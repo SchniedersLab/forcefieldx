@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" 
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.kenai.ffx</groupId>
+        <artifactId>ffx</artifactId>
+        <version>1.0</version>
+    </parent>
+    <groupId>com.kenai.ffx</groupId>
+    <artifactId>potentials</artifactId>
+    <packaging>jar</packaging>
+    <name>Potentials</name>
+
+    <developers>
+        <developer>
+            <id>pren</id>
+            <name>Pengyu Ren</name>
+            <email>pren@mail.utexas.edu</email>
+            <organization>Assistant Professor, U. of Texas, Austin</organization>
+            <organizationUrl>http://biomol.bme.utexas.edu/lab/</organizationUrl>
+            <roles>
+                <role>Chief Force Field Architect</role>
+            </roles>
+            <timezone>-5</timezone>
+        </developer>
+    </developers>
+
+    <reporting>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>jdepend-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jxr-plugin</artifactId>
+                <configuration>
+                    <linkJavadoc>true</linkJavadoc>
+                    <javadocDir>${project.reporting.outputDirectory}/apidocs</javadocDir>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-project-info-reports-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-report-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </reporting>
+
+
+    <dependencies>
+        <dependency>
+            <groupId>com.kenai.ffx</groupId>
+            <artifactId>numerics</artifactId>
+            <version>${project.version}</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>com.kenai.ffx</groupId>
+            <artifactId>crystal</artifactId>
+            <version>${project.version}</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>java3d</groupId>
+            <artifactId>j3dcore</artifactId>
+            <type>jar</type>
+            <version>1.5.2</version>
+        </dependency>
+        <dependency>
+            <groupId>java3d</groupId>
+            <artifactId>j3dutils</artifactId>
+            <type>jar</type>
+            <version>1.5.2</version>
+        </dependency>
+        <dependency>
+            <groupId>java3d</groupId>
+            <artifactId>j3dvrml</artifactId>
+            <type>jar</type>
+            <version>1.5.2</version>
+        </dependency>
+        <dependency>
+            <groupId>java3d</groupId>
+            <artifactId>vecmath</artifactId>
+            <type>jar</type>
+            <version>1.5.2</version>
+        </dependency>
+        <dependency>
+            <groupId>net.java.dev.jogl</groupId>
+            <artifactId>jogl</artifactId>
+            <type>jar</type>
+            <version>1.1.1</version>
+        </dependency>
+        <dependency>
+            <groupId>net.java.dev.jogl</groupId>
+            <artifactId>gluegen-rt</artifactId>
+            <type>jar</type>
+            <version>1.1.1</version>
+        </dependency>
+    </dependencies>
+
+</project>

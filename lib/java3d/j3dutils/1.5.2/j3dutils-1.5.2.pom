@@ -1,0 +1,8 @@
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>java3d</groupId>
+  <artifactId>j3dutils</artifactId>
+  <name>Java3D Utilities</name>
+  <version>1.5.2</version>
+  <url>https://java3d.dev.java.net</url>
+</project>

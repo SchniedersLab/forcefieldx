@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<document>
+    <properties>
+        <author email="schnied@stanford.edu">Michael Schnieders</author>
+        <title>Building from Source</title>
+    </properties>
+    <meta name="Building from Source"/>
+    <body>
+        <section name="Building from Source">
+            <p>Force Field X can be built from source using Apache ANT and a Java Development Kit (JDK).</p>
+            <p>The following tools are required:</p>
+            <ul>
+                <li>Ant 1.7.1</li>
+                <li>JDK 1.6.0</li>
+            </ul>
+            <subsection name="Directory Structure">
+                <p>The build files assume the following directory structure:</p>
+                <source>
+|-- FFX
+    |-- lib 
+    |-- native
+    |-- test
+                </source>
+            </subsection>
+        </section>
+    </body>
+</document>

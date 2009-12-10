@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<document>
+  <properties>
+    <author email="schnied@stanford.edu">Michael Schnieders</author>
+    <title>Links</title>
+  </properties>
+  <meta name="Links" content="Visualization, Molecular Modeling"/>
+  <body>
+    <section name="Links">
+<p>Those interested in molecular physics may find the following sites useful.</p>
+      <subsection name="Simulation Software">
+        <ul>
+          <li>
+            <a href="http://www.msg.ameslab.gov/GAMESS/GAMESS.html">GAMESS </a>" The General Atomic and Molecular Electronic Structure System (GAMESS) is a general ab initio quantum chemistry package. GAMESS is maintained by the members of the Gordon research group at Iowa State University."</li>
+          <li><a href="http://www.ks.uiuc.edu/research/namd">NAMD </a>"NAMD is a parallel molecular dynamics code designed for high-performance simulation of large biomolecular systems."</li>
+        </ul>
+      </subsection>
+      <subsection name="Visualization">
+        <ul>
+          <li>
+            <a href="http://www.cgl.ucsf.edu/chimera">Chimera </a>"UCSF Chimera is a highly extensible, interactive molecular graphics program. It is the successor to UCSF Midas and MidasPlus; however, it has been completely redesigned to maximize extensibility and leverage advances in hardware."</li>
+            <li><a href="http://jmol.sourceforge.net">JMol </a>"JMol is a free, open source molecule viewer for students, educators, and researchers in chemistry and biochemistry. It is cross-platform, running on Windows, Mac OS X, and Linux/Unix systems."</li>
+          <li>
+            <a href="http://pymol.sourceforge.net">PyMol </a>"PyMOL is a molecular graphics system with an embedded Python interpreter designed for real-time visualization and rapid generation of high-quality molecular graphics images and animations. It can also perform many other valuable tasks (such as editing PDB files) to assist you in your research."</li>
+          <li> <a href="http://molvis.sdsc.edu/protexpl/frntdoor.htm">Rasmol/Protein X </a>"Free software for visualizing the three-dimensional structures of protein, DNA, and RNA macromolecules, and their interactions and binding of ligands, inhibitors, and drugs. It is arguably the easiest-to-use software of its kind. It is suitable for high school and college students (ages 16 years and older), yet it is also widely used by graduate students and researchers."</li>
+          <li><a href="http://www.ks.uiuc.edu/research/vmd">VMD</a>" VMD is a molecular visualization program for displaying, animating, and analyzing large biomolecular systems using 3-D graphics and built-in scripting."</li>
+        </ul>
+      </subsection>
+      <subsection name="Java Resources">
+        <ul>
+          <li>
+            <a href="http://java.sun.com">Java 2 Platform, Standard Edition </a>"The premier solution for rapidly developing and deploying mission-critical, enterprise applications, J2SE provides the essential compiler, tools, runtimes, and APIs for writing, deploying, and running applets and applications in the Java programming language."</li>
+          <li>
+            <a href="http://java.sun.com/products/java-media/3D">Java3D </a>"Developers can easily incorporate high-quality, scalable, platform-independent 3D graphics into Java technology-based applications and applets. The Java 3D application programming interface (API) provides a set of object-oriented interfaces that support a simple, high-level programming model."</li>
+          <li>
+            <a href="http://ant.apache.org">Ant Java Build Tool </a>"Apache Ant is a Java-based build tool. In theory, it is kind of like Make, but without Make's wrinkles."</li>
+          <li>
+            <a href="http://maven.apache.org">Maven Project Management Tool </a>"Maven is a Java project management and project comprehension tool. Maven is based on the concept of a project object model (POM) in that all the artifacts produced by Maven are a result of consulting a well defined model for your project."</li>
+        </ul>
+      </subsection>
+    </section>
+  </body>
+</document>

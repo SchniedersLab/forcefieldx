@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<document
+    xmlns="http://maven.apache.org/XDOC/2.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
+    <properties>
+        <author email="fenn@stanford.edu">Timothy D. Fenn</author>
+        <title>Home Page</title>
+    </properties>
+    <head>
+        <meta name="Home Page" content="Introduction" />
+    </head>
+    <body>
+        <section name="Introduction">
+            <p>
+                The Xray module includes support for:
+            </p>
+            <ul>
+                <li>Stuff</li>
+            </ul>
+        </section>
+    </body>
+</document>

@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<project name="Force Field X">
+	<poweredBy>
+		<logo
+			name="Force Field X"
+			href="http://ffx.kenai.com"
+			img="images/icon90.png"
+		/>
+	</poweredBy>
+	<bannerRight>
+		<name>Force Field X</name>
+		<src>images/forcefieldx.png</src>
+		<href>http://ffx.kenai.com</href>
+	</bannerRight>
+	<bannerLeft>
+		<name>Force Field X</name>
+		<src>images/helixBanner.jpg</src>
+		<href>http://ffx.kenai.com</href>
+	</bannerLeft>
+	<publishDate format="dd MMM yyyy" />
+        <skin>
+		<groupId>site</groupId>
+		<artifactId>theme</artifactId>
+		<version>1.0</version>
+	</skin>
+	<body>
+		<links>
+			<item
+				name="Download"
+				href="download.html"
+			/>
+		</links>
+		<menu name="Overview">
+			<item
+				name="Introduction"
+				href="/index.html"
+			/>
+			<item
+				name="Scope"
+				href="/scope.html"
+			/>
+			<item
+				name="Features"
+				href="/features.html"
+			/>
+			<item
+				name="Motivation"
+				href="/motivation.html"
+			/>
+			<item
+				name="Download"
+				href="/download.html"
+			/>
+			<item
+				name="Installation"
+				href="/installation.html"
+			/>
+			<item
+				name="Links"
+				href="/links.html"
+			/>
+			<item
+				name="Acknowledgements"
+				href="/acknowledgements.html"
+			/>
+		</menu>
+		<menu name="Manual">
+			<item
+				name="Online (html)"
+				href="ffx/index.html"
+			/>
+			<item
+				name="Offline (pdf)"
+				href="ffx/ffx-guide.pdf"
+			/>
+		</menu>
+		<menu name="For Developers">
+			<item
+				name="Source Code"
+				href="/source.html"
+			/>
+			<item
+				name="Building from Source"
+				href="/building.html"
+			/>
+			<item
+				name="Unit Testing"
+				href="/quality.html"
+			/>
+		</menu>
+
+           <menu ref="modules" />
+           <menu ref="reports" />
+
+	</body>
+</project>

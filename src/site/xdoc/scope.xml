@@ -1,0 +1,164 @@
+<?xml version="1.0"?>
+<document>
+    <properties>
+        <author email="schnied@stanford.edu">
+			Michael Schnieders
+        </author>
+        <title>Scope</title>
+    </properties>
+    <meta name="Scope" content="Examples"/>
+    <body>
+        <section name="Scope">
+            <p> Molecular tools may be of use to scientists or teachers
+		working in a range of fields and at a variety of length
+		scales including:
+            </p>
+            <ul>
+                <li>
+                    <a href="scope.html#Chemistry and Biochemistry">
+			Chemistry and Biochemistry
+                    </a>
+                </li>
+                <li>
+                    <a href="scope.html#Molecular Biology">
+			Molecular Biology
+                    </a>
+                </li>
+                <li>
+                    <a href="scope.html#Molecular Engineering and Nanotechnology" >
+			Molecular Engineering and Nanotechnology
+                    </a>
+                </li>
+            </ul>
+            <p>
+            Shown below is an overview of systems that have been
+            investigated using classical potentials. Click on the
+            images to see more detail.
+            </p>
+            <subsection name="Chemistry and Biochemistry">
+                <table>
+                    <tr>
+                        <td>
+                            <a href="images/trpcage.png">
+                                <img src="images/trpcage_small.png" />
+                            </a>
+                        </td>
+                        <td>
+                            <a href="images/heme.png">
+                                <img src="images/heme_small.png" />
+                            </a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Trp-Cage</td>
+                        <td>Heme Prosthetic Group</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="images/enk.png">
+                                <img src="images/enk_small.png" />
+                            </a>
+                        </td>
+                        <td>
+                            <a href="images/glucose.png">
+                                <img src="images/glucose_small.png" />
+                            </a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Enkephalin</td>
+                        <td>Glucose</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="images/lipid.png">
+                                <img src="images/lipid_small.png" />
+                            </a>
+                        </td>
+                        <td>
+                            <a href="images/retinoic.png">
+                                <img src="images/retinoic_small.png" />
+                            </a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Lipid</td>
+                        <td>Retinoic Acid</td>
+                    </tr>
+                </table>
+            </subsection>
+            <subsection name="Molecular Biology">
+                <table>
+                    <tr>
+                        <td>
+                            <a href="images/bdna.png">
+                                <img src="images/bdna_small.png" />
+                            </a>
+                        </td>
+                        <td>
+                            <a href="images/crambin.png">
+                                <img src="images/crambin_small.png" />
+                            </a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>DNA B-Form Dodecamer</td>
+                        <td>Crambin</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="images/membrane.png">
+                                <img src="images/membrane_small.png" />
+                            </a>
+                        </td>
+                        <td>
+                            <a href="images/photo.png">
+                                <img src="images/photo_small.png" />
+                            </a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Membrane Bilayer</td>
+                        <td>Photosynthetic Reaction Center</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="images/polyalanine.png">
+                                <img src="images/polyalanine_small.png" />
+                            </a>
+                        </td>
+                        <td>
+                            <a href="images/calmodulin.png">
+                                <img src="images/calmodulin_small.png" />
+                            </a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Docked Polyalanines</td>
+                        <td>Calmodulin</td>
+                    </tr>
+                </table>
+            </subsection>
+            <subsection name="Molecular Engineering and Nanotechnology">
+                <table>
+                    <tr>
+                        <td>
+                            <a href="images/bucky.png">
+                                <img src="images/bucky_small.png" />
+                            </a>
+                        </td>
+                        <td>
+                            <a href="images/bearing.png">
+                                <img src="images/bearing_small.png" />
+                            </a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Small Bearing</td>
+                        <td>Large Bearing</td>
+                    </tr>
+                </table>
+            </subsection>
+        </section>
+    </body>
+</document>

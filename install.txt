@@ -1,0 +1,15 @@
+
+On Mac OS X add the ffx/bin/macosx directory to your path. For example, if ffx is unpacked into /Users/shared/ffx
+BASH
+export PATH="/Users/shared/ffx/bin/macosx:$PATH"
+CSH
+setenv PATH "/Users/shared/ffx/bin/macosx:$PATH"
+
+
+On Linux add the ffx/bin/linux directory to your path. For example, if ffx is unpacked into /Users/shared/ffx
+BASH
+export PATH="/Users/shared/ffx/bin/linux:$PATH"
+CSH
+setenv PATH "/Users/shared/ffx/bin/linux:$PATH"
+
+(This assumes that a Java 1.6 JRE is available)

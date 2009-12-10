@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<document>
+    <properties>
+        <author email="schnied@stanford.edu">
+			Michael Schnieders
+        </author>
+        <title>Home Page</title>
+    </properties>
+    <meta name="Home Page" content="Introduction" />
+    <body>
+        <section name="Introduction">
+            <p>
+            Force Field X implements biomolecular physics with state-of-the-art features for crystals.
+            </p>
+              <table>
+                    <tr>
+                       <th>Chaperonin Unit Cell</th>
+                       <th>Chaperonin Asymmetric Unit</th> 
+                    </tr>
+                    <tr>
+                        <td> 
+                    <img align="center" src="images/mmcpn.P1.png"/>
+                 </td>
+                 <td>
+                    <img align="center" src="images/mmcpn.C2.png"/>
+                 </td>
+               </tr>
+               <tr>
+                <td>
+           <p>Force Field X can be used to simulate the unit cell of this chaperonin crystal, 
+           which contains 4 copies of the asymmetric unit.</p>
+           <p>Advantages include:
+                 <ul>
+                    <li>Fluctuations of each asymmetric unit are correlated, but not strictly symmetric.</li>
+                    <li>For thermodynamic averages, each sample contains 4 observations of any asymmetric unit property.</li>
+                  </ul></p>
+                 </td>
+                  <td>
+           <p>Rather than apply molecular physics to the entire unit cell (P1), 
+              Force Field X is also capable of using the native space group of a crystal 
+              (C2 in this case).</p>
+           <p>Advantages include:
+                       <ul>
+                         <li>Crystal space group symmetry is strictly enforced.</li>
+                         <li>Evaluation of the potential energy and gradients is significantly faster.</li>
+                         <li>Memory requirements are significantly reduced.</li>
+                        </ul></p>
+                  </td>
+               </tr>
+           </table>
+        </section>
+    </body>
+</document>

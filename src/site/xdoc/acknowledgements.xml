@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<document>
+    <properties>
+        <author email="schnied@stanford.edu">Michael Schnieders</author>
+        <title>Acknowledgements</title>
+    </properties>
+    <meta name="Acknowledgements" />
+    <body>
+        <section name="Acknowledgements">
+            <ul>
+                <li>
+                    <a href="acknowledgements.html#Force Field X">
+                        Force Field X
+                    </a>
+                </li>
+            </ul>
+        </section>
+    </body>
+</document>

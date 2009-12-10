@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--  
+
+ Title: Force Field Xplorer</p>
+ Description: Force Field Xplorer is a Molecular Engineering Environment</p>
+ Copyright: Copyright (c) Michael J. Schnieders 2002-2009</p>
+ Institution: Labs of Axel T. Brunger (Stanford), Vijay S. Pande (Stanford) and Jay W. Ponder (WUSTL)</p>
+ Author: Michael J. Schnieders
+ Version: 5.0
+ 
+-->
+<!ELEMENT TinkerCommands (Command+)>
+<!ELEMENT Command name, description, fileType, action, (Option*)>
+<!ELEMENT Option name, description, gui, default, blank, lowerLimit, upperLimit, (Value*, Conditional?)>
+<!ELEMENT Value name>
+<!ELEMENT Conditional name, description, gui, default>

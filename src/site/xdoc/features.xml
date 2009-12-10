@@ -1,0 +1,82 @@
+<?xml version="1.0"?>
+<document>
+    <properties>
+        <author email="schnied@stanford.edu">
+			Michael Schnieders
+        </author>
+        <title>Features</title>
+    </properties>
+    <meta
+		name="Features"
+		content="Features of Force Field X"
+	/>
+    <body>
+        <section name="Features">
+            <ul>
+                <li>
+                    <a href="features.html#Force Field X">
+						Force Field X
+                    </a>
+                </li>
+            </ul>
+            <subsection name="Force Field X">
+                <ul>
+                    <li>Scripting using a Java like syntax.</li>
+                    <li>Merging of any number of docked structures.</li>
+                    <li>Direct download from the PDB.</li>
+                    <li>Trajectory playback.</li>
+                    <li>Selection</li>
+                    <ul>
+                        <li>Based on graphics picking</li>
+                        <li>Based on a hierarchical molecular tree</li>
+                    </ul>
+                    <li>Configurable Labels</li>
+                    <ul>
+                        <li>Atoms</li>
+                        <li>Residues</li>
+                    </ul>
+                    <li>Measurement</li>
+                    <ul>
+                        <li>Distances</li>
+                        <li>Angles</li>
+                        <li>Dihedrals</li>
+                    </ul>
+                    <li>Rotation and translation</li>
+                    <ul>
+                        <li>Of individual molecules</li>
+                        <li>Of the global frame</li>
+                    </ul>
+                    <li>Global Zooming.</li>
+                    <li>3D display methods</li>
+                    <ul>
+                        <li>Wireframe</li>
+                        <li>Spacefill</li>
+                        <li>Tube</li>
+                        <li>Ball and Stick</li>
+                        <li>RMIN</li>
+                        <li>Vectors</li>
+                        <li>VRML</li>
+                    </ul>
+                    <li>Coloring methods</li>
+                    <ul>
+                        <li>CPK</li>
+                        <li>Residue</li>
+                        <li>Polymer</li>
+                        <li>Secondary Structure</li>
+                        <li>Partial Charge</li>
+                        <li>Vector Magnitude</li>
+                        <li>Monochrome</li>
+                        <li>User Assigned Color</li>
+                    </ul>
+                    <li>Image Capture</li>
+                    <ul>
+                        <li>PNG</li>
+                        <li>JPEG</li>
+                        <li>BMP</li>
+                        <li>WBMP</li>
+                    </ul>
+                </ul>
+            </subsection>
+        </section>
+    </body>
+</document>

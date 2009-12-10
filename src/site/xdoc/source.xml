@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<document>
+  <properties>
+    <author email="schnied@stanford.edu">Michael Schnieders</author>
+    <title>Source Code</title>
+  </properties>
+  <meta name="Source Code" content="Source Code"/>
+  <body>
+    <section name="Source Code">
+     <subsection name="Force Field X">
+      <p>Currently the Force Field X project include about 130 Java classes. An ANT build.xml file for building Force Field X is included with the distribution.</p>
+        <p>The Application Programming Interface (API) documentation on Force Field X packages is available as <a href="apidocs/index.html">Javadocs.</a></p>
+        <p>For detailed information on the layout of Force Field X source code visit the "Project Documentation" area of this website. For example, we use the <a href="jdepend-report.html">JDepend Report</a> to avoid cyclic package dependencies.</p>
+    </subsection>
+</section>
+    <section name="Development Tools">
+      <subsection name="Ant">
+        <p>After installing Ant, Force Field X can be built using the command 'ant' within the FFX directory. Specific instructions for building the FFX Molecular Biophysics Environment are given <a href="building.html">here.</a></p>
+      </subsection>
+      <subsection name="Maven">
+        <p>The Force Field X web site facilitates technology transfer and further development of features. It is built with the Maven project management tool.</p>
+      </subsection>
+    </section>
+  </body>
+</document>

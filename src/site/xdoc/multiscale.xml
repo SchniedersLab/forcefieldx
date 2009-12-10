@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+<document>
+  <properties>
+    <author email="schnied@stanford.edu">Michael Schnieders</author>
+    <title>Multiscale Infrastructure</title>
+  </properties>
+  <meta name="Multiscale Infrastructure"/>
+  <body>
+    <section name="Multiscale Infrastructure">
+    <subsection name="Recursion Over Length Scales">
+      <p>The Force Field X multiscale infrastructure is designed around the principle of Recursion Over Length Scales (ROLS). Another well known example of ROLS is Renormalization.</p>
+     </subsection>
+    <subsection name="Array of Atoms">
+        <p>The "Array of Atoms" data structure used by most modeling packages is not appropriate for multiscale modeling. It might even be asserted that this design choice (flaw), which is inherent in the structure of most modeling packages and algorithms, has limited progress toward the development of multiscale theories and codes.</p>
+        <p>Furthermore, in our experience, ROLS algorithms require two features not present (or difficult to implement and maintain) in programming languages most often used by scientists (FORTRAN and C).</p>
+        <ol>
+           <li>Inheritance</li>
+           <li>Polymorphism</li>
+        </ol>
+        <p align="center">
+          <img src="images/tree.jpg"/>
+        </p>
+        <p align="center">
+A view of the Force Field X multiscale data structure for the crambin crystal unit cell. 
+        </p>
+     </subsection>
+    <subsection name="An Alternative to Using an Array of Atoms">
+        <p>The ffe.lang package can be used independently of the rest of Force Field X. Important design goals that were considered include:</p>
+        <ul>
+          <li>Facilitating Recursive Over Length Scales Approaches.</li>
+          <li>Self-Rendering Views of the Model:
+             <ol>
+                <li>3D Graphics View</li>
+                <li>Molecular Tree View</li>
+             </ol>
+          </li>
+          <li>Platform Independence.</li>
+          <li>Scalable up to large molecular assemblies.</li>
+        </ul>
+        <p>For more details visit the <a href="apidocs/ffe/lang/package-summary.html">ffe.lang</a> documentation.</p>
+        </subsection>
+    </section>
+  </body>
+</document>

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<project
+    name="Force Field X"
+    xmlns="http://maven.apache.org/DECORATION/1.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/DECORATION/1.0.0 http://maven.apache.org/xsd/decoration-1.0.0.xsd">
+    <publishDate position="right" format="dd MMM yyyy" />
+    <version position="right" />
+    <poweredBy>
+        <logo
+            name="Force Field X Development"
+            href="http://kenai.com/projects/ffx"
+            img="/images/icon90.png"
+            />
+    </poweredBy>
+    <bannerRight>
+        <name>Force Field X</name>
+        <src>/images/forcefieldx.png</src>
+        <href>http://ffx.kenai.com</href>
+    </bannerRight>
+    <bannerLeft>
+        <name>Force Field X</name>
+        <src>/images/helixBanner.jpg</src>
+        <href>http://ffx.kenai.com</href>
+    </bannerLeft>
+    <skin>
+        <groupId>site</groupId>
+        <artifactId>theme</artifactId>
+        <version>1.0</version>
+    </skin>
+    <body>
+        <breadcrumbs>
+            <item name="Force Field X" href="http://ffx.kenai.com"/>
+        </breadcrumbs>
+        <menu name="Overview" inherit="top">
+            <item
+                name="Introduction"
+                href="/index.html"
+                />
+            <item
+                name="Download"
+                href="/download.html"
+                />
+        </menu>
+        <menu name="Force Field X Modules" inherit="bottom">
+            <item name="Algorithms"  href="modules/algorithms/index.html"/>
+            <item name="Binding Affinity"  href="modules/binding/index.html"/>
+            <item name="Crystal" href="modules/crystal/index.html"/>
+            <item name="Numerics" href="modules/numerics/index.html"/>
+            <item name="Parsers" href="modules/parsers/index.html"/>
+            <item name="Potentials" href="modules/potentials/index.html"/>
+            <item name="User Interface" href="modules/ui/index.html"/>
+            <item name="X-ray Refinement" href="modules/xray/index.html"/>
+        </menu>
+        <!-- menu ref="reports" inherit="bottom"/ -->
+    </body>
+</project>

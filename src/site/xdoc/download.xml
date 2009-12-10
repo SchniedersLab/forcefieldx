@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<document
+    xmlns="http://maven.apache.org/XDOC/2.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
+    <properties>
+        <title>Download</title>
+        <author>Michael J. Schnieders</author>
+    </properties>
+    <body>
+        <section name="Download">
+            <p>A single Force Field X distribution supports Linux, Mac OS X and Microsoft Windows
+            operating systems for both 32-Bit and 64-Bit hardware.</p>
+            <p>The distribution includes:</p>
+            <ul>
+                <li>Launchers for the graphical user interface and command line compiler</li>
+                <li>Documentation</li>
+                <li>Examples</li>
+                <li>Scripts</li>
+                <li>Force Field Parameters</li>
+            </ul>
+            <p>System requirement:</p>
+            <ul>
+                <li>A Java Runtime Environment (JRE) version 1.6.0 or later</li>
+            </ul>
+            <table>
+                <tr>
+                    <th>Version</th>
+                    <th>Date</th>
+                    <th>Download</th>
+                </tr>
+                <tr>
+                    <td>1.0-SNAPSHOT</td>
+                    <td>January 2010</td>
+                    <td>
+                        <a href="downloads/ffx-1.0-SNAPSHOT-bin.tar.gz">ffx-1.0-SNAPSHOT-bin.tar.gz</a>
+                    </td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td>
+                        <a href="downloads/ffx-1.0-SNAPSHOT-bin.zip">ffx-1.0-SNAPSHOT-bin.zip</a>
+                    </td>
+                </tr>
+            </table>
+            <p>After downloading a distribution from the table above please proceed to verify
+            your JRE.</p>
+            <subsection name="Verifying the JRE">
+                <p>Force Field X start up commands use the JRE specified by the <code>JAVA_HOME</code> environment
+                variable. Please verify that <code>JAVA_HOME</code> references a JRE (or JDK) of version 1.6.0 or later.</p>
+                <ul>
+                    <li><p>Linux</p>
+                        <p>Type "<code>echo $JAVA_HOME</code>" in a shell.</p>
+                        <p>If <code>JAVA_HOME</code> is not set or the JRE version is less than 1.6.0,
+                            then please follow Sun's
+                            <a href="http://java.sun.com/javase/6/webnotes/install/system-configurations.html">
+                            Java installation instructions</a> to install a JRE and/or set the
+                            <code>JAVA_HOME</code> environment variable.
+                        </p>
+                    </li>
+                    <li><p>Mac OS X</p>
+                        <p>Type "<code>echo $JAVA_HOME</code>" in a shell. The result should look like this:</p>
+                        <p><code>/System/Library/Frameworks/JavaVM.framework/Versions/1.6.0/Home</code></p>
+                        <p>If the version is less than 1.6.0, simply open "/Applications/Utilities/Java Preferences"
+                        and specify version 1.6.0 (or later) to be preferred for Applications (ie. drag it to the top of the list).</p>
+                    </li>
+                    <li><p>Microsoft Windows</p>
+                        <p>Type "<code>echo %JAVA_HOME%</code>" at a DOS prompt.</p>
+                        <p>If <code>JAVA_HOME</code> is not set or the version is less than 1.6.0, then please follow Sun's
+                            <a href="http://java.sun.com/javase/6/webnotes/install/system-configurations.html">
+                            Java installation instructions</a> to install a JRE. The Windows installer will set the
+                            <code>JAVA_HOME</code> environment variable for you (please open a new DOS window after
+                            the installation finishes to check).
+                        </p>
+                    </li>
+                </ul>
+                <p>After <code>JAVA_HOME</code> is verified, please read the brief installation instructions for your platform:</p>
+                <ul>
+                    <li>
+                        <a href="download.html#Linux_Installation_Instructions">Linux</a>
+                    </li>
+                    <li>
+                        <a href="download.html#Mac_OS_X_Installation_Instructions">Mac OS X</a>
+                    </li>
+                    <li>
+                        <a href="download.html#Microsoft_Windows_Installation_Instructions">Microsoft Windows</a>
+                    </li>
+                </ul>
+
+            </subsection>
+            <subsection name="Linux Installation Instructions" id="linux">
+                <table>
+                    <tr>
+                        <td>
+                            <p align="left">
+                                <img src="images/tux.jpg" alt="LINUX" />
+                            </p>
+                        </td>
+                        <td>
+                            <ol>
+                                <li>
+                                    <p>Unpack the distribution (replace VERSION based on the downloaded file):</p>
+                                    <p><code>tar -xzf ffx-VERSION-bin.tar.gz</code></p>
+                                    <p><code>unzip ffx-VERSION-bin.zip</code></p>
+                                </li>
+                                <li>
+                                    <p>Add the directory ffx-VERSION/bin/linux to your path. For example,
+                                        if ffx is unpacked into /Users/shared/ffx-VERSION, then
+                                    </p>
+                                    <ul>
+                                        <li><p>BASH</p>
+                                            <p>export PATH="/Users/shared/ffx-VERSION/bin/linux:$PATH"</p>
+                                        </li>
+                                        <li><p>CSH</p>
+                                            <p>setenv PATH "/Users/shared/ffx-VERSION/bin/linux:$PATH"</p>
+                                        </li>
+                                    </ul>
+                                    <p>To check use "<code>echo $PATH</code>" and "<code>which ffx</code>".
+                                        Both the graphical <code>ffx</code> and command line
+                                        compiler <code>ffxc</code> versions should now be available.
+                                    </p>
+                                </li>
+                            </ol>
+                        </td>
+                    </tr>
+                </table>
+            </subsection>
+            <subsection name="Mac OS X Installation Instructions" id="macosx">
+                <table>
+                    <tr>
+                        <td>
+                            <p align="left">
+                                <img src="images/mac.jpg" alt="MAC OS X" />
+                            </p>
+                        </td>
+                        <td>
+                            <ol>
+                                <li>
+                                    <p>Unpack the distribution (replace VERSION based on the downloaded file):</p>
+                                    <p><code>tar -xzf ffx-VERSION-bin.tar.gz</code></p>
+                                    <p><code>unzip ffx-VERSION-bin.zip</code></p>
+                                </li>
+                                <li>
+                                    <p>Add the ffx-VERSION/bin/macosx directory to your path.
+                                        For example, if ffx is unpacked into /Users/shared/ffx-VERSION, then
+                                    </p>
+                                    <ul>
+                                        <li><p>BASH</p>
+                                            <p>export PATH="/Users/shared/ffx-VERSION/bin/macosx:$PATH"</p>
+                                        </li>
+                                        <li><p>CSH</p>
+                                            <p>setenv PATH "/Users/shared/ffx-VERSION/bin/macosx:$PATH"</p>
+                                        </li>
+                                    </ul>
+                                    <p>To check use "<code>echo $PATH</code>" and "<code>which ffx</code>".
+                                        Both the graphical <code>ffx</code> and command line
+                                        compiler <code>ffxc</code> versions should now be available.
+                                    </p>
+                                </li>
+                            </ol>
+                        </td>
+                    </tr>
+                </table>
+            </subsection>
+            <subsection name="Microsoft Windows Installation Instructions" id="windows">
+                <p align="center">
+                    <img src="images/windows.jpg" alt="MS WINDOWS" />
+                </p>
+            </subsection>
+        </section>
+    </body>
+</document>

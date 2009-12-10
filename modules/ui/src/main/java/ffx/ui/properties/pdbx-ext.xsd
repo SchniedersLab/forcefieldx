@@ -1,0 +1,90 @@
+<?xml version = "1.0" encoding = "UTF-8"?>
+
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+ xmlns:PDBx="http://deposit.pdb.org/pdbML/pdbx-ext.xsd" 
+ targetNamespace="http://deposit.pdb.org/pdbML/pdbx-ext.xsd" 
+ elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+
+<!--#========================================================
+    # data type definition 
+    # pdbx-v1.008-ext.xsd  Updated:  23-March-2007 jdw
+    #========================================================-->
+
+
+
+    <!-- PDB_ID data type -->
+
+    <xsd:simpleType name = "datablock_nameType">
+        <xsd:restriction base = "xsd:string">
+            <xsd:pattern value = "[1-9][0-9A-Z]{3}(-extatom)"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <!-- atom_record data type ( with regular expression ) -->
+    <xsd:simpleType name="atom_record_formatType">
+        <xsd:restriction base="xsd:string">
+
+            <xsd:pattern value="\p{Zs}*(ATOM|HETATM)\p{Zs}+(\d)+\p{Zs}+([A-Za-z0-9.?]+)\p{Zs}+([A-Za-z0-9.?]+|[\-])\p{Zs}+([0-9]+|\.)\p{Zs}+([\-]?[0-9]+[A-Za-z]?[&apos;]?)\p{Zs}+([A-Za-z0-9]|\.|\?|&apos;)\p{Zs}+(.+|\.|\?)\p{Zs}+([A-Za-z0-9]{1,3}|[+]?[ATGCUatgcu]|\.|\?)\p{Zs}+([A-Za-z0-9]{1,3}|[+]?[ATGCUatgcu]|\.|\?)\p{Zs}+([A-Za-z0-9]{1,3}|\.|\?)\p{Zs}+([A-Za-z0-9_\*&apos;&quot;,&#32;+]+|\.|\?)\p{Zs}+([A-Za-z0-9_\*&apos;&quot;,&#32;+\-]+|\.|\?)\p{Zs}+([+\-]?[0-9]+(\.?[0-9]+)?|\.|\?)\p{Zs}+([+\-]?[0-9]+(\.?[0-9]+)?|\.|\?)\p{Zs}+([+\-]?[0-9]+(\.?[0-9]+)?|\.|\?)\p{Zs}+([+\-]?[0-9]+(\.?[0-9]+)?|\.|\?)\p{Zs}+([+\-]?[0-9]+(\.?[0-9]+)?|\.|\?)\p{Zs}*"/>
+
+<!--
+    *** regular expressions of atom_record ***
+
+    \p{Zs}*  ...  separator (1st, last)
+    \p{Zs}+  ...  separator (2nd,3rd,...)
+
+    (ATOM|HETATM)                             - group_PDB
+    (\d)                                      - pdbx_PDB_model_num
+    ([A-Za-z0-9.?]+)                          - label_asym_id
+    ([A-Za-z0-9]+|[\-])                       - auth_asym_id
+    ([0-9]+|\.)                               - label_seq_id
+    ([\-]?[0-9]+[A-Za-z]?[&apos;]?)                      - auth_seq_id
+    ([A-Za-z0-9]|\.|\?|&apos;)                          - pdbx_PDB_ins_code
+    (.+|\.|\?)                                          - label_alt_id
+    ([A-Za-z0-9]{1,3}|[+]?[ATGCUatgcu]|\.|\?)           - label_comp_id
+    ([A-Za-z0-9]{1,3}|[+]?[ATGCUatgcu]|\.|\?)           - auth_comp_id
+    ([A-Za-z0-9]{1,3}|\.|\?)                            - type_symbol
+    ([A-Za-z0-9_\*&apos;&quot;,&#32;+]+|\.|\?)          - label_atom_id
+    ([A-Za-z0-9_\*&apos;&quot;,&#32;+\-]+|\.|\?)        - auth_atom_id
+    ([+\-]?[0-9]+(\.?[0-9]+)?|\.|\?)          - CartnX,CartnY,CartnZ,Occupancy,Bfactor
+-->
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <!-- about atom_record -->
+    <xsd:complexType name = "atom_recordType">
+        <xsd:sequence>
+        <xsd:element name="atom_record" minOccurs="0" maxOccurs="unbounded" >
+            <xsd:complexType>
+                <xsd:simpleContent>
+                    <xsd:extension base = "PDBx:atom_record_formatType">
+                        <xsd:attribute name="id" use="required" type="xsd:positiveInteger"/>
+                    </xsd:extension>
+                </xsd:simpleContent>
+            </xsd:complexType>
+        </xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+
+    <!-- about datablock -->
+    <xsd:complexType name="datablockType">
+        <xsd:sequence>
+            <xsd:element name="category_atom_record" type = "PDBx:atom_recordType" minOccurs="0" maxOccurs="1"/>
+        </xsd:sequence>
+        <xsd:attribute name="datablockName" use="optional" type="PDBx:datablock_nameType"/>
+    </xsd:complexType>
+
+
+<!--#========================================================
+    # Root element
+    #========================================================-->
+    <xsd:element name="datablock" type="PDBx:datablockType" />
+
+
+</xsd:schema>
+
+
+
+
+
