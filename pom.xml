@@ -8,7 +8,7 @@
     <artifactId>ffx</artifactId>
     <packaging>pom</packaging>
     <name>Force Field X</name>
-    <version>1.0</version>
+    <version>SNAPSHOT</version>
     <description>Software for Biomolecular Physics</description>
     <url>http://ffx.kenai.com</url>
     <inceptionYear>2001</inceptionYear>
@@ -67,9 +67,15 @@
         <repository>
             <uniqueVersion>false</uniqueVersion>
             <id>releases</id>
-            <name>FFX Kenai Repository</name>
+            <name>FFX Local Kenai Repository</name>
             <url>file:../ffx-maven</url>
         </repository>
+        <snapshotRepository>
+            <uniqueVersion>false</uniqueVersion>
+            <id>snapshots</id>
+            <name>FFX Local Kenai Repository</name>
+            <url>file:../ffx-maven-snapshots</url>
+        </snapshotRepository>
     </distributionManagement>
 
     <developers>
@@ -171,6 +177,7 @@
     <properties>
         <compileVersion>1.6</compileVersion>
         <targetVersion>1.6</targetVersion>
+        <username>schnied</username>
         <!-- Setting the source encoding is required for builds
              that are platform independent. -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

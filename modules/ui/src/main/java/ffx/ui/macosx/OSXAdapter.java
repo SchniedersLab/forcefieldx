@@ -56,7 +56,7 @@ public class OSXAdapter extends ApplicationAdapter {
         application.addApplicationListener(adapter);
         application.setEnabledPreferencesMenu(true);
         application.setEnabledAboutMenu(true);
-        ImageIcon icon = new ImageIcon(ClassLoader.getSystemResource("ffx/ui/icons/icon64.png"));
+        ImageIcon icon = new ImageIcon(m.getClass().getClassLoader().getResource("ffx/ui/icons/icon64.png"));
         application.setDockIconImage(icon.getImage());
     }
 
@@ -89,14 +89,15 @@ public class OSXAdapter extends ApplicationAdapter {
      * do these need to be set to be recognized?
      */
     public static void setOSXProperties() {
-        System.setProperty("apple.mrj.application.apple.menu.about.name",
-                "Force Field X");
+        
+        System.setProperty("apple.mrj.application.apple.menu.about.name","Force Field X");
         System.setProperty("apple.laf.useScreenMenuBar", "true");
         System.setProperty("apple.awt.showGrowBox", "true");
         System.setProperty("apple.mrj.application.growbox.intrudes", "false");
         System.setProperty("apple.awt.brushMetalLook", "true");
         System.setProperty("apple.mrj.application.live-resize", "true");
         System.setProperty("apple.macos.smallTabs", "true");
+        
         // -Xdock:name="Force Field X"
     }
 

@@ -7,7 +7,7 @@
     <parent>
         <groupId>com.kenai.ffx</groupId>
         <artifactId>ffx</artifactId>
-        <version>1.0</version>
+        <version>SNAPSHOT</version>
     </parent>
     <groupId>com.kenai.ffx</groupId>
     <artifactId>potentials</artifactId>
