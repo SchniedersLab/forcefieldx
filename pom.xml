@@ -8,7 +8,7 @@
     <artifactId>ffx</artifactId>
     <packaging>pom</packaging>
     <name>Force Field X</name>
-    <version>SNAPSHOT</version>
+    <version>1.0.0-SNAPSHOT</version>
     <description>Software for Biomolecular Physics</description>
     <url>http://ffx.kenai.com</url>
     <inceptionYear>2001</inceptionYear>
@@ -67,13 +67,13 @@
         <repository>
             <uniqueVersion>false</uniqueVersion>
             <id>releases</id>
-            <name>FFX Local Kenai Repository</name>
+            <name>Local Maven Repository</name>
             <url>file:../ffx-maven</url>
         </repository>
         <snapshotRepository>
             <uniqueVersion>false</uniqueVersion>
             <id>snapshots</id>
-            <name>FFX Local Kenai Repository</name>
+            <name>Local Maven SNAPSHOT Repository</name>
             <url>file:../ffx-maven-snapshots</url>
         </snapshotRepository>
     </distributionManagement>
@@ -88,7 +88,7 @@
             Stanford University</organization>
             <organizationUrl>http://ffx.kenai.com</organizationUrl>
             <roles>
-                <role>Chief Architect of Force Field X</role>
+                <role>Director of Force Field X</role>
             </roles>
             <timezone>-7</timezone>
         </developer>
@@ -148,13 +148,40 @@
                 </executions>
             </plugin>
             <plugin>
+                <inherited>false</inherited>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <configuration>
                     <descriptors>
                         <descriptor>src/assemble/bin.xml</descriptor>
                     </descriptors>
-                    <finalName>ffx-${version}-SNAPSHOT</finalName>
+                    <finalName>ffx-${version}</finalName>
+                </configuration>
+            </plugin>
+            <plugin>
+                <inherited>false</inherited>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <executable>java</executable>
+                    <arguments>
+                        <argument>-ms2G</argument>
+                        <argument>-mx2G</argument>
+                        <argument>-Djava.awt.headless=false</argument>
+                        <argument>-Dpj.nt=2</argument>
+                        <argument>-Djava.library.path=bin/${platform}/jogl</argument>
+                        <argument>-classpath</argument>
+                        <argument>target/site/ffx-all-${version}.jar</argument>
+                        <argument>ffx.Main</argument>
+                        <!-- argument>scripts/md.ffx</argument -->
+                    </arguments>
                 </configuration>
             </plugin>
         </plugins>

@@ -1,8 +1,6 @@
 
 // Open a test system.
-//open "test/snare-brunger-02-1n7s.P212121.xyz"
-
-//return;
+open "examples/snare-brunger-02-1n7s.P212121.xyz"
 
 // Number of molecular dynamics steps
 int nSteps = 1000;

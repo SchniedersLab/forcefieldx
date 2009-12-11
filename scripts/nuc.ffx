@@ -1,0 +1,12 @@
+
+closeAll()
+// Set the convergence criteria
+double eps = 5.0;
+
+open ("examples/nuc.P1.xyz")
+e = minimize(eps)
+
+open ("examples/nuc.P3221.xyz")
+e = minimize(eps)
+
+

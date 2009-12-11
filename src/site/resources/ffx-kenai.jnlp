@@ -6,7 +6,7 @@
         <vendor>Michael J. Schnieders</vendor>
         <homepage href="http://ffx.kenai.com" />
         <description>Software for Molecular Biophysics</description>
-        <icon href="images/icon64.png"/>
+        <icon href="images/icon128.png"/>
         <offline-allowed/>
         <shortcut  online="false">
             <desktop/>
@@ -20,8 +20,8 @@
             <description>TINKER XYZ File</description>
             <icon href="images/icon32.png" />
         </association>
-        <association mime-type="application-x/xyz-file" extensions="key">
-            <description>Force Field X Key File</description>
+        <association mime-type="application-x/key-file" extensions="key">
+            <description>Force Field X Property File</description>
             <icon href="images/icon32.png" />
         </association>
     </information>
@@ -30,7 +30,7 @@
     </security>
     <resources>
         <j2se version="1.6+" java-vm-args="-Xmx1G" />
-        <jar href="ffx-all.jar" />
+        <jar href="ffx-all-1.0.0-SNAPSHOT.jar" />
         <extension name="jogl" href="http://download.java.net/media/jogl/builds/archive/jsr-231-webstart-current/jogl.jnlp" />
     </resources>
     <application-desc main-class="ffx.Main" />

@@ -3,14 +3,31 @@
         <action>
             <actionName>build</actionName>
             <goals>
-                <goal>compile</goal>
+                <goal>verify</goal>
             </goals>
         </action>
         <action>
             <actionName>rebuild</actionName>
             <goals>
                 <goal>clean</goal>
-                <goal>compile</goal>
+                <goal>verify</goal>
+            </goals>
+        </action>
+        <action>
+            <actionName>run</actionName>
+            <goals>
+                <goal>exec:exec</goal>
+                
+            </goals>
+            <recursive>false</recursive>
+        </action>
+        <action>
+            <actionName>CUSTOM-Build Local Website</actionName>
+            <displayName>Build Local Website</displayName>
+            <goals>
+                <goal>-o</goal>
+                <goal>site</goal>
+                
             </goals>
         </action>
         

@@ -1,0 +1,7 @@
+
+closeAll()
+
+open ("examples/dhfr.xyz")
+double eps = 1.0;
+e = minimize(eps)
+

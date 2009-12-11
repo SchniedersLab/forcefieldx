@@ -77,24 +77,6 @@ public class Main extends JFrame {
     }
 
     /**
-     * Look for Java3D extensions. If they are not found, directions are printed
-     * on where to find them. The JARs should always be located in the ffe/lib
-     * directory while the native libraries can be found in
-     * ffe/native/${platform}.
-     */
-    private void checkJava3D() {
-        try {
-            getClass().getClassLoader().loadClass("javax.media.j3d.Canvas3D");
-        } catch (Exception e) {
-            StringBuffer message = new StringBuffer("\n\nJava3D Extensions have not been installed: \n\n" + e);
-            message.append("\n\nPlease follow Java3D 1.5.2 installation instructions given at http://java3d.dev.java.net\n\n");
-            message.append("\n\nForce Field Xr can not continue\n\n");
-            logger.severe(message.toString());
-            System.exit(-1);
-        }
-    }
-
-    /**
      * Create an instance of Force Field X
      */
     public static void main(String[] args) throws Exception {
@@ -110,7 +92,7 @@ public class Main extends JFrame {
             }
         }
         if (!GraphicsEnvironment.isHeadless()) {
-            logger.info("\n\nForce Field X is starting up in GUI mode.\n");
+            logger.info("\n\n Force Field X is starting up in GUI mode.\n");
             // Some Mac OS X specific features that help FFX look native.
             // These need to be set before the MainPanel is created.
             if (SystemUtils.IS_OS_MAC_OSX) {
@@ -122,7 +104,7 @@ public class Main extends JFrame {
             // Initialize the main frame and Force Field X MainPanel
             Main m = new Main(commandLineFile);
         } else {
-            logger.info("\n\nForce Field X is starting up in command line mode.\n");
+            logger.info("\n\n Force Field X is starting up in command line mode.\n");
             HeadlessMain m = new HeadlessMain(commandLineFile, logHandler);
         }
     }
@@ -135,8 +117,6 @@ public class Main extends JFrame {
         // Start the clock.
         stopWatch.start();
         setVisible(false);
-        // Check for Java3D Extensions
-        checkJava3D();
         // Create the MainPanel and MainMenu, then add them to the JFrame
         java.awt.Toolkit.getDefaultToolkit().setDynamicLayout(true);
         mainPanel = new MainPanel(this);

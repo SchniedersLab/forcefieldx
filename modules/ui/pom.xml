@@ -7,7 +7,7 @@
     <parent>
         <groupId>com.kenai.ffx</groupId>
         <artifactId>ffx</artifactId>
-        <version>SNAPSHOT</version>
+        <version>1.0.0-SNAPSHOT</version>
     </parent>
     <groupId>com.kenai.ffx</groupId>
     <artifactId>ui</artifactId>
@@ -15,31 +15,6 @@
     <name>User Interfaces</name>
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <executable>java</executable>
-                    <arguments>
-                        <argument>-ms2G</argument>
-                        <argument>-mx2G</argument>
-                        <argument>-Djava.awt.headless=false</argument>
-                        <argument>-Dpj.nt=2</argument>
-                        <argument>-Djava.library.path=../../bin/${platform}/jogl</argument>
-                        <argument>-classpath</argument>
-                        <classpath/>
-                        <argument>ffx.Main</argument>
-                        <argument>groovy/md.groovy</argument>
-                    </arguments>
-                </configuration>
-            </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>appassembler-maven-plugin</artifactId>
@@ -84,7 +59,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jarsigner-plugin</artifactId>
                 <configuration>
-                    <archive>../../target/site/ffx-all.jar</archive>
+                    <archive>../../target/site/ffx-all-${version}.jar</archive>
                     <alias>mykey</alias>
                     <storepass>ForceFieldX</storepass>
                     <keypass>ForceFieldX</keypass>

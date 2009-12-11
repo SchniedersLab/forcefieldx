@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE jnlp PUBLIC '-//Sun Microsystems, Inc//DTD JNLP Descriptor 6.0//EN' 'http://java.sun.com/dtd/JNLP-6.0.dtd'>
-<jnlp spec="6.0+" codebase="http://localhost/Data/ffx/target/site/" href="ffx-localhost.jnlp">
+<jnlp spec="6.0+" codebase="file:///Data/ffx/target/site/" href="ffx-localhost.jnlp">
     <information>
         <title>Force Field X</title>
         <vendor>Michael J. Schnieders</vendor>
-        <homepage href="http://localhost/Data/ffx/target/site/" />
+        <homepage href="file:///Data/ffx/target/site/" />
         <description>Software for Molecular Biophysics</description>
-        <icon href="images/icon64.png"/>
+        <icon href="images/icon128.png"/>
         <offline-allowed/>
         <shortcut  online="false">
             <desktop/>
@@ -30,7 +30,7 @@
     </security>
     <resources>
         <j2se version="1.6+" java-vm-args="-Xmx1G" />
-        <jar href="ffx-all.jar" />
+        <jar href="ffx-all-1.0.0-SNAPSHOT.jar" />
         <extension name="jogl" href="http://download.java.net/media/jogl/builds/archive/jsr-231-webstart-current/jogl.jnlp" />
     </resources>
     <application-desc main-class="ffx.Main" />
