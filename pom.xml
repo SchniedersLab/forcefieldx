@@ -58,12 +58,18 @@
     </mailingLists>
 
     <distributionManagement>
-        <downloadUrl>http://ffx.kenai.com/download.html</downloadUrl>
+        <downloadUrl>http://ffx.kenai.com</downloadUrl>
         <site>
             <id>kenai</id>
             <name>Kenai Website</name>
             <url>dav:https://kenai.com/website/ffx</url>
         </site>
+        <repository>
+            <uniqueVersion>false</uniqueVersion>
+            <id>releases</id>
+            <name>FFX Kenai Repository</name>
+            <url>file:../ffx-maven</url>
+        </repository>
     </distributionManagement>
 
     <developers>
@@ -73,7 +79,7 @@
             <email>schnied@stanford.edu</email>
             <url>http://www.stanford.edu/~schnied</url>
             <organization>Joint Postdoc of the Pande and Brunger Labs,
-                Stanford University</organization>
+            Stanford University</organization>
             <organizationUrl>http://ffx.kenai.com</organizationUrl>
             <roles>
                 <role>Chief Architect of Force Field X</role>
@@ -154,7 +160,7 @@
             <artifactId>junit</artifactId>
             <version>4.6</version>
             <type>jar</type>
-            <scope>test</scope> 
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

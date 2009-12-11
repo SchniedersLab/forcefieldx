@@ -1,10 +1,11 @@
 
 System.setProperty("pj.nt","2")
 
-open "../test/nuc.P3221.xyz"
+open "examples/trypsin.P1.xyz"
 
 // Compute the initial energy
 println energy()
+return
 
 // RMS gradient per atom convergence criteria (Kcal/mole/A)
 rmsg = 5.0

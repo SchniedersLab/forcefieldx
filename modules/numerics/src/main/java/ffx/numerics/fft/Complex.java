@@ -58,11 +58,11 @@ public class Complex {
     private final double twiddle[][][];
     private final double scratch[];
     // TINKER v. 5.0 factors to achieve exact numerical agreement.
-    // private static final int availableFactors[] = {5, 4, 3, 2};
-    // private static final int firstUnavailablePrime = 7;
+    private static final int availableFactors[] = {5, 4, 3, 2};
+    private static final int firstUnavailablePrime = 7;
 
-    private static final int availableFactors[] = { 7, 6, 5, 4, 3, 2 };
-    private static final int firstUnavailablePrime = 11;
+    //private static final int availableFactors[] = { 7, 6, 5, 4, 3, 2 };
+    //private static final int firstUnavailablePrime = 11;
     /**
      * Construct a Complex instance for data of length n. Factorization of n is
      * designed to use special methods for small factors, and a general routine
