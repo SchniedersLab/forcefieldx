@@ -240,9 +240,9 @@ public class ReciprocalSpace {
                 nZ--;
             }
             nC = nZ;
-            div *= 2;
+            div = 2;
             // If we have 2 * threadCount chunks, stop dividing the domain.
-            if (nC / threadCount >= div) {
+            if (nC / threadCount > div) {
                 nA = 1;
                 nB = 1;
             } else {
@@ -251,9 +251,9 @@ public class ReciprocalSpace {
                     nY--;
                 }
                 nB = nY;
-                div *= 2;
+                div = 4;
                 // If we have 4 * threadCount chunks, stop dividing the domain.
-                if (nB * nC / threadCount >= div) {
+                if (nB * nC / threadCount > div) {
                     nA = 1;
                 } else {
                     nX = fftX / bSplineOrder;
@@ -261,7 +261,7 @@ public class ReciprocalSpace {
                         nX--;
                     }
                     nA = nX;
-                    div *= 2;
+                    div = 8;
                 }
             }
             nAB = nA * nB;
@@ -280,8 +280,8 @@ public class ReciprocalSpace {
             sb.append(String.format(" B-Spline order:         %8d\n", bSplineOrder));
             sb.append(String.format(" Grid density:           %8.3f\n", density));
             sb.append(String.format(" Grid dimensions:           (%d,%d,%d)\n", fftX, fftY, fftZ));
-            sb.append(String.format(" Grid chunks:               (%dx%dx%d)/%d = %d\n",
-                    nA, nB, nC, div, nWork));
+            sb.append(String.format(" Grid chunks per thread:    %d / %d = %8.3f\n",
+                    nWork, threadCount, ((double) nWork) / threadCount));
             logger.info(sb.toString());
         }
 

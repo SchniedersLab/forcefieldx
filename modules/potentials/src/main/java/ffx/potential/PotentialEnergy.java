@@ -113,6 +113,7 @@ public class PotentialEnergy implements Optimizable {
 
     public PotentialEnergy(MolecularAssembly molecularAssembly) {
         parallelTeam = new ParallelTeam();
+        logger.info(" Number of Threads: " +  parallelTeam.getThreadCount());
 
         ForceField forceField = molecularAssembly.getForceField();
 
