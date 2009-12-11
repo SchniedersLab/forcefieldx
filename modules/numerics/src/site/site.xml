@@ -15,7 +15,7 @@
         <href>http://ffx.kenai.com</href>
     </bannerLeft>
     <body>
-        <menu name="Numerics Module">
+        <menu name="Numerics">
             <item
                 name="Introduction"
                 href="/index.html"

@@ -15,7 +15,7 @@
         <href>http://ffx.kenai.com</href>
     </bannerLeft>
     <body>
-        <menu name="Parsers Module">
+        <menu name="Parsers">
             <item
                 name="Introduction"
                 href="/index.html"

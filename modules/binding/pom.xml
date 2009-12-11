@@ -12,7 +12,7 @@
     <groupId>com.kenai.ffx</groupId>
     <artifactId>binding</artifactId>
     <packaging>jar</packaging>
-    <name>Binding</name>
+    <name>Binding Affinity</name>
 
     <developers>
         <developer>

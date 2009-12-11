@@ -15,7 +15,7 @@
         <href>http://ffx.kenai.com</href>
     </bannerLeft>
     <body>
-        <menu name="User Interfaces Module">
+        <menu name="User Interfaces">
             <item
                 name="Introduction"
                 href="/index.html"

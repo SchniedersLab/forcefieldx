@@ -42,7 +42,7 @@
                 href="/download.html"
                 />
         </menu>
-        <menu name="Force Field X Modules" inherit="bottom">
+        <menu name="Force Field X Modules" inherit="top">
             <item name="Algorithms"  href="modules/algorithms/index.html"/>
             <item name="Binding Affinity"  href="modules/binding/index.html"/>
             <item name="Crystal" href="modules/crystal/index.html"/>
@@ -52,6 +52,7 @@
             <item name="User Interface" href="modules/ui/index.html"/>
             <item name="X-ray Refinement" href="modules/xray/index.html"/>
         </menu>
+
         <menu ref="reports" inherit="bottom" />
     </body>
 </project>
