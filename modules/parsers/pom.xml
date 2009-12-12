@@ -42,6 +42,12 @@
     <dependencies>
         <dependency>
             <groupId>com.kenai.ffx</groupId>
+            <artifactId>crystal</artifactId>
+            <version>${project.version}</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>com.kenai.ffx</groupId>
             <artifactId>potentials</artifactId>
             <version>${project.version}</version>
             <type>jar</type>

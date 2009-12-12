@@ -190,19 +190,6 @@
 
     <repositories>
         <repository>
-            <name>FFX SNAPSHOT Repository</name>
-            <id>ffx.snapshots</id>
-            <url>http://kenai.com/projects/ffx/sources/maven-snapshot-repo/content</url>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <checksumPolicy>warn</checksumPolicy>
-                <enabled>true</enabled>
-                <updatePolicy>daily</updatePolicy>
-            </snapshots>
-        </repository>
-        <repository>
             <name>FFX Dependency Repository</name>
             <id>ffx.dependency</id>
             <url>http://kenai.com/projects/ffx/sources/maven-dependency-repo/content</url>
