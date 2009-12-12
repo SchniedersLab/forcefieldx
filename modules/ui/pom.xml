@@ -13,6 +13,37 @@
     <artifactId>ui</artifactId>
     <packaging>jar</packaging>
     <name>User Interfaces</name>
+
+    <profiles>
+        <profile>
+            <id>jarsign</id>
+            <build>
+                <plugins>
+                    <!-- Sign the assembly (the verify phase is after the package phase) -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-jarsigner-plugin</artifactId>
+                        <configuration>
+                            <archive>target/site/ffx-all-${version}.jar</archive>
+                            <alias>mykey</alias>
+                            <storepass>ForceFieldX</storepass>
+                            <keypass>ForceFieldX</keypass>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>sign</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
     <build>
         <plugins>
             <plugin>
@@ -40,8 +71,7 @@
                     <descriptors>
                         <descriptor>src/assemble/all.xml</descriptor>
                     </descriptors>
-                    <!-- Put this into the Force Fielx X site directory -->
-                    <outputDirectory>../../target/site</outputDirectory>
+                    <outputDirectory>target/site</outputDirectory>
                     <finalName>ffx</finalName>
                 </configuration>
                 <executions>
@@ -54,28 +84,8 @@
                     </execution>
                 </executions>
             </plugin>
-            <!-- Sign the assembly (the verify phase is after the package phase) -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jarsigner-plugin</artifactId>
-                <configuration>
-                    <archive>../../target/site/ffx-all-${version}.jar</archive>
-                    <alias>mykey</alias>
-                    <storepass>ForceFieldX</storepass>
-                    <keypass>ForceFieldX</keypass>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>sign</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>sign</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-
         </plugins>
+
         <resources>
             <resource>
                 <directory>${basedir}/src/main/java/ffx/ui/commands

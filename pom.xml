@@ -67,14 +67,14 @@
         <repository>
             <uniqueVersion>false</uniqueVersion>
             <id>releases</id>
-            <name>Local Maven Repository</name>
-            <url>file:../ffx-maven</url>
+            <name>Local Maven Release Repository</name>
+            <url>file:../ffx-release-repo</url>
         </repository>
         <snapshotRepository>
             <uniqueVersion>false</uniqueVersion>
             <id>snapshots</id>
             <name>Local Maven SNAPSHOT Repository</name>
-            <url>file:../ffx-maven-snapshots</url>
+            <url>file:../ffx-snapshots-repo</url>
         </snapshotRepository>
     </distributionManagement>
 
@@ -176,6 +176,7 @@
                         <argument>-mx2G</argument>
                         <argument>-Djava.awt.headless=false</argument>
                         <argument>-Dpj.nt=2</argument>
+                        <argument>-Dj3d.rend=jogl</argument>
                         <argument>-Djava.library.path=bin/${platform}/jogl</argument>
                         <argument>-classpath</argument>
                         <argument>target/site/ffx-all-${version}.jar</argument>
@@ -186,6 +187,35 @@
             </plugin>
         </plugins>
     </build>
+
+    <repositories>
+        <repository>
+            <name>FFX SNAPSHOT Repository</name>
+            <id>ffx.snapshots</id>
+            <url>http://kenai.com/projects/ffx/sources/maven-snapshot-repo/content</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <checksumPolicy>warn</checksumPolicy>
+                <enabled>true</enabled>
+                <updatePolicy>daily</updatePolicy>
+            </snapshots>
+        </repository>
+        <repository>
+            <name>FFX Dependency Repository</name>
+            <id>ffx.dependency</id>
+            <url>http://kenai.com/projects/ffx/sources/maven-dependency-repo/content</url>
+            <releases>
+                <checksumPolicy>ignore</checksumPolicy>
+                <enabled>true</enabled>
+                <updatePolicy>daily</updatePolicy>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
 
     <dependencies>
         <dependency>
