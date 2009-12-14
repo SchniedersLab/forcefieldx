@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Vector;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import edu.rit.pj.IntegerForLoop;
@@ -55,7 +56,6 @@ import ffx.potential.parameters.ForceField.ForceFieldBoolean;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.ForceField.ForceFieldString;
 import ffx.potential.parameters.ForceField.ForceFieldType;
-import java.util.logging.Level;
 
 /**
  * This Particle Mesh Ewald class implements PME for the AMOEBA polarizable
@@ -268,11 +268,11 @@ public class ParticleMeshEwald {
 
         polsor = forceField.getDouble(ForceFieldDouble.POLAR_SOR, 0.70);
         poleps = forceField.getDouble(ForceFieldDouble.POLAR_EPS, 1e-6);
-        d11scale = forceField.getDouble(ForceFieldDouble.POLAR_11_SCALE, 0.0);
         m12scale = forceField.getDouble(ForceFieldDouble.MPOLE_12_SCALE, 0.0);
         m13scale = forceField.getDouble(ForceFieldDouble.MPOLE_13_SCALE, 0.0);
         m14scale = forceField.getDouble(ForceFieldDouble.MPOLE_14_SCALE, 0.4);
         m15scale = forceField.getDouble(ForceFieldDouble.MPOLE_15_SCALE, 0.8);
+        d11scale = forceField.getDouble(ForceFieldDouble.DIRECT_11_SCALE, 0.0);
         p12scale = forceField.getDouble(ForceFieldDouble.POLAR_12_SCALE, 0.0);
         p13scale = forceField.getDouble(ForceFieldDouble.POLAR_13_SCALE, 0.0);
 
@@ -780,9 +780,8 @@ public class ParticleMeshEwald {
 
     private double permanentSelfEnergy() {
         double e = 0.0;
-        double dielec = 1.0;
         double term = 2.0 * aewald * aewald;
-        double fterm = -(electric / dielec) * aewald / sqrtPi;
+        double fterm = -electric * aewald / sqrtPi;
         for (int i = 0; i < nAtoms; i++) {
             double in[] = localMultipole[i];
             double cii = in[t000] * in[t000];
@@ -850,8 +849,7 @@ public class ParticleMeshEwald {
 
     private double polarizationSelfEnergy(boolean gradient) {
         double e = 0.0;
-        double dielec = 1.0;
-        final double term = -2.0 / 3.0 * (electric / dielec) * aewald * aewald * aewald / sqrtPi;
+        final double term = -2.0 / 3.0 * electric * aewald * aewald * aewald / sqrtPi;
         final double ind[][] = inducedDipole[0];
         final double indp[][] = inducedDipolep[0];
         final double mpole[][] = globalMultipole[0];

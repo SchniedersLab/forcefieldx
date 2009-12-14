@@ -20,8 +20,6 @@
  */
 package ffx.potential.nonbonded;
 
-import static ffx.numerics.UniformBSpline.bSpline;
-import static ffx.numerics.UniformBSpline.bSplineDerivatives;
 import static java.lang.Math.PI;
 import static java.lang.Math.cos;
 import static java.lang.Math.exp;
@@ -30,12 +28,17 @@ import static java.lang.Math.round;
 import static java.lang.Math.signum;
 import static java.lang.Math.sin;
 
+import static ffx.numerics.UniformBSpline.bSpline;
+import static ffx.numerics.UniformBSpline.bSplineDerivatives;
+
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
+
 import ffx.crystal.Crystal;
 import ffx.numerics.TensorRecursion;
 import ffx.numerics.fft.Complex;
@@ -44,7 +47,6 @@ import ffx.numerics.fft.Real3DParallel;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.ForceField.ForceFieldInteger;
-import java.util.logging.Level;
 
 /**
  * The Reciprocal Space class computes the reciprocal space contribution to
@@ -189,7 +191,7 @@ public class ReciprocalSpace {
         this.aewald = aewald;
         threadCount = parallelTeam.getThreadCount();
 
-        bSplineOrder = forceField.getInteger(ForceFieldInteger.PME_ORDER, 6);
+        bSplineOrder = forceField.getInteger(ForceFieldInteger.PME_ORDER, 5);
         double density = forceField.getDouble(ForceFieldDouble.PME_SPACING, 1.0);
 
         // Set default FFT grid size from unit cell dimensions.

@@ -1,0 +1,169 @@
+/**
+ * <p>Title: Force Field X</p>
+ * <p>Description: Force Field X is a Molecular Biophysics Environment</p>
+ * <p>Copyright: Copyright (c) Michael J. Schnieders 2002-2009</p>
+ *
+ * @author Michael J. Schnieders
+ * @version 0.1
+ *
+ * This file is part of Force Field X.
+ *
+ * Force Field X is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 3 as published
+ * by the Free Software Foundation.
+ *
+ * Force Field X is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Force Field X; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ */
+
+package ffx.potential.bonded;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
+import javax.vecmath.Vector3d;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import ffx.potential.parameters.AtomType;
+
+/**
+ * Unit tests for the Atom class.
+ */
+public class AtomTest {
+
+    private final double d[] = {0.0, 0.0, 0.0};
+    private Atom atom = null;
+    private Atom atom2 = null;
+    private Atom atom3 = null;
+    private Bond b = null;
+
+    @Test(timeout = 500)
+    public void Atom_addTrajectoryCoords() {
+        int position = 1;
+        Vector3d v3d = new Vector3d(1.0, 2.0, 3.0);
+        atom.addTrajectoryCoords(v3d, position);
+        atom.setCurrentCycle(2);
+        atom.getV3D(v3d);
+        assertEquals(1.0, v3d.x, 0.0);
+        assertEquals(2.0, v3d.y, 0.0);
+        assertEquals(3.0, v3d.z, 0.0);
+    }
+
+    @Test(timeout = 500)
+    public void Atom_constructor() {
+        String s = "Carbon";
+        Atom actualReturn = new Atom(s);
+        assertEquals("return value", s, actualReturn.getName());
+    }
+
+    @Test(timeout = 500)
+    public void Atom_constructor2() {
+        String i = "C";
+        AtomType mmdata = null;
+        Atom actualReturn = new Atom(i, mmdata, d);
+        assertEquals("return value", "C", actualReturn.getName());
+    }
+
+    @Test(timeout = 500)
+    public void Atom_constructor3() {
+        int index = 0;
+        String i = "N";
+        AtomType mmdata = null;
+        Atom actualReturn = new Atom(index, i, mmdata, d);
+        assertEquals("return value", 0, actualReturn.getXYZIndex());
+    }
+
+    @Test(timeout = 500)
+    public void Atom_constructor4() {
+        int xyznum = 0;
+        String id = "O";
+        AtomType mmdata = null;
+        String r = "GLY";
+        int n = 1;
+        String c = "A";
+        Atom actualReturn = new Atom(xyznum, id, mmdata, d, r, n, c);
+        assertEquals("return value", "GLY", actualReturn.getResidueName());
+    }
+
+    @Test(timeout = 500)
+    public void Atom_destroy() {
+        boolean expectedReturn = true;
+        boolean actualReturn = atom.destroy();
+        assertEquals("return value", expectedReturn, actualReturn);
+    }
+
+    @Test(timeout = 500)
+    public void Atom_equals() {
+        boolean expectedReturn = true;
+        boolean actualReturn = atom.equals(atom);
+        assertEquals("return value", expectedReturn, actualReturn);
+        expectedReturn = false;
+        actualReturn = atom.equals(null);
+        assertEquals("return value", expectedReturn, actualReturn);
+        Atom atom4 = new Atom(atom.getName());
+        expectedReturn = false;
+        actualReturn = atom.equals(atom4);
+        assertEquals("return value", expectedReturn, actualReturn);
+    }
+
+    @Test(timeout = 500)
+    public void Atom_getBond() {
+        Bond expectedReturn = b;
+        Bond actualReturn = atom.getBond(atom2);
+        assertEquals("return value", expectedReturn, actualReturn);
+        actualReturn = atom.getBond(null);
+        assertNull(actualReturn);
+        actualReturn = atom.getBond(atom3);
+        assertNull(actualReturn);
+    }
+
+    @Test(timeout = 500)
+    public void Atom_getNumBonds() {
+        int expectedReturn = 1;
+        int actualReturn = atom.getNumBonds();
+        assertEquals("return value", expectedReturn, actualReturn);
+    }
+
+    @Test(timeout = 500)
+    public void Atom_isBonded() {
+        boolean expectedReturn = true;
+        boolean actualReturn = atom.isBonded(atom2);
+        assertEquals("return value", expectedReturn, actualReturn);
+        expectedReturn = false;
+        actualReturn = atom.isBonded(atom3);
+        assertEquals("return value", expectedReturn, actualReturn);
+        expectedReturn = false;
+        actualReturn = atom.isBonded(null);
+        assertEquals("return value", expectedReturn, actualReturn);
+    }
+
+    @Before
+    public void setUp() {
+        atom = new Atom(1, "C", null, d, "GLY", 1, "A");
+        atom2 = new Atom("C");
+        atom3 = new Atom("O");
+        b = new Bond(atom, atom2);
+    }
+
+    @After
+    public void tearDown() {
+        assertTrue(atom.destroy());
+        assertTrue(atom2.destroy());
+        assertTrue(atom3.destroy());
+        assertTrue(b.destroy());
+        atom = null;
+        atom2 = null;
+        atom3 = null;
+        b = null;
+    }
+}

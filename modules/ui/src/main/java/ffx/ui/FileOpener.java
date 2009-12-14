@@ -27,7 +27,7 @@ import org.apache.commons.lang.time.StopWatch;
 
 import ffx.potential.bonded.Utilities;
 import ffx.potential.bonded.Utilities.FileType;
-import ffx.parsers.SystemFilter;
+import ffx.potential.parsers.SystemFilter;
 
 /**
  * The FileOpener class opens a file into Force Field X using a filter

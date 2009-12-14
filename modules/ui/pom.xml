@@ -13,37 +13,6 @@
     <artifactId>ui</artifactId>
     <packaging>jar</packaging>
     <name>User Interfaces</name>
-
-    <profiles>
-        <profile>
-            <id>jarsign</id>
-            <build>
-                <plugins>
-                    <!-- Sign the assembly (the verify phase is after the package phase) -->
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-jarsigner-plugin</artifactId>
-                        <configuration>
-                            <archive>target/site/ffx-all-${version}.jar</archive>
-                            <alias>mykey</alias>
-                            <storepass>ForceFieldX</storepass>
-                            <keypass>ForceFieldX</keypass>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <id>sign</id>
-                                <phase>verify</phase>
-                                <goals>
-                                    <goal>sign</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
-
     <build>
         <plugins>
             <plugin>
@@ -116,6 +85,41 @@
         </resources>
     </build>
 
+    <profiles>
+        <!-- This profile should only be activated by commiters who can sign
+        the artifacts. -->
+        <profile>
+            <id>ffx.jarsigner</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <!-- Sign the assembly (the verify phase is after the package phase) -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-jarsigner-plugin</artifactId>
+                        <configuration>
+                            <archive>target/site/ffx-all-${version}.jar</archive>
+                            <alias>mykey</alias>
+                            <storepass>ForceFieldX</storepass>
+                            <keypass>ForceFieldX</keypass>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>sign</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
     <reporting>
         <plugins>
             <plugin>
@@ -145,12 +149,6 @@
         <dependency>
             <groupId>com.kenai.ffx</groupId>
             <artifactId>algorithms</artifactId>
-            <version>${project.version}</version>
-            <type>jar</type>
-        </dependency>
-        <dependency>
-            <groupId>com.kenai.ffx</groupId>
-            <artifactId>parsers</artifactId>
             <version>${project.version}</version>
             <type>jar</type>
         </dependency>

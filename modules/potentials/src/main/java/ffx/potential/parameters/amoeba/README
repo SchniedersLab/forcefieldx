@@ -1,0 +1,181 @@
+The "amoeba-readme" file contains literature references for the 2004 and 2009
+versions for AMOEBA water, small molecules, protein and nucleic acid force fields.
+They were consolidated from comments in the original parameter files
+for convenience and given in the following sections:
+
+1.) AMOEBA Water Model References
+2.) AMOEBA Small Molecules References
+3.) AMOEBA Protein References and Force Field Atom Classes
+4.) AMOEBA Nucleic Acid References
+5.) Notes on the Force Field X implementation of AMOEBA and its validation
+
+---
+
+1.) AMOEBA Water Model References
+
+P. Ren and J. W. Ponder, "A Polarizable Atomic Multipole Water Model
+for Molecular Mechanics Simulation", J. Phys. Chem. B, 107, 5933-5947
+(2003)
+
+Y. Kong, "Multipole Electrostatic Methods for Protein Modeling with
+Reaction Field Treatment", Ph.D. thesis, DBBS Program in Molecular
+Biophysics, Washington University, St. Louis, August, 1997  [available
+online from http://dasher.wustl.edu/ponder/]
+
+---
+
+2.) AMOEBA Small Molecules References
+
+P. Ren and J. W. Ponder, "Polarizable Atomic Multipole Intermolecular
+Potentials for Small Organic Molecules", in preparation.
+
+P. Ren and J. W. Ponder, "A Consistent Treatment of Inter- and
+Intramolecular Polarization in Molecular Mechanics Calculations",
+J. Comput. Chem., 23, 1497-1506 (2002)
+
+---
+
+3.) AMOEBA Protein References and Force Field Atom Classes
+
+P. Ren, C. Wu and J. W. Ponder, "Polarizable Atomic Multipole-based
+Potential for Proteins: Model and Parameterization", in preparation.
+
+J. W. Ponder and D. A. Case, "Force Fields for Protein Simulation",
+Adv. Prot. Chem., 66, 27-85 (2003)
+
+[ The 2009 update to the AMOEBA Protein Force Field is a modification of
+the original AMOEBA protein parameters with changes made during Fall 2009
+and by Chuanjie Wu. ]
+
+   ###############################################
+   ##                                           ##
+   ##  AMOEBA Protein Force Field Atom Classes  ##
+   ##                                           ##
+   ##   1  Backbone Amide Nitrogen              ##
+   ##   2  Glycine Alpha Carbon                 ##
+   ##   3  Backbone Carbonyl Carbon             ##
+   ##   4  Amide or Guanidinium Hydrogen        ##
+   ##   5  Amide Carbonyl Oxygen                ##
+   ##   6  Methine Hydrogen                     ##
+   ##   7  Methine Carbon                       ##
+   ##   8  Methyl or Methylene Carbon           ##
+   ##   9  Methyl or Methylene Hydrogen         ##
+   ##  10  Hydroxyl Oxygen                      ##
+   ##  11  Hydroxyl Hydrogen                    ##
+   ##  12  Sulfide or Disulfide Sulfur          ##
+   ##  13  Sulfhydryl Hydrogen                  ##
+   ##  14  Proline Backbone Nitrogen            ##
+   ##  15  Proline Ring Methylene Carbon        ##
+   ##  16  Phenyl Carbon                        ##
+   ##  17  Phenyl Hydrogen                      ##
+   ##  18  Phenolic Oxygen                      ##
+   ##  19  Phenolic Hydrogen                    ##
+   ##  20  Indole Carbon                        ##
+   ##  21  Indole CH Hydrogen                   ##
+   ##  22  Imidazole or Indole NH Nitrogen      ##
+   ##  23  Imidazole or Indole NH Hydrogen      ##
+   ##  24  Imidazole C=C Carbon                 ##
+   ##  25  Imidazole CH Hydrogen                ##
+   ##  26  Imidazole N=C-N Carbon               ##
+   ##  27  Imidazole C=N Nitrogen               ##
+   ##  28  Carboxylate Carbon                   ##
+   ##  29  Carboxylate Oxygen                   ##
+   ##  30  Carboxylic Acid Carbonyl Oxygen      ##
+   ##  31  Carboxylic Acid Hydroxyl Oxygen      ##
+   ##  32  Carboxylic Acid Hydrogen             ##
+   ##  33  Ammonium Nitrogen                    ##
+   ##  34  Ammonium Hydrogen                    ##
+   ##  35  Guanidinium Carbon                   ##
+   ##  36  Acetyl or NMe Methyl Carbon          ##
+   ##  37  N-Terminal Ammonium Nitrogen         ##
+   ##  38  N-Terminal Ammonium Hydrogen         ##
+   ##                                           ##
+   ###############################################
+
+---
+
+4.) AMOEBA Nucleic Acid References
+
+amoebanuc09.prm is a beta version of AMOEBA nucleic acid parameters as
+developed by Chuanjie Wu, Ponder Lab, Washington University, May 2008
+
+5.) Notes on the Force Field X implementation of AMOEBA
+
+The file "AMOEBA-BASE" contains properties that are common between the AMOEBA
+parameter files. Since the Force Field X potential implements only AMOEBA,
+these properties are set by default and not parsed. Further notes on individual
+force field terms are given below.
+
+These BondType parameters are declared as final fields:
+
+bond-cubic              -2.55
+bond-quartic            3.793125
+
+These AngleType parameters are declared as final fields:
+
+angle-cubic             -0.014
+angle-quartic           0.000056
+angle-pentic            -0.0000007
+angle-sextic            0.000000022
+
+The Allinger style OutOfPlaneBendType parameters are declared as final fields.
+Other styles are not implemented.
+
+opbend-cubic            -0.014
+opbend-quartic          0.000056
+opbend-pentic           -0.0000007
+opbend-sextic           0.000000022
+opbendtype              ALLINGER
+
+This TorsionType conversion factor is declared as a final field:
+
+torsionunit             0.5
+
+Only the BUFFERED-14-7 VDWType is currently supported by FFX and respects
+the CUBIC-MEAN and HHG radius and epsilon combining rules, respectively. The
+masking rules are hard-coded into VanDerWaals class for efficiency; such that
+the vdw-*-scale keywords are supported.
+
+vdwtype                 BUFFERED-14-7
+radiusrule              CUBIC-MEAN
+radiustype              R-MIN
+radiussize              DIAMETER
+epsilonrule             HHG
+vdw-13-scale            0.0
+vdw-14-scale            1.0
+vdw-15-scale            1.0
+
+The AMOEBA electrostatics are hard-coded to use a dielectric constant of 1.0.
+Values other than 1.0 are of limited physical signficance since AMOEBA takes
+into account polarization explicitly. Mutual polarization is the default.
+
+dielectric              1.0
+polarization            MUTUAL
+
+Only non-unity masking rules are respected for efficiency, but at the cost of
+reduced flexibility relative to the original TINKER code. The following scale 
+factors are implemented:
+
+mpole-12-scale          0.0
+mpole-13-scale          0.0
+mpole-14-scale          0.4
+mpole-15-scale          0.8
+
+direct-11-scale         0.0
+
+polar-12-scale          0.0
+polar-13-scale          0.0
+
+These scale factors are currently hard-coded to be 1.0:
+
+polar-14-scale          1.0
+polar-15-scale          1.0
+
+direct-12-scale         1.0
+direct-13-scale         1.0
+direct-14-scale         1.0
+
+mutual-11-scale         1.0
+mutual-12-scale         1.0
+mutual-13-scale         1.0
+mutual-14-scale         1.0

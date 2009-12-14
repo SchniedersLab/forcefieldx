@@ -29,7 +29,7 @@ import java.util.Vector;
 
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.Utilities.FileType;
-import ffx.parsers.SystemFilter;
+import ffx.potential.parsers.SystemFilter;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.parameters.AtomType;

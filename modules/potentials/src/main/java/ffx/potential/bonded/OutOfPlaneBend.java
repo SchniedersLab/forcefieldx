@@ -23,8 +23,7 @@ package ffx.potential.bonded;
 import static java.lang.Math.*;
 
 import static ffx.numerics.VectorMath.*;
-import static ffx.potential.parameters.AngleType.*;
-import static ffx.potential.parameters.OutOfPlaneBendType.units;
+import static ffx.potential.parameters.OutOfPlaneBendType.*;
 
 import java.util.logging.Logger;
 

@@ -68,8 +68,8 @@ import org.xml.sax.SAXException;
 
 import ffx.ui.commands.DTDResolver;
 import ffx.potential.parameters.Keyword;
-import ffx.parsers.KeyFileFilter;
-import ffx.parsers.KeyFilter;
+import ffx.potential.parsers.KeyFileFilter;
+import ffx.potential.parsers.KeyFilter;
 
 /**
  * The KeywordPanel class provides a View and Control of TINKER Keyword (*.KEY)

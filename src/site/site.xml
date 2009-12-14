@@ -33,21 +33,16 @@
             <item name="Force Field X" href="http://ffx.kenai.com"/>
         </breadcrumbs>
         <menu name="Overview" inherit="top">
-            <item
-                name="Introduction"
-                href="/index.html"
-                />
-            <item
-                name="Download"
-                href="/download.html"
-                />
+            <item name="Introduction" href="/index.html"/>
+            <item name="Getting (Web) Started" href="/webstart.html"/>
+            <item name="Download" href="/download.html"/>
+            <item name="License" href="/license.html"/>
         </menu>
         <menu name="Force Field X Modules" inherit="top">
             <item name="Algorithms"  href="modules/algorithms/index.html"/>
             <item name="Binding Affinity"  href="modules/binding/index.html"/>
             <item name="Crystal" href="modules/crystal/index.html"/>
             <item name="Numerics" href="modules/numerics/index.html"/>
-            <item name="Parsers" href="modules/parsers/index.html"/>
             <item name="Potentials" href="modules/potentials/index.html"/>
             <item name="User Interface" href="modules/ui/index.html"/>
             <item name="X-ray Refinement" href="modules/xray/index.html"/>

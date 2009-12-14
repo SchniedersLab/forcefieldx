@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<document
+    xmlns="http://maven.apache.org/XDOC/2.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
+    <properties>
+        <title>Getting (Web) Started</title>
+        <author email="schnied@stanford.edu">
+            Michael Schnieders
+        </author>
+    </properties>
+    <body>
+        <section name="Getting (Web) Started">
+            <p>Molecular biophysics in any space group is one click away.</p>
+            <p>            
+                <a href="modules/ui/ffx.jnlp">
+                    <img src="images/webstart.png" alt="Start FFX"/>
+                </a>
+            </p>
+            <subsection name="Java Web Start Benefits">
+                <ul>
+                    <li>Full support for Linux, Mac OS X, Solaris and Windows.</li>
+                    <li>Full support for 32-Bit and 64-Bit hardware.</li>
+                    <li>Automatic download of the required Java Runtime Environment.</li>
+                    <li>Automatic download of the required native libraries.</li>
+                    <li>Creation of a desktop shortcut to launch Force Field X outside of your browser.</li>
+                    <li>Updates of Force Field X are automatic when run standalone from your desktop.</li>
+                </ul>
+            </subsection>
+        </section>
+    </body>
+</document>

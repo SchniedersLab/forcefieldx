@@ -28,7 +28,7 @@ import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
 /**
- * ParsersTestSuite collects all Unit tests from the ffx.parsers package.
+ * NumericsTestSuite collects all Unit tests from the ffx.numerics package.
  */
 @RunWith(Suite.class)
 @SuiteClasses({ErfTest.class, TensorRecursionTest.class, UniformBSplineTest.class})

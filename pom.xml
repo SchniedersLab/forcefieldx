@@ -99,7 +99,6 @@
         <module>modules/binding</module>
         <module>modules/crystal</module>
         <module>modules/numerics</module>
-        <module>modules/parsers</module>
         <module>modules/potentials</module>
         <module>modules/ui</module>
         <module>modules/xray</module>
@@ -179,7 +178,7 @@
                         <argument>-Dj3d.rend=jogl</argument>
                         <argument>-Djava.library.path=bin/${platform}/jogl</argument>
                         <argument>-classpath</argument>
-                        <argument>target/site/ffx-all-${version}.jar</argument>
+                        <argument>modules/ui/target/site/ffx-all-${version}.jar</argument>
                         <argument>ffx.Main</argument>
                         <!-- argument>scripts/md.ffx</argument -->
                     </arguments>
@@ -197,6 +196,17 @@
                 <checksumPolicy>ignore</checksumPolicy>
                 <enabled>true</enabled>
                 <updatePolicy>daily</updatePolicy>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <name>Maven Plugin SNAPSHOTS</name>
+            <id>maven.snapshots</id>
+            <url>http://repository.apache.org/snapshots</url>
+            <releases>
+                <enabled>false</enabled>
             </releases>
             <snapshots>
                 <enabled>false</enabled>

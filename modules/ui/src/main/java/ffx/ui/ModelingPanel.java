@@ -80,7 +80,7 @@ import ffx.ui.commands.DTDResolver;
 import ffx.potential.parameters.Keyword;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Utilities.FileType;
-import ffx.parsers.SystemFilter;
+import ffx.potential.parsers.SystemFilter;
 
 /**
  * The ModelingPanel class encapsulates functionality needed to run TINKER

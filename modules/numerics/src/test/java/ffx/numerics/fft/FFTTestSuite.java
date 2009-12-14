@@ -28,7 +28,7 @@ import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
 /**
- * ParsersTestSuite collects all Unit tests from the ffx.parsers package.
+ * FFTTestSuite collects all Unit tests from the ffx.numerics.fft package.
  */
 @RunWith(Suite.class)
 @SuiteClasses({ComplexTest.class, Complex3DTest.class, Complex3DParallelTest.class,

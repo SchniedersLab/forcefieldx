@@ -84,26 +84,27 @@ import ffx.potential.bonded.MSRoot;
 import ffx.potential.bonded.ROLS;
 import ffx.potential.bonded.RendererCache;
 import ffx.potential.bonded.Utilities.FileType;
-import ffx.parsers.ARCFileFilter;
-import ffx.parsers.DYNFileFilter;
-import ffx.parsers.DYNFilter;
-import ffx.parsers.ForceFieldFileFilter;
-import ffx.parsers.ForceFieldFilter;
-import ffx.parsers.INTFileFilter;
-import ffx.parsers.INTFilter;
-import ffx.parsers.InducedFileFilter;
-import ffx.parsers.InducedFilter;
-import ffx.parsers.KeyFileFilter;
-import ffx.parsers.KeyFilter;
-import ffx.parsers.MergeFilter;
-import ffx.parsers.PDBFileFilter;
-import ffx.parsers.PDBFilter;
-import ffx.parsers.SystemFilter;
-import ffx.parsers.XYZFileFilter;
-import ffx.parsers.XYZFilter;
+import ffx.potential.parsers.ARCFileFilter;
+import ffx.potential.parsers.DYNFileFilter;
+import ffx.potential.parsers.DYNFilter;
+import ffx.potential.parsers.ForceFieldFileFilter;
+import ffx.potential.parsers.ForceFieldFilter;
+import ffx.potential.parsers.INTFileFilter;
+import ffx.potential.parsers.INTFilter;
+import ffx.potential.parsers.InducedFileFilter;
+import ffx.potential.parsers.InducedFilter;
+import ffx.potential.parsers.KeyFileFilter;
+import ffx.potential.parsers.KeyFilter;
+import ffx.potential.parsers.MergeFilter;
+import ffx.potential.parsers.PDBFileFilter;
+import ffx.potential.parsers.PDBFilter;
+import ffx.potential.parsers.SystemFilter;
+import ffx.potential.parsers.XYZFileFilter;
+import ffx.potential.parsers.XYZFilter;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.parameters.ForceField;
+import ffx.potential.parameters.ForceField.Force_Field;
 import java.awt.Font;
 
 /**
@@ -1048,32 +1049,20 @@ public final class MainPanel extends JPanel implements ActionListener,
         // Open the keyword file for this coordinate file, if one exists.
         if (openKey(newSystem, true)) {
             // Try to parse the force field specified in the key file.
-            Keyword parameters = newSystem.getKeyword("PARAMETERS");
-            if (parameters != null) {
-                String parmname = parameters.getEntry(0);
-                File parameterFile = null;
-                if (parmname != null && !parmname.equalsIgnoreCase("NONE")) {
-                    // Remove quotes
-                    parmname = parmname.replaceAll("\"", "");
-                    if (!parmname.endsWith(".prm")) {
-                        parmname = parmname + ".prm";
-                    }
-                    parameterFile = new File(parmname);
-                    if (!parameterFile.exists()) {
-                        File keyFile = newSystem.getKeyFile();
-                        if (keyFile != null) {
-                            // See if the path is relative to the key file
-                            // location.
-                            parameterFile = new File(keyFile.getParent() + File.separator + parmname);
-                        }
-                    }
-                }
-                forceFieldFilter = new ForceFieldFilter(parameterFile,
-                        newSystem.getKeyFile());
-                ForceField forceField = forceFieldFilter.parse();
-                newSystem.setForceField(forceField);
-                systemFilter.setForceField(forceField);
+            Force_Field ff = null;
+            try {
+                Keyword keyword = newSystem.getKeyword("FORCEFIELD");
+                String model = keyword.getEntry(0);
+                ff = ForceField.Force_Field.valueOf(model.toUpperCase().replace('-', '_'));
+            } catch (Exception e) {
+                logger.warning("Using force field AMOEBA-PROTEIN-2009");
+                ff = ForceField.Force_Field.AMOEBA_PROTEIN_2009;
             }
+            forceFieldFilter = new ForceFieldFilter(ff, newSystem.getKeyFile());
+            ForceField forceField = forceFieldFilter.parse();
+            newSystem.setForceField(forceField);
+            systemFilter.setForceField(forceField);
+
             setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
             FileOpener openFile = new FileOpener(systemFilter, this);
             openThread = new Thread(openFile);

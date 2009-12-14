@@ -25,6 +25,7 @@ import static java.lang.Math.sqrt;
 
 import java.util.ArrayList;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 import java.util.TreeMap;
 import java.util.Vector;
 
@@ -45,7 +46,6 @@ import ffx.potential.bonded.Bond;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.VDWType;
-import java.util.logging.Level;
 
 /**
  * The van der Waals class computes the buffered 14-7 van der Waals interaction
@@ -197,6 +197,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface {
          * Set up the cutoff and polynomial switch.
          */
         double vdwcut = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, 9.0);
+        
         double vdwtaper = 0.9 * vdwcut;
         cut = vdwtaper;
         off = vdwcut;

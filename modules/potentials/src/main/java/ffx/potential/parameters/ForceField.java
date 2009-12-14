@@ -32,23 +32,26 @@ public class ForceField {
 
     private static final Logger log = Logger.getLogger("ffx");
 
+    /**
+     * Available force fields; currently limited to the AMOEBA family.
+     */
+    public enum Force_Field {
+
+        AMOEBA_WATER, AMOEBA_2004, AMOEBA_PROTEIN_2004,
+        AMOEBA_2009, AMOEBA_PROTEIN_2009, AMOEBA_NUCLEIC_2009
+    }
+
     public enum ForceFieldString {
 
-        SPACEGROUP, EPSILONRULE, FORCEFIELD, RADIUSRULE, RADIUSSIZE, RADIUSTYPE,
-        POLARIZATION, VDWTYPE
+        SPACEGROUP, FORCEFIELD, POLARIZATION
     }
 
     public enum ForceFieldDouble {
 
-        A_AXIS, B_AXIS, C_AXIS, ALPHA, BETA, GAMMA, ANGLE_CUBIC, ANGLE_QUARTIC,
-        ANGLE_PENTIC, ANGLE_SEXTIC, BOND_CUBIC, BOND_QUARTIC, OPBENDUNIT,
-        TORSIONUNIT, DIELECTRIC, POLAR_DAMP, POLAR_SOR, POLAR_EPS, EWALD_CUTOFF,
-        EWALD_ALPHA, PME_SPACING, VDW_13_SCALE, VDW_14_SCALE, VDW_15_SCALE,
-        VDW_CUTOFF, MPOLE_11_SCALE, MPOLE_12_SCALE, MPOLE_13_SCALE, MPOLE_14_SCALE,
-        MPOLE_15_SCALE, POLAR_11_SCALE, POLAR_12_SCALE, POLAR_13_SCALE,
-        POLAR_14_SCALE, POLAR_15_SCALE, DIRECT_11_SCALE, DIRECT_12_SCALE,
-        DIRECT_13_SCALE, DIRECT_14_SCALE, MUTUAL_11_SCALE, MUTUAL_12_SCALE,
-        MUTUAL_13_SCALE, MUTUAL_14_SCALE
+        A_AXIS, B_AXIS, C_AXIS, ALPHA, BETA, GAMMA, POLAR_DAMP, POLAR_SOR, 
+        POLAR_EPS, EWALD_CUTOFF, EWALD_ALPHA, PME_SPACING, VDW_CUTOFF,
+        MPOLE_11_SCALE, MPOLE_12_SCALE, MPOLE_13_SCALE, MPOLE_14_SCALE,
+        MPOLE_15_SCALE, POLAR_12_SCALE, POLAR_13_SCALE, DIRECT_11_SCALE
     }
 
     public enum ForceFieldInteger {
@@ -68,6 +71,28 @@ public class ForceField {
         ATOM, ANGLE, BIOTYPE, BOND, CHARGE, MULTIPOLE, OPBEND, PITORS, POLARIZE,
         STRBND, TORSION, TORTORS, UREYBRAD, VDW, KEYWORD
     }
+
+    /**
+     * A map between a Force_Field and its parameter file.
+     */
+    private static final TreeMap<Force_Field, File> forceFields = new TreeMap<Force_Field, File>();
+    {
+        ClassLoader cl = this.getClass().getClassLoader();
+        String amoeba = "ffx/potential/parameters/amoeba/";
+        Force_Field ff = Force_Field.AMOEBA_WATER;
+        forceFields.put(ff, new File(cl.getResource(amoeba + ff).getFile()));
+        ff = Force_Field.AMOEBA_2004;
+        forceFields.put(ff, new File(cl.getResource(amoeba + ff).getFile()));
+        ff = Force_Field.AMOEBA_PROTEIN_2004;
+        forceFields.put(ff, new File(cl.getResource(amoeba + ff).getFile()));
+        ff = Force_Field.AMOEBA_2009;
+        forceFields.put(ff, new File(cl.getResource(amoeba + ff).getFile()));
+        ff = Force_Field.AMOEBA_PROTEIN_2009;
+        forceFields.put(ff, new File(cl.getResource(amoeba + ff).getFile()));
+        ff = Force_Field.AMOEBA_NUCLEIC_2009;
+        forceFields.put(ff, new File(cl.getResource(amoeba + ff).getFile()));
+    }
+
     public File forceFieldFile;
     public File keywordFile;
     private final TreeMap<String, AngleType> angleTypes;
@@ -90,9 +115,10 @@ public class ForceField {
     /**
      * ForceField Constructor.
      */
-    public ForceField(File forceFieldFile, File keyFile) {
-        this.forceFieldFile = forceFieldFile;
+    public ForceField(Force_Field forceField, File keyFile) {
+        this.forceFieldFile = forceFields.get(forceField);
         this.keywordFile = keyFile;
+
         angleTypes = new TreeMap<String, AngleType>();
         atomTypes = new TreeMap<String, AtomType>();
         bondTypes = new TreeMap<String, BondType>();
@@ -480,7 +506,9 @@ public class ForceField {
     }
 
     public String toString(String key) {
-        if (key == null) return null;
+        if (key == null) {
+            return null;
+        }
         Keyword keyword = keywordTypes.get(key.toUpperCase());
         if (keyword != null) {
             return keyword.toString();

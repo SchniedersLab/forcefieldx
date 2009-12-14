@@ -90,13 +90,13 @@ public final class BondType extends BaseType {
 	/**
 	 * Convert bond stretch energy to kcal/mole.
 	 */
-	public static double units = 1.0;
+	public static final double units = 1.0;
 	/**
 	 * Cubic coefficient in bond stretch potential.
 	 */
-	public static double cubic = -2.55;
+	public static final double cubic = -2.55;
 	/**
 	 * Quartic coefficient in bond stretch potential.
 	 */
-	public static double quartic = 3.793125;
+	public static final double quartic = 3.793125;
 }

@@ -1,7 +1,7 @@
 
 System.setProperty("pj.nt","2")
 
-open "examples/trypsin.P21212.xyz"
+//open "/Data/ffx/examples/trypsin.P21212.xyz"
 
 // Compute the initial energy
 println energy()
@@ -18,7 +18,7 @@ int nSteps = 100
 // Time step in femtoseconds.
 double timeStep = 1.0
 // Frequency to print out thermodynamics information in picoseconds.
-double printInterval = 0.01
+double printInterval = 0.001
 // Temperature in degrees Kelvin.
 double temperature = 300.0
 // Reset velocities.
