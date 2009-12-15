@@ -34,7 +34,7 @@
         </breadcrumbs>
         <menu name="Overview" inherit="top">
             <item name="Introduction" href="/index.html"/>
-            <item name="Getting (Web) Started" href="/webstart.html"/>
+            <item name="Run Force Field X" href="/webstart.html"/>
             <item name="Download" href="/download.html"/>
             <item name="License" href="/license.html"/>
         </menu>
@@ -44,8 +44,8 @@
             <item name="Crystal" href="modules/crystal/index.html"/>
             <item name="Numerics" href="modules/numerics/index.html"/>
             <item name="Potentials" href="modules/potentials/index.html"/>
-            <item name="User Interface" href="modules/ui/index.html"/>
-            <item name="X-ray Refinement" href="modules/xray/index.html"/>
+            <item name="User Interfaces" href="modules/ui/index.html"/>
+            <item name="X-Ray Refinement" href="modules/xray/index.html"/>
         </menu>
 
         <menu ref="reports" inherit="bottom" />

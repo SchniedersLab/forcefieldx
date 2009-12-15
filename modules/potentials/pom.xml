@@ -34,6 +34,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <argLine>-Dj3d.rend=jogl</argLine>
                     <argLine>-ms1G -mx1G</argLine>
                 </configuration>
             </plugin>

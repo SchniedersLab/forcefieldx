@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE jnlp PUBLIC '-//Sun Microsystems, Inc//DTD JNLP Descriptor 6.0//EN' 'http://java.sun.com/dtd/JNLP-6.0.dtd'>
 <jnlp spec="6.0+" codebase="file:///Data/ffx/modules/ui/target/site/" href="ffx-localhost.jnlp">
     <information>
@@ -20,20 +20,20 @@
             <description>TINKER XYZ File</description>
             <icon href="images/icon32.png" />
         </association>
-        <association mime-type="application-x/xyz-file" extensions="key">
-            <description>Force Field X Key File</description>
+        <association mime-type="application-x/key-file" extensions="key">
+            <description>Force Field X Property File</description>
             <icon href="images/icon32.png" />
         </association>
     </information>
     <security>
         <all-permissions/>
     </security>
+    <update check="background" policy="prompt-update"/>
     <resources>
-        <j2se version="1.6+" java-vm-args="-Dj3d.rend=jogl" initial-heap-size="256M" max-heap-size="512M" />
+        <java version="1.6+" initial-heap-size="512M" max-heap-size="512M"/>
         <jar href="ffx-all-1.0.0-SNAPSHOT.jar" />
-        <extension name="jogl" href="http://download.java.net/media/jogl/builds/archive/jsr-231-webstart-current/jogl.jnlp" />
+        <property name="j3d.rend" value="jogl"/>
+        <extension name="jogl" href="http://download.java.net/media/jogl/builds/archive/jsr-231-1.1.1a/webstart/jogl.jnlp" />
     </resources>
-    <application-desc main-class="ffx.Main">
-        <argument>/Data/ffx/scripts/md.ffx</argument>
-    </application-desc>
+    <application-desc main-class="ffx.Main"/>
 </jnlp>

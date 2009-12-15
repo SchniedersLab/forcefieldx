@@ -30,11 +30,10 @@
     </security>
     <update check="background" policy="prompt-update"/>
     <resources>
-        <java version="1.6+" java-vm-args="-Dj3d.rend=jogl"
-        initial-heap-size="512M" max-heap-size="512M"/>
+        <java version="1.6+" initial-heap-size="512M" max-heap-size="512M"/>
         <jar href="ffx-all-1.0.0-SNAPSHOT.jar" />
-        <extension name="jogl" href="http://download.java.net/media/jogl/builds/archive/jsr-231-webstart-current/jogl.jnlp" />
+        <property name="j3d.rend" value="jogl"/>
+        <extension name="jogl" href="http://download.java.net/media/jogl/builds/archive/jsr-231-1.1.1a/webstart/jogl.jnlp" />
     </resources>
-    <application-desc main-class="ffx.Main">
-    </application-desc>/>
+    <application-desc main-class="ffx.Main"/>
 </jnlp>

@@ -12,7 +12,7 @@
     <groupId>com.kenai.ffx</groupId>
     <artifactId>xray</artifactId>
     <packaging>jar</packaging>
-    <name>X-Ray</name>
+    <name>X-Ray Refinement</name>
 
     <developers>
         <developer>

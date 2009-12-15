@@ -10,8 +10,8 @@
         </author>
     </properties>
     <body>
-        <section name="Getting (Web) Started">
-            <p>Molecular biophysics in any space group is one click away.</p>
+        <section name="Run Force Field X">
+            <p>One click via Java Web Start.</p>
             <p>            
                 <a href="modules/ui/ffx.jnlp">
                     <img src="images/webstart.png" alt="Start FFX"/>
