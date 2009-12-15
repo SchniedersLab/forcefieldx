@@ -21,6 +21,7 @@
 package ffx.potential.parameters;
 
 import java.io.File;
+import java.net.URL;
 import java.util.TreeMap;
 import java.util.logging.Logger;
 
@@ -30,7 +31,7 @@ import java.util.logging.Logger;
  */
 public class ForceField {
 
-    private static final Logger log = Logger.getLogger("ffx");
+    private static final Logger log = Logger.getLogger(ForceField.class.getName());
 
     /**
      * Available force fields; currently limited to the AMOEBA family.
@@ -75,25 +76,25 @@ public class ForceField {
     /**
      * A map between a Force_Field and its parameter file.
      */
-    private static final TreeMap<Force_Field, File> forceFields = new TreeMap<Force_Field, File>();
+    private static final TreeMap<Force_Field, URL> forceFields = new TreeMap<Force_Field, URL>();
     {
         ClassLoader cl = this.getClass().getClassLoader();
         String amoeba = "ffx/potential/parameters/amoeba/";
         Force_Field ff = Force_Field.AMOEBA_WATER;
-        forceFields.put(ff, new File(cl.getResource(amoeba + ff).getFile()));
+        forceFields.put(ff, cl.getResource(amoeba + ff));
         ff = Force_Field.AMOEBA_2004;
-        forceFields.put(ff, new File(cl.getResource(amoeba + ff).getFile()));
+        forceFields.put(ff, cl.getResource(amoeba + ff));
         ff = Force_Field.AMOEBA_PROTEIN_2004;
-        forceFields.put(ff, new File(cl.getResource(amoeba + ff).getFile()));
+        forceFields.put(ff, cl.getResource(amoeba + ff));
         ff = Force_Field.AMOEBA_2009;
-        forceFields.put(ff, new File(cl.getResource(amoeba + ff).getFile()));
+        forceFields.put(ff, cl.getResource(amoeba + ff));
         ff = Force_Field.AMOEBA_PROTEIN_2009;
-        forceFields.put(ff, new File(cl.getResource(amoeba + ff).getFile()));
+        forceFields.put(ff, cl.getResource(amoeba + ff));
         ff = Force_Field.AMOEBA_NUCLEIC_2009;
-        forceFields.put(ff, new File(cl.getResource(amoeba + ff).getFile()));
+        forceFields.put(ff, cl.getResource(amoeba + ff));
     }
 
-    public File forceFieldFile;
+    public URL forceFieldURL;
     public File keywordFile;
     private final TreeMap<String, AngleType> angleTypes;
     private final TreeMap<String, AtomType> atomTypes;
@@ -116,7 +117,7 @@ public class ForceField {
      * ForceField Constructor.
      */
     public ForceField(Force_Field forceField, File keyFile) {
-        this.forceFieldFile = forceFields.get(forceField);
+        this.forceFieldURL = forceFields.get(forceField);
         this.keywordFile = keyFile;
 
         angleTypes = new TreeMap<String, AngleType>();

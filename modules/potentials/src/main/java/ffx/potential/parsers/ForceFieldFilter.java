@@ -23,8 +23,10 @@ package ffx.potential.parsers;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Hashtable;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import ffx.potential.parameters.AngleType;
@@ -47,7 +49,6 @@ import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.ForceField.ForceFieldInteger;
 import ffx.potential.parameters.ForceField.ForceFieldString;
 import ffx.potential.parameters.ForceField.ForceFieldType;
-import java.util.logging.Level;
 
 /**
  * The ForceFieldFilter Class is used to parse and store molecular mechanics
@@ -97,6 +98,7 @@ public class ForceFieldFilter {
      */
     public ForceFieldFilter(ForceField.Force_Field force_Field, File keyFile) {
         forceField = new ForceField(force_Field, keyFile);
+        logger.info(forceField.toString());
     }
 
     public static File parseParameterLocation(String parameterLocation, File keyFile) {
@@ -124,20 +126,25 @@ public class ForceFieldFilter {
      * @return ForceField
      */
     public ForceField parse() {
-        if (forceField.forceFieldFile != null) {
-            parse(forceField.forceFieldFile);
+        try {
+            if (forceField.forceFieldURL != null) {
+                parse(forceField.forceFieldURL.openStream());
+            }
+            if (forceField.keywordFile != null) {
+                FileInputStream fis = new FileInputStream(forceField.keywordFile);
+                parse(fis);
+            }
+            forceField.checkPolarizationTypes();
+        } catch (Exception e) {
+            String message = "Exception parsing force field.";
+            logger.log(Level.WARNING, message, e);
         }
-        if (forceField.keywordFile != null) {
-            parse(forceField.keywordFile);
-        }
-        forceField.checkPolarizationTypes();
         return forceField;
     }
 
-    private void parse(File file) {
+    private void parse(InputStream stream) {
         try {
-            FileInputStream fis = new FileInputStream(file);
-            BufferedReader br = new BufferedReader(new InputStreamReader(fis));
+            BufferedReader br = new BufferedReader(new InputStreamReader(stream));
             while (br.ready()) {
                 String input = br.readLine();
                 String tokens[] = input.trim().split(" +");
@@ -249,9 +256,8 @@ public class ForceFieldFilter {
                 }
             }
             br.close();
-            fis.close();
         } catch (Exception e) {
-            String message = "Error parsing force field parameters from: " + file + "\n";
+            String message = "Error parsing force field parameters.\n";
             logger.log(Level.SEVERE, message, e);
         }
     }

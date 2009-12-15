@@ -16,6 +16,19 @@
 
     <developers>
         <developer>
+            <id>schnied</id>
+            <name>Michael J. Schnieders</name>
+            <email>schnied@stanford.edu</email>
+            <url>http://www.stanford.edu/~schnied</url>
+            <organization>Joint Postdoc of the Pande and Brunger Labs,
+            Stanford University</organization>
+            <organizationUrl>http://ffx.kenai.com</organizationUrl>
+            <roles>
+                <role>Director of Force Field X</role>
+            </roles>
+            <timezone>-7</timezone>
+        </developer>
+        <developer>
             <id>pren</id>
             <name>Pengyu Ren</name>
             <email>pren@mail.utexas.edu</email>

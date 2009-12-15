@@ -276,6 +276,7 @@
             </activation>
             <properties>
                 <platform>macosx</platform>
+                <bit>64</bit>
             </properties>
         </profile>
         <profile>
