@@ -166,16 +166,16 @@ public class PotentialEnergyTest {
         this.nPolar = nPolar;
 
         ClassLoader cl = this.getClass().getClassLoader();
-        this.structure = new File(cl.getResource(filename).getPath());
+        structure = new File(cl.getResource(filename).getPath());
         String name = structure.getName();
-        int index = name.lastIndexOf(".");
-        name = name.substring(0, index);
+        int index = filename.lastIndexOf(".");
+        name = filename.substring(0, index);
         molecularAssembly = new MolecularAssembly(name);
         molecularAssembly.setFile(structure);
-        String keyFileName = name + ".key";
-        File keyFile = new File(structure.getParent() + File.separator + keyFileName);
+        filename = filename.replace("xyz", "key");
+        File keyFile = new File(cl.getResource(filename).getPath());
         assertTrue(keyFile.exists());
-                Hashtable keywordHash = KeyFilter.open(keyFile);
+        Hashtable keywordHash = KeyFilter.open(keyFile);
         Keyword keyword = (Keyword) keywordHash.get("FORCEFIELD");
         assertNotNull(keyword);
         String model = keyword.getEntry(0);
