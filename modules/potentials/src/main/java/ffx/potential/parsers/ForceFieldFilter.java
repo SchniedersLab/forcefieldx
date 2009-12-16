@@ -98,7 +98,6 @@ public class ForceFieldFilter {
      */
     public ForceFieldFilter(ForceField.Force_Field force_Field, File keyFile) {
         forceField = new ForceField(force_Field, keyFile);
-        logger.info(forceField.toString());
     }
 
     public static File parseParameterLocation(String parameterLocation, File keyFile) {

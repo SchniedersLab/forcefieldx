@@ -31,7 +31,7 @@
     <update check="background" policy="prompt-update"/>
     <resources>
         <java version="1.6+" initial-heap-size="512M" max-heap-size="512M"/>
-        <jar href="ffx-all-1.0.0-SNAPSHOT.jar" />
+        <jar href="ui-1.0.0-SNAPSHOT-all.jar" />
         <property name="j3d.rend" value="jogl"/>
         <extension name="jogl" href="http://download.java.net/media/jogl/builds/archive/jsr-231-1.1.1a/webstart/jogl.jnlp" />
     </resources>
