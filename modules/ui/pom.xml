@@ -37,7 +37,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <configuration>
-                    <finalName>uber</finalName>
+                    <finalName>ffx</finalName>
                     <descriptors>
                         <descriptor>src/assemble/all.xml</descriptor>
                     </descriptors>
@@ -100,7 +100,7 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-jarsigner-plugin</artifactId>
                         <configuration>
-                            <archive>target/site/uber-all.jar</archive>
+                            <archive>target/site/ffx-all.jar</archive>
                             <alias>mykey</alias>
                             <storepass>ForceFieldX</storepass>
                             <keypass>ForceFieldX</keypass>

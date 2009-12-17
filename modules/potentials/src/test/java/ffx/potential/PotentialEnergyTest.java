@@ -174,6 +174,7 @@ public class PotentialEnergyTest {
         molecularAssembly.setFile(structure);
         filename = filename.replace("xyz", "key");
         File keyFile = new File(cl.getResource(filename).getPath());
+        System.out.println(keyFile.getAbsolutePath());
         assertTrue(keyFile.exists());
         Hashtable keywordHash = KeyFilter.open(keyFile);
         Keyword keyword = (Keyword) keywordHash.get("FORCEFIELD");

@@ -1,5 +1,6 @@
 
 open "examples/3DB3.P62.xyz"
+return;
 
 // Compute the initial energy
 println energy()
