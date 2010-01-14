@@ -492,15 +492,14 @@ public class ParticleMeshEwald {
          */
         selfConsistentField(print);
 
-        if (logger.isLoggable(Level.INFO)) {
+        if (logger.isLoggable(Level.FINE)) {
             StringBuffer s = new StringBuffer();
             s.append(String.format("\nb-Spline:   %8.3f (sec)\n", bsplineTime * toSeconds));
             s.append(String.format("Density:    %8.3f (sec)\n", densityTime * toSeconds));
             s.append(String.format("Real + FFT: %8.3f (sec)\n", realAndFFTTime * toSeconds));
             s.append(String.format("Phi:        %8.3f (sec)\n", phiTime * toSeconds));
-            logger.info(s.toString());
+            logger.fine(s.toString());
         }
-
 
         /**
          * The self energy of the permanent multipoles is constant.

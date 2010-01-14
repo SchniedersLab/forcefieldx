@@ -20,12 +20,12 @@
  */
 package ffx.algorithms;
 
-import ffx.algorithms.Thermostat.Thermostats;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import ffx.algorithms.Thermostat.Thermostats;
 import ffx.potential.PotentialEnergy;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
@@ -93,11 +93,11 @@ public class MolecularDynamics implements Terminatable {
                     thermostat = null;
                     break;
                 case BERENDSEN:
-                    thermostat = new Berendsen(n, v, mass, 300.0);
+                    thermostat = new Berendsen(n, x, v, mass, 300.0);
                     break;
                 case BUSSI:
                 default:
-                    thermostat = new Bussi(n, v, mass, 300.0);
+                    thermostat = new Bussi(n, x, v, mass, 300.0);
             }
         } else {
             thermostat = null;
@@ -112,6 +112,18 @@ public class MolecularDynamics implements Terminatable {
             final double temperature, final boolean initVelocities) {
         terminate = false;
         done = false;
+
+        logger.info(" Molecular dynamics starting up.");
+        logger.info(String.format(" Number of steps:     %d", nSteps));
+        logger.info(String.format(" Time step:           %8.3f (fsec)", timeStep));
+        logger.info(String.format(" Print interval:      %8.3f (psec)", printInterval));
+        logger.info(String.format(" Target temperature:  %8.3f Kelvin", temperature));
+        if (thermostat != null) {
+            logger.info(String.format(" Sampling the NVT Ensemble via a %s thermostat.\n", thermostat.name));
+        } else {
+            logger.info(String.format(" Sampling the NVE Ensemble.\n"));
+        }
+
         /**
          * Convert the time step from femtoseconds to picoseconds.
          */

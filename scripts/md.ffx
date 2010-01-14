@@ -1,17 +1,7 @@
 
 System.setProperty("pj.nt","2");
 
-open "examples/dhfr.xyz"
-
-// Compute the initial energy
-println energy()
-
-// RMS gradient per atom convergence criteria (Kcal/mole/A)
-rmsg = 5.0
-minimize(rmsg)
-
-// Compute the energy after minimization
-println energy()
+open "examples/3DB3.P62.xyz"
 
 // Number of molecular dynamics steps
 int nSteps = 100

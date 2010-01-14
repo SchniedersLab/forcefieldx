@@ -38,14 +38,15 @@ public class Berendsen extends Thermostat {
 
     private double tau;
 
-    public Berendsen(int n, double v[], double mass[], double targetTemperature,
+    public Berendsen(int n, double x[], double v[], double mass[], double targetTemperature,
             double tau) {
-        super(n, v, mass, targetTemperature);
+        super(n, x, v, mass, targetTemperature);
+        this.name = Thermostats.BUSSI;
         this.tau = tau;
     }
 
-    public Berendsen(int n, double v[], double mass[], double targetTemperature) {
-        this(n, v, mass, targetTemperature, 0.2e0);
+    public Berendsen(int n, double x[], double v[], double mass[], double targetTemperature) {
+        this(n, x, v, mass, targetTemperature, 0.2e0);
     }
 
     public void setTau(double tau) {
@@ -54,6 +55,11 @@ public class Berendsen extends Thermostat {
 
     public double getTau() {
         return tau;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%s thermostat (tau = %8.3f)", name, tau);
     }
 
     /**
