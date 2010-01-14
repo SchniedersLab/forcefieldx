@@ -20,16 +20,9 @@
  */
 package ffx.potential.nonbonded;
 
-import static java.lang.Math.PI;
-import static java.lang.Math.cos;
-import static java.lang.Math.exp;
-import static java.lang.Math.pow;
-import static java.lang.Math.round;
-import static java.lang.Math.signum;
-import static java.lang.Math.sin;
+import static java.lang.Math.*;
 
-import static ffx.numerics.UniformBSpline.bSpline;
-import static ffx.numerics.UniformBSpline.bSplineDerivatives;
+import static ffx.numerics.UniformBSpline.*;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -42,11 +35,14 @@ import edu.rit.pj.ParallelTeam;
 import ffx.crystal.Crystal;
 import ffx.numerics.TensorRecursion;
 import ffx.numerics.fft.Complex;
+import ffx.numerics.fft.Complex3DOpenCL;
 import ffx.numerics.fft.Complex3DParallel;
 import ffx.numerics.fft.Real3DParallel;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.ForceField.ForceFieldInteger;
+import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
 
 /**
  * The Reciprocal Space class computes the reciprocal space contribution to
@@ -170,29 +166,37 @@ public class ReciprocalSpace {
     private final int threadCount;
     private final BSplineRegion bSplineRegion;
     private final PermanentDensityRegion permanentDensity;
-    private final Real3DParallel realFFT3D;
-    private final Complex3DParallel complexFFT3D;
     private final PermanentReciprocalSumRegion permanentReciprocalSum;
     private final PermanentPhiRegion permanentPhi;
     private final PolarizationDensityRegion polarizationDensity;
     private final PolarizationReciprocalSumRegion polarizationReciprocalSum;
     private final PolarizationPhiRegion polarizationPhi;
+    private final ParallelTeam fftTeam;
+    private final Real3DParallel realFFT3D;
+    private final Complex3DParallel complexFFT3D;
+    private final Complex3DOpenCL complexFFT3DOpenCL;
+    private final boolean openCL;
+    private final FloatBuffer real;
+    private final FloatBuffer imag;
+    private final FloatBuffer recip;
 
     /**
      * Reciprocal Space PME contribution.
      */
     public ReciprocalSpace(Crystal crystal, ForceField forceField,
-            double coordinates[][][],
-            int nAtoms, ParallelTeam parallelTeam, double aewald) {
+            double coordinates[][][], int nAtoms, double aewald,
+            ParallelTeam fftTeam, ParallelTeam parallelTeam) {
         this.crystal = crystal;
         this.coordinates = coordinates;
         this.nAtoms = nAtoms;
-        this.parallelTeam = parallelTeam;
         this.aewald = aewald;
-        threadCount = parallelTeam.getThreadCount();
+        this.fftTeam = fftTeam;
+        this.parallelTeam = parallelTeam;
 
+        threadCount = parallelTeam.getThreadCount();
         bSplineOrder = forceField.getInteger(ForceFieldInteger.PME_ORDER, 5);
         double density = forceField.getDouble(ForceFieldDouble.PME_SPACING, 1.0);
+        openCL = forceField.getBoolean(ForceField.ForceFieldBoolean.OPENCL, false);
 
         // Set default FFT grid size from unit cell dimensions.
         int nX = (int) Math.floor(crystal.a * density) + 1;
@@ -201,15 +205,63 @@ public class ReciprocalSpace {
         if (nX % 2 != 0) {
             nX += 1;
         }
-        // Use preferred dimensions.
-        while (!Complex.preferredDimension(nX)) {
-            nX += 2;
-        }
-        while (!Complex.preferredDimension(nY)) {
-            nY += 1;
-        }
-        while (!Complex.preferredDimension(nZ)) {
-            nZ += 1;
+
+        if (!openCL) {
+            // Use preferred dimensions.
+            while (!Complex.preferredDimension(nX)) {
+                nX += 2;
+            }
+            while (!Complex.preferredDimension(nY)) {
+                nY += 1;
+            }
+            while (!Complex.preferredDimension(nZ)) {
+                nZ += 1;
+            }
+            real = null;
+            imag = null;
+            recip = null;
+        } else {
+            // OpenCL FFTs are currently powers of 2 only.
+            int p2 = 2;
+            while (nX > p2) {
+                p2 *= 2;
+            }
+            nX = p2;
+            p2 = 2;
+            while (nY > p2) {
+                p2 *= 2;
+            }
+            nY = p2;
+            p2 = 2;
+            while (nZ > p2) {
+                p2 *= 2;
+            }
+            nZ = p2;
+
+            final int dimCubed = nX * nY * nZ;
+            int size = Float.SIZE / Byte.SIZE;
+            ByteBuffer realTemp = ByteBuffer.allocateDirect(size * dimCubed);
+            ByteBuffer imagTemp = ByteBuffer.allocateDirect(size * dimCubed);
+            ByteBuffer recipTemp = ByteBuffer.allocateDirect(size * dimCubed);
+
+            /**
+             * Set the byte order to that of the native plaform.
+             */
+            float array[] = new float[1];
+            FloatBuffer temp = FloatBuffer.wrap(array);
+            realTemp.order(temp.order());
+            imagTemp.order(temp.order());
+            recipTemp.order(temp.order());
+
+            /**
+             * Finally create views of the ByteBuffers as FloatBuffers.
+             *
+             * Before the OpenCL convolution is called, the Java Data must be
+             * copied into these arrays.
+             */
+            real = realTemp.asFloatBuffer();
+            imag = imagTemp.asFloatBuffer();
+            recip = recipTemp.asFloatBuffer();
         }
 
         fftX = nX;
@@ -236,6 +288,7 @@ public class ReciprocalSpace {
         nY = 1;
         nZ = 1;
         int div = 1;
+        int minWork = 4;
         if (threadCount > 1) {
             nZ = fftZ / bSplineOrder;
             if (nZ % 2 != 0) {
@@ -243,8 +296,8 @@ public class ReciprocalSpace {
             }
             nC = nZ;
             div = 2;
-            // If we have 2 * threadCount chunks, stop dividing the domain.
-            if (nC / threadCount > div) {
+            // If we have 2 * threadCount * minWork chunks, stop dividing the domain.
+            if (nC / threadCount > div * minWork) {
                 nA = 1;
                 nB = 1;
             } else {
@@ -254,8 +307,8 @@ public class ReciprocalSpace {
                 }
                 nB = nY;
                 div = 4;
-                // If we have 4 * threadCount chunks, stop dividing the domain.
-                if (nB * nC / threadCount > div) {
+                // If we have 4 * threadCount * minWork chunks, stop dividing the domain.
+                if (nB * nC / threadCount > div * minWork) {
                     nA = 1;
                 } else {
                     nX = fftX / bSplineOrder;
@@ -321,68 +374,100 @@ public class ReciprocalSpace {
         zf = new double[nAtoms];
 
         bSplineRegion = new BSplineRegion();
-        realFFT3D = new Real3DParallel(fftX, fftY, fftZ, parallelTeam);
-        complexFFT3D = new Complex3DParallel(fftX, fftY, fftZ, parallelTeam);
+
         permanentDensity = new PermanentDensityRegion(bSplineRegion);
         permanentReciprocalSum = new PermanentReciprocalSumRegion();
         permanentPhi = new PermanentPhiRegion(bSplineRegion);
         polarizationDensity = new PolarizationDensityRegion(bSplineRegion);
         polarizationReciprocalSum = new PolarizationReciprocalSumRegion();
         polarizationPhi = new PolarizationPhiRegion(bSplineRegion);
+
+        realFFT3D = new Real3DParallel(fftX, fftY, fftZ, fftTeam);
+        realFFT3D.setRecip(permanentReciprocalSum.getRecip());
+        if (!openCL) {
+            complexFFT3D = new Complex3DParallel(fftX, fftY, fftZ, fftTeam);
+            complexFFT3D.setRecip(polarizationReciprocalSum.getRecip());
+            complexFFT3DOpenCL = null;
+        } else {
+            complexFFT3D = null;
+            recip.rewind();
+            double temp[] = polarizationReciprocalSum.getRecip();
+            for (int i = 0; i < polarizationTotal; i++) {
+                recip.put((float) temp[i]);
+            }
+            complexFFT3DOpenCL = new Complex3DOpenCL(fftX, fftY, fftZ, real, imag, recip);
+        }
     }
 
-    /**
-     * Note that the Java function "signum" and the FORTRAN version have
-     * different definitions for an argument of zero.
-     * <p>
-     * JAVA: Math.signum(0.0) == 0.0
-     * <p>
-     * FORTRAN: signum(0.0) .eq. 1.0
-     */
-    public void permanent(double globalMultipoles[][][]) {
+    public void computeBSplines() {
+        try {
+            long startTime = System.nanoTime();
+            parallelTeam.execute(bSplineRegion);
+            long bSplineTime = System.nanoTime() - startTime;
+            if (logger.isLoggable(Level.FINE)) {
+                StringBuffer sb = new StringBuffer();
+                sb.append(String.format("\nCompute B-Splines:      %8.3f (sec)\n", bSplineTime * toSeconds));
+                logger.fine(sb.toString());
+            }
+        } catch (Exception e) {
+            String message = "Fatal exception evaluating b-Splines.\n";
+            logger.log(Level.SEVERE, message, e);
+        }
+    }
+
+    public void computePermanentDensity(double globalMultipoles[][][]) {
         assignAtomsToCells();
         permanentDensity.setPermanent(globalMultipoles);
         try {
             long startTime = System.nanoTime();
-            parallelTeam.execute(bSplineRegion);
-            long bSplineTime = System.nanoTime();
             parallelTeam.execute(permanentDensity);
-            long permanentDensityTime = System.nanoTime();
-            realFFT3D.convolution(densityGrid, permanentReciprocalSum.getRecip());
-            long convolutionTime = System.nanoTime();
-            parallelTeam.execute(permanentPhi);
-            long phiTime = System.nanoTime();
-
-            phiTime -= convolutionTime;
-            convolutionTime -= permanentDensityTime;
-            permanentDensityTime -= bSplineTime;
-            bSplineTime -= startTime;
-
+            long permanentDensityTime = System.nanoTime() - startTime;
             if (logger.isLoggable(Level.FINE)) {
                 StringBuffer sb = new StringBuffer();
-                sb.append(String.format("\nCompute B-Splines:      %8.3f (sec)\n", bSplineTime * toSeconds));
                 sb.append(String.format("Grid Permanent Density: %8.3f (sec)\n", permanentDensityTime * toSeconds));
+                logger.fine(sb.toString());
+            }
+        } catch (Exception e) {
+            String message = "Fatal exception evaluating permanent multipole density.\n";
+            logger.log(Level.SEVERE, message, e);
+        }
+    }
+
+    public void computePermanentConvolution() {
+        try {
+            long startTime = System.nanoTime();
+            realFFT3D.convolution(densityGrid);
+            long convolutionTime = System.nanoTime() - startTime;
+            if (logger.isLoggable(Level.FINE)) {
+                StringBuffer sb = new StringBuffer();
                 sb.append(String.format("Convolution:            %8.3f (sec)\n", convolutionTime * toSeconds));
+                logger.fine(sb.toString());
+            }
+        } catch (Exception e) {
+            String message = "Fatal exception evaluating permanent convolution.\n";
+            logger.log(Level.SEVERE, message, e);
+        }
+    }
+
+    public void computePermanentPhi(double cartesianMultipolePhi[][]) {
+        try {
+            long startTime = System.nanoTime();
+            parallelTeam.execute(permanentPhi);
+            long phiTime = System.nanoTime() - startTime;
+            if (logger.isLoggable(Level.FINE)) {
+                StringBuffer sb = new StringBuffer();
                 sb.append(String.format("Compute Phi:            %8.3f (sec)\n", phiTime * toSeconds));
                 logger.fine(sb.toString());
             }
         } catch (Exception e) {
             String message = "Fatal exception evaluating permanent reciprocal space potential.\n";
             logger.log(Level.SEVERE, message, e);
-            System.exit(-1);
         }
+        fractionalToCartesianPhi(fractionalMultipolePhi, cartesianMultipolePhi);
     }
     private static double toSeconds = 0.000000001;
 
-    /**
-     * Note that the Java function "signum" and the FORTRAN version have
-     * different definitions for an argument of zero.
-     * <p>
-     * JAVA: Math.signum(0.0) == 0.0
-     * <p>
-     * FORTRAN: signum(0.0) .eq. 1.0
-     */
-    public void polarization(double inducedDipole[][][],
+    public void computeInducedDensity(double inducedDipole[][][],
             double inducedDipolep[][][]) {
         for (int i = 0; i < 3; i++) {
             a[0][i] = fftX * crystal.recip[i][0];
@@ -392,13 +477,57 @@ public class ReciprocalSpace {
         polarizationDensity.setPolarization(inducedDipole, inducedDipolep);
         try {
             parallelTeam.execute(polarizationDensity);
-            complexFFT3D.convolution(densityGrid, polarizationReciprocalSum.getRecip());
+        } catch (Exception e) {
+            String message = "Fatal exception evaluating induced density.\n";
+            logger.log(Level.SEVERE, message, e);
+        }
+    }
+
+    /**
+     * Note that the Java function "signum" and the FORTRAN version have
+     * different definitions for an argument of zero.
+     * <p>
+     * JAVA: Math.signum(0.0) == 0.0
+     * <p>
+     * FORTRAN: signum(0.0) .eq. 1.0
+     */
+    public void computeInducedConvolution() {
+        try {
+            if (openCL) {
+                long fftTime = -System.nanoTime();
+                complexFFT3DOpenCL.convolution();
+                fftTime += System.nanoTime();
+                if (logger.isLoggable(Level.FINEST)) {
+                    StringBuffer sb = new StringBuffer();
+                    sb.append(String.format(" OpenCL FFT: %8.3f (sec)\n", fftTime * toSeconds));
+                    logger.finest(sb.toString());
+                }
+            } else {
+                long fftTime = -System.nanoTime();
+                complexFFT3D.convolution(densityGrid);
+                fftTime += System.nanoTime();
+                if (logger.isLoggable(Level.FINEST)) {
+                    StringBuffer sb = new StringBuffer();
+                    sb.append(String.format(" Java FFT:   %8.3f (sec)\n", fftTime * toSeconds));
+                    logger.finest(sb.toString());
+                }
+            }
+        } catch (Exception e) {
+            String message = "Fatal exception evaluating induced convolution.\n";
+            logger.log(Level.SEVERE, message, e);
+        }
+    }
+
+    public void computeInducedPhi(double cartesianPolarizationPhi[][],
+            double cartesianChainRulePhi[][]) {
+        try {
             parallelTeam.execute(polarizationPhi);
         } catch (Exception e) {
-            String message = "Fatal exception evaluating induced reciprocal space field.\n";
+            String message = "Fatal exception evaluating induced reciprocal space potential.\n";
             logger.log(Level.SEVERE, message, e);
-            System.exit(-1);
         }
+        fractionalToCartesianPhi(fractionalInducedDipolePhi, cartesianPolarizationPhi);
+        fractionalToCartesianPhi(fractionalInducedDipolepPhi, cartesianChainRulePhi);
     }
 
     public void cartesianToFractionalDipoles(double inducedDipole[][][],
@@ -446,20 +575,6 @@ public class ReciprocalSpace {
 
     public double[][] getFractionalInducedDipolesp() {
         return this.fractionalDipolep[0];
-    }
-
-    public void getCartesianMultipolePhi(double cartesianMultipolePhi[][]) {
-        fractionalToCartesianPhi(fractionalMultipolePhi, cartesianMultipolePhi);
-    }
-
-    public void getCartesianPolarizationPhi(double cartesianPolarizationPhi[][]) {
-        fractionalToCartesianPhi(fractionalInducedDipolePhi,
-                cartesianPolarizationPhi);
-    }
-
-    public void getCartesianChainRulePhi(double cartesianChainRulePhi[][]) {
-        fractionalToCartesianPhi(fractionalInducedDipolepPhi,
-                cartesianChainRulePhi);
     }
 
     public double getNfftX() {
@@ -945,7 +1060,8 @@ public class ReciprocalSpace {
                     // if (.not. use_bounds) then
                     // expterm = expterm * (1.0d0-cos(pi*xbox*sqrt(hsq)));
                 }
-                permanentFac[k3 + k1 * fftZ + k2 * (halfFFTX + 1) * fftZ] = expterm;
+                permanentFac[k1 + k2 * (halfFFTX + 1) + k3 * (halfFFTX + 1) * fftY] = expterm;
+                //permanentFac[k3 + k1 * fftZ + k2 * (halfFFTX + 1) * fftZ] = expterm;
             }
         }
     }
@@ -1151,27 +1267,32 @@ public class ReciprocalSpace {
             }
         }
 
+        @Override
         public void run() {
             int ti = getThreadIndex();
             PolarizationDensityLoop thisLoop = polarizationDensityLoop[ti];
-            int work1 = nWork - 1;
+            int lim = nWork - 1;
             try {
                 // Zero out the grid.
-                execute(0, polarizationTotal * 2 - 1, initLoop);
-                execute(0, work1, thisLoop.setOctant(0));
+                if (!openCL) {
+                    execute(0, polarizationTotal * 2 - 1, initLoop);
+                } else {
+                    execute(0, polarizationTotal - 1, initLoop);
+                }
+                execute(0, lim, thisLoop.setOctant(0));
                 // Fractional chunks along the C-axis.
                 if (nC > 1) {
-                    execute(0, work1, thisLoop.setOctant(1));
+                    execute(0, lim, thisLoop.setOctant(1));
                     // Fractional chunks along the B-axis.
                     if (nB > 1) {
-                        execute(0, work1, thisLoop.setOctant(2));
-                        execute(0, work1, thisLoop.setOctant(3));
+                        execute(0, lim, thisLoop.setOctant(2));
+                        execute(0, lim, thisLoop.setOctant(3));
                         // Fractional chunks along the A-axis.
                         if (nA > 1) {
-                            execute(0, work1, thisLoop.setOctant(4));
-                            execute(0, work1, thisLoop.setOctant(5));
-                            execute(0, work1, thisLoop.setOctant(6));
-                            execute(0, work1, thisLoop.setOctant(7));
+                            execute(0, lim, thisLoop.setOctant(4));
+                            execute(0, lim, thisLoop.setOctant(5));
+                            execute(0, lim, thisLoop.setOctant(6));
+                            execute(0, lim, thisLoop.setOctant(7));
                         }
                     }
                 }
@@ -1189,9 +1310,17 @@ public class ReciprocalSpace {
                 return schedule;
             }
 
+            @Override
             public void run(int lb, int ub) {
-                for (int i = lb; i <= ub; i++) {
-                    densityGrid[i] = 0.0;
+                if (!openCL) {
+                    for (int i = lb; i <= ub; i++) {
+                        densityGrid[i] = 0.0;
+                    }
+                } else {
+                    for (int i = lb; i <= ub; i++) {
+                        real.put(i, 0.0f);
+                        imag.put(i, 0.0f);
+                    }
                 }
             }
         }
@@ -1201,7 +1330,7 @@ public class ReciprocalSpace {
             private int octant = 0;
             private double inducedDipole[][][] = null;
             private double inducedDipolep[][][] = null;
-            private final IntegerSchedule schedule = IntegerSchedule.dynamic(1);
+            private final IntegerSchedule schedule = IntegerSchedule.fixed();
 
             public void setPolarization(double inducedDipole[][][],
                     double inducedDipolep[][][]) {
@@ -1335,8 +1464,14 @@ public class ReciprocalSpace {
                             final double splxi[] = splx[ith1];
                             final double dq = splxi[0] * term0 + splxi[1] * term1;
                             final double pq = splxi[0] * termp0 + splxi[1] * termp1;
-                            densityGrid[ii] += dq;
-                            densityGrid[ii + 1] += pq;
+                            if (!openCL) {
+                                densityGrid[ii] += dq;
+                                densityGrid[ii + 1] += pq;
+                            } else {
+                                ii = ii / 2;
+                                real.put(ii, (float) (real.get(ii) + dq));
+                                imag.put(ii, (float) (real.get(ii) + pq));
+                            }
                         }
                     }
                 }
@@ -1377,6 +1512,7 @@ public class ReciprocalSpace {
                 return schedule;
             }
 
+            @Override
             public void run(int lb, int ub) {
                 int ii = 2 * lb;
                 for (int i = lb; i <= ub; i++) {
@@ -1452,9 +1588,8 @@ public class ReciprocalSpace {
                     // if (.not. use_bounds) then
                     // expterm = expterm * (1.0d0-cos(pi*xbox*sqrt(hsq)));
                 }
-                // polarizationFac[k1 + k2 * nfftX + k3 * nfftX * nfftY] =
-                // expterm;
-                polarizationFac[k1 * fftZ + k2 * fftX * fftZ + k3] = expterm;
+                polarizationFac[k1 + k2 * fftX + k3 * fftX * fftY] = expterm;
+                //polarizationFac[k1 * fftZ + k2 * fftX * fftZ + k3] = expterm;
             }
         }
     }
@@ -1493,6 +1628,7 @@ public class ReciprocalSpace {
                 return schedule;
             }
 
+            @Override
             public void run(int lb, int ub) {
                 for (int n = lb; n <= ub; n++) {
                     final double[][] splx = splineX[0][n];
@@ -1581,9 +1717,17 @@ public class ReciprocalSpace {
                             double t3p = 0.0;
                             for (int ith1 = 0; ith1 < bSplineOrder; ith1++) {
                                 i0++;
-                                final int i = 2 * i0 + (1 - ((int) signum(i0 + signum_eps))) * fftX + jk;
-                                final double tq = densityGrid[i];
-                                final double tp = densityGrid[i + 1];
+                                int i = 2 * i0 + (1 - ((int) signum(i0 + signum_eps))) * fftX + jk;
+                                double tq;
+                                double tp;
+                                if (!openCL) {
+                                    tq = densityGrid[i];
+                                    tp = densityGrid[i + 1];
+                                } else {
+                                    i = i / 2;
+                                    tq = real.get(i);
+                                    tp = imag.get(i);
+                                }
                                 final double splxi[] = splx[ith1];
                                 t0 += tq * splxi[0];
                                 t1 += tq * splxi[1];

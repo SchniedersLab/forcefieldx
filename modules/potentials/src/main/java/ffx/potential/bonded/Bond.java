@@ -57,16 +57,16 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
         if (b == this) {
             return 0;
         }
-        int this0 = atoms[0].xyzindex;
-        int a0 = b.atoms[0].xyzindex;
+        int this0 = atoms[0].xyzIndex;
+        int a0 = b.atoms[0].xyzIndex;
         if (this0 < a0) {
             return -1;
         }
         if (this0 > a0) {
             return 1;
         }
-        int this1 = atoms[1].xyzindex;
-        int a1 = b.atoms[1].xyzindex;
+        int this1 = atoms[1].xyzIndex;
+        int a1 = b.atoms[1].xyzIndex;
         if (this1 < a1) {
             return -1;
         }

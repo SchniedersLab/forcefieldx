@@ -20,6 +20,7 @@
  */
 package ffx.potential.parameters;
 
+import ffx.utilities.Keyword;
 import java.io.File;
 import java.net.URL;
 import java.util.TreeMap;
@@ -39,7 +40,8 @@ public class ForceField {
     public enum Force_Field {
 
         AMOEBA_WATER, AMOEBA_2004, AMOEBA_PROTEIN_2004,
-        AMOEBA_2009, AMOEBA_PROTEIN_2009, AMOEBA_NUCLEIC_2009
+        AMOEBA_2009, AMOEBA_PROTEIN_2009, AMOEBA_NUCLEIC_2009,
+        AMOEBA_BIO_2009
     }
 
     public enum ForceFieldString {
@@ -64,7 +66,7 @@ public class ForceField {
 
         BONDTERM, ANGLETERM, STRBNDTERM, UREYTERM, OPBENDTERM,
         TORSIONTERM, PITORSTERM, TORTORTERM, VDWTERM,
-        MPOLETERM, POLARIZETERM, SCFCACHE;
+        MPOLETERM, POLARIZETERM, SCFCACHE, OPENCL;
     }
 
     public enum ForceFieldType {
@@ -89,9 +91,12 @@ public class ForceField {
         ff = Force_Field.AMOEBA_2009;
         forceFields.put(ff, cl.getResource(amoeba + ff));
         ff = Force_Field.AMOEBA_PROTEIN_2009;
-        forceFields.put(ff, cl.getResource(amoeba + ff));
+        String value = amoeba + ff;
+        forceFields.put(ff, cl.getResource(value));
         ff = Force_Field.AMOEBA_NUCLEIC_2009;
-        forceFields.put(ff, cl.getResource(amoeba + ff));
+        forceFields.put(ff, cl.getResource(value));
+        ff = Force_Field.AMOEBA_BIO_2009;
+        forceFields.put(ff, cl.getResource(value));
     }
 
     public URL forceFieldURL;

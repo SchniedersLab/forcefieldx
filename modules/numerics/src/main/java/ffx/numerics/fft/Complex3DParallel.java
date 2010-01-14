@@ -57,6 +57,7 @@ public class Complex3DParallel {
     private final ParallelFFT parallelFFT;
     private final ParallelIFFT parallelIFFT;
     private final Convolution convolution;
+    private final double[] recip;
     private final IntegerSchedule schedule;
     private static final Logger logger = Logger.getLogger(Complex3DParallel.class.getName());
 
@@ -79,6 +80,7 @@ public class Complex3DParallel {
         this.nY = nY;
         this.nZ = nZ;
         this.parallelTeam = parallelTeam;
+        recip = new double[nX * nY * nZ];
         nY2 = 2 * this.nY;
         nZ2 = 2 * this.nZ;
         nextX = 2;
@@ -140,15 +142,30 @@ public class Complex3DParallel {
      *
      * @since 1.0
      */
-    public void convolution(final double input[], final double recip[]) {
+    public void convolution(final double input[]) {
         convolution.input = input;
-        convolution.recip = recip;
         try {
             parallelTeam.execute(convolution);
         } catch (Exception e) {
             String message = "Fatal exception evaluating a convolution.\n";
             logger.log(Level.SEVERE, message, e);
-            System.exit(-1);
+        }
+    }
+
+    public void setRecip(double recip[]) {
+        int offset, y, x, z, i;
+
+        /**
+         * Reorder the reciprocal space data into the order it is needed
+         * by the convolution routine.
+         */
+        int index = 0;
+        for (offset = 0, y = 0; y < nY; y++) {
+            for (x = 0; x < nX; x++, offset += 1) {
+                for (i = 0, z = offset; i < nZ2; i += 2, z += nX * nY) {
+                    this.recip[index++] = recip[z];
+                }
+            }
         }
     }
 
@@ -332,7 +349,6 @@ public class Complex3DParallel {
     private class Convolution extends ParallelRegion {
 
         public double input[];
-        public double recip[];
         private final int nYm1;
         private final int nZm1;
         private final FFTXYLoop fftXYLoop[];
@@ -357,7 +373,6 @@ public class Complex3DParallel {
             int threadIndex = getThreadIndex();
             fftXYLoop[threadIndex].input = input;
             fftZ_Multiply_IFFTZLoop[threadIndex].input = input;
-            fftZ_Multiply_IFFTZLoop[threadIndex].recip = recip;
             ifftXYLoop[threadIndex].input = input;
             try {
                 execute(0, nZm1, fftXYLoop[threadIndex]);
@@ -396,7 +411,6 @@ public class Complex3DParallel {
         private class FFTZ_Multiply_IFFTZLoop extends IntegerForLoop {
 
             public double input[];
-            public double recip[];
             private double work[] = new double[nZ2];
             private int i, j, x, y, z, offset;
             private final Complex fft = new Complex(nZ);
@@ -536,6 +550,8 @@ public class Complex3DParallel {
         double toSeconds = 0.000000001;
         long parTime = Long.MAX_VALUE;
         long seqTime = Long.MAX_VALUE;
+        complexDoubleFFT3D.setRecip(work);
+        parallelComplexDoubleFFT3D.setRecip(work);
         for (int i = 0; i < reps; i++) {
             System.out.println(String.format("Iteration %d", i + 1));
             long time = System.nanoTime();
@@ -548,7 +564,7 @@ public class Complex3DParallel {
                 seqTime = time;
             }
             time = System.nanoTime();
-            complexDoubleFFT3D.convolution(data, work);
+            complexDoubleFFT3D.convolution(data);
             time = (System.nanoTime() - time);
             System.out.println(String.format("Sequential: %8.3f (Convolution)",
                     toSeconds * time));
@@ -565,7 +581,7 @@ public class Complex3DParallel {
                 parTime = time;
             }
             time = System.nanoTime();
-            parallelComplexDoubleFFT3D.convolution(data, work);
+            parallelComplexDoubleFFT3D.convolution(data);
             time = (System.nanoTime() - time);
             System.out.println(String.format(
                     "Parallel:   %8.3f (Convolution)\n", toSeconds * time));

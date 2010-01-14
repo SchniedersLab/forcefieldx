@@ -1,10 +1,7 @@
 /**
- * <p>Title: Force Field X</p>
- * <p>Description: Force Field X is a Molecular Biophysics Environment</p>
- * <p>Copyright: Copyright (c) Michael J. Schnieders 2002-2009</p>
- *
- * @author Michael J. Schnieders
- * @version 0.1
+ * Title: Force Field X
+ * Description: Force Field X - Software for Molecular Biophysics.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2009
  *
  * This file is part of Force Field X.
  *
@@ -46,6 +43,7 @@ public class Complex3D {
     private final int nextX, nextY, nextZ;
     private final double work[];
     private final Complex fftX, fftY, fftZ;
+    private final double recip[];
 
     /**
      * Initialize the 3D FFT for complex 3D matrix.
@@ -65,7 +63,10 @@ public class Complex3D {
         nextX = 2;
         nextY = 2 * nX;
         nextZ = nextY * nY;
+        
         work = new double[nZ2];
+        recip = new double[nX * nY * nZ];
+
         fftX = new Complex(nX);
         fftY = new Complex(nY);
         fftZ = new Complex(nZ);
@@ -134,8 +135,25 @@ public class Complex3D {
         }
     }
 
-    public void convolution(final double input[], final double recip[]) {
-        int x, y, z, i, j, index, stride, offset;
+    public void setRecip(double recip[]){
+        int offset, y, x, z, i;
+
+        /**
+         * Reorder the reciprocal space data into the order it is needed
+         * by the convolution routine.
+         */
+        int index = 0;
+        for (offset = 0, y = 0; y < nY; y++) {
+            for (x = 0; x < nX; x++, offset += 1) {
+                for (i = 0, z = offset; i < nZ2; i += 2, z += nX*nY) {
+                    this.recip[index++] = recip[z];
+                }
+            }
+        }
+    }
+
+    public void convolution(final double input[]) {
+        int x, y, z, i, index, stride, offset;
         for (z = 0; z < nZ; z++) {
             for (offset = z * nextZ, stride = nextX, y = 0; y < nY; y++, offset += nextY) {
                 fftX.fft(input, offset, stride);

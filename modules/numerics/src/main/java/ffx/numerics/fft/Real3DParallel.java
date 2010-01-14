@@ -45,6 +45,7 @@ public class Real3DParallel {
     private final ParallelIFFT parallelIFFT;
     private final ParallelFFT parallelFFT;
     private final ParallelConvolution parallelConvolution;
+    private final double recip[];
     private final IntegerSchedule schedule;
 
     /**
@@ -69,6 +70,7 @@ public class Real3DParallel {
         nextX = 2;
         nextY = n + 2;
         nextZ = nextY * nY;
+        recip = new double[nX1 * nY * nZ];
         threadCount = parallelTeam.getThreadCount();
         parallelFFT = new ParallelFFT();
         parallelIFFT = new ParallelIFFT();
@@ -118,19 +120,38 @@ public class Real3DParallel {
      * Compute a convolution in parallel.
      *
      * @param input The input array must be of size (nX + 2) * nY * nZ.
-     * @param recip The recip array must be of size [(nX + 2) * nY * nZ]/2.
      * 
      * @since 1.0
      */
-    public void convolution(final double input[], final double recip[]) {
+    public void convolution(final double input[]) {
         parallelConvolution.input = input;
-        parallelConvolution.recip = recip;
         try {
             parallelTeam.execute(parallelConvolution);
         } catch (Exception e) {
             String message = "Fatal exception evaluating a 3D convolution in parallel.\n";
             logger.log(Level.SEVERE, message, e);
             System.exit(-1);
+        }
+    }
+
+    /**
+     * @param recip The recip array must be of size [(nX/2 + 1) * nY * nZ].
+     */
+    public void setRecip(double recip[]) {
+        int offset, y, x, z, i;
+
+        /**
+         * Reorder the reciprocal space data into the order it is needed
+         * by the convolution routine.
+         */
+        int index = 0;
+        for (index = 0, offset = 0, y = 0; y < nY; y++) {
+            for (x = 0; x < nX1; x++, offset += 1) {
+                for (i = 0, z = offset; i < nZ; i++, z += nX1 * nY) {
+                    this.recip[index++] = recip[z];
+
+                }
+            }
         }
     }
 
@@ -330,7 +351,6 @@ public class Real3DParallel {
     private class ParallelConvolution extends ParallelRegion {
 
         public double input[];
-        public double recip[];
         private final int nZm1, nYm1, nX1nZ;
         private final FFTXYLoop fftXYLoop[];
         private final FFTZ_Multiply_IFFTZLoop fftZ_Multiply_ifftZLoop[];
@@ -355,7 +375,6 @@ public class Real3DParallel {
             int threadIndex = getThreadIndex();
             fftXYLoop[threadIndex].input = input;
             fftZ_Multiply_ifftZLoop[threadIndex].input = input;
-            fftZ_Multiply_ifftZLoop[threadIndex].recip = recip;
             ifftXYLoop[threadIndex].input = input;
             try {
                 execute(0, nZm1, fftXYLoop[threadIndex]);
@@ -395,7 +414,6 @@ public class Real3DParallel {
 
             private int offset, x, y, z, i, j;
             public double input[];
-            public double recip[];
             private final double work[] = new double[nZ2];
             private final Complex fft = new Complex(nZ);
 
@@ -536,6 +554,8 @@ public class Real3DParallel {
         double toSeconds = 0.000000001;
         long parTime = Long.MAX_VALUE;
         long seqTime = Long.MAX_VALUE;
+        real3D.setRecip(work);
+        real3DParallel.setRecip(work);
         for (int i = 0; i < reps; i++) {
             System.out.println(String.format("Iteration %d", i + 1));
             long time = System.nanoTime();
@@ -548,7 +568,7 @@ public class Real3DParallel {
                 seqTime = time;
             }
             time = System.nanoTime();
-            real3D.convolution(data, work);
+            real3D.convolution(data);
             time = (System.nanoTime() - time);
             System.out.println(String.format("Sequential: %8.3f (Convolution)",
                     toSeconds * time));
@@ -565,7 +585,7 @@ public class Real3DParallel {
                 parTime = time;
             }
             time = System.nanoTime();
-            real3DParallel.convolution(data, work);
+            real3DParallel.convolution(data);
             time = (System.nanoTime() - time);
             System.out.println(String.format(
                     "Parallel:   %8.3f (Convolution)\n", toSeconds * time));

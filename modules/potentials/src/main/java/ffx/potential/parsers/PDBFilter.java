@@ -20,7 +20,6 @@
  */
 package ffx.potential.parsers;
 
-import ffx.potential.parsers.PDBFilter.ResiduePosition;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -31,7 +30,9 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Vector;
+import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Hashtable;
 
 import static ffx.potential.parsers.INTFilter.intxyz;
 import static ffx.potential.parsers.PDBFilter.ResiduePosition.FIRST_RESIDUE;
@@ -48,17 +49,23 @@ import ffx.potential.bonded.Molecule;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.BioType;
-import java.util.logging.Level;
+import ffx.potential.parsers.PDBFilter.ResiduePosition;
+import ffx.utilities.Keyword;
 
 /**
  * The PDBFilter class parses data from a Protein DataBank (*.PDB) file. The
- * following records are recognized: HEADER, ATOM, HETATM, LINK, SSBOND, HELIX,
- * SHEET, TURN. The rest are ignored.
+ * following records are recognized: ANISOU, ATOM, CONECT, CRYST1, HELIX,
+ * HETATM, LINK, SHEET, SSBOND, TURN, REMARK. The rest are ignored.
  */
 public final class PDBFilter extends SystemFilter {
 
     private static final Logger log = Logger.getLogger(PDBFilter.class.getName());
     private String pdbURL = null;
+    /**
+     * This is sm
+     */
+    private Vector<Character> altLocs = new Vector<Character>();
+    private Hashtable<Integer, Atom> atoms = new Hashtable<Integer, Atom>();
 
     /**
      * Default Constructor
@@ -68,7 +75,7 @@ public final class PDBFilter extends SystemFilter {
     }
 
     /**
-     * Parse the PDB File form a local disk
+     * Parse the PDB File from a local disk
      */
     public PDBFilter(MolecularAssembly f) {
         super(f);
@@ -84,7 +91,7 @@ public final class PDBFilter extends SystemFilter {
 
     private enum Card {
 
-        ATOM, HETATM, CONECT, SSBOND, LINK, HELIX, SHEET, TURN, REMARK
+        ANISOU, ATOM, CONECT, CRYST1, HELIX, HETATM, LINK, SHEET, SSBOND, TURN, REMARK
     };
 
     /**
@@ -107,7 +114,7 @@ public final class PDBFilter extends SystemFilter {
                 FileReader fr = new FileReader(pdbFile);
                 br = new BufferedReader(fr);
                 if (log.isLoggable(Level.INFO)) {
-                    log.info("  Opening " + pdbFile.getName());
+                    log.info(" Opening " + pdbFile.getName());
                 }
             } else {
                 try {
@@ -139,8 +146,8 @@ public final class PDBFilter extends SystemFilter {
                 }
             }
             // First atom is #1, to match xyz file format
-            int atomnum = 1;
-            boolean useSegID = true;
+            int xyzIndex = 1;
+            boolean useSegID = false;
             String[] connect;
             ArrayList<String[]> links = new ArrayList<String[]>();
             Vector<String[]> structs = new Vector<String[]>();
@@ -148,96 +155,212 @@ public final class PDBFilter extends SystemFilter {
             Polymer polymer = null;
             Molecule molecule = null;
             // While the END parameter is not read in, load atoms
-            String rawdata = br.readLine();
-            while ((rawdata != null) && (!rawdata.startsWith("END"))) {
-                int len = rawdata.length();
+            String pdbLine = br.readLine();
+            while ((pdbLine != null) && (!pdbLine.startsWith("END"))) {
+                int len = pdbLine.length();
                 if (len > 4) {
                     len = 4;
                 }
-                String identity = rawdata.substring(0, len).trim().toUpperCase().intern();
+                String identity = pdbLine.substring(0, len).trim().toUpperCase().intern();
                 Card card = null;
-                for (Card c : Card.values()) {
-                    if (c.toString().startsWith(identity)) {
-                        card = c;
-                        break;
-                    }
-                }
-                if (card == null) {
+                try {
+                    card = Card.valueOf(identity);
+                } catch (Exception e) {
                     card = Card.REMARK;
                 }
                 switch (card) {
+                    case ANISOU:
+// =============================================================================
+//  1 - 6        Record name   "ANISOU"
+//  7 - 11       Integer       serial         Atom serial number.
+// 13 - 16       Atom          name           Atom name.
+// 17            Character     altLoc         Alternate location indicator
+// 18 - 20       Residue name  resName        Residue name.
+// 22            Character     chainID        Chain identifier.
+// 23 - 26       Integer       resSeq         Residue sequence number.
+// 27            AChar         iCode          Insertion code.
+// 29 - 35       Integer       u[0][0]        U(1,1)
+// 36 - 42       Integer       u[1][1]        U(2,2)
+// 43 - 49       Integer       u[2][2]        U(3,3)
+// 50 - 56       Integer       u[0][1]        U(1,2)
+// 57 - 63       Integer       u[0][2]        U(1,3)
+// 64 - 70       Integer       u[1][2]        U(2,3)
+// 77 - 78       LString(2)    element        Element symbol, right-justified.
+// 79 - 80       LString(2)    charge         Charge on the atom.
+// =============================================================================
+                        Integer serial = new Integer(pdbLine.substring(6, 11).trim());
+                        String name = pdbLine.substring(12, 16).trim().intern();
+                        Character altLoc = new Character(pdbLine.substring(16, 17).toUpperCase().charAt(0));
+                        String resName = pdbLine.substring(17, 20).trim().intern();
+                        String chainID = null;
+                        if (!useSegID) {
+                            chainID = pdbLine.substring(21, 22).intern();
+                        } else {
+                            chainID = pdbLine.substring(72, 76).intern();
+                        }
+                        if (chainID.equalsIgnoreCase(" ")) {
+                            chainID = "Blank".intern();
+                        }
+                        int resSeq = Integer.decode(pdbLine.substring(22, 26).trim()).intValue();
+                        int adp[] = new int[6];
+                        adp[0] = new Integer(pdbLine.substring(28, 35).trim());
+                        adp[1] = new Integer(pdbLine.substring(35, 42).trim());
+                        adp[2] = new Integer(pdbLine.substring(42, 49).trim());
+                        adp[3] = new Integer(pdbLine.substring(49, 56).trim());
+                        adp[4] = new Integer(pdbLine.substring(56, 63).trim());
+                        adp[5] = new Integer(pdbLine.substring(63, 70).trim());
+                        if (atoms.containsKey(serial)) {
+                            Atom a = atoms.get(serial);
+                            a.setAltLoc(altLoc);
+                            a.setAnisou(adp);
+                        } else {
+                            Atom a = new Atom(xyzIndex++, name, altLoc, null, resName, resSeq, chainID, 1.0, 15.0);
+                            a.setAnisou(adp);
+                            atoms.put(serial, a);
+                            molecularAssembly.addMSNode(a);
+                        }
+                        break;
                     case ATOM:
-                        String altloc = rawdata.substring(16, 17).toUpperCase();
-                        if (altloc.equals(" ") || altloc.equals("A")) {
-                            String type = rawdata.substring(12, 16).trim().intern();
-                            String residueType = rawdata.substring(17, 20).trim().intern();
-                            int residueNum = Integer.decode(rawdata.substring(22, 26).trim()).intValue();
-                            String polymerType = null;
-                            if (!useSegID) {
-                                polymerType = rawdata.substring(21, 22).intern();
-                            } else {
-                                polymerType = rawdata.substring(72, 76).intern();
-                            }
-                            if (polymerType.equalsIgnoreCase(" ")) {
-                                polymerType = "Blank".intern();
-                            }
-                            double d[] = new double[3];
-                            d[0] = Double.valueOf(rawdata.substring(30, 38).trim()).doubleValue();
-                            d[1] = Double.valueOf(rawdata.substring(38, 46).trim()).doubleValue();
-                            d[2] = Double.valueOf(rawdata.substring(46, 54).trim()).doubleValue();
-                            Atom a = new Atom(atomnum++, type, null, d, residueType, residueNum, polymerType);
-                            if (residue != null && polymer != null && residue.getResidueNumber() == residueNum && residue.getName() == residueType && polymer.getName() == polymerType) {
-                                residue.addMSNode(a);
-                            } else {
-                                molecularAssembly.addMSNode(a);
-                                residue = (Residue) a.getMSNode(Residue.class);
-                                polymer = (Polymer) a.getMSNode(Polymer.class);
-                            }
+// =============================================================================
+//  1 -  6        Record name   "ATOM  "
+//  7 - 11        Integer       serial       Atom serial number.
+// 13 - 16        Atom          name         Atom name.
+// 17             Character     altLoc       Alternate location indicator.
+// 18 - 20        Residue name  resName      Residue name.
+// 22             Character     chainID      Chain identifier.
+// 23 - 26        Integer       resSeq       Residue sequence number.
+// 27             AChar         iCode        Code for insertion of residues.
+// 31 - 38        Real(8.3)     x            Orthogonal coordinates for X in Angstroms.
+// 39 - 46        Real(8.3)     y            Orthogonal coordinates for Y in Angstroms.
+// 47 - 54        Real(8.3)     z            Orthogonal coordinates for Z in Angstroms.
+// 55 - 60        Real(6.2)     occupancy    Occupancy.
+// 61 - 66        Real(6.2)     tempFactor   Temperature factor.
+// 77 - 78        LString(2)    element      Element symbol, right-justified.
+// 79 - 80        LString(2)    charge       Charge  on the atom.
+// =============================================================================
+                        serial = new Integer(pdbLine.substring(6, 11).trim());
+                        name = pdbLine.substring(12, 16).trim().intern();
+                        altLoc = new Character(pdbLine.substring(16, 17).toUpperCase().charAt(0));
+                        resName = pdbLine.substring(17, 20).trim().intern();
+                        chainID = null;
+                        if (!useSegID) {
+                            chainID = pdbLine.substring(21, 22).intern();
+                        } else {
+                            chainID = pdbLine.substring(72, 76).intern();
+                        }
+                        if (chainID.equalsIgnoreCase(" ")) {
+                            chainID = "Blank".intern();
+                        }
+                        resSeq = new Integer(pdbLine.substring(22, 26).trim());
+                        double d[] = new double[3];
+                        d[0] = new Double(pdbLine.substring(30, 38).trim());
+                        d[1] = new Double(pdbLine.substring(38, 46).trim());
+                        d[2] = new Double(pdbLine.substring(46, 54).trim());
+                        double occupancy = new Double(pdbLine.substring(54, 60).trim());
+                        double tempFactor = new Double(pdbLine.substring(60, 66).trim());
+                        if (atoms.containsKey(serial)) {
+                            Atom a = atoms.get(serial);
+                            a.addAltLoc(altLoc, d, occupancy, tempFactor);
+                            continue;
+                        }
+                        Atom a = new Atom(0, name, altLoc, d, resName, resSeq, chainID, occupancy, tempFactor);
+                        Atom prev = (Atom) molecularAssembly.contains(a);
+                        if (prev != null) {
+                            prev.addAltLoc(altLoc, d, occupancy, tempFactor);
+                        } else {
+                            a.setXYZIndex(xyzIndex++);
+                            atoms.put(serial, a);
+                            molecularAssembly.addMSNode(a);
                         }
                         break;
                     case HETATM:
-                        altloc = rawdata.substring(16, 17).toUpperCase();
-                        if (altloc.equals(" ") || altloc.equals("A")) {
-                            String type = rawdata.substring(12, 16).trim().intern();
-                            String residueType = rawdata.substring(17, 20).trim().intern();
-                            int residueNum = Integer.decode(rawdata.substring(22, 26).trim()).intValue();
-                            String polymerType = null;
-                            if (!useSegID) {
-                                polymerType = rawdata.substring(21, 22).intern();
-                            } else {
-                                polymerType = rawdata.substring(72, 76).intern();
-                            }
-                            if (polymerType.equalsIgnoreCase(" ")) {
-                                polymerType = "Blank".intern();
-                            }
-                            double d[] = new double[3];
-                            d[0] = Double.valueOf(rawdata.substring(30, 38).trim()).doubleValue();
-                            d[1] = Double.valueOf(rawdata.substring(38, 46).trim()).doubleValue();
-                            d[2] = Double.valueOf(rawdata.substring(46, 54).trim()).doubleValue();
-                            Atom a = new Atom(atomnum++, type, null, d, residueType, residueNum, polymerType);
-                            if (molecule != null && molecule.getResidueNumber() == residueNum && molecule.getName() == residueType && molecule.getPolymerName() == polymerType) {
-                                molecule.addMSNode(a);
-                            } else {
-                                molecule = new Molecule(residueType, residueNum, polymerType);
-                                molecule.addMSNode(a);
-                                molecularAssembly.addMSNode(molecule);
-                            }
+// =============================================================================
+//  1 - 6        Record name    "HETATM"
+//  7 - 11       Integer        serial        Atom serial number.
+// 13 - 16       Atom           name          Atom name.
+// 17            Character      altLoc        Alternate location indicator.
+// 18 - 20       Residue name   resName       Residue name.
+// 22            Character      chainID       Chain identifier.
+// 23 - 26       Integer        resSeq        Residue sequence number.
+// 27            AChar          iCode         Code for insertion of residues.
+// 31 - 38       Real(8.3)      x             Orthogonal coordinates for X.
+// 39 - 46       Real(8.3)      y             Orthogonal coordinates for Y.
+// 47 - 54       Real(8.3)      z             Orthogonal coordinates for Z.
+// 55 - 60       Real(6.2)      occupancy     Occupancy.
+// 61 - 66       Real(6.2)      tempFactor    Temperature factor.
+// 77 - 78       LString(2)     element       Element symbol; right-justified.
+// 79 - 80       LString(2)     charge        Charge on the atom.
+// =============================================================================
+                        serial = new Integer(pdbLine.substring(6, 11).trim());
+                        name = pdbLine.substring(12, 16).trim().intern();
+                        altLoc = new Character(pdbLine.substring(16, 17).toUpperCase().charAt(0));
+                        resName = pdbLine.substring(17, 20).trim().intern();
+                        chainID = null;
+                        if (!useSegID) {
+                            chainID = pdbLine.substring(21, 22).intern();
+                        } else {
+                            chainID = pdbLine.substring(72, 76).intern();
+                        }
+                        if (chainID.equalsIgnoreCase(" ")) {
+                            chainID = "Blank".intern();
+                        }
+                        resSeq = new Integer(pdbLine.substring(22, 26).trim());
+                        d = new double[3];
+                        d[0] = new Double(pdbLine.substring(30, 38).trim());
+                        d[1] = new Double(pdbLine.substring(38, 46).trim());
+                        d[2] = new Double(pdbLine.substring(46, 54).trim());
+                        occupancy = new Double(pdbLine.substring(54, 60).trim());
+                        tempFactor = new Double(pdbLine.substring(60, 66).trim());
+                        if (atoms.containsKey(serial)) {
+                            a = atoms.get(serial);
+                            a.addAltLoc(altLoc, d, occupancy, tempFactor);
+                            continue;
+                        }
+                        a = new Atom(0, name, altLoc, d, resName, resSeq, chainID, occupancy, tempFactor);
+                        prev = (Atom) molecularAssembly.contains(a);
+                        if (prev != null) {
+                            prev.addAltLoc(altLoc, d, occupancy, tempFactor);
+                            continue;
+                        }
+                        a.setXYZIndex(xyzIndex++);
+                        atoms.put(serial, a);
+                        if (molecule != null && molecule.getResidueNumber() == resSeq && molecule.getName() == resName && molecule.getPolymerName() == chainID) {
+                            molecule.addMSNode(a);
+                        } else {
+                            molecule = new Molecule(resName, resSeq, chainID);
+                            molecule.addMSNode(a);
+                            molecularAssembly.addMSNode(molecule);
                         }
                         break;
                     case CONECT:
                         connect = new String[2];
-                        connect[0] = rawdata.substring(7, 11).trim();
-                        connect[1] = rawdata.substring(12, 16).trim();
+                        connect[0] = pdbLine.substring(7, 11).trim();
+                        connect[1] = pdbLine.substring(12, 16).trim();
                         links.add(connect);
                         break;
+                    case CRYST1:
+// =============================================================================
+//  7 - 15       Real(9.3)     a              a (Angstroms).
+// 16 - 24       Real(9.3)     b              b (Angstroms).
+// 25 - 33       Real(9.3)     c              c (Angstroms).
+// 34 - 40       Real(7.2)     alpha          alpha (degrees).
+// 41 - 47       Real(7.2)     beta           beta (degrees).
+// 48 - 54       Real(7.2)     gamma          gamma (degrees).
+// 56 - 66       LString       sGroup         Space  group.
+// 67 - 70       Integer       z              Z value.
+// =============================================================================
+                        String key = "CRYST1";
+                        String value = pdbLine.substring(6, 70);
+                        Keyword keyword = new Keyword(key, value);
+                        keywordHash.put(key, keyword);
                     case SSBOND:
                         connect = new String[6];
-                        connect[0] = rawdata.substring(15, 16);
+                        connect[0] = pdbLine.substring(15, 16);
                         // Polymers
-                        connect[1] = rawdata.substring(29, 30);
-                        connect[2] = rawdata.substring(17, 21).trim();
+                        connect[1] = pdbLine.substring(29, 30);
+                        connect[2] = pdbLine.substring(17, 21).trim();
                         // Residues
-                        connect[3] = rawdata.substring(31, 35).trim();
+                        connect[3] = pdbLine.substring(31, 35).trim();
                         connect[4] = new String("SG");
                         // Atoms
                         connect[5] = new String("SG");
@@ -245,44 +368,44 @@ public final class PDBFilter extends SystemFilter {
                         break;
                     case LINK:
                         connect = new String[6];
-                        connect[0] = rawdata.substring(21, 22);
+                        connect[0] = pdbLine.substring(21, 22);
                         // Polymers
-                        connect[1] = rawdata.substring(51, 52);
-                        connect[2] = rawdata.substring(22, 26).trim();
+                        connect[1] = pdbLine.substring(51, 52);
+                        connect[2] = pdbLine.substring(22, 26).trim();
                         // Residues
-                        connect[3] = rawdata.substring(52, 56).trim();
-                        connect[4] = rawdata.substring(12, 16).trim();
+                        connect[3] = pdbLine.substring(52, 56).trim();
+                        connect[4] = pdbLine.substring(12, 16).trim();
                         // Atoms
-                        connect[5] = rawdata.substring(42, 46).trim();
+                        connect[5] = pdbLine.substring(42, 46).trim();
                         links.add(connect);
                         break;
                     case HELIX:
                         String[] struct = new String[6];
-                        struct[0] = rawdata.substring(0, 6).trim(); // HELIX
-                        struct[1] = rawdata.substring(19, 20); // Polymers
-                        struct[2] = rawdata.substring(31, 32);
-                        struct[3] = rawdata.substring(21, 25).trim(); // Residue
-                        struct[4] = rawdata.substring(33, 37).trim();
-                        struct[5] = rawdata.substring(38, 40).trim();
+                        struct[0] = pdbLine.substring(0, 6).trim(); // HELIX
+                        struct[1] = pdbLine.substring(19, 20); // Polymers
+                        struct[2] = pdbLine.substring(31, 32);
+                        struct[3] = pdbLine.substring(21, 25).trim(); // Residue
+                        struct[4] = pdbLine.substring(33, 37).trim();
+                        struct[5] = pdbLine.substring(38, 40).trim();
                         structs.add(struct);
                         break;
                     case SHEET:
                         struct = new String[6];
-                        struct[0] = rawdata.substring(0, 6).trim(); // SHEET
-                        struct[1] = rawdata.substring(21, 22); // Polymers
-                        struct[2] = rawdata.substring(32, 33);
-                        struct[3] = rawdata.substring(22, 26).trim(); // Residue
-                        struct[4] = rawdata.substring(33, 37).trim();
-                        struct[5] = rawdata.substring(38, 40).trim(); // Strand
+                        struct[0] = pdbLine.substring(0, 6).trim(); // SHEET
+                        struct[1] = pdbLine.substring(21, 22); // Polymers
+                        struct[2] = pdbLine.substring(32, 33);
+                        struct[3] = pdbLine.substring(22, 26).trim(); // Residue
+                        struct[4] = pdbLine.substring(33, 37).trim();
+                        struct[5] = pdbLine.substring(38, 40).trim(); // Strand
                         structs.add(struct);
                         break;
                     case TURN:
                         struct = new String[6];
-                        struct[0] = rawdata.substring(0, 6).trim(); // TURN
-                        struct[1] = rawdata.substring(19, 20); // Polymers
-                        struct[2] = rawdata.substring(30, 31);
-                        struct[3] = rawdata.substring(20, 24).trim(); // Residue
-                        struct[4] = rawdata.substring(31, 35).trim();
+                        struct[0] = pdbLine.substring(0, 6).trim(); // TURN
+                        struct[1] = pdbLine.substring(19, 20); // Polymers
+                        struct[2] = pdbLine.substring(30, 31);
+                        struct[3] = pdbLine.substring(20, 24).trim(); // Residue
+                        struct[4] = pdbLine.substring(31, 35).trim();
                         structs.add(struct);
                         break;
                     default:
@@ -292,19 +415,19 @@ public final class PDBFilter extends SystemFilter {
                         break;
                 }
                 if (bw != null) {
-                    bw.write(rawdata);
+                    bw.write(pdbLine);
                     bw.newLine();
                 }
-                rawdata = br.readLine();
+                pdbLine = br.readLine();
             }
             if (bw != null) {
                 bw.flush();
                 bw.close();
             }
             br.close();
-            atomnum--;
+            xyzIndex--;
             if (log.isLoggable(Level.INFO)) {
-                log.info(" Read " + atomnum + " atoms");
+                log.info(" Read " + xyzIndex + " atoms");
             }
             // Assign Secondary Structure Based on PDB Info
             for (String[] s : structs) {
@@ -393,20 +516,12 @@ public final class PDBFilter extends SystemFilter {
 
     public void renumberAtoms() {
         int index = 1;
-        String[] chainNames = molecularAssembly.getChainNames();
-        for (String chain : chainNames) {
-            Polymer polymer = molecularAssembly.getPolymer(chain, false);
-            ArrayList<Residue> residues = polymer.getResidues();
-            for (Residue residue : residues) {
-                ArrayList<Atom> atoms = residue.getAtomList();
-                for (Atom a : atoms) {
-                    a.xyzindex = index++;
-                }
-            }
+        for (Atom a : molecularAssembly.getAtomList()) {
+            a.xyzIndex = index++;
         }
         index--;
         if (log.isLoggable(Level.INFO)) {
-            log.info(String.format("Total number of atoms: %d", index));
+            log.info(String.format(" Total number of atoms: %d", index));
         }
     }
 
@@ -462,7 +577,7 @@ public final class PDBFilter extends SystemFilter {
                 try {
                     assignAminoAcidAtomTypes(residues);
                     if (log.isLoggable(Level.INFO)) {
-                        log.info("Atom type assignment completed for amino acid chain " + chain + ".");
+                        log.info(" Atom type assignment completed for amino acid chain " + chain + ".");
                     }
                 } catch (MissingHeavyAtomException missingHeavyAtomException) {
                     log.severe(missingHeavyAtomException.toString());

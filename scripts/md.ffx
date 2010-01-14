@@ -1,5 +1,7 @@
 
-open "examples/3DB3.P62.xyz"
+System.setProperty("pj.nt","2");
+
+open "examples/dhfr.xyz"
 
 // Compute the initial energy
 println energy()

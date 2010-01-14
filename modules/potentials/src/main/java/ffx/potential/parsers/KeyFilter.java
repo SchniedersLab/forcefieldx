@@ -27,7 +27,7 @@ import java.io.IOException;
 import java.util.Hashtable;
 import java.util.logging.Logger;
 
-import ffx.potential.parameters.Keyword;
+import ffx.utilities.Keyword;
 
 /**
  * The KeyFilter class parses TINKER Keyword (*.KEY) files.
@@ -36,11 +36,37 @@ public class KeyFilter {
 
     private static final Logger logger = Logger.getLogger(KeyFilter.class.getName());
 
+    public static Hashtable<String, Keyword> loadSystemKeywords() {
+        File f = new File("/etc/ffx.conf");
+        Hashtable<String, Keyword> systemKeywords = new Hashtable<String, Keyword>();
+        if (f.exists() && f.canRead()) {
+            logger.info("Reading /etc/ffx.conf");
+            systemKeywords = KeyFilter.open(f, systemKeywords);
+        }
+        String path = System.getProperty("user.home") + File.separator + ".ffx/ffx.conf";
+        f = new File(path);
+        if (f.exists() && f.canRead()) {
+            logger.info("Reading " + path);
+            systemKeywords = KeyFilter.open(f, systemKeywords);
+        }
+        return systemKeywords;
+    }
+
     public static Hashtable<String, Keyword> open(File keyFile) {
         if (keyFile == null || !keyFile.exists() || !keyFile.canRead()) {
             return null;
         }
-        Hashtable<String, Keyword> keywordHash = new Hashtable<String, Keyword>();
+        Hashtable<String, Keyword> keywordHash = loadSystemKeywords();
+        return open(keyFile, keywordHash);
+    }
+
+    public static Hashtable<String, Keyword> open(File keyFile, Hashtable<String, Keyword> keywordHash) {
+        if (keyFile == null || !keyFile.exists() || !keyFile.canRead()) {
+            return null;
+        }
+        if (keywordHash == null) {
+            keywordHash = new Hashtable<String, Keyword>();
+        }
         FileReader fr = null;
         BufferedReader br = null;
         try {

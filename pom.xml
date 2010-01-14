@@ -101,6 +101,7 @@
         <module>modules/numerics</module>
         <module>modules/potentials</module>
         <module>modules/ui</module>
+        <module>modules/utilities</module>
         <module>modules/xray</module>
     </modules>
 
@@ -185,7 +186,7 @@
                         <argument>-Dj3d.rend=jogl</argument>
                         <argument>-Djava.library.path=bin/${platform}/jogl-${bit}</argument>
                         <argument>-classpath</argument>
-                        <argument>modules/ui/target/site/ffx-all-${version}.jar</argument>
+                        <argument>lib/com/kenai/ffx/ui/${version}/ui-${version}-all.jar</argument>
                         <argument>ffx.Main</argument>
                         <!-- argument>scripts/md.ffx</argument -->
                     </arguments>
@@ -197,15 +198,11 @@
                 <configuration>
 		    <systemProperties>
 		      <property>
-			<name>java.library.path</name>
-			<value>${parent.project.basedir}/bin/${platform}/jogl-${bit}</value>
-		      </property>
-		      <property>
 			<name>j3d.rend</name>
 			<value>jogl</value>
 		      </property>
 		    </systemProperties>
-                    <argLine>-ms1G -mx1G</argLine>
+                    <argLine>-ms1G -mx1G -Djava.library.path=${basedir}/../../bin/${platform}/jogl-${bit}:${basedir}/../../bin/${platform}/jocl-${bit}</argLine>
                 </configuration>
             </plugin>
         </plugins>

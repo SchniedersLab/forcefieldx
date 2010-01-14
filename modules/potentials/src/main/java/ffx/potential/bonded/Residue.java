@@ -39,7 +39,7 @@ import javax.vecmath.Vector3d;
  */
 public class Residue extends MSGroup {
 
-    private Logger logger = Logger.getLogger("ffx");
+    private Logger logger = Logger.getLogger(ffx.potential.bonded.Residue.class.getName());
 
     public enum AA {
 

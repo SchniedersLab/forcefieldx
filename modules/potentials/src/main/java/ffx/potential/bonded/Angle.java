@@ -120,7 +120,7 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
         Atom a3 = b2.get1_2(a2);
         atoms = new Atom[3];
         atoms[1] = a2;
-        if (a1.xyzindex < a3.xyzindex) {
+        if (a1.xyzIndex < a3.xyzIndex) {
             atoms[0] = a1;
             atoms[2] = a3;
         } else {
@@ -424,24 +424,24 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
         if (a == this) {
             return 0;
         }
-        int this1 = atoms[1].xyzindex;
-        int a1 = a.atoms[1].xyzindex;
+        int this1 = atoms[1].xyzIndex;
+        int a1 = a.atoms[1].xyzIndex;
         if (this1 < a1) {
             return -1;
         }
         if (this1 > a1) {
             return 1;
         }
-        int this0 = atoms[0].xyzindex;
-        int a0 = a.atoms[0].xyzindex;
+        int this0 = atoms[0].xyzIndex;
+        int a0 = a.atoms[0].xyzIndex;
         if (this0 < a0) {
             return -1;
         }
         if (this0 > a0) {
             return 1;
         }
-        int this2 = atoms[2].xyzindex;
-        int a2 = a.atoms[2].xyzindex;
+        int this2 = atoms[2].xyzIndex;
+        int a2 = a.atoms[2].xyzIndex;
         if (this2 < a2) {
             return -1;
         }

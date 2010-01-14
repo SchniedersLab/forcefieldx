@@ -67,7 +67,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import ffx.ui.commands.DTDResolver;
-import ffx.potential.parameters.Keyword;
+import ffx.utilities.Keyword;
 import ffx.potential.parsers.KeyFileFilter;
 import ffx.potential.parsers.KeyFilter;
 

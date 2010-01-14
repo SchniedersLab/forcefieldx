@@ -120,7 +120,8 @@ public class Real3DParallelTest {
     @Test
     public void testConvolution() {
         Real3DParallel real3D = new Real3DParallel(nx, ny, nz, parallelTeam);
-        real3D.convolution(data, recip);
+        real3D.setRecip(recip);
+        real3D.convolution(data);
         int paddedIndex = 0;
         int index = 0;
         for (int z = 0; z < nz; z++) {

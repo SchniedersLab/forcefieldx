@@ -30,7 +30,7 @@ import ffx.ui.commands.TinkerUpdate;
 
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.Atom;
-import ffx.potential.parameters.Keyword;
+import ffx.utilities.Keyword;
 
 /**
  * The FFXSystem class contains extensions to the generic

@@ -301,7 +301,7 @@ public class Complex {
                             product);
                     break;
                 default:
-                    // passOddN agrees with pass{3 and 5}
+                    // passOddN agrees with pass{3, 5 and 7}
                     passOdd(i, in, inStart, inStride, out, outStart, outStride,
                             sign, factor, product);
             }

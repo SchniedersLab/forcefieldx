@@ -45,6 +45,7 @@
             <item name="Numerics" href="modules/numerics/index.html"/>
             <item name="Potentials" href="modules/potentials/index.html"/>
             <item name="User Interfaces" href="modules/ui/index.html"/>
+            <item name="Utilities" href="modules/utilities/index.html"/>
             <item name="X-Ray Refinement" href="modules/xray/index.html"/>
         </menu>
 

@@ -87,11 +87,11 @@ public class AtomTest {
     public void Atom_constructor4() {
         int xyznum = 0;
         String id = "O";
-        AtomType mmdata = null;
+        Character altLoc = 'A';
         String r = "GLY";
         int n = 1;
         String c = "A";
-        Atom actualReturn = new Atom(xyznum, id, mmdata, d, r, n, c);
+        Atom actualReturn = new Atom(xyznum, xyznum, id, altLoc, d, r, n, c, 0.0, 0.0);
         assertEquals("return value", "GLY", actualReturn.getResidueName());
     }
 
@@ -149,7 +149,7 @@ public class AtomTest {
 
     @Before
     public void setUp() {
-        atom = new Atom(1, "C", null, d, "GLY", 1, "A");
+        atom = new Atom(1, 1, "C", 'A', d, "GLY", 1, "A", 0.0, 0.0);
         atom2 = new Atom("C");
         atom3 = new Atom("O");
         b = new Bond(atom, atom2);

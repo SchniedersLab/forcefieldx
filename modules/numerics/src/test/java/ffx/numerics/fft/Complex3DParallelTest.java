@@ -111,7 +111,8 @@ public class Complex3DParallelTest {
     @Test
     public void testConvolution() {
         Complex3DParallel complex3D = new Complex3DParallel(nx, ny, nz, parallelTeam);
-        complex3D.convolution(data, recip);
+        complex3D.setRecip(recip);
+        complex3D.convolution(data);
         for (int i = 0; i < tot; i++) {
             int index = i * 2;
             double actual = data[index] / tot;

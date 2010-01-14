@@ -14,6 +14,34 @@
     <packaging>jar</packaging>
     <name>Numerics</name>
 
+    <build>
+        <plugins>
+            <plugin>
+                <inherited>false</inherited>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <executable>java</executable>
+                    <arguments>
+                        <argument>-ms2G</argument>
+                        <argument>-mx2G</argument>
+                        <argument>-Djava.library.path=../../bin/${platform}/jocl-${bit}</argument>
+                        <argument>-classpath</argument>
+                        <argument>target/numerics-${version}.jar:${settings.localRepository}/edu/rit/pj/pj/1.0/pj-1.0.jar</argument>
+                        <argument>ffx.numerics.fft.Complex3DOpenCL</argument>
+                    </arguments>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
     <reporting>
         <plugins>
             <plugin>
@@ -47,5 +75,58 @@
             <version>1.0</version>
         </dependency>
     </dependencies>
+
+    <profiles>
+        <profile>
+            <id>Mac OS X</id>
+            <activation>
+                <os><family>mac</family></os>
+            </activation>
+            <properties>
+                <platform>macosx</platform>
+                <bit>64</bit>
+            </properties>
+        </profile>
+        <profile>
+            <id>Linux-32</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <platform>linux</platform>
+		<bit>32</bit>
+            </properties>
+        </profile>
+        <profile>
+            <id>Linux-64</id>
+            <activation>
+                <os><name>Linux</name><arch>x86_64</arch></os>
+            </activation>
+            <properties>
+                <platform>linux</platform>
+		<bit>64</bit>
+            </properties>
+        </profile>
+        <profile>
+            <id>Windows-32</id>
+            <activation>
+                <os><family>windows</family><arch>x86</arch></os>
+            </activation>
+            <properties>
+                <platform>windows</platform>
+		<bit>32</bit>
+            </properties>
+        </profile>
+        <profile>
+            <id>Windows-64</id>
+            <activation>
+                <os><family>windows</family><arch>x86_64</arch></os>
+            </activation>
+            <properties>
+                <platform>windows</platform>
+		<bit>64</bit>
+            </properties>
+        </profile>
+    </profiles>
 
 </project>

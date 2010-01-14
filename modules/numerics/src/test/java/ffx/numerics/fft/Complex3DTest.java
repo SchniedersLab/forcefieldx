@@ -101,7 +101,8 @@ public class Complex3DTest {
     @Test
     public void testConvolution() {
         Complex3D complex3D = new Complex3D(nx, ny, nz);
-        complex3D.convolution(data, recip);
+        complex3D.setRecip(recip);
+        complex3D.convolution(data);
         for (int i = 0; i < tot; i++) {
             int index = i * 2;
             double actual = data[index] / tot;

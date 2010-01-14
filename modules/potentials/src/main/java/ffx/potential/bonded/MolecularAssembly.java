@@ -513,6 +513,19 @@ public class MolecularAssembly extends MSGroup {
         return branchGroup;
     }
 
+    public Polymer getChain(String name) {
+        for (ListIterator li = getAtomNodeList().listIterator(); li.hasNext();) {
+            MSNode node = (MSNode) li.next();
+            if (node instanceof Polymer) {
+                String chainName = node.getName();
+                if (chainName.equalsIgnoreCase(name)) {
+                    return (Polymer) node;
+                }
+            }
+        }
+        return null;
+    }
+
     public String[] getChainNames() {
         ArrayList<String> temp = new ArrayList<String>();
         for (ListIterator li = getAtomNodeList().listIterator(); li.hasNext();) {
@@ -527,8 +540,7 @@ public class MolecularAssembly extends MSGroup {
         }
 
         String[] names = new String[temp.size()];
-        for (int i = 0; i
-                < temp.size(); i++) {
+        for (int i = 0; i < temp.size(); i++) {
             names[i] = temp.get(i);
         }
 

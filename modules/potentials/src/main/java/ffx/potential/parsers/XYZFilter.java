@@ -342,7 +342,7 @@ public class XYZFilter extends SystemFilter {
                     coords[i][2] = Double.parseDouble(tokens[4]);
                 }
                 for (Atom a : atomList) {
-                    int i = a.xyzindex - 1;
+                    int i = a.xyzIndex - 1;
                     Vector3d v3d = new Vector3d(coords[i][0], coords[i][1],
                             coords[i][2]);
                     a.addTrajectoryCoords(v3d, cycle);
@@ -390,7 +390,7 @@ public class XYZFilter extends SystemFilter {
                         "%6d  %3s%14.8f%14.8f%14.8f%6d", a.getXYZIndex(), a.getID(), a.getX() - offset.x, a.getY() - offset.y, a.getZ() - offset.z, a.getType()));
                 for (Bond b : a.getBonds()) {
                     a2 = b.get1_2(a);
-                    line.append(String.format("%6d", a2.xyzindex));
+                    line.append(String.format("%6d", a2.xyzIndex));
                 }
                 lines[a.getXYZIndex() - 1] = line.append("\n");
             }
@@ -453,7 +453,7 @@ public class XYZFilter extends SystemFilter {
                             xyz[1], xyz[2], type));
                     for (Bond b : a.getBonds()) {
                         a2 = b.get1_2(a);
-                        line.append(String.format("%7d", a2.xyzindex + indexOffset));
+                        line.append(String.format("%7d", a2.xyzIndex + indexOffset));
                     }
                     lines[index - 1] = line.append("\n");
                 }

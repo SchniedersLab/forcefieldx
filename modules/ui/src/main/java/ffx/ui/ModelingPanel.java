@@ -77,7 +77,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import ffx.ui.commands.DTDResolver;
-import ffx.potential.parameters.Keyword;
+import ffx.utilities.Keyword;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Utilities.FileType;
 import ffx.potential.parsers.SystemFilter;
@@ -548,7 +548,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
      */
     public FFXExec executeCommand() {
         FFXSystem s = mainPanel.getHierarchy().getActive();
-        String dir = MainPanel.getCWD().getAbsolutePath();
+        String dir = MainPanel.getPWD().getAbsolutePath();
         if (s != null) {
             File f = s.getFile();
             if (f != null) {
@@ -1441,10 +1441,10 @@ public class ModelingPanel extends JPanel implements ActionListener,
         if (activeSystem == null) {
             fileName = ((String) currentCommandBox.getSelectedItem()).toLowerCase()
                     + ".log";
-            currentLog = new File(MainPanel.getCWD() + File.separator
+            currentLog = new File(MainPanel.getPWD() + File.separator
                     + fileName);
             logDir = currentLog.getParentFile();
-            systemDir = MainPanel.getCWD();
+            systemDir = MainPanel.getPWD();
         } else {
             currentLog = activeSystem.getLogFile();
             fileName = currentLog.getName();

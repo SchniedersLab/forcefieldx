@@ -49,7 +49,7 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
-import ffx.potential.parameters.Keyword;
+import ffx.utilities.Keyword;
 
 /**
  * The KeywordComponent class is used to represent one TINKER keyword.

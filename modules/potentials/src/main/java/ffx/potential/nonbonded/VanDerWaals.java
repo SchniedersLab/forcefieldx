@@ -147,7 +147,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface {
         this.crystal = crystal;
         this.parallelTeam = parallelTeam;
         for (Atom ai : unOrderedAtoms) {
-            atoms[ai.xyzindex - 1] = ai;
+            atoms[ai.xyzIndex - 1] = ai;
         }
         nAtoms = atoms.length;
         nSymm = crystal.spaceGroup.symOps.size();
@@ -241,7 +241,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface {
                 Bond bond = bonds.get(0);
                 Atom heavyAtom = bond.get1_2(ai);
                 // Atom indexes start at 1
-                reductionIndex[i] = heavyAtom.xyzindex - 1;
+                reductionIndex[i] = heavyAtom.xyzIndex - 1;
                 reductionValue[i] = vdwType.reductionFactor;
             } else {
                 reductionIndex[i] = i;
@@ -250,7 +250,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface {
             bondMask[i] = new int[numBonds];
             for (int j = 0; j < numBonds; j++) {
                 Bond b = bonds.get(j);
-                bondMask[i][j] = b.get1_2(ai).xyzindex - 1;
+                bondMask[i][j] = b.get1_2(ai).xyzIndex - 1;
             }
 
             ArrayList<Angle> angles = ai.getAngles();
@@ -267,7 +267,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface {
             for (Angle a : angles) {
                 Atom ak = a.get1_3(ai);
                 if (ak != null) {
-                    angleMask[i][j++] = ak.xyzindex - 1;
+                    angleMask[i][j++] = ak.xyzIndex - 1;
                 }
             }
         }
@@ -523,8 +523,8 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface {
         int classi = atoms[i].getAtomType().atomClass;
         int classk = atoms[k].getAtomType().atomClass;
         logger.info(String.format("%s %6d-%s %6d-%s %10.4f  %10.4f  %10.4f",
-                "VDW", atoms[i].xyzindex, atoms[i].getAtomType().name,
-                atoms[k].xyzindex, atoms[k].getAtomType().name,
+                "VDW", atoms[i].xyzIndex, atoms[i].getAtomType().name,
+                atoms[k].xyzIndex, atoms[k].getAtomType().name,
                 radEps[classi][classk * 3 + RADMIN] / dhal, r, eij));
     }
 

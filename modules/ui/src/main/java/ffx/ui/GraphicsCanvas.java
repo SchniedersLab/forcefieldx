@@ -279,7 +279,7 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
         }
         fileChooser.setDialogTitle("Select Name for Screen Capture " + "("
                 + imageFormat + ")");
-        fileChooser.setCurrentDirectory(MainPanel.getCWD());
+        fileChooser.setCurrentDirectory(MainPanel.getPWD());
         int result = fileChooser.showSaveDialog(this);
         if (result == JFileChooser.APPROVE_OPTION) {
             imageName = fileChooser.getSelectedFile();

@@ -20,13 +20,11 @@
  */
 package ffx.algorithms;
 
-import static java.lang.Math.sqrt;
-
+import ffx.algorithms.Thermostat.Thermostats;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Random;
 
 import ffx.potential.PotentialEnergy;
 import ffx.potential.bonded.Atom;
@@ -42,14 +40,7 @@ import ffx.potential.bonded.MolecularAssembly;
 public class MolecularDynamics implements Terminatable {
 
     private static final Logger logger = Logger.getLogger(MolecularDynamics.class.getName());
-    /**
-     * Boltzmann constant in units of g*Ang**2/ps**2/mole/K
-     */
-    private static final double kB = 0.83144725;
-    /**
-     * Conversion from kcal/mole to g*Ang**2/ps**2.
-     */
-    private static final double convert = 4.1840e2;
+
     private final int n;
     private final int dof;
     private final double[] x;
@@ -59,7 +50,6 @@ public class MolecularDynamics implements Terminatable {
     private final double[] aPrevious;
     private final double[] grad;
     private final double[] mass;
-    private double targetTemp;
     private double currentTemp;
     private double kinetic;
     private double potential;
@@ -69,10 +59,12 @@ public class MolecularDynamics implements Terminatable {
     private final PotentialEnergy potentialEnergy;
     private final Atom atoms[];
     private AlgorithmListener algorithmListener;
+    private Thermostat thermostat;
     private boolean done;
     private boolean terminate;
 
-    public MolecularDynamics(MolecularAssembly assembly, AlgorithmListener listener) {
+    public MolecularDynamics(MolecularAssembly assembly, AlgorithmListener listener,
+            Thermostats requestedThermostat) {
         this.molecularAssembly = assembly;
         this.algorithmListener = listener;
         if (molecularAssembly.getPotentialEnergy() == null) {
@@ -94,6 +86,26 @@ public class MolecularDynamics implements Terminatable {
         a = new double[dof];
         aPrevious = new double[dof];
         grad = new double[dof];
+
+        if (requestedThermostat != null) {
+            switch (requestedThermostat) {
+                case ISOTHERMAL:
+                    thermostat = null;
+                    break;
+                case BERENDSEN:
+                    thermostat = new Berendsen(n, v, mass, 300.0);
+                    break;
+                case BUSSI:
+                default:
+                    thermostat = new Bussi(n, v, mass, 300.0);
+            }
+        } else {
+            thermostat = null;
+        }
+    }
+
+    public void setThermostat(Thermostat thermostat) {
+        this.thermostat = thermostat;
     }
 
     public void dynamic(final int nSteps, final double timeStep, final double printInterval,
@@ -113,11 +125,10 @@ public class MolecularDynamics implements Terminatable {
         /**
          * Set the target temperature.
          */
-        if (temperature > 0.0) {
-            targetTemp = temperature;
-        } else {
-            targetTemp = 0.0;
+        if (thermostat != null) {
+            thermostat.setTargetTemperature(temperature);
         }
+
 
         /**
          * Initialize atomic positions and masses.
@@ -133,19 +144,16 @@ public class MolecularDynamics implements Terminatable {
         }
 
         /**
-         * Initialize velocities.
+         * Initialize velocities and compute the kinetic energy.
          */
-        if (targetTemp != 0.0 && initVelocities) {
-            maxwell();
+        if (thermostat != null && initVelocities) {
+            thermostat.maxwell();
+            kinetic = thermostat.getKineticEnergy();
+            currentTemp = thermostat.getCurrentTemperture();
         } else {
             for (int i = 0; i < dof; i++) {
                 v[i] = 0.0;
             }
-        }
-
-        if (targetTemp > 0.0) {
-            kinetic = kineticEnergy();
-        } else {
             kinetic = 0.0;
         }
 
@@ -160,13 +168,11 @@ public class MolecularDynamics implements Terminatable {
         for (int i = 0; i < n; i++) {
             double m = mass[i];
             for (j = 0; j < 3; j++, index++) {
-                a[index] = -convert * grad[index] / m;
+                a[index] = -Thermostat.convert * grad[index] / m;
                 aPrevious[index] = a[index];
             }
         }
 
-        final double kT = kB * targetTemp;
-        logger.info(String.format("\n Initial kT per degree of freedom:  %7.3f\n", convert * kinetic / (dof * kT)));
         logger.info(String.format("\n   Step      Kinetic    Potential        Total     Temp     Time"));
         logger.info(String.format("       %13.4f%13.4f%13.4f %8.2f ", kinetic, potential, total, currentTemp));
 
@@ -177,16 +183,26 @@ public class MolecularDynamics implements Terminatable {
         long time = System.nanoTime();
         for (int step = 1; step <= nSteps; step++) {
             beeman(dt);
-            kinetic = kineticEnergy();
+
+            if (thermostat != null) {
+                kinetic = thermostat.getKineticEnergy();
+                currentTemp = thermostat.getCurrentTemperture();
+            } else {
+                kinetic = Double.MIN_VALUE;
+                currentTemp = Double.MIN_VALUE;
+            }
+            
             total = kinetic + potential;
             if (step % printFrequency == 0) {
                 time = System.nanoTime() - time;
                 logger.info(String.format(" %6d%13.4f%13.4f%13.4f%9.2f%9.3f", step, kinetic, potential, total, currentTemp, time * 1.0e-9));
                 time = System.nanoTime();
             }
+
             if (algorithmListener != null && step % printFrequency == 0) {
                 algorithmListener.algorithmUpdate(molecularAssembly);
             }
+
             if (terminate) {
                 logger.info(String.format("\n Terminating after %6d time steps.\n", step));
                 done = true;
@@ -195,7 +211,6 @@ public class MolecularDynamics implements Terminatable {
         }
 
         if (!terminate) {
-            logger.info(String.format("\n Final kT per degree of freedom:    %7.3f\n", convert * kinetic / (dof * kT)));
             logger.info(String.format(" Completed %6d time steps.\n", nSteps));
         }
     }
@@ -224,6 +239,10 @@ public class MolecularDynamics implements Terminatable {
         final double dt_8 = 0.125 * dt;
         final double dt2_8 = dt * dt_8;
 
+        if (thermostat != null) {
+            thermostat.halfStep(dt);
+        }
+
         /**
          * Store the current atom positions, then find new atom positions
          * and half-step velocities via Beeman recusion.
@@ -248,47 +267,13 @@ public class MolecularDynamics implements Terminatable {
             double m = mass[i];
             for (int j = 0; j < 3; j++, index++) {
                 aPrevious[index] = a[index];
-                a[index] = -convert * grad[index] / m;
+                a[index] = -Thermostat.convert * grad[index] / m;
                 v[index] += (3.0 * a[index] + aPrevious[index]) * dt_8;
             }
         }
-    }
-
-    /**
-     * Initialize velocities from a Maxwell-Boltzmann distribution of momenta.
-     * The varience of each independent momentum component is kT * mass.
-     */
-    private void maxwell() {
-        Random random = new Random();
-        final double kT = kB * targetTemp;
-        int index = 0;
-        for (int i = 0; i < n; i++) {
-            double m = mass[i];
-            double variance = m * kT;
-            double sd = sqrt(variance);
-            v[index++] = random.nextGaussian() * sd / m;
-            v[index++] = random.nextGaussian() * sd / m;
-            v[index++] = random.nextGaussian() * sd / m;
+        
+        if (thermostat != null) {
+            thermostat.fullStep(dt);
         }
-    }
-
-    /**
-     * Compute the kinetic energy of the system.
-     */
-    private double kineticEnergy() {
-        double e = 0.0;
-        int index = 0;
-        for (int i = 0; i < n; i++) {
-            double velocity = v[index++];
-            double v2 = velocity * velocity;
-            velocity = v[index++];
-            v2 += velocity * velocity;
-            velocity = v[index++];
-            v2 += velocity * velocity;
-            e += mass[i] * v2;
-        }
-        e *= 0.5 / convert;
-        currentTemp = convert * e / (0.5 * kB * dof);
-        return e;
     }
 }

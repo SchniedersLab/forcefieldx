@@ -3,7 +3,7 @@
         <action>
             <actionName>build</actionName>
             <goals>
-                <goal>install</goal>
+                <goal>deploy</goal>
             </goals>
             <properties>
                 <skipTests>true</skipTests>
@@ -14,7 +14,7 @@
             <actionName>rebuild</actionName>
             <goals>
                 <goal>clean</goal>
-                <goal>install</goal>
+                <goal>deploy</goal>
             </goals>
             <properties>
                 <skipTests>true</skipTests>

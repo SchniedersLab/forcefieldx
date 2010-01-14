@@ -44,7 +44,7 @@ import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldString;
 import ffx.potential.parameters.ForceField.Force_Field;
-import ffx.potential.parameters.Keyword;
+import ffx.utilities.Keyword;
 
 /**
  * Test the PotentialEnergy class.
@@ -126,7 +126,7 @@ public class PotentialEnergyTest {
     private Polarization polarization;
     private double polarizationEnergy;
     private final PotentialEnergy energy;
-    private final double tolerance = 1.0e-7;
+    private final double tolerance = 1.0e-3;
     private final double gradientTolerance = 1.0e-4;
 
     public PotentialEnergyTest(String info, String filename,

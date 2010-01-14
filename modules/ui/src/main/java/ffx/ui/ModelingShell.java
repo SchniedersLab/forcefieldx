@@ -52,6 +52,7 @@ import ffx.algorithms.Minimize;
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.MolecularDynamics;
 import ffx.algorithms.Terminatable;
+import ffx.algorithms.Thermostat.Thermostats;
 
 import ffx.potential.PotentialEnergy;
 import ffx.potential.bonded.MSNode;
@@ -224,7 +225,7 @@ public class ModelingShell extends Console implements AlgorithmListener {
                 energy = new PotentialEnergy(active);
                 active.setPotential(energy);
             }
-            energy.energy(false, false);
+            energy.energy(false, true);
             return energy;
         }
         return null;
@@ -252,7 +253,7 @@ public class ModelingShell extends Console implements AlgorithmListener {
         }
         MolecularAssembly active = mainPanel.getHierarchy().getActive();
         if (active != null) {
-            MolecularDynamics molecularDynamics = new MolecularDynamics(active, this);
+            MolecularDynamics molecularDynamics = new MolecularDynamics(active, this, Thermostats.BUSSI);
             terminatableAlgorithm = molecularDynamics;
             molecularDynamics.dynamic(nStep, timeStep, printInterval, temperature, initVelocities);
             terminatableAlgorithm = null;

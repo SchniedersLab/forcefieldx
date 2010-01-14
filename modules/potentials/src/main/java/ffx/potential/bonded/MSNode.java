@@ -148,6 +148,21 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
     }
 
     /**
+     * If <code>this</code> MSNode or any MSNode below it <code>equals</code>
+     * the argument, that MSNode is returned.
+     */
+    public MSNode contains(MSNode msNode) {
+        Enumeration e = depthFirstEnumeration();
+        while (e.hasMoreElements()) {
+            MSNode node = (MSNode) e.nextElement();
+            if (node.equals(msNode)) {
+                return node;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Returns an ArrayList of all Bonds below the present MSNode.
      */
     public ArrayList<ROLS> getBondList() {
@@ -248,7 +263,7 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
     }
 
     /**
-     * Returns a ListIterator containing this FNode's children.
+     * Returns a ListIterator containing this MSNode's children.
      */
     public ListIterator<MSNode> getChildListIterator() {
         return getChildList().listIterator();
@@ -322,7 +337,7 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
     }
 
     /**
-     * Returns the name of this FNode.
+     * Returns the name of this MSNode.
      */
     public String getName() {
         return name;

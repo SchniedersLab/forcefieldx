@@ -114,7 +114,8 @@ public class Real3DTest {
     @Test
     public void testConvolution() {
         Real3D real3D = new Real3D(nx, ny, nz);
-        real3D.convolution(data, recip);
+        real3D.setRecip(recip);
+        real3D.convolution(data);
         int paddedIndex = 0;
         int index = 0;
         for (int z = 0; z < nz; z++) {

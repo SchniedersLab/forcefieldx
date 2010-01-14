@@ -87,9 +87,13 @@
         </plugins>
     </reporting>
 
-
-
     <dependencies>
+        <dependency>
+            <groupId>com.kenai.ffx</groupId>
+            <artifactId>crystal</artifactId>
+            <version>${project.version}</version>
+            <type>jar</type>
+        </dependency>
         <dependency>
             <groupId>com.kenai.ffx</groupId>
             <artifactId>numerics</artifactId>
@@ -98,7 +102,7 @@
         </dependency>
         <dependency>
             <groupId>com.kenai.ffx</groupId>
-            <artifactId>crystal</artifactId>
+            <artifactId>utilities</artifactId>
             <version>${project.version}</version>
             <type>jar</type>
         </dependency>
@@ -137,6 +141,12 @@
             <artifactId>jogl</artifactId>
             <type>jar</type>
             <version>1.1.1</version>
+        </dependency>
+        <dependency>
+            <groupId>net.java.dev.jogl</groupId>
+            <artifactId>jocl</artifactId>
+            <type>jar</type>
+            <version>1.0.0</version>
         </dependency>
         <dependency>
             <groupId>net.java.dev.jogl</groupId>

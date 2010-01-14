@@ -39,4 +39,20 @@ public class MSRoot extends MSNode {
     public String toString() {
         return "Structural Heirarchy";
     }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) {
+            return true;
+        } else if (object == null || getClass() != object.getClass()) {
+            return false;
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        return hash;
+    }
 }

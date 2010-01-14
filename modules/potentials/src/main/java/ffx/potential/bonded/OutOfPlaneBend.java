@@ -264,16 +264,16 @@ public class OutOfPlaneBend extends BondedTerm implements
         if (o == this) {
             return 0;
         }
-        int this1 = atoms[1].xyzindex;
-        int a1 = o.atoms[1].xyzindex;
+        int this1 = atoms[1].xyzIndex;
+        int a1 = o.atoms[1].xyzIndex;
         if (this1 < a1) {
             return -1;
         }
         if (this1 > a1) {
             return 1;
         }
-        int this3 = atoms[3].xyzindex;
-        int a3 = o.atoms[3].xyzindex;
+        int this3 = atoms[3].xyzIndex;
+        int a3 = o.atoms[3].xyzIndex;
         if (this3 < a3) {
             return -1;
         }

@@ -24,6 +24,7 @@ import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.Cursor;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Frame;
 import java.awt.GraphicsConfigTemplate;
 import java.awt.GraphicsConfiguration;
@@ -77,8 +78,8 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.SystemUtils;
 import org.apache.commons.lang.time.StopWatch;
 
-import ffx.ui.properties.FFXLocale;
-import ffx.potential.parameters.Keyword;
+import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.MSRoot;
 import ffx.potential.bonded.ROLS;
@@ -101,11 +102,10 @@ import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.SystemFilter;
 import ffx.potential.parsers.XYZFileFilter;
 import ffx.potential.parsers.XYZFilter;
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.Bond;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.Force_Field;
-import java.awt.Font;
+import ffx.ui.properties.FFXLocale;
+import ffx.utilities.Keyword;
 
 /**
  * The MainPanel class is the main container for Force Field X, handles
@@ -118,7 +118,7 @@ public final class MainPanel extends JPanel implements ActionListener,
 
     private static final Logger logger = Logger.getLogger(MainPanel.class.getName());
     private static JFileChooser fileChooser = null;
-    private static File cwd;
+    private static File pwd;
     // Panel Order in the TabbedPane
     public static final int GRAPHICS = 0;
     public static final int KEYWORDS = 1;
@@ -143,19 +143,19 @@ public final class MainPanel extends JPanel implements ActionListener,
             String ffxString = System.getProperty("ffx.dir", ".");
             ffxDir = new File(ffxString);
             classpath = System.getProperty("java.class.path");
-            cwd = MainPanel.getCWD();
+            pwd = MainPanel.getPWD();
             String ld_library_path = System.getProperty("java.library.path");
-            logger.fine("\njava.library.path: " + ld_library_path + "\nclasspath: " + classpath + "\nFFX: " + ffxDir.getAbsolutePath() + "\nCWD: " + cwd + "\n");
+            logger.fine("\njava.library.path: " + ld_library_path + "\nclasspath: " + classpath + "\nFFX: " + ffxDir.getAbsolutePath() + "\nCWD: " + pwd + "\n");
         } catch (Exception e) {
             logger.severe("FFX directory could not be found.\n" + e);
         }
     }
 
-    public static File getCWD() {
-        if (cwd == null) {
-            cwd = new File(System.getProperty("user.dir", FileSystemView.getFileSystemView().getDefaultDirectory().getAbsolutePath()));
+    public static File getPWD() {
+        if (pwd == null) {
+            pwd = new File(System.getProperty("user.dir", FileSystemView.getFileSystemView().getDefaultDirectory().getAbsolutePath()));
         }
-        return cwd;
+        return pwd;
     }
 
     /**
@@ -169,7 +169,7 @@ public final class MainPanel extends JPanel implements ActionListener,
         fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
         fileChooser.setFileHidingEnabled(false);
         fileChooser.setAcceptAllFileFilterUsed(true);
-        fileChooser.setCurrentDirectory(getCWD());
+        fileChooser.setCurrentDirectory(getPWD());
         fileChooser.setMultiSelectionEnabled(false);
         fileChooser.setSelectedFile(null);
         return fileChooser;
@@ -520,7 +520,7 @@ public final class MainPanel extends JPanel implements ActionListener,
             if (params.equalsIgnoreCase("Use an existing TINKER Key file")) {
                 JFileChooser fc = resetFileChooser();
                 fc.setDialogTitle("Choose a KEY File");
-                fc.setCurrentDirectory(cwd);
+                fc.setCurrentDirectory(pwd);
                 fc.setSelectedFile(null);
                 fc.setFileFilter(keyfilefilter);
                 int result = fc.showOpenDialog(this);
@@ -571,7 +571,7 @@ public final class MainPanel extends JPanel implements ActionListener,
                         JOptionPane.showMessageDialog(this, message);
                     }
                 } else {
-                    message = new String("Could not create a Key file because " + cwd.getAbsolutePath() + " is not writable");
+                    message = new String("Could not create a Key file because " + pwd.getAbsolutePath() + " is not writable");
                     JOptionPane.showMessageDialog(this, message);
                 }
             }
@@ -1062,7 +1062,7 @@ public final class MainPanel extends JPanel implements ActionListener,
             ForceField forceField = forceFieldFilter.parse();
             newSystem.setForceField(forceField);
             systemFilter.setForceField(forceField);
-
+            systemFilter.setKeywordHash(newSystem.getKeywords());
             setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
             FileOpener openFile = new FileOpener(systemFilter, this);
             openThread = new Thread(openFile);
@@ -1097,7 +1097,7 @@ public final class MainPanel extends JPanel implements ActionListener,
         File f = new File(name);
         if (!f.exists()) {
             // Check for a file in the CWD
-            f = new File(cwd + File.separator + name);
+            f = new File(pwd + File.separator + name);
             if (!f.exists()) {
                 logger.warning(name + ": could not be found.");
                 return null;
@@ -1133,7 +1133,7 @@ public final class MainPanel extends JPanel implements ActionListener,
         try {
             // Get the PDB File
             String fileName = code + ".pdb";
-            String path = getCWD().getAbsolutePath();
+            String path = getPWD().getAbsolutePath();
             File pdbFile = new File(path + File.separatorChar + fileName);
             FFXSystem newSystem = new FFXSystem(code, null, pdbFile);
             PDBFilter pdbFilter = new PDBFilter(newSystem, pdbAddress,
@@ -1151,7 +1151,7 @@ public final class MainPanel extends JPanel implements ActionListener,
     private void openInduced() {
         FFXSystem active = hierarchy.getActive();
         resetFileChooser();
-        fileChooser.setCurrentDirectory(cwd);
+        fileChooser.setCurrentDirectory(pwd);
         fileChooser.setSelectedFile(active.getFile());
         fileChooser.setDialogTitle("Choose Induced Dipole File");
         fileChooser.addChoosableFileFilter(indFileFilter);
@@ -1232,7 +1232,7 @@ public final class MainPanel extends JPanel implements ActionListener,
     private void openRestart() {
         FFXSystem active = hierarchy.getActive();
         resetFileChooser();
-        fileChooser.setCurrentDirectory(cwd);
+        fileChooser.setCurrentDirectory(pwd);
         fileChooser.setSelectedFile(hierarchy.getActive().getFile());
         fileChooser.setDialogTitle("Choose Restart File");
         fileChooser.addChoosableFileFilter(dynFileFilter);
@@ -1350,12 +1350,12 @@ public final class MainPanel extends JPanel implements ActionListener,
                 savefile = file;
             } else {
                 resetFileChooser();
-                fileChooser.setCurrentDirectory(cwd);
+                fileChooser.setCurrentDirectory(pwd);
                 fileChooser.setAcceptAllFileFilterUsed(true);
                 int result = fileChooser.showSaveDialog(this);
                 if (result == JFileChooser.APPROVE_OPTION) {
                     savefile = fileChooser.getSelectedFile();
-                    cwd = savefile.getParentFile();
+                    pwd = savefile.getParentFile();
                 }
             }
             if (savefile != null) {
@@ -1396,7 +1396,7 @@ public final class MainPanel extends JPanel implements ActionListener,
             }
             preferences.putInt(c + ".port", socketAddress.getPort());
         }
-        preferences.put(c + ".cwd", cwd.toString());
+        preferences.put(c + ".cwd", pwd.toString());
         /*
         if (modelingPanel != null) {
         modelingPanel.savePrefs();
@@ -1423,7 +1423,7 @@ public final class MainPanel extends JPanel implements ActionListener,
         if ((file == null) || (!file.exists())) {
             return;
         }
-        cwd = file;
+        pwd = file;
     }
 
     public void setPanel(int panel) {
