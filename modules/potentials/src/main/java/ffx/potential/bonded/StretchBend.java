@@ -146,9 +146,9 @@ public class StretchBend extends BondedTerm implements Comparable<StretchBend> {
                 sum(dtc, v12, g2);
                 sum(g0, g2, g1);
                 scalar(g1, -1.0, g1);
-                atoms[0].addToGradient(g0[0], g0[1], g0[2]);
-                atoms[1].addToGradient(g1[0], g1[1], g1[2]);
-                atoms[2].addToGradient(g2[0], g2[1], g2[2]);
+                atoms[0].addToXYZGradient(g0[0], g0[1], g0[2]);
+                atoms[1].addToXYZGradient(g1[0], g1[1], g1[2]);
+                atoms[2].addToXYZGradient(g2[0], g2[1], g2[2]);
             }
         }
         return energy;

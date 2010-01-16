@@ -598,8 +598,8 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
             }
             scalar(v10, de, g0);
             scalar(v10, -de, g1);
-            atoms[0].addToGradient(g0[0], g0[1], g0[2]);
-            atoms[1].addToGradient(g1[0], g1[1], g1[2]);
+            atoms[0].addToXYZGradient(g0[0], g0[1], g0[2]);
+            atoms[1].addToXYZGradient(g1[0], g1[1], g1[2]);
         }
         return energy;
     }

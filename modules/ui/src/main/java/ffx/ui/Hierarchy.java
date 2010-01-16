@@ -397,20 +397,14 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
         } else {
             status.setText("  " + activeSystem.toString());
         }
-        if (activeSystem.isSimulation()) {
-            step.setText(activeSystem.getTimeString() + " ");
-        } else if (activeSystem.isOptimization()) {
-            step.setText(activeSystem.getStepString() + " ");
-        } else if (activeSystem.getCycles() > 1) {
+
+        if (activeSystem.getCycles() > 1) {
             step.setText("" + activeSystem.getCurrentCycle() + "/" + activeSystem.getCycles());
         } else {
             step.setText("");
         }
-        if (activeSystem.isSimulation()) {
-            energy.setText(activeSystem.getEnergyString() + " ");
-        } else if (activeSystem.isOptimization()) {
-            energy.setText(activeSystem.getEnergyString() + " ");
-        } else if (activeSystem.getCycles() > 1) {
+
+        if (activeSystem.getCycles() > 1) {
             energy.setText("");
         } else {
             energy.setText("");

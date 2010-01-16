@@ -287,7 +287,7 @@ public class PotentialEnergy implements Optimizable {
         // Zero out the Cartesian coordinate gradient for each atom.
         if (gradient) {
             for (Atom atom : atoms) {
-                atom.setGradient(0.0, 0.0, 0.0);
+                atom.setXYZGradient(0.0, 0.0, 0.0);
             }
         }
 
@@ -509,7 +509,7 @@ public class PotentialEnergy implements Optimizable {
         double grad[] = new double[3];
         int index = 0;
         for (Atom a : atoms) {
-            a.getGradient(grad);
+            a.getXYZGradient(grad);
             g[index++] = grad[0];
             g[index++] = grad[1];
             g[index++] = grad[2];

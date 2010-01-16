@@ -10,9 +10,9 @@
     <dependencySets>
         <dependencySet>
             <unpackOptions>
-            <excludes>
-                <exclude>META-INF/*</exclude>
-            </excludes>
+                <excludes>
+                    <exclude>META-INF/*</exclude>
+                </excludes>
             </unpackOptions>
             <unpack>true</unpack>
             <scope>runtime</scope>

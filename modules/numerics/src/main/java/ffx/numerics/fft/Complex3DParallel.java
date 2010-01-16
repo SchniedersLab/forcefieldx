@@ -137,8 +137,6 @@ public class Complex3DParallel {
      *
      * @param input
      *            The input array must be of size 2 * nX * nY * nZ.
-     * @param recip
-     *            The recip array must be of size nX * nY * nZ.
      *
      * @since 1.0
      */

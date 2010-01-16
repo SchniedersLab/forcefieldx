@@ -117,6 +117,7 @@ public class Main extends JFrame {
         // Start the clock.
         stopWatch.start();
         setVisible(false);
+        
         // Create the MainPanel and MainMenu, then add them to the JFrame
         java.awt.Toolkit.getDefaultToolkit().setDynamicLayout(true);
         mainPanel = new MainPanel(this);

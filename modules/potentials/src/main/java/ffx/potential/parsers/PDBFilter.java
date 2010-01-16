@@ -59,12 +59,16 @@ import ffx.utilities.Keyword;
  */
 public final class PDBFilter extends SystemFilter {
 
-    private static final Logger log = Logger.getLogger(PDBFilter.class.getName());
+    private static final Logger logger = Logger.getLogger(PDBFilter.class.getName());
     private String pdbURL = null;
     /**
-     * This is sm
+     * Keep track of altLoc Characters.
      */
     private Vector<Character> altLocs = new Vector<Character>();
+    /**
+     * Keep track of ATOM record serial numbers to match them with ANISOU
+     * records.
+     */
     private Hashtable<Integer, Atom> atoms = new Hashtable<Integer, Atom>();
 
     /**
@@ -113,8 +117,8 @@ public final class PDBFilter extends SystemFilter {
                 }
                 FileReader fr = new FileReader(pdbFile);
                 br = new BufferedReader(fr);
-                if (log.isLoggable(Level.INFO)) {
-                    log.info(" Opening " + pdbFile.getName());
+                if (logger.isLoggable(Level.INFO)) {
+                    logger.info(" Opening " + pdbFile.getName());
                 }
             } else {
                 try {
@@ -123,15 +127,15 @@ public final class PDBFilter extends SystemFilter {
                     int retry = 0;
                     while (!br.ready() && retry < 10) {
                         synchronized (this) {
-                            if (log.isLoggable(Level.INFO)) {
-                                log.info("Waiting on Network");
+                            if (logger.isLoggable(Level.INFO)) {
+                                logger.info("Waiting on Network");
                             }
                             wait(50);
                             retry++;
                         }
                     }
                 } catch (Exception e) {
-                    log.exiting(PDBFilter.class.getName(), "readFile", e);
+                    logger.exiting(PDBFilter.class.getName(), "readFile", e);
                     return false;
                 }
                 // The downloaded PBD file will be echoed to the local file
@@ -140,8 +144,8 @@ public final class PDBFilter extends SystemFilter {
                 if (pdbFile != null && !pdbFile.exists()) {
                     fw = new FileWriter(pdbFile);
                     bw = new BufferedWriter(fw);
-                    if (log.isLoggable(Level.INFO)) {
-                        log.info("  Opening " + pdbFile.getName());
+                    if (logger.isLoggable(Level.INFO)) {
+                        logger.info("  Opening " + pdbFile.getName());
                     }
                 }
             }
@@ -151,8 +155,6 @@ public final class PDBFilter extends SystemFilter {
             String[] connect;
             ArrayList<String[]> links = new ArrayList<String[]>();
             Vector<String[]> structs = new Vector<String[]>();
-            Residue residue = null;
-            Polymer polymer = null;
             Molecule molecule = null;
             // While the END parameter is not read in, load atoms
             String pdbLine = br.readLine();
@@ -202,22 +204,20 @@ public final class PDBFilter extends SystemFilter {
                             chainID = "Blank".intern();
                         }
                         int resSeq = Integer.decode(pdbLine.substring(22, 26).trim()).intValue();
-                        int adp[] = new int[6];
-                        adp[0] = new Integer(pdbLine.substring(28, 35).trim());
-                        adp[1] = new Integer(pdbLine.substring(35, 42).trim());
-                        adp[2] = new Integer(pdbLine.substring(42, 49).trim());
-                        adp[3] = new Integer(pdbLine.substring(49, 56).trim());
-                        adp[4] = new Integer(pdbLine.substring(56, 63).trim());
-                        adp[5] = new Integer(pdbLine.substring(63, 70).trim());
+                        double adp[] = new double[6];
+                        adp[0] = new Integer(pdbLine.substring(28, 35).trim()) * 1.0e-4;
+                        adp[1] = new Integer(pdbLine.substring(35, 42).trim()) * 1.0e-4;
+                        adp[2] = new Integer(pdbLine.substring(42, 49).trim()) * 1.0e-4;
+                        adp[3] = new Integer(pdbLine.substring(49, 56).trim()) * 1.0e-4;
+                        adp[4] = new Integer(pdbLine.substring(56, 63).trim()) * 1.0e-4;
+                        adp[5] = new Integer(pdbLine.substring(63, 70).trim()) * 1.0e-4;
                         if (atoms.containsKey(serial)) {
                             Atom a = atoms.get(serial);
                             a.setAltLoc(altLoc);
                             a.setAnisou(adp);
                         } else {
-                            Atom a = new Atom(xyzIndex++, name, altLoc, null, resName, resSeq, chainID, 1.0, 15.0);
-                            a.setAnisou(adp);
-                            atoms.put(serial, a);
-                            molecularAssembly.addMSNode(a);
+                            logger.info("Unknown serial number " + serial + "for ANISOU record: ");
+                            logger.info(pdbLine);
                         }
                         break;
                     case ATOM:
@@ -241,6 +241,9 @@ public final class PDBFilter extends SystemFilter {
                         serial = new Integer(pdbLine.substring(6, 11).trim());
                         name = pdbLine.substring(12, 16).trim().intern();
                         altLoc = new Character(pdbLine.substring(16, 17).toUpperCase().charAt(0));
+                        if (!altLocs.contains(altLoc)) {
+                            altLocs.add(altLoc);
+                        }
                         resName = pdbLine.substring(17, 20).trim().intern();
                         chainID = null;
                         if (!useSegID) {
@@ -294,6 +297,9 @@ public final class PDBFilter extends SystemFilter {
                         serial = new Integer(pdbLine.substring(6, 11).trim());
                         name = pdbLine.substring(12, 16).trim().intern();
                         altLoc = new Character(pdbLine.substring(16, 17).toUpperCase().charAt(0));
+                        if (!altLocs.contains(altLoc)) {
+                            altLocs.add(altLoc);
+                        }
                         resName = pdbLine.substring(17, 20).trim().intern();
                         chainID = null;
                         if (!useSegID) {
@@ -426,8 +432,14 @@ public final class PDBFilter extends SystemFilter {
             }
             br.close();
             xyzIndex--;
-            if (log.isLoggable(Level.INFO)) {
-                log.info(" Read " + xyzIndex + " atoms");
+            if (logger.isLoggable(Level.INFO)) {
+                logger.info(" Read " + xyzIndex + " atoms");
+                StringBuffer altLocString = new StringBuffer(" Alternate locations [ ");
+                for (Character c : altLocs) {
+                    altLocString.append("(" + c + ") ");
+                }
+                altLocString.append("]");
+                logger.info(altLocString.toString());
             }
             // Assign Secondary Structure Based on PDB Info
             for (String[] s : structs) {
@@ -446,7 +458,7 @@ public final class PDBFilter extends SystemFilter {
             }
             setFileRead(true);
         } catch (IOException e) {
-            log.exiting(PDBFilter.class.getName(), "readFile", e);
+            logger.exiting(PDBFilter.class.getName(), "readFile", e);
             return false;
         }
         // Now read in VRML data
@@ -520,8 +532,8 @@ public final class PDBFilter extends SystemFilter {
             a.xyzIndex = index++;
         }
         index--;
-        if (log.isLoggable(Level.INFO)) {
-            log.info(String.format(" Total number of atoms: %d", index));
+        if (logger.isLoggable(Level.INFO)) {
+            logger.info(String.format(" Total number of atoms: %d", index));
         }
     }
 
@@ -576,13 +588,13 @@ public final class PDBFilter extends SystemFilter {
             if (isProtein) {
                 try {
                     assignAminoAcidAtomTypes(residues);
-                    if (log.isLoggable(Level.INFO)) {
-                        log.info(" Atom type assignment completed for amino acid chain " + chain + ".");
+                    if (logger.isLoggable(Level.INFO)) {
+                        logger.info(" Atom type assignment completed for amino acid chain " + chain + ".");
                     }
                 } catch (MissingHeavyAtomException missingHeavyAtomException) {
-                    log.severe(missingHeavyAtomException.toString());
+                    logger.severe(missingHeavyAtomException.toString());
                 } catch (MissingAtomTypeException missingAtomTypeException) {
-                    log.severe(missingAtomTypeException.toString());
+                    logger.severe(missingAtomTypeException.toString());
                 }
                 continue;
             }
@@ -615,13 +627,13 @@ public final class PDBFilter extends SystemFilter {
             if (isNucleicAcid) {
                 try {
                     assignNucleicAcidAtomTypes(residues);
-                    if (log.isLoggable(Level.INFO)) {
-                        log.info("Atom type assignment completed for nucleic acid chain " + chain + ".");
+                    if (logger.isLoggable(Level.INFO)) {
+                        logger.info("Atom type assignment completed for nucleic acid chain " + chain + ".");
                     }
                 } catch (MissingHeavyAtomException missingHeavyAtomException) {
-                    log.severe(missingHeavyAtomException.toString());
+                    logger.severe(missingHeavyAtomException.toString());
                 } catch (MissingAtomTypeException missingAtomTypeException) {
-                    log.severe(missingAtomTypeException.toString());
+                    logger.severe(missingAtomTypeException.toString());
                 }
                 continue;
             }
@@ -635,8 +647,8 @@ public final class PDBFilter extends SystemFilter {
                 ArrayList<Atom> atoms = residue.getAtomList();
                 try {
                     HETATOMS molecule = HETATOMS.valueOf(name);
-                    if (log.isLoggable(Level.FINE)) {
-                        log.fine("Assigning atom types for residue " + residue.toString());
+                    if (logger.isLoggable(Level.FINE)) {
+                        logger.fine("Assigning atom types for residue " + residue.toString());
                     }
                     switch (molecule) {
                         case HOH:
@@ -651,7 +663,7 @@ public final class PDBFilter extends SystemFilter {
                                     } else if (a == O) {
                                         continue;
                                     } else {
-                                        log.severe("Check atom " + a.toString() + " in residue " + residue.toString());
+                                        logger.severe("Check atom " + a.toString() + " in residue " + residue.toString());
                                     }
                                 }
                             } else {
@@ -661,43 +673,43 @@ public final class PDBFilter extends SystemFilter {
                             break;
                         case NA:
                             if (atoms.size() != 1) {
-                                log.severe("Check residue " + residue.toString() + " of chain " + chain + ".");
+                                logger.severe("Check residue " + residue.toString() + " of chain " + chain + ".");
                             }
                             atoms.get(0).setAtomType(findAtomType(2003));
                             break;
                         case K:
                             if (atoms.size() != 1) {
-                                log.severe("Check residue " + residue.toString() + " of chain " + chain + ".");
+                                logger.severe("Check residue " + residue.toString() + " of chain " + chain + ".");
                             }
                             atoms.get(0).setAtomType(findAtomType(2004));
                             break;
                         case MG:
                         case MG2:
                             if (atoms.size() != 1) {
-                                log.severe("Check residue " + residue.toString() + " of chain " + chain + ".");
+                                logger.severe("Check residue " + residue.toString() + " of chain " + chain + ".");
                             }
                             atoms.get(0).setAtomType(findAtomType(2005));
                             break;
                         case CA:
                         case CA2:
                             if (atoms.size() != 1) {
-                                log.severe("Check residue " + residue.toString() + " of chain " + chain + ".");
+                                logger.severe("Check residue " + residue.toString() + " of chain " + chain + ".");
                             }
                             atoms.get(0).setAtomType(findAtomType(2006));
                             break;
                         case CL:
                             if (atoms.size() != 1) {
-                                log.severe("Check residue " + residue.toString() + " of chain " + chain + ".");
+                                logger.severe("Check residue " + residue.toString() + " of chain " + chain + ".");
                             }
                             atoms.get(0).setAtomType(findAtomType(2003));
                             break;
                         default:
-                            log.severe("Check residue " + residue.toString() + " of chain " + chain + ".");
+                            logger.severe("Check residue " + residue.toString() + " of chain " + chain + ".");
                     }
                 } catch (IllegalArgumentException e) {
-                    log.severe("Unknown residue " + residue.toString() + " in chain " + chain + ".");
+                    logger.severe("Unknown residue " + residue.toString() + " in chain " + chain + ".");
                 } catch (MissingHeavyAtomException missingHeavyAtomException) {
-                    log.severe(missingHeavyAtomException.toString());
+                    logger.severe(missingHeavyAtomException.toString());
                 }
             }
         }
@@ -899,7 +911,7 @@ public final class PDBFilter extends SystemFilter {
             try {
                 assignNucleicAcidBaseAtomTypes(nucleicAcid, residue, C1s);
             } catch (MissingHeavyAtomException missingHeavyAtomException) {
-                log.throwing(PDBFilter.class.getName(), "assignNucleicAcidAtomTypes", missingHeavyAtomException);
+                logger.throwing(PDBFilter.class.getName(), "assignNucleicAcidAtomTypes", missingHeavyAtomException);
                 throw missingHeavyAtomException;
             }
 
@@ -912,7 +924,7 @@ public final class PDBFilter extends SystemFilter {
                 AtomType atomType = atom.getAtomType();
                 if (atomType == null) {
                     MissingAtomTypeException missingAtomTypeException = new MissingAtomTypeException(residue, atom);
-                    log.throwing(PDBFilter.class.getName(), "assignNucleicAcidAtomTypes", missingAtomTypeException);
+                    logger.throwing(PDBFilter.class.getName(), "assignNucleicAcidAtomTypes", missingAtomTypeException);
                     throw missingAtomTypeException;
                 }
                 int numberOfBonds = atom.getNumBonds();

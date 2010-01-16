@@ -45,6 +45,7 @@ import ffx.potential.bonded.RendererCache.ViewModel;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.PolarizeType;
+import java.util.Arrays;
 import java.util.Vector;
 
 /**
@@ -226,41 +227,60 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     private int altID = 0;
     /**
-     * Vector of altLoc identifiers defined for this atom.
+     * Array of altLoc identifiers defined for this atom.
      *
      * @since 1.0
      */
-    private Vector<Character> altLoc = new Vector<Character>();
+    private Character altLoc[] = new Character[1];
     /**
-     * Vector of XYZ coordiantes for each altLoc.
+     * Array of XYZ coordiantes for each altLoc.
      *
      * @since 1.0
      */
-    private Vector<double[]> xyz = new Vector<double[]>();
+    private double xyz[][] = new double[1][];
     /**
-     * Vector of occupancy values for each altLoc.
+     * Array of XYZ gradients for each altLoc.
      *
      * @since 1.0
      */
-    private Vector<Double> occupancy = new Vector<Double>();
+    private double xyzGradient[][] = new double[1][];
     /**
-     * Vector of bFactor values for each altLoc.
+     * Array of occupancy values for each altLoc.
      *
      * @since 1.0
      */
-    private Vector<Double> tempFactor = new Vector<Double>();
+    private double occupancy[] = new double[1];
     /**
-     * Vector of anisou tensors for each altLoc.
+     * Array of occupancy gradients for each altLoc.
      *
      * @since 1.0
      */
-    private Vector<int[]> anisou = new Vector<int[]>();
+    private double occupancyGradient[] = new double[1];
     /**
-     * Vector of XYZ gradients for each altLoc.
+     * Array of tempFactor values for each altLoc.
      *
      * @since 1.0
      */
-    private Vector<double[]> gradient = new Vector<double[]>();
+    private double tempFactor[] = new double[1];
+    /**
+     * Array fo tempFactorGradients
+     *
+     * @since 1.0
+     */
+    private double tempFactorGradient[] = new double[1];
+    /**
+     * List of anisou tensors for each altLoc.
+     *
+     * @since 1.0
+     */
+    private double anisou[][] = new double[1][];
+    /**
+     * List of anisou tensors for each altLoc.
+     *
+     * @since 1.0
+     */
+    private double anisouGradient[][] = new double[1][];
+
     private ArrayList<Vector3d> trajectory;
     // Molecular Mechanics Info
     private AtomType atomType = null;
@@ -319,15 +339,15 @@ public class Atom extends MSNode implements Comparable<Atom> {
      *
      * @param name The Atom's PDB name.
      * @param atomType Molecular mechanics atom type.
-     * @param d Cartesian coordinates.
+     * @param xyz Cartesian coordinates.
      *
      * @since 1.0
      */
-    public Atom(String name, AtomType atomType, double[] d) {
+    public Atom(String name, AtomType atomType, double[] xyz) {
         this(name);
         this.atomType = atomType;
-        this.xyz.add(d);
-        this.gradient.add(new double[3]);
+        this.xyz[0] = xyz;
+        this.xyzGradient[0] = new double[3];
         setAllowsChildren(false);
         if (atomType != null) {
             currentCol = previousCol = AtomColor.get(atomType.atomicNumber);
@@ -340,7 +360,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * @param xyzIndex Contiguous, unique atom index between 0..nAtoms.
      * @param name The Atom's molecular mechanics name.
      * @param atomType Molecular mechanics atom type.
-     * @param d Cartesian coordinates.
+     * @param xyz Cartesian coordinates.
      * 
      * @since 1.0
      */
@@ -359,9 +379,9 @@ public class Atom extends MSNode implements Comparable<Atom> {
         this.resName = resName;
         this.resSeq = resSeq;
         this.chainID = chainID;
-        this.altLoc.add(altLoc);
-        this.occupancy.add(occupancy);
-        this.tempFactor.add(tempFactor);
+        this.altLoc[0] = altLoc;
+        this.occupancy[0] = occupancy;
+        this.tempFactor[0] = tempFactor;
         altID = 0;
     }
 
@@ -386,6 +406,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
             g2d.drawString(toShortString(), (float) point2d.x,
                     (float) point2d.y);
         }
+
     }
 
     /**
@@ -521,10 +542,10 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     public void getForce(double[] t) {
-        if (gradient == null || t == null) {
+        if (xyzGradient == null || t == null) {
             return;
         }
-        double g[] = gradient.get(altID);
+        double g[] = xyzGradient[altID];
         t[0] = g[0];
         t[1] = g[1];
         t[2] = g[2];
@@ -673,7 +694,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * Gets the Atom's Cartesian Coordinates return The Cartesian Coordinates
      */
     public void getV3D(Vector3d temp) {
-        temp.set(xyz.get(altID));
+        temp.set(xyz[altID]);
     }
 
     // public final Vector3f getnewV3D(){ return new Vector3f(v3f); }
@@ -685,28 +706,54 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     public void setAltLoc(Character a) {
-        if (altLoc.contains(a)) {
-            altID = altLoc.indexOf(a);
+        for (int i = 0; i < altLoc.length; i++) {
+            if (altLoc[i] == a) {
+                altID = i;
+            }
         }
     }
 
     public Character getAltLoc() {
-        return altLoc.get(altID);
+        return altLoc[altID];
+    }
+
+    public Character[] getAltLocs() {
+        return altLoc;
     }
 
     public void addAltLoc(Character a, double[] xyz, double occupancy, double bFactor) {
-        if (altLoc.contains(a)) {
-            altID = altLoc.indexOf(a);
-            this.xyz.set(altID, xyz);
-            this.occupancy.set(altID, occupancy);
-            this.tempFactor.set(altID, bFactor);
+        altID = -1;
+        for (int i = 0; i < altLoc.length; i++) {
+            if (altLoc[i] == a) {
+                altID = i;
+            }
+        }
+        /**
+         * If we've seen this altLoc character already, overwrite the previous
+         * values.
+         */
+        if (altID != -1) {
+            this.xyz[altID] = xyz;
+            this.occupancy[altID] = occupancy;
+            this.tempFactor[altID] = bFactor;
         } else {
-            altLoc.add(a);
-            altID = altLoc.indexOf(a);
-            this.xyz.add(xyz);
-            this.occupancy.add(occupancy);
-            this.tempFactor.add(bFactor);
-            this.gradient.add(new double[3]);
+            /**
+             * This is a new altLoc so we need to copy over the current arrays to
+             * longer versions and store the new altLoc information.
+             */
+            altID = altLoc.length;
+            altLoc = Arrays.copyOf(altLoc, altID + 1);
+            altLoc[altID] = a;
+            this.xyz = Arrays.copyOf(this.xyz, altID + 1);
+            this.xyz[altID] = xyz;
+            this.occupancy = Arrays.copyOf(this.occupancy, altID + 1);
+            this.occupancy[altID] = occupancy;
+            this.tempFactor = Arrays.copyOf(this.tempFactor, altID + 1);
+            this.tempFactor[altID] = bFactor;
+            xyzGradient = Arrays.copyOf(xyzGradient, altID + 1);
+            xyzGradient[altID] = new double[3];
+            occupancyGradient = Arrays.copyOf(occupancyGradient, altID + 1);
+            tempFactorGradient = Arrays.copyOf(tempFactorGradient, altID + 1);
         }
     }
 
@@ -716,18 +763,18 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * @return x coordinate
      */
     public double getX() {
-        return xyz.get(altID)[0];
+        return xyz[altID][0];
     }
 
     public void getXYZ(double[] x) {
-        double t[] = xyz.get(altID);
+        double t[] = xyz[altID];
         x[0] = t[0];
         x[1] = t[1];
         x[2] = t[2];
     }
 
     public double[] getXYZ() {
-        return xyz.get(altID);
+        return xyz[altID];
     }
 
     /**
@@ -745,7 +792,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * @return y coordinate
      */
     public final double getY() {
-        return xyz.get(altID)[1];
+        return xyz[altID][1];
     }
 
     /**
@@ -754,7 +801,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * @return z coordinate
      */
     public final double getZ() {
-        return xyz.get(altID)[2];
+        return xyz[altID][2];
     }
 
     @Override
@@ -775,10 +822,10 @@ public class Atom extends MSNode implements Comparable<Atom> {
                     ViewModel.FILL);
         }
         if (transform3D == null) {
-            transform3D = RendererCache.transform3DFactory(new Vector3d(xyz.get(altID)),
+            transform3D = RendererCache.transform3DFactory(new Vector3d(xyz[altID]),
                     scale);
         } else {
-            transform3D.setTranslation(new Vector3d(xyz.get(altID)));
+            transform3D.setTranslation(new Vector3d(xyz[altID]));
             transform3D.setScale(scale);
         }
         detail = RendererCache.detail;
@@ -855,11 +902,11 @@ public class Atom extends MSNode implements Comparable<Atom> {
     /**
      * Add a vector to the Atom's current position vector
      *
-     * @param d
+     * @param xyz
      *            Vector to add to the current position
      */
     public void move(double[] d) {
-        double x[] = xyz.get(altID);
+        double x[] = xyz[altID];
         x[0] += d[0];
         x[1] += d[1];
         x[2] += d[2];
@@ -867,7 +914,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     public void moveTo(double a, double b, double c) {
-        double x[] = xyz.get(altID);
+        double x[] = xyz[altID];
         x[0] = a;
         x[1] = b;
         x[2] = c;
@@ -875,13 +922,13 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     public void setXYZ(double xyz[]) {
-        this.xyz.set(altID, xyz);
+        this.xyz[altID] = xyz;
     }
 
     /**
      * Moves the atom to the specified location
      *
-     * @param d
+     * @param xyz
      *            Location to move <b>this</b> Atom to
      */
     public void moveTo(double[] d) {
@@ -928,28 +975,65 @@ public class Atom extends MSNode implements Comparable<Atom> {
         this.atomType = atomType;
     }
 
-    public void setBFactor(double bFactor) {
-        this.tempFactor.set(altID, bFactor);
+    public void setTempFactor(double tempFactor) {
+        this.tempFactor[altID] = tempFactor;
     }
 
-    public double getBFactor() {
-        return tempFactor.get(altID);
+    public double getTempFactor() {
+        return tempFactor[altID];
+    }
+
+    public void setTempFactorGradient(double tempFactorGradient) {
+        this.tempFactorGradient[altID] = tempFactorGradient;
+    }
+
+    public double getTempFactorGradient() {
+        return tempFactorGradient[altID];
     }
 
     public void setOccupancy(double occupancy) {
-        this.occupancy.set(altID, occupancy);
+        this.occupancy[altID] = occupancy;
     }
 
     public double getOccupancy() {
-        return occupancy.get(altID);
+        return occupancy[altID];
     }
 
-    public void setAnisou(int[] anisou) {
-        this.anisou.set(altID, anisou);
+    public void setOccupancyGradient(double occupancyGradient) {
+        this.occupancyGradient[altID] = occupancyGradient;
     }
 
-    public int[] getAnisou() {
-        return anisou.get(altID);
+    public double getOccupancyGradient() {
+        return occupancyGradient[altID];
+    }
+
+    public void setAnisou(double[] anisou) {
+        /**
+         * Ensure that we have space for it.
+         */
+        if (this.anisou.length <= altID) {
+            this.anisou = Arrays.copyOf(this.anisou, altID + 1);
+            this.anisouGradient = Arrays.copyOf(this.anisouGradient, altID + 1);
+            anisouGradient[altID] = new double[6];
+        }
+        this.anisou[altID] = anisou;
+    }
+
+    public double[] getAnisou() {
+        return anisou[altID];
+    }
+
+    public void setAnisouGradient(double[] anisou) {
+        /**
+         * Ensure that we have space for it.
+         */
+        assert (this.anisouGradient.length <= altID);
+
+        this.anisouGradient[altID] = anisou;
+    }
+
+    public double[] getAnisouGradient() {
+        return anisouGradient[altID];
     }
 
     public void setAngle(Angle a) {
@@ -1099,25 +1183,25 @@ public class Atom extends MSNode implements Comparable<Atom> {
         }
     }
 
-    public void setGradient(double x, double y, double z) {
-        double g[] = gradient.get(altID);
+    public void setXYZGradient(double x, double y, double z) {
+        double g[] = xyzGradient[altID];
         g[0] = x;
         g[1] = y;
         g[2] = z;
     }
 
-    public void addToGradient(double x, double y, double z) {
-        double g[] = gradient.get(altID);
+    public void addToXYZGradient(double x, double y, double z) {
+        double g[] = xyzGradient[altID];
         g[0] += x;
         g[1] += y;
         g[2] += z;
     }
 
-    public void getGradient(double x[]) {
+    public void getXYZGradient(double x[]) {
         if (x == null) {
             x = new double[3];
         }
-        double g[] = gradient.get(altID);
+        double g[] = xyzGradient[altID];
         x[0] = g[0];
         x[1] = g[1];
         x[2] = g[2];
@@ -1295,7 +1379,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     @Override
     public String toString() {
-        double x[] = xyz.get(altID);
+        double x[] = xyz[altID];
         return String.format("%7d-%s (%7.2f,%7.2f,%7.2f)", xyzIndex, name,
                 x[0], x[1], x[2]);
     }
@@ -1316,7 +1400,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
 
     public void updateSphere() {
         if (branchGroup != null && viewModel != ViewModel.INVISIBLE) {
-            vector3d.set(xyz.get(altID));
+            vector3d.set(xyz[altID]);
             transform3D.setTranslation(vector3d);
             transform3D.setScale(scale);
             transformGroup.setTransform(transform3D);

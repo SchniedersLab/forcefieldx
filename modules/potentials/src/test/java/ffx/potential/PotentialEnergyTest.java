@@ -271,7 +271,7 @@ public class PotentialEnergyTest {
         int i = random.nextInt(n);
         Atom a0 = atoms.get(i);
 
-        a0.getGradient(analytic);
+        a0.getXYZGradient(analytic);
         a0.getXYZ(xyz);
         // Find numeric dX
         xyz[0] += step;

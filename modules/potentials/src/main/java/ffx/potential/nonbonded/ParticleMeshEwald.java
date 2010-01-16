@@ -581,7 +581,7 @@ public class ParticleMeshEwald {
                 torque(i, trq);
             }
             for (int i = 0; i < nAtoms; i++) {
-                atoms[i].addToGradient(sharedGrad[0].get(i), sharedGrad[1].get(i), sharedGrad[2].get(i));
+                atoms[i].addToXYZGradient(sharedGrad[0].get(i), sharedGrad[1].get(i), sharedGrad[2].get(i));
             }
         }
         return multipoleEnergy + polarizationEnergy;

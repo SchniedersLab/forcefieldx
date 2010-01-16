@@ -102,8 +102,8 @@ public class UreyBradley extends BondedTerm implements Comparable<UreyBradley> {
             }
             scalar(v20, de, g0);
             scalar(v20, -de, g2);
-            atoms[0].addToGradient(g0[0], g0[1], g0[2]);
-            atoms[2].addToGradient(g2[0], g2[1], g2[2]);
+            atoms[0].addToXYZGradient(g0[0], g0[1], g0[2]);
+            atoms[2].addToXYZGradient(g2[0], g2[1], g2[2]);
         }
         return energy;
     }

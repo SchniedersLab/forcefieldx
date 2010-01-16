@@ -496,7 +496,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface {
         if (gradient) {
             for (int i = 0; i < nAtoms; i++) {
                 Atom ai = atoms[i];
-                ai.addToGradient(grad[0].get(i), grad[1].get(i), grad[2].get(i));
+                ai.addToXYZGradient(grad[0].get(i), grad[1].get(i), grad[2].get(i));
             }
         }
         long computeTime = 0;
