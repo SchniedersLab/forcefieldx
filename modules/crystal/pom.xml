@@ -61,6 +61,30 @@
             <version>${project.version}</version>
             <type>jar</type>
         </dependency>
+        <dependency>
+            <groupId>com.kenai.ffx</groupId>
+            <artifactId>utilities</artifactId>
+            <version>${project.version}</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>no.uib.cipr</groupId>
+            <artifactId>mtj</artifactId>
+            <version>0.9.12</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.netlib</groupId>
+            <artifactId>netlib-java</artifactId>
+            <version>0.9.1</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.netlib</groupId>
+            <artifactId>arpack</artifactId>
+            <version>0.1</version>
+            <type>jar</type>
+        </dependency>
     </dependencies>
 
 </project>

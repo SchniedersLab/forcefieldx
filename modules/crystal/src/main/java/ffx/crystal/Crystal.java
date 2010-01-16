@@ -22,6 +22,7 @@ package ffx.crystal;
 
 import static java.lang.Math.abs;
 import static java.lang.Math.cos;
+import static java.lang.Math.PI;
 import static java.lang.Math.sin;
 import static java.lang.Math.sqrt;
 import static java.lang.Math.toRadians;
@@ -32,6 +33,9 @@ import static ffx.numerics.VectorMath.scalar;
 
 import java.util.logging.Logger;
 
+import no.uib.cipr.matrix.DenseMatrix;
+import no.uib.cipr.matrix.Matrices;
+
 /**
  * The Crystal class encapsulates the lattice parameters and space group that
  * describe the geometry and symmetry of a crystal. Methods are available to
@@ -41,9 +45,8 @@ import java.util.logging.Logger;
  * @since 1.0
  */
 public class Crystal {
-    
-    private static final Logger logger = Logger.getLogger(Crystal.class.getName());
 
+    private static final Logger logger = Logger.getLogger(Crystal.class.getName());
     /**
      * Length of the cell edge in the direction of the <b>a</b> basis vector.
      */
@@ -101,6 +104,10 @@ public class Crystal {
      */
     public final double G[][] = new double[3][3];
     /**
+     * the reciprocal space metric matrix.
+     */
+    public final double Gstar[][] = new double[3][3];
+    /**
      * Direct space lattice vector <b>a</b>.
      */
     private final double ad[] = new double[3];
@@ -153,7 +160,7 @@ public class Crystal {
      * @param sg The space group symbol.
      */
     public Crystal(double a, double b, double c, double alpha, double beta,
-                   double gamma, String sg) {
+            double gamma, String sg) {
         this.a = a;
         this.b = b;
         this.c = c;
@@ -170,8 +177,8 @@ public class Crystal {
         crystalSystem = spaceGroup.crystalSystem;
 
         if (!SpaceGroup.checkRestrictions(crystalSystem, a, b, c, alpha, beta, gamma)) {
-            String message = "The lattice parameters do not satisfy the " + crystalSystem +
-                    " crystal system restrictions:/n" + toString();
+            String message = "The lattice parameters do not satisfy the " + crystalSystem
+                    + " crystal system restrictions:/n" + toString();
             logger.severe(message);
             System.exit(-1);
         }
@@ -292,6 +299,18 @@ public class Crystal {
         G[2][0] = G[0][2];
         G[2][1] = G[1][2];
         G[2][2] = c * c;
+
+        // invert G to yield Gstar
+        DenseMatrix A = new DenseMatrix(G);
+        DenseMatrix I = Matrices.identity(3);
+        DenseMatrix AI = I.copy();
+        A.solve(I, AI);
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                Gstar[i][j] = AI.get(i, j);
+            }
+        }
+
     }
 
     /**
@@ -496,7 +515,7 @@ public class Crystal {
      *            The symmetry operator.
      */
     public void applySymOp(int n, double x[], double y[], double z[],
-                           double mateX[], double mateY[], double mateZ[], SymOp symOp) {
+            double mateX[], double mateY[], double mateZ[], SymOp symOp) {
         final double rot[][] = symOp.rot;
         final double trans[] = symOp.tr;
         final double rot00 = rot[0][0];
@@ -562,6 +581,32 @@ public class Crystal {
     }
 
     /**
+     * Apply a symmetry operator to one HKL.
+     *
+     * @param hkl
+     *            Input HKL.
+     * @param mate
+     *            Symmetry mate HKL.
+     * @param symOp
+     *            The symmetry operator.
+     */
+    public void applySymOp(HKL hkl, HKL mate, SymOp symOp) {
+        double rot[][] = symOp.rot;
+        double trans[] = symOp.tr;
+        double h = hkl.h();
+        double k = hkl.k();
+        double l = hkl.l();
+        // Apply Symmetry Operator.
+        double hs = rot[0][0] * h + rot[0][1] * k + rot[0][2] * l + trans[0];
+        double ks = rot[1][0] * h + rot[1][1] * k + rot[1][2] * l + trans[1];
+        double ls = rot[2][0] * h + rot[2][1] * k + rot[2][2] * l + trans[2];
+        // Convert back to HKL
+        mate.h((int) hs);
+        mate.k((int) ks);
+        mate.l((int) ls);
+    }
+
+    /**
      * Apply a symmetry operator to one set of coordinates.
      *
      * @param xyz
@@ -592,6 +637,31 @@ public class Crystal {
     }
 
     /**
+     * Apply a symmetry operator to one HKL.
+     *
+     * @param hkl
+     *            Input HKL.
+     * @param mate
+     *            Symmetry mate HKL.
+     * @param symOp
+     *            The symmetry operator.
+     */
+    public void applySymRot(HKL hkl, HKL mate, SymOp symOp) {
+        double rot[][] = symOp.rot;
+        double h = hkl.h();
+        double k = hkl.k();
+        double l = hkl.l();
+        // Apply Symmetry Operator.
+        double hs = rot[0][0] * h + rot[0][1] * k + rot[0][2] * l;
+        double ks = rot[1][0] * h + rot[1][1] * k + rot[1][2] * l;
+        double ls = rot[2][0] * h + rot[2][1] * k + rot[2][2] * l;
+        // Convert back to HKL
+        mate.h((int) hs);
+        mate.k((int) ks);
+        mate.l((int) ls);
+    }
+
+    /**
      * Apply a symmetry operator to an array of Cartesian coordinates. If the
      * arrays x, y or z are null or not of length n, the method returns
      * immediately. If xs, ys or zs are null or not of length n, new arrays are
@@ -615,7 +685,7 @@ public class Crystal {
      *            The symmetry operator.
      */
     public void applySymRot(int n, double x[], double y[], double z[],
-                            double mateX[], double mateY[], double mateZ[], SymOp symOp) {
+            double mateX[], double mateY[], double mateZ[], SymOp symOp) {
         double rot[][] = symOp.rot;
         final double rot00 = rot[0][0];
         final double rot10 = rot[1][0];
@@ -647,7 +717,7 @@ public class Crystal {
     }
 
     public void toFractionalCoordinates(int n, double x[], double y[],
-                                        double z[], double xf[], double yf[], double zf[]) {
+            double z[], double xf[], double yf[], double zf[]) {
         for (int i = 0; i < n; i++) {
             double xc = x[i];
             double yc = y[i];
@@ -682,7 +752,7 @@ public class Crystal {
         xf[0] = xc * r00 + yc * r10 + zc * r20;
         xf[1] = xc * r01 + yc * r11 + zc * r21;
         xf[2] = xc * r02 + yc * r12 + zc * r22;
-        
+
     }
 
     public void toCartesianCoordinates(double xf[], double x[]) {
@@ -699,6 +769,42 @@ public class Crystal {
         xf[2] = (x[2] / gamma_term) / c;
         xf[1] = ((x[1] - xf[2] * c * beta_term) / sin_gamma) / b;
         xf[0] = (x[0] - xf[1] * b * cos_gamma - xf[2] * c * cos_beta) / a;
+    }
+
+    public static double quad_form(double v[], double mat[][]) {
+        return (v[0] * (v[0] * mat[0][0] + 2 * (v[1] * mat[0][1] + v[2] * mat[0][2]))
+                + v[1] * (v[1] * mat[1][1] + 2 * (v[2] * mat[1][2]))
+                + v[2] * v[2] * mat[2][2]);
+    }
+
+    public static double quad_form(HKL hkl, double mat[][]) {
+        return (hkl.h() * (hkl.h() * mat[0][0] + 2 * (hkl.k() * mat[0][1] + hkl.l() * mat[0][2]))
+                + hkl.k() * (hkl.k() * mat[1][1] + 2 * (hkl.l() * mat[1][2]))
+                + hkl.l() * hkl.l() * mat[2][2]);
+    }
+
+    public static double invressq(Crystal crystal, HKL hkl) {
+        return quad_form(hkl, crystal.Gstar);
+    }
+
+    public static double res(Crystal crystal, HKL hkl) {
+        return 1.0 / sqrt(quad_form(hkl, crystal.Gstar));
+    }
+
+    public static double sym_phase_shift(HKL hkl, SymOp symOp) {
+        double trans[] = symOp.tr;
+        // Apply translation
+        return -2.0 * PI
+                * (hkl.h() * trans[0] + hkl.k() * trans[1] + hkl.l() * trans[2]);
+    }
+
+    // this is here as its an atypical mod function used by xtal methods
+    public static double mod(double a, double b) {
+        double res = a % b;
+        if (res < 0.0) {
+            res += b;
+        }
+        return res;
     }
 
     @Override

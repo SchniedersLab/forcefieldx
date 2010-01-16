@@ -18,7 +18,7 @@
  * along with Force Field X; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
  */
-package ffx.crystal;
+package ffx.xray;
 
 import static java.lang.Math.round;
 
@@ -30,6 +30,8 @@ import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
 
+import ffx.crystal.Crystal;
+import ffx.crystal.Resolution;
 import ffx.numerics.fft.Complex;
 import ffx.numerics.fft.Real3DParallel;
 
@@ -39,6 +41,7 @@ public class CrystalReciprocalSpace {
 
     private static final Logger logger = Logger.getLogger(CrystalReciprocalSpace.class.getName());
     private final Crystal crystal;
+    private final Resolution resolution;
     private final int nSymm;
     private final double coordinates[][][];
     private final double xf[];
@@ -124,20 +127,22 @@ public class CrystalReciprocalSpace {
     /**
      * Crystal Reciprocal Space.
      */
-    public CrystalReciprocalSpace(Crystal crystal, double coordinates[][][],
+    public CrystalReciprocalSpace(Crystal crystal, Resolution resolution, double coordinates[][][],
             int nAtoms, ParallelTeam parallelTeam) {
         this.crystal = crystal;
+        this.resolution = resolution;
         this.coordinates = coordinates;
         this.nAtoms = nAtoms;
         this.parallelTeam = parallelTeam;
         threadCount = parallelTeam.getThreadCount();
 
-        double density = 1.0;
+        double density = 2.0 * resolution.sampling_limit();
+        double res = resolution.res_limit();
 
         // Set default FFT grid size from unit cell dimensions.
-        int nX = (int) Math.floor(crystal.a * density) + 1;
-        int nY = (int) Math.floor(crystal.b * density) + 1;
-        int nZ = (int) Math.floor(crystal.c * density) + 1;
+        int nX = (int) Math.floor(crystal.a * density / res) + 1;
+        int nY = (int) Math.floor(crystal.b * density / res) + 1;
+        int nZ = (int) Math.floor(crystal.c * density / res) + 1;
         if (nX % 2 != 0) {
             nX += 1;
         }

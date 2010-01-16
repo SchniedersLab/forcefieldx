@@ -181,6 +181,22 @@ public final class VectorMath {
     }
 
     /**
+     * returns the determinant for a 3x3 matrix
+     *
+     * @param m  input matrix
+     *
+     * @return determinant
+     */
+    public static double determinant3(double m[][]) {
+        return (m[0][0] * m[1][1] * m[2][2]
+                - m[0][0] * m[1][2] * m[2][1]
+                + m[0][1] * m[1][2] * m[2][0]
+                - m[0][1] * m[1][0] * m[2][2]
+                + m[0][2] * m[1][0] * m[2][1]
+                - m[0][2] * m[1][1] * m[2][0]);
+    }
+
+    /**
      * Finds the difference between two vectors
      *
      * @param a
@@ -384,6 +400,91 @@ public final class VectorMath {
         } else {
             return n * factorial(n - 1);
         }
+    }
+
+    /**
+     * vector times a matrix
+     *
+     * @param v input vector
+     *
+     * @param m input matrix
+     *
+     * @return vector product
+     */
+    public static double[] vec3mat3(double v[], double m[][]) {
+        double res[] = new double[3];
+        res[0] = v[0] * m[0][0] + v[1] * m[1][0] + v[2] * m[2][0];
+        res[1] = v[0] * m[0][1] + v[1] * m[1][1] + v[2] * m[2][1];
+        res[2] = v[0] * m[0][2] + v[1] * m[1][2] + v[2] * m[2][2];
+
+        return res;
+    }
+
+    /**
+     * matrix times a vector
+     *
+     * @param m input matrix
+     *
+     * @param v input vector
+     *
+     * @return vector product
+     */
+    public static double[] mat3vec3(double v[], double m[][]) {
+        double res[] = new double[3];
+        res[0] = m[0][0] * v[0] + m[0][1] * v[1] + m[0][2] * v[2];
+        res[1] = m[1][0] * v[0] + m[1][1] * v[1] + m[1][2] * v[2];
+        res[2] = m[2][0] * v[0] + m[2][1] * v[1] + m[2][2] * v[2];
+
+        return res;
+    }
+
+    /**
+     * matrix times a matrix
+     *
+     * @param m1 first input matrix
+     *
+     * @param m2 second input matrix
+     *
+     * @return matrix product
+     */
+    public static double[][] mat3mat3(double m1[][], double m2[][]) {
+        double res[][] = new double[3][3];
+        res[0][0] = m1[0][0] * m2[0][0] + m1[0][1] * m2[1][0] + m1[0][2] * m2[2][0];
+        res[0][1] = m1[0][0] * m2[0][1] + m1[0][1] * m2[1][1] + m1[0][2] * m2[2][1];
+        res[0][2] = m1[0][0] * m2[0][2] + m1[0][1] * m2[1][2] + m1[0][2] * m2[2][2];
+        res[1][0] = m1[1][0] * m2[0][0] + m1[1][1] * m2[1][0] + m1[1][2] * m2[2][0];
+        res[1][1] = m1[1][0] * m2[0][1] + m1[1][1] * m2[1][1] + m1[1][2] * m2[2][1];
+        res[1][2] = m1[1][0] * m2[0][2] + m1[1][1] * m2[1][2] + m1[1][2] * m2[2][2];
+        res[2][0] = m1[2][0] * m2[0][0] + m1[2][1] * m2[1][0] + m1[2][2] * m2[2][0];
+        res[2][1] = m1[2][0] * m2[0][1] + m1[2][1] * m2[1][1] + m1[2][2] * m2[2][1];
+        res[2][2] = m1[2][0] * m2[0][2] + m1[2][1] * m2[1][2] + m1[2][2] * m2[2][2];
+
+        return res;
+    }
+
+    /**
+     * scalar times a matrix times a matrix
+     *
+     * @param scalar input scalar
+     * @param m1 first input matrix
+     *
+     * @param m2 second input matrix
+     *
+     * @return matrix product
+     */
+    public static double[][] scalarmat3mat3(double scalar, double m1[][], double m2[][]) {
+        double res[][] = new double[3][3];
+        res[0][0] = scalar * (m1[0][0] * m2[0][0] + m1[0][1] * m2[1][0] + m1[0][2] * m2[2][0]);
+        res[0][1] = scalar * (m1[0][0] * m2[0][1] + m1[0][1] * m2[1][1] + m1[0][2] * m2[2][1]);
+        res[0][2] = scalar * (m1[0][0] * m2[0][2] + m1[0][1] * m2[1][2] + m1[0][2] * m2[2][2]);
+        res[1][0] = scalar * (m1[1][0] * m2[0][0] + m1[1][1] * m2[1][0] + m1[1][2] * m2[2][0]);
+        res[1][1] = scalar * (m1[1][0] * m2[0][1] + m1[1][1] * m2[1][1] + m1[1][2] * m2[2][1]);
+        res[1][2] = scalar * (m1[1][0] * m2[0][2] + m1[1][1] * m2[1][2] + m1[1][2] * m2[2][2]);
+        res[2][0] = scalar * (m1[2][0] * m2[0][0] + m1[2][1] * m2[1][0] + m1[2][2] * m2[2][0]);
+        res[2][1] = scalar * (m1[2][0] * m2[0][1] + m1[2][1] * m2[1][1] + m1[2][2] * m2[2][1]);
+        res[2][2] = scalar * (m1[2][0] * m2[0][2] + m1[2][1] * m2[1][2] + m1[2][2] * m2[2][2]);
+
+        return res;
     }
 
     /**
