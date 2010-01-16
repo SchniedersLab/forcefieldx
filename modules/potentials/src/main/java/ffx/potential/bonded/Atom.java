@@ -280,7 +280,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * @since 1.0
      */
     private double anisouGradient[][] = new double[1][];
-
     private ArrayList<Vector3d> trajectory;
     // Molecular Mechanics Info
     private AtomType atomType = null;
@@ -1020,7 +1019,11 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     public double[] getAnisou() {
-        return anisou[altID];
+        if (anisou.length > altID) {
+            return anisou[altID];
+        } else {
+            return null;
+        }
     }
 
     public void setAnisouGradient(double[] anisou) {

@@ -21,9 +21,12 @@
 package ffx.ui;
 
 import java.io.File;
+import java.util.Iterator;
 import java.util.Hashtable;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.configuration.SystemConfiguration;
@@ -31,9 +34,6 @@ import org.apache.commons.configuration.SystemConfiguration;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.utilities.Keyword;
-import java.util.Iterator;
-import java.util.logging.Level;
-import org.apache.commons.configuration.Configuration;
 
 /**
  * The FFXSystem class contains extensions to the generic
