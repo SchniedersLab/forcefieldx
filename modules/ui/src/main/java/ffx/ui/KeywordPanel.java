@@ -395,7 +395,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
             }
         }
         d.setAcceptAllFileFilterUsed(false);
-        d.setFileFilter(MainPanel.keyfilefilter);
+        d.setFileFilter(MainPanel.keyFileFilter);
         d.setDialogTitle("Open KEY File");
         int result = d.showOpenDialog(this);
         if (result == JFileChooser.APPROVE_OPTION) {

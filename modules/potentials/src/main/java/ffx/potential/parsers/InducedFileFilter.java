@@ -1,10 +1,22 @@
 /**
- * <p>Title: Force Field X</p>
- * <p>Description: Force Field X is a Molecular Engineering Environment</p>
- * <p>Copyright: Copyright (c) Michael J. Schnieders 2002-2009</p>
- * <p>Institution: Labs of Axel T. Brunger (Stanford), Vijay S. Pande (Stanford) and Jay W. Ponder (WUSTL)</p>
- * @author Michael J. Schnieders
- * @version 0.1
+ * Title: Force Field X
+ * Description: Force Field X - Software for Molecular Biophysics.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2009
+ *
+ * This file is part of Force Field X.
+ *
+ * Force Field X is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 3 as published
+ * by the Free Software Foundation.
+ *
+ * Force Field X is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Force Field X; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
  */
 package ffx.potential.parsers;
 
@@ -12,33 +24,42 @@ import java.io.File;
 
 import javax.swing.filechooser.FileFilter;
 
+import org.apache.commons.io.FilenameUtils;
+
 /**
- * The InducedFileFilter class is used to choose TINKER Induced (*.IND) files.
+ * The InducedFileFilter class is used to choose a TINKER induced
+ * dipole (*.IND) file.
+ *
+ * @author Michael J. Schnieders
+ *
+ * @since 1.0
  */
 public final class InducedFileFilter extends FileFilter {
-	/**
-	 * Default Constructor
-	 */
-	public InducedFileFilter() {
-	}
 
-	/**
-	 * This method determines whether or not the parm File parameter is a Tinker
-	 * *.xyz or not, returning true if it is. (Also returns true for any
-	 * directory)
-	 */
-	public boolean accept(File parm) {
-		if (parm.isDirectory()) {
-			return true;
-		}
-		String filename = parm.getName().toLowerCase();
-		return filename.endsWith("u");
-	}
+    /**
+     * Default Constructor.
+     */
+    public InducedFileFilter() {
+    }
 
-	/**
-	 * Provides a description of this FileFilter
-	 */
-	public String getDescription() {
-		return new String("Tinker Induced Dipole Files: *.*u");
-	}
+    /**
+     * This method return <code>true</code> if the file is a directory or
+     * matches the extension for TINKER induced dipole (*.*U) file.
+     */
+    @Override
+    public boolean accept(File file) {
+        if (file.isDirectory()) {
+            return true;
+        }
+        String ext = FilenameUtils.getExtension(file.getName());
+        return ext.toUpperCase().endsWith("U");
+    }
+
+    /**
+     * Provides a description of the InducedFileFilter.
+     */
+    @Override
+    public String getDescription() {
+        return new String("TINKER Induced Dipole Files (*.*U)");
+    }
 }

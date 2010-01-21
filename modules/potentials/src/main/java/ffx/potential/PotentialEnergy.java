@@ -77,6 +77,7 @@ public class PotentialEnergy implements Optimizable {
     protected final int nTorsions;
     protected final int nPiOrbitalTorsions;
     protected final int nTorsionTorsions;
+    protected int nVanDerWaals;
     protected final boolean bondTerm;
     protected final boolean angleTerm;
     protected final boolean stretchBendTerm;
@@ -88,7 +89,6 @@ public class PotentialEnergy implements Optimizable {
     protected final boolean vanDerWaalsTerm;
     protected final boolean multipoleTerm;
     protected final boolean polarizationTerm;
-    protected int nVanDerWaals;
     protected double bondEnergy;
     protected double angleEnergy;
     protected double stretchBendEnergy;
@@ -113,7 +113,7 @@ public class PotentialEnergy implements Optimizable {
 
     public PotentialEnergy(MolecularAssembly molecularAssembly) {
         parallelTeam = new ParallelTeam();
-        logger.info(" Number of Threads: " +  parallelTeam.getThreadCount());
+        logger.info(" Number of Threads: " + parallelTeam.getThreadCount());
 
         ForceField forceField = molecularAssembly.getForceField();
 
@@ -377,9 +377,9 @@ public class PotentialEnergy implements Optimizable {
         if (print) {
             StringBuffer sb = new StringBuffer("\n");
             if (gradient) {
-                sb.append("Computed Potential Energy and Atomic Coordinate Gradients\n");
+                sb.append(" Computed Potential Energy and Atomic Coordinate Gradients\n");
             } else {
-                sb.append("Computed Potential Energy\n");
+                sb.append(" Computed Potential Energy\n");
             }
             sb.append(this);
             logger.info(sb.toString());

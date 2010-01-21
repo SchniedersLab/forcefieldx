@@ -595,7 +595,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     public String getKey() {
         if (atomType != null) {
-            return atomType.key;
+            return atomType.getKey();
         }
         return null;
     }

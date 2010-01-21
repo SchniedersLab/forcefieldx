@@ -9,14 +9,14 @@
     <packaging>pom</packaging>
     <name>Force Field X</name>
     <version>1.0.0-SNAPSHOT</version>
-    <description>Software for Biomolecular Physics</description>
+    <description>Software for Molecular Biophysics</description>
     <url>http://ffx.kenai.com</url>
     <inceptionYear>2001</inceptionYear>
 
     <organization>
         <!-- This is used to generate the Copyright on the website.
              Module authors should override this with their name. -->
-        <name>Michael J. Schnieders</name>
+        <name>Force Field X Module Authors</name>
         <url>http://ffx.kenai.com</url>
     </organization>
 

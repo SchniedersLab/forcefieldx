@@ -45,7 +45,11 @@ import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
 
 /**
- * The XYZFilter class parses TINKER Cartesian Coordinate (*.XYZ) files.
+ * The XYZFilter class parses TINKER Cartesian coordinate (*.XYZ) files.
+ *
+ * @author Michael J. Schnieders
+ *
+ * @since 1.0
  */
 public class XYZFilter extends SystemFilter {
 

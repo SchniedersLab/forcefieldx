@@ -56,6 +56,10 @@ import ffx.utilities.Keyword;
  * The PDBFilter class parses data from a Protein DataBank (*.PDB) file. The
  * following records are recognized: ANISOU, ATOM, CONECT, CRYST1, HELIX,
  * HETATM, LINK, SHEET, SSBOND, TURN, REMARK. The rest are ignored.
+ *
+ * @author Michael J. Schnieders
+ *
+ * @since 1.0
  */
 public final class PDBFilter extends SystemFilter {
 

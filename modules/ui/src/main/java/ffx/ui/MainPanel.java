@@ -76,7 +76,6 @@ import javax.vecmath.Vector3d;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.SystemUtils;
-import org.apache.commons.lang.time.StopWatch;
 
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
@@ -104,8 +103,15 @@ import ffx.potential.parsers.XYZFileFilter;
 import ffx.potential.parsers.XYZFilter;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.Force_Field;
+import ffx.potential.parsers.FFXFileFilter;
 import ffx.ui.properties.FFXLocale;
 import ffx.utilities.Keyword;
+import java.util.Arrays;
+import java.util.Iterator;
+import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.configuration.SystemConfiguration;
 
 /**
  * The MainPanel class is the main container for Force Field X, handles
@@ -117,15 +123,16 @@ public final class MainPanel extends JPanel implements ActionListener,
     // Static Variables
 
     private static final Logger logger = Logger.getLogger(MainPanel.class.getName());
-    private static JFileChooser fileChooser = null;
-    private static File pwd;
     // Panel Order in the TabbedPane
     public static final int GRAPHICS = 0;
     public static final int KEYWORDS = 1;
     public static final int MODELING = 2;
     public static String classpath;
     public static File ffxDir;
+    private static File pwd;
+
     // FileFilters for filtering file selection in the JFileChooser
+    private static JFileChooser fileChooser = null;
     public static final XYZFileFilter xyzFileFilter = new XYZFileFilter();
     public static final ARCFileFilter arcFileFilter = new ARCFileFilter();
     public static final INTFileFilter intFileFilter = new INTFileFilter();
@@ -133,8 +140,8 @@ public final class MainPanel extends JPanel implements ActionListener,
     public static final InducedFileFilter indFileFilter = new InducedFileFilter();
     public static final ForceFieldFileFilter forceFieldFileFilter = new ForceFieldFileFilter();
     public static final PDBFileFilter pdbFileFilter = new PDBFileFilter();
-    public static final KeyFileFilter keyfilefilter = new KeyFileFilter();
-    public static StopWatch stopWatch = new StopWatch();
+    public static final KeyFileFilter keyFileFilter = new KeyFileFilter();
+    public static final FFXFileFilter ffxFileFilter = new FFXFileFilter();
     ImageIcon test = new ImageIcon("");
 
     static {
@@ -522,7 +529,7 @@ public final class MainPanel extends JPanel implements ActionListener,
                 fc.setDialogTitle("Choose a KEY File");
                 fc.setCurrentDirectory(pwd);
                 fc.setSelectedFile(null);
-                fc.setFileFilter(keyfilefilter);
+                fc.setFileFilter(keyFileFilter);
                 int result = fc.showOpenDialog(this);
                 if (result == JFileChooser.APPROVE_OPTION) {
                     File keyfile = fc.getSelectedFile();
@@ -801,7 +808,6 @@ public final class MainPanel extends JPanel implements ActionListener,
             SwingUtilities.updateComponentTreeUI(SwingUtilities.getRoot(this));
             splashScreen.dispose();
         }
-        stopWatch.start();
     }
 
     public boolean isOpening() {
@@ -979,11 +985,12 @@ public final class MainPanel extends JPanel implements ActionListener,
             return null;
         }
         JFileChooser fc = resetFileChooser();
-        fc.setDialogTitle("Choose XYZ/Archive File");
+        fc.setDialogTitle("Choose FFX, PDB, XYZ or ARC");
         fc.addChoosableFileFilter(xyzFileFilter);
         fc.addChoosableFileFilter(pdbFileFilter);
         fc.addChoosableFileFilter(intFileFilter);
         fc.addChoosableFileFilter(arcFileFilter);
+        fc.addChoosableFileFilter(ffxFileFilter);
         fc.setAcceptAllFileFilterUsed(true);
         int result = fc.showOpenDialog(this);
         if (result == JFileChooser.APPROVE_OPTION) {
@@ -1018,12 +1025,13 @@ public final class MainPanel extends JPanel implements ActionListener,
          * Run the Force Field X script.
          */
         if (extension.equalsIgnoreCase("ffx")) {
+            ModelingShell shell = getModelingShell();
             if (java.awt.GraphicsEnvironment.isHeadless()) {
-                getModelingShell().headlessRun(file);
+                shell.headlessRun(file);
                 return null;
             } else {
-                getModelingShell().loadScriptFile(file);
-                getModelingShell().runScript();
+                shell.loadScriptFile(file);
+                shell.runScript();
                 return null;
             }
         }
@@ -1046,6 +1054,10 @@ public final class MainPanel extends JPanel implements ActionListener,
             newSystem.setFileType(FileType.PDB);
             systemFilter = new PDBFilter(newSystem);
         }
+
+        // Create the CompositeConfiguration properties.
+
+
         // Open the keyword file for this coordinate file, if one exists.
         if (openKey(newSystem, true)) {
             // Try to parse the force field specified in the key file.
@@ -1058,8 +1070,8 @@ public final class MainPanel extends JPanel implements ActionListener,
                 logger.warning("Using force field AMOEBA-PROTEIN-2009");
                 ff = ForceField.Force_Field.AMOEBA_PROTEIN_2009;
             }
-            forceFieldFilter = new ForceFieldFilter(ff, newSystem.getKeyFile());
-            ForceField forceField = forceFieldFilter.parse();
+            forceFieldFilter = new ForceFieldFilter();
+            ForceField forceField = forceFieldFilter.parse(ff, newSystem.getKeyFile());
             newSystem.setForceField(forceField);
             systemFilter.setForceField(forceField);
             systemFilter.setKeywordHash(newSystem.getKeywords());
@@ -1071,6 +1083,74 @@ public final class MainPanel extends JPanel implements ActionListener,
             return openThread;
         }
         return null;
+    }
+
+    private CompositeConfiguration createConfiguration(File keyFile) {
+
+        /**
+         * Command line options take precedences.
+         */
+        CompositeConfiguration properties = new CompositeConfiguration();
+        properties.addConfiguration(new SystemConfiguration());
+
+        /**
+         * Structure specific options are 2nd.
+         */
+        if (keyFile.exists() && keyFile.canRead()) {
+            try {
+                properties.addConfiguration(new PropertiesConfiguration(keyFile));
+            } catch (Exception e) {
+                logger.info("Error loading " + keyFile.getAbsolutePath() + ".");
+            }
+        }
+
+        /**
+         * User specific options are 3rd.
+         */
+        String filename = System.getProperty("user.home") + File.separator + ".ffx/ffx.properties";
+        File userPropFile = new File(filename);
+        if (userPropFile.exists() && userPropFile.canRead()) {
+            try {
+                properties.addConfiguration(new PropertiesConfiguration(userPropFile));
+            } catch (Exception e) {
+                logger.info("Error loading " + filename + ".");
+            }
+
+        }
+
+        /**
+         * System wide options are 2nd to last.
+         */
+        filename = System.getenv("FFX_PROPERTIES");
+        if (filename != null) {
+            File systemPropFile = new File(filename);
+            if (systemPropFile.exists() && systemPropFile.canRead()) {
+                try {
+                    properties.addConfiguration(new PropertiesConfiguration(systemPropFile));
+                } catch (Exception e) {
+                    logger.info("Error loading " + filename + ".");
+                }
+            }
+        }
+
+        /**
+         * Load the force field information.
+         */
+
+        /**
+         * Echo the interpolated configuration.
+         */
+        if (logger.isLoggable(Level.INFO)) {
+            Configuration config = properties.interpolatedConfiguration();
+            Iterator<String> i = config.getKeys();
+            while (i.hasNext()) {
+                String s = i.next();
+                logger.info("Key: " + s + ", Value: " + Arrays.toString(config.getList(s).toArray()));
+            }
+        }
+        
+        return properties;
+
     }
 
     public FFXSystem openWait(String file) {

@@ -34,6 +34,7 @@ import org.apache.commons.configuration.SystemConfiguration;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.utilities.Keyword;
+import java.util.Arrays;
 
 /**
  * The FFXSystem class contains extensions to the generic
@@ -86,6 +87,8 @@ public class FFXSystem extends MolecularAssembly {
      * 3.) User specific properties (~/.ffx/ffx.properties)
      *
      * 4.) System wide properties (file defined by environment variable FFX_PROPERTIES)
+     *
+     * 5.) Internal force field definition.
      */
     private void loadProperties() {
         /**
@@ -121,7 +124,6 @@ public class FFXSystem extends MolecularAssembly {
             } catch (Exception e) {
                 logger.info("Error loading " + filename + ".");
             }
-
         }
 
         /**
@@ -142,12 +144,12 @@ public class FFXSystem extends MolecularAssembly {
         /**
          * Echo the interpolated configuration.
          */
-        if (logger.isLoggable(Level.FINE)) {
+        if (logger.isLoggable(Level.INFO)) {
             Configuration config = properties.interpolatedConfiguration();
             Iterator<String> i = config.getKeys();
             while (i.hasNext()) {
                 String s = i.next();
-                logger.info("Key: " + s + ", Value: " + config.getString(s));
+                logger.info("Key: " + s + ", Value: " + Arrays.toString(config.getList(s).toArray()));
             }
         }
     }

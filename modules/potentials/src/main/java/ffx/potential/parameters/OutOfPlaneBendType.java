@@ -23,11 +23,18 @@ package ffx.potential.parameters;
 import static java.lang.Math.PI;
 import static java.lang.Math.pow;
 
+import java.util.Arrays;
+import java.util.Comparator;
+
 /**
  * The OutOfPlaneBendType class defines one Allinger style
  * out-of-plane angle bending energy type.
+ *
+ * @author Michael J. Schnieders
+ *
+ * @since 1.0
  */
-public final class OutOfPlaneBendType extends BaseType {
+public final class OutOfPlaneBendType extends BaseType implements Comparator<String> {
 
     /**
      * Atom classes for this out-of-plane angle bending type.
@@ -74,7 +81,7 @@ public final class OutOfPlaneBendType extends BaseType {
      */
     @Override
     public String toString() {
-        return String.format("opbend  %5d  %5d  %5d  %5d  %4.2f", atomClasses[0],
+        return String.format("opbend  %5d  %5d  %5d  %5d  %6.2f", atomClasses[0],
                 atomClasses[1], atomClasses[2],
                 atomClasses[3], forceConstant);
     }
@@ -98,4 +105,45 @@ public final class OutOfPlaneBendType extends BaseType {
      * Convert Out-of-Plane bending energy to kcal/mole.
      */
     public static final double units = 1.0 / pow(180.0 / PI, 2);
+
+    @Override
+    public int compare(String s1, String s2) {
+        String keys1[] = s1.split(" ");
+        String keys2[] = s2.split(" ");
+
+        for (int i = 0; i < 4; i++) {
+            int c1 = Integer.parseInt(keys1[i]);
+            int c2 = Integer.parseInt(keys2[i]);
+            if (c1 < c2) {
+                return -1;
+            } else if (c1 > c2) {
+                return 1;
+            }
+        }
+        return 0;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other == this) {
+            return true;
+        }
+        if (other == null || !(other instanceof OutOfPlaneBendType)) {
+            return false;
+        }
+        OutOfPlaneBendType outOfPlaneBendType = (OutOfPlaneBendType) other;
+        for (int i = 0; i < 4; i++) {
+            if (outOfPlaneBendType.atomClasses[i] != atomClasses[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 53 * hash + Arrays.hashCode(atomClasses);
+        return hash;
+    }
 }

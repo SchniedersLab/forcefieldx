@@ -23,8 +23,6 @@ package ffx.ui;
 import java.awt.Cursor;
 import java.util.logging.Logger;
 
-import org.apache.commons.lang.time.StopWatch;
-
 import ffx.potential.bonded.Utilities;
 import ffx.potential.bonded.Utilities.FileType;
 import ffx.potential.parsers.SystemFilter;
@@ -38,7 +36,6 @@ public class FileOpener
         implements Runnable {
 
     private static final Logger logger = Logger.getLogger(FileOpener.class.getName());
-    
     private static final long KB = 1024;
     private static final long MB = KB * KB;
     SystemFilter systemFilter = null;
@@ -46,7 +43,7 @@ public class FileOpener
     private boolean timer = false;
     private boolean gc = false;
     private long occupiedMemory;
-    private StopWatch stopWatch;
+    private long time;
 
     public FileOpener(SystemFilter systemFilter, MainPanel mainPanel) {
         this.systemFilter = systemFilter;
@@ -65,43 +62,16 @@ public class FileOpener
             startTimer();
         }
         FFXSystem ffxSystem = null;
-        // Continue if the file was read in successfully
+        // Continue if the file was read in successfully.
         if (systemFilter.readFile()) {
             ffxSystem = (FFXSystem) systemFilter.getMolecularSystem();
             if (ffxSystem.getFileType() != FileType.PDB) {
                 Utilities.biochemistry(ffxSystem, systemFilter.getAtomList());
             }
-            // Add the opened system to the Multiscale Hierarchy
+            // Add the system to the multiscale hierarchy.
             mainPanel.getHierarchy().addSystemNode(ffxSystem);
         }
         mainPanel.setCursor(Cursor.getDefaultCursor());
-
-        /**
-        PMEWisdom pmeWisdom = new PMEWisdom( ffxSystem );
-        pmeWisdom.run();
-
-        PotentialEnergy energy = new PotentialEnergy(ffxSystem);
-        long time = System.nanoTime();
-        double e = energy.energy(true, true);
-        time = System.nanoTime() - time;
-
-        for (int j = 0; j < 20; j++) {
-            long newTime = System.nanoTime();
-            e = energy.energy(true, true);
-            newTime = System.nanoTime() - newTime;
-            if (newTime < time) {
-                time = newTime;
-            }
-        }
-        logger.info(String.format("Best Time: %10.3f (sec)", time * 1.0e-9));
-
-        */
-
-        /**
-        XYZFilter xyzFilter = new XYZFilter(ffxSystem);
-        xyzFilter.writeP1(energy.getCrystal());
-        System.exit(1);
-         */
         if (timer) {
             stopTimer(ffxSystem);
         }
@@ -119,19 +89,18 @@ public class FileOpener
      * files for specific information.
      */
     private void startTimer() {
-        stopWatch = new StopWatch();
         Runtime runtime = Runtime.getRuntime();
         if (gc) {
             runtime.runFinalization();
             runtime.gc();
         }
         occupiedMemory = runtime.totalMemory() - runtime.freeMemory();
-        stopWatch.start();
+        time -= System.nanoTime();
     }
 
-    private void stopTimer(FFXSystem ffeSystem) {
-        stopWatch.stop();
-        logger.info("Opened " + ffeSystem.toString() + " with " + ffeSystem.getAtomList().size() + " atoms.\n" + "File Op Time  (msec): " + stopWatch.getTime());
+    private void stopTimer(FFXSystem ffxSystem) {
+        time += System.nanoTime();
+        logger.info("Opened " + ffxSystem.toString() + " with " + ffxSystem.getAtomList().size() + " atoms.\n" + "File Op Time  (msec): " + time * 1.0e-9);
         Runtime runtime = Runtime.getRuntime();
         if (gc) {
             runtime.runFinalization();
@@ -140,6 +109,5 @@ public class FileOpener
             logger.info("File Op Memory  (Kb): " + moleculeMemory / KB);
         }
         occupiedMemory = runtime.totalMemory() - runtime.freeMemory();
-        logger.info("\nAfter File Op FFX Up-Time       (sec): " + (MainPanel.stopWatch.getTime()) / 1000 + "\nAfter File Op FFX Memory         (Mb): " + occupiedMemory / MB + " " + runtime.freeMemory() / MB + " " + runtime.totalMemory() / MB);
     }
 }

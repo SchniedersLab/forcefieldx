@@ -22,85 +22,131 @@ package ffx.potential.parameters;
 
 import static java.lang.Math.pow;
 
+import java.util.Comparator;
+
 /**
  * The PolarizeType class defines an isotropic atomic polarizability.
+ *
+ * @author Michael J. Schnieders
+ *
+ * @since 1.0
  */
-public final class PolarizeType extends BaseType {
-	private static final double sixth = 1.0 / 6.0;
-	/**
-	 * Atom type number.
-	 */
-	public final int atomType;
-	/**
-	 * Thole damping factor.
-	 */
-	public final double thole;
-	/**
-	 * Value of polarizability scale factor.
-	 */
-	public final double pdamp;
-	/**
-	 * Isotropic polarizability in units of Angstroms^3.
-	 */
-	public final double polarizability;
-	/**
-	 * Connected types in the polarization group of each atom. (may be null)
-	 */
-	public int[] polarizationGroup;
+public final class PolarizeType extends BaseType implements Comparator<String> {
 
-	/**
-	 * PolarizeType Constructor.
-	 * 
-	 * @param atomType
-	 *            int
-	 * @param polarizability
-	 *            double
-	 * @param polarizationGroup
-	 *            int[]
-	 */
-	public PolarizeType(int atomType, double polarizability, double thole,
-			int polarizationGroup[]) {
-		super(ForceField.ForceFieldType.POLARIZE, new String("" + atomType));
-		this.atomType = atomType;
-		this.thole = thole;
-		this.polarizability = polarizability;
-		this.polarizationGroup = polarizationGroup;
-		if (thole == 0.0) {
-			pdamp = 0.0;
-		} else {
-			pdamp = pow(polarizability, sixth);
-		}
-	}
+    private static final double sixth = 1.0 / 6.0;
+    /**
+     * Atom type number.
+     */
+    public final int type;
+    /**
+     * Thole damping factor.
+     */
+    public final double thole;
+    /**
+     * Value of polarizability scale factor.
+     */
+    public final double pdamp;
+    /**
+     * Isotropic polarizability in units of Angstroms^3.
+     */
+    public final double polarizability;
+    /**
+     * Connected types in the polarization group of each atom. (may be null)
+     */
+    public int[] polarizationGroup;
 
-        public void add(int key) {
-            for (int i : polarizationGroup) {
-                if (key == i) {
-                    return;
-                }
+    /**
+     * PolarizeType Constructor.
+     *
+     * @param atomType
+     *            int
+     * @param polarizability
+     *            double
+     * @param polarizationGroup
+     *            int[]
+     */
+    public PolarizeType(int atomType, double polarizability, double thole,
+            int polarizationGroup[]) {
+        super(ForceField.ForceFieldType.POLARIZE, new String("" + atomType));
+        this.type = atomType;
+        this.thole = thole;
+        this.polarizability = polarizability;
+        this.polarizationGroup = polarizationGroup;
+        if (thole == 0.0) {
+            pdamp = 0.0;
+        } else {
+            pdamp = pow(polarizability, sixth);
+        }
+    }
+
+    public void add(int key) {
+        for (int i : polarizationGroup) {
+            if (key == i) {
+                return;
             }
-            int len = polarizationGroup.length;
-            int newGroup[] = new int[len+1];
-            for (int i=0; i<len; i++) {
-                newGroup[i] = polarizationGroup[i];
+        }
+        int len = polarizationGroup.length;
+        int newGroup[] = new int[len + 1];
+        for (int i = 0; i < len; i++) {
+            newGroup[i] = polarizationGroup[i];
+        }
+        newGroup[len] = key;
+        polarizationGroup = newGroup;
+    }
+
+    /**
+     * Nicely formatted polarization type.
+     *
+     * @return String
+     */
+    @Override
+    public String toString() {
+        StringBuffer polarizeString = new StringBuffer(String.format(
+                "polarize  %5d  %6.3f %6.3f", type, polarizability, thole));
+        if (polarizationGroup != null) {
+            for (int a : polarizationGroup) {
+                polarizeString.append(String.format("  %5d", a));
             }
-            newGroup[len] = key;
-            polarizationGroup = newGroup;
+        }
+        return polarizeString.toString();
+    }
+
+    @Override
+    public int compare(String s1, String s2) {
+
+        int t1 = Integer.parseInt(s1);
+        int t2 = Integer.parseInt(s2);
+
+        if (t1 < t2) {
+            return -1;
+        }
+        if (t1 > t2) {
+            return 1;
         }
 
-	/**
-	 * Nicely formatted polarization type.
-	 * 
-	 * @return String
-	 */
-	@Override
-	public String toString() {
-		StringBuffer polarizeString = new StringBuffer(String.format(
-				"polarize  %5d  %5.3f %5.3f", atomType, polarizability, thole));
-		if (polarizationGroup != null) {
-			for (int a : polarizationGroup) {
-				polarizeString.append(String.format("  %5d", a));
-			}
-		}
-		return polarizeString.toString();
-	}
+        return 0;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other == this) {
+            return true;
+        }
+        if (other == null || !(other instanceof PolarizeType)) {
+            return false;
+        }
+        PolarizeType polarizeType = (PolarizeType) other;
+        if (polarizeType.type == this.type) {
+            return true;
+        }
+
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 5;
+        hash = 37 * hash + type;
+        return hash;
+    }
 }

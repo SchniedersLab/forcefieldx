@@ -20,68 +20,116 @@
  */
 package ffx.potential.parameters;
 
+import java.util.Arrays;
+import java.util.Comparator;
+
 /**
  * The PiTorsionType class defines a Pi-Torsion energy term.
+ *
+ * @author Michael J. Schnieders
+ *
+ * @since 1.0
  */
-public final class PiTorsionType extends BaseType {
-	/**
-	 * Atom classes that form this Pi-Torsion.
-	 */
-	public final int atomClasses[];
-	/**
-	 * Force constant.
-	 */
-	public final double forceConstant;
+public final class PiTorsionType extends BaseType implements Comparator<String> {
 
-	/**
-	 * PiTorsionType Constructor.
-	 * 
-	 * @param atomClasses
-	 *            int[]
-	 * @param forceConstant
-	 *            double
-	 */
-	public PiTorsionType(int atomClasses[], double forceConstant) {
-		super(ForceField.ForceFieldType.PITORS, sortKey(atomClasses));
-		this.atomClasses = atomClasses;
-		this.forceConstant = forceConstant;
-	}
+    /**
+     * Atom classes that form this Pi-Torsion.
+     */
+    public final int atomClasses[];
+    /**
+     * Force constant.
+     */
+    public final double forceConstant;
 
-	/**
-	 * This method sorts the atom classes as: min, max
-	 * 
-	 * @param c
-	 *            atomClasses
-	 * @return lookup key
-	 */
-	public static String sortKey(int c[]) {
-		if (c == null || c.length != 2) {
-			return null;
-		}
-		String key = null;
-		int temp;
-		if (c[1] <= c[0]) {
-			temp = c[1];
-			c[1] = c[0];
-			c[0] = temp;
-		}
-		key = c[0] + " " + c[1];
-		return key;
-	}
+    /**
+     * PiTorsionType Constructor.
+     *
+     * @param atomClasses
+     *            int[]
+     * @param forceConstant
+     *            double
+     */
+    public PiTorsionType(int atomClasses[], double forceConstant) {
+        super(ForceField.ForceFieldType.PITORS, sortKey(atomClasses));
+        this.atomClasses = atomClasses;
+        this.forceConstant = forceConstant;
+    }
 
-	/**
-	 * Nicely formatted Pi-Torsion type.
-	 * 
-	 * @return String
-	 */
-	@Override
-	public String toString() {
-		return String.format("pitors  %5d  %5d  %4.2f", atomClasses[0],
-				atomClasses[1], forceConstant);
-	}
+    /**
+     * This method sorts the atom classes as: min, max
+     *
+     * @param c
+     *            atomClasses
+     * @return lookup key
+     */
+    public static String sortKey(int c[]) {
+        if (c == null || c.length != 2) {
+            return null;
+        }
+        String key = null;
+        int temp;
+        if (c[1] <= c[0]) {
+            temp = c[1];
+            c[1] = c[0];
+            c[0] = temp;
+        }
+        key = c[0] + " " + c[1];
+        return key;
+    }
 
-	/**
-	 * Convert Pi-Torsion energy to kcal/mole.
-	 */
-	public static double units = 1.0;
+    /**
+     * Nicely formatted Pi-Torsion type.
+     *
+     * @return String
+     */
+    @Override
+    public String toString() {
+        return String.format("pitors  %5d  %5d  %4.2f", atomClasses[0],
+                atomClasses[1], forceConstant);
+    }
+    /**
+     * Convert Pi-Torsion energy to kcal/mole.
+     */
+    public static double units = 1.0;
+
+    @Override
+    public int compare(String s1, String s2) {
+        String keys1[] = s1.split(" ");
+        String keys2[] = s2.split(" ");
+
+        for (int i = 0; i < 2; i++) {
+            int c1 = Integer.parseInt(keys1[i]);
+            int c2 = Integer.parseInt(keys2[i]);
+            if (c1 < c2) {
+                return -1;
+            } else if (c1 > c2) {
+                return 1;
+            }
+        }
+        return 0;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other == this) {
+            return true;
+        }
+        if (other == null || !(other instanceof PiTorsionType)) {
+            return false;
+        }
+        PiTorsionType piTorsionType = (PiTorsionType) other;
+        for (int i = 0; i < 2; i++) {
+            if (piTorsionType.atomClasses[i] != atomClasses[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 5;
+        hash = 97 * hash + Arrays.hashCode(atomClasses);
+        return hash;
+    }
 }

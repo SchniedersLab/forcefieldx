@@ -1,12 +1,12 @@
 
-closeAll()
+open ("examples/cg12.xyz")
+
+for (int i = 0; i < 10; i++) {
+   energy();
+}
+
 // Set the convergence criteria
-double eps = 5.0;
-
-open ("examples/nuc.P1.xyz")
-e = minimize(eps)
-
-open ("examples/nuc.P3221.xyz")
+double eps = 1.0;
 e = minimize(eps)
 
 

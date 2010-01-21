@@ -20,12 +20,7 @@
  */
 package ffx.potential.parsers;
 
-import static java.lang.Math.abs;
-import static java.lang.Math.cos;
-import static java.lang.Math.max;
-import static java.lang.Math.sin;
-import static java.lang.Math.sqrt;
-import static java.lang.Math.toRadians;
+import static java.lang.Math.*;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -35,10 +30,7 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import static ffx.numerics.VectorMath.diff;
-import static ffx.numerics.VectorMath.norm;
-import static ffx.numerics.VectorMath.scalar;
-import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.*;
 
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
@@ -48,7 +40,11 @@ import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 
 /**
- * The INTFilter class parses TINKER Internal Coordinate (*.INT) files.
+ * The INTFilter class parses TINKER internal coordinate (*.INT) files.
+ *
+ * @author Michael J. Schnieders
+ *
+ * @since 1.0
  */
 public class INTFilter extends SystemFilter {
 
@@ -377,7 +373,7 @@ public class INTFilter extends SystemFilter {
                     double angle1 = zv[i][1];
                     double angle2 = zv[i][2];
                     int chiral = atoms[3];
-                    intxyz(atom,ia,bond,ib,angle1,ic,angle2,chiral);
+                    intxyz(atom, ia, bond, ib, angle1, ic, angle2, chiral);
                 }
                 return true;
             }

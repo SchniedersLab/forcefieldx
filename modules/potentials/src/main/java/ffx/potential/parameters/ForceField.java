@@ -20,19 +20,26 @@
  */
 package ffx.potential.parameters;
 
-import ffx.utilities.Keyword;
 import java.io.File;
 import java.net.URL;
+import java.util.Iterator;
+import java.util.NavigableSet;
 import java.util.TreeMap;
 import java.util.logging.Logger;
+
+import ffx.utilities.Keyword;
 
 /**
  * The ForceField class organizes parameters for a molecular mechanics force
  * field.
+ *
+ * @author Michael J. Schnieders
+ *
+ * @since 1.0
  */
 public class ForceField {
 
-    private static final Logger log = Logger.getLogger(ForceField.class.getName());
+    private static final Logger logger = Logger.getLogger(ForceField.class.getName());
 
     /**
      * Available force fields; currently limited to the AMOEBA family.
@@ -51,7 +58,7 @@ public class ForceField {
 
     public enum ForceFieldDouble {
 
-        A_AXIS, B_AXIS, C_AXIS, ALPHA, BETA, GAMMA, POLAR_DAMP, POLAR_SOR, 
+        A_AXIS, B_AXIS, C_AXIS, ALPHA, BETA, GAMMA, POLAR_DAMP, POLAR_SOR,
         POLAR_EPS, EWALD_CUTOFF, EWALD_ALPHA, PME_SPACING, VDW_CUTOFF,
         MPOLE_11_SCALE, MPOLE_12_SCALE, MPOLE_13_SCALE, MPOLE_14_SCALE,
         MPOLE_15_SCALE, POLAR_12_SCALE, POLAR_13_SCALE, DIRECT_11_SCALE
@@ -71,14 +78,14 @@ public class ForceField {
 
     public enum ForceFieldType {
 
-        ATOM, ANGLE, BIOTYPE, BOND, CHARGE, MULTIPOLE, OPBEND, PITORS, POLARIZE,
-        STRBND, TORSION, TORTORS, UREYBRAD, VDW, KEYWORD
+        KEYWORD, ANGLE, ATOM, BIOTYPE, BOND, CHARGE, MULTIPOLE, OPBEND, PITORS, POLARIZE,
+        STRBND, TORSION, TORTORS, UREYBRAD, VDW
     }
-
     /**
-     * A map between a Force_Field and its parameter file.
+     * A map between a Force_Field and its internal parameter file.
      */
     private static final TreeMap<Force_Field, URL> forceFields = new TreeMap<Force_Field, URL>();
+
     {
         ClassLoader cl = this.getClass().getClassLoader();
         String amoeba = "ffx/potential/parameters/amoeba/";
@@ -98,14 +105,13 @@ public class ForceField {
         ff = Force_Field.AMOEBA_BIO_2009;
         forceFields.put(ff, cl.getResource(value));
     }
-
     public URL forceFieldURL;
     public File keywordFile;
+    private final TreeMap<String, Keyword> keywordTypes;
     private final TreeMap<String, AngleType> angleTypes;
     private final TreeMap<String, AtomType> atomTypes;
-    private final TreeMap<String, BondType> bondTypes;
     private final TreeMap<String, BioType> bioTypes;
-    private final TreeMap<String, ChargeType> chargeTypes;
+    private final TreeMap<String, BondType> bondTypes;
     private final TreeMap<String, MultipoleType> multipoleTypes;
     private final TreeMap<String, OutOfPlaneBendType> outOfPlaneBendTypes;
     private final TreeMap<String, PolarizeType> polarizeTypes;
@@ -115,38 +121,45 @@ public class ForceField {
     private final TreeMap<String, TorsionTorsionType> torsionTorsionTypes;
     private final TreeMap<String, UreyBradleyType> ureyBradleyTypes;
     private final TreeMap<String, VDWType> vanderWaalsTypes;
-    private final TreeMap<String, Keyword> keywordTypes;
     private final TreeMap<ForceFieldType, TreeMap> forceFieldTypes;
 
     /**
      * ForceField Constructor.
      */
     public ForceField(Force_Field forceField, File keyFile) {
-        this.forceFieldURL = forceFields.get(forceField);
+        if (forceField != null) {
+            this.forceFieldURL = forceFields.get(forceField);
+        } else {
+            this.forceFieldURL = null;
+        }
         this.keywordFile = keyFile;
 
-        angleTypes = new TreeMap<String, AngleType>();
-        atomTypes = new TreeMap<String, AtomType>();
-        bondTypes = new TreeMap<String, BondType>();
-        bioTypes = new TreeMap<String, BioType>();
-        chargeTypes = new TreeMap<String, ChargeType>();
-        outOfPlaneBendTypes = new TreeMap<String, OutOfPlaneBendType>();
-        multipoleTypes = new TreeMap<String, MultipoleType>();
-        piTorsionTypes = new TreeMap<String, PiTorsionType>();
-        polarizeTypes = new TreeMap<String, PolarizeType>();
-        stretchBendTypes = new TreeMap<String, StretchBendType>();
-        torsionTypes = new TreeMap<String, TorsionType>();
-        torsionTorsionTypes = new TreeMap<String, TorsionTorsionType>();
-        ureyBradleyTypes = new TreeMap<String, UreyBradleyType>();
-        vanderWaalsTypes = new TreeMap<String, VDWType>();
+        /**
+         * Each force field "type" implements the "Comparator<String>" interface
+         * so that passing an "empty" instance of the "type" to its TreeMap
+         * constructor will keep the types sorted.
+         */
         keywordTypes = new TreeMap<String, Keyword>();
+        angleTypes = new TreeMap<String, AngleType>(new AngleType(new int[3], 0, new double[1]));
+        atomTypes = new TreeMap<String, AtomType>(new AtomType(0, 0, null, null, 0, 0, 0));
+        bioTypes = new TreeMap<String, BioType>(new BioType(0, null, null, 0));
+        bondTypes = new TreeMap<String, BondType>(new BondType(new int[2], 0, 0));
+        multipoleTypes = new TreeMap<String, MultipoleType>(new MultipoleType(0, new double[3], new double[3][3], null, null));
+        outOfPlaneBendTypes = new TreeMap<String, OutOfPlaneBendType>(new OutOfPlaneBendType(new int[4], 0));
+        piTorsionTypes = new TreeMap<String, PiTorsionType>(new PiTorsionType(new int[2], 0));
+        polarizeTypes = new TreeMap<String, PolarizeType>(new PolarizeType(0, 0, 0, new int[1]));
+        stretchBendTypes = new TreeMap<String, StretchBendType>(new StretchBendType(new int[3], new double[1]));
+        torsionTorsionTypes = new TreeMap<String, TorsionTorsionType>();
+        torsionTypes = new TreeMap<String, TorsionType>(new TorsionType(new int[4], new double[1], new double[1], new int[1]));
+        ureyBradleyTypes = new TreeMap<String, UreyBradleyType>(new UreyBradleyType(new int[3], 0, 0));
+        vanderWaalsTypes = new TreeMap<String, VDWType>(new VDWType(0, 0, 0, 0));
 
         forceFieldTypes = new TreeMap<ForceFieldType, TreeMap>();
+        forceFieldTypes.put(ForceFieldType.KEYWORD, keywordTypes);
         forceFieldTypes.put(ForceFieldType.ANGLE, angleTypes);
         forceFieldTypes.put(ForceFieldType.ATOM, atomTypes);
         forceFieldTypes.put(ForceFieldType.BOND, bondTypes);
         forceFieldTypes.put(ForceFieldType.BIOTYPE, bioTypes);
-        forceFieldTypes.put(ForceFieldType.CHARGE, chargeTypes);
         forceFieldTypes.put(ForceFieldType.OPBEND, outOfPlaneBendTypes);
         forceFieldTypes.put(ForceFieldType.MULTIPOLE, multipoleTypes);
         forceFieldTypes.put(ForceFieldType.PITORS, piTorsionTypes);
@@ -156,7 +169,6 @@ public class ForceField {
         forceFieldTypes.put(ForceFieldType.TORTORS, torsionTorsionTypes);
         forceFieldTypes.put(ForceFieldType.UREYBRAD, ureyBradleyTypes);
         forceFieldTypes.put(ForceFieldType.VDW, vanderWaalsTypes);
-        forceFieldTypes.put(ForceFieldType.KEYWORD, keywordTypes);
     }
 
     public double getDouble(ForceFieldDouble forceFieldDouble)
@@ -244,7 +256,7 @@ public class ForceField {
         if (keyword != null) {
             double oldValue = getDouble(forceFieldDouble, value);
             if (Double.compare(oldValue, value) != 0) {
-                log.warning(String.format(
+                logger.warning(String.format(
                         "\nOld %s value of %6.3e replaced with %6.3e\n", keyword,
                         oldValue, value));
             }
@@ -269,7 +281,7 @@ public class ForceField {
         if (keyword != null) {
             int oldValue = getInteger(forceFieldInteger, value);
             if (oldValue != value) {
-                log.warning(String.format(
+                logger.warning(String.format(
                         "\nOld %s value of %6d replaced with %6d\n", keyword,
                         oldValue, value));
             }
@@ -294,7 +306,7 @@ public class ForceField {
         if (keyword != null) {
             String oldValue = getString(forceFieldString, value);
             if (!oldValue.equalsIgnoreCase(value)) {
-                log.warning(String.format(
+                logger.warning(String.format(
                         "\nOld %s value of %6d replaced with %6d\n", forceFieldString,
                         oldValue, value));
             }
@@ -318,7 +330,7 @@ public class ForceField {
         if (keyword != null) {
             boolean oldValue = getBoolean(forceFieldBoolean, value);
             if (oldValue != value) {
-                log.warning(String.format(
+                logger.warning(String.format(
                         "\nOld %s value of %l replaced with %l\n", keyword,
                         oldValue, value));
             }
@@ -340,16 +352,16 @@ public class ForceField {
      */
     public void addForceFieldType(BaseType type) {
         if (type == null) {
-            log.info("Null force field type ignored.");
+            logger.info("Null force field type ignored.");
             return;
         }
         TreeMap treeMap = forceFieldTypes.get(type.forceFieldType);
         if (treeMap == null) {
-            log.info("Unrecognized force field type ignored " + type.forceFieldType);
+            logger.info("Unrecognized force field type ignored " + type.forceFieldType);
             type.print();
         }
         if (treeMap.containsKey(type.key)) {
-            log.fine("A force field entry of type " + type.forceFieldType
+            logger.fine("A force field entry of type " + type.forceFieldType
                     + " already exists with the key: " + type.key
                     + "\nThe (discarded) old entry:\n" + treeMap.get(type.key).
                     toString() + "\nThe new entry:\n" + type.toString());
@@ -374,10 +386,10 @@ public class ForceField {
         return bioTypes.get(key);
     }
 
+    /*
     public ChargeType getChargeType(String key) {
-        return chargeTypes.get(key);
-    }
-
+    return chargeTypes.get(key);
+    } */
     public MultipoleType getMultipoleType(String key) {
         return multipoleTypes.get(key);
     }
@@ -422,7 +434,7 @@ public class ForceField {
         TreeMap<String, BaseType> treeMap =
                 (TreeMap<String, BaseType>) forceFieldTypes.get(type);
         if (treeMap == null) {
-            log.warning("Unrecognized Force Field Type: " + type);
+            logger.warning("Unrecognized Force Field Type: " + type);
             return 0;
         }
         return treeMap.size();
@@ -445,7 +457,7 @@ public class ForceField {
                 String key2 = Integer.toString(type);
                 PolarizeType polarizeType2 = polarizeTypes.get(key2);
                 if (polarizeType2 == null) {
-                    log.severe("Polarize type " + key
+                    logger.severe("Polarize type " + key
                             + "references nonexistant polarize type " + key2);
                     continue;
                 }
@@ -475,9 +487,9 @@ public class ForceField {
         }
     }
 
-    public void print() {
+    public void log() {
         for (ForceFieldType s : forceFieldTypes.keySet()) {
-            print(s.toString());
+            log(s.toString());
         }
     }
 
@@ -487,9 +499,20 @@ public class ForceField {
      * @param key
      *            String
      */
+    public void log(String key) {
+        ForceFieldType type = ForceFieldType.valueOf(key);
+        logger.info(toString(type));
+    }
+
+    public void print() {
+        for (ForceFieldType s : forceFieldTypes.keySet()) {
+            print(s.toString());
+        }
+    }
+
     public void print(String key) {
         ForceFieldType type = ForceFieldType.valueOf(key);
-        log.info(toString(type));
+        System.out.println(toString(type));
     }
 
     /**
@@ -503,8 +526,10 @@ public class ForceField {
         StringBuffer stringBuffer = new StringBuffer("\n");
         TreeMap t = forceFieldTypes.get(type);
         if (t.size() > 0) {
-            for (Object o : t.values()) {
-                stringBuffer.append(o + "\n");
+            NavigableSet set = t.navigableKeySet();
+            Iterator i = set.iterator();
+            while (i.hasNext()) {
+                stringBuffer.append(t.get(i.next()) + "\n");
             }
             return stringBuffer.toString();
         }

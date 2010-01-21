@@ -168,7 +168,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface {
             double ri3 = ri * ri2;
             double e1 = vdwi.wellDepth;
             double se1 = sqrt(e1);
-            for (VDWType vdwj : vdwTypes.tailMap(vdwi.key).values()) {
+            for (VDWType vdwj : vdwTypes.tailMap(vdwi.getKey()).values()) {
                 int j = vdwj.atomClass;
                 double rj = 0.5 * vdwj.radius;
                 double rj2 = rj * rj;

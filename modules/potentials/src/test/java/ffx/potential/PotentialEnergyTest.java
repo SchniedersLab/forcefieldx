@@ -181,8 +181,8 @@ public class PotentialEnergyTest {
         assertNotNull(keyword);
         String model = keyword.getEntry(0);
         Force_Field ff = ForceField.Force_Field.valueOf(model.toUpperCase().replace('-', '_'));
-        ForceFieldFilter forceFieldFilter = new ForceFieldFilter(ff, keyFile);
-        ForceField forceField = forceFieldFilter.parse();
+        ForceFieldFilter forceFieldFilter = new ForceFieldFilter();
+        ForceField forceField = forceFieldFilter.parse(ff, keyFile);
         molecularAssembly.setForceField(forceField);
         assertNotNull(forceField);
         XYZFilter xyzFilter = new XYZFilter(molecularAssembly, forceField);
