@@ -31,13 +31,13 @@ public class RefinementData {
     public final int n;
     public final double fsigf[][];
     public final int freer[];
-    public final Complex fc[];
-    public final Complex fs[];
-    public final Complex fctot[];
+    public final double fc[][];
+    public final double fs[][];
+    public final double fctot[][];
     public final double sigmaa[][];
-    public final Complex fofc2[];
-    public final Complex fofc1[];
-    public final Complex fd[];
+    public final double fofc2[][];
+    public final double fofc1[][];
+    public final double fd[][];
     // scaling coefficients
     public double solvent_k, solvent_b;
     public double anisok[] = new double[6];
@@ -46,13 +46,13 @@ public class RefinementData {
         this.n = n;
         fsigf = new double[n][2];
         freer = new int[n];
-        fc = new Complex[n];
-        fs = new Complex[n];
-        fctot = new Complex[n];
+        fc = new double[n][2];
+        fs = new double[n][2];
+        fctot = new double[n][2];
         sigmaa = new double[n][2];
-        fofc2 = new Complex[n];
-        fofc1 = new Complex[n];
-        fd = new Complex[n];
+        fofc2 = new double[n][2];
+        fofc1 = new double[n][2];
+        fd = new double[n][2];
     }
 
     public void f(int i, double f) {
@@ -92,27 +92,42 @@ public class RefinementData {
     }
 
     public void fc(int i, Complex c) {
-        fc[i] = c;
+        fc[i][0] = c.re();
+        fc[i][1] = c.im();
     }
 
     public Complex fc(int i) {
-        return fc[i];
+        return new Complex(fc[i][0], fc[i][1]);
+    }
+
+    public double fc_f(int i){
+        Complex c = new Complex(fc[i][0], fc[i][1]);
+
+        return c.abs();
+    }
+
+    public double fc_phi(int i){
+        Complex c = new Complex(fc[i][0], fc[i][1]);
+
+        return c.phase();
     }
 
     public void fs(int i, Complex c) {
-        fs[i] = c;
+        fs[i][0] = c.re();
+        fs[i][1] = c.im();
     }
 
     public Complex fs(int i) {
-        return fs[i];
+        return new Complex(fs[i][0], fs[i][1]);
     }
 
     public void fctot(int i, Complex c) {
-        fctot[i] = c;
+        fctot[i][0] = c.re();
+        fctot[i][1] = c.im();
     }
 
     public Complex fctot(int i) {
-        return fctot[i];
+        return new Complex(fctot[i][0], fctot[i][1]);
     }
 
     public double[] sigmaa(int i) {
@@ -123,43 +138,46 @@ public class RefinementData {
         sigmaa[i] = d;
     }
 
-    public void sigmasigmaa(int i, double d) {
+    public void ssigmaa(int i, double d) {
         sigmaa[i][0] = d;
     }
 
-    public double sigmasigmaa(int i) {
+    public double ssigmaa(int i) {
         return sigmaa[i][0];
     }
 
-    public void sigsigmaa(int i, double d) {
+    public void wsigmaa(int i, double d) {
         sigmaa[i][1] = d;
     }
 
-    public double sigsigmaa(int i) {
+    public double wsigmaa(int i) {
         return sigmaa[i][1];
     }
 
     public void fofc2(int i, Complex c) {
-        fofc2[i] = c;
+        fofc2[i][0] = c.re();
+        fofc2[i][1] = c.im();
     }
 
     public Complex fofc2(int i) {
-        return fofc2[i];
+        return new Complex(fofc2[i][0], fofc2[i][1]);
     }
 
     public void fofc1(int i, Complex c) {
-        fofc1[i] = c;
+        fofc1[i][0] = c.re();
+        fofc1[i][1] = c.im();
     }
 
     public Complex fofc1(int i) {
-        return fofc1[i];
+        return new Complex(fofc1[i][0], fofc1[i][1]);
     }
 
     public void fd(int i, Complex c) {
-        fd[i] = c;
+        fd[i][0] = c.re();
+        fd[i][1] = c.im();
     }
 
     public Complex fd(int i) {
-        return fd[i];
+        return new Complex(fd[i][0], fd[i][1]);
     }
 }

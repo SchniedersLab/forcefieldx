@@ -86,7 +86,7 @@ public class FormFactorTest {
     public void testCarbonfrho() {
         HKL hkl = new HKL(1, 1, 1);
         assertEquals("carbon (1 1 1) structure factor should be correct",
-                2.39874e-26, carbonff.f(hkl), 1e-25);
+                2.39874e-26, carbonff.f(hkl), 1e-30);
 
         double xyz[] = {1.0, 1.0, 1.0};
         assertEquals("carbon (1 1 1) electron density should be correct",
