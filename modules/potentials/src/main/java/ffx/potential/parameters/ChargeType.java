@@ -22,6 +22,10 @@ package ffx.potential.parameters;
 
 /**
  * The ChargeType class defines a partial atomic charge type.
+ *
+ * @author Michael J. Schnieders
+ *
+ * @since 1.0
  */
 public final class ChargeType extends BaseType {
 	/**

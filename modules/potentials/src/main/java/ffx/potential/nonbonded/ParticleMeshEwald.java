@@ -5141,7 +5141,7 @@ public class ParticleMeshEwald {
             logger.severe(message);
             System.exit(-1);
         }
-        PolarizeType polarizeType = forceField.getPolarizeType(atomType.key);
+        PolarizeType polarizeType = forceField.getPolarizeType(atomType.getKey());
         if (polarizeType != null) {
             atom.setPolarizeType(polarizeType);
         } else {
@@ -5152,7 +5152,7 @@ public class ParticleMeshEwald {
         MultipoleType multipoleType = null;
         String key = null;
         // No reference atoms.
-        key = atomType.key + " 0 0";
+        key = atomType.getKey() + " 0 0";
         multipoleType = forceField.getMultipoleType(key);
         if (multipoleType != null) {
             atom.setMultipoleType(multipoleType, null);
@@ -5180,7 +5180,7 @@ public class ParticleMeshEwald {
         // 1 reference atom.
         for (Bond b : bonds) {
             Atom atom2 = b.get1_2(atom);
-            key = atomType.key + " " + atom2.getAtomType().key + " 0";
+            key = atomType.getKey() + " " + atom2.getAtomType().getKey() + " 0";
             multipoleType = multipoleType = forceField.getMultipoleType(key);
             if (multipoleType != null) {
                 int multipoleReferenceAtoms[] = new int[1];
@@ -5204,14 +5204,14 @@ public class ParticleMeshEwald {
         // 2 reference atoms.
         for (Bond b : bonds) {
             Atom atom2 = b.get1_2(atom);
-            String key2 = atom2.getAtomType().key;
+            String key2 = atom2.getAtomType().getKey();
             for (Bond b2 : bonds) {
                 if (b == b2) {
                     continue;
                 }
                 Atom atom3 = b2.get1_2(atom);
-                String key3 = atom3.getAtomType().key;
-                key = atomType.key + " " + key2 + " " + key3;
+                String key3 = atom3.getAtomType().getKey();
+                key = atomType.getKey() + " " + key2 + " " + key3;
                 multipoleType = forceField.getMultipoleType(key);
                 if (multipoleType != null) {
                     int multipoleReferenceAtoms[] = new int[2];
@@ -5237,20 +5237,20 @@ public class ParticleMeshEwald {
         // 3 reference atoms (chiral).
         for (Bond b : bonds) {
             Atom atom2 = b.get1_2(atom);
-            String key2 = atom2.getAtomType().key;
+            String key2 = atom2.getAtomType().getKey();
             for (Bond b2 : bonds) {
                 if (b == b2) {
                     continue;
                 }
                 Atom atom3 = b2.get1_2(atom);
-                String key3 = atom3.getAtomType().key;
+                String key3 = atom3.getAtomType().getKey();
                 for (Bond b3 : bonds) {
                     if (b == b3 || b2 == b3) {
                         continue;
                     }
                     Atom atom4 = b3.get1_2(atom);
-                    String key4 = atom4.getAtomType().key;
-                    key = atomType.key + " " + key2 + " " + key3 + " " + key4;
+                    String key4 = atom4.getAtomType().getKey();
+                    key = atomType.getKey() + " " + key2 + " " + key3 + " " + key4;
                     multipoleType = forceField.getMultipoleType(key);
                     if (multipoleType != null) {
                         int multipoleReferenceAtoms[] = new int[3];
@@ -5277,8 +5277,8 @@ public class ParticleMeshEwald {
                 for (Angle angle : angles) {
                     Atom atom4 = angle.get1_3(atom);
                     if (atom4 != null) {
-                        String key4 = atom4.getAtomType().key;
-                        key = atomType.key + " " + key2 + " " + key3 + " " + key4;
+                        String key4 = atom4.getAtomType().getKey();
+                        key = atomType.getKey() + " " + key2 + " " + key3 + " " + key4;
                         multipoleType = forceField.getMultipoleType(key);
                         if (multipoleType != null) {
                             int multipoleReferenceAtoms[] = new int[3];
@@ -5308,13 +5308,13 @@ public class ParticleMeshEwald {
         // For example a hydrogen on water.
         for (Bond b : bonds) {
             Atom atom2 = b.get1_2(atom);
-            String key2 = atom2.getAtomType().key;
+            String key2 = atom2.getAtomType().getKey();
             List<Angle> angles = atom.getAngles();
             for (Angle angle : angles) {
                 Atom atom3 = angle.get1_3(atom);
                 if (atom3 != null) {
-                    String key3 = atom3.getAtomType().key;
-                    key = atomType.key + " " + key2 + " " + key3;
+                    String key3 = atom3.getAtomType().getKey();
+                    key = atomType.getKey() + " " + key2 + " " + key3;
                     multipoleType = forceField.getMultipoleType(key);
                     if (multipoleType != null) {
                         int multipoleReferenceAtoms[] = new int[2];

@@ -1,10 +1,22 @@
 /**
- * <p>Title: Force Field X</p>
- * <p>Description: Force Field X is a Molecular Engineering Environment</p>
- * <p>Copyright: Copyright (c) Michael J. Schnieders 2002-2009</p>
- * <p>Institution: Labs of Axel T. Brunger (Stanford), Vijay S. Pande (Stanford) and Jay W. Ponder (WUSTL)</p>
- * @author Michael J. Schnieders
- * @version 0.1
+ * Title: Force Field X
+ * Description: Force Field X - Software for Molecular Biophysics.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2009
+ *
+ * This file is part of Force Field X.
+ *
+ * Force Field X is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 3 as published
+ * by the Free Software Foundation.
+ *
+ * Force Field X is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Force Field X; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
  */
 package ffx.potential.parsers;
 
@@ -12,36 +24,41 @@ import java.io.File;
 
 import javax.swing.filechooser.FileFilter;
 
+import org.apache.commons.io.FilenameUtils;
+
 /**
  * The PDBXFileFilter class is used to choose a PDBML File (*.XML).
+ *
+ * @author Michael J. Schnieders
+ *
+ * @since 1.0.
  */
 public final class PDBMLFileFilter extends FileFilter {
-	/**
-	 * Default Constructor
-	 */
-	public PDBMLFileFilter() {
-	}
 
-	/**
-	 * This method determines whether or not the File is PDBML or not, returning
-	 * true if it is. (Also returns true for any directory)
-	 */
-	public boolean accept(File parm) {
-		if (parm.isDirectory()) {
-			return true;
-		}
-		String filename = parm.getName().toUpperCase();
-		int dot = filename.lastIndexOf(".");
-		if (filename.regionMatches(false, dot + 1, "XML", 0, 3)) {
-			return true;
-		}
-		return false;
-	}
+    /**
+     * Public Constructor.
+     */
+    public PDBMLFileFilter() {
+    }
 
-	/**
-	 * Provides a description of this FileFilter
-	 */
-	public String getDescription() {
-		return new String("PDBML Files: *.xml");
-	}
+    /**
+     * This method return <code>true</code> if the file is a directory or
+     * Protein Databank XML File (*.XML).
+     */
+    @Override
+    public boolean accept(File file) {
+        if (file.isDirectory()) {
+            return true;
+        }
+        String ext = FilenameUtils.getExtension(file.getName());
+        return ext.toUpperCase().startsWith("XML");
+    }
+
+    /**
+     * Provides a description of the PDBMLFileFilter.
+     */
+    @Override
+    public String getDescription() {
+        return new String("Protein Databank XML (*.XML)");
+    }
 }

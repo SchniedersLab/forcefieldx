@@ -26,15 +26,26 @@ import java.util.logging.Logger;
 import ffx.potential.parameters.ForceField.ForceFieldType;
 
 /**
- * The BaseType class.
+ * All force field types should extend the BaseType class.
+ *
+ * @author Michael J. Schnieders
+ *
+ * @since 1.0
  */
 public abstract class BaseType {
 
-    private static final Logger log = Logger.getLogger(BaseType.class.getName());
+    private static final Logger logger = Logger.getLogger(BaseType.class.getName());
+    protected final ForceFieldType forceFieldType;
+    protected final String key;
 
-    public final ForceFieldType forceFieldType;
-    public final String key;
-
+    /**
+     * Public constructor.
+     *
+     * @param forceFieldType
+     * @param keys
+     *
+     * @since 1.0
+     */
     public BaseType(ForceFieldType forceFieldType, int keys[]) {
         this.forceFieldType = forceFieldType;
         if (keys == null) {
@@ -48,21 +59,59 @@ public abstract class BaseType {
         }
     }
 
+    /**
+     * Public constructor.
+     *
+     * @param forceFieldType
+     * @param key
+     *
+     * @since 1.0
+     */
     public BaseType(ForceFieldType forceFieldType, String key) {
         this.forceFieldType = forceFieldType;
         this.key = key;
     }
 
+    /**
+     * Get the <code>key</code> for this Type.
+     *
+     * @return the key
+     *
+     * @since 1.0
+     */
+    public String getKey() {
+        return key;
+    }
+
+    /**
+     * Log <code>this</code> type.
+     *
+     * @since 1.0
+     */
     public void log() {
-        if (log.isLoggable(Level.FINE)) {
-            log.fine(this.toString());
+        if (logger.isLoggable(Level.FINE)) {
+            logger.fine(toString());
         }
     }
 
     /**
-     * Print the Type to System.out.
+     * Print <code>this</code> to System.out.
+     *
+     * @since 1.0
      */
     public void print() {
-        log.info(toString());
+        System.out.println(toString());
+    }
+
+    /**
+     * Basic toString method.
+     *
+     * @return "Type Key"
+     *
+     * @since 1.0
+     */
+    @Override
+    public String toString() {
+        return forceFieldType + " " + key;
     }
 }

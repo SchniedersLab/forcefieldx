@@ -20,39 +20,46 @@
  */
 package ffx.potential.parsers;
 
-import java.util.ArrayList;
+import java.io.File;
 
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.Bond;
-import ffx.potential.bonded.MolecularAssembly;
+import javax.swing.filechooser.FileFilter;
+
+import org.apache.commons.io.FilenameUtils;
 
 /**
- * The MergeFilter class allows Force Field X to treat merging of Systems
- * just like opening a file from a hard disk or socket.
+ * The FFXFileFilter class is used to choose Force Field X script (*.FFX)
+ * files.
  *
  * @author Michael J. Schnieders
- * 
+ *
  * @since 1.0
  */
-public class MergeFilter extends SystemFilter {
+public final class FFXFileFilter extends FileFilter {
 
-    public MergeFilter(MolecularAssembly f, ArrayList<Atom> a, ArrayList<Bond> b) {
-        super(f);
-        atomList = a;
-        bondList = b;
+    /**
+     * Default Constructor.
+     */
+    public FFXFileFilter() {
     }
 
     /**
-     *
+     * This method return <code>true</code> if the file is a directory or
+     * Force Field X script (*.FFX).
      */
-    public boolean readFile() {
-        return true;
+    @Override
+    public boolean accept(File file) {
+        if (file.isDirectory()) {
+            return true;
+        }
+        String ext = FilenameUtils.getExtension(file.getName());
+        return ext.toUpperCase().startsWith("FFX");
     }
 
     /**
-     *
+     * Provides a description of the FFXFileFilter.
      */
-    public boolean writeFile() {
-        return false;
+    @Override
+    public String getDescription() {
+        return new String("Force Field X Script (*.FFX)");
     }
 }

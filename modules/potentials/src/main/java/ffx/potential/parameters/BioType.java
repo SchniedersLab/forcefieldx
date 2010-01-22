@@ -20,43 +20,89 @@
  */
 package ffx.potential.parameters;
 
+import java.util.Comparator;
+
 /**
  * The BioType class maps PDB identifiers to atom types.
+ *
+ * @author Michael J. Schnieders
+ *
+ * @since 1.0
  */
-public final class BioType extends BaseType {
-	public final int index;
-	public final String PDB;
-	public final String residue;
-	public final int atomType;
+public final class BioType extends BaseType implements Comparator<String> {
 
-	/**
-	 * BioType Constructor.
-	 * 
-	 * @param index
-	 *            int
-	 * @param PDB
-	 *            String
-	 * @param residue
-	 *            String
-	 * @param atomType
-	 *            int
-	 */
-	public BioType(int index, String PDB, String residue, int atomType) {
-		super(ForceField.ForceFieldType.BIOTYPE, Integer.toString(index));
-		this.index = index;
-		this.PDB = PDB;
-		this.residue = residue;
-		this.atomType = atomType;
-	}
+    public final int index;
+    public final String PDB;
+    public final String residue;
+    public final int atomType;
 
-	/**
-	 * Nicely formatted biotype.
-	 * 
-	 * @return String
-	 */
-	@Override
-	public String toString() {
-		return String.format("biotype  %5d  %-4s  %-25s  %5d", index, PDB,
-				residue, atomType);
-	}
+    /**
+     * BioType Constructor.
+     *
+     * @param index
+     *            int
+     * @param PDB
+     *            String
+     * @param residue
+     *            String
+     * @param atomType
+     *            int
+     */
+    public BioType(int index, String PDB, String residue, int atomType) {
+        super(ForceField.ForceFieldType.BIOTYPE, Integer.toString(index));
+        this.index = index;
+        this.PDB = PDB;
+        this.residue = residue;
+        this.atomType = atomType;
+    }
+
+    /**
+     * Nicely formatted biotype.
+     *
+     * @return String
+     */
+    @Override
+    public String toString() {
+        return String.format("biotype  %5d  %-4s  %-25s  %5d", index, PDB,
+                residue, atomType);
+    }
+
+    @Override
+    public int compare(String s1, String s2) {
+
+        int t1 = Integer.parseInt(s1);
+        int t2 = Integer.parseInt(s2);
+
+        if (t1 < t2) {
+            return -1;
+        }
+        if (t1 > t2) {
+            return 1;
+        }
+
+        return 0;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other == this) {
+            return true;
+        }
+        if (other == null || !(other instanceof BioType)) {
+            return false;
+        }
+        BioType bioType = (BioType) other;
+        if (bioType.index == this.index) {
+            return true;
+        }
+
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 3;
+        hash = 17 * hash + index;
+        return hash;
+    }
 }

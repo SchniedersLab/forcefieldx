@@ -23,14 +23,19 @@ package ffx.potential.parameters;
 import static java.lang.Math.abs;
 
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * The TorsionTorsionType class defines a Torsion-Torsion spline.
+ *
+ * @author Michael J. Schnieders
+ *
+ * @since 1.0
  */
-public final class TorsionTorsionType extends BaseType {
-    
+public final class TorsionTorsionType extends BaseType implements Comparator<String> {
+
     private static final Logger logger = Logger.getLogger(TorsionTorsionType.class.getName());
 
     /**
@@ -245,10 +250,10 @@ public final class TorsionTorsionType extends BaseType {
         int j1 = 1;
         int j2 = 1;
         for (int i = 1; i < nx; i++) {
-            while (torsion1[j1] == tx[i-1]) {
+            while (torsion1[j1] == tx[i - 1]) {
                 j1++;
             }
-            while (torsion2[j2] == ty[i-1]) {
+            while (torsion2[j2] == ty[i - 1]) {
                 j2++;
             }
             tx[i] = torsion1[j1];
@@ -536,7 +541,7 @@ public final class TorsionTorsionType extends BaseType {
         tortorBuffer.append(String.format("  %2d  %2d", gridPoints[0],
                 gridPoints[1]));
         for (int i = 0; i < energy.length; i++) {
-            tortorBuffer.append(String.format("\n  % 6.1f  % 6.1f  % 8.5f",
+            tortorBuffer.append(String.format(" \\\n  % 6.1f  % 6.1f  % 8.5f",
                     torsion1[i], torsion2[i], energy[i]));
         }
         return tortorBuffer.toString();
@@ -545,4 +550,43 @@ public final class TorsionTorsionType extends BaseType {
      * Convert Torsion-Torsion energy to kcal/mole.
      */
     public static final double units = 1.0;
+
+    @Override
+    public int compare(String key1, String key2) {
+        String keys1[] = key1.split(" ");
+        String keys2[] = key2.split(" ");
+        int c1 = Integer.parseInt(keys1[2]);
+        int c2 = Integer.parseInt(keys2[2]);
+        if (c1 < c2) {
+            return -1;
+        } else if (c1 > c2) {
+            return 1;
+        }
+        return 0;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other == this) {
+            return true;
+        }
+        if (other == null || !(other instanceof TorsionTorsionType)) {
+            return false;
+        }
+        TorsionTorsionType torsionTorsionType = (TorsionTorsionType) other;
+        int c[] = torsionTorsionType.atomClasses;
+        for (int i = 0; i < c.length; i++) {
+            if (c[i] != atomClasses[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 3;
+        hash = 47 * hash + Arrays.hashCode(atomClasses);
+        return hash;
+    }
 }

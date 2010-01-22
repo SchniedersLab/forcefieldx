@@ -20,87 +20,126 @@
  */
 package ffx.potential.parameters;
 
+import java.util.Comparator;
+
 /**
  * The AtomType class represents one molecular mechanics atom type.
+ *
+ * @author Michael J. Schnieders
+ *
+ * @since 1.0
  */
-public final class AtomType extends BaseType {
-	/**
-	 * Atom type.
-	 */
-	public final int type;
-	/**
-	 * Atom class.
-	 */
-	public final int atomClass;
-	/**
-	 * Short name (ie CH3/CH2 etc).
-	 */
-	public final String name;
-	/**
-	 * Description of the atom's bonding environment.
-	 */
-	public final String environment;
-	/**
-	 * Atomic Number.
-	 */
-	public final int atomicNumber;
-	/**
-	 * Atomic weight. "An atomic weight (relative atomic atomicWeight) of an
-	 * element from a specified source is the ratio of the average atomicWeight
-	 * per atom of the element to 1/12 of the atomicWeight of an atom of 12C"
-	 */
-	public final double atomicWeight;
-	/**
-	 * Valence number for this type.
-	 */
-	public final int valence;
+public final class AtomType extends BaseType implements Comparator<String> {
 
-	/**
-	 * AtomType Constructor.
-	 * 
-	 * @param type
-	 *            int
-	 * @param atomClass
-	 *            int
-	 * @param name
-	 *            String
-	 * @param environment
-	 *            String
-	 * @param atomicNumber
-	 *            int
-	 * @param atomicWeight
-	 *            double
-	 * @param valence
-	 *            int
-	 */
-	public AtomType(int type, int atomClass, String name, String environment,
-			int atomicNumber, double atomicWeight, int valence) {
-		super(ForceField.ForceFieldType.ATOM, new String("" + type));
-		this.type = type;
-		this.atomClass = atomClass;
-		this.name = name;
-		this.environment = environment;
-		this.atomicNumber = atomicNumber;
-		this.atomicWeight = atomicWeight;
-		this.valence = valence;
-	}
+    /**
+     * Atom type.
+     */
+    public final int type;
+    /**
+     * Atom class.
+     */
+    public final int atomClass;
+    /**
+     * Short name (ie CH3/CH2 etc).
+     */
+    public final String name;
+    /**
+     * Description of the atom's bonding environment.
+     */
+    public final String environment;
+    /**
+     * Atomic Number.
+     */
+    public final int atomicNumber;
+    /**
+     * Atomic weight. "An atomic weight (relative atomic atomicWeight) of an
+     * element from a specified source is the ratio of the average atomicWeight
+     * per atom of the element to 1/12 of the atomicWeight of an atom of 12C"
+     */
+    public final double atomicWeight;
+    /**
+     * Valence number for this type.
+     */
+    public final int valence;
 
-	/**
-	 * Nicely formatted atom type string.
-	 * 
-	 * @return String
-	 */
-	@Override
-	public String toString() {
-		String s;
-		if (atomClass >= 0) {
-			s = String.format("atom  %5d  %5d  %-4s  %-25s  %3d  %8.4f  %d",
-					type, atomClass, name, environment, atomicNumber,
-					atomicWeight, valence);
-		} else {
-			s = String.format("atom  %5d  %-4s  %-25s  %3d  %8.4f  %d", type,
-					name, environment, atomicNumber, atomicWeight, valence);
-		}
-		return s;
-	}
+    /**
+     * AtomType Constructor.
+     *
+     * @param type int
+     * @param atomClass int
+     * @param name String
+     * @param environment String
+     * @param atomicNumber int
+     * @param atomicWeight double
+     * @param valence int
+     */
+    public AtomType(int type, int atomClass, String name, String environment,
+            int atomicNumber, double atomicWeight, int valence) {
+        super(ForceField.ForceFieldType.ATOM, new String("" + type));
+        this.type = type;
+        this.atomClass = atomClass;
+        this.name = name;
+        this.environment = environment;
+        this.atomicNumber = atomicNumber;
+        this.atomicWeight = atomicWeight;
+        this.valence = valence;
+    }
+
+    /**
+     * Nicely formatted atom type string.
+     *
+     * @return String
+     */
+    @Override
+    public String toString() {
+        String s;
+        if (atomClass >= 0) {
+            s = String.format("atom  %5d  %5d  %-4s  %-25s  %3d  %8.4f  %d",
+                    type, atomClass, name, environment, atomicNumber,
+                    atomicWeight, valence);
+        } else {
+            s = String.format("atom  %5d  %-4s  %-25s  %3d  %8.4f  %d", type,
+                    name, environment, atomicNumber, atomicWeight, valence);
+        }
+        return s;
+    }
+
+    @Override
+    public int compare(String s1, String s2) {
+
+        int t1 = Integer.parseInt(s1);
+        int t2 = Integer.parseInt(s2);
+
+        if (t1 < t2) {
+            return -1;
+        }
+        if (t1 > t2) {
+            return 1;
+        }
+
+        return 0;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other == this) {
+            return true;
+        }
+        if (other == null || !(other instanceof AtomType)) {
+            return false;
+        }
+        AtomType atomType = (AtomType) other;
+        if (atomType.type == this.type) {
+            return true;
+        }
+
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 71 * hash + this.type;
+        return hash;
+    }
 }

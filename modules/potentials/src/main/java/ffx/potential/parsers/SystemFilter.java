@@ -22,6 +22,7 @@ package ffx.potential.parsers;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Hashtable;
 
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.Utilities.FileType;
@@ -29,10 +30,13 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.parameters.ForceField;
 import ffx.utilities.Keyword;
-import java.util.Hashtable;
 
 /**
- * The SystemFilter class is the base class for most file parsers.
+ * The SystemFilter class is the base class for most Force Field X file parsers.
+ *
+ * @author Michael J. Schnieders
+ *
+ * @since 1.0
  */
 public abstract class SystemFilter {
 
@@ -155,8 +159,8 @@ public abstract class SystemFilter {
     }
 
     public SystemFilter(MolecularAssembly f, ForceField mm,
-            Hashtable<String,Keyword> keywordHash) {
-        this(f,mm);
+            Hashtable<String, Keyword> keywordHash) {
+        this(f, mm);
         this.keywordHash = keywordHash;
     }
 
@@ -209,7 +213,7 @@ public abstract class SystemFilter {
         forceField = f;
     }
 
-    public void setKeywordHash(Hashtable<String,Keyword> keywordHash){
+    public void setKeywordHash(Hashtable<String, Keyword> keywordHash) {
         this.keywordHash = keywordHash;
     }
 

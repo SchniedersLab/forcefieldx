@@ -20,10 +20,16 @@
  */
 package ffx.potential.parameters;
 
+import java.util.Comparator;
+
 /**
  * The VDWType class defines a van der Waals type.
+ *
+ * @author Michael J. Schnieders
+ *
+ * @since 1.0
  */
-public final class VDWType extends BaseType {
+public final class VDWType extends BaseType implements Comparator<String> {
 
     public enum RadiusSize {
 
@@ -92,5 +98,44 @@ public final class VDWType extends BaseType {
                     atomClass, radius, wellDepth, reductionFactor);
         }
         return vdwString;
+    }
+
+    @Override
+    public int compare(String s1, String s2) {
+
+        int t1 = Integer.parseInt(s1);
+        int t2 = Integer.parseInt(s2);
+
+        if (t1 < t2) {
+            return -1;
+        }
+        if (t1 > t2) {
+            return 1;
+        }
+
+        return 0;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other == this) {
+            return true;
+        }
+        if (other == null || !(other instanceof VDWType)) {
+            return false;
+        }
+        VDWType vdwType = (VDWType) other;
+        if (vdwType.atomClass == this.atomClass) {
+            return true;
+        }
+
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 97 * hash + this.atomClass;
+        return hash;
     }
 }

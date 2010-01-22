@@ -14,6 +14,12 @@
     <packaging>jar</packaging>
     <name>Potentials</name>
 
+    <organization>
+        <name>Michael J. Schnieders</name>
+        <url>http://ffx.kenai.com</url>
+    </organization>
+
+
     <developers>
         <developer>
             <id>schnied</id>
@@ -105,6 +111,12 @@
             <artifactId>utilities</artifactId>
             <version>${project.version}</version>
             <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <type>jar</type>
+            <version>1.4</version>
         </dependency>
         <dependency>
             <groupId>edu.rit.pj</groupId>

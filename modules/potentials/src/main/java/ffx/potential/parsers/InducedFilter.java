@@ -26,11 +26,15 @@ import java.io.FileReader;
 import java.util.List;
 import java.util.logging.Logger;
 
-import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.MolecularAssembly;
 
 /**
- * The InducedFilter class parses TINKER Induced Dipole (*.IND) files.
+ * The InducedFilter class parses TINKER Induced Dipole (*.*U) files.
+ *
+ * @author Michael J. Schnieders
+ * 
+ * @since 1.0
  */
 public class InducedFilter {
 

@@ -20,12 +20,20 @@
  */
 package ffx.potential.parameters;
 
+import static java.lang.Math.abs;
+
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.logging.Logger;
 
 /**
  * The MultipoleType class defines a multipole in its local frame.
+ *
+ * @author Michael J. Schnieders
+ *
+ * @since 1.0
  */
-public final class MultipoleType extends BaseType {
+public final class MultipoleType extends BaseType implements Comparator<String> {
 
     private static final Logger logger = Logger.getLogger(MultipoleType.class.getName());
 
@@ -142,15 +150,23 @@ public final class MultipoleType extends BaseType {
      */
     public String toBohrString() {
         StringBuffer multipoleBuffer = new StringBuffer("multipole");
-        for (int i : frameAtomTypes) {
-            multipoleBuffer.append(String.format("  %5d", i));
+        if (frameDefinition == MultipoleFrameDefinition.BISECTOR) {
+            multipoleBuffer.append(String.format("  %5d", frameAtomTypes[0]));
+            for (int i = 1; i < frameAtomTypes.length; i++) {
+                int t = -frameAtomTypes[i];
+                multipoleBuffer.append(String.format("  %5d", t));
+            }
+        } else {
+            for (int i : frameAtomTypes) {
+                multipoleBuffer.append(String.format("  %5d", i));
+            }
         }
         if (frameAtomTypes.length == 3) {
             multipoleBuffer.append("       ");
         }
-        multipoleBuffer.append(String.format("  % 7.5f\n"
-                + "%11$s % 7.5f % 7.5f % 7.5f\n" + "%11$s % 7.5f\n"
-                + "%11$s % 7.5f % 7.5f\n" + "%11$s % 7.5f % 7.5f % 7.5f",
+        multipoleBuffer.append(String.format("  % 7.5f \\\n"
+                + "%11$s % 7.5f % 7.5f % 7.5f \\\n" + "%11$s % 7.5f \\\n"
+                + "%11$s % 7.5f % 7.5f \\\n" + "%11$s % 7.5f % 7.5f % 7.5f",
                 charge, dipole[0] / BOHR, dipole[1] / BOHR, dipole[2] / BOHR,
                 quadrupole[0][0] / BOHR2, quadrupole[1][0] / BOHR2,
                 quadrupole[1][1] / BOHR2, quadrupole[2][0] / BOHR2,
@@ -167,15 +183,23 @@ public final class MultipoleType extends BaseType {
      */
     public String toDebyeString() {
         StringBuffer multipoleBuffer = new StringBuffer("multipole");
-        for (int i : frameAtomTypes) {
-            multipoleBuffer.append(String.format("  %5d", i));
+        if (frameDefinition == MultipoleFrameDefinition.BISECTOR) {
+            multipoleBuffer.append(String.format("  %5d", frameAtomTypes[0]));
+            for (int i = 1; i < frameAtomTypes.length; i++) {
+                int t = -frameAtomTypes[i];
+                multipoleBuffer.append(String.format("  %5d", t));
+            }
+        } else {
+            for (int i : frameAtomTypes) {
+                multipoleBuffer.append(String.format("  %5d", i));
+            }
         }
         if (frameAtomTypes.length == 3) {
             multipoleBuffer.append("       ");
         }
-        multipoleBuffer.append(String.format("  % 7.5f\n"
-                + "%11$s % 7.5f % 7.5f % 7.5f\n" + "%11$s % 7.5f\n"
-                + "%11$s % 7.5f % 7.5f\n" + "%11$s % 7.5f % 7.5f % 7.5f",
+        multipoleBuffer.append(String.format("  % 7.5f\\\n"
+                + "%11$s % 7.5f % 7.5f % 7.5f\\\n" + "%11$s % 7.5f\\\n"
+                + "%11$s % 7.5f % 7.5f\\\n" + "%11$s % 7.5f % 7.5f % 7.5f",
                 charge, dipole[0] * DEBYE, dipole[1] * DEBYE,
                 dipole[2] * DEBYE, quadrupole[0][0] * BUCKINGHAM,
                 quadrupole[1][0] * BUCKINGHAM, quadrupole[1][1] * BUCKINGHAM,
@@ -188,5 +212,63 @@ public final class MultipoleType extends BaseType {
     @Override
     public String toString() {
         return toBohrString();
+    }
+
+    @Override
+    public int compare(String s1, String s2) {
+        String keys1[] = s1.split(" ");
+        String keys2[] = s2.split(" ");
+
+        int len = keys1.length;
+        if (keys1.length > keys2.length) {
+            len = keys2.length;
+        }
+        int c1[] = new int[len];
+        int c2[] = new int[len];
+        for (int i = 0; i < len; i++) {
+            c1[i] = abs(Integer.parseInt(keys1[i]));
+            c2[i] = abs(Integer.parseInt(keys2[i]));
+            if (c1[i] < c2[i]) {
+                return -1;
+            } else if (c1[i] > c2[i]) {
+                return 1;
+            }
+        }
+
+        if (keys1.length < keys2.length) {
+            return -1;
+        } else if (keys1.length > keys2.length) {
+            return 1;
+        }
+
+        return 0;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other == this) {
+            return true;
+        }
+        if (other == null || !(other instanceof MultipoleType)) {
+            return false;
+        }
+        MultipoleType multipoleType = (MultipoleType) other;
+        int c[] = multipoleType.frameAtomTypes;
+        if (c.length != frameAtomTypes.length) {
+            return false;
+        }
+        for (int i = 0; i < c.length; i++) {
+            if (c[i] != this.frameAtomTypes[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 29 * hash + Arrays.hashCode(frameAtomTypes);
+        return hash;
     }
 }

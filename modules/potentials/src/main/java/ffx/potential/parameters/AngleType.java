@@ -23,10 +23,17 @@ package ffx.potential.parameters;
 import static java.lang.Math.PI;
 import static java.lang.Math.pow;
 
+import java.util.Arrays;
+import java.util.Comparator;
+
 /**
  * The AngleType class defines one harmonic angle bend energy term.
+ *
+ * @author Michael J. Schnieders
+ *
+ * @since 1.0
  */
-public final class AngleType extends BaseType {
+public final class AngleType extends BaseType implements Comparator<String> {
 
     /**
      * Atom classes that for this Angle type.
@@ -109,4 +116,55 @@ public final class AngleType extends BaseType {
      * Convert angle bending energy to kcal/mole.
      */
     public static double units = 1.0 / pow(180.0 / PI, 2);
+
+    @Override
+    public int compare(String key1, String key2) {
+        String keys1[] = key1.split(" ");
+        String keys2[] = key2.split(" ");
+        int c1[] = new int[3];
+        int c2[] = new int[3];
+        for (int i = 0; i < 3; i++) {
+            c1[i] = Integer.parseInt(keys1[i]);
+            c2[i] = Integer.parseInt(keys2[i]);
+        }
+
+        if (c1[1] < c2[1]) {
+            return -1;
+        } else if (c1[1] > c2[1]) {
+            return 1;
+        } else if (c1[0] < c2[0]) {
+            return -1;
+        } else if (c1[0] > c2[0]) {
+            return 1;
+        } else if (c1[2] < c2[2]) {
+            return -1;
+        } else if (c1[2] > c2[2]) {
+            return 1;
+        }
+
+        return 0;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other == this) {
+            return true;
+        }
+        if (other == null || !(other instanceof AngleType)) {
+            return false;
+        }
+        AngleType angleType = (AngleType) other;
+        int c[] = angleType.atomClasses;
+        if (c[0] == atomClasses[0] && c[1] == atomClasses[1] && c[2] == atomClasses[2]) {
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 5;
+        hash = 37 * hash + Arrays.hashCode(atomClasses);
+        return hash;
+    }
 }

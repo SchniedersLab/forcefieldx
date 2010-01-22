@@ -30,7 +30,12 @@ import java.util.logging.Logger;
 import ffx.utilities.Keyword;
 
 /**
- * The KeyFilter class parses TINKER Keyword (*.KEY) files.
+ * The KeyFilter class parses Force Field X Keyword (*.KEY) and
+ * Property (*.PROPERTIES) files.
+ *
+ * @author Michael J. Schnieders
+ *
+ * @since 1.0
  */
 public class KeyFilter {
 

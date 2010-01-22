@@ -22,10 +22,17 @@ package ffx.potential.parameters;
 
 import static java.lang.Math.PI;
 
+import java.util.Arrays;
+import java.util.Comparator;
+
 /**
  * The StretchBendType class defines one out-of-plane angle bending energy type.
+ *
+ * @author Michael J. Schnieders
+ *
+ * @since 1.0
  */
-public final class StretchBendType extends BaseType {
+public final class StretchBendType extends BaseType implements Comparator<String> {
 
     /**
      * Atom class for this out-of-plane angle bending type.
@@ -81,6 +88,54 @@ public final class StretchBendType extends BaseType {
                 atomClasses[0], atomClasses[1], atomClasses[2],
                 forceConstants[0], forceConstants[1]);
     }
-    
     public static final double units = PI / 180.0;
+
+    @Override
+    public int compare(String key1, String key2) {
+        String keys1[] = key1.split(" ");
+        String keys2[] = key2.split(" ");
+        int c1[] = new int[3];
+        int c2[] = new int[3];
+        for (int i = 0; i < 3; i++) {
+            c1[i] = Integer.parseInt(keys1[i]);
+            c2[i] = Integer.parseInt(keys2[i]);
+        }
+        if (c1[1] < c2[1]) {
+            return -1;
+        } else if (c1[1] > c2[1]) {
+            return 1;
+        } else if (c1[0] < c2[0]) {
+            return -1;
+        } else if (c1[0] > c2[0]) {
+            return 1;
+        } else if (c1[2] < c2[2]) {
+            return -1;
+        } else if (c1[2] > c2[2]) {
+            return 1;
+        }
+        return 0;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other == this) {
+            return true;
+        }
+        if (other == null || !(other instanceof StretchBendType)) {
+            return false;
+        }
+        StretchBendType stretchBendType = (StretchBendType) other;
+        int c[] = stretchBendType.atomClasses;
+        if (c[0] == atomClasses[0] && c[1] == atomClasses[1] && c[2] == atomClasses[2]) {
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 3;
+        hash = 29 * hash + Arrays.hashCode(atomClasses);
+        return hash;
+    }
 }

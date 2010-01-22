@@ -201,7 +201,7 @@ public abstract class MSGroup extends MSNode {
          */
         time = System.nanoTime();
         for (Angle angle : angles) {
-            StretchBendType stretchBendType = forceField.getStretchBendType(angle.getAngleType().key);
+            StretchBendType stretchBendType = forceField.getStretchBendType(angle.getAngleType().getKey());
             if (stretchBendType != null) {
                 StretchBend newStretchBend = new StretchBend(angle);
                 if (stretchBendType.forceConstants[newStretchBend.nh] != 0.0) {
@@ -219,7 +219,7 @@ public abstract class MSGroup extends MSNode {
          */
         time = System.nanoTime();
         for (Angle angle : angles) {
-            String key = angle.angleType.key;
+            String key = angle.angleType.getKey();
             UreyBradleyType ureyBradleyType = forceField.getUreyBradleyType(key);
             if (ureyBradleyType != null) {
                 UreyBradley newUreyBradley = new UreyBradley(angle);
@@ -510,7 +510,7 @@ public abstract class MSGroup extends MSNode {
         }
         newAngleNode.setName("Angles (" + newAngleNode.getChildCount() + ")");
         for (Angle angle : angles) {
-            StretchBendType stretchBendType = ff.getStretchBendType(angle.getAngleType().key);
+            StretchBendType stretchBendType = ff.getStretchBendType(angle.getAngleType().getKey());
             if (stretchBendType != null) {
                 StretchBend sb = new StretchBend(angle);
                 if (stretchBendType.forceConstants[sb.nh] != 0.0) {
@@ -518,7 +518,7 @@ public abstract class MSGroup extends MSNode {
                     newStretchBendNode.insert(sb, 0);
                 }
             }
-            String key = angle.getAngleType().key;
+            String key = angle.getAngleType().getKey();
             UreyBradleyType ureyBradleyType = ff.getUreyBradleyType(key);
             if (ureyBradleyType != null) {
                 UreyBradley ureyBradley = new UreyBradley(angle);

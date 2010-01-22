@@ -52,7 +52,11 @@ import ffx.potential.parameters.ForceField.ForceFieldType;
 
 /**
  * The ForceFieldFilter Class is used to parse and store molecular mechanics
- * data from TINKER Keyword (*.KEY) and Parameter (*.PRM) files.
+ * data from keyword/property and parameter (*.PRM) files.
+ *
+ * @author Michael J. Schnieders
+ *
+ * @since 1.0
  */
 public class ForceFieldFilter {
 
@@ -96,8 +100,7 @@ public class ForceFieldFilter {
     /**
      * ForceFieldFilter Constructor.
      */
-    public ForceFieldFilter(ForceField.Force_Field force_Field, File keyFile) {
-        forceField = new ForceField(force_Field, keyFile);
+    public ForceFieldFilter() {
     }
 
     public static File parseParameterLocation(String parameterLocation, File keyFile) {
@@ -124,10 +127,30 @@ public class ForceFieldFilter {
      *
      * @return ForceField
      */
-    public ForceField parse() {
+    public ForceField parse(ForceField.Force_Field force_Field, File keyFile) {
+        forceField = new ForceField(force_Field, keyFile);
         try {
             if (forceField.forceFieldURL != null) {
                 parse(forceField.forceFieldURL.openStream());
+            }
+            if (forceField.keywordFile != null) {
+                FileInputStream fis = new FileInputStream(forceField.keywordFile);
+                parse(fis);
+            }
+            forceField.checkPolarizationTypes();
+        } catch (Exception e) {
+            String message = "Exception parsing force field.";
+            logger.log(Level.WARNING, message, e);
+        }
+        return forceField;
+    }
+
+    public ForceField parse(File forceFieldFile, File keyFile) {
+        forceField = new ForceField(null, keyFile);
+        try {
+            if (forceFieldFile != null && forceFieldFile.exists()) {
+                FileInputStream inputStream = new FileInputStream(forceFieldFile);
+                parse(inputStream);
             }
             if (forceField.keywordFile != null) {
                 FileInputStream fis = new FileInputStream(forceField.keywordFile);
@@ -192,7 +215,7 @@ public class ForceFieldFilter {
                                         }
                                     }
                                     forceField.addForceFieldBoolean(ffBoolean, value);
-                                    forceField.print(keyword);
+                                    forceField.log(keyword);
                                 } catch (Exception e4) {
                                     parsed = false;
                                 }
@@ -681,5 +704,21 @@ public class ForceFieldFilter {
             String message = "Exception parsing VDW type:\n" + input + "\n";
             logger.log(Level.SEVERE, message, e);
         }
+    }
+
+
+    /**
+     * Parse a Force Field paramter file and echo the results with slashes.
+     */
+    public static void main(String[] args) throws Exception {
+        if (args == null || args.length < 1) {
+            System.out.println("Usage: ForceFieldFilter <file.prm> [append slashes]");
+            System.exit(-1);
+        }
+        File ff = new File(args[0]);
+
+        ForceFieldFilter forceFieldFilter = new ForceFieldFilter();
+        ForceField forceField = forceFieldFilter.parse(ff, null);
+        forceField.print();
     }
 }
