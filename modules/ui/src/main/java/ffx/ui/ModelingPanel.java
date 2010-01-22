@@ -914,7 +914,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
                 File file = new File(dir + File.separator + structureName
                         + ".xyz");
                 file = SystemFilter.version(file);
-                activeSystem = new FFXSystem(structureName, null, file);
+                activeSystem = new FFXSystem(file, null, Keyword.loadProperties(file));
                 File logFile = new File(file.getParent() + File.separator
                         + structureName + ".log");
                 activeSystem.setLogFile(logFile);

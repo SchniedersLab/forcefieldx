@@ -39,6 +39,21 @@
         </plugins>
     </reporting>
 
+    <dependencies>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <type>jar</type>
+            <version>1.4</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-configuration</groupId>
+            <artifactId>commons-configuration</artifactId>
+            <type>jar</type>
+            <version>1.6</version>
+        </dependency>
+    </dependencies>
+
     <profiles>
         <profile>
             <id>Mac OS X</id>
@@ -57,7 +72,7 @@
             </activation>
             <properties>
                 <platform>linux</platform>
-		<bit>32</bit>
+                <bit>32</bit>
             </properties>
         </profile>
         <profile>
@@ -67,7 +82,7 @@
             </activation>
             <properties>
                 <platform>linux</platform>
-		<bit>64</bit>
+                <bit>64</bit>
             </properties>
         </profile>
         <profile>
@@ -77,7 +92,7 @@
             </activation>
             <properties>
                 <platform>windows</platform>
-		<bit>32</bit>
+                <bit>32</bit>
             </properties>
         </profile>
         <profile>
@@ -87,7 +102,7 @@
             </activation>
             <properties>
                 <platform>windows</platform>
-		<bit>64</bit>
+                <bit>64</bit>
             </properties>
         </profile>
     </profiles>

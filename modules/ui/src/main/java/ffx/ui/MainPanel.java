@@ -39,8 +39,10 @@ import java.io.FileWriter;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
@@ -74,6 +76,10 @@ import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileSystemView;
 import javax.vecmath.Vector3d;
 
+import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.configuration.SystemConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.SystemUtils;
 
@@ -106,12 +112,6 @@ import ffx.potential.parameters.ForceField.Force_Field;
 import ffx.potential.parsers.FFXFileFilter;
 import ffx.ui.properties.FFXLocale;
 import ffx.utilities.Keyword;
-import java.util.Arrays;
-import java.util.Iterator;
-import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.commons.configuration.SystemConfiguration;
 
 /**
  * The MainPanel class is the main container for Force Field X, handles
@@ -130,7 +130,6 @@ public final class MainPanel extends JPanel implements ActionListener,
     public static String classpath;
     public static File ffxDir;
     private static File pwd;
-
     // FileFilters for filtering file selection in the JFileChooser
     private static JFileChooser fileChooser = null;
     public static final XYZFileFilter xyzFileFilter = new XYZFileFilter();
@@ -895,7 +894,7 @@ public final class MainPanel extends JPanel implements ActionListener,
         // Set up a structure to hold the new system
         FFXSystem active = hierarchy.getActive();
         File file = SystemFilter.version(hierarchy.getActive().getFile());
-        FFXSystem system = new FFXSystem(active.getName(), "Merge Result", file);
+        FFXSystem system = new FFXSystem(file, "Merge Result", active.getProperties());
         system.setKeyFile(active.getKeyFile());
         system.setKeywords(KeyFilter.open(active.getKeyFile()));
         system.setFileType(active.getFileType());
@@ -1036,8 +1035,11 @@ public final class MainPanel extends JPanel implements ActionListener,
             }
         }
 
+        // Create the CompositeConfiguration properties.
+        CompositeConfiguration properties = Keyword.loadProperties(file);
+
         // Create a FFXSystem for this file.
-        FFXSystem newSystem = new FFXSystem(fileName, commandDescription, file);
+        FFXSystem newSystem = new FFXSystem(file, commandDescription, properties);
         SystemFilter systemFilter = null;
 
         // Decide which parser to use.
@@ -1055,102 +1057,19 @@ public final class MainPanel extends JPanel implements ActionListener,
             systemFilter = new PDBFilter(newSystem);
         }
 
-        // Create the CompositeConfiguration properties.
+        forceFieldFilter = new ForceFieldFilter(properties, null);
+        ForceField forceField = forceFieldFilter.parse();
+        newSystem.setForceField(forceField);
+        systemFilter.setForceField(forceField);
+        systemFilter.setKeywordHash(newSystem.getKeywords());
 
+        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+        FileOpener openFile = new FileOpener(systemFilter, this);
+        openThread = new Thread(openFile);
+        openThread.start();
+        setPanel(GRAPHICS);
 
-        // Open the keyword file for this coordinate file, if one exists.
-        if (openKey(newSystem, true)) {
-            // Try to parse the force field specified in the key file.
-            Force_Field ff = null;
-            try {
-                Keyword keyword = newSystem.getKeyword("FORCEFIELD");
-                String model = keyword.getEntry(0);
-                ff = ForceField.Force_Field.valueOf(model.toUpperCase().replace('-', '_'));
-            } catch (Exception e) {
-                logger.warning("Using force field AMOEBA-PROTEIN-2009");
-                ff = ForceField.Force_Field.AMOEBA_PROTEIN_2009;
-            }
-            forceFieldFilter = new ForceFieldFilter();
-            ForceField forceField = forceFieldFilter.parse(ff, newSystem.getKeyFile());
-            newSystem.setForceField(forceField);
-            systemFilter.setForceField(forceField);
-            systemFilter.setKeywordHash(newSystem.getKeywords());
-            setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-            FileOpener openFile = new FileOpener(systemFilter, this);
-            openThread = new Thread(openFile);
-            openThread.start();
-            setPanel(GRAPHICS);
-            return openThread;
-        }
-        return null;
-    }
-
-    private CompositeConfiguration createConfiguration(File keyFile) {
-
-        /**
-         * Command line options take precedences.
-         */
-        CompositeConfiguration properties = new CompositeConfiguration();
-        properties.addConfiguration(new SystemConfiguration());
-
-        /**
-         * Structure specific options are 2nd.
-         */
-        if (keyFile.exists() && keyFile.canRead()) {
-            try {
-                properties.addConfiguration(new PropertiesConfiguration(keyFile));
-            } catch (Exception e) {
-                logger.info("Error loading " + keyFile.getAbsolutePath() + ".");
-            }
-        }
-
-        /**
-         * User specific options are 3rd.
-         */
-        String filename = System.getProperty("user.home") + File.separator + ".ffx/ffx.properties";
-        File userPropFile = new File(filename);
-        if (userPropFile.exists() && userPropFile.canRead()) {
-            try {
-                properties.addConfiguration(new PropertiesConfiguration(userPropFile));
-            } catch (Exception e) {
-                logger.info("Error loading " + filename + ".");
-            }
-
-        }
-
-        /**
-         * System wide options are 2nd to last.
-         */
-        filename = System.getenv("FFX_PROPERTIES");
-        if (filename != null) {
-            File systemPropFile = new File(filename);
-            if (systemPropFile.exists() && systemPropFile.canRead()) {
-                try {
-                    properties.addConfiguration(new PropertiesConfiguration(systemPropFile));
-                } catch (Exception e) {
-                    logger.info("Error loading " + filename + ".");
-                }
-            }
-        }
-
-        /**
-         * Load the force field information.
-         */
-
-        /**
-         * Echo the interpolated configuration.
-         */
-        if (logger.isLoggable(Level.INFO)) {
-            Configuration config = properties.interpolatedConfiguration();
-            Iterator<String> i = config.getKeys();
-            while (i.hasNext()) {
-                String s = i.next();
-                logger.info("Key: " + s + ", Value: " + Arrays.toString(config.getList(s).toArray()));
-            }
-        }
-        
-        return properties;
-
+        return openThread;
     }
 
     public FFXSystem openWait(String file) {
@@ -1215,7 +1134,8 @@ public final class MainPanel extends JPanel implements ActionListener,
             String fileName = code + ".pdb";
             String path = getPWD().getAbsolutePath();
             File pdbFile = new File(path + File.separatorChar + fileName);
-            FFXSystem newSystem = new FFXSystem(code, null, pdbFile);
+            CompositeConfiguration properties = Keyword.loadProperties(pdbFile);
+            FFXSystem newSystem = new FFXSystem(pdbFile, null, properties);
             PDBFilter pdbFilter = new PDBFilter(newSystem, pdbAddress,
                     vrmlAddress);
             setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));

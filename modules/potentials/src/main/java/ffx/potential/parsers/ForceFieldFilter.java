@@ -20,12 +20,13 @@
  */
 package ffx.potential.parsers;
 
+import static java.lang.Math.abs;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.Hashtable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -49,10 +50,21 @@ import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.ForceField.ForceFieldInteger;
 import ffx.potential.parameters.ForceField.ForceFieldString;
 import ffx.potential.parameters.ForceField.ForceFieldType;
+import ffx.potential.parameters.ForceField.Force_Field;
+import ffx.utilities.Keyword;
+import java.net.URL;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.PropertiesConfiguration;
 
 /**
  * The ForceFieldFilter Class is used to parse and store molecular mechanics
  * data from keyword/property and parameter (*.PRM) files.
+ *
+ * Alternatively, an Apache Commons "Configuration" instance can be parsed.
  *
  * @author Michael J. Schnieders
  *
@@ -61,46 +73,17 @@ import ffx.potential.parameters.ForceField.ForceFieldType;
 public class ForceFieldFilter {
 
     private static final Logger logger = Logger.getLogger(ForceFieldFilter.class.getName());
-    /**
-     * A Hashtable of Amino Acid Name Strings, stored by three-letter
-     * abreviations
-     */
-    public static final Hashtable<String, String> aminoAcidLookup = new Hashtable<String, String>();
-
-    static {
-        aminoAcidLookup.put("GLY", "Glycine");
-        aminoAcidLookup.put("ALA", "Alanine");
-        aminoAcidLookup.put("VAL", "Valine");
-        aminoAcidLookup.put("LEU", "Leucine");
-        aminoAcidLookup.put("ILE", "Isoleucine");
-        aminoAcidLookup.put("SER", "Serine");
-        aminoAcidLookup.put("THR", "Threonine");
-        aminoAcidLookup.put("CYS", "Cystine (-SS-)");
-        aminoAcidLookup.put("PRO", "Proline");
-        aminoAcidLookup.put("PHE", "Phenylalanine");
-        aminoAcidLookup.put("TYR", "Tyrosine");
-        aminoAcidLookup.put("TRP", "Tryptophan");
-        aminoAcidLookup.put("HIS", "Histidine (HD)");
-        aminoAcidLookup.put("ASP", "Aspartic Acid");
-        aminoAcidLookup.put("ASN", "Asparagine");
-        aminoAcidLookup.put("GLU", "Glutamic Acid");
-        aminoAcidLookup.put("GLN", "Glutamine");
-        aminoAcidLookup.put("MET", "Methionine");
-        aminoAcidLookup.put("LYS", "Lysine");
-        aminoAcidLookup.put("ARG", "Arginine");
-        aminoAcidLookup.put("A", "Adenine");
-        aminoAcidLookup.put("T", "Thymine");
-        aminoAcidLookup.put("G", "Guanine");
-        aminoAcidLookup.put("C", "Cytosine");
-        aminoAcidLookup.put("HOH", "HOH");
-        aminoAcidLookup.put("HEM", "HEM");
-    }
     private ForceField forceField = null;
+    private CompositeConfiguration properties;
+    private File forceFieldFile;
 
     /**
      * ForceFieldFilter Constructor.
      */
-    public ForceFieldFilter() {
+    public ForceFieldFilter(CompositeConfiguration properties, File forceFieldFile) {
+        forceField = new ForceField(properties, forceFieldFile);
+        this.properties = properties;
+        this.forceFieldFile = forceFieldFile;
     }
 
     public static File parseParameterLocation(String parameterLocation, File keyFile) {
@@ -122,20 +105,21 @@ public class ForceFieldFilter {
         return parameterFile;
     }
 
-    /**
-     * Parse a Force Field parameter file.
-     *
-     * @return ForceField
-     */
-    public ForceField parse(ForceField.Force_Field force_Field, File keyFile) {
-        forceField = new ForceField(force_Field, keyFile);
+    public ForceField parse() {
         try {
-            if (forceField.forceFieldURL != null) {
-                parse(forceField.forceFieldURL.openStream());
+            /**
+             * Parse an external (ie. not in the FFX jar) parameter file.
+             */
+            if (forceFieldFile != null && forceFieldFile.exists()
+                    && forceFieldFile.canRead()) {
+                parse(new FileInputStream(forceFieldFile));
             }
-            if (forceField.keywordFile != null) {
-                FileInputStream fis = new FileInputStream(forceField.keywordFile);
-                parse(fis);
+            /**
+             * Overwrite parameters of the forceFieldFile with those from the
+             * CompositeConfiguration.
+             */
+            if (properties != null) {
+                parse(properties);
             }
             forceField.checkPolarizationTypes();
         } catch (Exception e) {
@@ -145,23 +129,106 @@ public class ForceFieldFilter {
         return forceField;
     }
 
-    public ForceField parse(File forceFieldFile, File keyFile) {
-        forceField = new ForceField(null, keyFile);
+    private void parse(CompositeConfiguration properties) {
+        /**
+         * If the "forcefield" property exists, add a Configuration for it.
+         */
+        String forceFieldString = properties.getString("forcefield", "AMOEBA-BIO-2009");
+        Force_Field ff = null;
         try {
-            if (forceFieldFile != null && forceFieldFile.exists()) {
-                FileInputStream inputStream = new FileInputStream(forceFieldFile);
-                parse(inputStream);
+            ff = ForceField.Force_Field.valueOf(forceFieldString.toUpperCase().replace('-', '_'));
+        } catch (Exception e) {
+            ff = ForceField.Force_Field.AMOEBA_BIO_2009;
+        }
+
+        URL url = ForceField.getForceFieldURL(ff);
+        if (url != null) {
+            try {
+                PropertiesConfiguration config = new PropertiesConfiguration(url);
+                properties.addConfiguration(config);
+            } catch (Exception e) {
+                logger.warning(e.toString());
             }
-            if (forceField.keywordFile != null) {
-                FileInputStream fis = new FileInputStream(forceField.keywordFile);
-                parse(fis);
+        }
+
+        try {
+            int numConfigs = properties.getNumberOfConfigurations();
+            /**
+             * Loop over the configurations starting with lowest precendence.
+             * This way higher precendence entries will overwrite lower
+             * precendence entries within the ForceField instance.
+             */
+            for (int n = numConfigs - 1; n >= 0; n--) {
+                Configuration config = properties.getConfiguration(n);
+                Iterator i = config.getKeys();
+                while (i.hasNext()) {
+                    String key = (String) i.next();
+                    ForceFieldType type = null;
+                    try {
+                        type = ForceFieldType.valueOf(key.toUpperCase());
+                    } catch (Exception e) {
+                        continue;
+                    }
+                    List<String> list = config.getList(key);
+                    for (String s : list) {
+                        // Add back the key to the input line.
+                        s = key + " " + s;
+                        String tokens[] = s.trim().split(" +");
+                        String input = s;
+                        switch (type) {
+                            case ATOM:
+                                parseAtom(input, tokens);
+                                break;
+                            case ANGLE:
+                                parseAngle(input, tokens);
+                                break;
+                            case BIOTYPE:
+                                parseBioType(input, tokens);
+                                break;
+                            case BOND:
+                                parseBond(input, tokens);
+                                break;
+                            case CHARGE:
+                                parseCharge(input, tokens);
+                                break;
+                            case MULTIPOLE:
+                                parseMultipole(input, tokens);
+                                break;
+                            case OPBEND:
+                                parseOPBend(input, tokens);
+                                break;
+                            case STRBND:
+                                parseStrBnd(input, tokens);
+                                break;
+                            case PITORS:
+                                parsePiTorsion(input, tokens);
+                                break;
+                            case TORSION:
+                                parseTorsion(input, tokens);
+                                break;
+                            case TORTORS:
+                                parseTorsionTorsion(input, tokens);
+                                break;
+                            case UREYBRAD:
+                                parseUreyBradley(input, tokens);
+                                break;
+                            case VDW:
+                                parseVDW(input, tokens);
+                                break;
+                            case POLARIZE:
+                                parsePolarize(input, tokens);
+                                break;
+                            default:
+                                logger.warning("ForceField type recognized, but not stored:" + type);
+                        }
+                    }
+                }
             }
             forceField.checkPolarizationTypes();
         } catch (Exception e) {
             String message = "Exception parsing force field.";
             logger.log(Level.WARNING, message, e);
         }
-        return forceField;
     }
 
     private void parse(InputStream stream) {
@@ -207,7 +274,7 @@ public class ForceFieldFilter {
                                             }
                                         } else if (tokens[1].equalsIgnoreCase("NONE")) {
                                             /**
-                                             * Legacy support for the "NONE" token. 
+                                             * Legacy support for the "NONE" token.
                                              */
                                             value = false;
                                         } else {
@@ -456,7 +523,7 @@ public class ForceFieldFilter {
                 atomTypes[i] = Integer.parseInt(tokens[i + 1]);
                 if (atomTypes[i] < 0) {
                     frameDefinition = MultipoleType.MultipoleFrameDefinition.BISECTOR;
-                    atomTypes[i] = Math.abs(atomTypes[i]);
+                    atomTypes[i] = abs(atomTypes[i]);
                 }
             }
             double c = Double.parseDouble(tokens[1 + numTypes]);
@@ -495,6 +562,55 @@ public class ForceFieldFilter {
             quadrupole[2][0] = Double.parseDouble(tokens[0]);
             quadrupole[2][1] = Double.parseDouble(tokens[1]);
             quadrupole[2][2] = Double.parseDouble(tokens[2]);
+            // Fill in symmetric components.
+            quadrupole[0][1] = quadrupole[1][0];
+            quadrupole[0][2] = quadrupole[2][0];
+            quadrupole[1][2] = quadrupole[2][1];
+            MultipoleType multipoleType = new MultipoleType(c, dipole,
+                    quadrupole, atomTypes, frameDefinition);
+            forceField.addForceFieldType(multipoleType);
+        } catch (Exception e) {
+            String message = "Exception parsing MULTIPOLE type:\n" + input + "\n";
+            logger.log(Level.SEVERE, message, e);
+        }
+    }
+
+    /**
+     * Parse a single line multipole.
+     *
+     * @param input
+     * @param tokens
+     *
+     * @since 1.0
+     */
+    private void parseMultipole(String input, String[] tokens) {
+        if (tokens.length < 14) {
+            logger.warning("Invalid MULTIPOLE type:" + Arrays.toString(tokens));
+            return;
+        }
+        try {
+            MultipoleType.MultipoleFrameDefinition frameDefinition = MultipoleType.MultipoleFrameDefinition.ZTHENX;
+            int numTypes = tokens.length - 11;
+            int atomTypes[] = new int[numTypes];
+            for (int i = 0; i < numTypes; i++) {
+                atomTypes[i] = Integer.parseInt(tokens[i + 1]);
+                if (atomTypes[i] < 0) {
+                    frameDefinition = MultipoleType.MultipoleFrameDefinition.BISECTOR;
+                    atomTypes[i] = abs(atomTypes[i]);
+                }
+            }
+            double dipole[] = new double[3];
+            double quadrupole[][] = new double[3][3];
+            double c = new Double(tokens[1 + numTypes]);
+            dipole[0] = new Double(tokens[2 + numTypes]);
+            dipole[1] = new Double(tokens[3 + numTypes]);
+            dipole[2] = new Double(tokens[4 + numTypes]);
+            quadrupole[0][0] = new Double(tokens[5 + numTypes]);
+            quadrupole[1][0] = new Double(tokens[6 + numTypes]);
+            quadrupole[1][1] = new Double(tokens[7 + numTypes]);
+            quadrupole[2][0] = new Double(tokens[8 + numTypes]);
+            quadrupole[2][1] = new Double(tokens[9 + numTypes]);
+            quadrupole[2][2] = new Double(tokens[10 + numTypes]);
             // Fill in symmetric components.
             quadrupole[0][1] = quadrupole[1][0];
             quadrupole[0][2] = quadrupole[2][0];
@@ -663,6 +779,45 @@ public class ForceFieldFilter {
         }
     }
 
+    private void parseTorsionTorsion(String input, String[] tokens) {
+        if (tokens.length < 8) {
+            logger.warning("Invalid TORTORS type:\n" + input);
+            return;
+        }
+        try {
+            int atomClasses[] = new int[5];
+            for (int i = 0; i < 5; i++) {
+                atomClasses[i] = Integer.parseInt(tokens[i + 1]);
+            }
+            int gridPoints[] = new int[2];
+            gridPoints[0] = new Integer(tokens[6]);
+            gridPoints[1] = new Integer(tokens[7]);
+
+            int points = gridPoints[0] * gridPoints[1];
+
+            int numTokens = points * 3 + 8;
+            if (tokens.length < numTokens) {
+                logger.warning("Invalid TORTORS type:\n" + input);
+                return;
+            }
+            double torsion1[] = new double[points];
+            double torsion2[] = new double[points];
+            double energy[] = new double[points];
+            int index = 8;
+            for (int i = 0; i < points; i++) {
+                torsion1[i] = new Double(tokens[index++]);
+                torsion2[i] = new Double(tokens[index++]);
+                energy[i] = new Double(tokens[index++]);
+            }
+            TorsionTorsionType torsionTorsionType = new TorsionTorsionType(
+                    atomClasses, gridPoints, torsion1, torsion2, energy);
+            forceField.addForceFieldType(torsionTorsionType);
+        } catch (Exception e) {
+            String message = "Exception parsing TORTORS type:\n" + input + "\n";
+            logger.log(Level.SEVERE, message, e);
+        }
+    }
+
     private void parseUreyBradley(String input, String[] tokens) {
         if (tokens.length < 5) {
             logger.warning("Invalid UREYBRAD type:\n" + input);
@@ -706,19 +861,17 @@ public class ForceFieldFilter {
         }
     }
 
-
     /**
      * Parse a Force Field paramter file and echo the results with slashes.
      */
     public static void main(String[] args) throws Exception {
         if (args == null || args.length < 1) {
-            System.out.println("Usage: ForceFieldFilter <file.prm> [append slashes]");
+            System.out.println("Usage: ForceFieldFilter <file.prm>");
             System.exit(-1);
         }
         File ff = new File(args[0]);
-
-        ForceFieldFilter forceFieldFilter = new ForceFieldFilter();
-        ForceField forceField = forceFieldFilter.parse(ff, null);
+        ForceFieldFilter forceFieldFilter = new ForceFieldFilter(Keyword.loadProperties(ff), ff);
+        ForceField forceField = forceFieldFilter.parse();
         forceField.print();
     }
 }

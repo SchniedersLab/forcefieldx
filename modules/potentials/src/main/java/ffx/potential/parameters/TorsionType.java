@@ -175,7 +175,7 @@ public final class TorsionType extends BaseType implements Comparator<String> {
      *
      * @param s1
      * @param s2
-     * @return
+     * @return -1 if s1 < s2, 0 if s1 == s2, 1 if s1 > s2.
      *
      * @since 1.0
      */
@@ -216,7 +216,8 @@ public final class TorsionType extends BaseType implements Comparator<String> {
      * Override the default <code>equals</code> method.
      *
      * @param other
-     * @return
+     * @return true if <this> and <other> are both TorsionType defined by
+     * the same atom classes.
      *
      * @since 1.0
      */
@@ -240,7 +241,7 @@ public final class TorsionType extends BaseType implements Comparator<String> {
     /**
      * Implementation of the <code>hashCode</code> method.
      *
-     * @return
+     * @return the hash code.
      *
      * @since 1.0
      */

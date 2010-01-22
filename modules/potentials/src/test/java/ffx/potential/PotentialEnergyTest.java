@@ -26,16 +26,17 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Hashtable;
 import java.util.Random;
 import java.util.logging.Logger;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
+import org.apache.commons.configuration.CompositeConfiguration;
+
 import ffx.potential.parsers.ForceFieldFilter;
-import ffx.potential.parsers.KeyFilter;
 import ffx.potential.parsers.XYZFilter;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
@@ -43,7 +44,6 @@ import ffx.potential.bonded.Utilities;
 import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldString;
-import ffx.potential.parameters.ForceField.Force_Field;
 import ffx.utilities.Keyword;
 
 /**
@@ -54,50 +54,50 @@ import ffx.utilities.Keyword;
  */
 @RunWith(Parameterized.class)
 public class PotentialEnergyTest {
+
     private static final Logger logger = Logger.getLogger(PotentialEnergyTest.class.getName());
 
     @Parameters
     public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][] {{"DHFR Benchmark",
-                                              "ffx/potential/structures/dhfr.xyz",
-                                              6423.84579926e0, 16569,
-                                              3749.73436272e0, 11584,
-                                              -21.85553039e0, 4031,
-                                              687.46861123e0, 7023,
-                                              198.72886589e0, 1566,
-                                              422.54712638e0, 6701,
-                                              48.26628393e0, 292,
-                                              -41.71473466e0, 147,
-                                              32676.57816012e0, 3480445,
-                                              -79670.54372856e0, 1463353,
-                                              -32033.24720761e0, 1463353} /*,
-                                             {"SNARE P1",
-                                              "ffx/potential/structures/1n7s.P1.xyz",
-                                              1405.28569930e0, 20160,
-                                              2976.77005458e0, 33020,
-                                              25.68062976e0, 27696,
-                                              10.00655326e0, 1288,
-                                              541.44132652e0, 9948,
-                                              1671.56977674e0, 45796,
-                                              159.42575736e0, 1480,
-                                              -2243.98305878e0, 1072,
-                                              16013.08734189e0, 2966542,
-                                              -49214.99281245e0, 1504176,
-                                              -11244.77107599e0, 1504176},
-                                             {"SNARE P212121",
-                                              "ffx/potential/structures/1n7s.P212121.xyz",
-                                              351.321424825e0, 5040,
-                                              744.192513645e0, 8255,
-                                              6.42015744e0, 6924,
-                                              2.501638315e0, 322,
-                                              135.36033163e0, 2487,
-                                              417.892444185e0, 11449,
-                                              39.85643934e0, 370,
-                                              -560.995764695e0, 268,
-                                              4003.2718354725e0, 2966542,
-                                              -12303.7482031125e0, 1504176,
-                                              -2811.1927689975e0, 1504176 } */
-                });
+        return Arrays.asList(new Object[][]{{"DHFR Benchmark",
+                        "ffx/potential/structures/dhfr.xyz",
+                        6423.84579926e0, 16569,
+                        3749.73436272e0, 11584,
+                        -21.85553039e0, 4031,
+                        687.46861123e0, 7023,
+                        198.72886589e0, 1566,
+                        422.54712638e0, 6701,
+                        48.26628393e0, 292,
+                        -41.71473466e0, 147,
+                        32676.57816012e0, 3480445,
+                        -79670.54372856e0, 1463353,
+                        -32033.24720761e0, 1463353} /*,
+                {"SNARE P1",
+                "ffx/potential/structures/1n7s.P1.xyz",
+                1405.28569930e0, 20160,
+                2976.77005458e0, 33020,
+                25.68062976e0, 27696,
+                10.00655326e0, 1288,
+                541.44132652e0, 9948,
+                1671.56977674e0, 45796,
+                159.42575736e0, 1480,
+                -2243.98305878e0, 1072,
+                16013.08734189e0, 2966542,
+                -49214.99281245e0, 1504176,
+                -11244.77107599e0, 1504176},
+                {"SNARE P212121",
+                "ffx/potential/structures/1n7s.P212121.xyz",
+                351.321424825e0, 5040,
+                744.192513645e0, 8255,
+                6.42015744e0, 6924,
+                2.501638315e0, 322,
+                135.36033163e0, 2487,
+                417.892444185e0, 11449,
+                39.85643934e0, 370,
+                -560.995764695e0, 268,
+                4003.2718354725e0, 2966542,
+                -12303.7482031125e0, 1504176,
+                -2811.1927689975e0, 1504176 } */});
     }
     private final String info;
     private final File structure;
@@ -130,17 +130,17 @@ public class PotentialEnergyTest {
     private final double gradientTolerance = 1.0e-4;
 
     public PotentialEnergyTest(String info, String filename,
-                               double bondEnergy, int nBonds,
-                               double angleEnergy, int nAngles,
-                               double stretchBendEnergy, int nStretchBends,
-                               double ureyBradleyEnergy, int nUreyBradleys,
-                               double outOfPlaneBendEnergy, int nOutOfPlaneBends,
-                               double torsionEnergy, int nTorsions,
-                               double piOrbitalTorsionEnergy, int nPiOrbitalTorsions,
-                               double torsionTorsionEnergy, int nTorsionTorsions,
-                               double vanDerWaalsEnergy, int nVanDerWaals,
-                               double permanentEnergy, int nPermanent,
-                               double polarizationEnergy, int nPolar) {
+            double bondEnergy, int nBonds,
+            double angleEnergy, int nAngles,
+            double stretchBendEnergy, int nStretchBends,
+            double ureyBradleyEnergy, int nUreyBradleys,
+            double outOfPlaneBendEnergy, int nOutOfPlaneBends,
+            double torsionEnergy, int nTorsions,
+            double piOrbitalTorsionEnergy, int nPiOrbitalTorsions,
+            double torsionTorsionEnergy, int nTorsionTorsions,
+            double vanDerWaalsEnergy, int nVanDerWaals,
+            double permanentEnergy, int nPermanent,
+            double polarizationEnergy, int nPolar) {
         this.info = info;
         this.bondEnergy = bondEnergy;
         this.nBonds = nBonds;
@@ -167,24 +167,18 @@ public class PotentialEnergyTest {
 
         ClassLoader cl = this.getClass().getClassLoader();
         structure = new File(cl.getResource(filename).getPath());
+        
         String name = structure.getName();
         int index = filename.lastIndexOf(".");
         name = filename.substring(0, index);
         molecularAssembly = new MolecularAssembly(name);
         molecularAssembly.setFile(structure);
-        filename = filename.replace("xyz", "key");
-        File keyFile = new File(cl.getResource(filename).getPath());
-        System.out.println(keyFile.getAbsolutePath());
-        assertTrue(keyFile.exists());
-        Hashtable keywordHash = KeyFilter.open(keyFile);
-        Keyword keyword = (Keyword) keywordHash.get("FORCEFIELD");
-        assertNotNull(keyword);
-        String model = keyword.getEntry(0);
-        Force_Field ff = ForceField.Force_Field.valueOf(model.toUpperCase().replace('-', '_'));
-        ForceFieldFilter forceFieldFilter = new ForceFieldFilter();
-        ForceField forceField = forceFieldFilter.parse(ff, keyFile);
+
+        CompositeConfiguration properties = Keyword.loadProperties(structure);
+        ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties, null);
+        ForceField forceField = forceFieldFilter.parse();
         molecularAssembly.setForceField(forceField);
-        assertNotNull(forceField);
+
         XYZFilter xyzFilter = new XYZFilter(molecularAssembly, forceField);
         boolean expectedReturn = true;
         boolean actualReturn = xyzFilter.readFile();
@@ -194,7 +188,7 @@ public class PotentialEnergyTest {
         energy = new PotentialEnergy(molecularAssembly);
 
         String polar = forceField.getString(ForceFieldString.POLARIZATION,
-                                            "MUTUAL");
+                "MUTUAL");
         // polarization = Polarization.NONE;
         if (polar.equalsIgnoreCase("MUTUAL")) {
             polarization = Polarization.MUTUAL;
@@ -309,12 +303,12 @@ public class PotentialEnergyTest {
             logger.severe("\n" + a0.toString() + String.format(" failed: %10.6f.", len) + String.format(
                     "\nAnalytic: (%12.4f, %12.4f, %12.4f)\n",
                     analytic[0], analytic[1], analytic[2]) + String.format("Numeric:  (%12.4f, %12.4f, %12.4f)\n",
-                                                                           numeric[0], numeric[1], numeric[2]));
+                    numeric[0], numeric[1], numeric[2]));
         } else {
             logger.info("\n" + a0.toString() + String.format(" passed: %10.6f.", len) + String.format(
                     "\nAnalytic: (%12.4f, %12.4f, %12.4f)\n",
                     analytic[0], analytic[1], analytic[2]) + String.format("Numeric:  (%12.4f, %12.4f, %12.4f)\n",
-                                                                           numeric[0], numeric[1], numeric[2]));
+                    numeric[0], numeric[1], numeric[2]));
         }
         assertEquals(a0.toString(), 0.0, len, gradientTolerance);
     }

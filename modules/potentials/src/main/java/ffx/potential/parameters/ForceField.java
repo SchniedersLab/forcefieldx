@@ -22,12 +22,14 @@ package ffx.potential.parameters;
 
 import java.io.File;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 import java.util.NavigableSet;
 import java.util.TreeMap;
 import java.util.logging.Logger;
 
-import ffx.utilities.Keyword;
+import org.apache.commons.configuration.CompositeConfiguration;
 
 /**
  * The ForceField class organizes parameters for a molecular mechanics force
@@ -86,28 +88,28 @@ public class ForceField {
      */
     private static final TreeMap<Force_Field, URL> forceFields = new TreeMap<Force_Field, URL>();
 
-    {
-        ClassLoader cl = this.getClass().getClassLoader();
-        String amoeba = "ffx/potential/parameters/amoeba/";
+    static {
+        ClassLoader cl = ForceField.class.getClassLoader();
+        String prefix = "ffx/potential/parameters/amoeba/";
         Force_Field ff = Force_Field.AMOEBA_WATER;
-        forceFields.put(ff, cl.getResource(amoeba + ff));
+        forceFields.put(ff, cl.getResource(prefix + ff));
         ff = Force_Field.AMOEBA_2004;
-        forceFields.put(ff, cl.getResource(amoeba + ff));
+        forceFields.put(ff, cl.getResource(prefix + ff));
         ff = Force_Field.AMOEBA_PROTEIN_2004;
-        forceFields.put(ff, cl.getResource(amoeba + ff));
+        forceFields.put(ff, cl.getResource(prefix + ff));
         ff = Force_Field.AMOEBA_2009;
-        forceFields.put(ff, cl.getResource(amoeba + ff));
+        forceFields.put(ff, cl.getResource(prefix + ff));
         ff = Force_Field.AMOEBA_PROTEIN_2009;
-        String value = amoeba + ff;
+        String value = prefix + ff;
         forceFields.put(ff, cl.getResource(value));
         ff = Force_Field.AMOEBA_NUCLEIC_2009;
         forceFields.put(ff, cl.getResource(value));
         ff = Force_Field.AMOEBA_BIO_2009;
-        forceFields.put(ff, cl.getResource(value));
+        forceFields.put(ff, cl.getResource(prefix + ff));
     }
     public URL forceFieldURL;
     public File keywordFile;
-    private final TreeMap<String, Keyword> keywordTypes;
+    private final CompositeConfiguration properties;
     private final TreeMap<String, AngleType> angleTypes;
     private final TreeMap<String, AtomType> atomTypes;
     private final TreeMap<String, BioType> bioTypes;
@@ -123,23 +125,32 @@ public class ForceField {
     private final TreeMap<String, VDWType> vanderWaalsTypes;
     private final TreeMap<ForceFieldType, TreeMap> forceFieldTypes;
 
+    public static URL getForceFieldURL(Force_Field forceField) {
+        if (forceField != null) {
+            return forceFields.get(forceField);
+        } else {
+            return null;
+        }
+    }
+
     /**
      * ForceField Constructor.
      */
-    public ForceField(Force_Field forceField, File keyFile) {
-        if (forceField != null) {
-            this.forceFieldURL = forceFields.get(forceField);
-        } else {
-            this.forceFieldURL = null;
-        }
-        this.keywordFile = keyFile;
+    public ForceField(CompositeConfiguration properties, File parameterFile) {
+        this(properties);
+        this.keywordFile = parameterFile;
+    }
 
+    /**
+     * ForceField Constructor.
+     */
+    public ForceField(CompositeConfiguration properties) {
+        this.properties = properties;
         /**
          * Each force field "type" implements the "Comparator<String>" interface
          * so that passing an "empty" instance of the "type" to its TreeMap
          * constructor will keep the types sorted.
          */
-        keywordTypes = new TreeMap<String, Keyword>();
         angleTypes = new TreeMap<String, AngleType>(new AngleType(new int[3], 0, new double[1]));
         atomTypes = new TreeMap<String, AtomType>(new AtomType(0, 0, null, null, 0, 0, 0));
         bioTypes = new TreeMap<String, BioType>(new BioType(0, null, null, 0));
@@ -155,7 +166,6 @@ public class ForceField {
         vanderWaalsTypes = new TreeMap<String, VDWType>(new VDWType(0, 0, 0, 0));
 
         forceFieldTypes = new TreeMap<ForceFieldType, TreeMap>();
-        forceFieldTypes.put(ForceFieldType.KEYWORD, keywordTypes);
         forceFieldTypes.put(ForceFieldType.ANGLE, angleTypes);
         forceFieldTypes.put(ForceFieldType.ATOM, atomTypes);
         forceFieldTypes.put(ForceFieldType.BOND, bondTypes);
@@ -171,13 +181,28 @@ public class ForceField {
         forceFieldTypes.put(ForceFieldType.VDW, vanderWaalsTypes);
     }
 
+    /**
+     * Enums are uppercase with underscores, but property files use lower case
+     * with dashes.
+     *
+     * @param s
+     * @return
+     */
+    private String normalizeKey(String s) {
+        if (s == null) return null;
+        return s.toLowerCase().replace("_", "-");
+    }
+
     public double getDouble(ForceFieldDouble forceFieldDouble)
             throws Exception {
-        Keyword keyword = keywordTypes.get(forceFieldDouble.toString());
-        if (keyword == null) {
-            throw new Exception("Undefined keyword: " + forceFieldDouble.toString());
+        if (forceFieldDouble == null) {
+            throw new Exception("NULL keyword");
         }
-        return Double.parseDouble(keyword.getEntry(0));
+        String key = normalizeKey(forceFieldDouble.toString());
+        if (!properties.containsKey(key)) {
+            throw new Exception("Undefined keyword: " + key);
+        }
+        return properties.getDouble(key);
     }
 
     public double getDouble(ForceFieldDouble forceFieldDouble,
@@ -191,11 +216,14 @@ public class ForceField {
 
     public int getInteger(ForceFieldInteger forceFieldInteger)
             throws Exception {
-        Keyword keyword = keywordTypes.get(forceFieldInteger.toString());
-        if (keyword == null) {
-            throw new Exception("Undefined keyword: " + forceFieldInteger.toString());
+        if (forceFieldInteger == null) {
+            throw new Exception("NULL keyword");
         }
-        return Integer.parseInt(keyword.getEntry(0));
+        String key = normalizeKey(forceFieldInteger.toString());
+        if (!properties.containsKey(key)) {
+            throw new Exception("Undefined keyword: " + key);
+        }
+        return properties.getInt(key);
     }
 
     public int getInteger(ForceFieldInteger forceFieldInteger,
@@ -209,11 +237,14 @@ public class ForceField {
 
     public String getString(ForceFieldString forceFieldString)
             throws Exception {
-        Keyword keyword = keywordTypes.get(forceFieldString.toString());
-        if (keyword == null) {
-            throw new Exception("Undefined keyword: " + forceFieldString.toString());
+        if (forceFieldString == null) {
+            throw new Exception("NULL keyword");
         }
-        return keyword.getEntry(0);
+        String key = normalizeKey(forceFieldString.toString());
+        if (!properties.containsKey(key)) {
+            throw new Exception("Undefined keyword: " + key);
+        }
+        return properties.getString(key);
     }
 
     public String getString(ForceFieldString forceFieldString,
@@ -227,11 +258,14 @@ public class ForceField {
 
     public boolean getBoolean(ForceFieldBoolean forceFieldBoolean)
             throws Exception {
-        Keyword keyword = keywordTypes.get(forceFieldBoolean.toString());
-        if (keyword == null) {
-            throw new Exception("Undefined keyword: " + forceFieldBoolean.toString());
+        if (forceFieldBoolean == null) {
+            throw new Exception("NULL keyword");
         }
-        return Boolean.parseBoolean(keyword.getEntry(0));
+        String key = normalizeKey(forceFieldBoolean.toString());
+        if (!properties.containsKey(key)) {
+            throw new Exception("Undefined keyword: " + key);
+        }
+        return properties.getBoolean(key);
     }
 
     public boolean getBoolean(ForceFieldBoolean forceFieldBoolean,
@@ -252,19 +286,19 @@ public class ForceField {
      *            double
      */
     public void addForceFieldDouble(ForceFieldDouble forceFieldDouble, double value) {
-        Keyword keyword = keywordTypes.get(forceFieldDouble.toString());
-        if (keyword != null) {
-            double oldValue = getDouble(forceFieldDouble, value);
-            if (Double.compare(oldValue, value) != 0) {
-                logger.warning(String.format(
-                        "\nOld %s value of %6.3e replaced with %6.3e\n", keyword,
-                        oldValue, value));
-            }
-            keyword.clear();
-            keyword.append(Double.toString(value));
-        } else {
-            keyword = new Keyword(forceFieldDouble.toString(), Double.toString(value));
-            keywordTypes.put(forceFieldDouble.toString(), keyword);
+        if (forceFieldDouble == null) {
+            return;
+        }
+        String key = normalizeKey(forceFieldDouble.toString());
+        try {
+            double old = getDouble(forceFieldDouble);
+            logger.info("Clearing " + key + " with value " + old);
+            properties.clearProperty(key);
+        } catch (Exception e) {
+            // Property does not exist yet.
+        } finally {
+            logger.info("Adding " + key + " with value " + value);
+            properties.addProperty(key, value);
         }
     }
 
@@ -277,19 +311,19 @@ public class ForceField {
      *            int
      */
     public void addForceFieldInteger(ForceFieldInteger forceFieldInteger, int value) {
-        Keyword keyword = keywordTypes.get(forceFieldInteger.toString());
-        if (keyword != null) {
-            int oldValue = getInteger(forceFieldInteger, value);
-            if (oldValue != value) {
-                logger.warning(String.format(
-                        "\nOld %s value of %6d replaced with %6d\n", keyword,
-                        oldValue, value));
-            }
-            keyword.clear();
-            keyword.append(Integer.toString(value));
-        } else {
-            keyword = new Keyword(forceFieldInteger.toString(), Integer.toString(value));
-            keywordTypes.put(forceFieldInteger.toString(), keyword);
+        if (forceFieldInteger == null) {
+            return;
+        }
+        String key = normalizeKey(forceFieldInteger.toString());
+        try {
+            int old = getInteger(forceFieldInteger);
+            logger.info("Clearing " + key + " with value " + old);
+            properties.clearProperty(key);
+        } catch (Exception e) {
+            // Property does not exist yet.
+        } finally {
+            logger.info("Adding " + key + " with value " + value);
+            properties.addProperty(key, value);
         }
     }
 
@@ -302,19 +336,19 @@ public class ForceField {
      *            String
      */
     public void addForceFieldString(ForceFieldString forceFieldString, String value) {
-        Keyword keyword = keywordTypes.get(forceFieldString.toString());
-        if (keyword != null) {
-            String oldValue = getString(forceFieldString, value);
-            if (!oldValue.equalsIgnoreCase(value)) {
-                logger.warning(String.format(
-                        "\nOld %s value of %6d replaced with %6d\n", forceFieldString,
-                        oldValue, value));
-            }
-            keyword.clear();
-            keyword.append(value);
-        } else {
-            keyword = new Keyword(forceFieldString.toString(), value);
-            keywordTypes.put(forceFieldString.toString(), keyword);
+        if (forceFieldString == null) {
+            return;
+        }
+        String key = normalizeKey(forceFieldString.toString());
+        try {
+            String old = getString(forceFieldString);
+            logger.info("Clearing " + key + " with value " + old);
+            properties.clearProperty(key);
+        } catch (Exception e) {
+            // Property does not exist yet.
+        } finally {
+            logger.info("Adding " + key + " with value " + value);
+            properties.addProperty(key, value);
         }
     }
 
@@ -326,19 +360,19 @@ public class ForceField {
      * @param value Boolean
      */
     public void addForceFieldBoolean(ForceFieldBoolean forceFieldBoolean, Boolean value) {
-        Keyword keyword = keywordTypes.get(forceFieldBoolean.toString());
-        if (keyword != null) {
-            boolean oldValue = getBoolean(forceFieldBoolean, value);
-            if (oldValue != value) {
-                logger.warning(String.format(
-                        "\nOld %s value of %l replaced with %l\n", keyword,
-                        oldValue, value));
-            }
-            keyword.clear();
-            keyword.append(Boolean.toString(value));
-        } else {
-            keyword = new Keyword(forceFieldBoolean.toString(), Boolean.toString(value));
-            keywordTypes.put(forceFieldBoolean.toString(), keyword);
+        if (forceFieldBoolean == null) {
+            return;
+        }
+        String key = normalizeKey(forceFieldBoolean.toString());
+        try {
+            boolean old = getBoolean(forceFieldBoolean);
+            logger.info("Clearing " + key + " with value " + old);
+            properties.clearProperty(key);
+        } catch (Exception e) {
+            // Property does not exist yet.
+        } finally {
+            logger.info("Adding " + key + " with value " + value);
+            properties.addProperty(key, value);
         }
     }
 
@@ -533,18 +567,21 @@ public class ForceField {
             }
             return stringBuffer.toString();
         }
-        return null;
+        return "";
     }
 
     public String toString(String key) {
         if (key == null) {
             return null;
         }
-        Keyword keyword = keywordTypes.get(key.toUpperCase());
-        if (keyword != null) {
-            return keyword.toString();
+        
+        key = normalizeKey(key);
+
+        if (properties.containsKey(key)) {
+            List l = properties.getList(key);
+            return key + " " + Arrays.toString(l.toArray());
         } else {
-            return null;
+            return key + " is not defined.";
         }
     }
 }

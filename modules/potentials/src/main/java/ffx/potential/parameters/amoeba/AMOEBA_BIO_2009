@@ -1525,30 +1525,30 @@ biotype   1226  O4    "Deoxythymidine"             251
 biotype   1227  C7    "Deoxythymidine"             252
 biotype   1228  H7    "Deoxythymidine"             253
 biotype   1229  H6    "Deoxythymidine"             254
-biotype   1230  P     "Phosphodiester, RNA"        328
-biotype   1231  OP    "Phosphodiester, RNA"        329
-biotype   1232  O5*   "5'-Hydroxyl, RNA"           330
-biotype   1233  H5T   "5'-Hydroxyl, RNA"           331
-biotype   1234  O5*   "5'-Phosphate OS, RNA"       332
-biotype   1235  P     "5'-Phosphate P, RNA"        333
-biotype   1236  OP    "5'-Phosphate OP, RNA"       334
-biotype   1237  O3*   "3'-Hydroxyl, RNA"           335
-biotype   1238  H3T   "3'-Hydroxyl, RNA"           336
-biotype   1239  O3*   "3'-Phosphate OS, RNA"       337
-biotype   1240  P     "3'-Phosphate P, RNA"        338
-biotype   1241  OP    "3'-Phosphate OP, RNA"       339
-biotype   1242  P     "Phosphodiester, DNA"        340
-biotype   1243  OP    "Phosphodiester, DNA"        341
-biotype   1244  O5*   "5'-Hydroxyl, DNA"           342
-biotype   1245  H5T   "5'-Hydroxyl, DNA"           343
-biotype   1246  O5*   "5'-Phosphate OS, DNA"       344
-biotype   1247  P     "5'-Phosphate P, DNA"        345
-biotype   1248  OP    "5'-Phosphate OP, DNA"       346
-biotype   1249  O3*   "3'-Hydroxyl, DNA"           347
-biotype   1250  H3T   "3'-Hydroxyl, DNA"           348
-biotype   1251  O3*   "3'-Phosphate OS, DNA"       349
-biotype   1252  P     "3'-Phosphate P, DNA"        350
-biotype   1253  OP    "3'-Phosphate OP, DNA"       351
+biotype   1230  P     "Phosphodiester RNA"         328
+biotype   1231  OP    "Phosphodiester RNA"         329
+biotype   1232  O5*   "5'-Hydroxyl RNA"            330
+biotype   1233  H5T   "5'-Hydroxyl RNA"            331
+biotype   1234  O5*   "5'-Phosphate OS RNA"        332
+biotype   1235  P     "5'-Phosphate P RNA"         333
+biotype   1236  OP    "5'-Phosphate OP RNA"        334
+biotype   1237  O3*   "3'-Hydroxyl RNA"            335
+biotype   1238  H3T   "3'-Hydroxyl RNA"            336
+biotype   1239  O3*   "3'-Phosphate OS RNA"        337
+biotype   1240  P     "3'-Phosphate P RNA"         338
+biotype   1241  OP    "3'-Phosphate OP RNA"        339
+biotype   1242  P     "Phosphodiester DNA"         340
+biotype   1243  OP    "Phosphodiester DNA"         341
+biotype   1244  O5*   "5'-Hydroxyl DNA"            342
+biotype   1245  H5T   "5'-Hydroxyl DNA"            343
+biotype   1246  O5*   "5'-Phosphate OS DNA"        344
+biotype   1247  P     "5'-Phosphate P DNA"         345
+biotype   1248  OP    "5'-Phosphate OP DNA"        346
+biotype   1249  O3*   "3'-Hydroxyl DNA"            347
+biotype   1250  H3T   "3'-Hydroxyl DNA"            348
+biotype   1251  O3*   "3'-Phosphate OS DNA"        349
+biotype   1252  P     "3'-Phosphate P DNA"         350
+biotype   1253  OP    "3'-Phosphate OP DNA"        351
 biotype   2001  O     "Water"                      352
 biotype   2002  H     "Water"                      353
 biotype   2003  NA    "Sodium Ion"                 355

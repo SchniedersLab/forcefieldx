@@ -21,20 +21,15 @@
 package ffx.ui;
 
 import java.io.File;
-import java.util.Iterator;
 import java.util.Hashtable;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.commons.configuration.Configuration;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.commons.configuration.SystemConfiguration;
 
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.utilities.Keyword;
-import java.util.Arrays;
 
 /**
  * The FFXSystem class contains extensions to the generic
@@ -43,115 +38,40 @@ import java.util.Arrays;
  */
 public class FFXSystem extends MolecularAssembly {
 
-    private static final Logger logger = Logger.getLogger(ffx.ui.FFXSystem.class.getName());
+    private static final Logger logger = Logger.getLogger(FFXSystem.class.getName());
     private static final long serialVersionUID = 50L;
     public static final int MultiScaleLevel = 4;
     // Log file being used for modeling commands
     private File logFile;
     // Key file for this system
     private File keyFile;
+
     private Hashtable<String, Keyword> keywords = new Hashtable<String, Keyword>();
-    // Command Description if this System is the result of a TINKER commad
+    private CompositeConfiguration properties = null;
+
     private String commandDescription = null;
     // Archive
     private Trajectory trajectory = null;
-    // Simulation data
-    //private double time, temperature, energy;
-    private int step;
     // Flag to indicate this System is being closed
     private boolean closing = false;
-    private CompositeConfiguration properties = null;
+
 
     /**
-     * FFXSystem Constructor
-     *
-     * @param name
-     *            String
+     * Constructor.
+     * 
+     * @param file Coordinate file.
+     * @param description Short description of the command that created this system.
+     * @param properties Properties controlling operations on this system.
      */
-    public FFXSystem(String name, String description, File file) {
-        super(name);
+    public FFXSystem(File file, String description, CompositeConfiguration properties) {
+        super(FilenameUtils.getBaseName(file.getName()));
         setFile(file);
         commandDescription = description;
-        loadProperties();
+        this.properties = properties;
     }
 
-    /**
-     * This method sets up configuration properties in the following precedence
-     * order:
-     * 1.) Java system properties
-     *     a.) -Dkey=value from the Java command line
-     *     b.) System.setProperty("key","value") within Java code.
-     *
-     * 2.) Structure specific properties (for example pdbname.properties)
-     *
-     * 3.) User specific properties (~/.ffx/ffx.properties)
-     *
-     * 4.) System wide properties (file defined by environment variable FFX_PROPERTIES)
-     *
-     * 5.) Internal force field definition.
-     */
-    private void loadProperties() {
-        /**
-         * Command line options take precedences.
-         */
-        properties = new CompositeConfiguration();
-        properties.addConfiguration(new SystemConfiguration());
-
-        /**
-         * Structure specific options are 2nd.
-         */
-        File file = getFile();
-        String filename = file.getAbsolutePath();
-        filename = org.apache.commons.io.FilenameUtils.removeExtension(filename);
-        filename = filename + ".properties";
-        File structurePropFile = new File(filename);
-        if (structurePropFile.exists() && structurePropFile.canRead()) {
-            try {
-                properties.addConfiguration(new PropertiesConfiguration(structurePropFile));
-            } catch (Exception e) {
-                logger.info("Error loading " + filename + ".");
-            }
-        }
-
-        /**
-         * User specific options are 3rd.
-         */
-        filename = System.getProperty("user.home") + File.separator + ".ffx/ffx.properties";
-        File userPropFile = new File(filename);
-        if (userPropFile.exists() && userPropFile.canRead()) {
-            try {
-                properties.addConfiguration(new PropertiesConfiguration(userPropFile));
-            } catch (Exception e) {
-                logger.info("Error loading " + filename + ".");
-            }
-        }
-
-        /**
-         * System wide options are last.
-         */
-        filename = System.getenv("FFX_PROPERTIES");
-        if (filename != null) {
-            File systemPropFile = new File(filename);
-            if (systemPropFile.exists() && systemPropFile.canRead()) {
-                try {
-                    properties.addConfiguration(new PropertiesConfiguration(systemPropFile));
-                } catch (Exception e) {
-                    logger.info("Error loading " + filename + ".");
-                }
-            }
-        }
-
-        /**
-         * Echo the interpolated configuration.
-         */
-        if (logger.isLoggable(Level.INFO)) {
-            Configuration config = properties.interpolatedConfiguration();
-            Iterator<String> i = config.getKeys();
-            while (i.hasNext()) {
-                String s = i.next();
-                logger.info("Key: " + s + ", Value: " + Arrays.toString(config.getList(s).toArray()));
-            }
-        }
+    public CompositeConfiguration getProperties() {
+        return properties;
     }
 
     public void addKeyword(Keyword k) {
@@ -190,10 +110,6 @@ public class FFXSystem extends MolecularAssembly {
             logFile = new File(fileName);
         }
         return logFile;
-    }
-
-    public String getStepString() {
-        return String.format("Step: %12d", step);
     }
 
     public Trajectory getTrajectory() {
@@ -237,10 +153,6 @@ public class FFXSystem extends MolecularAssembly {
 
     public void setLogFile(File f) {
         logFile = f;
-    }
-
-    public void setStep(int s) {
-        step = s;
     }
 
     public void setTrajectory(Trajectory t) {

@@ -363,8 +363,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * 
      * @since 1.0
      */
-    public Atom(int xyzIndex, String name, AtomType atomType, double[] d) {
-        this(name, atomType, d);
+    public Atom(int xyzIndex, String name, AtomType atomType, double[] xyz) {
+        this(name, atomType, xyz);
         this.xyzIndex = xyzIndex;
     }
 
@@ -901,8 +901,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     /**
      * Add a vector to the Atom's current position vector
      *
-     * @param xyz
-     *            Vector to add to the current position
+     * @param d Vector to add to the current position
      */
     public void move(double[] d) {
         double x[] = xyz[altID];
@@ -927,8 +926,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     /**
      * Moves the atom to the specified location
      *
-     * @param xyz
-     *            Location to move <b>this</b> Atom to
+     * @param d Location to move <b>this</b> Atom to
      */
     public void moveTo(double[] d) {
         moveTo(d[0], d[1], d[2]);

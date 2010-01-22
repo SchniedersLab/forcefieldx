@@ -26,15 +26,17 @@ package ffx.ui;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.net.InetSocketAddress;
+import java.io.File;
 import java.util.List;
 
 import javax.swing.Timer;
 
+import ffx.potential.bonded.Atom;
 import ffx.ui.commands.FFXClient;
 import ffx.ui.commands.SimulationFilter;
 import ffx.ui.commands.TinkerSystem;
 import ffx.ui.commands.TinkerUpdate;
-import ffx.potential.bonded.Atom;
+import ffx.utilities.Keyword;
 
 /**
  * This TinkerSimulation class oversees loading information from an executing
@@ -77,6 +79,7 @@ public class TinkerSimulation implements ActionListener {
         }
     }
 
+    @Override
     public void actionPerformed(ActionEvent e) {
         // Check if we're connected to a TINKER Server.
         if (!connect()) {
@@ -88,7 +91,8 @@ public class TinkerSimulation implements ActionListener {
             if (sys != null) {
                 if (simulationFilter == null) {
                     if (system == null) {
-                        system = new FFXSystem("Simulation", null, null);
+                        system = new FFXSystem(new File("Simulation"),
+                                "Simulation", Keyword.loadProperties(null));
                     }
                     simulationFilter = new SimulationFilter(sys, system);
                     FileOpener openFile = new FileOpener(simulationFilter,
@@ -211,7 +215,6 @@ public class TinkerSimulation implements ActionListener {
                 return;
             }
             step = tinkerUpdate.step;
-            system.setStep(step);
         }
         // Reset the Maximum Magnitude Values, such that they will be consistent
         // with this frame of the simulation after the update.

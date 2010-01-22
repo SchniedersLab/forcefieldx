@@ -20,11 +20,24 @@
  */
 package ffx.utilities;
 
+import java.io.File;
+import java.util.Arrays;
+import java.util.Iterator;
 import java.util.Vector;
+import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.configuration.SystemConfiguration;
 
 /**
  * The Keyword class holds a single Force Field X keyword entry.
+ *
+ * @author Michael J. Schnieders
+ *
+ * @since 1.0
  */
 public class Keyword {
 
@@ -86,5 +99,97 @@ public class Keyword {
             sb.append(s);
         }
         return sb.toString();
+    }
+
+    /**
+     * This method sets up configuration properties in the following precedence
+     * order:
+     * 1.) Java system properties
+     *     a.) -Dkey=value from the Java command line
+     *     b.) System.setProperty("key","value") within Java code.
+     *
+     * 2.) Structure specific properties (for example pdbname.properties)
+     *
+     * 3.) User specific properties (~/.ffx/ffx.properties)
+     *
+     * 4.) System wide properties (file defined by environment variable FFX_PROPERTIES)
+     *
+     * 5.) Internal force field definition.
+     */
+    public static CompositeConfiguration loadProperties(File file) {
+        /**
+         * Command line options take precedences.
+         */
+        CompositeConfiguration properties = new CompositeConfiguration();
+        properties.addConfiguration(new SystemConfiguration());
+
+        /**
+         * Structure specific options are 2nd.
+         */
+        if (file != null) {
+            String filename = file.getAbsolutePath();
+            filename = org.apache.commons.io.FilenameUtils.removeExtension(filename);
+            String keyFilename = filename + ".properties";
+            File structurePropFile = new File(keyFilename);
+            if (structurePropFile.exists() && structurePropFile.canRead()) {
+                try {
+                    properties.addConfiguration(new PropertiesConfiguration(structurePropFile));
+                } catch (Exception e) {
+                    logger.info("Error loading " + filename + ".");
+                }
+            } else {
+                keyFilename = filename + ".key";
+                structurePropFile = new File(keyFilename);
+                if (structurePropFile.exists() && structurePropFile.canRead()) {
+                    try {
+                        properties.addConfiguration(new PropertiesConfiguration(structurePropFile));
+                    } catch (Exception e) {
+                        logger.info("Error loading " + filename + ".");
+                    }
+                }
+            }
+        }
+
+        /**
+         * User specific options are 3rd.
+         */
+        String filename = System.getProperty("user.home") + File.separator + ".ffx/ffx.properties";
+        File userPropFile = new File(filename);
+        if (userPropFile.exists() && userPropFile.canRead()) {
+            try {
+                properties.addConfiguration(new PropertiesConfiguration(userPropFile));
+            } catch (Exception e) {
+                logger.info("Error loading " + filename + ".");
+            }
+        }
+
+        /**
+         * System wide options are 2nd to last.
+         */
+        filename = System.getenv("FFX_PROPERTIES");
+        if (filename != null) {
+            File systemPropFile = new File(filename);
+            if (systemPropFile.exists() && systemPropFile.canRead()) {
+                try {
+                    properties.addConfiguration(new PropertiesConfiguration(systemPropFile));
+                } catch (Exception e) {
+                    logger.info("Error loading " + filename + ".");
+                }
+            }
+        }
+
+        /**
+         * Echo the interpolated configuration.
+         */
+        if (logger.isLoggable(Level.FINE)) {
+            Configuration config = properties.interpolatedConfiguration();
+            Iterator<String> i = config.getKeys();
+            while (i.hasNext()) {
+                String s = i.next();
+                logger.fine("Key: " + s + ", Value: " + Arrays.toString(config.getList(s).toArray()));
+            }
+        }
+
+        return properties;
     }
 }

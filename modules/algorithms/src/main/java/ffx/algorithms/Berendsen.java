@@ -30,9 +30,10 @@ import static java.lang.Math.sqrt;
  *         derived from TINKER temperature control by Alan Grossfield
  *         and Jay Ponder
  *
- * @see H. J. C. Berendsen, J. P. M. Postma, W. F. van Gunsteren,
+ * @see <a href="http://link.aip.org/link/?JCP/81/3684">
+ *      H. J. C. Berendsen, J. P. M. Postma, W. F. van Gunsteren,
  *      A. DiNola and J. R. Hauk, "Molecular Dynamics with Coupling
- *      to an External Bath", Journal of Chemical Physics, 81, 3684-3690 (1984)
+ *      to an External Bath", Journal of Chemical Physics, 81, 3684-3690 (1984)</a>
  */
 public class Berendsen extends Thermostat {
 

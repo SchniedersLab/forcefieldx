@@ -33,11 +33,12 @@ import java.util.Random;
  * @author Michael J. Schnieders
  *
  *         Derived from TINKER temperature control by Alan Grossfield
- *         and Jay Ponder
+ *         and Jay Ponder.
  *
- * @see G. Bussi and M. Parrinello, "Stochastic Thermostats: Comparison
+ * @see <a href="http://dx.doi.org/10.1016/j.cpc.2008.01.006">
+ *      G. Bussi and M. Parrinello, "Stochastic Thermostats: Comparison
  *      of Local and Global Schemes", Computer Physics Communications,
- *      179, 26-29 (2008)
+ *      179, 26-29 (2008)</a>
  *
  * @since 1.0
  */
