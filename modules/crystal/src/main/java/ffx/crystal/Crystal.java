@@ -728,6 +728,13 @@ public class Crystal {
         }
     }
 
+    public void toFractionalCoordinates(double x, double y,
+            double z, double xf, double yf, double zf) {
+        xf = x * r00 + y * r10 + z * r20;
+        yf = x * r01 + y * r11 + z * r21;
+        zf = x * r02 + y * r12 + z * r22;
+    }
+
     public void toFractionalCoordinates(int n, double cart[], double frac[]) {
         int i3 = 0;
         for (int i = 0; i < n; i++) {
@@ -753,6 +760,42 @@ public class Crystal {
         xf[1] = xc * r01 + yc * r11 + zc * r21;
         xf[2] = xc * r02 + yc * r12 + zc * r22;
 
+    }
+
+    public void toCartesianCoordinates(int n, double xf[], double yf[],
+            double zf[], double x[], double y[], double z[]) {
+        for (int i = 0; i < n; i++) {
+            double xi = xf[i];
+            double yi = yf[i];
+            double zi = zf[i];
+            x[i] = xi * c00 + yi * c10 + zi * c20;
+            y[i] = xi * c01 + yi * c11 + zi * c21;
+            z[i] = xi * c02 + yi * c12 + zi * c22;
+        }
+    }
+
+    public void toCartesianCoordinates(double xf, double yf,
+            double zf, double x, double y, double z) {
+        x = xf * c00 + yf * c10 + zf * c20;
+        y = xf * c01 + yf * c11 + zf * c21;
+        z = xf * c02 + yf * c12 + zf * c22;
+    }
+
+    public void toCartesianCoordinates(int n, double frac[], double cart[]) {
+        int i3 = 0;
+        for (int i = 0; i < n; i++) {
+            // Convert to cartesian coordinates.
+            int iX = i3 + XX;
+            int iY = i3 + YY;
+            int iZ = i3 + ZZ;
+            i3 += 3;
+            double xf = frac[iX];
+            double yf = frac[iY];
+            double zf = frac[iZ];
+            cart[iX] = xf * c00 + yf * c10 + zf * c20;
+            cart[iY] = xf * c01 + yf * c11 + zf * c21;
+            cart[iZ] = xf * c02 + yf * c12 + zf * c22;
+        }
     }
 
     public void toCartesianCoordinates(double xf[], double x[]) {
