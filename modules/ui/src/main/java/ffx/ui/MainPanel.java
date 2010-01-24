@@ -39,10 +39,8 @@ import java.io.FileWriter;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URL;
-import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
@@ -77,9 +75,6 @@ import javax.swing.filechooser.FileSystemView;
 import javax.vecmath.Vector3d;
 
 import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.commons.configuration.SystemConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.SystemUtils;
 
@@ -108,7 +103,6 @@ import ffx.potential.parsers.SystemFilter;
 import ffx.potential.parsers.XYZFileFilter;
 import ffx.potential.parsers.XYZFilter;
 import ffx.potential.parameters.ForceField;
-import ffx.potential.parameters.ForceField.Force_Field;
 import ffx.potential.parsers.FFXFileFilter;
 import ffx.ui.properties.FFXLocale;
 import ffx.utilities.Keyword;
@@ -1061,7 +1055,7 @@ public final class MainPanel extends JPanel implements ActionListener,
         ForceField forceField = forceFieldFilter.parse();
         newSystem.setForceField(forceField);
         systemFilter.setForceField(forceField);
-        systemFilter.setKeywordHash(newSystem.getKeywords());
+        systemFilter.setProperties(properties);
 
         setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         FileOpener openFile = new FileOpener(systemFilter, this);
@@ -1122,22 +1116,25 @@ public final class MainPanel extends JPanel implements ActionListener,
             return;
         }
         // Example
-        // http://www.rcsb.org/pdb/download/downloadFile.do?fileFormat=pdb&compression=NO&structureId=1CRN
-        String pdbAddress = "http://www.rcsb.org/pdb/download/downloadFile.do?fileFormat=pdb&compression=NO&structureId=" + code;
-        logger.log(Level.INFO, pdbAddress);
+        String pdbAddress = PDBFilter.pdbForID(code);
+        logger.log(Level.INFO, " Downloading " + pdbAddress);
         // Example
         // http://www.fli-leibniz.de/cgi-bin/nucauto.pl?COLOR=black&TYPE=model&CODE=1crn
-        String vrmlAddress = "http://www.fli-leibniz.de/cgi-bin/molscript.pl?COLOR=black&TYPE=VRML&CODE=" + code;
-        logger.log(Level.INFO, vrmlAddress);
+        // String vrmlAddress = "http://www.fli-leibniz.de/cgi-bin/molscript.pl?COLOR=black&TYPE=VRML&CODE=" + code;
+        // logger.log(Level.INFO, vrmlAddress);
         try {
             // Get the PDB File
             String fileName = code + ".pdb";
             String path = getPWD().getAbsolutePath();
             File pdbFile = new File(path + File.separatorChar + fileName);
             CompositeConfiguration properties = Keyword.loadProperties(pdbFile);
-            FFXSystem newSystem = new FFXSystem(pdbFile, null, properties);
-            PDBFilter pdbFilter = new PDBFilter(newSystem, pdbAddress,
-                    vrmlAddress);
+            forceFieldFilter = new ForceFieldFilter(properties, null);
+            ForceField forceField = forceFieldFilter.parse();
+            FFXSystem newSystem = new FFXSystem(pdbFile, "PDB", properties);
+            newSystem.setForceField(forceField);
+            PDBFilter pdbFilter = new PDBFilter(newSystem, pdbAddress, null);
+            pdbFilter.setForceField(forceField);
+            pdbFilter.setProperties(properties);
             setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
             FileOpener openFile = new FileOpener(pdbFilter, this);
             openThread = new Thread(openFile);
@@ -1340,11 +1337,11 @@ public final class MainPanel extends JPanel implements ActionListener,
         FFXSystem system = hierarchy.getActive();
         if (system != null && !system.isClosing()) {
             SystemFilter filter;
-            if (system.getFileType() == FileType.XYZ) {
-                filter = new XYZFilter();
-            } else {
-                return;
-            }
+            //if (system.getFileType() == FileType.XYZ) {
+            filter = new XYZFilter();
+            //} else {
+            //    return;
+            //}
             File savefile = null;
             if (file != null) {
                 savefile = file;

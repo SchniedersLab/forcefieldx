@@ -36,12 +36,12 @@ import org.junit.runners.Parameterized.Parameters;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 
-import ffx.potential.parsers.ForceFieldFilter;
-import ffx.potential.parsers.XYZFilter;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.Utilities;
 import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
+import ffx.potential.parsers.ForceFieldFilter;
+import ffx.potential.parsers.XYZFilter;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldString;
 import ffx.utilities.Keyword;

@@ -157,28 +157,31 @@ public class MolecularAssembly extends MSGroup {
         ArrayList Polymers = getAtomNodeList();
         if (o instanceof Atom) {
             Atom atom = (Atom) o;
-            Residue res = getResidue(atom.getChain(), atom.getResidueNumber(),
-                    atom.getResidueName(), true);
-            if (res == null) {
+            MSNode node = null;
+            if (!atom.isHetero()) {
+                node = getResidue(atom, true);
+            } else {
+                node = getMolecule(atom, true);
+            }
+            if (node == null) {
                 String message = "Programming error in MolecularAssembly.\n";
                 logger.severe(message);
                 System.exit(-1);
             }
-            res.addMSNode(atom);
         } else if (o instanceof Residue) {
             Residue g = (Residue) o;
             String key = g.getPolymer();
             int index = Polymers.indexOf(new Polymer(key));
+            /**
+             * See if the polymer already exists.
+             */
             if (index != -1) {
-                Polymer c = (Polymer) Polymers.get(index); // Find the
-                // requested Polymer
-                c.addMSNode(g); // Add the residue to the Polymer
+                Polymer c = (Polymer) Polymers.get(index);
+                c.addMSNode(g);
                 setFinalized(false);
             } else {
-                Polymer newc = new Polymer(key); // Create a
-                // new
-                // Polymer
-                newc.addMSNode(g); // Add residue
+                Polymer newc = new Polymer(key);
+                newc.addMSNode(g);
                 getAtomNode().add(newc);
                 setFinalized(false);
             }
@@ -624,16 +627,110 @@ public class MolecularAssembly extends MSGroup {
         return null;
     }
 
-    private Residue getResidue(String chainName, int resNum, String resName,
-            boolean create) {
+    private Residue getResidue(Atom atom, boolean create) {
+        String chainName = atom.getChain();
+        String resName = atom.getResidueName();
+        int resNum = atom.getResidueNumber();
         // Find/Create the chain
         Polymer polymer = getPolymer(chainName, create);
         if (polymer == null) {
             return null;
         }
-// If the chain was found/created, find/create the residue
+        Residue res = polymer.getResidue(resName, resNum, create);
+        if (create && res != null) {
+            res.addMSNode(atom);
+        }
+        return res;
+    }
 
-        return polymer.getResidue(resName, resNum, create);
+    public ArrayList<MSNode> getIons() {
+        return ions.getChildList();
+    }
+    
+    public ArrayList<MSNode> getMolecules() {
+        return molecules.getChildList();
+    }
+
+    public ArrayList<MSNode> getWaters() {
+        return water.getChildList();
+    }
+
+    public void deleteMolecule(Molecule molecule) {
+        ArrayList<MSNode> list = ions.getChildList();
+        for (MSNode node : list) {
+            Molecule m = (Molecule) node;
+            if (molecule == m) {
+                ions.remove(m);
+                return;
+            }
+        }
+        list = water.getChildList();
+        for (MSNode node : list) {
+            Molecule m = (Molecule) node;
+            if (molecule == m) {
+                water.remove(m);
+                return;
+            }
+        }
+        list = molecules.getChildList();
+        for (MSNode node : list) {
+            Molecule m = (Molecule) node;
+            if (molecule == m) {
+                molecules.remove(m);
+                return;
+            }
+        }
+    }
+
+    private Molecule getMolecule(Atom atom, boolean create) {
+        String chainName = atom.getChain();
+        String resName = atom.getResidueName();
+        int resNum = atom.getResidueNumber();
+        ArrayList<MSNode> list = ions.getChildList();
+        for (MSNode node : list) {
+            Molecule m = (Molecule) node;
+            if (m.getPolymerName().equalsIgnoreCase(chainName) && m.getResidueName().equalsIgnoreCase(resName)
+                    && m.getResidueNumber() == resNum) {
+                m.addMSNode(atom);
+                return m;
+            }
+        }
+        list = water.getChildList();
+        for (MSNode node : list) {
+            Molecule m = (Molecule) node;
+            if (m.getPolymerName().equalsIgnoreCase(chainName) && m.getResidueName().equalsIgnoreCase(resName)
+                    && m.getResidueNumber() == resNum) {
+                m.addMSNode(atom);
+                return m;
+            }
+        }
+        list = molecules.getChildList();
+        for (MSNode node : list) {
+            Molecule m = (Molecule) node;
+            if (m.getPolymerName().equalsIgnoreCase(chainName) && m.getResidueName().equalsIgnoreCase(resName)
+                    && m.getResidueNumber() == resNum) {
+                m.addMSNode(atom);
+                return m;
+            }
+        }
+        if (create) {
+            Molecule m = new Molecule(resName, resNum, chainName);
+            m.addMSNode(atom);
+            if (resName.equalsIgnoreCase("HOH") || resName.equalsIgnoreCase("WAT")) {
+                water.add(m);
+                // NA, K, MG, MG2, CA, CA2, CL
+            } else if (resName.equalsIgnoreCase("NA") || resName.equalsIgnoreCase("K")
+                    || resName.equalsIgnoreCase("MG") || resName.equalsIgnoreCase("MG2")
+                    || resName.equalsIgnoreCase("CA") || resName.equalsIgnoreCase("CA2")
+                    || resName.equalsIgnoreCase("CL")) {
+                ions.add(m);
+            } else {
+                molecules.add(m);
+            }
+            return m;
+        } else {
+            return null;
+        }
     }
 
     public ArrayList<Residue> getResidueList() {
@@ -641,9 +738,7 @@ public class MolecularAssembly extends MSGroup {
         ListIterator li,
                 lj;
         MSNode o;
-
         Polymer c;
-
         for (li = getAtomNodeList().listIterator(); li.hasNext();) {
             o = (MSNode) li.next();
             if (o instanceof Polymer) {

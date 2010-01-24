@@ -46,7 +46,6 @@ import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.PolarizeType;
 import java.util.Arrays;
-import java.util.Vector;
 
 /**
  * The Atom class represents a single atom and defines its alternate
@@ -189,6 +188,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
         hybridTable.put("19", 0);
         hybridTable.put("26", 8);
     }
+
+    private boolean hetatm;
     /**
      * Either the PDB "name" record or the molecular mechanics atom type name.
      *
@@ -393,6 +394,14 @@ public class Atom extends MSNode implements Comparable<Atom> {
             }
         }
         trajectory.add(position, coords);
+    }
+
+    public void setHetero(boolean hetatm) {
+        this.hetatm = hetatm;
+    }
+
+    public boolean isHetero() {
+        return hetatm;
     }
 
     @Override

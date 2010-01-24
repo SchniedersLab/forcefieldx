@@ -30,6 +30,7 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.parameters.ForceField;
 import ffx.utilities.Keyword;
+import org.apache.commons.configuration.CompositeConfiguration;
 
 /**
  * The SystemFilter class is the base class for most Force Field X file parsers.
@@ -125,17 +126,17 @@ public abstract class SystemFilter {
         }
         return previousFile;
     }
-    protected MolecularAssembly molecularAssembly = null;
-    protected FileType fileType = FileType.UNK;
     /**
      * The atomList and bondList are filled by the filters that extend this base
      * class.
      */
     protected ArrayList<Atom> atomList = null;
     protected ArrayList<Bond> bondList = null;
+    protected MolecularAssembly molecularAssembly = null;
+    protected FileType fileType = FileType.UNK;
+    protected CompositeConfiguration properties;
     protected ForceField forceField = null;
     protected boolean fileRead = false;
-    protected Hashtable<String, Keyword> keywordHash;
 
     /**
      * Default constructor.
@@ -158,10 +159,9 @@ public abstract class SystemFilter {
         forceField = mm;
     }
 
-    public SystemFilter(MolecularAssembly f, ForceField mm,
-            Hashtable<String, Keyword> keywordHash) {
+    public SystemFilter(MolecularAssembly f, ForceField mm, CompositeConfiguration properties) {
         this(f, mm);
-        this.keywordHash = keywordHash;
+        this.properties = properties;
     }
 
     /**
@@ -213,8 +213,8 @@ public abstract class SystemFilter {
         forceField = f;
     }
 
-    public void setKeywordHash(Hashtable<String, Keyword> keywordHash) {
-        this.keywordHash = keywordHash;
+    public void setProperties(CompositeConfiguration properties) {
+        this.properties = properties;
     }
 
     public void setMolecularSystem(MolecularAssembly f) {

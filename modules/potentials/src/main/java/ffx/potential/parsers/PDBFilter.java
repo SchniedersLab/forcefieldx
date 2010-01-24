@@ -20,6 +20,7 @@
  */
 package ffx.potential.parsers;
 
+import ffx.crystal.SpaceGroup;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -32,7 +33,8 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Hashtable;
+import java.util.HashMap;
+import java.util.zip.GZIPInputStream;
 
 import static ffx.potential.parsers.INTFilter.intxyz;
 import static ffx.potential.parsers.PDBFilter.ResiduePosition.FIRST_RESIDUE;
@@ -45,12 +47,13 @@ import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Utilities.FileType;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
+import ffx.potential.bonded.MSGroup;
+import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.BioType;
 import ffx.potential.parsers.PDBFilter.ResiduePosition;
-import ffx.utilities.Keyword;
 
 /**
  * The PDBFilter class parses data from a Protein DataBank (*.PDB) file. The
@@ -65,6 +68,20 @@ public final class PDBFilter extends SystemFilter {
 
     private static final Logger logger = Logger.getLogger(PDBFilter.class.getName());
     private String pdbURL = null;
+
+    public static String pdbForID(String id) {
+        if (id.length() != 4) {
+            return null;
+        }
+        return "http://www.rcsb.org/pdb/files/" + id.toLowerCase() + ".pdb.gz";
+    }
+
+    public static String cifForID(String id) {
+        if (id.length() != 4) {
+            return null;
+        }
+        return "http://www.rcsb.org/pdb/files/" + id.toLowerCase() + ".cif.gz";
+    }
     /**
      * Keep track of altLoc Characters.
      */
@@ -73,7 +90,7 @@ public final class PDBFilter extends SystemFilter {
      * Keep track of ATOM record serial numbers to match them with ANISOU
      * records.
      */
-    private Hashtable<Integer, Atom> atoms = new Hashtable<Integer, Atom>();
+    private HashMap<Integer, Atom> atoms = new HashMap<Integer, Atom>();
 
     /**
      * Default Constructor
@@ -127,7 +144,8 @@ public final class PDBFilter extends SystemFilter {
             } else {
                 try {
                     URL url = new URL(pdbURL);
-                    br = new BufferedReader(new InputStreamReader(url.openStream()));
+                    GZIPInputStream is = new GZIPInputStream(url.openStream());
+                    br = new BufferedReader(new InputStreamReader(is));
                     int retry = 0;
                     while (!br.ready() && retry < 10) {
                         synchronized (this) {
@@ -149,7 +167,7 @@ public final class PDBFilter extends SystemFilter {
                     fw = new FileWriter(pdbFile);
                     bw = new BufferedWriter(fw);
                     if (logger.isLoggable(Level.INFO)) {
-                        logger.info("  Opening " + pdbFile.getName());
+                        logger.info(" Saving to: " + pdbFile.getAbsolutePath());
                     }
                 }
             }
@@ -164,10 +182,10 @@ public final class PDBFilter extends SystemFilter {
             String pdbLine = br.readLine();
             while ((pdbLine != null) && (!pdbLine.startsWith("END"))) {
                 int len = pdbLine.length();
-                if (len > 4) {
-                    len = 4;
+                String identity = pdbLine;
+                if (len > 6) {
+                    identity = pdbLine.substring(0, 6).trim().toUpperCase().intern();
                 }
-                String identity = pdbLine.substring(0, len).trim().toUpperCase().intern();
                 Card card = null;
                 try {
                     card = Card.valueOf(identity);
@@ -220,8 +238,8 @@ public final class PDBFilter extends SystemFilter {
                             a.setAltLoc(altLoc);
                             a.setAnisou(adp);
                         } else {
-                            logger.info("Unknown serial number " + serial + "for ANISOU record: ");
-                            logger.info(pdbLine);
+                            logger.info("No ATOM record for ANISOU serial number " + serial + ".");
+                            logger.info("The following ANISOU record will be ignored:\n" + pdbLine);
                         }
                         break;
                     case ATOM:
@@ -265,14 +283,10 @@ public final class PDBFilter extends SystemFilter {
                         d[2] = new Double(pdbLine.substring(46, 54).trim());
                         double occupancy = new Double(pdbLine.substring(54, 60).trim());
                         double tempFactor = new Double(pdbLine.substring(60, 66).trim());
-                        if (atoms.containsKey(serial)) {
-                            Atom a = atoms.get(serial);
-                            a.addAltLoc(altLoc, d, occupancy, tempFactor);
-                            continue;
-                        }
                         Atom a = new Atom(0, name, altLoc, d, resName, resSeq, chainID, occupancy, tempFactor);
                         Atom prev = (Atom) molecularAssembly.contains(a);
                         if (prev != null) {
+                            atoms.put(serial, prev);
                             prev.addAltLoc(altLoc, d, occupancy, tempFactor);
                         } else {
                             a.setXYZIndex(xyzIndex++);
@@ -321,25 +335,16 @@ public final class PDBFilter extends SystemFilter {
                         d[2] = new Double(pdbLine.substring(46, 54).trim());
                         occupancy = new Double(pdbLine.substring(54, 60).trim());
                         tempFactor = new Double(pdbLine.substring(60, 66).trim());
-                        if (atoms.containsKey(serial)) {
-                            a = atoms.get(serial);
-                            a.addAltLoc(altLoc, d, occupancy, tempFactor);
-                            continue;
-                        }
                         a = new Atom(0, name, altLoc, d, resName, resSeq, chainID, occupancy, tempFactor);
                         prev = (Atom) molecularAssembly.contains(a);
                         if (prev != null) {
+                            atoms.put(serial, prev);
                             prev.addAltLoc(altLoc, d, occupancy, tempFactor);
-                            continue;
-                        }
-                        a.setXYZIndex(xyzIndex++);
-                        atoms.put(serial, a);
-                        if (molecule != null && molecule.getResidueNumber() == resSeq && molecule.getName() == resName && molecule.getPolymerName() == chainID) {
-                            molecule.addMSNode(a);
                         } else {
-                            molecule = new Molecule(resName, resSeq, chainID);
-                            molecule.addMSNode(a);
-                            molecularAssembly.addMSNode(molecule);
+                            a.setXYZIndex(xyzIndex++);
+                            a.setHetero(true);
+                            atoms.put(serial, a);
+                            molecularAssembly.addMSNode(a);
                         }
                         break;
                     case CONECT:
@@ -359,10 +364,20 @@ public final class PDBFilter extends SystemFilter {
 // 56 - 66       LString       sGroup         Space  group.
 // 67 - 70       Integer       z              Z value.
 // =============================================================================
-                        String key = "CRYST1";
-                        String value = pdbLine.substring(6, 70);
-                        Keyword keyword = new Keyword(key, value);
-                        keywordHash.put(key, keyword);
+                        double aaxis = new Double(pdbLine.substring(6, 15).trim());
+                        double baxis = new Double(pdbLine.substring(15, 24).trim());
+                        double caxis = new Double(pdbLine.substring(24, 33).trim());
+                        double alpha = new Double(pdbLine.substring(33, 40).trim());
+                        double beta = new Double(pdbLine.substring(40, 47).trim());
+                        double gamma = new Double(pdbLine.substring(47, 54).trim());
+                        String sg = pdbLine.substring(55, 66).trim();
+                        properties.addProperty("a-axis", aaxis);
+                        properties.addProperty("b-axis", baxis);
+                        properties.addProperty("c-axis", caxis);
+                        properties.addProperty("alpha", alpha);
+                        properties.addProperty("beta", beta);
+                        properties.addProperty("gamma", gamma);
+                        properties.addProperty("spacegroup", SpaceGroup.pdb2ShortName(sg));
                     case SSBOND:
                         connect = new String[6];
                         connect[0] = pdbLine.substring(15, 16);
@@ -641,81 +656,62 @@ public final class PDBFilter extends SystemFilter {
                 }
                 continue;
             }
+        }
 
-            /**
-             * To do: See if the remaining atoms are known hetero atoms.
-             */
-            for (int residueNumber = 0; residueNumber < numberOfResidues; residueNumber++) {
-                Residue residue = residues.get(residueNumber);
-                String name = residue.getName().toUpperCase();
-                ArrayList<Atom> atoms = residue.getAtomList();
-                try {
-                    HETATOMS molecule = HETATOMS.valueOf(name);
-                    if (logger.isLoggable(Level.FINE)) {
-                        logger.fine("Assigning atom types for residue " + residue.toString());
-                    }
-                    switch (molecule) {
-                        case HOH:
-                        case H2O:
-                        case WAT:
-                            Atom O = setHeavyAtom(residue, "O", null, 2001);
-                            if (atoms.size() == 3) {
-                                AtomType atomType = findAtomType(2002);
-                                for (Atom a : atoms) {
-                                    if (a.getName().toUpperCase().startsWith("H")) {
-                                        a.setAtomType(atomType);
-                                    } else if (a == O) {
-                                        continue;
-                                    } else {
-                                        logger.severe("Check atom " + a.toString() + " in residue " + residue.toString());
-                                    }
-                                }
-                            } else {
-                                Atom H1 = setHydrogenAtom(residue, "H1", O, 0.96e0, null, 109.5e0, null, 120.0e0, 0, 2002);
-                                Atom H2 = setHydrogenAtom(residue, "H2", O, 0.96e0, H1, 109.5e0, null, 120.0e0, 0, 2002);
-                            }
-                            break;
-                        case NA:
-                            if (atoms.size() != 1) {
-                                logger.severe("Check residue " + residue.toString() + " of chain " + chain + ".");
-                            }
-                            atoms.get(0).setAtomType(findAtomType(2003));
-                            break;
-                        case K:
-                            if (atoms.size() != 1) {
-                                logger.severe("Check residue " + residue.toString() + " of chain " + chain + ".");
-                            }
-                            atoms.get(0).setAtomType(findAtomType(2004));
-                            break;
-                        case MG:
-                        case MG2:
-                            if (atoms.size() != 1) {
-                                logger.severe("Check residue " + residue.toString() + " of chain " + chain + ".");
-                            }
-                            atoms.get(0).setAtomType(findAtomType(2005));
-                            break;
-                        case CA:
-                        case CA2:
-                            if (atoms.size() != 1) {
-                                logger.severe("Check residue " + residue.toString() + " of chain " + chain + ".");
-                            }
-                            atoms.get(0).setAtomType(findAtomType(2006));
-                            break;
-                        case CL:
-                            if (atoms.size() != 1) {
-                                logger.severe("Check residue " + residue.toString() + " of chain " + chain + ".");
-                            }
-                            atoms.get(0).setAtomType(findAtomType(2003));
-                            break;
-                        default:
-                            logger.severe("Check residue " + residue.toString() + " of chain " + chain + ".");
-                    }
-                } catch (IllegalArgumentException e) {
-                    logger.severe("Unknown residue " + residue.toString() + " in chain " + chain + ".");
-                } catch (MissingHeavyAtomException missingHeavyAtomException) {
-                    logger.severe(missingHeavyAtomException.toString());
-                }
+        // Assign ion atom types.
+        ArrayList<MSNode> ions = molecularAssembly.getIons();
+        for (MSNode m : ions) {
+            Molecule ion = (Molecule) m;
+            String name = ion.getResidueName().toUpperCase();
+            HETATOMS hetatm = HETATOMS.valueOf(name);
+            Atom atom = ion.getAtomList().get(0);
+            if (ion.getAtomList().size() != 1) {
+                logger.severe("Check residue " + ion.toString() + " of chain " + ion.getPolymerName() + ".");
             }
+            try {
+                switch (hetatm) {
+                    case NA:
+                        atom.setAtomType(findAtomType(2003));
+                        break;
+                    case K:
+                        atom.setAtomType(findAtomType(2004));
+                        break;
+                    case MG:
+                    case MG2:
+                        atom.setAtomType(findAtomType(2005));
+                        break;
+                    case CA:
+                    case CA2:
+                        atom.setAtomType(findAtomType(2006));
+                        break;
+                    case CL:
+                        atom.setAtomType(findAtomType(2003));
+                        break;
+                    default:
+                        logger.severe("Check residue " + ion.getResidueName() + " of chain " + ion.getPolymerName() + ".");
+                }
+            } catch (Exception e) {
+                String message = "Error assigning atom types.";
+                logger.log(Level.SEVERE, message, e);
+            }
+        }
+        // Assign water atom types.
+        ArrayList<MSNode> water = molecularAssembly.getWaters();
+        for (MSNode m : water) {
+            Molecule wat = (Molecule) m;
+            try {
+                Atom O = setHeavyAtom(wat, "O", null, 2001);
+                Atom H1 = setHydrogenAtom(wat, "H1", O, 0.96e0, null, 109.5e0, null, 120.0e0, 0, 2002);
+                Atom H2 = setHydrogenAtom(wat, "H2", O, 0.96e0, H1, 109.5e0, null, 120.0e0, 0, 2002);
+            } catch (Exception e) {
+                String message = "Error assigning atom types to a water.";
+                logger.log(Level.SEVERE, message, e);
+            }
+        }
+        // Assign small molecule atom types.
+        ArrayList<MSNode> molecules = molecularAssembly.getMolecules();
+        for (MSNode m : molecules) {
+            molecularAssembly.deleteMolecule((Molecule) m);
         }
     }
 
@@ -735,8 +731,8 @@ public final class PDBFilter extends SystemFilter {
          * Loop over residues.
          */
         int numberOfResidues = residues.size();
-        for (int residueNumber = 0; residueNumber < numberOfResidues; residueNumber++) {
-
+        for (int residueNumber = 0; residueNumber
+                < numberOfResidues; residueNumber++) {
             /**
              * Match the residue name to a known nucleic acid residue.
              */
@@ -744,7 +740,8 @@ public final class PDBFilter extends SystemFilter {
             String residueName = residue.getName().toUpperCase();
             NucleicAcid3 nucleicAcid = NucleicAcid3.UNK;
             int naNumber = -1;
-            for (int n = 0; n < numberOfKnownNucleicAcids; n++) {
+            for (int n = 0; n
+                    < numberOfKnownNucleicAcids; n++) {
                 NucleicAcid3 amino = knownNucleicAcids[n];
                 if (amino.toString().equalsIgnoreCase(residueName)) {
                     nucleicAcid = amino;
@@ -752,7 +749,6 @@ public final class PDBFilter extends SystemFilter {
                     break;
                 }
             }
-
             /**
              * Check if the sugar is deoxyribose and change the residue
              * name if necessary.
@@ -819,7 +815,6 @@ public final class PDBFilter extends SystemFilter {
             } else if (residueNumber == numberOfResidues - 1) {
                 position = LAST_RESIDUE;
             }
-
             /**
              * Build the phosphate atoms of the current residue.
              */
@@ -827,11 +822,11 @@ public final class PDBFilter extends SystemFilter {
             Atom O5s = null;
             if (position == FIRST_RESIDUE) {
                 /**
-                 * The 5' O5* oxygen of the nucleic acid is generally 
-                 * terminated by 
+                 * The 5' O5* oxygen of the nucleic acid is generally
+                 * terminated by
                  * 1.) A phosphate group PO3 (-3).
-                 * 2.) A hydrogen. 
-                 * 
+                 * 2.) A hydrogen.
+                 *
                  * If the base has phosphate atom we will assume a PO3 group.
                  */
                 P = (Atom) residue.getAtomNode("P");
@@ -862,7 +857,6 @@ public final class PDBFilter extends SystemFilter {
                 setHeavyAtom(residue, "OP2", P, opTyp[naNumber]);
                 O5s = setHeavyAtom(residue, "O5*", P, o5Typ[naNumber]);
             }
-
             /**
              * Build the ribose sugar atoms of the current base.
              */
@@ -886,7 +880,6 @@ public final class PDBFilter extends SystemFilter {
             if (!isDNA) {
                 O2s = setHeavyAtom(residue, "O2*", C2s, o2Typ[naNumber]);
             }
-
             /**
              * Build the backbone hydrogen atoms.
              */
@@ -908,7 +901,6 @@ public final class PDBFilter extends SystemFilter {
             if (position == LAST_RESIDUE) {
                 setHydrogenAtom(residue, "H3T", O3s, 1.00e0, C3s, 109.5e0, C4s, 180.0e0, 0, h3tTyp[naNumber]);
             }
-
             /**
              * Build the nucleic acid base.
              */
@@ -1135,10 +1127,10 @@ public final class PDBFilter extends SystemFilter {
          * Loop over amino acid residues.
          */
         int numberOfResidues = residues.size();
-        for (int residueNumber = 0; residueNumber < numberOfResidues; residueNumber++) {
+        for (int residueNumber = 0; residueNumber
+                < numberOfResidues; residueNumber++) {
             Residue residue = residues.get(residueNumber);
             String residueName = residue.getName().toUpperCase();
-
             int j = 1;
             ResiduePosition position = MIDDLE_RESIDUE;
             if (residueNumber == 0) {
@@ -1157,10 +1149,10 @@ public final class PDBFilter extends SystemFilter {
                     residue.setName(residueName);
                 }
             }
-
             AminoAcid3 aminoAcid = AminoAcid3.UNK;
             int aminoAcidNumber = -1;
-            for (int a = 0; a < numberOfKnownAminoAcids; a++) {
+            for (int a = 0; a
+                    < numberOfKnownAminoAcids; a++) {
                 AminoAcid3 amino = knownAminoAcids[a];
                 if (amino.toString().equalsIgnoreCase(residueName)) {
                     aminoAcid = amino;
@@ -1170,7 +1162,7 @@ public final class PDBFilter extends SystemFilter {
             }
             /**
              * Check for missing heavy atoms.
-             * 
+             *
              * This check ignores special terminating groups like
              * FOR, NH2, etc.
              */
@@ -1219,10 +1211,10 @@ public final class PDBFilter extends SystemFilter {
                     }
                 }
             }
-
             aminoAcid = AminoAcid3.UNK;
             aminoAcidNumber = -1;
-            for (int a = 0; a < numberOfKnownAminoAcids; a++) {
+            for (int a = 0; a
+                    < numberOfKnownAminoAcids; a++) {
                 AminoAcid3 amino = knownAminoAcids[a];
                 if (amino.toString().equalsIgnoreCase(residueName)) {
                     aminoAcid = amino;
@@ -1296,7 +1288,6 @@ public final class PDBFilter extends SystemFilter {
                     // Mid-chain nitrogen hydrogen.
                     setHydrogenAtom(residue, "H", N, 1.01e0, pC, 119.0e0, CA, 119.0e0, 1, atomType);
             }
-
             /**
              * C-alpha hydrogen atoms.
              */
@@ -1335,7 +1326,6 @@ public final class PDBFilter extends SystemFilter {
                 default:
                     setHydrogenAtom(residue, haName, CA, 1.10e0, N, 109.5e0, C, 109.0e0, -1, atomType);
             }
-
             /**
              * Build the amino acid side chain.
              */
@@ -1362,7 +1352,6 @@ public final class PDBFilter extends SystemFilter {
                 }
                 bond(C, OXT);
             }
-
             /**
              * Do some checks on the current residue to make sure all atoms
              * have been assigned an atom type.
@@ -1384,7 +1373,6 @@ public final class PDBFilter extends SystemFilter {
                     System.out.println("Expected: " + atomType.valence + " Actual: " + numberOfBonds);
                 }
             }
-
             /**
              * Remember the current C-alpha and carboxyl C atoms for use
              * with the next residue.
@@ -1392,7 +1380,6 @@ public final class PDBFilter extends SystemFilter {
             pCA = CA;
             pC = C;
         }
-
     }
 
     /**
@@ -1422,14 +1409,12 @@ public final class PDBFilter extends SystemFilter {
                         setHydrogenAtom(residue, "HA3", CA, 1.10e0, N, 109.5e0, C, 109.5e0, 1, 6);
                 }
                 break;
-
             case ALA:
                 Atom CB = setHeavyAtom(residue, "CB", CA, 13);
                 setHydrogenAtom(residue, "HB1", CB, 1.10e0, CA, 110.2e0, N, 180.0e0, 0, 14);
                 setHydrogenAtom(residue, "HB2", CB, 1.10e0, CA, 110.2e0, N, 60.0e0, 0, 14);
                 setHydrogenAtom(residue, "HB3", CB, 1.10e0, CA, 110.2e0, N, -60.0e0, 0, 14);
                 break;
-
             case VAL:
                 CB = setHeavyAtom(residue, "CB", CA, 21);
                 Atom CG1 = setHeavyAtom(residue, "CG1", CB, 23);
@@ -1442,7 +1427,6 @@ public final class PDBFilter extends SystemFilter {
                 setHydrogenAtom(residue, "HG22", CG2, 1.10e0, CB, 111.6e0, CA, 60.0e0, 0, 26);
                 setHydrogenAtom(residue, "HG23", CG2, 1.10e0, CB, 111.6e0, CA, -60.0e0, 0, 26);
                 break;
-
             case LEU:
                 CB = setHeavyAtom(residue, "CB", CA, 33);
                 Atom CG = setHeavyAtom(residue, "CG", CB, 35);
@@ -1458,7 +1442,6 @@ public final class PDBFilter extends SystemFilter {
                 setHydrogenAtom(residue, "HD22", CD2, 1.10e0, CG, 111.6e0, CB, 60.0e0, 0, 40);
                 setHydrogenAtom(residue, "HD23", CD2, 1.10e0, CG, 111.6e0, CB, -60.0e0, 0, 40);
                 break;
-
             case ILE:
                 CB = setHeavyAtom(residue, "CB", CA, 47);
                 CG1 = setHeavyAtom(residue, "CG1", CB, 49);
@@ -1478,7 +1461,6 @@ public final class PDBFilter extends SystemFilter {
                 setHydrogenAtom(residue, "HD12", CD1, 1.10e0, CG1, 111.6e0, CB, 60.0e0, 0, 54);
                 setHydrogenAtom(residue, "HD13", CD1, 1.10e0, CG1, 111.6e0, CB, -60.0e0, 0, 54);
                 break;
-
             case SER:
                 CB = setHeavyAtom(residue, "CB", CA, 61);
                 Atom OG = setHeavyAtom(residue, "OG", CB, 63);
@@ -1486,7 +1468,6 @@ public final class PDBFilter extends SystemFilter {
                 setHydrogenAtom(residue, "HB3", CB, 1.10e0, CA, 109.2e0, OG, 109.5e0, -1, 62);
                 setHydrogenAtom(residue, "HG", OG, 0.94e0, CB, 106.9e0, CA, 180.0e0, 0, 64);
                 break;
-
             case THR:
                 CB = setHeavyAtom(residue, "CB", CA, 71);
                 Atom OG1 = setHeavyAtom(residue, "OG1", CB, 73);
@@ -1497,7 +1478,6 @@ public final class PDBFilter extends SystemFilter {
                 setHydrogenAtom(residue, "HG22", CG2, 1.10e0, CB, 111.6e0, CA, 60.0e0, 0, 76);
                 setHydrogenAtom(residue, "HG23", CG2, 1.10e0, CB, 111.6e0, CA, -60.0e0, 0, 76);
                 break;
-
             case CYS:
                 CB = setHeavyAtom(residue, "CB", CA, 83);
                 Atom SG = setHeavyAtom(residue, "SG", CB, 85);
@@ -1505,14 +1485,12 @@ public final class PDBFilter extends SystemFilter {
                 setHydrogenAtom(residue, "HB3", CB, 1.10e0, CA, 109.5e0, SG, 107.5e0, -1, 84);
                 setHydrogenAtom(residue, "HG", SG, 1.34e0, CB, 96.0e0, CA, 180.0e0, 0, 86);
                 break;
-
             case CYX:
                 CB = setHeavyAtom(residue, "CB", CA, 93);
                 SG = setHeavyAtom(residue, "SG", CB, 95);
                 setHydrogenAtom(residue, "HB2", CB, 1.10e0, CA, 109.5e0, SG, 107.5e0, 1, 94);
                 setHydrogenAtom(residue, "HB3", CB, 1.10e0, CA, 109.5e0, SG, 107.5e0, -1, 94);
                 break;
-
             case PRO:
                 CB = setHeavyAtom(residue, "CB", CA, 101);
                 CG = setHeavyAtom(residue, "CG", CB, 103);
@@ -1522,7 +1500,6 @@ public final class PDBFilter extends SystemFilter {
                 } else {
                     CD = setHeavyAtom(residue, "CD", CG, 105);
                 }
-
                 bond(CD, N);
                 setHydrogenAtom(residue, "HB2", CB, 1.10e0, CA, 111.2e0, CG, 111.2e0, 1, 102);
                 setHydrogenAtom(residue, "HB3", CB, 1.10e0, CA, 111.2e0, CG, 111.2e0, -1, 102);
@@ -1535,7 +1512,6 @@ public final class PDBFilter extends SystemFilter {
                     setHydrogenAtom(residue, "HD2", CD, 1.10e0, CG, 111.2e0, N, 111.2e0, 1, 106);
                     setHydrogenAtom(residue, "HD3", CD, 1.10e0, CG, 111.2e0, N, 111.2e0, -1, 106);
                 }
-
                 break;
             case PHE:
                 CB = setHeavyAtom(residue, "CB", CA, 113);
@@ -1554,7 +1530,6 @@ public final class PDBFilter extends SystemFilter {
                 setHydrogenAtom(residue, "HE2", CE2, 1.10e0, CD2, 120.0e0, CG, 180.0e0, 0, 119);
                 setHydrogenAtom(residue, "HZ", CZ, 1.10e0, CE2, 120.0e0, CD2, 180.0e0, 0, 121);
                 break;
-
             case TYR:
                 CB = setHeavyAtom(residue, "CB", CA, 128);
                 CG = setHeavyAtom(residue, "CG", CB, 130);
@@ -1573,7 +1548,6 @@ public final class PDBFilter extends SystemFilter {
                 setHydrogenAtom(residue, "HE2", CE2, 1.10e0, CD2, 120.0e0, CG, 180.0e0, 0, 134);
                 setHydrogenAtom(residue, "HH", OH, 0.97e0, CZ, 108.0e0, CE2, 0.0e0, 0, 137);
                 break;
-
             case TRP:
                 CB = setHeavyAtom(residue, "CB", CA, 144);
                 CG = setHeavyAtom(residue, "CG", CB, 146);
@@ -1596,7 +1570,6 @@ public final class PDBFilter extends SystemFilter {
                 setHydrogenAtom(residue, "HZ3", CZ3, 1.09e0, CH2, 120.0e0, CZ2, 180.0e0, 0, 158);
                 setHydrogenAtom(residue, "HH2", CH2, 1.09e0, CZ3, 120.0e0, CE3, 180.0e0, 0, 160);
                 break;
-
             case HIS:
                 CB = setHeavyAtom(residue, "CB", CA, 167);
                 CG = setHeavyAtom(residue, "CG", CB, 169);
@@ -1612,7 +1585,6 @@ public final class PDBFilter extends SystemFilter {
                 setHydrogenAtom(residue, "HE1", CE1, 1.09e0, NE2, 126.0e0, CD2, 180.0e0, 0, 175);
                 setHydrogenAtom(residue, "HE2", NE2, 1.02e0, CE1, 126.0e0, ND1, 180.0e0, 0, 177);
                 break;
-
             case HID:
                 CB = setHeavyAtom(residue, "CB", CA, 184);
                 CG = setHeavyAtom(residue, "CG", CB, 186);
@@ -1627,7 +1599,6 @@ public final class PDBFilter extends SystemFilter {
                 setHydrogenAtom(residue, "HD2", CD2, 1.09e0, NE2, 126.0e0, CE1, 180.0e0, 0, 190);
                 setHydrogenAtom(residue, "HE1", CE1, 1.09e0, NE2, 126.0e0, CD2, 180.0e0, 0, 192);
                 break;
-
             case HIE:
                 CB = setHeavyAtom(residue, "CB", CA, 200);
                 CG = setHeavyAtom(residue, "CG", CB, 202);
@@ -1642,7 +1613,6 @@ public final class PDBFilter extends SystemFilter {
                 setHydrogenAtom(residue, "HE1", CE1, 1.09e0, NE2, 126.0e0, CD2, 180.0e0, 0, 207);
                 setHydrogenAtom(residue, "HE2", NE2, 1.02e0, CE1, 126.0e0, ND1, 180.0e0, 0, 209);
                 break;
-
             case ASP:
                 CB = setHeavyAtom(residue, "CB", CA, 216);
                 CG = setHeavyAtom(residue, "CG", CB, 218);
@@ -1651,7 +1621,6 @@ public final class PDBFilter extends SystemFilter {
                 setHydrogenAtom(residue, "HB2", CB, 1.10e0, CA, 107.9e0, CG, 110.0e0, 1, 217);
                 setHydrogenAtom(residue, "HB3", CB, 1.10e0, CA, 107.9e0, CG, 110.0e0, -1, 217);
                 break;
-
             case ASN:
                 CB = setHeavyAtom(residue, "CB", CA, 226);
                 CG = setHeavyAtom(residue, "CG", CB, 228);
@@ -1662,7 +1631,6 @@ public final class PDBFilter extends SystemFilter {
                 setHydrogenAtom(residue, "HD21", ND2, 1.01e0, CG, 120.9e0, CB, 0.0e0, 0, 231);
                 setHydrogenAtom(residue, "HD22", ND2, 1.01e0, CG, 120.3e0, CB, 180.0e0, 0, 231);
                 break;
-
             case GLU:
                 CB = setHeavyAtom(residue, "CB", CA, 238);
                 CG = setHeavyAtom(residue, "CG", CB, 240);
@@ -1674,7 +1642,6 @@ public final class PDBFilter extends SystemFilter {
                 setHydrogenAtom(residue, "HG2", CG, 1.10e0, CB, 109.5e0, CD, 109.5e0, 1, 241);
                 setHydrogenAtom(residue, "HG3", CG, 1.10e0, CB, 109.5e0, CD, 109.5e0, -1, 241);
                 break;
-
             case GLN:
                 CB = setHeavyAtom(residue, "CB", CA, 250);
                 CG = setHeavyAtom(residue, "CG", CB, 252);
@@ -1688,7 +1655,6 @@ public final class PDBFilter extends SystemFilter {
                 setHydrogenAtom(residue, "HE21", NE2, 1.01e0, CD, 120.9e0, CG, 0.0e0, 0, 257);
                 setHydrogenAtom(residue, "HE22", NE2, 1.01e0, CD, 120.3e0, CG, 180.0e0, 0, 257);
                 break;
-
             case MET:
                 CB = setHeavyAtom(residue, "CB", CA, 264);
                 CG = setHeavyAtom(residue, "CG", CB, 266);
@@ -1702,7 +1668,6 @@ public final class PDBFilter extends SystemFilter {
                 setHydrogenAtom(residue, "HE2", CE, 1.10e0, SD, 110.2e0, CG, 60.0e0, 0, 270);
                 setHydrogenAtom(residue, "HE3", CE, 1.10e0, SD, 110.2e0, CG, -60.0e0, 0, 270);
                 break;
-
             case LYS:
                 CB = setHeavyAtom(residue, "CB", CA, 277);
                 CG = setHeavyAtom(residue, "CG", CB, 279);
@@ -1721,7 +1686,6 @@ public final class PDBFilter extends SystemFilter {
                 setHydrogenAtom(residue, "HZ2", NZ, 1.04e0, CE, 110.5e0, CD, 60.0e0, 0, 286);
                 setHydrogenAtom(residue, "HZ3", NZ, 1.04e0, CE, 110.5e0, CD, -60.0e0, 0, 286);
                 break;
-
             case ARG:
                 CB = setHeavyAtom(residue, "CB", CA, 293);
                 CG = setHeavyAtom(residue, "CG", CB, 295);
@@ -1742,7 +1706,6 @@ public final class PDBFilter extends SystemFilter {
                 setHydrogenAtom(residue, "HH21", NH2, 1.01e0, CZ, 122.5e0, NE, 0.0e0, 0, 303);
                 setHydrogenAtom(residue, "HH22", NH2, 1.01e0, CZ, 118.5e0, NE, 180.0e0, 0, 303);
                 break;
-
             case ORN:
                 CB = setHeavyAtom(residue, "CB", CA, 310);
                 CG = setHeavyAtom(residue, "CG", CB, 312);
@@ -1758,7 +1721,6 @@ public final class PDBFilter extends SystemFilter {
                 setHydrogenAtom(residue, "HE2", NE, 1.04e0, CD, 110.5e0, CG, 60.0e0, 0, 317);
                 setHydrogenAtom(residue, "HE3", NE, 1.04e0, CD, 110.5e0, CG, -60.0e0, 0, 317);
                 break;
-
             case AIB:
                 Atom CB1 = setHeavyAtom(residue, "CB1", CA, 323);
                 Atom CB2 = setHeavyAtom(residue, "CB1", CA, 323);
@@ -1769,7 +1731,6 @@ public final class PDBFilter extends SystemFilter {
                 setHydrogenAtom(residue, "HG22", CB2, 1.10e0, CA, 110.2e0, N, 60.0e0, 0, 324);
                 setHydrogenAtom(residue, "HG23", CB2, 1.10e0, CA, 110.2e0, N, -60.0e0, 0, 324);
                 break;
-
             case PCA:
                 CB = setHeavyAtom(residue, "CB", CA, 331);
                 CG = setHeavyAtom(residue, "CG", CB, 333);
@@ -1780,24 +1741,19 @@ public final class PDBFilter extends SystemFilter {
                 setHydrogenAtom(residue, "HG2", CG, 1.10e0, CB, 111.2e0, CD, 111.2e0, 1, 334);
                 setHydrogenAtom(residue, "HG3", CG, 1.10e0, CB, 111.2e0, CD, 111.2e0, -1, 334);
                 break;
-
             case UNK:
                 switch (position) {
                     case FIRST_RESIDUE:
                         setHydrogenAtom(residue, "HA2", CA, 1.10e0, N, 109.5e0, C, 109.5e0, 1, 355);
                         break;
-
                     case LAST_RESIDUE:
                         setHydrogenAtom(residue, "HA2", CA, 1.10e0, N, 109.5e0, C, 109.5e0, 1, 506);
                         break;
-
                     default:
                         setHydrogenAtom(residue, "HA2", CA, 1.10e0, N, 109.5e0, C, 109.5e0, 1, 6);
                 }
-
                 break;
         }
-
     }
 
     /**
@@ -1859,36 +1815,32 @@ public final class PDBFilter extends SystemFilter {
         }
     }
 
-    private Atom setHeavyAtom(Residue residue, String atomName, Atom bondedTo, int key)
+    private Atom setHeavyAtom(MSGroup residue, String atomName, Atom bondedTo, int key)
             throws MissingHeavyAtomException {
         Atom atom = (Atom) residue.getAtomNode(atomName);
         AtomType atomType = findAtomType(key);
-
         if (atom == null) {
             MissingHeavyAtomException missingHeavyAtom = new MissingHeavyAtomException(atomName, atomType, bondedTo);
             throw missingHeavyAtom;
         }
-
         atom.setAtomType(atomType);
-
         if (bondedTo != null) {
             bond(atom, bondedTo);
         }
         return atom;
     }
 
-    private Atom setHydrogenAtom(Residue residue, String atomName, Atom ia, double bond, Atom ib, double angle1,
+    private Atom setHydrogenAtom(MSGroup residue, String atomName, Atom ia, double bond, Atom ib, double angle1,
             Atom ic, double angle2, int chiral, int lookUp) {
         AtomType atomType = findAtomType(lookUp);
         return setHydrogenAtom(residue, atomName, ia, bond, ib, angle1, ic, angle2, chiral, atomType);
     }
 
-    private Atom setHydrogenAtom(Residue residue, String atomName, Atom ia, double bond, Atom ib, double angle1,
+    private Atom setHydrogenAtom(MSGroup residue, String atomName, Atom ia, double bond, Atom ib, double angle1,
             Atom ic, double angle2, int chiral, AtomType atomType) {
         if (atomType == null) {
             return null;
         }
-
         Atom atom = (Atom) residue.getAtomNode(atomName);
         if (atom == null) {
             atom = new Atom(atomName, atomType, new double[3]);
@@ -1897,7 +1849,6 @@ public final class PDBFilter extends SystemFilter {
         } else {
             atom.setAtomType(atomType);
         }
-
         bond(ia, atom);
         return atom;
     }
@@ -1914,7 +1865,6 @@ public final class PDBFilter extends SystemFilter {
         } else {
             bond.setBondType(bondType);
         }
-
         bondList.add(bond);
     }
 
@@ -1936,7 +1886,6 @@ public final class PDBFilter extends SystemFilter {
         } else {
             //System.out.println("The biotype look-up " + lookUp + " was not found.");
         }
-
         return null;
     }
 

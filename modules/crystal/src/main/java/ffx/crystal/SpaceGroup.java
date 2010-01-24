@@ -147,6 +147,50 @@ public class SpaceGroup {
         "F-43c", "I-43d", "Pm-3m", "Pn-3n", "Pm-3n", "Pn-3m", "Fm-3m",
         "Fm-3c", "Fd-3m", "Fd-3c", "Im-3m", "Ia-3d"};
 
+    public static String pdbSpaceGroupNames[] = {"P 1", "P -1", "P 1 2 1",
+    "P 1 21 1", "C 1 2 1", "P 1 m 1", "P 1 c 1", "C 1 m 1", "C 1 c 1",
+    "P 1 2/m 1", "P 1 21/m 1", "C 1 2/m 1", "P 1 2/c 1", "P 1 21/c 1",
+    "C 1 2/c 1", "P 2 2 2", "P 2 2 21", "P 21 21 2", "P 21 21 21",
+    "C 2 2 21", "C 2 2 2", "F 2 2 2", "I 2 2 2", "I 21 21 21", "P m m 2",
+    "P m c 21", "P c c 2", "P m a 2", "P c a 21", "P n c 2", "P m n 21",
+    "P b a 2", "P n a 21", "P n n 2", "C m m 2", "C m c 21", "C c c 2",
+    "A m m 2", "A b m 2", "A m a 2", "A b a 2", "F m m 2", "F d d 2",
+    "I m m 2", "I b a 2", "I m a 2", "P 2/m 2/m 2/m", "P 2/n 2/n 2/n",
+    "P 2/c 2/c 2/m", "P 2/b 2/a 2/n", "P 21/m 2/m 2/a", "P 2/n 21/n 2/a",
+    "P 2/m 2/n 21/a", "P 21/c 2/c 2/a", "P 21/b 21/a 2/m", "P 21/c 21/c 2/n",
+    "P 2/b 21/c 21/m", "P 21/n 21/n 2/m", "P 21/m 21/m 2/n", "P 21/b 2/c 21/n",
+    "P 21/b 21/c 21/a", "P 21/n 21/m 21/a", "C 2/m 2/c 21/m", "C 2/m 2/c 21/a",
+    "C 2/m 2/m 2/m", "C 2/c 2/c 2/m", "C 2/m 2/m 2/a", "C 2/c 2/c 2/a",
+    "F 2/m 2/m 2/m", "F 2/d 2/d 2/d", "I 2/m 2/m 2/m", "I 2/b 2/a 2/m",
+    "I 21/b 21/c 21/a", "I 21/m 21/m 21/a", "P 4", "P 41", "P 42", "P 43",
+    "I 4", "I 41", "P -4", "I -4", "P 4/m", "P 42/m", "P 4/n", "P 42/n",
+    "I 4/m", "I 41/a", "P 4 2 2", "P 4 21 2", "P 41 2 2", "P 41 21 2",
+    "P 42 2 2", "P 42 21 2", "P 43 2 2", "P 43 21 2", "I 4 2 2", "I 41 2 2",
+    "P 4 m m", "P 4 b m", "P 42 c m", "P 42 n m", "P 4 c c", "P 4 n c",
+    "P 42 m c", "P 42 b c", "I 4 m m", "I 4 c m", "I 41 m d", "I 41 c d",
+    "P -4 2 m", "P -4 2 c", "P -4 21 m", "P -4 21 c", "P -4 m 2", "P -4 c 2",
+    "P -4 b 2", "P -4 n 2", "I -4 m 2", "I -4 c 2", "I -4 2 m", "I -4 2 d",
+    "P 4/m 2/m 2/m", "P 4/m 2/c 2/c", "P 4/n 2/b 2/m", "P 4/n 2/n 2/c",
+    "P 4/m 21/b 2/m", "P 4/m 21/n 2/c", "P 4/n 21/m 2/m", "P 4/n 2/c 2/c",
+    "P 42/m 2/m 2/c", "P 42/m 2/c 2/m", "P 42/n 2/b 2/c", "P 42/n 2/n 2/m",
+    "P 42/m 21/b 2/c", "P 42/m 21/n 2/m", "P 42/n 21/m 2/c", "P 42/n 21/c 2/m",
+    "I 4/m 2/m 2/m", "I 4/m 2/c 2/m", "I 41/a 2/m 2/d", "I 41/a 2/c 2/d", "P 3",
+    "P 31", "P 32", "H 3", "P -3", "H -3", "P 3 1 2", "P 3 2 1", "P 31 1 2",
+    "P 31 2 1", "P 32 1 2", "P 32 2 1", "H 3 2", "P 3 m 1", "P 3 1 m",
+    "P 3 c 1", "P 3 1 c", "H 3 m", "H 3 c", "P -3 1 2/m", "P -3 1 2/c",
+    "P -3 2/m 1", "P -3 2/c 1", "H -3 2/m", "H -3 2/c", "P 6", "P 61", "P 65",
+    "P 62", "P 64", "P 63", "P -6", "P 6/m", "P 63/m", "P 6 2 2", "P 61 2 2",
+    "P 65 2 2", "P 62 2 2", "P 64 2 2", "P 63 2 2", "P 6 m m", "P 6 c c",
+    "P 63 c m", "P 63 m c", "P -6 m 2", "P -6 c 2", "P -6 2 m", "P -6 2 c",
+    "P 6/m 2/m 2/m", "P 6/m 2/c 2/c", "P 63/m 2/c 2/m", "P 63/m 2/m 2/c",
+    "P 2 3", "F 2 3", "I 2 3", "P 21 3", "I 21 3", "P 2/m -3", "P 2/n -3",
+    "F 2/m -3", "F 2/d -3", "I 2/m -3", "P 21/a -3", "I 21/a -3", "P 4 3 2",
+    "P 42 3 2", "F 4 3 2", "F 41 3 2", "I 4 3 2", "P 43 3 2", "P 41 3 2",
+    "I 41 3 2", "P -4 3 m", "F -4 3 m", "I -4 3 m", "P -4 3 n", "F -4 3 c",
+    "I -4 3 d", "P 4/m -3 2/m", "P 4/n -3 2/n", "P 42/m -3 2/n",
+    "P 42/n -3 2/m", "F 4/m -3 2/m", "F 4/m -3 2/c", "F 41/d -3 2/m",
+    "F 41/d -3 2/c", "I 4/m -3 2/m", "I 41/a -3 2/d"};
+
     /**
      * Immutable SpaceGroup instances are made available only through the
      * factory method so this constructor is private.
@@ -368,7 +412,7 @@ public class SpaceGroup {
 
     /**
      * Return a SpaceGroup based on its name.
-     * @param name Available SpaceGroup names are given in
+     * @param pdbName Available SpaceGroup names are given in
      *              the "spaceGroupName" array.
      * @return The space group corresponding to the given number.
      * @since 1.0
@@ -5702,7 +5746,7 @@ public class SpaceGroup {
 
     /**
      * Returns the space group number for a given space group name.
-     * @param name The space group name.
+     * @param pdbName The space group name.
      * @return The space group number.
      * @since 1.0
      */
@@ -5719,5 +5763,37 @@ public class SpaceGroup {
             }
         }
         return -1;
+    }
+
+    /**
+     * Returns the space group name for the given PDB name.
+     * @param pdbName PDB space group name.
+     * @return A short space group name.
+     * @since 1.0
+     */
+    public static String pdb2ShortName(String pdbName) {
+        if (pdbName == null) {
+            return null;
+        }
+        String n = pdbName.trim();
+        int num = pdbSpaceGroupNames.length;
+        for (int i = 0; i < num; i++) {
+            if (pdbSpaceGroupNames[i].equalsIgnoreCase(n)) {
+                return spaceGroupNames[i];
+            }
+        }
+        return pdbName;
+    }
+
+    /**
+     * Print out info for each space group.
+     */
+    public static void main(String[] args) throws Exception {
+        SpaceGroup sg = SpaceGroup.spaceGroupFactory(1);
+        System.out.print("\"" + sg.pdbName + "\"");
+        for (int i = 1; i < spaceGroupNames.length; i++) {
+            sg = SpaceGroup.spaceGroupFactory(i+1);
+            System.out.print(", \"" + sg.pdbName + "\"");
+        }
     }
 }
