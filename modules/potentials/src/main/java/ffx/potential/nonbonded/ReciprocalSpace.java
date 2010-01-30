@@ -24,6 +24,8 @@ import static java.lang.Math.*;
 
 import static ffx.numerics.UniformBSpline.*;
 
+import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -41,8 +43,7 @@ import ffx.numerics.fft.Real3DParallel;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.ForceField.ForceFieldInteger;
-import java.nio.ByteBuffer;
-import java.nio.FloatBuffer;
+
 
 /**
  * The Reciprocal Space class computes the reciprocal space contribution to

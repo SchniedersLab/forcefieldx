@@ -126,6 +126,7 @@ public class PotentialEnergyTest {
     private Polarization polarization;
     private double polarizationEnergy;
     private final PotentialEnergy energy;
+    private boolean mpoleTerm;
     private final double tolerance = 1.0e-3;
     private final double gradientTolerance = 1.0e-4;
 
@@ -167,7 +168,7 @@ public class PotentialEnergyTest {
 
         ClassLoader cl = this.getClass().getClassLoader();
         structure = new File(cl.getResource(filename).getPath());
-        
+
         String name = structure.getName();
         int index = filename.lastIndexOf(".");
         name = filename.substring(0, index);
@@ -185,11 +186,12 @@ public class PotentialEnergyTest {
         assertEquals(info, expectedReturn, actualReturn);
         Utilities.biochemistry(molecularAssembly, xyzFilter.getAtomList());
         molecularAssembly.finalize(true);
+
         energy = new PotentialEnergy(molecularAssembly);
+        mpoleTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.MPOLETERM, true);
 
         String polar = forceField.getString(ForceFieldString.POLARIZATION,
                 "MUTUAL");
-        // polarization = Polarization.NONE;
         if (polar.equalsIgnoreCase("MUTUAL")) {
             polarization = Polarization.MUTUAL;
         } else if (polar.equalsIgnoreCase("DIRECT")) {
@@ -235,7 +237,9 @@ public class PotentialEnergyTest {
         assertEquals(info + " van Der Waals Energy", vanDerWaalsEnergy, energy.vanDerWaalsEnergy, tolerance);
         //assertEquals(info + " van Der Waals Count", nVanDerWaals, energy.nVanDerWaals);
         // Permanent Multipoles
-        assertEquals(info + " Permanent Multipole Energy", permanentEnergy, energy.permanentMultipoleEnergy, tolerance);
+        if (mpoleTerm) {
+            assertEquals(info + " Permanent Multipole Energy", permanentEnergy, energy.permanentMultipoleEnergy, tolerance);
+        }
         //assertEquals(info + " van Der Waals Count", nVanDerWaals, energy.nVanDerWaals);
         // Polarization
         if (polarization == Polarization.MUTUAL) {
@@ -247,7 +251,7 @@ public class PotentialEnergyTest {
     /**
      * Test of energy gradient, of class PotentialEnergy.
      */
-//    @Test
+    @Test
     public void testGradient() {
         boolean gradient = true;
         boolean print = true;
@@ -311,5 +315,29 @@ public class PotentialEnergyTest {
                     numeric[0], numeric[1], numeric[2]));
         }
         assertEquals(a0.toString(), 0.0, len, gradientTolerance);
+    }
+
+    @Test
+    public void testSoftCore() {
+
+        ArrayList<Atom> atoms = molecularAssembly.getAtomList();
+        int n = atoms.size();
+        Atom atomArray[] = new Atom[n];
+        for (Atom ai : atoms) {
+            atomArray[ai.xyzIndex - 1] = ai;
+        }
+        // Make the last water soft
+        for (int i = n; i > n - 3; i--) {
+            Atom ai = atomArray[i - 1];
+            ai.setSoftCore(true);
+        }
+        boolean gradient = false;
+        boolean print = true;
+        // Compute the energy with Lambda = 1.0;
+        for (int i = 0; i <= 10; i++) {
+            double lambda = 1.0 - i * 0.1;
+            energy.setSoftCoreLambda(lambda);
+            energy.energy(gradient, print);
+        }
     }
 }

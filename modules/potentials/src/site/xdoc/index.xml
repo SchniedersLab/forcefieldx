@@ -4,8 +4,8 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
     <properties>
-        <author email="pren@mail.utexas.edu">Ren Lab</author>
-        <title>Binding Affinity Home Page</title>
+        <author email="schnied@stanford.edu">Michael J. Schnieders</author>
+        <title>Potentials Home Page</title>
     </properties>
     <head>
         <meta name="Home Page" content="Introduction" />
@@ -13,8 +13,8 @@
     <body>
         <section name="Introduction">
             <p>
-                The Binding Affinity module computes Protein-Ligand
-                affinities via free energy perturbation.
+                The Potentials module computes the potential energy of a
+                molecular system via a classical force field.
             </p>
         </section>
     </body>

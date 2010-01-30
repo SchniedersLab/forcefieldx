@@ -14,13 +14,22 @@
     <packaging>jar</packaging>
     <name>Binding Affinity</name>
 
+    <inceptionYear>2008</inceptionYear>
+
+    <organization>
+        <!-- This is used to generate the Copyright on the website.
+             Module authors should override this with their name. -->
+        <name>Pengyu Ren</name>
+        <url>http://biomol.bme.utexas.edu/lab</url>
+    </organization>
+
     <developers>
         <developer>
             <id>pren</id>
             <name>Pengyu Ren</name>
             <organization>Assistant Professor, U. Texas in Austin
             </organization>
-            <organizationUrl>http://ffx.kenai.com</organizationUrl>
+            <organizationUrl>http://biomol.bme.utexas.edu/lab</organizationUrl>
             <roles>
                 <role>Chief Force Field Developer</role>
             </roles>

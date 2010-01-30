@@ -32,22 +32,23 @@ package ffx.potential.nonbonded;
  * @since 1.0
  */
 public interface MaskingInterface {
-	/**
-	 * Interactions with atom i that should not be included in the
-         * NeighborList should be set to 0.0.
-	 * 
-	 * @param mask The masking array.
-	 * @param i The atom whose masking rules should be applied.
-         * @since 1.0
-	 */
-	public void applyMask(final double mask[], final int i);
 
-	/**
-	 * After calling removeMask, all entries in the mask array should be 1.0.
-	 * 
-	 * @param mask The masking array.
-	 * @param i The atom whose masking rules should be removed.
-         * @since 1.0
-	 */
-	public void removeMask(final double mask[], final int i);
+    /**
+     * Interactions with atom i that should not be included in the
+     * NeighborList should be set to 0.0.
+     *
+     * @param mask The masking array.
+     * @param i The atom whose masking rules should be applied.
+     * @since 1.0
+     */
+    public void applyMask(final double mask[], final int i);
+
+    /**
+     * After calling removeMask, all entries in the mask array should be 1.0.
+     *
+     * @param mask The masking array.
+     * @param i The atom whose masking rules should be removed.
+     * @since 1.0
+     */
+    public void removeMask(final double mask[], final int i);
 }

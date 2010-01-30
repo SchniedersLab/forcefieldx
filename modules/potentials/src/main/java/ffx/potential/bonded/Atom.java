@@ -188,7 +188,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
         hybridTable.put("19", 0);
         hybridTable.put("26", 8);
     }
-
     private boolean hetatm;
     /**
      * Either the PDB "name" record or the molecular mechanics atom type name.
@@ -289,6 +288,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     private Atom[] multipoleReferenceSites = null;
     private double globalDipole[] = null;
     private double globalQuadrupole[][] = null;
+    private boolean softCore = false;
     // solvation
     private double bornRadius;
     // Connectivity information.
@@ -547,6 +547,14 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     public double getEpsilon() {
         return 1.0;
+    }
+
+    public boolean isSoftCore() {
+        return softCore;
+    }
+
+    public void setSoftCore(boolean softCore) {
+        this.softCore = softCore;
     }
 
     public void getForce(double[] t) {

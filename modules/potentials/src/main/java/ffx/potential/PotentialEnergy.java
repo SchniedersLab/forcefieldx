@@ -463,6 +463,15 @@ public class PotentialEnergy implements Optimizable {
         return crystal;
     }
 
+    public void setSoftCoreLambda(double lambda) {
+        if (lambda <= 1.0 && lambda >= 0.0) {
+            vanderWaals.setLambda(lambda);
+        } else {
+            String message = String.format("Softcore lambda value %8.3f is not in the range [0..1].", lambda);
+            logger.warning(message);
+        }
+    }
+
     @Override
     public void setOptimizationScaling(double scaling[]) {
         if (scaling != null && scaling.length == nAtoms * 3) {
