@@ -251,7 +251,6 @@ public class PotentialEnergyTest {
     /**
      * Test of energy gradient, of class PotentialEnergy.
      */
-    @Test
     public void testGradient() {
         boolean gradient = true;
         boolean print = true;
@@ -334,7 +333,7 @@ public class PotentialEnergyTest {
         boolean gradient = false;
         boolean print = true;
         // Compute the energy with Lambda = 1.0;
-        for (int i = 0; i <= 10; i++) {
+        for (int i = 0; i <= 1; i++) {
             double lambda = 1.0 - i * 0.1;
             energy.setSoftCoreLambda(lambda);
             energy.energy(gradient, print);
