@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<document>
+    <properties>
+        <author email="schnied@stanford.edu">Michael J. Schnieders</author>
+        <title>Why Java?</title>
+    </properties>
+    <meta name="Why Java?"/>
+    <body>
+        <section name="Why Java?">
+        <p>"Why Java?", in our opinion, is perhaps not the right question. Instead, let's ask "Why the JRE?", 
+            or Java Runtime Environment. The only answer that matters is that we can get more science done,
+            where we refers the developers of Force Field X and to the scientific community in general.
+        </p>
+        <p>The reasons the JRE is superior to compiled languages for getting science done, when compared to 
+            langauges like FORTRAN or C/C++ that must be compiled to binary formats before they are disseminated,
+            are the subject of this page.
+        </p>
+        <subsection name="Performance">
+        <p>
+
+        </p>
+        </subsection>
+        <subsection name="Long Term">
+
+        </subsection>
+        </section>
+    </body>
+</document>

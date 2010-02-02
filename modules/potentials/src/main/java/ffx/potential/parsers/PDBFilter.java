@@ -20,7 +20,11 @@
  */
 package ffx.potential.parsers;
 
-import ffx.crystal.SpaceGroup;
+import static ffx.potential.parsers.INTFilter.intxyz;
+import static ffx.potential.parsers.PDBFilter.ResiduePosition.FIRST_RESIDUE;
+import static ffx.potential.parsers.PDBFilter.ResiduePosition.MIDDLE_RESIDUE;
+import static ffx.potential.parsers.PDBFilter.ResiduePosition.LAST_RESIDUE;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -36,11 +40,7 @@ import java.util.logging.Logger;
 import java.util.HashMap;
 import java.util.zip.GZIPInputStream;
 
-import static ffx.potential.parsers.INTFilter.intxyz;
-import static ffx.potential.parsers.PDBFilter.ResiduePosition.FIRST_RESIDUE;
-import static ffx.potential.parsers.PDBFilter.ResiduePosition.MIDDLE_RESIDUE;
-import static ffx.potential.parsers.PDBFilter.ResiduePosition.LAST_RESIDUE;
-
+import ffx.crystal.SpaceGroup;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
@@ -177,7 +177,6 @@ public final class PDBFilter extends SystemFilter {
             String[] connect;
             ArrayList<String[]> links = new ArrayList<String[]>();
             Vector<String[]> structs = new Vector<String[]>();
-            Molecule molecule = null;
             // While the END parameter is not read in, load atoms
             String pdbLine = br.readLine();
             while ((pdbLine != null) && (!pdbLine.startsWith("END"))) {
@@ -1845,6 +1844,8 @@ public final class PDBFilter extends SystemFilter {
         if (atom == null) {
             atom = new Atom(atomName, atomType, new double[3]);
             residue.addMSNode(atom);
+            atom.setOccupancy(ia.getOccupancy());
+            atom.setTempFactor(ia.getTempFactor());
             intxyz(atom, ia, bond, ib, angle1, ic, angle2, chiral);
         } else {
             atom.setAtomType(atomType);
@@ -1889,9 +1890,240 @@ public final class PDBFilter extends SystemFilter {
         return null;
     }
 
+    public static String padRight(String s, int n) {
+        return String.format("%1$-" + n + "s", s);
+    }
+
+    public static String padLeft(String s, int n) {
+        return String.format("%1$#" + n + "s", s);
+    }
+
+    /**
+     * Write out the Atomic information in PDB format.
+     *
+     * @return <code>true</code> if the read was successful.
+     */
     @Override
     public boolean writeFile() {
-        return false;
+        File pdbFile = molecularAssembly.getFile();
+        if (pdbFile == null) {
+            return false;
+        }
+        // Create StringBuffers for ATOM, ANISOU and TER records.
+        StringBuffer sb = new StringBuffer();
+        StringBuffer anisouSB = new StringBuffer();
+        StringBuffer terSB = new StringBuffer();
+        for (int i = 0; i < 80; i++) {
+            sb.append(' ');
+            anisouSB.append(' ');
+            terSB.append(' ');
+        }
+        sb.replace(0, 6, "ATOM  ");
+        anisouSB.replace(0, 6, "ANISOU");
+        terSB.replace(0, 6, "TER   ");
+        FileWriter fw = null;
+        BufferedWriter bw = null;
+        try {
+            File newFile = version(pdbFile);
+            molecularAssembly.setFile(newFile);
+            molecularAssembly.setName(newFile.getName());
+            fw = new FileWriter(newFile);
+            bw = new BufferedWriter(fw);
+// =============================================================================
+//  1 -  6        Record name   "ATOM  "
+//  7 - 11        Integer       serial       Atom serial number.
+// 13 - 16        Atom          name         Atom name.
+// 17             Character     altLoc       Alternate location indicator.
+// 18 - 20        Residue name  resName      Residue name.
+// 22             Character     chainID      Chain identifier.
+// 23 - 26        Integer       resSeq       Residue sequence number.
+// 27             AChar         iCode        Code for insertion of residues.
+// 31 - 38        Real(8.3)     x            Orthogonal coordinates for X in Angstroms.
+// 39 - 46        Real(8.3)     y            Orthogonal coordinates for Y in Angstroms.
+// 47 - 54        Real(8.3)     z            Orthogonal coordinates for Z in Angstroms.
+// 55 - 60        Real(6.2)     occupancy    Occupancy.
+// 61 - 66        Real(6.2)     tempFactor   Temperature factor.
+// 77 - 78        LString(2)    element      Element symbol, right-justified.
+// 79 - 80        LString(2)    charge       Charge  on the atom.
+// =============================================================================
+//         1         2         3         4         5         6         7
+//123456789012345678901234567890123456789012345678901234567890123456789012345678
+//ATOM      1  N   ILE A  16      60.614  71.140 -10.592  1.00  7.38           N
+//ATOM      2  CA  ILE A  16      60.793  72.149  -9.511  1.00  6.91           C
+            int serial = 1;
+            // Loop over biomolecular chains
+            String chains[] = molecularAssembly.getChainNames();
+            for (String chain : chains) {
+                if (chain.equalsIgnoreCase("Blank")) {
+                    sb.setCharAt(21, ' ');
+                } else {
+                    sb.setCharAt(21, chain.toUpperCase().charAt(0));
+                }
+                Polymer polymer = molecularAssembly.getPolymer(chain, false);
+                // Loop over residues
+                ArrayList<Residue> residues = polymer.getResidues();
+                for (Residue residue : residues) {
+                    String resName = residue.getName();
+                    if (resName.length() > 3) {
+                        resName = resName.substring(0, 3);
+                    }
+                    int resID = residue.getResidueNumber();
+                    sb.replace(17, 20, padLeft(resName.toUpperCase(), 3));
+                    sb.replace(22, 26, String.format("%4d", resID));
+                    // Loop over atoms
+                    ArrayList<Atom> residueAtoms = residue.getAtomList();
+                    for (Atom atom : residueAtoms) {
+                        String name = atom.getID();
+                        if (name.length() > 4) {
+                            name = name.substring(0, 4);
+                        } else if (name.length() == 1) {
+                            name = name + "  ";
+                        } else if (name.length() == 2) {
+                            name = name + " ";
+                        }
+                        double xyz[] = atom.getXYZ();
+                        sb.replace(6, 16, String.format("%5d " + padLeft(name.toUpperCase(), 4), serial++));
+                        Character altLoc = atom.getAltLoc();
+                        if (altLoc != null) {
+                            sb.setCharAt(16, altLoc);
+                        } else {
+                            sb.setCharAt(16, ' ');
+                        }
+                        sb.replace(30, 66, String.format("%8.3f%8.3f%8.3f%6.2f%6.2f",
+                                xyz[0], xyz[1], xyz[2], atom.getOccupancy(), atom.getTempFactor()));
+                        /*
+                        if (name.length() > 2) {
+                        name = name.substring(0, 2);
+                        }
+                        sb.replace(76, 78, padRight(name, 2));
+                         */
+                        bw.write(sb.toString());
+                        bw.newLine();
+// =============================================================================
+//  1 - 6        Record name   "ANISOU"
+//  7 - 11       Integer       serial         Atom serial number.
+// 13 - 16       Atom          name           Atom name.
+// 17            Character     altLoc         Alternate location indicator
+// 18 - 20       Residue name  resName        Residue name.
+// 22            Character     chainID        Chain identifier.
+// 23 - 26       Integer       resSeq         Residue sequence number.
+// 27            AChar         iCode          Insertion code.
+// 29 - 35       Integer       u[0][0]        U(1,1)
+// 36 - 42       Integer       u[1][1]        U(2,2)
+// 43 - 49       Integer       u[2][2]        U(3,3)
+// 50 - 56       Integer       u[0][1]        U(1,2)
+// 57 - 63       Integer       u[0][2]        U(1,3)
+// 64 - 70       Integer       u[1][2]        U(2,3)
+// 77 - 78       LString(2)    element        Element symbol, right-justified.
+// 79 - 80       LString(2)    charge         Charge on the atom.
+// =============================================================================
+                        double[] anisou = atom.getAnisou();
+                        if (anisou != null) {
+                            anisouSB.replace(6, 80, sb.substring(6, 80));
+                            anisouSB.replace(28, 70, String.format("%7d%7d%7d%7d%7d%7d",
+                                    (int) (anisou[0] * 1e4), (int) (anisou[1] * 1e4),
+                                    (int) (anisou[2] * 1e4), (int) (anisou[3] * 1e4),
+                                    (int) (anisou[4] * 1e4), (int) (anisou[5] * 1e4)));
+                            bw.write(sb.toString());
+                            bw.newLine();
+                        }
+                    }
+                }
+                terSB.replace(6, 11, Integer.toString(serial++));
+                terSB.replace(12, 16, "    ");
+                terSB.replace(16, 26, sb.substring(16, 26));
+                bw.write(terSB.toString());
+                bw.newLine();
+            }
+            sb.replace(0, 6, "HETATM");
+            // Loop over molecules, ions and then water.
+            ArrayList<MSNode> molecules = new ArrayList<MSNode>();
+            molecules.addAll(molecularAssembly.getMolecules());
+            molecules.addAll(molecularAssembly.getIons());
+            molecules.addAll(molecularAssembly.getWaters());
+            for (MSNode node : molecules) {
+                Molecule molecule = (Molecule) node;
+                String chain = molecule.getPolymerName();
+                if (chain.equalsIgnoreCase("Blank")) {
+                    sb.setCharAt(21, ' ');
+                } else {
+                    sb.setCharAt(21, chain.toUpperCase().charAt(0));
+                }
+                String resName = molecule.getResidueName();
+                if (resName.length() > 3) {
+                    resName = resName.substring(0, 3);
+                }
+                int resID = molecule.getResidueNumber();
+                sb.replace(17, 20, padRight(resName.toUpperCase(), 3));
+                sb.replace(22, 26, String.format("%4d", resID));
+                // Loop over atoms
+                ArrayList<Atom> residueAtoms = molecule.getAtomList();
+                for (Atom atom : residueAtoms) {
+                    String name = atom.getID();
+                    if (name.length() > 4) {
+                        name = name.substring(0, 4);
+                    } else if (name.length() == 1) {
+                        name = name + "  ";
+                    } else if (name.length() == 2) {
+                        name = name + " ";
+                    }
+                    double xyz[] = atom.getXYZ();
+                    sb.replace(6, 16, String.format("%5d " + padLeft(name.toUpperCase(), 4), serial++));
+                    Character altLoc = atom.getAltLoc();
+                    if (altLoc != null) {
+                        sb.setCharAt(16, altLoc);
+                    } else {
+                        sb.setCharAt(16, ' ');
+                    }
+                    sb.replace(30, 66, String.format("%8.3f%8.3f%8.3f%6.2f%6.2f",
+                            xyz[0], xyz[1], xyz[2], atom.getOccupancy(), atom.getTempFactor()));
+                    /*
+                    if (name.length() > 2) {
+                    name = name.substring(0, 2);
+                    }
+                    sb.replace(76, 78, padRight(name, 2));
+                     */
+                    bw.write(sb.toString());
+                    bw.newLine();
+// =============================================================================
+//  1 - 6        Record name   "ANISOU"
+//  7 - 11       Integer       serial         Atom serial number.
+// 13 - 16       Atom          name           Atom name.
+// 17            Character     altLoc         Alternate location indicator
+// 18 - 20       Residue name  resName        Residue name.
+// 22            Character     chainID        Chain identifier.
+// 23 - 26       Integer       resSeq         Residue sequence number.
+// 27            AChar         iCode          Insertion code.
+// 29 - 35       Integer       u[0][0]        U(1,1)
+// 36 - 42       Integer       u[1][1]        U(2,2)
+// 43 - 49       Integer       u[2][2]        U(3,3)
+// 50 - 56       Integer       u[0][1]        U(1,2)
+// 57 - 63       Integer       u[0][2]        U(1,3)
+// 64 - 70       Integer       u[1][2]        U(2,3)
+// 77 - 78       LString(2)    element        Element symbol, right-justified.
+// 79 - 80       LString(2)    charge         Charge on the atom.
+// =============================================================================
+                    double[] anisou = atom.getAnisou();
+                    if (anisou != null) {
+                        anisouSB.replace(6, 80, sb.substring(6, 80));
+                        anisouSB.replace(28, 70, String.format("%7d%7d%7d%7d%7d%7d",
+                                (int) (anisou[0] * 1e4), (int) (anisou[1] * 1e4),
+                                (int) (anisou[2] * 1e4), (int) (anisou[3] * 1e4),
+                                (int) (anisou[4] * 1e4), (int) (anisou[5] * 1e4)));
+                        bw.write(sb.toString());
+                        bw.newLine();
+                    }
+                }
+            }
+            bw.write("END");
+            bw.newLine();
+            bw.close();
+        } catch (Exception e) {
+            String message = "Exception writing to file: " + pdbFile.toString();
+            logger.log(Level.WARNING, message, e);
+            return false;
+        }
+        return true;
     }
 
     /**

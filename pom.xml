@@ -119,7 +119,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
                 <version>2.1.1</version>
-                <executions>
+                <!-- executions>
                     <execution>
                         <id>Package Source</id>
                         <phase>package</phase>
@@ -128,7 +128,7 @@
                             <goal>test-jar-no-fork</goal>
                         </goals>
                     </execution>
-                </executions>
+                </executions -->
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -136,7 +136,7 @@
                 <configuration>
                     <quiet>true</quiet>
                 </configuration>
-                <executions>
+                <!-- executions>
                     <execution>
                         <id>Package Javadocs</id>
                         <phase>package</phase>
@@ -145,7 +145,7 @@
                             <goal>test-jar</goal>
                         </goals>
                     </execution>
-                </executions>
+                </executions -->
             </plugin>
             <plugin>
                 <inherited>false</inherited>
@@ -181,14 +181,14 @@
                     <arguments>
                         <argument>-ms2G</argument>
                         <argument>-mx2G</argument>
-                        <argument>-Djava.awt.headless=false</argument>
+                        <argument>-Djava.awt.headless=true</argument>
                         <argument>-Dpj.nt=2</argument>
                         <argument>-Dj3d.rend=jogl</argument>
                         <argument>-Djava.library.path=bin/${platform}/jogl-${bit}</argument>
                         <argument>-classpath</argument>
                         <argument>lib/com/kenai/ffx/ui/${version}/ui-${version}-all.jar</argument>
                         <argument>ffx.Main</argument>
-                        <!-- argument>scripts/md.ffx</argument -->
+                        <argument>scripts/saveAsPDB.ffx</argument>
                     </arguments>
                 </configuration>
             </plugin>

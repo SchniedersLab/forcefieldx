@@ -1,0 +1,10 @@
+
+p97 at a range of resolutions.
+need ADP parameters.
+hydrogen bonding - alpha helix conformations. 
+scramble loops - see if you get back.
+truncate some high resolution; refine.
+
+Ribozyme, L21 - Westhoff, Dowdna
+
+Jamie Kate's Ribosome structures

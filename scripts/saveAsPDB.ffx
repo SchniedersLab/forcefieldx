@@ -1,0 +1,4 @@
+String name = "examples/1HJ8.pdb"
+File file = new File(name)
+open name
+saveAsPDB file

@@ -282,7 +282,7 @@ public final class MainPanel extends JPanel implements ActionListener,
         } else if (arg.equals("DownloadFromPDB")) {
             openFromPDB();
         } else if (arg.equals("SaveAs")) {
-            save(null);
+            saveAsXYZ(null);
         } else if (arg.equals("Close")) {
             close();
         } else if (arg.equals("CloseAll")) {
@@ -1328,27 +1328,24 @@ public final class MainPanel extends JPanel implements ActionListener,
     }
 
     /**
-     * Save the currently selected System to disk
+     * Save the currently selected FFXSystem to disk.
      *
-     * @param file
-     *            File to save the system to
+     * @param file File to save the system to.
+     *
+     * @since 1.0
      */
-    public void save(File file) {
+    public void saveAsXYZ(File file) {
         FFXSystem system = hierarchy.getActive();
         if (system != null && !system.isClosing()) {
-            SystemFilter filter;
-            //if (system.getFileType() == FileType.XYZ) {
-            filter = new XYZFilter();
-            //} else {
-            //    return;
-            //}
+            SystemFilter filter = new XYZFilter();
             File savefile = null;
             if (file != null) {
                 savefile = file;
             } else {
                 resetFileChooser();
                 fileChooser.setCurrentDirectory(pwd);
-                fileChooser.setAcceptAllFileFilterUsed(true);
+                fileChooser.setFileFilter(xyzFileFilter);
+                fileChooser.setAcceptAllFileFilterUsed(false);
                 int result = fileChooser.showSaveDialog(this);
                 if (result == JFileChooser.APPROVE_OPTION) {
                     savefile = fileChooser.getSelectedFile();
@@ -1366,6 +1363,44 @@ public final class MainPanel extends JPanel implements ActionListener,
             }
         }
     }
+
+    /**
+     * Save the currently selected FFXSystem to a PDB file.
+     *
+     * @param file File to save the system to.
+     *
+     * @since 1.0
+     */
+    public void saveAsPDB(File file) {
+        FFXSystem system = hierarchy.getActive();
+        if (system != null && !system.isClosing()) {
+            SystemFilter filter = new PDBFilter();
+            File savefile = null;
+            if (file != null) {
+                savefile = file;
+            } else {
+                resetFileChooser();
+                fileChooser.setCurrentDirectory(pwd);
+                fileChooser.setFileFilter(pdbFileFilter);
+                fileChooser.setAcceptAllFileFilterUsed(false);
+                int result = fileChooser.showSaveDialog(this);
+                if (result == JFileChooser.APPROVE_OPTION) {
+                    savefile = fileChooser.getSelectedFile();
+                    pwd = savefile.getParentFile();
+                }
+            }
+            if (savefile != null) {
+                filter.setMolecularSystem(system);
+                if (filter.writeFile()) {
+                    system.setFile(savefile);
+                    system.setName(savefile.getName());
+                    // Refresh Panels with the new System name
+                    hierarchy.setActive(system);
+                }
+            }
+        }
+    }
+
     static final Preferences preferences = Preferences.userNodeForPackage(MainPanel.class);
 
     /**

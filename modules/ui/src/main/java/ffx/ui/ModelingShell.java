@@ -90,7 +90,6 @@ public class ModelingShell extends Console implements AlgorithmListener {
         setVariable("dat", mainPanel.getHierarchy());
         setVariable("cmd", mainPanel);
         setVariable("vis", mainPanel.getGraphics3D());
-        //setVariable("job", mainPanel.getModelingPanel());
         setVariable("sh", this);
         setVariable("active", mainPanel.getHierarchy().getActive());
 
@@ -99,7 +98,8 @@ public class ModelingShell extends Console implements AlgorithmListener {
 
         // File
         setVariable("open", new MethodClosure(mainPanel, "openWait"));
-        setVariable("save", new MethodClosure(mainPanel, "save"));
+        setVariable("save", new MethodClosure(mainPanel, "saveAsXYZ"));
+        setVariable("saveAsPDB", new MethodClosure(mainPanel, "saveAsPDB"));
         setVariable("close", new MethodClosure(mainPanel, "closeWait"));
         setVariable("closeAll", new MethodClosure(mainPanel, "closeAll"));
 

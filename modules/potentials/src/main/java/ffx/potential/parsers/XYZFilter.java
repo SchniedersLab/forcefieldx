@@ -381,7 +381,7 @@ public class XYZFilter extends SystemFilter {
             int numberOfAtoms = molecularAssembly.getAtomList().size();
             String output = String.format("%6d  %s\n", numberOfAtoms,
                     molecularAssembly.toString());
-            System.out.println(output);
+            logger.info("Writing first line of XYZ file:\n" + output);
             bw.write(output);
             Atom a2;
             StringBuffer line;
