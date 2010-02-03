@@ -22,6 +22,7 @@ package ffx.xray;
 
 import ffx.crystal.HKL;
 import ffx.potential.bonded.Atom;
+import ffx.potential.parameters.AtomType;
 
 import org.junit.After;
 import org.junit.AfterClass;
@@ -58,6 +59,8 @@ public class FormFactorTest {
         anisou[0] = anisou[1] = anisou[2] = 1.0;
         anisou[3] = anisou[4] = anisou[5] = 0.0;
         carbon = new Atom(1, "C", 'A', d, "ALA", 1, "A", 1.0, 20.0);
+        AtomType atomType = new AtomType(1, 1, "C", null, 6, 12.01, 1);
+        carbon.setAtomType(atomType);
         carbon.setAltLoc('A');
         carbon.setAnisou(anisou);
         carbonff = new FormFactor(carbon);
@@ -72,9 +75,9 @@ public class FormFactorTest {
         double ff[][] = new double[2][6];
 
         assertNotNull("carbon form factors should exist",
-                FormFactor.getFormFactor("C"));
+                FormFactor.getFormFactor("6"));
 
-        ff = FormFactor.getFormFactor("C");
+        ff = FormFactor.getFormFactor("6");
 
         assertEquals("carbon form factors should be correct",
                 2.09921, ff[0][0], 0.0001);

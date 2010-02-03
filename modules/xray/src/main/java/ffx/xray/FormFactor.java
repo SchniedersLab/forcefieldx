@@ -37,7 +37,9 @@ import java.util.HashMap;
 import java.util.logging.Logger;
 
 import no.uib.cipr.matrix.DenseMatrix;
+import no.uib.cipr.matrix.EVD;
 import no.uib.cipr.matrix.Matrices;
+import no.uib.cipr.matrix.NotConvergedException;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
@@ -80,6 +82,18 @@ public class FormFactor {
         "Sr2+", "Y3+", "Zr4+", "Nb3+", "Nb5+", "Mo3+", "Mo6+", "Ru3+", "Ru4+",
         "Rh3+", "Rh4+", "Pd2+", "Pd4+", "Ag+", "Ag2+", "Cd2+", "In3+", "Sn2+",
         "Sn4+", "Sb3+", "Sb5+", "I-"};
+    private static final String[] atomsi = {"1", "2", "3", "4", "5", "6", "7", "8",
+        "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20",
+        "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32",
+        "33", "34", "35", "36", "37", "38", "39", "40", "41", "42", "43", "44",
+        "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "3_1",
+        "4_2", "6_5", "8_-1", "9_-1", "11_1", "12_2", "13_3", "14_0", "14_4", "17_-1",
+        "19_1", "20_2", "21_3", "22_2", "22_3", "22_4", "23_2", "23_3", "23_5",
+        "24_2", "24_3", "25_2", "25_3", "25_4", "26_2", "26_3", "27_2", "27_3",
+        "28_2", "28_3", "29_1", "29_2", "30_2", "31_3", "32_4", "35_-1", "37_1",
+        "38_2", "39_3", "40_4", "41_3", "41_5", "42_3", "42_6", "44_3", "44_4",
+        "45_3", "45_4", "46_2", "46_4", "47_1", "47_2", "48_2", "49_3", "50_2",
+        "50_4", "51_3", "51_5", "53_-1"};
     private static final double[][][] ffactors = {
         {{0.43028, 0.28537, 0.17134, 0.09451, 0.01725, 0.00114},
             {23.02312, 10.20138, 51.25444, 4.13511, 1.35427, 0.24269}},
@@ -313,12 +327,13 @@ public class FormFactor {
 
     {
         for (int i = 0; i < atoms.length; i++) {
-            formfactors.put(atoms[i], ffactors[i]);
+            formfactors.put(atomsi[i], ffactors[i]);
         }
     }
     private final Atom atom;
     private final double xyz[] = new double[3];
     private final double biso;
+    private final double uadd;
     private final double uaniso[];
     private final double occ;
     private final double a[] = new double[6];
@@ -328,10 +343,11 @@ public class FormFactor {
     private final double u[][][] = new double[6][3][3];
     private final double uinv[][][] = new double[6][3][3];
 
-    public FormFactor(Atom atom) {
+    public FormFactor(Atom atom, double uadd) {
         this.atom = atom;
+        this.uadd = uadd;
         double ffactor[][] = new double[2][6];
-        ffactor = getFormFactor(atom.getID());
+        ffactor = getFormFactor("" + atom.getAtomType().atomicNumber);
         for (int i = 0; i < 6; i++) {
             a[i] = ffactor[0][i];
             b[i] = ffactor[1][i];
@@ -341,17 +357,47 @@ public class FormFactor {
         biso = atom.getTempFactor();
 
         if (atom.getAnisou() != null) {
+            // first check the ANISOU is valid
             uaniso = atom.getAnisou();
+            u[0][0][0] = uaniso[0];
+            u[0][1][1] = uaniso[1];
+            u[0][2][2] = uaniso[2];
+            u[0][0][1] = u[0][1][0] = uaniso[3];
+            u[0][0][2] = u[0][2][0] = uaniso[4];
+            u[0][1][2] = u[0][2][1] = uaniso[5];
+            DenseMatrix A = new DenseMatrix(u[0]);
+            try {
+                EVD evd = EVD.factorize(A);
+                double evalues[] = evd.getRealEigenvalues();
+                boolean nonpos = false;
+                if (evalues[0] <= 0.0 || evalues[1] <= 0.0 || evalues[2] <= 0.0) {
+                    nonpos = true;
+                }
+                // if not, scream and reset it based on the isotropic B
+                if (nonpos) {
+                    StringBuffer sb = new StringBuffer();
+                    sb.append("non-positive definite ANISOU for atom: " + atom.toString() + "\n");
+                    sb.append("resetting ANISOU based on isotropic B: (" + biso + ")\n");
+                    logger.warning(sb.toString());
+
+                    uaniso[0] = uaniso[1] = uaniso[2] = biso / eightpi2;
+                    uaniso[3] = uaniso[4] = uaniso[5] = 0.0;
+                    atom.setAnisou(uaniso);
+                }
+            } catch (NotConvergedException e) {
+                String message = "ANISOU error on atom: " + atom.toString();
+                logger.severe(message);
+            }
         } else {
             uaniso = new double[6];
-            uaniso[0] = uaniso[1] = uaniso[2] = biso / (8.0 * PI * PI);
+            uaniso[0] = uaniso[1] = uaniso[2] = biso / eightpi2;
             uaniso[3] = uaniso[4] = uaniso[5] = 0.0;
         }
 
         for (int i = 0; i < 6; i++) {
-            u[i][0][0] = uaniso[0] + b[i] / eightpi2;
-            u[i][1][1] = uaniso[1] + b[i] / eightpi2;
-            u[i][2][2] = uaniso[2] + b[i] / eightpi2;
+            u[i][0][0] = uaniso[0] + (b[i] / eightpi2) + uadd;
+            u[i][1][1] = uaniso[1] + (b[i] / eightpi2) + uadd;
+            u[i][2][2] = uaniso[2] + (b[i] / eightpi2) + uadd;
             u[i][0][1] = u[i][1][0] = uaniso[3];
             u[i][0][2] = u[i][2][0] = uaniso[4];
             u[i][1][2] = u[i][2][1] = uaniso[5];
@@ -372,6 +418,10 @@ public class FormFactor {
             det = determinant3(uinv[i]);
             binv[i] = pow(det, 0.3333333333);
         }
+    }
+
+    public FormFactor(Atom atom) {
+        this(atom, 0.0);
     }
 
     public static double[] getFormFactorA(String atom) {

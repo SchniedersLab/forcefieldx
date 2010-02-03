@@ -20,7 +20,7 @@
  */
 package ffx.xray;
 
-import ffx.numerics.Complex;
+import ffx.numerics.ComplexNumber;
 
 /**
  *
@@ -53,6 +53,10 @@ public class RefinementData {
         fofc2 = new double[n][2];
         fofc1 = new double[n][2];
         fd = new double[n][2];
+
+        for (int i = 0; i < n; i++) {
+            fsigf[i][0] = fsigf[i][1] = Double.NaN;
+        }
     }
 
     public void f(int i, double f) {
@@ -91,43 +95,43 @@ public class RefinementData {
         return (freer[i] == 1);
     }
 
-    public void fc(int i, Complex c) {
+    public void fc(int i, ComplexNumber c) {
         fc[i][0] = c.re();
         fc[i][1] = c.im();
     }
 
-    public Complex fc(int i) {
-        return new Complex(fc[i][0], fc[i][1]);
+    public ComplexNumber fc(int i) {
+        return new ComplexNumber(fc[i][0], fc[i][1]);
     }
 
-    public double fc_f(int i){
-        Complex c = new Complex(fc[i][0], fc[i][1]);
+    public double fc_f(int i) {
+        ComplexNumber c = new ComplexNumber(fc[i][0], fc[i][1]);
 
         return c.abs();
     }
 
-    public double fc_phi(int i){
-        Complex c = new Complex(fc[i][0], fc[i][1]);
+    public double fc_phi(int i) {
+        ComplexNumber c = new ComplexNumber(fc[i][0], fc[i][1]);
 
         return c.phase();
     }
 
-    public void fs(int i, Complex c) {
+    public void fs(int i, ComplexNumber c) {
         fs[i][0] = c.re();
         fs[i][1] = c.im();
     }
 
-    public Complex fs(int i) {
-        return new Complex(fs[i][0], fs[i][1]);
+    public ComplexNumber fs(int i) {
+        return new ComplexNumber(fs[i][0], fs[i][1]);
     }
 
-    public void fctot(int i, Complex c) {
+    public void fctot(int i, ComplexNumber c) {
         fctot[i][0] = c.re();
         fctot[i][1] = c.im();
     }
 
-    public Complex fctot(int i) {
-        return new Complex(fctot[i][0], fctot[i][1]);
+    public ComplexNumber fctot(int i) {
+        return new ComplexNumber(fctot[i][0], fctot[i][1]);
     }
 
     public double[] sigmaa(int i) {
@@ -154,30 +158,30 @@ public class RefinementData {
         return sigmaa[i][1];
     }
 
-    public void fofc2(int i, Complex c) {
+    public void fofc2(int i, ComplexNumber c) {
         fofc2[i][0] = c.re();
         fofc2[i][1] = c.im();
     }
 
-    public Complex fofc2(int i) {
-        return new Complex(fofc2[i][0], fofc2[i][1]);
+    public ComplexNumber fofc2(int i) {
+        return new ComplexNumber(fofc2[i][0], fofc2[i][1]);
     }
 
-    public void fofc1(int i, Complex c) {
+    public void fofc1(int i, ComplexNumber c) {
         fofc1[i][0] = c.re();
         fofc1[i][1] = c.im();
     }
 
-    public Complex fofc1(int i) {
-        return new Complex(fofc1[i][0], fofc1[i][1]);
+    public ComplexNumber fofc1(int i) {
+        return new ComplexNumber(fofc1[i][0], fofc1[i][1]);
     }
 
-    public void fd(int i, Complex c) {
+    public void fd(int i, ComplexNumber c) {
         fd[i][0] = c.re();
         fd[i][1] = c.im();
     }
 
-    public Complex fd(int i) {
-        return new Complex(fd[i][0], fd[i][1]);
+    public ComplexNumber fd(int i) {
+        return new ComplexNumber(fd[i][0], fd[i][1]);
     }
 }
