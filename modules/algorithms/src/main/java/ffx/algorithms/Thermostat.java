@@ -24,9 +24,8 @@ import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import no.uib.cipr.matrix.DenseMatrix;
-import no.uib.cipr.matrix.Matrices;
 
-import no.uib.cipr.matrix.Matrix;
+import no.uib.cipr.matrix.Matrices;
 
 /**
  * The abstract Thermostat class implements methods common to all thermostats
@@ -40,7 +39,7 @@ import no.uib.cipr.matrix.Matrix;
  */
 public abstract class Thermostat {
 
-    private static final Logger logger = Logger.getLogger(ffx.algorithms.Thermostat.class.getName());
+    private static final Logger logger = Logger.getLogger(Thermostat.class.getName());
     /**
      * Boltzmann constant in units of g*Ang**2/ps**2/mole/K
      */

@@ -247,7 +247,7 @@ public class ModelingShell extends Console implements AlgorithmListener {
     }
 
     public void md(int nStep, double timeStep, double printInterval,
-            double temperature, boolean initVelocities) {
+            double saveInterval, double temperature, boolean initVelocities) {
         if (interrupted || terminatableAlgorithm != null) {
             return;
         }
@@ -255,7 +255,8 @@ public class ModelingShell extends Console implements AlgorithmListener {
         if (active != null) {
             MolecularDynamics molecularDynamics = new MolecularDynamics(active, this, Thermostats.BUSSI);
             terminatableAlgorithm = molecularDynamics;
-            molecularDynamics.dynamic(nStep, timeStep, printInterval, temperature, initVelocities);
+            molecularDynamics.dynamic(nStep, timeStep, printInterval,
+                    saveInterval, temperature, initVelocities);
             terminatableAlgorithm = null;
         }
     }

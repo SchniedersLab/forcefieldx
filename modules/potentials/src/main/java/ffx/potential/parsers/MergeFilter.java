@@ -20,6 +20,7 @@
  */
 package ffx.potential.parsers;
 
+import java.io.File;
 import java.util.ArrayList;
 
 import ffx.potential.bonded.Atom;
@@ -42,17 +43,13 @@ public class MergeFilter extends SystemFilter {
         bondList = b;
     }
 
-    /**
-     *
-     */
+    @Override
     public boolean readFile() {
         return true;
     }
 
-    /**
-     *
-     */
-    public boolean writeFile() {
+    @Override
+    public boolean writeFile(File saveFile, boolean append) {
         return false;
     }
 }

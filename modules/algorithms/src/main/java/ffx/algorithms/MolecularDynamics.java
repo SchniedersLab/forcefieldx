@@ -29,6 +29,10 @@ import ffx.algorithms.Thermostat.Thermostats;
 import ffx.potential.PotentialEnergy;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.parsers.XYZFilter;
+import java.io.File;
+import java.io.FileWriter;
+import org.apache.commons.io.FilenameUtils;
 
 /**
  * Run NVE or NVT molecular dynamics.
@@ -60,6 +64,8 @@ public class MolecularDynamics implements Terminatable {
     private final Atom atoms[];
     private AlgorithmListener algorithmListener;
     private Thermostat thermostat;
+    private File archive = null;
+    private XYZFilter xyzFilter = null;
     private boolean done;
     private boolean terminate;
 
@@ -108,20 +114,29 @@ public class MolecularDynamics implements Terminatable {
         this.thermostat = thermostat;
     }
 
+    public void setArchiveFile(File archive) {
+        this.archive = archive;
+    }
+
+    public File getArchiveFile() {
+        return archive;
+    }
+
     public void dynamic(final int nSteps, final double timeStep, final double printInterval,
-            final double temperature, final boolean initVelocities) {
+            final double saveInterval, final double temperature, final boolean initVelocities) {
         terminate = false;
         done = false;
 
-        logger.info(" Molecular dynamics starting up.");
-        logger.info(String.format(" Number of steps:     %d", nSteps));
+        logger.info(" Molecular dynamics starting up");
+        logger.info(String.format(" Number of steps:     %8d", nSteps));
         logger.info(String.format(" Time step:           %8.3f (fsec)", timeStep));
         logger.info(String.format(" Print interval:      %8.3f (psec)", printInterval));
+        logger.info(String.format(" Save interval:       %8.3f (psec)", saveInterval));
         logger.info(String.format(" Target temperature:  %8.3f Kelvin", temperature));
         if (thermostat != null) {
-            logger.info(String.format(" Sampling the NVT Ensemble via a %s thermostat.\n", thermostat.name));
+            logger.info(String.format(" Sampling the NVT Ensemble via a %s thermostat", thermostat.name));
         } else {
-            logger.info(String.format(" Sampling the NVE Ensemble.\n"));
+            logger.info(String.format(" Sampling the NVE Ensemble"));
         }
 
         /**
@@ -129,9 +144,30 @@ public class MolecularDynamics implements Terminatable {
          */
         dt = timeStep * 1.0e-3;
 
+        /**
+         * Convert the print interval to a print frequency.
+         */
         int printFrequency = 1;
         if (printInterval > dt) {
             printFrequency = (int) (printInterval / dt);
+        }
+
+        /**
+         * Convert the save interval to a save frequency.
+         */
+        int saveFrequency = -1;
+        if (saveInterval > dt) {
+            saveFrequency = (int) (saveInterval / dt);
+            if (archive == null) {
+                File file = molecularAssembly.getFile();
+                String filename = FilenameUtils.removeExtension(file.getAbsolutePath());
+                archive = new File(filename + ".arc");
+                archive = XYZFilter.version(archive);
+                logger.info(" Snap shots will be written to " + archive.getAbsolutePath());
+            }
+            if (xyzFilter == null) {
+                xyzFilter = new XYZFilter(molecularAssembly);
+            }
         }
 
         /**
@@ -140,7 +176,6 @@ public class MolecularDynamics implements Terminatable {
         if (thermostat != null) {
             thermostat.setTargetTemperature(temperature);
         }
-
 
         /**
          * Initialize atomic positions and masses.
@@ -211,19 +246,27 @@ public class MolecularDynamics implements Terminatable {
                 time = System.nanoTime();
             }
 
+            if (saveFrequency > 0 && step % saveFrequency == 0 && archive != null) {
+                if (xyzFilter.writeFile(archive, true)) {
+                    logger.info(String.format(" Appended snap shot to " + archive.getName()));
+                } else {
+                    logger.severe(String.format(" Appending snap shot to " + archive.getName() + " failed"));
+                }
+            }
+
             if (algorithmListener != null && step % printFrequency == 0) {
                 algorithmListener.algorithmUpdate(molecularAssembly);
             }
 
             if (terminate) {
-                logger.info(String.format("\n Terminating after %6d time steps.\n", step));
+                logger.info(String.format("\n Terminating after %8d time steps\n", step));
                 done = true;
                 break;
             }
         }
 
         if (!terminate) {
-            logger.info(String.format(" Completed %6d time steps.\n", nSteps));
+            logger.info(String.format(" Completed %8d time steps\n", nSteps));
         }
     }
 

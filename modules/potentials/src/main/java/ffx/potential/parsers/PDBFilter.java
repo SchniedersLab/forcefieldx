@@ -1906,9 +1906,8 @@ public final class PDBFilter extends SystemFilter {
      * @return <code>true</code> if the read was successful.
      */
     @Override
-    public boolean writeFile() {
-        File pdbFile = molecularAssembly.getFile();
-        if (pdbFile == null) {
+    public boolean writeFile(File saveFile, boolean append) {
+        if (saveFile == null) {
             return false;
         }
         // Create StringBuffers for ATOM, ANISOU and TER records.
@@ -1923,10 +1922,13 @@ public final class PDBFilter extends SystemFilter {
         FileWriter fw = null;
         BufferedWriter bw = null;
         try {
-            File newFile = version(pdbFile);
+            File newFile = saveFile;
+            if (!append) {
+                newFile = version(saveFile);
+            }
             molecularAssembly.setFile(newFile);
             molecularAssembly.setName(newFile.getName());
-            fw = new FileWriter(newFile);
+            fw = new FileWriter(newFile, append);
             bw = new BufferedWriter(fw);
 // =============================================================================
 //  1 -  6        Record name   "ATOM  "
@@ -2118,7 +2120,7 @@ public final class PDBFilter extends SystemFilter {
             bw.newLine();
             bw.close();
         } catch (Exception e) {
-            String message = "Exception writing to file: " + pdbFile.toString();
+            String message = "Exception writing to file: " + saveFile.toString();
             logger.log(Level.WARNING, message, e);
             return false;
         }

@@ -1,21 +1,26 @@
 
-System.setProperty("pj.nt","2");
+import ffx.algorithms.MolecularDynamics;
+import ffx.algorithms.Thermostat.Thermostats;
 
-open "examples/3DB3.P62.xyz"
+open "examples/3DB3.P62.xyz";
 
 // Number of molecular dynamics steps
-int nSteps = 100
+int nSteps = 100;
 // Time step in femtoseconds.
-double timeStep = 1.0
+double timeStep = 1.0;
 // Frequency to print out thermodynamics information in picoseconds.
-double printInterval = 0.01
+double printInterval = 0.01;
+// Frequency to save out coordinates in picoseconds.
+double saveInterval = 0.01;
 // Temperature in degrees Kelvin.
-double temperature = 300.0
+double temperature = 300.0;
 // Reset velocities.
-boolean initVelocities = true
-// Go!
+boolean initVelocities = true;
 
-for (int i = 0; i < 10; i++) {
-    md(nSteps, timeStep, printInterval, temperature, initVelocities)
-    time()
-}
+Thermostats thermostat = Thermostats.BUSSI;
+
+
+MolecularDynamics molDyn = new MolecularDynamics(active, null, thermostat);
+
+molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities);
+

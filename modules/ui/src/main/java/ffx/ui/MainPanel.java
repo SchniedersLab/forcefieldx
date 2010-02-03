@@ -1338,25 +1338,21 @@ public final class MainPanel extends JPanel implements ActionListener,
         FFXSystem system = hierarchy.getActive();
         if (system != null && !system.isClosing()) {
             SystemFilter filter = new XYZFilter();
-            File savefile = null;
-            if (file != null) {
-                savefile = file;
-            } else {
+            File saveFile = file;
+            if (saveFile == null) {
                 resetFileChooser();
                 fileChooser.setCurrentDirectory(pwd);
                 fileChooser.setFileFilter(xyzFileFilter);
                 fileChooser.setAcceptAllFileFilterUsed(false);
                 int result = fileChooser.showSaveDialog(this);
                 if (result == JFileChooser.APPROVE_OPTION) {
-                    savefile = fileChooser.getSelectedFile();
-                    pwd = savefile.getParentFile();
+                    saveFile = fileChooser.getSelectedFile();
+                    pwd = saveFile.getParentFile();
                 }
             }
-            if (savefile != null) {
+            if (saveFile != null) {
                 filter.setMolecularSystem(system);
-                if (filter.writeFile()) {
-                    system.setFile(savefile);
-                    system.setName(savefile.getName());
+                if (filter.writeFile(saveFile, false)) {
                     // Refresh Panels with the new System name
                     hierarchy.setActive(system);
                 }
@@ -1375,25 +1371,21 @@ public final class MainPanel extends JPanel implements ActionListener,
         FFXSystem system = hierarchy.getActive();
         if (system != null && !system.isClosing()) {
             SystemFilter filter = new PDBFilter();
-            File savefile = null;
-            if (file != null) {
-                savefile = file;
-            } else {
+            File saveFile = file;
+            if (saveFile == null) {
                 resetFileChooser();
                 fileChooser.setCurrentDirectory(pwd);
                 fileChooser.setFileFilter(pdbFileFilter);
                 fileChooser.setAcceptAllFileFilterUsed(false);
                 int result = fileChooser.showSaveDialog(this);
                 if (result == JFileChooser.APPROVE_OPTION) {
-                    savefile = fileChooser.getSelectedFile();
-                    pwd = savefile.getParentFile();
+                    saveFile = fileChooser.getSelectedFile();
+                    pwd = saveFile.getParentFile();
                 }
             }
-            if (savefile != null) {
+            if (saveFile != null) {
                 filter.setMolecularSystem(system);
-                if (filter.writeFile()) {
-                    system.setFile(savefile);
-                    system.setName(savefile.getName());
+                if (filter.writeFile(saveFile, false)) {
                     // Refresh Panels with the new System name
                     hierarchy.setActive(system);
                 }

@@ -180,7 +180,6 @@ public class Crystal {
             String message = "The lattice parameters do not satisfy the " + crystalSystem
                     + " crystal system restrictions:/n" + toString();
             logger.severe(message);
-            System.exit(-1);
         }
 
         switch (crystalSystem) {
@@ -552,12 +551,9 @@ public class Crystal {
     /**
      * Apply a symmetry operator to one set of coordinates.
      *
-     * @param xyz
-     *            Input coordinates.
-     * @param mate
-     *            Symmetry mate coordinates.
-     * @param symOp
-     *            The symmetry operator.
+     * @param xyz   Input coordinates.
+     * @param mate  Symmetry mate coordinates.
+     * @param symOp The symmetry operator.
      */
     public void applySymOp(double xyz[], double mate[], SymOp symOp) {
         double rot[][] = symOp.rot;

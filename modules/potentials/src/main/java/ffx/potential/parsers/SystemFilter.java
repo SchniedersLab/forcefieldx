@@ -22,15 +22,14 @@ package ffx.potential.parsers;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Hashtable;
+
+import org.apache.commons.configuration.CompositeConfiguration;
 
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.Utilities.FileType;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.parameters.ForceField;
-import ffx.utilities.Keyword;
-import org.apache.commons.configuration.CompositeConfiguration;
 
 /**
  * The SystemFilter class is the base class for most Force Field X file parsers.
@@ -127,8 +126,8 @@ public abstract class SystemFilter {
         return previousFile;
     }
     /**
-     * The atomList and bondList are filled by the filters that extend this base
-     * class.
+     * The atomList and bondList are filled by the filters that extend 
+     * this base class.
      */
     protected ArrayList<Atom> atomList = null;
     protected ArrayList<Bond> bondList = null;
@@ -226,7 +225,10 @@ public abstract class SystemFilter {
     }
 
     /**
-     * This method is different for each subclass and must be overidden
+     * This method is different for each subclass and must be overidden.
+     *
+     * If the append flag is true, "saveFile" will be appended to. Otherwise
+     * the default versioning scheme will be applied.
      */
-    public abstract boolean writeFile();
+    public abstract boolean writeFile(File saveFile, boolean append);
 }

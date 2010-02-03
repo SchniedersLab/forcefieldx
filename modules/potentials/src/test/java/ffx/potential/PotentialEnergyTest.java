@@ -23,6 +23,7 @@ package ffx.potential;
 import static org.junit.Assert.*;
 
 import java.io.File;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -319,15 +320,11 @@ public class PotentialEnergyTest {
     @Test
     public void testSoftCore() {
 
-        ArrayList<Atom> atoms = molecularAssembly.getAtomList();
-        int n = atoms.size();
-        Atom atomArray[] = new Atom[n];
-        for (Atom ai : atoms) {
-            atomArray[ai.xyzIndex - 1] = ai;
-        }
+        Atom atoms[] = molecularAssembly.getAtomArray();
+        int n = atoms.length;
         // Make the last water soft
         for (int i = n; i > n - 3; i--) {
-            Atom ai = atomArray[i - 1];
+            Atom ai = atoms[i - 1];
             ai.setSoftCore(true);
         }
         boolean gradient = false;

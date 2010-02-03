@@ -366,22 +366,24 @@ public class XYZFilter extends SystemFilter {
     }
 
     @Override
-    public boolean writeFile() {
-        File xyzfile = molecularAssembly.getFile();
-        if (xyzfile == null) {
+    public boolean writeFile(File saveFile, boolean append) {
+        if (saveFile == null) {
             return false;
         }
         try {
-            File newFile = version(xyzfile);
+            File newFile = saveFile;
+            if (!append) {
+                newFile = version(saveFile);
+            }
             molecularAssembly.setFile(newFile);
             molecularAssembly.setName(newFile.getName());
-            FileWriter fw = new FileWriter(newFile);
+            FileWriter fw = new FileWriter(newFile, append);
             BufferedWriter bw = new BufferedWriter(fw);
+
             // XYZ File First Line
             int numberOfAtoms = molecularAssembly.getAtomList().size();
             String output = String.format("%6d  %s\n", numberOfAtoms,
                     molecularAssembly.toString());
-            logger.info("Writing first line of XYZ file:\n" + output);
             bw.write(output);
             Atom a2;
             StringBuffer line;

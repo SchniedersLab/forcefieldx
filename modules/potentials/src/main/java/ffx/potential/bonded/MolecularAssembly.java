@@ -61,6 +61,7 @@ import ffx.potential.parameters.ForceField;
 import ffx.potential.bonded.Utilities.FileType;
 import ffx.numerics.VectorMath;
 import ffx.potential.PotentialEnergy;
+import java.util.Arrays;
 
 /**
  * The MolecularAssembly class is a collection of Polymers, Hetero Molecules,
@@ -111,7 +112,6 @@ public class MolecularAssembly extends MSGroup {
     private URL vrmlURL = null;
     private boolean visible = false;
     private ArrayList<ROLS> bondList = null;
-    private ArrayList<Atom> atomList = null;
     private final ArrayList<BranchGroup> myNewShapes = new ArrayList<BranchGroup>();
 
     // Constructors
@@ -474,17 +474,15 @@ public class MolecularAssembly extends MSGroup {
         if (atomLookUp != null && atomLookUp.length > i) {
             return atomLookUp[i];
         }
-
         return null;
     }
 
-    @Override
-    public ArrayList<Atom> getAtomList() {
-        if (atomList != null) {
-            return atomList;
-        }
-        atomList = super.getAtomList();
-        return atomList;
+    public Atom[] getAtomArray() {
+        ArrayList<Atom> atoms = getAtomList();
+        int n = atoms.size();
+        Atom[] atomArray = atoms.toArray(new Atom[n]);
+        Arrays.sort(atomArray);
+        return atomArray;
     }
 
     public ArrayList<Atom> getBackBoneAtoms() {

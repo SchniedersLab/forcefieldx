@@ -385,7 +385,7 @@ public class INTFilter extends SystemFilter {
     }
 
     @Override
-    public boolean writeFile() {
+    public boolean writeFile(File saveFile, boolean append) {
         /*
          * File xyzfile = getFile(); if (xyzfile == null) { return false; } try
          * { FileWriter fw = new FileWriter(xyzfile); BufferedWriter bw = new

@@ -86,6 +86,9 @@ public class Atom extends MSNode implements Comparable<Atom> {
         return 0;
     }
 
+    /**
+     * Element symbols for the first 109 elements.
+     */
     public static enum ElementSymbol {
 
         H, He, Li, Be, B, C, N, O, F, Ne, Na, Mg,
