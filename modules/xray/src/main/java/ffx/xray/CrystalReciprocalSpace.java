@@ -20,10 +20,11 @@
  */
 package ffx.xray;
 
-import static java.lang.Math.round;
+import static java.lang.Math.exp;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Vector;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
@@ -31,7 +32,11 @@ import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
 
 import ffx.crystal.Crystal;
+import ffx.crystal.HKL;
+import ffx.crystal.ReflectionList;
 import ffx.crystal.Resolution;
+import ffx.crystal.SymOp;
+import ffx.numerics.ComplexNumber;
 import ffx.numerics.fft.Complex;
 import ffx.numerics.fft.Real3DParallel;
 import ffx.potential.bonded.Atom;
@@ -41,8 +46,12 @@ import ffx.potential.bonded.Atom;
 public class CrystalReciprocalSpace {
 
     private static final Logger logger = Logger.getLogger(CrystalReciprocalSpace.class.getName());
+    private static double toSeconds = 0.000000001;
     private final Crystal crystal;
     private final Resolution resolution;
+    private final ReflectionList reflectionlist;
+    private final boolean solvent;
+    private final double hkldata[][];
     private final int nSymm;
     private final Atom atoms[];
     private final double xf[];
@@ -50,6 +59,7 @@ public class CrystalReciprocalSpace {
     private final double zf[];
     private final int nAtoms;
     private final int fftX, fftY, fftZ;
+    private final int halfFFTX, halfFFTY, halfFFTZ;
     private final int ngridx, ngridy, ngridz;
     private static final double arad = 2.0;
     private final int nfftTotal;
@@ -129,13 +139,17 @@ public class CrystalReciprocalSpace {
     /**
      * Crystal Reciprocal Space.
      */
-    public CrystalReciprocalSpace(Crystal crystal, Resolution resolution, Atom atoms[],
-            int nAtoms, ParallelTeam parallelTeam) {
-        this.crystal = crystal;
-        this.resolution = resolution;
+    public CrystalReciprocalSpace(Atom atoms[], int nAtoms,
+            ParallelTeam parallelTeam, boolean solvent,
+            ReflectionList reflectionlist, double hkldata[][]) {
         this.atoms = atoms;
         this.nAtoms = nAtoms;
         this.parallelTeam = parallelTeam;
+        this.reflectionlist = reflectionlist;
+        this.hkldata = hkldata;
+        this.crystal = reflectionlist.crystal;
+        this.resolution = reflectionlist.resolution;
+        this.solvent = solvent;
         threadCount = parallelTeam.getThreadCount();
 
         double density = 2.0 * resolution.sampling_limit();
@@ -162,6 +176,9 @@ public class CrystalReciprocalSpace {
         fftX = nX;
         fftY = nY;
         fftZ = nZ;
+        halfFFTX = nX / 2;
+        halfFFTY = nY / 2;
+        halfFFTZ = nZ / 2;
         // number of grid points to sample density on
         ngridx = (int) Math.floor(arad * nX / crystal.a) + 1;
         ngridy = (int) Math.floor(arad * nY / crystal.b) + 1;
@@ -270,16 +287,83 @@ public class CrystalReciprocalSpace {
      */
     public void permanent() {
         assignAtomsToCells();
+        long permtime = -System.nanoTime();
         try {
             parallelTeam.execute(permanentDensity);
-            realFFT3D.fft(densityGrid);
         } catch (Exception e) {
             String message = "Fatal exception evaluating structure factors.\n";
             logger.log(Level.SEVERE, message, e);
             System.exit(-1);
         }
+
+        /*
+         * bulk solvent needs an additional exponentiation
+         * to yield the final mask
+         */
+        if (solvent) {
+            for (int k = 0; k < fftZ; k++) {
+                for (int j = 0; j < fftY; j++) {
+                    for (int i = 0; i < fftX; i++) {
+                        int index = k * (fftY * (fftX + 2)) + j * (fftX + 2) + i;
+                        densityGrid[index] = exp(-densityGrid[index]);
+                    }
+                }
+            }
+        }
+        permtime += System.nanoTime();
+
+        long ffttime = -System.nanoTime();
+        realFFT3D.fft(densityGrid);
+        ffttime += System.nanoTime();
+
+        // extract structure factors
+        long symtime = -System.nanoTime();
+        int nsym = crystal.spaceGroup.symOps.size();
+        Vector<SymOp> symops = crystal.spaceGroup.symOps;
+        for (HKL ih : reflectionlist.hkllist) {
+            if (ih.allowed == 0) {
+                continue;
+            }
+            double fc[] = hkldata[ih.index];
+
+            // apply symmetry
+            for (int j = 0; j < nsym; j++) {
+                HKL ij = new HKL();
+                crystal.applySymRot(ih, ij, symops.get(j));
+                double shift = Crystal.sym_phase_shift(ij, symops.get(j));
+
+                int h = Crystal.mod(ij.h, fftX);
+                int k = Crystal.mod(ij.k, fftY);
+                int l = Crystal.mod(ij.l, fftZ);
+
+                if (h < halfFFTX + 1) {
+                    int index = l * (fftY * (fftX + 2)) + k * (fftX + 2) + h * 2;
+                    ComplexNumber c = new ComplexNumber(densityGrid[index],
+                            -densityGrid[index + 1]);
+                    fc[0] += c.phase_shift(shift).re();
+                    fc[1] += c.phase_shift(shift).im();
+                } else {
+                    h = (fftX - h) % fftX;
+                    k = (fftY - k) % fftY;
+                    l = (fftZ - l) % fftZ;
+                    int index = l * (fftY * (fftX + 2)) + k * (fftX + 2) + h * 2;
+                    ComplexNumber c = new ComplexNumber(densityGrid[index],
+                            densityGrid[index + 1]);
+                    fc[0] += c.phase_shift(shift).re();
+                    fc[1] += c.phase_shift(shift).im();
+                }
+            }
+        }
+        symtime += System.nanoTime();
+
+        if (logger.isLoggable(Level.INFO)) {
+            StringBuffer sb = new StringBuffer();
+            sb.append(String.format("\nrealspace e.d.:   %8.3f (sec)\n", permtime * toSeconds));
+            sb.append(String.format("FFT:              %8.3f (sec)\n", ffttime * toSeconds));
+            sb.append(String.format("symmetry:         %8.3f (sec)\n", symtime * toSeconds));
+            logger.info(sb.toString());
+        }
     }
-    private static double toSeconds = 0.000000001;
 
     public double getNfftX() {
         return fftX;
@@ -459,18 +543,15 @@ public class CrystalReciprocalSpace {
                 // Logic to loop within the cutoff box.
 
                 final double wx = xi * r00 + yi * r10 + zi * r20;
-                final double ux = wx - round(wx) + 0.5;
-                final double frx = fftX * ux;
+                final double frx = fftX * wx;
                 final int ifrx = (int) frx;
 
                 final double wy = xi * r01 + yi * r11 + zi * r21;
-                final double uy = wy - round(wy) + 0.5;
-                final double fry = fftY * uy;
+                final double fry = fftY * wy;
                 final int ifry = (int) fry;
 
                 final double wz = xi * r02 + yi * r12 + zi * r22;
-                final double uz = wz - round(wz) + 0.5;
-                final double frz = fftZ * uz;
+                final double frz = fftZ * wz;
                 final int ifrz = (int) frz;
 
                 for (int ix = ifrx - ngridx; ix <= ifrx + ngridx; ix++) {
@@ -478,36 +559,47 @@ public class CrystalReciprocalSpace {
                         for (int iz = ifrz - ngridz; iz <= ifrz + ngridz; iz++) {
                             // apply minimum image
                             int gix = ix;
-                            if (gix < 0) {
-                                gix = fftX + ix;
+                            while (gix < 0) {
+                                gix += fftX;
                             }
-                            if (gix >= fftX) {
-                                gix = ix - fftX;
+                            while (gix >= fftX) {
+                                gix -= fftX;
                             }
                             int giy = iy;
-                            if (giy < 0) {
-                                giy = fftY + iy;
+                            while (giy < 0) {
+                                giy += fftY;
                             }
-                            if (giy >= fftY) {
-                                giy = iy - fftY;
+                            while (giy >= fftY) {
+                                giy -= fftY;
                             }
                             int giz = iz;
-                            if (giz < 0) {
-                                giz = fftZ + iz;
+                            while (giz < 0) {
+                                giz += fftZ;
                             }
-                            if (giz >= fftZ) {
-                                giz = iz - fftZ;
+                            while (giz >= fftZ) {
+                                giz -= fftZ;
                             }
 
                             double xc[] = new double[3];
                             double xf[] = new double[3];
-                            xf[0] = gix / fftX;
-                            xf[1] = giy / fftY;
-                            xf[2] = giz / fftZ;
+                            xf[0] = ix / (double) fftX;
+                            xf[1] = iy / (double) fftY;
+                            xf[2] = iz / (double) fftZ;
                             crystal.toCartesianCoordinates(xf, xc);
 
-                            int index = giz * (fftY * fftX * 2) + giy * (fftX * 2) + gix * 2;
-                            densityGrid[index] += atomff.rho(xc);
+                            int index = giz * (fftY * (fftX + 2)) + giy * (fftX + 2) + gix;
+                            if (solvent) {
+                                densityGrid[index] += atomff.rho_gauss(xc, 1.5);
+                            } else {
+                                densityGrid[index] += atomff.rho(xc);
+                            }
+                            /*
+                            System.out.print(atoms[n].getName() + " "
+                            + atoms[n].getAtomType().atomicNumber + ": "
+                            + xyz[0] + " " + xyz[1] + " " + xyz[2] + "  "
+                            + xc[0] + " " + xc[1] + " " + xc[2] + " ");
+                            System.out.println("rho: " + densityGrid[index] + " " + atomff.rho(xc));
+                             */
                         }
                     }
                 }

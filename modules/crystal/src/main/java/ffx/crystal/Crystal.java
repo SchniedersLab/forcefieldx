@@ -578,32 +578,6 @@ public class Crystal {
     }
 
     /**
-     * Apply a symmetry operator to one HKL.
-     *
-     * @param hkl
-     *            Input HKL.
-     * @param mate
-     *            Symmetry mate HKL.
-     * @param symOp
-     *            The symmetry operator.
-     */
-    public void applySymOp(HKL hkl, HKL mate, SymOp symOp) {
-        double rot[][] = symOp.rot;
-        double trans[] = symOp.tr;
-        double h = hkl.h();
-        double k = hkl.k();
-        double l = hkl.l();
-        // Apply Symmetry Operator.
-        double hs = rot[0][0] * h + rot[0][1] * k + rot[0][2] * l + trans[0];
-        double ks = rot[1][0] * h + rot[1][1] * k + rot[1][2] * l + trans[1];
-        double ls = rot[2][0] * h + rot[2][1] * k + rot[2][2] * l + trans[2];
-        // Convert back to HKL
-        mate.h((int) rint(hs));
-        mate.k((int) rint(ks));
-        mate.l((int) rint(ls));
-    }
-
-    /**
      * Apply a symmetry operator to one set of coordinates.
      *
      * @param xyz

@@ -29,6 +29,19 @@
         </developer>
     </developers>
 
+    <build>
+        <resources>
+            <resource>
+                <directory>${basedir}/src/main/java/ffx/xray/structures
+                </directory>
+                <targetPath>ffx/xray/structures</targetPath>
+                <includes>
+                    <include>*</include>
+                </includes>
+            </resource>
+        </resources>
+    </build>
+
     <reporting>
         <plugins>
             <plugin>
@@ -72,6 +85,12 @@
             <artifactId>potentials</artifactId>
             <version>${project.version}</version>
             <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>commons-configuration</groupId>
+            <artifactId>commons-configuration</artifactId>
+            <type>jar</type>
+            <version>1.6</version>
         </dependency>
         <dependency>
             <groupId>no.uib.cipr</groupId>

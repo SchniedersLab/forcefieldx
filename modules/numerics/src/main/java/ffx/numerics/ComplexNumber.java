@@ -29,15 +29,15 @@ import static java.lang.Math.sinh;
  *
  * @author fennt
  */
-public class Complex {
+public class ComplexNumber {
 
     private double re;
     private double im;
 
-    public Complex() {
+    public ComplexNumber() {
     }
 
-    public Complex(double real, double imag) {
+    public ComplexNumber(double real, double imag) {
         re = real;
         im = imag;
     }
@@ -80,97 +80,108 @@ public class Complex {
         return atan2(im, re);
     }
 
+    public ComplexNumber phase_shift(double s) {
+        ComplexNumber sc = new ComplexNumber(Math.cos(s), Math.sin(s));
+        return this.times(sc);
+    }
+
+    // static version of phase_shift
+    public static ComplexNumber phase_shift(ComplexNumber a, double s) {
+        ComplexNumber sc = new ComplexNumber(Math.cos(s), Math.sin(s));
+        return a.times(sc);
+    }
+
     // return a new Complex object whose value is (this + b)
-    public Complex plus(Complex b) {
-        Complex a = this;
+    public ComplexNumber plus(ComplexNumber b) {
+        ComplexNumber a = this;
         double real = a.re + b.re;
         double imag = a.im + b.im;
-        return new Complex(real, imag);
+        return new ComplexNumber(real, imag);
     }
 
     // a static version of plus
-    public static Complex plus(Complex a, Complex b) {
+    public static ComplexNumber plus(ComplexNumber a, ComplexNumber b) {
         double real = a.re + b.re;
         double imag = a.im + b.im;
-        Complex sum = new Complex(real, imag);
+        ComplexNumber sum = new ComplexNumber(real, imag);
         return sum;
     }
 
     // return a new Complex object whose value is (this - b)
-    public Complex minus(Complex b) {
-        Complex a = this;
+    public ComplexNumber minus(ComplexNumber b) {
+        ComplexNumber a = this;
         double real = a.re - b.re;
         double imag = a.im - b.im;
-        return new Complex(real, imag);
+        return new ComplexNumber(real, imag);
     }
 
     // a static version of plus
-    public static Complex minus(Complex a, Complex b) {
+    public static ComplexNumber minus(ComplexNumber a, ComplexNumber b) {
         double real = a.re - b.re;
         double imag = a.im - b.im;
-        Complex sum = new Complex(real, imag);
+        ComplexNumber sum = new ComplexNumber(real, imag);
         return sum;
     }
 
     // return a new Complex object whose value is (this * b)
-    public Complex times(Complex b) {
-        Complex a = this;
+    public ComplexNumber times(ComplexNumber b) {
+        ComplexNumber a = this;
         double real = a.re * b.re - a.im * b.im;
         double imag = a.re * b.im + a.im * b.re;
-        return new Complex(real, imag);
+        return new ComplexNumber(real, imag);
     }
 
     // a static version of times
-    public Complex times(Complex a, Complex b) {
+    public ComplexNumber times(ComplexNumber a, ComplexNumber b) {
         double real = a.re * b.re - a.im * b.im;
         double imag = a.re * b.im + a.im * b.re;
-        return new Complex(real, imag);
+        return new ComplexNumber(real, imag);
     }
 
     // return a new object whose value is (this * alpha)
-    public Complex times(double alpha) {
-        return new Complex(alpha * re, alpha * im);
+    public ComplexNumber times(double alpha) {
+        return new ComplexNumber(alpha * re, alpha * im);
     }
 
     // a static version of times
-    public static Complex times(double alpha, Complex a) {
-        return new Complex(alpha * a.re, alpha * a.im);
+    public static ComplexNumber times(double alpha, ComplexNumber a) {
+        return new ComplexNumber(alpha * a.re, alpha * a.im);
     }
 
     // return a new Complex object whose value is the conjugate of this
-    public Complex conjugate() {
-        return new Complex(re, -im);
+    public ComplexNumber conjugate() {
+        return new ComplexNumber(re, -im);
     }
 
     // return a new Complex object whose value is the reciprocal of this
-    public Complex reciprocal() {
+    public ComplexNumber reciprocal() {
         double scale = re * re + im * im;
-        return new Complex(re / scale, -im / scale);
+        return new ComplexNumber(re / scale, -im / scale);
     }
 
     // return a / b
-    public Complex divides(Complex b) {
-        Complex a = this;
+    public ComplexNumber divides(ComplexNumber b) {
+        ComplexNumber a = this;
         return a.times(b.reciprocal());
     }
 
     // return a new Complex object whose value is the complex exponential of this
-    public Complex exp() {
-        return new Complex(Math.exp(re) * Math.cos(im), Math.exp(re) * Math.sin(im));
+    public ComplexNumber exp() {
+        return new ComplexNumber(Math.exp(re) * Math.cos(im), Math.exp(re) * Math.sin(im));
     }
 
     // return a new Complex object whose value is the complex sine of this
-    public Complex sin() {
-        return new Complex(Math.sin(re) * cosh(im), Math.cos(re) * sinh(im));
+    public ComplexNumber sin() {
+        return new ComplexNumber(Math.sin(re) * cosh(im), Math.cos(re) * sinh(im));
     }
 
     // return a new Complex object whose value is the complex cosine of this
-    public Complex cos() {
-        return new Complex(Math.cos(re) * cosh(im), -Math.sin(re) * sinh(im));
+    public ComplexNumber cos() {
+        return new ComplexNumber(Math.cos(re) * cosh(im), -Math.sin(re) * sinh(im));
     }
 
     // return a new Complex object whose value is the complex tangent of this
-    public Complex tan() {
+    public ComplexNumber tan() {
         return sin().divides(cos());
     }
 }
