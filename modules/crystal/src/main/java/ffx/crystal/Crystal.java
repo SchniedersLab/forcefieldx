@@ -23,6 +23,7 @@ package ffx.crystal;
 import static java.lang.Math.abs;
 import static java.lang.Math.cos;
 import static java.lang.Math.PI;
+import static java.lang.Math.rint;
 import static java.lang.Math.sin;
 import static java.lang.Math.sqrt;
 import static java.lang.Math.toRadians;
@@ -597,9 +598,9 @@ public class Crystal {
         double ks = rot[1][0] * h + rot[1][1] * k + rot[1][2] * l + trans[1];
         double ls = rot[2][0] * h + rot[2][1] * k + rot[2][2] * l + trans[2];
         // Convert back to HKL
-        mate.h((int) hs);
-        mate.k((int) ks);
-        mate.l((int) ls);
+        mate.h((int) rint(hs));
+        mate.k((int) rint(ks));
+        mate.l((int) rint(ls));
     }
 
     /**
@@ -652,9 +653,9 @@ public class Crystal {
         double ks = rot[1][0] * h + rot[1][1] * k + rot[1][2] * l;
         double ls = rot[2][0] * h + rot[2][1] * k + rot[2][2] * l;
         // Convert back to HKL
-        mate.h((int) hs);
-        mate.k((int) ks);
-        mate.l((int) ls);
+        mate.h((int) rint(hs));
+        mate.k((int) rint(ks));
+        mate.l((int) rint(ls));
     }
 
     /**
@@ -841,6 +842,14 @@ public class Crystal {
     public static double mod(double a, double b) {
         double res = a % b;
         if (res < 0.0) {
+            res += b;
+        }
+        return res;
+    }
+
+    public static int mod(int a, int b) {
+        int res = a % b;
+        if (res < 0) {
             res += b;
         }
         return res;
