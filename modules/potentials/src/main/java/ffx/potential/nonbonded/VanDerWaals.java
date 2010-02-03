@@ -315,9 +315,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
             alphaFactor[0][i] = 0.0;
             alphaFactor[1][i] = 0.0;
         }
-
         doLongRangeCorrection = forceField.getBoolean(ForceField.ForceFieldBoolean.VDWLRTERM, false);
-        setLambda(1.0);
 
         // Create the neighbor list.
         neighborLists = new int[nSymm][][];
@@ -675,7 +673,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
             }
         }
         if (softAtoms) {
-            logger.info(String.format(" Soft Core Lambda value set to %8.3f.\n", lambda));
+            logger.info(String.format(" Soft Core Lambda value set to %8.3f", lambda));
             logger.info(sb.toString());
         } else {
             logger.info(" No Soft Core atoms are selected\n");

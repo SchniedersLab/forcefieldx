@@ -20,19 +20,19 @@
  */
 package ffx.algorithms;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import org.apache.commons.io.FilenameUtils;
 
 import ffx.algorithms.Thermostat.Thermostats;
 import ffx.potential.PotentialEnergy;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.parsers.XYZFilter;
-import java.io.File;
-import java.io.FileWriter;
-import org.apache.commons.io.FilenameUtils;
 
 /**
  * Run NVE or NVT molecular dynamics.
@@ -128,17 +128,12 @@ public class MolecularDynamics implements Terminatable {
         done = false;
 
         logger.info(" Molecular dynamics starting up");
-        logger.info(String.format(" Number of steps:     %8d", nSteps));
-        logger.info(String.format(" Time step:           %8.3f (fsec)", timeStep));
-        logger.info(String.format(" Print interval:      %8.3f (psec)", printInterval));
-        logger.info(String.format(" Save interval:       %8.3f (psec)", saveInterval));
-        logger.info(String.format(" Target temperature:  %8.3f Kelvin", temperature));
         if (thermostat != null) {
-            logger.info(String.format(" Sampling the NVT Ensemble via a %s thermostat", thermostat.name));
+            logger.info(String.format(" Sampling the NVT ensemble via a %s thermostat", thermostat.name));
         } else {
-            logger.info(String.format(" Sampling the NVE Ensemble"));
+            logger.info(String.format(" Sampling the NVE ensemble"));
         }
-
+        
         /**
          * Convert the time step from femtoseconds to picoseconds.
          */
@@ -163,12 +158,18 @@ public class MolecularDynamics implements Terminatable {
                 String filename = FilenameUtils.removeExtension(file.getAbsolutePath());
                 archive = new File(filename + ".arc");
                 archive = XYZFilter.version(archive);
-                logger.info(" Snap shots will be written to " + archive.getAbsolutePath());
             }
+            logger.info(" Snap shots will be written to " + archive.getAbsolutePath());
             if (xyzFilter == null) {
                 xyzFilter = new XYZFilter(molecularAssembly);
             }
         }
+
+        logger.info(String.format(" Number of steps:     %8d", nSteps));
+        logger.info(String.format(" Time step:           %8.3f (fsec)", timeStep));
+        logger.info(String.format(" Print interval:      %8.3f (psec)", printInterval));
+        logger.info(String.format(" Save interval:       %8.3f (psec)", saveInterval));
+        logger.info(String.format(" Target temperature:  %8.3f Kelvin", temperature));
 
         /**
          * Set the target temperature.
