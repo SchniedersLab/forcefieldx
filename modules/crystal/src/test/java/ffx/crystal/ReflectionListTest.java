@@ -85,6 +85,8 @@ public class ReflectionListTest {
         HKL hkl = p1list.getHKL(0, 0, 0);
         assertEquals("P1 list 0 0 0 reflection should have epsilon of 1",
                 1, hkl.epsilon());
+        assertEquals("P1 list 0 0 0 reflection should NOT be allowed",
+                0, hkl.allowed);
     }
 
     @Test
@@ -97,21 +99,31 @@ public class ReflectionListTest {
         HKL hkl = i222list.getHKL(0, 0, 0);
         assertEquals("I222 list 0 0 0 reflection should have epsilon of 8",
                 8, hkl.epsilon());
+        assertEquals("I222 list 0 0 0 reflection should NOT be allowed",
+                0, hkl.allowed);
     }
 
     /*
     @Test
     public void listreflections() {
     int nhkl = 0;
+    int nbin[] = new int[10];
     for (HKL i : i222list.hkllist) {
     System.out.println(nhkl + ": " + i.h() + " " + i.k() + " " + i.l()
     + " eps: " + i.epsilon()
     + " allowed: " + i.allowed()
+    + " bin: " + i.bin
     + " res: " + Crystal.res(i222list.crystal, i));
     nhkl++;
+    nbin[i.bin]++;
+    }
+    System.out.println("bin  # HKL");
+    for (int i = 0; i < 10; i++) {
+    System.out.println(i + "  " + nbin[i]);
     }
     }
      */
+
     /*
     for (Iterator i = hkls.hkls.entrySet().iterator(); i.hasNext(); nhkl++) {
     Map.Entry ei = (Map.Entry) i.next();

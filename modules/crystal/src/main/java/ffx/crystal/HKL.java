@@ -35,6 +35,8 @@ public class HKL {
     public int l;
     public int epsilon;
     public int allowed;
+    public int bin;
+    public int index;
     private int hashCode;
 
     // null constructor
@@ -106,6 +108,22 @@ public class HKL {
 
     public void l(int l) {
         this.l = l;
+    }
+
+    public int bin() {
+        return this.bin;
+    }
+
+    public void bin(int bin) {
+        this.bin = bin;
+    }
+
+    public int index() {
+        return this.index;
+    }
+
+    public void index(int index) {
+        this.index = index;
     }
 
     public static HKL neg(HKL hkl) {

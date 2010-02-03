@@ -22,6 +22,9 @@ package ffx.crystal;
 
 import static java.lang.Math.PI;
 import static java.lang.Math.cos;
+import static java.lang.Math.floor;
+import static java.lang.Math.max;
+import static java.lang.Math.min;
 import static java.lang.Math.rint;
 
 import java.util.ArrayList;
@@ -30,6 +33,9 @@ import java.util.Iterator;
 import java.util.Map;
 
 /**
+ * Uses some methods from:
+ * Cowtan, K. 2002. Generic representation and evaluation of properties as a
+ * function of position in reciprocal space. J. Appl. Cryst. 35:655-663.
  *
  * @author fennt
  */
@@ -42,6 +48,9 @@ public class ReflectionList {
     private final SpaceGroup.CrystalSystem crystalSystem;
     private final SpaceGroup.LaueSystem laueSystem;
     public final Resolution resolution;
+    // for binning reflections based on resolution
+    public double hist[] = new double[1001];
+    public double minres, maxres;
 
     public ReflectionList(Crystal crystal, Resolution resolution) {
         this.crystal = crystal;
@@ -54,6 +63,8 @@ public class ReflectionList {
         int kmax = (int) (this.crystal.b / this.resolution.res_limit());
         int lmax = (int) (this.crystal.c / this.resolution.res_limit());
 
+        minres = Double.POSITIVE_INFINITY;
+        maxres = Double.NEGATIVE_INFINITY;
         int n = 0;
 
         HKL hkl = new HKL();
@@ -64,10 +75,13 @@ public class ReflectionList {
                 for (int l = -lmax; l <= lmax; l++) {
                     hkl.l(l);
 
+                    double res = Crystal.invressq(this.crystal, hkl);
                     getepsilon(hkl);
                     if (SpaceGroup.checkLaueRestrictions(laueSystem, h, k, l)
-                            && Crystal.invressq(this.crystal, hkl) < resolution.invressq_limit()
+                            && res < resolution.invressq_limit()
                             && !HKL.sys_abs(hkl)) {
+                        minres = min(res, minres);
+                        maxres = max(res, maxres);
                         String s = ("" + h + "_" + k + "_" + l).intern();
                         hklmap.put(s, new HKL(hkl.h(), hkl.k(), hkl.l(), hkl.epsilon(), hkl.allowed));
                         n++;
@@ -76,12 +90,39 @@ public class ReflectionList {
             }
         }
 
+        n=0;
         for (Iterator i = hklmap.entrySet().iterator(); i.hasNext();) {
             Map.Entry ei = (Map.Entry) i.next();
             Object key = ei.getKey();
             HKL ih = (HKL) ei.getValue();
 
+            ih.index(n);
             hkllist.add(ih);
+            n++;
+        }
+
+        /*
+         * set up the resolution bins
+         * first build a histogram
+         */
+        for (HKL ih : hkllist) {
+            double r = (Crystal.invressq(this.crystal, ih) - minres) / (maxres - minres);
+            int i = (int) (min(r, 0.999) * 1000.0);
+            hist[i + 1] += 1.0;
+        }
+
+        // convert to cumulative histogram
+        for (int i = 1; i < hist.length; i++) {
+            hist[i] += hist[i - 1];
+        }
+        for (int i = 0; i < hist.length; i++) {
+            hist[i] /= hist[hist.length - 1];
+        }
+
+        // assign each reflection to a bin in the range (0-9)
+        for (HKL ih : hkllist) {
+            int bin = (int) (10.0 * ordinal(Crystal.invressq(this.crystal, ih)));
+            ih.bin = min(bin, 9);
         }
     }
 
@@ -110,6 +151,10 @@ public class ReflectionList {
         }
     }
 
+    public boolean hasHKL(HKL hkl) {
+        return hasHKL(hkl.h(), hkl.k(), hkl.l());
+    }
+
     public void getepsilon(HKL hkl) {
         int epsilon = 1;
         int allowed = 255;
@@ -131,12 +176,20 @@ public class ReflectionList {
                 // centric reflection
                 allowed = (int) rint(Crystal.mod(-0.5 * shift, PI) / (PI / 12.0));
             }
-            if (hkl.k() == 0 && hkl.k() == 0 && hkl.l() == 0) {
-                allowed = 0;
-            }
+        }
+        if (hkl.h() == 0 && hkl.k() == 0 && hkl.l() == 0) {
+            allowed = 0;
         }
 
         hkl.epsilon(epsilon);
         hkl.allowed(allowed);
+    }
+
+    public double ordinal(double s) {
+        double r = (s - minres) / (maxres - minres);
+        r = min(r, 0.999) * 1000.0;
+        int i = (int) r;
+        r -= floor(r);
+        return ((1.0 - r) * hist[i] + r * hist[i + 1]);
     }
 }
