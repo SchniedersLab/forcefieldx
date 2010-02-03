@@ -162,7 +162,7 @@ public class ReflectionList {
         int nsym = spaceGroup.symOps.size();
         for (int i = 1; i < nsym; i++) {
             HKL mate = new HKL();
-            crystal.applySymOp(hkl, mate, spaceGroup.symOps.get(i));
+            crystal.applySymRot(hkl, mate, spaceGroup.symOps.get(i));
             double shift = Crystal.sym_phase_shift(hkl, spaceGroup.symOps.get(i));
 
             if (mate.equals(hkl)) {
