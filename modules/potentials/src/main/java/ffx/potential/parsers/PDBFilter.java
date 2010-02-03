@@ -1345,6 +1345,8 @@ public final class PDBFilter extends SystemFilter {
                 if (OXT == null) {
                     OXT = new Atom("OXT", atomType, new double[3]);
                     residue.addMSNode(OXT);
+                    OXT.setOccupancy(C.getOccupancy());
+                    OXT.setTempFactor(C.getTempFactor());
                     intxyz(OXT, C, 1.25e0, CA, 117.0e0, O, 126.0, 1);
                 } else {
                     OXT.setAtomType(atomType);
@@ -1910,17 +1912,14 @@ public final class PDBFilter extends SystemFilter {
             return false;
         }
         // Create StringBuffers for ATOM, ANISOU and TER records.
-        StringBuffer sb = new StringBuffer();
-        StringBuffer anisouSB = new StringBuffer();
-        StringBuffer terSB = new StringBuffer();
-        for (int i = 0; i < 80; i++) {
+        StringBuffer sb = new StringBuffer("ATOM  ");
+        StringBuffer anisouSB = new StringBuffer("ANISOU");
+        StringBuffer terSB = new StringBuffer("TER   ");
+        for (int i = 6; i < 80; i++) {
             sb.append(' ');
             anisouSB.append(' ');
             terSB.append(' ');
         }
-        sb.replace(0, 6, "ATOM  ");
-        anisouSB.replace(0, 6, "ANISOU");
-        terSB.replace(0, 6, "TER   ");
         FileWriter fw = null;
         BufferedWriter bw = null;
         try {
@@ -1991,12 +1990,10 @@ public final class PDBFilter extends SystemFilter {
                         }
                         sb.replace(30, 66, String.format("%8.3f%8.3f%8.3f%6.2f%6.2f",
                                 xyz[0], xyz[1], xyz[2], atom.getOccupancy(), atom.getTempFactor()));
-                        /*
-                        if (name.length() > 2) {
-                        name = name.substring(0, 2);
-                        }
-                        sb.replace(76, 78, padRight(name, 2));
-                         */
+                        name = Atom.ElementSymbol.values()[atom.getAtomicNumber() - 1].toString();
+                        name = name.toUpperCase();
+                        sb.replace(76, 78, padLeft(name, 2));
+                        sb.replace(78, 80, String.format("%2d", 0));
                         bw.write(sb.toString());
                         bw.newLine();
 // =============================================================================
@@ -2024,7 +2021,7 @@ public final class PDBFilter extends SystemFilter {
                                     (int) (anisou[0] * 1e4), (int) (anisou[1] * 1e4),
                                     (int) (anisou[2] * 1e4), (int) (anisou[3] * 1e4),
                                     (int) (anisou[4] * 1e4), (int) (anisou[5] * 1e4)));
-                            bw.write(sb.toString());
+                            bw.write(anisouSB.toString());
                             bw.newLine();
                         }
                     }
@@ -2054,7 +2051,7 @@ public final class PDBFilter extends SystemFilter {
                     resName = resName.substring(0, 3);
                 }
                 int resID = molecule.getResidueNumber();
-                sb.replace(17, 20, padRight(resName.toUpperCase(), 3));
+                sb.replace(17, 20, padLeft(resName.toUpperCase(), 3));
                 sb.replace(22, 26, String.format("%4d", resID));
                 // Loop over atoms
                 ArrayList<Atom> residueAtoms = molecule.getAtomList();
@@ -2065,7 +2062,11 @@ public final class PDBFilter extends SystemFilter {
                     } else if (name.length() == 1) {
                         name = name + "  ";
                     } else if (name.length() == 2) {
-                        name = name + " ";
+                        if (atom.getAtomType().valence == 0) {
+                            name = name + "  ";
+                        } else {
+                            name = name + " ";
+                        }
                     }
                     double xyz[] = atom.getXYZ();
                     sb.replace(6, 16, String.format("%5d " + padLeft(name.toUpperCase(), 4), serial++));
@@ -2077,12 +2078,10 @@ public final class PDBFilter extends SystemFilter {
                     }
                     sb.replace(30, 66, String.format("%8.3f%8.3f%8.3f%6.2f%6.2f",
                             xyz[0], xyz[1], xyz[2], atom.getOccupancy(), atom.getTempFactor()));
-                    /*
-                    if (name.length() > 2) {
-                    name = name.substring(0, 2);
-                    }
-                    sb.replace(76, 78, padRight(name, 2));
-                     */
+                    name = Atom.ElementSymbol.values()[atom.getAtomicNumber() - 1].toString();
+                    name = name.toUpperCase();
+                    sb.replace(76, 78, padLeft(name, 2));
+                    sb.replace(78, 80, String.format("%2d", 0));
                     bw.write(sb.toString());
                     bw.newLine();
 // =============================================================================
@@ -2110,7 +2109,7 @@ public final class PDBFilter extends SystemFilter {
                                 (int) (anisou[0] * 1e4), (int) (anisou[1] * 1e4),
                                 (int) (anisou[2] * 1e4), (int) (anisou[3] * 1e4),
                                 (int) (anisou[4] * 1e4), (int) (anisou[5] * 1e4)));
-                        bw.write(sb.toString());
+                        bw.write(anisouSB.toString());
                         bw.newLine();
                     }
                 }
@@ -2196,42 +2195,42 @@ public final class PDBFilter extends SystemFilter {
      * ntyp[1][..] are mid-chain residues.
      * ntyp[2][..] are for C-terminal residues.
      */
-    private final int nType[][] = {
+    private static final int nType[][] = {
         {350, 356, 362, 368, 374, 380, 386, 392, 398, 404, 412, 418, 424, 430, 436, 442, 448,
             454, 460, 466, 472, 478, 484, 490, 496, 325, 0, 0, 0, 0, 350},
         {1, 7, 15, 27, 41, 55, 65, 77, 87, 96, 107, 122, 138, 161, 178, 194, 210, 220,
             232, 244, 258, 271, 287, 304, 318, 325, 0, 0, 0, 0, 1},
         {501, 507, 513, 519, 525, 531, 537, 543, 549, 555, 560, 566, 572, 578, 584, 590, 596,
             602, 608, 614, 620, 626, 632, 638, 644, 0, 0, 0, 344, 346, 501}};
-    private final int caType[][] = {
+    private static final int caType[][] = {
         {351, 357, 363, 369, 375, 381, 387, 393, 399, 405, 413, 419, 425, 431, 437, 443, 449,
             455, 461, 467, 473, 479, 485, 491, 497, 326, 0, 340, 0, 0, 351},
         {2, 8, 16, 28, 42, 56, 66, 78, 88, 97, 108, 123, 139, 162, 179, 195, 211, 221,
             233, 245, 259, 272, 288, 305, 319, 326, 0, 0, 0, 0, 2},
         {502, 508, 514, 520, 526, 532, 538, 544, 550, 556, 561, 567, 573, 579, 585, 591, 597,
             603, 609, 615, 621, 627, 633, 639, 645, 0, 0, 0, 0, 348, 502}};
-    private final int cType[][] = {{
+    private static final int cType[][] = {{
             352, 358, 364, 370, 376, 382, 388, 394, 400, 406, 414, 420, 426, 432, 438, 444, 450,
             456, 462, 468, 474, 480, 486, 492, 498, 327, 337, 342, 0, 0, 352},
         {3, 9, 17, 29, 43, 57, 67, 79, 89, 98, 109, 124, 140, 163, 180, 196, 212, 222,
             234, 246, 260, 273, 289, 306, 320, 327, 0, 0, 0, 0, 3},
         {503, 509, 515, 521, 527, 533, 539, 545, 551, 557, 562, 568, 574, 580, 586, 592, 598,
             604, 610, 616, 622, 628, 634, 640, 646, 0, 0, 0, 0, 0, 503}};
-    private final int hnType[][] = {{
+    private static final int hnType[][] = {{
             353, 359, 365, 371, 377, 383, 389, 395, 401, 407, 415, 421, 427, 433, 439, 445, 451,
             457, 463, 469, 475, 481, 487, 493, 499, 328, 0, 0, 0, 0, 353},
         {4, 10, 18, 30, 44, 58, 68, 80, 90, 0, 110, 125, 141, 164, 181, 197, 213, 223,
             235, 247, 261, 274, 290, 307, 321, 328, 0, 0, 0, 0, 4},
         {504, 510, 516, 522, 528, 534, 540, 546, 552, 0, 563, 569, 575, 581, 587, 593, 599,
             605, 611, 617, 623, 629, 635, 641, 647, 0, 0, 0, 345, 347, 504}};
-    private final int oType[][] = {{
+    private static final int oType[][] = {{
             354, 360, 366, 372, 378, 384, 390, 396, 402, 408, 416, 422, 428, 434, 440, 446, 452,
             458, 464, 470, 476, 482, 488, 494, 500, 329, 339, 343, 0, 0, 354},
         {5, 11, 19, 31, 45, 59, 69, 81, 91, 99, 111, 126, 142, 165, 182, 198, 214, 224,
             236, 248, 262, 275, 291, 308, 322, 329, 0, 0, 0, 0, 5},
         {505, 511, 517, 523, 529, 535, 541, 547, 553, 558, 564, 570, 576, 582, 588, 594, 600,
             606, 612, 618, 624, 630, 636, 642, 648, 0, 0, 0, 0, 0, 505}};
-    private final int haType[][] = {{
+    private static final int haType[][] = {{
             355, 361, 367, 373, 379, 385, 391, 397, 403, 409, 417, 423, 429, 435, 441, 447, 453,
             459, 465, 471, 477, 483, 489, 495, 0, 330, 338, 341, 0, 0, 355},
         {6, 12, 20, 32, 46, 60, 70, 82, 92, 100, 112, 127, 143, 166, 183, 199, 215, 225,
