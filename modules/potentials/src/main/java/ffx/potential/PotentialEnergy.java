@@ -472,6 +472,15 @@ public class PotentialEnergy implements Optimizable {
         }
     }
 
+    public void setElectrostaticsLambda(double lambda) {
+        if (lambda <= 1.0 && lambda >= 0.0) {
+            particleMeshEwald.setLambda(lambda);
+        } else {
+            String message = String.format("Electrostatics lambda value %8.3f is not in the range [0..1].", lambda);
+            logger.warning(message);
+        }
+    }
+
     @Override
     public void setOptimizationScaling(double scaling[]) {
         if (scaling != null && scaling.length == nAtoms * 3) {

@@ -20,6 +20,7 @@
  */
 package ffx.potential.bonded;
 
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
@@ -45,7 +46,7 @@ import ffx.potential.bonded.RendererCache.ViewModel;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.PolarizeType;
-import java.util.Arrays;
+
 
 /**
  * The Atom class represents a single atom and defines its alternate
@@ -141,49 +142,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
             } else {
                 AtomColor.put(i, RendererCache.GREEN);
             }
-        }
-    }
-
-    static {
-        AtomVDW.put(0, 1.0f);
-        AtomVDW.put(1, 1.20f);
-        AtomVDW.put(2, 1.22f);
-        AtomVDW.put(3, 0.78f);
-        AtomVDW.put(4, 0.34f);
-        AtomVDW.put(5, 2.08f);
-        AtomVDW.put(6, 1.85f);
-        AtomVDW.put(7, 1.54f);
-        AtomVDW.put(8, 1.40f);
-        AtomVDW.put(9, 1.35f);
-        AtomVDW.put(10, 1.60f);
-        AtomVDW.put(11, 0.98f);
-        AtomVDW.put(12, 0.78f);
-        AtomVDW.put(13, 0.57f);
-        AtomVDW.put(14, 2.00f);
-        AtomVDW.put(15, 1.90f);
-        AtomVDW.put(16, 1.85f);
-        AtomVDW.put(17, 1.81f);
-        AtomVDW.put(18, 1.91f);
-        AtomVDW.put(19, 1.33f);
-        AtomVDW.put(20, 1.06f);
-        AtomVDW.put(21, 0.91f);
-        AtomVDW.put(22, 0.83f);
-        AtomVDW.put(23, 0.82f);
-        AtomVDW.put(24, 2.0f);
-        AtomVDW.put(25, 2.0f);
-        AtomVDW.put(26, 2.0f);
-        AtomVDW.put(27, 2.0f);
-        AtomVDW.put(28, 2.0f);
-        AtomVDW.put(29, 2.0f);
-        AtomVDW.put(30, 2.0f);
-        AtomVDW.put(31, 2.0f);
-        AtomVDW.put(32, 2.0f);
-        AtomVDW.put(33, 2.0f);
-        AtomVDW.put(34, 2.0f);
-        AtomVDW.put(35, 1.95f);
-        AtomVDW.put(36, 1.89f);
-        for (int i = 37; i < 109; i++) {
-            AtomVDW.put(i, 2.0f);
         }
     }
 
@@ -297,7 +255,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
     private Atom[] multipoleReferenceSites = null;
     private double globalDipole[] = null;
     private double globalQuadrupole[][] = null;
-    private boolean softCore = false;
+    private boolean applyLambda = false;
+
     // solvation
     private double bornRadius;
     // Connectivity information.
@@ -558,12 +517,12 @@ public class Atom extends MSNode implements Comparable<Atom> {
         return 1.0;
     }
 
-    public boolean isSoftCore() {
-        return softCore;
+    public boolean applyLambda() {
+        return applyLambda;
     }
 
-    public void setSoftCore(boolean softCore) {
-        this.softCore = softCore;
+    public void setApplyLambda(boolean applyLambda) {
+        this.applyLambda = applyLambda;
     }
 
     public void getForce(double[] t) {

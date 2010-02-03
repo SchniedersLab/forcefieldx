@@ -1,15 +1,18 @@
 
 // Coordinate file to open (can be XYZ or PDB)
-String fileName = "examples/waterbox.xyz";
+String fileName = "examples/watersmall.xyz";
 
-// Beginning of the soft core atom range.
-int softStart = 1;
+// Beginning of the ligand atom range.
+int ligandStart = 1;
 
-// End of the soft core atom range.
-int softStop = 3;
+// End of the ligand atom range.
+int ligandStop = 3;
 
-// Number of soft core Lambda windows.
-int softWindows = 10;
+// Number of electrostatics lambda windows.
+int elecWindows = 10;
+
+// Number of soft core van der Waals lambda windows.
+int vdwWindows = 10;
 
 // Number of molecular dynamics steps per window.
 int nSteps = 100;
@@ -36,35 +39,43 @@ import org.apache.commons.io.FilenameUtils;
 
 import ffx.algorithms.MolecularDynamics;
 import ffx.algorithms.Thermostat.Thermostats;
+
 import ffx.potential.PotentialEnergy;
 import ffx.potential.bonded.Atom;
 
 // Open the system
 open(fileName);
+String lambdaName = FilenameUtils.removeExtension(fileName);
 
-Atom[] atomArray = active.getAtomArray();
-
-// Apply the soft core selection
-for (int i = softStart; i <= softStop; i++) {
-   Atom ai = atomArray[i - 1];
-   ai.setSoftCore(true);
+// Apply the ligand atom selection
+Atom[] atoms = active.getAtomArray();
+for (int i = ligandStart; i <= ligandStop; i++) {
+   Atom ai = atoms[i - 1];
+   ai.setApplyLambda(true);
 }
 
-// Availble Thermostats are [ BUSSI, BERENDSEN, ISOTHERMAL ]
+// Select an availble thermostat [ BUSSI, BERENDSEN, ISOTHERMAL ]
 Thermostats thermostat = Thermostats.BUSSI;
 
 // Create a MolecularDynamics instance
 MolecularDynamics molDyn = new MolecularDynamics(active, null, thermostat);
+
+// Retrieve the PotentialEnergy instance
 PotentialEnergy energy = active.getPotentialEnergy();
 
-for (int i=0; i < softWindows; i++) {
-   double lambda = 1.0 - (double) i / (double) softWindows;
+// Turn off the polarizability and multipoles for the selected atoms
+for (int i=0; i <= elecWindows; i++) {
+   double lambda = 1.0 - (double) i / (double) elecWindows;
+   energy.setElectrostaticsLambda(lambda);
+   molDyn.setArchiveFile(new File(lambdaName + "_elec_" + String.format("%5.3f", lambda) + ".arc"));
+   molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities);
+}
+
+// Turn off the vdW potential for the selected atoms
+for (int i=0; i <= vdwWindows; i++) {
+   double lambda = 1.0 - (double) i / (double) vdwWindows;
    energy.setSoftCoreLambda(lambda);
-   String lambdaName = FilenameUtils.removeExtension(fileName);
-   lambdaName += "_softCore_" + String.format("%5.3f", lambda) + ".arc";
-   File lambdaFile = new File(lambdaName);
-   lambdaFile.delete();
-   molDyn.setArchiveFile(lambdaFile);
+   molDyn.setArchiveFile(new File(lambdaName + "_vdw_" + String.format("%5.3f", lambda) + ".arc"));
    molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities);
 }
 

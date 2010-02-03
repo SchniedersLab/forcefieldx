@@ -325,7 +325,7 @@ public class PotentialEnergyTest {
         // Make the last water soft
         for (int i = n; i > n - 3; i--) {
             Atom ai = atoms[i - 1];
-            ai.setSoftCore(true);
+            ai.setApplyLambda(true);
         }
         boolean gradient = false;
         boolean print = true;

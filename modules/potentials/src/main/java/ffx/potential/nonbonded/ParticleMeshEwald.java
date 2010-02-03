@@ -45,6 +45,7 @@ import edu.rit.pj.reduction.SharedInteger;
 import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
 import ffx.numerics.TensorRecursion;
+import ffx.potential.LambdaInterface;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
@@ -78,9 +79,38 @@ import ffx.potential.parameters.ForceField.ForceFieldType;
  *      "Point Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter,
  *      46, 18-30, 1998</a><br>
  */
-public class ParticleMeshEwald {
+public class ParticleMeshEwald implements LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(ParticleMeshEwald.class.getName());
+    private double lambda = 1.0;
+
+    @Override
+    public void setLambda(double lambda) {
+        this.lambda = lambda;
+
+        /**
+         * Log the new lambda value.
+         */
+        StringBuffer sb = new StringBuffer(" Multipoles and polarizabilities will be scaled for:\n");
+        boolean scaleAtoms = false;
+        for (int i = 0; i < nAtoms; i++) {
+            if (atoms[i].applyLambda()) {
+                scaleAtoms = true;
+                sb.append(" " + atoms[i].toShortString() + "\n");
+            }
+        }
+        if (scaleAtoms) {
+            logger.info(String.format(" Electrostatic lambda value is set to %8.3f", lambda));
+            logger.info(sb.toString());
+        } else {
+            logger.warning(" No atoms are selected for multipole and polarizability scaling.\n");
+        }
+    }
+
+    @Override
+    public double getLambda() {
+        return lambda;
+    }
 
     /**
      * Polarization modes include "direct", in which induced dipoles do not
@@ -308,9 +338,6 @@ public class ParticleMeshEwald {
         }
 
         openCL = forceField.getBoolean(ForceField.ForceFieldBoolean.OPENCL, false);
-
-        logger.info(" OpenCL status: " + openCL);
-
         localMultipole = new double[nAtoms][10];
         frame = new MultipoleType.MultipoleFrameDefinition[nAtoms];
         axisAtom = new int[nAtoms][];
@@ -4921,10 +4948,24 @@ public class ParticleMeshEwald {
                 out[t110] = quadrupole[0][1];
                 out[t101] = quadrupole[0][2];
                 out[t011] = quadrupole[1][2];
-                /*
-                 * out[0] = 0.0; for (int i = 1; i <= 3; i++) { out[i] = 0.0; } for
-                 * (int i = 4; i <= 9; i++) { out[i] = 0.0; }
-                 */
+            }
+            for (int ii = 0; ii < nAtoms; ii++) {
+                Atom a = atoms[ii];
+                if (a.applyLambda()) {
+                    final double out[] = globalMultipole[iSymm][ii];
+                    out[t000] *= lambda;
+                    out[t100] *= lambda;
+                    out[t010] *= lambda;
+                    out[t001] *= lambda;
+                    out[t200] *= lambda;
+                    out[t020] *= lambda;
+                    out[t002] *= lambda;
+                    out[t110] *= lambda;
+                    out[t101] *= lambda;
+                    out[t011] *= lambda;
+                    PolarizeType polarizeType = a.getPolarizeType();
+                    polarizability[ii] = lambda * polarizeType.polarizability;
+                }
             }
         }
     }

@@ -650,10 +650,10 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         /**
          * Set up the lambda
          */
-        StringBuffer sb = new StringBuffer(" Softcore atoms include:\n");
+        StringBuffer sb = new StringBuffer(" van der Waals soft core will be applied to:\n");
         boolean softAtoms = false;
         for (int i = 0; i < nAtoms; i++) {
-            isSoft[i] = atoms[i].isSoftCore();
+            isSoft[i] = atoms[i].applyLambda();
             if (isSoft[i]) {
                 softAtoms = true;
                 sb.append(" " + atoms[i].toShortString() + "\n");
@@ -673,10 +673,10 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
             }
         }
         if (softAtoms) {
-            logger.info(String.format(" Soft Core Lambda value set to %8.3f", lambda));
+            logger.info(String.format(" Soft core van der Waals lambda value set to %8.3f", lambda));
             logger.info(sb.toString());
         } else {
-            logger.info(" No Soft Core atoms are selected\n");
+            logger.warning(" No atoms are selected for soft core van der Waals.\n");
         }
 
         // Redo the long range correction.
