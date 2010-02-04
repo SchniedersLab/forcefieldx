@@ -12,7 +12,116 @@
     </head>
     <body>
         <section name="Usage Examples">
-            <subsection name="To do...">
+            <subsection name="Generation of Water in Water Trajectories">
+                <p>First, we need an input coordinate file in TINKER XYZ (or PDB) format</p>
+                <source>
+  648  Water Cubic Box (18.643 Ang, 216 AMOEBA)
+    1  O      8.039430    5.868035    0.492777     1     2     3
+    2  H      7.581494    5.022666    0.403759     2     1
+    3  H      8.287056    6.062440   -0.397074     2     1
+    4  O      0.114840   -8.876599    6.445852     1     5     6
+    5  H      0.958925   -8.446494    6.405247     2     4
+    6  H      0.247235   -9.794471    6.137893     2     4
+    7  O     -6.576367   -0.252600    8.104632     1     8     9
+    8  H     -6.645499    0.689925    7.896356     2     7
+    9  H     -6.684537   -0.400760    9.103747     2     7
+                </source>
+                <p>Next, is the property file (like a TINKER keyword file). Note
+                that Force Field X stores parameter files internally.</p>
+                <source>
+forcefield             amoeba-water
+a-axis                       18.643
+spacegroup P1
+polar-eps 0.01
+                </source>
+                <p>Finally, we use a Force Field X script to run the sampling.</p>
+                <source>
+<![CDATA[
+// Coordinate file to open (can be XYZ or PDB)
+String fileName = "examples/watersmall.xyz";
+
+// Beginning of the ligand atom range.
+int ligandStart = 1;
+
+// End of the ligand atom range.
+int ligandStop = 3;
+
+// Number of electrostatics lambda windows.
+int elecWindows = 10;
+
+// Number of soft core van der Waals lambda windows.
+int vdwWindows = 10;
+
+// Number of equilibration MD steps.
+int eSteps = 100000;
+
+// Number of MD steps per window.
+int nSteps = 100000;
+
+// Time step in femtoseconds.
+double timeStep = 1.0;
+
+// Frequency to print out thermodynamics information in picoseconds.
+double printInterval = 0.01;
+
+// Frequency to save out coordinates in picoseconds.
+double saveInterval = 0.1;
+
+// Temperature in degrees Kelvin.
+double temperature = 300.0;
+
+// Things below this line normally do not need to be modified.
+// =============================================================================
+
+import org.apache.commons.io.FilenameUtils;
+
+import ffx.algorithms.MolecularDynamics;
+import ffx.algorithms.Thermostat.Thermostats;
+
+import ffx.potential.PotentialEnergy;
+import ffx.potential.bonded.Atom;
+
+// Open the system
+open(fileName);
+String lambdaName = FilenameUtils.removeExtension(fileName);
+
+// Apply the ligand atom selection
+Atom[] atoms = active.getAtomArray();
+for (int i = ligandStart; i <= ligandStop; i++) {
+    Atom ai = atoms[i - 1];
+    ai.setApplyLambda(true);
+}
+
+// Select an availble thermostat [ BUSSI, BERENDSEN, ISOTHERMAL ]
+Thermostats thermostat = Thermostats.BUSSI;
+
+// Create a MolecularDynamics instance
+MolecularDynamics molDyn = new MolecularDynamics(active, null, thermostat);
+
+// Equilibrate the system
+boolean initVelocities = true;
+molDyn.dynamic(eSteps, timeStep, printInterval, -1, temperature, initVelocities);
+
+// Retrieve the PotentialEnergy instance
+PotentialEnergy energy = active.getPotentialEnergy();
+
+// Turn off the polarizability and multipoles for the selected atoms
+for (int i=0; i <= elecWindows; i++) {
+    double lambda = 1.0 - (double) i / (double) elecWindows;
+    energy.setElectrostaticsLambda(lambda);
+    molDyn.setArchiveFile(new File(lambdaName + "_elec_" + String.format("%5.3f", lambda) + ".arc"));
+    molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities);
+}
+
+// Turn off the vdW potential for the selected atoms
+for (int i=1; i <= vdwWindows; i++) {
+    double lambda = 1.0 - (double) i / (double) vdwWindows;
+    energy.setSoftCoreLambda(lambda);
+    molDyn.setArchiveFile(new File(lambdaName + "_vdw_" + String.format("%5.3f", lambda) + ".arc"));
+    molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities);
+}
+]]>
+                </source>
             </subsection>
         </section>
     </body>

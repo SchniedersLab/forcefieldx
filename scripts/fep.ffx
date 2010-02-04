@@ -14,8 +14,11 @@ int elecWindows = 10;
 // Number of soft core van der Waals lambda windows.
 int vdwWindows = 10;
 
-// Number of molecular dynamics steps per window.
-int nSteps = 100;
+// Number of equilibration MD steps.
+int eSteps = 100000;
+
+// Number of MD steps per window.
+int nSteps = 100000;
 
 // Time step in femtoseconds.
 double timeStep = 1.0;
@@ -24,16 +27,13 @@ double timeStep = 1.0;
 double printInterval = 0.01;
 
 // Frequency to save out coordinates in picoseconds.
-double saveInterval = 0.01;
+double saveInterval = 0.1;
 
 // Temperature in degrees Kelvin.
 double temperature = 300.0;
 
-// Reset velocities.
-boolean initVelocities = true;
-
 // Things below this line normally do not need to be modified.
-// ========================================================================
+// =============================================================================
 
 import org.apache.commons.io.FilenameUtils;
 
@@ -60,6 +60,10 @@ Thermostats thermostat = Thermostats.BUSSI;
 // Create a MolecularDynamics instance
 MolecularDynamics molDyn = new MolecularDynamics(active, null, thermostat);
 
+// Equilibrate the system
+boolean initVelocities = true;
+molDyn.dynamic(eSteps, timeStep, printInterval, -1, temperature, initVelocities);
+
 // Retrieve the PotentialEnergy instance
 PotentialEnergy energy = active.getPotentialEnergy();
 
@@ -72,7 +76,7 @@ for (int i=0; i <= elecWindows; i++) {
 }
 
 // Turn off the vdW potential for the selected atoms
-for (int i=0; i <= vdwWindows; i++) {
+for (int i=1; i <= vdwWindows; i++) {
    double lambda = 1.0 - (double) i / (double) vdwWindows;
    energy.setSoftCoreLambda(lambda);
    molDyn.setArchiveFile(new File(lambdaName + "_vdw_" + String.format("%5.3f", lambda) + ".arc"));
