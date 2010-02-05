@@ -343,9 +343,9 @@ public class FormFactor {
     private final double u[][][] = new double[6][3][3];
     private final double uinv[][][] = new double[6][3][3];
 
-    public FormFactor(Atom atom, double uadd) {
+    public FormFactor(Atom atom, double badd) {
         this.atom = atom;
-        this.uadd = uadd;
+        this.uadd = badd / eightpi2;
         double ffactor[][] = new double[2][6];
         ffactor = getFormFactor("" + atom.getAtomType().atomicNumber);
         for (int i = 0; i < 6; i++) {
