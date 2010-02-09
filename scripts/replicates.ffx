@@ -1,0 +1,14 @@
+
+filename = "examples/alamet-replicated.xyz"
+open(filename);
+energy();
+
+filename = "examples/alamet-unitcell.xyz"
+open(filename);
+energy();
+
+String filename = "examples/alamet.pdb"
+open(filename);
+energy();
+minimize(0.1);
+

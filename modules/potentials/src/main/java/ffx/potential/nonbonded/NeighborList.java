@@ -256,11 +256,11 @@ public class NeighborList extends ParallelRegion {
          * decomposition. Otherwise, the unit cell is too small relative to the
          * cutoff plus buffer distance use the logic implemented here.
          */
-        StringBuffer sb = new StringBuffer("\n Neighbor List Builder\n");
+        StringBuffer sb = new StringBuffer("\n NEIGHBOR LIST BUILDER\n");
         if (minDivisions >= 5) {
             nAB = nA * nB;
             nCells = nAB * nC;
-            sb.append(" The unit cell is partitioned into " + nCells + " volumes.\n");
+            sb.append(" The unit cell is partitioned into " + nCells + " volumes.");
         } else {
             minDivisions = 1;
             nA = 1;
@@ -268,7 +268,7 @@ public class NeighborList extends ParallelRegion {
             nC = 1;
             nAB = 1;
             nCells = 1;
-            sb.append(" The unit cell will not be partitioned into cells.\n");
+            sb.append(" The unit cell will not be partitioned into cells.");
         }
         cellList = new int[nSymm][nAtoms];
         cellIndex = new int[nSymm][nAtoms];

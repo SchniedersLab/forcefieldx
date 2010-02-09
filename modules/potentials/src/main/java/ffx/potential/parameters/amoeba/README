@@ -45,7 +45,7 @@ Adv. Prot. Chem., 66, 27-85 (2003)
 
 [ The 2009 update to the AMOEBA Protein Force Field is a modification of
 the original AMOEBA protein parameters with changes made during Fall 2009
-and by Chuanjie Wu. ]
+and early 2010 by Chuanjie Wu, Pengyu Ren and Jay Ponder ]
 
    ###############################################
    ##                                           ##
@@ -96,8 +96,8 @@ and by Chuanjie Wu. ]
 
 4.) AMOEBA Nucleic Acid References
 
-amoebanuc09.prm is a beta version of AMOEBA nucleic acid parameters as
-developed by Chuanjie Wu, Ponder Lab, Washington University, May 2008
+AMOEBA nucleic acid parameters have been developed by Chuanjie Wu, 
+Ponder Lab, Washington University, May 2008
 
 5.) Notes on the Force Field X implementation of AMOEBA
 

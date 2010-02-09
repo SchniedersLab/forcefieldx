@@ -1,0 +1,12 @@
+
+import ffx.potential.PotentialEnergy;
+
+open ("examples/ubiquitin.xyz")
+
+PotentialEnergy e = energy();
+
+for (int i=0; i<10; i++) {
+   e.energy(true,true);
+}
+
+

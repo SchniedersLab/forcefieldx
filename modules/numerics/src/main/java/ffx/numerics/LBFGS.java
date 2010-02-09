@@ -354,10 +354,10 @@ public class LBFGS {
             logger.info(" QN Iter    F Value      G RMS     F Move    X Move    Angle  FG Call  Comment\n");
         }
         if (info == null) {
-            logger.info(String.format("%6d%13.4f%11.4f%11.4f%10.4f%9.2f%7d\n",
+            logger.info(String.format("%6d%13.4f%11.4f%11.4f%10.4f%9.2f%7d",
                     iter, f, grms, df, xrms, angle, nfun));
         } else {
-            logger.info(String.format("%6d%13.4f%11.4f%11.4f%10.4f%9.2f%7d   %8s\n",
+            logger.info(String.format("%6d%13.4f%11.4f%11.4f%10.4f%9.2f%7d   %8s",
                     iter, f, grms, df, xrms, angle, nfun, info.toString()));
         }
     }

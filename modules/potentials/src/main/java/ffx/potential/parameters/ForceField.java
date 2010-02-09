@@ -49,8 +49,7 @@ public class ForceField {
     public enum Force_Field {
 
         AMOEBA_WATER, AMOEBA_2004, AMOEBA_PROTEIN_2004,
-        AMOEBA_2009, AMOEBA_PROTEIN_2009, AMOEBA_NUCLEIC_2009,
-        AMOEBA_BIO_2009
+        AMOEBA_2009, AMOEBA_BIO_2009
     }
 
     public enum ForceFieldString {
@@ -99,11 +98,6 @@ public class ForceField {
         forceFields.put(ff, cl.getResource(prefix + ff));
         ff = Force_Field.AMOEBA_2009;
         forceFields.put(ff, cl.getResource(prefix + ff));
-        ff = Force_Field.AMOEBA_PROTEIN_2009;
-        String value = prefix + ff;
-        forceFields.put(ff, cl.getResource(value));
-        ff = Force_Field.AMOEBA_NUCLEIC_2009;
-        forceFields.put(ff, cl.getResource(value));
         ff = Force_Field.AMOEBA_BIO_2009;
         forceFields.put(ff, cl.getResource(prefix + ff));
     }
@@ -189,7 +183,9 @@ public class ForceField {
      * @return
      */
     private String normalizeKey(String s) {
-        if (s == null) return null;
+        if (s == null) {
+            return null;
+        }
         return s.toLowerCase().replace("_", "-");
     }
 
@@ -574,7 +570,7 @@ public class ForceField {
         if (key == null) {
             return null;
         }
-        
+
         key = normalizeKey(key);
 
         if (properties.containsKey(key)) {

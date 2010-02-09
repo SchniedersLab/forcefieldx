@@ -40,6 +40,7 @@ import edu.rit.pj.reduction.SharedDoubleArray;
 import edu.rit.pj.reduction.SharedInteger;
 
 import ffx.crystal.Crystal;
+import ffx.crystal.ReplicatesCrystal;
 import ffx.crystal.SymOp;
 import ffx.potential.LambdaInterface;
 import ffx.potential.bonded.Angle;
@@ -176,16 +177,14 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
      * @param parallelTeam The parallel environment.
      * @since 1.0
      */
-    public VanDerWaals(ForceField forceField, Atom[] unOrderedAtoms,
+    public VanDerWaals(ForceField forceField, Atom[] atoms,
             Crystal crystal, ParallelTeam parallelTeam) {
-        this.atoms = new Atom[unOrderedAtoms.length];
-        this.crystal = crystal;
+        this.atoms = atoms;
         this.parallelTeam = parallelTeam;
-        for (Atom ai : unOrderedAtoms) {
-            atoms[ai.xyzIndex - 1] = ai;
-        }
+        this.crystal = crystal;
         nAtoms = atoms.length;
-        nSymm = crystal.spaceGroup.symOps.size();
+        nSymm = this.crystal.spaceGroup.getNumberOfSymOps();
+
         // Set up the Buffered-14-7 parameters.
         TreeMap<String, VDWType> vdwTypes = forceField.getVDWTypes();
         maxClass = 0;
@@ -224,27 +223,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                 radEps[j][i * 2 + EPS] = eps;
             }
         }
-        /**
-         * Set up the cutoff and polynomial switch.
-         */
-        double vdwcut = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, 9.0);
-        double vdwtaper = 0.9 * vdwcut;
-        cut = vdwtaper;
-        off = vdwcut;
-        buff = 2.0;
-        cut2 = cut * cut;
-        off2 = off * off;
-        double denom = pow(off - cut, 5.0);
-        c0 = off * off2 * (off2 - 5.0 * off * cut + 10.0 * cut2) / denom;
-        c1 = -30.0 * off2 * cut2 / denom;
-        c2 = 30.0 * (off2 * cut + off * cut2) / denom;
-        c3 = -10.0 * (off2 + 4.0 * off * cut + cut2) / denom;
-        c4 = 15.0 * (off + cut) / denom;
-        c5 = -6.0 / denom;
-        twoC2 = 2.0 * c2;
-        threeC3 = 3.0 * c3;
-        fourC4 = 4.0 * c4;
-        fiveC5 = 5.0 * c5;
+
         /**
          * Allocate coordinate arrays and set up reduction indices and values.
          */
@@ -301,6 +280,29 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         }
 
         /**
+         * Set up the cutoff and polynomial switch.
+         */
+        double vdwcut = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, 9.0);
+        double vdwtaper = 0.9 * vdwcut;
+        cut = vdwtaper;
+        off = vdwcut;
+        buff = 2.0;
+        cut2 = cut * cut;
+        off2 = off * off;
+        double denom = pow(off - cut, 5.0);
+        c0 = off * off2 * (off2 - 5.0 * off * cut + 10.0 * cut2) / denom;
+        c1 = -30.0 * off2 * cut2 / denom;
+        c2 = 30.0 * (off2 * cut + off * cut2) / denom;
+        c3 = -10.0 * (off2 + 4.0 * off * cut + cut2) / denom;
+        c4 = 15.0 * (off + cut) / denom;
+        c5 = -6.0 / denom;
+        twoC2 = 2.0 * c2;
+        threeC3 = 3.0 * c3;
+        fourC4 = 4.0 * c4;
+        fiveC5 = 5.0 * c5;
+
+
+        /**
          * Initialize the soft core lambda masks.
          */
         lambdaPow = new double[2][nAtoms];
@@ -333,7 +335,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         interactions = new SharedInteger();
         vdwEnergy = new SharedDouble();
         // Parallel neighbor list builder.
-        neighborList = new NeighborList(null, crystal, atoms, off, buff, parallelTeam);
+        neighborList = new NeighborList(null, this.crystal, atoms, off, buff, parallelTeam);
 
         /**
          * Reduced and expand the coordinates of the asymmetric unit.
@@ -378,8 +380,8 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         double total = 0.0;
         /*
         logger.info(String.format(" Long range correction integral: Steps %d, Step Size %8.3f, Window %8.3f-%8.3f",
-                n, delR, cut, cut + delR * n));
-        */
+        n, delR, cut, cut + delR * n));
+         */
         /**
          * Loop over vdW types.
          */

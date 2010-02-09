@@ -48,6 +48,20 @@ public class SymOp {
 		this.tr = tr;
 	}
 
+
+        @Override
+        public String toString() {
+            StringBuffer sb = new StringBuffer();
+            sb.append(" Rotation operator:\n");
+            sb.append(String.format(" [[%4.1f,%4.1f,%4.1f]\n  [%4.1f,%4.1f,%4.1f]\n  [%4.1f,%4.1f,%4.1f]]\n",
+                    rot[0][0],rot[0][1],rot[0][2],
+                    rot[1][0],rot[1][1],rot[1][2],
+                    rot[2][0],rot[2][1],rot[2][2]));
+            sb.append(" Translation:\n");
+            sb.append(String.format(" [%4.2f,%4.2f,%4.2f]", tr[0],tr[1],tr[2]));
+            return sb.toString();
+        }
+
 	private static final double zero = 0.0;
 	private static final double f12 = 1.0 / 2.0;
 	private static final double f13 = 1.0 / 3.0;

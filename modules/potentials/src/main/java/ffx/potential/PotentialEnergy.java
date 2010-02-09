@@ -20,6 +20,8 @@
  */
 package ffx.potential;
 
+import static java.lang.Math.max;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.logging.Logger;
@@ -27,6 +29,7 @@ import java.util.logging.Logger;
 import edu.rit.pj.ParallelTeam;
 
 import ffx.crystal.Crystal;
+import ffx.crystal.ReplicatesCrystal;
 import ffx.numerics.Optimizable;
 import ffx.potential.bonded.ROLS;
 import ffx.potential.bonded.Angle;
@@ -129,11 +132,9 @@ public class PotentialEnergy implements Optimizable {
         multipoleTerm = forceField.getBoolean(ForceFieldBoolean.MPOLETERM, true);
         polarizationTerm = forceField.getBoolean(ForceFieldBoolean.POLARIZETERM, true);
 
-        // Collect, count, pack and sort atoms.
-        ArrayList<Atom> atomList = molecularAssembly.getAtomList();
-        nAtoms = atomList.size();
-        atoms = atomList.toArray(new Atom[nAtoms]);
-        Arrays.sort(atoms);
+        // Get a reference to the sorted atom array.
+        atoms = molecularAssembly.getAtomArray();
+        nAtoms = atoms.length;
 
         // Collect, count, pack and sort bonds.
         if (bondTerm) {
@@ -231,7 +232,35 @@ public class PotentialEnergy implements Optimizable {
         final double gamma = forceField.getDouble(ForceFieldDouble.GAMMA, 90.0);
         final String spacegroup = forceField.getString(
                 ForceFieldString.SPACEGROUP, "P1");
-        crystal = new Crystal(a, b, c, alpha, beta, gamma, spacegroup);
+        Crystal unitCell = new Crystal(a, b, c, alpha, beta, gamma, spacegroup);
+
+        double vdwOff = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, 9.0);
+        double ewaldOff = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, 7.0);
+        double buff = 2.0;
+        double cutOff2 = 2.0 * (max(vdwOff, ewaldOff) + buff);
+
+        /**
+         * Do we need a ReplicatesCrystal?
+         */
+        int l = 1;
+        int m = 1;
+        int n = 1;
+        while (unitCell.a * l < cutOff2) {
+            l++;
+        }
+        while (unitCell.b * m < cutOff2) {
+            m++;
+        }
+        while (unitCell.c * n < cutOff2) {
+            n++;
+        }
+
+        if (l * m * n > 1) {
+            this.crystal = new ReplicatesCrystal(unitCell, l, m, n);
+        } else {
+            this.crystal = unitCell;
+        }
+
         logger.info(crystal.toString());
 
         if (vanDerWaalsTerm) {
@@ -451,11 +480,17 @@ public class PotentialEnergy implements Optimizable {
         }
         sb.append(String.format("\n %s %16.8f  %s %12.3f (sec)\n",
                 "Total Potential   ", totalEnergy, "(Kcal/mole)", totalTime * toSeconds));
-        int nsymm = crystal.spaceGroup.symOps.size();
+        int nsymm = crystal.getUnitCell().spaceGroup.getNumberOfSymOps();
         if (nsymm > 1) {
             sb.append(String.format(" %s %16.8f\n", "Unit Cell         ",
                     totalEnergy * nsymm));
         }
+        if (crystal.getUnitCell() != crystal) {
+            nsymm = crystal.spaceGroup.getNumberOfSymOps();
+            sb.append(String.format(" %s %16.8f\n", "Replicates Cell   ",
+                    totalEnergy * nsymm));
+        }
+
         return sb.toString();
     }
 

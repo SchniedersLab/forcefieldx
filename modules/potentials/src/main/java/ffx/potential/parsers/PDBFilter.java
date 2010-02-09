@@ -369,7 +369,11 @@ public final class PDBFilter extends SystemFilter {
                         double alpha = new Double(pdbLine.substring(33, 40).trim());
                         double beta = new Double(pdbLine.substring(40, 47).trim());
                         double gamma = new Double(pdbLine.substring(47, 54).trim());
-                        String sg = pdbLine.substring(55, 66).trim();
+                        int limit = 66;
+                        if (len < 66) {
+                            limit = len;
+                        }
+                        String sg = pdbLine.substring(55, limit).trim();
                         properties.addProperty("a-axis", aaxis);
                         properties.addProperty("b-axis", baxis);
                         properties.addProperty("c-axis", caxis);

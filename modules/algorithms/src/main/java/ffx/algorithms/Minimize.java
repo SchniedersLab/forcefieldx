@@ -148,14 +148,13 @@ public class Minimize implements OptimizationListener, Terminatable {
             logger.info(" Cycle       Energy      G RMS    Delta E   Delta X    Angle  Evals     Time\n");
         }
         if (info == null) {
-            logger.info(String.format("%6d%13.4f%11.4f\n",
-                    iter, f, grms));
+            logger.info(String.format("%6d%13.4f%11.4f", iter, f, grms));
         } else {
             if (info == LineSearchResult.Success) {
-                logger.info(String.format("%6d%13.4f%11.4f%11.4f%10.4f%9.2f%7d %8.3f\n",
+                logger.info(String.format("%6d%13.4f%11.4f%11.4f%10.4f%9.2f%7d %8.3f",
                         iter, f, grms, df, xrms, angle, nfun, seconds));
             } else {
-                logger.info(String.format("%6d%13.4f%11.4f%11.4f%10.4f%9.2f%7d %8s\n",
+                logger.info(String.format("%6d%13.4f%11.4f%11.4f%10.4f%9.2f%7d %8s",
                         iter, f, grms, df, xrms, angle, nfun, info.toString()));
             }
         }

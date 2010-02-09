@@ -28,14 +28,14 @@ import static java.lang.Math.sin;
 import static java.lang.Math.sqrt;
 import static java.lang.Math.toRadians;
 
-import static ffx.numerics.VectorMath.dot;
-import static ffx.numerics.VectorMath.cross;
-import static ffx.numerics.VectorMath.scalar;
-
 import java.util.logging.Logger;
 
 import no.uib.cipr.matrix.DenseMatrix;
 import no.uib.cipr.matrix.Matrices;
+
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.scalar;
 
 /**
  * The Crystal class encapsulates the lattice parameters and space group that
@@ -311,6 +311,16 @@ public class Crystal {
             }
         }
 
+    }
+
+    /**
+     * The ReplicatesCrystal over-rides this method to return the unit cell
+     * rather than the ReplicateCell.
+     * 
+     * @return The unit cell Crystal instance.
+     */
+    public Crystal getUnitCell() {
+        return this;
     }
 
     /**
@@ -832,13 +842,13 @@ public class Crystal {
     @Override
     public String toString() {
         return String.format(
-                "\n Unit cell: (%7.3f, %7.3f, %7.3f, %7.3f, %7.3f, %7.3f)\n", a,
+                " Unit cell (%7.3f, %7.3f, %7.3f, %7.3f, %7.3f, %7.3f)\n", a,
                 b, c, alpha, beta, gamma)
                 + String.format(
                 " Space group number %d (%s, Nsymm = %d)\n",
                 spaceGroup.number,
                 spaceGroup.shortName,
-                spaceGroup.numSymEquiv);
+                spaceGroup.getNumberOfSymOps());
     }
     private static final int XX = 0;
     private static final int YY = 1;

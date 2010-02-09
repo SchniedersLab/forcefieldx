@@ -72,13 +72,13 @@ import ffx.potential.parameters.ForceField.ForceFieldInteger;
 public class ReciprocalSpace {
 
     private static final Logger logger = Logger.getLogger(ReciprocalSpace.class.getName());
-    private final Crystal crystal;
-    private final int nSymm;
+    private final int nAtoms;
     private final double coordinates[][][];
     private final double xf[];
     private final double yf[];
     private final double zf[];
-    private final int nAtoms;
+    private final Crystal crystal;
+    private final int nSymm;
     private final double fractionalMultipole[][][];
     private final double fractionalDipole[][][];
     private final double fractionalDipolep[][][];
@@ -196,7 +196,7 @@ public class ReciprocalSpace {
 
         threadCount = parallelTeam.getThreadCount();
         bSplineOrder = forceField.getInteger(ForceFieldInteger.PME_ORDER, 5);
-        double density = forceField.getDouble(ForceFieldDouble.PME_SPACING, 1.0);
+        double density = forceField.getDouble(ForceFieldDouble.PME_SPACING, 1.2);
         openCL = forceField.getBoolean(ForceField.ForceFieldBoolean.OPENCL, false);
 
         // Set default FFT grid size from unit cell dimensions.
@@ -277,7 +277,7 @@ public class ReciprocalSpace {
         zSlicep = fftX * fftY * 2;
         polarizationTotal = fftX * fftY * fftZ;
         a = new double[3][3];
-        this.nSymm = crystal.spaceGroup.symOps.size();
+        this.nSymm = crystal.spaceGroup.getNumberOfSymOps();
         densityGrid = new double[polarizationTotal * 2];
         /**
          * Chop up the 3D unit cell domain into fractional coordinate chunks to
@@ -285,34 +285,31 @@ public class ReciprocalSpace {
          * needing the same grid point. First, we partition the X-axis, then
          * the Y-axis, and finally the Z-axis if necesary.
          */
-        nX = 1;
-        nY = 1;
-        nZ = 1;
+        nX = fftX / bSplineOrder;
+        nY = fftY / bSplineOrder;
+        nZ = fftZ / bSplineOrder;
         int div = 1;
         int minWork = 4;
-        if (threadCount > 1) {
-            nZ = fftZ / bSplineOrder;
+        if (threadCount > 1 && nZ > 1) {
             if (nZ % 2 != 0) {
                 nZ--;
             }
             nC = nZ;
             div = 2;
             // If we have 2 * threadCount * minWork chunks, stop dividing the domain.
-            if (nC / threadCount > div * minWork) {
+            if (nC / threadCount > div * minWork || nY < 2) {
                 nA = 1;
                 nB = 1;
             } else {
-                nY = fftY / bSplineOrder;
                 if (nY % 2 != 0) {
                     nY--;
                 }
                 nB = nY;
                 div = 4;
                 // If we have 4 * threadCount * minWork chunks, stop dividing the domain.
-                if (nB * nC / threadCount > div * minWork) {
+                if (nB * nC / threadCount > div * minWork || nX < 2) {
                     nA = 1;
                 } else {
-                    nX = fftX / bSplineOrder;
                     if (nX % 2 != 0) {
                         nX--;
                     }
@@ -373,16 +370,13 @@ public class ReciprocalSpace {
         xf = new double[nAtoms];
         yf = new double[nAtoms];
         zf = new double[nAtoms];
-
         bSplineRegion = new BSplineRegion();
-
         permanentDensity = new PermanentDensityRegion(bSplineRegion);
         permanentReciprocalSum = new PermanentReciprocalSumRegion();
         permanentPhi = new PermanentPhiRegion(bSplineRegion);
         polarizationDensity = new PolarizationDensityRegion(bSplineRegion);
         polarizationReciprocalSum = new PolarizationReciprocalSumRegion();
         polarizationPhi = new PolarizationPhiRegion(bSplineRegion);
-
         realFFT3D = new Real3DParallel(fftX, fftY, fftZ, fftTeam);
         realFFT3D.setRecip(permanentReciprocalSum.getRecip());
         if (!openCL) {
@@ -436,12 +430,13 @@ public class ReciprocalSpace {
 
     public void computePermanentConvolution() {
         try {
-            long startTime = System.nanoTime();
+            //logger.info(String.format(" Computing reciprocal convolution with %d threads", fftTeam.getThreadCount()));
+            long convolutionTime = -System.nanoTime();
             realFFT3D.convolution(densityGrid);
-            long convolutionTime = System.nanoTime() - startTime;
+            convolutionTime += System.nanoTime();
             if (logger.isLoggable(Level.FINE)) {
                 StringBuffer sb = new StringBuffer();
-                sb.append(String.format("Convolution:            %8.3f (sec)\n", convolutionTime * toSeconds));
+                sb.append(String.format(" Convolution:            %8.3f (sec)\n", convolutionTime * toSeconds));
                 logger.fine(sb.toString());
             }
         } catch (Exception e) {
