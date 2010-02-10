@@ -18,7 +18,7 @@
  * along with Force Field X; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
  */
-package ffx.crystal;
+package ffx.xray;
 
 import java.io.File;
 import java.io.DataInputStream;
@@ -47,8 +47,7 @@ public final class MTZFileFilter extends FileFilter {
             return true;
         }
         String filename = parm.getName().toLowerCase();
-        int dot = filename.lastIndexOf(".");
-        return filename.regionMatches(false, dot + 1, "mtz", 0, 3);
+        return filename.endsWith(".mtz");
     }
 
     public boolean acceptDeep(File file) {
@@ -80,6 +79,6 @@ public final class MTZFileFilter extends FileFilter {
      */
     @Override
     public String getDescription() {
-        return new String("CCP4 MTZ Reflection Files: *.xyz");
+        return new String("CCP4 MTZ Reflection Files: *.mtz");
     }
 }

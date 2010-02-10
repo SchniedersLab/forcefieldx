@@ -75,6 +75,11 @@ public class RefinementData {
         return fsigf[i][1];
     }
 
+    public void fsigf(int i, double f, double sigf){
+        fsigf[i][0] = f;
+        fsigf[i][1] = sigf;
+    }
+
     public double[] fsigf(int i) {
         return fsigf[i];
     }

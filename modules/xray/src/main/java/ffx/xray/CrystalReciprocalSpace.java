@@ -50,8 +50,7 @@ public class CrystalReciprocalSpace {
     private final Crystal crystal;
     private final Resolution resolution;
     private final ReflectionList reflectionlist;
-    private final boolean solvent;
-    private final double hkldata[][];
+    private boolean solvent = false;
     private final int nSymm;
     private final Atom atoms[];
     private final double xf[];
@@ -140,16 +139,13 @@ public class CrystalReciprocalSpace {
      * Crystal Reciprocal Space.
      */
     public CrystalReciprocalSpace(Atom atoms[], int nAtoms,
-            ParallelTeam parallelTeam, boolean solvent,
-            ReflectionList reflectionlist, double hkldata[][]) {
+            ParallelTeam parallelTeam, ReflectionList reflectionlist) {
         this.atoms = atoms;
         this.nAtoms = nAtoms;
         this.parallelTeam = parallelTeam;
         this.reflectionlist = reflectionlist;
-        this.hkldata = hkldata;
         this.crystal = reflectionlist.crystal;
         this.resolution = reflectionlist.resolution;
-        this.solvent = solvent;
         threadCount = parallelTeam.getThreadCount();
 
         double density = 2.0 * resolution.sampling_limit();
@@ -240,9 +236,14 @@ public class CrystalReciprocalSpace {
         }
         if (logger.isLoggable(Level.INFO)) {
             StringBuffer sb = new StringBuffer();
-            sb.append(String.format(" Form Factor Width:         (%d,%d,%d)\n", ngridx, ngridy, ngridz));
-            sb.append(String.format(" Grid density:               %8.3f\n", density));
-            sb.append(String.format(" Grid dimensions:           (%d,%d,%d)\n", fftX, fftY, fftZ));
+            sb.append(String.format(" Form Factor Width:         (%d,%d,%d)\n",
+                    ngridx, ngridy, ngridz));
+            sb.append(String.format(" Grid density:               %8.3f\n",
+                    density));
+            sb.append(String.format(" Grid dimensions:           (%d,%d,%d)\n",
+                    fftX, fftY, fftZ));
+            sb.append(String.format(" Total grid size:             %d\n",
+                    nfftTotal));
             sb.append(String.format(" Grid chunks per thread:    (%dx%dx%d)/%d = %d\n",
                     nA, nB, nC, div, nWork));
             logger.info(sb.toString());
@@ -277,6 +278,10 @@ public class CrystalReciprocalSpace {
         permanentDensity = new PermanentDensityRegion();
     }
 
+    public void setSolventMask(boolean solvent) {
+        this.solvent = solvent;
+    }
+
     /**
      * Note that the Java function "signum" and the FORTRAN version have
      * different definitions for an argument of zero.
@@ -285,7 +290,7 @@ public class CrystalReciprocalSpace {
      * <p>
      * FORTRAN: signum(0.0) .eq. 1.0
      */
-    public void permanent() {
+    public void permanent(double hkldata[][]) {
         assignAtomsToCells();
         long permtime = -System.nanoTime();
         try {
@@ -358,9 +363,10 @@ public class CrystalReciprocalSpace {
 
         if (logger.isLoggable(Level.INFO)) {
             StringBuffer sb = new StringBuffer();
-            sb.append(String.format("\nrealspace e.d.:   %8.3f (sec)\n", permtime * toSeconds));
-            sb.append(String.format("FFT:              %8.3f (sec)\n", ffttime * toSeconds));
-            sb.append(String.format("symmetry:         %8.3f (sec)\n", symtime * toSeconds));
+            sb.append(String.format("\n realspace e.d.:   %8.3f (sec)\n", permtime * toSeconds));
+            sb.append(String.format(" FFT:              %8.3f (sec)\n", ffttime * toSeconds));
+            sb.append(String.format(" symmetry:         %8.3f (sec)\n", symtime * toSeconds));
+            sb.append(String.format(" HKLs generated:   %8d\n", reflectionlist.hkllist.size()));
             logger.info(sb.toString());
         }
     }
@@ -534,7 +540,7 @@ public class CrystalReciprocalSpace {
 
             private void gridPermanent(int iSymm, int n) {
 
-                FormFactor atomff = new FormFactor(atoms[n]);
+                FormFactor atomff = new FormFactor(atoms[n], 2.0);
                 final double xyz[] = atoms[n].getXYZ();
                 final double xi = xyz[0];
                 final double yi = xyz[1];

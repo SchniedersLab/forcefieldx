@@ -18,8 +18,13 @@
  * along with Force Field X; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
  */
-package ffx.crystal;
+package ffx.xray;
 
+import ffx.crystal.Crystal;
+import ffx.crystal.HKL;
+import ffx.crystal.ReflectionList;
+import ffx.crystal.Resolution;
+import ffx.crystal.SpaceGroup;
 import ffx.utilities.ByteSwap;
 
 import java.io.File;
@@ -30,12 +35,16 @@ import java.io.IOException;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
  * @author fennt
  */
 public class MTZFilter {
+
+    private static final Logger logger = Logger.getLogger(MTZFilter.class.getName());
 
     private class column {
 
@@ -69,6 +78,7 @@ public class MTZFilter {
     final private ArrayList<column> columns = new ArrayList();
     final private ArrayList<dataset> datasets = new ArrayList();
     private String title;
+    private int h, k, l, fo, sigfo, rfree;
     public int ncol;
     public int nrfl;
     public int nbatches;
@@ -77,10 +87,16 @@ public class MTZFilter {
     public double reslow;
     public double reshigh;
 
-    public boolean readFile() {
-        File mtzFile = null;
-        // File mtzFile = molecularAssembly.getFile();
+    // null constructor
+    public MTZFilter() {
+    }
 
+    /*
+    public boolean readFile(){
+    this(readFile(molecularAssembly.getFile()));
+    }
+     */
+    public ReflectionList getReflectionList(File mtzFile) {
         ByteOrder b = ByteOrder.nativeOrder();
         Boolean swap = true;
         if (b.equals(ByteOrder.BIG_ENDIAN)) {
@@ -96,14 +112,85 @@ public class MTZFilter {
             int offset = 0;
             String mtzstr = new String(bytes);
 
+            // eat "MTZ" title
+            dis.read(bytes, offset, 4);
+
             // header offset
             int headeroffset = swap ? ByteSwap.swap(dis.readInt()) : dis.readInt();
 
+            // ignore machine stamp
             dis.read(bytes, offset, 4);
             mtzstr = new String(bytes);
 
             // skip to header and parse
-            dis.skipBytes(headeroffset * 4);
+            dis.skipBytes((headeroffset - 4) * 4);
+
+            for (Boolean parsing = true; parsing; dis.read(bytes, offset, 80)) {
+                mtzstr = new String(bytes);
+                parsing = parse_header(mtzstr);
+            }
+        } catch (EOFException eof) {
+            System.out.println("EOF reached ");
+        } catch (IOException ioe) {
+            System.out.println("IO Exception: " + ioe.getMessage());
+            return null;
+        }
+
+        h = k = l = fo = sigfo = rfree = -1;
+        parse_columns();
+
+        if (fo < 0) {
+            return null;
+        }
+
+        column c = (column) columns.get(fo);
+        dataset d = (dataset) datasets.get(c.id - 1);
+
+        if (logger.isLoggable(Level.INFO)) {
+            StringBuffer sb = new StringBuffer();
+            sb.append(String.format("\nsetting up Reflection List using spacegroup #: %d (name: %s)\n",
+                    sgnum, SpaceGroup.spaceGroupNames[sgnum - 1]));
+            sb.append(String.format("and cell: %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f\n",
+                    d.cell[0], d.cell[1], d.cell[2], d.cell[3], d.cell[4], d.cell[5]));
+            logger.info(sb.toString());
+        }
+
+        Crystal crystal = new Crystal(d.cell[0], d.cell[1], d.cell[2],
+                d.cell[3], d.cell[4], d.cell[5], SpaceGroup.spaceGroupNames[sgnum - 1]);
+        Resolution resolution = new Resolution(reshigh);
+
+        return new ReflectionList(crystal, resolution);
+    }
+
+    public boolean readFile(File mtzFile, ReflectionList reflectionlist,
+            RefinementData refinementdata) {
+        ByteOrder b = ByteOrder.nativeOrder();
+        Boolean swap = true;
+        if (b.equals(ByteOrder.BIG_ENDIAN)) {
+            swap = false;
+        }
+        FileInputStream fis;
+        DataInputStream dis;
+        try {
+            fis = new FileInputStream(mtzFile);
+            dis = new DataInputStream(fis);
+
+            byte bytes[] = new byte[80];
+            int offset = 0;
+            String mtzstr = new String(bytes);
+
+            // eat "MTZ" title
+            dis.read(bytes, offset, 4);
+
+            // header offset
+            int headeroffset = swap ? ByteSwap.swap(dis.readInt()) : dis.readInt();
+
+            // ignore machine stamp
+            dis.read(bytes, offset, 4);
+            mtzstr = new String(bytes);
+
+            // skip to header and parse
+            dis.skipBytes((headeroffset - 4) * 4);
 
             for (Boolean parsing = true; parsing; dis.read(bytes, offset, 80)) {
                 mtzstr = new String(bytes);
@@ -117,6 +204,54 @@ public class MTZFilter {
             // skip initial header
             dis.skipBytes(80);
 
+            // column identifiers
+            h = k = l = fo = sigfo = rfree = -1;
+            parse_columns();
+
+            if (h < 0 || k < 0 || l < 0) {
+                String message = "Fatal error in MTZ file - no H K L indexes?\n";
+                logger.log(Level.SEVERE, message);
+                return false;
+            }
+
+            // read in data
+            int nread, nignore, nres;
+            nread = nignore = nres = 0;
+            float data[] = new float[ncol];
+            for (int i = 0; i < nrfl; i++) {
+                for (int j = 0; j < ncol; j++) {
+                    data[j] = swap ? ByteSwap.swap(dis.readFloat()) : dis.readFloat();
+                }
+                int ih = (int) data[h];
+                int ik = (int) data[k];
+                int il = (int) data[l];
+                HKL hkl = reflectionlist.getHKL(ih, ik, il);
+                if (hkl != null) {
+                    if (fo > 0 && sigfo > 0) {
+                        refinementdata.fsigf(hkl.index(), data[fo], data[sigfo]);
+                    }
+                    if (rfree > 0) {
+                        refinementdata.freer(hkl.index(), (int) data[rfree]);
+                    }
+                    nread++;
+                } else {
+                    HKL tmp = new HKL(ih, ik, il);
+                    if (Crystal.invressq(reflectionlist.crystal, tmp)
+                            > reflectionlist.resolution.invressq_limit()) {
+                        nres++;
+                    } else {
+                        nignore++;
+                    }
+                }
+            }
+            StringBuffer sb = new StringBuffer();
+            sb.append(String.format("\n# HKL read in:                             %d\n", nread));
+            sb.append(String.format("# HKL NOT read in (too high resolution):   %d\n", nres));
+            sb.append(String.format("# HKL NOT read in (not in internal list?): %d\n", nignore));
+            if (logger.isLoggable(Level.INFO)) {
+                logger.info(sb.toString());
+            }
+
             // print out some reflections
             /*
              * TODO: columns.id should match desired column to read in
@@ -124,38 +259,41 @@ public class MTZFilter {
              * into datasets.cell
              * flag desired columns to read in, then read in data
              */
+            /*
             int nc = 1;
             for (Iterator i = columns.iterator(); i.hasNext(); nc++) {
-                column c = (column) i.next();
+            column c = (column) i.next();
 
-                System.out.format("%3d %10s ", nc, c.label);
+            System.out.format("%3d %10s ", nc, c.label);
             }
             System.out.println();
             nc = 1;
             for (Iterator i = columns.iterator(); i.hasNext(); nc++) {
-                column c = (column) i.next();
+            column c = (column) i.next();
 
-                System.out.format("%3d %10s ", nc, c.type);
+            System.out.format("%3d %10s ", nc, c.type);
             }
             System.out.println();
             nc = 1;
             for (Iterator i = columns.iterator(); i.hasNext(); nc++) {
-                column c = (column) i.next();
+            column c = (column) i.next();
 
-                System.out.format("%3d %10s ", nc, c.id);
+            System.out.format("%3d %10s ", nc, c.id);
             }
             System.out.println();
 
             for (int i = 0; i < nrfl; i++) {
-                for (int j = 0; j < ncol; j++) {
-                    float fval = swap ? ByteSwap.swap(dis.readFloat()) : dis.readFloat();
-                    System.out.format("%14.3g ", fval);
-                }
-                System.out.println();
+            for (int j = 0; j < ncol; j++) {
+            float fval = swap ? ByteSwap.swap(dis.readFloat()) : dis.readFloat();
+            System.out.format("%14.3g ", fval);
             }
+            System.out.println();
+            }
+             */
         } catch (EOFException eof) {
             System.out.println("EOF reached ");
         } catch (IOException ioe) {
+            System.out.println("IO Exception: " + ioe.getMessage());
             return false;
         }
 
@@ -267,6 +405,46 @@ public class MTZFilter {
         }
 
         return parsing;
+    }
+
+    private void parse_columns() {
+
+        int nc = 0;
+        StringBuffer sb = new StringBuffer();
+        for (Iterator i = columns.iterator(); i.hasNext(); nc++) {
+            column c = (column) i.next();
+            String label = c.label.trim();
+            if (label.equalsIgnoreCase("H") && c.type == 'H') {
+                h = nc;
+            } else if (label.equalsIgnoreCase("K") && c.type == 'H') {
+                k = nc;
+            } else if (label.equalsIgnoreCase("L") && c.type == 'H') {
+                l = nc;
+            } else if ((label.equalsIgnoreCase("free")
+                    || label.equalsIgnoreCase("freer")
+                    || label.equalsIgnoreCase("freerflag")
+                    || label.equalsIgnoreCase("rfree")
+                    || label.equalsIgnoreCase("rfreeflag"))
+                    && c.type == 'I') {
+                sb.append(String.format("Reading R Free column: \"%s\"\n", c.label));
+                rfree = nc;
+            } else if ((label.equalsIgnoreCase("f")
+                    || label.equalsIgnoreCase("fp")
+                    || label.equalsIgnoreCase("fo"))
+                    && c.type == 'F') {
+                sb.append(String.format("Reading Fo column: \"%s\"\n", c.label));
+                fo = nc;
+            } else if ((label.equalsIgnoreCase("sigf")
+                    || label.equalsIgnoreCase("sigfp")
+                    || label.equalsIgnoreCase("sigfo"))
+                    && c.type == 'Q') {
+                sb.append(String.format("Reading sigFo column: \"%s\"\n", c.label));
+                sigfo = nc;
+            }
+        }
+        if (logger.isLoggable(Level.INFO)) {
+            logger.info(sb.toString());
+        }
     }
 
     static void print_header(MTZFilter mfile) {
