@@ -52,7 +52,11 @@ public final class BioType extends BaseType implements Comparator<String> {
         super(ForceField.ForceFieldType.BIOTYPE, Integer.toString(index));
         this.index = index;
         this.PDB = PDB;
-        this.residue = residue;
+        if (residue != null) {
+            this.residue = residue.replace(',', ' ');
+        } else {
+            this.residue = null;
+        }
         this.atomType = atomType;
     }
 

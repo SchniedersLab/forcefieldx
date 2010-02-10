@@ -60,19 +60,33 @@ public class PotentialEnergyTest {
 
     @Parameters
     public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][]{{"DHFR Benchmark",
+        return Arrays.asList(new Object[][]{
+                    {"Ubiquitin Benchmark",
+                        "ffx/potential/structures/ubiquitin.xyz",
+                        2673.3768, 6908,
+                        1637.3492, 5094,
+                        -11.0435, 1958,
+                        279.6416, 2835,
+                        67.6480, 651,
+                        215.1421, 3297,
+                        24.6906, 106,
+                        -29.4368, 71,
+                        13202.8700, 1483768,
+                        -33012.6618, 623490,
+                        -12918.8241, 623490} /*,
+                        {"DHFR Benchmark",
                         "ffx/potential/structures/dhfr.xyz",
                         6423.84579926e0, 16569,
-                        3749.73436272e0, 11584,
+                        3746.31506290e0, 11584,
                         -21.85553039e0, 4031,
                         687.46861123e0, 7023,
                         198.72886589e0, 1566,
-                        422.54712638e0, 6701,
+                        426.23738971e0, 6701,
                         48.26628393e0, 292,
-                        -41.71473466e0, 147,
-                        32676.57816012e0, 3480445,
-                        -79670.54372856e0, 1463353,
-                        -32033.24720761e0, 1463353} /*,
+                        -41.71473465e0, 147,
+                        32646.72296821e0, 3480445,
+                        -79415.53874328e0, 1463353,
+                        -32001.56811430e0, 1463353},
                 {"SNARE P1",
                 "ffx/potential/structures/1n7s.P1.xyz",
                 1405.28569930e0, 20160,
@@ -98,7 +112,8 @@ public class PotentialEnergyTest {
                 -560.995764695e0, 268,
                 4003.2718354725e0, 2966542,
                 -12303.7482031125e0, 1504176,
-                -2811.1927689975e0, 1504176 } */});
+                -2811.1927689975e0, 1504176 } */
+                });
     }
     private final String info;
     private final File structure;

@@ -57,7 +57,6 @@ public class Complex3DOpenCL {
             logger.log(Level.INFO, System.getProperty("java.library.path"));
             String message = "Fatal error loading the OpenCL convolution library.";
             logger.log(Level.SEVERE, message, e);
-            System.exit(-1);
         }
     }
     private final int nX, nY, nZ;

@@ -40,7 +40,6 @@ import edu.rit.pj.reduction.SharedDoubleArray;
 import edu.rit.pj.reduction.SharedInteger;
 
 import ffx.crystal.Crystal;
-import ffx.crystal.ReplicatesCrystal;
 import ffx.crystal.SymOp;
 import ffx.potential.LambdaInterface;
 import ffx.potential.bonded.Angle;

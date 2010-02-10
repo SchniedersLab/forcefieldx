@@ -1,5 +1,5 @@
-The "amoeba-readme" file contains literature references for the 2004 and 2009
-versions for AMOEBA water, small molecules, protein and nucleic acid force fields.
+This "README" file contains literature references for the 2004 and 2009
+versions of AMOEBA water, small molecules, protein and nucleic acid force fields.
 They were consolidated from comments in the original parameter files
 for convenience and given in the following sections:
 
@@ -97,11 +97,11 @@ and early 2010 by Chuanjie Wu, Pengyu Ren and Jay Ponder ]
 4.) AMOEBA Nucleic Acid References
 
 AMOEBA nucleic acid parameters have been developed by Chuanjie Wu, 
-Ponder Lab, Washington University, May 2008
+Ponder Lab, Washington University
 
 5.) Notes on the Force Field X implementation of AMOEBA
 
-The file "AMOEBA-BASE" contains properties that are common between the AMOEBA
+The file "AMOEBA_BASE" contains properties that are common between the AMOEBA
 parameter files. Since the Force Field X potential implements only AMOEBA,
 these properties are set by default and not parsed. Further notes on individual
 force field terms are given below.
@@ -133,8 +133,8 @@ torsionunit             0.5
 
 Only the BUFFERED-14-7 VDWType is currently supported by FFX and respects
 the CUBIC-MEAN and HHG radius and epsilon combining rules, respectively. The
-masking rules are hard-coded into VanDerWaals class for efficiency; such that
-the vdw-*-scale keywords are supported.
+masking rules are hard-coded into the VanDerWaals class for efficiency;
+changes to the vdw-*-scale keywords are not supported.
 
 vdwtype                 BUFFERED-14-7
 radiusrule              CUBIC-MEAN
@@ -154,7 +154,7 @@ polarization            MUTUAL
 
 Only non-unity masking rules are respected for efficiency, but at the cost of
 reduced flexibility relative to the original TINKER code. The following scale 
-factors are implemented:
+factors can be changed at the command line:
 
 mpole-12-scale          0.0
 mpole-13-scale          0.0

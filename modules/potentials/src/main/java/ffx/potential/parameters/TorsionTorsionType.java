@@ -541,8 +541,10 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
         tortorBuffer.append(String.format("  %2d  %2d", gridPoints[0],
                 gridPoints[1]));
         for (int i = 0; i < energy.length; i++) {
+            int nxi = i % nx;
+            int nyi = i / ny;
             tortorBuffer.append(String.format(" \\\n  % 6.1f  % 6.1f  % 8.5f",
-                    torsion1[i], torsion2[i], energy[i]));
+                    tx[nxi], ty[nyi], energy[i]));
         }
         return tortorBuffer.toString();
     }
