@@ -48,7 +48,7 @@ public class ForceField {
      */
     public enum Force_Field {
 
-        AMOEBA_WATER, AMOEBA_2004, AMOEBA_PROTEIN_2004,
+        AMOEBA_WATER, AMOEBA_2004, AMOEBA_PROTEIN_2004, AMOEBA_PROTEIN_2004_U1,
         AMOEBA_2009, AMOEBA_BIO_2009
     }
 
@@ -90,16 +90,9 @@ public class ForceField {
     static {
         ClassLoader cl = ForceField.class.getClassLoader();
         String prefix = "ffx/potential/parameters/amoeba/";
-        Force_Field ff = Force_Field.AMOEBA_WATER;
-        forceFields.put(ff, cl.getResource(prefix + ff));
-        ff = Force_Field.AMOEBA_2004;
-        forceFields.put(ff, cl.getResource(prefix + ff));
-        ff = Force_Field.AMOEBA_PROTEIN_2004;
-        forceFields.put(ff, cl.getResource(prefix + ff));
-        ff = Force_Field.AMOEBA_2009;
-        forceFields.put(ff, cl.getResource(prefix + ff));
-        ff = Force_Field.AMOEBA_BIO_2009;
-        forceFields.put(ff, cl.getResource(prefix + ff));
+        for (Force_Field ff : Force_Field.values()) {
+            forceFields.put(ff, cl.getResource(prefix + ff));
+        }
     }
     public URL forceFieldURL;
     public File keywordFile;

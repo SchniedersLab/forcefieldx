@@ -412,7 +412,7 @@ public class SpaceGroup {
 
     /**
      * Return a SpaceGroup based on its name.
-     * @param pdbName Available SpaceGroup names are given in
+     * @param name Available SpaceGroup names are given in
      *              the "spaceGroupName" array.
      * @return The space group corresponding to the given number.
      * @since 1.0

@@ -43,9 +43,14 @@ Potential for Proteins: Model and Parameterization", in preparation.
 J. W. Ponder and D. A. Case, "Force Fields for Protein Simulation",
 Adv. Prot. Chem., 66, 27-85 (2003)
 
-[ The 2009 update to the AMOEBA Protein Force Field is a modification of
-the original AMOEBA protein parameters with changes made during Fall 2009
-and early 2010 by Chuanjie Wu, Pengyu Ren and Jay Ponder ]
+The 2004 AMOEBA Protein Force Field [AMOEBA_PROTEIN_2004_U1] is a
+modification of the TINKER v. 5.1 amoebapro04.prm [AMOEBA_PROTEIN_2004] 
+based on validation studies done in the Ren lab.
+
+The 2009 AMOEBA Protein Force Field [AMOEBA_BIO_2009] is based on a new 
+protocol for determining multipole parameters via distributed multipole
+analysis (DMA) of electronic structure wave functions followed by
+restrained optimization of the multipoles to the electric potential. 
 
    ###############################################
    ##                                           ##
