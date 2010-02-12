@@ -133,10 +133,8 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.6.1</version>
                 <configuration>
                     <quiet>true</quiet>
-                    <detectOfflineLinks>false</detectOfflineLinks>
                 </configuration>
                 <!-- executions>
                     <execution>
@@ -228,9 +226,8 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.6.1</version>
                 <configuration>
-                    <detectOfflineLinks>false</detectOfflineLinks>
+                    <aggregate>true</aggregate>
                     <quiet>true</quiet>
                 </configuration>
             </plugin>
@@ -238,13 +235,15 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jxr-plugin</artifactId>
                 <configuration>
-                    <linkJavadoc>true</linkJavadoc>
-                    <javadocDir>${project.reporting.outputDirectory}/apidocs</javadocDir>
+                    <aggregate>true</aggregate>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-report-plugin</artifactId>
+                <configuration>
+                    <aggregate>true</aggregate>
+                </configuration>
             </plugin>
         </plugins>
     </reporting>

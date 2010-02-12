@@ -1,7 +1,7 @@
 /**
  * Title: Force Field X
  * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2009
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2010
  *
  * This file is part of Force Field X.
  *
@@ -22,7 +22,6 @@ package ffx.potential.nonbonded;
 
 import static java.lang.Math.*;
 
-import static ffx.numerics.VectorMath.diff;
 import static ffx.numerics.Erf.erfc;
 import static ffx.numerics.VectorMath.*;
 
@@ -46,7 +45,6 @@ import edu.rit.pj.reduction.SharedInteger;
 import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
 import ffx.numerics.TensorRecursion;
-import ffx.numerics.VectorMath;
 import ffx.potential.LambdaInterface;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
@@ -804,12 +802,16 @@ public class ParticleMeshEwald implements LambdaInterface {
                     done = true;
                 }
                 if (eps > epsold) {
-                    logger.warning(sb.toString());
+                    if (sb != null) {
+                        logger.warning(sb.toString());
+                    }
                     String message = String.format("Fatal convergence failure: (%10.5f > %10.5f)\n", eps, epsold);
                     logger.severe(message);
                 }
                 if (iter >= maxiter) {
-                    logger.warning(sb.toString());
+                    if (sb != null) {
+                        logger.warning(sb.toString());
+                    }
                     String message = String.format("Maximum iterations reached: (%d)\n", iter);
                     logger.severe(message);
                 }
@@ -5254,7 +5256,6 @@ public class ParticleMeshEwald implements LambdaInterface {
         if (bonds == null || bonds.size() < 1) {
             String message = "Multipoles can only be assigned after bonded relationships are defined.\n";
             logger.severe(message);
-            System.exit(-1);
         }
         // 1 reference atom.
         for (Bond b : bonds) {
@@ -5313,7 +5314,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                 }
             }
         }
-        // 3 reference atoms (chiral).
+        // 3 reference atoms.
         for (Bond b : bonds) {
             Atom atom2 = b.get1_2(atom);
             String key2 = atom2.getAtomType().getKey();
@@ -5413,6 +5414,34 @@ public class ParticleMeshEwald implements LambdaInterface {
                         axisAtom[i] = multipoleReferenceAtoms;
                         frame[i] = multipoleType.frameDefinition;
                         return true;
+                    }
+                    for (Angle angle2 : angles) {
+                        Atom atom4 = angle2.get1_3(atom);
+                        if (atom4 != null && atom4 != atom3) {
+                            String key4 = atom4.getAtomType().getKey();
+                            key = atomType.getKey() + " " + key2 + " " + key3 + " " + key4;
+                            multipoleType = forceField.getMultipoleType(key);
+                            if (multipoleType != null) {
+                                int multipoleReferenceAtoms[] = new int[3];
+                                multipoleReferenceAtoms[0] = atom2.xyzIndex - 1;
+                                multipoleReferenceAtoms[1] = atom3.xyzIndex - 1;
+                                multipoleReferenceAtoms[2] = atom4.xyzIndex - 1;
+                                atom.setMultipoleType(multipoleType, null);
+                                localMultipole[i][0] = multipoleType.charge;
+                                localMultipole[i][1] = multipoleType.dipole[0];
+                                localMultipole[i][2] = multipoleType.dipole[1];
+                                localMultipole[i][3] = multipoleType.dipole[2];
+                                localMultipole[i][4] = multipoleType.quadrupole[0][0];
+                                localMultipole[i][5] = multipoleType.quadrupole[1][1];
+                                localMultipole[i][6] = multipoleType.quadrupole[2][2];
+                                localMultipole[i][7] = multipoleType.quadrupole[0][1];
+                                localMultipole[i][8] = multipoleType.quadrupole[0][2];
+                                localMultipole[i][9] = multipoleType.quadrupole[1][2];
+                                axisAtom[i] = multipoleReferenceAtoms;
+                                frame[i] = multipoleType.frameDefinition;
+                                return true;
+                            }
+                        }
                     }
                 }
             }

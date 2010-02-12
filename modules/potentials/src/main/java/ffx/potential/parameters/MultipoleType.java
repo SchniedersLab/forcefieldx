@@ -1,7 +1,7 @@
 /**
  * Title: Force Field X
  * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2009
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2010
  *
  * This file is part of Force Field X.
  *
@@ -43,7 +43,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
      */
     public enum MultipoleFrameDefinition {
 
-        ZTHENX, BISECTOR
+        ZTHENX, BISECTOR, ZTHENBISECTOR, TRISECTOR
     }
     /**
      * Conversion from electron-Angstroms to Debyes
@@ -152,10 +152,18 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
         StringBuffer multipoleBuffer = new StringBuffer("multipole");
         if (frameDefinition == MultipoleFrameDefinition.BISECTOR) {
             multipoleBuffer.append(String.format("  %5d", frameAtomTypes[0]));
-            for (int i = 1; i < frameAtomTypes.length; i++) {
-                int t = -frameAtomTypes[i];
-                multipoleBuffer.append(String.format("  %5d", t));
-            }
+            multipoleBuffer.append(String.format("  %5d", -frameAtomTypes[1]));
+            multipoleBuffer.append(String.format("  %5d", -frameAtomTypes[2]));
+        } else if (frameDefinition == MultipoleFrameDefinition.ZTHENBISECTOR) {
+            multipoleBuffer.append(String.format("  %5d", frameAtomTypes[0]));
+            multipoleBuffer.append(String.format("  %5d", frameAtomTypes[1]));
+            multipoleBuffer.append(String.format("  %5d", -frameAtomTypes[2]));
+            multipoleBuffer.append(String.format("  %5d", -frameAtomTypes[3]));
+        } else if (frameDefinition == MultipoleFrameDefinition.TRISECTOR){
+            multipoleBuffer.append(String.format("  %5d", frameAtomTypes[0]));
+            multipoleBuffer.append(String.format("  %5d", -frameAtomTypes[1]));
+            multipoleBuffer.append(String.format("  %5d", -frameAtomTypes[2]));
+            multipoleBuffer.append(String.format("  %5d", -frameAtomTypes[3]));
         } else {
             for (int i : frameAtomTypes) {
                 multipoleBuffer.append(String.format("  %5d", i));
@@ -185,10 +193,18 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
         StringBuffer multipoleBuffer = new StringBuffer("multipole");
         if (frameDefinition == MultipoleFrameDefinition.BISECTOR) {
             multipoleBuffer.append(String.format("  %5d", frameAtomTypes[0]));
-            for (int i = 1; i < frameAtomTypes.length; i++) {
-                int t = -frameAtomTypes[i];
-                multipoleBuffer.append(String.format("  %5d", t));
-            }
+            multipoleBuffer.append(String.format("  %5d", -frameAtomTypes[1]));
+            multipoleBuffer.append(String.format("  %5d", -frameAtomTypes[2]));
+        } else if (frameDefinition == MultipoleFrameDefinition.ZTHENBISECTOR) {
+            multipoleBuffer.append(String.format("  %5d", frameAtomTypes[0]));
+            multipoleBuffer.append(String.format("  %5d", frameAtomTypes[1]));
+            multipoleBuffer.append(String.format("  %5d", -frameAtomTypes[2]));
+            multipoleBuffer.append(String.format("  %5d", -frameAtomTypes[3]));
+        } else if (frameDefinition == MultipoleFrameDefinition.TRISECTOR){
+            multipoleBuffer.append(String.format("  %5d", frameAtomTypes[0]));
+            multipoleBuffer.append(String.format("  %5d", -frameAtomTypes[1]));
+            multipoleBuffer.append(String.format("  %5d", -frameAtomTypes[2]));
+            multipoleBuffer.append(String.format("  %5d", -frameAtomTypes[3]));
         } else {
             for (int i : frameAtomTypes) {
                 multipoleBuffer.append(String.format("  %5d", i));

@@ -1,7 +1,7 @@
 /**
  * Title: Force Field X
  * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2009
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2010
  *
  * This file is part of Force Field X.
  *
@@ -517,15 +517,24 @@ public class ForceFieldFilter {
             return;
         }
         try {
-            MultipoleType.MultipoleFrameDefinition frameDefinition = MultipoleType.MultipoleFrameDefinition.ZTHENX;
             int numTypes = tokens.length - 2;
             int atomTypes[] = new int[numTypes];
             for (int i = 0; i < numTypes; i++) {
                 atomTypes[i] = Integer.parseInt(tokens[i + 1]);
-                if (atomTypes[i] < 0) {
-                    frameDefinition = MultipoleType.MultipoleFrameDefinition.BISECTOR;
-                    atomTypes[i] = abs(atomTypes[i]);
+            }
+            MultipoleType.MultipoleFrameDefinition frameDefinition =
+                    MultipoleType.MultipoleFrameDefinition.ZTHENX;
+            if (atomTypes.length == 3 && (atomTypes[1] < 0 || atomTypes[2] < 0)) {
+                frameDefinition = MultipoleType.MultipoleFrameDefinition.BISECTOR;
+            } else if (atomTypes.length == 4 && atomTypes[2] < 0 && atomTypes[3] < 0) {
+                if (atomTypes[1] < 0) {
+                    frameDefinition = MultipoleType.MultipoleFrameDefinition.TRISECTOR;
+                } else {
+                    frameDefinition = MultipoleType.MultipoleFrameDefinition.ZTHENBISECTOR;
                 }
+            }
+            for (int i = 0; i < numTypes; i++) {
+                atomTypes[i] = abs(atomTypes[i]);
             }
             double c = Double.parseDouble(tokens[1 + numTypes]);
             input = br.readLine();
@@ -590,15 +599,24 @@ public class ForceFieldFilter {
             return;
         }
         try {
-            MultipoleType.MultipoleFrameDefinition frameDefinition = MultipoleType.MultipoleFrameDefinition.ZTHENX;
             int numTypes = tokens.length - 11;
             int atomTypes[] = new int[numTypes];
             for (int i = 0; i < numTypes; i++) {
                 atomTypes[i] = Integer.parseInt(tokens[i + 1]);
-                if (atomTypes[i] < 0) {
-                    frameDefinition = MultipoleType.MultipoleFrameDefinition.BISECTOR;
-                    atomTypes[i] = abs(atomTypes[i]);
+            }
+            MultipoleType.MultipoleFrameDefinition frameDefinition
+                    = MultipoleType.MultipoleFrameDefinition.ZTHENX;
+            if (atomTypes.length == 3 && (atomTypes[1] < 0 || atomTypes[2] < 0)) {
+                frameDefinition = MultipoleType.MultipoleFrameDefinition.BISECTOR;
+            } else if (atomTypes.length == 4 && atomTypes[2] < 0 && atomTypes[3] < 0) {
+                if (atomTypes[1] < 0) {
+                    frameDefinition = MultipoleType.MultipoleFrameDefinition.TRISECTOR;
+                } else {
+                    frameDefinition = MultipoleType.MultipoleFrameDefinition.ZTHENBISECTOR;
                 }
+            }
+            for (int i = 0; i < numTypes; i++) {
+                atomTypes[i] = abs(atomTypes[i]);
             }
             double dipole[] = new double[3];
             double quadrupole[][] = new double[3][3];

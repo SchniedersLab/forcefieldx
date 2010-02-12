@@ -1,7 +1,7 @@
 /**
  * Title: Force Field X
  * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2009
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2010
  *
  * This file is part of Force Field X.
  *
@@ -102,6 +102,7 @@ public class ModelingShell extends Console implements AlgorithmListener {
         setVariable("saveAsPDB", new MethodClosure(mainPanel, "saveAsPDB"));
         setVariable("close", new MethodClosure(mainPanel, "closeWait"));
         setVariable("closeAll", new MethodClosure(mainPanel, "closeAll"));
+        setVariable("expandToP1", new MethodClosure(mainPanel, "expandToP1"));
 
         // Select
         setVariable("select", new MethodClosure(this, "select"));
@@ -251,9 +252,10 @@ public class ModelingShell extends Console implements AlgorithmListener {
         if (interrupted || terminatableAlgorithm != null) {
             return;
         }
-        MolecularAssembly active = mainPanel.getHierarchy().getActive();
+        FFXSystem active = mainPanel.getHierarchy().getActive();
         if (active != null) {
-            MolecularDynamics molecularDynamics = new MolecularDynamics(active, this, Thermostats.BUSSI);
+            MolecularDynamics molecularDynamics = new MolecularDynamics(active,
+                    active.getProperties(), this, Thermostats.BUSSI);
             terminatableAlgorithm = molecularDynamics;
             molecularDynamics.dynamic(nStep, timeStep, printInterval,
                     saveInterval, temperature, initVelocities);

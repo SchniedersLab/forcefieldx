@@ -1,7 +1,7 @@
 /**
  * Title: Force Field X
  * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2009
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2010
  *
  * This file is part of Force Field X.
  *
@@ -33,6 +33,7 @@ import ffx.potential.PotentialEnergy;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.parsers.XYZFilter;
+import org.apache.commons.configuration.CompositeConfiguration;
 
 /**
  * Run NVE or NVT molecular dynamics.
@@ -61,6 +62,7 @@ public class MolecularDynamics implements Terminatable {
     private double dt;
     private final MolecularAssembly molecularAssembly;
     private final PotentialEnergy potentialEnergy;
+    private final CompositeConfiguration properties;
     private final Atom atoms[];
     private AlgorithmListener algorithmListener;
     private Thermostat thermostat;
@@ -69,8 +71,9 @@ public class MolecularDynamics implements Terminatable {
     private boolean done;
     private boolean terminate;
 
-    public MolecularDynamics(MolecularAssembly assembly, AlgorithmListener listener,
-            Thermostats requestedThermostat) {
+    public MolecularDynamics(MolecularAssembly assembly,
+            CompositeConfiguration properties,
+            AlgorithmListener listener, Thermostats requestedThermostat) {
         this.molecularAssembly = assembly;
         this.algorithmListener = listener;
         if (molecularAssembly.getPotentialEnergy() == null) {
@@ -79,6 +82,7 @@ public class MolecularDynamics implements Terminatable {
         } else {
             potentialEnergy = molecularAssembly.getPotentialEnergy();
         }
+        this.properties = properties;
         ArrayList<Atom> atomList = molecularAssembly.getAtomList();
         n = atomList.size();
         atoms = atomList.toArray(new Atom[n]);
@@ -99,11 +103,13 @@ public class MolecularDynamics implements Terminatable {
                     thermostat = null;
                     break;
                 case BERENDSEN:
-                    thermostat = new Berendsen(n, x, v, mass, 300.0);
+                    double tau = properties.getDouble("tau-temperature", 0.2);
+                    thermostat = new Berendsen(n, x, v, mass, 300.0, tau);
                     break;
                 case BUSSI:
                 default:
-                    thermostat = new Bussi(n, x, v, mass, 300.0);
+                    tau = properties.getDouble("tau-temperature", 0.2);
+                    thermostat = new Bussi(n, x, v, mass, 300.0, tau);
             }
         } else {
             thermostat = null;

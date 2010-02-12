@@ -15,17 +15,17 @@
             <subsection name="Available Force Fields">
                 <p>Force Field X stores AMOEBA force fields internally. The 2009
                 AMOEBA Biomolecular force field is specified as:</p>
-                <source>forcefield AMOEBA_BIO_2009</source>
+                <source>forcefield amoeba-bio-2009</source>
                 <p>The following force fields may also be specified. Except where
                 noted, they have been imported from the TINKER v. 5.1 distribution.</p>
                 <ul>
-                    <li>AMOEBA_WATER - the 2003 Ren and Ponder AMOEBA water model (water.prm)</li>
-                    <li>AMOEBA_2004 - initial AMOEBA small molecule parameters (amoeba04.prm)</li>
-                    <li>AMOEBA_2009 - 2009 update to the AMOEBA small molecule parameters (amoeba09.prm)</li>
-                    <li>AMOEBA_PROTEIN_2004 - initial AMOEBA protein force field (amoebapro04.prm)</li>
-                    <li>AMOEBA_PROTEIN_2004_U1 - update to the initial AMOEBA protein force field
+                    <li>amoeba-water            the 2003 Ren and Ponder AMOEBA water model (water.prm)</li>
+                    <li>amoeba-2004             initial AMOEBA small molecule parameters (amoeba04.prm)</li>
+                    <li>amoeba-2009             2009 update to the AMOEBA small molecule parameters (amoeba09.prm)</li>
+                    <li>amoeba-protein-2004     initial AMOEBA protein force field (amoebapro04.prm)</li>
+                    <li>amoeba-protein-2004-u1  an update to the initial AMOEBA protein force field
                     based on validation stuides done in the Ren lab</li>
-                    <li>AMOEBA_BIO_2009 - 2009 update to the AMOEBA protein force field and initial
+                    <li>amoeba-bio-2009         the 2009 update to the AMOEBA protein force field and initial
                     AMOEBA nucleic acid force field (amoebabio09.prm)</li>
                 </ul>
             </subsection>
@@ -35,7 +35,7 @@
                 as solvated ubiquitin.</p>
                 <p>The DHFR property file:</p>
                 <source>
-forcefield AMOEBA-BIO-2009
+forcefield amoeba-bio-2009
 a-axis 62.23
 b-axis 62.23
 c-axis 62.23
