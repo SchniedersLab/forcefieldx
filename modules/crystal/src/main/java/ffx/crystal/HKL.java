@@ -30,13 +30,13 @@ import ffx.utilities.HashCodeUtil;
  */
 public class HKL {
 
-    public int h;
-    public int k;
-    public int l;
-    public int epsilon;
-    public int allowed;
-    public int bin;
-    public int index;
+    protected int h;
+    protected int k;
+    protected int l;
+    protected int epsilon;
+    protected int allowed;
+    protected int bin;
+    protected int index;
     private int hashCode;
 
     // null constructor

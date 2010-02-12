@@ -39,8 +39,10 @@ public class RefinementData {
     public final double fofc1[][];
     public final double fd[][];
     // scaling coefficients
-    public double solvent_k, solvent_b;
-    public double anisok[] = new double[6];
+    public double spline[] = new double[10];
+    public double solvent_k, solvent_ueq;
+    public double model_k;
+    public double aniso_b[] = new double[6];
 
     public RefinementData(int n) {
         this.n = n;
@@ -57,6 +59,14 @@ public class RefinementData {
         for (int i = 0; i < n; i++) {
             fsigf[i][0] = fsigf[i][1] = Double.NaN;
         }
+
+        for (int i = 0; i < spline.length; i++) {
+            spline[i] = 1.0;
+        }
+
+        solvent_k = 0.33;
+        solvent_ueq = 50.0 / (8.0 * Math.PI * Math.PI);
+        model_k = 1.0;
     }
 
     public void f(int i, double f) {
@@ -75,7 +85,7 @@ public class RefinementData {
         return fsigf[i][1];
     }
 
-    public void fsigf(int i, double f, double sigf){
+    public void fsigf(int i, double f, double sigf) {
         fsigf[i][0] = f;
         fsigf[i][1] = sigf;
     }

@@ -49,6 +49,17 @@ public class Crystal {
 
     private static final Logger logger = Logger.getLogger(Crystal.class.getName());
     /**
+     * bit mask operators for determining scaling terms
+     */
+    public static final int SCALE_NONE = 1 << 0;
+    public static final int SCALE_B11 = 1 << 1;
+    public static final int SCALE_B22 = 1 << 2;
+    public static final int SCALE_B33 = 1 << 3;
+    public static final int SCALE_B12 = 1 << 4;
+    public static final int SCALE_B13 = 1 << 5;
+    public static final int SCALE_B23 = 1 << 6;
+    public static final int SCALE_ALL = ~(0);
+    /**
      * Length of the cell edge in the direction of the <b>a</b> basis vector.
      */
     public final double a;
@@ -146,6 +157,7 @@ public class Crystal {
     private final double beta_term;
     private final double gamma_term;
     private final double tolerance = 1.0e-10;
+    public int scale_flag;
 
     /**
      * The Crystal class encapsulates the lattice parameters and space group.
@@ -176,11 +188,88 @@ public class Crystal {
         mhalf_c = -half_c;
         spaceGroup = SpaceGroup.spaceGroupFactory(sg);
         crystalSystem = spaceGroup.crystalSystem;
+        scale_flag = SCALE_NONE;
 
         if (!SpaceGroup.checkRestrictions(crystalSystem, a, b, c, alpha, beta, gamma)) {
             String message = "The lattice parameters do not satisfy the " + crystalSystem
                     + " crystal system restrictions:/n" + toString();
             logger.severe(message);
+        }
+
+        SymOp symop;
+        double rot[][];
+        switch (crystalSystem) {
+            case TRICLINIC:
+                scale_flag |= SCALE_ALL;
+                break;
+            case MONOCLINIC:
+                scale_flag |= SCALE_B11;
+                scale_flag |= SCALE_B22;
+                scale_flag |= SCALE_B33;
+                // determine unique axis
+                symop = spaceGroup.symOps.get(1);
+                rot = symop.rot;
+                if (rot[0][0] > 0) {
+                    scale_flag |= SCALE_B23;
+                } else if (rot[1][1] > 0) {
+                    scale_flag |= SCALE_B13;
+                } else {
+                    scale_flag |= SCALE_B12;
+                }
+                break;
+            case ORTHORHOMBIC:
+                scale_flag |= SCALE_B11;
+                scale_flag |= SCALE_B22;
+                scale_flag |= SCALE_B33;
+                break;
+            case TETRAGONAL:
+                scale_flag |= SCALE_B11;
+                scale_flag |= SCALE_B33;
+                break;
+            case TRIGONAL:
+            case HEXAGONAL:
+                boolean hexagonal = false;
+                for (int i = 1; i < spaceGroup.symOps.size(); i++) {
+                    symop = spaceGroup.symOps.get(i);
+                    rot = symop.rot;
+
+                    if ((rot[1][1] * rot[1][2] == -1)
+                            || (rot[2][1] * rot[2][2] == -1)
+                            || (rot[1][1] * rot[1][2] == 1)
+                            || (rot[2][1] * rot[2][2] == 1)) {
+                        scale_flag |= SCALE_B11;
+                        scale_flag |= SCALE_B22;
+                        scale_flag |= SCALE_B23;
+                        hexagonal = true;
+                    } else if ((rot[0][0] * rot[0][2] == -1)
+                            || (rot[2][0] * rot[2][2] == -1)
+                            || (rot[0][0] * rot[0][2] == 1)
+                            || (rot[2][0] * rot[2][2] == 1)) {
+                        scale_flag |= SCALE_B22;
+                        scale_flag |= SCALE_B33;
+                        scale_flag |= SCALE_B13;
+                        hexagonal = true;
+                    } else if ((rot[0][0] * rot[0][1] == -1)
+                            || (rot[1][0] * rot[1][1] == -1)
+                            || (rot[0][0] * rot[0][1] == 1)
+                            || (rot[1][0] * rot[1][1] == 1)) {
+                        scale_flag |= SCALE_B11;
+                        scale_flag |= SCALE_B33;
+                        scale_flag |= SCALE_B12;
+                        hexagonal = true;
+                    }
+
+                    if (hexagonal) {
+                        break;
+                    }
+                }
+                if (!hexagonal) {
+                    // rhombohedral
+                    scale_flag |= SCALE_B12;
+                }
+                break;
+            case CUBIC:
+                break;
         }
 
         switch (crystalSystem) {
@@ -585,6 +674,29 @@ public class Crystal {
         mate[0] = fx * c00 + fy * c10 + fz * c20;
         mate[1] = fx * c01 + fy * c11 + fz * c21;
         mate[2] = fx * c02 + fy * c12 + fz * c22;
+    }
+
+    /**
+     * Apply a symmetry operator to one set of coordinates.
+     *
+     * @param xyz   Input coordinates.
+     * @param mate  Symmetry mate coordinates.
+     * @param symOp The symmetry operator.
+     */
+    public void applyFracSymOp(double xyz[], double mate[], SymOp symOp) {
+        double rot[][] = symOp.rot;
+        double trans[] = symOp.tr;
+        // Convert to fractional coordinates.
+        double xi = xyz[0];
+        double yi = xyz[1];
+        double zi = xyz[2];
+        // Apply Symmetry Operator.
+        double fx = rot[0][0] * xi + rot[0][1] * yi + rot[0][2] * zi + trans[0];
+        double fy = rot[1][0] * xi + rot[1][1] * yi + rot[1][2] * zi + trans[1];
+        double fz = rot[2][0] * xi + rot[2][1] * yi + rot[2][2] * zi + trans[2];
+        mate[0] = fx;
+        mate[1] = fy;
+        mate[2] = fz;
     }
 
     /**
