@@ -22,10 +22,9 @@ package ffx.xray;
 
 import java.io.File;
 import java.util.List;
-// temporary
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.PrintWriter;
+
+import edu.rit.pj.ParallelTeam;
+import org.apache.commons.configuration.CompositeConfiguration;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
@@ -38,10 +37,10 @@ import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.ForceFieldFilter;
 import ffx.potential.parsers.PDBFilter;
 import ffx.utilities.Keyword;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.PrintWriter;
 
-import edu.rit.pj.ParallelTeam;
-
-import org.apache.commons.configuration.CompositeConfiguration;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -53,9 +52,9 @@ import static org.junit.Assert.*;
  *
  * @author fennt
  */
-public class CrystalReciprocalSpaceTest {
+public class ScaleBulkMinimizeTest {
 
-    public CrystalReciprocalSpaceTest() {
+    public ScaleBulkMinimizeTest() {
     }
 
     @BeforeClass
@@ -75,39 +74,29 @@ public class CrystalReciprocalSpaceTest {
     }
 
     /**
-     * Test of permanent method, of class CrystalReciprocalSpace.
+     * Test of minimize method, of class ScaleMinimize.
      */
     @Test
-    public void test1N7SPermanent() {
-        String filename = "ffx/xray/structures/1N7S.pdb";
-        // String filename = "ffx/xray/structures/1EXR.pdb";
-        // String filename = "ffx/xray/structures/2DRM.pdb";
-        int index = filename.lastIndexOf(".");
-        String name = filename.substring(0, index);
-
-        Crystal crystal = new Crystal(39.767, 51.750, 132.938,
-                90.00, 90.00, 90.00, "P212121");
-        Resolution resolution = new Resolution(1.45);
-
-        /*
-        Crystal crystal = new Crystal(25.015, 29.415, 52.761, 89.54, 86.10, 82.39, "P1");
-        Resolution resolution = new Resolution(1.0);
-         */
-
-        // set up the crystal data
-        /*
-        Crystal crystal =
-        new Crystal(29.97, 37.86, 44.51, 90.28, 90.11, 90.64, "P1");
-        Resolution resolution = new Resolution(1.35);
-         */
-
-        ReflectionList reflectionlist = new ReflectionList(crystal, resolution);
-        RefinementData refinementdata =
-                new RefinementData(reflectionlist.hkllist.size());
+    public void testMinimize() {
+        String mtzfilename = "ffx/xray/structures/1N7S.mtz";
+        String pdbfilename = "ffx/xray/structures/1N7S.pdb";
+        // String mtzfilename = "ffx/xray/structures/2DRM.mtz";
+        // String pdbfilename = "ffx/xray/structures/2DRM.pdb";
+        int index = pdbfilename.lastIndexOf(".");
+        String name = pdbfilename.substring(0, index);
 
         // load the structure
         ClassLoader cl = this.getClass().getClassLoader();
-        File structure = new File(cl.getResource(filename).getPath());
+        File structure = new File(cl.getResource(pdbfilename).getPath());
+        File mtzfile = new File(cl.getResource(mtzfilename).getPath());
+
+        // read in Fo/sigFo/FreeR
+        MTZFilter mtzfilter = new MTZFilter();
+        ReflectionList reflectionlist = mtzfilter.getReflectionList(mtzfile);
+        RefinementData refinementdata =
+                new RefinementData(reflectionlist.hkllist.size());
+        assertTrue("mtz file should be read in without errors",
+                mtzfilter.readFile(mtzfile, reflectionlist, refinementdata));
 
         // load any properties associated with it
         CompositeConfiguration properties = Keyword.loadProperties(structure);
@@ -130,10 +119,12 @@ public class CrystalReciprocalSpaceTest {
         ParallelTeam parallelTeam = new ParallelTeam(1);
         CrystalReciprocalSpace crs =
                 new CrystalReciprocalSpace(atomarray, atomarray.length,
+                parallelTeam, reflectionlist, false);
+        crs.permanent(refinementdata.fc);
+        crs = new CrystalReciprocalSpace(atomarray, atomarray.length,
                 parallelTeam, reflectionlist, true);
         crs.permanent(refinementdata.fs);
 
-        // write out reflections (temporary)
         /*
         try {
         PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter("/tmp/foo.cns")));
@@ -155,24 +146,14 @@ public class CrystalReciprocalSpaceTest {
         }
          */
 
-        // tests
-        /*
-        ComplexNumber b = new ComplexNumber(-14.6045, -45.6596);
-        HKL hkl = reflectionlist.getHKL(1, 0, 0);
-        ComplexNumber a = new ComplexNumber(refinementdata.fc[hkl.index][0],
-        refinementdata.fc[hkl.index][1]);
-        System.out.println("1 0 0: " + a.toString() + " "
-        + a.abs() + " " + a.phase() + " "
-        + a.divides(b).toString());
+        ScaleBulkMinimize scalebulkminimize =
+                new ScaleBulkMinimize(reflectionlist, refinementdata);
+        scalebulkminimize.minimize(7, 1e-4);
 
-        b.re(113.862);
-        b.im(178.684);
-        hkl = reflectionlist.getHKL(2, 0, 0);
-        a = new ComplexNumber(refinementdata.fc[hkl.index][0],
-        refinementdata.fc[hkl.index][1]);
-        System.out.println("2 0 0: " + a.toString() + " "
-        + a.abs() + " " + a.phase() + " "
-        + a.divides(b).toString());
+        /*
+        SplineMinimize scaleminimize = new SplineMinimize(reflectionlist,
+        refinementdata, refinementdata.spline);
+        scaleminimize.minimize(7, 1e-5);
          */
     }
 }

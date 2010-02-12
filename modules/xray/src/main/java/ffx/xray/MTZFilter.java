@@ -40,7 +40,11 @@ import java.util.logging.Logger;
 
 /**
  *
- * @author fennt
+ * @author Tim Fenn<br>
+ *
+ * This method parses CCP4 MTZ files:<br>
+ * 
+ * @see <a href="http://www.ccp4.ac.uk/html/maplib.html#description" target="_blank">
  */
 public class MTZFilter {
 
@@ -77,6 +81,7 @@ public class MTZFilter {
     }
     final private ArrayList<column> columns = new ArrayList();
     final private ArrayList<dataset> datasets = new ArrayList();
+    private boolean headerparsed = false;
     private String title;
     private int h, k, l, fo, sigfo, rfree;
     public int ncol;
@@ -148,9 +153,11 @@ public class MTZFilter {
 
         if (logger.isLoggable(Level.INFO)) {
             StringBuffer sb = new StringBuffer();
-            sb.append(String.format("\nsetting up Reflection List using spacegroup #: %d (name: %s)\n",
+            sb.append(String.format("\nsetting up Reflection List based on MTZ:\n"));
+            sb.append(String.format("  spacegroup #: %d (name: %s)\n",
                     sgnum, SpaceGroup.spaceGroupNames[sgnum - 1]));
-            sb.append(String.format("and cell: %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f\n",
+            sb.append(String.format("  resolution: %8.3f\n", reshigh));
+            sb.append(String.format("  cell: %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f\n",
                     d.cell[0], d.cell[1], d.cell[2], d.cell[3], d.cell[4], d.cell[5]));
             logger.info(sb.toString());
         }
@@ -308,6 +315,14 @@ public class MTZFilter {
         int ndset;
         String[] strarray = str.split("\\s+");
 
+        if (headerparsed) {
+            if (Header.toHeader(strarray[0]) == Header.END) {
+                return false;
+            } else {
+                return true;
+            }
+        }
+
         switch (Header.toHeader(strarray[0])) {
             case TITLE:
                 title = str.substring(5);
@@ -398,6 +413,7 @@ public class MTZFilter {
             case BATCH:
                 break;
             case END:
+                headerparsed = true;
                 parsing = false;
                 break;
             default:

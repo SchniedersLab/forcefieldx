@@ -31,7 +31,7 @@ import static ffx.numerics.VectorMath.dot;
 import static ffx.numerics.VectorMath.mat3mat3;
 import static ffx.numerics.VectorMath.scalarmat3mat3;
 import static ffx.numerics.VectorMath.vec3mat3;
-import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.rsq;
 
 import java.util.HashMap;
 import java.util.logging.Logger;
@@ -47,12 +47,19 @@ import ffx.potential.bonded.Atom;
 
 /**
  *
- * This implementation uses the coefficients from Su and Coppens
- * (1997), Acta Cryst. A53, 749-762 and
- * (1998), Acta Cryst. A54, 357. The source data can be found at:
- * http://harker.chem.buffalo.edu/group/groupindex.html
+ * @author Tim Fenn<br>
  *
- * @author fennt
+ * This implementation uses the coefficients from Su and Coppens:<br>
+ *
+ * @see <a href="http://dx.doi.org/10.1107/S0108767397004558" target="_blank">
+ * Z. Su and P. Coppens, Acta Cryst. (1997). A53, 749-762
+ *
+ * @see <a href="http://dx.doi.org/10.1107/S010876739800124X" target="_blank">
+ * Z. Su and P. Coppens, Acta Cryst. (1998). A54, 357
+ *
+ * Source data:<br>
+ * @see <a href="http://harker.chem.buffalo.edu/group/groupindex.html" target="_blank">
+ *
  */
 public class FormFactor {
 
@@ -331,7 +338,7 @@ public class FormFactor {
         }
     }
     private final Atom atom;
-    private final double xyz[] = new double[3];
+    private double xyz[] = new double[3];
     private final double biso;
     private final double uadd;
     private final double uaniso[];
@@ -343,7 +350,7 @@ public class FormFactor {
     private final double u[][][] = new double[6][3][3];
     private final double uinv[][][] = new double[6][3][3];
 
-    public FormFactor(Atom atom, double badd) {
+    public FormFactor(Atom atom, double badd, double xyz[]) {
         this.atom = atom;
         this.uadd = badd / eightpi2;
         double ffactor[][] = new double[2][6];
@@ -352,7 +359,9 @@ public class FormFactor {
             a[i] = ffactor[0][i];
             b[i] = ffactor[1][i];
         }
-        atom.getXYZ(xyz);
+        this.xyz[0] = xyz[0];
+        this.xyz[1] = xyz[1];
+        this.xyz[2] = xyz[2];
         occ = atom.getOccupancy();
         biso = atom.getTempFactor();
 
@@ -424,6 +433,10 @@ public class FormFactor {
         this(atom, 0.0);
     }
 
+    public FormFactor(Atom atom, double badd) {
+        this(atom, badd, atom.getXYZ());
+    }
+
     public static double[] getFormFactorA(String atom) {
         double ffactor[][] = null;
 
@@ -492,7 +505,7 @@ public class FormFactor {
     public double rho_gauss(double xyz[], double sd) {
         double dxyz[] = new double[3];
         diff(xyz, this.xyz, dxyz);
-        return rho_gauss(r(dxyz), sd);
+        return rho_gauss(rsq(dxyz), sd);
     }
 
     public double rho_gauss(double rsq, double sd) {
@@ -502,7 +515,7 @@ public class FormFactor {
     public void rho_grad(double xyz[]) {
         double dxyz[] = new double[3];
         diff(xyz, this.xyz, dxyz);
-        double rsq = r(dxyz);
+        double r2 = rsq(dxyz);
         double aex;
         double jmat[][][] = new double[6][3][3];
         double gradp[] = {0.0, 0.0, 0.0, 0.0, 0.0};
@@ -518,7 +531,7 @@ public class FormFactor {
             gradp[1] += aex * dot(vec3mat3(dxyz, uinv[i]), vy);
             gradp[2] += aex * dot(vec3mat3(dxyz, uinv[i]), vz);
             gradp[3] += aex;
-            gradp[4] += aex * 0.5 * (rsq * binv[i] * binv[i] - 3.0 * binv[i]);
+            gradp[4] += aex * 0.5 * (r2 * binv[i] * binv[i] - 3.0 * binv[i]);
 
             jmat[0] = mat3mat3(scalarmat3mat3(-1.0, uinv[i], u11), uinv[i]);
             jmat[1] = mat3mat3(scalarmat3mat3(-1.0, uinv[i], u22), uinv[i]);
@@ -560,9 +573,9 @@ public class FormFactor {
     public void rho_gauss_grad(double xyz[], double sd) {
         double dxyz[] = new double[3];
         diff(xyz, this.xyz, dxyz);
-        double rsq = r(dxyz);
+        double r2 = rsq(dxyz);
 
-        double rho = exp(-0.5 * rsq / sd);
+        double rho = exp(-0.5 * r2 / sd);
 
         double g[] = new double[3];
         g[0] = rho * dxyz[0] / sd;
@@ -570,5 +583,11 @@ public class FormFactor {
         g[2] = rho * dxyz[2] / sd;
 
         atom.setXYZGradient(g[0], g[1], g[2]);
+    }
+
+    public void setXYZ(double xyz[]) {
+        this.xyz[0] = xyz[0];
+        this.xyz[1] = xyz[1];
+        this.xyz[2] = xyz[2];
     }
 }

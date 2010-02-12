@@ -551,6 +551,17 @@ public final class VectorMath {
     }
 
     /**
+     * Finds the length^2 of a vector
+     *
+     * @param d
+     *            A vector to find the length of.
+     * @return Length^2 of vector d.
+     */
+    public static double rsq(double[] d) {
+        return (d[0] * d[0] + d[1] * d[1] + d[2] * d[2]);
+    }
+
+    /**
      * Scales a vector
      *
      * @param n
