@@ -150,10 +150,14 @@ public class ScaleBulkMinimizeTest {
                 new ScaleBulkMinimize(reflectionlist, refinementdata);
         scalebulkminimize.minimize(7, 1e-4);
 
-        /*
-        SplineMinimize scaleminimize = new SplineMinimize(reflectionlist,
-        refinementdata, refinementdata.spline);
-        scaleminimize.minimize(7, 1e-5);
-         */
+        SigmaAMinimize sigmaaminimize = new SigmaAMinimize(reflectionlist,
+                refinementdata);
+        sigmaaminimize.minimize(7, 1.0);
+
+        System.out.println("final sigmaA params:");
+        for (int i = 0; i < refinementdata.nparams; i++) {
+            System.out.printf("%8g  %8g\n", refinementdata.sigmaa[i],
+                    refinementdata.sigmaw[i]);
+        }
     }
 }

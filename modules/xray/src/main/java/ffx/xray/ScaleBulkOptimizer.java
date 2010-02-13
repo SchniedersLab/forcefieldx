@@ -74,7 +74,7 @@ public class ScaleBulkOptimizer implements Optimizable {
 
         // initialize params
         this.spline = new ReflectionSpline(reflectionlist,
-                refinementdata.spline.length);
+                refinementdata.nparams);
     }
 
     public double target(double x[], double g[],

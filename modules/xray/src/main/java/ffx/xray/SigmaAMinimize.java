@@ -20,26 +20,33 @@
  */
 package ffx.xray;
 
+import static java.lang.Math.pow;
+import static java.lang.Math.sqrt;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import ffx.algorithms.Terminatable;
 import ffx.crystal.Crystal;
+import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
+import ffx.crystal.ReflectionSpline;
+import ffx.numerics.ComplexNumber;
 import ffx.numerics.LBFGS;
 import ffx.numerics.LineSearch.LineSearchResult;
 import ffx.numerics.OptimizationListener;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
  * @author fennt
  */
-public class SplineMinimize implements OptimizationListener, Terminatable {
+public class SigmaAMinimize implements OptimizationListener, Terminatable {
 
     private static final Logger logger = Logger.getLogger(SplineOptimizer.class.getName());
     private final ReflectionList reflectionlist;
     private final RefinementData refinementdata;
     private final Crystal crystal;
-    private final SplineOptimizer splineoptimizer;
+    private final SigmaAOptimizer sigmaaoptimizer;
     private final int n;
     private final double x[];
     private final double grad[];
@@ -50,40 +57,91 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
     private double grms;
     private int nSteps;
 
-    public SplineMinimize(ReflectionList reflectionlist,
-            RefinementData refinementdata, double x[], int type) {
+    public SigmaAMinimize(ReflectionList reflectionlist,
+            RefinementData refinementdata) {
         this.reflectionlist = reflectionlist;
         this.refinementdata = refinementdata;
         this.crystal = reflectionlist.crystal;
-        this.x = x;
 
-        n = x.length;
-        splineoptimizer = new SplineOptimizer(reflectionlist, refinementdata,
-                n, type);
+        n = refinementdata.nparams * 2;
+        sigmaaoptimizer = new SigmaAOptimizer(reflectionlist, refinementdata);
+        x = new double[n];
         grad = new double[n];
         scaling = new double[n];
-        for (int i = 0; i < n; i++) {
-            x[i] = 1.0;
+        for (int i = 0; i < refinementdata.nparams; i++) {
+            // for optimizationscaling, best to move to 0.0
+            x[i] = refinementdata.sigmaa[i] - 1.0;
             scaling[i] = 1.0;
+            x[i + refinementdata.nparams] = refinementdata.sigmaw[i];
+            scaling[i + refinementdata.nparams] = 1.0;
         }
-        splineoptimizer.setOptimizationScaling(scaling);
+        sigmaaoptimizer.setOptimizationScaling(scaling);
+
+        // generate Es
+        int type = SplineOptimizer.Type.FCTOESQ;
+        SplineMinimize splineminimize = new SplineMinimize(reflectionlist,
+                refinementdata, refinementdata.fcesq, type);
+        splineminimize.minimize(7, 1.0);
+
+        type = SplineOptimizer.Type.FOTOESQ;
+        splineminimize = new SplineMinimize(reflectionlist,
+                refinementdata, refinementdata.foesq, type);
+        splineminimize.minimize(7, 1.0);
+
+        // generate initial w estimate
+        ReflectionSpline spline = new ReflectionSpline(reflectionlist,
+                refinementdata.nparams);
+        int nmean[] = new int[refinementdata.nparams];
+        for (int i = 0; i < refinementdata.nparams; i++) {
+            nmean[i] = 0;
+        }
+        double fc[][] = refinementdata.fctot;
+        double fo[][] = refinementdata.fsigf;
+        for (HKL ih : reflectionlist.hkllist) {
+            int i = ih.index();
+            if (ih.allowed() == 0.0
+                    || Double.isNaN(fc[i][0])
+                    || Double.isNaN(fo[i][0])) {
+                continue;
+            }
+
+            double s2 = Crystal.invressq(crystal, ih);
+            double epsc = ih.epsilonc();
+            ComplexNumber fct = new ComplexNumber(fc[i][0], fc[i][1]);
+            double ecscale = spline.f(s2, refinementdata.fcesq);
+            double eoscale = spline.f(s2, refinementdata.foesq);
+            double ec = fct.times(sqrt(ecscale)).abs();
+            double eo = fo[i][0] * sqrt(eoscale);
+            double wi = pow(eo - ec, 2.0) / epsc;
+
+            nmean[spline.i1()]++;
+            x[spline.i1() + refinementdata.nparams] += (wi
+                    - x[spline.i1() + refinementdata.nparams])
+                    / nmean[spline.i1()];
+        }
+
+        System.out.println("init params: ");
+        for (int i = 0; i < n; i++) {
+            System.out.print(x[i] + " ");
+        }
+        System.out.println();
     }
 
-    public SplineOptimizer minimize() {
+    public SigmaAOptimizer minimize() {
         return minimize(0.5);
     }
 
-    public SplineOptimizer minimize(double eps) {
-        return minimize(5, eps);
+    public SigmaAOptimizer minimize(double eps) {
+        return minimize(7, eps);
     }
 
-    public SplineOptimizer minimize(int m, double eps) {
+    public SigmaAOptimizer minimize(int m, double eps) {
 
-        double e = splineoptimizer.energyAndGradient(x, grad);
+        double e = sigmaaoptimizer.energyAndGradient(x, grad);
 
         time = -System.nanoTime();
         done = false;
-        int status = LBFGS.minimize(n, m, x, e, grad, eps, splineoptimizer, this);
+        int status = LBFGS.minimize(n, m, x, e, grad, eps, sigmaaoptimizer, this);
         done = true;
         switch (status) {
             case 0:
@@ -95,7 +153,13 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
             default:
                 logger.warning("\n Optimization failed.\n");
         }
-        return splineoptimizer;
+
+        for (int i = 0; i < refinementdata.nparams; i++) {
+            refinementdata.sigmaa[i] = 1.0 + x[i] / scaling[i];
+            refinementdata.sigmaw[i] = x[i + refinementdata.nparams] / scaling[i];
+        }
+
+        return sigmaaoptimizer;
     }
 
     @Override

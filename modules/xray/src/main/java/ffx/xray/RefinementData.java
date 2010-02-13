@@ -34,36 +34,53 @@ public class RefinementData {
     public final double fc[][];
     public final double fs[][];
     public final double fctot[][];
-    public final double sigmaa[][];
     public final double fofc2[][];
     public final double fofc1[][];
-    public final double fd[][];
+    public final double dfc[][];
+    public final double dfs[][];
+    // spline scaling coefficients
+    public final int nparams;
+    public double spline[];
+    public double sigmaa[];
+    public double sigmaw[];
+    public double fcesq[];
+    public double foesq[];
     // scaling coefficients
-    public double spline[] = new double[10];
     public double solvent_k, solvent_ueq;
     public double model_k;
     public double aniso_b[] = new double[6];
 
     public RefinementData(int n) {
+        this(n, 10);
+    }
+
+    public RefinementData(int n, int nparams) {
         this.n = n;
+        this.nparams = nparams;
         fsigf = new double[n][2];
         freer = new int[n];
         fc = new double[n][2];
         fs = new double[n][2];
         fctot = new double[n][2];
-        sigmaa = new double[n][2];
         fofc2 = new double[n][2];
         fofc1 = new double[n][2];
-        fd = new double[n][2];
+        dfc = new double[n][2];
+        dfs = new double[n][2];
 
         for (int i = 0; i < n; i++) {
             fsigf[i][0] = fsigf[i][1] = Double.NaN;
         }
 
-        for (int i = 0; i < spline.length; i++) {
-            spline[i] = 1.0;
+        spline = new double[nparams];
+        sigmaa = new double[nparams];
+        sigmaw = new double[nparams];
+        fcesq = new double[nparams];
+        foesq = new double[nparams];
+        for (int i = 0; i < nparams; i++) {
+            spline[i] = sigmaa[i] = fcesq[i] = foesq[i] = 1.0;
         }
 
+        // initial guess for scaling/bulk solvent correction
         solvent_k = 0.33;
         solvent_ueq = 50.0 / (8.0 * Math.PI * Math.PI);
         model_k = 1.0;
@@ -149,30 +166,6 @@ public class RefinementData {
         return new ComplexNumber(fctot[i][0], fctot[i][1]);
     }
 
-    public double[] sigmaa(int i) {
-        return sigmaa[i];
-    }
-
-    public void sigmaa(int i, double d[]) {
-        sigmaa[i] = d;
-    }
-
-    public void ssigmaa(int i, double d) {
-        sigmaa[i][0] = d;
-    }
-
-    public double ssigmaa(int i) {
-        return sigmaa[i][0];
-    }
-
-    public void wsigmaa(int i, double d) {
-        sigmaa[i][1] = d;
-    }
-
-    public double wsigmaa(int i) {
-        return sigmaa[i][1];
-    }
-
     public void fofc2(int i, ComplexNumber c) {
         fofc2[i][0] = c.re();
         fofc2[i][1] = c.im();
@@ -189,14 +182,5 @@ public class RefinementData {
 
     public ComplexNumber fofc1(int i) {
         return new ComplexNumber(fofc1[i][0], fofc1[i][1]);
-    }
-
-    public void fd(int i, ComplexNumber c) {
-        fd[i][0] = c.re();
-        fd[i][1] = c.im();
-    }
-
-    public ComplexNumber fd(int i) {
-        return new ComplexNumber(fd[i][0], fd[i][1]);
     }
 }
