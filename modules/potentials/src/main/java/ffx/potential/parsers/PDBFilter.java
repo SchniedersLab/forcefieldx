@@ -2047,7 +2047,7 @@ public final class PDBFilter extends SystemFilter {
             for (MSNode node : molecules) {
                 Molecule molecule = (Molecule) node;
                 String chain = molecule.getPolymerName();
-                if (chain.equalsIgnoreCase("Blank")) {
+                if (chain == null || chain.equalsIgnoreCase("Blank")) {
                     sb.setCharAt(21, ' ');
                 } else {
                     sb.setCharAt(21, chain.toUpperCase().charAt(0));

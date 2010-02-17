@@ -1,9 +1,9 @@
 
-import ffx.algorithms.MolecularDynamics;
-import ffx.algorithms.Thermostat.Thermostats;
+System.setProperty("pj.nt","2");
 
-String filename = "examples/ammonia.xyz"
+String filename = "examples/ammonia.P1.xyz"
 open(filename);
+energy();
 
 minimize(1.0);
 
@@ -20,9 +20,5 @@ double temperature = 100.0;
 // Reset velocities.
 boolean initVelocities = true;
 
-Thermostats thermostat = Thermostats.BUSSI;
-
-MolecularDynamics molDyn = new MolecularDynamics(active, active.getProperties(), null, thermostat);
-
-molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities);
+md(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities);
 

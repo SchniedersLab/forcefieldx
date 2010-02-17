@@ -20,6 +20,7 @@
  */
 package ffx.ui;
 
+import ffx.crystal.Crystal;
 import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.Cursor;
@@ -103,6 +104,8 @@ import ffx.potential.parsers.SystemFilter;
 import ffx.potential.parsers.XYZFileFilter;
 import ffx.potential.parsers.XYZFilter;
 import ffx.potential.parameters.ForceField;
+import ffx.potential.parameters.ForceField.ForceFieldDouble;
+import ffx.potential.parameters.ForceField.ForceFieldString;
 import ffx.potential.parsers.FFXFileFilter;
 import ffx.ui.properties.FFXLocale;
 import ffx.utilities.Keyword;
@@ -1362,6 +1365,49 @@ public final class MainPanel extends JPanel implements ActionListener,
     }
 
     /**
+     * Save the currently selected FFXSystem to disk.
+     *
+     * @param file File to save the system to.
+     *
+     * @since 1.0
+     */
+    public void saveAsP1(File file) {
+        FFXSystem system = hierarchy.getActive();
+        if (system != null && !system.isClosing()) {
+            XYZFilter filter = new XYZFilter();
+            File saveFile = file;
+            if (saveFile == null) {
+                resetFileChooser();
+                fileChooser.setCurrentDirectory(pwd);
+                fileChooser.setFileFilter(xyzFileFilter);
+                fileChooser.setAcceptAllFileFilterUsed(false);
+                int result = fileChooser.showSaveDialog(this);
+                if (result == JFileChooser.APPROVE_OPTION) {
+                    saveFile = fileChooser.getSelectedFile();
+                    pwd = saveFile.getParentFile();
+                }
+            }
+            if (saveFile != null) {
+                filter.setMolecularSystem(system);
+                ForceField forceField = system.getForceField();
+                final double a = forceField.getDouble(ForceFieldDouble.A_AXIS, 10.0);
+                final double b = forceField.getDouble(ForceFieldDouble.B_AXIS, a);
+                final double c = forceField.getDouble(ForceFieldDouble.C_AXIS, a);
+                final double alpha = forceField.getDouble(ForceFieldDouble.ALPHA, 90.0);
+                final double beta = forceField.getDouble(ForceFieldDouble.BETA, 90.0);
+                final double gamma = forceField.getDouble(ForceFieldDouble.GAMMA, 90.0);
+                final String spacegroup = forceField.getString(
+                        ForceFieldString.SPACEGROUP, "P1");
+                Crystal crystal = new Crystal(a, b, c, alpha, beta, gamma, spacegroup);
+                if (filter.writeFileAsP1(saveFile, false, crystal)) {
+                    // Refresh Panels with the new System name
+                    hierarchy.setActive(system);
+                }
+            }
+        }
+    }
+
+    /**
      * Save the currently selected FFXSystem to a PDB file.
      *
      * @param file File to save the system to.
@@ -1393,7 +1439,6 @@ public final class MainPanel extends JPanel implements ActionListener,
             }
         }
     }
-
     static final Preferences preferences = Preferences.userNodeForPackage(MainPanel.class);
 
     /**

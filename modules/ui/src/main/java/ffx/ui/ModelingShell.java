@@ -46,6 +46,7 @@ import javax.swing.text.StyleContext;
 import javax.swing.text.StyledDocument;
 
 import groovy.ui.Console;
+
 import org.codehaus.groovy.runtime.MethodClosure;
 
 import ffx.algorithms.Minimize;
@@ -99,10 +100,10 @@ public class ModelingShell extends Console implements AlgorithmListener {
         // File
         setVariable("open", new MethodClosure(mainPanel, "openWait"));
         setVariable("save", new MethodClosure(mainPanel, "saveAsXYZ"));
+        setVariable("saveAsP1", new MethodClosure(mainPanel, "saveAsP1"));
         setVariable("saveAsPDB", new MethodClosure(mainPanel, "saveAsPDB"));
         setVariable("close", new MethodClosure(mainPanel, "closeWait"));
         setVariable("closeAll", new MethodClosure(mainPanel, "closeAll"));
-        setVariable("expandToP1", new MethodClosure(mainPanel, "expandToP1"));
 
         // Select
         setVariable("select", new MethodClosure(this, "select"));

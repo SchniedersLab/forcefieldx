@@ -1,4 +1,15 @@
+import ffx.potential.PotentialEnergy;
+import ffx.potential.bonded.Atom;
 
-open ("examples/dhfr.xyz")
+String filename = "examples/dhfr.xyz";
+open filename;
 
-energy();
+Atom[] atoms = active.getAtomArray();
+atoms[0].setApplyLambda(true);
+
+energy = new PotentialEnergy(active);
+energy.setSoftCoreLambda(0.5);
+energy.setElectrostaticsLambda(0.5);
+
+energy.energy(false, true);
+

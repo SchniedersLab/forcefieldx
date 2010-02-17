@@ -61,32 +61,35 @@ public class PotentialEnergyTest {
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
-                    {"Ubiquitin Benchmark",
-                        "ffx/potential/structures/ubiquitin.xyz",
-                        2673.3768, 6908,
-                        1637.3492, 5094,
-                        -11.0435, 1958,
-                        279.6416, 2835,
-                        67.6480, 651,
-                        215.1421, 3297,
-                        24.6906, 106,
-                        -29.4368, 71,
-                        13202.8700, 1483768,
-                        -33012.6618, 623490,
-                        -12918.8241, 623490} /*,
-                        {"DHFR Benchmark",
-                        "ffx/potential/structures/dhfr.xyz",
-                        6423.84579926e0, 16569,
-                        3746.31506290e0, 11584,
-                        -21.85553039e0, 4031,
-                        687.46861123e0, 7023,
-                        198.72886589e0, 1566,
-                        426.23738971e0, 6701,
-                        48.26628393e0, 292,
-                        -41.71473465e0, 147,
-                        32646.72296821e0, 3480445,
-                        -79415.53874328e0, 1463353,
-                        -32001.56811430e0, 1463353},
+                    {
+                        false,
+                "Ubiquitin Benchmark",
+                "ffx/potential/structures/ubiquitin.xyz",
+                2673.37683484, 6908,
+                1637.34919041, 5094,
+                 -11.04350364, 1958,
+                 279.64162198, 2835,
+                 67.64798284, 651,
+                215.14214012, 3297,
+                 24.69060350, 106,
+                -29.43681349, 71,
+              13202.86995849, 1483768,
+             -33012.66179952, 623490,
+             -13041.30955459, 623490},
+                {true,
+                    "DHFR Benchmark",
+                "ffx/potential/structures/dhfr.xyz",
+                6423.84579926, 16569,
+                3746.31506290, 11584,
+                -21.85553039, 4031,
+                687.46861123, 7023,
+                198.72886589, 1566,
+                426.23738971, 6701,
+                48.26628393, 292,
+                -41.71473465, 147,
+                32646.72296821, 3480445,
+                -79415.53874328, 1463353,
+                -32155.50351016, 1463353} /*,
                 {"SNARE P1",
                 "ffx/potential/structures/1n7s.P1.xyz",
                 1405.28569930e0, 20160,
@@ -118,6 +121,7 @@ public class PotentialEnergyTest {
     private final String info;
     private final File structure;
     private final MolecularAssembly molecularAssembly;
+    private final int nAtoms;
     private final int nBonds;
     private final int nAngles;
     private final int nStretchBends;
@@ -146,7 +150,12 @@ public class PotentialEnergyTest {
     private final double tolerance = 1.0e-3;
     private final double gradientTolerance = 1.0e-4;
 
-    public PotentialEnergyTest(String info, String filename,
+    private final boolean ci;
+    private final boolean ciOnly;
+
+    public PotentialEnergyTest(
+            boolean ciOnly,
+            String info, String filename,
             double bondEnergy, int nBonds,
             double angleEnergy, int nAngles,
             double stretchBendEnergy, int nStretchBends,
@@ -158,6 +167,7 @@ public class PotentialEnergyTest {
             double vanDerWaalsEnergy, int nVanDerWaals,
             double permanentEnergy, int nPermanent,
             double polarizationEnergy, int nPolar) {
+        this.ciOnly = ciOnly;
         this.info = info;
         this.bondEnergy = bondEnergy;
         this.nBonds = nBonds;
@@ -182,6 +192,21 @@ public class PotentialEnergyTest {
         this.polarizationEnergy = polarizationEnergy;
         this.nPolar = nPolar;
 
+        String ffxCi = System.getProperty("ffx.ci");
+        if (ffxCi.equalsIgnoreCase("true")) {
+            ci = true;
+        } else {
+            ci = false;
+        }
+
+        if (!ci && ciOnly) {
+            structure = null;
+            molecularAssembly = null;
+            nAtoms = 0;
+            energy = null;
+            return;
+        }
+
         ClassLoader cl = this.getClass().getClassLoader();
         structure = new File(cl.getResource(filename).getPath());
 
@@ -203,6 +228,7 @@ public class PotentialEnergyTest {
         Utilities.biochemistry(molecularAssembly, xyzFilter.getAtomList());
         molecularAssembly.finalize(true);
 
+        nAtoms = molecularAssembly.getAtomArray().length;        
         energy = new PotentialEnergy(molecularAssembly);
         mpoleTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.MPOLETERM, true);
 
@@ -222,6 +248,14 @@ public class PotentialEnergyTest {
      */
     @Test
     public void testEnergy() {
+
+        /**
+         * Skip expensive tests for normal builds.
+         */
+        if (!ci && ciOnly) {
+            return;
+        }
+
         boolean gradient = false;
         boolean print = true;
         double total = energy.energy(gradient, print);
@@ -251,23 +285,25 @@ public class PotentialEnergyTest {
         assertEquals(info + " Torsion-Torsion Count", nTorsionTorsions, energy.nTorsionTorsions);
         // van Der Waals
         assertEquals(info + " van Der Waals Energy", vanDerWaalsEnergy, energy.vanDerWaalsEnergy, tolerance);
-        //assertEquals(info + " van Der Waals Count", nVanDerWaals, energy.nVanDerWaals);
+        assertEquals(info + " van Der Waals Count", nVanDerWaals, energy.nVanDerWaals);
         // Permanent Multipoles
         if (mpoleTerm) {
             assertEquals(info + " Permanent Multipole Energy", permanentEnergy, energy.permanentMultipoleEnergy, tolerance);
         }
-        //assertEquals(info + " van Der Waals Count", nVanDerWaals, energy.nVanDerWaals);
         // Polarization
         if (polarization == Polarization.MUTUAL) {
             assertEquals(info + " Polarization Energy", polarizationEnergy, energy.polarizationEnergy, tolerance);
-            //assertEquals(info + " van Der Waals Count", nVanDerWaals, energy.nVanDerWaals);
         }
     }
 
     /**
      * Test of energy gradient, of class PotentialEnergy.
      */
+    @Test
     public void testGradient() {
+        if (!ci && ciOnly) {
+            return;
+        }
         boolean gradient = true;
         boolean print = true;
         energy.energy(gradient, print);
@@ -282,73 +318,76 @@ public class PotentialEnergyTest {
         int n = atoms.size();
         Random random = new Random();
         int i = random.nextInt(n);
-        Atom a0 = atoms.get(i);
+            Atom a0 = atoms.get(i);
 
-        a0.getXYZGradient(analytic);
-        a0.getXYZ(xyz);
-        // Find numeric dX
-        xyz[0] += step;
-        a0.moveTo(xyz);
-        double e = energy.energy(gradient, print);
-        xyz[0] -= 2.0 * step;
-        a0.moveTo(xyz);
-        e -= energy.energy(gradient, print);
-        numeric[0] = e / (2.0 * step);
-        xyz[0] += step;
-        // Find numeric dY
-        xyz[1] += step;
-        a0.moveTo(xyz);
-        e = energy.energy(gradient, print);
-        xyz[1] -= 2.0 * step;
-        a0.moveTo(xyz);
-        e -= energy.energy(gradient, print);
-        numeric[1] = e / (2.0 * step);
-        xyz[1] += step;
-        // Find numeric dZ
-        xyz[2] += step;
-        a0.moveTo(xyz);
-        e = energy.energy(gradient, print);
-        xyz[2] -= 2.0 * step;
-        a0.moveTo(xyz);
-        e -= energy.energy(gradient, print);
-        numeric[2] = e / (2.0 * step);
-        xyz[2] += step;
-        a0.moveTo(xyz);
-        double dx = analytic[0] - numeric[0];
-        double dy = analytic[1] - numeric[1];
-        double dz = analytic[2] - numeric[2];
-        double len = Math.sqrt(dx * dx + dy * dy + dz * dz);
-        if (len > gradientTolerance) {
-            logger.severe("\n" + a0.toString() + String.format(" failed: %10.6f.", len) + String.format(
-                    "\nAnalytic: (%12.4f, %12.4f, %12.4f)\n",
-                    analytic[0], analytic[1], analytic[2]) + String.format("Numeric:  (%12.4f, %12.4f, %12.4f)\n",
-                    numeric[0], numeric[1], numeric[2]));
-        } else {
-            logger.info("\n" + a0.toString() + String.format(" passed: %10.6f.", len) + String.format(
-                    "\nAnalytic: (%12.4f, %12.4f, %12.4f)\n",
-                    analytic[0], analytic[1], analytic[2]) + String.format("Numeric:  (%12.4f, %12.4f, %12.4f)\n",
-                    numeric[0], numeric[1], numeric[2]));
-        }
-        assertEquals(a0.toString(), 0.0, len, gradientTolerance);
+            a0.getXYZGradient(analytic);
+            a0.getXYZ(xyz);
+            // Find numeric dX
+            xyz[0] += step;
+            a0.moveTo(xyz);
+            double e = energy.energy(gradient, print);
+            xyz[0] -= 2.0 * step;
+            a0.moveTo(xyz);
+            e -= energy.energy(gradient, print);
+            numeric[0] = e / (2.0 * step);
+            xyz[0] += step;
+            // Find numeric dY
+            xyz[1] += step;
+            a0.moveTo(xyz);
+            e = energy.energy(gradient, print);
+            xyz[1] -= 2.0 * step;
+            a0.moveTo(xyz);
+            e -= energy.energy(gradient, print);
+            numeric[1] = e / (2.0 * step);
+            xyz[1] += step;
+            // Find numeric dZ
+            xyz[2] += step;
+            a0.moveTo(xyz);
+            e = energy.energy(gradient, print);
+            xyz[2] -= 2.0 * step;
+            a0.moveTo(xyz);
+            e -= energy.energy(gradient, print);
+            numeric[2] = e / (2.0 * step);
+            xyz[2] += step;
+            a0.moveTo(xyz);
+            double dx = analytic[0] - numeric[0];
+            double dy = analytic[1] - numeric[1];
+            double dz = analytic[2] - numeric[2];
+            double len = Math.sqrt(dx * dx + dy * dy + dz * dz);
+            if (len > gradientTolerance) {
+                logger.severe("\n" + a0.toString() + String.format(" failed: %10.6f.", len) + String.format(
+                        "\nAnalytic: (%12.4f, %12.4f, %12.4f)\n",
+                        analytic[0], analytic[1], analytic[2]) + String.format("Numeric:  (%12.4f, %12.4f, %12.4f)\n",
+                        numeric[0], numeric[1], numeric[2]));
+            } else {
+                logger.info("\n" + a0.toString() + String.format(" passed: %10.6f.", len) + String.format(
+                        "\nAnalytic: (%12.4f, %12.4f, %12.4f)\n",
+                        analytic[0], analytic[1], analytic[2]) + String.format("Numeric:  (%12.4f, %12.4f, %12.4f)\n",
+                        numeric[0], numeric[1], numeric[2]));
+            }
+            assertEquals(a0.toString(), 0.0, len, gradientTolerance);
     }
 
-    //@Test
+    @Test
     public void testSoftCore() {
-
+        if (!ci && ciOnly) {
+            return;
+        }
+        boolean gradient = false;
+        boolean print = true;
+        double e = energy.energy(gradient, print);
         Atom atoms[] = molecularAssembly.getAtomArray();
         int n = atoms.length;
-        // Make the last water soft
+        // Make the 3 atoms soft
         for (int i = n; i > n - 3; i--) {
             Atom ai = atoms[i - 1];
             ai.setApplyLambda(true);
         }
-        boolean gradient = false;
-        boolean print = true;
         // Compute the energy with Lambda = 1.0;
-        for (int i = 0; i <= 1; i++) {
-            double lambda = 1.0 - i * 0.1;
-            energy.setSoftCoreLambda(lambda);
-            energy.energy(gradient, print);
-        }
+        double lambda = 1.0;
+        energy.setSoftCoreLambda(lambda);
+        energy.setElectrostaticsLambda(lambda);
+        double e2 = energy.energy(gradient, print);
+        assertEquals(e, e2, tolerance);
     }
 }

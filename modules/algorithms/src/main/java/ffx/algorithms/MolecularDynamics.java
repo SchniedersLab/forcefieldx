@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 
 import ffx.algorithms.Thermostat.Thermostats;
@@ -33,7 +34,6 @@ import ffx.potential.PotentialEnergy;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.parsers.XYZFilter;
-import org.apache.commons.configuration.CompositeConfiguration;
 
 /**
  * Run NVE or NVT molecular dynamics.
@@ -42,10 +42,9 @@ import org.apache.commons.configuration.CompositeConfiguration;
  *
  * @since 1.0
  */
-public class MolecularDynamics implements Terminatable {
+public class MolecularDynamics implements Terminatable, Runnable {
 
     private static final Logger logger = Logger.getLogger(MolecularDynamics.class.getName());
-
     private final int n;
     private final int dof;
     private final double[] x;
@@ -70,6 +69,11 @@ public class MolecularDynamics implements Terminatable {
     private XYZFilter xyzFilter = null;
     private boolean done;
     private boolean terminate;
+    private int nSteps = 1000;
+    private int printFrequency = 100;
+    private int saveFrequency = 1000;
+    private double temperature = 300.0;
+    private boolean initVelocities = true;
 
     public MolecularDynamics(MolecularAssembly assembly,
             CompositeConfiguration properties,
@@ -128,18 +132,18 @@ public class MolecularDynamics implements Terminatable {
         return archive;
     }
 
-    public void dynamic(final int nSteps, final double timeStep, final double printInterval,
+    public void init(final int nSteps, final double timeStep, final double printInterval,
             final double saveInterval, final double temperature, final boolean initVelocities) {
-        terminate = false;
-        done = false;
 
-        logger.info(" Molecular dynamics starting up");
-        if (thermostat != null) {
-            logger.info(String.format(" Sampling the NVT ensemble via a %s thermostat", thermostat.name));
-        } else {
-            logger.info(String.format(" Sampling the NVE ensemble"));
+        /**
+         * Return if already running.
+         */
+        if (!done) {
+            logger.warning("Programming error - attempt to modify parameters of a running MolecularDynamics instance.");
+            return;
         }
-        
+
+        this.nSteps = nSteps;
         /**
          * Convert the time step from femtoseconds to picoseconds.
          */
@@ -148,7 +152,7 @@ public class MolecularDynamics implements Terminatable {
         /**
          * Convert the print interval to a print frequency.
          */
-        int printFrequency = 1;
+        printFrequency = 1;
         if (printInterval > dt) {
             printFrequency = (int) (printInterval / dt);
         }
@@ -156,7 +160,7 @@ public class MolecularDynamics implements Terminatable {
         /**
          * Convert the save interval to a save frequency.
          */
-        int saveFrequency = -1;
+        saveFrequency = -1;
         if (saveInterval > dt) {
             saveFrequency = (int) (saveInterval / dt);
             if (archive == null) {
@@ -171,11 +175,68 @@ public class MolecularDynamics implements Terminatable {
             }
         }
 
+        this.temperature = temperature;
+        this.initVelocities = initVelocities;
+    }
+
+    /**
+     * Blocking molecular dynamics. When this method returns, the MD run is done.
+     *
+     * @param nSteps
+     * @param timeStep
+     * @param printInterval
+     * @param saveInterval
+     * @param temperature
+     * @param initVelocities
+     */
+    public void dynamic(final int nSteps, final double timeStep, final double printInterval,
+            final double saveInterval, final double temperature, final boolean initVelocities) {
+
+        /**
+         * Return if already running; Could happen if two threads call
+         * dynamic on the same MolecularDynamics instance.
+         */
+        if (!done) {
+            logger.warning("Programming error - a thread invoked dynamic when it was already running.");
+            return;
+        }
+
+        logger.info(" Molecular dynamics starting up");
+        if (thermostat != null) {
+            logger.info(String.format(" Sampling the NVT ensemble via a %s thermostat", thermostat.name));
+        } else {
+            logger.info(String.format(" Sampling the NVE ensemble"));
+        }
+
+        init(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities);
+
+        // Now we're committed!
+        done = false;
+
         logger.info(String.format(" Number of steps:     %8d", nSteps));
         logger.info(String.format(" Time step:           %8.3f (fsec)", timeStep));
         logger.info(String.format(" Print interval:      %8.3f (psec)", printInterval));
         logger.info(String.format(" Save interval:       %8.3f (psec)", saveInterval));
         logger.info(String.format(" Target temperature:  %8.3f Kelvin", temperature));
+
+        Thread dynamicThread = new Thread(this);
+        dynamicThread.start();
+        synchronized (this) {
+            try {
+                while (dynamicThread.isAlive()) {
+                    wait(100);
+                }
+            } catch (Exception e) {
+                String message = "Molecular dynamics interrupted.";
+                logger.log(Level.WARNING, message, e);
+            }
+        }
+    }
+
+    @Override
+    public void run() {
+        done = false;
+        terminate = false;
 
         /**
          * Set the target temperature.
@@ -245,7 +306,7 @@ public class MolecularDynamics implements Terminatable {
                 kinetic = Double.MIN_VALUE;
                 currentTemp = Double.MIN_VALUE;
             }
-            
+
             total = kinetic + potential;
             if (step % printFrequency == 0) {
                 time = System.nanoTime() - time;
@@ -297,7 +358,7 @@ public class MolecularDynamics implements Terminatable {
      *
      * @since 1.0
      */
-    public void beeman(final double dt) {
+    private void beeman(final double dt) {
         final double dt_8 = 0.125 * dt;
         final double dt2_8 = dt * dt_8;
 
@@ -333,7 +394,7 @@ public class MolecularDynamics implements Terminatable {
                 v[index] += (3.0 * a[index] + aPrevious[index]) * dt_8;
             }
         }
-        
+
         if (thermostat != null) {
             thermostat.fullStep(dt);
         }

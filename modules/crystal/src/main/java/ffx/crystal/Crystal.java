@@ -157,6 +157,8 @@ public class Crystal {
     private final double beta_term;
     private final double gamma_term;
     private final double tolerance = 1.0e-10;
+    private boolean aperiodic;
+
     public int scale_flag;
 
     /**
@@ -180,6 +182,7 @@ public class Crystal {
         this.alpha = alpha;
         this.beta = beta;
         this.gamma = gamma;
+        aperiodic = false;
         half_a = 0.5 * a;
         half_b = 0.5 * b;
         half_c = 0.5 * c;
@@ -413,6 +416,18 @@ public class Crystal {
     }
 
     /**
+     * Is this a finite system - ie. one unit cell in isolation?
+     */
+    public void setAperiodic(boolean aperiodic) {
+        this.aperiodic = aperiodic;
+    }
+
+    public boolean aperiodic() {
+        return aperiodic;
+    }
+
+
+    /**
      * Apply the minimum image convention.
      *
      * @param xyz input distances that are over-written.
@@ -422,6 +437,9 @@ public class Crystal {
         double x = xyz[0];
         double y = xyz[1];
         double z = xyz[2];
+        if (aperiodic) {
+            return x * x + y * y + z * z;
+        }
         switch (crystalSystem) {
             case CUBIC:
             case ORTHORHOMBIC:
@@ -512,6 +530,9 @@ public class Crystal {
      * @return the output distance squared.
      */
     public double image(double dx, double dy, double dz) {
+        if (aperiodic) {
+            return dx * dx + dy * dy + dz * dz;
+        }
         switch (crystalSystem) {
             case CUBIC:
             case ORTHORHOMBIC:

@@ -60,7 +60,8 @@ public class SpaceGroup {
      */
     public enum CrystalSystem {
 
-        TRICLINIC, MONOCLINIC, ORTHORHOMBIC, TETRAGONAL, TRIGONAL, HEXAGONAL, CUBIC
+        TRICLINIC, MONOCLINIC, ORTHORHOMBIC, TETRAGONAL, TRIGONAL,
+        HEXAGONAL, CUBIC
     }
 
     /**

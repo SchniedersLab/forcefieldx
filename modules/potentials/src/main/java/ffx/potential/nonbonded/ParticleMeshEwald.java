@@ -4847,16 +4847,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                         quadrupole[i][j] = 0.0;
                     }
                 }
-                if (referenceSites != null && referenceSites.length >= 2) {
-                    int index = referenceSites[0];
-                    zAxis[0] = x[index];
-                    zAxis[1] = y[index];
-                    zAxis[2] = z[index];
-                    index = referenceSites[1];
-                    xAxis[0] = x[index];
-                    xAxis[1] = y[index];
-                    xAxis[2] = z[index];
-                } else {
+                if (referenceSites == null || referenceSites.length < 2) {
                     out[t000] = in[0];
                     out[t100] = 0.0;
                     out[t010] = 0.0;
@@ -4869,50 +4860,89 @@ public class ParticleMeshEwald implements LambdaInterface {
                     out[t011] = 0.0;
                     continue;
                 }
-                zAxis[0] = zAxis[0] - localOrigin[0];
-                zAxis[1] = zAxis[1] - localOrigin[1];
-                zAxis[2] = zAxis[2] - localOrigin[2];
-                double length = sqrt(zAxis[0] * zAxis[0] + zAxis[1] * zAxis[1] + zAxis[2] * zAxis[2]);
-                zAxis[0] = zAxis[0] / length;
-                zAxis[1] = zAxis[1] / length;
-                zAxis[2] = zAxis[2] / length;
-                xAxis[0] = xAxis[0] - localOrigin[0];
-                xAxis[1] = xAxis[1] - localOrigin[1];
-                xAxis[2] = xAxis[2] - localOrigin[2];
-                // Separate differences between the Z-THEN-X definition
-                // and BISECTOR methods for finding the Z elements of the
-                // rotation matrix.
-                if (frame[ii] == MultipoleType.MultipoleFrameDefinition.ZTHENX) {
-                    rotmat[0][2] = zAxis[0];
-                    rotmat[1][2] = zAxis[1];
-                    rotmat[2][2] = zAxis[2];
-                } else {
-                    length = sqrt(xAxis[0] * xAxis[0] + xAxis[1] * xAxis[1] + xAxis[2] * xAxis[2]);
-                    xAxis[0] = xAxis[0] / length;
-                    xAxis[1] = xAxis[1] / length;
-                    xAxis[2] = xAxis[2] / length;
-                    // Take the norm of the sum of unit vectors to find their
-                    // bisector.
-                    zAxis[0] = zAxis[0] + xAxis[0];
-                    zAxis[1] = zAxis[1] + xAxis[1];
-                    zAxis[2] = zAxis[2] + xAxis[2];
-                    length = sqrt(zAxis[0] * zAxis[0] + zAxis[1] * zAxis[1] + zAxis[2] * zAxis[2]);
-                    zAxis[0] = zAxis[0] / length;
-                    zAxis[1] = zAxis[1] / length;
-                    zAxis[2] = zAxis[2] / length;
-                    rotmat[0][2] = zAxis[0];
-                    rotmat[1][2] = zAxis[1];
-                    rotmat[2][2] = zAxis[2];
+                switch (frame[ii]) {
+                    case BISECTOR:
+                        int index = referenceSites[0];
+                        zAxis[0] = x[index];
+                        zAxis[1] = y[index];
+                        zAxis[2] = z[index];
+                        index = referenceSites[1];
+                        xAxis[0] = x[index];
+                        xAxis[1] = y[index];
+                        xAxis[2] = z[index];
+                        diff(zAxis, localOrigin, zAxis);
+                        norm(zAxis, zAxis);
+                        diff(xAxis, localOrigin, xAxis);
+                        norm(xAxis, xAxis);
+                        sum(xAxis, zAxis, zAxis);
+                        norm(zAxis, zAxis);
+                        rotmat[0][2] = zAxis[0];
+                        rotmat[1][2] = zAxis[1];
+                        rotmat[2][2] = zAxis[2];
+                        double dot = dot(xAxis, zAxis);
+                        scalar(zAxis, dot, zAxis);
+                        diff(xAxis, zAxis, xAxis);
+                        norm(xAxis, xAxis);
+                        rotmat[0][0] = xAxis[0];
+                        rotmat[1][0] = xAxis[1];
+                        rotmat[2][0] = xAxis[2];
+                        break;
+                    case ZTHENBISECTOR:
+                        index = referenceSites[0];
+                        zAxis[0] = x[index];
+                        zAxis[1] = y[index];
+                        zAxis[2] = z[index];
+                        index = referenceSites[1];
+                        xAxis[0] = x[index];
+                        xAxis[1] = y[index];
+                        xAxis[2] = z[index];
+                        index = referenceSites[2];
+                        yAxis[0] = x[index];
+                        yAxis[1] = y[index];
+                        yAxis[2] = z[index];
+                        diff(zAxis, localOrigin, zAxis);
+                        norm(zAxis, zAxis);
+                        rotmat[0][2] = zAxis[0];
+                        rotmat[1][2] = zAxis[1];
+                        rotmat[2][2] = zAxis[2];
+                        diff(xAxis, localOrigin, xAxis);
+                        norm(xAxis, xAxis);
+                        diff(yAxis, localOrigin, yAxis);
+                        norm(yAxis, yAxis);
+                        sum(xAxis, yAxis, xAxis);
+                        norm(xAxis, xAxis);
+                        dot = dot(xAxis, zAxis);
+                        scalar(zAxis, dot, zAxis);
+                        diff(xAxis, zAxis, xAxis);
+                        norm(xAxis, xAxis);
+                        rotmat[0][0] = xAxis[0];
+                        rotmat[1][0] = xAxis[1];
+                        rotmat[2][0] = xAxis[2];
+                        break;
+                    default:
+                    case ZTHENX:
+                        index = referenceSites[0];
+                        zAxis[0] = x[index];
+                        zAxis[1] = y[index];
+                        zAxis[2] = z[index];
+                        index = referenceSites[1];
+                        xAxis[0] = x[index];
+                        xAxis[1] = y[index];
+                        xAxis[2] = z[index];
+                        diff(zAxis, localOrigin, zAxis);
+                        norm(zAxis, zAxis);
+                        rotmat[0][2] = zAxis[0];
+                        rotmat[1][2] = zAxis[1];
+                        rotmat[2][2] = zAxis[2];
+                        diff(xAxis, localOrigin, xAxis);
+                        dot = dot(xAxis, zAxis);
+                        scalar(zAxis, dot, zAxis);
+                        diff(xAxis, zAxis, xAxis);
+                        norm(xAxis, xAxis);
+                        rotmat[0][0] = xAxis[0];
+                        rotmat[1][0] = xAxis[1];
+                        rotmat[2][0] = xAxis[2];
                 }
-                // Find the X elements.
-                double dot = zAxis[0] * xAxis[0] + zAxis[1] * xAxis[1] + zAxis[2] * xAxis[2];
-                xAxis[0] = xAxis[0] - zAxis[0] * dot;
-                xAxis[1] = xAxis[1] - zAxis[1] * dot;
-                xAxis[2] = xAxis[2] - zAxis[2] * dot;
-                length = sqrt(xAxis[0] * xAxis[0] + xAxis[1] * xAxis[1] + xAxis[2] * xAxis[2]);
-                rotmat[0][0] = xAxis[0] / length;
-                rotmat[1][0] = xAxis[1] / length;
-                rotmat[2][0] = xAxis[2] / length;
                 // Finally the Y elements.
                 rotmat[0][1] = rotmat[2][0] * rotmat[1][2] - rotmat[1][0] * rotmat[2][2];
                 rotmat[1][1] = rotmat[0][0] * rotmat[2][2] - rotmat[2][0] * rotmat[0][2];
@@ -5018,22 +5048,38 @@ public class ParticleMeshEwald implements LambdaInterface {
         int ia = ax[0];
         int ib = i;
         int ic = ax[1];
+        int id = 0;
+
         double x[] = coordinates[0][0];
         double y[] = coordinates[0][1];
         double z[] = coordinates[0][2];
         localOrigin[0] = x[ib];
         localOrigin[1] = y[ib];
         localOrigin[2] = z[ib];
-        zAxis[0] = x[ia];
-        zAxis[1] = y[ia];
-        zAxis[2] = z[ia];
-        xAxis[0] = x[ic];
-        xAxis[1] = y[ic];
-        xAxis[2] = z[ic];
+        u[0] = x[ia];
+        u[1] = y[ia];
+        u[2] = z[ia];
+        v[0] = x[ic];
+        v[1] = y[ic];
+        v[2] = z[ic];
         // Construct the three rotation axes for the local frame
-        diff(zAxis, localOrigin, u);
-        diff(xAxis, localOrigin, v);
-        cross(u, v, w);
+        diff(u, localOrigin, u);
+        diff(v, localOrigin, v);
+        switch (frame[i]) {
+            default:
+            case ZTHENX:
+            case BISECTOR:
+                cross(u, v, w);
+                break;
+            case TRISECTOR:
+            case ZTHENBISECTOR:
+                id = ax[2];
+                w[0] = x[id];
+                w[1] = y[id];
+                w[2] = z[id];
+                diff(w, localOrigin, w);
+        }
+
         double ru = r(u);
         double rv = r(v);
         double rw = r(w);
@@ -5053,6 +5099,10 @@ public class ParticleMeshEwald implements LambdaInterface {
         // Compute the sine of the angle between the rotation axes.
         double uvcos = dot(u, v);
         double uvsin = sqrt(1.0 - uvcos * uvcos);
+        //double uwcos = dot(u, w);
+        //double uwsin = sqrt(1.0 - uwcos * uwcos);
+        //double vwcos = dot(v, w);
+        //double vwsin = sqrt(1.0 - vwcos * vwcos);
         /*
          * Negative of dot product of torque with unit vectors gives result of
          * infinitesimal rotation along these vectors.
@@ -5061,6 +5111,61 @@ public class ParticleMeshEwald implements LambdaInterface {
         double dphidv = -(trq[0] * v[0] + trq[1] * v[1] + trq[2] * v[2]);
         double dphidw = -(trq[0] * w[0] + trq[1] * w[1] + trq[2] * w[2]);
         switch (frame[i]) {
+            case ZTHENBISECTOR:
+                // Build some additional axes needed for the Z-then-Bisector method
+                sum(v, w, r);
+                cross(u, r, s);
+                double rr = r(r);
+                double rs = r(s);
+                scalar(r, 1.0 / rr, r);
+                scalar(s, 1.0 / rs, s);
+                // Find the perpendicular and angle for each pair of axes.
+                cross(r, u, ur);
+                cross(s, u, us);
+                cross(s, v, vs);
+                cross(s, w, ws);
+                double rur = r(ur);
+                double rus = r(us);
+                double rvs = r(vs);
+                double rws = r(ws);
+                scalar(ur, 1.0 / rur, ur);
+                scalar(us, 1.0 / rus, us);
+                scalar(vs, 1.0 / rvs, vs);
+                scalar(ws, 1.0 / rws, ws);
+                // Compute the sine of the angle between the rotation axes
+                double urcos = dot(u, r);
+                double ursin = sqrt(1.0 - urcos * urcos);
+                //double uscos = dot(u, s);
+                //double ussin = sqrt(1.0 - uscos * uscos);
+                double vscos = dot(v, s);
+                double vssin = sqrt(1.0 - vscos * vscos);
+                double wscos = dot(w, s);
+                double wssin = sqrt(1.0 - wscos * wscos);
+                // Compute the projection of v and w onto the ru-plane
+                scalar(s, -vscos, t1);
+                scalar(s, -wscos, t2);
+                sum(v, t1, t1);
+                sum(w, t2, t2);
+                double rt1 = r(t1);
+                double rt2 = r(t2);
+                scalar(t1, 1.0 / rt1, t1);
+                scalar(t2, 1.0 / rt2, t2);
+                double ut1cos = dot(u, t1);
+                double ut1sin = sqrt(1.0 - ut1cos * ut1cos);
+                double ut2cos = dot(u, t2);
+                double ut2sin = sqrt(1.0 - ut2cos * ut2cos);
+                double dphidr = -(trq[0] * r[0] + trq[1] * r[1] + trq[2] * r[2]);
+                double dphids = -(trq[0] * s[0] + trq[1] * s[1] + trq[2] * s[2]);
+                for (int j = 0; j < 3; j++) {
+                    double du = ur[j] * dphidr / (ru * ursin) + us[j] * dphids / ru;
+                    double dv = (vssin * s[j] - vscos * t1[j]) * dphidu / (rv * (ut1sin + ut2sin));
+                    double dw = (wssin * s[j] - wscos * t2[j]) * dphidu / (rw * (ut1sin + ut2sin));
+                    sharedGrad[j].addAndGet(ia, du);
+                    sharedGrad[j].addAndGet(ic, dv);
+                    sharedGrad[j].addAndGet(id, dw);
+                    sharedGrad[j].addAndGet(ib, -du - dv - dw);
+                }
+                break;
             case ZTHENX:
                 for (int j = 0; j < 3; j++) {
                     double du = uv[j] * dphidv / (ru * uvsin) + uw[j] * dphidw / ru;
@@ -5665,7 +5770,15 @@ public class ParticleMeshEwald implements LambdaInterface {
     private final double u[] = new double[3];
     private final double v[] = new double[3];
     private final double w[] = new double[3];
+    private final double r[] = new double[3];
+    private final double s[] = new double[3];
     private final double uv[] = new double[3];
     private final double uw[] = new double[3];
     private final double vw[] = new double[3];
+    private final double ur[] = new double[3];
+    private final double us[] = new double[3];
+    private final double vs[] = new double[3];
+    private final double ws[] = new double[3];
+    private final double t1[] = new double[3];
+    private final double t2[] = new double[3];
 }

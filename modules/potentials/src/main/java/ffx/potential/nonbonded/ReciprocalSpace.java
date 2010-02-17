@@ -44,7 +44,6 @@ import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.ForceField.ForceFieldInteger;
 
-
 /**
  * The Reciprocal Space class computes the reciprocal space contribution to
  * {@link ParticleMeshEwald} for the AMOEBA force field.
@@ -1053,11 +1052,18 @@ public class ReciprocalSpace {
                 if (term > -50.0) {
                     double denom = ssq * volterm * bsModX[k1] * bsModY[k2] * bsModZ[k3];
                     expterm = exp(term) / denom;
-                    // if (.not. use_bounds) then
-                    // expterm = expterm * (1.0d0-cos(pi*xbox*sqrt(hsq)));
+                    if (crystal.aperiodic()) {
+                        expterm *= (1.0 - cos(PI * crystal.a * sqrt(ssq)));
+                    }
                 }
                 permanentFac[k1 + k2 * (halfFFTX + 1) + k3 * (halfFFTX + 1) * fftY] = expterm;
-                //permanentFac[k3 + k1 * fftZ + k2 * (halfFFTX + 1) * fftZ] = expterm;
+            }
+            /**
+             *  Account for the zeroth grid point for a periodic system.
+             */
+            permanentFac[0] = 0.0;
+            if (crystal.aperiodic()) {
+                permanentFac[0] = 0.5 * PI / crystal.a;
             }
         }
     }
@@ -1581,11 +1587,18 @@ public class ReciprocalSpace {
                 if (term > -50.0) {
                     double denom = ssq * volterm * bsModX[k1] * bsModY[k2] * bsModZ[k3];
                     expterm = exp(term) / denom;
-                    // if (.not. use_bounds) then
-                    // expterm = expterm * (1.0d0-cos(pi*xbox*sqrt(hsq)));
+                    if (crystal.aperiodic()) {
+                        expterm *= (1.0 - cos(PI * crystal.a * sqrt(ssq)));
+                    }
                 }
                 polarizationFac[k1 + k2 * fftX + k3 * fftX * fftY] = expterm;
-                //polarizationFac[k1 * fftZ + k2 * fftX * fftZ + k3] = expterm;
+            }
+            /**
+             *  Account for the zeroth grid point for a periodic system.
+             */
+            polarizationFac[0] = 0.0;
+            if (crystal.aperiodic()) {
+                polarizationFac[0] = 0.5 * PI / crystal.a;
             }
         }
     }

@@ -419,16 +419,20 @@ public class XYZFilter extends SystemFilter {
         return true;
     }
 
-    public boolean writeP1(Crystal crystal) {
-        File xyzfile = molecularAssembly.getFile();
-        xyzfile = SystemFilter.version(xyzfile);
-        int nSymm = crystal.spaceGroup.symOps.size();
-        if (xyzfile == null) {
+    public boolean writeFileAsP1(File saveFile, boolean append, Crystal crystal) {
+        if (saveFile == null) {
             return false;
         }
         try {
-            FileWriter fw = new FileWriter(xyzfile);
+            File newFile = saveFile;
+            if (!append) {
+                newFile = version(saveFile);
+            }
+            molecularAssembly.setFile(newFile);
+            molecularAssembly.setName(newFile.getName());
+            FileWriter fw = new FileWriter(newFile, append);
             BufferedWriter bw = new BufferedWriter(fw);
+            int nSymm = crystal.spaceGroup.symOps.size();
             // XYZ File First Line
             int numberOfAtoms = molecularAssembly.getAtomList().size() * nSymm;
             String output = String.format("%6d  %s\n", numberOfAtoms,

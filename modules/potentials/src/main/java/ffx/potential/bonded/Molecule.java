@@ -31,17 +31,14 @@ public class Molecule extends MSGroup {
     private Logger logger = Logger.getLogger(Molecule.class.getName());
     private static final long serialVersionUID = 1L;
     public static final int MultiScaleLevel = 2;
-
     /**
      * Residue number assigned in PDB files.
      */
     private int residueNum = -1;
-
     /**
      * Residue name assigned in PDB fles.
      */
     private String residueName = null;
-
     /**
      * Polymer name assigned in PDB files.
      */
@@ -52,6 +49,8 @@ public class Molecule extends MSGroup {
 
     public Molecule(String name) {
         super(name);
+        residueName = name;
+        polymerName = "A";
     }
 
     public Molecule(String name, int residueNum, String polymerName) {
@@ -59,7 +58,7 @@ public class Molecule extends MSGroup {
         this.residueName = name;
         this.residueNum = residueNum;
         this.polymerName = polymerName;
-        if (!polymerName.equalsIgnoreCase(" ") && !polymerName.equalsIgnoreCase("Blank") ) {
+        if (!polymerName.equalsIgnoreCase(" ") && !polymerName.equalsIgnoreCase("Blank")) {
             this.setName(name + "-" + residueNum + " " + polymerName);
         }
     }

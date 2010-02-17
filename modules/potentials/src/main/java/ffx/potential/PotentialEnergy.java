@@ -22,6 +22,8 @@ package ffx.potential;
 
 import static java.lang.Math.max;
 
+import static ffx.numerics.VectorMath.*;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.logging.Logger;
@@ -222,22 +224,54 @@ public class PotentialEnergy implements Optimizable {
             torsionTorsions = null;
         }
 
-
-        // Determine the unit cell dimensions and Spacegroup
-        final double a = forceField.getDouble(ForceFieldDouble.A_AXIS, 10.0);
-        final double b = forceField.getDouble(ForceFieldDouble.B_AXIS, a);
-        final double c = forceField.getDouble(ForceFieldDouble.C_AXIS, a);
-        final double alpha = forceField.getDouble(ForceFieldDouble.ALPHA, 90.0);
-        final double beta = forceField.getDouble(ForceFieldDouble.BETA, 90.0);
-        final double gamma = forceField.getDouble(ForceFieldDouble.GAMMA, 90.0);
-        final String spacegroup = forceField.getString(
-                ForceFieldString.SPACEGROUP, "P1");
-        Crystal unitCell = new Crystal(a, b, c, alpha, beta, gamma, spacegroup);
-
+        // Define the cutoff lengths.
         double vdwOff = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, 9.0);
         double ewaldOff = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, 7.0);
         double buff = 2.0;
         double cutOff2 = 2.0 * (max(vdwOff, ewaldOff) + buff);
+
+        // Determine the unit cell dimensions and Spacegroup
+        String spacegroup;
+        double a,b,c,alpha,beta,gamma;
+        boolean aperiodic;
+        try {
+            spacegroup = forceField.getString(ForceFieldString.SPACEGROUP);
+            a = forceField.getDouble(ForceFieldDouble.A_AXIS);
+            b = forceField.getDouble(ForceFieldDouble.B_AXIS, a);
+            c = forceField.getDouble(ForceFieldDouble.C_AXIS, a);
+            alpha = forceField.getDouble(ForceFieldDouble.ALPHA, 90.0);
+            beta = forceField.getDouble(ForceFieldDouble.BETA, 90.0);
+            gamma = forceField.getDouble(ForceFieldDouble.GAMMA, 90.0);
+            aperiodic = false;
+        } catch (Exception e) {
+            logger.info(" The system will be treated as aperiodic.");
+            aperiodic = true;
+            spacegroup = "P1";
+            /**
+             * Search all atom pairs to find the largest pair-wise distance.
+             */
+            double xr[] = new double[3];
+            double maxr = 0.0;
+            for (int i=0; i < nAtoms - 1; i++) {
+                double[] xi =  atoms[i].getXYZ();
+                for (int j=i+1; j < nAtoms; j++) {
+                    double[] xj = atoms[j].getXYZ();
+                    diff(xi, xj, xr);
+                    double r = r(xr);
+                    if (r > maxr) {
+                        maxr = r;
+                    }
+                }
+            }
+            a = 2.0 * (maxr + ewaldOff);
+            b = a;
+            c = a;
+            alpha = 90.0;
+            beta = 90.0;
+            gamma = 90.0;
+        }
+        Crystal unitCell = new Crystal(a, b, c, alpha, beta, gamma, spacegroup);
+        unitCell.setAperiodic(aperiodic);
 
         /**
          * Do we need a ReplicatesCrystal?
@@ -255,7 +289,7 @@ public class PotentialEnergy implements Optimizable {
             n++;
         }
 
-        if (l * m * n > 1) {
+        if (l * m * n > 1 && !aperiodic) {
             this.crystal = new ReplicatesCrystal(unitCell, l, m, n);
         } else {
             this.crystal = unitCell;

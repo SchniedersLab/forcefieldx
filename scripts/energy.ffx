@@ -1,0 +1,10 @@
+
+// Name of the file (PDB or XYZ) to evaluate the energy of.
+String filename = "examples/ammonia-dimer.xyz";
+
+open(filename); 
+
+energy();
+
+
+
