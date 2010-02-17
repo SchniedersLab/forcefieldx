@@ -65,7 +65,7 @@ public class MTZFilter {
         public double[] cell = new double[6];
     }
 
-    private enum Header {
+    private static enum Header {
 
         VERS, TITLE, NCOL, SORT, SYMINF, SYMM, RESO, VALM, COL, COLUMN, NDIF,
         PROJECT, CRYSTAL, DATASET, DCELL, DWAVEL, BATCH,
