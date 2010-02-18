@@ -165,6 +165,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
      */
     private final NeighborList neighborList;
     private final ExpandRegion expandRegion;
+    private final IntegerSchedule pairWiseSchedule;
     private final VanDerWaalsLoop vanDerWaalsLoop[];
 
     /**
@@ -323,6 +324,23 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         // Parallel constructs.
         threadCount = parallelTeam.getThreadCount();
         vanDerWaalsLoop = new VanDerWaalsLoop[threadCount];
+
+        boolean available = false;
+        String pairWiseStrategy = null;
+        try {
+            pairWiseStrategy = forceField.getString(ForceField.ForceFieldString.VDW_SCHEDULE);
+            IntegerSchedule.parse(pairWiseStrategy);
+            available = true;
+        } catch (Exception e) {
+            available = false;
+        }
+        if (available) {
+            pairWiseSchedule = IntegerSchedule.parse(pairWiseStrategy);
+            logger.info(" van der Waals pairwise schedule " + pairWiseStrategy);
+        } else {
+            pairWiseSchedule = IntegerSchedule.fixed();
+        }
+
         expandRegion = new ExpandRegion();
         for (int i = 0; i < threadCount; i++) {
             vanDerWaalsLoop[i] = new VanDerWaalsLoop();
@@ -806,7 +824,6 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         private final double dx_local[];
         private final double dx2_local[];
         private final double mask[];
-        private final IntegerSchedule schedule = IntegerSchedule.fixed();
 
         public VanDerWaalsLoop() {
             super();
@@ -827,7 +844,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
 
         @Override
         public IntegerSchedule schedule() {
-            return schedule;
+            return pairWiseSchedule;
         }
 
         @Override

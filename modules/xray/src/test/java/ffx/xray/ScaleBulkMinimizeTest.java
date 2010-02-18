@@ -26,20 +26,13 @@ import java.util.List;
 import edu.rit.pj.ParallelTeam;
 import org.apache.commons.configuration.CompositeConfiguration;
 
-import ffx.crystal.Crystal;
-import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
-import ffx.crystal.Resolution;
-import ffx.numerics.ComplexNumber;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.ForceFieldFilter;
 import ffx.potential.parsers.PDBFilter;
 import ffx.utilities.Keyword;
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.PrintWriter;
 
 import org.junit.After;
 import org.junit.AfterClass;

@@ -1,6 +1,6 @@
 
 // Name of the file (PDB or XYZ) to evaluate the energy of.
-String filename = "examples/ammonia-dimer.xyz";
+String filename = "examples/3DB3.P62.xyz";
 
 open(filename); 
 

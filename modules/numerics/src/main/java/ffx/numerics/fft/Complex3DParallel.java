@@ -21,13 +21,13 @@
 package ffx.numerics.fft;
 
 import java.util.Random;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
-import java.util.logging.Level;
 
 /**
  * Compute the 3D FFT of complex, double precision input of arbitrary dimensions
@@ -87,10 +87,49 @@ public class Complex3DParallel {
         nextY = 2 * this.nX;
         nextZ = nextY * this.nY;
         threadCount = parallelTeam.getThreadCount();
+        schedule = IntegerSchedule.fixed();
         parallelFFT = new ParallelFFT();
         parallelIFFT = new ParallelIFFT();
         convolution = new Convolution();
-        schedule = IntegerSchedule.fixed();
+    }
+
+        /**
+     * Initialize the 3D FFT for complex 3D matrix.
+     *
+     * @param nX
+     *            X-dimension.
+     * @param nY
+     *            Y-dimension.
+     * @param nZ
+     *            Z-dimension.
+     * @param parallelTeam
+     *            A ParallelTeam instance.
+     * @param integerSchedule
+     *            The IntegerSchedule to use.
+     *
+     * @since 1.0
+     */
+    public Complex3DParallel(int nX, int nY, int nZ, ParallelTeam parallelTeam,
+            IntegerSchedule integerSchedule) {
+        this.nX = nX;
+        this.nY = nY;
+        this.nZ = nZ;
+        this.parallelTeam = parallelTeam;
+        recip = new double[nX * nY * nZ];
+        nY2 = 2 * this.nY;
+        nZ2 = 2 * this.nZ;
+        nextX = 2;
+        nextY = 2 * this.nX;
+        nextZ = nextY * this.nY;
+        threadCount = parallelTeam.getThreadCount();
+        if (integerSchedule != null) {
+            schedule = integerSchedule;
+        } else {
+            schedule = IntegerSchedule.fixed();
+        }
+        parallelFFT = new ParallelFFT();
+        parallelIFFT = new ParallelIFFT();
+        convolution = new Convolution();
     }
 
     /**

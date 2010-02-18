@@ -54,7 +54,7 @@ public class ForceField {
 
     public enum ForceFieldString {
 
-        SPACEGROUP, FORCEFIELD, POLARIZATION
+        SPACEGROUP, FORCEFIELD, POLARIZATION, VDW_SCHEDULE, REAL_SCHEDULE, RECIP_SCHEDULE
     }
 
     public enum ForceFieldDouble {
@@ -67,7 +67,7 @@ public class ForceField {
 
     public enum ForceFieldInteger {
 
-        PME_ORDER
+        PME_ORDER, PME_REAL_THREADS
     }
 
     public enum ForceFieldBoolean {

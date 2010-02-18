@@ -376,10 +376,28 @@ public class ReciprocalSpace {
         polarizationDensity = new PolarizationDensityRegion(bSplineRegion);
         polarizationReciprocalSum = new PolarizationReciprocalSumRegion();
         polarizationPhi = new PolarizationPhiRegion(bSplineRegion);
-        realFFT3D = new Real3DParallel(fftX, fftY, fftZ, fftTeam);
+
+        
+        boolean available = false;
+        String recipStrategy = null;
+        try {
+            recipStrategy = forceField.getString(ForceField.ForceFieldString.RECIP_SCHEDULE);
+            IntegerSchedule.parse(recipStrategy);
+            available = true;
+        } catch (Exception e) {
+            available = false;
+        }
+        IntegerSchedule recipSchedule;
+        if (available) {
+            recipSchedule = IntegerSchedule.parse(recipStrategy);
+            logger.info(" Electrostatics reciprocal schedule " + recipStrategy);
+        } else {
+            recipSchedule = IntegerSchedule.fixed();
+        }
+        realFFT3D = new Real3DParallel(fftX, fftY, fftZ, fftTeam, recipSchedule);
         realFFT3D.setRecip(permanentReciprocalSum.getRecip());
         if (!openCL) {
-            complexFFT3D = new Complex3DParallel(fftX, fftY, fftZ, fftTeam);
+            complexFFT3D = new Complex3DParallel(fftX, fftY, fftZ, fftTeam, recipSchedule);
             complexFFT3D.setRecip(polarizationReciprocalSum.getRecip());
             complexFFT3DOpenCL = null;
         } else {

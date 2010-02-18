@@ -21,13 +21,13 @@
 package ffx.numerics.fft;
 
 import java.util.Random;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
-import java.util.logging.Level;
 
 /**
  * Compute the 3D FFT of real, double precision input of arbitrary dimensions in parallel.<p>
@@ -76,6 +76,46 @@ public class Real3DParallel {
         parallelIFFT = new ParallelIFFT();
         parallelConvolution = new ParallelConvolution();
         schedule = IntegerSchedule.fixed();
+    }
+
+    /**
+     * Initialize the FFT for real input.
+     *
+     * @param nX
+     *            X-dimension.
+     * @param nY
+     *            Y-dimension.
+     * @param nZ
+     *            Z-dimension.
+     * @param parallelTeam
+     *            The ParallelTeam that will execute the transforms.
+     * @param integerSchedule
+     *            The IntegerSchedule to use.
+     * 
+     * @since 1.0
+     */
+    public Real3DParallel(int nX, int nY, int nZ, ParallelTeam parallelTeam,
+            IntegerSchedule integerSchedule) {
+        this.nX = nX / 2;
+        this.nY = nY;
+        this.nZ = nZ;
+        this.parallelTeam = parallelTeam;
+        n = nX;
+        nX1 = this.nX + 1;
+        nZ2 = this.nZ * 2;
+        nextX = 2;
+        nextY = n + 2;
+        nextZ = nextY * nY;
+        recip = new double[nX1 * nY * nZ];
+        threadCount = parallelTeam.getThreadCount();
+        if (integerSchedule != null) {
+            schedule = integerSchedule;
+        } else {
+            schedule = IntegerSchedule.fixed();
+        }
+        parallelFFT = new ParallelFFT();
+        parallelIFFT = new ParallelIFFT();
+        parallelConvolution = new ParallelConvolution();
     }
 
     /**
