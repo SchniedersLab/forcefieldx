@@ -41,6 +41,7 @@ import org.apache.commons.lang.time.StopWatch;
 import ffx.ui.LogHandler;
 import ffx.ui.MainPanel;
 import ffx.ui.macosx.OSXAdapter;
+import java.util.logging.Level;
 
 /**
  * The Main class is the entry point to the graphical user interface version of
@@ -69,8 +70,11 @@ public class Main extends JFrame {
             /**
              * Create a Handler for FFX logging.
              */
+
             logHandler = new LogHandler();
+            logHandler.setLevel(Level.ALL);
             ffxLogger.addHandler(logHandler);
+            ffxLogger.setLevel(Level.ALL);
         } catch (Exception e) {
             System.err.println(e.toString());
         }

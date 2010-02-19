@@ -1,10 +1,19 @@
 
+import ffx.potential.PotentialEnergy;
+
 // Name of the file (PDB or XYZ) to evaluate the energy of.
-String filename = "examples/3DB3.P62.xyz";
+String filename = "examples/1n7s.P1.xyz";
+
+/*
+open(filename); 
+System.setProperty("pj.nt", "1");
+for (int i = 1; i < 10; i++) {
+   energy();
+} */
 
 open(filename); 
-
-energy();
-
-
-
+System.setProperty("pj.nt", "2");
+potentialEnergy = new PotentialEnergy(active);
+for (int i = 1; i < 10; i++) {
+   potentialEnergy.energy(true,true);
+}

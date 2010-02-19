@@ -746,11 +746,13 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
 
             private final double in[] = new double[3];
             private final double out[] = new double[3];
-            private final IntegerSchedule schedule = IntegerSchedule.fixed();
+            // Extra padding to avert cache interference.
+            private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
+            private long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
             @Override
             public IntegerSchedule schedule() {
-                return schedule;
+                return pairWiseSchedule;
             }
 
             @Override
@@ -824,6 +826,9 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         private final double dx_local[];
         private final double dx2_local[];
         private final double mask[];
+        // Extra padding to avert cache interference.
+        private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
+        private long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
         public VanDerWaalsLoop() {
             super();

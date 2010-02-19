@@ -193,7 +193,7 @@ public class PotentialEnergyTest {
         this.nPolar = nPolar;
 
         String ffxCi = System.getProperty("ffx.ci");
-        if (ffxCi.equalsIgnoreCase("true")) {
+        if (ffxCi != null && ffxCi.equalsIgnoreCase("true")) {
             ci = true;
         } else {
             ci = false;

@@ -196,6 +196,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <!-- This prevents Mac OS X from using its old Java3D verion.  -->
+                    <useSystemClassLoader>false</useSystemClassLoader>
                     <systemProperties>
                         <property>
                             <name>j3d.rend</name>
@@ -299,27 +301,6 @@
     </properties>
 
     <profiles>
-        <!-- profile>
-            <id>Normal Build</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-            <properties>
-                <doExpensiveTests>false</doExpensiveTests>
-            </properties>
-        </profile>
-        <profile>
-            <id>Continuous Integration Build</id>
-            <activation>
-                <property>
-                    <name>ffx.ci</name>
-                    <value>true</value>
-                </property>
-            </activation>
-            <properties>
-                <ffx.ci>true</ffx.ci>
-            </properties>
-        </profile -->
         <profile>
             <id>Mac OS X</id>
             <activation>

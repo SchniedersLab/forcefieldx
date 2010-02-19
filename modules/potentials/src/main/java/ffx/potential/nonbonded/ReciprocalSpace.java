@@ -377,7 +377,7 @@ public class ReciprocalSpace {
         polarizationReciprocalSum = new PolarizationReciprocalSumRegion();
         polarizationPhi = new PolarizationPhiRegion(bSplineRegion);
 
-        
+
         boolean available = false;
         String recipStrategy = null;
         try {
@@ -390,7 +390,7 @@ public class ReciprocalSpace {
         IntegerSchedule recipSchedule;
         if (available) {
             recipSchedule = IntegerSchedule.parse(recipStrategy);
-            logger.info(" Electrostatics reciprocal schedule " + recipStrategy);
+            logger.info(" Convolution schedule " + recipStrategy);
         } else {
             recipSchedule = IntegerSchedule.fixed();
         }
@@ -418,7 +418,7 @@ public class ReciprocalSpace {
             long bSplineTime = System.nanoTime() - startTime;
             if (logger.isLoggable(Level.FINE)) {
                 StringBuffer sb = new StringBuffer();
-                sb.append(String.format("\nCompute B-Splines:      %8.3f (sec)\n", bSplineTime * toSeconds));
+                sb.append(String.format(" Compute B-Splines:      %8.3f (sec)\n", bSplineTime * toSeconds));
                 logger.fine(sb.toString());
             }
         } catch (Exception e) {
@@ -436,7 +436,7 @@ public class ReciprocalSpace {
             long permanentDensityTime = System.nanoTime() - startTime;
             if (logger.isLoggable(Level.FINE)) {
                 StringBuffer sb = new StringBuffer();
-                sb.append(String.format("Grid Permanent Density: %8.3f (sec)\n", permanentDensityTime * toSeconds));
+                sb.append(String.format(" Grid Permanent Density: %8.3f (sec)\n", permanentDensityTime * toSeconds));
                 logger.fine(sb.toString());
             }
         } catch (Exception e) {
@@ -642,10 +642,10 @@ public class ReciprocalSpace {
             private final double r21;
             private final double r22;
             private final double bSplineWork[][];
-            private final IntegerSchedule schedule = IntegerSchedule.fixed();
-            // 128 bytes of extra padding to avert cache interference.
-            private long p0, p1, p2, p3, p4, p5, p6, p7;
-            private long p8, p9, pa, pb, pc, pd, pe, pf;
+            private final IntegerSchedule schedule = IntegerSchedule.dynamic(10);
+            // Extra padding to avert cache interference.
+            long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
+            long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
             @Override
             public IntegerSchedule schedule() {
@@ -770,6 +770,9 @@ public class ReciprocalSpace {
         private class GridInitLoop extends IntegerForLoop {
 
             private final IntegerSchedule schedule = IntegerSchedule.fixed();
+            // Extra padding to avert cache interference.
+            long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
+            long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
             @Override
             public IntegerSchedule schedule() {
@@ -789,9 +792,9 @@ public class ReciprocalSpace {
             private int octant = 0;
             private double globalMultipoles[][][] = null;
             private final IntegerSchedule schedule = IntegerSchedule.fixed();
-            // 128 bytes of extra padding to avert cache interference.
-            private long p0, p1, p2, p3, p4, p5, p6, p7;
-            private long p8, p9, pa, pb, pc, pd, pe, pf;
+            // Extra padding to avert cache interference.
+            long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
+            long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
             public void setPermanent(double globalMultipoles[][][]) {
                 this.globalMultipoles = globalMultipoles;
@@ -846,7 +849,6 @@ public class ReciprocalSpace {
                         default:
                             String message = "Programming error in PermanentDensityLoop.\n";
                             logger.severe(message);
-                            System.exit(-1);
                     }
                 }
             }
@@ -1117,7 +1119,10 @@ public class ReciprocalSpace {
 
         private class FractionalPhiLoop extends IntegerForLoop {
 
-            private final IntegerSchedule schedule = IntegerSchedule.fixed();
+            private final IntegerSchedule schedule = IntegerSchedule.dynamic(1);
+            // Extra padding to avert cache interference.
+            long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
+            long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
             @Override
             public IntegerSchedule schedule() {
@@ -1324,6 +1329,9 @@ public class ReciprocalSpace {
         private class GridInitLoop extends IntegerForLoop {
 
             private final IntegerSchedule schedule = IntegerSchedule.fixed();
+            // Extra padding to avert cache interference.
+            long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
+            long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
             @Override
             public IntegerSchedule schedule() {
@@ -1351,6 +1359,9 @@ public class ReciprocalSpace {
             private double inducedDipole[][][] = null;
             private double inducedDipolep[][][] = null;
             private final IntegerSchedule schedule = IntegerSchedule.fixed();
+            // Extra padding to avert cache interference.
+            long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
+            long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
             public void setPolarization(double inducedDipole[][][],
                     double inducedDipolep[][][]) {
@@ -1648,7 +1659,10 @@ public class ReciprocalSpace {
 
         private class PolarizationPhiInducedLoop extends IntegerForLoop {
 
-            private final IntegerSchedule schedule = IntegerSchedule.fixed();
+            private final IntegerSchedule schedule = IntegerSchedule.dynamic(1);
+            // Extra padding to avert cache interference.
+            long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
+            long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
             @Override
             public IntegerSchedule schedule() {

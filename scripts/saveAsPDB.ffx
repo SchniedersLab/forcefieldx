@@ -1,4 +1,5 @@
-String name = "examples/1HJ8.pdb"
+
+String name = "examples/mmcpn.C2.xyz"
 File file = new File(name)
 open name
 saveAsPDB file

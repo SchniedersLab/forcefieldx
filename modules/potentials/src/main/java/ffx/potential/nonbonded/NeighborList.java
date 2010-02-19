@@ -22,6 +22,7 @@ package ffx.potential.nonbonded;
 
 import static java.lang.Math.floor;
 import static java.lang.Math.min;
+import static java.lang.String.format;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -72,7 +73,6 @@ import ffx.potential.bonded.Atom;
 public class NeighborList extends ParallelRegion {
 
     private static final Logger logger = Logger.getLogger(NeighborList.class.getName());
-
     /**
      * The crystal object defines the unit cell dimensions and spacegroup.
      */
@@ -329,16 +329,16 @@ public class NeighborList extends ParallelRegion {
             if (print) {
                 StringBuffer sb = new StringBuffer(" The cutoff is " + cutoff + " angstroms.\n");
                 final double toSeconds = 0.000000001;
-                sb.append(String.format(" Assignment to cells: %8.3f\n", cellTime * toSeconds)
-                        + String.format(" Verlet lists:        %8.3f\n", verletTime * toSeconds)
-                        + String.format(" Total:               %8.3f (sec)\n", totalTime * toSeconds));
-                sb.append(String.format(" Neighbors in the asymmetric unit: %12d\n", asymmetricUnitCount));
+                sb.append(format(" Assignment to cells: %8.3f\n", cellTime * toSeconds)
+                        + format(" Verlet lists:        %8.3f\n", verletTime * toSeconds)
+                        + format(" Total:               %8.3f (sec)\n", totalTime * toSeconds));
+                sb.append(format(" Neighbors in the asymmetric unit: %12d\n", asymmetricUnitCount));
                 if (nSymm > 1) {
                     int num = (int) (asymmetricUnitCount * nSymm + symmetryMateCount * (nSymm * 0.5));
                     double speedup = ((double) num) / (asymmetricUnitCount + symmetryMateCount);
-                    sb.append(String.format(" Neighbors in symmetry mates:      %12d\n", symmetryMateCount));
-                    sb.append(String.format(" Neighbors in the unit cell:       %12d\n", num));
-                    sb.append(String.format(" Space group speed up factor:      %12.3f\n", speedup));
+                    sb.append(format(" Neighbors in symmetry mates:      %12d\n", symmetryMateCount));
+                    sb.append(format(" Neighbors in the unit cell:       %12d\n", num));
+                    sb.append(format(" Space group speed up factor:      %12.3f\n", speedup));
                 }
                 logger.info(sb.toString() + "\n");
             }
@@ -367,13 +367,13 @@ public class NeighborList extends ParallelRegion {
      * @since 1.0
      */
     private void assignAtomsToCells() {
-        // Zero out the cell counts.
         for (int iSymm = 0; iSymm < nSymm; iSymm++) {
             final int cellIndexs[] = cellIndex[iSymm];
             final int cellCounts[] = cellCount[iSymm];
             final int cellStarts[] = cellStart[iSymm];
             final int cellLists[] = cellList[iSymm];
             final int cellOffsets[] = cellOffset[iSymm];
+            // Zero out the cell counts.
             for (int i = 0; i < nCells; i++) {
                 cellCounts[i] = 0;
             }
@@ -406,19 +406,14 @@ public class NeighborList extends ParallelRegion {
                     zu += 1.0;
                 }
                 // The cell indices of this atom.
-                final int a = (int) Math.floor(xu * nA);
-                final int b = (int) Math.floor(yu * nB);
-                final int c = (int) Math.floor(zu * nC);
+                final int a = (int) floor(xu * nA);
+                final int b = (int) floor(yu * nB);
+                final int c = (int) floor(zu * nC);
                 if (iSymm == 0) {
                     cellA[i] = a;
                     cellB[i] = b;
                     cellC[i] = c;
                 }
-                /*
-                if (iSymm == 0 && i < 100) {
-                System.out.println(String.format("%5d (%10.5f,%10.5f,%10.5f)/(%5d,%5d,%5d)",i+1,xu,yu,zu,a,b,c));
-                }
-                 */
                 // The cell index of this atom.
                 final int index = a + b * nA + c * nAB;
                 cellIndexs[i] = index;
@@ -463,7 +458,6 @@ public class NeighborList extends ParallelRegion {
         } catch (Exception e) {
             String message = "Fatal exception building neighbor list.\n";
             logger.log(Level.SEVERE, message, e);
-            System.exit(-1);
         }
         int list[][] = lists[0];
         for (int i = 0; i < nAtoms; i++) {
@@ -499,7 +493,6 @@ public class NeighborList extends ParallelRegion {
         } catch (Exception e) {
             String message = "Fatal exception building neighbor list in thread: " + getThreadIndex() + "\n";
             logger.log(Level.SEVERE, message, e);
-            System.exit(-1);
         }
     }
 
@@ -561,6 +554,9 @@ public class NeighborList extends ParallelRegion {
         private final double mask[];
         private final int asymmetricIndex[];
         private final IntegerSchedule schedule;
+        // Extra padding to avert cache interference.
+        private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
+        private long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
         public VerletListLoop() {
             super();
@@ -570,7 +566,7 @@ public class NeighborList extends ParallelRegion {
             for (int i = 0; i < nAtoms; i++) {
                 mask[i] = 1.0;
             }
-            schedule = IntegerSchedule.guided(10);
+            schedule = IntegerSchedule.dynamic(10);
         }
 
         @Override
@@ -608,9 +604,11 @@ public class NeighborList extends ParallelRegion {
                         if (iSymm == 0) {
                             // Interactions within the "self-volume".
                             atomCellPairs(index);
-                            // Half (62) of the neighboring volumes (124) are
-                            // searched to avoid double counting.
-                            // 2 cells (a, b+1..2, c)
+                            /**
+                             * Half (62) of the neighboring volumes (124) are
+                             * searched to avoid double counting.
+                             * 2 cells (a, b+1..2, c)
+                             */
                             atomCellPairs(image(a, b1, c));
                             atomCellPairs(image(a, b2, c));
                             // 10 cells (a, b-2..2, c+1..2)
@@ -626,8 +624,10 @@ public class NeighborList extends ParallelRegion {
                                 }
                             }
                         } else {
-                            // Interactions with the 125 adjacent symmetry mate
-                            // cells.
+                            /**
+                             * Interactions with the 125 adjacent symmetry mate
+                             * cells.
+                             */
                             for (int ai = a - 2; ai <= a2; ai++) {
                                 for (int bi = bm2; bi <= b2; bi++) {
                                     for (int ci = cm2; ci <= c2; ci++) {
