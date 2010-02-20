@@ -72,9 +72,9 @@ public class Main extends JFrame {
              */
 
             logHandler = new LogHandler();
-            logHandler.setLevel(Level.ALL);
+            logHandler.setLevel(Level.INFO);
             ffxLogger.addHandler(logHandler);
-            ffxLogger.setLevel(Level.ALL);
+            ffxLogger.setLevel(Level.INFO);
         } catch (Exception e) {
             System.err.println(e.toString());
         }
