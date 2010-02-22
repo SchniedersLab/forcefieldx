@@ -68,6 +68,23 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
         x = new double[n];
         grad = new double[n];
         scaling = new double[n];
+        /*
+        x[0] = refinementdata.model_k;
+        if (refinementdata.solvent_n > 1) {
+        x[1] = refinementdata.solvent_k;
+        x[2] = refinementdata.solvent_ueq;
+        }
+        for (int i = 0; i < 6; i++) {
+        if (crystal.scale_b[i] >= 0) {
+        x[refinementdata.solvent_n + crystal.scale_b[i]] =
+        refinementdata.aniso_b[i];
+        }
+        }
+        for (int i = 0; i < scale_n; i++) {
+        scaling[i] = 1.0;
+        }
+         */
+
         for (int i = 0; i < refinementdata.nparams; i++) {
             // for optimizationscaling, best to move to 0.0
             x[i] = refinementdata.sigmaa[i] - 1.0;
@@ -75,6 +92,7 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
             x[i + refinementdata.nparams] = refinementdata.sigmaw[i];
             scaling[i + refinementdata.nparams] = 1.0;
         }
+
         sigmaaoptimizer.setOptimizationScaling(scaling);
 
         // generate Es
@@ -115,6 +133,7 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
             double wi = pow(eo - ec, 2.0) / epsc;
 
             nmean[spline.i1()]++;
+
             x[spline.i1() + refinementdata.nparams] += (wi
                     - x[spline.i1() + refinementdata.nparams])
                     / nmean[spline.i1()];
@@ -154,9 +173,24 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
                 logger.warning("\n Optimization failed.\n");
         }
 
+        /*
+        refinementdata.model_k = x[0];
+        if (refinementdata.solvent_n > 1) {
+        refinementdata.solvent_k = x[1];
+        refinementdata.solvent_ueq = x[2];
+        }
+        for (int i = 0; i < 6; i++) {
+        if (crystal.scale_b[i] >= 0) {
+        refinementdata.aniso_b[i] =
+        x[refinementdata.solvent_n + crystal.scale_b[i]];
+        }
+        }
+         */
+
         for (int i = 0; i < refinementdata.nparams; i++) {
             refinementdata.sigmaa[i] = 1.0 + x[i] / scaling[i];
-            refinementdata.sigmaw[i] = x[i + refinementdata.nparams] / scaling[i];
+            refinementdata.sigmaw[i] = x[i + refinementdata.nparams]
+                    / scaling[i + refinementdata.nparams];
         }
 
         return sigmaaoptimizer;

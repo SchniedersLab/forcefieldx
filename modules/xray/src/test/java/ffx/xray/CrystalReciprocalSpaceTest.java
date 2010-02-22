@@ -22,16 +22,10 @@ package ffx.xray;
 
 import java.io.File;
 import java.util.List;
-// temporary
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.PrintWriter;
 
 import ffx.crystal.Crystal;
-import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
 import ffx.crystal.Resolution;
-import ffx.numerics.ComplexNumber;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.parameters.ForceField;
@@ -40,6 +34,11 @@ import ffx.potential.parsers.PDBFilter;
 import ffx.utilities.Keyword;
 
 import edu.rit.pj.ParallelTeam;
+import ffx.crystal.HKL;
+import ffx.numerics.ComplexNumber;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.PrintWriter;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.junit.After;
@@ -80,30 +79,8 @@ public class CrystalReciprocalSpaceTest {
     @Test
     public void test1N7SPermanent() {
         String filename = "ffx/xray/structures/1N7S.pdb";
-        // String filename = "ffx/xray/structures/1EXR.pdb";
-        // String filename = "ffx/xray/structures/2DRM.pdb";
         int index = filename.lastIndexOf(".");
         String name = filename.substring(0, index);
-
-        Crystal crystal = new Crystal(39.767, 51.750, 132.938,
-                90.00, 90.00, 90.00, "P212121");
-        Resolution resolution = new Resolution(1.45);
-
-        /*
-        Crystal crystal = new Crystal(25.015, 29.415, 52.761, 89.54, 86.10, 82.39, "P1");
-        Resolution resolution = new Resolution(1.0);
-         */
-
-        // set up the crystal data
-        /*
-        Crystal crystal =
-        new Crystal(29.97, 37.86, 44.51, 90.28, 90.11, 90.64, "P1");
-        Resolution resolution = new Resolution(1.35);
-         */
-
-        ReflectionList reflectionlist = new ReflectionList(crystal, resolution);
-        RefinementData refinementdata =
-                new RefinementData(reflectionlist.hkllist.size());
 
         // load the structure
         ClassLoader cl = this.getClass().getClassLoader();
@@ -111,6 +88,15 @@ public class CrystalReciprocalSpaceTest {
 
         // load any properties associated with it
         CompositeConfiguration properties = Keyword.loadProperties(structure);
+
+        Crystal crystal = new Crystal(39.767, 51.750, 132.938,
+                90.00, 90.00, 90.00, "P212121");
+        Resolution resolution = new Resolution(1.45);
+
+        ReflectionList reflectionlist = new ReflectionList(crystal, resolution);
+        RefinementData refinementdata = new RefinementData(properties,
+                reflectionlist);
+
         ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties, null);
         ForceField forceField = forceFieldFilter.parse();
 
@@ -130,8 +116,79 @@ public class CrystalReciprocalSpaceTest {
         ParallelTeam parallelTeam = new ParallelTeam(1);
         CrystalReciprocalSpace crs =
                 new CrystalReciprocalSpace(atomarray, atomarray.length,
-                parallelTeam, reflectionlist, true);
-        crs.permanent(refinementdata.fs);
+                parallelTeam, reflectionlist, false);
+        crs.permanent(refinementdata.fc);
+
+        // tests
+        ComplexNumber b = new ComplexNumber(-828.584, -922.704);
+        HKL hkl = reflectionlist.getHKL(1, 1, 4);
+        ComplexNumber a = new ComplexNumber(refinementdata.fc[hkl.index()][0],
+                refinementdata.fc[hkl.index()][1]);
+        System.out.println("1 1 4: " + a.toString() + " | "
+                + b.toString() + " | "
+                + a.divides(b).toString());
+
+        assertEquals("1 1 4 reflection should be correct",
+                -753.1078686943852, a.re(), 0.001);
+        assertEquals("1 1 4 reflection should be correct",
+                -991.3980428343319, a.im(), 0.001);
+
+        b.re(-70.4582);
+        b.im(-486.142);
+        hkl = reflectionlist.getHKL(2, 1, 10);
+        a.re(refinementdata.fc[hkl.index()][0]);
+        a.im(refinementdata.fc[hkl.index()][1]);
+        System.out.println("2 1 10: " + a.toString() + " | "
+                + b.toString() + " | "
+                + a.divides(b).toString());
+
+        assertEquals("2 1 10 reflection should be correct",
+                -80.19700297765023, a.re(), 0.001);
+        assertEquals("2 1 10 reflection should be correct",
+                -414.60777043854677, a.im(), 0.001);
+    }
+
+    @Test
+    public void test1NSFPermanent() {
+        String filename = "ffx/xray/structures/1NSF.pdb";
+        int index = filename.lastIndexOf(".");
+        String name = filename.substring(0, index);
+
+        // load the structure
+        ClassLoader cl = this.getClass().getClassLoader();
+        File structure = new File(cl.getResource(filename).getPath());
+
+        // load any properties associated with it
+        CompositeConfiguration properties = Keyword.loadProperties(structure);
+
+        Crystal crystal = new Crystal(115.996, 115.996, 44.13, 90.0, 90.0, 120.0, "P6");
+        Resolution resolution = new Resolution(1.89631);
+
+        ReflectionList reflectionlist = new ReflectionList(crystal, resolution);
+        RefinementData refinementdata = new RefinementData(properties,
+                reflectionlist);
+
+        ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties, null);
+        ForceField forceField = forceFieldFilter.parse();
+
+        // associate molecular assembly with the structure, set up forcefield
+        MolecularAssembly molecularAssembly = new MolecularAssembly(name);
+        molecularAssembly.setFile(structure);
+        molecularAssembly.setForceField(forceField);
+        PDBFilter pdbfile = new PDBFilter(molecularAssembly);
+        pdbfile.setForceField(forceField);
+        pdbfile.setProperties(properties);
+        pdbfile.readFile();
+
+        List<Atom> atomlist = molecularAssembly.getAtomList();
+        Atom atomarray[] = atomlist.toArray(new Atom[atomlist.size()]);
+
+        // set up FFT and run it
+        ParallelTeam parallelTeam = new ParallelTeam(1);
+        CrystalReciprocalSpace crs =
+                new CrystalReciprocalSpace(atomarray, atomarray.length,
+                parallelTeam, reflectionlist, false);
+        crs.permanent(refinementdata.fc);
 
         // write out reflections (temporary)
         /*
@@ -143,7 +200,7 @@ public class CrystalReciprocalSpaceTest {
         if (ih.allowed() == 0.0) {
         continue;
         }
-        double fc[] = refinementdata.fs[ih.index()];
+        double fc[] = refinementdata.fc[ih.index()];
         out.printf("INDE %5d%5d%5d FC= ", ih.h(), ih.k(), ih.l());
         out.printf("%10.3f%10.3f\n",
         Math.hypot(fc[0], fc[1]),
@@ -157,22 +214,32 @@ public class CrystalReciprocalSpaceTest {
 
         // tests
         /*
-        ComplexNumber b = new ComplexNumber(-14.6045, -45.6596);
-        HKL hkl = reflectionlist.getHKL(1, 0, 0);
-        ComplexNumber a = new ComplexNumber(refinementdata.fc[hkl.index][0],
-        refinementdata.fc[hkl.index][1]);
-        System.out.println("1 0 0: " + a.toString() + " "
-        + a.abs() + " " + a.phase() + " "
+        ComplexNumber b = new ComplexNumber(-828.584, -922.704);
+        HKL hkl = reflectionlist.getHKL(1, 1, 4);
+        ComplexNumber a = new ComplexNumber(refinementdata.fc[hkl.index()][0],
+        refinementdata.fc[hkl.index()][1]);
+        System.out.println("1 1 4: " + a.toString() + " | "
+        + b.toString() + " | "
         + a.divides(b).toString());
 
-        b.re(113.862);
-        b.im(178.684);
-        hkl = reflectionlist.getHKL(2, 0, 0);
-        a = new ComplexNumber(refinementdata.fc[hkl.index][0],
-        refinementdata.fc[hkl.index][1]);
-        System.out.println("2 0 0: " + a.toString() + " "
-        + a.abs() + " " + a.phase() + " "
+        assertEquals("1 1 4 reflection should be correct",
+        -753.1078686943852, a.re(), 0.001);
+        assertEquals("1 1 4 reflection should be correct",
+        -991.3980428343319, a.im(), 0.001);
+
+        b.re(-70.4582);
+        b.im(-486.142);
+        hkl = reflectionlist.getHKL(2, 1, 10);
+        a.re(refinementdata.fc[hkl.index()][0]);
+        a.im(refinementdata.fc[hkl.index()][1]);
+        System.out.println("2 1 10: " + a.toString() + " | "
+        + b.toString() + " | "
         + a.divides(b).toString());
+
+        assertEquals("2 1 10 reflection should be correct",
+        -80.19700297765023, a.re(), 0.001);
+        assertEquals("2 1 10 reflection should be correct",
+        -414.60777043854677, a.im(), 0.001);
          */
     }
 }

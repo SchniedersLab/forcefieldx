@@ -20,7 +20,11 @@
  */
 package ffx.xray;
 
+import ffx.crystal.ReflectionList;
 import ffx.numerics.ComplexNumber;
+import java.util.Arrays;
+import java.util.Iterator;
+import org.apache.commons.configuration.CompositeConfiguration;
 
 /**
  *
@@ -29,14 +33,26 @@ import ffx.numerics.ComplexNumber;
 public class RefinementData {
 
     public final int n;
+    public final int scale_n;
+    public final int solvent_n;
+    // data
     public final double fsigf[][];
     public final int freer[];
+    // calculated atomic structure factors
     public final double fc[][];
+    // calculted bulk solvent structure factors
     public final double fs[][];
+    // scaled sum of Fc and Fs
     public final double fctot[][];
+    // figure of merit and phase
+    public final double fomphi[][];
+    // 2mFo - DFc coefficients
     public final double fofc2[][];
+    // mFo - DFc coefficients
     public final double fofc1[][];
+    // derivatives wrt Fc
     public final double dfc[][];
+    // derivatives wrt Fs
     public final double dfs[][];
     // spline scaling coefficients
     public final int nparams;
@@ -49,19 +65,29 @@ public class RefinementData {
     public double solvent_k, solvent_ueq;
     public double model_k;
     public double aniso_b[] = new double[6];
+    // settings
+    public final int rfreeflag;
 
-    public RefinementData(int n) {
-        this(n, 10);
-    }
+    public RefinementData(CompositeConfiguration properties,
+            ReflectionList reflectionlist) {
 
-    public RefinementData(int n, int nparams) {
-        this.n = n;
-        this.nparams = nparams;
+        int rflag = properties.getInt("rfreeflag", 1);
+        int npar = properties.getInt("nbins", 10);
+
+        System.out.println("r free flag: " + rflag);
+
+        this.n = reflectionlist.hkllist.size();
+        this.scale_n = reflectionlist.crystal.scale_n;
+        // should be user definable!
+        this.solvent_n = 3;
+        this.nparams = npar;
+        this.rfreeflag = rflag;
         fsigf = new double[n][2];
         freer = new int[n];
         fc = new double[n][2];
         fs = new double[n][2];
         fctot = new double[n][2];
+        fomphi = new double[n][2];
         fofc2 = new double[n][2];
         fofc1 = new double[n][2];
         dfc = new double[n][2];
@@ -71,13 +97,14 @@ public class RefinementData {
             fsigf[i][0] = fsigf[i][1] = Double.NaN;
         }
 
-        spline = new double[nparams];
+        spline = new double[nparams * 2];
         sigmaa = new double[nparams];
         sigmaw = new double[nparams];
         fcesq = new double[nparams];
         foesq = new double[nparams];
         for (int i = 0; i < nparams; i++) {
-            spline[i] = sigmaa[i] = fcesq[i] = foesq[i] = 1.0;
+            spline[i] = spline[i + nparams] = sigmaa[i] = fcesq[i] = foesq[i] = 1.0;
+            sigmaw[i] = 0.05;
         }
 
         // initial guess for scaling/bulk solvent correction

@@ -21,6 +21,8 @@
 
 package ffx.crystal;
 
+import org.apache.commons.configuration.CompositeConfiguration;
+
 /**
  * The Resolution class encapsulates the sampling limits and resolution limits
  * for a given crystal and/or data set.
@@ -40,6 +42,17 @@ public class Resolution {
 
     public Resolution(double resolution) {
         this(resolution, 1.5);
+    }
+
+    public static Resolution checkProperties(CompositeConfiguration properties) {
+        double res = properties.getDouble("resolution", -1.0);
+        double sampling = properties.getDouble("sampling", 1.5);
+
+        if (res < 0.0) {
+            return null;
+        }
+
+        return new Resolution(res, sampling);
     }
 
     public double res_limit() {

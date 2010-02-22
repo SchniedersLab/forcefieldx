@@ -30,7 +30,6 @@ import java.util.logging.Logger;
 import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
-import ffx.crystal.ReflectionSpline;
 import ffx.numerics.ComplexNumber;
 import ffx.numerics.Optimizable;
 
@@ -52,7 +51,6 @@ public class ScaleBulkOptimizer implements Optimizable {
     private static final double twopi2 = 2.0 * PI * PI;
     private static final double eightpi2 = 8.0 * PI * PI;
     private final ReflectionList reflectionlist;
-    private final ReflectionSpline spline;
     private final Crystal crystal;
     private final RefinementData refinementdata;
     private final double fc[][];
@@ -60,9 +58,10 @@ public class ScaleBulkOptimizer implements Optimizable {
     private final double fctot[][];
     private final double fo[][];
     private final int freer[];
+    private final int n;
     protected double[] optimizationScaling = null;
 
-    public ScaleBulkOptimizer(ReflectionList reflectionlist, RefinementData refinementdata) {
+    public ScaleBulkOptimizer(ReflectionList reflectionlist, RefinementData refinementdata, int n) {
         this.reflectionlist = reflectionlist;
         this.crystal = reflectionlist.crystal;
         this.refinementdata = refinementdata;
@@ -71,10 +70,7 @@ public class ScaleBulkOptimizer implements Optimizable {
         this.fctot = refinementdata.fctot;
         this.fo = refinementdata.fsigf;
         this.freer = refinementdata.freer;
-
-        // initialize params
-        this.spline = new ReflectionSpline(reflectionlist,
-                refinementdata.nparams);
+        this.n = n;
     }
 
     public double target(double x[], double g[],
@@ -88,11 +84,20 @@ public class ScaleBulkOptimizer implements Optimizable {
             }
         }
 
-        int scale_flag = crystal.scale_flag;
+        int scale_n = crystal.scale_n;
         double model_k = x[0];
-        double model_b[] = {x[1], x[2], x[3], x[4], x[5], x[6]};
-        double solvent_k = x[7];
-        double solvent_ueq = x[8];
+        double solvent_k = 0.0;
+        double solvent_ueq = 0.0;
+        if (refinementdata.solvent_n > 1) {
+            solvent_k = x[1];
+            solvent_ueq = x[2];
+        }
+        double model_b[] = new double[6];
+        for (int i = 0; i < 6; i++) {
+            if (crystal.scale_b[i] >= 0) {
+                model_b[i] = x[refinementdata.solvent_n + crystal.scale_b[i]];
+            }
+        }
         r = rf = rfree = rfreef = sum = sumfo = 0.0;
         for (HKL ih : reflectionlist.hkllist) {
             int i = ih.index();
@@ -118,9 +123,6 @@ public class ScaleBulkOptimizer implements Optimizable {
             double ksebs = solvent_k * ebs;
             double kmems = model_k * u;
 
-            // spline setup
-            double fh = spline.f(s, refinementdata.spline);
-
             // structure factors
             ComplexNumber fcc = new ComplexNumber(fc[i][0], fc[i][1]);
             ComplexNumber fsc = new ComplexNumber(fs[i][0], fs[i][1]);
@@ -134,18 +136,18 @@ public class ScaleBulkOptimizer implements Optimizable {
             // target
             double f1 = fo[i][0];
             double f2 = kfct.abs();
-            double d = f1 - fh * f2;
+            double d = f1 - f2;
             double d2 = d * d;
-            double dr = -2.0 * fh * d;
+            double dr = -2.0 * d;
 
             sum += d2;
             sumfo += f1 * f1;
 
-            if (freer[i] == 0) {
-                rfree += abs(abs(fo[i][0]) - abs(fh * kfct.abs()));
+            if (freer[i] == refinementdata.rfreeflag) {
+                rfree += abs(abs(fo[i][0]) - abs(kfct.abs()));
                 rfreef += abs(fo[i][0]);
             } else {
-                r += abs(abs(fo[i][0]) - abs(fh * kfct.abs()));
+                r += abs(abs(fo[i][0]) - abs(kfct.abs()));
                 rf += abs(fo[i][0]);
             }
 
@@ -155,29 +157,46 @@ public class ScaleBulkOptimizer implements Optimizable {
                         + fcc.im() * fsc.im()
                         + ksebs * pow(fsc.abs(), 2.0);
 
+                // model_k derivative
                 g[0] += fct.abs() * u * dr;
-
-                if ((scale_flag & Crystal.SCALE_B11) == Crystal.SCALE_B11) {
-                    g[1] += kfct.abs() * -0.25 * pow(ihf[0], 2.0) * dr;
-                }
-                if ((scale_flag & Crystal.SCALE_B22) == Crystal.SCALE_B22) {
-                    g[2] += kfct.abs() * -0.25 * pow(ihf[1], 2.0) * dr;
-                }
-                if ((scale_flag & Crystal.SCALE_B33) == Crystal.SCALE_B33) {
-                    g[3] += kfct.abs() * -0.25 * pow(ihf[2], 2.0) * dr;
-                }
-                if ((scale_flag & Crystal.SCALE_B12) == Crystal.SCALE_B12) {
-                    g[4] += kfct.abs() * -0.5 * ihf[0] * ihf[1] * dr;
-                }
-                if ((scale_flag & Crystal.SCALE_B13) == Crystal.SCALE_B13) {
-                    g[5] += kfct.abs() * -0.5 * ihf[0] * ihf[2] * dr;
-                }
-                if ((scale_flag & Crystal.SCALE_B23) == Crystal.SCALE_B23) {
-                    g[6] += kfct.abs() * -0.5 * ihf[1] * ihf[2] * dr;
+                if (refinementdata.solvent_n > 1) {
+                    // solvent_k derivative
+                    g[1] += kmems * (ebs * dfp) * dr / fct.abs();
+                    // solvent_ueq derivative
+                    g[2] += kmems * (-twopi2 * s * ksebs * dfp) * dr / fct.abs();
                 }
 
-                g[7] += model_k * u * (ebs * dfp) * dr / fct.abs();
-                g[8] += model_k * u * (-twopi2 * s * ksebs * dfp) * dr / fct.abs();
+                int sn = refinementdata.solvent_n;
+                for (int j = 0; j < 6; j++) {
+                    if (crystal.scale_b[j] >= 0) {
+                        switch (j) {
+                            case (0):
+                                // B11
+                                g[sn + crystal.scale_b[j]] += kfct.abs() * -0.25 * pow(ihf[0], 2.0) * dr;
+                                break;
+                            case (1):
+                                // B22
+                                g[sn + crystal.scale_b[j]] += kfct.abs() * -0.25 * pow(ihf[1], 2.0) * dr;
+                                break;
+                            case (2):
+                                // B33
+                                g[sn + crystal.scale_b[j]] += kfct.abs() * -0.25 * pow(ihf[2], 2.0) * dr;
+                                break;
+                            case (3):
+                                // B12
+                                g[sn + crystal.scale_b[j]] += kfct.abs() * -0.5 * ihf[0] * ihf[1] * dr;
+                                break;
+                            case (4):
+                                // B13
+                                g[sn + crystal.scale_b[j]] += kfct.abs() * -0.5 * ihf[0] * ihf[2] * dr;
+                                break;
+                            case (5):
+                                // B23
+                                g[sn + crystal.scale_b[j]] += kfct.abs() * -0.5 * ihf[1] * ihf[2] * dr;
+                                break;
+                        }
+                    }
+                }
             }
         }
 
@@ -193,6 +212,15 @@ public class ScaleBulkOptimizer implements Optimizable {
             sb.append(String.format("   residual:  %8.3f\n", sum / sumfo));
             sb.append(String.format("   R:  %8.3f  Rfree:  %8.3f\n",
                     (r / rf) * 100.0, (rfree / rfreef) * 100.0));
+            sb.append("x: ");
+            for (int i = 0; i < x.length; i++) {
+                sb.append(String.format("%8g ", x[i]));
+            }
+            sb.append("\ng: ");
+            for (int i = 0; i < g.length; i++) {
+                sb.append(String.format("%8g ", g[i]));
+            }
+            sb.append("\n");
             logger.info(sb.toString());
         }
 
@@ -223,7 +251,7 @@ public class ScaleBulkOptimizer implements Optimizable {
 
     @Override
     public void setOptimizationScaling(double[] scaling) {
-        if (scaling != null && scaling.length == 9) {
+        if (scaling != null && scaling.length == n) {
             optimizationScaling = scaling;
         } else {
             optimizationScaling = null;

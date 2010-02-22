@@ -32,6 +32,7 @@ import java.util.logging.Logger;
 
 import no.uib.cipr.matrix.DenseMatrix;
 import no.uib.cipr.matrix.Matrices;
+import org.apache.commons.configuration.CompositeConfiguration;
 
 import static ffx.numerics.VectorMath.dot;
 import static ffx.numerics.VectorMath.cross;
@@ -48,17 +49,6 @@ import static ffx.numerics.VectorMath.scalar;
 public class Crystal {
 
     private static final Logger logger = Logger.getLogger(Crystal.class.getName());
-    /**
-     * bit mask operators for determining scaling terms
-     */
-    public static final int SCALE_NONE = 1 << 0;
-    public static final int SCALE_B11 = 1 << 1;
-    public static final int SCALE_B22 = 1 << 2;
-    public static final int SCALE_B33 = 1 << 3;
-    public static final int SCALE_B12 = 1 << 4;
-    public static final int SCALE_B13 = 1 << 5;
-    public static final int SCALE_B23 = 1 << 6;
-    public static final int SCALE_ALL = ~(0);
     /**
      * Length of the cell edge in the direction of the <b>a</b> basis vector.
      */
@@ -158,8 +148,9 @@ public class Crystal {
     private final double gamma_term;
     private final double tolerance = 1.0e-10;
     private boolean aperiodic;
-
     public int scale_flag;
+    public int scale_b[] = new int[6];
+    public int scale_n;
 
     /**
      * The Crystal class encapsulates the lattice parameters and space group.
@@ -191,7 +182,6 @@ public class Crystal {
         mhalf_c = -half_c;
         spaceGroup = SpaceGroup.spaceGroupFactory(sg);
         crystalSystem = spaceGroup.crystalSystem;
-        scale_flag = SCALE_NONE;
 
         if (!SpaceGroup.checkRestrictions(crystalSystem, a, b, c, alpha, beta, gamma)) {
             String message = "The lattice parameters do not satisfy the " + crystalSystem
@@ -199,35 +189,45 @@ public class Crystal {
             logger.severe(message);
         }
 
+        for (int i = 0; i < 6; i++) {
+            scale_b[i] = -1;
+        }
         SymOp symop;
         double rot[][];
+        int index = 0;
         switch (crystalSystem) {
             case TRICLINIC:
-                scale_flag |= SCALE_ALL;
+                for (int i = 0; i < 6; i++) {
+                    scale_b[i] = i;
+                }
                 break;
             case MONOCLINIC:
-                scale_flag |= SCALE_B11;
-                scale_flag |= SCALE_B22;
-                scale_flag |= SCALE_B33;
+                index = 0;
+                scale_b[0] = index++;
+                scale_b[1] = index++;
+                scale_b[2] = index++;
                 // determine unique axis
                 symop = spaceGroup.symOps.get(1);
                 rot = symop.rot;
                 if (rot[0][0] > 0) {
-                    scale_flag |= SCALE_B23;
+                    scale_b[5] = index++;
                 } else if (rot[1][1] > 0) {
-                    scale_flag |= SCALE_B13;
+                    scale_b[4] = index++;
                 } else {
-                    scale_flag |= SCALE_B12;
+                    scale_b[3] = index++;
                 }
                 break;
             case ORTHORHOMBIC:
-                scale_flag |= SCALE_B11;
-                scale_flag |= SCALE_B22;
-                scale_flag |= SCALE_B33;
+                index = 0;
+                scale_b[0] = index++;
+                scale_b[1] = index++;
+                scale_b[2] = index++;
                 break;
             case TETRAGONAL:
-                scale_flag |= SCALE_B11;
-                scale_flag |= SCALE_B33;
+                index = 0;
+                scale_b[0] = index++;
+                scale_b[1] = scale_b[0];
+                scale_b[2] = index++;
                 break;
             case TRIGONAL:
             case HEXAGONAL:
@@ -236,29 +236,33 @@ public class Crystal {
                     symop = spaceGroup.symOps.get(i);
                     rot = symop.rot;
 
+                    index = 0;
                     if ((rot[1][1] * rot[1][2] == -1)
                             || (rot[2][1] * rot[2][2] == -1)
                             || (rot[1][1] * rot[1][2] == 1)
                             || (rot[2][1] * rot[2][2] == 1)) {
-                        scale_flag |= SCALE_B11;
-                        scale_flag |= SCALE_B22;
-                        scale_flag |= SCALE_B23;
+                        scale_b[0] = index++;
+                        scale_b[1] = index++;
+                        scale_b[2] = scale_b[1];
+                        scale_b[5] = index++;
                         hexagonal = true;
                     } else if ((rot[0][0] * rot[0][2] == -1)
                             || (rot[2][0] * rot[2][2] == -1)
                             || (rot[0][0] * rot[0][2] == 1)
                             || (rot[2][0] * rot[2][2] == 1)) {
-                        scale_flag |= SCALE_B22;
-                        scale_flag |= SCALE_B33;
-                        scale_flag |= SCALE_B13;
+                        scale_b[0] = index++;
+                        scale_b[1] = index++;
+                        scale_b[2] = scale_b[0];
+                        scale_b[4] = index++;
                         hexagonal = true;
                     } else if ((rot[0][0] * rot[0][1] == -1)
                             || (rot[1][0] * rot[1][1] == -1)
                             || (rot[0][0] * rot[0][1] == 1)
                             || (rot[1][0] * rot[1][1] == 1)) {
-                        scale_flag |= SCALE_B11;
-                        scale_flag |= SCALE_B33;
-                        scale_flag |= SCALE_B12;
+                        scale_b[0] = index++;
+                        scale_b[1] = scale_b[0];
+                        scale_b[2] = index++;
+                        scale_b[3] = index++;
                         hexagonal = true;
                     }
 
@@ -268,12 +272,16 @@ public class Crystal {
                 }
                 if (!hexagonal) {
                     // rhombohedral
-                    scale_flag |= SCALE_B12;
+                    index = 0;
+                    scale_b[3] = index++;
+                    scale_b[4] = scale_b[3];
+                    scale_b[5] = scale_b[3];
                 }
                 break;
             case CUBIC:
                 break;
         }
+        scale_n = index;
 
         switch (crystalSystem) {
             case CUBIC:
@@ -403,6 +411,24 @@ public class Crystal {
             }
         }
 
+    }
+
+    public static Crystal checkProperties(CompositeConfiguration properties) {
+        double a = properties.getDouble("a-axis", -1.0);
+        double b = properties.getDouble("b-axis", -1.0);
+        double c = properties.getDouble("c-axis", -1.0);
+        double alpha = properties.getDouble("alpha", -1.0);
+        double beta = properties.getDouble("beta", -1.0);
+        double gamma = properties.getDouble("gamma", -1.0);
+        String sg = properties.getString("spacegroup", "");
+
+        if (a < 0.0 || b < 0.0 || c < 0.0
+                || alpha < 0.0 || beta < 0.0 || gamma < 0.0
+                || sg.isEmpty()) {
+            return null;
+        }
+
+        return new Crystal(a, b, c, alpha, beta, gamma, sg);
     }
 
     /**
@@ -776,6 +802,31 @@ public class Crystal {
     }
 
     /**
+     * Apply a transpose rotation symmetry operator to one HKL.
+     *
+     * @param hkl
+     *            Input HKL.
+     * @param mate
+     *            Symmetry mate HKL.
+     * @param symOp
+     *            The symmetry operator.
+     */
+    public void applyTransSymRot(HKL hkl, HKL mate, SymOp symOp) {
+        double rot[][] = symOp.rot;
+        double h = hkl.h();
+        double k = hkl.k();
+        double l = hkl.l();
+        // Apply transpose Symmetry Operator.
+        double hs = rot[0][0] * h + rot[1][0] * k + rot[2][0] * l;
+        double ks = rot[0][1] * h + rot[1][1] * k + rot[2][1] * l;
+        double ls = rot[0][2] * h + rot[1][2] * k + rot[2][2] * l;
+        // Convert back to HKL
+        mate.h((int) rint(hs));
+        mate.k((int) rint(ks));
+        mate.l((int) rint(ls));
+    }
+
+    /**
      * Apply a symmetry operator to an array of Cartesian coordinates. If the
      * arrays x, y or z are null or not of length n, the method returns
      * immediately. If xs, ys or zs are null or not of length n, new arrays are
@@ -946,6 +997,13 @@ public class Crystal {
 
     public static double res(Crystal crystal, HKL hkl) {
         return 1.0 / sqrt(quad_form(hkl, crystal.Gstar));
+    }
+
+    public static double sym_phase_shift(double hkl[], SymOp symOp) {
+        double trans[] = symOp.tr;
+        // Apply translation
+        return -2.0 * PI
+                * (hkl[0] * trans[0] + hkl[1] * trans[1] + hkl[2] * trans[2]);
     }
 
     public static double sym_phase_shift(HKL hkl, SymOp symOp) {

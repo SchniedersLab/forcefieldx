@@ -26,7 +26,9 @@ import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
 import ffx.crystal.Resolution;
+import ffx.utilities.Keyword;
 
+import org.apache.commons.configuration.CompositeConfiguration;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -43,13 +45,15 @@ public class MTZFilterTest {
     String filename = "ffx/xray/structures/2DRM.mtz";
     ClassLoader cl = this.getClass().getClassLoader();
     File mtzfile = new File(cl.getResource(filename).getPath());
+    // load any properties associated with it
+    CompositeConfiguration properties = Keyword.loadProperties(mtzfile);
+
     // set up the crystal data
     Crystal crystal =
             new Crystal(29.97, 37.86, 44.51, 90.28, 90.11, 90.64, "P1");
     Resolution resolution = new Resolution(1.35);
     ReflectionList reflectionlist = new ReflectionList(crystal, resolution);
-    RefinementData refinementdata =
-            new RefinementData(reflectionlist.hkllist.size());
+    RefinementData refinementdata = new RefinementData(properties, reflectionlist);
 
     public MTZFilterTest() {
     }

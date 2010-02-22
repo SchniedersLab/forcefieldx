@@ -356,8 +356,8 @@ public class CrystalReciprocalSpace {
             // apply symmetry
             for (int j = 0; j < nsym; j++) {
                 HKL ij = new HKL();
-                crystal.applySymRot(ih, ij, symops.get(j));
-                double shift = Crystal.sym_phase_shift(ij, symops.get(j));
+                crystal.applyTransSymRot(ih, ij, symops.get(j));
+                double shift = Crystal.sym_phase_shift(ih, symops.get(j));
 
                 int h = Crystal.mod(ij.h(), fftX);
                 int k = Crystal.mod(ij.k(), fftY);

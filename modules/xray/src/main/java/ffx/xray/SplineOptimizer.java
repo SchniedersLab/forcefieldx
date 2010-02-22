@@ -49,8 +49,9 @@ public class SplineOptimizer implements Optimizable {
     public interface Type {
 
         public static final int FOFC = 1;
-        public static final int FCTOESQ = 2;
-        public static final int FOTOESQ = 3;
+        public static final int F1F2 = 2;
+        public static final int FCTOESQ = 3;
+        public static final int FOTOESQ = 4;
     }
     private static final Logger logger = Logger.getLogger(SplineOptimizer.class.getName());
     private static final double twopi2 = 2.0 * PI * PI;
@@ -86,7 +87,7 @@ public class SplineOptimizer implements Optimizable {
 
     public double target(double x[], double g[],
             boolean gradient, boolean print) {
-        double sum, sumfo;
+        double r, rf, rfree, rfreef, sum, sumfo;
 
         // zero out the gradient
         if (gradient) {
@@ -95,7 +96,7 @@ public class SplineOptimizer implements Optimizable {
             }
         }
 
-        sum = sumfo = 0.0;
+        r = rf = rfree = rfreef = sum = sumfo = 0.0;
         for (HKL ih : reflectionlist.hkllist) {
             int i = ih.index();
             if (ih.allowed() == 0.0
@@ -120,6 +121,24 @@ public class SplineOptimizer implements Optimizable {
             double f1, f2, d, d2, dr, w;
             f1 = f2 = d = d2 = dr = w = 0.0;
             switch (type) {
+                case Type.FOFC:
+                    w = 1.0;
+                    f1 = fo[i][0];
+                    f2 = fct.abs();
+                    d = f1 - fh * f2;
+                    d2 = d * d;
+                    dr = -2.0 * f2 * d;
+                    sumfo += f1 * f1;
+                    break;
+                case Type.F1F2:
+                    w = 2.0 / ih.epsilonc();
+                    f1 = pow(fct.abs(), 2.0) / eps;
+                    f2 = pow(fo[i][0], 2.0) / eps;
+                    d = fh * f1 - f2;
+                    d2 = d * d / f1;
+                    dr = 2.0 * d;
+                    sumfo = 1.0;
+                    break;
                 case Type.FCTOESQ:
                     w = 2.0 / ih.epsilonc();
                     f1 = pow(fct.abs() / sqrt(eps), 2.0);
@@ -136,28 +155,17 @@ public class SplineOptimizer implements Optimizable {
                     dr = 2.0 * d;
                     sumfo = 1.0;
                     break;
-                case Type.FOFC:
-                    w = 1.0;
-                    f1 = fo[i][0];
-                    f2 = fct.abs();
-                    d = f1 - fh * f2;
-                    d2 = d * d;
-                    dr = -2.0 * fh * d;
-                    sumfo += f1 * f1;
-                    break;
             }
 
             sum += w * d2;
 
-            // scaling F1 to F2
-            /*
-            double f1 = pow(fct.abs(), 2.0) / eps;
-            double f2 = pow(fo[i][0], 2.0) / eps;
-            double d = fh * f1 - f2;
-            double d2 = d * d / f1;
-            double dr = 2.0 * d;
-             */
-
+            if (freer[i] == refinementdata.rfreeflag) {
+                rfree += abs(abs(fo[i][0]) - abs(fh * fct.abs()));
+                rfreef += abs(fo[i][0]);
+            } else {
+                r += abs(abs(fo[i][0]) - abs(fh * fct.abs()));
+                rf += abs(fo[i][0]);
+            }
 
             if (gradient) {
                 int i0 = spline.i0();
@@ -184,6 +192,19 @@ public class SplineOptimizer implements Optimizable {
             sb.append(" Computed Potential Energy\n");
             sb.append(String.format("   residual:  %8.3f\n",
                     sum / sumfo));
+            if (type == Type.FOFC || type == Type.F1F2) {
+                sb.append(String.format("   R:  %8.3f  Rfree:  %8.3f\n",
+                        (r / rf) * 100.0, (rfree / rfreef) * 100.0));
+            }
+            sb.append("x: ");
+            for (int i = 0; i < x.length; i++) {
+                sb.append(String.format("%8g ", x[i]));
+            }
+            sb.append("\ng: ");
+            for (int i = 0; i < g.length; i++) {
+                sb.append(String.format("%8g ", g[i]));
+            }
+            sb.append("\n");
             logger.info(sb.toString());
         }
 
@@ -199,7 +220,7 @@ public class SplineOptimizer implements Optimizable {
             }
         }
 
-        double sum = target(x, g, true, false);
+        double sum = target(x, g, true, true);
 
         if (optimizationScaling != null) {
             int len = x.length;

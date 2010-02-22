@@ -44,7 +44,9 @@ import java.util.logging.Logger;
  *
  * This method parses CCP4 MTZ files:<br>
  * 
- * @see <a href="http://www.ccp4.ac.uk/html/maplib.html#description" target="_blank">
+ * @see <a href="http://www.ccp4.ac.uk/html/maplib.html" target="_blank">
+ *
+ * @see <a href="http://www.ccp4.ac.uk/dist/html/library.html" target="_blank">
  */
 public class MTZFilter {
 
@@ -103,10 +105,8 @@ public class MTZFilter {
      */
     public ReflectionList getReflectionList(File mtzFile) {
         ByteOrder b = ByteOrder.nativeOrder();
+        // most likely little endian
         Boolean swap = true;
-        if (b.equals(ByteOrder.BIG_ENDIAN)) {
-            swap = false;
-        }
         FileInputStream fis;
         DataInputStream dis;
         try {
@@ -115,17 +115,40 @@ public class MTZFilter {
 
             byte bytes[] = new byte[80];
             int offset = 0;
-            String mtzstr = new String(bytes);
 
             // eat "MTZ" title
             dis.read(bytes, offset, 4);
+            String mtzstr = new String(bytes);
 
             // header offset
             int headeroffset = swap ? ByteSwap.swap(dis.readInt()) : dis.readInt();
 
-            // ignore machine stamp
-            dis.read(bytes, offset, 4);
-            mtzstr = new String(bytes);
+            // machine stamp
+            int stamp = swap ? ByteSwap.swap(dis.readInt()) : dis.readInt();
+            mtzstr = Integer.toHexString(stamp);
+            System.out.println("stamp: " + mtzstr);
+            switch (mtzstr.charAt(0)) {
+                case '1':
+                case '3':
+                    if (b.equals(ByteOrder.LITTLE_ENDIAN)) {
+                        swap = false;
+                    } else {
+                        swap = true;
+                    }
+                    break;
+                case '4':
+                    if (b.equals(ByteOrder.LITTLE_ENDIAN)) {
+                        swap = true;
+                    } else {
+                        swap = false;
+                    }
+                    break;
+            }
+
+            if (!swap) {
+                // swap it back (grrr...)
+                headeroffset = ByteSwap.swap(headeroffset);
+            }
 
             // skip to header and parse
             dis.skipBytes((headeroffset - 4) * 4);
@@ -192,9 +215,32 @@ public class MTZFilter {
             // header offset
             int headeroffset = swap ? ByteSwap.swap(dis.readInt()) : dis.readInt();
 
-            // ignore machine stamp
-            dis.read(bytes, offset, 4);
-            mtzstr = new String(bytes);
+            // machine stamp
+            int stamp = swap ? ByteSwap.swap(dis.readInt()) : dis.readInt();
+            mtzstr = Integer.toHexString(stamp);
+            System.out.println("stamp: " + mtzstr);
+            switch (mtzstr.charAt(0)) {
+                case '1':
+                case '3':
+                    if (b.equals(ByteOrder.LITTLE_ENDIAN)) {
+                        swap = false;
+                    } else {
+                        swap = true;
+                    }
+                    break;
+                case '4':
+                    if (b.equals(ByteOrder.LITTLE_ENDIAN)) {
+                        swap = true;
+                    } else {
+                        swap = false;
+                    }
+                    break;
+            }
+
+            if (!swap) {
+                // swap it back (grrr...)
+                headeroffset = ByteSwap.swap(headeroffset);
+            }
 
             // skip to header and parse
             dis.skipBytes((headeroffset - 4) * 4);
@@ -440,19 +486,22 @@ public class MTZFilter {
                     || label.equalsIgnoreCase("freer")
                     || label.equalsIgnoreCase("freerflag")
                     || label.equalsIgnoreCase("rfree")
-                    || label.equalsIgnoreCase("rfreeflag"))
+                    || label.equalsIgnoreCase("rfreeflag")
+                    || label.equalsIgnoreCase("test"))
                     && c.type == 'I') {
                 sb.append(String.format("Reading R Free column: \"%s\"\n", c.label));
                 rfree = nc;
             } else if ((label.equalsIgnoreCase("f")
                     || label.equalsIgnoreCase("fp")
-                    || label.equalsIgnoreCase("fo"))
+                    || label.equalsIgnoreCase("fo")
+                    || label.equalsIgnoreCase("fobs"))
                     && c.type == 'F') {
                 sb.append(String.format("Reading Fo column: \"%s\"\n", c.label));
                 fo = nc;
             } else if ((label.equalsIgnoreCase("sigf")
                     || label.equalsIgnoreCase("sigfp")
-                    || label.equalsIgnoreCase("sigfo"))
+                    || label.equalsIgnoreCase("sigfo")
+                    || label.equalsIgnoreCase("sigfobs"))
                     && c.type == 'Q') {
                 sb.append(String.format("Reading sigFo column: \"%s\"\n", c.label));
                 sigfo = nc;
