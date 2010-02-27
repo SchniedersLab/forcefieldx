@@ -71,16 +71,15 @@ public class CrystalStats {
             res[i][1] = Double.MAX_VALUE;
         }
 
+        System.out.println("# HKL: " + refinementdata.n);
+
         for (HKL ih : reflectionlist.hkllist) {
             int i = ih.index();
             int b = ih.bin();
 
             // ignored cases
-            if (ih.allowed() == 0.0) {
-                continue;
-            }
             if (Double.isNaN(fo[i][0])
-                    || fo[i][0] <= 0.0) {
+                    || fo[i][1] <= 0.0) {
                 nhkl[b][2]++;
                 continue;
             }
@@ -151,10 +150,9 @@ public class CrystalStats {
             int b = ih.bin();
 
             // ignored cases
-            if (ih.allowed() == 0.0
-                    || Double.isNaN(fc[i][0])
+            if (Double.isNaN(fc[i][0])
                     || Double.isNaN(fo[i][0])
-                    || fo[i][0] <= 0.0) {
+                    || fo[i][1] <= 0.0) {
                 continue;
             }
 
@@ -231,9 +229,8 @@ public class CrystalStats {
             int b = ih.bin();
 
             // ignored cases
-            if (ih.allowed() == 0.0
-                    || Double.isNaN(fo[i][0])
-                    || fo[i][0] <= 0.0) {
+            if (Double.isNaN(fo[i][0])
+                    || fo[i][1] <= 0.0) {
                 continue;
             }
 

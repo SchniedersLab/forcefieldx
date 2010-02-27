@@ -99,9 +99,9 @@ public class SplineOptimizer implements Optimizable {
         r = rf = rfree = rfreef = sum = sumfo = 0.0;
         for (HKL ih : reflectionlist.hkllist) {
             int i = ih.index();
-            if (ih.allowed() == 0.0
-                    || Double.isNaN(fc[i][0])
-                    || Double.isNaN(fo[i][0])) {
+            if (Double.isNaN(fc[i][0])
+                    || Double.isNaN(fo[i][0])
+                    || fo[i][1] <= 0.0) {
                 continue;
             }
 
@@ -220,7 +220,7 @@ public class SplineOptimizer implements Optimizable {
             }
         }
 
-        double sum = target(x, g, true, true);
+        double sum = target(x, g, true, false);
 
         if (optimizationScaling != null) {
             int len = x.length;

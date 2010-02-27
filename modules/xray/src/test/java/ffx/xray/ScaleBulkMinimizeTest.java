@@ -29,6 +29,7 @@ import org.apache.commons.configuration.CompositeConfiguration;
 
 import ffx.crystal.ReflectionList;
 import ffx.crystal.Resolution;
+import ffx.crystal.SymOp;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.parameters.ForceField;
@@ -102,6 +103,7 @@ public class ScaleBulkMinimizeTest {
         } else {
             reflectionlist = new ReflectionList(crystal, resolution);
         }
+
         RefinementData refinementdata = new RefinementData(properties,
                 reflectionlist);
         assertTrue("mtz file should be read in without errors",
@@ -170,5 +172,11 @@ public class ScaleBulkMinimizeTest {
         stats.print_hklstats();
         stats.print_snstats();
         stats.print_rstats();
+
+        /*
+        MTZWriter mtzwriter = new MTZWriter(reflectionlist, refinementdata,
+        "/tmp/foo.mtz");
+        mtzwriter.write();
+         */
     }
 }

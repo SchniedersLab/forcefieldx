@@ -36,6 +36,7 @@ import java.util.logging.Logger;
 public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
 
     private static final Logger logger = Logger.getLogger(SplineOptimizer.class.getName());
+    private static double toSeconds = 0.000000001;
     private static final double eightpi2 = 8.0 * Math.PI * Math.PI;
     private final ReflectionList reflectionlist;
     private final RefinementData refinementdata;
@@ -119,6 +120,8 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
 
         if (logger.isLoggable(Level.INFO)) {
             StringBuffer sb = new StringBuffer();
+            time += System.nanoTime();
+            sb.append(String.format("minimizer time: %g\n", time * toSeconds));
             sb.append(String.format("\n final scale:\n"));
             sb.append(String.format("  overall scale: %g\n", x[0]));
             sb.append(String.format("  aniso B tensor:\n"));

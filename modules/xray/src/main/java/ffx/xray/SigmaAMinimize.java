@@ -43,6 +43,7 @@ import ffx.numerics.OptimizationListener;
 public class SigmaAMinimize implements OptimizationListener, Terminatable {
 
     private static final Logger logger = Logger.getLogger(SplineOptimizer.class.getName());
+    private static double toSeconds = 0.000000001;
     private final ReflectionList reflectionlist;
     private final RefinementData refinementdata;
     private final Crystal crystal;
@@ -191,6 +192,13 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
             refinementdata.sigmaa[i] = 1.0 + x[i] / scaling[i];
             refinementdata.sigmaw[i] = x[i + refinementdata.nparams]
                     / scaling[i + refinementdata.nparams];
+        }
+
+        if (logger.isLoggable(Level.INFO)) {
+            StringBuffer sb = new StringBuffer();
+            time += System.nanoTime();
+            sb.append(String.format("minimizer time: %g\n", time * toSeconds));
+            logger.info(sb.toString());
         }
 
         return sigmaaoptimizer;

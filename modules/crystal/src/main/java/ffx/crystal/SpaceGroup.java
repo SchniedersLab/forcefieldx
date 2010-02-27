@@ -86,7 +86,7 @@ public class SpaceGroup {
     /**
      * Number of primitive symmetry equivalents.
      */
-    private final int numPrimitiveSymEquiv;
+    public final int numPrimitiveSymEquiv;
     /**
      * Space group name.
      */

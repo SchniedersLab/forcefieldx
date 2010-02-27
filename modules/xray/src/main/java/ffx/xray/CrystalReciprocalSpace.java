@@ -47,6 +47,7 @@ public class CrystalReciprocalSpace {
 
     private static final Logger logger = Logger.getLogger(CrystalReciprocalSpace.class.getName());
     private static double toSeconds = 0.000000001;
+    private static double badd = 2.0;
     private final Crystal crystal;
     private final Resolution resolution;
     private final ReflectionList reflectionlist;
@@ -348,9 +349,6 @@ public class CrystalReciprocalSpace {
         }
         Vector<SymOp> symops = crystal.spaceGroup.symOps;
         for (HKL ih : reflectionlist.hkllist) {
-            if (ih.allowed() == 0.0) {
-                continue;
-            }
             double fc[] = hkldata[ih.index()];
 
             // apply symmetry
@@ -385,12 +383,16 @@ public class CrystalReciprocalSpace {
         // scale
         double scale = crystal.volume / (fftX * fftY * fftZ);
         for (HKL ih : reflectionlist.hkllist) {
-            if (ih.allowed() == 0.0) {
-                continue;
-            }
             double fc[] = hkldata[ih.index()];
             ComplexNumber c = new ComplexNumber(fc[0], fc[1]);
             c = c.times(scale);
+
+            // remove Badd if need be
+            if (!solvent) {
+                double s = Crystal.invressq(crystal, ih);
+                c = c.times(exp(0.25 * badd * s));
+            }
+
             fc[0] = c.conjugate().re();
             fc[1] = c.conjugate().im();
         }
@@ -577,7 +579,7 @@ public class CrystalReciprocalSpace {
                 Vector<SymOp> symops = crystal.spaceGroup.symOps;
                 double xyz[] = new double[3];
                 crystal.applySymOp(atoms[n].getXYZ(), xyz, symops.get(iSymm));
-                FormFactor atomff = new FormFactor(atoms[n], 2.0, xyz);
+                FormFactor atomff = new FormFactor(atoms[n], solvent ? 0.0 : badd, xyz);
                 final double xi = xyz[0];
                 final double yi = xyz[1];
                 final double zi = xyz[2];
@@ -611,11 +613,8 @@ public class CrystalReciprocalSpace {
                             crystal.toCartesianCoordinates(xf, xc);
 
                             int index = giz * (fftY * (fftX + 2)) + giy * (fftX + 2) + gix;
-                            if (solvent) {
-                                densityGrid[index] += atomff.rho_gauss(xc, 1.5);
-                            } else {
-                                densityGrid[index] += atomff.rho(xc);
-                            }
+                            densityGrid[index] += solvent
+                                    ? atomff.rho_gauss(xc, 1.5) : atomff.rho(xc);
                         }
                     }
                 }

@@ -126,7 +126,7 @@ public class MTZFilter {
             // machine stamp
             int stamp = swap ? ByteSwap.swap(dis.readInt()) : dis.readInt();
             mtzstr = Integer.toHexString(stamp);
-            System.out.println("stamp: " + mtzstr);
+            // System.out.println("stamp: " + mtzstr);
             switch (mtzstr.charAt(0)) {
                 case '1':
                 case '3':
@@ -179,7 +179,7 @@ public class MTZFilter {
             sb.append(String.format("\nsetting up Reflection List based on MTZ:\n"));
             sb.append(String.format("  spacegroup #: %d (name: %s)\n",
                     sgnum, SpaceGroup.spaceGroupNames[sgnum - 1]));
-            sb.append(String.format("  resolution: %8.3f\n", reshigh));
+            sb.append(String.format("  resolution: %8.3f\n", 0.9999 * reshigh));
             sb.append(String.format("  cell: %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f\n",
                     d.cell[0], d.cell[1], d.cell[2], d.cell[3], d.cell[4], d.cell[5]));
             logger.info(sb.toString());
@@ -187,7 +187,7 @@ public class MTZFilter {
 
         Crystal crystal = new Crystal(d.cell[0], d.cell[1], d.cell[2],
                 d.cell[3], d.cell[4], d.cell[5], SpaceGroup.spaceGroupNames[sgnum - 1]);
-        Resolution resolution = new Resolution(reshigh);
+        Resolution resolution = new Resolution(0.9999 * reshigh);
 
         return new ReflectionList(crystal, resolution);
     }
@@ -218,7 +218,7 @@ public class MTZFilter {
             // machine stamp
             int stamp = swap ? ByteSwap.swap(dis.readInt()) : dis.readInt();
             mtzstr = Integer.toHexString(stamp);
-            System.out.println("stamp: " + mtzstr);
+            // System.out.println("stamp: " + mtzstr);
             switch (mtzstr.charAt(0)) {
                 case '1':
                 case '3':

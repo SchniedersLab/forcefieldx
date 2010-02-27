@@ -26,12 +26,15 @@ import static java.lang.Math.PI;
 import static java.lang.Math.pow;
 
 import java.util.logging.Logger;
+import java.util.Vector;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
+import ffx.crystal.SymOp;
 import ffx.numerics.ComplexNumber;
 import ffx.numerics.Optimizable;
+import ffx.numerics.VectorMath;
 
 /**
  *
@@ -98,35 +101,36 @@ public class ScaleBulkOptimizer implements Optimizable {
                 model_b[i] = x[refinementdata.solvent_n + crystal.scale_b[i]];
             }
         }
+
         r = rf = rfree = rfreef = sum = sumfo = 0.0;
         for (HKL ih : reflectionlist.hkllist) {
             int i = ih.index();
-            if (ih.allowed() == 0.0
-                    || Double.isNaN(fc[i][0])
-                    || Double.isNaN(fo[i][0])) {
+            if (Double.isNaN(fc[i][0])
+                    || Double.isNaN(fo[i][0])
+                    || fo[i][1] <= 0.0) {
                 continue;
             }
 
             //  constants
             double ihc[] = {ih.h(), ih.k(), ih.l()};
-            double ihf[] = new double[3];
-            crystal.toFractionalCoordinates(ihc, ihf);
-            double u = exp(-0.25
-                    * (pow(ihf[0], 2.0) * model_b[0]
-                    + pow(ihf[1], 2.0) * model_b[1]
-                    + pow(ihf[2], 2.0) * model_b[2]
-                    + 2.0 * ihf[0] * ihf[1] * model_b[3]
-                    + 2.0 * ihf[0] * ihf[2] * model_b[4]
-                    + 2.0 * ihf[1] * ihf[2] * model_b[5]));
+            double ihf[] = VectorMath.mat3vec3(ihc, crystal.recip);
+            double u = model_k
+                    - pow(ihf[0], 2.0) * model_b[0]
+                    - pow(ihf[1], 2.0) * model_b[1]
+                    - pow(ihf[2], 2.0) * model_b[2]
+                    - 2.0 * ihf[0] * ihf[1] * model_b[3]
+                    - 2.0 * ihf[0] * ihf[2] * model_b[4]
+                    - 2.0 * ihf[1] * ihf[2] * model_b[5];
             double s = Crystal.invressq(crystal, ih);
             double ebs = exp(-twopi2 * solvent_ueq * s);
             double ksebs = solvent_k * ebs;
-            double kmems = model_k * u;
+            double kmems = exp(0.5 * u);
 
             // structure factors
             ComplexNumber fcc = new ComplexNumber(fc[i][0], fc[i][1]);
             ComplexNumber fsc = new ComplexNumber(fs[i][0], fs[i][1]);
-            ComplexNumber fct = fcc.plus(fsc.times(ksebs));
+            ComplexNumber fct = refinementdata.solvent_n > 1
+                    ? fcc.plus(fsc.times(ksebs)) : fcc;
             ComplexNumber kfct = fct.times(kmems);
 
             // total structure factor (for refinement)
@@ -139,6 +143,14 @@ public class ScaleBulkOptimizer implements Optimizable {
             double d = f1 - f2;
             double d2 = d * d;
             double dr = -2.0 * d;
+            /*
+            double eps = ih.epsilon();
+            double f1 = pow(fo[i][0], 2.0) / eps;
+            double f2 = pow(fct.abs(), 2.0) / eps;
+            double d = u + log(f2) - log(f1);
+            double d2 = d * d;
+            double dr = 2.0 * d;
+             */
 
             sum += d2;
             sumfo += f1 * f1;
@@ -153,46 +165,49 @@ public class ScaleBulkOptimizer implements Optimizable {
 
             if (gradient) {
                 // common derivative element
-                double dfp = fcc.re() * fsc.re()
+                double dfp = ebs * (fcc.re() * fsc.re()
                         + fcc.im() * fsc.im()
-                        + ksebs * pow(fsc.abs(), 2.0);
+                        + ksebs * pow(fsc.abs(), 2.0));
 
                 // model_k derivative
-                g[0] += fct.abs() * u * dr;
+                g[0] += 0.5 * kfct.abs() * dr;
+                // g[0] += dr;
                 if (refinementdata.solvent_n > 1) {
                     // solvent_k derivative
-                    g[1] += kmems * (ebs * dfp) * dr / fct.abs();
+                    g[1] += kmems * dfp * dr / fct.abs();
+                    // g[1] += dfp * dr / pow(fct.abs(), 2.0);
                     // solvent_ueq derivative
-                    g[2] += kmems * (-twopi2 * s * ksebs * dfp) * dr / fct.abs();
+                    g[2] += kmems * -twopi2 * s * solvent_k * dfp * dr / fct.abs();
+                    // g[2] += -twopi2 * s * solvent_k * dfp * dr / pow(fct.abs(), 2.0);
                 }
 
                 int sn = refinementdata.solvent_n;
-                for (int j = 0; j < 6; j++) {
-                    if (crystal.scale_b[j] >= 0) {
-                        switch (j) {
+                for (int k = 0; k < 6; k++) {
+                    if (crystal.scale_b[k] >= 0) {
+                        switch (k) {
                             case (0):
                                 // B11
-                                g[sn + crystal.scale_b[j]] += kfct.abs() * -0.25 * pow(ihf[0], 2.0) * dr;
+                                g[sn + crystal.scale_b[k]] += 0.5 * kfct.abs() * -pow(ihf[0], 2.0) * dr;
                                 break;
                             case (1):
                                 // B22
-                                g[sn + crystal.scale_b[j]] += kfct.abs() * -0.25 * pow(ihf[1], 2.0) * dr;
+                                g[sn + crystal.scale_b[k]] += 0.5 * kfct.abs() * -pow(ihf[1], 2.0) * dr;
                                 break;
                             case (2):
                                 // B33
-                                g[sn + crystal.scale_b[j]] += kfct.abs() * -0.25 * pow(ihf[2], 2.0) * dr;
+                                g[sn + crystal.scale_b[k]] += 0.5 * kfct.abs() * -pow(ihf[2], 2.0) * dr;
                                 break;
                             case (3):
                                 // B12
-                                g[sn + crystal.scale_b[j]] += kfct.abs() * -0.5 * ihf[0] * ihf[1] * dr;
+                                g[sn + crystal.scale_b[k]] += 0.5 * kfct.abs() * -2.0 * ihf[0] * ihf[1] * dr;
                                 break;
                             case (4):
                                 // B13
-                                g[sn + crystal.scale_b[j]] += kfct.abs() * -0.5 * ihf[0] * ihf[2] * dr;
+                                g[sn + crystal.scale_b[k]] += 0.5 * kfct.abs() * -2.0 * ihf[0] * ihf[2] * dr;
                                 break;
                             case (5):
                                 // B23
-                                g[sn + crystal.scale_b[j]] += kfct.abs() * -0.5 * ihf[1] * ihf[2] * dr;
+                                g[sn + crystal.scale_b[k]] += 0.5 * kfct.abs() * -2.0 * ihf[1] * ihf[2] * dr;
                                 break;
                         }
                     }
@@ -236,7 +251,7 @@ public class ScaleBulkOptimizer implements Optimizable {
             }
         }
 
-        double sum = target(x, g, true, true);
+        double sum = target(x, g, true, false);
 
         if (optimizationScaling != null) {
             int len = x.length;

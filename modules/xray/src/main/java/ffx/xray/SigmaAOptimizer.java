@@ -40,6 +40,7 @@ import ffx.crystal.ReflectionList;
 import ffx.crystal.ReflectionSpline;
 import ffx.numerics.ComplexNumber;
 import ffx.numerics.Optimizable;
+import ffx.numerics.VectorMath;
 
 /**
  *
@@ -141,27 +142,21 @@ public class SigmaAOptimizer implements Optimizable {
         sum = sumr = 0.0;
         for (HKL ih : reflectionlist.hkllist) {
             int i = ih.index();
-            if (ih.allowed() == 0.0) {
-                continue;
-            }
 
             // constants
             double ihc[] = {ih.h(), ih.k(), ih.l()};
-            double ihf[] = new double[3];
-            crystal.toFractionalCoordinates(ihc, ihf);
-            double u = exp(-0.25
-                    * (pow(ihf[0], 2.0) * model_b[0]
-                    + pow(ihf[1], 2.0) * model_b[1]
-                    + pow(ihf[2], 2.0) * model_b[2]
-                    + 2.0 * ihf[0] * ihf[1] * model_b[3]
-                    + 2.0 * ihf[0] * ihf[2] * model_b[4]
-                    + 2.0 * ihf[1] * ihf[2] * model_b[5]));
-            double u2 = u * u;
-            double k2 = model_k * model_k;
+            double ihf[] = VectorMath.mat3vec3(ihc, crystal.recip);
+            double u = model_k
+                    - pow(ihf[0], 2.0) * model_b[0]
+                    - pow(ihf[1], 2.0) * model_b[1]
+                    - pow(ihf[2], 2.0) * model_b[2]
+                    - 2.0 * ihf[0] * ihf[1] * model_b[3]
+                    - 2.0 * ihf[0] * ihf[2] * model_b[4]
+                    - 2.0 * ihf[1] * ihf[2] * model_b[5];
             double s = Crystal.invressq(crystal, ih);
             double ebs = exp(-twopi2 * solvent_ueq * s);
             double ksebs = solvent_k * ebs;
-            double kmems = model_k * u;
+            double kmems = exp(0.5 * u);
             double km2 = kmems * kmems;
             double epsc = ih.epsilonc();
 
@@ -175,7 +170,8 @@ public class SigmaAOptimizer implements Optimizable {
             // structure factors
             ComplexNumber fcc = new ComplexNumber(fc[i][0], fc[i][1]);
             ComplexNumber fsc = new ComplexNumber(fs[i][0], fs[i][1]);
-            ComplexNumber fct = fcc.plus(fsc.times(ksebs));
+            ComplexNumber fct = refinementdata.solvent_n > 1
+                    ? fcc.plus(fsc.times(ksebs)) : fcc;
             ComplexNumber kfct = fct.times(kmems);
 
             ComplexNumber ecc = fcc.times(sqrt(ecscale));
@@ -191,9 +187,6 @@ public class SigmaAOptimizer implements Optimizable {
             double d = 2.0 * sigeo * sigeo + epsc * wai;
             double d2 = d * d;
             double fomx = 2.0 * eo * sai * kect.abs() / d;
-            double dfbulk = 2.0 * ebs * (fcc.re() * fsc.re()
-                    + fcc.im() * fsc.im()
-                    + ksebs * pow(fsc.abs(), 2.0));
 
             double inot, dinot, cf;
             if (ih.centric()) {
@@ -214,17 +207,6 @@ public class SigmaAOptimizer implements Optimizable {
             double dfsi = (2.0 * sa2 * km2 * ksebs * ect.im()) / d - ((2.0 * eo * sai * kmems * ksebs * ect.im()) / (d * ect.abs())) * dinot;
             double dfsa = 2.0 * sai * kect2 / d - (2.0 * eo * kect.abs() / d) * dinot;
             double dfwa = epsc * (cf / d - (eo2 + sa2 * kect2) / d2 + (2.0 * eo * sai * kect.abs() / d2) * dinot);
-            /*
-            double dfkm = (2.0 * u2 * model_k * sa2 * ect2) / d - ((2.0 * u * eo * sai * ect.abs()) / d) * dinot;
-            double dfks = (km2 * sa2 * ecscale * dfbulk) / d - ((kmems * eo * sai * ecscale * dfbulk) / (d * ect.abs())) * dinot;
-            double dfbs = (km2 * sa2 * -twopi2 * s * solvent_k * ecscale * dfbulk) / d - ((kmems * eo * sai * -twopi2 * s * solvent_k * ecscale * dfbulk) / (d * ect.abs())) * dinot;
-            double dfb11 = (2.0 * kmems * model_k * sa2 * ect2 * -0.25 * pow(ihf[0], 2.0)) / d - ((2.0 * kmems * eo * sai * ect.abs() * -0.25 * pow(ihf[0], 2.0)) / d) * dinot;
-            double dfb22 = (2.0 * kmems * model_k * sa2 * ect2 * -0.25 * pow(ihf[1], 2.0)) / d - ((2.0 * kmems * eo * sai * ect.abs() * -0.25 * pow(ihf[1], 2.0)) / d) * dinot;
-            double dfb33 = (2.0 * kmems * model_k * sa2 * ect2 * -0.25 * pow(ihf[2], 2.0)) / d - ((2.0 * kmems * eo * sai * ect.abs() * -0.25 * pow(ihf[2], 2.0)) / d) * dinot;
-            double dfb12 = (2.0 * kmems * model_k * sa2 * ect2 * -0.5 * ihf[0] * ihf[1]) / d - ((2.0 * kmems * eo * sai * ect.abs() * -0.5 * ihf[0] * ihf[1]) / d) * dinot;
-            double dfb13 = (2.0 * kmems * model_k * sa2 * ect2 * -0.5 * ihf[0] * ihf[2]) / d - ((2.0 * kmems * eo * sai * ect.abs() * -0.5 * ihf[0] * ihf[2]) / d) * dinot;
-            double dfb23 = (2.0 * kmems * model_k * sa2 * ect2 * -0.5 * ihf[1] * ihf[2]) / d - ((2.0 * kmems * eo * sai * ect.abs() * -0.5 * ihf[1] * ihf[2]) / d) * dinot;
-             */
 
             double f = dinot * eo;
             double phi = kect.phase();
@@ -328,7 +310,7 @@ public class SigmaAOptimizer implements Optimizable {
             }
         }
 
-        double sum = target(x, g, true, true);
+        double sum = target(x, g, true, false);
 
         if (optimizationScaling != null) {
             int len = x.length;

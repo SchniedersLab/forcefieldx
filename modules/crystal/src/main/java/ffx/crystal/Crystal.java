@@ -198,7 +198,7 @@ public class Crystal {
         switch (crystalSystem) {
             case TRICLINIC:
                 for (int i = 0; i < 6; i++) {
-                    scale_b[i] = i;
+                    scale_b[i] = index++;
                 }
                 break;
             case MONOCLINIC:
@@ -244,7 +244,6 @@ public class Crystal {
                         scale_b[0] = index++;
                         scale_b[1] = index++;
                         scale_b[2] = scale_b[1];
-                        scale_b[5] = index++;
                         hexagonal = true;
                     } else if ((rot[0][0] * rot[0][2] == -1)
                             || (rot[2][0] * rot[2][2] == -1)
@@ -253,7 +252,6 @@ public class Crystal {
                         scale_b[0] = index++;
                         scale_b[1] = index++;
                         scale_b[2] = scale_b[0];
-                        scale_b[4] = index++;
                         hexagonal = true;
                     } else if ((rot[0][0] * rot[0][1] == -1)
                             || (rot[1][0] * rot[1][1] == -1)
@@ -262,7 +260,6 @@ public class Crystal {
                         scale_b[0] = index++;
                         scale_b[1] = scale_b[0];
                         scale_b[2] = index++;
-                        scale_b[3] = index++;
                         hexagonal = true;
                     }
 
@@ -451,7 +448,6 @@ public class Crystal {
     public boolean aperiodic() {
         return aperiodic;
     }
-
 
     /**
      * Apply the minimum image convention.
