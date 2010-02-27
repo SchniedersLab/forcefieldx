@@ -29,7 +29,6 @@ import org.apache.commons.configuration.CompositeConfiguration;
 
 import ffx.crystal.ReflectionList;
 import ffx.crystal.Resolution;
-import ffx.crystal.SymOp;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.parameters.ForceField;

@@ -217,9 +217,9 @@ public class MTZFilter {
 
             // machine stamp
             int stamp = swap ? ByteSwap.swap(dis.readInt()) : dis.readInt();
-            mtzstr = Integer.toHexString(stamp);
+            String stampstr = Integer.toHexString(stamp);
             // System.out.println("stamp: " + mtzstr);
-            switch (mtzstr.charAt(0)) {
+            switch (stampstr.charAt(0)) {
                 case '1':
                 case '3':
                     if (b.equals(ByteOrder.LITTLE_ENDIAN)) {
@@ -298,9 +298,16 @@ public class MTZFilter {
                 }
             }
             StringBuffer sb = new StringBuffer();
-            sb.append(String.format("\n# HKL read in:                             %d\n", nread));
-            sb.append(String.format("# HKL NOT read in (too high resolution):   %d\n", nres));
-            sb.append(String.format("# HKL NOT read in (not in internal list?): %d\n", nignore));
+            sb.append(String.format("\nMTZ file type (machine stamp): %s\n",
+                    stampstr));
+            sb.append(String.format("# HKL read in:                             %d\n",
+                    nread));
+            sb.append(String.format("# HKL NOT read in (too high resolution):   %d\n",
+                    nres));
+            sb.append(String.format("# HKL NOT read in (not in internal list?): %d\n",
+                    nignore));
+            sb.append(String.format("# HKL in internal list:                    %d\n",
+                    reflectionlist.hkllist.size()));
             if (logger.isLoggable(Level.INFO)) {
                 logger.info(sb.toString());
             }

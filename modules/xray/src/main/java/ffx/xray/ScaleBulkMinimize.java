@@ -92,6 +92,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
 
         double e = bulksolventoptimizer.energyAndGradient(x, grad);
 
+        long mtime = -System.nanoTime();
         time = -System.nanoTime();
         done = false;
         int status = LBFGS.minimize(n, m, x, e, grad, eps, bulksolventoptimizer, this);
@@ -120,8 +121,8 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
 
         if (logger.isLoggable(Level.INFO)) {
             StringBuffer sb = new StringBuffer();
-            time += System.nanoTime();
-            sb.append(String.format("minimizer time: %g\n", time * toSeconds));
+            mtime += System.nanoTime();
+            sb.append(String.format("minimizer time: %g\n", mtime * toSeconds));
             sb.append(String.format("\n final scale:\n"));
             sb.append(String.format("  overall scale: %g\n", x[0]));
             sb.append(String.format("  aniso B tensor:\n"));

@@ -69,22 +69,6 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
         x = new double[n];
         grad = new double[n];
         scaling = new double[n];
-        /*
-        x[0] = refinementdata.model_k;
-        if (refinementdata.solvent_n > 1) {
-        x[1] = refinementdata.solvent_k;
-        x[2] = refinementdata.solvent_ueq;
-        }
-        for (int i = 0; i < 6; i++) {
-        if (crystal.scale_b[i] >= 0) {
-        x[refinementdata.solvent_n + crystal.scale_b[i]] =
-        refinementdata.aniso_b[i];
-        }
-        }
-        for (int i = 0; i < scale_n; i++) {
-        scaling[i] = 1.0;
-        }
-         */
 
         for (int i = 0; i < refinementdata.nparams; i++) {
             // for optimizationscaling, best to move to 0.0
@@ -139,12 +123,6 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
                     - x[spline.i1() + refinementdata.nparams])
                     / nmean[spline.i1()];
         }
-
-        System.out.println("init params: ");
-        for (int i = 0; i < n; i++) {
-            System.out.print(x[i] + " ");
-        }
-        System.out.println();
     }
 
     public SigmaAOptimizer minimize() {
@@ -159,6 +137,7 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
 
         double e = sigmaaoptimizer.energyAndGradient(x, grad);
 
+        long mtime = -System.nanoTime();
         time = -System.nanoTime();
         done = false;
         int status = LBFGS.minimize(n, m, x, e, grad, eps, sigmaaoptimizer, this);
@@ -174,20 +153,6 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
                 logger.warning("\n Optimization failed.\n");
         }
 
-        /*
-        refinementdata.model_k = x[0];
-        if (refinementdata.solvent_n > 1) {
-        refinementdata.solvent_k = x[1];
-        refinementdata.solvent_ueq = x[2];
-        }
-        for (int i = 0; i < 6; i++) {
-        if (crystal.scale_b[i] >= 0) {
-        refinementdata.aniso_b[i] =
-        x[refinementdata.solvent_n + crystal.scale_b[i]];
-        }
-        }
-         */
-
         for (int i = 0; i < refinementdata.nparams; i++) {
             refinementdata.sigmaa[i] = 1.0 + x[i] / scaling[i];
             refinementdata.sigmaw[i] = x[i + refinementdata.nparams]
@@ -196,8 +161,8 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
 
         if (logger.isLoggable(Level.INFO)) {
             StringBuffer sb = new StringBuffer();
-            time += System.nanoTime();
-            sb.append(String.format("minimizer time: %g\n", time * toSeconds));
+            mtime += System.nanoTime();
+            sb.append(String.format("minimizer time: %g\n", mtime * toSeconds));
             logger.info(sb.toString());
         }
 

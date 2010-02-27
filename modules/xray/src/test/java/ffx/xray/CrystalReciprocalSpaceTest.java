@@ -24,8 +24,10 @@ import java.io.File;
 import java.util.List;
 
 import ffx.crystal.Crystal;
+import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
 import ffx.crystal.Resolution;
+import ffx.numerics.ComplexNumber;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.parameters.ForceField;
@@ -34,12 +36,6 @@ import ffx.potential.parsers.PDBFilter;
 import ffx.utilities.Keyword;
 
 import edu.rit.pj.ParallelTeam;
-import ffx.crystal.HKL;
-import ffx.numerics.ComplexNumber;
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.PrintWriter;
-
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -129,9 +125,9 @@ public class CrystalReciprocalSpaceTest {
                 + a.divides(b).toString());
 
         assertEquals("1 1 4 reflection should be correct",
-                -753.1078686943852, a.re(), 0.001);
+                -753.8278487995589, a.re(), 0.001);
         assertEquals("1 1 4 reflection should be correct",
-                -991.3980428343319, a.im(), 0.001);
+                -992.3458311881893, a.im(), 0.001);
 
         b.re(-70.4582);
         b.im(-486.142);
@@ -143,9 +139,9 @@ public class CrystalReciprocalSpaceTest {
                 + a.divides(b).toString());
 
         assertEquals("2 1 10 reflection should be correct",
-                -80.19700297765023, a.re(), 0.001);
+                -80.54103372671413, a.re(), 0.001);
         assertEquals("2 1 10 reflection should be correct",
-                -414.60777043854677, a.im(), 0.001);
+                -416.3863633601565, a.im(), 0.001);
     }
 
     @Test
@@ -190,56 +186,32 @@ public class CrystalReciprocalSpaceTest {
                 parallelTeam, reflectionlist, false);
         crs.permanent(refinementdata.fc);
 
-        // write out reflections (temporary)
-        /*
-        try {
-        PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter("/tmp/foo.cns")));
-        out.println("ANOMalous=FALSE");
-        out.println("DECLare NAME=FC DOMAin=RECIprocal TYPE=COMP END");
-        for (HKL ih : reflectionlist.hkllist) {
-        if (ih.allowed() == 0.0) {
-        continue;
-        }
-        double fc[] = refinementdata.fc[ih.index()];
-        out.printf("INDE %5d%5d%5d FC= ", ih.h(), ih.k(), ih.l());
-        out.printf("%10.3f%10.3f\n",
-        Math.hypot(fc[0], fc[1]),
-        Math.toDegrees(Math.atan2(fc[1], fc[0])));
-        }
-        out.close();
-        } catch (Exception e) {
-        System.out.println("error: " + e.getMessage());
-        }
-         */
-
         // tests
-        /*
-        ComplexNumber b = new ComplexNumber(-828.584, -922.704);
-        HKL hkl = reflectionlist.getHKL(1, 1, 4);
+        ComplexNumber b = new ComplexNumber(-496.999, 431.817);
+        HKL hkl = reflectionlist.getHKL(1, 9, 4);
         ComplexNumber a = new ComplexNumber(refinementdata.fc[hkl.index()][0],
-        refinementdata.fc[hkl.index()][1]);
-        System.out.println("1 1 4: " + a.toString() + " | "
-        + b.toString() + " | "
-        + a.divides(b).toString());
+                refinementdata.fc[hkl.index()][1]);
+        System.out.println("1 9 4: " + a.toString() + " | "
+                + b.toString() + " | "
+                + a.divides(b).toString());
 
-        assertEquals("1 1 4 reflection should be correct",
-        -753.1078686943852, a.re(), 0.001);
-        assertEquals("1 1 4 reflection should be correct",
-        -991.3980428343319, a.im(), 0.001);
+        assertEquals("1 9 4 reflection should be correct",
+                -494.80203768683873, a.re(), 0.001);
+        assertEquals("1 9 4 reflection should be correct",
+                445.43523040263096, a.im(), 0.001);
 
-        b.re(-70.4582);
-        b.im(-486.142);
-        hkl = reflectionlist.getHKL(2, 1, 10);
+        b.re(-129.767);
+        b.im(-76.9812);
+        hkl = reflectionlist.getHKL(5, 26, 8);
         a.re(refinementdata.fc[hkl.index()][0]);
         a.im(refinementdata.fc[hkl.index()][1]);
-        System.out.println("2 1 10: " + a.toString() + " | "
-        + b.toString() + " | "
-        + a.divides(b).toString());
+        System.out.println("5 26 8: " + a.toString() + " | "
+                + b.toString() + " | "
+                + a.divides(b).toString());
 
-        assertEquals("2 1 10 reflection should be correct",
-        -80.19700297765023, a.re(), 0.001);
-        assertEquals("2 1 10 reflection should be correct",
-        -414.60777043854677, a.im(), 0.001);
-         */
+        assertEquals("5 26 8 reflection should be correct",
+                -123.46207255713327, a.re(), 0.001);
+        assertEquals("5 26 8 reflection should be correct",
+                -74.42597056709984, a.im(), 0.001);
     }
 }
