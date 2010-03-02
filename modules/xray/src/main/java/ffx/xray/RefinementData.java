@@ -20,7 +20,11 @@
  */
 package ffx.xray;
 
+import ffx.crystal.ReflectionList;
 import ffx.numerics.ComplexNumber;
+import java.util.Arrays;
+import java.util.Iterator;
+import org.apache.commons.configuration.CompositeConfiguration;
 
 /**
  *
@@ -29,14 +33,26 @@ import ffx.numerics.ComplexNumber;
 public class RefinementData {
 
     public final int n;
+    public final int scale_n;
+    public final int solvent_n;
+    // data
     public final double fsigf[][];
     public final int freer[];
+    // calculated atomic structure factors
     public final double fc[][];
+    // calculted bulk solvent structure factors
     public final double fs[][];
+    // scaled sum of Fc and Fs
     public final double fctot[][];
+    // figure of merit and phase
+    public final double fomphi[][];
+    // 2mFo - DFc coefficients
     public final double fofc2[][];
+    // mFo - DFc coefficients
     public final double fofc1[][];
+    // derivatives wrt Fc
     public final double dfc[][];
+    // derivatives wrt Fs
     public final double dfs[][];
     // spline scaling coefficients
     public final int nparams;
@@ -49,19 +65,27 @@ public class RefinementData {
     public double solvent_k, solvent_ueq;
     public double model_k;
     public double aniso_b[] = new double[6];
+    // settings
+    public final int rfreeflag;
 
-    public RefinementData(int n) {
-        this(n, 10);
-    }
+    public RefinementData(CompositeConfiguration properties,
+            ReflectionList reflectionlist) {
 
-    public RefinementData(int n, int nparams) {
-        this.n = n;
-        this.nparams = nparams;
+        int rflag = properties.getInt("rfreeflag", 1);
+        int npar = properties.getInt("nbins", 10);
+        boolean bulksolvent = properties.getBoolean("bulksolvent", true);
+
+        this.n = reflectionlist.hkllist.size();
+        this.scale_n = reflectionlist.crystal.scale_n;
+        this.solvent_n = bulksolvent ? 3 : 1;
+        this.nparams = npar;
+        this.rfreeflag = rflag;
         fsigf = new double[n][2];
         freer = new int[n];
         fc = new double[n][2];
         fs = new double[n][2];
         fctot = new double[n][2];
+        fomphi = new double[n][2];
         fofc2 = new double[n][2];
         fofc1 = new double[n][2];
         dfc = new double[n][2];
@@ -71,13 +95,14 @@ public class RefinementData {
             fsigf[i][0] = fsigf[i][1] = Double.NaN;
         }
 
-        spline = new double[nparams];
+        spline = new double[nparams * 2];
         sigmaa = new double[nparams];
         sigmaw = new double[nparams];
         fcesq = new double[nparams];
         foesq = new double[nparams];
         for (int i = 0; i < nparams; i++) {
-            spline[i] = sigmaa[i] = fcesq[i] = foesq[i] = 1.0;
+            spline[i] = spline[i + nparams] = sigmaa[i] = fcesq[i] = foesq[i] = 1.0;
+            sigmaw[i] = 0.05;
         }
 
         // initial guess for scaling/bulk solvent correction
@@ -124,7 +149,7 @@ public class RefinementData {
     }
 
     public boolean isfreer(int i) {
-        return (freer[i] == 1);
+        return (freer[i] == rfreeflag);
     }
 
     public void fc(int i, ComplexNumber c) {
@@ -157,6 +182,18 @@ public class RefinementData {
         return new ComplexNumber(fs[i][0], fs[i][1]);
     }
 
+    public double fs_f(int i) {
+        ComplexNumber c = new ComplexNumber(fs[i][0], fs[i][1]);
+
+        return c.abs();
+    }
+
+    public double fs_phi(int i) {
+        ComplexNumber c = new ComplexNumber(fs[i][0], fs[i][1]);
+
+        return c.phase();
+    }
+
     public void fctot(int i, ComplexNumber c) {
         fctot[i][0] = c.re();
         fctot[i][1] = c.im();
@@ -164,6 +201,18 @@ public class RefinementData {
 
     public ComplexNumber fctot(int i) {
         return new ComplexNumber(fctot[i][0], fctot[i][1]);
+    }
+
+    public double fctot_f(int i) {
+        ComplexNumber c = new ComplexNumber(fctot[i][0], fctot[i][1]);
+
+        return c.abs();
+    }
+
+    public double fctot_phi(int i) {
+        ComplexNumber c = new ComplexNumber(fctot[i][0], fctot[i][1]);
+
+        return c.phase();
     }
 
     public void fofc2(int i, ComplexNumber c) {
@@ -175,6 +224,18 @@ public class RefinementData {
         return new ComplexNumber(fofc2[i][0], fofc2[i][1]);
     }
 
+    public double fofc2_f(int i) {
+        ComplexNumber c = new ComplexNumber(fofc2[i][0], fofc2[i][1]);
+
+        return c.abs();
+    }
+
+    public double fofc2_phi(int i) {
+        ComplexNumber c = new ComplexNumber(fofc2[i][0], fofc2[i][1]);
+
+        return c.phase();
+    }
+
     public void fofc1(int i, ComplexNumber c) {
         fofc1[i][0] = c.re();
         fofc1[i][1] = c.im();
@@ -182,5 +243,17 @@ public class RefinementData {
 
     public ComplexNumber fofc1(int i) {
         return new ComplexNumber(fofc1[i][0], fofc1[i][1]);
+    }
+
+    public double fofc1_f(int i) {
+        ComplexNumber c = new ComplexNumber(fofc1[i][0], fofc1[i][1]);
+
+        return c.abs();
+    }
+
+    public double fofc1_phi(int i) {
+        ComplexNumber c = new ComplexNumber(fofc1[i][0], fofc1[i][1]);
+
+        return c.phase();
     }
 }

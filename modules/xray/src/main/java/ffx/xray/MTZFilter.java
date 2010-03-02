@@ -44,7 +44,9 @@ import java.util.logging.Logger;
  *
  * This method parses CCP4 MTZ files:<br>
  * 
- * @see <a href="http://www.ccp4.ac.uk/html/maplib.html#description" target="_blank">
+ * @see <a href="http://www.ccp4.ac.uk/html/maplib.html" target="_blank">
+ *
+ * @see <a href="http://www.ccp4.ac.uk/dist/html/library.html" target="_blank">
  */
 public class MTZFilter {
 
@@ -103,10 +105,8 @@ public class MTZFilter {
      */
     public ReflectionList getReflectionList(File mtzFile) {
         ByteOrder b = ByteOrder.nativeOrder();
+        // most likely little endian
         Boolean swap = true;
-        if (b.equals(ByteOrder.BIG_ENDIAN)) {
-            swap = false;
-        }
         FileInputStream fis;
         DataInputStream dis;
         try {
@@ -115,17 +115,40 @@ public class MTZFilter {
 
             byte bytes[] = new byte[80];
             int offset = 0;
-            String mtzstr = new String(bytes);
 
             // eat "MTZ" title
             dis.read(bytes, offset, 4);
+            String mtzstr = new String(bytes);
 
             // header offset
             int headeroffset = swap ? ByteSwap.swap(dis.readInt()) : dis.readInt();
 
-            // ignore machine stamp
-            dis.read(bytes, offset, 4);
-            mtzstr = new String(bytes);
+            // machine stamp
+            int stamp = swap ? ByteSwap.swap(dis.readInt()) : dis.readInt();
+            mtzstr = Integer.toHexString(stamp);
+            // System.out.println("stamp: " + mtzstr);
+            switch (mtzstr.charAt(0)) {
+                case '1':
+                case '3':
+                    if (b.equals(ByteOrder.LITTLE_ENDIAN)) {
+                        swap = false;
+                    } else {
+                        swap = true;
+                    }
+                    break;
+                case '4':
+                    if (b.equals(ByteOrder.LITTLE_ENDIAN)) {
+                        swap = true;
+                    } else {
+                        swap = false;
+                    }
+                    break;
+            }
+
+            if (!swap) {
+                // swap it back (grrr...)
+                headeroffset = ByteSwap.swap(headeroffset);
+            }
 
             // skip to header and parse
             dis.skipBytes((headeroffset - 4) * 4);
@@ -156,7 +179,7 @@ public class MTZFilter {
             sb.append(String.format("\nsetting up Reflection List based on MTZ:\n"));
             sb.append(String.format("  spacegroup #: %d (name: %s)\n",
                     sgnum, SpaceGroup.spaceGroupNames[sgnum - 1]));
-            sb.append(String.format("  resolution: %8.3f\n", reshigh));
+            sb.append(String.format("  resolution: %8.3f\n", 0.9999 * reshigh));
             sb.append(String.format("  cell: %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f\n",
                     d.cell[0], d.cell[1], d.cell[2], d.cell[3], d.cell[4], d.cell[5]));
             logger.info(sb.toString());
@@ -164,7 +187,7 @@ public class MTZFilter {
 
         Crystal crystal = new Crystal(d.cell[0], d.cell[1], d.cell[2],
                 d.cell[3], d.cell[4], d.cell[5], SpaceGroup.spaceGroupNames[sgnum - 1]);
-        Resolution resolution = new Resolution(reshigh);
+        Resolution resolution = new Resolution(0.9999 * reshigh);
 
         return new ReflectionList(crystal, resolution);
     }
@@ -192,9 +215,32 @@ public class MTZFilter {
             // header offset
             int headeroffset = swap ? ByteSwap.swap(dis.readInt()) : dis.readInt();
 
-            // ignore machine stamp
-            dis.read(bytes, offset, 4);
-            mtzstr = new String(bytes);
+            // machine stamp
+            int stamp = swap ? ByteSwap.swap(dis.readInt()) : dis.readInt();
+            String stampstr = Integer.toHexString(stamp);
+            // System.out.println("stamp: " + mtzstr);
+            switch (stampstr.charAt(0)) {
+                case '1':
+                case '3':
+                    if (b.equals(ByteOrder.LITTLE_ENDIAN)) {
+                        swap = false;
+                    } else {
+                        swap = true;
+                    }
+                    break;
+                case '4':
+                    if (b.equals(ByteOrder.LITTLE_ENDIAN)) {
+                        swap = true;
+                    } else {
+                        swap = false;
+                    }
+                    break;
+            }
+
+            if (!swap) {
+                // swap it back (grrr...)
+                headeroffset = ByteSwap.swap(headeroffset);
+            }
 
             // skip to header and parse
             dis.skipBytes((headeroffset - 4) * 4);
@@ -252,9 +298,16 @@ public class MTZFilter {
                 }
             }
             StringBuffer sb = new StringBuffer();
-            sb.append(String.format("\n# HKL read in:                             %d\n", nread));
-            sb.append(String.format("# HKL NOT read in (too high resolution):   %d\n", nres));
-            sb.append(String.format("# HKL NOT read in (not in internal list?): %d\n", nignore));
+            sb.append(String.format("\nMTZ file type (machine stamp): %s\n",
+                    stampstr));
+            sb.append(String.format("# HKL read in:                             %d\n",
+                    nread));
+            sb.append(String.format("# HKL NOT read in (too high resolution):   %d\n",
+                    nres));
+            sb.append(String.format("# HKL NOT read in (not in internal list?): %d\n",
+                    nignore));
+            sb.append(String.format("# HKL in internal list:                    %d\n",
+                    reflectionlist.hkllist.size()));
             if (logger.isLoggable(Level.INFO)) {
                 logger.info(sb.toString());
             }
@@ -440,19 +493,22 @@ public class MTZFilter {
                     || label.equalsIgnoreCase("freer")
                     || label.equalsIgnoreCase("freerflag")
                     || label.equalsIgnoreCase("rfree")
-                    || label.equalsIgnoreCase("rfreeflag"))
+                    || label.equalsIgnoreCase("rfreeflag")
+                    || label.equalsIgnoreCase("test"))
                     && c.type == 'I') {
                 sb.append(String.format("Reading R Free column: \"%s\"\n", c.label));
                 rfree = nc;
             } else if ((label.equalsIgnoreCase("f")
                     || label.equalsIgnoreCase("fp")
-                    || label.equalsIgnoreCase("fo"))
+                    || label.equalsIgnoreCase("fo")
+                    || label.equalsIgnoreCase("fobs"))
                     && c.type == 'F') {
                 sb.append(String.format("Reading Fo column: \"%s\"\n", c.label));
                 fo = nc;
             } else if ((label.equalsIgnoreCase("sigf")
                     || label.equalsIgnoreCase("sigfp")
-                    || label.equalsIgnoreCase("sigfo"))
+                    || label.equalsIgnoreCase("sigfo")
+                    || label.equalsIgnoreCase("sigfobs"))
                     && c.type == 'Q') {
                 sb.append(String.format("Reading sigFo column: \"%s\"\n", c.label));
                 sigfo = nc;

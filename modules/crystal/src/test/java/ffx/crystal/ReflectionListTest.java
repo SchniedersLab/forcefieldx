@@ -39,6 +39,9 @@ public class ReflectionListTest {
     Crystal crystal2 = new Crystal(25.015, 29.415, 52.761, 89.54, 86.1, 82.39, "P1");
     Resolution resolution2 = new Resolution(1.0);
     ReflectionList p1list = new ReflectionList(crystal2, resolution2);
+    Crystal crystal3 = new Crystal(115.996, 115.996, 44.13, 90.0, 90.0, 120.0, "P6");
+    Resolution resolution3 = new Resolution(1.89631);
+    ReflectionList p6list = new ReflectionList(crystal3, resolution3);
 
     public ReflectionListTest() {
     }
@@ -76,6 +79,14 @@ public class ReflectionListTest {
     }
 
     @Test
+    public void testP6sizes() {
+        assertEquals("hash map and arraylist should have equal length",
+                p6list.hklmap.size(), p6list.hkllist.size());
+        assertEquals("P6 reflection list should have 27200 elements",
+                27200, p6list.hkllist.size());
+    }
+
+    @Test
     public void testP1reflections() {
         assertNotNull("P1 list should have -24 -10 1 reflection",
                 p1list.getHKL(-24, -10, 1));
@@ -101,6 +112,32 @@ public class ReflectionListTest {
                 8, hkl.epsilon());
         assertEquals("I222 list 0 0 0 reflection should NOT be allowed",
                 0, hkl.allowed);
+    }
+
+    @Test
+    public void testP6reflections() {
+        assertNotNull("P6 list should have 0 0 4 reflection",
+                p6list.getHKL(0, 0, 4));
+        assertNull("P6 list should NOT have -1 0 0 reflection",
+                p6list.getHKL(-1, 0, 0));
+
+        HKL hkl = p6list.getHKL(0, 0, 0);
+        assertEquals("P6 list 0 0 0 reflection should have epsilon of 6",
+                6, hkl.epsilon());
+        assertEquals("P6 list 0 0 0 reflection should NOT be allowed",
+                0, hkl.allowed);
+
+        hkl = p6list.getHKL(0, 1, 0);
+        assertEquals("P6 list 0 1 0 reflection should have epsilon of 1",
+                1, hkl.epsilon());
+        assertEquals("P6 list 0 1 0 reflection should NOT be allowed",
+                0, hkl.allowed);
+
+        hkl = p6list.getHKL(0, 1, 1);
+        assertEquals("P6 list 0 1 1 reflection should have epsilon of 1",
+                1, hkl.epsilon());
+        assertEquals("P6 list 0 1 1 reflection should be allowed",
+                255, hkl.allowed);
     }
 
     /*

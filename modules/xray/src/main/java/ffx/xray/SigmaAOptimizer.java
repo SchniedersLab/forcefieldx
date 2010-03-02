@@ -22,11 +22,13 @@ package ffx.xray;
 
 import static java.lang.Math.abs;
 import static java.lang.Math.atan;
+import static java.lang.Math.cos;
 import static java.lang.Math.cosh;
 import static java.lang.Math.exp;
 import static java.lang.Math.log;
 import static java.lang.Math.PI;
 import static java.lang.Math.pow;
+import static java.lang.Math.sin;
 import static java.lang.Math.sqrt;
 import static java.lang.Math.tanh;
 
@@ -38,6 +40,7 @@ import ffx.crystal.ReflectionList;
 import ffx.crystal.ReflectionSpline;
 import ffx.numerics.ComplexNumber;
 import ffx.numerics.Optimizable;
+import ffx.numerics.VectorMath;
 
 /**
  *
@@ -74,16 +77,17 @@ public class SigmaAOptimizer implements Optimizable {
     private static final double sim_r = -0.74817947490;
     private final ReflectionList reflectionlist;
     private final ReflectionSpline spline;
-    private final int nparams;
+    private final int n;
     private final Crystal crystal;
     private final RefinementData refinementdata;
+    private final double fo[][];
+    private final int freer[];
     private final double fc[][];
     private final double fs[][];
     private final double fctot[][];
-    private final double fo[][];
-    private final int freer[];
     private final double fofc1[][];
     private final double fofc2[][];
+    private final double fomphi[][];
     private final double dfc[][];
     private final double dfs[][];
     protected double[] optimizationScaling = null;
@@ -93,19 +97,20 @@ public class SigmaAOptimizer implements Optimizable {
         this.reflectionlist = reflectionlist;
         this.crystal = reflectionlist.crystal;
         this.refinementdata = refinementdata;
+        this.fo = refinementdata.fsigf;
+        this.freer = refinementdata.freer;
         this.fc = refinementdata.fc;
         this.fs = refinementdata.fs;
         this.fctot = refinementdata.fctot;
-        this.fo = refinementdata.fsigf;
-        this.freer = refinementdata.freer;
+        this.fomphi = refinementdata.fomphi;
         this.fofc1 = refinementdata.fofc1;
         this.fofc2 = refinementdata.fofc2;
         this.dfc = refinementdata.dfc;
         this.dfs = refinementdata.dfs;
+        this.n = refinementdata.nparams;
 
         // initialize params
-        this.spline = new ReflectionSpline(reflectionlist, refinementdata.nparams);
-        this.nparams = refinementdata.nparams;
+        this.spline = new ReflectionSpline(reflectionlist, n);
     }
 
     public double target(double x[], double g[],
@@ -121,64 +126,67 @@ public class SigmaAOptimizer implements Optimizable {
         }
 
         double model_k = refinementdata.model_k;
-        double model_b[] = refinementdata.aniso_b;
         double solvent_k = refinementdata.solvent_k;
         double solvent_ueq = refinementdata.solvent_ueq;
-        double sa[] = new double[nparams];
-        double wa[] = new double[nparams];
-        for (int i = 0; i < nparams; i++) {
-            sa[i] = 1.0 + x[i];
-            wa[i] = x[i + nparams];
+        double model_b[] = new double[6];
+        for (int i = 0; i < 6; i++) {
+            model_b[i] = refinementdata.aniso_b[i];
         }
-
+        double sa[] = new double[n];
+        double wa[] = new double[n];
+        for (int i = 0; i < n; i++) {
+            sa[i] = 1.0 + x[i];
+            wa[i] = x[n + i];
+        }
         nsum = nsumr = 0;
         sum = sumr = 0.0;
         for (HKL ih : reflectionlist.hkllist) {
             int i = ih.index();
-            if (ih.allowed() == 0.0
-                    || Double.isNaN(fctot[i][0])
-                    || Double.isNaN(fo[i][0])) {
-                continue;
-            }
 
             // constants
             double ihc[] = {ih.h(), ih.k(), ih.l()};
-            double ihf[] = new double[3];
-            crystal.toFractionalCoordinates(ihc, ihf);
-            double u = exp(-0.25
-                    * (pow(ihf[0], 2.0) * model_b[0]
-                    + pow(ihf[1], 2.0) * model_b[1]
-                    + pow(ihf[2], 2.0) * model_b[2]
-                    + 2.0 * ihf[0] * ihf[1] * model_b[3]
-                    + 2.0 * ihf[0] * ihf[2] * model_b[4]
-                    + 2.0 * ihf[1] * ihf[2] * model_b[5]));
+            double ihf[] = VectorMath.mat3vec3(ihc, crystal.recip);
+            double u = model_k
+                    - pow(ihf[0], 2.0) * model_b[0]
+                    - pow(ihf[1], 2.0) * model_b[1]
+                    - pow(ihf[2], 2.0) * model_b[2]
+                    - 2.0 * ihf[0] * ihf[1] * model_b[3]
+                    - 2.0 * ihf[0] * ihf[2] * model_b[4]
+                    - 2.0 * ihf[1] * ihf[2] * model_b[5];
             double s = Crystal.invressq(crystal, ih);
             double ebs = exp(-twopi2 * solvent_ueq * s);
             double ksebs = solvent_k * ebs;
-            double kmems = model_k * u;
+            double kmems = exp(0.5 * u);
             double km2 = kmems * kmems;
             double epsc = ih.epsilonc();
 
             // spline setup
-            double sai, wai;
-            sai = spline.f(s, sa);
-            wai = spline.f(s, wa);
+            double ecscale = spline.f(s, refinementdata.fcesq);
+            double eoscale = spline.f(s, refinementdata.foesq);
+            double sai = spline.f(s, sa);
+            double wai = spline.f(s, wa);
             double sa2 = pow(sai, 2.0);
 
             // structure factors
-            ComplexNumber fct = new ComplexNumber(fctot[i][0], fctot[i][1]);
-            double ecscale = spline.f(s, refinementdata.fcesq);
-            double eoscale = spline.f(s, refinementdata.foesq);
-            ComplexNumber ecs = fct.times(sqrt(ecscale)).times(1.0 / kmems);
-            double ec = fct.times(sqrt(ecscale)).abs();
+            ComplexNumber fcc = new ComplexNumber(fc[i][0], fc[i][1]);
+            ComplexNumber fsc = new ComplexNumber(fs[i][0], fs[i][1]);
+            ComplexNumber fct = refinementdata.solvent_n > 1
+                    ? fcc.plus(fsc.times(ksebs)) : fcc;
+            ComplexNumber kfct = fct.times(kmems);
+
+            ComplexNumber ecc = fcc.times(sqrt(ecscale));
+            ComplexNumber esc = fsc.times(sqrt(ecscale));
+            ComplexNumber ect = fct.times(sqrt(ecscale));
+            ComplexNumber kect = kfct.times(sqrt(ecscale));
             double eo = fo[i][0] * sqrt(eoscale);
             double sigeo = fo[i][1] * sqrt(eoscale);
             double eo2 = pow(eo, 2.0);
-            double ec2 = pow(ec, 2.0);
+            double ect2 = pow(ect.abs(), 2.0);
+            double kect2 = pow(kect.abs(), 2.0);
 
             double d = 2.0 * sigeo * sigeo + epsc * wai;
             double d2 = d * d;
-            double fomx = 2.0 * eo * sai * ec / d;
+            double fomx = 2.0 * eo * sai * kect.abs() / d;
 
             double inot, dinot, cf;
             if (ih.centric()) {
@@ -190,21 +198,62 @@ public class SigmaAOptimizer implements Optimizable {
                 dinot = sim(fomx);
                 cf = 1.0;
             }
-            double llk = cf * log(d) + (eo2 + sa2 * ec2) / d - inot;
+            double llk = cf * log(d) + (eo2 + sa2 * kect2) / d - inot;
 
-            double dfcr = (2.0 * km2 * sa2 * ecs.re()) / d - ((2.0 * kmems * eo * sai * ecs.re()) / (d * ecs.abs())) * dinot;
-            double dfci = (2.0 * km2 * sa2 * ecs.im()) / d - ((2.0 * kmems * eo * sai * ecs.im()) / (d * ecs.abs())) * dinot;
+            // derivatives (scary)
+            double dfcr = (2.0 * sa2 * km2 * ect.re()) / d - ((2.0 * eo * sai * kmems * ect.re()) / (d * ect.abs())) * dinot;
+            double dfci = (2.0 * sa2 * km2 * ect.im()) / d - ((2.0 * eo * sai * kmems * ect.im()) / (d * ect.abs())) * dinot;
+            double dfsr = (2.0 * sa2 * km2 * ksebs * ect.re()) / d - ((2.0 * eo * sai * kmems * ksebs * ect.re()) / (d * ect.abs())) * dinot;
+            double dfsi = (2.0 * sa2 * km2 * ksebs * ect.im()) / d - ((2.0 * eo * sai * kmems * ksebs * ect.im()) / (d * ect.abs())) * dinot;
+            double dfsa = 2.0 * sai * kect2 / d - (2.0 * eo * kect.abs() / d) * dinot;
+            double dfwa = epsc * (cf / d - (eo2 + sa2 * kect2) / d2 + (2.0 * eo * sai * kect.abs() / d2) * dinot);
+
+            double f = dinot * eo;
+            double phi = kect.phase();
+            fomphi[i][0] = dinot;
+            fomphi[i][1] = phi;
+            ComplexNumber mfo = new ComplexNumber(f * cos(phi), f * sin(phi));
+            ComplexNumber mfo2 = new ComplexNumber(2.0 * f * cos(phi), 2.0 * f * sin(phi));
+            ComplexNumber dfcc = new ComplexNumber(sai * kect.abs() * cos(phi), sai * kect.abs() * sin(phi));
+            // map and derivative coefficients
+            if (Double.isNaN(fctot[i][0])) {
+                fofc1[i][0] = 0.0;
+                fofc1[i][1] = 0.0;
+                fofc2[i][0] = mfo.re();
+                fofc2[i][1] = mfo.im();
+                dfc[i][0] = 0.0;
+                dfc[i][1] = 0.0;
+                dfs[i][0] = 0.0;
+                dfs[i][1] = 0.0;
+                continue;
+            }
+            if (Double.isNaN(fo[i][0])) {
+                fofc1[i][0] = 0.0;
+                fofc1[i][1] = 0.0;
+                if (Double.isNaN(fctot[i][0])) {
+                    fofc2[i][0] = 0.0;
+                    fofc2[i][1] = 0.0;
+                } else {
+                    fofc2[i][0] = dfcc.re();
+                    fofc2[i][1] = dfcc.im();
+                }
+                dfc[i][0] = 0.0;
+                dfc[i][1] = 0.0;
+                dfs[i][0] = 0.0;
+                dfs[i][1] = 0.0;
+                continue;
+            }
+            fofc1[i][0] = mfo.minus(dfcc).re();
+            fofc1[i][1] = mfo.minus(dfcc).im();
+            fofc2[i][0] = mfo2.minus(dfcc).re();
+            fofc2[i][1] = mfo2.minus(dfcc).im();
             dfc[i][0] = dfcr;
             dfc[i][1] = dfci;
-            double dfsr = (2.0 * km2 * sa2 * ksebs * ecs.re()) / d - ((2.0 * kmems * eo * sai * ksebs * ecs.re()) / (d * ecs.abs())) * dinot;
-            double dfsi = (2.0 * km2 * sa2 * ksebs * ecs.im()) / d - ((2.0 * kmems * eo * sai * ksebs * ecs.im()) / (d * ecs.abs())) * dinot;
-            dfc[i][0] = dfsr;
-            dfc[i][1] = dfsi;
-            double dfsa = 2.0 * sai * ec2 / d - (2.0 * eo * ec / d) * dinot;
-            double dfwa = epsc * (cf / d - (eo2 + sa2 * ec2) / d2 + (2.0 * eo * ec * sai / d2) * dinot);
+            dfs[i][0] = dfsr;
+            dfs[i][1] = dfsi;
 
-            // only use freeR flagged reflections
-            if (freer[i] == 0) {
+            // only use freeR flagged reflections in overall sum
+            if (freer[i] == refinementdata.rfreeflag) {
                 sum += llk;
                 nsum++;
             } else {
@@ -221,15 +270,16 @@ public class SigmaAOptimizer implements Optimizable {
                 double g1 = spline.dfi1();
                 double g2 = spline.dfi2();
 
+                // s derivative
                 g[i0] += dfsa * g0;
                 g[i1] += dfsa * g1;
                 g[i2] += dfsa * g2;
-                g[i0 + nparams] += dfwa * g0;
-                g[i1 + nparams] += dfwa * g1;
-                g[i2 + nparams] += dfwa * g2;
+                // w derivative
+                g[n + i0] += dfwa * g0;
+                g[n + i1] += dfwa * g1;
+                g[n + i2] += dfwa * g2;
             }
         }
-
         if (print) {
             StringBuffer sb = new StringBuffer("\n");
             sb.append(" sigmaA[s and w] fit using ONLY Rfree reflections\n");
@@ -248,7 +298,6 @@ public class SigmaAOptimizer implements Optimizable {
             sb.append("\n");
             logger.info(sb.toString());
         }
-
         return sum;
     }
 
@@ -261,11 +310,12 @@ public class SigmaAOptimizer implements Optimizable {
             }
         }
 
-        double sum = target(x, g, true, true);
+        double sum = target(x, g, true, false);
 
         if (optimizationScaling != null) {
             int len = x.length;
-            for (int i = 0; i < len; i++) {
+            for (int i = 0; i
+                    < len; i++) {
                 x[i] *= optimizationScaling[i];
                 g[i] /= optimizationScaling[i];
             }
@@ -276,7 +326,7 @@ public class SigmaAOptimizer implements Optimizable {
 
     @Override
     public void setOptimizationScaling(double[] scaling) {
-        if (scaling != null && scaling.length == refinementdata.nparams * 2) {
+        if (scaling != null && scaling.length == n * 2) {
             optimizationScaling = scaling;
         } else {
             optimizationScaling = null;
@@ -301,6 +351,7 @@ public class SigmaAOptimizer implements Optimizable {
     public static double sim_integ(double x0) {
         double x = abs(x0);
         double z = (x + sim_p) / sim_q;
+
         return sim_A * log(x + sim_g)
                 + 0.5 * sim_B * log(z * z + 1.0)
                 + sim_r * atan(z)

@@ -34,7 +34,11 @@ import ffx.utilities.ByteSwap;
 
 /**
  *
- * @author fennt
+ * @author Tim Fenn
+ *
+ * @see <a href="http://www.ccp4.ac.uk/html/maplib.html" target="_blank">
+ *
+ * @see <a href="http://www.ccp4.ac.uk/dist/html/library.html" target="_blank">
  */
 public class CCP4MapWriter {
 
@@ -55,9 +59,6 @@ public class CCP4MapWriter {
     public void write(double data[]) {
         ByteOrder b = ByteOrder.nativeOrder();
         Boolean swap = true;
-        if (b.equals(ByteOrder.BIG_ENDIAN)) {
-            swap = false;
-        }
         FileOutputStream fos;
         DataOutputStream dos;
 
@@ -197,8 +198,12 @@ public class CCP4MapWriter {
             dos.writeBytes(mapstr);
 
             // machine code: double, float, int, uchar
-            // 0x4144 for LE
-            imapdata = swap ? 0x4144 : 0x1111;
+            // 0x4144 for LE, 0x1111 for BE
+            if (b.equals(ByteOrder.LITTLE_ENDIAN)) {
+                imapdata = 0x4144;
+            } else {
+                imapdata = 0x1111;
+            }
             imapdata = swap ? ByteSwap.swap(imapdata) : imapdata;
             dos.writeInt(imapdata);
 
@@ -226,7 +231,7 @@ public class CCP4MapWriter {
             sb.append("x,y,z");
             sb.setLength(80);
             dos.writeBytes(sb.toString());
-            */
+             */
 
             for (int k = 0; k < nz; k++) {
                 for (int j = 0; j < ny; j++) {

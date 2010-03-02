@@ -24,9 +24,11 @@ import java.io.File;
 import java.util.List;
 
 import edu.rit.pj.ParallelTeam;
+import ffx.crystal.Crystal;
 import org.apache.commons.configuration.CompositeConfiguration;
 
 import ffx.crystal.ReflectionList;
+import ffx.crystal.Resolution;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.parameters.ForceField;
@@ -71,10 +73,14 @@ public class ScaleBulkMinimizeTest {
      */
     @Test
     public void testMinimize() {
-        String mtzfilename = "ffx/xray/structures/1N7S.mtz";
-        String pdbfilename = "ffx/xray/structures/1N7S.pdb";
+        // String mtzfilename = "ffx/xray/structures/1N7S.mtz";
+        // String pdbfilename = "ffx/xray/structures/1N7S.pdb";
         // String mtzfilename = "ffx/xray/structures/2DRM.mtz";
         // String pdbfilename = "ffx/xray/structures/2DRM.pdb";
+        // String mtzfilename = "ffx/xray/structures/1EXR.mtz";
+        // String pdbfilename = "ffx/xray/structures/1EXR.pdb";
+        String mtzfilename = "ffx/xray/structures/1NSF.mtz";
+        String pdbfilename = "ffx/xray/structures/1NSF.pdb";
         int index = pdbfilename.lastIndexOf(".");
         String name = pdbfilename.substring(0, index);
 
@@ -83,16 +89,25 @@ public class ScaleBulkMinimizeTest {
         File structure = new File(cl.getResource(pdbfilename).getPath());
         File mtzfile = new File(cl.getResource(mtzfilename).getPath());
 
+        // load any properties associated with it
+        CompositeConfiguration properties = Keyword.loadProperties(structure);
+
         // read in Fo/sigFo/FreeR
         MTZFilter mtzfilter = new MTZFilter();
-        ReflectionList reflectionlist = mtzfilter.getReflectionList(mtzfile);
-        RefinementData refinementdata =
-                new RefinementData(reflectionlist.hkllist.size());
+        ReflectionList reflectionlist;
+        Crystal crystal = Crystal.checkProperties(properties);
+        Resolution resolution = Resolution.checkProperties(properties);
+        if (crystal == null || resolution == null) {
+            reflectionlist = mtzfilter.getReflectionList(mtzfile);
+        } else {
+            reflectionlist = new ReflectionList(crystal, resolution);
+        }
+
+        RefinementData refinementdata = new RefinementData(properties,
+                reflectionlist);
         assertTrue("mtz file should be read in without errors",
                 mtzfilter.readFile(mtzfile, reflectionlist, refinementdata));
 
-        // load any properties associated with it
-        CompositeConfiguration properties = Keyword.loadProperties(structure);
         ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties);
         ForceField forceField = forceFieldFilter.parse();
 
@@ -145,12 +160,22 @@ public class ScaleBulkMinimizeTest {
 
         SigmaAMinimize sigmaaminimize = new SigmaAMinimize(reflectionlist,
                 refinementdata);
-        sigmaaminimize.minimize(7, 1.0);
+        sigmaaminimize.minimize(7, 1e-1);
 
-        System.out.println("final sigmaA params:");
-        for (int i = 0; i < refinementdata.nparams; i++) {
-            System.out.printf("%8g  %8g\n", refinementdata.sigmaa[i],
-                    refinementdata.sigmaw[i]);
-        }
+        SplineMinimize splineminimize = new SplineMinimize(reflectionlist,
+                refinementdata, refinementdata.spline,
+                SplineOptimizer.Type.FOFC);
+        splineminimize.minimize(7, 1e-5);
+
+        CrystalStats stats = new CrystalStats(reflectionlist, refinementdata);
+        stats.print_hklstats();
+        stats.print_snstats();
+        stats.print_rstats();
+
+        /*
+        MTZWriter mtzwriter = new MTZWriter(reflectionlist, refinementdata,
+        "/tmp/foo.mtz");
+        mtzwriter.write();
+         */
     }
 }

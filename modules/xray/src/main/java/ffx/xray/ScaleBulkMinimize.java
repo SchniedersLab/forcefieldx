@@ -36,6 +36,7 @@ import java.util.logging.Logger;
 public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
 
     private static final Logger logger = Logger.getLogger(SplineOptimizer.class.getName());
+    private static double toSeconds = 0.000000001;
     private static final double eightpi2 = 8.0 * Math.PI * Math.PI;
     private final ReflectionList reflectionlist;
     private final RefinementData refinementdata;
@@ -57,40 +58,26 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         this.refinementdata = refinementdata;
         this.crystal = reflectionlist.crystal;
 
-        n = 9;
-        bulksolventoptimizer = new ScaleBulkOptimizer(reflectionlist, refinementdata);
+        n = refinementdata.solvent_n + refinementdata.scale_n;
+        bulksolventoptimizer = new ScaleBulkOptimizer(reflectionlist, refinementdata, n);
         x = new double[n];
         grad = new double[n];
         scaling = new double[n];
         x[0] = refinementdata.model_k;
-        x[7] = refinementdata.solvent_k;
-        x[8] = refinementdata.solvent_ueq;
+        if (refinementdata.solvent_n > 1) {
+            x[1] = refinementdata.solvent_k;
+            x[2] = refinementdata.solvent_ueq;
+        }
+        for (int i = 0; i < 6; i++) {
+            if (crystal.scale_b[i] >= 0) {
+                x[refinementdata.solvent_n + crystal.scale_b[i]] =
+                        refinementdata.aniso_b[i];
+            }
+        }
         for (int i = 0; i < n; i++) {
             scaling[i] = 1.0;
         }
         bulksolventoptimizer.setOptimizationScaling(scaling);
-
-
-        int scale_flag = crystal.scale_flag;
-
-        if ((scale_flag & Crystal.SCALE_B11) == Crystal.SCALE_B11) {
-            System.out.println("scale B11");
-        }
-        if ((scale_flag & Crystal.SCALE_B22) == Crystal.SCALE_B22) {
-            System.out.println("scale B22");
-        }
-        if ((scale_flag & Crystal.SCALE_B33) == Crystal.SCALE_B33) {
-            System.out.println("scale B33");
-        }
-        if ((scale_flag & Crystal.SCALE_B12) == Crystal.SCALE_B12) {
-            System.out.println("scale B12");
-        }
-        if ((scale_flag & Crystal.SCALE_B13) == Crystal.SCALE_B13) {
-            System.out.println("scale B13");
-        }
-        if ((scale_flag & Crystal.SCALE_B23) == Crystal.SCALE_B23) {
-            System.out.println("scale B23");
-        }
     }
 
     public ScaleBulkOptimizer minimize() {
@@ -105,6 +92,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
 
         double e = bulksolventoptimizer.energyAndGradient(x, grad);
 
+        long mtime = -System.nanoTime();
         time = -System.nanoTime();
         done = false;
         int status = LBFGS.minimize(n, m, x, e, grad, eps, bulksolventoptimizer, this);
@@ -120,25 +108,40 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
                 logger.warning("\n Optimization failed.\n");
         }
         refinementdata.model_k = x[0];
-        refinementdata.aniso_b[0] = x[1];
-        refinementdata.aniso_b[1] = x[2];
-        refinementdata.aniso_b[2] = x[3];
-        refinementdata.aniso_b[3] = x[4];
-        refinementdata.aniso_b[4] = x[5];
-        refinementdata.aniso_b[5] = x[6];
-        refinementdata.solvent_k = x[7];
-        refinementdata.solvent_ueq = x[8];
+        if (refinementdata.solvent_n > 1) {
+            refinementdata.solvent_k = x[1];
+            refinementdata.solvent_ueq = x[2];
+        }
+        for (int i = 0; i < 6; i++) {
+            if (crystal.scale_b[i] >= 0) {
+                refinementdata.aniso_b[i] =
+                        x[refinementdata.solvent_n + crystal.scale_b[i]];
+            }
+        }
 
         if (logger.isLoggable(Level.INFO)) {
             StringBuffer sb = new StringBuffer();
+            mtime += System.nanoTime();
+            sb.append(String.format("minimizer time: %g\n", mtime * toSeconds));
             sb.append(String.format("\n final scale:\n"));
             sb.append(String.format("  overall scale: %g\n", x[0]));
             sb.append(String.format("  aniso B tensor:\n"));
-            sb.append(String.format("    %g %g %g\n", x[1], x[4], x[5]));
-            sb.append(String.format("    %g %g %g\n", x[4], x[2], x[6]));
-            sb.append(String.format("    %g %g %g\n", x[5], x[6], x[3]));
-            sb.append(String.format("  bulk solvent scale: %g  B: %g\n\n",
-                    x[7], x[8] * eightpi2));
+            sb.append(String.format("    %g %g %g\n",
+                    refinementdata.aniso_b[0],
+                    refinementdata.aniso_b[3],
+                    refinementdata.aniso_b[4]));
+            sb.append(String.format("    %g %g %g\n",
+                    refinementdata.aniso_b[3],
+                    refinementdata.aniso_b[1],
+                    refinementdata.aniso_b[5]));
+            sb.append(String.format("    %g %g %g\n",
+                    refinementdata.aniso_b[4],
+                    refinementdata.aniso_b[5],
+                    refinementdata.aniso_b[2]));
+            if (refinementdata.solvent_n > 1) {
+                sb.append(String.format("  bulk solvent scale: %g  B: %g\n\n",
+                        x[1], x[2] * eightpi2));
+            }
             logger.info(sb.toString());
         }
 

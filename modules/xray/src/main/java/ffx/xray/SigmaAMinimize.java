@@ -43,6 +43,7 @@ import ffx.numerics.OptimizationListener;
 public class SigmaAMinimize implements OptimizationListener, Terminatable {
 
     private static final Logger logger = Logger.getLogger(SplineOptimizer.class.getName());
+    private static double toSeconds = 0.000000001;
     private final ReflectionList reflectionlist;
     private final RefinementData refinementdata;
     private final Crystal crystal;
@@ -68,6 +69,7 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
         x = new double[n];
         grad = new double[n];
         scaling = new double[n];
+
         for (int i = 0; i < refinementdata.nparams; i++) {
             // for optimizationscaling, best to move to 0.0
             x[i] = refinementdata.sigmaa[i] - 1.0;
@@ -75,6 +77,7 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
             x[i + refinementdata.nparams] = refinementdata.sigmaw[i];
             scaling[i + refinementdata.nparams] = 1.0;
         }
+
         sigmaaoptimizer.setOptimizationScaling(scaling);
 
         // generate Es
@@ -115,16 +118,11 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
             double wi = pow(eo - ec, 2.0) / epsc;
 
             nmean[spline.i1()]++;
+
             x[spline.i1() + refinementdata.nparams] += (wi
                     - x[spline.i1() + refinementdata.nparams])
                     / nmean[spline.i1()];
         }
-
-        System.out.println("init params: ");
-        for (int i = 0; i < n; i++) {
-            System.out.print(x[i] + " ");
-        }
-        System.out.println();
     }
 
     public SigmaAOptimizer minimize() {
@@ -139,6 +137,7 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
 
         double e = sigmaaoptimizer.energyAndGradient(x, grad);
 
+        long mtime = -System.nanoTime();
         time = -System.nanoTime();
         done = false;
         int status = LBFGS.minimize(n, m, x, e, grad, eps, sigmaaoptimizer, this);
@@ -156,7 +155,15 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
 
         for (int i = 0; i < refinementdata.nparams; i++) {
             refinementdata.sigmaa[i] = 1.0 + x[i] / scaling[i];
-            refinementdata.sigmaw[i] = x[i + refinementdata.nparams] / scaling[i];
+            refinementdata.sigmaw[i] = x[i + refinementdata.nparams]
+                    / scaling[i + refinementdata.nparams];
+        }
+
+        if (logger.isLoggable(Level.INFO)) {
+            StringBuffer sb = new StringBuffer();
+            mtime += System.nanoTime();
+            sb.append(String.format("minimizer time: %g\n", mtime * toSeconds));
+            logger.info(sb.toString());
         }
 
         return sigmaaoptimizer;
