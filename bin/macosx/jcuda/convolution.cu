@@ -7,13 +7,15 @@
 #include <jni.h>
 #include "ffx_numerics_fft_Complex3DCuda.h"
 
-static __global__ void recipSummation(float* data, float* recip, int len)
+__global__ void recipSummation(float* data, float* recip, int len)
 {
     const int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i >= len) return;
-    const int j = 2 * i;
-    data[j]     *= recip[i];
-    data[j + 1] *= recip[i];
+    if (i < len) { 
+       const int j = 2 * i;
+       data[j]     *= recip[i];
+       data[j + 1] *= recip[i];
+    }
+    __syncthreads();
 }
 
 /*
@@ -23,7 +25,7 @@ static __global__ void recipSummation(float* data, float* recip, int len)
  */
 JNIEXPORT jint JNICALL Java_ffx_numerics_fft_Complex3DCuda_init
   (JNIEnv *env, jobject obj, jint nx, jint ny, jint nz, 
-   jfloatArray data, jfloatArray recipArray, jlongArray pointerArray) {
+   jfloatArray dataArray, jfloatArray recipArray, jlongArray pointerArray) {
 
    // Init the CUDA device.
    cudaSetDevice( cutGetMaxGflopsDeviceId() );
@@ -50,12 +52,15 @@ JNIEXPORT jint JNICALL Java_ffx_numerics_fft_Complex3DCuda_init
    pointers[2] = (jlong) d_recip; 
    env->ReleasePrimitiveArrayCritical(pointerArray, pointers, 0);
 
-   // Copy the reciprocal vector to the GPU.
+   // Copy the data and reciprocal vectors to the GPU.
+   jfloat *data = (jfloat*) env->GetPrimitiveArrayCritical(dataArray, 0);
    jfloat *recip = (jfloat*) env->GetPrimitiveArrayCritical(recipArray, 0);
-   if (pointers == NULL) {
+   if (recip == NULL || data == NULL) {
        return -1;
    }
+   cutilSafeCall(cudaMemcpy(d_data, data, dataSize, cudaMemcpyHostToDevice));
    cutilSafeCall(cudaMemcpy(d_recip, recip, recipSize, cudaMemcpyHostToDevice));
+   env->ReleasePrimitiveArrayCritical(dataArray, data, 0);
    env->ReleasePrimitiveArrayCritical(recipArray, recip, 0);
    return 1;
 }
@@ -68,6 +73,13 @@ JNIEXPORT jint JNICALL Java_ffx_numerics_fft_Complex3DCuda_init
 JNIEXPORT jint JNICALL Java_ffx_numerics_fft_Complex3DCuda_convolution
   (JNIEnv *env, jobject obj, jfloatArray dataArray, jlongArray pointerArray) {
 
+   // Get a reference to the data array
+   jint len = env->GetArrayLength(dataArray) / 2; 
+   jfloat *data = (jfloat*) env->GetPrimitiveArrayCritical(dataArray, 0);
+   if (data == NULL) {
+       return -1;
+   }
+
    // Get the FFT plan ID and GPU memory addresses.
    jlong *pointers = (jlong*) env->GetPrimitiveArrayCritical(pointerArray, 0);
    if (pointers == NULL) {
@@ -76,24 +88,20 @@ JNIEXPORT jint JNICALL Java_ffx_numerics_fft_Complex3DCuda_convolution
    cufftHandle plan = (cufftHandle) pointers[0];
    float *d_data = (float*) pointers[1];
    float *d_recip = (float*) pointers[2];
-   env->ReleasePrimitiveArrayCritical(pointerArray, pointers, 0);
 
    // Compute the needed GPU memory and numbers of thread blocks.
-   jint len = env->GetArrayLength(dataArray) / 2; 
-   int threads = 256;
+   int threads = 512;
    int blocks = (len + threads - 1) / threads;
    int dataSize = 2 * len * sizeof(float);
 
    // Copy the data to the GPU and do the convolution.
-   jfloat *data = (jfloat*) env->GetPrimitiveArrayCritical(dataArray, 0);
-   if (pointers == NULL) {
-       return -1;
-   }
    cutilSafeCall(cudaMemcpy(d_data, data, dataSize, cudaMemcpyHostToDevice));
    cufftSafeCall(cufftExecC2C(plan, (cufftComplex *) d_data, (cufftComplex *) d_data, CUFFT_FORWARD));
    recipSummation<<<blocks,threads>>>(d_data, d_recip, len);
    cufftSafeCall(cufftExecC2C(plan, (cufftComplex *) d_data, (cufftComplex *) d_data, CUFFT_INVERSE));
    cutilSafeCall(cudaMemcpy(data, d_data, dataSize, cudaMemcpyDeviceToHost));
+
+   env->ReleasePrimitiveArrayCritical(pointerArray, pointers, 0);
    env->ReleasePrimitiveArrayCritical(dataArray, data, 0);
    return 1;
 }

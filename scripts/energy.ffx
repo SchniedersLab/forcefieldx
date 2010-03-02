@@ -1,21 +1,16 @@
 
 import ffx.potential.PotentialEnergy;
 
-// Name of the file (PDB or XYZ) to evaluate the energy of.
-String filename = "examples/waterbox.xyz";
-
-/*
-open(filename); 
-System.setProperty("pj.nt", "1");
-for (int i = 1; i < 10; i++) {
-   energy();
-} */
-
-open(filename); 
 System.setProperty("pj.nt", "2");
-potentialEnergy = new PotentialEnergy(active);
-for (int i = 1; i < 10; i++) {
-   potentialEnergy.energy(true,true);
-}
 
+// Name of the file (PDB or XYZ) to evaluate the energy of.
+String filename = "modules/potentials/src/main/java/ffx/potential/structures/dhfr.xyz";
+open(filename); 
+potentialEnergy = new PotentialEnergy(active);
+potentialEnergy.energy(false,true);
+
+filename = "modules/potentials/src/main/java/ffx/potential/structures/ubiquitin.xyz";
+open(filename); 
+potentialEnergy = new PotentialEnergy(active);
+potentialEnergy.energy(false,true);
 

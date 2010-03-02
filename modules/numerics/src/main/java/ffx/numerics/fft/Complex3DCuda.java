@@ -181,7 +181,7 @@ public class Complex3DCuda implements Runnable {
             try {
                 dimNotFinal = Integer.parseInt(args[0]);
                 if (dimNotFinal < 1) {
-                    dimNotFinal = 100;
+                    dimNotFinal = 64;
                 }
                 reps = Integer.parseInt(args[2]);
                 if (reps < 1) {

@@ -698,6 +698,35 @@ public class Crystal {
      * @param mate  Symmetry mate coordinates.
      * @param symOp The symmetry operator.
      */
+    public void applySymOp(int xyz[], int mate[], SymOp symOp) {
+        double rot[][] = symOp.rot;
+        double trans[] = symOp.tr;
+        double xc = xyz[0];
+        double yc = xyz[1];
+        double zc = xyz[2];
+        // Convert to fractional coordinates.
+        double xi = xc * r00 + yc * r10 + zc * r20;
+        double yi = xc * r01 + yc * r11 + zc * r21;
+        double zi = xc * r02 + yc * r12 + zc * r22;
+        // Apply Symmetry Operator.
+        double fx = rot[0][0] * xi + rot[0][1] * yi + rot[0][2] * zi + trans[0];
+        double fy = rot[1][0] * xi + rot[1][1] * yi + rot[1][2] * zi + trans[1];
+        double fz = rot[2][0] * xi + rot[2][1] * yi + rot[2][2] * zi + trans[2];
+        // Convert back to Cartesian coordinates.
+        mate[0] = (int) rint(fx * c00 + fy * c10 + fz * c20);
+        mate[1] = (int) rint(fx * c01 + fy * c11 + fz * c21);
+        mate[2] = (int) rint(fx * c02 + fy * c12 + fz * c22);
+        // Map back into the unit cell if necessary.
+
+    }
+
+    /**
+     * Apply a symmetry operator to one set of coordinates.
+     *
+     * @param xyz   Input coordinates.
+     * @param mate  Symmetry mate coordinates.
+     * @param symOp The symmetry operator.
+     */
     public void applySymOp(double xyz[], double mate[], SymOp symOp) {
         double rot[][] = symOp.rot;
         double trans[] = symOp.tr;

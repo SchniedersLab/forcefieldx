@@ -63,60 +63,61 @@ public class PotentialEnergyTest {
         return Arrays.asList(new Object[][]{
                     {
                         false,
-                "Ubiquitin Benchmark",
-                "ffx/potential/structures/ubiquitin.xyz",
-                2673.37683484, 6908,
-                1637.34919041, 5094,
-                 -11.04350364, 1958,
-                 279.64162198, 2835,
-                 67.64798284, 651,
-                215.14214012, 3297,
-                 24.69060350, 106,
-                -29.43681349, 71,
-              13202.86995849, 1483768,
-             -33012.66179952, 623490,
-             -13041.30955459, 623490},
-                {true,
-                    "DHFR Benchmark",
-                "ffx/potential/structures/dhfr.xyz",
-                6423.84579926, 16569,
-                3746.31506290, 11584,
-                -21.85553039, 4031,
-                687.46861123, 7023,
-                198.72886589, 1566,
-                426.23738971, 6701,
-                48.26628393, 292,
-                -41.71473465, 147,
-                32646.72296821, 3480445,
-                -79415.53874328, 1463353,
-                -32155.50351016, 1463353} /*,
-                {"SNARE P1",
-                "ffx/potential/structures/1n7s.P1.xyz",
-                1405.28569930e0, 20160,
-                2976.77005458e0, 33020,
-                25.68062976e0, 27696,
-                10.00655326e0, 1288,
-                541.44132652e0, 9948,
-                1671.56977674e0, 45796,
-                159.42575736e0, 1480,
-                -2243.98305878e0, 1072,
-                16013.08734189e0, 2966542,
-                -49214.99281245e0, 1504176,
-                -11244.77107599e0, 1504176},
-                {"SNARE P212121",
-                "ffx/potential/structures/1n7s.P212121.xyz",
-                351.321424825e0, 5040,
-                744.192513645e0, 8255,
-                6.42015744e0, 6924,
-                2.501638315e0, 322,
-                135.36033163e0, 2487,
-                417.892444185e0, 11449,
-                39.85643934e0, 370,
-                -560.995764695e0, 268,
-                4003.2718354725e0, 2966542,
-                -12303.7482031125e0, 1504176,
-                -2811.1927689975e0, 1504176 } */
-                });
+                        "Ubiquitin Benchmark",
+                        "ffx/potential/structures/ubiquitin.xyz",
+                        2673.37683484, 6908,
+                        1637.34919041, 5094,
+                        -11.04350364, 1958,
+                        279.64162198, 2835,
+                        67.64798284, 651,
+                        215.14214012, 3297,
+                        24.69060350, 106,
+                        -29.43681349, 71,
+                        13202.86995849, 1483768,
+                        -33012.66179952, 623490,
+                        -13041.30955459, 623490},
+                    {true,
+                     "DHFR Benchmark",
+                     "ffx/potential/structures/dhfr.xyz",
+                     6423.84579926, 16569,
+                     3746.31506290, 11584,
+                     -21.85553039, 4031,
+                     687.46861123, 7023,
+                     198.72886589, 1566,
+                     426.23738971, 6701,
+                     48.26628393, 292,
+                     -41.71473465, 147,
+                     32646.72296821, 3480445,
+                     -79396.71166429, 1463353,
+                     -32141.39930772, 1463353},
+                    {true,
+                     "SNARE P1",
+                     "ffx/potential/structures/1n7s.P1.xyz",
+                     1405.28569930, 20160,
+                     2976.77005458, 33020,
+                     25.68062976, 27696,
+                     10.00655326, 1288,
+                     540.99677465, 9948,
+                     1671.56977674, 45796,
+                     159.42575736, 1480,
+                     -2243.98305878, 1072,
+                     16013.08734188, 2966572,
+                     -49215.72628076, 1328456,
+                     -11245.82734685, 1328456},
+                    {true,
+                     "SNARE P212121",
+                     "ffx/potential/structures/1n7s.P212121.xyz",
+                     351.32142483, 5040,
+                     744.19251364, 8255,
+                     6.42015744, 6924,
+                     2.50163831, 322,
+                     135.24919366, 2487,
+                     417.89244418, 11449,
+                     39.85643934, 370,
+                     -560.99576469, 268,
+                     4003.27183547, 832824,
+                     -12303.93157019, 359312,
+                     -2811.45683671, 359312}});
     }
     private final String info;
     private final File structure;
@@ -149,7 +150,6 @@ public class PotentialEnergyTest {
     private boolean mpoleTerm;
     private final double tolerance = 1.0e-3;
     private final double gradientTolerance = 1.0e-4;
-
     private final boolean ci;
     private final boolean ciOnly;
 
@@ -192,8 +192,8 @@ public class PotentialEnergyTest {
         this.polarizationEnergy = polarizationEnergy;
         this.nPolar = nPolar;
 
-        String ffxCi = System.getProperty("ffx.ci");
-        if (ffxCi != null && ffxCi.equalsIgnoreCase("true")) {
+        String ffxCi = System.getProperty("ffx.ci", "false");
+        if (ffxCi.equalsIgnoreCase("true")) {
             ci = true;
         } else {
             ci = false;
@@ -228,18 +228,23 @@ public class PotentialEnergyTest {
         Utilities.biochemistry(molecularAssembly, xyzFilter.getAtomList());
         molecularAssembly.finalize(true);
 
-        nAtoms = molecularAssembly.getAtomArray().length;        
+        nAtoms = molecularAssembly.getAtomArray().length;
         energy = new PotentialEnergy(molecularAssembly);
         mpoleTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.MPOLETERM, true);
 
         String polar = forceField.getString(ForceFieldString.POLARIZATION,
-                "MUTUAL");
+                                            "MUTUAL");
         if (polar.equalsIgnoreCase("MUTUAL")) {
             polarization = Polarization.MUTUAL;
         } else if (polar.equalsIgnoreCase("DIRECT")) {
             polarization = Polarization.DIRECT;
         } else {
             polarization = Polarization.NONE;
+        }
+
+        if (ci) {
+            testGradient();
+            testSoftCore();
         }
     }
 
@@ -299,11 +304,7 @@ public class PotentialEnergyTest {
     /**
      * Test of energy gradient, of class PotentialEnergy.
      */
-    //@Test
     public void testGradient() {
-        if (!ci && ciOnly) {
-            return;
-        }
         boolean gradient = true;
         boolean print = true;
         energy.energy(gradient, print);
@@ -318,61 +319,57 @@ public class PotentialEnergyTest {
         int n = atoms.size();
         Random random = new Random();
         int i = random.nextInt(n);
-            Atom a0 = atoms.get(i);
+        Atom a0 = atoms.get(i);
 
-            a0.getXYZGradient(analytic);
-            a0.getXYZ(xyz);
-            // Find numeric dX
-            xyz[0] += step;
-            a0.moveTo(xyz);
-            double e = energy.energy(gradient, print);
-            xyz[0] -= 2.0 * step;
-            a0.moveTo(xyz);
-            e -= energy.energy(gradient, print);
-            numeric[0] = e / (2.0 * step);
-            xyz[0] += step;
-            // Find numeric dY
-            xyz[1] += step;
-            a0.moveTo(xyz);
-            e = energy.energy(gradient, print);
-            xyz[1] -= 2.0 * step;
-            a0.moveTo(xyz);
-            e -= energy.energy(gradient, print);
-            numeric[1] = e / (2.0 * step);
-            xyz[1] += step;
-            // Find numeric dZ
-            xyz[2] += step;
-            a0.moveTo(xyz);
-            e = energy.energy(gradient, print);
-            xyz[2] -= 2.0 * step;
-            a0.moveTo(xyz);
-            e -= energy.energy(gradient, print);
-            numeric[2] = e / (2.0 * step);
-            xyz[2] += step;
-            a0.moveTo(xyz);
-            double dx = analytic[0] - numeric[0];
-            double dy = analytic[1] - numeric[1];
-            double dz = analytic[2] - numeric[2];
-            double len = Math.sqrt(dx * dx + dy * dy + dz * dz);
-            if (len > gradientTolerance) {
-                logger.severe("\n" + a0.toString() + String.format(" failed: %10.6f.", len) + String.format(
-                        "\nAnalytic: (%12.4f, %12.4f, %12.4f)\n",
-                        analytic[0], analytic[1], analytic[2]) + String.format("Numeric:  (%12.4f, %12.4f, %12.4f)\n",
-                        numeric[0], numeric[1], numeric[2]));
-            } else {
-                logger.info("\n" + a0.toString() + String.format(" passed: %10.6f.", len) + String.format(
-                        "\nAnalytic: (%12.4f, %12.4f, %12.4f)\n",
-                        analytic[0], analytic[1], analytic[2]) + String.format("Numeric:  (%12.4f, %12.4f, %12.4f)\n",
-                        numeric[0], numeric[1], numeric[2]));
-            }
-            assertEquals(a0.toString(), 0.0, len, gradientTolerance);
+        a0.getXYZGradient(analytic);
+        a0.getXYZ(xyz);
+        // Find numeric dX
+        xyz[0] += step;
+        a0.moveTo(xyz);
+        double e = energy.energy(gradient, print);
+        xyz[0] -= 2.0 * step;
+        a0.moveTo(xyz);
+        e -= energy.energy(gradient, print);
+        numeric[0] = e / (2.0 * step);
+        xyz[0] += step;
+        // Find numeric dY
+        xyz[1] += step;
+        a0.moveTo(xyz);
+        e = energy.energy(gradient, print);
+        xyz[1] -= 2.0 * step;
+        a0.moveTo(xyz);
+        e -= energy.energy(gradient, print);
+        numeric[1] = e / (2.0 * step);
+        xyz[1] += step;
+        // Find numeric dZ
+        xyz[2] += step;
+        a0.moveTo(xyz);
+        e = energy.energy(gradient, print);
+        xyz[2] -= 2.0 * step;
+        a0.moveTo(xyz);
+        e -= energy.energy(gradient, print);
+        numeric[2] = e / (2.0 * step);
+        xyz[2] += step;
+        a0.moveTo(xyz);
+        double dx = analytic[0] - numeric[0];
+        double dy = analytic[1] - numeric[1];
+        double dz = analytic[2] - numeric[2];
+        double len = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (len > gradientTolerance) {
+            logger.severe("\n" + a0.toString() + String.format(" failed: %10.6f.", len) + String.format(
+                    "\nAnalytic: (%12.4f, %12.4f, %12.4f)\n",
+                    analytic[0], analytic[1], analytic[2]) + String.format("Numeric:  (%12.4f, %12.4f, %12.4f)\n",
+                                                                           numeric[0], numeric[1], numeric[2]));
+        } else {
+            logger.info("\n" + a0.toString() + String.format(" passed: %10.6f.", len) + String.format(
+                    "\nAnalytic: (%12.4f, %12.4f, %12.4f)\n",
+                    analytic[0], analytic[1], analytic[2]) + String.format("Numeric:  (%12.4f, %12.4f, %12.4f)\n",
+                                                                           numeric[0], numeric[1], numeric[2]));
+        }
+        assertEquals(a0.toString(), 0.0, len, gradientTolerance);
     }
 
-    //@Test
     public void testSoftCore() {
-        if (!ci && ciOnly) {
-            return;
-        }
         boolean gradient = false;
         boolean print = true;
         double e = energy.energy(gradient, print);

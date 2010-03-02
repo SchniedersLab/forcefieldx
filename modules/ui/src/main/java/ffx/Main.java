@@ -70,11 +70,21 @@ public class Main extends JFrame {
             /**
              * Create a Handler for FFX logging.
              */
+            String logLevel = System.getProperty("ffx.log", "info");
+            Level level = null;
+            try {
+                level = Level.parse(logLevel.toUpperCase());
+            } catch (Exception e) {
+                level = Level.INFO;
+            }
 
             logHandler = new LogHandler();
-            logHandler.setLevel(Level.INFO);
+            logHandler.setLevel(level);
             ffxLogger.addHandler(logHandler);
-            ffxLogger.setLevel(Level.INFO);
+            ffxLogger.setLevel(level);
+            
+            logger.info(" FFX log level set to " + level.toString());
+
         } catch (Exception e) {
             System.err.println(e.toString());
         }
@@ -121,7 +131,7 @@ public class Main extends JFrame {
         // Start the clock.
         stopWatch.start();
         setVisible(false);
-        
+
         // Create the MainPanel and MainMenu, then add them to the JFrame
         java.awt.Toolkit.getDefaultToolkit().setDynamicLayout(true);
         mainPanel = new MainPanel(this);

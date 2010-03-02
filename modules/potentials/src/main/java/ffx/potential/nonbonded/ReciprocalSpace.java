@@ -34,6 +34,7 @@ import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
 
 import ffx.crystal.Crystal;
+import ffx.crystal.SymOp;
 import ffx.numerics.TensorRecursion;
 import ffx.numerics.fft.Complex;
 import ffx.numerics.fft.Complex3DCuda;
@@ -204,15 +205,21 @@ public class ReciprocalSpace {
         if (nX % 2 != 0) {
             nX += 1;
         }
+        if (nY % 2 != 0) {
+            nY += 1;
+        }
+        if (nZ % 2 != 0) {
+            nZ += 1;
+        }
 
         while (!Complex.preferredDimension(nX)) {
             nX += 2;
         }
         while (!Complex.preferredDimension(nY)) {
-            nY += 1;
+            nY += 2;
         }
         while (!Complex.preferredDimension(nZ)) {
-            nZ += 1;
+            nZ += 2;
         }
 
         fftX = nX;
@@ -227,7 +234,7 @@ public class ReciprocalSpace {
         zSlicep = fftX * fftY * 2;
         polarizationTotal = fftX * fftY * fftZ;
         a = new double[3][3];
-        this.nSymm = crystal.spaceGroup.getNumberOfSymOps();
+        nSymm = crystal.spaceGroup.getNumberOfSymOps();
         densityGrid = new double[polarizationTotal * 2];
 
         if (cudaFFT) {
@@ -712,23 +719,23 @@ public class ReciprocalSpace {
         public void run() {
             int ti = getThreadIndex();
             int work1 = nWork - 1;
-            PermanentDensityLoop thisLoop = permanentDensityLoop[ti];
+            PermanentDensityLoop loop = permanentDensityLoop[ti];
             try {
                 execute(0, nfftTotal - 1, gridInitLoop);
-                execute(0, work1, thisLoop.setOctant(0));
+                execute(0, work1, loop.setOctant(0));
                 // Fractional chunks along the C-axis.
                 if (nC > 1) {
-                    execute(0, work1, thisLoop.setOctant(1));
+                    execute(0, work1, loop.setOctant(1));
                     // Fractional chunks along the B-axis.
                     if (nB > 1) {
-                        execute(0, work1, thisLoop.setOctant(2));
-                        execute(0, work1, thisLoop.setOctant(3));
+                        execute(0, work1, loop.setOctant(2));
+                        execute(0, work1, loop.setOctant(3));
                         // Fractional chunks along the A-axis.
                         if (nA > 1) {
-                            execute(0, work1, thisLoop.setOctant(4));
-                            execute(0, work1, thisLoop.setOctant(5));
-                            execute(0, work1, thisLoop.setOctant(6));
-                            execute(0, work1, thisLoop.setOctant(7));
+                            execute(0, work1, loop.setOctant(4));
+                            execute(0, work1, loop.setOctant(5));
+                            execute(0, work1, loop.setOctant(6));
+                            execute(0, work1, loop.setOctant(7));
                         }
                     }
                 }
@@ -740,9 +747,6 @@ public class ReciprocalSpace {
         private class GridInitLoop extends IntegerForLoop {
 
             private final IntegerSchedule schedule = IntegerSchedule.fixed();
-            // Extra padding to avert cache interference.
-            long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
-            long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
             @Override
             public IntegerSchedule schedule() {
@@ -761,6 +765,9 @@ public class ReciprocalSpace {
 
             private int octant = 0;
             private double globalMultipoles[][][] = null;
+            private int hkl[] = new int[3];
+            private int shkl[] = new int[3];
+
             private final IntegerSchedule schedule = IntegerSchedule.fixed();
             // Extra padding to avert cache interference.
             long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
@@ -898,6 +905,7 @@ public class ReciprocalSpace {
                     final double qyz1 = qyz * v1;
                     k0++;
                     final int k = k0 + (1 - ((int) signum(k0 + signum_eps))) * fftZ / 2;
+                    hkl[2] = k;
                     final int kk = k * xySlice;
                     int j0 = jgrd0;
                     for (int ith2 = 0; ith2 < bSplineOrder; ith2++) {
@@ -910,17 +918,31 @@ public class ReciprocalSpace {
                         final double term2 = qxx0 * u0;
                         j0++;
                         final int j = j0 + (1 - ((int) signum(j0 + signum_eps))) * fftY / 2;
+                        hkl[1] = j;
                         final int jj = j * (fftX + 2) * 2;
                         final int jk = jj + kk;
                         int i0 = igrd0;
                         for (int ith1 = 0; ith1 < bSplineOrder; ith1++) {
                             i0++;
                             final int i = i0 + (1 - ((int) signum(i0 + signum_eps))) * fftX / 2;
-                            // final int ii = i * 2 + jk;
-                            int ii = i + jk / 2;
+                            hkl[0] = i;
+                            final int ii = i + jk / 2;
                             final double splxi[] = splx[ith1];
                             final double dq = splxi[0] * term0 + splxi[1] * term1 + splxi[2] * term2;
                             densityGrid[ii] += dq;
+                            /*
+                            for (int ss = 1; ss < nSymm; ss++) {
+                                SymOp symOp = crystal.spaceGroup.getSymOp(ss);
+                                crystal.applySymOp(hkl, shkl, symOp);
+                                final int si0 = shkl[0];
+                                final int sj0 = shkl[1];
+                                final int sk0 = shkl[2];
+                                final int si = si0 + (1 - ((int) signum(si0 + signum_eps))) * fftX / 2;
+                                final int sj = sj0 + (1 - ((int) signum(sj0 + signum_eps))) * fftY / 2;
+                                final int sk = sk0 + (1 - ((int) signum(sk0 + signum_eps))) * fftZ / 2;
+                                final int iis = (sk * xySlice + sj * ((fftX + 2) * 2)) / 2 + i;
+                                densityGrid[iis] += dq;
+                            } */
                         }
                     }
                 }
@@ -1265,25 +1287,25 @@ public class ReciprocalSpace {
         @Override
         public void run() {
             int ti = getThreadIndex();
-            PolarizationDensityLoop thisLoop = polarizationDensityLoop[ti];
+            PolarizationDensityLoop loop = polarizationDensityLoop[ti];
             int lim = nWork - 1;
             try {
                 // Zero out the grid.
                 execute(0, polarizationTotal * 2 - 1, initLoop);
-                execute(0, lim, thisLoop.setOctant(0));
+                execute(0, lim, loop.setOctant(0));
                 // Fractional chunks along the C-axis.
                 if (nC > 1) {
-                    execute(0, lim, thisLoop.setOctant(1));
+                    execute(0, lim, loop.setOctant(1));
                     // Fractional chunks along the B-axis.
                     if (nB > 1) {
-                        execute(0, lim, thisLoop.setOctant(2));
-                        execute(0, lim, thisLoop.setOctant(3));
+                        execute(0, lim, loop.setOctant(2));
+                        execute(0, lim, loop.setOctant(3));
                         // Fractional chunks along the A-axis.
                         if (nA > 1) {
-                            execute(0, lim, thisLoop.setOctant(4));
-                            execute(0, lim, thisLoop.setOctant(5));
-                            execute(0, lim, thisLoop.setOctant(6));
-                            execute(0, lim, thisLoop.setOctant(7));
+                            execute(0, lim, loop.setOctant(4));
+                            execute(0, lim, loop.setOctant(5));
+                            execute(0, lim, loop.setOctant(6));
+                            execute(0, lim, loop.setOctant(7));
                         }
                     }
                 }
