@@ -287,4 +287,29 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
         hash = 29 * hash + Arrays.hashCode(frameAtomTypes);
         return hash;
     }
+
+    /**
+     * Indices into a 1D tensor array based on compressed tensor notation. This
+     * makes multipole code much easier to read.
+     */
+    public static final int t000 = 0;
+    public static final int t100 = 1;
+    public static final int t010 = 2;
+    public static final int t001 = 3;
+    public static final int t200 = 4;
+    public static final int t020 = 5;
+    public static final int t002 = 6;
+    public static final int t110 = 7;
+    public static final int t101 = 8;
+    public static final int t011 = 9;
+    public static final int t300 = 10;
+    public static final int t030 = 11;
+    public static final int t003 = 12;
+    public static final int t210 = 13;
+    public static final int t201 = 14;
+    public static final int t120 = 15;
+    public static final int t021 = 16;
+    public static final int t102 = 17;
+    public static final int t012 = 18;
+    public static final int t111 = 19;
 }

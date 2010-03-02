@@ -42,7 +42,7 @@ public class Berendsen extends Thermostat {
     public Berendsen(int n, double x[], double v[], double mass[], double targetTemperature,
             double tau) {
         super(n, x, v, mass, targetTemperature);
-        this.name = Thermostats.BUSSI;
+        this.name = Thermostats.BERENDSEN;
         this.tau = tau;
     }
 

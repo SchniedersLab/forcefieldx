@@ -115,6 +115,8 @@ public class Keyword {
      * 4.) System wide properties (file defined by environment variable FFX_PROPERTIES)
      *
      * 5.) Internal force field definition.
+     *
+     * @since 1.0
      */
     public static CompositeConfiguration loadProperties(File file) {
         /**
@@ -129,20 +131,22 @@ public class Keyword {
         if (file != null) {
             String filename = file.getAbsolutePath();
             filename = org.apache.commons.io.FilenameUtils.removeExtension(filename);
-            String keyFilename = filename + ".properties";
-            File structurePropFile = new File(keyFilename);
+            String propertyFilename = filename + ".properties";
+            File structurePropFile = new File(propertyFilename);
             if (structurePropFile.exists() && structurePropFile.canRead()) {
                 try {
                     properties.addConfiguration(new PropertiesConfiguration(structurePropFile));
+                    properties.addProperty("propertyFile", structurePropFile.getCanonicalPath());
                 } catch (Exception e) {
                     logger.info("Error loading " + filename + ".");
                 }
             } else {
-                keyFilename = filename + ".key";
-                structurePropFile = new File(keyFilename);
+                propertyFilename = filename + ".key";
+                structurePropFile = new File(propertyFilename);
                 if (structurePropFile.exists() && structurePropFile.canRead()) {
                     try {
                         properties.addConfiguration(new PropertiesConfiguration(structurePropFile));
+                        properties.addProperty("propertyFile", structurePropFile.getCanonicalPath());
                     } catch (Exception e) {
                         logger.info("Error loading " + filename + ".");
                     }

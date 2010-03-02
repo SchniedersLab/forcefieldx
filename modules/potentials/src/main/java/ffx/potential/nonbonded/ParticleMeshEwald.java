@@ -24,6 +24,7 @@ import static java.lang.Math.*;
 
 import static ffx.numerics.Erf.erfc;
 import static ffx.numerics.VectorMath.*;
+import static ffx.potential.parameters.MultipoleType.*;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -255,7 +256,7 @@ public class ParticleMeshEwald implements LambdaInterface {
      * If the real and reciprocal space parts of PME are done concurrently, then
      * the reciprocalSpaceTeam will have fewer threads than the default parallelTeam.
      */
-    private final ParallelTeam reciprocalSpaceTeam;
+    private final ParallelTeam fftTeam;
     /**
      * If real and reciprocal space are done sequentially then
      * reciprocalSpaceThreads == maxThreads
@@ -264,19 +265,31 @@ public class ParticleMeshEwald implements LambdaInterface {
      * 
      * Otherwise, reciprocalSpaceThreads = maxThreads - realSpaceThreads
      */
-    private final int reciprocalSpaceThreads;
+    private final int fftThreads;
+    private final RotateMultipolesRegion rotateMultipolesRegion;
+    private final ExpandCoordinatesRegion expandCoordinatesRegion;
+    private final ExpandInducedDipolesRegion expandInducedDipolesRegion;
     private final ReciprocalSpace reciprocalSpace;
     private final PermanentFieldRegion permanentFieldRegion;
     private final InducedDipoleFieldRegion inducedDipoleFieldRegion;
     private final RealSpaceEnergyRegion realSpaceEnergyRegion;
+    private final TorqueRegion torqueRegion;
     private final IntegerSchedule pairWiseSchedule;
-    
     private final SharedDoubleArray sharedGrad[];
     private final SharedDoubleArray sharedTorque[];
-    private final boolean openCL;
+    private final boolean cudaFFT;
     private long realSpaceTime;
     private long reciprocalSpaceTime;
     private long bsplineTime, densityTime, realAndFFTTime, phiTime;
+    private static double toSeconds = 0.000000001;
+    /**
+     * Conversion from electron^2/Ang to Kcal/mole
+     */
+    private static final double electric = 332.063709;
+    /**
+     * The sqrt of PI.
+     */
+    private static final double sqrtPi = sqrt(Math.PI);
 
     /**
      *
@@ -287,7 +300,7 @@ public class ParticleMeshEwald implements LambdaInterface {
      * @param neighborLists
      */
     public ParticleMeshEwald(ForceField forceField, Atom[] atoms,
-            Crystal crystal, ParallelTeam parallelTeam, int neighborLists[][][]) {
+                             Crystal crystal, ParallelTeam parallelTeam, int neighborLists[][][]) {
         this.forceField = forceField;
         this.atoms = atoms;
         this.crystal = crystal;
@@ -339,8 +352,8 @@ public class ParticleMeshEwald implements LambdaInterface {
             polarization = Polarization.MUTUAL;
         }
 
-        openCL = forceField.getBoolean(ForceField.ForceFieldBoolean.OPENCL, false);
-
+        cudaFFT = forceField.getBoolean(ForceField.ForceFieldBoolean.CUDAFFT, false);
+        
         localMultipole = new double[nAtoms][10];
         frame = new MultipoleType.MultipoleFrameDefinition[nAtoms];
         axisAtom = new int[nAtoms][];
@@ -381,13 +394,13 @@ public class ParticleMeshEwald implements LambdaInterface {
             logger.info(sb.toString());
         }
 
-        if (openCL) {
+        if (cudaFFT) {
             sectionThreads = 2;
             realSpaceThreads = parallelTeam.getThreadCount();
-            reciprocalSpaceThreads = 1;
+            fftThreads = 1;
             sectionTeam = new ParallelTeam(sectionThreads);
             realSpaceTeam = parallelTeam;
-            reciprocalSpaceTeam = new ParallelTeam(reciprocalSpaceThreads);
+            fftTeam = new ParallelTeam(fftThreads);
         } else {
             boolean concurrent;
             int realThreads = 1;
@@ -403,10 +416,10 @@ public class ParticleMeshEwald implements LambdaInterface {
             if (concurrent) {
                 sectionThreads = 2;
                 realSpaceThreads = realThreads;
-                reciprocalSpaceThreads = maxThreads - realThreads;
+                fftThreads = maxThreads - realThreads;
                 sectionTeam = new ParallelTeam(sectionThreads);
                 realSpaceTeam = new ParallelTeam(realSpaceThreads);
-                reciprocalSpaceTeam = new ParallelTeam(reciprocalSpaceThreads);
+                fftTeam = new ParallelTeam(fftThreads);
             } else {
                 /**
                  * If pme-real-threads is not defined, then do real and reciprocal
@@ -414,10 +427,10 @@ public class ParticleMeshEwald implements LambdaInterface {
                  */
                 sectionThreads = 1;
                 realSpaceThreads = maxThreads;
-                reciprocalSpaceThreads = maxThreads;
+                fftThreads = maxThreads;
                 sectionTeam = new ParallelTeam(sectionThreads);
                 realSpaceTeam = parallelTeam;
-                reciprocalSpaceTeam = parallelTeam;
+                fftTeam = parallelTeam;
             }
         }
 
@@ -437,16 +450,20 @@ public class ParticleMeshEwald implements LambdaInterface {
             pairWiseSchedule = IntegerSchedule.fixed();
         }
 
+        rotateMultipolesRegion = new RotateMultipolesRegion(maxThreads);
+        expandCoordinatesRegion = new ExpandCoordinatesRegion(maxThreads);
+        expandInducedDipolesRegion = new ExpandInducedDipolesRegion(maxThreads);
         /**
          * Note that we always pass on the unit cell crystal to ReciprocalSpace
          * instance even if the real space calculations require
          * a ReplicatesCrystal.
          */
         reciprocalSpace = new ReciprocalSpace(crystal.getUnitCell(), forceField,
-                coordinates, nAtoms, aewald, reciprocalSpaceTeam, parallelTeam);
+                                              coordinates, nAtoms, aewald, fftTeam, parallelTeam);
         permanentFieldRegion = new PermanentFieldRegion(realSpaceTeam);
         inducedDipoleFieldRegion = new InducedDipoleFieldRegion(realSpaceTeam);
         realSpaceEnergyRegion = new RealSpaceEnergyRegion(maxThreads);
+        torqueRegion = new TorqueRegion(maxThreads);
     }
 
     private void setEwaldParameters() {
@@ -564,17 +581,14 @@ public class ParticleMeshEwald implements LambdaInterface {
                 sharedTorque[2].set(j, 0.0);
             }
         }
-        /**
-         * Expand coordinates and rotate multipoles for all atoms in the unit
-         * cell.
-         */
-        expandCoordinates();
-        rotateMulitpoles();
 
         /**
          * Find the permanent multipole potential and its gradients.
          */
         try {
+            parallelTeam.execute(expandCoordinatesRegion);
+            parallelTeam.execute(rotateMultipolesRegion);
+
             bsplineTime = -System.nanoTime();
             reciprocalSpace.computeBSplines();
             bsplineTime += System.nanoTime();
@@ -664,7 +678,7 @@ public class ParticleMeshEwald implements LambdaInterface {
             StringBuffer sb = new StringBuffer();
             sb.append(String.format("\n Total Time =    Real +   Recip (sec)\n"));
             sb.append(String.format("   %8.3f =%8.3f +%8.3f\n", toSeconds * (realSpaceTime + reciprocalSpaceTime), toSeconds * realSpaceTime,
-                    toSeconds * reciprocalSpaceTime));
+                                    toSeconds * reciprocalSpaceTime));
             sb.append(String.format(" Multipole Self-Energy:   %16.8f\n", eself));
             sb.append(String.format(" Multipole Reciprocal:    %16.8f\n", erecip));
             sb.append(String.format(" Multipole Real Space:    %16.8f\n", ereal));
@@ -679,11 +693,9 @@ public class ParticleMeshEwald implements LambdaInterface {
         // Add electrostatic gradient to total atomic gradient.
         if (gradient) {
             // Convert torques to forces.
-            for (int i = 0; i < nAtoms; i++) {
-                trq[0] = sharedTorque[0].get(i);
-                trq[1] = sharedTorque[1].get(i);
-                trq[2] = sharedTorque[2].get(i);
-                torque(i, trq);
+            try {
+                parallelTeam.execute(torqueRegion);
+            } catch (Exception e) {
             }
             for (int i = 0; i < nAtoms; i++) {
                 atoms[i].addToXYZGradient(sharedGrad[0].get(i), sharedGrad[1].get(i), sharedGrad[2].get(i));
@@ -742,7 +754,12 @@ public class ParticleMeshEwald implements LambdaInterface {
                 inducedDipolep[0][i][1] = 0.0;
                 inducedDipolep[0][i][2] = 0.0;
             }
-            expandInducedDipoles();
+            try {
+                parallelTeam.execute(expandInducedDipolesRegion);
+            } catch (Exception e) {
+                String message = "Exception expanding induced dipoles.";
+                logger.log(Level.SEVERE, message, e);
+            }
             return;
         }
         /**
@@ -772,7 +789,12 @@ public class ParticleMeshEwald implements LambdaInterface {
             directpi[2] = inp[2];
         }
 
-        expandInducedDipoles();
+        try {
+            parallelTeam.execute(expandInducedDipolesRegion);
+        } catch (Exception e) {
+            String message = "Exception expanding induced dipoles.";
+            logger.log(Level.SEVERE, message, e);
+        }
 
         if (polarization == Polarization.MUTUAL) {
             StringBuffer sb = null;
@@ -865,7 +887,12 @@ public class ParticleMeshEwald implements LambdaInterface {
                         epsp += delta * delta;
                     }
                 }
-                expandInducedDipoles();
+                try {
+                    parallelTeam.execute(expandInducedDipolesRegion);
+                } catch (Exception e) {
+                    String message = "Exception expanding induced dipoles.";
+                    logger.log(Level.SEVERE, message, e);
+                }
                 eps = max(eps, epsp);
                 eps = MultipoleType.DEBYE * sqrt(eps / (double) nAtoms);
                 cycleTime += System.nanoTime();
@@ -894,10 +921,10 @@ public class ParticleMeshEwald implements LambdaInterface {
             }
             if (print) {
                 sb.append(String.format("\n Direct:                    %8.3f\n",
-                        toSeconds * directTime));
+                                        toSeconds * directTime));
                 startTime = System.nanoTime() - startTime;
                 sb.append(String.format(" SCF Total:                 %8.3f\n",
-                        startTime * toSeconds));
+                                        startTime * toSeconds));
                 logger.info(sb.toString());
             }
             if (false) {
@@ -2149,7 +2176,6 @@ public class ParticleMeshEwald implements LambdaInterface {
             } catch (Exception e) {
                 String message = "Fatal exception computing the real space energy in thread " + getThreadIndex() + "\n";
                 logger.log(Level.SEVERE, message, e);
-                System.exit(-1);
             }
         }
 
@@ -2298,11 +2324,11 @@ public class ParticleMeshEwald implements LambdaInterface {
                          */
                         SymOp symOp = symOps.get(iSymm);
                         crystal.applySymRot(nAtoms, gxk_local, gyk_local,
-                                gzk_local, gxk_local, gyk_local, gzk_local,
-                                symOp);
+                                            gzk_local, gxk_local, gyk_local, gzk_local,
+                                            symOp);
                         crystal.applySymRot(nAtoms, txk_local, tyk_local,
-                                tzk_local, txk_local, tyk_local, tzk_local,
-                                symOp);
+                                            tzk_local, txk_local, tyk_local, tzk_local,
+                                            symOp);
                         /**
                          * The two force and torque arrays can now be condensed
                          * into single arrays.
@@ -3048,425 +3074,583 @@ public class ParticleMeshEwald implements LambdaInterface {
         }
     }
 
-    private void expandCoordinates() {
-        double x[] = coordinates[0][0];
-        double y[] = coordinates[0][1];
-        double z[] = coordinates[0][2];
-        Vector<SymOp> symOps = crystal.spaceGroup.symOps;
-        for (int iSymm = 1; iSymm < nSymm; iSymm++) {
-            SymOp symOp = symOps.get(iSymm);
-            double xs[] = coordinates[iSymm][0];
-            double ys[] = coordinates[iSymm][1];
-            double zs[] = coordinates[iSymm][2];
-            crystal.applySymOp(nAtoms, x, y, z, xs, ys, zs, symOp);
-        }
-    }
+    private class ExpandCoordinatesRegion extends ParallelRegion {
 
-    private void expandInducedDipoles() {
-        for (int s = 1; s < nSymm; s++) {
-            SymOp symOp = crystal.spaceGroup.symOps.get(s);
-            double rot[][] = symOp.rot;
-            for (int ii = 0; ii < nAtoms; ii++) {
-                induced[0] = 0.0;
-                induced[1] = 0.0;
-                induced[2] = 0.0;
-                inducedp[0] = 0.0;
-                inducedp[1] = 0.0;
-                inducedp[2] = 0.0;
-                double in[] = inducedDipole[0][ii];
-                tempInducedDipole[0] = in[0];
-                tempInducedDipole[1] = in[1];
-                tempInducedDipole[2] = in[2];
-                in = inducedDipolep[0][ii];
-                tempInducedDipolep[0] = in[0];
-                tempInducedDipolep[1] = in[1];
-                tempInducedDipolep[2] = in[2];
-                for (int i = 0; i < 3; i++) {
-                    double[] rotmati = rot[i];
-                    for (int j = 0; j < 3; j++) {
-                        induced[i] += rotmati[j] * tempInducedDipole[j];
-                        inducedp[i] += rotmati[j] * tempInducedDipolep[j];
+        private final ExpandCoordinatesLoop expandCoordinatesLoop[];
+
+        public ExpandCoordinatesRegion(int maxThreads) {
+            expandCoordinatesLoop = new ExpandCoordinatesLoop[maxThreads];
+            for (int i = 0; i < maxThreads; i++) {
+                expandCoordinatesLoop[i] = new ExpandCoordinatesLoop();
+            }
+        }
+
+        @Override
+        public void run() {
+            try {
+                execute(0, nAtoms - 1, expandCoordinatesLoop[getThreadIndex()]);
+            } catch (Exception e) {
+                String message = "Fatal exception expanding coordinates in thread: " + getThreadIndex() + "\n";
+                logger.log(Level.SEVERE, message, e);
+            }
+        }
+
+        private class ExpandCoordinatesLoop extends IntegerForLoop {
+
+            private final double in[] = new double[3];
+            private final double out[] = new double[3];
+            private final double x[] = coordinates[0][0];
+            private final double y[] = coordinates[0][1];
+            private final double z[] = coordinates[0][2];
+            // Extra padding to avert cache interference.
+            private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
+            private long pad8, pad9, pada, padb, padc, padd, pade, padf;
+
+            @Override
+            public IntegerSchedule schedule() {
+                return pairWiseSchedule;
+            }
+
+            @Override
+            public void run(int lb, int ub) {
+                Vector<SymOp> symOps = crystal.spaceGroup.symOps;
+                for (int iSymm = 1; iSymm < nSymm; iSymm++) {
+                    SymOp symOp = symOps.get(iSymm);
+                    double xs[] = coordinates[iSymm][0];
+                    double ys[] = coordinates[iSymm][1];
+                    double zs[] = coordinates[iSymm][2];
+                    for (int i = lb; i <= ub; i++) {
+                        in[0] = x[i];
+                        in[1] = y[i];
+                        in[2] = z[i];
+                        crystal.applySymOp(in, out, symOp);
+                        xs[i] = out[0];
+                        ys[i] = out[1];
+                        zs[i] = out[2];
                     }
                 }
-                double[] out = inducedDipole[s][ii];
-                out[0] = induced[0];
-                out[1] = induced[1];
-                out[2] = induced[2];
-                out = inducedDipolep[s][ii];
-                out[0] = inducedp[0];
-                out[1] = inducedp[1];
-                out[2] = inducedp[2];
             }
         }
     }
 
-    /**
-     * Rotate atomic multipoles into the global frame.
-     *
-     * @param atoms
-     *            List
-     */
-    private void rotateMulitpoles() {
-        double tot = 0;
-        for (int iSymm = 0; iSymm < nSymm; iSymm++) {
-            final double x[] = coordinates[iSymm][0];
-            final double y[] = coordinates[iSymm][1];
-            final double z[] = coordinates[iSymm][2];
-            for (int ii = 0; ii < nAtoms; ii++) {
-                final double in[] = localMultipole[ii];
-                final double out[] = globalMultipole[iSymm][ii];
-                localOrigin[0] = x[ii];
-                localOrigin[1] = y[ii];
-                localOrigin[2] = z[ii];
-                int referenceSites[] = axisAtom[ii];
-                for (int i = 0; i < 3; i++) {
-                    zAxis[i] = 0.0;
-                    xAxis[i] = 0.0;
-                    dipole[i] = 0.0;
-                    for (int j = 0; j < 3; j++) {
-                        quadrupole[i][j] = 0.0;
-                    }
-                }
-                if (referenceSites == null || referenceSites.length < 2) {
-                    out[t000] = in[0];
-                    out[t100] = 0.0;
-                    out[t010] = 0.0;
-                    out[t001] = 0.0;
-                    out[t200] = 0.0;
-                    out[t020] = 0.0;
-                    out[t002] = 0.0;
-                    out[t110] = 0.0;
-                    out[t101] = 0.0;
-                    out[t011] = 0.0;
-                    continue;
-                }
-                switch (frame[ii]) {
-                    case BISECTOR:
-                        int index = referenceSites[0];
-                        zAxis[0] = x[index];
-                        zAxis[1] = y[index];
-                        zAxis[2] = z[index];
-                        index = referenceSites[1];
-                        xAxis[0] = x[index];
-                        xAxis[1] = y[index];
-                        xAxis[2] = z[index];
-                        diff(zAxis, localOrigin, zAxis);
-                        norm(zAxis, zAxis);
-                        diff(xAxis, localOrigin, xAxis);
-                        norm(xAxis, xAxis);
-                        sum(xAxis, zAxis, zAxis);
-                        norm(zAxis, zAxis);
-                        rotmat[0][2] = zAxis[0];
-                        rotmat[1][2] = zAxis[1];
-                        rotmat[2][2] = zAxis[2];
-                        double dot = dot(xAxis, zAxis);
-                        scalar(zAxis, dot, zAxis);
-                        diff(xAxis, zAxis, xAxis);
-                        norm(xAxis, xAxis);
-                        rotmat[0][0] = xAxis[0];
-                        rotmat[1][0] = xAxis[1];
-                        rotmat[2][0] = xAxis[2];
-                        break;
-                    case ZTHENBISECTOR:
-                        index = referenceSites[0];
-                        zAxis[0] = x[index];
-                        zAxis[1] = y[index];
-                        zAxis[2] = z[index];
-                        index = referenceSites[1];
-                        xAxis[0] = x[index];
-                        xAxis[1] = y[index];
-                        xAxis[2] = z[index];
-                        index = referenceSites[2];
-                        yAxis[0] = x[index];
-                        yAxis[1] = y[index];
-                        yAxis[2] = z[index];
-                        diff(zAxis, localOrigin, zAxis);
-                        norm(zAxis, zAxis);
-                        rotmat[0][2] = zAxis[0];
-                        rotmat[1][2] = zAxis[1];
-                        rotmat[2][2] = zAxis[2];
-                        diff(xAxis, localOrigin, xAxis);
-                        norm(xAxis, xAxis);
-                        diff(yAxis, localOrigin, yAxis);
-                        norm(yAxis, yAxis);
-                        sum(xAxis, yAxis, xAxis);
-                        norm(xAxis, xAxis);
-                        dot = dot(xAxis, zAxis);
-                        scalar(zAxis, dot, zAxis);
-                        diff(xAxis, zAxis, xAxis);
-                        norm(xAxis, xAxis);
-                        rotmat[0][0] = xAxis[0];
-                        rotmat[1][0] = xAxis[1];
-                        rotmat[2][0] = xAxis[2];
-                        break;
-                    default:
-                    case ZTHENX:
-                        index = referenceSites[0];
-                        zAxis[0] = x[index];
-                        zAxis[1] = y[index];
-                        zAxis[2] = z[index];
-                        index = referenceSites[1];
-                        xAxis[0] = x[index];
-                        xAxis[1] = y[index];
-                        xAxis[2] = z[index];
-                        diff(zAxis, localOrigin, zAxis);
-                        norm(zAxis, zAxis);
-                        rotmat[0][2] = zAxis[0];
-                        rotmat[1][2] = zAxis[1];
-                        rotmat[2][2] = zAxis[2];
-                        diff(xAxis, localOrigin, xAxis);
-                        dot = dot(xAxis, zAxis);
-                        scalar(zAxis, dot, zAxis);
-                        diff(xAxis, zAxis, xAxis);
-                        norm(xAxis, xAxis);
-                        rotmat[0][0] = xAxis[0];
-                        rotmat[1][0] = xAxis[1];
-                        rotmat[2][0] = xAxis[2];
-                }
-                // Finally the Y elements.
-                rotmat[0][1] = rotmat[2][0] * rotmat[1][2] - rotmat[1][0] * rotmat[2][2];
-                rotmat[1][1] = rotmat[0][0] * rotmat[2][2] - rotmat[2][0] * rotmat[0][2];
-                rotmat[2][1] = rotmat[1][0] * rotmat[0][2] - rotmat[0][0] * rotmat[1][2];
-                // Do the rotation.
-                tempDipole[0] = in[t100];
-                tempDipole[1] = in[t010];
-                tempDipole[2] = in[t001];
-                tempQuadrupole[0][0] = in[t200];
-                tempQuadrupole[1][1] = in[t020];
-                tempQuadrupole[2][2] = in[t002];
-                tempQuadrupole[0][1] = in[t110];
-                tempQuadrupole[0][2] = in[t101];
-                tempQuadrupole[1][2] = in[t011];
-                tempQuadrupole[1][0] = in[t110];
-                tempQuadrupole[2][0] = in[t101];
-                tempQuadrupole[2][1] = in[t011];
-                if (frame[ii] == MultipoleType.MultipoleFrameDefinition.ZTHENX
-                        && referenceSites.length == 3) {
-                    localOrigin[0] = x[ii];
-                    localOrigin[1] = y[ii];
-                    localOrigin[2] = z[ii];
-                    int index = referenceSites[0];
-                    zAxis[0] = x[index];
-                    zAxis[1] = y[index];
-                    zAxis[2] = z[index];
-                    index = referenceSites[1];
-                    xAxis[0] = x[index];
-                    xAxis[1] = y[index];
-                    xAxis[2] = z[index];
-                    index = referenceSites[2];
-                    yAxis[0] = x[index];
-                    yAxis[1] = y[index];
-                    yAxis[2] = z[index];
-                    diff(localOrigin, yAxis, localOrigin);
-                    diff(zAxis, yAxis, zAxis);
-                    diff(xAxis, yAxis, xAxis);
-                    double c1 = zAxis[1] * xAxis[2] - zAxis[2] * xAxis[1];
-                    double c2 = xAxis[1] * localOrigin[2] - xAxis[2] * localOrigin[1];
-                    double c3 = localOrigin[1] * zAxis[2] - localOrigin[2] * zAxis[1];
-                    double vol = localOrigin[0] * c1 + zAxis[0] * c2 + xAxis[0] * c3;
-                    if (vol < 0.0) {
-                        tempDipole[1] = -tempDipole[1];
-                        tempQuadrupole[0][1] = -tempQuadrupole[0][1];
-                        tempQuadrupole[1][0] = -tempQuadrupole[1][0];
-                        tempQuadrupole[1][2] = -tempQuadrupole[1][2];
-                        tempQuadrupole[2][1] = -tempQuadrupole[2][1];
-                    }
-                }
-                for (int i = 0; i < 3; i++) {
-                    double[] rotmati = rotmat[i];
-                    double[] quadrupolei = quadrupole[i];
-                    for (int j = 0; j < 3; j++) {
-                        double[] rotmatj = rotmat[j];
-                        dipole[i] += rotmati[j] * tempDipole[j];
-                        if (j < i) {
-                            quadrupolei[j] = quadrupole[j][i];
-                        } else {
-                            for (int k = 0; k < 3; k++) {
-                                double[] localQuadrupolek = tempQuadrupole[k];
-                                quadrupolei[j] += rotmati[k] * (rotmatj[0] * localQuadrupolek[0] + rotmatj[1] * localQuadrupolek[1] + rotmatj[2] * localQuadrupolek[2]);
+    private class RotateMultipolesRegion extends ParallelRegion {
+
+        private final RotateMultipolesLoop rotateMultipolesLoop[];
+
+        public RotateMultipolesRegion(int nt) {
+            rotateMultipolesLoop = new RotateMultipolesLoop[nt];
+            for (int i = 0; i < nt; i++) {
+                rotateMultipolesLoop[i] = new RotateMultipolesLoop();
+            }
+        }
+
+        @Override
+        public void run() {
+            try {
+                execute(0, nAtoms - 1, rotateMultipolesLoop[getThreadIndex()]);
+            } catch (Exception e) {
+                String message = "Fatal exception rotating multipoles in thread " + getThreadIndex() + "\n";
+                logger.log(Level.SEVERE, message, e);
+            }
+        }
+
+        private class RotateMultipolesLoop extends IntegerForLoop {
+            // Local variables
+
+            private final double localOrigin[] = new double[3];
+            private final double xAxis[] = new double[3];
+            private final double yAxis[] = new double[3];
+            private final double zAxis[] = new double[3];
+            private final double rotmat[][] = new double[3][3];
+            private final double tempDipole[] = new double[3];
+            private final double tempQuadrupole[][] = new double[3][3];
+            private final double dipole[] = new double[3];
+            private final double quadrupole[][] = new double[3][3];
+            // Extra padding to avert cache interference.
+            private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
+            private long pad8, pad9, pada, padb, padc, padd, pade, padf;
+
+            @Override
+            public void run(int lb, int ub) {
+                for (int iSymm = 0; iSymm < nSymm; iSymm++) {
+                    final double x[] = coordinates[iSymm][0];
+                    final double y[] = coordinates[iSymm][1];
+                    final double z[] = coordinates[iSymm][2];
+                    for (int ii = lb; ii <= ub; ii++) {
+                        final double in[] = localMultipole[ii];
+                        final double out[] = globalMultipole[iSymm][ii];
+                        localOrigin[0] = x[ii];
+                        localOrigin[1] = y[ii];
+                        localOrigin[2] = z[ii];
+                        int referenceSites[] = axisAtom[ii];
+                        for (int i = 0; i < 3; i++) {
+                            zAxis[i] = 0.0;
+                            xAxis[i] = 0.0;
+                            dipole[i] = 0.0;
+                            for (int j = 0; j < 3; j++) {
+                                quadrupole[i][j] = 0.0;
                             }
                         }
+                        if (referenceSites == null || referenceSites.length < 2) {
+                            out[t000] = in[0];
+                            out[t100] = 0.0;
+                            out[t010] = 0.0;
+                            out[t001] = 0.0;
+                            out[t200] = 0.0;
+                            out[t020] = 0.0;
+                            out[t002] = 0.0;
+                            out[t110] = 0.0;
+                            out[t101] = 0.0;
+                            out[t011] = 0.0;
+                            continue;
+                        }
+                        switch (frame[ii]) {
+                            case BISECTOR:
+                                int index = referenceSites[0];
+                                zAxis[0] = x[index];
+                                zAxis[1] = y[index];
+                                zAxis[2] = z[index];
+                                index = referenceSites[1];
+                                xAxis[0] = x[index];
+                                xAxis[1] = y[index];
+                                xAxis[2] = z[index];
+                                diff(zAxis, localOrigin, zAxis);
+                                norm(zAxis, zAxis);
+                                diff(xAxis, localOrigin, xAxis);
+                                norm(xAxis, xAxis);
+                                sum(xAxis, zAxis, zAxis);
+                                norm(zAxis, zAxis);
+                                rotmat[0][2] = zAxis[0];
+                                rotmat[1][2] = zAxis[1];
+                                rotmat[2][2] = zAxis[2];
+                                double dot = dot(xAxis, zAxis);
+                                scalar(zAxis, dot, zAxis);
+                                diff(xAxis, zAxis, xAxis);
+                                norm(xAxis, xAxis);
+                                rotmat[0][0] = xAxis[0];
+                                rotmat[1][0] = xAxis[1];
+                                rotmat[2][0] = xAxis[2];
+                                break;
+                            case ZTHENBISECTOR:
+                                index = referenceSites[0];
+                                zAxis[0] = x[index];
+                                zAxis[1] = y[index];
+                                zAxis[2] = z[index];
+                                index = referenceSites[1];
+                                xAxis[0] = x[index];
+                                xAxis[1] = y[index];
+                                xAxis[2] = z[index];
+                                index = referenceSites[2];
+                                yAxis[0] = x[index];
+                                yAxis[1] = y[index];
+                                yAxis[2] = z[index];
+                                diff(zAxis, localOrigin, zAxis);
+                                norm(zAxis, zAxis);
+                                rotmat[0][2] = zAxis[0];
+                                rotmat[1][2] = zAxis[1];
+                                rotmat[2][2] = zAxis[2];
+                                diff(xAxis, localOrigin, xAxis);
+                                norm(xAxis, xAxis);
+                                diff(yAxis, localOrigin, yAxis);
+                                norm(yAxis, yAxis);
+                                sum(xAxis, yAxis, xAxis);
+                                norm(xAxis, xAxis);
+                                dot = dot(xAxis, zAxis);
+                                scalar(zAxis, dot, zAxis);
+                                diff(xAxis, zAxis, xAxis);
+                                norm(xAxis, xAxis);
+                                rotmat[0][0] = xAxis[0];
+                                rotmat[1][0] = xAxis[1];
+                                rotmat[2][0] = xAxis[2];
+                                break;
+                            default:
+                            case ZTHENX:
+                                index = referenceSites[0];
+                                zAxis[0] = x[index];
+                                zAxis[1] = y[index];
+                                zAxis[2] = z[index];
+                                index = referenceSites[1];
+                                xAxis[0] = x[index];
+                                xAxis[1] = y[index];
+                                xAxis[2] = z[index];
+                                diff(zAxis, localOrigin, zAxis);
+                                norm(zAxis, zAxis);
+                                rotmat[0][2] = zAxis[0];
+                                rotmat[1][2] = zAxis[1];
+                                rotmat[2][2] = zAxis[2];
+                                diff(xAxis, localOrigin, xAxis);
+                                dot = dot(xAxis, zAxis);
+                                scalar(zAxis, dot, zAxis);
+                                diff(xAxis, zAxis, xAxis);
+                                norm(xAxis, xAxis);
+                                rotmat[0][0] = xAxis[0];
+                                rotmat[1][0] = xAxis[1];
+                                rotmat[2][0] = xAxis[2];
+                        }
+                        // Finally the Y elements.
+                        rotmat[0][1] = rotmat[2][0] * rotmat[1][2] - rotmat[1][0] * rotmat[2][2];
+                        rotmat[1][1] = rotmat[0][0] * rotmat[2][2] - rotmat[2][0] * rotmat[0][2];
+                        rotmat[2][1] = rotmat[1][0] * rotmat[0][2] - rotmat[0][0] * rotmat[1][2];
+                        // Do the rotation.
+                        tempDipole[0] = in[t100];
+                        tempDipole[1] = in[t010];
+                        tempDipole[2] = in[t001];
+                        tempQuadrupole[0][0] = in[t200];
+                        tempQuadrupole[1][1] = in[t020];
+                        tempQuadrupole[2][2] = in[t002];
+                        tempQuadrupole[0][1] = in[t110];
+                        tempQuadrupole[0][2] = in[t101];
+                        tempQuadrupole[1][2] = in[t011];
+                        tempQuadrupole[1][0] = in[t110];
+                        tempQuadrupole[2][0] = in[t101];
+                        tempQuadrupole[2][1] = in[t011];
+                        if (frame[ii] == MultipoleType.MultipoleFrameDefinition.ZTHENX
+                            && referenceSites.length == 3) {
+                            localOrigin[0] = x[ii];
+                            localOrigin[1] = y[ii];
+                            localOrigin[2] = z[ii];
+                            int index = referenceSites[0];
+                            zAxis[0] = x[index];
+                            zAxis[1] = y[index];
+                            zAxis[2] = z[index];
+                            index = referenceSites[1];
+                            xAxis[0] = x[index];
+                            xAxis[1] = y[index];
+                            xAxis[2] = z[index];
+                            index = referenceSites[2];
+                            yAxis[0] = x[index];
+                            yAxis[1] = y[index];
+                            yAxis[2] = z[index];
+                            diff(localOrigin, yAxis, localOrigin);
+                            diff(zAxis, yAxis, zAxis);
+                            diff(xAxis, yAxis, xAxis);
+                            double c1 = zAxis[1] * xAxis[2] - zAxis[2] * xAxis[1];
+                            double c2 = xAxis[1] * localOrigin[2] - xAxis[2] * localOrigin[1];
+                            double c3 = localOrigin[1] * zAxis[2] - localOrigin[2] * zAxis[1];
+                            double vol = localOrigin[0] * c1 + zAxis[0] * c2 + xAxis[0] * c3;
+                            if (vol < 0.0) {
+                                tempDipole[1] = -tempDipole[1];
+                                tempQuadrupole[0][1] = -tempQuadrupole[0][1];
+                                tempQuadrupole[1][0] = -tempQuadrupole[1][0];
+                                tempQuadrupole[1][2] = -tempQuadrupole[1][2];
+                                tempQuadrupole[2][1] = -tempQuadrupole[2][1];
+                            }
+                        }
+                        for (int i = 0; i < 3; i++) {
+                            double[] rotmati = rotmat[i];
+                            double[] quadrupolei = quadrupole[i];
+                            for (int j = 0; j < 3; j++) {
+                                double[] rotmatj = rotmat[j];
+                                dipole[i] += rotmati[j] * tempDipole[j];
+                                if (j < i) {
+                                    quadrupolei[j] = quadrupole[j][i];
+                                } else {
+                                    for (int k = 0; k < 3; k++) {
+                                        double[] localQuadrupolek = tempQuadrupole[k];
+                                        quadrupolei[j] += rotmati[k] * (rotmatj[0] * localQuadrupolek[0] + rotmatj[1] * localQuadrupolek[1] + rotmatj[2] * localQuadrupolek[2]);
+                                    }
+                                }
+                            }
+                        }
+                        double scale = 1.0;
+                        Atom a = atoms[ii];
+                        if (a.applyLambda()) {
+                            scale = lambda;
+                        }
+                        out[t000] = scale * in[0];
+                        out[t100] = scale * dipole[0];
+                        out[t010] = scale * dipole[1];
+                        out[t001] = scale * dipole[2];
+                        out[t200] = scale * quadrupole[0][0];
+                        out[t020] = scale * quadrupole[1][1];
+                        out[t002] = scale * quadrupole[2][2];
+                        out[t110] = scale * quadrupole[0][1];
+                        out[t101] = scale * quadrupole[0][2];
+                        out[t011] = scale * quadrupole[1][2];
+                        PolarizeType polarizeType = a.getPolarizeType();
+                        polarizability[ii] = scale * polarizeType.polarizability;
                     }
-                }
-                out[t000] = in[0];
-                out[t100] = dipole[0];
-                out[t010] = dipole[1];
-                out[t001] = dipole[2];
-                out[t200] = quadrupole[0][0];
-                out[t020] = quadrupole[1][1];
-                out[t002] = quadrupole[2][2];
-                out[t110] = quadrupole[0][1];
-                out[t101] = quadrupole[0][2];
-                out[t011] = quadrupole[1][2];
-            }
-            for (int ii = 0; ii < nAtoms; ii++) {
-                Atom a = atoms[ii];
-                if (a.applyLambda()) {
-                    final double out[] = globalMultipole[iSymm][ii];
-                    out[t000] *= lambda;
-                    out[t100] *= lambda;
-                    out[t010] *= lambda;
-                    out[t001] *= lambda;
-                    out[t200] *= lambda;
-                    out[t020] *= lambda;
-                    out[t002] *= lambda;
-                    out[t110] *= lambda;
-                    out[t101] *= lambda;
-                    out[t011] *= lambda;
-                    PolarizeType polarizeType = a.getPolarizeType();
-                    polarizability[ii] = lambda * polarizeType.polarizability;
                 }
             }
         }
     }
 
-    private void torque(int i, double trq[]) {
-        int ax[] = axisAtom[i];
-        if (ax == null || ax.length < 2) {
-            return;
-        }
-        int ia = ax[0];
-        int ib = i;
-        int ic = ax[1];
-        int id = 0;
+    private class ExpandInducedDipolesRegion extends ParallelRegion {
 
-        double x[] = coordinates[0][0];
-        double y[] = coordinates[0][1];
-        double z[] = coordinates[0][2];
-        localOrigin[0] = x[ib];
-        localOrigin[1] = y[ib];
-        localOrigin[2] = z[ib];
-        u[0] = x[ia];
-        u[1] = y[ia];
-        u[2] = z[ia];
-        v[0] = x[ic];
-        v[1] = y[ic];
-        v[2] = z[ic];
-        // Construct the three rotation axes for the local frame
-        diff(u, localOrigin, u);
-        diff(v, localOrigin, v);
-        switch (frame[i]) {
-            default:
-            case ZTHENX:
-            case BISECTOR:
-                cross(u, v, w);
-                break;
-            case TRISECTOR:
-            case ZTHENBISECTOR:
-                id = ax[2];
-                w[0] = x[id];
-                w[1] = y[id];
-                w[2] = z[id];
-                diff(w, localOrigin, w);
+        private final ExpandInducedDipoleLoop expandInducedDipoleLoop[];
+
+        public ExpandInducedDipolesRegion(int maxThreads) {
+            expandInducedDipoleLoop = new ExpandInducedDipoleLoop[maxThreads];
+            for (int i = 0; i < maxThreads; i++) {
+                expandInducedDipoleLoop[i] = new ExpandInducedDipoleLoop();
+            }
         }
 
-        double ru = r(u);
-        double rv = r(v);
-        double rw = r(w);
-        scalar(u, 1.0 / ru, u);
-        scalar(v, 1.0 / rv, v);
-        scalar(w, 1.0 / rw, w);
-        // Find the perpendicular and angle for each pair of axes.
-        cross(v, u, uv);
-        cross(w, u, uw);
-        cross(w, v, vw);
-        double ruv = r(uv);
-        double ruw = r(uw);
-        double rvw = r(vw);
-        scalar(uv, 1.0 / ruv, uv);
-        scalar(uw, 1.0 / ruw, uw);
-        scalar(vw, 1.0 / rvw, vw);
-        // Compute the sine of the angle between the rotation axes.
-        double uvcos = dot(u, v);
-        double uvsin = sqrt(1.0 - uvcos * uvcos);
-        //double uwcos = dot(u, w);
-        //double uwsin = sqrt(1.0 - uwcos * uwcos);
-        //double vwcos = dot(v, w);
-        //double vwsin = sqrt(1.0 - vwcos * vwcos);
+        @Override
+        public void run() {
+            try {
+                execute(0, nAtoms - 1, expandInducedDipoleLoop[getThreadIndex()]);
+            } catch (Exception e) {
+                String message = "Fatal exception expanding coordinates in thread: " + getThreadIndex() + "\n";
+                logger.log(Level.SEVERE, message, e);
+            }
+        }
+
+        private class ExpandInducedDipoleLoop extends IntegerForLoop {
+
+            // Temporary work arrays.
+            private final double tempInducedDipole[] = new double[3];
+            private final double tempInducedDipolep[] = new double[3];
+            private final double induced[] = new double[3];
+            private final double inducedp[] = new double[3];
+            // Extra padding to avert cache interference.
+            private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
+            private long pad8, pad9, pada, padb, padc, padd, pade, padf;
+
+            @Override
+            public IntegerSchedule schedule() {
+                return pairWiseSchedule;
+            }
+
+            @Override
+            public void run(int lb, int ub) {
+                for (int s = 1; s < nSymm; s++) {
+                    SymOp symOp = crystal.spaceGroup.symOps.get(s);
+                    double rot[][] = symOp.rot;
+                    for (int ii = lb; ii <= ub; ii++) {
+                        induced[0] = 0.0;
+                        induced[1] = 0.0;
+                        induced[2] = 0.0;
+                        inducedp[0] = 0.0;
+                        inducedp[1] = 0.0;
+                        inducedp[2] = 0.0;
+                        double in[] = inducedDipole[0][ii];
+                        tempInducedDipole[0] = in[0];
+                        tempInducedDipole[1] = in[1];
+                        tempInducedDipole[2] = in[2];
+                        in = inducedDipolep[0][ii];
+                        tempInducedDipolep[0] = in[0];
+                        tempInducedDipolep[1] = in[1];
+                        tempInducedDipolep[2] = in[2];
+                        for (int i = 0; i < 3; i++) {
+                            double[] rotmati = rot[i];
+                            for (int j = 0; j < 3; j++) {
+                                induced[i] += rotmati[j] * tempInducedDipole[j];
+                                inducedp[i] += rotmati[j] * tempInducedDipolep[j];
+                            }
+                        }
+                        double[] out = inducedDipole[s][ii];
+                        out[0] = induced[0];
+                        out[1] = induced[1];
+                        out[2] = induced[2];
+                        out = inducedDipolep[s][ii];
+                        out[0] = inducedp[0];
+                        out[1] = inducedp[1];
+                        out[2] = inducedp[2];
+                    }
+                }
+            }
+        }
+    }
+
+    private class TorqueRegion extends ParallelRegion {
+
+        private final TorqueLoop torqueLoop[];
+
+        public TorqueRegion(int maxThreads) {
+            torqueLoop = new TorqueLoop[maxThreads];
+            for (int i = 0; i < maxThreads; i++) {
+                torqueLoop[i] = new TorqueLoop();
+            }
+        }
+
+        @Override
+        public void run() {
+            try {
+                execute(0, nAtoms - 1, torqueLoop[getThreadIndex()]);
+            } catch (Exception e) {
+                String message = "Fatal exception computing torque in thread " + getThreadIndex() + "\n";
+                logger.log(Level.SEVERE, message, e);
+            }
+        }
+
+        private class TorqueLoop extends IntegerForLoop {
+
+            private final double trq[] = new double[3];
+            private final double u[] = new double[3];
+            private final double v[] = new double[3];
+            private final double w[] = new double[3];
+            private final double r[] = new double[3];
+            private final double s[] = new double[3];
+            private final double uv[] = new double[3];
+            private final double uw[] = new double[3];
+            private final double vw[] = new double[3];
+            private final double ur[] = new double[3];
+            private final double us[] = new double[3];
+            private final double vs[] = new double[3];
+            private final double ws[] = new double[3];
+            private final double t1[] = new double[3];
+            private final double t2[] = new double[3];
+            private final double localOrigin[] = new double[3];
+            // Extra padding to avert cache interference.
+            private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
+            private long pad8, pad9, pada, padb, padc, padd, pade, padf;
+
+            @Override
+            public void run(int lb, int ub) {
+                for (int i = lb; i <= ub; i++) {
+                    int ax[] = axisAtom[i];
+                    if (ax == null || ax.length < 2) {
+                        return;
+                    }
+                    int ia = ax[0];
+                    int ib = i;
+                    int ic = ax[1];
+                    int id = 0;
+
+                    trq[0] = sharedTorque[0].get(i);
+                    trq[1] = sharedTorque[1].get(i);
+                    trq[2] = sharedTorque[2].get(i);
+                    double x[] = coordinates[0][0];
+                    double y[] = coordinates[0][1];
+                    double z[] = coordinates[0][2];
+                    localOrigin[0] = x[ib];
+                    localOrigin[1] = y[ib];
+                    localOrigin[2] = z[ib];
+                    u[0] = x[ia];
+                    u[1] = y[ia];
+                    u[2] = z[ia];
+                    v[0] = x[ic];
+                    v[1] = y[ic];
+                    v[2] = z[ic];
+                    // Construct the three rotation axes for the local frame
+                    diff(u, localOrigin, u);
+                    diff(v, localOrigin, v);
+                    switch (frame[i]) {
+                        default:
+                        case ZTHENX:
+                        case BISECTOR:
+                            cross(u, v, w);
+                            break;
+                        case TRISECTOR:
+                        case ZTHENBISECTOR:
+                            id = ax[2];
+                            w[0] = x[id];
+                            w[1] = y[id];
+                            w[2] = z[id];
+                            diff(w, localOrigin, w);
+                    }
+
+                    double ru = r(u);
+                    double rv = r(v);
+                    double rw = r(w);
+                    scalar(u, 1.0 / ru, u);
+                    scalar(v, 1.0 / rv, v);
+                    scalar(w, 1.0 / rw, w);
+                    // Find the perpendicular and angle for each pair of axes.
+                    cross(v, u, uv);
+                    cross(w, u, uw);
+                    cross(w, v, vw);
+                    double ruv = r(uv);
+                    double ruw = r(uw);
+                    double rvw = r(vw);
+                    scalar(uv, 1.0 / ruv, uv);
+                    scalar(uw, 1.0 / ruw, uw);
+                    scalar(vw, 1.0 / rvw, vw);
+                    // Compute the sine of the angle between the rotation axes.
+                    double uvcos = dot(u, v);
+                    double uvsin = sqrt(1.0 - uvcos * uvcos);
+                    //double uwcos = dot(u, w);
+                    //double uwsin = sqrt(1.0 - uwcos * uwcos);
+                    //double vwcos = dot(v, w);
+                    //double vwsin = sqrt(1.0 - vwcos * vwcos);
         /*
-         * Negative of dot product of torque with unit vectors gives result of
-         * infinitesimal rotation along these vectors.
-         */
-        double dphidu = -(trq[0] * u[0] + trq[1] * u[1] + trq[2] * u[2]);
-        double dphidv = -(trq[0] * v[0] + trq[1] * v[1] + trq[2] * v[2]);
-        double dphidw = -(trq[0] * w[0] + trq[1] * w[1] + trq[2] * w[2]);
-        switch (frame[i]) {
-            case ZTHENBISECTOR:
-                // Build some additional axes needed for the Z-then-Bisector method
-                sum(v, w, r);
-                cross(u, r, s);
-                double rr = r(r);
-                double rs = r(s);
-                scalar(r, 1.0 / rr, r);
-                scalar(s, 1.0 / rs, s);
-                // Find the perpendicular and angle for each pair of axes.
-                cross(r, u, ur);
-                cross(s, u, us);
-                cross(s, v, vs);
-                cross(s, w, ws);
-                double rur = r(ur);
-                double rus = r(us);
-                double rvs = r(vs);
-                double rws = r(ws);
-                scalar(ur, 1.0 / rur, ur);
-                scalar(us, 1.0 / rus, us);
-                scalar(vs, 1.0 / rvs, vs);
-                scalar(ws, 1.0 / rws, ws);
-                // Compute the sine of the angle between the rotation axes
-                double urcos = dot(u, r);
-                double ursin = sqrt(1.0 - urcos * urcos);
-                //double uscos = dot(u, s);
-                //double ussin = sqrt(1.0 - uscos * uscos);
-                double vscos = dot(v, s);
-                double vssin = sqrt(1.0 - vscos * vscos);
-                double wscos = dot(w, s);
-                double wssin = sqrt(1.0 - wscos * wscos);
-                // Compute the projection of v and w onto the ru-plane
-                scalar(s, -vscos, t1);
-                scalar(s, -wscos, t2);
-                sum(v, t1, t1);
-                sum(w, t2, t2);
-                double rt1 = r(t1);
-                double rt2 = r(t2);
-                scalar(t1, 1.0 / rt1, t1);
-                scalar(t2, 1.0 / rt2, t2);
-                double ut1cos = dot(u, t1);
-                double ut1sin = sqrt(1.0 - ut1cos * ut1cos);
-                double ut2cos = dot(u, t2);
-                double ut2sin = sqrt(1.0 - ut2cos * ut2cos);
-                double dphidr = -(trq[0] * r[0] + trq[1] * r[1] + trq[2] * r[2]);
-                double dphids = -(trq[0] * s[0] + trq[1] * s[1] + trq[2] * s[2]);
-                for (int j = 0; j < 3; j++) {
-                    double du = ur[j] * dphidr / (ru * ursin) + us[j] * dphids / ru;
-                    double dv = (vssin * s[j] - vscos * t1[j]) * dphidu / (rv * (ut1sin + ut2sin));
-                    double dw = (wssin * s[j] - wscos * t2[j]) * dphidu / (rw * (ut1sin + ut2sin));
-                    sharedGrad[j].addAndGet(ia, du);
-                    sharedGrad[j].addAndGet(ic, dv);
-                    sharedGrad[j].addAndGet(id, dw);
-                    sharedGrad[j].addAndGet(ib, -du - dv - dw);
+                     * Negative of dot product of torque with unit vectors gives result of
+                     * infinitesimal rotation along these vectors.
+                     */
+                    double dphidu = -(trq[0] * u[0] + trq[1] * u[1] + trq[2] * u[2]);
+                    double dphidv = -(trq[0] * v[0] + trq[1] * v[1] + trq[2] * v[2]);
+                    double dphidw = -(trq[0] * w[0] + trq[1] * w[1] + trq[2] * w[2]);
+                    switch (frame[i]) {
+                        case ZTHENBISECTOR:
+                            // Build some additional axes needed for the Z-then-Bisector method
+                            sum(v, w, r);
+                            cross(u, r, s);
+                            double rr = r(r);
+                            double rs = r(s);
+                            scalar(r, 1.0 / rr, r);
+                            scalar(s, 1.0 / rs, s);
+                            // Find the perpendicular and angle for each pair of axes.
+                            cross(r, u, ur);
+                            cross(s, u, us);
+                            cross(s, v, vs);
+                            cross(s, w, ws);
+                            double rur = r(ur);
+                            double rus = r(us);
+                            double rvs = r(vs);
+                            double rws = r(ws);
+                            scalar(ur, 1.0 / rur, ur);
+                            scalar(us, 1.0 / rus, us);
+                            scalar(vs, 1.0 / rvs, vs);
+                            scalar(ws, 1.0 / rws, ws);
+                            // Compute the sine of the angle between the rotation axes
+                            double urcos = dot(u, r);
+                            double ursin = sqrt(1.0 - urcos * urcos);
+                            //double uscos = dot(u, s);
+                            //double ussin = sqrt(1.0 - uscos * uscos);
+                            double vscos = dot(v, s);
+                            double vssin = sqrt(1.0 - vscos * vscos);
+                            double wscos = dot(w, s);
+                            double wssin = sqrt(1.0 - wscos * wscos);
+                            // Compute the projection of v and w onto the ru-plane
+                            scalar(s, -vscos, t1);
+                            scalar(s, -wscos, t2);
+                            sum(v, t1, t1);
+                            sum(w, t2, t2);
+                            double rt1 = r(t1);
+                            double rt2 = r(t2);
+                            scalar(t1, 1.0 / rt1, t1);
+                            scalar(t2, 1.0 / rt2, t2);
+                            double ut1cos = dot(u, t1);
+                            double ut1sin = sqrt(1.0 - ut1cos * ut1cos);
+                            double ut2cos = dot(u, t2);
+                            double ut2sin = sqrt(1.0 - ut2cos * ut2cos);
+                            double dphidr = -(trq[0] * r[0] + trq[1] * r[1] + trq[2] * r[2]);
+                            double dphids = -(trq[0] * s[0] + trq[1] * s[1] + trq[2] * s[2]);
+                            for (int j = 0; j < 3; j++) {
+                                double du = ur[j] * dphidr / (ru * ursin) + us[j] * dphids / ru;
+                                double dv = (vssin * s[j] - vscos * t1[j]) * dphidu / (rv * (ut1sin + ut2sin));
+                                double dw = (wssin * s[j] - wscos * t2[j]) * dphidu / (rw * (ut1sin + ut2sin));
+                                sharedGrad[j].addAndGet(ia, du);
+                                sharedGrad[j].addAndGet(ic, dv);
+                                sharedGrad[j].addAndGet(id, dw);
+                                sharedGrad[j].addAndGet(ib, -du - dv - dw);
+                            }
+                            break;
+                        case ZTHENX:
+                            for (int j = 0; j < 3; j++) {
+                                double du = uv[j] * dphidv / (ru * uvsin) + uw[j] * dphidw / ru;
+                                double dv = -uv[j] * dphidu / (rv * uvsin);
+                                sharedGrad[j].addAndGet(ia, du);
+                                sharedGrad[j].addAndGet(ic, dv);
+                                sharedGrad[j].addAndGet(ib, -du - dv);
+                            }
+                            break;
+                        case BISECTOR:
+                            for (int j = 0; j < 3; j++) {
+                                double du = uv[j] * dphidv / (ru * uvsin) + 0.5 * uw[j] * dphidw / ru;
+                                double dv = -uv[j] * dphidu / (rv * uvsin) + 0.5 * vw[j] * dphidw / rv;
+                                sharedGrad[j].addAndGet(ia, du);
+                                sharedGrad[j].addAndGet(ic, dv);
+                                sharedGrad[j].addAndGet(ib, -du - dv);
+                            }
+                            break;
+                        default:
+                            String message = "Fatal exception: Unknown frame definition: " + frame[i] + "\n";
+                            logger.log(Level.SEVERE, message);
+                    }
                 }
-                break;
-            case ZTHENX:
-                for (int j = 0; j < 3; j++) {
-                    double du = uv[j] * dphidv / (ru * uvsin) + uw[j] * dphidw / ru;
-                    double dv = -uv[j] * dphidu / (rv * uvsin);
-                    sharedGrad[j].addAndGet(ia, du);
-                    sharedGrad[j].addAndGet(ic, dv);
-                    sharedGrad[j].addAndGet(ib, -du - dv);
-                }
-                break;
-            case BISECTOR:
-                for (int j = 0; j < 3; j++) {
-                    double du = uv[j] * dphidv / (ru * uvsin) + 0.5 * uw[j] * dphidw / ru;
-                    double dv = -uv[j] * dphidu / (rv * uvsin) + 0.5 * vw[j] * dphidw / rv;
-                    sharedGrad[j].addAndGet(ia, du);
-                    sharedGrad[j].addAndGet(ic, dv);
-                    sharedGrad[j].addAndGet(ib, -du - dv);
-                }
-                break;
-            default:
-                String message = "Fatal exception: Unknown frame definition: " + frame[i] + "\n";
-                logger.log(Level.SEVERE, message);
+            }
         }
     }
 
@@ -3566,7 +3750,7 @@ public class ParticleMeshEwald implements LambdaInterface {
             if (!assignMultipole(i)) {
                 Atom atom = atoms[i];
                 String message = "Fatal exception: No multipole could be assigned to atom:\n"
-                        + atom + "\nof type:\n" + atom.getAtomType();
+                                 + atom + "\nof type:\n" + atom.getAtomType();
                 logger.log(Level.SEVERE, message);
                 System.exit(-1);
             }
@@ -3873,7 +4057,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                 //System.out.println(String.format("%d %d", index + 1, g11));
             } else {
                 String message = "The polarize keyword was not found for atom "
-                        + (index + 1) + " with type " + ai.getType();
+                                 + (index + 1) + " with type " + ai.getType();
                 logger.severe(message);
                 System.exit(-1);
             }
@@ -3964,7 +4148,7 @@ public class ParticleMeshEwald implements LambdaInterface {
      *            group.
      */
     private void growGroup(Vector<Integer> polarizationGroup,
-            Vector<Integer> group, Atom seed) {
+                           Vector<Integer> group, Atom seed) {
         ArrayList<Bond> bonds = seed.getBonds();
         for (Bond bi : bonds) {
             Atom aj = bi.get1_2(seed);
@@ -3991,74 +4175,10 @@ public class ParticleMeshEwald implements LambdaInterface {
             }
         }
     }
-    private static double toSeconds = 0.000000001;
-    /**
-     * Conversion from electron^2/Ang to Kcal/mole
-     */
-    private static final double electric = 332.063709;
-    /**
-     * The sqrt of PI.
-     */
-    private static final double sqrtPi = sqrt(Math.PI);
-    // Strict TINKER
-    //private static final double sqrtPi = 1.772453850905516027;
     /**
      * Number of unique tensors for given order.
      */
     private static final int tensorCount = TensorRecursion.tensorCount(3);
-    /**
-     * Indices into a 1D tensor array based on compressed tensor notation. This
-     * makes multipole code much easier to read.
-     */
-    private static final int t000 = 0;
-    private static final int t100 = 1;
-    private static final int t010 = 2;
-    private static final int t001 = 3;
-    private static final int t200 = 4;
-    private static final int t020 = 5;
-    private static final int t002 = 6;
-    private static final int t110 = 7;
-    private static final int t101 = 8;
-    private static final int t011 = 9;
-    private static final int t300 = 10;
-    private static final int t030 = 11;
-    private static final int t003 = 12;
-    private static final int t210 = 13;
-    private static final int t201 = 14;
-    private static final int t120 = 15;
-    private static final int t021 = 16;
-    private static final int t102 = 17;
-    private static final int t012 = 18;
-    private static final int t111 = 19;
-    // Temporary work arrays.
-    private final double localOrigin[] = new double[3];
-    private final double xAxis[] = new double[3];
-    private final double yAxis[] = new double[3];
-    private final double zAxis[] = new double[3];
-    private final double rotmat[][] = new double[3][3];
-    private final double tempDipole[] = new double[3];
-    private final double tempInducedDipole[] = new double[3];
-    private final double tempInducedDipolep[] = new double[3];
-    private final double tempQuadrupole[][] = new double[3][3];
-    private final double dipole[] = new double[3];
-    private final double quadrupole[][] = new double[3][3];
-    private final double induced[] = new double[3];
-    private final double inducedp[] = new double[3];
     private final double sfPhi[] = new double[tensorCount];
     private final double sPhi[] = new double[tensorCount];
-    private final double trq[] = new double[3];
-    private final double u[] = new double[3];
-    private final double v[] = new double[3];
-    private final double w[] = new double[3];
-    private final double r[] = new double[3];
-    private final double s[] = new double[3];
-    private final double uv[] = new double[3];
-    private final double uw[] = new double[3];
-    private final double vw[] = new double[3];
-    private final double ur[] = new double[3];
-    private final double us[] = new double[3];
-    private final double vs[] = new double[3];
-    private final double ws[] = new double[3];
-    private final double t1[] = new double[3];
-    private final double t2[] = new double[3];
 }

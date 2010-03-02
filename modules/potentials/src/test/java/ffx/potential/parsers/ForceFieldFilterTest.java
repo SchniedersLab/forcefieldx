@@ -29,7 +29,7 @@ public class ForceFieldFilterTest {
     @Test
     public void testParse() {
         CompositeConfiguration properties = Keyword.loadProperties(null);
-        ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties, null);
+        ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties);
         ForceField forceField = forceFieldFilter.parse();
     }
 }

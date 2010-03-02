@@ -1015,7 +1015,6 @@ public final class MainPanel extends JPanel implements ActionListener,
 
         // Get "filename" from "filename.extension".
         String name = file.getName();
-        String fileName = FilenameUtils.getBaseName(name);
         String extension = FilenameUtils.getExtension(name);
 
         /**
@@ -1025,11 +1024,10 @@ public final class MainPanel extends JPanel implements ActionListener,
             ModelingShell shell = getModelingShell();
             if (java.awt.GraphicsEnvironment.isHeadless()) {
                 shell.headlessRun(file);
-                return null;
+                exit();
             } else {
                 shell.loadScriptFile(file);
                 shell.runScript();
-                return null;
             }
         }
 
@@ -1055,7 +1053,7 @@ public final class MainPanel extends JPanel implements ActionListener,
             systemFilter = new PDBFilter(newSystem);
         }
 
-        forceFieldFilter = new ForceFieldFilter(properties, null);
+        forceFieldFilter = new ForceFieldFilter(properties);
         ForceField forceField = forceFieldFilter.parse();
         newSystem.setForceField(forceField);
         systemFilter.setForceField(forceField);
@@ -1132,7 +1130,7 @@ public final class MainPanel extends JPanel implements ActionListener,
             String path = getPWD().getAbsolutePath();
             File pdbFile = new File(path + File.separatorChar + fileName);
             CompositeConfiguration properties = Keyword.loadProperties(pdbFile);
-            forceFieldFilter = new ForceFieldFilter(properties, null);
+            forceFieldFilter = new ForceFieldFilter(properties);
             ForceField forceField = forceFieldFilter.parse();
             FFXSystem newSystem = new FFXSystem(pdbFile, "PDB", properties);
             newSystem.setForceField(forceField);

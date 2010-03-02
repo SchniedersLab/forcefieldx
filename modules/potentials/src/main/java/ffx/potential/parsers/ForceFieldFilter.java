@@ -80,10 +80,28 @@ public class ForceFieldFilter {
     /**
      * ForceFieldFilter Constructor.
      */
+    /*
     public ForceFieldFilter(CompositeConfiguration properties, File forceFieldFile) {
         forceField = new ForceField(properties, forceFieldFile);
         this.properties = properties;
         this.forceFieldFile = forceFieldFile;
+    } */
+
+    public ForceFieldFilter(CompositeConfiguration properties) {
+        this.properties = properties;
+        if (properties.containsKey("parameters")) {
+            String fileName = properties.getString("parameters");
+            if (properties.containsKey("propertyFile")) {
+                String propertyName = properties.getString("propertyFile");
+                File propertyFile = new File(propertyName);
+                forceFieldFile = parseParameterLocation(fileName, propertyFile);
+            } else {
+                forceFieldFile = parseParameterLocation(fileName, null);
+            }
+        } else {
+            forceFieldFile = null;
+        }
+        forceField = new ForceField(properties, forceFieldFile);
     }
 
     public static File parseParameterLocation(String parameterLocation, File keyFile) {
@@ -113,6 +131,27 @@ public class ForceFieldFilter {
             if (forceFieldFile != null && forceFieldFile.exists()
                     && forceFieldFile.canRead()) {
                 parse(new FileInputStream(forceFieldFile));
+            /**
+             * Parse an internal parameter file and add it to the
+             * composite configuration.
+             */
+            } else {
+                String forceFieldString = properties.getString("forcefield", "AMOEBA-BIO-2009");
+                Force_Field ff = null;
+                try {
+                    ff = ForceField.Force_Field.valueOf(forceFieldString.toUpperCase().replace('-', '_'));
+                } catch (Exception e) {
+                    ff = ForceField.Force_Field.AMOEBA_BIO_2009;
+                }
+                URL url = ForceField.getForceFieldURL(ff);
+                if (url != null) {
+                    try {
+                        PropertiesConfiguration config = new PropertiesConfiguration(url);
+                        properties.addConfiguration(config);
+                    } catch (Exception e) {
+                        logger.warning(e.toString());
+                    }
+                }
             }
             /**
              * Overwrite parameters of the forceFieldFile with those from the
@@ -130,28 +169,6 @@ public class ForceFieldFilter {
     }
 
     private void parse(CompositeConfiguration properties) {
-        if (forceFieldFile == null) {
-            /**
-             * If the "forcefield" property exists, add a Configuration for it.
-             */
-            String forceFieldString = properties.getString("forcefield", "AMOEBA-BIO-2009");
-            Force_Field ff = null;
-            try {
-                ff = ForceField.Force_Field.valueOf(forceFieldString.toUpperCase().replace('-', '_'));
-            } catch (Exception e) {
-                ff = ForceField.Force_Field.AMOEBA_BIO_2009;
-            }
-
-            URL url = ForceField.getForceFieldURL(ff);
-            if (url != null) {
-                try {
-                    PropertiesConfiguration config = new PropertiesConfiguration(url);
-                    properties.addConfiguration(config);
-                } catch (Exception e) {
-                    logger.warning(e.toString());
-                }
-            }
-        }
         try {
             int numConfigs = properties.getNumberOfConfigurations();
             /**
@@ -888,9 +905,12 @@ public class ForceFieldFilter {
             System.out.println("Usage: ForceFieldFilter <file.prm>");
             System.exit(-1);
         }
-        File ff = new File(args[0]);
-        ForceFieldFilter forceFieldFilter = new ForceFieldFilter(Keyword.loadProperties(null), ff);
+        CompositeConfiguration properties = Keyword.loadProperties(null);
+        properties.setProperty("parameters", args[0]);
+        ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties);
         ForceField forceField = forceFieldFilter.parse();
-        forceField.print();
+        if (forceField != null) {
+            forceField.print();
+        }
     }
 }

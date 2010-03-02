@@ -93,7 +93,7 @@ public class Complex3DParallel {
         convolution = new Convolution();
     }
 
-        /**
+    /**
      * Initialize the 3D FFT for complex 3D matrix.
      *
      * @param nX
@@ -110,7 +110,7 @@ public class Complex3DParallel {
      * @since 1.0
      */
     public Complex3DParallel(int nX, int nY, int nZ, ParallelTeam parallelTeam,
-            IntegerSchedule integerSchedule) {
+                             IntegerSchedule integerSchedule) {
         this.nX = nX;
         this.nY = nY;
         this.nZ = nZ;
@@ -423,7 +423,6 @@ public class Complex3DParallel {
         private class FFTXYLoop extends IntegerForLoop {
 
             public double input[];
-            private int x, y, z, offset, stride;
             private final Complex fftX = new Complex(nX);
             private final Complex fftY = new Complex(nY);
 
@@ -434,6 +433,7 @@ public class Complex3DParallel {
 
             @Override
             public void run(final int lb, final int ub) {
+                int x, y, z, offset, stride;
                 for (z = lb; z <= ub; z++) {
                     for (offset = z * nextZ, stride = nextX, y = 0; y < nY; y++, offset += nextY) {
                         fftX.fft(input, offset, stride);
@@ -449,7 +449,6 @@ public class Complex3DParallel {
 
             public double input[];
             private double work[] = new double[nZ2];
-            private int i, j, x, y, z, offset;
             private final Complex fft = new Complex(nZ);
 
             @Override
@@ -459,6 +458,7 @@ public class Complex3DParallel {
 
             @Override
             public void run(final int lb, final int ub) {
+                int i, x, y, z, offset;
                 int index = nX * nZ * lb;
                 for (offset = lb * nextY, y = lb; y <= ub; y++) {
                     for (x = 0; x < nX; x++, offset += 2) {
@@ -485,7 +485,6 @@ public class Complex3DParallel {
         private class IFFTXYLoop extends IntegerForLoop {
 
             public double input[];
-            private int x, y, z, offset, stride;
             private final Complex fftY = new Complex(nY);
             private final Complex fftX = new Complex(nX);
 
@@ -496,6 +495,7 @@ public class Complex3DParallel {
 
             @Override
             public void run(final int lb, final int ub) {
+                int x, y, z, offset, stride;
                 for (z = lb; z <= ub; z++) {
                     for (offset = z * nextZ, stride = nextY, x = 0; x < nX; x++, offset += nextX) {
                         fftY.ifft(input, offset, stride);
@@ -596,7 +596,7 @@ public class Complex3DParallel {
             complexDoubleFFT3D.ifft(data);
             time = (System.nanoTime() - time);
             System.out.println(String.format("Sequential: %8.3f", toSeconds
-                    * time));
+                                                                  * time));
             if (time < seqTime) {
                 seqTime = time;
             }
@@ -604,7 +604,7 @@ public class Complex3DParallel {
             complexDoubleFFT3D.convolution(data);
             time = (System.nanoTime() - time);
             System.out.println(String.format("Sequential: %8.3f (Convolution)",
-                    toSeconds * time));
+                                             toSeconds * time));
             if (time < seqTime) {
                 seqTime = time;
             }
@@ -613,7 +613,7 @@ public class Complex3DParallel {
             parallelComplexDoubleFFT3D.ifft(data);
             time = (System.nanoTime() - time);
             System.out.println(String.format("Parallel:   %8.3f", toSeconds
-                    * time));
+                                                                  * time));
             if (time < parTime) {
                 parTime = time;
             }
@@ -627,10 +627,10 @@ public class Complex3DParallel {
             }
         }
         System.out.println(String.format("Best Sequential Time:  %8.3f",
-                toSeconds * seqTime));
+                                         toSeconds * seqTime));
         System.out.println(String.format("Best Parallel Time:    %8.3f",
-                toSeconds * parTime));
+                                         toSeconds * parTime));
         System.out.println(String.format("Speedup: %15.5f", (double) seqTime
-                / parTime));
+                                                            / parTime));
     }
 }

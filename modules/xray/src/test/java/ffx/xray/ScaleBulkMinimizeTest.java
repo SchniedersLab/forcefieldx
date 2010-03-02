@@ -93,7 +93,7 @@ public class ScaleBulkMinimizeTest {
 
         // load any properties associated with it
         CompositeConfiguration properties = Keyword.loadProperties(structure);
-        ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties, null);
+        ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties);
         ForceField forceField = forceFieldFilter.parse();
 
         // associate molecular assembly with the structure, set up forcefield
