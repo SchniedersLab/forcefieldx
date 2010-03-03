@@ -1,16 +1,13 @@
 
 import ffx.potential.PotentialEnergy;
 
-System.setProperty("pj.nt", "2");
+System.setProperty("pj.nt", "1");
 
 // Name of the file (PDB or XYZ) to evaluate the energy of.
-String filename = "modules/potentials/src/main/java/ffx/potential/structures/dhfr.xyz";
+String filename = "examples/mmcpn.C2.xyz";
 open(filename); 
 potentialEnergy = new PotentialEnergy(active);
-potentialEnergy.energy(false,true);
-
-filename = "modules/potentials/src/main/java/ffx/potential/structures/ubiquitin.xyz";
-open(filename); 
-potentialEnergy = new PotentialEnergy(active);
-potentialEnergy.energy(false,true);
+for (int i=1; i<10; i++) {
+   potentialEnergy.energy(false,true);
+}
 
