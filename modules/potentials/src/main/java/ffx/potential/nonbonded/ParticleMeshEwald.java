@@ -1000,7 +1000,6 @@ public class ParticleMeshEwald implements LambdaInterface {
         @Override
         public void run() {
             try {
-                //logger.info(format(" Computing real space permanent field with %d threads.", pt.getThreadCount()));
                 long time = -System.nanoTime();
                 pt.execute(permanentRealSpaceFieldRegion);
                 permanentRealSpaceFieldRegion.setField(field1, field2);
@@ -1092,9 +1091,9 @@ public class ParticleMeshEwald implements LambdaInterface {
         final double pole[][] = globalMultipole[0];
         final double fpole[][] = reciprocalSpace.getFractionalMultipoles();
         final double fractionalMultipolePhi[][] = reciprocalSpace.getFractionalMultipolePhi();
-        final double nfftX = reciprocalSpace.getNfftX();
-        final double nfftY = reciprocalSpace.getNfftY();
-        final double nfftZ = reciprocalSpace.getNfftZ();
+        final double nfftX = reciprocalSpace.getXDim();
+        final double nfftY = reciprocalSpace.getYDim();
+        final double nfftZ = reciprocalSpace.getZDim();
         for (int i = 0; i < nAtoms; i++) {
             final double phi[] = cartesianMultipolePhi[i];
             final double fPhi[] = fractionalMultipolePhi[i];
@@ -1194,9 +1193,9 @@ public class ParticleMeshEwald implements LambdaInterface {
         } else {
             reciprocalSpace.cartesianToFractionalDipoles(inducedDipole, inducedDipolep);
         }
-        final double nfftX = reciprocalSpace.getNfftX();
-        final double nfftY = reciprocalSpace.getNfftY();
-        final double nfftZ = reciprocalSpace.getNfftZ();
+        final double nfftX = reciprocalSpace.getXDim();
+        final double nfftY = reciprocalSpace.getYDim();
+        final double nfftZ = reciprocalSpace.getZDim();
         final double mpole[][] = globalMultipole[0];
         final double fractionalMultipolePhi[][] = reciprocalSpace.getFractionalMultipolePhi();
         final double fractionalInducedDipolePhi[][] = reciprocalSpace.getFractionalInducedDipolePhi();
@@ -3354,16 +3353,18 @@ public class ParticleMeshEwald implements LambdaInterface {
                         if (a.applyLambda()) {
                             scale = lambda;
                         }
+                        double dipoleScale = 1.0;
+                        double quadrupoleScale = 1.0;
                         out[t000] = scale * in[0];
-                        out[t100] = scale * dipole[0];
-                        out[t010] = scale * dipole[1];
-                        out[t001] = scale * dipole[2];
-                        out[t200] = scale * quadrupole[0][0];
-                        out[t020] = scale * quadrupole[1][1];
-                        out[t002] = scale * quadrupole[2][2];
-                        out[t110] = scale * quadrupole[0][1];
-                        out[t101] = scale * quadrupole[0][2];
-                        out[t011] = scale * quadrupole[1][2];
+                        out[t100] = scale * dipole[0] * dipoleScale;
+                        out[t010] = scale * dipole[1] * dipoleScale;
+                        out[t001] = scale * dipole[2] * dipoleScale;
+                        out[t200] = scale * quadrupole[0][0] * quadrupoleScale;
+                        out[t020] = scale * quadrupole[1][1] * quadrupoleScale;
+                        out[t002] = scale * quadrupole[2][2] * quadrupoleScale;
+                        out[t110] = scale * quadrupole[0][1] * quadrupoleScale;
+                        out[t101] = scale * quadrupole[0][2] * quadrupoleScale;
+                        out[t011] = scale * quadrupole[1][2] * quadrupoleScale;
                         PolarizeType polarizeType = a.getPolarizeType();
                         polarizability[ii] = scale * polarizeType.polarizability;
                     }

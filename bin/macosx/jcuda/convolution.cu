@@ -40,7 +40,7 @@ JNIEXPORT jint JNICALL Java_ffx_numerics_fft_Complex3DCuda_init
    cufftHandle plan;
    cutilSafeCall(cudaMalloc((void**)&d_data, dataSize));
    cutilSafeCall(cudaMalloc((void**)&d_recip, recipSize));
-   cufftSafeCall(cufftPlan3d(&plan, nx, ny, nz, CUFFT_C2C));
+   cufftSafeCall(cufftPlan3d(&plan, nz, ny, nx, CUFFT_C2C));
 
    // Save the FFT plan ID and GPU memory addresses.
    jlong *pointers = (jlong*) env->GetPrimitiveArrayCritical(pointerArray, 0);

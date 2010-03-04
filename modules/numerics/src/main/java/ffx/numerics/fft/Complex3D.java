@@ -191,4 +191,8 @@ public class Complex3D {
             }
         }
     }
+
+    public static int iComplex3D(int i, int j, int k, int nX, int nY, int nZ) {
+        return 2 * (i + nX * (j + nY * k));
+    }
 }

@@ -28,15 +28,17 @@ import static java.lang.Math.sin;
 import static java.lang.Math.sqrt;
 import static java.lang.Math.toRadians;
 
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.scalar;
+
 import java.util.logging.Logger;
 
 import no.uib.cipr.matrix.DenseMatrix;
 import no.uib.cipr.matrix.Matrices;
+
 import org.apache.commons.configuration.CompositeConfiguration;
 
-import static ffx.numerics.VectorMath.dot;
-import static ffx.numerics.VectorMath.cross;
-import static ffx.numerics.VectorMath.scalar;
 
 /**
  * The Crystal class encapsulates the lattice parameters and space group that
@@ -698,26 +700,16 @@ public class Crystal {
      * @param mate  Symmetry mate coordinates.
      * @param symOp The symmetry operator.
      */
-    public void applySymOp(int xyz[], int mate[], SymOp symOp) {
+    public void applySymOp(int h, int k, int l, int mate[], SymOp symOp, int nx, int ny, int nz) {
         double rot[][] = symOp.rot;
         double trans[] = symOp.tr;
-        double xc = xyz[0];
-        double yc = xyz[1];
-        double zc = xyz[2];
-        // Convert to fractional coordinates.
-        double xi = xc * r00 + yc * r10 + zc * r20;
-        double yi = xc * r01 + yc * r11 + zc * r21;
-        double zi = xc * r02 + yc * r12 + zc * r22;
         // Apply Symmetry Operator.
-        double fx = rot[0][0] * xi + rot[0][1] * yi + rot[0][2] * zi + trans[0];
-        double fy = rot[1][0] * xi + rot[1][1] * yi + rot[1][2] * zi + trans[1];
-        double fz = rot[2][0] * xi + rot[2][1] * yi + rot[2][2] * zi + trans[2];
-        // Convert back to Cartesian coordinates.
-        mate[0] = (int) rint(fx * c00 + fy * c10 + fz * c20);
-        mate[1] = (int) rint(fx * c01 + fy * c11 + fz * c21);
-        mate[2] = (int) rint(fx * c02 + fy * c12 + fz * c22);
-        // Map back into the unit cell if necessary.
-
+        mate[0] = (int) rot[0][0] * h + (int) rot[0][1] * k + (int) rot[0][2] * l + (int) rint(nx * trans[0]);
+        mate[1] = (int) rot[1][0] * h + (int) rot[1][1] * k + (int) rot[1][2] * l + (int) rint(ny * trans[1]);
+        mate[2] = (int) rot[2][0] * h + (int) rot[2][1] * k + (int) rot[2][2] * l + (int) rint(nz * trans[2]);
+        mate[0] = mod(mate[0], nx);
+        mate[1] = mod(mate[1], ny);
+        mate[2] = mod(mate[2], nz);
     }
 
     /**
@@ -730,7 +722,6 @@ public class Crystal {
     public void applySymOp(double xyz[], double mate[], SymOp symOp) {
         double rot[][] = symOp.rot;
         double trans[] = symOp.tr;
-        // Convert to fractional coordinates.
         double xc = xyz[0];
         double yc = xyz[1];
         double zc = xyz[2];

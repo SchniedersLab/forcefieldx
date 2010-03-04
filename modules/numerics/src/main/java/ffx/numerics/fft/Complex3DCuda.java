@@ -20,13 +20,12 @@
  */
 package ffx.numerics.fft;
 
-import edu.rit.pj.IntegerSchedule;
 import java.util.Random;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelTeam;
-import java.util.Vector;
-import java.util.logging.Level;
 
 /**
  * Compute a 3D FFT or Convolution using a Java Native Interface
@@ -127,7 +126,7 @@ public class Complex3DCuda implements Runnable {
     @Override
     public void run() {
         init(nX, nY, nZ, data, recip, pointers);
-        logger.info("CUDA Thread Initialized");
+        logger.info(" CUDA Thread Initialized.");
         synchronized (this) {
             while (!free) {
                 if (doConvolution) {
@@ -145,7 +144,7 @@ public class Complex3DCuda implements Runnable {
             dead = true;
             notify();
         }
-        logger.info("CUDA Thread Done!");
+        logger.info(" CUDA Thread Done!");
     }
 
     /**

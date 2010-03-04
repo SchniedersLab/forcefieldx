@@ -32,9 +32,10 @@
     <build>
         <resources>
             <resource>
-                <directory>${basedir}/src/main/java/ffx/xray/structures
-                </directory>
+
+                <directory>${basedir}/src/main/java/ffx/xray/structures</directory>
                 <targetPath>ffx/xray/structures</targetPath>
+
                 <includes>
                     <include>*</include>
                 </includes>

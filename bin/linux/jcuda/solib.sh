@@ -1,3 +1,15 @@
 #!/bin/sh
 rm libcudafft.so
-nvcc -Xcompiler -fPIC --shared ../../macosx/jcuda/convolution.cu -o libcudafft.so -I../../macosx/jcuda -I/home/schnied/Software/jdk1.6.0_17/include -I/home/schnied/Software/jdk1.6.0_17/include/linux -I/home/schnied/NVIDIA_GPU_Computing_SDK/C/common/inc -L/usr/local/cuda/lib -lcudart -lcuda -lcufft
+
+export CUDA_HOME="/usr/local/cuda"
+export JAVA_HOME="/usr/lib/jvm/java-openjdk"
+export CUDA_SDK="/usr/local/NVIDIA_GPU_Computing_SDK"
+export PATH="$JAVA_HOME/bin:$CUDA_HOME/bin:$PATH"
+
+nvcc --keep --compiler-options -fno-inline -Xcompiler -fPIC -c ../../macosx/jcuda/convolution.cu -I../../macosx/jcuda -I$CUDA_HOME/include -I$JAVA_HOME/include -I$JAVA_HOME/include/linux -I$CUDA_SDK/C/common/inc 
+
+sed -i "s|__builtin_stdarg_start|__builtin_va_start|g" convolution.cu.cpp
+
+g++ -fPIC --shared -o libcudafft.so -L/usr/lib64/nvidia -L$CUDA_HOME/lib64 -lcudart -lcuda -lcufft -I$CUDA_HOME/include convolution.cu.cpp 
+
+rm convolution.*
