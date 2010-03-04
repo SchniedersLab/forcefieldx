@@ -34,11 +34,20 @@ public abstract class SpatialDensityLoop extends IntegerForLoop {
 
     private static final Logger logger = Logger.getLogger(SpatialDensityLoop.class.getName());
 
+    private int nSymm;
+
     private final SpatialDensityRegion region;
     private int octant = 0;
 
-    public SpatialDensityLoop(SpatialDensityRegion region) {
+    public SpatialDensityLoop(SpatialDensityRegion region, int Nsymm) {
         this.region = region;
+        this.nSymm = nSymm;
+        assert (nSymm <= region.nSymm);
+    }
+
+    public void setNsymm(int nSymm) {
+        this.nSymm = nSymm;
+        assert(nSymm <= region.nSymm);
     }
 
     public SpatialDensityLoop setOctant(int octant) {
@@ -90,7 +99,7 @@ public abstract class SpatialDensityLoop extends IntegerForLoop {
     }
 
     private void gridCell(int ia, int ib, int ic) {
-        for (int iSymm = 0; iSymm < region.nSymm; iSymm++) {
+        for (int iSymm = 0; iSymm < nSymm; iSymm++) {
             final int pairList[] = region.cellList[iSymm];
             final int index = region.index(ia, ib, ic);
             final int start = region.cellStart[iSymm][index];

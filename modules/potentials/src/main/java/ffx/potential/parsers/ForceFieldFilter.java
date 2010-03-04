@@ -27,8 +27,16 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.URL;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.PropertiesConfiguration;
 
 import ffx.potential.parameters.AngleType;
 import ffx.potential.parameters.AtomType;
@@ -52,13 +60,6 @@ import ffx.potential.parameters.ForceField.ForceFieldString;
 import ffx.potential.parameters.ForceField.ForceFieldType;
 import ffx.potential.parameters.ForceField.Force_Field;
 import ffx.utilities.Keyword;
-import java.net.URL;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.PropertiesConfiguration;
 
 /**
  * The ForceFieldFilter Class is used to parse and store molecular mechanics
@@ -110,13 +111,14 @@ public class ForceFieldFilter {
             // Remove quotes
             parameterLocation = parameterLocation.replaceAll("\"", "");
             // Append the suffix if necessary
+            /*
             if (!parameterLocation.endsWith(".prm")) {
                 parameterLocation = parameterLocation + ".prm";
-            }
+            } */
             parameterFile = new File(parameterLocation);
             // If the location is not absolute, check if it is relative
             // to the key file location.
-            if (!parameterFile.exists()) {
+            if (!parameterFile.exists() && keyFile != null) {
                 parameterFile = new File(keyFile.getParent() + File.separator + parameterLocation);
             }
         }

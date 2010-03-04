@@ -1,6 +1,6 @@
 
 // Coordinate file to open (can be XYZ or PDB)
-String fileName = "examples/n1l2x.xyz";
+String fileName = "examples/trypsin.P21212.xyz";
 // Number of MD steps per window.
 int nSteps = 10000000;
 // Time step in femtoseconds.
