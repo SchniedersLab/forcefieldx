@@ -39,7 +39,7 @@ public abstract class SpatialDensityLoop extends IntegerForLoop {
     private final SpatialDensityRegion region;
     private int octant = 0;
 
-    public SpatialDensityLoop(SpatialDensityRegion region, int Nsymm) {
+    public SpatialDensityLoop(SpatialDensityRegion region, int nSymm) {
         this.region = region;
         this.nSymm = nSymm;
         assert (nSymm <= region.nSymm);
