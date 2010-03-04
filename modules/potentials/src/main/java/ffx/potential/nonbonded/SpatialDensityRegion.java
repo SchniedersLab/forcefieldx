@@ -24,6 +24,7 @@ import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
 import ffx.crystal.Crystal;
+import ffx.potential.bonded.Atom;
 import java.util.logging.Logger;
 
 /**
@@ -104,8 +105,9 @@ public class SpatialDensityRegion extends ParallelRegion {
      * The index of the first atom in each cell. [nsymm][ncell]
      */
     protected final int cellStart[][];
-    protected final int nSymm;
+    public final int nSymm;
     private final double coordinates[][][];
+    private final Atom atoms[];
     private final double xf[];
     private final double yf[];
     private final double zf[];
@@ -118,25 +120,25 @@ public class SpatialDensityRegion extends ParallelRegion {
     private GridInitLoop gridInitLoop;
 
     public SpatialDensityRegion(int gX, int gY, int gZ, double grid[],
-                                int bSplineOrder,
+                                int basisSize,
                                 int threadCount, Crystal crystal,
-                                int nAtoms, double coordinates[][][]) {
-        this(gX, gY, gZ, bSplineOrder, threadCount, crystal, nAtoms, coordinates);
+                                Atom atoms[], double coordinates[][][]) {
+        this(gX, gY, gZ, basisSize, threadCount, crystal, atoms, coordinates);
         this.grid = grid;
     }
 
     public SpatialDensityRegion(int gX, int gY, int gZ, float grid[],
-                                int bSplineOrder,
+                                int basisSize,
                                 int threadCount, Crystal crystal,
-                                int nAtoms, double coordinates[][][]) {
-        this(gX, gY, gZ, bSplineOrder, threadCount, crystal, nAtoms, coordinates);
+                                Atom atoms[], double coordinates[][][]) {
+        this(gX, gY, gZ, basisSize, threadCount, crystal, atoms, coordinates);
         this.floatGrid = grid;
     }
 
     private SpatialDensityRegion(int gX, int gY, int gZ,
-                                 int bSplineOrder,
+                                 int basisSize,
                                  int threadCount, Crystal crystal,
-                                 int nAtoms, double coordinates[][][]) {
+                                 Atom atoms[], double coordinates[][][]) {
         /**
          * Chop up the 3D unit cell domain into fractional coordinate chunks to
          * allow multiple threads to put charge density onto the grid without
@@ -146,7 +148,8 @@ public class SpatialDensityRegion extends ParallelRegion {
         this.crystal = crystal;
         this.coordinates = coordinates;
         this.nSymm = crystal.getUnitCell().spaceGroup.getNumberOfSymOps();
-        this.nAtoms = nAtoms;
+        this.atoms = atoms;
+        this.nAtoms = atoms.length;
 
         gridInitLoop = new GridInitLoop();
 
@@ -156,9 +159,9 @@ public class SpatialDensityRegion extends ParallelRegion {
         yf = new double[nAtoms];
         zf = new double[nAtoms];
 
-        int nX = gX / bSplineOrder;
-        int nY = gY / bSplineOrder;
-        int nZ = gZ / bSplineOrder;
+        int nX = gX / basisSize;
+        int nY = gY / basisSize;
+        int nZ = gZ / basisSize;
         int div = 1;
         int minWork = 4;
         if (threadCount > 1 && nZ > 1) {

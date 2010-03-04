@@ -42,6 +42,7 @@ import ffx.numerics.fft.Complex;
 import ffx.numerics.fft.Complex3DCuda;
 import ffx.numerics.fft.Complex3DParallel;
 import ffx.numerics.fft.Real3DParallel;
+import ffx.potential.bonded.Atom;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.ForceField.ForceFieldInteger;
@@ -73,6 +74,7 @@ import ffx.potential.parameters.ForceField.ForceFieldInteger;
 public class ReciprocalSpace {
 
     private static final Logger logger = Logger.getLogger(ReciprocalSpace.class.getName());
+    private final Atom atoms[];
     private final int nAtoms;
     private final double coordinates[][][];
     private final Crystal crystal;
@@ -113,11 +115,12 @@ public class ReciprocalSpace {
      * Reciprocal Space PME contribution.
      */
     public ReciprocalSpace(Crystal crystal, ForceField forceField,
-                           double coordinates[][][], int nAtoms, double aewald,
+                           double coordinates[][][], Atom atoms[], double aewald,
                            ParallelTeam fftTeam, ParallelTeam parallelTeam) {
         this.crystal = crystal;
         this.coordinates = coordinates;
-        this.nAtoms = nAtoms;
+        this.atoms = atoms;
+        this.nAtoms = atoms.length;
         this.aewald = aewald;
         this.fftTeam = fftTeam;
         this.parallelTeam = parallelTeam;
@@ -186,10 +189,10 @@ public class ReciprocalSpace {
         bSplineRegion = new BSplineRegion();
         if (cudaFFT) {
             spatialDensityRegion = new SpatialDensityRegion(fftX, fftY, fftZ, floatGrid, bSplineOrder,
-                                                            threadCount, crystal, nAtoms, coordinates);
+                                                            threadCount, crystal, atoms, coordinates);
         } else {
             spatialDensityRegion = new SpatialDensityRegion(fftX, fftY, fftZ, densityGrid, bSplineOrder,
-                                                            threadCount, crystal, nAtoms, coordinates);
+                                                            threadCount, crystal, atoms, coordinates);
         }
         permanentDensityLoops = new PermanentDensityLoop[threadCount];
         polarizationDensityLoops = new PolarizationDensityLoop[threadCount];

@@ -460,7 +460,7 @@ public class ParticleMeshEwald implements LambdaInterface {
          * a ReplicatesCrystal.
          */
         reciprocalSpace = new ReciprocalSpace(crystal.getUnitCell(), forceField,
-                                              coordinates, nAtoms, aewald, fftTeam, parallelTeam);
+                                              coordinates, atoms, aewald, fftTeam, parallelTeam);
         permanentFieldRegion = new PermanentFieldRegion(realSpaceTeam);
         inducedDipoleFieldRegion = new InducedDipoleFieldRegion(realSpaceTeam);
         realSpaceEnergyRegion = new RealSpaceEnergyRegion(maxThreads);
