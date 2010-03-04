@@ -71,8 +71,6 @@ public class CrystalStats {
             res[i][1] = Double.MAX_VALUE;
         }
 
-        System.out.println("# HKL: " + refinementdata.n);
-
         for (HKL ih : reflectionlist.hkllist) {
             int i = ih.index();
             int b = ih.bin();
@@ -102,6 +100,7 @@ public class CrystalStats {
         }
 
         StringBuffer sb = new StringBuffer("\n");
+        sb.append("# reflections (for 100% complete): " + refinementdata.n + "\n");
         sb.append(String.format("%15s | %8s|%9s| %7s | %7s |%s\n",
                 "res. range", "#HKL (R)", "#HKL (cv)", "#bin", "#miss",
                 "%complete"));
@@ -129,6 +128,120 @@ public class CrystalStats {
                 (((double) sum1 + sum2) / (sum1 + sum2 + sum3)) * 100.0));
 
         logger.info(sb.toString());
+    }
+
+    public double get_r() {
+        double sum = 0.0;
+        double sumfo = 0.0;
+        for (HKL ih : reflectionlist.hkllist) {
+            int i = ih.index();
+            int b = ih.bin();
+
+            // ignored cases
+            if (Double.isNaN(fc[i][0])
+                    || Double.isNaN(fo[i][0])
+                    || fo[i][1] <= 0.0) {
+                continue;
+            }
+
+            // spline setup
+            double ss = Crystal.invressq(crystal, ih);
+            double fh = spline.f(ss, refinementdata.spline);
+
+            ComplexNumber c = new ComplexNumber(fc[i][0], fc[i][1]);
+            if (!refinementdata.isfreer(i)) {
+                sum += abs(abs(fo[i][0]) - fh * abs(c.abs()));
+                sumfo += abs(fo[i][0]);
+            }
+        }
+
+        return (sum / sumfo) * 100.0;
+    }
+
+    public double get_rfree() {
+        double sum = 0.0;
+        double sumfo = 0.0;
+        for (HKL ih : reflectionlist.hkllist) {
+            int i = ih.index();
+            int b = ih.bin();
+
+            // ignored cases
+            if (Double.isNaN(fc[i][0])
+                    || Double.isNaN(fo[i][0])
+                    || fo[i][1] <= 0.0) {
+                continue;
+            }
+
+            // spline setup
+            double ss = Crystal.invressq(crystal, ih);
+            double fh = spline.f(ss, refinementdata.spline);
+
+            ComplexNumber c = new ComplexNumber(fc[i][0], fc[i][1]);
+            if (refinementdata.isfreer(i)) {
+                sum += abs(abs(fo[i][0]) - fh * abs(c.abs()));
+                sumfo += abs(fo[i][0]);
+            }
+        }
+
+        return (sum / sumfo) * 100.0;
+    }
+
+    public double get_sigmaa() {
+        double sum = 0.0;
+        int nhkl = 0;
+        ReflectionSpline sigmaaspline = new ReflectionSpline(reflectionlist,
+                refinementdata.sigmaa.length);
+
+        for (HKL ih : reflectionlist.hkllist) {
+            int i = ih.index();
+            int b = ih.bin();
+
+            // ignored cases
+            if (Double.isNaN(fc[i][0])
+                    || Double.isNaN(fo[i][0])
+                    || fo[i][1] <= 0.0) {
+                continue;
+            }
+
+            // spline setup
+            double ss = Crystal.invressq(crystal, ih);
+            double fh = spline.f(ss, refinementdata.spline);
+            double sa = sigmaaspline.f(ss, refinementdata.sigmaa);
+
+            nhkl++;
+            sum += (sa - sum) / nhkl;
+        }
+
+        return sum;
+    }
+
+    public double get_sigmaw() {
+        double sum = 0.0;
+        int nhkl = 0;
+        ReflectionSpline sigmaaspline = new ReflectionSpline(reflectionlist,
+                refinementdata.sigmaa.length);
+
+        for (HKL ih : reflectionlist.hkllist) {
+            int i = ih.index();
+            int b = ih.bin();
+
+            // ignored cases
+            if (Double.isNaN(fc[i][0])
+                    || Double.isNaN(fo[i][0])
+                    || fo[i][1] <= 0.0) {
+                continue;
+            }
+
+            // spline setup
+            double ss = Crystal.invressq(crystal, ih);
+            double fh = spline.f(ss, refinementdata.spline);
+            double wa = sigmaaspline.f(ss, refinementdata.sigmaw);
+
+            nhkl++;
+            sum += (wa - sum) / nhkl;
+        }
+
+        return sum;
     }
 
     public void print_rstats() {
@@ -172,7 +285,7 @@ public class CrystalStats {
             }
 
             ComplexNumber c = new ComplexNumber(fc[i][0], fc[i][1]);
-            if (freer[i] == refinementdata.rfreeflag) {
+            if (refinementdata.isfreer(i)) {
                 r[b][1] += abs(abs(fo[i][0]) - fh * abs(c.abs()));
                 sumfo[b][1] += abs(fo[i][0]);
                 r[n][1] += abs(abs(fo[i][0]) - fh * abs(c.abs()));

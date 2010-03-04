@@ -21,12 +21,14 @@
 package ffx.xray;
 
 import java.io.File;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 import edu.rit.pj.ParallelTeam;
-import ffx.crystal.Crystal;
 import org.apache.commons.configuration.CompositeConfiguration;
 
+import ffx.crystal.Crystal;
 import ffx.crystal.ReflectionList;
 import ffx.crystal.Resolution;
 import ffx.potential.bonded.Atom;
@@ -36,77 +38,129 @@ import ffx.potential.parsers.ForceFieldFilter;
 import ffx.potential.parsers.PDBFilter;
 import ffx.utilities.Keyword;
 
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 import static org.junit.Assert.*;
 
 /**
  *
  * @author fennt
  */
+@RunWith(Parameterized.class)
 public class ScaleBulkMinimizeTest {
 
-    public ScaleBulkMinimizeTest() {
+    @Parameters
+    public static Collection<Object[]> data() {
+        return Arrays.asList(new Object[][]{
+                    {false,
+                        "NSF D2 domain test",
+                        "ffx/xray/structures/1NSF.pdb",
+                        "ffx/xray/structures/1NSF.mtz",
+                        null,
+                        25.263354,
+                        25.665623,
+                        0.8789127,
+                        0.1532101},
+                    {true,
+                        "myosin I SH3 domain bound to acan125",
+                        "ffx/xray/structures/2DRM.pdb",
+                        "ffx/xray/structures/2DRM.mtz",
+                        null,
+                        21.026049,
+                        23.121546,
+                        0.9273,
+                        0.1415},
+                    {true,
+                        "E322Y alkaline phosphatase",
+                        "ffx/xray/structures/3DYC.pdb",
+                        null,
+                        "ffx/xray/structures/3DYC.ent",
+                        20.538768,
+                        26.581925,
+                        0.8928,
+                        0.1835}
+                });
     }
+    private final String info;
+    private final String pdbname;
+    private final String mtzname;
+    private final String cifname;
+    private final CrystalStats crystalstats;
+    private final double r;
+    private final double rfree;
+    private final double sigmaa;
+    private final double sigmaw;
+    private final boolean ci;
+    private final boolean ciOnly;
 
-    @BeforeClass
-    public static void setUpClass() throws Exception {
-    }
+    public ScaleBulkMinimizeTest(boolean ciOnly,
+            String info, String pdbname, String mtzname, String cifname,
+            double r, double rfree, double sigmaa, double sigmaw) {
+        this.ciOnly = ciOnly;
+        this.info = info;
+        this.pdbname = pdbname;
+        this.mtzname = mtzname;
+        this.cifname = cifname;
+        this.r = r;
+        this.rfree = rfree;
+        this.sigmaa = sigmaa;
+        this.sigmaw = sigmaw;
 
-    @AfterClass
-    public static void tearDownClass() throws Exception {
-    }
+        String ffxCi = System.getProperty("ffx.ci");
+        if (ffxCi != null && ffxCi.equalsIgnoreCase("true")) {
+            ci = true;
+        } else {
+            ci = false;
+        }
 
-    @Before
-    public void setUp() {
-    }
+        if (!ci && ciOnly) {
+            crystalstats = null;
+            return;
+        }
 
-    @After
-    public void tearDown() {
-    }
-
-    /**
-     * Test of minimize method, of class ScaleMinimize.
-     */
-    @Test
-    public void testMinimize() {
-        // String mtzfilename = "ffx/xray/structures/1N7S.mtz";
-        // String pdbfilename = "ffx/xray/structures/1N7S.pdb";
-        // String mtzfilename = "ffx/xray/structures/2DRM.mtz";
-        // String pdbfilename = "ffx/xray/structures/2DRM.pdb";
-        // String mtzfilename = "ffx/xray/structures/1EXR.mtz";
-        // String pdbfilename = "ffx/xray/structures/1EXR.pdb";
-        String mtzfilename = "ffx/xray/structures/1NSF.mtz";
-        String pdbfilename = "ffx/xray/structures/1NSF.pdb";
-        int index = pdbfilename.lastIndexOf(".");
-        String name = pdbfilename.substring(0, index);
+        int index = pdbname.lastIndexOf(".");
+        String name = pdbname.substring(0, index);
 
         // load the structure
         ClassLoader cl = this.getClass().getClassLoader();
-        File structure = new File(cl.getResource(pdbfilename).getPath());
-        File mtzfile = new File(cl.getResource(mtzfilename).getPath());
+        File structure = new File(cl.getResource(pdbname).getPath());
+        File mtzfile = null, ciffile = null;
+        if (mtzname != null) {
+            mtzfile = new File(cl.getResource(mtzname).getPath());
+        } else {
+            ciffile = new File(cl.getResource(cifname).getPath());
+        }
 
         // load any properties associated with it
         CompositeConfiguration properties = Keyword.loadProperties(structure);
 
         // read in Fo/sigFo/FreeR
         MTZFilter mtzfilter = new MTZFilter();
+        CIFFilter ciffilter = new CIFFilter();
         ReflectionList reflectionlist;
         Crystal crystal = Crystal.checkProperties(properties);
         Resolution resolution = Resolution.checkProperties(properties);
         if (crystal == null || resolution == null) {
-            reflectionlist = mtzfilter.getReflectionList(mtzfile);
+            if (mtzname != null) {
+                reflectionlist = mtzfilter.getReflectionList(mtzfile);
+            } else {
+                reflectionlist = ciffilter.getReflectionList(ciffile);
+            }
         } else {
             reflectionlist = new ReflectionList(crystal, resolution);
         }
 
         RefinementData refinementdata = new RefinementData(properties,
                 reflectionlist);
-        assertTrue("mtz file should be read in without errors",
-                mtzfilter.readFile(mtzfile, reflectionlist, refinementdata));
+        if (mtzname != null) {
+            assertTrue(info + " mtz file should be read in without errors",
+                    mtzfilter.readFile(mtzfile, reflectionlist, refinementdata));
+        } else {
+            assertTrue(info + " cif file should be read in without errors",
+                    ciffilter.readFile(ciffile, reflectionlist, refinementdata));
+        }
 
         ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties);
         ForceField forceField = forceFieldFilter.parse();
@@ -139,7 +193,9 @@ public class ScaleBulkMinimizeTest {
         out.println("ANOMalous=FALSE");
         out.println("DECLare NAME=FC DOMAin=RECIprocal TYPE=COMP END");
         for (HKL ih : reflectionlist.hkllist) {
-        if (ih.allowed() == 0.0) {
+        if (ih.h() == 0
+        && ih.k() == 0
+        && ih.l() == 0) {
         continue;
         }
         double fc[] = refinementdata.fs[ih.index()];
@@ -167,15 +223,26 @@ public class ScaleBulkMinimizeTest {
                 SplineOptimizer.Type.FOFC);
         splineminimize.minimize(7, 1e-5);
 
-        CrystalStats stats = new CrystalStats(reflectionlist, refinementdata);
-        stats.print_hklstats();
-        stats.print_snstats();
-        stats.print_rstats();
+        crystalstats = new CrystalStats(reflectionlist, refinementdata);
+    }
 
-        /*
-        MTZWriter mtzwriter = new MTZWriter(reflectionlist, refinementdata,
-        "/tmp/foo.mtz");
-        mtzwriter.write();
-         */
+    @Test
+    public void testCrystalStats() {
+        if (!ci && ciOnly) {
+            return;
+        }
+
+        crystalstats.print_hklstats();
+        crystalstats.print_snstats();
+        crystalstats.print_rstats();
+
+        assertEquals(info + " R value should be correct",
+                r, crystalstats.get_r(), 0.01);
+        assertEquals(info + " Rfree value should be correct",
+                rfree, crystalstats.get_rfree(), 0.01);
+        assertEquals(info + " sigmaA s value should be correct",
+                sigmaa, crystalstats.get_sigmaa(), 0.01);
+        assertEquals(info + " sigmaA w value should be correct",
+                sigmaw, crystalstats.get_sigmaw(), 0.01);
     }
 }

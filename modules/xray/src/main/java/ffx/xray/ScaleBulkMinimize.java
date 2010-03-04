@@ -20,14 +20,15 @@
  */
 package ffx.xray;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import ffx.algorithms.Terminatable;
 import ffx.crystal.Crystal;
 import ffx.crystal.ReflectionList;
 import ffx.numerics.LBFGS;
 import ffx.numerics.LineSearch.LineSearchResult;
 import ffx.numerics.OptimizationListener;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
@@ -60,6 +61,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
 
         n = refinementdata.solvent_n + refinementdata.scale_n;
         bulksolventoptimizer = new ScaleBulkOptimizer(reflectionlist, refinementdata, n);
+
         x = new double[n];
         grad = new double[n];
         scaling = new double[n];
@@ -74,7 +76,9 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
                         refinementdata.aniso_b[i];
             }
         }
-        for (int i = 0; i < n; i++) {
+
+        scaling[0] = 10.0;
+        for (int i = 1; i < n; i++) {
             scaling[i] = 1.0;
         }
         bulksolventoptimizer.setOptimizationScaling(scaling);
@@ -107,15 +111,16 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
             default:
                 logger.warning("\n Optimization failed.\n");
         }
-        refinementdata.model_k = x[0];
+        refinementdata.model_k = x[0] / scaling[0];
         if (refinementdata.solvent_n > 1) {
-            refinementdata.solvent_k = x[1];
-            refinementdata.solvent_ueq = x[2];
+            refinementdata.solvent_k = x[1] / scaling[1];
+            refinementdata.solvent_ueq = x[2] / scaling[2];
         }
         for (int i = 0; i < 6; i++) {
             if (crystal.scale_b[i] >= 0) {
                 refinementdata.aniso_b[i] =
-                        x[refinementdata.solvent_n + crystal.scale_b[i]];
+                        x[refinementdata.solvent_n + crystal.scale_b[i]]
+                        / scaling[refinementdata.solvent_n + crystal.scale_b[i]];
             }
         }
 
@@ -124,7 +129,8 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
             mtime += System.nanoTime();
             sb.append(String.format("minimizer time: %g\n", mtime * toSeconds));
             sb.append(String.format("\n final scale:\n"));
-            sb.append(String.format("  overall scale: %g\n", x[0]));
+            sb.append(String.format("  overall scale: %g\n",
+                    refinementdata.model_k));
             sb.append(String.format("  aniso B tensor:\n"));
             sb.append(String.format("    %g %g %g\n",
                     refinementdata.aniso_b[0],
@@ -140,7 +146,8 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
                     refinementdata.aniso_b[2]));
             if (refinementdata.solvent_n > 1) {
                 sb.append(String.format("  bulk solvent scale: %g  B: %g\n\n",
-                        x[1], x[2] * eightpi2));
+                        refinementdata.solvent_k,
+                        refinementdata.solvent_ueq * eightpi2));
             }
             logger.info(sb.toString());
         }

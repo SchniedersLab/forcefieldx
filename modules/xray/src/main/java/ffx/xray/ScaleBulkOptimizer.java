@@ -26,12 +26,10 @@ import static java.lang.Math.PI;
 import static java.lang.Math.pow;
 
 import java.util.logging.Logger;
-import java.util.Vector;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
-import ffx.crystal.SymOp;
 import ffx.numerics.ComplexNumber;
 import ffx.numerics.Optimizable;
 import ffx.numerics.VectorMath;
@@ -47,6 +45,11 @@ import ffx.numerics.VectorMath;
  * P. V. Afonine, R. W. Grosse-Kunstleve and P. D. Adams,
  * Acta Cryst. (2005). D61, 850-855
  *
+ * @see <a href="http://dx.doi.org/10.1002/jcc.1032" target="_blank">
+ * J. A. Grant, B. T. Pickup, A. Nicholls, J. Comp. Chem. (2001). 22, 608-640
+ *
+ * @see <a href="http://dx.doi.org/10.1006/jmbi.1994.1633" target="_blank">
+ * J. S. Jiang, A. T. Brunger, JMB (1994) 243, 100-115.
  */
 public class ScaleBulkOptimizer implements Optimizable {
 
@@ -127,9 +130,9 @@ public class ScaleBulkOptimizer implements Optimizable {
             double kmems = exp(0.5 * u);
 
             // structure factors
-            ComplexNumber fcc = new ComplexNumber(fc[i][0], fc[i][1]);
-            ComplexNumber fsc = new ComplexNumber(fs[i][0], fs[i][1]);
-            ComplexNumber fct = refinementdata.solvent_n > 1
+            ComplexNumber fcc = refinementdata.fc(i);
+            ComplexNumber fsc = refinementdata.fs(i);
+            ComplexNumber fct = (refinementdata.solvent_n > 1)
                     ? fcc.plus(fsc.times(ksebs)) : fcc;
             ComplexNumber kfct = fct.times(kmems);
 
@@ -138,76 +141,65 @@ public class ScaleBulkOptimizer implements Optimizable {
             fctot[i][1] = kfct.im();
 
             // target
-            double f1 = fo[i][0];
+            double f1 = refinementdata.f(i);
             double f2 = kfct.abs();
             double d = f1 - f2;
             double d2 = d * d;
             double dr = -2.0 * d;
-            /*
-            double eps = ih.epsilon();
-            double f1 = pow(fo[i][0], 2.0) / eps;
-            double f2 = pow(fct.abs(), 2.0) / eps;
-            double d = u + log(f2) - log(f1);
-            double d2 = d * d;
-            double dr = 2.0 * d;
-             */
 
             sum += d2;
             sumfo += f1 * f1;
 
-            if (freer[i] == refinementdata.rfreeflag) {
-                rfree += abs(abs(fo[i][0]) - abs(kfct.abs()));
-                rfreef += abs(fo[i][0]);
+            if (refinementdata.isfreer(i)){
+                rfree += abs(abs(f1) - abs(kfct.abs()));
+                rfreef += abs(f1);
             } else {
-                r += abs(abs(fo[i][0]) - abs(kfct.abs()));
-                rf += abs(fo[i][0]);
+                r += abs(abs(f1) - abs(kfct.abs()));
+                rf += abs(f1);
             }
 
             if (gradient) {
-                // common derivative element
+                // bulk solvent - common derivative element
                 double dfp = ebs * (fcc.re() * fsc.re()
                         + fcc.im() * fsc.im()
                         + ksebs * pow(fsc.abs(), 2.0));
 
                 // model_k derivative
                 g[0] += 0.5 * kfct.abs() * dr;
-                // g[0] += dr;
                 if (refinementdata.solvent_n > 1) {
                     // solvent_k derivative
                     g[1] += kmems * dfp * dr / fct.abs();
-                    // g[1] += dfp * dr / pow(fct.abs(), 2.0);
                     // solvent_ueq derivative
                     g[2] += kmems * -twopi2 * s * solvent_k * dfp * dr / fct.abs();
-                    // g[2] += -twopi2 * s * solvent_k * dfp * dr / pow(fct.abs(), 2.0);
                 }
 
                 int sn = refinementdata.solvent_n;
-                for (int k = 0; k < 6; k++) {
-                    if (crystal.scale_b[k] >= 0) {
-                        switch (k) {
+                for (int j = 0; j < 6; j++) {
+                    if (crystal.scale_b[j] >= 0) {
+                        switch (j) {
                             case (0):
                                 // B11
-                                g[sn + crystal.scale_b[k]] += 0.5 * kfct.abs() * -pow(ihf[0], 2.0) * dr;
+                                g[sn + crystal.scale_b[j]] += 0.5 * kfct.abs() * -pow(ihf[0], 2.0) * dr;
                                 break;
                             case (1):
                                 // B22
-                                g[sn + crystal.scale_b[k]] += 0.5 * kfct.abs() * -pow(ihf[1], 2.0) * dr;
+                                g[sn + crystal.scale_b[j]] += 0.5 * kfct.abs() * -pow(ihf[1], 2.0) * dr;
                                 break;
                             case (2):
                                 // B33
-                                g[sn + crystal.scale_b[k]] += 0.5 * kfct.abs() * -pow(ihf[2], 2.0) * dr;
+                                g[sn + crystal.scale_b[j]] += 0.5 * kfct.abs() * -pow(ihf[2], 2.0) * dr;
                                 break;
                             case (3):
                                 // B12
-                                g[sn + crystal.scale_b[k]] += 0.5 * kfct.abs() * -2.0 * ihf[0] * ihf[1] * dr;
+                                g[sn + crystal.scale_b[j]] += 0.5 * kfct.abs() * -2.0 * ihf[0] * ihf[1] * dr;
                                 break;
                             case (4):
                                 // B13
-                                g[sn + crystal.scale_b[k]] += 0.5 * kfct.abs() * -2.0 * ihf[0] * ihf[2] * dr;
+                                g[sn + crystal.scale_b[j]] += 0.5 * kfct.abs() * -2.0 * ihf[0] * ihf[2] * dr;
                                 break;
                             case (5):
                                 // B23
-                                g[sn + crystal.scale_b[k]] += 0.5 * kfct.abs() * -2.0 * ihf[1] * ihf[2] * dr;
+                                g[sn + crystal.scale_b[j]] += 0.5 * kfct.abs() * -2.0 * ihf[1] * ihf[2] * dr;
                                 break;
                         }
                     }

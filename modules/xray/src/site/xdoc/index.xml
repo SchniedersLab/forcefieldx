@@ -16,7 +16,15 @@
                 The Xray module includes support for:
             </p>
             <ul>
-                <li>Stuff</li>
+                <li>Reading/writing of MTZ files</li>
+                <li>Writing of CNS/CCP4 Map files</li>
+                <li>Anisotropic scaling of model to data</li>
+                <li>Bulk solvent correction of models using a continuous function</li>
+                <li>SigmaA computation</li>
+                <li>Likelihood target function</li>
+                <li>Structure factor derivatives</li>
+                <li>Atomic X-ray derivatives</li>
+                <li>Crystallography statistics (R, Rfree, etc)</li>
             </ul>
         </section>
     </body>

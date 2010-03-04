@@ -44,7 +44,11 @@ import ffx.numerics.VectorMath;
 
 /**
  *
- * Fit structure factors using spline coefficients
+ * Optimize sigmaA coefficients (using spline coefficients)
+ * and structure factor derivatives
+ * using a likelihood target function
+ *
+ * this target can also be used for structure refinement
  *
  * @author Tim Fenn<br>
  *
@@ -57,7 +61,15 @@ import ffx.numerics.VectorMath;
  * @see <a href="http://dx.doi.org/10.1107/S0907444996012255" target="_blank">
  * G. N. Murshudov, A. A. Vagin and E. J. Dodson,
  * Acta Cryst. (1997). D53, 240-255
- * 
+ *
+ * @see <a href="http://dx.doi.org/10.1107/S0108767388009183" target="_blank">
+ * A. T. Brunger, Acta Cryst. (1989). A45, 42-50.
+ *
+ * @see <a href="http://dx.doi.org/10.1107/S0108767386099622" target="_blank">
+ * R. J. Read, Acta Cryst. (1986). A42, 140-149.
+ *
+ * @see <a href="http://dx.doi.org/10.1107/S0108767396004370" target="_blank">
+ * N. S. Pannu and R. J. Read, Acta Cryst. (1996). A52, 659-668.
  */
 public class SigmaAOptimizer implements Optimizable {
 
@@ -70,7 +82,6 @@ public class SigmaAOptimizer implements Optimizable {
     private static final double sim_e = 7.107935;
     private static final double sim_A = -1.28173889903;
     private static final double sim_B = 0.69231689903;
-    private static final double sim_C = -1.33099462667;
     private static final double sim_g = 2.13643992379;
     private static final double sim_p = 0.04613803811;
     private static final double sim_q = 1.82167089029;
@@ -170,7 +181,7 @@ public class SigmaAOptimizer implements Optimizable {
             // structure factors
             ComplexNumber fcc = new ComplexNumber(fc[i][0], fc[i][1]);
             ComplexNumber fsc = new ComplexNumber(fs[i][0], fs[i][1]);
-            ComplexNumber fct = refinementdata.solvent_n > 1
+            ComplexNumber fct = (refinementdata.solvent_n > 1)
                     ? fcc.plus(fsc.times(ksebs)) : fcc;
             ComplexNumber kfct = fct.times(kmems);
 
@@ -215,6 +226,7 @@ public class SigmaAOptimizer implements Optimizable {
             ComplexNumber mfo = new ComplexNumber(f * cos(phi), f * sin(phi));
             ComplexNumber mfo2 = new ComplexNumber(2.0 * f * cos(phi), 2.0 * f * sin(phi));
             ComplexNumber dfcc = new ComplexNumber(sai * kect.abs() * cos(phi), sai * kect.abs() * sin(phi));
+
             // map and derivative coefficients
             if (Double.isNaN(fctot[i][0])) {
                 fofc1[i][0] = 0.0;
@@ -253,7 +265,7 @@ public class SigmaAOptimizer implements Optimizable {
             dfs[i][1] = dfsi;
 
             // only use freeR flagged reflections in overall sum
-            if (freer[i] == refinementdata.rfreeflag) {
+            if (refinementdata.isfreer(i)) {
                 sum += llk;
                 nsum++;
             } else {
@@ -280,6 +292,11 @@ public class SigmaAOptimizer implements Optimizable {
                 g[n + i2] += dfwa * g2;
             }
         }
+
+        // save total likelihoods
+        refinementdata.llkr = sumr;
+        refinementdata.llkf = sum;
+
         if (print) {
             StringBuffer sb = new StringBuffer("\n");
             sb.append(" sigmaA[s and w] fit using ONLY Rfree reflections\n");
@@ -338,6 +355,13 @@ public class SigmaAOptimizer implements Optimizable {
         return optimizationScaling;
     }
 
+    /*
+     * from sim and sim_integ functions in clipper utils:
+     * http://www.ysbl.york.ac.uk/~cowtan/clipper/clipper.html
+     * and from ln_of_i0 and i1_over_i0 functions in bessel.h
+     * in scitbx module of cctbx:
+     * http://cci.lbl.gov/cctbx_sources/scitbx/math/bessel.h
+     */
     public static double sim(double x) {
         if (x >= 0.0) {
             return (((x + sim_a) * x + sim_b) * x)
