@@ -169,9 +169,9 @@ public class ReciprocalSpace {
          
         if (logger.isLoggable(Level.INFO)) {
             StringBuffer sb = new StringBuffer();
-            sb.append(String.format(" B-Spline order:         %8d\n", bSplineOrder));
-            sb.append(String.format(" Grid density:           %8.3f\n", density));
-            sb.append(String.format(" Grid dimensions:           (%d,%d,%d)\n", fftX, fftY, fftZ));
+            sb.append(format(" B-Spline order:         %8d\n", bSplineOrder));
+            sb.append(format(" Grid density:           %8.3f\n", density));
+            sb.append(format(" Grid dimensions:           (%d,%d,%d)", fftX, fftY, fftZ));
             logger.info(sb.toString());
         }
 
@@ -273,15 +273,15 @@ public class ReciprocalSpace {
                 long fftTime = -System.nanoTime();
                 cudaFFT3D.convolution(floatGrid);
                 fftTime += System.nanoTime();
-                if (logger.isLoggable(Level.INFO)) {
-                    logger.info(format(" CUDA Convolution:       %8.3f", fftTime * toSeconds));
+                if (logger.isLoggable(Level.FINE)) {
+                    logger.fine(format(" CUDA Convolution:       %8.3f", fftTime * toSeconds));
                 }
             } else {
                 long convolutionTime = -System.nanoTime();
                 complexFFT3D.convolution(densityGrid);
                 convolutionTime += System.nanoTime();
-                if (logger.isLoggable(Level.INFO)) {
-                    logger.info(format(" Java Convolution:       %8.3f", convolutionTime * toSeconds));
+                if (logger.isLoggable(Level.FINE)) {
+                    logger.fine(format(" Java Convolution:       %8.3f", convolutionTime * toSeconds));
                 }
             }
         } catch (Exception e) {

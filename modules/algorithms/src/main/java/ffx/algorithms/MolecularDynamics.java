@@ -118,6 +118,8 @@ public class MolecularDynamics implements Terminatable, Runnable {
         } else {
             thermostat = null;
         }
+
+        done = true;
     }
 
     public void setThermostat(Thermostat thermostat) {
