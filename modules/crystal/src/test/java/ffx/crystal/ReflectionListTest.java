@@ -20,124 +20,123 @@
  */
 package ffx.crystal;
 
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
+import java.util.Arrays;
+import java.util.Collection;
+
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 import static org.junit.Assert.*;
 
 /**
  *
  * @author fennt
  */
+@RunWith(Parameterized.class)
 public class ReflectionListTest {
 
-    Crystal crystal1 = new Crystal(86.031, 92.854, 98.312, 90.00, 90.00, 90.00, "I222");
-    Resolution resolution1 = new Resolution(1.0);
-    ReflectionList i222list = new ReflectionList(crystal1, resolution1);
-    Crystal crystal2 = new Crystal(25.015, 29.415, 52.761, 89.54, 86.1, 82.39, "P1");
-    Resolution resolution2 = new Resolution(1.0);
-    ReflectionList p1list = new ReflectionList(crystal2, resolution2);
-    Crystal crystal3 = new Crystal(115.996, 115.996, 44.13, 90.0, 90.0, 120.0, "P6");
-    Resolution resolution3 = new Resolution(1.89631);
-    ReflectionList p6list = new ReflectionList(crystal3, resolution3);
-
-    public ReflectionListTest() {
+    @Parameters
+    public static Collection<Object[]> data() {
+        return Arrays.asList(new Object[][]{
+                    {false,
+                        "P6 test",
+                        115.996, 115.996, 44.13, 90.0, 90.0, 120.0, "P6",
+                        1.89631,
+                        27200,
+                        new HKL(0, 0, 4),
+                        new HKL(-1, 0, 0),
+                        6, 0},
+                    {true,
+                        "I222 test",
+                        86.031, 92.854, 98.312, 90.0, 90.0, 90.0, "I222",
+                        1.0,
+                        210663,
+                        new HKL(0, 0, 4),
+                        new HKL(0, 0, 3),
+                        8, 0},
+                    {true,
+                        "P1 test",
+                        25.015, 29.415, 52.761, 89.54, 86.1, 82.39, "P1",
+                        1.0,
+                        80373,
+                        new HKL(-24, -10, 1),
+                        new HKL(-24, -10, 8),
+                        1, 0}
+                });
     }
+    private final String info;
+    private final int size;
+    private final HKL valid;
+    private final HKL invalid;
+    private final int epsilon;
+    private final int allowed;
+    private final boolean ci;
+    private final boolean ciOnly;
+    private final Crystal crystal;
+    private final Resolution resolution;
+    private final ReflectionList reflectionlist;
 
-    @BeforeClass
-    public static void setUpClass() throws Exception {
-    }
+    public ReflectionListTest(boolean ciOnly,
+            String info, double a, double b, double c,
+            double alpha, double beta, double gamma, String sg,
+            double resolution,
+            int size, HKL valid, HKL invalid, int epsilon, int allowed) {
+        this.ciOnly = ciOnly;
+        this.info = info;
+        this.size = size;
+        this.valid = valid;
+        this.invalid = invalid;
+        this.epsilon = epsilon;
+        this.allowed = allowed;
 
-    @AfterClass
-    public static void tearDownClass() throws Exception {
-    }
+        String ffxCi = System.getProperty("ffx.ci");
+        if (ffxCi != null && ffxCi.equalsIgnoreCase("true")) {
+            ci = true;
+        } else {
+            ci = false;
+        }
 
-    @Before
-    public void setUp() {
-    }
+        if (!ci && ciOnly) {
+            this.crystal = null;
+            this.resolution = null;
+            this.reflectionlist = null;
+            return;
+        }
 
-    @After
-    public void tearDown() {
-    }
-
-    @Test
-    public void testP1sizes() {
-        assertEquals("hash map and arraylist should have equal length",
-                p1list.hklmap.size(), p1list.hkllist.size());
-        assertEquals("P1 reflection list should have 80373 elements",
-                80373, p1list.hkllist.size());
-    }
-
-    @Test
-    public void testI222sizes() {
-        assertEquals("hash map and arraylist should have equal length",
-                i222list.hklmap.size(), i222list.hkllist.size());
-        assertEquals("I222 reflection list should have 210663 elements",
-                210663, i222list.hkllist.size());
-    }
-
-    @Test
-    public void testP6sizes() {
-        assertEquals("hash map and arraylist should have equal length",
-                p6list.hklmap.size(), p6list.hkllist.size());
-        assertEquals("P6 reflection list should have 27200 elements",
-                27200, p6list.hkllist.size());
-    }
-
-    @Test
-    public void testP1reflections() {
-        assertNotNull("P1 list should have -24 -10 1 reflection",
-                p1list.getHKL(-24, -10, 1));
-        assertNull("P1 list should NOT have -24 -10 8 reflection",
-                p1list.getHKL(-24, -10, 8));
-
-        HKL hkl = p1list.getHKL(0, 0, 0);
-        assertEquals("P1 list 0 0 0 reflection should have epsilon of 1",
-                1, hkl.epsilon());
-        assertEquals("P1 list 0 0 0 reflection should NOT be allowed",
-                0, hkl.allowed);
-    }
-
-    @Test
-    public void testI222reflections() {
-        assertNotNull("I222 list should have 0 0 4 reflection",
-                i222list.getHKL(0, 0, 4));
-        assertNull("I222 list should NOT have 0 0 3 reflection",
-                i222list.getHKL(0, 0, 3));
-
-        HKL hkl = i222list.getHKL(0, 0, 0);
-        assertEquals("I222 list 0 0 0 reflection should have epsilon of 8",
-                8, hkl.epsilon());
-        assertEquals("I222 list 0 0 0 reflection should NOT be allowed",
-                0, hkl.allowed);
+        this.crystal = new Crystal(a, b, c, alpha, beta, gamma, sg);
+        this.resolution = new Resolution(resolution);
+        this.reflectionlist = new ReflectionList(this.crystal, this.resolution);
     }
 
     @Test
-    public void testP6reflections() {
-        assertNotNull("P6 list should have 0 0 4 reflection",
-                p6list.getHKL(0, 0, 4));
-        assertNull("P6 list should NOT have -1 0 0 reflection",
-                p6list.getHKL(-1, 0, 0));
+    public void testsize() {
+        if (!ci && ciOnly) {
+            return;
+        }
 
-        HKL hkl = p6list.getHKL(0, 0, 0);
-        assertEquals("P6 list 0 0 0 reflection should have epsilon of 6",
-                6, hkl.epsilon());
-        assertEquals("P6 list 0 0 0 reflection should NOT be allowed",
-                0, hkl.allowed);
+        assertEquals(info + " hash map and arraylist should have equal length",
+                reflectionlist.hklmap.size(), reflectionlist.hkllist.size());
+        assertEquals(info + " reflection list should have correct size",
+                size, reflectionlist.hkllist.size());
+    }
 
-        hkl = p6list.getHKL(0, 1, 0);
-        assertEquals("P6 list 0 1 0 reflection should have epsilon of 1",
-                1, hkl.epsilon());
-        assertEquals("P6 list 0 1 0 reflection should NOT be allowed",
-                0, hkl.allowed);
+    @Test
+    public void testreflections() {
+        if (!ci && ciOnly) {
+            return;
+        }
 
-        hkl = p6list.getHKL(0, 1, 1);
-        assertEquals("P6 list 0 1 1 reflection should have epsilon of 1",
-                1, hkl.epsilon());
-        assertEquals("P6 list 0 1 1 reflection should be allowed",
-                255, hkl.allowed);
+        assertNotNull(info + " list should have valid reflection",
+                reflectionlist.getHKL(valid));
+        assertNull(info + " list should NOT have invalid reflection",
+                reflectionlist.getHKL(invalid));
+
+        HKL hkl = reflectionlist.getHKL(0, 0, 0);
+        assertEquals(info + " list 0 0 0 reflection should have correct epsilon",
+                epsilon, hkl.epsilon());
+        assertEquals(info + " list 0 0 0 reflection should have correct allowance",
+                allowed, hkl.allowed);
     }
 
     /*

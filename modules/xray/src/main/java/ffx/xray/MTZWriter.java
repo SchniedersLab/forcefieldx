@@ -436,12 +436,4 @@ public class MTZWriter {
             System.exit(-1);
         }
     }
-
-    private static double getMin(double minmax[], double val) {
-        if (val > minmax[1]) {
-            return val;
-        } else {
-            return minmax[1];
-        }
-    }
 }

@@ -22,8 +22,6 @@ package ffx.xray;
 
 import ffx.crystal.ReflectionList;
 import ffx.numerics.ComplexNumber;
-import java.util.Arrays;
-import java.util.Iterator;
 import org.apache.commons.configuration.CompositeConfiguration;
 
 /**
@@ -54,6 +52,8 @@ public class RefinementData {
     public final double dfc[][];
     // derivatives wrt Fs
     public final double dfs[][];
+    // log likelihoods
+    public double llkr, llkf;
     // spline scaling coefficients
     public final int nparams;
     public double spline[];
@@ -108,7 +108,7 @@ public class RefinementData {
         // initial guess for scaling/bulk solvent correction
         solvent_k = 0.33;
         solvent_ueq = 50.0 / (8.0 * Math.PI * Math.PI);
-        model_k = 1.0;
+        model_k = 0.0;
     }
 
     public void f(int i, double f) {
@@ -255,5 +255,13 @@ public class RefinementData {
         ComplexNumber c = new ComplexNumber(fofc1[i][0], fofc1[i][1]);
 
         return c.phase();
+    }
+
+    public double likelihood_work() {
+        return llkr;
+    }
+
+    public double likelihood_free() {
+        return llkf;
     }
 }

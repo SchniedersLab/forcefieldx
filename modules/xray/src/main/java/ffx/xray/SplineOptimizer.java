@@ -116,14 +116,14 @@ public class SplineOptimizer implements Optimizable {
             // spline setup
             double fh = spline.f(s, x);
 
-            ComplexNumber fct = new ComplexNumber(fctot[i][0], fctot[i][1]);
+            ComplexNumber fct = refinementdata.fctot(i);
 
             double f1, f2, d, d2, dr, w;
             f1 = f2 = d = d2 = dr = w = 0.0;
             switch (type) {
                 case Type.FOFC:
                     w = 1.0;
-                    f1 = fo[i][0];
+                    f1 = refinementdata.f(i);
                     f2 = fct.abs();
                     d = f1 - fh * f2;
                     d2 = d * d;
@@ -133,7 +133,7 @@ public class SplineOptimizer implements Optimizable {
                 case Type.F1F2:
                     w = 2.0 / ih.epsilonc();
                     f1 = pow(fct.abs(), 2.0) / eps;
-                    f2 = pow(fo[i][0], 2.0) / eps;
+                    f2 = pow(refinementdata.f(i), 2.0) / eps;
                     d = fh * f1 - f2;
                     d2 = d * d / f1;
                     dr = 2.0 * d;
@@ -149,7 +149,7 @@ public class SplineOptimizer implements Optimizable {
                     break;
                 case Type.FOTOESQ:
                     w = 2.0 / ih.epsilonc();
-                    f1 = pow(fo[i][0] / sqrt(eps), 2.0);
+                    f1 = pow(refinementdata.f(i) / sqrt(eps), 2.0);
                     d = f1 * fh - 1.0;
                     d2 = d * d / f1;
                     dr = 2.0 * d;
@@ -159,7 +159,7 @@ public class SplineOptimizer implements Optimizable {
 
             sum += w * d2;
 
-            if (freer[i] == refinementdata.rfreeflag) {
+            if (refinementdata.isfreer(i)) {
                 rfree += abs(abs(fo[i][0]) - abs(fh * fct.abs()));
                 rfreef += abs(fo[i][0]);
             } else {

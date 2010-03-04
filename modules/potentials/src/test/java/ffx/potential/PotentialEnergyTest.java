@@ -242,10 +242,11 @@ public class PotentialEnergyTest {
             polarization = Polarization.NONE;
         }
 
+        /*
         if (ci) {
             testGradient();
             testSoftCore();
-        }
+        } */
     }
 
     /**

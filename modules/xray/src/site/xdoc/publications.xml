@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<document
+    xmlns="http://maven.apache.org/XDOC/2.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
+    <properties>
+        <author email="fenn@stanford.edu">Tim Fenn</author>
+        <title>X-ray Home Page</title>
+    </properties>
+    <head>
+        <meta name="X-ray Publications" content="X-ray Publications" />
+    </head>
+    <body>
+        <section name="X-ray Publications">
+            <ul>
+                <li><a href="http://dx.doi.org/10.1107/S0567739473000458">
+                        L. F. Ten Eyck, Acta Cryst. (1973). A29, 183-191.
+                </a></li>
+                <li><a href="http://dx.doi.org/10.1107/S0567739477001211">
+                        L. F. Ten Eyck, Acta Cryst. (1977). A33, 486-492.
+                </a></li>
+                <li><a href="http://dx.doi.org/10.1038/355472a0">
+                        A. T. Brunger, Nature (1992). 355, 472-475
+                </a></li>
+                <li><a href="http://dx.doi.org/10.1107/S0108767397004558">
+                        Z. Su and P. Coppens, Acta Cryst. (1997). A53, 749-762
+                </a></li>
+                <li><a href="http://dx.doi.org/10.1107/S010876739800124X">
+                        Z. Su and P. Coppens, Acta Cryst. (1998). A54, 357
+                </a></li>
+                <li><a href="http://dx.doi.org/10.1107/S0907444905007894">
+                        P. V. Afonine, R. W. Grosse-Kunstleve and P. D. Adams, Acta Cryst. (2005). D61, 850-855
+                </a></li>
+                <li><a href="http://dx.doi.org/10.1002/jcc.1032">
+                        J. A. Grant, B. T. Pickup, A. Nicholls, J. Comp. Chem. (2001). 22, 608-640
+                </a></li>
+                <li><a href="http://dx.doi.org/10.1006/jmbi.1994.1633">
+                        J. S. Jiang, A. T. Brunger, JMB (1994) 243, 100-115.
+                </a></li>
+                <li><a href="http://dx.doi.org/10.1107/S0021889804031474">
+                        K. Cowtan, J. Appl. Cryst. (2005). 38, 193-198
+                </a></li>
+                <li><a href="http://dx.doi.org/10.1107/S0907444992007352">
+                        A. T. Brunger, Acta Cryst. (1993). D49, 24-36
+                </a></li>
+                <li><a href="http://dx.doi.org/10.1107/S0907444996012255">
+                        G. N. Murshudov, A. A. Vagin and E. J. Dodson, Acta Cryst. (1997). D53, 240-255
+                </a></li>
+                <li><a href="http://dx.doi.org/10.1107/S0108767388009183">
+                        A. T. Brunger, Acta Cryst. (1989). A45, 42-50.
+                </a></li>
+                <li><a href="http://dx.doi.org/10.1107/S0108767386099622">
+                        R. J. Read, Acta Cryst. (1986). A42, 140-149.
+                </a></li>
+                <li><a href="http://dx.doi.org/10.1107/S0108767396004370">
+                        N. S. Pannu and R. J. Read, Acta Cryst. (1996). A52, 659-668.
+                </a></li>
+                <li><a href="http://dx.doi.org/10.1107/S0021889802013420">
+                        K. Cowtan, J. Appl. Cryst. (2002). 35, 655-663
+                </a></li>
+            </ul>
+        </section>
+    </body>
+</document>

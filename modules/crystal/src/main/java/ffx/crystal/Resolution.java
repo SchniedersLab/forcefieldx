@@ -18,7 +18,6 @@
  * along with Force Field X; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
  */
-
 package ffx.crystal;
 
 import org.apache.commons.configuration.CompositeConfiguration;
@@ -41,12 +40,12 @@ public class Resolution {
     }
 
     public Resolution(double resolution) {
-        this(resolution, 1.5);
+        this(resolution, 1.0 / 1.5);
     }
 
     public static Resolution checkProperties(CompositeConfiguration properties) {
         double res = properties.getDouble("resolution", -1.0);
-        double sampling = properties.getDouble("sampling", 1.5);
+        double sampling = properties.getDouble("sampling", 1.0 / 1.5);
 
         if (res < 0.0) {
             return null;

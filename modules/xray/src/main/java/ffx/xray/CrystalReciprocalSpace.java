@@ -42,6 +42,19 @@ import ffx.numerics.fft.Real3DParallel;
 import ffx.potential.bonded.Atom;
 
 /**
+ * Structure factor calculation (including bulk solvent structure factors)
+ * 
+ * @see <a href="http://dx.doi.org/10.1107/S0567739473000458" target="_blank">
+ * L. F. Ten Eyck, Acta Cryst. (1973). A29, 183-191.
+ * 
+ * @see <a href="http://dx.doi.org/10.1107/S0567739477001211" target="_blank">
+ * L. F. Ten Eyck, Acta Cryst. (1977). A33, 486-492.
+ *
+ * @see <a href="http://dx.doi.org/10.1002/jcc.1032" target="_blank">
+ * J. A. Grant, B. T. Pickup, A. Nicholls, J. Comp. Chem. (2001). 22, 608-640
+ *
+ * @see <a href="http://dx.doi.org/10.1006/jmbi.1994.1633" target="_blank">
+ * J. S. Jiang, A. T. Brunger, JMB (1994) 243, 100-115.
  */
 public class CrystalReciprocalSpace {
 
@@ -156,7 +169,7 @@ public class CrystalReciprocalSpace {
         this.solvent = solventmask;
         threadCount = parallelTeam.getThreadCount();
 
-        double density = 2.0 * resolution.sampling_limit();
+        double density = 2.0 / resolution.sampling_limit();
         double res = resolution.res_limit();
 
         // Set default FFT grid size from unit cell dimensions.

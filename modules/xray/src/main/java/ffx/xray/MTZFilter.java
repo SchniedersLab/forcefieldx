@@ -311,45 +311,6 @@ public class MTZFilter {
             if (logger.isLoggable(Level.INFO)) {
                 logger.info(sb.toString());
             }
-
-            // print out some reflections
-            /*
-             * TODO: columns.id should match desired column to read in
-             * then read in cell from datasets.dataset == columns.id
-             * into datasets.cell
-             * flag desired columns to read in, then read in data
-             */
-            /*
-            int nc = 1;
-            for (Iterator i = columns.iterator(); i.hasNext(); nc++) {
-            column c = (column) i.next();
-
-            System.out.format("%3d %10s ", nc, c.label);
-            }
-            System.out.println();
-            nc = 1;
-            for (Iterator i = columns.iterator(); i.hasNext(); nc++) {
-            column c = (column) i.next();
-
-            System.out.format("%3d %10s ", nc, c.type);
-            }
-            System.out.println();
-            nc = 1;
-            for (Iterator i = columns.iterator(); i.hasNext(); nc++) {
-            column c = (column) i.next();
-
-            System.out.format("%3d %10s ", nc, c.id);
-            }
-            System.out.println();
-
-            for (int i = 0; i < nrfl; i++) {
-            for (int j = 0; j < ncol; j++) {
-            float fval = swap ? ByteSwap.swap(dis.readFloat()) : dis.readFloat();
-            System.out.format("%14.3g ", fval);
-            }
-            System.out.println();
-            }
-             */
         } catch (EOFException eof) {
             System.out.println("EOF reached ");
         } catch (IOException ioe) {
@@ -478,6 +439,7 @@ public class MTZFilter {
 
     private void parse_columns() {
 
+        // TODO: allow user to set mtz strings to look for in properties
         int nc = 0;
         StringBuffer sb = new StringBuffer();
         for (Iterator i = columns.iterator(); i.hasNext(); nc++) {
