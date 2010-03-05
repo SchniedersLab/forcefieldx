@@ -20,12 +20,16 @@
  */
 package ffx.potential.nonbonded;
 
+import static java.lang.String.format;
+
+import java.util.logging.Logger;
+
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
+
 import ffx.crystal.Crystal;
 import ffx.potential.bonded.Atom;
-import java.util.logging.Logger;
 
 /**
  * This class implements a spatial decomposition based on partitioning a
@@ -105,7 +109,8 @@ public class SpatialDensityRegion extends ParallelRegion {
      * The index of the first atom in each cell. [nsymm][ncell]
      */
     protected final int cellStart[][];
-    public final int nSymm;
+
+    public int nSymm;
     private final double coordinates[][][];
     private final Atom atoms[];
     private final double xf[];
@@ -120,23 +125,23 @@ public class SpatialDensityRegion extends ParallelRegion {
     private GridInitLoop gridInitLoop;
 
     public SpatialDensityRegion(int gX, int gY, int gZ, double grid[],
-                                int basisSize,
+                                int basisSize, int nSymm,
                                 int threadCount, Crystal crystal,
                                 Atom atoms[], double coordinates[][][]) {
-        this(gX, gY, gZ, basisSize, threadCount, crystal, atoms, coordinates);
+        this(gX, gY, gZ, basisSize, nSymm, threadCount, crystal, atoms, coordinates);
         this.grid = grid;
     }
 
     public SpatialDensityRegion(int gX, int gY, int gZ, float grid[],
-                                int basisSize,
+                                int basisSize, int nSymm,
                                 int threadCount, Crystal crystal,
                                 Atom atoms[], double coordinates[][][]) {
-        this(gX, gY, gZ, basisSize, threadCount, crystal, atoms, coordinates);
+        this(gX, gY, gZ, basisSize, nSymm, threadCount, crystal, atoms, coordinates);
         this.floatGrid = grid;
     }
 
     private SpatialDensityRegion(int gX, int gY, int gZ,
-                                 int basisSize,
+                                 int basisSize, int nSymm,
                                  int threadCount, Crystal crystal,
                                  Atom atoms[], double coordinates[][][]) {
         /**
@@ -147,7 +152,7 @@ public class SpatialDensityRegion extends ParallelRegion {
          */
         this.crystal = crystal;
         this.coordinates = coordinates;
-        this.nSymm = crystal.getUnitCell().spaceGroup.getNumberOfSymOps();
+        this.nSymm = nSymm;
         this.atoms = atoms;
         this.nAtoms = atoms.length;
 

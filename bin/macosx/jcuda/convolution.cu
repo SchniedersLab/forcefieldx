@@ -90,7 +90,7 @@ JNIEXPORT jint JNICALL Java_ffx_numerics_fft_Complex3DCuda_convolution
    float *d_recip = (float*) pointers[2];
 
    // Compute the needed GPU memory and numbers of thread blocks.
-   int threads = 512;
+   int threads = 32;
    int blocks = (len + threads - 1) / threads;
    int dataSize = 2 * len * sizeof(float);
 

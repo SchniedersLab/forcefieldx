@@ -160,6 +160,7 @@ public class ReciprocalSpace {
         complexFFT3DSpace = fftX * fftY * fftZ * 2;
         a = new double[3][3];
         nSymm = crystal.spaceGroup.getNumberOfSymOps();
+
         if (cudaFFT) {
             densityGrid = null;
             floatGrid = new float[complexFFT3DSpace];
@@ -188,10 +189,10 @@ public class ReciprocalSpace {
         transformFieldMatrix(tfm);
         bSplineRegion = new BSplineRegion();
         if (cudaFFT) {
-            spatialDensityRegion = new SpatialDensityRegion(fftX, fftY, fftZ, floatGrid, bSplineOrder,
+            spatialDensityRegion = new SpatialDensityRegion(fftX, fftY, fftZ, floatGrid, bSplineOrder, nSymm,
                                                             threadCount, crystal, atoms, coordinates);
         } else {
-            spatialDensityRegion = new SpatialDensityRegion(fftX, fftY, fftZ, densityGrid, bSplineOrder,
+            spatialDensityRegion = new SpatialDensityRegion(fftX, fftY, fftZ, densityGrid, bSplineOrder, nSymm, 
                                                             threadCount, crystal, atoms, coordinates);
         }
         permanentDensityLoops = new PermanentDensityLoop[threadCount];
