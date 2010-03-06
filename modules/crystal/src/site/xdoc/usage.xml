@@ -4,12 +4,9 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
     <properties>
-        <author email="fenn@stanford.edu">Timothy D. Fenn</author>
         <title>Home Page</title>
+        <author email="fenn@stanford.edu">Timothy D. Fenn</author>
     </properties>
-    <head>
-        <meta name="Usage" content="Crystal usage examples." />
-    </head>
     <body>
         <section name="Usage Examples">
             <subsection name="Symmetry Operators">

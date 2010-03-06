@@ -4,12 +4,9 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
     <properties>
+        <title>Binding Affinity</title>
         <author email="pren@mail.utexas.edu">Ren Lab</author>
-        <title>Usage</title>
     </properties>
-    <head>
-        <meta name="Usage" content="Binding affinity usage." />
-    </head>
     <body>
         <section name="Usage Examples">
             <subsection name="Generation of Water in Water Trajectories">

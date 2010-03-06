@@ -16,7 +16,7 @@
     <organization>
         <!-- This is used to generate the Copyright on the website.
              Module authors should override this with their name. -->
-        <name>Force Field X Module Authors</name>
+        <name>Michael J. Schnieders</name>
         <url>http://ffx.kenai.com</url>
     </organization>
 
@@ -28,10 +28,21 @@
         </license>
     </licenses>
 
+    <scm>
+        <url>http://kenai.com/projects/ffx/sources/source/show</url>
+        <connection>scm:git://kenai.com/ffx~source</connection>
+        <developerConnection>scm:git:ssh://${kenai.user.name}@git.kenai.com/ffx~source</developerConnection>
+    </scm>
+
     <issueManagement>
         <system>jira</system>
-        <url>http://kenai.com/jira/browse/FFX</url>
+        <url>http://kenai.com/jira/browse/ffx</url>
     </issueManagement>
+
+    <ciManagement>
+        <system>Hudson</system>
+        <url>http://atbsrv3.stanford.edu:8080/</url>
+    </ciManagement>
 
     <mailingLists>
         <mailingList>
@@ -84,13 +95,67 @@
             <name>Michael J. Schnieders</name>
             <email>schnied@stanford.edu</email>
             <url>http://www.stanford.edu/~schnied</url>
-            <organization>Joint Postdoc of the Pande and Brunger Labs,
+            <organization>Postdoc, Pande and Brunger Labs,
             Stanford University</organization>
             <organizationUrl>http://ffx.kenai.com</organizationUrl>
             <roles>
                 <role>Director of Force Field X</role>
             </roles>
             <timezone>-7</timezone>
+        </developer>
+        <developer>
+            <id>fenn</id>
+            <name>Timothy D. Fenn</name>
+            <email>fenn@stanford.edu</email>
+            <organization>Postdoc, Brunger Lab, Stanford University
+            </organization>
+            <organizationUrl>http://ffx.kenai.com</organizationUrl>
+            <roles>
+                <role>Chief Crystallographer, Crystal and X-Ray Refinement Modules</role>
+            </roles>
+            <timezone>-7</timezone>
+        </developer>
+        <developer>
+            <id>prffx</id>
+            <name>Pengyu Ren</name>
+            <email>pren@mail.utexas.edu</email>
+            <organization>Assistant Professor, U. of Texas, Austin</organization>
+            <organizationUrl>http://biomol.bme.utexas.edu/lab/</organizationUrl>
+            <roles>
+                <role>Chief Force Field Architect</role>
+            </roles>
+            <timezone>-5</timezone>
+        </developer>
+        <developer>
+            <id>ZhenXia</id>
+            <name>Zhen Xia</name>
+            <email>oversnow@gmail.com</email>
+            <organization>Postdoc, Ren Lab, U. of Texas, Austin</organization>
+            <organizationUrl>http://biomol.bme.utexas.edu/lab/</organizationUrl>
+            <roles>
+                <role>Coarse Grain Module</role>
+            </roles>
+            <timezone>-5</timezone>
+        </developer>
+        <developer>
+            <id>wuch</id>
+            <name>Johnny Wu</name>
+            <email>jwu@mail.utexas.edu</email>
+            <organization>Graduate Student, Ren Lab, U. of Texas, Austin</organization>
+            <organizationUrl>http://biomol.bme.utexas.edu/lab/</organizationUrl>
+            <roles>
+                <role>Automatic AMOEBA Parameterization, Coarse Grain Module</role>
+            </roles>
+            <timezone>-5</timezone>
+        </developer>
+        <developer>
+            <id>surahata</id>
+            <name>Sergio Urahata</name>
+            <email>surahata@gmail.com</email>
+            <organization>Sau Paulo, Brazil</organization>
+            <roles>
+                <role>Algorithms Module, Replica Exchange</role>
+            </roles>
         </developer>
     </developers>
 
@@ -255,6 +320,24 @@
                     <aggregate>true</aggregate>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-changes-plugin</artifactId>
+                <configuration>
+                    <webUser>${kenai.user.name}</webUser>
+                    <webPassword>${kenai.password}</webPassword>
+                    <statusIds>Open, In Progress, Reopened, Resolved, Closed</statusIds>
+                    <resolutionIds>Unresolved, Fixed, Won't Fix, Duplicate, Incomplete, Cannot Reproduce</resolutionIds>
+                </configuration>
+                <reportSets>
+                    <reportSet>
+                        <reports>
+                            <report>jira-report</report>
+                            <report>changes-report</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
+            </plugin>
         </plugins>
     </reporting>
 
@@ -296,13 +379,12 @@
     </dependencies>
 
     <prerequisites>
-        <maven>2.2.0</maven>
+        <maven>2.2.1</maven>
     </prerequisites>
 
     <properties>
         <compileVersion>1.6</compileVersion>
         <targetVersion>1.6</targetVersion>
-        <username>schnied</username>
         <!-- Setting the source encoding is required for builds
              that are platform independent. -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -336,7 +418,7 @@
             <activation>
                 <os>
                     <name>Linux</name>
-                    <arch>x86_64</arch>
+                    <arch>amd64</arch>
                 </os>
             </activation>
             <properties>

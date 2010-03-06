@@ -5,12 +5,9 @@
     xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
     http://maven.apache.org/xsd/xdoc-2.0.xsd">
     <properties>
+        <title>Algorithms Module</title>
         <author email="schnied@stanford.edu">Michael J. Schnieders</author>
-        <title>Home Page</title>
     </properties>
-    <head>
-        <meta name="Home Page" content="Introduction" />
-    </head>
     <body>
         <section name="Introduction">
             <p>

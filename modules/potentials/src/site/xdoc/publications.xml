@@ -4,12 +4,9 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
     <properties>
+        <title>Potentials Publications</title>
         <author email="schnied@stanford.edu">Michael J. Schnieders</author>
-        <title>Potentials Home Page</title>
     </properties>
-    <head>
-        <meta name="Potentials Publications" content="Potentials Publications" />
-    </head>
     <body>
         <section name="Potentials Publications">
             <ul>
