@@ -109,11 +109,11 @@ public class CrystalReciprocalSpaceTest {
         Atom atomarray[] = atomlist.toArray(new Atom[atomlist.size()]);
 
         // set up FFT and run it
-        ParallelTeam parallelTeam = new ParallelTeam(1);
+        ParallelTeam parallelTeam = new ParallelTeam();
         CrystalReciprocalSpace crs =
-                new CrystalReciprocalSpace(atomarray, atomarray.length,
-                parallelTeam, reflectionlist, false);
-        crs.permanent(refinementdata.fc);
+                new CrystalReciprocalSpace(reflectionlist, atomarray,
+                parallelTeam, parallelTeam, false);
+        crs.computeAtomicDensity(refinementdata.fc);
 
         // tests
         ComplexNumber b = new ComplexNumber(-828.584, -922.704);
@@ -177,11 +177,11 @@ public class CrystalReciprocalSpaceTest {
         Atom atomarray[] = atomlist.toArray(new Atom[atomlist.size()]);
 
         // set up FFT and run it
-        ParallelTeam parallelTeam = new ParallelTeam(1);
+        ParallelTeam parallelTeam = new ParallelTeam();
         CrystalReciprocalSpace crs =
-                new CrystalReciprocalSpace(atomarray, atomarray.length,
-                parallelTeam, reflectionlist, false);
-        crs.permanent(refinementdata.fc);
+                new CrystalReciprocalSpace(reflectionlist, atomarray,
+                parallelTeam, parallelTeam, false);
+        crs.computeAtomicDensity(refinementdata.fc);
 
         // tests
         ComplexNumber b = new ComplexNumber(-496.999, 431.817);

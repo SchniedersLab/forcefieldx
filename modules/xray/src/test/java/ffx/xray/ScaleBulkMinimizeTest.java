@@ -178,14 +178,19 @@ public class ScaleBulkMinimizeTest {
         Atom atomarray[] = atomlist.toArray(new Atom[atomlist.size()]);
 
         // set up FFT and run it
-        ParallelTeam parallelTeam = new ParallelTeam(1);
+        ParallelTeam parallelTeam = new ParallelTeam();
         CrystalReciprocalSpace crs =
-                new CrystalReciprocalSpace(atomarray, atomarray.length,
-                parallelTeam, reflectionlist, false);
-        crs.permanent(refinementdata.fc);
-        crs = new CrystalReciprocalSpace(atomarray, atomarray.length,
-                parallelTeam, reflectionlist, true);
-        crs.permanent(refinementdata.fs);
+                new CrystalReciprocalSpace(reflectionlist, atomarray,
+                parallelTeam, parallelTeam, false);
+        for (int i = 0; i < 10; i++) {
+            crs.computeAtomicDensity(refinementdata.fc);
+        }
+        crs =
+                new CrystalReciprocalSpace(reflectionlist, atomarray,
+                parallelTeam, parallelTeam, true);
+        for (int i = 0; i < 10; i++) {
+            crs.computeSolventDensity(refinementdata.fs);
+        }
 
         /*
         try {

@@ -90,7 +90,7 @@ public class ReflectionList {
             }
         }
 
-        n=0;
+        n = 0;
         for (Iterator i = hklmap.entrySet().iterator(); i.hasNext();) {
             Map.Entry ei = (Map.Entry) i.next();
             Object key = ei.getKey();
@@ -131,6 +131,13 @@ public class ReflectionList {
             double resolution) {
         this(new Crystal(a, b, c, alpha, beta, gamma, sg),
                 new Resolution(resolution));
+    }
+
+    @Override
+    public String toString() {
+        return "reflection list with " + this.hkllist.size()
+                + " reflections, spacegroup " + this.spaceGroup.shortName
+                + " resolution limit: " + resolution.res_limit();
     }
 
     public HKL getHKL(int h, int k, int l) {

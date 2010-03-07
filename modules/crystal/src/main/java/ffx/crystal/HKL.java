@@ -86,6 +86,12 @@ public class HKL {
         return hashCode;
     }
 
+    @Override
+    public String toString(){
+        return this.h() + " " + this.k() + " " + this.l()
+                + "(allowed: " + this.allowed + " eps: " + this.epsilon + ") ";
+    }
+
     public int h() {
         return this.h;
     }
