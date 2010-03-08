@@ -15,7 +15,7 @@
     <name>User Interfaces</name>
     <build>
         <plugins>
-            <plugin>
+            <!-- plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>appassembler-maven-plugin</artifactId>
                 <configuration>
@@ -31,7 +31,7 @@
                         </program>
                     </programs>
                 </configuration>
-            </plugin>
+            </plugin -->
             <!-- Make an assembly for Webstart -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

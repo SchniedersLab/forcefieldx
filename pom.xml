@@ -277,7 +277,7 @@
                             <value>jogl</value>
                         </property>
                     </systemProperties>
-                    <argLine>-ms1GM -mx1G -Dffx.ci=${ffx.ci} -Djava.library.path=${basedir}/../../bin/${platform}/jogl-${bit}:${basedir}/../../bin/${platform}/jocl-${bit}</argLine>
+                    <argLine>-ms1G -mx1G -Dffx.ci=${ffx.ci} -Djava.library.path=${basedir}/../../bin/${platform}/jogl-${bit}:${basedir}/../../bin/${platform}/jocl-${bit}</argLine>
                 </configuration>
             </plugin>
         </plugins>
