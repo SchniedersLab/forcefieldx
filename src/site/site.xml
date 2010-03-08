@@ -36,6 +36,7 @@
             <item name="Introduction" href="/index.html"/>
             <item name="Run Force Field X" href="/webstart.html"/>
             <item name="Download" href="/download.html"/>
+            <item name="Source Code" href="/source.html"/>
             <item name="License" href="/license.html"/>
         </menu>
         <menu name="Force Field X Modules" inherit="top">

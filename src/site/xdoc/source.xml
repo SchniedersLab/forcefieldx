@@ -1,25 +1,54 @@
 <?xml version="1.0"?>
-<document>
-  <properties>
-    <author email="schnied@stanford.edu">Michael Schnieders</author>
-    <title>Source Code</title>
-  </properties>
-  <meta name="Source Code" content="Source Code"/>
-  <body>
-    <section name="Source Code">
-     <subsection name="Force Field X">
-      <p>Currently the Force Field X project include about 130 Java classes. An ANT build.xml file for building Force Field X is included with the distribution.</p>
-        <p>The Application Programming Interface (API) documentation on Force Field X packages is available as <a href="apidocs/index.html">Javadocs.</a></p>
-        <p>For detailed information on the layout of Force Field X source code visit the "Project Documentation" area of this website. For example, we use the <a href="jdepend-report.html">JDepend Report</a> to avoid cyclic package dependencies.</p>
-    </subsection>
-</section>
-    <section name="Development Tools">
-      <subsection name="Ant">
-        <p>After installing Ant, Force Field X can be built using the command 'ant' within the FFX directory. Specific instructions for building the FFX Molecular Biophysics Environment are given <a href="building.html">here.</a></p>
-      </subsection>
-      <subsection name="Maven">
-        <p>The Force Field X web site facilitates technology transfer and further development of features. It is built with the Maven project management tool.</p>
-      </subsection>
-    </section>
-  </body>
+<document
+    xmlns="http://maven.apache.org/XDOC/2.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
+    <properties>
+        <title>Source Code</title>
+        <author email="schnied@stanford.edu">Michael Schnieders</author>
+    </properties>
+    <body>
+        <section name="Source Code">
+            <p>"<i>A (molecular biophysics) algorithm must be seen to be believed</i>." Donald Knuth</p>
+            <subsection name="Git the Code">
+                <p>The Force Field X project is hosted at <a href="http://www.kenai.com/projects/ffx/">Kenai</a>with the source code in a GIT repository.
+                    "<a href="http://git-scm.com/">Git</a>is a free and open source, distributed version control system designed to handle everything from
+                    small to very large projects with speed and efficiency."
+                    To clone the Force Field X source first join the Kenai site, set up an ssh key and then join the FFX project. The GIT command is:
+                    <source>git clone ssh://KENAI.USER.NAME@git.kenai.com/ffx~source ffx</source>
+                </p>
+            </subsection>
+            <subsection name="Building Force Field X">
+                <p>A Maven project file (pom.xml) is provided to build Force Field X on any platform. After cloing the Force Field X git repository, change
+                    directoies into the base project directory. Then execute:
+                    <source>mvn deploy</source>
+                    This requires Maven v. 2.2.1 or later to be installed with its bin directory included in your $PATH environment variable. The first time this command
+                    is executed, Maven will download build dependencies and Force Field X runtime dependecies. Future executions are quicker. Force Field X will self-test
+                    its modules and report failures. Only code that passes all testing should be uploaded to the Kenai repository, so if any test fails it may be
+                    due to a local configuration issue.
+                </p>
+                <p>
+                    Once the build succeeds, Force Field X can be executed using platform dependent start-up scripts located in the bin/PLATFORM directories, where PLATFORM
+                    is either macosx, linux or windows.
+                    <source>bin/linux/ffxc scripts/energy.ffx</source>
+                    The appropriate directory for your operating system may be appended to your $PATH environment variable.
+                </p>
+            </subsection>
+        </section>
+        <section name="Developing Force Field X">
+            <subsection name="Maven">
+                <p>The Force Field X web site facilitates technology transfer and further development of features and is built with Maven.
+                The Application Programming Interface (API) documentation for Force Field X packages is available as <a href="apidocs/index.html">Javadocs.</a>
+                The Force Field X source code is available fully <a href="xref/index.html">cross-referenced </a>with line numbers.
+                For detailed information on the layout of the Force Field X source code visit the "Project Documentation" area of this website.
+                For example, we use the <a href="jdepend-report.html">JDepend Report</a> to avoid cyclic package dependencies.</p>
+            </subsection>
+            <subsection name="NetBeans">
+
+            </subsection>
+            <subsection name="Kenai.com / Java.net">
+
+            </subsection>
+        </section>
+    </body>
 </document>
