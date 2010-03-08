@@ -60,6 +60,11 @@ import ffx.potential.bonded.Atom;
  * Source data:<br>
  * @see <a href="http://harker.chem.buffalo.edu/group/groupindex.html" target="_blank">
  *
+ * and form factor equations from:
+ *
+ * @see <a href="http://dx.doi.org/10.1107/S0907444909022707" target="_blank">
+ * M. J. Schnieders, T. D. Fenn, V. S. Pande and A. T. Brunger,
+ * Acta Cryst. (2009). D65 952-965.
  */
 public class FormFactor {
 
@@ -349,16 +354,23 @@ public class FormFactor {
     private final double binv[] = new double[6];
     private final double u[][][] = new double[6][3][3];
     private final double uinv[][][] = new double[6][3][3];
+    private final int n;
 
     public FormFactor(Atom atom, double badd, double xyz[]) {
         this.atom = atom;
         this.uadd = badd / eightpi2;
         double ffactor[][] = new double[2][6];
         ffactor = getFormFactor("" + atom.getAtomType().atomicNumber);
-        for (int i = 0; i < 6; i++) {
+        int i;
+        for (i = 0; i < 6; i++) {
+            if (ffactor[0][i] < 0.01) {
+                break;
+            }
             a[i] = ffactor[0][i];
             b[i] = ffactor[1][i];
         }
+        n = i;
+        assert (n > 0);
         this.xyz[0] = xyz[0];
         this.xyz[1] = xyz[1];
         this.xyz[2] = xyz[2];
@@ -403,7 +415,7 @@ public class FormFactor {
             uaniso[3] = uaniso[4] = uaniso[5] = 0.0;
         }
 
-        for (int i = 0; i < 6; i++) {
+        for (i = 0; i < n; i++) {
             u[i][0][0] = uaniso[0] + (b[i] / eightpi2) + uadd;
             u[i][1][1] = uaniso[1] + (b[i] / eightpi2) + uadd;
             u[i][2][2] = uaniso[2] + (b[i] / eightpi2) + uadd;
@@ -480,26 +492,23 @@ public class FormFactor {
     }
 
     public double f(HKL hkl) {
-        return occ
-                * (a[0] * exp(-twopi2 * Crystal.quad_form(hkl, u[0]))
-                + a[1] * exp(-twopi2 * Crystal.quad_form(hkl, u[1]))
-                + a[2] * exp(-twopi2 * Crystal.quad_form(hkl, u[2]))
-                + a[3] * exp(-twopi2 * Crystal.quad_form(hkl, u[3]))
-                + a[4] * exp(-twopi2 * Crystal.quad_form(hkl, u[4]))
-                + a[5] * exp(-twopi2 * Crystal.quad_form(hkl, u[5])));
+        double sum = 0.0;
+
+        for (int i = 0; i < n; i++) {
+            sum += a[i] * exp(-twopi2 * Crystal.quad_form(hkl, u[i]));
+        }
+        return occ * sum;
     }
 
     public double rho(double xyz[]) {
         double dxyz[] = new double[3];
         diff(xyz, this.xyz, dxyz);
+        double sum = 0.0;
 
-        return occ * twopi32
-                * (ainv[0] * exp(-0.5 * Crystal.quad_form(dxyz, uinv[0]))
-                + ainv[1] * exp(-0.5 * Crystal.quad_form(dxyz, uinv[1]))
-                + ainv[2] * exp(-0.5 * Crystal.quad_form(dxyz, uinv[2]))
-                + ainv[3] * exp(-0.5 * Crystal.quad_form(dxyz, uinv[3]))
-                + ainv[4] * exp(-0.5 * Crystal.quad_form(dxyz, uinv[4]))
-                + ainv[5] * exp(-0.5 * Crystal.quad_form(dxyz, uinv[5])));
+        for (int i = 0; i < n; i++) {
+            sum += ainv[i] * exp(-0.5 * Crystal.quad_form(dxyz, uinv[i]));
+        }
+        return occ * twopi32 * sum;
     }
 
     public double rho_gauss(double xyz[], double sd) {
@@ -524,7 +533,7 @@ public class FormFactor {
         double rho;
         double g[];
 
-        for (int i = 0; i < 6; i++) {
+        for (int i = 0; i < n; i++) {
             aex = ainv[i] * exp(-0.5 * Crystal.quad_form(dxyz, uinv[i]));
 
             gradp[0] += aex * dot(vec3mat3(dxyz, uinv[i]), vx);
