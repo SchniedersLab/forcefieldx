@@ -20,12 +20,23 @@
  */
 package ffx.numerics.fft;
 
+import static jcuda.driver.JCudaDriver.*;
+import static jcuda.jcufft.JCufft.*;
+
+import java.io.File;
+import java.net.URL;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.commons.io.FileUtils;
+
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelTeam;
+
+import jcuda.*;
+import jcuda.driver.*;
+import jcuda.jcufft.*;
 
 /**
  * Compute a 3D FFT or Convolution using a Java Native Interface
@@ -37,36 +48,18 @@ import edu.rit.pj.ParallelTeam;
 public class Complex3DCuda implements Runnable {
 
     private static final Logger logger = Logger.getLogger(Complex3DCuda.class.getName());
-    private final int nX, nY, nZ;
+    private final int nX, nY, nZ, len;
     private float data[], recip[];
-    /**
-     * Native addresses.
-     *
-     * pointers[0] is the CUDA fftPlan ID (usually == 1)
-     * pointers[1] is to the device data array
-     * pointers[2] is to the device recip array
-     */
-    private final long[] pointers = new long[3];
     private boolean doConvolution = false;
     private boolean free = false;
     private boolean dead = false;
     private int status;
-
-    static {
-        try {
-            System.loadLibrary("cudafft");
-        } catch (Error e) {
-            logger.log(Level.INFO, System.getProperty("java.library.path"));
-            String message = "Fatal error loading the CUDA convolution library.";
-            logger.log(Level.SEVERE, message, e);
-        }
-    }
-
-    private native int init(int x, int y, int z, float data[], float recip[], long pointers[]);
-
-    private native int convolution(float data[], long pointers[]);
-
-    private native int free(long pointers[]);
+    CUfunction function;
+    CUmodule module;
+    cufftHandle plan;
+    Pointer dataPtr, recipPtr;
+    CUdeviceptr dataDevice, recipDevice;
+    Pointer dataDevicePtr, recipDevicePtr, lenDevicePtr;
 
     /**
      * Blocking convolution method.
@@ -125,12 +118,79 @@ public class Complex3DCuda implements Runnable {
 
     @Override
     public void run() {
-        init(nX, nY, nZ, data, recip, pointers);
+        JCudaDriver.setExceptionsEnabled(true);
+        JCufft.setExceptionsEnabled(true);
+
+        // Initialize the driver and create a context for the first device.
+        cuInit(0);
+        CUcontext pctx = new CUcontext();
+        CUdevice dev = new CUdevice();
+        cuDeviceGet(dev, 0);
+        cuCtxCreate(pctx, 0, dev);
+
+        // Load the CUBIN file and obtain the "recipSummation" function.
+        try {
+            String bit = System.getProperty("sun.arch.data.model").trim();
+            URL source = getClass().getClassLoader().getResource("ffx/numerics/fft/recipSummation-" + bit + ".cubin");
+            File cubinFile = File.createTempFile("recipSummation", "cubin");
+            FileUtils.copyURLToFile(source, cubinFile);
+            module = new CUmodule();
+            cuModuleLoad(module, cubinFile.getCanonicalPath());
+            function = new CUfunction();
+            cuModuleGetFunction(function, module, "recipSummation");
+        } catch (Exception e) {
+            String message = "Error loading the reciprocal summation kernel";
+            logger.log(Level.SEVERE, message, e);
+        }
+
+        // Copy the data array to the device.
+        dataDevice = new CUdeviceptr();
+        cuMemAlloc(dataDevice, len * 2 * Sizeof.FLOAT);
+        dataPtr = Pointer.to(data);
+        cuMemcpyHtoD(dataDevice, dataPtr, len * 2 * Sizeof.FLOAT);
+
+        // Copy the recip array to the device.
+        recipDevice = new CUdeviceptr();
+        cuMemAlloc(recipDevice, len * Sizeof.FLOAT);
+        recipPtr = Pointer.to(recip);
+        cuMemcpyHtoD(recipDevice, recipPtr, len * Sizeof.FLOAT);
+
+        // Create and execute a JCufft plan for the data
+        plan = new cufftHandle();
+        cufftPlan3d(plan, nZ, nY, nX, cufftType.CUFFT_C2C);
+
+        dataDevicePtr = Pointer.to(dataDevice);
+        recipDevicePtr = Pointer.to(recipDevice);
+        lenDevicePtr = Pointer.to(new int[]{len});
+
         logger.info(" CUDA Thread Initialized.");
         synchronized (this) {
             while (!free) {
                 if (doConvolution) {
-                    status = convolution(data, pointers);
+                    //dataPtr = Pointer.to(data);
+                    cuMemcpyHtoD(dataDevice, dataPtr, len * 2 * Sizeof.FLOAT);
+                    cufftExecC2C(plan, dataDevice, dataDevice, CUFFT_FORWARD);
+                    // Set up the execution parameters for the kernel
+                    int blockSize = 16;
+                    int nBlocks = len/blockSize + (len%blockSize == 0?0:1);
+                    cuFuncSetBlockShape(function, blockSize, 1, 1);
+                    int offset = 0;
+                    offset = align(offset, Sizeof.POINTER);
+                    cuParamSetv(function, offset, dataDevicePtr, Sizeof.POINTER);
+                    offset += Sizeof.POINTER;
+                    offset = align(offset, Sizeof.POINTER);
+                    cuParamSetv(function, offset, recipDevicePtr, Sizeof.POINTER);
+                    offset += Sizeof.POINTER;
+                    offset = align(offset, Sizeof.INT);
+                    cuParamSetv(function, offset, lenDevicePtr, Sizeof.INT);
+                    offset += Sizeof.INT;
+                    cuParamSetSize(function, offset);
+                    // Call the kernel function.
+                    //cuLaunch(function);
+                    cuLaunchGrid(function,nBlocks,1);
+                    cuCtxSynchronize();
+                    cufftExecC2C(plan, dataDevice, dataDevice, CUFFT_INVERSE);
+                    cuMemcpyDtoH(Pointer.to(data), dataDevice, len * 2 * Sizeof.FLOAT);
                     doConvolution = false;
                     notify();
                 }
@@ -140,7 +200,9 @@ public class Complex3DCuda implements Runnable {
                     logger.severe(e.toString());
                 }
             }
-            status = free(pointers);
+            cufftDestroy(plan);
+            cuMemFree(dataDevice);
+            cuMemFree(recipDevice);
             dead = true;
             notify();
         }
@@ -158,6 +220,7 @@ public class Complex3DCuda implements Runnable {
         this.nX = nX;
         this.nY = nY;
         this.nZ = nZ;
+        this.len = nX * nY * nZ;
         this.data = data;
         this.recip = recip;
         doConvolution = false;
