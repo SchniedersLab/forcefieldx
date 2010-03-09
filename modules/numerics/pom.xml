@@ -47,7 +47,7 @@
                         <argument>-classpath</argument>
                         <argument>target/numerics-${version}.jar:${settings.localRepository}/commons-io/commons-io/1.4.0/commons-io-1.4.0.jar:${settings.localRepository}/jcuda/jcuda-all/3.0.0/jcuda-all-3.0.0.jar:${settings.localRepository}/edu/rit/pj/pj/1.0/pj-1.0.jar</argument>
                         <argument>ffx.numerics.fft.Complex3DCuda</argument>
-                        <argument>64</argument>
+                        <argument>128</argument>
                     </arguments>
                 </configuration>
             </plugin>
