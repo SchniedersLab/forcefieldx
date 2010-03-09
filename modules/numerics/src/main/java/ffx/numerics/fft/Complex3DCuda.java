@@ -59,7 +59,7 @@ public class Complex3DCuda implements Runnable {
     cufftHandle plan;
     Pointer dataPtr, recipPtr;
     CUdeviceptr dataDevice, recipDevice;
-    Pointer dataDevicePtr, recipDevicePtr, lenDevicePtr;
+    Pointer dataDevicePtr, recipDevicePtr;
 
     /**
      * Blocking convolution method.
@@ -120,6 +120,7 @@ public class Complex3DCuda implements Runnable {
     public void run() {
         JCudaDriver.setExceptionsEnabled(true);
         JCufft.setExceptionsEnabled(true);
+        JCudaDriver.setLogLevel(LogLevel.LOG_ERROR);
 
         // Initialize the driver and create a context for the first device.
         cuInit(0);
@@ -161,18 +162,17 @@ public class Complex3DCuda implements Runnable {
 
         dataDevicePtr = Pointer.to(dataDevice);
         recipDevicePtr = Pointer.to(recipDevice);
-        lenDevicePtr = Pointer.to(new int[]{len});
+        
+        int blockSize = 256;
+        int nBlocks = len/blockSize + (len%blockSize == 0?0:1);
 
         logger.info(" CUDA Thread Initialized.");
         synchronized (this) {
             while (!free) {
                 if (doConvolution) {
-                    //dataPtr = Pointer.to(data);
                     cuMemcpyHtoD(dataDevice, dataPtr, len * 2 * Sizeof.FLOAT);
                     cufftExecC2C(plan, dataDevice, dataDevice, CUFFT_FORWARD);
                     // Set up the execution parameters for the kernel
-                    int blockSize = 16;
-                    int nBlocks = len/blockSize + (len%blockSize == 0?0:1);
                     cuFuncSetBlockShape(function, blockSize, 1, 1);
                     int offset = 0;
                     offset = align(offset, Sizeof.POINTER);
@@ -182,15 +182,13 @@ public class Complex3DCuda implements Runnable {
                     cuParamSetv(function, offset, recipDevicePtr, Sizeof.POINTER);
                     offset += Sizeof.POINTER;
                     offset = align(offset, Sizeof.INT);
-                    cuParamSetv(function, offset, lenDevicePtr, Sizeof.INT);
+                    cuParamSeti(function, offset, len);
                     offset += Sizeof.INT;
                     cuParamSetSize(function, offset);
                     // Call the kernel function.
-                    //cuLaunch(function);
                     cuLaunchGrid(function,nBlocks,1);
-                    cuCtxSynchronize();
                     cufftExecC2C(plan, dataDevice, dataDevice, CUFFT_INVERSE);
-                    cuMemcpyDtoH(Pointer.to(data), dataDevice, len * 2 * Sizeof.FLOAT);
+                    cuMemcpyDtoH(dataPtr, dataDevice, len * 2 * Sizeof.FLOAT);
                     doConvolution = false;
                     notify();
                 }
