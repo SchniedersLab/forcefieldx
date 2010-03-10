@@ -24,23 +24,28 @@
                         </p>
                         <ul>
                             <li><a href="modules/algorithms/index.html">Algorithms</a> for optimization and sampling.</li>
-                            <li><a href="modules/binding/index.html">Binding Affinity</a> for computing binding affinities.</li>
+                            <li><a href="modules/binding/index.html">Binding Affinity</a> for computing binding affinities contributed by the lab of Prof. Pengyu Ren.</li>
                             <li><a href="modules/crystal/index.html">Crystal</a> for spacegroup symmetry operations.</li>
                             <li><a href="modules/numerics/index.html">Numerics</a> for numerical methods.</li>
-                            <li><a href="modules/potential/index.html">Potentials</a> for computing the potential energy of the system.</li>
+                            <li><a href="modules/potential/index.html">Potentials</a> for computing the potential energy of the system by Dr. Michael J. Schnieders.</li>
                             <li><a href="modules/ui/index.html">User Interfaces</a> for command line and GUI versions.</li>
                             <li><a href="modules/utilities/index.html">Utilities</a> for support functions needed by many modules.</li>
-                            <li><a href="modules/xray/index.html">X-Ray Refinement</a> for refinement of X-ray diffraction data sets.</li>
+                            <li><a href="modules/xray/index.html">X-Ray Refinement</a> for refinement of X-ray diffraction data sets by Dr. Timothy D. Fenn.</li>
                         </ul>
                     </td>
                 </tr>
                 <tr>
                     <td align="center" valign="middle">
+                        <p>"<i>New discoveries in science will continue to create a thousand new
+                        frontiers for those who still would adventure</i>." President Herbert Hoover</p>
+                        <p>The 1.0 version of Force Field X is code-named "Herb and Lou's" after Herbert
+                        and Lou Henry Hoover. Two of us (Fenn and Schnieders) are post-doctoral scholars at 
+                        Stanford University, where the Hoovers were in the first undergraduate class.
+
+                        </p>
                         <p>
                             <img align="middle" src="images/trypsin.png" alt="GUI"/>
                         </p>
-                        <p>"<i>New discoveries in science will continue to create a thousand new
-                        frontiers for those who still would adventure</i>." Herbert Hoover</p>
                     </td>
                 </tr>
             </table>
