@@ -40,14 +40,14 @@
                 <configuration>
                     <executable>java</executable>
                     <arguments>
-                        <argument>-d32</argument>
-                        <argument>-ms1G</argument>
-                        <argument>-mx1G</argument>
-                        <argument>-Djava.library.path=../../bin/${platform}/jcuda-32</argument>
+                        <!--argument>-d64</argument-->
+                        <argument>-ms4G</argument>
+                        <argument>-mx4G</argument>
+                        <argument>-Djava.library.path=../../bin/${platform}/jcuda-${bit}</argument>
                         <argument>-classpath</argument>
                         <argument>target/numerics-${version}.jar:${settings.localRepository}/commons-io/commons-io/1.4.0/commons-io-1.4.0.jar:${settings.localRepository}/jcuda/jcuda-all/3.0.0/jcuda-all-3.0.0.jar:${settings.localRepository}/edu/rit/pj/pj/1.0/pj-1.0.jar</argument>
                         <argument>ffx.numerics.fft.Complex3DCuda</argument>
-                        <argument>128</argument>
+                        <argument>256</argument>
                     </arguments>
                 </configuration>
             </plugin>

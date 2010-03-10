@@ -20,6 +20,8 @@
  */
 package ffx.numerics.fft;
 
+import static java.lang.String.format;
+
 import static jcuda.driver.JCudaDriver.*;
 import static jcuda.jcufft.JCufft.*;
 
@@ -126,6 +128,10 @@ public class Complex3DCuda implements Runnable {
         cuInit(0);
         CUcontext pctx = new CUcontext();
         CUdevice dev = new CUdevice();
+        CUdevprop prop = new CUdevprop();
+        cuDeviceGetProperties(prop, dev);
+        logger.info(" CUDA " + prop.toFormattedString());
+
         cuDeviceGet(dev, 0);
         cuCtxCreate(pctx, 0, dev);
 
@@ -163,17 +169,22 @@ public class Complex3DCuda implements Runnable {
         dataDevicePtr = Pointer.to(dataDevice);
         recipDevicePtr = Pointer.to(recipDevice);
         
-        int blockSize = 256;
-        int nBlocks = len/blockSize + (len%blockSize == 0?0:1);
+        int threads = 512;
+        int nBlocks = len/threads + (len%threads == 0?0:1);
+        int gridSize = (int) Math.floor(Math.sqrt(nBlocks)) + 1;
 
-        logger.info(" CUDA Thread Initialized.");
+        logger.info(format(" CUDA thread initialized with %d threads per block", threads));
+        logger.info(format(" Grid Size: (%d x %d x 1).", gridSize, gridSize));
+
+        assert (gridSize * gridSize * threads >= len);
+
         synchronized (this) {
             while (!free) {
                 if (doConvolution) {
                     cuMemcpyHtoD(dataDevice, dataPtr, len * 2 * Sizeof.FLOAT);
                     cufftExecC2C(plan, dataDevice, dataDevice, CUFFT_FORWARD);
                     // Set up the execution parameters for the kernel
-                    cuFuncSetBlockShape(function, blockSize, 1, 1);
+                    cuFuncSetBlockShape(function, threads, 1, 1);
                     int offset = 0;
                     offset = align(offset, Sizeof.POINTER);
                     cuParamSetv(function, offset, dataDevicePtr, Sizeof.POINTER);
@@ -186,7 +197,7 @@ public class Complex3DCuda implements Runnable {
                     offset += Sizeof.INT;
                     cuParamSetSize(function, offset);
                     // Call the kernel function.
-                    cuLaunchGrid(function,nBlocks,1);
+                    cuLaunchGrid(function,gridSize,gridSize);
                     cufftExecC2C(plan, dataDevice, dataDevice, CUFFT_INVERSE);
                     cuMemcpyDtoH(dataPtr, dataDevice, len * 2 * Sizeof.FLOAT);
                     doConvolution = false;
