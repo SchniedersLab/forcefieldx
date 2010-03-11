@@ -79,13 +79,19 @@ public class Molecule extends MSGroup {
      * Allows adding Atom FNodes to the Molecule.
      */
     @Override
-    public void addMSNode(MSNode o) {
+    public MSNode addMSNode(MSNode o) {
         if (o instanceof Atom) {
-            getAtomNode().add(o);
-            setFinalized(false);
+            MSNode node = getAtomNode().contains(o);
+            if (node == null) {
+                getAtomNode().add(o);
+                setFinalized(false);
+            } else {
+                return node;
+            }
         } else {
             logger.warning("Can not add " + o.getClass() + " to a Molecule, not of type Atom");
         }
+        return o;
     }
 
     @Override

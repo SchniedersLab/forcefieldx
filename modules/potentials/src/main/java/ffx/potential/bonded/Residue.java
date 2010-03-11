@@ -233,13 +233,19 @@ public class Residue extends MSGroup {
      * Allows adding Atoms to the Residue.
      */
     @Override
-    public void addMSNode(MSNode o) {
+    public MSNode addMSNode(MSNode o) {
         if (o instanceof Atom) {
-            getAtomNode().add(o);
-            setFinalized(false);
+            MSNode node = getAtomNode().contains(o);
+            if (node == null) {
+                getAtomNode().add(o);
+                setFinalized(false);
+            } else {
+                return node;
+            }
         } else {
             logger.warning("Can't add MSNode to Residue, not of type Atom");
         }
+        return o;
     }
 
     private void assignResidueType() {

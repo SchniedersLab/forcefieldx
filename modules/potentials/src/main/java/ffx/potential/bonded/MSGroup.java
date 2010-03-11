@@ -124,7 +124,7 @@ public abstract class MSGroup extends MSNode {
      * Abstract method that should specify how to add various MSNodes subclasses
      * (such as Atoms, Residues and Polymers) to the MSGroup
      */
-    public abstract void addMSNode(MSNode m);
+    public abstract MSNode addMSNode(MSNode m);
 
     public void collectValenceTerms() {
         MSNode newBondNode = new MSNode("Bonds");

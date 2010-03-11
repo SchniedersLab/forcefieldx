@@ -82,7 +82,7 @@ public class PotentialEnergy implements Optimizable {
     protected final int nTorsions;
     protected final int nPiOrbitalTorsions;
     protected final int nTorsionTorsions;
-    protected int nVanDerWaals;
+    protected int nVanDerWaals, nPME;
     protected final boolean bondTerm;
     protected final boolean angleTerm;
     protected final boolean stretchBendTerm;
@@ -430,6 +430,7 @@ public class PotentialEnergy implements Optimizable {
             totalElectrostaticEnergy = particleMeshEwald.energy(gradient, print);
             permanentMultipoleEnergy = particleMeshEwald.getPermanentEnergy();
             polarizationEnergy = particleMeshEwald.getPolarizationEnergy();
+            nPME = particleMeshEwald.getInteractions();
             electrostaticTime = System.nanoTime() - electrostaticTime;
         }
         totalTime = System.nanoTime() - totalTime;
@@ -504,13 +505,12 @@ public class PotentialEnergy implements Optimizable {
         }
         if (multipoleTerm) {
             sb.append(String.format(" %s %16.8f %12d\n",
-                    "Atomic Multipoles ", permanentMultipoleEnergy,
-                    particleMeshEwald.getInteractions()));
+                    "Atomic Multipoles ", permanentMultipoleEnergy, nPME));
         }
         if (polarizationTerm) {
             sb.append(String.format(" %s %16.8f %12d %12.3f\n",
                     "Polarization      ", polarizationEnergy,
-                    particleMeshEwald.getInteractions(), electrostaticTime * toSeconds));
+                    nPME, electrostaticTime * toSeconds));
         }
         sb.append(String.format("\n %s %16.8f  %s %12.3f (sec)\n",
                 "Total Potential   ", totalEnergy, "(Kcal/mole)", totalTime * toSeconds));

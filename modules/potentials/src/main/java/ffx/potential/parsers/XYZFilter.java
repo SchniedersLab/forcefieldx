@@ -20,6 +20,8 @@
  */
 package ffx.potential.parsers;
 
+import static java.lang.String.format;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -382,8 +384,7 @@ public class XYZFilter extends SystemFilter {
 
             // XYZ File First Line
             int numberOfAtoms = molecularAssembly.getAtomList().size();
-            String output = String.format("%6d  %s\n", numberOfAtoms,
-                    molecularAssembly.toString());
+            String output = format("%7d  %s\n", numberOfAtoms, molecularAssembly.toString());
             bw.write(output);
             Atom a2;
             StringBuffer line;
@@ -392,11 +393,11 @@ public class XYZFilter extends SystemFilter {
             ArrayList<Atom> atoms = molecularAssembly.getAtomList();
             Vector3d offset = molecularAssembly.getOffset();
             for (Atom a : atoms) {
-                line = new StringBuffer(String.format(
-                        "%6d  %3s%14.8f%14.8f%14.8f%6d", a.getXYZIndex(), a.getID(), a.getX() - offset.x, a.getY() - offset.y, a.getZ() - offset.z, a.getType()));
+                line = new StringBuffer(format(
+                        "%7d %3s%14.8f%14.8f%14.8f%6d", a.getXYZIndex(), a.getID(), a.getX() - offset.x, a.getY() - offset.y, a.getZ() - offset.z, a.getType()));
                 for (Bond b : a.getBonds()) {
                     a2 = b.get1_2(a);
-                    line.append(String.format("%6d", a2.xyzIndex));
+                    line.append(format("%8d", a2.xyzIndex));
                 }
                 lines[a.getXYZIndex() - 1] = line.append("\n");
             }
@@ -435,8 +436,7 @@ public class XYZFilter extends SystemFilter {
             int nSymm = crystal.spaceGroup.symOps.size();
             // XYZ File First Line
             int numberOfAtoms = molecularAssembly.getAtomList().size() * nSymm;
-            String output = String.format("%6d  %s\n", numberOfAtoms,
-                    molecularAssembly.toString());
+            String output = format("%7d %s\n", numberOfAtoms, molecularAssembly.toString());
             bw.write(output);
             Atom a2;
             StringBuffer line;
@@ -458,12 +458,12 @@ public class XYZFilter extends SystemFilter {
                     xyz[2] = a.getZ() - offset.z;
                     crystal.applySymOp(xyz, xyz, symOp);
                     int type = a.getType();
-                    line = new StringBuffer(String.format(
-                            "%6d  %3s%14.8f%14.8f%14.8f%6d", index, id, xyz[0],
+                    line = new StringBuffer(format(
+                            "%7d %3s%14.8f%14.8f%14.8f%6d", index, id, xyz[0],
                             xyz[1], xyz[2], type));
                     for (Bond b : a.getBonds()) {
                         a2 = b.get1_2(a);
-                        line.append(String.format("%7d", a2.xyzIndex + indexOffset));
+                        line.append(format("%8d", a2.xyzIndex + indexOffset));
                     }
                     lines[index - 1] = line.append("\n");
                 }

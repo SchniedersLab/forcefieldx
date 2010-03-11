@@ -283,14 +283,13 @@ public final class PDBFilter extends SystemFilter {
                         double occupancy = new Double(pdbLine.substring(54, 60).trim());
                         double tempFactor = new Double(pdbLine.substring(60, 66).trim());
                         Atom a = new Atom(0, name, altLoc, d, resName, resSeq, chainID, occupancy, tempFactor);
-                        Atom prev = (Atom) molecularAssembly.contains(a);
-                        if (prev != null) {
+                        Atom prev = (Atom) molecularAssembly.addMSNode(a);
+                        if (prev != a) {
                             atoms.put(serial, prev);
                             prev.addAltLoc(altLoc, d, occupancy, tempFactor);
                         } else {
-                            a.setXYZIndex(xyzIndex++);
                             atoms.put(serial, a);
-                            molecularAssembly.addMSNode(a);
+                            a.setXYZIndex(xyzIndex++);
                         }
                         break;
                     case HETATM:
@@ -335,15 +334,14 @@ public final class PDBFilter extends SystemFilter {
                         occupancy = new Double(pdbLine.substring(54, 60).trim());
                         tempFactor = new Double(pdbLine.substring(60, 66).trim());
                         a = new Atom(0, name, altLoc, d, resName, resSeq, chainID, occupancy, tempFactor);
-                        prev = (Atom) molecularAssembly.contains(a);
-                        if (prev != null) {
+                        a.setHetero(true);
+                        prev = (Atom) molecularAssembly.addMSNode(a);
+                        if (prev != a) {
                             atoms.put(serial, prev);
                             prev.addAltLoc(altLoc, d, occupancy, tempFactor);
                         } else {
-                            a.setXYZIndex(xyzIndex++);
-                            a.setHetero(true);
                             atoms.put(serial, a);
-                            molecularAssembly.addMSNode(a);
+                            a.setXYZIndex(xyzIndex++);
                         }
                         break;
                     case CONECT:

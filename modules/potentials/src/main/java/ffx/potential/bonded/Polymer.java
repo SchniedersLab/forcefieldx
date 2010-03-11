@@ -109,9 +109,11 @@ public class Polymer extends MSGroup {
      *            so long as its sequence number is not already in use.
      */
     @Override
-    public void addMSNode(MSNode o) {
+    public MSNode addMSNode(MSNode o) {
         assert (o instanceof Residue);
         getAtomNode().add(o);
+
+        return o;
     }
 
     /**

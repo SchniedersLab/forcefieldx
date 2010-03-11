@@ -73,7 +73,7 @@ public class PotentialEnergyTest {
                         215.14214012, 3297,
                         24.69060350, 106,
                         -29.43681349, 71,
-                        13202.86995849, 1483768,
+                        13183.92864934, 1483768,
                         -33012.66179952, 623490,
                         -13041.30955459, 623490},
                     {true,
@@ -87,9 +87,9 @@ public class PotentialEnergyTest {
                      426.23738971, 6701,
                      48.26628393, 292,
                      -41.71473465, 147,
-                     32646.72296821, 3480445,
-                     -79396.71166429, 1463353,
-                     -32141.39930772, 1463353},
+                     32630.94057333, 3480445,
+                     -79415.53874328, 1463353,
+                     -32155.50351016, 1463353},
                     {true,
                      "SNARE P1",
                      "ffx/potential/structures/1n7s.P1.xyz",
@@ -295,10 +295,12 @@ public class PotentialEnergyTest {
         // Permanent Multipoles
         if (mpoleTerm) {
             assertEquals(info + " Permanent Multipole Energy", permanentEnergy, energy.permanentMultipoleEnergy, tolerance);
+            assertEquals(info + " Permanent Multipole Count", nPermanent, energy.nPME);
         }
         // Polarization
         if (polarization == Polarization.MUTUAL) {
             assertEquals(info + " Polarization Energy", polarizationEnergy, energy.polarizationEnergy, tolerance);
+            assertEquals(info + " Polarization Count", nPolar, energy.nPME);
         }
     }
 
