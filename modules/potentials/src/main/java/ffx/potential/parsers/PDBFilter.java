@@ -173,7 +173,7 @@ public final class PDBFilter extends SystemFilter {
             }
             // First atom is #1, to match xyz file format
             int xyzIndex = 1;
-            boolean useSegID = false;
+            boolean useSegID = properties.getBoolean("ffx.useSegID", false);
             String[] connect;
             ArrayList<String[]> links = new ArrayList<String[]>();
             Vector<String[]> structs = new Vector<String[]>();
