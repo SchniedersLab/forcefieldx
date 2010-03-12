@@ -550,7 +550,7 @@ public class NeighborList extends ParallelRegion {
         private int iSymm;
         private int atomIndex;
         private double xyz[];
-        private final int pairs[];
+        private int pairs[];
         private final double mask[];
         private final int asymmetricIndex[];
         private final IntegerSchedule schedule;
@@ -714,7 +714,13 @@ public class NeighborList extends ParallelRegion {
                     }
                      */
                     if (d2 <= total2) {
-                        pairs[n++] = aj;
+                        try {
+                            pairs[n++] = aj;
+                        } catch (Exception e) {
+                            n = pairs.length;
+                            pairs = java.util.Arrays.copyOf(pairs, n + 100);
+                            pairs[n++] = aj;
+                        }
                     }
                 }
             }
@@ -723,6 +729,8 @@ public class NeighborList extends ParallelRegion {
             }
         }
     }
+
+
     private final static int XX = 0;
     private final static int YY = 1;
     private final static int ZZ = 2;

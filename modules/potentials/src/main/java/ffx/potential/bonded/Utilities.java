@@ -75,6 +75,7 @@ public final class Utilities {
      * case.
      */
     static private Hashtable<String, String> sidechainStoichiometry = new Hashtable<String, String>();
+
     private static final double p4 = 15.236;
     private static final double p5 = 1.254;
     private static final double p5inv = 1.0 / 1.254;

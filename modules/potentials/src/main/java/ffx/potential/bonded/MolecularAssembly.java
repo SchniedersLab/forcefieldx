@@ -421,8 +421,10 @@ public class MolecularAssembly extends MSGroup {
                 if (logger.isLoggable(Level.FINE)) {
                     Runtime runtime = Runtime.getRuntime();
                     long occupiedMemory = runtime.totalMemory() - runtime.freeMemory();
-                    long KB = 1024;
-                    logger.fine("\nIn-Use Memory   (Kb): " + occupiedMemory / KB + "\nFree Memory     (Kb): " + runtime.freeMemory() / KB + "\nTotal Memory    (Kb): " + runtime.totalMemory() / KB);
+                    long MB = 1024 * 1024;
+                    logger.fine("\nIn-Use Memory   (Mb): " + occupiedMemory / MB
+                              + "\nFree Memory     (Mb): " + runtime.freeMemory() / MB
+                              + "\nTotal Memory    (Mb): " + runtime.totalMemory() / MB);
                 }
             }
             for (MSNode m : molecules.getChildList()) {
@@ -455,8 +457,7 @@ public class MolecularAssembly extends MSGroup {
             center();
         }
         removeLeaves();
-        setFinalized(
-                true);
+        setFinalized(true);
     }
 
     public String[] getAltLocations() {

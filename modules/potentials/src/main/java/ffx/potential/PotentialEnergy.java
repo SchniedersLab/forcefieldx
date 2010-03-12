@@ -235,14 +235,14 @@ public class PotentialEnergy implements Optimizable {
         double a,b,c,alpha,beta,gamma;
         boolean aperiodic;
         try {
-            spacegroup = forceField.getString(ForceFieldString.SPACEGROUP);
             a = forceField.getDouble(ForceFieldDouble.A_AXIS);
+            aperiodic = false;
             b = forceField.getDouble(ForceFieldDouble.B_AXIS, a);
             c = forceField.getDouble(ForceFieldDouble.C_AXIS, a);
             alpha = forceField.getDouble(ForceFieldDouble.ALPHA, 90.0);
             beta = forceField.getDouble(ForceFieldDouble.BETA, 90.0);
             gamma = forceField.getDouble(ForceFieldDouble.GAMMA, 90.0);
-            aperiodic = false;
+            spacegroup = forceField.getString(ForceFieldString.SPACEGROUP, "P1");
         } catch (Exception e) {
             logger.info(" The system will be treated as aperiodic.");
             aperiodic = true;
