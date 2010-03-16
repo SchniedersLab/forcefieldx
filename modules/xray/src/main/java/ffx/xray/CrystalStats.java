@@ -327,6 +327,60 @@ public class CrystalStats {
         logger.info(sb.toString());
     }
 
+    public void print_scalestats() {
+        int nhkl[] = new int[n];
+        double scale[] = new double[n];
+
+        for (HKL ih : reflectionlist.hkllist) {
+            int i = ih.index();
+            int b = ih.bin();
+
+            // ignored cases
+            if (Double.isNaN(fo[i][0])
+                    || fo[i][1] <= 0.0) {
+                continue;
+            }
+
+            // spline setup
+            double ss = Crystal.invressq(crystal, ih);
+            double fh = spline.f(ss, refinementdata.spline);
+
+            nhkl[b]++;
+            scale[b] += (fh - scale[b]) / nhkl[b];
+        }
+
+        StringBuffer sb = new StringBuffer("\n");
+        sb.append(String.format("  Fc to Fo scale: %4.2f\n",
+                refinementdata.model_k));
+        sb.append("  Fc to Fo spline scale: ");
+        for (int i = 0; i < n; i++) {
+            sb.append(String.format("%4.2f ", scale[i]));
+        }
+        sb.append("\n");
+        sb.append(String.format("  aniso B tensor:\n"));
+        sb.append(String.format("    %g %g %g\n",
+                refinementdata.model_b[0],
+                refinementdata.model_b[3],
+                refinementdata.model_b[4]));
+        sb.append(String.format("    %g %g %g\n",
+                refinementdata.model_b[3],
+                refinementdata.model_b[1],
+                refinementdata.model_b[5]));
+        sb.append(String.format("    %g %g %g\n",
+                refinementdata.model_b[4],
+                refinementdata.model_b[5],
+                refinementdata.model_b[2]));
+        if (refinementdata.solvent_n > 1) {
+            sb.append(String.format("  bulk solvent A: %g sd: %g\n",
+                    refinementdata.solvent_a,
+                    refinementdata.solvent_sd));
+            sb.append(String.format("  bulk solvent scale: %g  B: %g\n\n",
+                    refinementdata.solvent_k,
+                    refinementdata.solvent_ueq * 8.0 * Math.PI * Math.PI));
+        }
+        logger.info(sb.toString());
+    }
+
     public void print_snstats() {
         double res[][] = new double[n][2];
         double nhkl[] = new double[n + 1];

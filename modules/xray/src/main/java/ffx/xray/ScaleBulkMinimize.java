@@ -42,6 +42,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
     private final ReflectionList reflectionlist;
     private final RefinementData refinementdata;
     private final Crystal crystal;
+    private final CrystalReciprocalSpace crs;
     private final ScaleBulkOptimizer bulksolventoptimizer;
     private final int n;
     private final double x[];
@@ -55,9 +56,15 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
 
     public ScaleBulkMinimize(ReflectionList reflectionlist,
             RefinementData refinementdata) {
+        this(reflectionlist, refinementdata, null);
+    }
+
+    public ScaleBulkMinimize(ReflectionList reflectionlist,
+            RefinementData refinementdata, CrystalReciprocalSpace crs) {
         this.reflectionlist = reflectionlist;
         this.refinementdata = refinementdata;
         this.crystal = reflectionlist.crystal;
+        this.crs = crs;
 
         n = refinementdata.solvent_n + refinementdata.scale_n;
         bulksolventoptimizer = new ScaleBulkOptimizer(reflectionlist, refinementdata, n);
@@ -73,15 +80,86 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         for (int i = 0; i < 6; i++) {
             if (crystal.scale_b[i] >= 0) {
                 x[refinementdata.solvent_n + crystal.scale_b[i]] =
-                        refinementdata.aniso_b[i];
+                        refinementdata.model_b[i];
             }
         }
 
-        scaling[0] = 10.0;
-        for (int i = 1; i < n; i++) {
-            scaling[i] = 1.0;
+        for (int i = 0; i < n; i++) {
+            scaling[i] = 100.0;
         }
         bulksolventoptimizer.setOptimizationScaling(scaling);
+    }
+
+    public void ksbsGridOptimize() {
+        if (refinementdata.solvent_n < 3) {
+            return;
+        }
+
+        double min = Double.MAX_VALUE;
+        double k = refinementdata.solvent_k;
+        double kmin = 0.1;
+        double kmax = 0.8;
+        double kstep = 0.1;
+        double b = refinementdata.solvent_ueq;
+        double bmin = 10.0;
+        double bmax = 200.0;
+        double bstep = 10.0;
+        for (double i = kmin; i <= kmax; i += kstep) {
+            for (double j = bmin; j <= bmax; j += bstep) {
+
+                x[1] = i;
+                x[2] = j;
+                double sum = bulksolventoptimizer.energyAndGradient(x, grad);
+
+                System.out.println("ks: " + i + " bs: " + j + " sum: " + sum);
+                if (sum < min) {
+                    min = sum;
+                    k = i;
+                    b = j;
+                }
+            }
+        }
+        System.out.println("minks: " + k + " minbs: " + b + " min: " + min);
+        refinementdata.solvent_k = k;
+        refinementdata.solvent_ueq = b;
+    }
+
+    public void asdGridOptimize() {
+        if (crs == null) {
+            return;
+        }
+
+        double min = Double.MAX_VALUE;
+        double a = refinementdata.solvent_a;
+        double amin = a - 1.0;
+        double amax = (a + 1.0) / 0.9999;
+        double astep = 0.5;
+        double sd = refinementdata.solvent_sd;
+        double sdmin = sd - 0.15;
+        double sdmax = (sd + 0.15) / 0.9999;
+        double sdstep = 0.05;
+        for (double i = amin; i <= amax; i += astep) {
+            crs.setSolventA(i);
+            for (double j = sdmin; j <= sdmax; j += sdstep) {
+                crs.setSolventsd(j);
+
+                crs.computeDensity(refinementdata.fs);
+                double sum = bulksolventoptimizer.energyAndGradient(x, grad);
+
+                System.out.println("a: " + i + " sd: " + j + " sum: " + sum);
+                if (sum < min) {
+                    min = sum;
+                    a = i;
+                    sd = j;
+                }
+            }
+        }
+        System.out.println("mina: " + a + " minsd: " + sd + " min: " + min);
+        crs.setSolventA(a);
+        crs.setSolventsd(sd);
+        refinementdata.solvent_a = a;
+        refinementdata.solvent_sd = sd;
+        crs.computeDensity(refinementdata.fs);
     }
 
     public ScaleBulkOptimizer minimize() {
@@ -118,7 +196,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         }
         for (int i = 0; i < 6; i++) {
             if (crystal.scale_b[i] >= 0) {
-                refinementdata.aniso_b[i] =
+                refinementdata.model_b[i] =
                         x[refinementdata.solvent_n + crystal.scale_b[i]]
                         / scaling[refinementdata.solvent_n + crystal.scale_b[i]];
             }
@@ -128,27 +206,6 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
             StringBuffer sb = new StringBuffer();
             mtime += System.nanoTime();
             sb.append(String.format("minimizer time: %g\n", mtime * toSeconds));
-            sb.append(String.format("\n final scale:\n"));
-            sb.append(String.format("  overall scale: %g\n",
-                    refinementdata.model_k));
-            sb.append(String.format("  aniso B tensor:\n"));
-            sb.append(String.format("    %g %g %g\n",
-                    refinementdata.aniso_b[0],
-                    refinementdata.aniso_b[3],
-                    refinementdata.aniso_b[4]));
-            sb.append(String.format("    %g %g %g\n",
-                    refinementdata.aniso_b[3],
-                    refinementdata.aniso_b[1],
-                    refinementdata.aniso_b[5]));
-            sb.append(String.format("    %g %g %g\n",
-                    refinementdata.aniso_b[4],
-                    refinementdata.aniso_b[5],
-                    refinementdata.aniso_b[2]));
-            if (refinementdata.solvent_n > 1) {
-                sb.append(String.format("  bulk solvent scale: %g  B: %g\n\n",
-                        refinementdata.solvent_k,
-                        refinementdata.solvent_ueq * eightpi2));
-            }
             logger.info(sb.toString());
         }
 

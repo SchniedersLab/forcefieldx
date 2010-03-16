@@ -62,10 +62,13 @@ public class CrystalReciprocalSpace {
     private static final Logger logger = Logger.getLogger(CrystalReciprocalSpace.class.getName());
     private static double toSeconds = 0.000000001;
     private static double badd = 2.0;
+    private static final double arad = 2.0;
     private final Crystal crystal;
     private final Resolution resolution;
     private final ReflectionList reflectionlist;
     private boolean solvent = false;
+    private double solvent_a = 11.5;
+    private double solvent_sd = 0.75;
     private final int nSymm;
     private final Atom atoms[];
     private final int nAtoms;
@@ -73,7 +76,6 @@ public class CrystalReciprocalSpace {
     private final int fftX, fftY, fftZ;
     private final int complexFFT3DSpace;
     private final int halfFFTX, halfFFTY, halfFFTZ;
-    private static final double arad = 2.0;
     private final int aradgrid;
     private final double densityGrid[];
     private final ParallelTeam parallelTeam;
@@ -209,6 +211,22 @@ public class CrystalReciprocalSpace {
         // complexFFT3D.setRecip(createReciprocalLattice());
     }
 
+    public void setSolventA(double a) {
+        this.solvent_a = a;
+    }
+
+    public void setSolventsd(double s) {
+        this.solvent_sd = s;
+    }
+
+    public void computeDensity(double hkldata[][]) {
+        if (solvent) {
+            computeSolventDensity(hkldata);
+        } else {
+            computeAtomicDensity(hkldata);
+        }
+    }
+
     public void computeAtomicDensity(double hkldata[][]) {
         // clear out the reflection data
         int n = reflectionlist.hkllist.size();
@@ -314,7 +332,7 @@ public class CrystalReciprocalSpace {
                 for (int j = 0; j < fftY; j++) {
                     for (int i = 0; i < fftX; i++) {
                         final int ii = iComplex3D(i, j, k, fftX, fftY, fftZ);
-                        densityGrid[ii] = exp(-densityGrid[ii]);
+                        densityGrid[ii] = exp(-solvent_a * densityGrid[ii]);
                     }
                 }
             }
@@ -483,7 +501,7 @@ public class CrystalReciprocalSpace {
                         crystal.toCartesianCoordinates(xf, xc);
 
                         final int ii = iComplex3D(gix, giy, giz, fftX, fftY, fftZ);
-                        densityGrid[ii] += atomff.rho_gauss(xc, 1.5);
+                        densityGrid[ii] += atomff.rho_gauss(xc, solvent_sd);
                     }
                 }
             }

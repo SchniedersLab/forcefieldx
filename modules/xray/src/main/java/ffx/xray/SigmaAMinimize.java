@@ -73,9 +73,9 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
         for (int i = 0; i < refinementdata.nparams; i++) {
             // for optimizationscaling, best to move to 0.0
             x[i] = refinementdata.sigmaa[i] - 1.0;
-            scaling[i] = 1.0;
+            scaling[i] = 10.0;
             x[i + refinementdata.nparams] = refinementdata.sigmaw[i];
-            scaling[i + refinementdata.nparams] = 1.0;
+            scaling[i + refinementdata.nparams] = 10.0;
         }
 
         sigmaaoptimizer.setOptimizationScaling(scaling);

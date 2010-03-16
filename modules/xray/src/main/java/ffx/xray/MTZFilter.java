@@ -168,6 +168,7 @@ public class MTZFilter {
         parse_columns();
 
         if (fo < 0) {
+            logger.info("insufficient information in MTZ header to generate Reflection List");
             return null;
         }
 
@@ -176,7 +177,8 @@ public class MTZFilter {
 
         if (logger.isLoggable(Level.INFO)) {
             StringBuffer sb = new StringBuffer();
-            sb.append(String.format("\nsetting up Reflection List based on MTZ:\n"));
+            sb.append(String.format("\nOpening %s\n", mtzFile.getName()));
+            sb.append(String.format("setting up Reflection List based on MTZ:\n"));
             sb.append(String.format("  spacegroup #: %d (name: %s)\n",
                     sgnum, SpaceGroup.spaceGroupNames[sgnum - 1]));
             sb.append(String.format("  resolution: %8.3f\n", 0.9999 * reshigh));
@@ -298,7 +300,8 @@ public class MTZFilter {
                 }
             }
             StringBuffer sb = new StringBuffer();
-            sb.append(String.format("\nMTZ file type (machine stamp): %s\n",
+            sb.append(String.format("\nOpening %s\n", mtzFile.getName()));
+            sb.append(String.format("MTZ file type (machine stamp): %s\n",
                     stampstr));
             sb.append(String.format("# HKL read in:                             %d\n",
                     nread));

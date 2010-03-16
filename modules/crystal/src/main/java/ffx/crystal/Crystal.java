@@ -30,15 +30,17 @@ import static java.lang.Math.toRadians;
 
 import static ffx.numerics.VectorMath.dot;
 import static ffx.numerics.VectorMath.cross;
+import static ffx.numerics.VectorMath.mat3mat3;
+import static ffx.numerics.VectorMath.mat3symvec6;
 import static ffx.numerics.VectorMath.scalar;
+import static ffx.numerics.VectorMath.transpose3;
 
 import java.util.logging.Logger;
 
-import no.uib.cipr.matrix.DenseMatrix;
-import no.uib.cipr.matrix.Matrices;
-
 import org.apache.commons.configuration.CompositeConfiguration;
-
+import org.apache.commons.math.linear.Array2DRowRealMatrix;
+import org.apache.commons.math.linear.LUDecompositionImpl;
+import org.apache.commons.math.linear.RealMatrix;
 
 /**
  * The Crystal class encapsulates the lattice parameters and space group that
@@ -110,7 +112,7 @@ public class Crystal {
     /**
      * the reciprocal space metric matrix.
      */
-    public final double Gstar[][] = new double[3][3];
+    public final double Gstar[][];
     /**
      * Direct space lattice vector <b>a</b>.
      */
@@ -400,16 +402,9 @@ public class Crystal {
         G[2][2] = c * c;
 
         // invert G to yield Gstar
-        DenseMatrix A = new DenseMatrix(G);
-        DenseMatrix I = Matrices.identity(3);
-        DenseMatrix AI = I.copy();
-        A.solve(I, AI);
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 3; j++) {
-                Gstar[i][j] = AI.get(i, j);
-            }
-        }
-
+        RealMatrix m = new Array2DRowRealMatrix(G, true);
+        m = new LUDecompositionImpl(m).getSolver().getInverse();
+        Gstar = m.getData();
     }
 
     public static Crystal checkProperties(CompositeConfiguration properties) {
@@ -633,6 +628,46 @@ public class Crystal {
                 dz = zt * gamma_term;
         }
         return dx * dx + dy * dy + dz * dz;
+    }
+
+    public void averageTensor(double m[][], double r[][]) {
+        int n = spaceGroup.symOps.size();
+        for (int i = 0; i < n; i++) {
+            SymOp symop = spaceGroup.symOps.get(i);
+            double rot[][] = symop.rot;
+            double rt[][] = transpose3(rot);
+            double rmrt[][] = mat3mat3(mat3mat3(rot, m), rt);
+            for (int j = 0; j < 3; j++) {
+                for (int k = 0; k < 3; k++) {
+                    r[j][k] += rmrt[j][k];
+                }
+            }
+        }
+        for (int j = 0; j < 3; j++) {
+            for (int k = 0; k < 3; k++) {
+                r[j][k] /= 6.0;
+            }
+        }
+    }
+
+    public void averageTensor(double v[], double r[][]) {
+        int n = spaceGroup.symOps.size();
+        for (int i = 0; i < n; i++) {
+            SymOp symop = spaceGroup.symOps.get(i);
+            double rot[][] = symop.rot;
+            double rt[][] = transpose3(rot);
+            double rmrt[][] = mat3mat3(mat3symvec6(rot, v), rt);
+            for (int j = 0; j < 3; j++) {
+                for (int k = 0; k < 3; k++) {
+                    r[j][k] += rmrt[j][k];
+                }
+            }
+        }
+        for (int j = 0; j < 3; j++) {
+            for (int k = 0; k < 3; k++) {
+                r[j][k] /= 6.0;
+            }
+        }
     }
 
     /**

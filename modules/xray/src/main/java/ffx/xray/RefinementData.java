@@ -20,9 +20,13 @@
  */
 package ffx.xray;
 
+import org.apache.commons.configuration.CompositeConfiguration;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import ffx.crystal.ReflectionList;
 import ffx.numerics.ComplexNumber;
-import org.apache.commons.configuration.CompositeConfiguration;
 
 /**
  *
@@ -30,6 +34,7 @@ import org.apache.commons.configuration.CompositeConfiguration;
  */
 public class RefinementData {
 
+    private static final Logger logger = Logger.getLogger(CrystalStats.class.getName());
     public final int n;
     public final int scale_n;
     public final int solvent_n;
@@ -61,10 +66,12 @@ public class RefinementData {
     public double sigmaw[];
     public double fcesq[];
     public double foesq[];
+    // bulk solvent parameters
+    public double solvent_a, solvent_sd;
     // scaling coefficients
     public double solvent_k, solvent_ueq;
     public double model_k;
-    public double aniso_b[] = new double[6];
+    public double model_b[] = new double[6];
     // settings
     public final int rfreeflag;
 
@@ -75,8 +82,19 @@ public class RefinementData {
         int npar = properties.getInt("nbins", 10);
         boolean bulksolvent = properties.getBoolean("bulksolvent", true);
 
+        if (logger.isLoggable(Level.INFO)) {
+            StringBuffer sb = new StringBuffer();
+            sb.append("Refinement data settings:");
+            sb.append("  R Free flag: " + rflag);
+            sb.append("  n bins: " + npar);
+            sb.append("  bulk solvent: " + bulksolvent);
+            logger.info(sb.toString());
+        }
+
         this.n = reflectionlist.hkllist.size();
         this.scale_n = reflectionlist.crystal.scale_n;
+        this.solvent_a = 11.5;
+        this.solvent_sd = 0.75;
         this.solvent_n = bulksolvent ? 3 : 1;
         this.nparams = npar;
         this.rfreeflag = rflag;

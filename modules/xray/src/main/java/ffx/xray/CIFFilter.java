@@ -127,12 +127,14 @@ public class CIFFilter {
         }
 
         if (sgnum < 0 || reshigh < 0 || cell[0] < 0) {
+            logger.info("insufficient information in CIF header to generate Reflection List");
             return null;
         }
 
         if (logger.isLoggable(Level.INFO)) {
             StringBuffer sb = new StringBuffer();
-            sb.append(String.format("\nsetting up Reflection List based on CIF:\n"));
+            sb.append(String.format("\nOpening %s\n", cifFile.getName()));
+            sb.append(String.format("setting up Reflection List based on CIF:\n"));
             sb.append(String.format("  spacegroup #: %d (name: %s)\n",
                     sgnum, SpaceGroup.spaceGroupNames[sgnum - 1]));
             sb.append(String.format("  resolution: %8.3f\n", 0.9999 * reshigh));
@@ -264,7 +266,8 @@ public class CIFFilter {
         }
 
         StringBuffer sb = new StringBuffer();
-        sb.append(String.format("\n# HKL read in:                             %d\n",
+        sb.append(String.format("\nOpening %s\n", cifFile.getName()));
+        sb.append(String.format("# HKL read in:                             %d\n",
                 nread));
         sb.append(String.format("# HKL with NaN (ignored):                  %d\n",
                 nnan));
