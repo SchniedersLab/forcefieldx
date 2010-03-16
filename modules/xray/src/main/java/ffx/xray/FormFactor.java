@@ -33,17 +33,17 @@ import static ffx.numerics.VectorMath.scalarmat3mat3;
 import static ffx.numerics.VectorMath.vec3mat3;
 import static ffx.numerics.VectorMath.rsq;
 
-import java.util.HashMap;
-import java.util.logging.Logger;
-
-import no.uib.cipr.matrix.DenseMatrix;
-import no.uib.cipr.matrix.EVD;
-import no.uib.cipr.matrix.Matrices;
-import no.uib.cipr.matrix.NotConvergedException;
-
 import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
 import ffx.potential.bonded.Atom;
+
+import java.util.HashMap;
+import java.util.logging.Logger;
+
+import org.apache.commons.math.linear.Array2DRowRealMatrix;
+import org.apache.commons.math.linear.EigenDecompositionImpl;
+import org.apache.commons.math.linear.LUDecompositionImpl;
+import org.apache.commons.math.linear.RealMatrix;
 
 /**
  *
@@ -339,7 +339,7 @@ public class FormFactor {
 
     {
         for (int i = 0; i < atoms.length; i++) {
-            formfactors.put(atomsi[i], ffactors[i]);
+            formfactors.put(atomsi[i].intern(), ffactors[i]);
         }
     }
     private final Atom atom;
@@ -386,28 +386,21 @@ public class FormFactor {
             u[0][0][1] = u[0][1][0] = uaniso[3];
             u[0][0][2] = u[0][2][0] = uaniso[4];
             u[0][1][2] = u[0][2][1] = uaniso[5];
-            DenseMatrix A = new DenseMatrix(u[0]);
-            try {
-                EVD evd = EVD.factorize(A);
-                double evalues[] = evd.getRealEigenvalues();
-                boolean nonpos = false;
-                if (evalues[0] <= 0.0 || evalues[1] <= 0.0 || evalues[2] <= 0.0) {
-                    nonpos = true;
-                }
-                // if not, scream and reset it based on the isotropic B
-                if (nonpos) {
-                    StringBuffer sb = new StringBuffer();
-                    sb.append("non-positive definite ANISOU for atom: " + atom.toString() + "\n");
-                    sb.append("resetting ANISOU based on isotropic B: (" + biso + ")\n");
-                    logger.warning(sb.toString());
 
-                    uaniso[0] = uaniso[1] = uaniso[2] = biso / eightpi2;
-                    uaniso[3] = uaniso[4] = uaniso[5] = 0.0;
-                    atom.setAnisou(uaniso);
-                }
-            } catch (NotConvergedException e) {
-                String message = "ANISOU error on atom: " + atom.toString();
-                logger.severe(message);
+
+            RealMatrix m = new Array2DRowRealMatrix(u[0], true);
+            EigenDecompositionImpl evd = new EigenDecompositionImpl(m, 0.01);
+            if (evd.getRealEigenvalue(0) <= 0.0
+                    || evd.getRealEigenvalue(1) <= 0.0
+                    || evd.getRealEigenvalue(2) <= 0.0) {
+                StringBuffer sb = new StringBuffer();
+                sb.append("non-positive definite ANISOU for atom: " + atom.toString() + "\n");
+                sb.append("resetting ANISOU based on isotropic B: (" + biso + ")\n");
+                logger.warning(sb.toString());
+
+                uaniso[0] = uaniso[1] = uaniso[2] = biso / eightpi2;
+                uaniso[3] = uaniso[4] = uaniso[5] = 0.0;
+                atom.setAnisou(uaniso);
             }
         } else {
             uaniso = new double[6];
@@ -423,15 +416,9 @@ public class FormFactor {
             u[i][0][2] = u[i][2][0] = uaniso[4];
             u[i][1][2] = u[i][2][1] = uaniso[5];
 
-            DenseMatrix A = new DenseMatrix(u[i]);
-            DenseMatrix I = Matrices.identity(3);
-            DenseMatrix AI = I.copy();
-            A.solve(I, AI);
-            for (int j = 0; j < 3; j++) {
-                for (int k = 0; k < 3; k++) {
-                    uinv[i][j][k] = AI.get(j, k);
-                }
-            }
+            RealMatrix m = new Array2DRowRealMatrix(u[i], true);
+            m = new LUDecompositionImpl(m).getSolver().getInverse();
+            uinv[i] = m.getData();
 
             double det = determinant3(u[i]);
             ainv[i] = a[i] / sqrt(det);
@@ -518,7 +505,8 @@ public class FormFactor {
     }
 
     public double rho_gauss(double rsq, double sd) {
-        return exp(-0.5 * rsq / sd);
+        double sd2 = sd * sd;
+        return exp(-rsq / (2.0 * sd2));
     }
 
     public void rho_grad(double xyz[]) {

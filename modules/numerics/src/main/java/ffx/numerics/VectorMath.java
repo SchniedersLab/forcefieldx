@@ -439,6 +439,50 @@ public final class VectorMath {
     }
 
     /**
+     * vector representation of a symmetric 3x3 matrix times a matrix
+     *
+     * @param v input vector of the form 11, 22, 33, 12, 13, 23
+     * @param m input matrix
+     * @return matrix product
+     */
+    public static double[][] symvec6mat3(double v[], double m[][]){
+        double res[][] = new double[3][3];
+        res[0][0] = v[0] * m[0][0] + v[3] * m[1][0] + v[4] * m[2][0];
+        res[0][1] = v[0] * m[0][1] + v[3] * m[1][1] + v[4] * m[2][1];        
+        res[0][2] = v[0] * m[0][2] + v[3] * m[1][2] + v[4] * m[2][2];
+        res[1][0] = v[3] * m[0][0] + v[1] * m[1][0] + v[5] * m[2][0];
+        res[1][1] = v[3] * m[0][1] + v[1] * m[1][1] + v[5] * m[2][1];        
+        res[1][2] = v[3] * m[0][2] + v[1] * m[1][2] + v[5] * m[2][2];
+        res[2][0] = v[4] * m[0][0] + v[5] * m[1][0] + v[2] * m[2][0];
+        res[2][1] = v[4] * m[0][1] + v[5] * m[1][1] + v[2] * m[2][1];        
+        res[2][2] = v[4] * m[0][2] + v[5] * m[1][2] + v[2] * m[2][2];
+
+        return res;
+    }
+
+    /**
+     * matrix times a vector representation of a symmetric 3x3 matrix
+     *
+     * @param m input matrix
+     * @param v input vector of the form 11, 22, 33, 12, 13, 23
+     * @return matrix product
+     */
+    public static double[][] mat3symvec6(double m[][], double v[]){
+        double res[][] = new double[3][3];
+        res[0][0] = m[0][0] * v[0] + m[0][1] * v[3] + m[0][2] * v[4];
+        res[0][1] = m[0][0] * v[3] + m[0][1] * v[1] + m[0][2] * v[5];
+        res[0][2] = m[0][0] * v[4] + m[0][1] * v[5] + m[0][2] * v[2];
+        res[1][0] = m[1][0] * v[0] + m[1][1] * v[3] + m[1][2] * v[4];
+        res[1][1] = m[1][0] * v[3] + m[1][1] * v[1] + m[1][2] * v[5];
+        res[1][2] = m[1][0] * v[4] + m[1][1] * v[5] + m[1][2] * v[2];
+        res[2][0] = m[2][0] * v[0] + m[2][1] * v[3] + m[2][2] * v[4];
+        res[2][1] = m[2][0] * v[3] + m[2][1] * v[1] + m[2][2] * v[5];
+        res[2][2] = m[2][0] * v[4] + m[2][1] * v[5] + m[2][2] * v[2];
+
+        return res;
+    }
+
+    /**
      * matrix times a matrix
      *
      * @param m1 first input matrix
@@ -603,5 +647,20 @@ public final class VectorMath {
         ret[0] = a[0] + b[0];
         ret[1] = a[1] + b[1];
         ret[2] = a[2] + b[2];
+    }
+
+    public static double[][] transpose3(double m[][]) {
+        double t[][] = new double[3][3];
+        t[0][0] = m[0][0];
+        t[0][1] = m[1][0];
+        t[0][2] = m[2][0];
+        t[1][0] = m[0][1];
+        t[1][1] = m[1][1];
+        t[1][2] = m[2][1];
+        t[2][0] = m[0][2];
+        t[2][1] = m[1][2];
+        t[2][2] = m[2][2];
+
+        return t;
     }
 }

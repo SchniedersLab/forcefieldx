@@ -25,6 +25,12 @@ import static java.lang.Math.exp;
 import static java.lang.Math.PI;
 import static java.lang.Math.pow;
 
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.mat3mat3;
+import static ffx.numerics.VectorMath.mat3symvec6;
+import static ffx.numerics.VectorMath.transpose3;
+import static ffx.numerics.VectorMath.vec3mat3;
+
 import java.util.logging.Logger;
 
 import ffx.crystal.Crystal;
@@ -32,7 +38,6 @@ import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
 import ffx.numerics.ComplexNumber;
 import ffx.numerics.Optimizable;
-import ffx.numerics.VectorMath;
 
 /**
  *
@@ -45,6 +50,9 @@ import ffx.numerics.VectorMath;
  * P. V. Afonine, R. W. Grosse-Kunstleve and P. D. Adams,
  * Acta Cryst. (2005). D61, 850-855
  *
+ * @see <a href="http://dx.doi.org/10.1107/S0021889802008580" target="_blank">
+ * R. W. Grosse-Kunstleve and P. D. Adams, J. Appl. Cryst. (2002). 35, 477-480.
+ *
  * @see <a href="http://dx.doi.org/10.1002/jcc.1032" target="_blank">
  * J. A. Grant, B. T. Pickup, A. Nicholls, J. Comp. Chem. (2001). 22, 608-640
  *
@@ -56,6 +64,12 @@ public class ScaleBulkOptimizer implements Optimizable {
     private static final Logger logger = Logger.getLogger(ScaleBulkOptimizer.class.getName());
     private static final double twopi2 = 2.0 * PI * PI;
     private static final double eightpi2 = 8.0 * PI * PI;
+    private static final double u11[][] = {{1.0, 0.0, 0.0}, {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}};
+    private static final double u22[][] = {{0.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 0.0}};
+    private static final double u33[][] = {{0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}, {0.0, 0.0, 1.0}};
+    private static final double u12[][] = {{0.0, 1.0, 0.0}, {1.0, 0.0, 0.0}, {0.0, 0.0, 0.0}};
+    private static final double u13[][] = {{0.0, 0.0, 1.0}, {0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}};
+    private static final double u23[][] = {{0.0, 0.0, 0.0}, {0.0, 0.0, 1.0}, {0.0, 1.0, 0.0}};
     private final ReflectionList reflectionlist;
     private final Crystal crystal;
     private final RefinementData refinementdata;
@@ -66,6 +80,13 @@ public class ScaleBulkOptimizer implements Optimizable {
     private final int freer[];
     private final int n;
     protected double[] optimizationScaling = null;
+    private final double recipt[][];
+    private final double j11[][];
+    private final double j22[][];
+    private final double j33[][];
+    private final double j12[][];
+    private final double j13[][];
+    private final double j23[][];
 
     public ScaleBulkOptimizer(ReflectionList reflectionlist, RefinementData refinementdata, int n) {
         this.reflectionlist = reflectionlist;
@@ -77,6 +98,14 @@ public class ScaleBulkOptimizer implements Optimizable {
         this.fo = refinementdata.fsigf;
         this.freer = refinementdata.freer;
         this.n = n;
+
+        recipt = transpose3(crystal.recip);
+        j11 = mat3mat3(mat3mat3(crystal.recip, u11), recipt);
+        j22 = mat3mat3(mat3mat3(crystal.recip, u22), recipt);
+        j33 = mat3mat3(mat3mat3(crystal.recip, u33), recipt);
+        j12 = mat3mat3(mat3mat3(crystal.recip, u12), recipt);
+        j13 = mat3mat3(mat3mat3(crystal.recip, u13), recipt);
+        j23 = mat3mat3(mat3mat3(crystal.recip, u23), recipt);
     }
 
     public double target(double x[], double g[],
@@ -104,6 +133,7 @@ public class ScaleBulkOptimizer implements Optimizable {
                 model_b[i] = x[refinementdata.solvent_n + crystal.scale_b[i]];
             }
         }
+        double ustar[][] = mat3mat3(mat3symvec6(crystal.recip, model_b), recipt);
 
         r = rf = rfree = rfreef = sum = sumfo = 0.0;
         for (HKL ih : reflectionlist.hkllist) {
@@ -115,26 +145,19 @@ public class ScaleBulkOptimizer implements Optimizable {
             }
 
             //  constants
-            double ihc[] = {ih.h(), ih.k(), ih.l()};
-            double ihf[] = VectorMath.mat3vec3(ihc, crystal.recip);
-            double u = model_k
-                    - pow(ihf[0], 2.0) * model_b[0]
-                    - pow(ihf[1], 2.0) * model_b[1]
-                    - pow(ihf[2], 2.0) * model_b[2]
-                    - 2.0 * ihf[0] * ihf[1] * model_b[3]
-                    - 2.0 * ihf[0] * ihf[2] * model_b[4]
-                    - 2.0 * ihf[1] * ihf[2] * model_b[5];
             double s = Crystal.invressq(crystal, ih);
+            double ihc[] = {ih.h(), ih.k(), ih.l()};
+            double u = model_k - dot(vec3mat3(ihc, ustar), ihc);
             double ebs = exp(-twopi2 * solvent_ueq * s);
             double ksebs = solvent_k * ebs;
-            double kmems = exp(0.5 * u);
+            double kmebm = exp(0.25 * u);
 
             // structure factors
             ComplexNumber fcc = refinementdata.fc(i);
             ComplexNumber fsc = refinementdata.fs(i);
             ComplexNumber fct = (refinementdata.solvent_n > 1)
                     ? fcc.plus(fsc.times(ksebs)) : fcc;
-            ComplexNumber kfct = fct.times(kmems);
+            ComplexNumber kfct = fct.times(kmebm);
 
             // total structure factor (for refinement)
             fctot[i][0] = kfct.re();
@@ -150,7 +173,7 @@ public class ScaleBulkOptimizer implements Optimizable {
             sum += d2;
             sumfo += f1 * f1;
 
-            if (refinementdata.isfreer(i)){
+            if (refinementdata.isfreer(i)) {
                 rfree += abs(abs(f1) - abs(kfct.abs()));
                 rfreef += abs(f1);
             } else {
@@ -159,18 +182,20 @@ public class ScaleBulkOptimizer implements Optimizable {
             }
 
             if (gradient) {
+                // model_k/model_b - common derivative element
+                double dfm = 0.25 * kfct.abs() * dr;
                 // bulk solvent - common derivative element
-                double dfp = ebs * (fcc.re() * fsc.re()
+                double dfb = ebs * (fcc.re() * fsc.re()
                         + fcc.im() * fsc.im()
                         + ksebs * pow(fsc.abs(), 2.0));
 
                 // model_k derivative
-                g[0] += 0.5 * kfct.abs() * dr;
+                g[0] += dfm;
                 if (refinementdata.solvent_n > 1) {
                     // solvent_k derivative
-                    g[1] += kmems * dfp * dr / fct.abs();
+                    g[1] += kmebm * dfb * dr / fct.abs();
                     // solvent_ueq derivative
-                    g[2] += kmems * -twopi2 * s * solvent_k * dfp * dr / fct.abs();
+                    g[2] += kmebm * -twopi2 * s * solvent_k * dfb * dr / fct.abs();
                 }
 
                 int sn = refinementdata.solvent_n;
@@ -179,27 +204,34 @@ public class ScaleBulkOptimizer implements Optimizable {
                         switch (j) {
                             case (0):
                                 // B11
-                                g[sn + crystal.scale_b[j]] += 0.5 * kfct.abs() * -pow(ihf[0], 2.0) * dr;
+                                g[sn + crystal.scale_b[j]] += -dfm
+                                        * dot(vec3mat3(ihc, j11), ihc);
                                 break;
                             case (1):
                                 // B22
-                                g[sn + crystal.scale_b[j]] += 0.5 * kfct.abs() * -pow(ihf[1], 2.0) * dr;
+                                g[sn + crystal.scale_b[j]] += -dfm
+                                        * dot(vec3mat3(ihc, j22), ihc);
                                 break;
                             case (2):
                                 // B33
-                                g[sn + crystal.scale_b[j]] += 0.5 * kfct.abs() * -pow(ihf[2], 2.0) * dr;
+                                g[sn + crystal.scale_b[j]] += -dfm
+                                        * dot(vec3mat3(ihc, j33), ihc);
                                 break;
                             case (3):
                                 // B12
-                                g[sn + crystal.scale_b[j]] += 0.5 * kfct.abs() * -2.0 * ihf[0] * ihf[1] * dr;
+                                g[sn + crystal.scale_b[j]] += -dfm
+                                        * dot(vec3mat3(ihc, j12), ihc);
                                 break;
                             case (4):
                                 // B13
-                                g[sn + crystal.scale_b[j]] += 0.5 * kfct.abs() * -2.0 * ihf[0] * ihf[2] * dr;
+                                g[sn + crystal.scale_b[j]] += -dfm
+                                        * dot(vec3mat3(ihc, j13), ihc);
                                 break;
                             case (5):
                                 // B23
-                                g[sn + crystal.scale_b[j]] += 0.5 * kfct.abs() * -2.0 * ihf[1] * ihf[2] * dr;
+                                // g[sn + crystal.scale_b[j]] += 0.25 * kfct.abs() * -2.0 * ihf[1] * ihf[2] * dr;
+                                g[sn + crystal.scale_b[j]] += -dfm
+                                        * dot(vec3mat3(ihc, j23), ihc);
                                 break;
                         }
                     }

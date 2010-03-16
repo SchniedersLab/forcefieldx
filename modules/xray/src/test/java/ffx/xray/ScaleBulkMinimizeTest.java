@@ -59,28 +59,28 @@ public class ScaleBulkMinimizeTest {
                         "ffx/xray/structures/1NSF.pdb",
                         "ffx/xray/structures/1NSF.mtz",
                         null,
-                        25.263354,
-                        25.665623,
-                        0.8789127,
-                        0.1532101},
+                        25.3337,
+                        25.7664,
+                        0.8789,
+                        0.1571},
                     {true,
-                        "myosin I SH3 domain bound to acan125",
+                        "SNARE complex",
+                        "ffx/xray/structures/1N7S.pdb",
+                        "ffx/xray/structures/1N7S.mtz",
+                        null,
+                        19.6702,
+                        21.7984,
+                        0.9305,
+                        0.1375},
+                    {true,
+                        "Myosin I SH3 domain bound to ACAN125",
                         "ffx/xray/structures/2DRM.pdb",
                         "ffx/xray/structures/2DRM.mtz",
                         null,
-                        21.026049,
-                        23.121546,
-                        0.9273,
-                        0.1415},
-                    {true,
-                        "E322Y alkaline phosphatase",
-                        "ffx/xray/structures/3DYC.pdb",
-                        null,
-                        "ffx/xray/structures/3DYC.ent",
-                        20.538768,
-                        26.581925,
-                        0.8928,
-                        0.1835}
+                        20.9467,
+                        23.1166,
+                        0.9266,
+                        0.1419}
                 });
     }
     private final String info;
@@ -179,18 +179,12 @@ public class ScaleBulkMinimizeTest {
 
         // set up FFT and run it
         ParallelTeam parallelTeam = new ParallelTeam();
-        CrystalReciprocalSpace crs =
-                new CrystalReciprocalSpace(reflectionlist, atomarray,
-                parallelTeam, parallelTeam, false);
-        for (int i = 0; i < 10; i++) {
-            crs.computeAtomicDensity(refinementdata.fc);
-        }
-        crs =
-                new CrystalReciprocalSpace(reflectionlist, atomarray,
+        CrystalReciprocalSpace crs = new CrystalReciprocalSpace(reflectionlist,
+                atomarray, parallelTeam, parallelTeam, false);
+        crs.computeDensity(refinementdata.fc);
+        crs = new CrystalReciprocalSpace(reflectionlist, atomarray,
                 parallelTeam, parallelTeam, true);
-        for (int i = 0; i < 10; i++) {
-            crs.computeSolventDensity(refinementdata.fs);
-        }
+        crs.computeDensity(refinementdata.fs);
 
         /*
         try {
@@ -216,7 +210,9 @@ public class ScaleBulkMinimizeTest {
          */
 
         ScaleBulkMinimize scalebulkminimize =
-                new ScaleBulkMinimize(reflectionlist, refinementdata);
+                new ScaleBulkMinimize(reflectionlist, refinementdata, crs);
+        scalebulkminimize.minimize(7, 1e-2);
+        scalebulkminimize.asdGridOptimize();
         scalebulkminimize.minimize(7, 1e-4);
 
         SigmaAMinimize sigmaaminimize = new SigmaAMinimize(reflectionlist,
@@ -237,6 +233,7 @@ public class ScaleBulkMinimizeTest {
             return;
         }
 
+        crystalstats.print_scalestats();
         crystalstats.print_hklstats();
         crystalstats.print_snstats();
         crystalstats.print_rstats();

@@ -32,6 +32,12 @@ import static java.lang.Math.sin;
 import static java.lang.Math.sqrt;
 import static java.lang.Math.tanh;
 
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.mat3mat3;
+import static ffx.numerics.VectorMath.mat3symvec6;
+import static ffx.numerics.VectorMath.transpose3;
+import static ffx.numerics.VectorMath.vec3mat3;
+
 import java.util.logging.Logger;
 
 import ffx.crystal.Crystal;
@@ -40,7 +46,6 @@ import ffx.crystal.ReflectionList;
 import ffx.crystal.ReflectionSpline;
 import ffx.numerics.ComplexNumber;
 import ffx.numerics.Optimizable;
-import ffx.numerics.VectorMath;
 
 /**
  *
@@ -102,6 +107,7 @@ public class SigmaAOptimizer implements Optimizable {
     private final double dfc[][];
     private final double dfs[][];
     protected double[] optimizationScaling = null;
+    private final double recipt[][];
 
     public SigmaAOptimizer(ReflectionList reflectionlist,
             RefinementData refinementdata) {
@@ -121,6 +127,7 @@ public class SigmaAOptimizer implements Optimizable {
         this.n = refinementdata.nparams;
 
         // initialize params
+        recipt = transpose3(crystal.recip);
         this.spline = new ReflectionSpline(reflectionlist, n);
     }
 
@@ -141,8 +148,10 @@ public class SigmaAOptimizer implements Optimizable {
         double solvent_ueq = refinementdata.solvent_ueq;
         double model_b[] = new double[6];
         for (int i = 0; i < 6; i++) {
-            model_b[i] = refinementdata.aniso_b[i];
+            model_b[i] = refinementdata.model_b[i];
         }
+        double ustar[][] = mat3mat3(mat3symvec6(crystal.recip, model_b), recipt);
+
         double sa[] = new double[n];
         double wa[] = new double[n];
         for (int i = 0; i < n; i++) {
@@ -156,18 +165,11 @@ public class SigmaAOptimizer implements Optimizable {
 
             // constants
             double ihc[] = {ih.h(), ih.k(), ih.l()};
-            double ihf[] = VectorMath.mat3vec3(ihc, crystal.recip);
-            double u = model_k
-                    - pow(ihf[0], 2.0) * model_b[0]
-                    - pow(ihf[1], 2.0) * model_b[1]
-                    - pow(ihf[2], 2.0) * model_b[2]
-                    - 2.0 * ihf[0] * ihf[1] * model_b[3]
-                    - 2.0 * ihf[0] * ihf[2] * model_b[4]
-                    - 2.0 * ihf[1] * ihf[2] * model_b[5];
+            double u = model_k - dot(vec3mat3(ihc, ustar), ihc);
             double s = Crystal.invressq(crystal, ih);
             double ebs = exp(-twopi2 * solvent_ueq * s);
             double ksebs = solvent_k * ebs;
-            double kmems = exp(0.5 * u);
+            double kmems = exp(0.25 * u);
             double km2 = kmems * kmems;
             double epsc = ih.epsilonc();
 
