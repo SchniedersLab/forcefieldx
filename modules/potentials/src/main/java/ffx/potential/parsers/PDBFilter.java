@@ -50,6 +50,7 @@ import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.MSGroup;
 import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.Molecule;
+import ffx.potential.bonded.Utilities;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.BioType;
@@ -116,7 +117,8 @@ public final class PDBFilter extends SystemFilter {
 
     private enum Card {
 
-        ANISOU, ATOM, CONECT, CRYST1, HELIX, HETATM, LINK, SHEET, SSBOND, TURN, REMARK
+        ANISOU, ATOM, CONECT, CRYST1, HELIX, HETATM, LINK, SHEET, SSBOND, TURN,
+        REMARK
     };
 
     /**
@@ -733,7 +735,7 @@ public final class PDBFilter extends SystemFilter {
          */
         int numberOfResidues = residues.size();
         for (int residueNumber = 0; residueNumber
-                < numberOfResidues; residueNumber++) {
+                                    < numberOfResidues; residueNumber++) {
             /**
              * Match the residue name to a known nucleic acid residue.
              */
@@ -742,7 +744,7 @@ public final class PDBFilter extends SystemFilter {
             NucleicAcid3 nucleicAcid = NucleicAcid3.UNK;
             int naNumber = -1;
             for (int n = 0; n
-                    < numberOfKnownNucleicAcids; n++) {
+                            < numberOfKnownNucleicAcids; n++) {
                 NucleicAcid3 amino = knownNucleicAcids[n];
                 if (amino.toString().equalsIgnoreCase(residueName)) {
                     nucleicAcid = amino;
@@ -930,7 +932,7 @@ public final class PDBFilter extends SystemFilter {
                         continue;
                     }
                     System.out.println("An atom for residue " + residueName
-                            + " has the wrong number of bonds.\n" + atom.toString());
+                                       + " has the wrong number of bonds.\n" + atom.toString());
                     System.out.println("Expected: " + atomType.valence + " Actual: " + numberOfBonds);
                 }
             }
@@ -1129,7 +1131,7 @@ public final class PDBFilter extends SystemFilter {
          */
         int numberOfResidues = residues.size();
         for (int residueNumber = 0; residueNumber
-                < numberOfResidues; residueNumber++) {
+                                    < numberOfResidues; residueNumber++) {
             Residue residue = residues.get(residueNumber);
             String residueName = residue.getName().toUpperCase();
             int j = 1;
@@ -1153,7 +1155,7 @@ public final class PDBFilter extends SystemFilter {
             AminoAcid3 aminoAcid = AminoAcid3.UNK;
             int aminoAcidNumber = -1;
             for (int a = 0; a
-                    < numberOfKnownAminoAcids; a++) {
+                            < numberOfKnownAminoAcids; a++) {
                 AminoAcid3 amino = knownAminoAcids[a];
                 if (amino.toString().equalsIgnoreCase(residueName)) {
                     aminoAcid = amino;
@@ -1215,7 +1217,7 @@ public final class PDBFilter extends SystemFilter {
             aminoAcid = AminoAcid3.UNK;
             aminoAcidNumber = -1;
             for (int a = 0; a
-                    < numberOfKnownAminoAcids; a++) {
+                            < numberOfKnownAminoAcids; a++) {
                 AminoAcid3 amino = knownAminoAcids[a];
                 if (amino.toString().equalsIgnoreCase(residueName)) {
                     aminoAcid = amino;
@@ -1372,7 +1374,7 @@ public final class PDBFilter extends SystemFilter {
                         continue;
                     }
                     System.out.println("An atom for residue " + residueName
-                            + " has the wrong number of bonds.\n" + atom.toString());
+                                       + " has the wrong number of bonds.\n" + atom.toString());
                     System.out.println("Expected: " + atomType.valence + " Actual: " + numberOfBonds);
                 }
             }
@@ -1398,7 +1400,7 @@ public final class PDBFilter extends SystemFilter {
      * @throws ffx.potential.parsers.PDBFilter.MissingHeavyAtomException
      */
     private void assignAminoAcidSideChain(ResiduePosition position, AminoAcid3 aminoAcid, Residue residue,
-            Atom CA, Atom N, Atom C) throws MissingHeavyAtomException {
+                                          Atom CA, Atom N, Atom C) throws MissingHeavyAtomException {
         switch (aminoAcid) {
             case GLY:
                 switch (position) {
@@ -1834,13 +1836,13 @@ public final class PDBFilter extends SystemFilter {
     }
 
     private Atom setHydrogenAtom(MSGroup residue, String atomName, Atom ia, double bond, Atom ib, double angle1,
-            Atom ic, double angle2, int chiral, int lookUp) {
+                                 Atom ic, double angle2, int chiral, int lookUp) {
         AtomType atomType = findAtomType(lookUp);
         return setHydrogenAtom(residue, atomName, ia, bond, ib, angle1, ic, angle2, chiral, atomType);
     }
 
     private Atom setHydrogenAtom(MSGroup residue, String atomName, Atom ia, double bond, Atom ib, double angle1,
-            Atom ic, double angle2, int chiral, AtomType atomType) {
+                                 Atom ic, double angle2, int chiral, AtomType atomType) {
         if (atomType == null) {
             return null;
         }
@@ -1976,73 +1978,62 @@ public final class PDBFilter extends SystemFilter {
                     // Loop over atoms
                     ArrayList<Atom> residueAtoms = residue.getAtomList();
                     for (Atom atom : residueAtoms) {
-                        String name = atom.getID();
-                        if (name.length() > 4) {
-                            name = name.substring(0, 4);
-                        } else if (name.length() == 1) {
-                            name = name + "  ";
-                        } else if (name.length() == 2) {
-                            name = name + " ";
-                        }
-                        double xyz[] = atom.getXYZ();
-                        sb.replace(6, 16, String.format("%5d " + padLeft(name.toUpperCase(), 4), serial++));
-                        Character altLoc = atom.getAltLoc();
-                        if (altLoc != null) {
-                            sb.setCharAt(16, altLoc);
-                        } else {
-                            sb.setCharAt(16, ' ');
-                        }
-                        sb.replace(30, 66, String.format("%8.3f%8.3f%8.3f%6.2f%6.2f",
-                                xyz[0], xyz[1], xyz[2], atom.getOccupancy(), atom.getTempFactor()));
-                        name = Atom.ElementSymbol.values()[atom.getAtomicNumber() - 1].toString();
-                        name = name.toUpperCase();
-                        sb.replace(76, 78, padLeft(name, 2));
-                        sb.replace(78, 80, String.format("%2d", 0));
-                        bw.write(sb.toString());
-                        bw.newLine();
-// =============================================================================
-//  1 - 6        Record name   "ANISOU"
-//  7 - 11       Integer       serial         Atom serial number.
-// 13 - 16       Atom          name           Atom name.
-// 17            Character     altLoc         Alternate location indicator
-// 18 - 20       Residue name  resName        Residue name.
-// 22            Character     chainID        Chain identifier.
-// 23 - 26       Integer       resSeq         Residue sequence number.
-// 27            AChar         iCode          Insertion code.
-// 29 - 35       Integer       u[0][0]        U(1,1)
-// 36 - 42       Integer       u[1][1]        U(2,2)
-// 43 - 49       Integer       u[2][2]        U(3,3)
-// 50 - 56       Integer       u[0][1]        U(1,2)
-// 57 - 63       Integer       u[0][2]        U(1,3)
-// 64 - 70       Integer       u[1][2]        U(2,3)
-// 77 - 78       LString(2)    element        Element symbol, right-justified.
-// 79 - 80       LString(2)    charge         Charge on the atom.
-// =============================================================================
-                        double[] anisou = atom.getAnisou();
-                        if (anisou != null) {
-                            anisouSB.replace(6, 80, sb.substring(6, 80));
-                            anisouSB.replace(28, 70, String.format("%7d%7d%7d%7d%7d%7d",
-                                    (int) (anisou[0] * 1e4), (int) (anisou[1] * 1e4),
-                                    (int) (anisou[2] * 1e4), (int) (anisou[3] * 1e4),
-                                    (int) (anisou[4] * 1e4), (int) (anisou[5] * 1e4)));
-                            bw.write(anisouSB.toString());
-                            bw.newLine();
-                        }
+                        writeAtom(atom, serial++, sb, anisouSB, bw);
                     }
                 }
-                terSB.replace(6, 11, Integer.toString(serial++));
+                terSB.replace(6, 11, String.format("%5d", serial++));
                 terSB.replace(12, 16, "    ");
                 terSB.replace(16, 26, sb.substring(16, 26));
                 bw.write(terSB.toString());
                 bw.newLine();
             }
             sb.replace(0, 6, "HETATM");
+            sb.setCharAt(21, 'A');
+            int resID = 1;
+            Polymer polymer = molecularAssembly.getPolymer("A", false);
+            if (polymer != null) {
+                ArrayList<Residue> residues = polymer.getResidues();
+                for (Residue residue : residues) {
+                    int resID2 = residue.getResidueNumber();
+                    if (resID2 >= resID) {
+                        resID = resID2 + 1;
+                    }
+                }
+            }
+
             // Loop over molecules, ions and then water.
-            ArrayList<MSNode> molecules = new ArrayList<MSNode>();
-            molecules.addAll(molecularAssembly.getMolecules());
-            molecules.addAll(molecularAssembly.getIons());
-            molecules.addAll(molecularAssembly.getWaters());
+            ArrayList<MSNode> molecules = molecularAssembly.getMolecules();
+            // Write out molecules.
             for (MSNode node : molecules) {
+                Molecule molecule = (Molecule) node;
+                String resName = "MOL";
+                sb.replace(17, 20, padLeft(resName.toUpperCase(), 3));
+                sb.replace(22, 26, String.format("%4d", resID++));
+                // Loop over atoms
+                ArrayList<Atom> residueAtoms = molecule.getAtomList();
+                for (Atom atom : residueAtoms) {
+                    writeAtom(atom, serial++, sb, anisouSB, bw);
+                }
+            }
+            // Write out ions.
+            ArrayList<MSNode> ions = molecularAssembly.getIons();
+            for (MSNode node : ions) {
+                Molecule molecule = (Molecule) node;
+                String resName = molecule.getName();
+                if (resName.length() > 3) {
+                    resName = resName.substring(0, 3);
+                }
+                sb.replace(17, 20, padLeft(resName.toUpperCase(), 3));
+                sb.replace(22, 26, String.format("%4d", resID++));
+                // Loop over atoms
+                ArrayList<Atom> residueAtoms = molecule.getAtomList();
+                for (Atom atom : residueAtoms) {
+                    writeAtom(atom, serial++, sb, anisouSB, bw);
+                }
+            }
+            // Write out water.
+            ArrayList<MSNode> water = molecularAssembly.getWaters();
+            for (MSNode node : water) {
                 Molecule molecule = (Molecule) node;
                 String chain = molecule.getPolymerName();
                 if (chain == null || chain.equalsIgnoreCase("Blank")) {
@@ -2050,74 +2041,16 @@ public final class PDBFilter extends SystemFilter {
                 } else {
                     sb.setCharAt(21, chain.toUpperCase().charAt(0));
                 }
-                String resName = molecule.getResidueName();
-                if (resName.length() > 3) {
-                    resName = resName.substring(0, 3);
-                }
-                int resID = molecule.getResidueNumber();
+                String resName = "HOH";
                 sb.replace(17, 20, padLeft(resName.toUpperCase(), 3));
-                sb.replace(22, 26, String.format("%4d", resID));
+                sb.replace(22, 26, String.format("%4d", resID++));
                 // Loop over atoms
                 ArrayList<Atom> residueAtoms = molecule.getAtomList();
                 for (Atom atom : residueAtoms) {
-                    String name = atom.getID();
-                    if (name.length() > 4) {
-                        name = name.substring(0, 4);
-                    } else if (name.length() == 1) {
-                        name = name + "  ";
-                    } else if (name.length() == 2) {
-                        if (atom.getAtomType().valence == 0) {
-                            name = name + "  ";
-                        } else {
-                            name = name + " ";
-                        }
-                    }
-                    double xyz[] = atom.getXYZ();
-                    sb.replace(6, 16, String.format("%5d " + padLeft(name.toUpperCase(), 4), serial++));
-                    Character altLoc = atom.getAltLoc();
-                    if (altLoc != null) {
-                        sb.setCharAt(16, altLoc);
-                    } else {
-                        sb.setCharAt(16, ' ');
-                    }
-                    sb.replace(30, 66, String.format("%8.3f%8.3f%8.3f%6.2f%6.2f",
-                            xyz[0], xyz[1], xyz[2], atom.getOccupancy(), atom.getTempFactor()));
-                    name = Atom.ElementSymbol.values()[atom.getAtomicNumber() - 1].toString();
-                    name = name.toUpperCase();
-                    sb.replace(76, 78, padLeft(name, 2));
-                    sb.replace(78, 80, String.format("%2d", 0));
-                    bw.write(sb.toString());
-                    bw.newLine();
-// =============================================================================
-//  1 - 6        Record name   "ANISOU"
-//  7 - 11       Integer       serial         Atom serial number.
-// 13 - 16       Atom          name           Atom name.
-// 17            Character     altLoc         Alternate location indicator
-// 18 - 20       Residue name  resName        Residue name.
-// 22            Character     chainID        Chain identifier.
-// 23 - 26       Integer       resSeq         Residue sequence number.
-// 27            AChar         iCode          Insertion code.
-// 29 - 35       Integer       u[0][0]        U(1,1)
-// 36 - 42       Integer       u[1][1]        U(2,2)
-// 43 - 49       Integer       u[2][2]        U(3,3)
-// 50 - 56       Integer       u[0][1]        U(1,2)
-// 57 - 63       Integer       u[0][2]        U(1,3)
-// 64 - 70       Integer       u[1][2]        U(2,3)
-// 77 - 78       LString(2)    element        Element symbol, right-justified.
-// 79 - 80       LString(2)    charge         Charge on the atom.
-// =============================================================================
-                    double[] anisou = atom.getAnisou();
-                    if (anisou != null) {
-                        anisouSB.replace(6, 80, sb.substring(6, 80));
-                        anisouSB.replace(28, 70, String.format("%7d%7d%7d%7d%7d%7d",
-                                (int) (anisou[0] * 1e4), (int) (anisou[1] * 1e4),
-                                (int) (anisou[2] * 1e4), (int) (anisou[3] * 1e4),
-                                (int) (anisou[4] * 1e4), (int) (anisou[5] * 1e4)));
-                        bw.write(anisouSB.toString());
-                        bw.newLine();
-                    }
+                    writeAtom(atom, serial++, sb, anisouSB, bw);
                 }
             }
+
             bw.write("END");
             bw.newLine();
             bw.close();
@@ -2127,6 +2060,68 @@ public final class PDBFilter extends SystemFilter {
             return false;
         }
         return true;
+    }
+
+
+    public void writeAtom(Atom atom, int serial, StringBuffer sb,
+            StringBuffer anisouSB, BufferedWriter bw)
+            throws IOException {
+        String name = atom.getID();
+        if (name.length() > 4) {
+            name = name.substring(0, 4);
+        } else if (name.length() == 1) {
+            name = name + "  ";
+        } else if (name.length() == 2) {
+            if (atom.getAtomType().valence == 0) {
+                name = name + "  ";
+            } else {
+                name = name + " ";
+            }
+        }
+        double xyz[] = atom.getXYZ();
+        sb.replace(6, 16, String.format("%5d " + padLeft(name.toUpperCase(), 4), serial));
+        Character altLoc = atom.getAltLoc();
+        if (altLoc != null) {
+            sb.setCharAt(16, altLoc);
+        } else {
+            sb.setCharAt(16, ' ');
+        }
+        sb.replace(30, 66, String.format("%8.3f%8.3f%8.3f%6.2f%6.2f",
+                                         xyz[0], xyz[1], xyz[2], atom.getOccupancy(), atom.getTempFactor()));
+        name = Atom.ElementSymbol.values()[atom.getAtomicNumber() - 1].toString();
+        name = name.toUpperCase();
+        sb.replace(76, 78, padLeft(name, 2));
+        sb.replace(78, 80, String.format("%2d", 0));
+        bw.write(sb.toString());
+        bw.newLine();
+// =============================================================================
+//  1 - 6        Record name   "ANISOU"
+//  7 - 11       Integer       serial         Atom serial number.
+// 13 - 16       Atom          name           Atom name.
+// 17            Character     altLoc         Alternate location indicator
+// 18 - 20       Residue name  resName        Residue name.
+// 22            Character     chainID        Chain identifier.
+// 23 - 26       Integer       resSeq         Residue sequence number.
+// 27            AChar         iCode          Insertion code.
+// 29 - 35       Integer       u[0][0]        U(1,1)
+// 36 - 42       Integer       u[1][1]        U(2,2)
+// 43 - 49       Integer       u[2][2]        U(3,3)
+// 50 - 56       Integer       u[0][1]        U(1,2)
+// 57 - 63       Integer       u[0][2]        U(1,3)
+// 64 - 70       Integer       u[1][2]        U(2,3)
+// 77 - 78       LString(2)    element        Element symbol, right-justified.
+// 79 - 80       LString(2)    charge         Charge on the atom.
+// =============================================================================
+        double[] anisou = atom.getAnisou();
+        if (anisou != null) {
+            anisouSB.replace(6, 80, sb.substring(6, 80));
+            anisouSB.replace(28, 70, String.format("%7d%7d%7d%7d%7d%7d",
+                                                   (int) (anisou[0] * 1e4), (int) (anisou[1] * 1e4),
+                                                   (int) (anisou[2] * 1e4), (int) (anisou[3] * 1e4),
+                                                   (int) (anisou[4] * 1e4), (int) (anisou[5] * 1e4)));
+            bw.write(anisouSB.toString());
+            bw.newLine();
+        }
     }
 
     /**
@@ -2145,11 +2140,13 @@ public final class PDBFilter extends SystemFilter {
 
     public enum AminoAcid3 {
 
-        GLY, ALA, VAL, LEU, ILE, SER, THR, CYS, CYX, PRO, PHE, TYR, TRP, HIS, HID, HIE,
-        ASP, ASN, GLU, GLN, MET, LYS, ARG, ORN, AIB, PCA, FOR, ACE, NH2, NME, UNK
+        GLY, ALA, VAL, LEU, ILE, SER, THR, CYS, CYX, PRO, PHE, TYR, TRP, HIS,
+        HID, HIE,
+        ASP, ASN, GLU, GLN, MET, LYS, ARG, ORN, AIB, PCA, FOR, ACE, NH2, NME,
+        UNK
     };
     public final int aminoAcidHeavyAtoms[] = {4, 5, 7, 8, 8, 6, 7, 6, 6, 7, 11, 12, 14, 10, 10, 10,
-        8, 8, 9, 9, 8, 9, 11, 8, 6, 8, 0, 0, 0, 0, 0};
+                                              8, 8, 9, 9, 8, 9, 11, 8, 6, 8, 0, 0, 0, 0, 0};
     static AminoAcid3 knownAminoAcids[] = AminoAcid3.values();
     static int numberOfKnownAminoAcids = knownAminoAcids.length;
 
@@ -2201,44 +2198,44 @@ public final class PDBFilter extends SystemFilter {
      */
     private static final int nType[][] = {
         {350, 356, 362, 368, 374, 380, 386, 392, 398, 404, 412, 418, 424, 430, 436, 442, 448,
-            454, 460, 466, 472, 478, 484, 490, 496, 325, 0, 0, 0, 0, 350},
+         454, 460, 466, 472, 478, 484, 490, 496, 325, 0, 0, 0, 0, 350},
         {1, 7, 15, 27, 41, 55, 65, 77, 87, 96, 107, 122, 138, 161, 178, 194, 210, 220,
-            232, 244, 258, 271, 287, 304, 318, 325, 0, 0, 0, 0, 1},
+         232, 244, 258, 271, 287, 304, 318, 325, 0, 0, 0, 0, 1},
         {501, 507, 513, 519, 525, 531, 537, 543, 549, 555, 560, 566, 572, 578, 584, 590, 596,
-            602, 608, 614, 620, 626, 632, 638, 644, 0, 0, 0, 344, 346, 501}};
+         602, 608, 614, 620, 626, 632, 638, 644, 0, 0, 0, 344, 346, 501}};
     private static final int caType[][] = {
         {351, 357, 363, 369, 375, 381, 387, 393, 399, 405, 413, 419, 425, 431, 437, 443, 449,
-            455, 461, 467, 473, 479, 485, 491, 497, 326, 0, 340, 0, 0, 351},
+         455, 461, 467, 473, 479, 485, 491, 497, 326, 0, 340, 0, 0, 351},
         {2, 8, 16, 28, 42, 56, 66, 78, 88, 97, 108, 123, 139, 162, 179, 195, 211, 221,
-            233, 245, 259, 272, 288, 305, 319, 326, 0, 0, 0, 0, 2},
+         233, 245, 259, 272, 288, 305, 319, 326, 0, 0, 0, 0, 2},
         {502, 508, 514, 520, 526, 532, 538, 544, 550, 556, 561, 567, 573, 579, 585, 591, 597,
-            603, 609, 615, 621, 627, 633, 639, 645, 0, 0, 0, 0, 348, 502}};
+         603, 609, 615, 621, 627, 633, 639, 645, 0, 0, 0, 0, 348, 502}};
     private static final int cType[][] = {{
             352, 358, 364, 370, 376, 382, 388, 394, 400, 406, 414, 420, 426, 432, 438, 444, 450,
             456, 462, 468, 474, 480, 486, 492, 498, 327, 337, 342, 0, 0, 352},
-        {3, 9, 17, 29, 43, 57, 67, 79, 89, 98, 109, 124, 140, 163, 180, 196, 212, 222,
-            234, 246, 260, 273, 289, 306, 320, 327, 0, 0, 0, 0, 3},
-        {503, 509, 515, 521, 527, 533, 539, 545, 551, 557, 562, 568, 574, 580, 586, 592, 598,
-            604, 610, 616, 622, 628, 634, 640, 646, 0, 0, 0, 0, 0, 503}};
+                                          {3, 9, 17, 29, 43, 57, 67, 79, 89, 98, 109, 124, 140, 163, 180, 196, 212, 222,
+                                           234, 246, 260, 273, 289, 306, 320, 327, 0, 0, 0, 0, 3},
+                                          {503, 509, 515, 521, 527, 533, 539, 545, 551, 557, 562, 568, 574, 580, 586, 592, 598,
+                                           604, 610, 616, 622, 628, 634, 640, 646, 0, 0, 0, 0, 0, 503}};
     private static final int hnType[][] = {{
             353, 359, 365, 371, 377, 383, 389, 395, 401, 407, 415, 421, 427, 433, 439, 445, 451,
             457, 463, 469, 475, 481, 487, 493, 499, 328, 0, 0, 0, 0, 353},
-        {4, 10, 18, 30, 44, 58, 68, 80, 90, 0, 110, 125, 141, 164, 181, 197, 213, 223,
-            235, 247, 261, 274, 290, 307, 321, 328, 0, 0, 0, 0, 4},
-        {504, 510, 516, 522, 528, 534, 540, 546, 552, 0, 563, 569, 575, 581, 587, 593, 599,
-            605, 611, 617, 623, 629, 635, 641, 647, 0, 0, 0, 345, 347, 504}};
+                                           {4, 10, 18, 30, 44, 58, 68, 80, 90, 0, 110, 125, 141, 164, 181, 197, 213, 223,
+                                            235, 247, 261, 274, 290, 307, 321, 328, 0, 0, 0, 0, 4},
+                                           {504, 510, 516, 522, 528, 534, 540, 546, 552, 0, 563, 569, 575, 581, 587, 593, 599,
+                                            605, 611, 617, 623, 629, 635, 641, 647, 0, 0, 0, 345, 347, 504}};
     private static final int oType[][] = {{
             354, 360, 366, 372, 378, 384, 390, 396, 402, 408, 416, 422, 428, 434, 440, 446, 452,
             458, 464, 470, 476, 482, 488, 494, 500, 329, 339, 343, 0, 0, 354},
-        {5, 11, 19, 31, 45, 59, 69, 81, 91, 99, 111, 126, 142, 165, 182, 198, 214, 224,
-            236, 248, 262, 275, 291, 308, 322, 329, 0, 0, 0, 0, 5},
-        {505, 511, 517, 523, 529, 535, 541, 547, 553, 558, 564, 570, 576, 582, 588, 594, 600,
-            606, 612, 618, 624, 630, 636, 642, 648, 0, 0, 0, 0, 0, 505}};
+                                          {5, 11, 19, 31, 45, 59, 69, 81, 91, 99, 111, 126, 142, 165, 182, 198, 214, 224,
+                                           236, 248, 262, 275, 291, 308, 322, 329, 0, 0, 0, 0, 5},
+                                          {505, 511, 517, 523, 529, 535, 541, 547, 553, 558, 564, 570, 576, 582, 588, 594, 600,
+                                           606, 612, 618, 624, 630, 636, 642, 648, 0, 0, 0, 0, 0, 505}};
     private static final int haType[][] = {{
             355, 361, 367, 373, 379, 385, 391, 397, 403, 409, 417, 423, 429, 435, 441, 447, 453,
             459, 465, 471, 477, 483, 489, 495, 0, 330, 338, 341, 0, 0, 355},
-        {6, 12, 20, 32, 46, 60, 70, 82, 92, 100, 112, 127, 143, 166, 183, 199, 215, 225,
-            237, 249, 263, 276, 292, 309, 0, 330, 0, 0, 0, 0, 6},
-        {506, 512, 518, 524, 530, 536, 542, 548, 554, 559, 565, 571, 577, 583, 589, 595, 601,
-            607, 613, 619, 625, 631, 637, 643, 0, 0, 0, 0, 0, 349, 506}};
+                                           {6, 12, 20, 32, 46, 60, 70, 82, 92, 100, 112, 127, 143, 166, 183, 199, 215, 225,
+                                            237, 249, 263, 276, 292, 309, 0, 330, 0, 0, 0, 0, 6},
+                                           {506, 512, 518, 524, 530, 536, 542, 548, 554, 559, 565, 571, 577, 583, 589, 595, 601,
+                                            607, 613, 619, 625, 631, 637, 643, 0, 0, 0, 0, 0, 349, 506}};
 }

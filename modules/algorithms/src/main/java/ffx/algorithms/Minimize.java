@@ -20,7 +20,22 @@
  */
 package ffx.algorithms;
 
+import static java.lang.Math.sqrt;
+
 import java.util.logging.Logger;
+
+import java.util.logging.Level;
+
+import org.apache.commons.math.optimization.GoalType;
+import org.apache.commons.math.optimization.RealConvergenceChecker;
+import org.apache.commons.math.optimization.RealPointValuePair;
+import org.apache.commons.math.optimization.general.ConjugateGradientFormula;
+import org.apache.commons.math.optimization.general.NonLinearConjugateGradientOptimizer;
+import org.apache.commons.math.analysis.solvers.BrentSolver;
+import org.apache.commons.math.analysis.solvers.NewtonSolver;
+import org.apache.commons.math.analysis.solvers.UnivariateRealSolver;
+import org.apache.commons.math.analysis.solvers.UnivariateRealSolverFactoryImpl;
+
 
 import ffx.numerics.LBFGS;
 import ffx.numerics.LineSearch.LineSearchResult;
@@ -35,8 +50,6 @@ import ffx.potential.bonded.MolecularAssembly;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-import java.util.logging.Level;
-
 public class Minimize implements OptimizationListener, Terminatable {
 
     private static final Logger logger = Logger.getLogger(Minimize.class.getName());
@@ -47,6 +60,8 @@ public class Minimize implements OptimizationListener, Terminatable {
     private final MolecularAssembly molecularAssembly;
     private final PotentialEnergy potentialEnergy;
     private AlgorithmListener algorithmListener;
+    private NonLinearConjugateGradientOptimizer optimizer;
+    private ConvergenceChecker convergenceChecker;
     private boolean done = false;
     private boolean terminate = false;
     private long time;
@@ -96,6 +111,8 @@ public class Minimize implements OptimizationListener, Terminatable {
     }
 
     public PotentialEnergy minimize(int m, double eps) {
+
+        time = System.nanoTime();
         potentialEnergy.getCoordinates(x);
         /**
          * Scale coordinates.
@@ -103,12 +120,39 @@ public class Minimize implements OptimizationListener, Terminatable {
         for (int i = 0; i < n; i++) {
             x[i] *= scaling[i];
         }
-        double e = potentialEnergy.energyAndGradient(x, grad);
-
-        time = System.nanoTime();
         done = false;
-        int status = LBFGS.minimize(n, m, x, e, grad, eps, potentialEnergy, this);
+        int status = 2;
+        double e = potentialEnergy.energyAndGradient(x, grad);
+        status = LBFGS.minimize(n, m, x, e, grad, eps, potentialEnergy, this);
         done = true;
+        
+
+        /*
+        optimizer = new NonLinearConjugateGradientOptimizer(ConjugateGradientFormula.FLETCHER_REEVES);
+        convergenceChecker = new ConvergenceChecker(eps);
+        optimizer.setConvergenceChecker(convergenceChecker);
+        optimizer.setMaxEvaluations(Integer.MAX_VALUE);
+        optimizer.setMaxIterations(Integer.MAX_VALUE);
+        UnivariateRealSolver solver = UnivariateRealSolverFactoryImpl.newInstance().newBrentSolver();
+        solver.setMaximalIterationCount(Integer.MAX_VALUE);
+        solver.setFunctionValueAccuracy(1.0e-16);
+        optimizer.setLineSearchSolver(solver);
+
+        try {
+            optimizer.optimize(potentialEnergy, GoalType.MINIMIZE, x);
+            grms = convergenceChecker.getGRMS();
+            done = true;
+            if (grms < eps) {
+                status = 0;
+            } else {
+                status = 1;
+                nSteps = optimizer.getIterations();
+            }
+        } catch (Exception e) {
+            String message = "Exception during optimization optimization.";
+            logger.log(Level.WARNING, message, e);
+        } */
+
         switch (status) {
             case 0:
                 logger.info(String.format("\n Optimization achieved convergence criteria: %8.5f\n", grms));
@@ -152,10 +196,10 @@ public class Minimize implements OptimizationListener, Terminatable {
         } else {
             if (info == LineSearchResult.Success) {
                 logger.info(String.format("%6d%13.4f%11.4f%11.4f%10.4f%9.2f%7d %8.3f",
-                        iter, f, grms, df, xrms, angle, nfun, seconds));
+                                          iter, f, grms, df, xrms, angle, nfun, seconds));
             } else {
                 logger.info(String.format("%6d%13.4f%11.4f%11.4f%10.4f%9.2f%7d %8s",
-                        iter, f, grms, df, xrms, angle, nfun, info.toString()));
+                                          iter, f, grms, df, xrms, angle, nfun, info.toString()));
             }
         }
         // Update the listener and check for an termination request.
@@ -168,5 +212,107 @@ public class Minimize implements OptimizationListener, Terminatable {
             return false;
         }
         return true;
+    }
+
+    /**
+     * Implement the OptimizationListener interface.
+     *
+     * @param iter Number of iterations so far.
+     * @param nfun Number of function evaluations so far.
+     * @param grms Gradient RMS at current solution.
+     * @param xrms Coordinate change RMS at current solution.
+     * @param f Function value at current solution.
+     * @param df Change in the function value compared to the previous solution.
+     *
+     * @since 1.0
+     */
+    public boolean optimizationUpdate(int iter, int nfun, double grms, double xrms, double f, double df) {
+        long currentTime = System.nanoTime();
+        Double seconds = (currentTime - time) * 1.0e-9;
+        time = currentTime;
+        this.grms = grms;
+        this.nSteps = iter;
+
+        if (iter == 1) {
+            logger.info("\n Limited Memory BFGS Quasi-Newton Optimization: \n\n");
+            logger.info(" Cycle       Energy      G RMS    Delta E   Delta X    Evals     Time\n");
+        }
+        logger.info(String.format("%6d%13.4f%11.4f%11.4f%10.4f%7d %8.3f",
+                                  iter, f, grms, df, xrms, nfun, seconds));
+        // Update the listener and check for an termination request.
+        if (algorithmListener != null) {
+            algorithmListener.algorithmUpdate(molecularAssembly);
+        }
+        if (terminate) {
+            logger.info(" The optimization recieved a termination request.");
+            // Tell the optimizer to terminate.
+            return false;
+        }
+        return true;
+    }
+
+    private class ConvergenceChecker implements RealConvergenceChecker {
+
+        double rms = Math.sqrt(n) / Math.sqrt(3.0);
+        double g[] = new double[n];
+        final double eps;
+        private double grms;
+
+        public ConvergenceChecker(double eps) {
+            this.eps = eps;
+        }
+
+        public double getGRMS() {
+            return grms;
+        }
+
+        @Override
+        public boolean converged(int k, RealPointValuePair previous, RealPointValuePair current) {
+            double f = current.getValue();
+            double df = f - previous.getValue();
+            /**
+             * Sometimes the NonLinearOptimizer calls this with a positive step?
+             */
+            if (df > 0) {
+                return false;
+            }
+
+            int iter = k;
+            int nfun = optimizer.getGradientEvaluations();
+
+            /**
+             * Compute the RMS gradient per atom.
+             * Compute the RMS coordinate change per atom.
+             */
+            grms = 0.0;
+            double xrms = 0.0;
+            double prevX[] = previous.getPointRef();
+            double currentX[] = current.getPointRef();
+            potentialEnergy.getGradients(g);
+            for (int i = 0; i < n; i++) {
+                double gs = g[i];
+                double xs = currentX[i] - prevX[i];
+                grms += gs * gs;
+                xrms += xs * xs;
+            }
+            grms = sqrt(grms) / rms;
+            xrms = sqrt(xrms) / rms;
+            /**
+             * Log this step of the optimization and see if an interrupt has
+             * been requested.
+             */
+            boolean status = optimizationUpdate(iter, nfun, grms, xrms, f, df);
+            /**
+             * Return true if we have converged to the RMS gradient criteria
+             * or if an interrupt has been requested.
+             */
+            if (!status || grms < eps) {
+                return true;
+            }
+            /**
+             * Otherwise, continue the optimization. 
+             */
+            return false;
+        }
     }
 }

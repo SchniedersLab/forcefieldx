@@ -76,7 +76,7 @@ public class LBFGS {
      * the problem is extremely badly scaled (in which case the exponent
      * should be increased).
      */
-    public static final double stepMax = 1.0e16;
+    public static final double stepMax = 5.0;
 
     /**
      * This method solves the unconstrained minimization problem
@@ -152,7 +152,7 @@ public class LBFGS {
         double scaling[] = optimizationSystem.getOptimizationScaling();
         double rms = sqrt(n) / sqrt(3.0);
         double previousF = f;
-        double ftol = 0.0001;
+        double ftol = 0.0000001;
         double previousX[] = new double[n];
         arraycopy(x, 0, previousX, 0, n);
 

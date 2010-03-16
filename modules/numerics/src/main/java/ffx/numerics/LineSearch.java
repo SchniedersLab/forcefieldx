@@ -46,8 +46,9 @@ public class LineSearch {
 
         Success, GradErr, XTol, MaxEval, StepMin, StepMax, MachPrec
     };
+
     private static double machinePrecision = 1.0e-16;
-    private static int maxFunctionEvaluations = 20;
+    private static int maxFunctionEvaluations = 100;
 
     /**
      * Minimize a function along a search direction.

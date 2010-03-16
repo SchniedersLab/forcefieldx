@@ -394,7 +394,7 @@ public class XYZFilter extends SystemFilter {
             Vector3d offset = molecularAssembly.getOffset();
             for (Atom a : atoms) {
                 line = new StringBuffer(format(
-                        "%7d %3s%14.8f%14.8f%14.8f%6d", a.getXYZIndex(), a.getID(), a.getX() - offset.x, a.getY() - offset.y, a.getZ() - offset.z, a.getType()));
+                        "%7d %3s%14.8f%14.8f%14.8f%6d", a.getXYZIndex(), a.getAtomType().name, a.getX() - offset.x, a.getY() - offset.y, a.getZ() - offset.z, a.getType()));
                 for (Bond b : a.getBonds()) {
                     a2 = b.get1_2(a);
                     line.append(format("%8d", a2.xyzIndex));
@@ -452,7 +452,7 @@ public class XYZFilter extends SystemFilter {
                 ii++;
                 for (Atom a : atoms) {
                     int index = a.getXYZIndex() + indexOffset;
-                    String id = a.getID();
+                    String id = a.getAtomType().name;
                     xyz[0] = a.getX() - offset.x;
                     xyz[1] = a.getY() - offset.y;
                     xyz[2] = a.getZ() - offset.z;

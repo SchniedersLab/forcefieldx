@@ -19,7 +19,6 @@
         <url>http://ffx.kenai.com</url>
     </organization>
 
-
     <developers>
         <developer>
             <id>schnied</id>
@@ -111,6 +110,12 @@
             <artifactId>utilities</artifactId>
             <version>${project.version}</version>
             <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>commons-math</groupId>
+            <artifactId>commons-math</artifactId>
+            <type>jar</type>
+            <version>2.0</version>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>

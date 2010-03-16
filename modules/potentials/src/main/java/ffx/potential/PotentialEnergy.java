@@ -50,6 +50,10 @@ import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldBoolean;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.ForceField.ForceFieldString;
+import org.apache.commons.math.FunctionEvaluationException;
+import org.apache.commons.math.analysis.DifferentiableMultivariateRealFunction;
+import org.apache.commons.math.analysis.MultivariateRealFunction;
+import org.apache.commons.math.analysis.MultivariateVectorialFunction;
 
 /**
  * Compute the potential energy and derivatives of an AMOEBA system.
@@ -57,7 +61,7 @@ import ffx.potential.parameters.ForceField.ForceFieldString;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-public class PotentialEnergy implements Optimizable {
+public class PotentialEnergy implements Optimizable, DifferentiableMultivariateRealFunction {
 
     private static final Logger logger = Logger.getLogger(PotentialEnergy.class.getName());
     private final Atom[] atoms;
@@ -114,6 +118,8 @@ public class PotentialEnergy implements Optimizable {
     protected long torsionTorsionTime, vanDerWaalsTime, electrostaticTime;
     protected long totalTime;
     protected double[] optimizationScaling = null;
+    private final EnergyGradient energyGradient;
+    private final EnergyPartialDerivative energyPartialDerivative;
     private static final double toSeconds = 0.000000001;
 
     public PotentialEnergy(MolecularAssembly molecularAssembly) {
@@ -232,7 +238,7 @@ public class PotentialEnergy implements Optimizable {
 
         // Determine the unit cell dimensions and Spacegroup
         String spacegroup;
-        double a,b,c,alpha,beta,gamma;
+        double a, b, c, alpha, beta, gamma;
         boolean aperiodic;
         try {
             a = forceField.getDouble(ForceFieldDouble.A_AXIS);
@@ -252,9 +258,9 @@ public class PotentialEnergy implements Optimizable {
              */
             double xr[] = new double[3];
             double maxr = 0.0;
-            for (int i=0; i < nAtoms - 1; i++) {
-                double[] xi =  atoms[i].getXYZ();
-                for (int j=i+1; j < nAtoms; j++) {
+            for (int i = 0; i < nAtoms - 1; i++) {
+                double[] xi = atoms[i].getXYZ();
+                for (int j = i + 1; j < nAtoms; j++) {
                     double[] xj = atoms[j].getXYZ();
                     diff(xi, xj, xr);
                     double r = r(xr);
@@ -305,12 +311,15 @@ public class PotentialEnergy implements Optimizable {
 
         if (multipoleTerm) {
             particleMeshEwald = new ParticleMeshEwald(forceField, atoms, crystal, parallelTeam,
-                    vanderWaals.getNeighborLists());
+                                                      vanderWaals.getNeighborLists());
         } else {
             particleMeshEwald = null;
         }
 
+        energyGradient = new EnergyGradient(this);
+        energyPartialDerivative = new EnergyPartialDerivative(energyGradient);
         molecularAssembly.setPotential(this);
+
     }
 
     public double energy(boolean gradient, boolean print) {
@@ -460,69 +469,69 @@ public class PotentialEnergy implements Optimizable {
         StringBuffer sb = new StringBuffer("\n");
         if (bondTerm) {
             sb.append(String.format(" %s %16.8f %12d %12.3f\n",
-                    "Bond Streching    ", bondEnergy, bonds.length,
-                    bondTime * toSeconds));
+                                    "Bond Streching    ", bondEnergy, bonds.length,
+                                    bondTime * toSeconds));
         }
         if (angleTerm) {
             sb.append(String.format(" %s %16.8f %12d %12.3f\n",
-                    "Angle Bending     ", angleEnergy, angles.length,
-                    angleTime * toSeconds));
+                                    "Angle Bending     ", angleEnergy, angles.length,
+                                    angleTime * toSeconds));
         }
         if (stretchBendTerm) {
             sb.append(String.format(" %s %16.8f %12d %12.3f\n",
-                    "Stretch-Bend      ", stretchBendEnergy,
-                    stretchBends.length, stretchBendTime * toSeconds));
+                                    "Stretch-Bend      ", stretchBendEnergy,
+                                    stretchBends.length, stretchBendTime * toSeconds));
         }
         if (ureyBradleyTerm) {
             sb.append(String.format(" %s %16.8f %12d %12.3f\n",
-                    "Urey-Bradley      ", ureyBradleyEnergy,
-                    ureyBradleys.length, ureyBradleyTime * toSeconds));
+                                    "Urey-Bradley      ", ureyBradleyEnergy,
+                                    ureyBradleys.length, ureyBradleyTime * toSeconds));
         }
         if (outOfPlaneBendTerm) {
             sb.append(String.format(" %s %16.8f %12d %12.3f\n",
-                    "Out-of-Plane Bend ", outOfPlaneBendEnergy,
-                    outOfPlaneBends.length, outOfPlaneBendTime * toSeconds));
+                                    "Out-of-Plane Bend ", outOfPlaneBendEnergy,
+                                    outOfPlaneBends.length, outOfPlaneBendTime * toSeconds));
         }
         if (torsionTerm) {
             sb.append(String.format(" %s %16.8f %12d %12.3f\n",
-                    "Torsional Angle   ", torsionEnergy, torsions.length,
-                    torsionTime * toSeconds));
+                                    "Torsional Angle   ", torsionEnergy, torsions.length,
+                                    torsionTime * toSeconds));
         }
         if (piOrbitalTorsionTerm) {
             sb.append(String.format(" %s %16.8f %12d %12.3f\n",
-                    "Pi-Orbital Torsion", piOrbitalTorsionEnergy,
-                    piOrbitalTorsions.length, piOrbitalTorsionTime * toSeconds));
+                                    "Pi-Orbital Torsion", piOrbitalTorsionEnergy,
+                                    piOrbitalTorsions.length, piOrbitalTorsionTime * toSeconds));
         }
         if (torsionTorsionTerm) {
             sb.append(String.format(" %s %16.8f %12d %12.3f\n",
-                    "Torsion-Torsion   ", torsionTorsionEnergy,
-                    torsionTorsions.length, torsionTorsionTime * toSeconds));
+                                    "Torsion-Torsion   ", torsionTorsionEnergy,
+                                    torsionTorsions.length, torsionTorsionTime * toSeconds));
         }
         if (vanDerWaalsTerm) {
             sb.append(String.format(" %s %16.8f %12d %12.3f\n",
-                    "Van der Waals     ", vanDerWaalsEnergy,
-                    nVanDerWaals, vanDerWaalsTime * toSeconds));
+                                    "Van der Waals     ", vanDerWaalsEnergy,
+                                    nVanDerWaals, vanDerWaalsTime * toSeconds));
         }
         if (multipoleTerm) {
             sb.append(String.format(" %s %16.8f %12d\n",
-                    "Atomic Multipoles ", permanentMultipoleEnergy, nPME));
+                                    "Atomic Multipoles ", permanentMultipoleEnergy, nPME));
         }
         if (polarizationTerm) {
             sb.append(String.format(" %s %16.8f %12d %12.3f\n",
-                    "Polarization      ", polarizationEnergy,
-                    nPME, electrostaticTime * toSeconds));
+                                    "Polarization      ", polarizationEnergy,
+                                    nPME, electrostaticTime * toSeconds));
         }
         sb.append(String.format("\n %s %16.8f  %s %12.3f (sec)\n",
-                "Total Potential   ", totalEnergy, "(Kcal/mole)", totalTime * toSeconds));
+                                "Total Potential   ", totalEnergy, "(Kcal/mole)", totalTime * toSeconds));
         int nsymm = crystal.getUnitCell().spaceGroup.getNumberOfSymOps();
         if (nsymm > 1) {
             sb.append(String.format(" %s %16.8f\n", "Unit Cell         ",
-                    totalEnergy * nsymm));
+                                    totalEnergy * nsymm));
         }
         if (crystal.getUnitCell() != crystal) {
             nsymm = crystal.spaceGroup.getNumberOfSymOps();
             sb.append(String.format(" %s %16.8f\n", "Replicates Cell   ",
-                    totalEnergy * nsymm));
+                                    totalEnergy * nsymm));
         }
 
         return sb.toString();
@@ -591,7 +600,7 @@ public class PotentialEnergy implements Optimizable {
         return e;
     }
 
-    private void getGradients(double g[]) {
+    public void getGradients(double g[]) {
         assert (g != null && g.length == nAtoms * 3);
         double grad[] = new double[3];
         int index = 0;
@@ -623,6 +632,97 @@ public class PotentialEnergy implements Optimizable {
             x[index++] = xyz[0];
             x[index++] = xyz[1];
             x[index++] = xyz[2];
+        }
+    }
+
+    @Override
+    public MultivariateRealFunction partialDerivative(int k) {
+        energyPartialDerivative.setPartialDerivative(k);
+        return energyPartialDerivative;
+    }
+
+    @Override
+    public MultivariateVectorialFunction gradient() {
+        return energyGradient;
+    }
+
+    @Override
+    public double value(double[] coords) throws FunctionEvaluationException, IllegalArgumentException {
+        /**
+         * Unscale the coordinates.
+         */
+        if (optimizationScaling != null) {
+            int len = coords.length;
+            for (int i = 0; i < len; i++) {
+                coords[i] /= optimizationScaling[i];
+            }
+        }
+        setCoordinates(coords);
+        if (optimizationScaling != null) {
+            int len = coords.length;
+            for (int i = 0; i < len; i++) {
+                coords[i] *= optimizationScaling[i];
+            }
+        }
+        return energy(false, false);
+    }
+
+    private class EnergyPartialDerivative implements MultivariateRealFunction {
+
+        private final EnergyGradient energyGradient;
+        private int k = 0;
+
+        public EnergyPartialDerivative(EnergyGradient energyGradient) {
+            this.energyGradient = energyGradient;
+        }
+
+        public void setPartialDerivative(int k) {
+            this.k = k;
+        }
+
+        @Override
+        public double value(double[] doubles) throws FunctionEvaluationException, IllegalArgumentException {
+            logger.info("EnergyPartialDerivative value called.");
+            double gradients[] = energyGradient.value(doubles);
+            return gradients[k];
+        }
+    }
+
+    private class EnergyGradient implements MultivariateVectorialFunction {
+
+        private final PotentialEnergy potentialEnergy;
+        private final double gradients[];
+
+        public EnergyGradient(PotentialEnergy potentialEnergy) {
+            this.potentialEnergy = potentialEnergy;
+            gradients = new double[potentialEnergy.nAtoms * 3];
+        }
+
+        @Override
+        public double[] value(double[] coords) throws FunctionEvaluationException, IllegalArgumentException {
+            /**
+             * Unscale the coordinates.
+             */
+            if (optimizationScaling != null) {
+                int len = coords.length;
+                for (int i = 0; i < len; i++) {
+                    coords[i] /= optimizationScaling[i];
+                }
+            }
+            potentialEnergy.setCoordinates(coords);
+            potentialEnergy.energy(true, false);
+            potentialEnergy.getGradients(gradients);
+            /**
+             * Scale the coordinates and gradients.
+             */
+            if (optimizationScaling != null) {
+                int len = coords.length;
+                for (int i = 0; i < len; i++) {
+                    coords[i] *= optimizationScaling[i];
+                    gradients[i] /= optimizationScaling[i];
+                }
+            }
+            return gradients;
         }
     }
 }

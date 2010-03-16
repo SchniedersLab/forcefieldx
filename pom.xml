@@ -152,10 +152,11 @@
             <id>surahata</id>
             <name>Sergio Urahata</name>
             <email>surahata@gmail.com</email>
-            <organization>Sau Paulo, Brazil</organization>
+            <organization>Sao Paulo, Brazil</organization>
             <roles>
                 <role>Algorithms Module, Replica Exchange</role>
             </roles>
+            <timezone>-3</timezone>
         </developer>
     </developers>
 

@@ -1,26 +1,14 @@
 
 import ffx.potential.PotentialEnergy;
 
-System.setProperty("pj.nt", "2");
-//System.setProperty("polarizeterm","false");
-System.setProperty("polar-eps","0.01");
-System.setProperty("pme-spacing","1.20");
-System.setProperty("cudafft","true");
-
 // Name of the file (PDB or XYZ) to evaluate the energy of.
-String filename = "modules/potentials/src/main/java/ffx/potential/structures/1n7s.P212121.xyz";
-//String filename = "examples/waterbox.xyz";
+String filename = "examples/1n7s.P1.xyz";
 open(filename); 
 potentialEnergy = new PotentialEnergy(active);
-for (int i=0; i<1; i++) {
-   potentialEnergy.energy(false,true);
-}
+potentialEnergy.energy(false,true);
 
-filename = "modules/potentials/src/main/java/ffx/potential/structures/1n7s.P1.xyz";
-System.setProperty("cudafft","false");
+filename = "examples/1n7s.P1.pdb";
 open(filename); 
 potentialEnergy = new PotentialEnergy(active);
-for (int i=0; i<1; i++) {
-   potentialEnergy.energy(false,true);
-}
+potentialEnergy.energy(false,true);
 

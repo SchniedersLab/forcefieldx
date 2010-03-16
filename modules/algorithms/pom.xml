@@ -67,5 +67,11 @@
             <artifactId>arpack</artifactId>
             <version>0.1</version>
         </dependency>
+        <dependency>
+            <groupId>commons-math</groupId>
+            <artifactId>commons-math</artifactId>
+            <type>jar</type>
+            <version>2.0</version>
+        </dependency>
     </dependencies>
 </project>
