@@ -85,8 +85,9 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         }
 
         for (int i = 0; i < n; i++) {
-            scaling[i] = 100.0;
+            scaling[i] = 1.0;
         }
+        
         bulksolventoptimizer.setOptimizationScaling(scaling);
     }
 

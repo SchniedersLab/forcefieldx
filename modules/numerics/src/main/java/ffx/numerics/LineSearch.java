@@ -20,6 +20,7 @@
  */
 package ffx.numerics;
 
+import java.util.logging.Logger;
 import static java.lang.Math.*;
 
 import static ffx.numerics.LBFGS.cappa;
@@ -41,6 +42,8 @@ import static ffx.numerics.LBFGS.stepMin;
  * @since 1.0
  */
 public class LineSearch {
+
+    private static final Logger logger = Logger.getLogger(LineSearch.class.getName());
 
     public enum LineSearchResult {
 
@@ -134,6 +137,8 @@ public class LineSearch {
         assert (stepSize[0] > 0);
         assert (ftol > 0);
 
+        //logger.info("Initial step size for line search: " + stepSize[0]);
+
         /**
          * Initialization.
          */
@@ -197,6 +202,10 @@ public class LineSearch {
         fy[0] = initialFunctionValue;
         dgy[0] = dgInit;
 
+        /**
+         *
+         */
+
         while (true) {
             /**
              * Set the minimum and maximum steps to correspond to the
@@ -216,6 +225,8 @@ public class LineSearch {
              */
             stepSize[0] = max(stepSize[0], stepMin);
             stepSize[0] = min(stepSize[0], stepMax);
+
+            //logger.info("Step size: " + stepSize[0]);
 
             /**
              * If an unusual termination is to occur then let stepSize be the

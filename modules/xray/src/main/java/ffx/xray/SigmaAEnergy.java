@@ -76,9 +76,9 @@ import ffx.numerics.Optimizable;
  * @see <a href="http://dx.doi.org/10.1107/S0108767396004370" target="_blank">
  * N. S. Pannu and R. J. Read, Acta Cryst. (1996). A52, 659-668.
  */
-public class SigmaAOptimizer implements Optimizable {
+public class SigmaAEnergy implements Optimizable {
 
-    private static final Logger logger = Logger.getLogger(SigmaAOptimizer.class.getName());
+    private static final Logger logger = Logger.getLogger(SigmaAEnergy.class.getName());
     private static final double twopi2 = 2.0 * PI * PI;
     private static final double sim_a = 1.639294;
     private static final double sim_b = 3.553967;
@@ -109,7 +109,7 @@ public class SigmaAOptimizer implements Optimizable {
     protected double[] optimizationScaling = null;
     private final double recipt[][];
 
-    public SigmaAOptimizer(ReflectionList reflectionlist,
+    public SigmaAEnergy(ReflectionList reflectionlist,
             RefinementData refinementdata) {
         this.reflectionlist = reflectionlist;
         this.crystal = reflectionlist.crystal;

@@ -184,7 +184,8 @@ public class LBFGS {
         }
         gnorm = sqrt(gnorm);
         grms = sqrt(grms) / rms;
-        double stp1 = 1.0 / gnorm;
+        //double stp1 = 1.0 / gnorm;
+        double stp1 = 0.5 * stepMax * gnorm;
         double angle = 0.0;
         if (listener != null) {
             if (!listener.optimizationUpdate(iterations, functionEvaluations, grms, 0.0, f, f - previousF, angle, null)) {
@@ -208,7 +209,6 @@ public class LBFGS {
         double stp[] = new double[1];
         while (true) {
             iterations++;
-            previousF = f;
             int bound = iterations - 1;
             if (iterations != 1) {
                 if (iterations > m) {
@@ -256,10 +256,13 @@ public class LBFGS {
                     w[ispt + point * n + i] = w[i];
                 }
             }
-            stp[0] = 1.0;
+            
             if (iterations == 1) {
                 stp[0] = stp1;
             }
+
+            previousF = f;
+
             angle = 0.0;
             gnorm = 0.0;
             double snorm = 0.0;

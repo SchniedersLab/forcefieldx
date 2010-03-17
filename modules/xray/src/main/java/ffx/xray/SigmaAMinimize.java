@@ -47,7 +47,7 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
     private final ReflectionList reflectionlist;
     private final RefinementData refinementdata;
     private final Crystal crystal;
-    private final SigmaAOptimizer sigmaaoptimizer;
+    private final SigmaAEnergy sigmaaoptimizer;
     private final int n;
     private final double x[];
     private final double grad[];
@@ -65,7 +65,7 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
         this.crystal = reflectionlist.crystal;
 
         n = refinementdata.nparams * 2;
-        sigmaaoptimizer = new SigmaAOptimizer(reflectionlist, refinementdata);
+        sigmaaoptimizer = new SigmaAEnergy(reflectionlist, refinementdata);
         x = new double[n];
         grad = new double[n];
         scaling = new double[n];
@@ -73,9 +73,9 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
         for (int i = 0; i < refinementdata.nparams; i++) {
             // for optimizationscaling, best to move to 0.0
             x[i] = refinementdata.sigmaa[i] - 1.0;
-            scaling[i] = 10.0;
+            scaling[i] = 1.0;
             x[i + refinementdata.nparams] = refinementdata.sigmaw[i];
-            scaling[i + refinementdata.nparams] = 10.0;
+            scaling[i + refinementdata.nparams] = 1.0;
         }
 
         sigmaaoptimizer.setOptimizationScaling(scaling);
@@ -125,15 +125,15 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
         }
     }
 
-    public SigmaAOptimizer minimize() {
+    public SigmaAEnergy minimize() {
         return minimize(0.5);
     }
 
-    public SigmaAOptimizer minimize(double eps) {
+    public SigmaAEnergy minimize(double eps) {
         return minimize(7, eps);
     }
 
-    public SigmaAOptimizer minimize(int m, double eps) {
+    public SigmaAEnergy minimize(int m, double eps) {
 
         double e = sigmaaoptimizer.energyAndGradient(x, grad);
 

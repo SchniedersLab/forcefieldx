@@ -275,7 +275,7 @@ public class ScaleBulkOptimizer implements Optimizable {
             }
         }
 
-        double sum = target(x, g, true, false);
+        double sum = target(x, g, true, true);
 
         if (optimizationScaling != null) {
             int len = x.length;
