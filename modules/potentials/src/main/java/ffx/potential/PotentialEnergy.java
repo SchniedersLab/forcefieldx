@@ -30,6 +30,11 @@ import java.util.logging.Logger;
 
 import edu.rit.pj.ParallelTeam;
 
+import org.apache.commons.math.FunctionEvaluationException;
+import org.apache.commons.math.analysis.DifferentiableMultivariateRealFunction;
+import org.apache.commons.math.analysis.MultivariateRealFunction;
+import org.apache.commons.math.analysis.MultivariateVectorialFunction;
+
 import ffx.crystal.Crystal;
 import ffx.crystal.ReplicatesCrystal;
 import ffx.numerics.Optimizable;
@@ -44,16 +49,14 @@ import ffx.potential.bonded.StretchBend;
 import ffx.potential.bonded.Torsion;
 import ffx.potential.bonded.TorsionTorsion;
 import ffx.potential.bonded.UreyBradley;
+import ffx.potential.nonbonded.CellCellVanDerWaals;
 import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.VanDerWaals;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldBoolean;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.ForceField.ForceFieldString;
-import org.apache.commons.math.FunctionEvaluationException;
-import org.apache.commons.math.analysis.DifferentiableMultivariateRealFunction;
-import org.apache.commons.math.analysis.MultivariateRealFunction;
-import org.apache.commons.math.analysis.MultivariateVectorialFunction;
+
 
 /**
  * Compute the potential energy and derivatives of an AMOEBA system.
@@ -76,6 +79,7 @@ public class PotentialEnergy implements Optimizable, DifferentiableMultivariateR
     private final PiOrbitalTorsion piOrbitalTorsions[];
     private final TorsionTorsion torsionTorsions[];
     private final VanDerWaals vanderWaals;
+    //private final CellCellVanDerWaals vanderWaals;
     private final ParticleMeshEwald particleMeshEwald;
     protected final int nAtoms;
     protected final int nBonds;
@@ -124,7 +128,7 @@ public class PotentialEnergy implements Optimizable, DifferentiableMultivariateR
 
     public PotentialEnergy(MolecularAssembly molecularAssembly) {
         parallelTeam = new ParallelTeam();
-        logger.info(" Number of Threads: " + parallelTeam.getThreadCount());
+        logger.info(" Parallel Java Threads: " + parallelTeam.getThreadCount());
 
         ForceField forceField = molecularAssembly.getForceField();
 
@@ -304,6 +308,7 @@ public class PotentialEnergy implements Optimizable, DifferentiableMultivariateR
         logger.info(crystal.toString());
 
         if (vanDerWaalsTerm) {
+            //vanderWaals = new CellCellVanDerWaals(forceField, atoms, crystal, parallelTeam);
             vanderWaals = new VanDerWaals(forceField, atoms, crystal, parallelTeam);
         } else {
             vanderWaals = null;

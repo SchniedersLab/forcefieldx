@@ -26,6 +26,7 @@ import java.awt.GraphicsEnvironment;
 import java.io.File;
 import java.net.URL;
 import java.util.logging.Handler;
+import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
@@ -41,7 +42,6 @@ import org.apache.commons.lang.time.StopWatch;
 import ffx.ui.LogHandler;
 import ffx.ui.MainPanel;
 import ffx.ui.macosx.OSXAdapter;
-import java.util.logging.Level;
 
 /**
  * The Main class is the entry point to the graphical user interface version of
@@ -53,6 +53,7 @@ import java.util.logging.Level;
 public class Main extends JFrame {
 
     private static final Logger logger = Logger.getLogger(Main.class.getName());
+    private static Level level;
     private static LogHandler logHandler = null;
 
     static {
@@ -71,7 +72,6 @@ public class Main extends JFrame {
              * Create a Handler for FFX logging.
              */
             String logLevel = System.getProperty("ffx.log", "info");
-            Level level = null;
             try {
                 level = Level.parse(logLevel.toUpperCase());
             } catch (Exception e) {
@@ -82,9 +82,7 @@ public class Main extends JFrame {
             logHandler.setLevel(level);
             ffxLogger.addHandler(logHandler);
             ffxLogger.setLevel(level);
-            
-            logger.info(" FFX log level set to " + level.toString());
-
+           
         } catch (Exception e) {
             System.err.println(e.toString());
         }
@@ -105,8 +103,13 @@ public class Main extends JFrame {
                         commandLineFile.getAbsolutePath()));
             }
         }
+        logger.info(MainPanel.border);
+        logger.info(MainPanel.title);
+        logger.info(MainPanel.aboutString);
+        logger.info(MainPanel.border);
+        logger.info("\n Log level is set to " + level.toString());
         if (!GraphicsEnvironment.isHeadless()) {
-            logger.info("\n\n Force Field X is starting up in GUI mode.\n");
+            logger.info(" Starting up the graphical user interface");
             // Some Mac OS X specific features that help FFX look native.
             // These need to be set before the MainPanel is created.
             if (SystemUtils.IS_OS_MAC_OSX) {
@@ -118,7 +121,7 @@ public class Main extends JFrame {
             // Initialize the main frame and Force Field X MainPanel
             Main m = new Main(commandLineFile);
         } else {
-            logger.info("\n\n Force Field X is starting up in command line mode.\n");
+            logger.info(" Starting up the command line interface");
             HeadlessMain m = new HeadlessMain(commandLineFile, logHandler);
         }
     }

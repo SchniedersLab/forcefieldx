@@ -7,8 +7,3 @@ open(filename);
 potentialEnergy = new PotentialEnergy(active);
 potentialEnergy.energy(false,true);
 
-filename = "examples/1n7s.P1.pdb";
-open(filename); 
-potentialEnergy = new PotentialEnergy(active);
-potentialEnergy.energy(false,true);
-

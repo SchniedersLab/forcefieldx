@@ -251,9 +251,9 @@ public final class MainPanel extends JPanel implements ActionListener,
     public void about() {
         if (aboutDialog == null) {
             aboutDialog = new JDialog(frame, "About... ", true);
-            URL tinkerURL = getClass().getClassLoader().getResource(
+            URL ffxURL = getClass().getClassLoader().getResource(
                     "ffx/ui/icons/splash.png");
-            ImageIcon logoIcon = new ImageIcon(tinkerURL);
+            ImageIcon logoIcon = new ImageIcon(ffxURL);
             JLabel logoLabel = new JLabel(logoIcon);
             logoLabel.setBorder(BorderFactory.createEtchedBorder(EtchedBorder.RAISED));
             Container contentpane = aboutDialog.getContentPane();
@@ -694,17 +694,23 @@ public final class MainPanel extends JPanel implements ActionListener,
             }
         }
     }
-    public static final String version = "Version 1.0 beta";
-    public static final String date = "January 2010";
+    public static final String version = "Version 1.0 SNAPSHOT";
+    public static final String date = "March 2010";
     public static final String border =
             " ______________________________________________________________________________\n";
     public static final String title =
-            "\n               FORCE FIELD X - Software for Molecular Biophysics               \n\n";
+            "\n               FORCE FIELD X - Software for Molecular Biophysics\n\n";
     public static final String aboutString =
-            "                         Version 1.0 beta  January 2010                        "
-            + "\n               Copyright (c)  Michael John Schnieders  2001-2008               "
-            + "\n             Copyright (c)  Force Field X Module Authors  2009-2010            "
-            + "\n                              All Rights Reserved                              ";
+            "                         " + version + "  " + date
+            + "\n                Copyright (c)  Michael J. Schnieders  2001-2010"
+            + "\n             Copyright (c)  Force Field X Module Authors  2009-2010"
+            + "\n"
+            + "\n                         Module             Copyright (c)"
+            + "\n                         Binding Affinity   Pengyu Ren"
+            + "\n                         X-Ray Refinement   Timothy D. Fenn"
+            + "\n"
+            + "\n                              All Rights Reserved\n";
+
 
     private void initAbout() {
         aboutTextArea = new JTextArea();

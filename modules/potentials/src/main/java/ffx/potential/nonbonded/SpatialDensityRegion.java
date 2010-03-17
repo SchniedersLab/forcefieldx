@@ -20,8 +20,6 @@
  */
 package ffx.potential.nonbonded;
 
-import static java.lang.String.format;
-
 import java.util.logging.Logger;
 
 import edu.rit.pj.IntegerForLoop;
@@ -168,15 +166,23 @@ public class SpatialDensityRegion extends ParallelRegion {
         int nY = gY / basisSize;
         int nZ = gZ / basisSize;
         int div = 1;
-        int minWork = 4;
+        int currentWork = 0;
+        int minWork = 1;
         if (threadCount > 1 && nZ > 1) {
             if (nZ % 2 != 0) {
                 nZ--;
             }
             nC = nZ;
             div = 2;
-            // If we have 2 * threadCount * minWork chunks, stop dividing the domain.
-            if (nC / threadCount > div * minWork || nY < 2) {
+            currentWork = nC / div / threadCount;
+            // If we have enough work per thread, stop dividing the domain.
+            if (currentWork > minWork || nY < 2) {
+                // Reduce the number of divisions along the X-axis if possible
+                while (currentWork >= minWork) {
+                    nC -= 2;
+                    currentWork = nC / div / threadCount;
+                }
+                nC += 2;
                 nA = 1;
                 nB = 1;
             } else {
@@ -185,8 +191,14 @@ public class SpatialDensityRegion extends ParallelRegion {
                 }
                 nB = nY;
                 div = 4;
+                currentWork = nB * nC / div / threadCount;
                 // If we have 4 * threadCount * minWork chunks, stop dividing the domain.
-                if (nB * nC / threadCount > div * minWork || nX < 2) {
+                if (currentWork > minWork || nX < 2) {
+                    while (currentWork >= minWork) {
+                        nB -= 2;
+                        currentWork = nB * nC / div / threadCount;
+                    }
+                    nB += 2;
                     nA = 1;
                 } else {
                     if (nX % 2 != 0) {
@@ -194,6 +206,12 @@ public class SpatialDensityRegion extends ParallelRegion {
                     }
                     nA = nX;
                     div = 8;
+                    currentWork = nA * nB * nC / div / threadCount;
+                    while (currentWork >= minWork) {
+                        nA -= 2;
+                        currentWork =  nA * nB * nC / div / threadCount;
+                    }
+                    nA += 2;
                 }
             }
             nAB = nA * nB;
