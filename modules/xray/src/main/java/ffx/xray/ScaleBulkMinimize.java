@@ -36,14 +36,14 @@ import ffx.numerics.OptimizationListener;
  */
 public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
 
-    private static final Logger logger = Logger.getLogger(SplineOptimizer.class.getName());
+    private static final Logger logger = Logger.getLogger(SplineEnergy.class.getName());
     private static double toSeconds = 0.000000001;
     private static final double eightpi2 = 8.0 * Math.PI * Math.PI;
     private final ReflectionList reflectionlist;
     private final RefinementData refinementdata;
     private final Crystal crystal;
     private final CrystalReciprocalSpace crs;
-    private final ScaleBulkOptimizer bulksolventoptimizer;
+    private final ScaleBulkEnergy bulksolventenergy;
     private final int n;
     private final double x[];
     private final double grad[];
@@ -67,7 +67,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         this.crs = crs;
 
         n = refinementdata.solvent_n + refinementdata.scale_n;
-        bulksolventoptimizer = new ScaleBulkOptimizer(reflectionlist, refinementdata, n);
+        bulksolventenergy = new ScaleBulkEnergy(reflectionlist, refinementdata, n);
 
         x = new double[n];
         grad = new double[n];
@@ -88,7 +88,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
             scaling[i] = 1.0;
         }
         
-        bulksolventoptimizer.setOptimizationScaling(scaling);
+        bulksolventenergy.setOptimizationScaling(scaling);
     }
 
     public void ksbsGridOptimize() {
@@ -110,7 +110,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
 
                 x[1] = i;
                 x[2] = j;
-                double sum = bulksolventoptimizer.energyAndGradient(x, grad);
+                double sum = bulksolventenergy.energyAndGradient(x, grad);
 
                 System.out.println("ks: " + i + " bs: " + j + " sum: " + sum);
                 if (sum < min) {
@@ -145,7 +145,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
                 crs.setSolventsd(j);
 
                 crs.computeDensity(refinementdata.fs);
-                double sum = bulksolventoptimizer.energyAndGradient(x, grad);
+                double sum = bulksolventenergy.energyAndGradient(x, grad);
 
                 System.out.println("a: " + i + " sd: " + j + " sum: " + sum);
                 if (sum < min) {
@@ -163,22 +163,22 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         crs.computeDensity(refinementdata.fs);
     }
 
-    public ScaleBulkOptimizer minimize() {
+    public ScaleBulkEnergy minimize() {
         return minimize(0.5);
     }
 
-    public ScaleBulkOptimizer minimize(double eps) {
+    public ScaleBulkEnergy minimize(double eps) {
         return minimize(5, eps);
     }
 
-    public ScaleBulkOptimizer minimize(int m, double eps) {
+    public ScaleBulkEnergy minimize(int m, double eps) {
 
-        double e = bulksolventoptimizer.energyAndGradient(x, grad);
+        double e = bulksolventenergy.energyAndGradient(x, grad);
 
         long mtime = -System.nanoTime();
         time = -System.nanoTime();
         done = false;
-        int status = LBFGS.minimize(n, m, x, e, grad, eps, bulksolventoptimizer, this);
+        int status = LBFGS.minimize(n, m, x, e, grad, eps, bulksolventenergy, this);
         done = true;
         switch (status) {
             case 0:
@@ -210,7 +210,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
             logger.info(sb.toString());
         }
 
-        return bulksolventoptimizer;
+        return bulksolventenergy;
     }
 
     @Override

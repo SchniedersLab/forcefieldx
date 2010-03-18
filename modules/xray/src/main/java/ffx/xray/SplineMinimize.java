@@ -35,11 +35,11 @@ import java.util.logging.Logger;
  */
 public class SplineMinimize implements OptimizationListener, Terminatable {
 
-    private static final Logger logger = Logger.getLogger(SplineOptimizer.class.getName());
+    private static final Logger logger = Logger.getLogger(SplineEnergy.class.getName());
     private final ReflectionList reflectionlist;
     private final RefinementData refinementdata;
     private final Crystal crystal;
-    private final SplineOptimizer splineoptimizer;
+    private final SplineEnergy splineenergy;
     private final int n;
     private final double x[];
     private final double grad[];
@@ -58,7 +58,7 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
         this.x = x;
 
         n = x.length;
-        splineoptimizer = new SplineOptimizer(reflectionlist, refinementdata,
+        splineenergy = new SplineEnergy(reflectionlist, refinementdata,
                 n, type);
         grad = new double[n];
         scaling = new double[n];
@@ -66,24 +66,24 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
             x[i] = 1.0;
             scaling[i] = 1.0;
         }
-        splineoptimizer.setOptimizationScaling(scaling);
+        splineenergy.setOptimizationScaling(scaling);
     }
 
-    public SplineOptimizer minimize() {
+    public SplineEnergy minimize() {
         return minimize(0.5);
     }
 
-    public SplineOptimizer minimize(double eps) {
+    public SplineEnergy minimize(double eps) {
         return minimize(5, eps);
     }
 
-    public SplineOptimizer minimize(int m, double eps) {
+    public SplineEnergy minimize(int m, double eps) {
 
-        double e = splineoptimizer.energyAndGradient(x, grad);
+        double e = splineenergy.energyAndGradient(x, grad);
 
         time = -System.nanoTime();
         done = false;
-        int status = LBFGS.minimize(n, m, x, e, grad, eps, splineoptimizer, this);
+        int status = LBFGS.minimize(n, m, x, e, grad, eps, splineenergy, this);
         done = true;
         switch (status) {
             case 0:
@@ -95,7 +95,7 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
             default:
                 logger.warning("\n Optimization failed.\n");
         }
-        return splineoptimizer;
+        return splineenergy;
     }
 
     @Override

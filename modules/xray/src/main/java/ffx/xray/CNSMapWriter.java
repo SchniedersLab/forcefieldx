@@ -78,7 +78,8 @@ public class CNSMapWriter {
                 out.printf("%8d\n", k);
                 for (int j = 0; j < ny; j++) {
                     for (int i = 0; i < nx; i++) {
-                        int index = k * (ny * (nx + 2)) + j * (nx + 2) + i;
+                        int index = 2 * (i + nx * (j + ny * k));
+                        // int index = k * (ny * (nx + 2)) + j * (nx + 2) + i;
                         out.printf("%12.5E", data[index]);
                         n++;
                         mean += (data[index] - mean) / n;

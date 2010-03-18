@@ -217,12 +217,12 @@ public class ScaleBulkMinimizeTest {
         scalebulkminimize.minimize(7, 1e-4);
 
         SigmaAMinimize sigmaaminimize = new SigmaAMinimize(reflectionlist,
-                refinementdata);
+                refinementdata, crs);
         sigmaaminimize.minimize(7, 1e-1);
 
         SplineMinimize splineminimize = new SplineMinimize(reflectionlist,
                 refinementdata, refinementdata.spline,
-                SplineOptimizer.Type.FOFC);
+                SplineEnergy.Type.FOFC);
         splineminimize.minimize(7, 1e-5);
 
         crystalstats = new CrystalStats(reflectionlist, refinementdata);
