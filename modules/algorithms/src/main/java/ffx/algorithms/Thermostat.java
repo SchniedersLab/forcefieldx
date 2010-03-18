@@ -66,7 +66,7 @@ public abstract class Thermostat {
 
     public Thermostat(int n, double x[], double v[], double mass[], double t) {
         this.n = n;
-        this.dof = n * 3;
+        this.dof = n * 3 - 6;
         this.x = x;
         this.v = v;
         this.mass = mass;
@@ -124,7 +124,7 @@ public abstract class Thermostat {
             v[index++] = random.nextGaussian() * sd / m;
             v[index++] = random.nextGaussian() * sd / m;
         }
-        centerOfMassMotion(true);
+        centerOfMassMotion(true, true);
         kineticEnergy();
     }
     protected double mTot;
@@ -132,7 +132,7 @@ public abstract class Thermostat {
     protected final double lm[] = new double[3];
     protected final double am[] = new double[3];
 
-    protected void centerOfMassMotion(boolean remove) {
+    protected void centerOfMassMotion(boolean remove, boolean print) {
         mTot = 0.0;
         for (int i = 0; i < 3; i++) {
             com[i] = 0.0;
@@ -170,13 +170,15 @@ public abstract class Thermostat {
         lm[1] /= mTot;
         lm[2] /= mTot;
 
+        if (print) {
         logger.info(String.format(" Center of Mass   (%12.3f,%12.3f,%12.3f)", com[0], com[1], com[2]));
         logger.info(String.format(" Linear Momemtum  (%12.3f,%12.3f,%12.3f)", lm[0], lm[1], lm[2]));
         logger.info(String.format(" Angular Momemtum (%12.3f,%12.3f,%12.3f)", am[0], am[1], am[2]));
+        }
 
         if (remove) {
-            removeCenterOfMassMotion();
-            centerOfMassMotion(false);
+            removeCenterOfMassMotion(print);
+            centerOfMassMotion(false, print);
         }
     }
 
@@ -184,7 +186,7 @@ public abstract class Thermostat {
      * Remove center of mass translational and rotational velocity by
      * inverting the moment of intertia tensor.
      */
-    private void removeCenterOfMassMotion() {
+    private void removeCenterOfMassMotion(boolean print) {
         double xx = 0.0;
         double yy = 0.0;
         double zz = 0.0;
@@ -243,9 +245,10 @@ public abstract class Thermostat {
         /**
          * Update the degrees of freedom.
          */
-        dof = 3 * n - 6;
-        logger.info(String.format(" Center of mass motion removed.\n" +
+        if (print) {
+            logger.info(String.format(" Center of mass motion removed.\n" +
                 " Total degress of freedom %d - 6 = %d", 3*n, dof));
+        }
     }
 
     /**

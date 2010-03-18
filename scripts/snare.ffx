@@ -1,16 +1,28 @@
 
-// Open a test system.
-open "examples/snare-brunger-02-1n7s.P212121.xyz"
+// Test system.
+String filename = "examples/1n7s.P212121.xyz"
+
+// Restart file
+File dyn = new File("examples/1n7s.P212121.dyn");
 
 // Number of molecular dynamics steps
-int nSteps = 1000;
+int nSteps = 100;
+
 // Time step in femtoseconds.
 double timeStep = 1.0;
+
 // Frequency to print out thermodynamics information in picoseconds.
-double printInterval = 0.001;
+double saveInterval = 0.01;
+
+// Frequency to print out thermodynamics information in picoseconds.
+double printInterval = 0.01;
+
 // Temperature in degrees Kelvin.
 double temperature = 300.0;
+
 // Reset velocities.
 boolean initVelocities = true
+
 // Go!
-md(nSteps, timeStep, printInterval, temperature, initVelocities);
+open filename;
+md(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);

@@ -743,8 +743,7 @@ public final class PDBFilter extends SystemFilter {
             String residueName = residue.getName().toUpperCase();
             NucleicAcid3 nucleicAcid = NucleicAcid3.UNK;
             int naNumber = -1;
-            for (int n = 0; n
-                            < numberOfKnownNucleicAcids; n++) {
+            for (int n = 0; n < numberOfKnownNucleicAcids; n++) {
                 NucleicAcid3 amino = knownNucleicAcids[n];
                 if (amino.toString().equalsIgnoreCase(residueName)) {
                     nucleicAcid = amino;

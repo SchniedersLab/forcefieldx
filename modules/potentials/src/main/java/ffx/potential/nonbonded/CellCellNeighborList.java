@@ -405,9 +405,9 @@ public class CellCellNeighborList extends ParallelRegion {
             if (print) {
                 StringBuffer sb = new StringBuffer(" The cutoff is " + cutoff + " angstroms.\n");
                 final double toSeconds = 0.000000001;
-                sb.append(format(" Assignment to cells: %8.3f\n", cellTime * toSeconds)
-                          + format(" Verlet lists:        %8.3f\n", verletTime * toSeconds)
-                          + format(" Total:               %8.3f (sec)\n", totalTime * toSeconds));
+                sb.append(  format(" Assignment to cells:    %8.3f\n", cellTime * toSeconds)
+                          + format(" Atom-Cell Verlet lists: %8.3f\n", verletTime * toSeconds)
+                          + format(" Total:                  %8.3f (sec)\n", totalTime * toSeconds));
                 sb.append(format(" Neighbors in the asymmetric unit: %12d\n", asymmetricUnitCount));
                 if (nSymm > 1) {
                     int num = (int) (asymmetricUnitCount * nSymm + symmetryMateCount * (nSymm * 0.5));
@@ -424,21 +424,24 @@ public class CellCellNeighborList extends ParallelRegion {
                     double speedup = ((double) num) / (asymmetricUnitCount2 + symmetryMateCount2);
                     sb.append(format(" Neighbors in symmetry mates (v2):      %12d\n", symmetryMateCount2));
                     sb.append(format(" Neighbors in the unit cell (v2):       %12d\n", num));
+
                     sb.append(format(" Space group speed up factor (v2):      %12.3f\n", speedup));
                 }
 
                 logger.info(sb.toString() + "\n");
             }
-
-            /*
-            int atomCount[] = new int[nAtoms];
-            for (int iSymm = 0; iSymm < nSymm; iSymm++) {
-            for (int i = 0; i < nAtoms; i++) {
-            atomCount[i] += lists[iSymm][i].length;
-            }
-            } */
         }
     }
+
+    public int getNumberOfCells(){
+        return nCells;
+    }
+
+    public int[][] getCellAtomLists() {
+        return cellList;
+    }
+
+
 
     /**
      * Assign asymmetric and symmetry mate atoms to cells. This is very fast;
@@ -664,10 +667,10 @@ public class CellCellNeighborList extends ParallelRegion {
         private int n;
         private int n2;
         private int iSymm;
-        private int atomIndex;
         private double xyz[];
         private int pairs[];
         private int pairs2[];
+        private int atomIndex;
         private final double mask[];
         private final int asymmetricIndex[];
         private final IntegerSchedule schedule;

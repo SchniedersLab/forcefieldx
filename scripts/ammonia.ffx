@@ -2,6 +2,8 @@
 System.setProperty("pj.nt","2");
 
 String filename = "examples/ammonia.P1.xyz"
+String dyn = null;
+
 open(filename);
 energy();
 
@@ -20,5 +22,5 @@ double temperature = 100.0;
 // Reset velocities.
 boolean initVelocities = true;
 
-md(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities);
+md(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, null);
 

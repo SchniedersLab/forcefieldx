@@ -294,8 +294,6 @@ public final class MainPanel extends JPanel implements ActionListener,
             chooseKey();
         } else if (arg.equals("ChooseLogFile")) {
             chooseLog();
-        } else if (arg.equals("LoadRestartData")) {
-            openRestart();
         } else if (arg.equals("LoadInducedData")) {
             openInduced();
             // Selection Commands
@@ -699,7 +697,7 @@ public final class MainPanel extends JPanel implements ActionListener,
     public static final String border =
             " ______________________________________________________________________________\n";
     public static final String title =
-            "\n               FORCE FIELD X - Software for Molecular Biophysics\n\n";
+            "               FORCE FIELD X - Software for Molecular Biophysics\n";
     public static final String aboutString =
             "                         " + version + "  " + date
             + "\n                Copyright (c)  Michael J. Schnieders  2001-2010"
@@ -709,7 +707,7 @@ public final class MainPanel extends JPanel implements ActionListener,
             + "\n                         Binding Affinity   Pengyu Ren"
             + "\n                         X-Ray Refinement   Timothy D. Fenn"
             + "\n"
-            + "\n                              All Rights Reserved\n";
+            + "\n                              All Rights Reserved";
 
 
     private void initAbout() {
@@ -1232,22 +1230,6 @@ public final class MainPanel extends JPanel implements ActionListener,
         graphicsCanvas.updateScene(oldSystem, true, false, null, false, null);
         getHierarchy().updateStatus();
         getHierarchy().repaint();
-    }
-
-    private void openRestart() {
-        FFXSystem active = hierarchy.getActive();
-        resetFileChooser();
-        fileChooser.setCurrentDirectory(pwd);
-        fileChooser.setSelectedFile(hierarchy.getActive().getFile());
-        fileChooser.setDialogTitle("Choose Restart File");
-        fileChooser.addChoosableFileFilter(dynFileFilter);
-        fileChooser.setAcceptAllFileFilterUsed(true);
-        int result = fileChooser.showOpenDialog(this);
-        if (result == JFileChooser.APPROVE_OPTION) {
-            File f = fileChooser.getSelectedFile();
-            DYNFilter dynFilter = new DYNFilter(active, f);
-            dynFilter.read();
-        }
     }
 
     public void oscillate(ActionEvent evt) {

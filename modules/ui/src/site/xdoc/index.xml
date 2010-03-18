@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<document
+    xmlns="http://maven.apache.org/XDOC/2.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
+    <properties>
+        <title>User Interfaces</title>
+        <author email="schnied@stanford.edu">
+            Michael Schnieders
+        </author>
+    </properties>
+    <body>
+        <section name="User Interfaces Introduction">
+            <p align="justify">
+                There are two main interfaces to Force Field X modules:
+            </p>
+            <ul>
+                <li>A graphical user interface (GUI) with a script development environment.</li>
+                <li>A command line interface (CLI) that executes scripts and simple commands.</li>
+            </ul>
+            <subsection name="Graphical User Interface">
+                <p>
+                    The GUI supports:
+                </p>
+                <ul>
+                    <li>3D Visualization</li>
+                    <li>Development of Scripts</li>
+                    <li>Editing of Propety Files</li>
+                </ul>
+                <p align="center">
+                    <img align="middle" src="images/trypsin.png" alt="GUI"/>
+                </p>
+            </subsection>
+            <subsection name="Command Line Interface">
+                <p>
+                    The CLI supports:
+                </p>
+                <ul>
+                    <li>Simple commands on structure files like "energy" and "minimize"</li>
+                    <li>Execution of custom or supplied scripts</li>
+                </ul>
+            </subsection>
+        </section>
+    </body>
+</document>

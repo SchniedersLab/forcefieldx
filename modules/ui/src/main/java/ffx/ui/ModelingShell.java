@@ -249,7 +249,8 @@ public class ModelingShell extends Console implements AlgorithmListener {
     }
 
     public void md(int nStep, double timeStep, double printInterval,
-            double saveInterval, double temperature, boolean initVelocities) {
+            double saveInterval, double temperature, boolean initVelocities,
+            File dyn) {
         if (interrupted || terminatableAlgorithm != null) {
             return;
         }
@@ -259,7 +260,7 @@ public class ModelingShell extends Console implements AlgorithmListener {
                     active.getProperties(), this, Thermostats.BUSSI);
             terminatableAlgorithm = molecularDynamics;
             molecularDynamics.dynamic(nStep, timeStep, printInterval,
-                    saveInterval, temperature, initVelocities);
+                    saveInterval, temperature, initVelocities, dyn);
             terminatableAlgorithm = null;
         }
     }

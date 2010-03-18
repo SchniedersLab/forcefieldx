@@ -20,6 +20,8 @@
  */
 package ffx.algorithms;
 
+import static java.lang.String.format;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,6 +35,7 @@ import ffx.algorithms.Thermostat.Thermostats;
 import ffx.potential.PotentialEnergy;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.parsers.DYNFilter;
 import ffx.potential.parsers.XYZFilter;
 
 /**
@@ -66,7 +69,9 @@ public class MolecularDynamics implements Terminatable, Runnable {
     private AlgorithmListener algorithmListener;
     private Thermostat thermostat;
     private File archive = null;
+    private File dyn = null;
     private XYZFilter xyzFilter = null;
+    private DYNFilter dynFilter = null;
     private boolean done;
     private boolean terminate;
     private int nSteps = 1000;
@@ -74,10 +79,11 @@ public class MolecularDynamics implements Terminatable, Runnable {
     private int saveFrequency = 1000;
     private double temperature = 300.0;
     private boolean initVelocities = true;
+    private boolean loadRestart = false;
 
     public MolecularDynamics(MolecularAssembly assembly,
-            CompositeConfiguration properties,
-            AlgorithmListener listener, Thermostats requestedThermostat) {
+                             CompositeConfiguration properties,
+                             AlgorithmListener listener, Thermostats requestedThermostat) {
         this.molecularAssembly = assembly;
         this.algorithmListener = listener;
         if (molecularAssembly.getPotentialEnergy() == null) {
@@ -87,10 +93,8 @@ public class MolecularDynamics implements Terminatable, Runnable {
             potentialEnergy = molecularAssembly.getPotentialEnergy();
         }
         this.properties = properties;
-        ArrayList<Atom> atomList = molecularAssembly.getAtomList();
-        n = atomList.size();
-        atoms = atomList.toArray(new Atom[n]);
-        Arrays.sort(atoms);
+        atoms = molecularAssembly.getAtomArray();
+        n = atoms.length;
 
         mass = new double[n];
         dof = n * 3;
@@ -135,7 +139,8 @@ public class MolecularDynamics implements Terminatable, Runnable {
     }
 
     public void init(final int nSteps, final double timeStep, final double printInterval,
-            final double saveInterval, final double temperature, final boolean initVelocities) {
+                     final double saveInterval, final double temperature, final boolean initVelocities,
+                     final File dyn) {
 
         /**
          * Return if already running.
@@ -165,15 +170,30 @@ public class MolecularDynamics implements Terminatable, Runnable {
         saveFrequency = -1;
         if (saveInterval > dt) {
             saveFrequency = (int) (saveInterval / dt);
+            File file = molecularAssembly.getFile();
+            String filename = FilenameUtils.removeExtension(file.getAbsolutePath());
             if (archive == null) {
-                File file = molecularAssembly.getFile();
-                String filename = FilenameUtils.removeExtension(file.getAbsolutePath());
                 archive = new File(filename + ".arc");
                 archive = XYZFilter.version(archive);
             }
             logger.info(" Snap shots will be written to " + archive.getAbsolutePath());
+
+            if (dyn == null) {
+                this.dyn = new File(filename + ".dyn");
+                loadRestart = false;
+            } else {
+                this.dyn = dyn;
+                loadRestart = true;
+            }
+            
+            logger.info(" Restart file will be written to " + this.dyn.getAbsolutePath());
+
+
             if (xyzFilter == null) {
                 xyzFilter = new XYZFilter(molecularAssembly);
+            }
+            if (dynFilter == null) {
+                dynFilter = new DYNFilter(molecularAssembly);
             }
         }
 
@@ -192,7 +212,8 @@ public class MolecularDynamics implements Terminatable, Runnable {
      * @param initVelocities
      */
     public void dynamic(final int nSteps, final double timeStep, final double printInterval,
-            final double saveInterval, final double temperature, final boolean initVelocities) {
+                        final double saveInterval, final double temperature, final boolean initVelocities,
+                        final File dyn) {
 
         /**
          * Return if already running; Could happen if two threads call
@@ -205,12 +226,16 @@ public class MolecularDynamics implements Terminatable, Runnable {
 
         logger.info(" Molecular dynamics starting up");
         if (thermostat != null) {
-            logger.info(String.format(" Sampling the NVT ensemble via a %s thermostat", thermostat.name));
+            logger.info(format(" Sampling the NVT ensemble via a %s thermostat", thermostat.name));
         } else {
-            logger.info(String.format(" Sampling the NVE ensemble"));
+            logger.info(format(" Sampling the NVE ensemble"));
         }
 
-        init(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities);
+        if (dyn != null) {
+            logger.info(format(" Continuing from " + dyn.getAbsolutePath()));
+        }
+
+        init(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);
 
         // Now we're committed!
         done = false;
@@ -248,45 +273,70 @@ public class MolecularDynamics implements Terminatable, Runnable {
         }
 
         /**
-         * Initialize atomic positions and masses.
+         * Initialize atomic masses.
          */
-        int j = 0;
         for (int i = 0; i < n; i++) {
             Atom atom = atoms[i];
             mass[i] = atom.getMass();
-            double xyz[] = atom.getXYZ();
-            x[j++] = xyz[0];
-            x[j++] = xyz[1];
-            x[j++] = xyz[2];
+        }
+
+        if (!loadRestart) {
+            /**
+             * Initialize atomic coordinates.
+             */
+            int j = 0;
+            for (int i = 0; i < n; i++) {
+                Atom atom = atoms[i];
+                double xyz[] = atom.getXYZ();
+                x[j++] = xyz[0];
+                x[j++] = xyz[1];
+                x[j++] = xyz[2];
+            }
+            /**
+             * Initialize atomic velocities.
+             */
+            if (thermostat != null && initVelocities) {
+                thermostat.maxwell();
+            } else {
+                for (int i = 0; i < dof; i++) {
+                    v[i] = 0.0;
+                }
+            }
+        } else {
+            if (!dynFilter.readFile(dyn, x, v, a, aPrevious)) {
+                String message = " Could not load the restart file - dynamics terminated.";
+                logger.log(Level.WARNING, message);
+                done = true;
+                return;
+            }
         }
 
         /**
-         * Initialize velocities and compute the kinetic energy.
+         * Compute the current potential energy.
          */
-        if (thermostat != null && initVelocities) {
-            thermostat.maxwell();
-            kinetic = thermostat.getKineticEnergy();
-            currentTemp = thermostat.getCurrentTemperture();
-        } else {
-            for (int i = 0; i < dof; i++) {
-                v[i] = 0.0;
-            }
-            kinetic = 0.0;
-        }
-
         potentialEnergy.setOptimizationScaling(null);
         potential = potentialEnergy.energyAndGradient(x, grad);
+
+        /**
+         * Compute the current kinetic energy.
+         */
+        thermostat.kineticEnergy();
+        kinetic = thermostat.getKineticEnergy();
+        currentTemp = thermostat.getCurrentTemperture();
+
         total = kinetic + potential;
 
         /**
          * Initialize current and previous accelerations.
          */
-        int index = 0;
-        for (int i = 0; i < n; i++) {
-            double m = mass[i];
-            for (j = 0; j < 3; j++, index++) {
-                a[index] = -Thermostat.convert * grad[index] / m;
-                aPrevious[index] = a[index];
+        if (!loadRestart) {
+            int index = 0;
+            for (int i = 0; i < n; i++) {
+                double m = mass[i];
+                for (int j = 0; j < 3; j++, index++) {
+                    a[index] = -Thermostat.convert * grad[index] / m;
+                    aPrevious[index] = a[index];
+                }
             }
         }
 
@@ -302,6 +352,13 @@ public class MolecularDynamics implements Terminatable, Runnable {
             beeman(dt);
 
             if (thermostat != null) {
+                /**
+                 * Update the kinetic energy to the full-step value
+                 * so that restarted trajectories report an initial temperature
+                 * exactly equal to the last temperature printed out.
+                 */
+                thermostat.centerOfMassMotion(true, false);
+                thermostat.kineticEnergy();
                 kinetic = thermostat.getKineticEnergy();
                 currentTemp = thermostat.getCurrentTemperture();
             } else {
@@ -320,8 +377,14 @@ public class MolecularDynamics implements Terminatable, Runnable {
                 if (xyzFilter.writeFile(archive, true)) {
                     logger.info(String.format(" Appended snap shot to " + archive.getName()));
                 } else {
-                    logger.severe(String.format(" Appending snap shot to " + archive.getName() + " failed"));
+                    logger.warning(String.format(" Appending snap shot to " + archive.getName() + " failed"));
                 }
+                if (dynFilter.writeFile(dyn, potentialEnergy.getCrystal(), x, v, a, aPrevious)) {
+                    logger.info(String.format(" Wrote restart file to " + dyn.getName()));
+                } else {
+                    logger.info(String.format(" Writing restart file to " + dyn.getName() + " failed"));
+                }
+
             }
 
             if (algorithmListener != null && step % printFrequency == 0) {
@@ -348,7 +411,7 @@ public class MolecularDynamics implements Terminatable, Runnable {
                 try {
                     wait(1);
                 } catch (Exception e) {
-                    logger.log(Level.WARNING, "Exception terminating minimization.\n", e);
+                    logger.log(Level.WARNING, "Exception terminating dynamics.\n", e);
                 }
             }
         }

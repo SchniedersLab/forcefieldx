@@ -2,6 +2,9 @@
 // Coordinate file to open (can be XYZ or PDB)
 String fileName = "examples/watersmall.xyz";
 
+// Restart file
+File dyn = null;
+
 // Beginning of the ligand atom range.
 int ligandStart = 1;
 
@@ -58,11 +61,11 @@ for (int i = ligandStart; i <= ligandStop; i++) {
 Thermostats thermostat = Thermostats.BUSSI;
 
 // Create a MolecularDynamics instance
-MolecularDynamics molDyn = new MolecularDynamics(active, null, thermostat);
+MolecularDynamics molDyn = new MolecularDynamics(active, active.getProperties(), null, thermostat);
 
 // Equilibrate the system
 boolean initVelocities = true;
-molDyn.dynamic(eSteps, timeStep, printInterval, -1, temperature, initVelocities);
+molDyn.dynamic(eSteps, timeStep, printInterval, -1, temperature, initVelocities, dyn);
 
 // Retrieve the PotentialEnergy instance
 PotentialEnergy energy = active.getPotentialEnergy();
@@ -72,7 +75,7 @@ for (int i=0; i <= elecWindows; i++) {
    double lambda = 1.0 - (double) i / (double) elecWindows;
    energy.setElectrostaticsLambda(lambda);
    molDyn.setArchiveFile(new File(lambdaName + "_elec_" + String.format("%5.3f", lambda) + ".arc"));
-   molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities);
+   molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);
 }
 
 // Turn off the vdW potential for the selected atoms
@@ -80,6 +83,7 @@ for (int i=1; i <= vdwWindows; i++) {
    double lambda = 1.0 - (double) i / (double) vdwWindows;
    energy.setSoftCoreLambda(lambda);
    molDyn.setArchiveFile(new File(lambdaName + "_vdw_" + String.format("%5.3f", lambda) + ".arc"));
-   molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities);
+   molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);
 }
+
 

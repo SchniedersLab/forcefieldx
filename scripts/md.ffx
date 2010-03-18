@@ -1,26 +1,40 @@
 
+// Force Field X Imports
 import ffx.algorithms.MolecularDynamics;
 import ffx.algorithms.Thermostat.Thermostats;
 
-open "examples/3DB3.P62.xyz";
+// Structure File (XYZ or PDB)
+String filename = "examples/3DB3.P62.xyz";
+
+// Restart file (uncomment only 1 of the 2 lines below)
+File dyn = null;
+//File dyn = new File("examples/3DB3.P62.dyn");
 
 // Number of molecular dynamics steps
 int nSteps = 100;
+
 // Time step in femtoseconds.
 double timeStep = 1.0;
+
 // Frequency to print out thermodynamics information in picoseconds.
 double printInterval = 0.01;
+
 // Frequency to save out coordinates in picoseconds.
 double saveInterval = 0.01;
+
 // Temperature in degrees Kelvin.
 double temperature = 300.0;
-// Reset velocities.
-boolean initVelocities = true;
 
+// Thermostat (BERENDSEN or BUSSI)
 Thermostats thermostat = Thermostats.BUSSI;
 
+// Reset velocities (ignored if a restart file is given)
+boolean initVelocities = true;
 
-MolecularDynamics molDyn = new MolecularDynamics(active, null, thermostat);
+// Things below this line normally do not need to be changed.
+// ===============================================================================================
 
-molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities);
+open filename;
+MolecularDynamics molDyn = new MolecularDynamics(active, active.getProperties(), null, thermostat);
+molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);
 

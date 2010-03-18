@@ -20,10 +20,19 @@
  */
 package ffx.potential.parsers;
 
+import ffx.crystal.Crystal;
+import static java.lang.String.format;
+
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
@@ -37,21 +46,22 @@ import ffx.potential.bonded.MolecularAssembly;
  */
 public class DYNFilter {
 
-    MolecularAssembly fsystem;
-    File file;
-
-    public DYNFilter(MolecularAssembly s, File f) {
-        fsystem = s;
-        file = f;
+    private static final Logger logger = Logger.getLogger(DYNFilter.class.getName());
+    MolecularAssembly molecularAssembly;
+ 
+    public DYNFilter(MolecularAssembly s) {
+        molecularAssembly = s;
     }
 
-    public boolean read() {
-        if (!file.exists() || !file.canRead()) {
+    public boolean readFile(File dynFile, double x[], double v[], double a[], double ap[]) {
+        if (!dynFile.exists() || !dynFile.canRead()) {
             return false;
         }
+        FileReader fr = null;
+        BufferedReader br = null;
         try {
-            FileReader fr = new FileReader(file);
-            BufferedReader br = new BufferedReader(fr);
+            fr = new FileReader(dynFile);
+            br = new BufferedReader(fr);
             br.readLine();
             String data = br.readLine().trim();
             String tokens[] = data.split(" +");
@@ -59,9 +69,11 @@ public class DYNFilter {
                 return false;
             }
             int numatoms = Integer.parseInt(tokens[0]);
-            if (numatoms != fsystem.getAtomList().size()) {
+            if (numatoms != molecularAssembly.getAtomList().size()) {
                 return false;
             }
+            
+            // Box size and angles
             br.readLine();
             data = br.readLine().trim();
             tokens = data.split(" +");
@@ -72,7 +84,7 @@ public class DYNFilter {
             d[0] = Double.parseDouble(tokens[0]);
             d[1] = Double.parseDouble(tokens[1]);
             d[2] = Double.parseDouble(tokens[2]);
-            fsystem.setBox(d);
+
             data = br.readLine().trim();
             tokens = data.split(" +");
             if (tokens.length != 3) {
@@ -81,25 +93,21 @@ public class DYNFilter {
             d[0] = Double.parseDouble(tokens[0]);
             d[1] = Double.parseDouble(tokens[1]);
             d[2] = Double.parseDouble(tokens[2]);
-            fsystem.setAngle(d);
+
             // Positions
             br.readLine();
-            double x[][] = new double[numatoms][3];
             for (int i = 0; i < numatoms; i++) {
                 data = br.readLine().trim();
                 tokens = data.split(" +");
                 if (tokens.length != 3) {
                     return false;
                 }
-                x[i][0] = Double.parseDouble(tokens[0]);
-                x[i][1] = Double.parseDouble(tokens[1]);
-                x[i][2] = Double.parseDouble(tokens[2]);
+                int j = i * 3;
+                x[j] = Double.parseDouble(tokens[0]);
+                x[j+1] = Double.parseDouble(tokens[1]);
+                x[j+2] = Double.parseDouble(tokens[2]);
             }
-            List<Atom> atoms = fsystem.getAtomList();
-            for (Atom a : atoms) {
-                int j = a.getXYZIndex() - 1;
-                a.moveTo(x[j][0], x[j][1], x[j][2]);
-            }
+
             // Velocities
             br.readLine();
             for (int i = 0; i < numatoms; i++) {
@@ -108,14 +116,12 @@ public class DYNFilter {
                 if (tokens.length != 3) {
                     return false;
                 }
-                x[i][0] = Double.parseDouble(tokens[0]);
-                x[i][1] = Double.parseDouble(tokens[1]);
-                x[i][2] = Double.parseDouble(tokens[2]);
+                int j = i * 3;
+                v[j] = Double.parseDouble(tokens[0]);
+                v[j+1] = Double.parseDouble(tokens[1]);
+                v[j+2] = Double.parseDouble(tokens[2]);
             }
-            for (Atom a : atoms) {
-                int j = a.getXYZIndex() - 1;
-                // a.setVeclocity(x[j][0], x[j][1], x[j][2]);
-            }
+
             // Accelerations
             br.readLine();
             for (int i = 0; i < numatoms; i++) {
@@ -124,19 +130,94 @@ public class DYNFilter {
                 if (tokens.length != 3) {
                     return false;
                 }
-                x[i][0] = Double.parseDouble(tokens[0]);
-                x[i][1] = Double.parseDouble(tokens[1]);
-                x[i][2] = Double.parseDouble(tokens[2]);
+                int j = i * 3;
+                a[j] = Double.parseDouble(tokens[0]);
+                a[j+1] = Double.parseDouble(tokens[1]);
+                a[j+2] = Double.parseDouble(tokens[2]);
             }
-            for (Atom a : atoms) {
-                int j = a.getXYZIndex() - 1;
-                // a.setAcceleration(x[j][0], x[j][1], x[j][2]);
+
+            // Previous Accelerations
+            br.readLine();
+            for (int i = 0; i < numatoms; i++) {
+                data = br.readLine().trim();
+                tokens = data.split(" +");
+                if (tokens.length != 3) {
+                    return false;
+                }
+                int j = i * 3;
+                ap[j] = Double.parseDouble(tokens[0]);
+                ap[j+1] = Double.parseDouble(tokens[1]);
+                ap[j+2] = Double.parseDouble(tokens[2]);
             }
-            br.close();
-            fr.close();
         } catch (Exception e) {
-            return false;
+            String message = "Exception reading dynamic restart file: " + dynFile;
+            logger.log(Level.WARNING, message, e);
+        } finally {
+            try {
+                br.close();
+                fr.close();
+            } catch (Exception e) {
+                String message = "Exception closing restart file " + dynFile;
+                logger.log(Level.WARNING, message, e);
+                return false;
+            }
         }
         return true;
+    }
+
+    public boolean writeFile(File writeFile, Crystal crystal, double x[], double v[],
+            double[] a, double ap[]) {
+        FileWriter fw = null;
+        BufferedWriter bw = null;
+        try {
+            fw = new FileWriter(writeFile);
+            bw = new BufferedWriter(fw);
+
+            bw.write(" Number of Atoms and Title :\n");
+            int numberOfAtoms = molecularAssembly.getAtomList().size();
+            String output = format("%7d  %s\n", numberOfAtoms, molecularAssembly.toString());
+            bw.write(output);
+
+            bw.write(" Periodic Box Dimensions :\n");
+            bw.write(format("%26.16E%26.16E%26.16E\n", crystal.a, crystal.b, crystal.c));
+            bw.write(format("%26.16E%26.16E%26.16E\n", crystal.alpha, crystal.beta, crystal.gamma));
+
+            bw.write(" Current Atomic Positions :\n");
+            for (int i = 0; i < numberOfAtoms; i++) {
+                int k = i * 3;
+                bw.write(format("%26.16E%26.16E%26.16E\n", x[k], x[k + 1], x[k + 2]));
+            }
+
+            bw.write(" Current Atomic Velocities :\n");
+            for (int i = 0; i < numberOfAtoms; i++) {
+                int k = i * 3;
+                bw.write(format("%26.16E%26.16E%26.16E\n", v[k], v[k + 1], v[k + 2]));
+            }
+
+            bw.write(" Current Atomic Accelerations :\n");
+            for (int i = 0; i < numberOfAtoms; i++) {
+                int k = i * 3;
+                bw.write(format("%26.16E%26.16E%26.16E\n", a[k], a[k + 1], a[k + 2]));
+            }
+
+            bw.write(" Previous Atomic Accelerations :\n");
+            for (int i = 0; i < numberOfAtoms; i++) {
+                int k = i * 3;
+                bw.write(format("%26.16E%26.16E%26.16E\n", ap[k], ap[k + 1], ap[k + 2]));
+            }
+        } catch (IOException e) {
+            String message = "Exception writing dynamic restart file " + writeFile;
+            logger.log(Level.SEVERE, message, e);
+        } finally {
+            try {
+                bw.close();
+                fw.close();
+                return true;
+            } catch (IOException e) {
+                String message = "Exception closing dynamic restart file " + writeFile;
+                logger.log(Level.WARNING, message, e);
+                return false;
+            }
+        }
     }
 }

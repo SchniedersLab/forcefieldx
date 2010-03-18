@@ -11,35 +11,62 @@
     </properties>
     <body>
         <section name="Introduction">
-            <table>
-                <tr>
-                    <th>Force Field X Modules</th>
-                </tr>
-                <tr>
-                    <td>
-                        <p>
-                            Force Field X is a collaboration to develop computational tools
-                            for molecular biophysics, including state-of-the-art features for X-ray
-                            crystallography and drug design. Force Field X modules include:
-                        </p>
-                        <ul>
-                            <li><a href="modules/algorithms/index.html">Algorithms</a> for optimization and sampling.</li>
-                            <li><a href="modules/binding/index.html">Binding Affinity</a> for computing binding affinities contributed by the lab of Prof. Pengyu Ren.</li>
-                            <li><a href="modules/crystal/index.html">Crystal</a> for space group symmetry operations.</li>
-                            <li><a href="modules/numerics/index.html">Numerics</a> for numerical methods.</li>
-                            <li><a href="modules/potential/index.html">Potentials</a> for the potential energy of systems with space group symmetry by Dr. Michael J. Schnieders.</li>
-                            <li><a href="modules/ui/index.html">User Interfaces</a> for command line and GUI versions.</li>
-                            <li><a href="modules/utilities/index.html">Utilities</a> for support functions needed by many modules.</li>
-                            <li><a href="modules/xray/index.html">X-Ray Refinement</a> for refinement of X-ray diffraction data sets by Dr. Timothy D. Fenn.</li>
-                        </ul>
-                    </td>
-                </tr>
-                <tr>
-                    <td align="center" valign="middle">
-                        <img align="middle" src="images/trypsin.png" alt="GUI"/>
-                    </td>
-                </tr>
-            </table>
+            <p align="justify">
+                Force Field X is a collaboration to develop computational tools
+                for molecular biophysics, including state-of-the-art features for X-ray
+                crystallography and structure based pharmacuetical engineering.
+            </p>
+            <subsection name="Force Field X Parent Project">
+                <p align="justify">
+                    The Force Field X parent project provides:
+                </p>
+                <ul>
+                    <li>
+                        <a href="project-info.html">Shared infrastructure</a> for the development of modules (like this website,
+                    mailing lists, forums, code repositories, etc.).</li>
+                    <li>
+                        <a href="project-reports.html">Aggregate documentaion</a> of the source code, API documentation,
+                        unit testing and known issues.
+                    </li>
+                    <li>
+                        A variety of <a href="modules/ui/index.html">user interfaces</a> that run on all platforms. This includes a GUI, command
+                        line version, scripting based on Groovy and even dissemination via <a href="webstart.html">Java Webstart</a>.
+                    </li>
+                </ul>
+                <p>
+                    The Force Field X parent project is analogous to a rather liberitarian Federal government.
+                    It costs nothing and the idea is to reach consensus on issues that arise.
+                </p>
+            </subsection>
+            <subsection name="Force Field X Modules">
+                <p align="justify">
+                    Force Field X modules are lead by PIs, postdoctoral scholars or graduate students.
+                    Module boundaries are sometimes a bit arbitrary, but so are the borders of states
+                    or countries. If you have an idea for a new Force Field X Module,
+                    please contact an existing member of the <a href="team-list.html">team</a>.
+                </p>
+                <table>
+                    <tr>
+                        <th>Force Field X Modules</th><th>Leader(s)</th><th>Publications</th>
+                    </tr>
+                    <tr><td><a href="modules/algorithms/index.html">Algorithms</a> for optimization and sampling</td>
+                    <td>Dr. Sergio Urahata</td><td></td></tr>
+                    <tr><td><a href="modules/binding/index.html">Binding Affinity</a> for computing binding affinities</td>
+                    <td>Lab of Prof. Pengyu Ren</td><td><a href="modules/algorithms/publications.html">Publications</a></td></tr>
+                    <tr><td><a href="modules/crystal/index.html">Crystal</a> for space group symmetry operations</td>
+                    <td>Dr. Michael J. Schnieders and Dr. Timothy D. Fenn</td><td></td></tr>
+                    <tr><td><a href="modules/numerics/index.html">Numerics</a> for numerical methods</td>
+                    <td>Community</td><td></td></tr>
+                    <tr><td><a href="modules/potential/index.html">Potentials</a> for molecular biophyiscs with support for space group symmetry</td>
+                    <td>Dr. Michael J. Schnieders</td><td><a href="modules/potential/publications.html">Publications</a></td></tr>
+                    <tr><td><a href="modules/ui/index.html">User Interfaces</a> for command line and GUI versions</td>
+                    <td>Community</td><td></td></tr>
+                    <tr><td><a href="modules/utilities/index.html">Utilities</a> for support functions needed by many modules</td>
+                    <td>Community</td><td></td></tr>
+                    <tr><td><a href="modules/xray/index.html">X-Ray Refinement</a> for refinement of X-ray diffraction data sets</td>
+                    <td>Dr. Timothy D. Fenn</td><td><a href="modules/xray/publications.html">Publications</a></td></tr>
+                </table>
+            </subsection>
         </section>
     </body>
 </document>

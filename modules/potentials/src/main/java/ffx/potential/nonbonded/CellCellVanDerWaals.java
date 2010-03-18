@@ -866,6 +866,13 @@ public class CellCellVanDerWaals extends ParallelRegion implements MaskingInterf
             computeTime = 0;
         }
 
+        /**
+         * Compute all interactions for each atom in cell lower bound to
+         * cell upper bound.
+         *
+         * @param lb Lower bound cell index.
+         * @param ub Upper bound cell index.
+         */
         @Override
         public void run(int lb, int ub) {
             long startTime = System.nanoTime();
