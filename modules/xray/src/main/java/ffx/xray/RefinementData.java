@@ -84,10 +84,10 @@ public class RefinementData {
 
         if (logger.isLoggable(Level.INFO)) {
             StringBuffer sb = new StringBuffer();
-            sb.append("Refinement data settings:");
-            sb.append("  R Free flag: " + rflag);
-            sb.append("  n bins: " + npar);
-            sb.append("  bulk solvent: " + bulksolvent);
+            sb.append("\nRefinement data settings:\n");
+            sb.append("  R Free flag: " + rflag + "\n");
+            sb.append("  n bins: " + npar + "\n");
+            sb.append("  bulk solvent: " + bulksolvent + "\n");
             logger.info(sb.toString());
         }
 

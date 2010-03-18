@@ -230,6 +230,7 @@ public class SigmaAEnergy implements Optimizable {
             ComplexNumber dfcc = new ComplexNumber(sai * kect.abs() * cos(phi), sai * kect.abs() * sin(phi));
 
             // map and derivative coefficients
+            // FIXME: check this - can fctot be nan?
             if (Double.isNaN(fctot[i][0])) {
                 fofc1[i][0] = 0.0;
                 fofc1[i][1] = 0.0;
@@ -244,7 +245,7 @@ public class SigmaAEnergy implements Optimizable {
             if (Double.isNaN(fo[i][0])) {
                 fofc1[i][0] = 0.0;
                 fofc1[i][1] = 0.0;
-                if (Double.isNaN(fctot[i][0])) {
+                if (Double.isNaN(fc[i][0])) {
                     fofc2[i][0] = 0.0;
                     fofc2[i][1] = 0.0;
                 } else {
@@ -257,10 +258,10 @@ public class SigmaAEnergy implements Optimizable {
                 dfs[i][1] = 0.0;
                 continue;
             }
-            fofc1[i][0] = mfo.minus(dfcc).re();
-            fofc1[i][1] = mfo.minus(dfcc).im();
-            fofc2[i][0] = mfo2.minus(dfcc).re();
-            fofc2[i][1] = mfo2.minus(dfcc).im();
+            fofc1[i][0] = mfo.minus(dfcc).times(1.0 / sqrt(eoscale)).re();
+            fofc1[i][1] = mfo.minus(dfcc).times(1.0 / sqrt(eoscale)).im();
+            fofc2[i][0] = mfo2.minus(dfcc).times(1.0 / sqrt(eoscale)).re();
+            fofc2[i][1] = mfo2.minus(dfcc).times(1.0 / sqrt(eoscale)).im();
             dfc[i][0] = dfcr;
             dfc[i][1] = dfci;
             dfs[i][0] = dfsr;

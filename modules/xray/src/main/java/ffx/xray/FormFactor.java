@@ -509,7 +509,7 @@ public class FormFactor {
         return exp(-rsq / (2.0 * sd2));
     }
 
-    public void rho_grad(double xyz[]) {
+    public void rho_grad(double xyz[], double scale) {
         double dxyz[] = new double[3];
         diff(xyz, this.xyz, dxyz);
         double r2 = rsq(dxyz);
@@ -547,39 +547,40 @@ public class FormFactor {
         rho = occ * twopi32 * gradp[3];
 
         // x, y, z
-        atom.setXYZGradient(
-                occ * twopi32 * gradp[0],
-                occ * twopi32 * gradp[1],
-                occ * twopi32 * gradp[2]);
+        atom.addToXYZGradient(
+                scale * occ * twopi32 * gradp[0],
+                scale * occ * twopi32 * gradp[1],
+                scale * occ * twopi32 * gradp[2]);
         // occ
-        atom.setOccupancyGradient(twopi32 * gradp[3]);
+        atom.setOccupancyGradient(scale * twopi32 * gradp[3]);
         // Biso
-        atom.setTempFactorGradient(occ * twopi32 * gradp[4]);
+        atom.setTempFactorGradient(scale * occ * twopi32 * gradp[4]);
         // Uaniso
         if (atom.getAnisou() != null) {
             g = atom.getAnisouGradient();
-            g[0] = occ * twopi32 * gradu[0];
-            g[1] = occ * twopi32 * gradu[1];
-            g[2] = occ * twopi32 * gradu[2];
-            g[3] = occ * twopi32 * gradu[3];
-            g[4] = occ * twopi32 * gradu[4];
-            g[5] = occ * twopi32 * gradu[5];
+            g[0] = scale * occ * twopi32 * gradu[0];
+            g[1] = scale * occ * twopi32 * gradu[1];
+            g[2] = scale * occ * twopi32 * gradu[2];
+            g[3] = scale * occ * twopi32 * gradu[3];
+            g[4] = scale * occ * twopi32 * gradu[4];
+            g[5] = scale * occ * twopi32 * gradu[5];
         }
     }
 
-    public void rho_gauss_grad(double xyz[], double sd) {
+    public void rho_gauss_grad(double xyz[], double sd, double scale) {
         double dxyz[] = new double[3];
         diff(xyz, this.xyz, dxyz);
         double r2 = rsq(dxyz);
+        double sd2 = sd * sd;
 
-        double rho = exp(-0.5 * r2 / sd);
+        double rho = exp(-r2 / (2.0 * sd2));
 
         double g[] = new double[3];
-        g[0] = rho * dxyz[0] / sd;
-        g[1] = rho * dxyz[1] / sd;
-        g[2] = rho * dxyz[2] / sd;
+        g[0] = scale * -rho * dxyz[0] / sd2;
+        g[1] = scale * -rho * dxyz[1] / sd2;
+        g[2] = scale * -rho * dxyz[2] / sd2;
 
-        atom.setXYZGradient(g[0], g[1], g[2]);
+        atom.addToXYZGradient(g[0], g[1], g[2]);
     }
 
     public void setXYZ(double xyz[]) {

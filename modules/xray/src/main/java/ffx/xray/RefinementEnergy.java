@@ -43,13 +43,20 @@ public class RefinementEnergy implements Optimizable {
         COORDINATES, BFACTORS, COORDINATES_AND_BFACTORS
     }
     private final MolecularAssembly molecularAssembly;
+    private final SigmaAMinimize sigmaaminimize;
+    private final CrystalReciprocalSpace crs;
+    private final RefinementData refinementdata;
     private final Atom atomArray[];
     private PotentialEnergy potentialEnergy;
     private RefinementMode refinementMode;
     private double weight = 1.0;
 
-    public RefinementEnergy(MolecularAssembly molecularAssembly) {
+    public RefinementEnergy(MolecularAssembly molecularAssembly,
+            SigmaAMinimize sigmaaminimize) {
         this.molecularAssembly = molecularAssembly;
+        this.sigmaaminimize = sigmaaminimize;
+        this.crs = sigmaaminimize.crs;
+        this.refinementdata = sigmaaminimize.refinementdata;
         this.refinementMode = RefinementMode.COORDINATES;
         this.atomArray = molecularAssembly.getAtomArray();
         potentialEnergy = new PotentialEnergy(molecularAssembly);
@@ -63,6 +70,9 @@ public class RefinementEnergy implements Optimizable {
                 // Compute the energy and gradient for the chemical term.
                 e = potentialEnergy.energyAndGradient(x, g);
                 // Compute the energy and gradient for the X-ray target.
+                e += sigmaaminimize.calculateLikelihood();
+                crs.computeAtomicGradients(refinementdata.dfc,
+                        refinementdata.freer, refinementdata.rfreeflag);
 
                 return e;
             case BFACTORS:

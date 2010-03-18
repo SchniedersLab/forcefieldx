@@ -42,12 +42,13 @@ import ffx.numerics.OptimizationListener;
  */
 public class SigmaAMinimize implements OptimizationListener, Terminatable {
 
-    private static final Logger logger = Logger.getLogger(SplineOptimizer.class.getName());
+    private static final Logger logger = Logger.getLogger(SplineEnergy.class.getName());
     private static double toSeconds = 0.000000001;
     private final ReflectionList reflectionlist;
-    private final RefinementData refinementdata;
+    protected final RefinementData refinementdata;
     private final Crystal crystal;
-    private final SigmaAEnergy sigmaaoptimizer;
+    protected final CrystalReciprocalSpace crs;
+    private final SigmaAEnergy sigmaaenergy;
     private final int n;
     private final double x[];
     private final double grad[];
@@ -59,13 +60,14 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
     private int nSteps;
 
     public SigmaAMinimize(ReflectionList reflectionlist,
-            RefinementData refinementdata) {
+            RefinementData refinementdata, CrystalReciprocalSpace crs) {
         this.reflectionlist = reflectionlist;
         this.refinementdata = refinementdata;
         this.crystal = reflectionlist.crystal;
+        this.crs = crs;
 
         n = refinementdata.nparams * 2;
-        sigmaaoptimizer = new SigmaAEnergy(reflectionlist, refinementdata);
+        sigmaaenergy = new SigmaAEnergy(reflectionlist, refinementdata);
         x = new double[n];
         grad = new double[n];
         scaling = new double[n];
@@ -78,15 +80,15 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
             scaling[i + refinementdata.nparams] = 1.0;
         }
 
-        sigmaaoptimizer.setOptimizationScaling(scaling);
+        sigmaaenergy.setOptimizationScaling(scaling);
 
         // generate Es
-        int type = SplineOptimizer.Type.FCTOESQ;
+        int type = SplineEnergy.Type.FCTOESQ;
         SplineMinimize splineminimize = new SplineMinimize(reflectionlist,
                 refinementdata, refinementdata.fcesq, type);
         splineminimize.minimize(7, 1.0);
 
-        type = SplineOptimizer.Type.FOTOESQ;
+        type = SplineEnergy.Type.FOTOESQ;
         splineminimize = new SplineMinimize(reflectionlist,
                 refinementdata, refinementdata.foesq, type);
         splineminimize.minimize(7, 1.0);
@@ -125,6 +127,15 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
         }
     }
 
+    public double calculateLikelihood() {
+        sigmaaenergy.energyAndGradient(x, grad);
+        return refinementdata.llkr;
+    }
+    
+    public double calculateLikelihoodFree() {
+        return sigmaaenergy.energyAndGradient(x, grad);
+    }
+
     public SigmaAEnergy minimize() {
         return minimize(0.5);
     }
@@ -135,12 +146,12 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
 
     public SigmaAEnergy minimize(int m, double eps) {
 
-        double e = sigmaaoptimizer.energyAndGradient(x, grad);
+        double e = sigmaaenergy.energyAndGradient(x, grad);
 
         long mtime = -System.nanoTime();
         time = -System.nanoTime();
         done = false;
-        int status = LBFGS.minimize(n, m, x, e, grad, eps, sigmaaoptimizer, this);
+        int status = LBFGS.minimize(n, m, x, e, grad, eps, sigmaaenergy, this);
         done = true;
         switch (status) {
             case 0:
@@ -166,7 +177,7 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
             logger.info(sb.toString());
         }
 
-        return sigmaaoptimizer;
+        return sigmaaenergy;
     }
 
     @Override

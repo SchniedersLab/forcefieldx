@@ -83,9 +83,10 @@ public class CrystalReciprocalSpace {
     private final ParallelTeam parallelTeam;
     private final int threadCount;
     private final SpatialDensityRegion spatialDensityRegion;
-    private final AtomicGradientRegion atomicGradientRegion;
     private final AtomicDensityLoop atomicDensityLoops[];
+    private final AtomicGradientRegion atomicGradientRegion;
     private final SolventDensityLoop solventDensityLoops[];
+    private final SolventGradientRegion solventGradientRegion;
     private final ParallelTeam fftTeam;
     private final Complex3DParallel complexFFT3D;
     private final IntegerSchedule recipSchedule;
@@ -94,15 +95,15 @@ public class CrystalReciprocalSpace {
      * Crystal Reciprocal Space.
      */
     public CrystalReciprocalSpace(ReflectionList reflectionlist,
-                                  Atom atoms[],
-                                  ParallelTeam fftTeam, ParallelTeam parallelTeam) {
+            Atom atoms[],
+            ParallelTeam fftTeam, ParallelTeam parallelTeam) {
         this(reflectionlist, atoms, fftTeam, parallelTeam, false);
     }
 
     public CrystalReciprocalSpace(ReflectionList reflectionlist,
-                                  Atom atoms[],
-                                  ParallelTeam fftTeam, ParallelTeam parallelTeam,
-                                  boolean solventmask) {
+            Atom atoms[],
+            ParallelTeam fftTeam, ParallelTeam parallelTeam,
+            boolean solventmask) {
         this.reflectionlist = reflectionlist;
         this.crystal = reflectionlist.crystal;
         this.resolution = reflectionlist.resolution;
@@ -179,18 +180,18 @@ public class CrystalReciprocalSpace {
         if (logger.isLoggable(Level.INFO)) {
             StringBuffer sb = new StringBuffer();
             sb.append(String.format(" Form Factor Grid Radius        %d\n",
-                                    aradgrid));
+                    aradgrid));
             sb.append(String.format(" Grid density:               %8.3f\n",
-                                    density));
+                    density));
             sb.append(String.format(" Grid dimensions:           (%d,%d,%d)\n",
-                                    fftX, fftY, fftZ));
+                    fftX, fftY, fftZ));
             logger.info(sb.toString());
         }
 
         spatialDensityRegion =
-        new SpatialDensityRegion(fftX, fftY, fftZ,
-                                 densityGrid, aradgrid * 2, nSymm,
-                                 threadCount, crystal, atoms, coordinates);
+                new SpatialDensityRegion(fftX, fftY, fftZ,
+                densityGrid, aradgrid * 2, nSymm,
+                threadCount, crystal, atoms, coordinates);
 
         if (solvent) {
             recipSchedule = IntegerSchedule.fixed();
@@ -198,8 +199,10 @@ public class CrystalReciprocalSpace {
             atomicDensityLoops = null;
             for (int i = 0; i < threadCount; i++) {
                 solventDensityLoops[i] =
-                new SolventDensityLoop(spatialDensityRegion);
+                        new SolventDensityLoop(spatialDensityRegion);
             }
+            atomicGradientRegion = null;
+            solventGradientRegion = new SolventGradientRegion();
         } else {
             // for Fc, only fill the ASU - better to use dynamic scheduler
             recipSchedule = IntegerSchedule.dynamic();
@@ -207,11 +210,12 @@ public class CrystalReciprocalSpace {
             solventDensityLoops = null;
             for (int i = 0; i < threadCount; i++) {
                 atomicDensityLoops[i] =
-                new AtomicDensityLoop(spatialDensityRegion);
+                        new AtomicDensityLoop(spatialDensityRegion);
             }
+            atomicGradientRegion = new AtomicGradientRegion();
+            solventGradientRegion = null;
         }
         complexFFT3D = new Complex3DParallel(fftX, fftY, fftZ, fftTeam);
-        atomicGradientRegion = new AtomicGradientRegion();
         // complexFFT3D.setRecip(createReciprocalLattice());
     }
 
@@ -231,14 +235,26 @@ public class CrystalReciprocalSpace {
         }
     }
 
-    public void computeAtomicGradients(double hkldata[][]) {
-        // extract structure factors
+    public void computeAtomicGradients(double hkldata[][],
+            int freer[], int flag) {
+        StringBuffer sb = new StringBuffer();
         long symtime = -System.nanoTime();
         int nsym = crystal.spaceGroup.symOps.size();
         Vector<SymOp> symops = crystal.spaceGroup.symOps;
         ComplexNumber c = new ComplexNumber();
         for (HKL ih : reflectionlist.hkllist) {
             double fc[] = hkldata[ih.index()];
+            if (Double.isNaN(fc[0])
+                    || (ih.h() == 0 && ih.k() == 0 && ih.l() == 0)) {
+                continue;
+            }
+            // cross validation check!!!
+            if (freer != null) {
+                if (freer[ih.index()] == flag) {
+                    continue;
+                }
+            }
+
             c.re(fc[0]);
             c.im(fc[1]);
 
@@ -255,29 +271,49 @@ public class CrystalReciprocalSpace {
                 if (h < halfFFTX + 1) {
                     final int ii = iComplex3D(h, k, l, fftX, fftY, fftZ);
                     densityGrid[ii] += c.phase_shift(shift).re();
-                    densityGrid[ii + 1] += c.phase_shift(shift).im();
+                    densityGrid[ii + 1] += -c.phase_shift(shift).im();
                 } else {
                     h = (fftX - h) % fftX;
                     k = (fftY - k) % fftY;
                     l = (fftZ - l) % fftZ;
                     final int ii = iComplex3D(h, k, l, fftX, fftY, fftZ);
                     densityGrid[ii] += c.phase_shift(shift).re();
-                    densityGrid[ii + 1] += -c.phase_shift(shift).im();
+                    densityGrid[ii + 1] += c.phase_shift(shift).im();
                 }
             }
         }
         symtime += System.nanoTime();
+        sb.append(String.format(" Symmetry: %8.3f\n", symtime * toSeconds));
+
+        long startTime = System.nanoTime();
         complexFFT3D.ifft(densityGrid);
+        long fftTime = System.nanoTime() - startTime;
+        sb.append(String.format(" inverse FFT: %8.3f\n", fftTime * toSeconds));
+
+        // CNSMapWriter cnsmapout = new CNSMapWriter(fftX, fftY, fftZ, crystal, "/tmp/foo.map");
+        // cnsmapout.write(densityGrid);
+
+        startTime = System.nanoTime();
         try {
-            parallelTeam.execute(atomicGradientRegion);
+            if (solvent) {
+                parallelTeam.execute(solventGradientRegion);
+            } else {
+                parallelTeam.execute(atomicGradientRegion);
+            }
+            long permanentDensityTime = System.nanoTime() - startTime;
+            sb.append(String.format(" Grid Atomic Gradients: %8.3f\n", permanentDensityTime * toSeconds));
         } catch (Exception e) {
             String message = "Exception computing atomic gradients.";
             logger.log(Level.SEVERE, message, e);
         }
 
+        if (logger.isLoggable(Level.INFO)) {
+            logger.info(sb.toString());
+        }
     }
 
     public void computeAtomicDensity(double hkldata[][]) {
+        StringBuffer sb = new StringBuffer();
         // clear out the reflection data
         int n = reflectionlist.hkllist.size();
         for (int i = 0; i < n; i++) {
@@ -290,78 +326,78 @@ public class CrystalReciprocalSpace {
             long startTime = System.nanoTime();
             parallelTeam.execute(spatialDensityRegion);
             long permanentDensityTime = System.nanoTime() - startTime;
-            if (logger.isLoggable(Level.INFO)) {
-                logger.info(String.format(" Grid Atomic Density: %8.3f", permanentDensityTime * toSeconds));
-            }
-
-            startTime = System.nanoTime();
-            complexFFT3D.fft(densityGrid);
-            long fftTime = System.nanoTime() - startTime;
-            if (logger.isLoggable(Level.INFO)) {
-                logger.info(String.format(" FFT: %8.3f", fftTime * toSeconds));
-            }
-
-            // extract structure factors
-            long symtime = -System.nanoTime();
-            int nsym = crystal.spaceGroup.symOps.size();
-            Vector<SymOp> symops = crystal.spaceGroup.symOps;
-            for (HKL ih : reflectionlist.hkllist) {
-                double fc[] = hkldata[ih.index()];
-
-                // apply symmetry
-                for (int j = 0; j < nsym; j++) {
-                    HKL ij = new HKL();
-                    crystal.applyTransSymRot(ih, ij, symops.get(j));
-                    double shift = Crystal.sym_phase_shift(ih, symops.get(j));
-
-                    int h = Crystal.mod(ij.h(), fftX);
-                    int k = Crystal.mod(ij.k(), fftY);
-                    int l = Crystal.mod(ij.l(), fftZ);
-
-                    if (h < halfFFTX + 1) {
-                        final int ii = iComplex3D(h, k, l, fftX, fftY, fftZ);
-                        ComplexNumber c = new ComplexNumber(densityGrid[ii],
-                                                            densityGrid[ii + 1]);
-                        fc[0] += c.phase_shift(shift).re();
-                        fc[1] += c.phase_shift(shift).im();
-                    } else {
-                        h = (fftX - h) % fftX;
-                        k = (fftY - k) % fftY;
-                        l = (fftZ - l) % fftZ;
-                        final int ii = iComplex3D(h, k, l, fftX, fftY, fftZ);
-                        ComplexNumber c = new ComplexNumber(densityGrid[ii],
-                                                            -densityGrid[ii + 1]);
-                        fc[0] += c.phase_shift(shift).re();
-                        fc[1] += c.phase_shift(shift).im();
-                    }
-                }
-            }
-
-            // scale
-            double scale = crystal.volume / (fftX * fftY * fftZ);
-            for (HKL ih : reflectionlist.hkllist) {
-                double fc[] = hkldata[ih.index()];
-                ComplexNumber c = new ComplexNumber(fc[0], fc[1]);
-                // remove Badd
-                double s = Crystal.invressq(crystal, ih);
-                c = c.times(scale * exp(0.25 * badd * s));
-
-                fc[0] = c.conjugate().re();
-                fc[1] = c.conjugate().im();
-            }
-            symtime += System.nanoTime();
-
-            if (logger.isLoggable(Level.INFO)) {
-                logger.info(String.format(" Symmetry/scaling: %8.3f", symtime * toSeconds));
-            }
-
+            sb.append(String.format(" Grid Atomic Density: %8.3f\n", permanentDensityTime * toSeconds));
         } catch (Exception e) {
             String message = "Fatal exception evaluating atomic electron density.";
             logger.log(Level.SEVERE, message, e);
         }
+
+        // CNSMapWriter cnsmapout = new CNSMapWriter(fftX, fftY, fftZ, crystal, "/tmp/foo.map");
+        // cnsmapout.write(densityGrid);
+
+        long startTime = System.nanoTime();
+        complexFFT3D.fft(densityGrid);
+        long fftTime = System.nanoTime() - startTime;
+        sb.append(String.format(" FFT: %8.3f\n", fftTime * toSeconds));
+
+        // extract structure factors
+        long symtime = -System.nanoTime();
+        int nsym = crystal.spaceGroup.symOps.size();
+        Vector<SymOp> symops = crystal.spaceGroup.symOps;
+        for (HKL ih : reflectionlist.hkllist) {
+            double fc[] = hkldata[ih.index()];
+
+            // apply symmetry
+            for (int j = 0; j < nsym; j++) {
+                HKL ij = new HKL();
+                crystal.applyTransSymRot(ih, ij, symops.get(j));
+                double shift = Crystal.sym_phase_shift(ih, symops.get(j));
+
+                int h = Crystal.mod(ij.h(), fftX);
+                int k = Crystal.mod(ij.k(), fftY);
+                int l = Crystal.mod(ij.l(), fftZ);
+
+                if (h < halfFFTX + 1) {
+                    final int ii = iComplex3D(h, k, l, fftX, fftY, fftZ);
+                    ComplexNumber c = new ComplexNumber(densityGrid[ii],
+                            densityGrid[ii + 1]);
+                    fc[0] += c.phase_shift(shift).re();
+                    fc[1] += c.phase_shift(shift).im();
+                } else {
+                    h = (fftX - h) % fftX;
+                    k = (fftY - k) % fftY;
+                    l = (fftZ - l) % fftZ;
+                    final int ii = iComplex3D(h, k, l, fftX, fftY, fftZ);
+                    ComplexNumber c = new ComplexNumber(densityGrid[ii],
+                            -densityGrid[ii + 1]);
+                    fc[0] += c.phase_shift(shift).re();
+                    fc[1] += c.phase_shift(shift).im();
+                }
+            }
+        }
+
+        // scale
+        double scale = crystal.volume / (fftX * fftY * fftZ);
+        for (HKL ih : reflectionlist.hkllist) {
+            double fc[] = hkldata[ih.index()];
+            ComplexNumber c = new ComplexNumber(fc[0], fc[1]);
+            // remove Badd
+            double s = Crystal.invressq(crystal, ih);
+            c = c.times(scale * exp(0.25 * badd * s));
+
+            fc[0] = c.conjugate().re();
+            fc[1] = c.conjugate().im();
+        }
+        symtime += System.nanoTime();
+
+        if (logger.isLoggable(Level.INFO)) {
+            sb.append(String.format(" Symmetry/scaling: %8.3f\n", symtime * toSeconds));
+            logger.info(sb.toString());
+        }
     }
 
     public void computeSolventDensity(double hkldata[][]) {
+        StringBuffer sb = new StringBuffer();
         // clear out the reflection data
         int n = reflectionlist.hkllist.size();
         for (int i = 0; i < n; i++) {
@@ -374,82 +410,79 @@ public class CrystalReciprocalSpace {
             long startTime = System.nanoTime();
             parallelTeam.execute(spatialDensityRegion);
             long permanentDensityTime = System.nanoTime() - startTime;
-            if (logger.isLoggable(Level.INFO)) {
-                logger.info(String.format(" Grid Solvent Density: %8.3f", permanentDensityTime * toSeconds));
-            }
-
-            for (int k = 0; k < fftZ; k++) {
-                for (int j = 0; j < fftY; j++) {
-                    for (int i = 0; i < fftX; i++) {
-                        final int ii = iComplex3D(i, j, k, fftX, fftY, fftZ);
-                        densityGrid[ii] = exp(-solvent_a * densityGrid[ii]);
-                    }
-                }
-            }
-
-            startTime = System.nanoTime();
-            complexFFT3D.fft(densityGrid);
-            long fftTime = System.nanoTime() - startTime;
-            if (logger.isLoggable(Level.INFO)) {
-                logger.info(String.format(" FFT: %8.3f", fftTime * toSeconds));
-            }
-
-            // extract structure factors
-            long symtime = -System.nanoTime();
-            int nsym = 1;
-            Vector<SymOp> symops = crystal.spaceGroup.symOps;
-            for (HKL ih : reflectionlist.hkllist) {
-                double fc[] = hkldata[ih.index()];
-
-                // apply symmetry
-                for (int j = 0; j < nsym; j++) {
-                    HKL ij = new HKL();
-                    crystal.applyTransSymRot(ih, ij, symops.get(j));
-                    double shift = Crystal.sym_phase_shift(ih, symops.get(j));
-
-                    int h = Crystal.mod(ij.h(), fftX);
-                    int k = Crystal.mod(ij.k(), fftY);
-                    int l = Crystal.mod(ij.l(), fftZ);
-
-                    if (h < halfFFTX + 1) {
-                        final int ii = iComplex3D(h, k, l, fftX, fftY, fftZ);
-                        ComplexNumber c = new ComplexNumber(densityGrid[ii],
-                                                            densityGrid[ii + 1]);
-                        fc[0] += c.phase_shift(shift).re();
-                        fc[1] += c.phase_shift(shift).im();
-                    } else {
-                        h = (fftX - h) % fftX;
-                        k = (fftY - k) % fftY;
-                        l = (fftZ - l) % fftZ;
-                        final int ii = iComplex3D(h, k, l, fftX, fftY, fftZ);
-                        ComplexNumber c = new ComplexNumber(densityGrid[ii],
-                                                            -densityGrid[ii + 1]);
-                        fc[0] += c.phase_shift(shift).re();
-                        fc[1] += c.phase_shift(shift).im();
-                    }
-                }
-            }
-
-            // scale
-            double scale = crystal.volume / (fftX * fftY * fftZ);
-            for (HKL ih : reflectionlist.hkllist) {
-                double fc[] = hkldata[ih.index()];
-                ComplexNumber c = new ComplexNumber(fc[0], fc[1]);
-                c = c.times(scale);
-
-                fc[0] = c.conjugate().re();
-                fc[1] = c.conjugate().im();
-            }
-            symtime += System.nanoTime();
-
-            if (logger.isLoggable(Level.INFO)) {
-                logger.info(String.format(" Symmetry/scaling: %8.3f", symtime * toSeconds));
-            }
-
+            sb.append(String.format(" Grid Solvent Density: %8.3f\n", permanentDensityTime * toSeconds));
         } catch (Exception e) {
             String message = "Fatal exception evaluating solvent electron density.";
             logger.log(Level.SEVERE, message, e);
         }
+
+        for (int k = 0; k < fftZ; k++) {
+            for (int j = 0; j < fftY; j++) {
+                for (int i = 0; i < fftX; i++) {
+                    final int ii = iComplex3D(i, j, k, fftX, fftY, fftZ);
+                    densityGrid[ii] = exp(-solvent_a * densityGrid[ii]);
+                }
+            }
+        }
+
+        long startTime = System.nanoTime();
+        complexFFT3D.fft(densityGrid);
+        long fftTime = System.nanoTime() - startTime;
+        sb.append(String.format(" FFT: %8.3f\n", fftTime * toSeconds));
+
+        // extract structure factors
+        long symtime = -System.nanoTime();
+        int nsym = 1;
+        Vector<SymOp> symops = crystal.spaceGroup.symOps;
+        for (HKL ih : reflectionlist.hkllist) {
+            double fc[] = hkldata[ih.index()];
+
+            // apply symmetry
+            for (int j = 0; j < nsym; j++) {
+                HKL ij = new HKL();
+                crystal.applyTransSymRot(ih, ij, symops.get(j));
+                double shift = Crystal.sym_phase_shift(ih, symops.get(j));
+
+                int h = Crystal.mod(ij.h(), fftX);
+                int k = Crystal.mod(ij.k(), fftY);
+                int l = Crystal.mod(ij.l(), fftZ);
+
+                if (h < halfFFTX + 1) {
+                    final int ii = iComplex3D(h, k, l, fftX, fftY, fftZ);
+                    ComplexNumber c = new ComplexNumber(densityGrid[ii],
+                            densityGrid[ii + 1]);
+                    fc[0] += c.phase_shift(shift).re();
+                    fc[1] += c.phase_shift(shift).im();
+                } else {
+                    h = (fftX - h) % fftX;
+                    k = (fftY - k) % fftY;
+                    l = (fftZ - l) % fftZ;
+                    final int ii = iComplex3D(h, k, l, fftX, fftY, fftZ);
+                    ComplexNumber c = new ComplexNumber(densityGrid[ii],
+                            -densityGrid[ii + 1]);
+                    fc[0] += c.phase_shift(shift).re();
+                    fc[1] += c.phase_shift(shift).im();
+                }
+            }
+        }
+
+        // scale
+        double scale = crystal.volume / (fftX * fftY * fftZ);
+        for (HKL ih : reflectionlist.hkllist) {
+            double fc[] = hkldata[ih.index()];
+            ComplexNumber c = new ComplexNumber(fc[0], fc[1]);
+            c = c.times(scale);
+
+            fc[0] = c.conjugate().re();
+            fc[1] = c.conjugate().im();
+        }
+        symtime += System.nanoTime();
+
+        if (logger.isLoggable(Level.INFO)) {
+            sb.append(String.format(" Symmetry/scaling: %8.3f\n", symtime * toSeconds));
+            logger.info(sb.toString());
+        }
+
     }
 
     private class AtomicDensityLoop extends SpatialDensityLoop {
@@ -467,8 +500,8 @@ public class CrystalReciprocalSpace {
         public void gridDensity(int iSymm, int n) {
             Vector<SymOp> symops = crystal.spaceGroup.symOps;
             double xyz[] = {coordinates[iSymm][0][n],
-                            coordinates[iSymm][1][n],
-                            coordinates[iSymm][2][n]};
+                coordinates[iSymm][1][n],
+                coordinates[iSymm][2][n]};
             FormFactor atomff = new FormFactor(atoms[n], badd, xyz);
             double uvw[] = new double[3];
             crystal.toFractionalCoordinates(xyz, uvw);
@@ -520,8 +553,8 @@ public class CrystalReciprocalSpace {
         public void gridDensity(int iSymm, int n) {
             Vector<SymOp> symops = crystal.spaceGroup.symOps;
             double xyz[] = {coordinates[iSymm][0][n],
-                            coordinates[iSymm][1][n],
-                            coordinates[iSymm][2][n]};
+                coordinates[iSymm][1][n],
+                coordinates[iSymm][2][n]};
             FormFactor atomff = new FormFactor(atoms[n], 0.0, xyz);
             double uvw[] = new double[3];
             crystal.toFractionalCoordinates(xyz, uvw);
@@ -593,8 +626,112 @@ public class CrystalReciprocalSpace {
             @Override
             public void run(final int lb, final int ub) {
                 for (int n = lb; n <= ub; n++) {
-                    Atom a = atoms[n];
-                    // a.addToXYZGradient(badd, badd, badd);
+                    FormFactor atomff = new FormFactor(atoms[n], badd);
+                    double uvw[] = new double[3];
+                    crystal.toFractionalCoordinates(atoms[n].getXYZ(), uvw);
+
+                    // Logic to loop within the cutoff box.
+                    final double frx = fftX * uvw[0];
+                    final int ifrx = (int) frx;
+
+                    final double fry = fftY * uvw[1];
+                    final int ifry = (int) fry;
+
+                    final double frz = fftZ * uvw[2];
+                    final int ifrz = (int) frz;
+
+                    for (int ix = ifrx - aradgrid; ix <= ifrx + aradgrid; ix++) {
+                        int gix = Crystal.mod(ix, fftX);
+                        for (int iy = ifry - aradgrid; iy <= ifry + aradgrid; iy++) {
+                            int giy = Crystal.mod(iy, fftY);
+                            for (int iz = ifrz - aradgrid; iz <= ifrz + aradgrid; iz++) {
+                                int giz = Crystal.mod(iz, fftZ);
+
+                                double xc[] = new double[3];
+                                double xf[] = new double[3];
+                                xf[0] = ix / (double) fftX;
+                                xf[1] = iy / (double) fftY;
+                                xf[2] = iz / (double) fftZ;
+                                crystal.toCartesianCoordinates(xf, xc);
+
+                                final int ii = iComplex3D(gix, giy, giz, fftX, fftY, fftZ);
+                                atomff.rho_grad(xc, densityGrid[ii]);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private class SolventGradientRegion extends ParallelRegion {
+
+        private final SolventGradientLoop solventGradientLoop[];
+
+        public SolventGradientRegion() {
+            solventGradientLoop = new SolventGradientLoop[threadCount];
+            for (int i = 0; i < threadCount; i++) {
+                solventGradientLoop[i] = new SolventGradientLoop();
+            }
+        }
+
+        @Override
+        public void run() {
+            try {
+                execute(0, nAtoms - 1, solventGradientLoop[getThreadIndex()]);
+            } catch (Exception e) {
+                logger.severe(e.toString());
+            }
+        }
+
+        private class SolventGradientLoop extends IntegerForLoop {
+
+            private final IntegerSchedule schedule = IntegerSchedule.dynamic(1);
+            // Extra padding to avert cache interference.
+            long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
+            long pad8, pad9, pada, padb, padc, padd, pade, padf;
+
+            @Override
+            public IntegerSchedule schedule() {
+                return schedule;
+            }
+
+            @Override
+            public void run(final int lb, final int ub) {
+                for (int n = lb; n <= ub; n++) {
+                    FormFactor atomff = new FormFactor(atoms[n], badd);
+                    double uvw[] = new double[3];
+                    crystal.toFractionalCoordinates(atoms[n].getXYZ(), uvw);
+
+                    // Logic to loop within the cutoff box.
+                    final double frx = fftX * uvw[0];
+                    final int ifrx = (int) frx;
+
+                    final double fry = fftY * uvw[1];
+                    final int ifry = (int) fry;
+
+                    final double frz = fftZ * uvw[2];
+                    final int ifrz = (int) frz;
+
+                    for (int ix = ifrx - aradgrid; ix <= ifrx + aradgrid; ix++) {
+                        int gix = Crystal.mod(ix, fftX);
+                        for (int iy = ifry - aradgrid; iy <= ifry + aradgrid; iy++) {
+                            int giy = Crystal.mod(iy, fftY);
+                            for (int iz = ifrz - aradgrid; iz <= ifrz + aradgrid; iz++) {
+                                int giz = Crystal.mod(iz, fftZ);
+
+                                double xc[] = new double[3];
+                                double xf[] = new double[3];
+                                xf[0] = ix / (double) fftX;
+                                xf[1] = iy / (double) fftY;
+                                xf[2] = iz / (double) fftZ;
+                                crystal.toCartesianCoordinates(xf, xc);
+
+                                final int ii = iComplex3D(gix, giy, giz, fftX, fftY, fftZ);
+                                atomff.rho_gauss_grad(xc, solvent_sd, densityGrid[ii]);
+                            }
+                        }
+                    }
                 }
             }
         }

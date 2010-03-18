@@ -59,9 +59,9 @@ import ffx.numerics.Optimizable;
  * @see <a href="http://dx.doi.org/10.1006/jmbi.1994.1633" target="_blank">
  * J. S. Jiang, A. T. Brunger, JMB (1994) 243, 100-115.
  */
-public class ScaleBulkOptimizer implements Optimizable {
+public class ScaleBulkEnergy implements Optimizable {
 
-    private static final Logger logger = Logger.getLogger(ScaleBulkOptimizer.class.getName());
+    private static final Logger logger = Logger.getLogger(ScaleBulkEnergy.class.getName());
     private static final double twopi2 = 2.0 * PI * PI;
     private static final double eightpi2 = 8.0 * PI * PI;
     private static final double u11[][] = {{1.0, 0.0, 0.0}, {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}};
@@ -88,7 +88,7 @@ public class ScaleBulkOptimizer implements Optimizable {
     private final double j13[][];
     private final double j23[][];
 
-    public ScaleBulkOptimizer(ReflectionList reflectionlist, RefinementData refinementdata, int n) {
+    public ScaleBulkEnergy(ReflectionList reflectionlist, RefinementData refinementdata, int n) {
         this.reflectionlist = reflectionlist;
         this.crystal = reflectionlist.crystal;
         this.refinementdata = refinementdata;

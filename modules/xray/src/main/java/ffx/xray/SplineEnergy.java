@@ -44,7 +44,7 @@ import ffx.numerics.Optimizable;
  * K. Cowtan, J. Appl. Cryst. (2002). 35, 655-663
  *
  */
-public class SplineOptimizer implements Optimizable {
+public class SplineEnergy implements Optimizable {
 
     public interface Type {
 
@@ -53,7 +53,7 @@ public class SplineOptimizer implements Optimizable {
         public static final int FCTOESQ = 3;
         public static final int FOTOESQ = 4;
     }
-    private static final Logger logger = Logger.getLogger(SplineOptimizer.class.getName());
+    private static final Logger logger = Logger.getLogger(SplineEnergy.class.getName());
     private static final double twopi2 = 2.0 * PI * PI;
     private final ReflectionList reflectionlist;
     private final ReflectionSpline spline;
@@ -68,7 +68,7 @@ public class SplineOptimizer implements Optimizable {
     private final int freer[];
     protected double[] optimizationScaling = null;
 
-    public SplineOptimizer(ReflectionList reflectionlist,
+    public SplineEnergy(ReflectionList reflectionlist,
             RefinementData refinementdata, int nparams, int type) {
         this.reflectionlist = reflectionlist;
         this.crystal = reflectionlist.crystal;
