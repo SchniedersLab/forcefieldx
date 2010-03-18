@@ -577,87 +577,89 @@ public final class PDBFilter extends SystemFilter {
         /**
          * Loop over chains.
          */
-        for (String chain : chainNames) {
-            Polymer polymer = molecularAssembly.getPolymer(chain, false);
-            ArrayList<Residue> residues = polymer.getResidues();
-            int numberOfResidues = residues.size();
+        if (chainNames != null) {
+            for (String chain : chainNames) {
+                Polymer polymer = molecularAssembly.getPolymer(chain, false);
+                ArrayList<Residue> residues = polymer.getResidues();
+                int numberOfResidues = residues.size();
 
-            /**
-             * Check if all residues are known amino acids.
-             */
-            boolean isProtein = true;
-            for (int residueNumber = 0; residueNumber < numberOfResidues; residueNumber++) {
-                Residue residue = residues.get(residueNumber);
-                String name = residue.getName().toUpperCase();
-                AminoAcid3 aminoAcid = AminoAcid3.UNK;
-                for (int a = 0; a < numberOfKnownAminoAcids; a++) {
-                    AminoAcid3 amino = knownAminoAcids[a];
-                    if (amino.toString().equalsIgnoreCase(name)) {
-                        aminoAcid = amino;
+                /**
+                 * Check if all residues are known amino acids.
+                 */
+                boolean isProtein = true;
+                for (int residueNumber = 0; residueNumber < numberOfResidues; residueNumber++) {
+                    Residue residue = residues.get(residueNumber);
+                    String name = residue.getName().toUpperCase();
+                    AminoAcid3 aminoAcid = AminoAcid3.UNK;
+                    for (int a = 0; a < numberOfKnownAminoAcids; a++) {
+                        AminoAcid3 amino = knownAminoAcids[a];
+                        if (amino.toString().equalsIgnoreCase(name)) {
+                            aminoAcid = amino;
+                            break;
+                        }
+                    }
+                    if (aminoAcid == AminoAcid3.UNK) {
+                        isProtein = false;
                         break;
                     }
                 }
-                if (aminoAcid == AminoAcid3.UNK) {
-                    isProtein = false;
-                    break;
-                }
-            }
 
-            /**
-             * If all the residues in this chain have known amino acids names,
-             * then attempt to assign atom types.
-             */
-            if (isProtein) {
-                try {
-                    assignAminoAcidAtomTypes(residues);
-                    if (logger.isLoggable(Level.INFO)) {
-                        logger.info(" Atom type assignment completed for amino acid chain " + chain + ".");
+                /**
+                 * If all the residues in this chain have known amino acids names,
+                 * then attempt to assign atom types.
+                 */
+                if (isProtein) {
+                    try {
+                        assignAminoAcidAtomTypes(residues);
+                        if (logger.isLoggable(Level.INFO)) {
+                            logger.info(" Atom type assignment completed for amino acid chain " + chain + ".");
+                        }
+                    } catch (MissingHeavyAtomException missingHeavyAtomException) {
+                        logger.severe(missingHeavyAtomException.toString());
+                    } catch (MissingAtomTypeException missingAtomTypeException) {
+                        logger.severe(missingAtomTypeException.toString());
                     }
-                } catch (MissingHeavyAtomException missingHeavyAtomException) {
-                    logger.severe(missingHeavyAtomException.toString());
-                } catch (MissingAtomTypeException missingAtomTypeException) {
-                    logger.severe(missingAtomTypeException.toString());
+                    continue;
                 }
-                continue;
-            }
 
-            /**
-             * Check if all residues have known nucleic acids names.
-             */
-            boolean isNucleicAcid = true;
-            for (int residueNumber = 0; residueNumber < numberOfResidues; residueNumber++) {
-                Residue residue = residues.get(residueNumber);
-                String name = residue.getName().toUpperCase();
-                NucleicAcid3 nucleicAcid = NucleicAcid3.UNK;
-                for (int a = 0; a < numberOfKnownNucleicAcids; a++) {
-                    NucleicAcid3 nucleic = knownNucleicAcids[a];
-                    if (nucleic.toString().equalsIgnoreCase(name)) {
-                        nucleicAcid = nucleic;
+                /**
+                 * Check if all residues have known nucleic acids names.
+                 */
+                boolean isNucleicAcid = true;
+                for (int residueNumber = 0; residueNumber < numberOfResidues; residueNumber++) {
+                    Residue residue = residues.get(residueNumber);
+                    String name = residue.getName().toUpperCase();
+                    NucleicAcid3 nucleicAcid = NucleicAcid3.UNK;
+                    for (int a = 0; a < numberOfKnownNucleicAcids; a++) {
+                        NucleicAcid3 nucleic = knownNucleicAcids[a];
+                        if (nucleic.toString().equalsIgnoreCase(name)) {
+                            nucleicAcid = nucleic;
+                            break;
+                        }
+                    }
+                    if (nucleicAcid == NucleicAcid3.UNK) {
+                        isNucleicAcid = false;
                         break;
                     }
                 }
-                if (nucleicAcid == NucleicAcid3.UNK) {
-                    isNucleicAcid = false;
-                    break;
-                }
-            }
 
-            /**
-             * If all the residues in this chain have known nucleic acids names,
-             * then attempt to assign atom types.
-             */
-            if (isNucleicAcid) {
-                try {
-                    assignNucleicAcidAtomTypes(residues);
-                    if (logger.isLoggable(Level.INFO)) {
-                        logger.info("Atom type assignment completed for nucleic acid chain " + chain + ".");
+                /**
+                 * If all the residues in this chain have known nucleic acids names,
+                 * then attempt to assign atom types.
+                 */
+                if (isNucleicAcid) {
+                    try {
+                        assignNucleicAcidAtomTypes(residues);
+                        if (logger.isLoggable(Level.INFO)) {
+                            logger.info("Atom type assignment completed for nucleic acid chain " + chain + ".");
+                        }
+                    } catch (MissingHeavyAtomException missingHeavyAtomException) {
+                        logger.severe(missingHeavyAtomException.toString());
+                    } catch (MissingAtomTypeException missingAtomTypeException) {
+                        logger.severe(missingAtomTypeException.toString());
                     }
-                } catch (MissingHeavyAtomException missingHeavyAtomException) {
-                    logger.severe(missingHeavyAtomException.toString());
-                } catch (MissingAtomTypeException missingAtomTypeException) {
-                    logger.severe(missingAtomTypeException.toString());
+                    continue;
                 }
-                continue;
             }
         }
 
@@ -2061,9 +2063,8 @@ public final class PDBFilter extends SystemFilter {
         return true;
     }
 
-
     public void writeAtom(Atom atom, int serial, StringBuffer sb,
-            StringBuffer anisouSB, BufferedWriter bw)
+                          StringBuffer anisouSB, BufferedWriter bw)
             throws IOException {
         String name = atom.getID();
         if (name.length() > 4) {
