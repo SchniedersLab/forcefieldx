@@ -54,7 +54,7 @@
                         <p>Type "<code>echo $JAVA_HOME</code>" in a shell.</p>
                         <p>If <code>JAVA_HOME</code> is not set or the JRE version is less than 1.6.0,
                             then please follow Sun's
-                            <a href="http://java.sun.com/javase/6/webnotes/install/system-configurations.html">
+                            <a href="http://java.sun.com/javase/6/webnotes/install/system-configurations.html" target="_blank">
                             Java installation instructions</a> to install a JRE and/or set the
                             <code>JAVA_HOME</code> environment variable.
                         </p>
@@ -68,7 +68,7 @@
                     <li><p>Microsoft Windows</p>
                         <p>Type "<code>echo %JAVA_HOME%</code>" at a DOS prompt.</p>
                         <p>If <code>JAVA_HOME</code> is not set or the version is less than 1.6.0, then please follow Sun's
-                            <a href="http://java.sun.com/javase/6/webnotes/install/system-configurations.html">
+                            <a href="http://java.sun.com/javase/6/webnotes/install/system-configurations.html" target="_blank">
                             Java installation instructions</a> to install a JRE. The Windows installer will set the
                             <code>JAVA_HOME</code> environment variable for you (please open a new DOS window after
                             the installation finishes to check).
@@ -78,18 +78,19 @@
                 <p>After <code>JAVA_HOME</code> is verified, please read the brief installation instructions for your platform:</p>
                 <ul>
                     <li>
-                        <a href="download.html#Linux_Installation_Instructions">Linux</a>
+                        <a href="download.html#linux">Linux</a>
                     </li>
                     <li>
-                        <a href="download.html#Mac_OS_X_Installation_Instructions">Mac OS X</a>
+                        <a href="download.html#macosx">Mac OS X</a>
                     </li>
                     <li>
-                        <a href="download.html#Microsoft_Windows_Installation_Instructions">Microsoft Windows</a>
+                        <a href="download.html#windows">Microsoft Windows</a>
                     </li>
                 </ul>
 
             </subsection>
-            <subsection name="Linux Installation Instructions" id="linux">
+            <a name="linux"/>
+            <subsection name="Linux Installation Instructions">
                 <table>
                     <tr>
                         <td>
@@ -126,7 +127,8 @@
                     </tr>
                 </table>
             </subsection>
-            <subsection name="Mac OS X Installation Instructions" id="macosx">
+            <a name="macosx"/>
+            <subsection name="Mac OS X Installation Instructions">
                 <table>
                     <tr>
                         <td>
@@ -163,7 +165,8 @@
                     </tr>
                 </table>
             </subsection>
-            <subsection name="Microsoft Windows Installation Instructions" id="windows">
+            <a name="windows"/>
+            <subsection name="Microsoft Windows Installation Instructions">
                 <p align="center">
                     <img src="images/windows.jpg" alt="MS WINDOWS" />
                 </p>

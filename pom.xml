@@ -164,6 +164,7 @@
         <module>modules/algorithms</module>
         <module>modules/binding</module>
         <module>modules/crystal</module>
+        <module>modules/nucleic</module>
         <module>modules/numerics</module>
         <module>modules/potentials</module>
         <module>modules/ui</module>

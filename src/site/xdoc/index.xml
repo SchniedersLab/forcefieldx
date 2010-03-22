@@ -52,13 +52,15 @@
                     <tr><td><a href="modules/algorithms/index.html">Algorithms</a> for optimization and sampling</td>
                     <td>Dr. Sergio Urahata</td><td></td></tr>
                     <tr><td><a href="modules/binding/index.html">Binding Affinity</a> for computing binding affinities</td>
-                    <td>Lab of Prof. Pengyu Ren</td><td><a href="modules/algorithms/publications.html">Publications</a></td></tr>
+                    <td>Lab of Prof. Pengyu Ren</td><td><a href="modules/binding/publications.html">Publications</a></td></tr>
                     <tr><td><a href="modules/crystal/index.html">Crystal</a> for space group symmetry operations</td>
                     <td>Dr. Michael J. Schnieders and Dr. Timothy D. Fenn</td><td></td></tr>
+                    <tr><td><a href="modules/nucleic/index.html">Nucleic Acid</a> simulations</td>
+                    <td>Dr. Chuanjie Wu</td><td></td></tr>
                     <tr><td><a href="modules/numerics/index.html">Numerics</a> for numerical methods</td>
                     <td>Community</td><td></td></tr>
-                    <tr><td><a href="modules/potential/index.html">Potentials</a> for molecular biophyiscs with support for space group symmetry</td>
-                    <td>Dr. Michael J. Schnieders</td><td><a href="modules/potential/publications.html">Publications</a></td></tr>
+                    <tr><td><a href="modules/potentials/index.html">Potentials</a> for molecular biophyiscs with support for space group symmetry</td>
+                    <td>Dr. Michael J. Schnieders</td><td><a href="modules/potentials/publications.html">Publications</a></td></tr>
                     <tr><td><a href="modules/ui/index.html">User Interfaces</a> for command line and GUI versions</td>
                     <td>Community</td><td></td></tr>
                     <tr><td><a href="modules/utilities/index.html">Utilities</a> for support functions needed by many modules</td>

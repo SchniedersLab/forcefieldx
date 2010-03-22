@@ -23,19 +23,11 @@ package ffx.algorithms;
 import static java.lang.Math.sqrt;
 
 import java.util.logging.Logger;
-
 import java.util.logging.Level;
 
-import org.apache.commons.math.optimization.GoalType;
 import org.apache.commons.math.optimization.RealConvergenceChecker;
 import org.apache.commons.math.optimization.RealPointValuePair;
-import org.apache.commons.math.optimization.general.ConjugateGradientFormula;
 import org.apache.commons.math.optimization.general.NonLinearConjugateGradientOptimizer;
-import org.apache.commons.math.analysis.solvers.BrentSolver;
-import org.apache.commons.math.analysis.solvers.NewtonSolver;
-import org.apache.commons.math.analysis.solvers.UnivariateRealSolver;
-import org.apache.commons.math.analysis.solvers.UnivariateRealSolverFactoryImpl;
-
 
 import ffx.numerics.LBFGS;
 import ffx.numerics.LineSearch.LineSearchResult;

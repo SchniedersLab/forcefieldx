@@ -11,8 +11,8 @@
         <section name="Source Code">
             <p>"<i>A (molecular biophysics) algorithm must be seen to be believed</i>." Donald Knuth</p>
             <subsection name="Git the Code">
-                <p>The Force Field X project is hosted at <a href="http://www.kenai.com/projects/ffx/">Kenai</a> with the source code in a GIT repository.
-                    "<a href="http://git-scm.com/">Git</a> is a free and open source, distributed version control system designed to handle everything from
+                <p>The Force Field X project is hosted at <a target="_blank" href="http://www.kenai.com/projects/ffx/">Kenai</a> with the source code in a GIT repository.
+                    "<a target="_blank" href="http://git-scm.com/">Git</a> is a free and open source, distributed version control system designed to handle everything from
                     small to very large projects with speed and efficiency."
                     To clone the Force Field X source using GIT first join the Kenai site, set up an ssh key and then join the FFX project. The GIT command is:
                     <source>git clone ssh://KENAI.USER.NAME@git.kenai.com/ffx~source ffx</source>

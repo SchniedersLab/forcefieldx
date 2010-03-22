@@ -9,14 +9,14 @@
     </properties>
     <body>
         <section name="Potentials Publications">
-            <ul>
-                <li><a href="http://dx.doi.org/10.1021/jp910674d">Ponder, J. W.; Wu, C.; Ren, P.; Pande, V. S.; Chodera, J. D.; Schnieders, M. J.; Haque, I.; Mobley, D. L.; Lambrecht, D. S.; DiStasio, R. A.; Head-Gordon, M.; Clark, G. N. I.; Johnson, M. E.; Head-Gordon, T., Current Status of the AMOEBA Polarizable Force Field. <i>The Journal of Physical Chemistry B.</i></a></li>
-                <li><a href="http://dx.doi.org/10.1021/ct7001336">Schnieders, M. J.; Ponder, J. W., Polarizable Atomic Multipole Solutes in a Generalized Kirkwood Continuum. <i>J. Chem. Theory Comput. </i> 2007, <b>3</b>, (6), 2083-2097.</a></li>
-                <li><a href="http://dx.doi.org/10.1063/1.2714528">Schnieders, M. J.; Baker, N. A.; Ren, P.; Ponder, J. W., Polarizable atomic multipole solutes in a Poisson-Boltzmann continuum. <i>Journal of Chemical Physics </i> 2007, <b>126</b>, (12).</a></li>
-                <li><a href="http://dx.doi.org/10.1021/jp0484332">Ren, P.; Ponder, J. W., Temperature and pressure dependence of the AMOEBA water model. <i>Journal of Physical Chemistry B </i> 2004, <b>108</b>, (35), 13427-13437.</a></li>
-                <li><a href="http://dx.doi.org/10.1021/jp027815+">Ren, P.; Ponder, J. W., Polarizable atomic multipole water model for molecular mechanics simulation. <i>Journal of Physical Chemistry B </i> 2003, <b>107</b>, (24), 5933-5947.</a></li>
-                <li><a href="http://dx.doi.org/10.1002/jcc.10127">Ren, P.; Ponder, J. W., Consistent treatment of inter- and intramolecular polarization in molecular mechanics calculations. <i>Journal of Computational Chemistry </i> 2002, <b>23</b>, (16), 1497-1506.</a></li>
-            </ul>
+            <ol>
+                <li><a target="_blank" href="http://dx.doi.org/10.1021/jp910674d"><img src="images/pdf.png" alt="PDF"/></a> Ponder, J. W.; Wu, C.; Ren, P.; Pande, V. S.; Chodera, J. D.; Schnieders, M. J.; Haque, I.; Mobley, D. L.; Lambrecht, D. S.; DiStasio, R. A.; Head-Gordon, M.; Clark, G. N. I.; Johnson, M. E.; Head-Gordon, T., Current Status of the AMOEBA Polarizable Force Field. <i>The Journal of Physical Chemistry B.</i></li>
+                <li><a target="_blank" href="http://dx.doi.org/10.1021/ct7001336"><img src="images/pdf.png" alt="PDF"/></a> Schnieders, M. J.; Ponder, J. W., Polarizable Atomic Multipole Solutes in a Generalized Kirkwood Continuum. <i>J. Chem. Theory Comput. </i> 2007, <b>3</b>, (6), 2083-2097.</li>
+                <li><a target="_blank" href="http://dx.doi.org/10.1063/1.2714528"><img src="images/pdf.png" alt="PDF"/></a> Schnieders, M. J.; Baker, N. A.; Ren, P.; Ponder, J. W., Polarizable atomic multipole solutes in a Poisson-Boltzmann continuum. <i>Journal of Chemical Physics </i> 2007, <b>126</b>, (12).</li>
+                <li><a target="_blank" href="http://dx.doi.org/10.1021/jp0484332"><img src="images/pdf.png" alt="PDF"/></a> Ren, P.; Ponder, J. W., Temperature and pressure dependence of the AMOEBA water model. <i>Journal of Physical Chemistry B </i> 2004, <b>108</b>, (35), 13427-13437.</li>
+                <li><a target="_blank" href="http://dx.doi.org/10.1021/jp027815+"><img src="images/pdf.png" alt="PDF"/></a> Ren, P.; Ponder, J. W., Polarizable atomic multipole water model for molecular mechanics simulation. <i>Journal of Physical Chemistry B </i> 2003, <b>107</b>, (24), 5933-5947.</li>
+                <li><a target="_blank" href="http://dx.doi.org/10.1002/jcc.10127"><img src="images/pdf.png" alt="PDF"/></a> Ren, P.; Ponder, J. W., Consistent treatment of inter- and intramolecular polarization in molecular mechanics calculations. <i>Journal of Computational Chemistry </i> 2002, <b>23</b>, (16), 1497-1506.</li>
+            </ol>
         </section>
     </body>
 </document>

@@ -969,6 +969,10 @@ public class Atom extends MSNode implements Comparable<Atom> {
         this.tempFactorGradient[altID] = tempFactorGradient;
     }
 
+    public void addToTempFactorGradient(double tempFactorGradient) {
+        this.tempFactorGradient[altID] += tempFactorGradient;
+    }
+
     public double getTempFactorGradient() {
         return tempFactorGradient[altID];
     }
@@ -983,6 +987,10 @@ public class Atom extends MSNode implements Comparable<Atom> {
 
     public void setOccupancyGradient(double occupancyGradient) {
         this.occupancyGradient[altID] = occupancyGradient;
+    }
+
+    public void addToOccupancyGradient(double occupancyGradient) {
+        this.occupancyGradient[altID] += occupancyGradient;
     }
 
     public double getOccupancyGradient() {
@@ -1016,6 +1024,18 @@ public class Atom extends MSNode implements Comparable<Atom> {
         assert (this.anisouGradient.length <= altID);
 
         this.anisouGradient[altID] = anisou;
+    }
+
+    public void addToAnisouGradient(double[] anisouGradient) {
+        /**
+         * Ensure that we have space for it.
+         */
+        assert (this.anisouGradient.length <= altID);
+
+        double grad[] = this.anisouGradient[altID];
+        for (int i = 0; i < 6; i++) {
+            grad[i] += anisouGradient[i];
+        }
     }
 
     public double[] getAnisouGradient() {
