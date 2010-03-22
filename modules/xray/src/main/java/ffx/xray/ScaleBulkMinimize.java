@@ -87,7 +87,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         for (int i = 0; i < n; i++) {
             scaling[i] = 1.0;
         }
-        
+
         bulksolventenergy.setOptimizationScaling(scaling);
     }
 
@@ -125,6 +125,18 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         refinementdata.solvent_ueq = b;
     }
 
+    public void GridOptimize() {
+        if (crs == null) {
+            return;
+        }
+
+        if (refinementdata.binarysolvent){
+            binaryradGridOptimize();
+        } else {
+            asdGridOptimize();
+        }
+    }
+
     public void asdGridOptimize() {
         if (crs == null) {
             return;
@@ -160,6 +172,32 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         crs.setSolventsd(sd);
         refinementdata.solvent_a = a;
         refinementdata.solvent_sd = sd;
+        crs.computeDensity(refinementdata.fs);
+    }
+
+    public void binaryradGridOptimize() {
+        if (crs == null) {
+            return;
+        }
+
+        double min = Double.MAX_VALUE;
+        double r = 2.0;
+        double rmin = r - 1.5;
+        double rmax = (r + 1.5) / 0.9999;
+        double rstep = 0.5;
+        for (double i = rmin; i <= rmax; i += rstep) {
+            crs.setSolventBinaryrad(i);
+            crs.computeDensity(refinementdata.fs);
+            double sum = bulksolventenergy.energyAndGradient(x, grad);
+
+            System.out.println("rad: " + i + " sum: " + sum);
+            if (sum < min) {
+                min = sum;
+                r = i;
+            }
+        }
+        System.out.println("minrad: " + r + " min: " + min);
+        crs.setSolventBinaryrad(r);
         crs.computeDensity(refinementdata.fs);
     }
 

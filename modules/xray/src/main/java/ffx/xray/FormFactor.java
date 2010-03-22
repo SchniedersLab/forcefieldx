@@ -337,9 +337,9 @@ public class FormFactor {
             {0.38165, 4.33217, 26.51128, 4.35007, 0.00013, 70.73529}}
     };
 
-    {
+    static {
         for (int i = 0; i < atoms.length; i++) {
-            formfactors.put(atomsi[i].intern(), ffactors[i]);
+            formfactors.put(atomsi[i], ffactors[i]);
         }
     }
     private final Atom atom;

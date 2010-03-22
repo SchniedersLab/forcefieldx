@@ -59,6 +59,9 @@ public class RefinementData {
     public final double dfs[][];
     // log likelihoods
     public double llkr, llkf;
+    // reciprocal space reference
+    // for structure factor calculations and computing derivatives
+    protected CrystalReciprocalSpace crs_fc, crs_fs;
     // spline scaling coefficients
     public final int nparams;
     public double spline[];
@@ -67,6 +70,8 @@ public class RefinementData {
     public double fcesq[];
     public double foesq[];
     // bulk solvent parameters
+    public boolean binarysolvent;
+    public double solvent_binaryrad;
     public double solvent_a, solvent_sd;
     // scaling coefficients
     public double solvent_k, solvent_ueq;
@@ -81,6 +86,7 @@ public class RefinementData {
         int rflag = properties.getInt("rfreeflag", 1);
         int npar = properties.getInt("nbins", 10);
         boolean bulksolvent = properties.getBoolean("bulksolvent", true);
+        binarysolvent = properties.getBoolean("binarysolvent", false);
 
         if (logger.isLoggable(Level.INFO)) {
             StringBuffer sb = new StringBuffer();
@@ -88,6 +94,7 @@ public class RefinementData {
             sb.append("  R Free flag: " + rflag + "\n");
             sb.append("  n bins: " + npar + "\n");
             sb.append("  bulk solvent: " + bulksolvent + "\n");
+            sb.append("  binary solvent: " + binarysolvent + "\n");
             logger.info(sb.toString());
         }
 
@@ -111,6 +118,7 @@ public class RefinementData {
 
         for (int i = 0; i < n; i++) {
             fsigf[i][0] = fsigf[i][1] = Double.NaN;
+            fctot[i][0] = fctot[i][1] = Double.NaN;
         }
 
         spline = new double[nparams * 2];
@@ -127,6 +135,14 @@ public class RefinementData {
         solvent_k = 0.33;
         solvent_ueq = 50.0 / (8.0 * Math.PI * Math.PI);
         model_k = 0.0;
+    }
+
+    public void setCrystalReciprocalSpaceFc(CrystalReciprocalSpace crs){
+        this.crs_fc = crs;
+    }
+
+    public void setCrystalReciprocalSpaceFs(CrystalReciprocalSpace crs){
+        this.crs_fs = crs;
     }
 
     public void f(int i, double f) {
