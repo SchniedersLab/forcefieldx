@@ -44,7 +44,8 @@ public class RefinementEnergy implements Optimizable {
     }
     private final MolecularAssembly molecularAssembly;
     private final SigmaAMinimize sigmaaminimize;
-    private final CrystalReciprocalSpace crs;
+    private final CrystalReciprocalSpace crs_fc;
+    private final CrystalReciprocalSpace crs_fs;
     private final RefinementData refinementdata;
     private final Atom atomArray[];
     private PotentialEnergy potentialEnergy;
@@ -52,11 +53,13 @@ public class RefinementEnergy implements Optimizable {
     private double weight = 1.0;
 
     public RefinementEnergy(MolecularAssembly molecularAssembly,
+            RefinementData refinementdata,
             SigmaAMinimize sigmaaminimize) {
         this.molecularAssembly = molecularAssembly;
+        this.refinementdata = refinementdata;
+        this.crs_fc = refinementdata.crs_fc;
+        this.crs_fs = refinementdata.crs_fs;
         this.sigmaaminimize = sigmaaminimize;
-        this.crs = sigmaaminimize.crs;
-        this.refinementdata = sigmaaminimize.refinementdata;
         this.refinementMode = RefinementMode.COORDINATES;
         this.atomArray = molecularAssembly.getAtomArray();
         potentialEnergy = new PotentialEnergy(molecularAssembly);
@@ -69,10 +72,21 @@ public class RefinementEnergy implements Optimizable {
             case COORDINATES:
                 // Compute the energy and gradient for the chemical term.
                 e = potentialEnergy.energyAndGradient(x, g);
-                // Compute the energy and gradient for the X-ray target.
+                // compute new structure factors
+                crs_fc.computeDensity(refinementdata.fc);
+                crs_fs.computeDensity(refinementdata.fs);
+                // update sigmaA
+                // sigmaaminimize.minimize(7, 1e-1);
+                // e += refinementdata.llkr;
+                // compute crystal likelihood
                 e += sigmaaminimize.calculateLikelihood();
-                crs.computeAtomicGradients(refinementdata.dfc,
+                // compute the crystal gradients (requires inverse FFT)
+                crs_fc.computeAtomicGradients(refinementdata.dfc,
                         refinementdata.freer, refinementdata.rfreeflag);
+                /*
+                crs_fs.computeAtomicGradients(refinementdata.dfs,
+                refinementdata.freer, refinementdata.rfreeflag);
+                 */
 
                 return e;
             case BFACTORS:

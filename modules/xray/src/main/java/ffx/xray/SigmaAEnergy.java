@@ -230,38 +230,38 @@ public class SigmaAEnergy implements Optimizable {
             ComplexNumber dfcc = new ComplexNumber(sai * kect.abs() * cos(phi), sai * kect.abs() * sin(phi));
 
             // map and derivative coefficients
-            // FIXME: check this - can fctot be nan?
+            fofc1[i][0] = 0.0;
+            fofc1[i][1] = 0.0;
+            fofc2[i][0] = 0.0;
+            fofc2[i][1] = 0.0;
+            dfc[i][0] = 0.0;
+            dfc[i][1] = 0.0;
+            dfs[i][0] = 0.0;
+            dfs[i][1] = 0.0;
             if (Double.isNaN(fctot[i][0])) {
-                fofc1[i][0] = 0.0;
-                fofc1[i][1] = 0.0;
-                fofc2[i][0] = mfo.re();
-                fofc2[i][1] = mfo.im();
-                dfc[i][0] = 0.0;
-                dfc[i][1] = 0.0;
-                dfs[i][0] = 0.0;
-                dfs[i][1] = 0.0;
+                if (!Double.isNaN(fo[i][0])) {
+                    fofc2[i][0] = mfo.times(1.0 / sqrt(eoscale)).re();
+                    fofc2[i][1] = mfo.times(1.0 / sqrt(eoscale)).im();
+                }
                 continue;
             }
             if (Double.isNaN(fo[i][0])) {
-                fofc1[i][0] = 0.0;
-                fofc1[i][1] = 0.0;
-                if (Double.isNaN(fc[i][0])) {
-                    fofc2[i][0] = 0.0;
-                    fofc2[i][1] = 0.0;
-                } else {
-                    fofc2[i][0] = dfcc.re();
-                    fofc2[i][1] = dfcc.im();
+                if (!Double.isNaN(fctot[i][0])) {
+                    fofc2[i][0] = dfcc.times(1.0 / sqrt(eoscale)).re();
+                    fofc2[i][1] = dfcc.times(1.0 / sqrt(eoscale)).im();
                 }
-                dfc[i][0] = 0.0;
-                dfc[i][1] = 0.0;
-                dfs[i][0] = 0.0;
-                dfs[i][1] = 0.0;
                 continue;
             }
+            // update Fctot
+            fctot[i][0] = kfct.re();
+            fctot[i][1] = kfct.im();
+            // mFo - DFc
             fofc1[i][0] = mfo.minus(dfcc).times(1.0 / sqrt(eoscale)).re();
             fofc1[i][1] = mfo.minus(dfcc).times(1.0 / sqrt(eoscale)).im();
+            // 2mFo - DFc
             fofc2[i][0] = mfo2.minus(dfcc).times(1.0 / sqrt(eoscale)).re();
             fofc2[i][1] = mfo2.minus(dfcc).times(1.0 / sqrt(eoscale)).im();
+            // partial LLK wrt Fc or Fs
             dfc[i][0] = dfcr;
             dfc[i][1] = dfci;
             dfs[i][0] = dfsr;

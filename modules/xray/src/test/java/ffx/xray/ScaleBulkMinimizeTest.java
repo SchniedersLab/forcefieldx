@@ -61,8 +61,8 @@ public class ScaleBulkMinimizeTest {
                         null,
                         25.3337,
                         25.7488,
-                        0.8789,
-                        0.1571},
+                        0.8927,
+                        0.1544},
                         /*
                     {false,
                         "SNARE complex",
@@ -73,14 +73,14 @@ public class ScaleBulkMinimizeTest {
                         21.7984,
                         0.9305,
                         0.1375}, */
-                    {false,
+                    {true,
                         "Myosin I SH3 domain bound to ACAN125",
                         "ffx/xray/structures/2DRM.pdb",
                         "ffx/xray/structures/2DRM.mtz",
                         null,
                         20.8645,
                         23.1024,
-                        0.9266,
+                        0.9265,
                         0.1419}
                 });
     }
@@ -183,9 +183,11 @@ public class ScaleBulkMinimizeTest {
         CrystalReciprocalSpace crs = new CrystalReciprocalSpace(reflectionlist,
                 atomarray, parallelTeam, parallelTeam, false);
         crs.computeDensity(refinementdata.fc);
+        refinementdata.setCrystalReciprocalSpaceFc(crs);
         crs = new CrystalReciprocalSpace(reflectionlist, atomarray,
-                parallelTeam, parallelTeam, true);
+                parallelTeam, parallelTeam, true, refinementdata.binarysolvent);
         crs.computeDensity(refinementdata.fs);
+        refinementdata.setCrystalReciprocalSpaceFs(crs);
 
         /*
         try {
@@ -213,11 +215,11 @@ public class ScaleBulkMinimizeTest {
         ScaleBulkMinimize scalebulkminimize =
                 new ScaleBulkMinimize(reflectionlist, refinementdata, crs);
         scalebulkminimize.minimize(7, 1e-2);
-        scalebulkminimize.asdGridOptimize();
+        scalebulkminimize.GridOptimize();
         scalebulkminimize.minimize(7, 1e-4);
 
         SigmaAMinimize sigmaaminimize = new SigmaAMinimize(reflectionlist,
-                refinementdata, crs);
+                refinementdata);
         sigmaaminimize.minimize(7, 1e-1);
 
         SplineMinimize splineminimize = new SplineMinimize(reflectionlist,

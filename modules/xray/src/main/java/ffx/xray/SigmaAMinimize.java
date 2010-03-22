@@ -47,7 +47,6 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
     private final ReflectionList reflectionlist;
     protected final RefinementData refinementdata;
     private final Crystal crystal;
-    protected final CrystalReciprocalSpace crs;
     private final SigmaAEnergy sigmaaenergy;
     private final int n;
     private final double x[];
@@ -60,11 +59,10 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
     private int nSteps;
 
     public SigmaAMinimize(ReflectionList reflectionlist,
-            RefinementData refinementdata, CrystalReciprocalSpace crs) {
+            RefinementData refinementdata) {
         this.reflectionlist = reflectionlist;
         this.refinementdata = refinementdata;
         this.crystal = reflectionlist.crystal;
-        this.crs = crs;
 
         n = refinementdata.nparams * 2;
         sigmaaenergy = new SigmaAEnergy(reflectionlist, refinementdata);

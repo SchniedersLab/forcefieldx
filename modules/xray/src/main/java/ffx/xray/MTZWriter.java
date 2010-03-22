@@ -23,8 +23,11 @@ package ffx.xray;
 import java.io.DataOutputStream;
 import java.io.FileOutputStream;
 import java.nio.ByteOrder;
+import java.text.SimpleDateFormat;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Date;
+import java.util.Vector;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
@@ -32,9 +35,6 @@ import ffx.crystal.ReflectionList;
 import ffx.crystal.SpaceGroup;
 import ffx.crystal.SymOp;
 import ffx.utilities.ByteSwap;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Vector;
 
 /**
  *
