@@ -30,6 +30,7 @@ import org.apache.commons.math.optimization.RealPointValuePair;
 import org.apache.commons.math.optimization.general.NonLinearConjugateGradientOptimizer;
 
 import ffx.numerics.LBFGS;
+import ffx.numerics.LBFGS_;
 import ffx.numerics.LineSearch.LineSearchResult;
 import ffx.numerics.OptimizationListener;
 import ffx.potential.PotentialEnergy;

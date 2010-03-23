@@ -2,12 +2,12 @@
 import ffx.potential.PotentialEnergy;
 
 // Name of the file (PDB or XYZ) to evaluate the energy of.
-String filename = "examples/1HR2.xyz";
+String filename = "examples/watersmall.xyz";
 open(filename); 
 potentialEnergy = new PotentialEnergy(active);
 potentialEnergy.energy(false,true);
 
 File minFile = new File(filename);
-minimize(0.5);
+minimize(0.01);
 
 

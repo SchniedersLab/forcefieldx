@@ -86,7 +86,7 @@ then
   REPO="$BASEDIR"/../lib
 fi
 
-CLASSPATH=$CLASSPATH_PREFIX:"$REPO"/com/kenai/ffx/ui/1.0.0-SNAPSHOT/ui-1.0.0-SNAPSHOT-all.jar
+CLASSPATH=$CLASSPATH_PREFIX:"$BASEDIR"/ffx-all.jar
 
 EXTRA_JVM_ARGUMENTS="-Xms4G -Xmx4G"
 

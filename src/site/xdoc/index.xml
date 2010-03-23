@@ -12,13 +12,15 @@
     <body>
         <section name="Introduction">
             <p align="justify">
-                Force Field X is a collaboration to develop computational tools
-                for molecular biophysics, including state-of-the-art features for X-ray
-                crystallography and structure based pharmacuetical engineering.
+                Force Field X is an open, platform independent, federation of
+                modules that work together to develop computational tools for
+                molecular biophysics. This includes state-of-the-art methods
+                for X-ray crystallography and structure based pharmacuetical
+                engineering.
             </p>
             <subsection name="Force Field X Parent Project">
                 <p align="justify">
-                    The Force Field X parent project provides:
+                    The Force Field X parent project (ie. the <b>Federation</b>) provides:
                 </p>
                 <ul>
                     <li>
@@ -40,9 +42,11 @@
             </subsection>
             <subsection name="Force Field X Modules">
                 <p align="justify">
-                    Force Field X modules are lead by PIs, postdoctoral scholars or graduate students.
-                    Module boundaries are sometimes a bit arbitrary, but so are the borders of states
-                    or countries. If you have an idea for a new Force Field X Module,
+                    Force Field X modules (ie. <b>Independent States</b>) are lead by PIs, postdoctoral
+                    scholars or graduate students. Module boundaries are sometimes a bit arbitrary,
+                    but so are the borders of states or countries.
+
+                    If you have an idea for a new Force Field X Module,
                     please contact an existing member of the <a href="team-list.html">team</a>.
                 </p>
                 <table>

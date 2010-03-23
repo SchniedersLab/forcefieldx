@@ -69,7 +69,7 @@ if "%JAVACMD%"=="" set JAVACMD=java
 
 if "%REPO%"=="" set REPO=%BASEDIR%\..\lib
 
-set CLASSPATH="%BASEDIR%"\etc;"%REPO%"\com\kenai\ffx\ui\1.0.0-SNAPSHOT\ui-1.0.0-SNAPSHOT-all.jar
+set CLASSPATH="%BASEDIR%"\etc;"%BASEDIR%"\ffx-all.jar
 
 set EXTRA_JVM_ARGUMENTS=-Xms128M -Xmx256M
 

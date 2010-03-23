@@ -111,7 +111,7 @@
             </organization>
             <organizationUrl>http://ffx.kenai.com</organizationUrl>
             <roles>
-                <role>Chief Crystallographer, Crystal and X-Ray Refinement Modules</role>
+                <role>Crystal and X-Ray Refinement Modules</role>
             </roles>
             <timezone>-7</timezone>
         </developer>
@@ -122,7 +122,7 @@
             <organization>Assistant Professor, U. of Texas, Austin</organization>
             <organizationUrl>http://biomol.bme.utexas.edu/lab/</organizationUrl>
             <roles>
-                <role>Chief Force Field Architect</role>
+                <role>Binding Affinity Module, Force Field Architect</role>
             </roles>
             <timezone>-5</timezone>
         </developer>
@@ -158,6 +158,16 @@
             </roles>
             <timezone>-3</timezone>
         </developer>
+        <developer>
+            <id>cjwu</id>
+            <name>Chuanjie Wu</name>
+            <email>chuanjiewu@gmail.com</email>
+            <organization>Washington University in St. Louis</organization>
+            <roles>
+                <role>Nucleic Acids Module</role>
+            </roles>
+            <timezone>-5</timezone>
+        </developer>
     </developers>
 
     <modules>
@@ -174,6 +184,30 @@
 
     <build>
         <plugins>
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>2.4.2</version>
+                <executions>
+                    <execution>
+                        <id>copy-jar</id>
+                        <phase>deploy</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${basedir}/bin</outputDirectory>
+                            <resources>          
+                                <resource>
+                                    <directory>modules/ui/target/site</directory>
+                                    <includes>
+                                        <include>ffx-all.jar</include>
+                                    </includes>
+                                </resource>
+                            </resources>              
+                        </configuration>            
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-scm-plugin</artifactId>

@@ -95,7 +95,7 @@
             </activation>
             <build>
                 <plugins>
-                    <!-- Sign the assembly (the verify phase is after the package phase) -->
+                    <!-- Sign the assembly when the website is built -->
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-jarsigner-plugin</artifactId>
@@ -108,7 +108,7 @@
                         <executions>
                             <execution>
                                 <id>sign</id>
-                                <phase>verify</phase>
+                                <phase>site</phase>
                                 <goals>
                                     <goal>sign</goal>
                                 </goals>
