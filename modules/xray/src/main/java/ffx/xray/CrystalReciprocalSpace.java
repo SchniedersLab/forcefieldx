@@ -200,7 +200,7 @@ public class CrystalReciprocalSpace {
 
         spatialDensityRegion =
                 new SpatialDensityRegion(fftX, fftY, fftZ,
-                densityGrid, aradgrid * 2, nSymm,
+                densityGrid, (aradgrid + 2) * 2, nSymm,
                 threadCount, crystal, atoms, coordinates);
 
         if (solvent) {

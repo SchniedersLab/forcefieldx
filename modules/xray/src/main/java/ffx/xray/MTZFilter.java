@@ -314,6 +314,10 @@ public class MTZFilter {
             if (logger.isLoggable(Level.INFO)) {
                 logger.info(sb.toString());
             }
+
+            if (rfree < 0){
+                refinementdata.generateRFree();
+            }
         } catch (EOFException eof) {
             System.out.println("EOF reached ");
         } catch (IOException ioe) {

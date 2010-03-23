@@ -27,6 +27,7 @@ import java.util.logging.Logger;
 
 import ffx.crystal.ReflectionList;
 import ffx.numerics.ComplexNumber;
+import java.util.Random;
 
 /**
  *
@@ -137,12 +138,45 @@ public class RefinementData {
         model_k = 0.0;
     }
 
-    public void setCrystalReciprocalSpaceFc(CrystalReciprocalSpace crs){
+    public void setCrystalReciprocalSpaceFc(CrystalReciprocalSpace crs) {
         this.crs_fc = crs;
     }
 
-    public void setCrystalReciprocalSpaceFs(CrystalReciprocalSpace crs){
+    public void setCrystalReciprocalSpaceFs(CrystalReciprocalSpace crs) {
         this.crs_fs = crs;
+    }
+
+    public void generateRFree() {
+        if (logger.isLoggable(Level.INFO)) {
+            StringBuffer sb = new StringBuffer();
+            sb.append("\ninternally flagging Rfree reflections\n");
+            sb.append("  flagging 5% of observed data reflections\n");
+        }
+
+        Random generator = new Random();
+        int nfree = 0;
+        for (int i = 0; i < n; i++) {
+            if (Double.isNaN(fsigf[i][0])){
+                freer[i] = 0;
+                continue;
+            }
+
+            int randomi = generator.nextInt(100);
+            if (randomi < 5) {
+                freer[i] = 1;
+                nfree++;
+            } else {
+                freer[i] = 0;
+            }
+        }
+
+        if (logger.isLoggable(Level.INFO)) {
+            StringBuffer sb = new StringBuffer();
+            sb.append(String.format("  selected %d of %d reflections\n",
+                    nfree, n));
+
+            logger.info(sb.toString());
+        }
     }
 
     public void f(int i, double f) {

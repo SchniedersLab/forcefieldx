@@ -72,7 +72,8 @@ public class ScaleBulkMinimizeTest {
                         19.6702,
                         21.7984,
                         0.9305,
-                        0.1375}, */
+                        0.1375},
+                         */
                     {true,
                         "Myosin I SH3 domain bound to ACAN125",
                         "ffx/xray/structures/2DRM.pdb",

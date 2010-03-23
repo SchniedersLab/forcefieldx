@@ -281,6 +281,10 @@ public class CIFFilter {
             logger.info(sb.toString());
         }
 
+        if (rfree < 0) {
+            refinementdata.generateRFree();
+        }
+
         return true;
     }
 }
