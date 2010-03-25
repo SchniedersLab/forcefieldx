@@ -185,30 +185,6 @@
     <build>
         <plugins>
             <plugin>
-                <artifactId>maven-resources-plugin</artifactId>
-                <version>2.4.2</version>
-                <executions>
-                    <execution>
-                        <id>copy-jar</id>
-                        <phase>deploy</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${basedir}/bin</outputDirectory>
-                            <resources>          
-                                <resource>
-                                    <directory>modules/ui/target/site</directory>
-                                    <includes>
-                                        <include>ffx-all.jar</include>
-                                    </includes>
-                                </resource>
-                            </resources>              
-                        </configuration>            
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-scm-plugin</artifactId>
                 <version>1.3</version>
@@ -295,7 +271,7 @@
                         <argument>-Dj3d.rend=jogl</argument>
                         <argument>-Djava.library.path=bin/${platform}/jogl-${bit}</argument>
                         <argument>-classpath</argument>
-                        <argument>lib/com/kenai/ffx/ui/${version}/ui-${version}-all.jar</argument>
+                        <argument>bin/ffx-all.jar</argument>
                         <argument>ffx.Main</argument>
                         <argument>scripts/saveAsPDB.ffx</argument>
                     </arguments>

@@ -28,7 +28,7 @@
     <security>
         <all-permissions/>
     </security>
-    <update check="background" policy="prompt-update"/>
+    <update check="always" policy="always"/>
     <resources>
         <java version="1.6+" initial-heap-size="1G" max-heap-size="1G"/>
         <jar href="ffx-all.jar" />

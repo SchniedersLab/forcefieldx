@@ -20,17 +20,10 @@
  */
 package ffx.algorithms;
 
-import static java.lang.Math.sqrt;
-
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
-import org.apache.commons.math.optimization.RealConvergenceChecker;
-import org.apache.commons.math.optimization.RealPointValuePair;
-import org.apache.commons.math.optimization.general.NonLinearConjugateGradientOptimizer;
-
 import ffx.numerics.LBFGS;
-import ffx.numerics.LBFGS_;
 import ffx.numerics.LineSearch.LineSearchResult;
 import ffx.numerics.OptimizationListener;
 import ffx.potential.PotentialEnergy;
@@ -53,8 +46,6 @@ public class Minimize implements OptimizationListener, Terminatable {
     private final MolecularAssembly molecularAssembly;
     private final PotentialEnergy potentialEnergy;
     private AlgorithmListener algorithmListener;
-    private NonLinearConjugateGradientOptimizer optimizer;
-    private ConvergenceChecker convergenceChecker;
     private boolean done = false;
     private boolean terminate = false;
     private long time;
@@ -119,33 +110,6 @@ public class Minimize implements OptimizationListener, Terminatable {
         status = LBFGS.minimize(n, m, x, e, grad, eps, potentialEnergy, this);
         done = true;
         
-
-        /*
-        optimizer = new NonLinearConjugateGradientOptimizer(ConjugateGradientFormula.FLETCHER_REEVES);
-        convergenceChecker = new ConvergenceChecker(eps);
-        optimizer.setConvergenceChecker(convergenceChecker);
-        optimizer.setMaxEvaluations(Integer.MAX_VALUE);
-        optimizer.setMaxIterations(Integer.MAX_VALUE);
-        UnivariateRealSolver solver = UnivariateRealSolverFactoryImpl.newInstance().newBrentSolver();
-        solver.setMaximalIterationCount(Integer.MAX_VALUE);
-        solver.setFunctionValueAccuracy(1.0e-16);
-        optimizer.setLineSearchSolver(solver);
-
-        try {
-            optimizer.optimize(potentialEnergy, GoalType.MINIMIZE, x);
-            grms = convergenceChecker.getGRMS();
-            done = true;
-            if (grms < eps) {
-                status = 0;
-            } else {
-                status = 1;
-                nSteps = optimizer.getIterations();
-            }
-        } catch (Exception e) {
-            String message = "Exception during optimization optimization.";
-            logger.log(Level.WARNING, message, e);
-        } */
-
         switch (status) {
             case 0:
                 logger.info(String.format("\n Optimization achieved convergence criteria: %8.5f\n", grms));
@@ -244,68 +208,4 @@ public class Minimize implements OptimizationListener, Terminatable {
         return true;
     }
 
-    private class ConvergenceChecker implements RealConvergenceChecker {
-
-        double rms = Math.sqrt(n) / Math.sqrt(3.0);
-        double g[] = new double[n];
-        final double eps;
-        private double grms;
-
-        public ConvergenceChecker(double eps) {
-            this.eps = eps;
-        }
-
-        public double getGRMS() {
-            return grms;
-        }
-
-        @Override
-        public boolean converged(int k, RealPointValuePair previous, RealPointValuePair current) {
-            double f = current.getValue();
-            double df = f - previous.getValue();
-            /**
-             * Sometimes the NonLinearOptimizer calls this with a positive step?
-             */
-            if (df > 0) {
-                return false;
-            }
-
-            int iter = k;
-            int nfun = optimizer.getGradientEvaluations();
-
-            /**
-             * Compute the RMS gradient per atom.
-             * Compute the RMS coordinate change per atom.
-             */
-            grms = 0.0;
-            double xrms = 0.0;
-            double prevX[] = previous.getPointRef();
-            double currentX[] = current.getPointRef();
-            potentialEnergy.getGradients(g);
-            for (int i = 0; i < n; i++) {
-                double gs = g[i];
-                double xs = currentX[i] - prevX[i];
-                grms += gs * gs;
-                xrms += xs * xs;
-            }
-            grms = sqrt(grms) / rms;
-            xrms = sqrt(xrms) / rms;
-            /**
-             * Log this step of the optimization and see if an interrupt has
-             * been requested.
-             */
-            boolean status = optimizationUpdate(iter, nfun, grms, xrms, f, df);
-            /**
-             * Return true if we have converged to the RMS gradient criteria
-             * or if an interrupt has been requested.
-             */
-            if (!status || grms < eps) {
-                return true;
-            }
-            /**
-             * Otherwise, continue the optimization. 
-             */
-            return false;
-        }
-    }
 }

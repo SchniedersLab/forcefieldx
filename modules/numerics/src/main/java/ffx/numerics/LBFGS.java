@@ -22,9 +22,13 @@ package ffx.numerics;
 
 import static java.lang.Math.*;
 import static java.lang.System.arraycopy;
+import static java.lang.String.format;
+import static java.util.Arrays.fill;
+
+
+import java.util.logging.Logger;
 
 import ffx.numerics.LineSearch.LineSearchResult;
-import java.util.logging.Logger;
 
 /**
  * This class implements the limited-memory Broyden-Fletcher-Goldfarb-Shanno
@@ -77,6 +81,9 @@ public class LBFGS {
      * should be increased).
      */
     public static final double stepMax = 5.0;
+    public static final double slopMax = 1.0e4;
+    public static final double angMax = 180.0;
+    public static final int intMax = 5;
 
     /**
      * This method solves the unconstrained minimization problem
@@ -104,11 +111,11 @@ public class LBFGS {
      * @param n The number of variables in the minimization problem.
      *		Restriction: <code>n &gt; 0</code>.
      *
-     * @param m The number of corrections used in the BFGS update.
-     *		Values of <code>m</code> less than 3 are not recommended;
-     *		large values of <code>m</code> will result in excessive
-     *		computing time. <code>3 &lt;= m &lt;= 7</code> is recommended.
-     *		Restriction: <code>m &gt; 0</code>.
+     * @param mSave The number of corrections used in the BFGS update.
+     *		Values of <code>mSave</code> less than 3 are not recommended;
+     *		large values of <code>mSave</code> will result in excessive
+     *		computing time. <code>3 &lt;= mSave &lt;= 7</code> is recommended.
+     *		Restriction: <code>mSave &gt; 0</code>.
      *
      * @param x On initial entry this must be set by the user to the values
      *		of the initial estimate of the solution vector. On exit it
@@ -137,205 +144,205 @@ public class LBFGS {
      *
      * @since 1.0
      */
-    public static int minimize(int n, int m, double[] x, double f, double[] g,
-            double eps, Optimizable optimizationSystem, OptimizationListener listener) {
+    public static int minimize(int n, int mSave, double[] x, double f, double[] g,
+                               double eps, Optimizable optimizationSystem, OptimizationListener listener) {
 
         assert (n > 0);
-        assert (m > 0);
+        assert (mSave > 0);
         assert (x != null && x.length >= n);
         assert (g != null && g.length >= n);
 
-        if (m > n) m = n;
+        if (mSave > n) {
+            logger.warning(format("Resetting the number of saved L-BFGS vectors to n " + n));
+            mSave = n;
+        }
 
         int iterations = 0;
-        int functionEvaluations = 1;
-        int point = 0;
-        double scaling[] = optimizationSystem.getOptimizationScaling();
-        double rms = sqrt(n) / sqrt(3.0);
-        double previousF = f;
-        double ftol = 0.0000001;
-        double previousX[] = new double[n];
-        arraycopy(x, 0, previousX, 0, n);
+        int evaluations = 1;
+        int nErrors = 0;
+        int maxErrors = 2;
 
-        /**
-         * Initialize inverse Hessian diagonal elements.
-         */
-        double diag[] = new double[n];
-        for (int i = 0; i < n; i++) {
-            diag[i] = 1.0;
-        }
-        int len = n * (2 * m + 1) + 2 * m;
-        int ispt = n + 2 * m;
-        int iypt = ispt + n * m;
+        double rms = sqrt(n);
+        double scaling[] = optimizationSystem.getOptimizationScaling();
 
         /**
          * Initial search direction is the steepest decent direction.
          */
-        double w[] = new double[len];
+        double s[][] = new double[mSave][n];
+        double y[][] = new double[mSave][n];
         for (int i = 0; i < n; i++) {
-            w[ispt + i] = -g[i];
+            s[0][i] = -g[i];
         }
+
         double grms = 0.0;
         double gnorm = 0.0;
         for (int i = 0; i < n; i++) {
             double gi = g[i];
             double gis = gi * scaling[i];
-            gnorm = gi * gi;
+            gnorm += gi * gi;
             grms += gis * gis;
         }
         gnorm = sqrt(gnorm);
         grms = sqrt(grms) / rms;
-        //double stp1 = 1.0 / gnorm;
-        double stp1 = 0.5 * stepMax * gnorm;
-        double angle = 0.0;
+
+        /**
+         * Notify the listeners of initial conditions.
+         */
         if (listener != null) {
-            if (!listener.optimizationUpdate(iterations, functionEvaluations, grms, 0.0, f, f - previousF, angle, null)) {
+            if (!listener.optimizationUpdate(iterations, evaluations, grms, 0.0, f, 0.0, 0.0, null)) {
                 /**
                  * Terminate the optimization.
                  */
                 return 1;
             }
         } else {
-            log(iterations, functionEvaluations, grms, 0.0, f, f - previousF, angle, null);
+            log(iterations, evaluations, grms, 0.0, f, 0.0, 0.0, null);
         }
+
         /**
          * The convergence criteria may already be satisfied.
          */
         if (grms <= eps) {
             return 0;
         }
-        int npt = 0;
-        LineSearchResult info[] = new LineSearchResult[1];
-        int nfev[] = new int[1];
-        double stp[] = new double[1];
+
+        double prevF = f;
+        double prevX[] = new double[n];
+        double prevG[] = new double[n];
+
+        double r[] = new double[n];
+        double p[] = new double[n];
+        double h0[] = new double[n];
+        double q[] = new double[n];
+
+        double alpha[] = new double[mSave];
+        double rho[] = new double[mSave];
+        double gamma = 1.0;
+
+        /**
+         * Line search parameters.
+         */
+        LineSearch lineSearch = new LineSearch(n);
+        LineSearchResult info[] = {LineSearchResult.Success};
+        int nFunctionEvals[] = {0};
+        double angle[] = {0.0};
+        //logger.info(format("Gnorm: %8.3f", gnorm));
+        double df = 0.5 * stepMax * gnorm;
+        int m = -1;
+
         while (true) {
             iterations++;
-            int bound = iterations - 1;
-            if (iterations != 1) {
-                if (iterations > m) {
-                    bound = m;
-                }
-                double ys = XdotY(n, w, iypt + npt, 1, w, ispt + npt, 1);
-                double yy = XdotY(n, w, iypt + npt, 1, w, iypt + npt, 1);
-                for (int i = 0; i < n; i++) {
-                    diag[i] = ys / yy;
-                }
-                int cp = point;
-                if (point == 0) {
-                    cp = m;
-                }
-                w[n + cp - 1] = 1.0 / ys;
-                for (int i = 0; i < n; i++) {
-                    w[i] = -g[i];
-                }
-                cp = point;
-                for (int i = 0; i < bound; i++) {
-                    cp = cp - 1;
-                    if (cp == -1) {
-                        cp = m - 1;
-                    }
-                    int inmc = n + m + cp;
-                    int iycn = iypt + cp * n;
-                    w[inmc] = w[n + cp] * XdotY(n, w, ispt + cp * n, 1, w, 0, 1);
-                    aXplusY(n, -w[inmc], w, iycn, 1, w, 0, 1);
-                }
-                for (int i = 0; i < n; i++) {
-                    w[i] = diag[i] * w[i];
-                }
-                for (int i = 0; i < bound; i++) {
-                    double beta = w[n + cp] * XdotY(n, w, iypt + cp * n, 1, w, 0, 1);
-                    int inmc = n + m + cp;
-                    beta = w[inmc] - beta;
-                    int iscn = ispt + cp * n;
-                    aXplusY(n, beta, w, iscn, 1, w, 0, 1);
-                    cp = cp + 1;
-                    if (cp == m) {
-                        cp = 0;
-                    }
-                }
-                for (int i = 0; i < n; i++) {
-                    w[ispt + point * n + i] = w[i];
-                }
-            }
-            
-            if (iterations == 1) {
-                stp[0] = stp1;
+            int muse = min(iterations - 1, mSave);
+            m++;
+            if (m > mSave - 1) {
+                m = 0;
             }
 
-            previousF = f;
-
-            angle = 0.0;
-            gnorm = 0.0;
-            double snorm = 0.0;
-            int searchStart = ispt + point * n;
-            for (int i = 0; i < n; i++) {
-                double gi = g[i];
-                double si = w[searchStart + i];
-                w[i] = gi;
-                gnorm += gi * gi;
-                snorm += si * si;
-                angle += gi * si;
-            }
-            snorm = sqrt(snorm);
-            gnorm = sqrt(gnorm);
-            angle = -angle / snorm / gnorm;
-            angle = min(1.0, max(-1.0, angle));
-            angle = toDegrees(acos(angle));
-            nfev[0] = 0;
-            info[0] = null;
-            f = LineSearch.search(n, x, f, g, w, searchStart, stp, ftol,
-                    info, nfev, diag, optimizationSystem);
-            functionEvaluations += nfev[0];
             /**
-             * Compute RMS gradient and RMS coordinate change.
+             * Estimate the Hessian Diagonal.
              */
-            grms = 0.0;
-            double xrms = 0.0;
-            for (int i = 0; i < n; i++) {
-                double gs = g[i] * scaling[i];
-                double xs = (x[i] - previousX[i]) / scaling[i];
-                grms += gs * gs;
-                xrms += xs * xs;
+            fill(h0, gamma);
+            arraycopy(g, 0, q, 0, n);
+            int k = m;
+            for (int j = 0; j < muse; j++) {
+                k--;
+                if (k < 0) {
+                    k = mSave - 1;
+                }
+                alpha[k] = XdotY(n, s[k], 0, 1, q, 0, 1);
+                alpha[k] *= rho[k];
+                aXplusY(n, -alpha[k], y[k], 0, 1, q, 0, 1);
             }
-            grms = sqrt(grms) / rms;
+            for (int i = 0; i < n; i++) {
+                r[i] = h0[i] * q[i];
+            }
+            for (int j = 0; j < muse; j++) {
+                double beta = XdotY(n, r, 0, 1, y[k], 0, 1);
+                beta *= rho[k];
+                aXplusY(n, alpha[k] - beta, s[k], 0, 1, r, 0, 1);
+                k++;
+                if (k > mSave - 1) {
+                    k = 0;
+                }
+            }
+
+            /**
+             * Set the search direction.
+             */
+            prevF = f;
+            for (int i = 0; i < n; i++) {
+                p[i] = -r[i];
+            }
+            arraycopy(x, 0, prevX, 0, n);
+            arraycopy(g, 0, prevG, 0, n);
+            /**
+             * Perform the line search along the new conjugate direction
+             */
+            nFunctionEvals[0] = 0;
+            f = lineSearch.search(n, x, f, g, p, angle, df,
+                                  info, nFunctionEvals, optimizationSystem);
+            evaluations += nFunctionEvals[0];
+
+            /**
+             * Update variables based on the results of this iteration.
+             */
+            for (int i = 0; i < n; i++) {
+                s[m][i] = x[i] - prevX[i];
+                y[m][i] = g[i] - prevG[i];
+            }
+            double ys = XdotY(n, y[m], 0, 1, s[m], 0, 1);
+            double yy = XdotY(n, y[m], 0, 1, y[m], 0, 1);
+            gamma = abs(ys / yy);
+            rho[m] = 1.0 / ys;
+
+            /**
+             * Get the sizes of the moves made during this iteration.
+             */
+            df = prevF - f;
+            prevF = f;
+            double xrms = 0.0;
+            grms = 0.0;
+            for (int i = 0; i < n; i++) {
+                double dx = (x[i] - prevX[i]) / scaling[i];
+                xrms += dx * dx;
+                double gx = g[i] * scaling[i];
+                grms += gx * gx;
+            }
             xrms = sqrt(xrms) / rms;
+            grms = sqrt(grms) / rms;
+
+            boolean done = false;
+            if (info[0] == LineSearchResult.BadIntpln
+                || info[0] == LineSearchResult.IntplnErr) {
+                nErrors++;
+                if (nErrors >= maxErrors) {
+                    done = true;
+                }
+            } else {
+                nErrors = 0;
+            }
+
             if (listener != null) {
-                if (!listener.optimizationUpdate(iterations, functionEvaluations, grms, xrms, f, f - previousF, angle, info[0])) {
+                if (!listener.optimizationUpdate(iterations, evaluations,
+                                                 grms, xrms, f, df, angle[0], info[0])) {
                     /**
                      * Terminate the optimization.
                      */
                     return 1;
                 }
             } else {
-                log(iterations, functionEvaluations, grms, xrms, f, f - previousF, angle, info[0]);
+                log(iterations, evaluations, grms, xrms, f, df, angle[0], info[0]);
             }
 
             /**
              * Terminate the optimization if the line search failed or upon
              * satisfying the convergence criteria.
              */
-            if (info[0] != LineSearchResult.Success) {
+            if (done) {
                 return -1;
             } else if (grms <= eps) {
                 return 0;
             }
-
-            /**
-             * Store gradient and search information from this iteration.
-             */
-            npt = point * n;
-            for (int i = 0; i < n; i++) {
-                w[ispt + npt + i] = stp[0] * w[ispt + npt + i];
-                w[iypt + npt + i] = g[i] - w[i];
-            }
-            point++;
-            if (point == m) {
-                point = 0;
-            }
-            /*
-             * Cache the current solution vector.
-             */
-            arraycopy(x, 0, previousX, 0, n);
         }
     }
 
@@ -359,10 +366,10 @@ public class LBFGS {
         }
         if (info == null) {
             logger.info(String.format("%6d%13.4f%11.4f%11.4f%10.4f%9.2f%7d",
-                    iter, f, grms, df, xrms, angle, nfun));
+                                      iter, f, grms, df, xrms, angle, nfun));
         } else {
             logger.info(String.format("%6d%13.4f%11.4f%11.4f%10.4f%9.2f%7d   %8s",
-                    iter, f, grms, df, xrms, angle, nfun, info.toString()));
+                                      iter, f, grms, df, xrms, angle, nfun, info.toString()));
         }
     }
 

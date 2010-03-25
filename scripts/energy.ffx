@@ -1,6 +1,11 @@
 
 import ffx.potential.PotentialEnergy;
 
+// Turn off elec and vdw
+System.setProperty("mpoleterm","false");
+System.setProperty("polarizeterm","false");
+// System.setProperty("vdwterm","false");
+
 // Name of the file (PDB or XYZ) to evaluate the energy of.
 String filename = "examples/watersmall.xyz";
 open(filename); 
@@ -8,6 +13,6 @@ potentialEnergy = new PotentialEnergy(active);
 potentialEnergy.energy(false,true);
 
 File minFile = new File(filename);
-minimize(0.01);
+minimize(0.1);
 
 

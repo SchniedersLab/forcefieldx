@@ -1004,6 +1004,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
         if (this.anisou.length <= altID) {
             this.anisou = Arrays.copyOf(this.anisou, altID + 1);
             this.anisouGradient = Arrays.copyOf(this.anisouGradient, altID + 1);
+        }
+        if ( anisouGradient[altID] == null) {
             anisouGradient[altID] = new double[6];
         }
         this.anisou[altID] = anisou;
