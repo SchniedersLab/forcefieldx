@@ -54,7 +54,6 @@ public final class SimulationFilter extends SystemFilter {
 
     @Override
     public boolean readFile() {
-        molecularAssembly.setFileType(FileType.SIM);
         // Create Molecular Mechanics Data Objects from the TinkerSystem
         // information
         for (int i = 0; i < system.numatoms; i++) {

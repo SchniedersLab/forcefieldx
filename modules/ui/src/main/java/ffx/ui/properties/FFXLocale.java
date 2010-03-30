@@ -34,58 +34,59 @@ import java.util.logging.Logger;
  * @since 1.0
  */
 public class FFXLocale {
-	private static final Logger logger = Logger.getLogger(FFXLocale.class.getName());
-	private Locale currentLocale;
-	private PropertyResourceBundle ffxLabels;
-	private Hashtable<String, String> reverseLookUp = new Hashtable<String, String>();
 
-	public FFXLocale() {
-		currentLocale = Locale.getDefault();
-		ffxLabels = (PropertyResourceBundle) ResourceBundle.getBundle(
-				"ffx.ui.properties.StringBundle", currentLocale);
-		loadHashtable();
-	}
+    private static final Logger logger = Logger.getLogger(FFXLocale.class.getName());
+    private Locale currentLocale;
+    private PropertyResourceBundle ffxLabels;
+    private Hashtable<String, String> reverseLookUp = new Hashtable<String, String>();
 
-	public FFXLocale(String language, String country) {
-		setLocale(language, country);
-	}
+    public FFXLocale() {
+        currentLocale = Locale.getDefault();
+        ffxLabels = (PropertyResourceBundle) ResourceBundle.getBundle(
+                "ffx.ui.properties.StringBundle", currentLocale);
+        loadHashtable();
+    }
 
-	public String getKey(String string) {
-		return reverseLookUp.get(string);
-	}
+    public FFXLocale(String language, String country) {
+        setLocale(language, country);
+    }
 
-	public String getValue(String key) {
-		return ffxLabels.getString(key).trim();
-	}
+    public String getKey(String string) {
+        return reverseLookUp.get(string);
+    }
 
-	public void list() {
-		for (String value : reverseLookUp.keySet()) {
-			String key = reverseLookUp.get(value);
-			logger.info("key = " + key + ", " + "value = " + value);
-		}
-	}
+    public String getValue(String key) {
+        return ffxLabels.getString(key).trim();
+    }
 
-	private void loadHashtable() {
-		reverseLookUp.clear();
-		Enumeration<String> e = ffxLabels.getKeys();
-		while (e.hasMoreElements()) {
-			String key = e.nextElement();
-			String value = getValue(key);
-			reverseLookUp.put(value, key);
-		}
-	}
+    public void list() {
+        for (String value : reverseLookUp.keySet()) {
+            String key = reverseLookUp.get(value);
+            logger.info("key = " + key + ", " + "value = " + value);
+        }
+    }
 
-	public boolean setLocale(String language, String country) {
-		Locale locale = new Locale(language, country);
-		try {
-			ffxLabels = (PropertyResourceBundle) ResourceBundle.getBundle(
-					"ffx.ui.properties.StringBundle", locale);
-		} catch (Exception ex) {
-			Logger.getLogger("ffx").severe("" + ex);
-			return false;
-		}
-		loadHashtable();
-		currentLocale = locale;
-		return true;
-	}
+    private void loadHashtable() {
+        reverseLookUp.clear();
+        Enumeration<String> e = ffxLabels.getKeys();
+        while (e.hasMoreElements()) {
+            String key = e.nextElement();
+            String value = getValue(key);
+            reverseLookUp.put(value, key);
+        }
+    }
+
+    public boolean setLocale(String language, String country) {
+        Locale locale = new Locale(language, country);
+        try {
+            ffxLabels = (PropertyResourceBundle) ResourceBundle.getBundle(
+                    "ffx.ui.properties.StringBundle", locale);
+        } catch (Exception ex) {
+            Logger.getLogger("ffx").severe("" + ex);
+            return false;
+        }
+        loadHashtable();
+        currentLocale = locale;
+        return true;
+    }
 }

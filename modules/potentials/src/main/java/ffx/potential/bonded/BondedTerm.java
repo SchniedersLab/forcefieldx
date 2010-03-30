@@ -20,6 +20,9 @@
  */
 package ffx.potential.bonded;
 
+import static ffx.utilities.HashCodeUtil.hash;
+import static ffx.utilities.HashCodeUtil.SEED;
+
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -134,7 +137,7 @@ public abstract class BondedTerm extends MSNode {
 
     @Override
     public final int hashCode() {
-        return HashCodeUtil.hash(HashCodeUtil.BONDTERMSEED, getID().hashCode());
+        return hash(SEED, getID().hashCode());
     }
 
     /**

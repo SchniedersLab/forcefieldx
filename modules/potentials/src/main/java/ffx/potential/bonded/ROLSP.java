@@ -20,6 +20,9 @@
  */
 package ffx.potential.bonded;
 
+import static ffx.utilities.HashCodeUtil.hash;
+import static ffx.utilities.HashCodeUtil.SEED;
+
 import java.util.Enumeration;
 import java.util.List;
 import java.util.logging.Logger;
@@ -84,9 +87,9 @@ public class ROLSP extends MSNode implements ROLS, Runnable {
     public int hashCode() {
         MSNode child = (MSNode) getChildAt(0);
         if (child == null) {
-            return HashCodeUtil.hash(HashCodeUtil.DATANODESEED, "none".hashCode());
+            return hash(SEED, "none".hashCode());
         }
-        return HashCodeUtil.hash(HashCodeUtil.PARALLELMSMSEED, child.hashCode());
+        return hash(SEED, child.hashCode());
     }
 
     @Override
@@ -105,7 +108,7 @@ public class ROLSP extends MSNode implements ROLS, Runnable {
 
     @Override
     public void setView(RendererCache.ViewModel viewModel,
-            List<BranchGroup> newShapes) {
+                        List<BranchGroup> newShapes) {
         // Set Up the Parallel setView Method
         if (parallelMethod == PARALLELMETHOD.NONE) {
             startTime = System.currentTimeMillis();

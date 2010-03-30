@@ -20,6 +20,9 @@
  */
 package ffx.potential.bonded;
 
+import static ffx.utilities.HashCodeUtil.hash;
+import static ffx.utilities.HashCodeUtil.SEED;
+
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
@@ -345,7 +348,7 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
 
     @Override
     public int hashCode() {
-        return HashCodeUtil.hash(HashCodeUtil.DATANODESEED, name.hashCode());
+        return hash(SEED, name.hashCode());
     }
 
     public boolean isSelected() {

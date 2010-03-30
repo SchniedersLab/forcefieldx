@@ -14,16 +14,54 @@
                     <exclude>META-INF/*</exclude>
                 </excludes>
             </unpackOptions>
-            <unpack>true</unpack>
+            <outputFileNameMapping>${artifact.groupId}/${artifact.artifactId}.jar</outputFileNameMapping>
+            <unpack>false</unpack>
             <scope>runtime</scope>
         </dependencySet>
     </dependencySets>
     <fileSets>
         <fileSet>
-            <directory>${project.build.outputDirectory}</directory>
-            <excludes>
-                <exclude>META-INF/LICENSE.txt</exclude>
-            </excludes>
+            <directory>${basedir}/target/classes/ffx</directory>
+            <includes>
+                <include>Launcher.class</include>
+                <include>FFXClassLoader.class</include>
+            </includes>
+            <outputDirectory>ffx</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>${basedir}/../../bin/macosx/jogl</directory>
+            <includes>
+                <include>*</include>
+            </includes>
+            <outputDirectory>jogl</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>${basedir}/../../bin/linux/jogl-32</directory>
+            <includes>
+                <include>*</include>
+            </includes>
+            <outputDirectory>jogl-32</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>${basedir}/../../bin/linux/jogl-64</directory>
+            <includes>
+                <include>*</include>
+            </includes>
+            <outputDirectory>jogl-64</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>${basedir}/../../bin/windows/jogl-32</directory>
+            <includes>
+                <include>*</include>
+            </includes>
+            <outputDirectory>jogl-32</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>${basedir}/../../bin/windows/jogl-64</directory>
+            <includes>
+                <include>*</include>
+            </includes>
+            <outputDirectory>jogl-64</outputDirectory>
         </fileSet>
     </fileSets>
 </assembly>

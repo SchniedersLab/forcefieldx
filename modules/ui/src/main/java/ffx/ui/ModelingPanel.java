@@ -186,6 +186,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
         initialize();
     }
 
+    @Override
     public void actionPerformed(ActionEvent evt) {
         synchronized (this) {
             String actionCommand = evt.getActionCommand();
@@ -872,7 +873,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
                 if (activeSystem == null) {
                     return null;
                 }
-                activeFileType = activeSystem.getFileType();
+                activeFileType = FileType.XYZ;
                 // Check that the TINKER command executes on this file type
                 if (!commandFileTypes.contains(activeFileType)) {
                     String message = new String(activeCommand.toUpperCase()
@@ -1040,7 +1041,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
                 statusLabel.setText("  ");
                 fileType = FileType.ANY;
             } else {
-                fileType = active.getFileType();
+                fileType = FileType.XYZ;
             }
             if (fileType != activeFileType) {
                 activeFileType = fileType;

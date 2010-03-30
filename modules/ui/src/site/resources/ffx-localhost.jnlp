@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE jnlp PUBLIC '-//Sun Microsystems, Inc//DTD JNLP Descriptor 6.0//EN' 'http://java.sun.com/dtd/JNLP-6.0.dtd'>
-<jnlp spec="6.0+" codebase="file:///Data/ffx/modules/ui/target/site/" href="ffx-localhost.jnlp">
+<jnlp spec="6.0+" codebase="file:///Data/ffx-project/ffx/modules/ui/target/site/" href="ffx-localhost.jnlp">
     <information>
         <title>Force Field X</title>
         <vendor>Michael J. Schnieders</vendor>
-        <homepage href="file:///Data/ffx/modules/ui/target/site/" />
+        <homepage href="file:///Data/ffx-project/ffx/modules/ui/target/site/" />
         <description>Software for Molecular Biophysics</description>
         <icon href="images/icon128.png"/>
         <offline-allowed/>
@@ -33,8 +33,6 @@
         <java version="1.6+" initial-heap-size="1G" max-heap-size="1G"/>
         <jar href="ffx-all.jar" />
         <property name="j3d.rend" value="jogl"/>
-        <property name="java.ext.dirs" value=""/>
-        <extension name="jogl" href="http://download.java.net/media/jogl/builds/archive/jsr-231-1.1.1a/webstart/jogl.jnlp" />
     </resources>
-    <application-desc main-class="ffx.Main"/>
+    <application-desc main-class="ffx.Launcher"/>
 </jnlp>

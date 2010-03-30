@@ -20,6 +20,9 @@
  */
 package ffx.potential.bonded;
 
+import static ffx.utilities.HashCodeUtil.hash;
+import static ffx.utilities.HashCodeUtil.SEED;
+
 import java.util.EnumSet;
 import java.util.Hashtable;
 import java.util.ListIterator;
@@ -43,22 +46,29 @@ public class Residue extends MSGroup {
 
     public enum AA {
 
-        GLYCINE, ALANINE, VALINE, LEUCINE, ILLUECINE, SERINE, THREONINE, CYSTIENE, PROLINE, PHENYLALANINE, TYROSINE, TYPTOPHAN, ASPARTATE, ASPARTAMINE, GLUTAMATE, GLUTAMINE, METHIONINE, LYSINE, ARGININE, HISTIDINE;
+        GLYCINE, ALANINE, VALINE, LEUCINE, ILLUECINE, SERINE, THREONINE,
+        CYSTIENE, PROLINE, PHENYLALANINE, TYROSINE, TYPTOPHAN, ASPARTATE,
+        ASPARTAMINE, GLUTAMATE, GLUTAMINE, METHIONINE, LYSINE, ARGININE,
+        HISTIDINE;
     }
 
     public enum AA1 {
 
-        G, A, V, L, I, S, T, C, P, F, Y, W, D, N, E, Q, M, K, R, H, U, Z, O, B, J, f, a, n, m, X;
+        G, A, V, L, I, S, T, C, P, F, Y, W, D, N, E, Q, M, K, R, H, U, Z, O, B,
+        J, f, a, n, m, X;
     }
 
     public enum AA3 {
 
-        GLY, ALA, VAL, LEU, ILE, SER, THR, CYS, PRO, PHE, TYR, TRP, ASP, ASN, GLU, GLN, MET, LYS, ARG, HIS, HID, HIE, ORN, AIB, PCA, FOR, ACE, NH2, NME, UNK;
+        GLY, ALA, VAL, LEU, ILE, SER, THR, CYS, PRO, PHE, TYR, TRP, ASP, ASN,
+        GLU, GLN, MET, LYS, ARG, HIS, HID, HIE, ORN, AIB, PCA, FOR, ACE, NH2,
+        NME, UNK;
     }
 
     public enum NA {
 
-        ADENINE, CYTOSINE, GUANINE, URACIL, DEOXYADENINE, DEOXYCYTOSINE, DEOXYGUANINE, THYMINE, MONOPHOSPHATE, DIPHOSPHATE, TRIPHOSPHATE;
+        ADENINE, CYTOSINE, GUANINE, URACIL, DEOXYADENINE, DEOXYCYTOSINE,
+        DEOXYGUANINE, THYMINE, MONOPHOSPHATE, DIPHOSPHATE, TRIPHOSPHATE;
     }
 
     public enum NA1 {
@@ -367,8 +377,8 @@ public class Residue extends MSGroup {
 
     @Override
     public final int hashCode() {
-        int hash = HashCodeUtil.hash(HashCodeUtil.RESIDUESEED, getParent().hashCode());
-        return HashCodeUtil.hash(hash, getResidueNumber());
+        int hash = hash(SEED, getParent().hashCode());
+        return hash(hash, getResidueNumber());
     }
 
     /**
@@ -389,7 +399,7 @@ public class Residue extends MSGroup {
             a = (Atom) li.next();
             String id = a.getID();
             if (!id.equals("CA") && !id.equals("N") && !id.equals("C")
-                    && !id.equals("O")) {
+                && !id.equals("O")) {
                 a.getV3D(v2);
                 v.add(v2);
                 count++;
@@ -403,7 +413,7 @@ public class Residue extends MSGroup {
 
     @Override
     public void setColor(RendererCache.ColorModel newColorModel, Color3f color,
-            Material mat) {
+                         Material mat) {
         // If Color by Residue, pass this Residue's Color
         if (newColorModel == RendererCache.ColorModel.RESIDUE) {
             switch (residueType) {

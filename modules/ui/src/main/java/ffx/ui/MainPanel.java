@@ -660,9 +660,6 @@ public final class MainPanel extends JPanel implements ActionListener,
         if (system == null) {
             return null;
         }
-        if (system.getFileType() != FileType.ARC) {
-            return null;
-        }
         Trajectory trajectory = system.getTrajectory();
         if (trajectory != null) {
             return trajectory;
@@ -899,7 +896,6 @@ public final class MainPanel extends JPanel implements ActionListener,
         FFXSystem system = new FFXSystem(file, "Merge Result", active.getProperties());
         system.setKeyFile(active.getKeyFile());
         system.setKeywords(KeyFilter.open(active.getKeyFile()));
-        system.setFileType(active.getFileType());
         // Fill arrays with the atoms and bonds from the systems to be combined
         ArrayList<Atom> mergedAtoms = new ArrayList<Atom>();
         ArrayList<Bond> mergedBonds = new ArrayList<Bond>();
@@ -1045,15 +1041,12 @@ public final class MainPanel extends JPanel implements ActionListener,
         // Decide which parser to use.
         if (xyzFileFilter.acceptDeep(file)) {
             // Use the TINKER Cartesian Coordinate File Parser.
-            newSystem.setFileType(FileType.XYZ);
             systemFilter = new XYZFilter(newSystem);
         } else if (intFileFilter.acceptDeep(file)) {
             // Use the TINKER Internal Coordinate File Parser.
-            newSystem.setFileType(FileType.INT);
             systemFilter = new INTFilter(newSystem);
         } else {
             // Use the PDB File Parser.
-            newSystem.setFileType(FileType.PDB);
             systemFilter = new PDBFilter(newSystem);
         }
 
@@ -1220,12 +1213,7 @@ public final class MainPanel extends JPanel implements ActionListener,
     }
 
     public void openOn(File f, FFXSystem oldSystem, String command) {
-        if (oldSystem.getFileType() == FileType.XYZ) {
-            XYZFilter.readOnto(f, oldSystem);
-        } else {
-            open(f, command);
-            return;
-        }
+        XYZFilter.readOnto(f, oldSystem);
         oldSystem.setCommandDescription(command);
         graphicsCanvas.updateScene(oldSystem, true, false, null, false, null);
         getHierarchy().updateStatus();

@@ -356,7 +356,6 @@ public class XYZFilter extends SystemFilter {
                 cycle++;
             }
             molecularAssembly.setCycles(cycle);
-            molecularAssembly.setFileType(FileType.ARC);
             setFileRead(true);
             return true;
         } catch (FileNotFoundException e) {

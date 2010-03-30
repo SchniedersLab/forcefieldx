@@ -20,6 +20,9 @@
  */
 package ffx.ui;
 
+import static ffx.utilities.HashCodeUtil.hash;
+import static ffx.utilities.HashCodeUtil.SEED;
+
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -148,6 +151,7 @@ public final class KeywordComponent implements MouseListener, ActionListener,
         options = o;
     }
 
+    @Override
     public void actionPerformed(ActionEvent evt) {
         synchronized (this) {
             isModified = true;
@@ -185,6 +189,7 @@ public final class KeywordComponent implements MouseListener, ActionListener,
         }
     }
 
+    @Override
     public void changedUpdate(DocumentEvent evt) {
         isModified = true;
     }
@@ -286,6 +291,7 @@ public final class KeywordComponent implements MouseListener, ActionListener,
      * Overidden equals method return true if object equals this, or if it of
      * the same class and has the same Tinker Keyword.
      */
+    @Override
     public boolean equals(Object object) {
         if (this == object) {
             return true;
@@ -372,8 +378,9 @@ public final class KeywordComponent implements MouseListener, ActionListener,
         }
     }
 
+    @Override
     public int hashCode() {
-        return ffx.potential.bonded.HashCodeUtil.hash(106, keyword.hashCode());
+        return hash(SEED, keyword.hashCode());
     }
 
     private void initSwingComponents() {
@@ -393,6 +400,7 @@ public final class KeywordComponent implements MouseListener, ActionListener,
         init = true;
     }
 
+    @Override
     public void insertUpdate(DocumentEvent evt) {
         isModified = true;
     }
@@ -443,6 +451,7 @@ public final class KeywordComponent implements MouseListener, ActionListener,
         }
     }
 
+    @Override
     public void mouseClicked(MouseEvent evt) {
         synchronized (this) {
             active = true;
@@ -455,24 +464,30 @@ public final class KeywordComponent implements MouseListener, ActionListener,
         }
     }
 
+    @Override
     public void mouseEntered(MouseEvent evt) {
         mouseClicked(evt);
     }
 
+    @Override
     public void mouseExited(MouseEvent evt) {
         mouseClicked(evt);
     }
 
+    @Override
     public void mousePressed(MouseEvent evt) {
     }
 
+    @Override
     public void mouseReleased(MouseEvent evt) {
     }
 
+    @Override
     public void removeUpdate(DocumentEvent evt) {
         isModified = true;
     }
 
+    @Override
     public void stateChanged(ChangeEvent evt) {
         isModified = true;
     }
@@ -504,6 +519,7 @@ public final class KeywordComponent implements MouseListener, ActionListener,
     /**
      * Overridden toString methods facilitates Keyword output to a file.
      */
+    @Override
     public String toString() {
         synchronized (this) {
             if (!active || !init) {

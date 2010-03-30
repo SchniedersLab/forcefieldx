@@ -33,8 +33,6 @@
         <java version="1.6+" initial-heap-size="1G" max-heap-size="1G"/>
         <jar href="ffx-all.jar" />
         <property name="j3d.rend" value="jogl"/>
-        <property name="java.ext.dirs" value=""/>
-        <extension name="jogl" href="http://download.java.net/media/jogl/builds/archive/jsr-231-1.1.1a/webstart/jogl.jnlp" />
     </resources>
-    <application-desc main-class="ffx.Main"/>
+    <application-desc main-class="ffx.Launcher"/>
 </jnlp>

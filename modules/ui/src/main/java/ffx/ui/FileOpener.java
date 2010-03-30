@@ -25,6 +25,7 @@ import java.util.logging.Logger;
 
 import ffx.potential.bonded.Utilities;
 import ffx.potential.bonded.Utilities.FileType;
+import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.SystemFilter;
 
 /**
@@ -65,7 +66,7 @@ public class FileOpener
         // Continue if the file was read in successfully.
         if (systemFilter.readFile()) {
             ffxSystem = (FFXSystem) systemFilter.getMolecularSystem();
-            if (ffxSystem.getFileType() != FileType.PDB) {
+            if (!(systemFilter instanceof PDBFilter)) {
                 Utilities.biochemistry(ffxSystem, systemFilter.getAtomList());
             }
             // Add the system to the multiscale hierarchy.

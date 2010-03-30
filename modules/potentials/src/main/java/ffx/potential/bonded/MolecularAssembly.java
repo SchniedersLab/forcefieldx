@@ -79,7 +79,6 @@ public class MolecularAssembly extends MSGroup {
     protected ForceField forceField;
     private PotentialEnergy potentialEnergy;
     private Vector3d offset;
-    private FileType fileType;
     private int cycles = 1;
     private int currentCycle = 1;
     private Vector<String> altLoc = null;
@@ -87,9 +86,6 @@ public class MolecularAssembly extends MSGroup {
     private MSNode ions = new MSNode("Ions");
     private MSNode water = new MSNode("Waters");
     private MSNode molecules = new MSNode("Hetero Molecules");
-    // TINKER Simulation variables
-    private Vector3d box = new Vector3d();
-    private Vector3d angle = new Vector3d();
     // 3D Graphics Nodes - There is a diagram explaining the MolecularAssembly
     // Scenegraph below
     private BranchGroup branchGroup;
@@ -596,10 +592,6 @@ public class MolecularAssembly extends MSGroup {
         return file;
     }
 
-    public FileType getFileType() {
-        return fileType;
-    }
-
     public Vector3d getOffset() {
         if (offset == null) {
             offset = new Vector3d(0.0, 0.0, 0.0);
@@ -1093,30 +1085,6 @@ public class MolecularAssembly extends MSGroup {
 
     }
 
-    public void setAngle(double a[]) {
-        if (a == null) {
-            return;
-        }
-
-        if (angle == null) {
-            angle = new Vector3d();
-        }
-
-        angle.set(a);
-    }
-
-    public void setBox(double b[]) {
-        if (b == null) {
-            return;
-        }
-
-        if (box == null) {
-            box = new Vector3d();
-        }
-
-        box.set(b);
-    }
-
     @Override
     public void setColor(RendererCache.ColorModel newColorModel, Color3f color,
                          Material mat) {
@@ -1159,10 +1127,6 @@ public class MolecularAssembly extends MSGroup {
         }
 
         file = f;
-    }
-
-    public void setFileType(FileType fileType) {
-        this.fileType = fileType;
     }
 
     public void setOffset(Vector3d o) {

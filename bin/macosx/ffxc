@@ -108,7 +108,6 @@ exec "$JAVACMD" $JAVA_OPTS \
   -Dbasedir="$BASEDIR" \
   -Djava.library.path="$BASEDIR/macosx/jogl-32:$BASEDIR/macosx/jcuda-32" \
   -Djava.awt.headless="true" \
-  -Djava.ext.dirs="" \
   -Dj3d.rend="jogl" \
-  ffx.Main \
+  ffx.Launcher \
   "$@"

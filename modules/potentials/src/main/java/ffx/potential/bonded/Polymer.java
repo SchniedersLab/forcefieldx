@@ -20,6 +20,9 @@
  */
 package ffx.potential.bonded;
 
+import static ffx.utilities.HashCodeUtil.hash;
+import static ffx.utilities.HashCodeUtil.SEED;
+
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
@@ -352,7 +355,7 @@ public class Polymer extends MSGroup {
 
     @Override
     public int hashCode() {
-        return HashCodeUtil.hash(HashCodeUtil.POLYMERSEED, polymerNumber);
+        return hash(SEED, polymerNumber);
     }
 
     @Override

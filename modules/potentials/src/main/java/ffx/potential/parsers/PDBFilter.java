@@ -129,7 +129,6 @@ public final class PDBFilter extends SystemFilter {
         FileWriter fw = null;
         BufferedReader br = null;
         BufferedWriter bw = null;
-        molecularAssembly.setFileType(FileType.PDB);
         try {
             setFileRead(false);
             if (pdbURL == null) {
@@ -288,7 +287,7 @@ public final class PDBFilter extends SystemFilter {
                         Atom prev = (Atom) molecularAssembly.addMSNode(a);
                         if (prev != a) {
                             atoms.put(serial, prev);
-                            prev.addAltLoc(altLoc, d, occupancy, tempFactor);
+                            //prev.addAltLoc(altLoc, d, occupancy, tempFactor);
                         } else {
                             atoms.put(serial, a);
                             a.setXYZIndex(xyzIndex++);
@@ -340,7 +339,7 @@ public final class PDBFilter extends SystemFilter {
                         prev = (Atom) molecularAssembly.addMSNode(a);
                         if (prev != a) {
                             atoms.put(serial, prev);
-                            prev.addAltLoc(altLoc, d, occupancy, tempFactor);
+                            //prev.addAltLoc(altLoc, d, occupancy, tempFactor);
                         } else {
                             atoms.put(serial, a);
                             a.setXYZIndex(xyzIndex++);
