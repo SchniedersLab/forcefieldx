@@ -147,12 +147,6 @@ public class RefinementData {
     }
 
     public void generateRFree() {
-        if (logger.isLoggable(Level.INFO)) {
-            StringBuffer sb = new StringBuffer();
-            sb.append("\ninternally flagging Rfree reflections\n");
-            sb.append("  flagging 5% of observed data reflections\n");
-        }
-
         Random generator = new Random();
         int nfree = 0;
         for (int i = 0; i < n; i++) {
@@ -172,6 +166,8 @@ public class RefinementData {
 
         if (logger.isLoggable(Level.INFO)) {
             StringBuffer sb = new StringBuffer();
+            sb.append("\ninternally flagging Rfree reflections\n");
+            sb.append("  flagging 5% of observed data reflections\n");
             sb.append(String.format("  selected %d of %d reflections\n",
                     nfree, n));
 

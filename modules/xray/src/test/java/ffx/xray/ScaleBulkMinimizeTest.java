@@ -59,30 +59,19 @@ public class ScaleBulkMinimizeTest {
                         "ffx/xray/structures/1NSF.pdb",
                         "ffx/xray/structures/1NSF.mtz",
                         null,
-                        25.3337,
-                        25.7488,
-                        0.8927,
-                        0.1544},
-                        /*
-                    {false,
+                        25.34,
+                        25.62,
+                        0.8932,
+                        0.1531},
+                    {true,
                         "SNARE complex",
                         "ffx/xray/structures/1N7S.pdb",
                         "ffx/xray/structures/1N7S.mtz",
                         null,
-                        19.6702,
-                        21.7984,
-                        0.9305,
-                        0.1375},
-                         */
-                    {true,
-                        "Myosin I SH3 domain bound to ACAN125",
-                        "ffx/xray/structures/2DRM.pdb",
-                        "ffx/xray/structures/2DRM.mtz",
-                        null,
-                        20.8645,
-                        23.1024,
-                        0.9265,
-                        0.1419}
+                        19.65,
+                        21.79,
+                        0.9317,
+                        0.1368}
                 });
     }
     private final String info;

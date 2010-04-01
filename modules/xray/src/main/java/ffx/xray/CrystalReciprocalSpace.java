@@ -76,8 +76,10 @@ public class CrystalReciprocalSpace {
     private final int nSymm;
     private final Atom atoms[];
     private final int nAtoms;
-    private final double coordinates[][][];
+    // not final for purposes of finite differences
+    private double coordinates[][][];
     private final int fftX, fftY, fftZ;
+    private final double fftscale;
     private final int complexFFT3DSpace;
     private final int halfFFTX, halfFFTY, halfFFTZ;
     private final int aradgrid;
@@ -153,6 +155,7 @@ public class CrystalReciprocalSpace {
         halfFFTZ = nZ / 2;
         // number of grid points to sample density on
         aradgrid = (int) Math.floor(arad * nX / crystal.a) + 1;
+        fftscale = crystal.volume;
         complexFFT3DSpace = fftX * fftY * fftZ * 2;
 
         /*
@@ -241,6 +244,39 @@ public class CrystalReciprocalSpace {
         this.solvent_binaryrad = rad;
     }
 
+    public void deltaX(int n, double delta) {
+        Vector<SymOp> symops = crystal.spaceGroup.symOps;
+        double xyz[] = atoms[n].getXYZ();
+        xyz[0] += delta;
+        double symxyz[] = new double[3];
+        for (int i = 0; i < nSymm; i++) {
+            crystal.applySymOp(xyz, symxyz, symops.get(i));
+            coordinates[i][0][n] = symxyz[0];
+        }
+    }
+
+    public void deltaY(int n, double delta) {
+        Vector<SymOp> symops = crystal.spaceGroup.symOps;
+        double xyz[] = atoms[n].getXYZ();
+        xyz[1] += delta;
+        double symxyz[] = new double[3];
+        for (int i = 0; i < nSymm; i++) {
+            crystal.applySymOp(xyz, symxyz, symops.get(i));
+            coordinates[i][1][n] = symxyz[1];
+        }
+    }
+
+    public void deltaZ(int n, double delta) {
+        Vector<SymOp> symops = crystal.spaceGroup.symOps;
+        double xyz[] = atoms[n].getXYZ();
+        xyz[2] += delta;
+        double symxyz[] = new double[3];
+        for (int i = 0; i < nSymm; i++) {
+            crystal.applySymOp(xyz, symxyz, symops.get(i));
+            coordinates[i][2][n] = symxyz[2];
+        }
+    }
+
     public void computeDensity(double hkldata[][]) {
         if (solvent) {
             computeSolventDensity(hkldata);
@@ -251,6 +287,12 @@ public class CrystalReciprocalSpace {
 
     public void computeAtomicGradients(double hkldata[][],
             int freer[], int flag) {
+
+        // zero out the density
+        for (int i = 0; i < complexFFT3DSpace; i++) {
+            densityGrid[i] = 0.0;
+        }
+
         StringBuffer sb = new StringBuffer();
         long symtime = -System.nanoTime();
         int nsym = crystal.spaceGroup.symOps.size();
@@ -258,10 +300,10 @@ public class CrystalReciprocalSpace {
         ComplexNumber c = new ComplexNumber();
         for (HKL ih : reflectionlist.hkllist) {
             double fc[] = hkldata[ih.index()];
-            if (Double.isNaN(fc[0])
-                    || (ih.h() == 0 && ih.k() == 0 && ih.l() == 0)) {
+            if (Double.isNaN(fc[0])) {
                 continue;
             }
+
             // cross validation check!!!
             if (freer != null) {
                 if (freer[ih.index()] == flag) {
@@ -271,6 +313,9 @@ public class CrystalReciprocalSpace {
 
             c.re(fc[0]);
             c.im(fc[1]);
+
+            // scale
+            c = c.times(2.0 / fftscale);
 
             // apply symmetry
             for (int j = 0; j < nsym; j++) {
@@ -303,9 +348,6 @@ public class CrystalReciprocalSpace {
         complexFFT3D.ifft(densityGrid);
         long fftTime = System.nanoTime() - startTime;
         sb.append(String.format(" inverse FFT: %8.3f\n", fftTime * toSeconds));
-
-        // CNSMapWriter cnsmapout = new CNSMapWriter(fftX, fftY, fftZ, crystal, "/tmp/foo.map");
-        // cnsmapout.write(densityGrid);
 
         startTime = System.nanoTime();
         try {
@@ -345,9 +387,6 @@ public class CrystalReciprocalSpace {
             String message = "Fatal exception evaluating atomic electron density.";
             logger.log(Level.SEVERE, message, e);
         }
-
-        // CNSMapWriter cnsmapout = new CNSMapWriter(fftX, fftY, fftZ, crystal, "/tmp/foo.map");
-        // cnsmapout.write(densityGrid);
 
         long startTime = System.nanoTime();
         complexFFT3D.fft(densityGrid);
@@ -392,7 +431,7 @@ public class CrystalReciprocalSpace {
         }
 
         // scale
-        double scale = crystal.volume / (fftX * fftY * fftZ);
+        double scale = (fftscale) / (fftX * fftY * fftZ);
         for (HKL ih : reflectionlist.hkllist) {
             double fc[] = hkldata[ih.index()];
             c.re(fc[0]);
@@ -503,7 +542,7 @@ public class CrystalReciprocalSpace {
         }
 
         // scale
-        double scale = crystal.volume / (fftX * fftY * fftZ);
+        double scale = (fftscale) / (fftX * fftY * fftZ);
         for (HKL ih : reflectionlist.hkllist) {
             double fc[] = hkldata[ih.index()];
             c.re(fc[0]);
@@ -655,6 +694,7 @@ public class CrystalReciprocalSpace {
             try {
                 execute(0, nAtoms - 1, atomicGradientLoop[getThreadIndex()]);
             } catch (Exception e) {
+                e.printStackTrace();
                 logger.severe(e.toString());
             }
         }
@@ -673,11 +713,12 @@ public class CrystalReciprocalSpace {
 
             @Override
             public void run(final int lb, final int ub) {
+                final int dfrad = aradgrid;
                 double uvw[] = new double[3];
                 double xc[] = new double[3];
                 double xf[] = new double[3];
                 for (int n = lb; n <= ub; n++) {
-                    FormFactor atomff = new FormFactor(atoms[n], badd);
+                    FormFactor atomff = new FormFactor(atoms[n], 0.0);
                     crystal.toFractionalCoordinates(atoms[n].getXYZ(), uvw);
 
                     // Logic to loop within the cutoff box.
@@ -690,11 +731,11 @@ public class CrystalReciprocalSpace {
                     final double frz = fftZ * uvw[2];
                     final int ifrz = (int) frz;
 
-                    for (int ix = ifrx - aradgrid; ix <= ifrx + aradgrid; ix++) {
+                    for (int ix = ifrx - dfrad; ix <= ifrx + dfrad; ix++) {
                         int gix = Crystal.mod(ix, fftX);
-                        for (int iy = ifry - aradgrid; iy <= ifry + aradgrid; iy++) {
+                        for (int iy = ifry - dfrad; iy <= ifry + dfrad; iy++) {
                             int giy = Crystal.mod(iy, fftY);
-                            for (int iz = ifrz - aradgrid; iz <= ifrz + aradgrid; iz++) {
+                            for (int iz = ifrz - dfrad; iz <= ifrz + dfrad; iz++) {
                                 int giz = Crystal.mod(iz, fftZ);
 
                                 xf[0] = ix / (double) fftX;
@@ -746,6 +787,7 @@ public class CrystalReciprocalSpace {
 
             @Override
             public void run(final int lb, final int ub) {
+                final int dfrad = aradgrid + 2;
                 double uvw[] = new double[3];
                 double xc[] = new double[3];
                 double xf[] = new double[3];
@@ -763,11 +805,11 @@ public class CrystalReciprocalSpace {
                     final double frz = fftZ * uvw[2];
                     final int ifrz = (int) frz;
 
-                    for (int ix = ifrx - aradgrid; ix <= ifrx + aradgrid; ix++) {
+                    for (int ix = ifrx - dfrad; ix <= ifrx + dfrad; ix++) {
                         int gix = Crystal.mod(ix, fftX);
-                        for (int iy = ifry - aradgrid; iy <= ifry + aradgrid; iy++) {
+                        for (int iy = ifry - dfrad; iy <= ifry + dfrad; iy++) {
                             int giy = Crystal.mod(iy, fftY);
-                            for (int iz = ifrz - aradgrid; iz <= ifrz + aradgrid; iz++) {
+                            for (int iz = ifrz - dfrad; iz <= ifrz + dfrad; iz++) {
                                 int giz = Crystal.mod(iz, fftZ);
 
                                 xf[0] = ix / (double) fftX;

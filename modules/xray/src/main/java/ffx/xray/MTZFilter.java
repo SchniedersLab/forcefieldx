@@ -25,13 +25,13 @@ import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
 import ffx.crystal.Resolution;
 import ffx.crystal.SpaceGroup;
-import ffx.utilities.ByteSwap;
 
 import java.io.File;
 import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.io.EOFException;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -105,14 +105,13 @@ public class MTZFilter {
      */
     public ReflectionList getReflectionList(File mtzFile) {
         ByteOrder b = ByteOrder.nativeOrder();
-        // most likely little endian
-        Boolean swap = true;
         FileInputStream fis;
         DataInputStream dis;
         try {
             fis = new FileInputStream(mtzFile);
             dis = new DataInputStream(fis);
 
+            byte headeroffset[] = new byte[4];
             byte bytes[] = new byte[80];
             int offset = 0;
 
@@ -121,37 +120,32 @@ public class MTZFilter {
             String mtzstr = new String(bytes);
 
             // header offset
-            int headeroffset = swap ? ByteSwap.swap(dis.readInt()) : dis.readInt();
+            dis.read(headeroffset, offset, 4);
 
             // machine stamp
-            int stamp = swap ? ByteSwap.swap(dis.readInt()) : dis.readInt();
-            mtzstr = Integer.toHexString(stamp);
-            // System.out.println("stamp: " + mtzstr);
-            switch (mtzstr.charAt(0)) {
+            dis.read(bytes, offset, 4);
+            ByteBuffer bb = ByteBuffer.wrap(bytes);
+            int stamp = bb.order(ByteOrder.BIG_ENDIAN).getInt();
+            String stampstr = Integer.toHexString(stamp);
+            switch (stampstr.charAt(0)) {
                 case '1':
                 case '3':
                     if (b.equals(ByteOrder.LITTLE_ENDIAN)) {
-                        swap = false;
-                    } else {
-                        swap = true;
+                        b = ByteOrder.BIG_ENDIAN;
                     }
                     break;
                 case '4':
-                    if (b.equals(ByteOrder.LITTLE_ENDIAN)) {
-                        swap = true;
-                    } else {
-                        swap = false;
+                    if (b.equals(ByteOrder.BIG_ENDIAN)) {
+                        b = ByteOrder.LITTLE_ENDIAN;
                     }
                     break;
             }
 
-            if (!swap) {
-                // swap it back (grrr...)
-                headeroffset = ByteSwap.swap(headeroffset);
-            }
+            bb = ByteBuffer.wrap(headeroffset);
+            int headeroffseti = bb.order(b).getInt();
 
             // skip to header and parse
-            dis.skipBytes((headeroffset - 4) * 4);
+            dis.skipBytes((headeroffseti - 4) * 4);
 
             for (Boolean parsing = true; parsing; dis.read(bytes, offset, 80)) {
                 mtzstr = new String(bytes);
@@ -197,55 +191,47 @@ public class MTZFilter {
     public boolean readFile(File mtzFile, ReflectionList reflectionlist,
             RefinementData refinementdata) {
         ByteOrder b = ByteOrder.nativeOrder();
-        Boolean swap = true;
-        if (b.equals(ByteOrder.BIG_ENDIAN)) {
-            swap = false;
-        }
         FileInputStream fis;
         DataInputStream dis;
         try {
             fis = new FileInputStream(mtzFile);
             dis = new DataInputStream(fis);
 
+            byte headeroffset[] = new byte[4];
             byte bytes[] = new byte[80];
             int offset = 0;
-            String mtzstr = new String(bytes);
 
             // eat "MTZ" title
             dis.read(bytes, offset, 4);
+            String mtzstr = new String(bytes);
 
             // header offset
-            int headeroffset = swap ? ByteSwap.swap(dis.readInt()) : dis.readInt();
+            dis.read(headeroffset, offset, 4);
 
             // machine stamp
-            int stamp = swap ? ByteSwap.swap(dis.readInt()) : dis.readInt();
+            dis.read(bytes, offset, 4);
+            ByteBuffer bb = ByteBuffer.wrap(bytes);
+            int stamp = bb.order(ByteOrder.BIG_ENDIAN).getInt();
             String stampstr = Integer.toHexString(stamp);
-            // System.out.println("stamp: " + mtzstr);
             switch (stampstr.charAt(0)) {
                 case '1':
                 case '3':
                     if (b.equals(ByteOrder.LITTLE_ENDIAN)) {
-                        swap = false;
-                    } else {
-                        swap = true;
+                        b = ByteOrder.BIG_ENDIAN;
                     }
                     break;
                 case '4':
-                    if (b.equals(ByteOrder.LITTLE_ENDIAN)) {
-                        swap = true;
-                    } else {
-                        swap = false;
+                    if (b.equals(ByteOrder.BIG_ENDIAN)) {
+                        b = ByteOrder.LITTLE_ENDIAN;
                     }
                     break;
             }
 
-            if (!swap) {
-                // swap it back (grrr...)
-                headeroffset = ByteSwap.swap(headeroffset);
-            }
+            bb = ByteBuffer.wrap(headeroffset);
+            int headeroffseti = bb.order(b).getInt();
 
             // skip to header and parse
-            dis.skipBytes((headeroffset - 4) * 4);
+            dis.skipBytes((headeroffseti - 4) * 4);
 
             for (Boolean parsing = true; parsing; dis.read(bytes, offset, 80)) {
                 mtzstr = new String(bytes);
@@ -275,7 +261,9 @@ public class MTZFilter {
             float data[] = new float[ncol];
             for (int i = 0; i < nrfl; i++) {
                 for (int j = 0; j < ncol; j++) {
-                    data[j] = swap ? ByteSwap.swap(dis.readFloat()) : dis.readFloat();
+                    dis.read(bytes, offset, 4);
+                    bb = ByteBuffer.wrap(bytes);
+                    data[j] = bb.order(b).getFloat();
                 }
                 int ih = (int) data[h];
                 int ik = (int) data[k];
@@ -315,7 +303,7 @@ public class MTZFilter {
                 logger.info(sb.toString());
             }
 
-            if (rfree < 0){
+            if (rfree < 0) {
                 refinementdata.generateRFree();
             }
         } catch (EOFException eof) {
@@ -463,6 +451,7 @@ public class MTZFilter {
                     || label.equalsIgnoreCase("freerflag")
                     || label.equalsIgnoreCase("rfree")
                     || label.equalsIgnoreCase("rfreeflag")
+                    || label.equalsIgnoreCase("r-free-flags")
                     || label.equalsIgnoreCase("test"))
                     && c.type == 'I') {
                 sb.append(String.format("Reading R Free column: \"%s\"\n", c.label));
@@ -489,24 +478,27 @@ public class MTZFilter {
     }
 
     static void print_header(MTZFilter mfile) {
-        System.out.println("title: " + mfile.title);
-        System.out.println("sg: " + mfile.sgname + " sgnum: " + mfile.sgnum);
-        System.out.println("res: " + mfile.reslow + " " + mfile.reshigh);
-        System.out.println("nrfl: " + mfile.nrfl);
-        System.out.println("ncol: " + mfile.ncol);
+        StringBuffer sb = new StringBuffer();
+        sb.append("title: " + mfile.title + "\n");
+        sb.append("sg: " + mfile.sgname + " sgnum: " + mfile.sgnum + "\n");
+        sb.append("res: " + mfile.reslow + " " + mfile.reshigh + "\n");
+        sb.append("nrfl: " + mfile.nrfl + "\n");
+        sb.append("ncol: " + mfile.ncol + "\n");
 
         int ndset = 1;
         for (Iterator i = mfile.datasets.iterator(); i.hasNext(); ndset++) {
             dataset d = (dataset) i.next();
 
-            System.out.println("  dset " + ndset + ": " + d.dataset);
-            System.out.println("  project " + ndset + ": " + d.project);
-            System.out.println("  wavelength " + ndset + ": " + d.lambda);
-            System.out.println("  cell " + ndset + ": "
+            sb.append("  dset " + ndset + ": " + d.dataset + "\n");
+            sb.append("  project " + ndset + ": " + d.project + "\n");
+            sb.append("  wavelength " + ndset + ": " + d.lambda + "\n");
+            sb.append("  cell " + ndset + ": "
                     + d.cell[0] + " " + d.cell[1] + " " + d.cell[2] + " "
-                    + d.cell[3] + " " + d.cell[4] + " " + d.cell[5]);
-            System.out.println();
+                    + d.cell[3] + " " + d.cell[4] + " " + d.cell[5] + "\n");
+            sb.append("\n");
         }
-
+        if (logger.isLoggable(Level.INFO)) {
+            logger.info(sb.toString());
+        }
     }
 }

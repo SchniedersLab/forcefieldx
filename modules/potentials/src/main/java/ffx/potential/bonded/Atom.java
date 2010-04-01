@@ -952,11 +952,11 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     public void addToAnisouGradient(double[] anisouGradient) {
-        if (anisouGradient == null) {
-            anisouGradient = new double[6];
+        if (this.anisouGradient == null) {
+            this.anisouGradient = new double[6];
         }
         for (int i = 0; i < 6; i++) {
-            anisouGradient[i] += anisouGradient[i];
+            this.anisouGradient[i] += anisouGradient[i];
         }
     }
 

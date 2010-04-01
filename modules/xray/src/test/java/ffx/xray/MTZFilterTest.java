@@ -47,7 +47,6 @@ public class MTZFilterTest {
     File mtzfile = new File(cl.getResource(filename).getPath());
     // load any properties associated with it
     CompositeConfiguration properties = Keyword.loadProperties(mtzfile);
-
     // set up the crystal data
     Crystal crystal =
             new Crystal(29.97, 37.86, 44.51, 90.28, 90.11, 90.64, "P1");

@@ -55,6 +55,7 @@ public final class VectorMath {
     private static final double[] dt = new double[3];
     private static final double[] du = new double[3];
     private static final double[] dtu = new double[3];
+    private static final double eightpi2 = 8.0 * Math.PI * Math.PI;
 
     public static double angle(double[] i, double[] j) {
         double x;
@@ -445,16 +446,16 @@ public final class VectorMath {
      * @param m input matrix
      * @return matrix product
      */
-    public static double[][] symvec6mat3(double v[], double m[][]){
+    public static double[][] symvec6mat3(double v[], double m[][]) {
         double res[][] = new double[3][3];
         res[0][0] = v[0] * m[0][0] + v[3] * m[1][0] + v[4] * m[2][0];
-        res[0][1] = v[0] * m[0][1] + v[3] * m[1][1] + v[4] * m[2][1];        
+        res[0][1] = v[0] * m[0][1] + v[3] * m[1][1] + v[4] * m[2][1];
         res[0][2] = v[0] * m[0][2] + v[3] * m[1][2] + v[4] * m[2][2];
         res[1][0] = v[3] * m[0][0] + v[1] * m[1][0] + v[5] * m[2][0];
-        res[1][1] = v[3] * m[0][1] + v[1] * m[1][1] + v[5] * m[2][1];        
+        res[1][1] = v[3] * m[0][1] + v[1] * m[1][1] + v[5] * m[2][1];
         res[1][2] = v[3] * m[0][2] + v[1] * m[1][2] + v[5] * m[2][2];
         res[2][0] = v[4] * m[0][0] + v[5] * m[1][0] + v[2] * m[2][0];
-        res[2][1] = v[4] * m[0][1] + v[5] * m[1][1] + v[2] * m[2][1];        
+        res[2][1] = v[4] * m[0][1] + v[5] * m[1][1] + v[2] * m[2][1];
         res[2][2] = v[4] * m[0][2] + v[5] * m[1][2] + v[2] * m[2][2];
 
         return res;
@@ -467,7 +468,7 @@ public final class VectorMath {
      * @param v input vector of the form 11, 22, 33, 12, 13, 23
      * @return matrix product
      */
-    public static double[][] mat3symvec6(double m[][], double v[]){
+    public static double[][] mat3symvec6(double m[][], double v[]) {
         double res[][] = new double[3][3];
         res[0][0] = m[0][0] * v[0] + m[0][1] * v[3] + m[0][2] * v[4];
         res[0][1] = m[0][0] * v[3] + m[0][1] * v[1] + m[0][2] * v[5];
@@ -518,15 +519,15 @@ public final class VectorMath {
      */
     public static double[][] scalarmat3mat3(double scalar, double m1[][], double m2[][]) {
         double res[][] = new double[3][3];
-        res[0][0] = scalar * (m1[0][0] * m2[0][0] + m1[0][1] * m2[1][0] + m1[0][2] * m2[2][0]);
-        res[0][1] = scalar * (m1[0][0] * m2[0][1] + m1[0][1] * m2[1][1] + m1[0][2] * m2[2][1]);
-        res[0][2] = scalar * (m1[0][0] * m2[0][2] + m1[0][1] * m2[1][2] + m1[0][2] * m2[2][2]);
-        res[1][0] = scalar * (m1[1][0] * m2[0][0] + m1[1][1] * m2[1][0] + m1[1][2] * m2[2][0]);
-        res[1][1] = scalar * (m1[1][0] * m2[0][1] + m1[1][1] * m2[1][1] + m1[1][2] * m2[2][1]);
-        res[1][2] = scalar * (m1[1][0] * m2[0][2] + m1[1][1] * m2[1][2] + m1[1][2] * m2[2][2]);
-        res[2][0] = scalar * (m1[2][0] * m2[0][0] + m1[2][1] * m2[1][0] + m1[2][2] * m2[2][0]);
-        res[2][1] = scalar * (m1[2][0] * m2[0][1] + m1[2][1] * m2[1][1] + m1[2][2] * m2[2][1]);
-        res[2][2] = scalar * (m1[2][0] * m2[0][2] + m1[2][1] * m2[1][2] + m1[2][2] * m2[2][2]);
+        res[0][0] = (scalar * m1[0][0]) * m2[0][0] + (scalar * m1[0][1]) * m2[1][0] + (scalar * m1[0][2]) * m2[2][0];
+        res[0][1] = (scalar * m1[0][0]) * m2[0][1] + (scalar * m1[0][1]) * m2[1][1] + (scalar * m1[0][2]) * m2[2][1];
+        res[0][2] = (scalar * m1[0][0]) * m2[0][2] + (scalar * m1[0][1]) * m2[1][2] + (scalar * m1[0][2]) * m2[2][2];
+        res[1][0] = (scalar * m1[1][0]) * m2[0][0] + (scalar * m1[1][1]) * m2[1][0] + (scalar * m1[1][2]) * m2[2][0];
+        res[1][1] = (scalar * m1[1][0]) * m2[0][1] + (scalar * m1[1][1]) * m2[1][1] + (scalar * m1[1][2]) * m2[2][1];
+        res[1][2] = (scalar * m1[1][0]) * m2[0][2] + (scalar * m1[1][1]) * m2[1][2] + (scalar * m1[1][2]) * m2[2][2];
+        res[2][0] = (scalar * m1[2][0]) * m2[0][0] + (scalar * m1[2][1]) * m2[1][0] + (scalar * m1[2][2]) * m2[2][0];
+        res[2][1] = (scalar * m1[2][0]) * m2[0][1] + (scalar * m1[2][1]) * m2[1][1] + (scalar * m1[2][2]) * m2[2][1];
+        res[2][2] = (scalar * m1[2][0]) * m2[0][2] + (scalar * m1[2][1]) * m2[1][2] + (scalar * m1[2][2]) * m2[2][2];
 
         return res;
     }
@@ -662,5 +663,13 @@ public final class VectorMath {
         t[2][2] = m[2][2];
 
         return t;
+    }
+
+    public static double b2u(double b) {
+        return b / eightpi2;
+    }
+
+    public static double u2b(double u) {
+        return u * eightpi2;
     }
 }

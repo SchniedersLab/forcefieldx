@@ -21,6 +21,7 @@
 package ffx.xray;
 
 import static java.lang.Math.abs;
+import static java.lang.Math.exp;
 
 import java.util.logging.Logger;
 
@@ -351,7 +352,7 @@ public class CrystalStats {
 
         StringBuffer sb = new StringBuffer("\n");
         sb.append(String.format("  Fc to Fo scale: %4.2f\n",
-                refinementdata.model_k));
+                exp(0.25 * refinementdata.model_k)));
         sb.append("  Fc to Fo spline scale: ");
         for (int i = 0; i < n; i++) {
             sb.append(String.format("%4.2f ", scale[i]));

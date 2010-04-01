@@ -58,23 +58,23 @@ import ffx.numerics.Optimizable;
  * @author Tim Fenn<br>
  *
  * @see <a href="http://dx.doi.org/10.1107/S0021889804031474" target="_blank">
- * K. Cowtan, J. Appl. Cryst. (2005). 38, 193-198
+ * K. Cowtan, J. Appl. Cryst. (2005). 38, 193-198</a>
  *
  * @see <a href="http://dx.doi.org/10.1107/S0907444992007352" target="_blank">
- * A. T. Brunger, Acta Cryst. (1993). D49, 24-36
+ * A. T. Brunger, Acta Cryst. (1993). D49, 24-36</a>
  *
  * @see <a href="http://dx.doi.org/10.1107/S0907444996012255" target="_blank">
  * G. N. Murshudov, A. A. Vagin and E. J. Dodson,
- * Acta Cryst. (1997). D53, 240-255
+ * Acta Cryst. (1997). D53, 240-255</a>
  *
  * @see <a href="http://dx.doi.org/10.1107/S0108767388009183" target="_blank">
- * A. T. Brunger, Acta Cryst. (1989). A45, 42-50.
+ * A. T. Brunger, Acta Cryst. (1989). A45, 42-50.</a>
  *
  * @see <a href="http://dx.doi.org/10.1107/S0108767386099622" target="_blank">
- * R. J. Read, Acta Cryst. (1986). A42, 140-149.
+ * R. J. Read, Acta Cryst. (1986). A42, 140-149.</a>
  *
  * @see <a href="http://dx.doi.org/10.1107/S0108767396004370" target="_blank">
- * N. S. Pannu and R. J. Read, Acta Cryst. (1996). A52, 659-668.
+ * N. S. Pannu and R. J. Read, Acta Cryst. (1996). A52, 659-668.</a>
  */
 public class SigmaAEnergy implements Optimizable {
 
@@ -96,6 +96,7 @@ public class SigmaAEnergy implements Optimizable {
     private final int n;
     private final Crystal crystal;
     private final RefinementData refinementdata;
+    private final double dfscale;
     private final double fo[][];
     private final int freer[];
     private final double fc[][];
@@ -127,6 +128,11 @@ public class SigmaAEnergy implements Optimizable {
         this.n = refinementdata.nparams;
 
         // initialize params
+        assert (refinementdata.crs_fc != null);
+        double fftgrid = 2.0 * refinementdata.crs_fc.getXDim()
+                * refinementdata.crs_fc.getYDim()
+                * refinementdata.crs_fc.getZDim();
+        dfscale = (crystal.volume * crystal.volume) / fftgrid;
         recipt = transpose3(crystal.A);
         this.spline = new ReflectionSpline(reflectionlist, n);
     }
@@ -170,7 +176,7 @@ public class SigmaAEnergy implements Optimizable {
             double ebs = exp(-twopi2 * solvent_ueq * s);
             double ksebs = solvent_k * ebs;
             double kmems = exp(0.25 * u);
-            double km2 = kmems * kmems;
+            double km2 = exp(0.5 * u);
             double epsc = ih.epsilonc();
 
             // spline setup
@@ -213,11 +219,11 @@ public class SigmaAEnergy implements Optimizable {
             }
             double llk = cf * log(d) + (eo2 + sa2 * kect2) / d - inot;
 
-            // derivatives (scary)
-            double dfcr = (2.0 * sa2 * km2 * ect.re()) / d - ((2.0 * eo * sai * kmems * ect.re()) / (d * ect.abs())) * dinot;
-            double dfci = (2.0 * sa2 * km2 * ect.im()) / d - ((2.0 * eo * sai * kmems * ect.im()) / (d * ect.abs())) * dinot;
-            double dfsr = (2.0 * sa2 * km2 * ksebs * ect.re()) / d - ((2.0 * eo * sai * kmems * ksebs * ect.re()) / (d * ect.abs())) * dinot;
-            double dfsi = (2.0 * sa2 * km2 * ksebs * ect.im()) / d - ((2.0 * eo * sai * kmems * ksebs * ect.im()) / (d * ect.abs())) * dinot;
+            // derivatives
+            double dfcr = (2.0 * sa2 * km2 * ecscale * fct.re()) / d - ((2.0 * eo * sai * kmems * sqrt(ecscale) * fct.re()) / (d * fct.abs())) * dinot;
+            double dfci = (2.0 * sa2 * km2 * ecscale * fct.im()) / d - ((2.0 * eo * sai * kmems * sqrt(ecscale) * fct.im()) / (d * fct.abs())) * dinot;
+            double dfsr = (2.0 * sa2 * km2 * ecscale * ksebs * fct.re()) / d - ((2.0 * eo * sai * kmems * sqrt(ecscale) * ksebs * fct.re()) / (d * fct.abs())) * dinot;
+            double dfsi = (2.0 * sa2 * km2 * ecscale * ksebs * fct.im()) / d - ((2.0 * eo * sai * kmems * sqrt(ecscale) * ksebs * fct.im()) / (d * fct.abs())) * dinot;
             double dfsa = 2.0 * sai * kect2 / d - (2.0 * eo * kect.abs() / d) * dinot;
             double dfwa = epsc * (cf / d - (eo2 + sa2 * kect2) / d2 + (2.0 * eo * sai * kect.abs() / d2) * dinot);
 
@@ -262,10 +268,10 @@ public class SigmaAEnergy implements Optimizable {
             fofc2[i][0] = mfo2.minus(dfcc).times(1.0 / sqrt(eoscale)).re();
             fofc2[i][1] = mfo2.minus(dfcc).times(1.0 / sqrt(eoscale)).im();
             // partial LLK wrt Fc or Fs
-            dfc[i][0] = dfcr;
-            dfc[i][1] = dfci;
-            dfs[i][0] = dfsr;
-            dfs[i][1] = dfsi;
+            dfc[i][0] = dfcr * dfscale;
+            dfc[i][1] = dfci * dfscale;
+            dfs[i][0] = dfsr * dfscale;
+            dfs[i][1] = dfsi * dfscale;
 
             // only use freeR flagged reflections in overall sum
             if (refinementdata.isfreer(i)) {

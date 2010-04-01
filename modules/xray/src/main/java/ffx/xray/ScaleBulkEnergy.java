@@ -275,7 +275,7 @@ public class ScaleBulkEnergy implements Optimizable {
             }
         }
 
-        double sum = target(x, g, true, true);
+        double sum = target(x, g, true, false);
 
         if (optimizationScaling != null) {
             int len = x.length;

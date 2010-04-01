@@ -20,14 +20,16 @@
  */
 package ffx.xray;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import ffx.algorithms.Terminatable;
 import ffx.crystal.Crystal;
 import ffx.crystal.ReflectionList;
 import ffx.numerics.LBFGS;
 import ffx.numerics.LineSearch.LineSearchResult;
 import ffx.numerics.OptimizationListener;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import ffx.xray.SplineEnergy.Type;
 
 /**
  *
@@ -63,7 +65,12 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
         grad = new double[n];
         scaling = new double[n];
         for (int i = 0; i < n; i++) {
-            x[i] = 1.0;
+            if (type == Type.FOTOESQ
+                    || type == Type.FCTOESQ) {
+                x[i] = 0.1;
+            } else {
+                x[i] = 1.0;
+            }
             scaling[i] = 1.0;
         }
         splineenergy.setOptimizationScaling(scaling);
@@ -106,22 +113,25 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
         this.grms = grms;
         this.nSteps = iter;
 
+        /*
         if (iter == 0) {
-            logger.info("\n Limited Memory BFGS Quasi-Newton Optimization: \n\n");
-            logger.info(" Cycle       Energy      G RMS    Delta E   Delta X    Angle  Evals     Time\n");
+        logger.info("\n Limited Memory BFGS Quasi-Newton Optimization: \n\n");
+        logger.info(" Cycle       Energy      G RMS    Delta E   Delta X    Angle  Evals     Time\n");
         }
         if (info == null) {
-            logger.info(String.format("%6d %13.4g %11.4g\n",
-                    iter, f, grms));
+        logger.info(String.format("%6d %13.4g %11.4g\n",
+        iter, f, grms));
         } else {
-            if (info == LineSearchResult.Success) {
-                logger.info(String.format("%6d %13.4g %11.4g %11.4g %10.4g %9.2g %7d %8.3g\n",
-                        iter, f, grms, df, xrms, angle, nfun, seconds));
-            } else {
-                logger.info(String.format("%6d %13.4g %11.4g %11.4g %10.4g %9.2g %7d %8s\n",
-                        iter, f, grms, df, xrms, angle, nfun, info.toString()));
-            }
+        if (info == LineSearchResult.Success) {
+        logger.info(String.format("%6d %13.4g %11.4g %11.4g %10.4g %9.2g %7d %8.3g\n",
+        iter, f, grms, df, xrms, angle, nfun, seconds));
+        } else {
+        logger.info(String.format("%6d %13.4g %11.4g %11.4g %10.4g %9.2g %7d %8s\n",
+        iter, f, grms, df, xrms, angle, nfun, info.toString()));
         }
+        }
+         */
+
         if (terminate) {
             logger.info(" The optimization recieved a termination request.");
             // Tell the L-BFGS optimizer to terminate.

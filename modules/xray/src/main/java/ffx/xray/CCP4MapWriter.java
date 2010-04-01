@@ -25,12 +25,12 @@ import static java.lang.Math.sqrt;
 
 import java.io.DataOutputStream;
 import java.io.FileOutputStream;
+import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import ffx.crystal.Crystal;
-import ffx.utilities.ByteSwap;
 
 /**
  *
@@ -58,7 +58,6 @@ public class CCP4MapWriter {
 
     public void write(double data[]) {
         ByteOrder b = ByteOrder.nativeOrder();
-        Boolean swap = true;
         FileOutputStream fos;
         DataOutputStream dos;
 
@@ -102,13 +101,15 @@ public class CCP4MapWriter {
             if (logger.isLoggable(Level.INFO)) {
                 StringBuffer sb = new StringBuffer();
                 sb.append(String.format("\nwriting CCP4 map file: \"%s\"\n", filename));
+                sb.append(String.format("map mean: %g standard dev.: %g",
+                        mean, sd));
                 logger.info(sb.toString());
             }
 
             fos = new FileOutputStream(filename);
             dos = new DataOutputStream(fos);
 
-            byte bytes[] = new byte[80];
+            byte bytes[] = new byte[2048];
             int offset = 0;
 
             int imapdata;
@@ -116,105 +117,70 @@ public class CCP4MapWriter {
             String mapstr;
 
             // header
-            imapdata = swap ? ByteSwap.swap(nx) : nx;
-            dos.writeInt(imapdata);
-            imapdata = swap ? ByteSwap.swap(ny) : ny;
-            dos.writeInt(imapdata);
-            imapdata = swap ? ByteSwap.swap(nz) : nz;
-            dos.writeInt(imapdata);
+            ByteBuffer bb = ByteBuffer.wrap(bytes);
+            bb.order(b).putInt(nx);
+            bb.order(b).putInt(ny);
+            bb.order(b).putInt(nz);
 
             // mode (2 = reals, only one we accept)
-            imapdata = swap ? ByteSwap.swap(2) : 2;
-            dos.writeInt(imapdata);
+            bb.order(b).putInt(2);
 
-            imapdata = swap ? ByteSwap.swap(0) : 0;
             for (int i = 0; i < 3; i++) {
-                dos.writeInt(imapdata);
+                bb.order(b).putInt(0);
             }
-            imapdata = swap ? ByteSwap.swap(nx) : nx;
-            dos.writeInt(imapdata);
-            imapdata = swap ? ByteSwap.swap(ny) : ny;
-            dos.writeInt(imapdata);
-            imapdata = swap ? ByteSwap.swap(nz) : nz;
-            dos.writeInt(imapdata);
+            bb.order(b).putInt(nx);
+            bb.order(b).putInt(ny);
+            bb.order(b).putInt(nz);
 
-            fmapdata = (float) crystal.a;
-            fmapdata = swap ? ByteSwap.swap(fmapdata) : fmapdata;
-            dos.writeFloat(fmapdata);
-            fmapdata = (float) crystal.b;
-            fmapdata = swap ? ByteSwap.swap(fmapdata) : fmapdata;
-            dos.writeFloat(fmapdata);
-            fmapdata = (float) crystal.c;
-            fmapdata = swap ? ByteSwap.swap(fmapdata) : fmapdata;
-            dos.writeFloat(fmapdata);
-            fmapdata = (float) crystal.alpha;
-            fmapdata = swap ? ByteSwap.swap(fmapdata) : fmapdata;
-            dos.writeFloat(fmapdata);
-            fmapdata = (float) crystal.beta;
-            fmapdata = swap ? ByteSwap.swap(fmapdata) : fmapdata;
-            dos.writeFloat(fmapdata);
-            fmapdata = (float) crystal.gamma;
-            fmapdata = swap ? ByteSwap.swap(fmapdata) : fmapdata;
-            dos.writeFloat(fmapdata);
+            bb.order(b).putFloat((float) crystal.a);
+            bb.order(b).putFloat((float) crystal.b);
+            bb.order(b).putFloat((float) crystal.c);
+            bb.order(b).putFloat((float) crystal.alpha);
+            bb.order(b).putFloat((float) crystal.beta);
+            bb.order(b).putFloat((float) crystal.gamma);
 
-            imapdata = swap ? ByteSwap.swap(1) : 1;
-            dos.writeInt(imapdata);
-            imapdata = swap ? ByteSwap.swap(2) : 2;
-            dos.writeInt(imapdata);
-            imapdata = swap ? ByteSwap.swap(3) : 3;
-            dos.writeInt(imapdata);
+            bb.order(b).putInt(1);
+            bb.order(b).putInt(2);
+            bb.order(b).putInt(3);
 
-            fmapdata = (float) min;
-            fmapdata = swap ? ByteSwap.swap(fmapdata) : fmapdata;
-            dos.writeFloat(fmapdata);
-            fmapdata = (float) max;
-            fmapdata = swap ? ByteSwap.swap(fmapdata) : fmapdata;
-            dos.writeFloat(fmapdata);
-            fmapdata = (float) mean;
-            fmapdata = swap ? ByteSwap.swap(fmapdata) : fmapdata;
-            dos.writeFloat(fmapdata);
+            bb.order(b).putFloat((float) min);
+            bb.order(b).putFloat((float) max);
+            bb.order(b).putFloat((float) mean);
 
-            imapdata = swap ? ByteSwap.swap(crystal.spaceGroup.number)
-                    : crystal.spaceGroup.number;
-            dos.writeInt(imapdata);
+            bb.order(b).putInt(crystal.spaceGroup.number);
 
             // symmetry bytes - should set this up at some point
             // imapdata = swap ? ByteSwap.swap(320) : 320;
-            imapdata = swap ? ByteSwap.swap(0) : 0;
-            dos.writeInt(imapdata);
+            bb.order(b).putInt(0);
 
-            imapdata = swap ? ByteSwap.swap(0) : 0;
-            dos.writeInt(imapdata);
+            bb.order(b).putInt(0);
 
-            fmapdata = 0.0f;
-            fmapdata = swap ? ByteSwap.swap(fmapdata) : fmapdata;
             for (int i = 0; i < 12; i++) {
-                dos.writeFloat(fmapdata);
+                bb.order(b).putFloat(0.0f);
             }
 
             for (int i = 0; i < 15; i++) {
-                dos.writeInt(imapdata);
+                bb.order(b).putInt(0);
             }
+            dos.write(bytes, offset, 208);
+            bb.rewind();
 
             mapstr = new String("MAP ");
             dos.writeBytes(mapstr);
 
             // machine code: double, float, int, uchar
-            // 0x4144 for LE, 0x1111 for BE
-            if (b.equals(ByteOrder.LITTLE_ENDIAN)) {
-                imapdata = 0x4144;
+            // 0x4441 for LE, 0x1111 for BE
+            if (ByteOrder.nativeOrder().equals(ByteOrder.LITTLE_ENDIAN)) {
+                imapdata = 0x4441;
             } else {
                 imapdata = 0x1111;
             }
-            imapdata = swap ? ByteSwap.swap(imapdata) : imapdata;
-            dos.writeInt(imapdata);
+            bb.order(b).putInt(imapdata);
 
-            fmapdata = (float) sd;
-            fmapdata = swap ? ByteSwap.swap(fmapdata) : fmapdata;
-            dos.writeFloat(fmapdata);
+            bb.order(b).putFloat((float) sd);
 
-            imapdata = swap ? ByteSwap.swap(1) : 1;
-            dos.writeInt(imapdata);
+            bb.order(b).putInt(1);
+            dos.write(bytes, offset, 12);
 
             StringBuffer sb = new StringBuffer();
             sb.append("map data from ffx");
@@ -235,14 +201,18 @@ public class CCP4MapWriter {
             dos.writeBytes(sb.toString());
              */
 
+            bb.rewind();
             for (int k = 0; k < nz; k++) {
                 for (int j = 0; j < ny; j++) {
                     for (int i = 0; i < nx; i++) {
                         int index = 2 * (i + nx * (j + ny * k));
                         // int index = k * (ny * (nx + 2)) + j * (nx + 2) + i;
                         fmapdata = (float) data[index];
-                        fmapdata = swap ? ByteSwap.swap(fmapdata) : fmapdata;
-                        dos.writeFloat(fmapdata);
+                        bb.order(b).putFloat(fmapdata);
+                        if (!bb.hasRemaining()){
+                            dos.write(bytes);
+                            bb.rewind();
+                        }
                     }
                 }
             }
