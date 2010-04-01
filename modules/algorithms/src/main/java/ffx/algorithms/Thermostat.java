@@ -23,9 +23,10 @@ package ffx.algorithms;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import no.uib.cipr.matrix.DenseMatrix;
 
-import no.uib.cipr.matrix.Matrices;
+import org.apache.commons.math.linear.Array2DRowRealMatrix;
+import org.apache.commons.math.linear.LUDecompositionImpl;
+import org.apache.commons.math.linear.RealMatrix;
 
 /**
  * The abstract Thermostat class implements methods common to all thermostats
@@ -206,27 +207,24 @@ public abstract class Thermostat {
             yz += yi * zi * m;
         }
 
-        DenseMatrix inertia = new DenseMatrix(3, 3);
-        inertia.set(0, 0, yy + zz);
-        inertia.set(1, 0, -xy);
-        inertia.set(2, 0, -xz);
-        inertia.set(0, 1, -xy);
-        inertia.set(1, 1, xx + zz);
-        inertia.set(2, 1, -yz);
-        inertia.set(0, 2, -xz);
-        inertia.set(1, 2, -yz);
-        inertia.set(2, 2, xx + yy);
 
-        DenseMatrix I = Matrices.identity(3);
-        DenseMatrix AI = I.copy();
-        inertia.solve(I, AI);
-
-        xx = AI.get(0, 0);
-        yy = AI.get(1, 1);
-        zz = AI.get(2, 2);
-        xy = AI.get(0, 1);
-        xz = AI.get(0, 2);
-        yz = AI.get(1, 2);
+        RealMatrix inertia = new Array2DRowRealMatrix(3,3);
+        inertia.setEntry(0, 0, yy + zz);
+        inertia.setEntry(1, 0, -xy);
+        inertia.setEntry(2, 0, -xz);
+        inertia.setEntry(0, 1, -xy);
+        inertia.setEntry(1, 1, xx + zz);
+        inertia.setEntry(2, 1, -yz);
+        inertia.setEntry(0, 2, -xz);
+        inertia.setEntry(1, 2, -yz);
+        inertia.setEntry(2, 2, xx + yy);
+        inertia = new LUDecompositionImpl(inertia).getSolver().getInverse();
+        xx = inertia.getEntry(0, 0);
+        yy = inertia.getEntry(1, 1);
+        zz = inertia.getEntry(2, 2);
+        xy = inertia.getEntry(0, 1);
+        xz = inertia.getEntry(0, 2);
+        yz = inertia.getEntry(1, 2);
         double ox = am[0]*xx + am[1]*xy + am[2]*xz;
         double oy = am[0]*xy + am[1]*yy + am[2]*yz;
         double oz = am[0]*xz + am[1]*yz + am[2]*zz;

@@ -72,9 +72,6 @@ public class Launcher {
                     "commons-lang/commons-lang.jar",
                     "commons-logging/commons-logging.jar",
                     "commons-math/commons-math.jar",
-                    "no.uib.cipr/mtj.jar",
-                    "org.netlib/netlib-java.jar",
-                    "org.netlib/arpack.jar",
                     "org.apache.ant/ant.jar",
                     "org.apache.ant/ant-launcher.jar",
                     "macosx/AppleJavaExtensions.jar",
@@ -121,9 +118,7 @@ public class Launcher {
                                         "org.apache.commons.lang",
                                         "org.apache.commons.math",
                                         "edu.rit.pj",
-                                        "jcuda",
-                                        "no.uib.cipr.matrix"
-        };
+                                        "jcuda"};
         ClassLoader classLoader = new FFXClassLoader(
                 ffxBootstrapClass.getClassLoader(),
                 ffxBootstrapClass.getProtectionDomain(),

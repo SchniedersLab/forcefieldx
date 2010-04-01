@@ -127,7 +127,7 @@ public class SigmaAEnergy implements Optimizable {
         this.n = refinementdata.nparams;
 
         // initialize params
-        recipt = transpose3(crystal.recip);
+        recipt = transpose3(crystal.A);
         this.spline = new ReflectionSpline(reflectionlist, n);
     }
 
@@ -150,7 +150,7 @@ public class SigmaAEnergy implements Optimizable {
         for (int i = 0; i < 6; i++) {
             model_b[i] = refinementdata.model_b[i];
         }
-        double ustar[][] = mat3mat3(mat3symvec6(crystal.recip, model_b), recipt);
+        double ustar[][] = mat3mat3(mat3symvec6(crystal.A, model_b), recipt);
 
         double sa[] = new double[n];
         double wa[] = new double[n];

@@ -53,21 +53,6 @@
             <type>jar</type>
         </dependency>
         <dependency>
-            <groupId>no.uib.cipr</groupId>
-            <artifactId>mtj</artifactId>
-            <version>0.9.12</version>
-        </dependency>
-        <dependency>
-            <groupId>org.netlib</groupId>
-            <artifactId>netlib-java</artifactId>
-            <version>0.9.1</version>
-        </dependency>
-        <dependency>
-            <groupId>org.netlib</groupId>
-            <artifactId>arpack</artifactId>
-            <version>0.1</version>
-        </dependency>
-        <dependency>
             <groupId>commons-math</groupId>
             <artifactId>commons-math</artifactId>
             <type>jar</type>

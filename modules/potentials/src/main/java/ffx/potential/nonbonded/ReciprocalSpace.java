@@ -312,9 +312,9 @@ public class ReciprocalSpace {
     public void computeInducedDensity(double inducedDipole[][][],
                                       double inducedDipolep[][][]) {
         for (int i = 0; i < 3; i++) {
-            a[0][i] = fftX * crystal.recip[i][0];
-            a[1][i] = fftY * crystal.recip[i][1];
-            a[2][i] = fftZ * crystal.recip[i][2];
+            a[0][i] = fftX * crystal.A[i][0];
+            a[1][i] = fftY * crystal.A[i][1];
+            a[2][i] = fftZ * crystal.A[i][2];
         }
         spatialDensityRegion.setDensityLoop(polarizationDensityLoops);
         for (int i = 0; i < threadCount; i++) {
@@ -384,9 +384,9 @@ public class ReciprocalSpace {
     public void cartesianToFractionalDipoles(double inducedDipole[][][],
                                              double inducedDipolep[][][]) {
         for (int i = 0; i < 3; i++) {
-            a[0][i] = fftX * crystal.recip[i][0];
-            a[1][i] = fftY * crystal.recip[i][1];
-            a[2][i] = fftZ * crystal.recip[i][2];
+            a[0][i] = fftX * crystal.A[i][0];
+            a[1][i] = fftY * crystal.A[i][1];
+            a[2][i] = fftZ * crystal.A[i][2];
         }
         for (int iSymm = 0; iSymm < nSymm; iSymm++) {
             for (int i = 0; i < nAtoms; i++) {
@@ -492,15 +492,15 @@ public class ReciprocalSpace {
 
             public BSplineFillLoop() {
                 super();
-                r00 = crystal.recip[0][0];
-                r01 = crystal.recip[0][1];
-                r02 = crystal.recip[0][2];
-                r10 = crystal.recip[1][0];
-                r11 = crystal.recip[1][1];
-                r12 = crystal.recip[1][2];
-                r20 = crystal.recip[2][0];
-                r21 = crystal.recip[2][1];
-                r22 = crystal.recip[2][2];
+                r00 = crystal.A[0][0];
+                r01 = crystal.A[0][1];
+                r02 = crystal.A[0][2];
+                r10 = crystal.A[1][0];
+                r11 = crystal.A[1][1];
+                r12 = crystal.A[1][2];
+                r20 = crystal.A[2][0];
+                r21 = crystal.A[2][1];
+                r22 = crystal.A[2][2];
                 bSplineWork = new double[bSplineOrder][bSplineOrder];
             }
 
@@ -1190,15 +1190,15 @@ public class ReciprocalSpace {
         discreteFTMod(bsModX, bsarray, fftX, bSplineOrder);
         discreteFTMod(bsModY, bsarray, fftY, bSplineOrder);
         discreteFTMod(bsModZ, bsarray, fftZ, bSplineOrder);
-        double r00 = crystal.recip[0][0];
-        double r01 = crystal.recip[0][1];
-        double r02 = crystal.recip[0][2];
-        double r10 = crystal.recip[1][0];
-        double r11 = crystal.recip[1][1];
-        double r12 = crystal.recip[1][2];
-        double r20 = crystal.recip[2][0];
-        double r21 = crystal.recip[2][1];
-        double r22 = crystal.recip[2][2];
+        double r00 = crystal.A[0][0];
+        double r01 = crystal.A[0][1];
+        double r02 = crystal.A[0][2];
+        double r10 = crystal.A[1][0];
+        double r11 = crystal.A[1][1];
+        double r12 = crystal.A[1][2];
+        double r20 = crystal.A[2][0];
+        double r21 = crystal.A[2][1];
+        double r22 = crystal.A[2][2];
         int ntot = fftX * fftY * fftZ;
         double pterm = (PI / aewald) * (PI / aewald);
         double volterm = PI * crystal.volume;
@@ -1273,9 +1273,9 @@ public class ReciprocalSpace {
 
     private void transformMultipoleMatrix(double mpole_xy[][]) {
         for (int i = 0; i < 3; i++) {
-            a[0][i] = fftX * crystal.recip[i][0];
-            a[1][i] = fftY * crystal.recip[i][1];
-            a[2][i] = fftZ * crystal.recip[i][2];
+            a[0][i] = fftX * crystal.A[i][0];
+            a[1][i] = fftY * crystal.A[i][1];
+            a[2][i] = fftZ * crystal.A[i][2];
         }
         for (int i = 0; i < 10; i++) {
             for (int j = 0; j < 10; j++) {
@@ -1312,9 +1312,9 @@ public class ReciprocalSpace {
 
     private void transformFieldMatrix(double field_xy[][]) {
         for (int i = 0; i < 3; i++) {
-            a[i][0] = fftX * crystal.recip[i][0];
-            a[i][1] = fftY * crystal.recip[i][1];
-            a[i][2] = fftZ * crystal.recip[i][2];
+            a[i][0] = fftX * crystal.A[i][0];
+            a[i][1] = fftY * crystal.A[i][1];
+            a[i][2] = fftZ * crystal.A[i][2];
         }
         for (int i = 0; i < 10; i++) {
             for (int j = 0; j < 10; j++) {

@@ -1108,7 +1108,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                 gx *= nfftX;
                 gy *= nfftY;
                 gz *= nfftZ;
-                final double recip[][] = crystal.getUnitCell().recip;
+                final double recip[][] = crystal.getUnitCell().A;
                 final double dfx = recip[0][0] * gx + recip[0][1] * gy + recip[0][2] * gz;
                 final double dfy = recip[1][0] * gx + recip[1][1] * gy + recip[1][2] * gz;
                 final double dfz = recip[2][0] * gx + recip[2][1] * gy + recip[2][2] * gz;
@@ -1242,7 +1242,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                 gx *= nfftX;
                 gy *= nfftY;
                 gz *= nfftZ;
-                double recip[][] = crystal.getUnitCell().recip;
+                double recip[][] = crystal.getUnitCell().A;
                 final double dfx = recip[0][0] * gx + recip[0][1] * gy + recip[0][2] * gz;
                 final double dfy = recip[1][0] * gx + recip[1][1] * gy + recip[1][2] * gz;
                 final double dfz = recip[2][0] * gx + recip[2][1] * gy + recip[2][2] * gz;

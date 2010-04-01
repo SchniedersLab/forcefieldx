@@ -20,19 +20,10 @@
  */
 package ffx.crystal;
 
-import static java.lang.Math.abs;
-import static java.lang.Math.cos;
-import static java.lang.Math.PI;
-import static java.lang.Math.rint;
-import static java.lang.Math.sin;
-import static java.lang.Math.sqrt;
-import static java.lang.Math.toRadians;
+import static java.lang.Math.*;
 
-import static ffx.numerics.VectorMath.dot;
-import static ffx.numerics.VectorMath.cross;
 import static ffx.numerics.VectorMath.mat3mat3;
 import static ffx.numerics.VectorMath.mat3symvec6;
-import static ffx.numerics.VectorMath.scalar;
 import static ffx.numerics.VectorMath.transpose3;
 
 import java.util.logging.Logger;
@@ -90,21 +81,21 @@ public class Crystal {
      */
     public final double volume;
     /**
-     * Matrix to convert from Cartesian to fractional coordinates.
-     */
-    public final double recip[][] = new double[3][3];
-    /**
-     * Entries in the "recip" array.
-     */
-    public final double r00, r01, r02, r10, r11, r12, r20, r21, r22;
-    /**
      * Matric to convert from fractional to Cartesian coordinates.
      */
-    public final double cart[][] = new double[3][3];
+    public final double Ai[][] = new double[3][3];
     /**
      * Entries in the "cart" array.
      */
-    public final double c00, c01, c02, c10, c11, c12, c20, c21, c22;
+    public final double Ai00, Ai01, Ai02, Ai10, Ai11, Ai12, Ai20, Ai21, Ai22;
+    /**
+     * Matrix to convert from Cartesian to fractional coordinates.
+     */
+    public final double A[][];
+    /**
+     * Entries in the "recip" array.
+     */
+    public final double A00, A01, A02, A10, A11, A12, A20, A21, A22;
     /**
      * The direct space metric matrix.
      */
@@ -113,30 +104,7 @@ public class Crystal {
      * the reciprocal space metric matrix.
      */
     public final double Gstar[][];
-    /**
-     * Direct space lattice vector <b>a</b>.
-     */
-    private final double ad[] = new double[3];
-    /**
-     * Direct space lattice vector <b>b</b>.
-     */
-    private final double bd[] = new double[3];
-    /**
-     * Direct space lattice vector <b>c</b>.
-     */
-    private final double cd[] = new double[3];
-    /**
-     * Reciprocal space lattice vector <b>a*</b>.
-     */
-    private final double as[] = new double[3];
-    /**
-     * Reciprocal space lattice vector <b>b*</b>.
-     */
-    private final double bs[] = new double[3];
-    /**
-     * Reciprocal space lattice vector <b>c*</b>.
-     */
-    private final double cs[] = new double[3];
+
     private final double half_a;
     private final double half_b;
     private final double half_c;
@@ -322,74 +290,42 @@ public class Crystal {
                 break;
         }
 
-        // a basis vector.
-        ad[0] = a;
-        ad[1] = 0.0;
-        ad[2] = 0.0;
-        cart[0][0] = ad[0];
-        cart[0][1] = ad[1];
-        cart[0][2] = ad[2];
-        // b basis vector.
-        bd[0] = b * cos_gamma;
-        bd[1] = b * sin_gamma;
-        bd[2] = 0.0;
-        cart[1][0] = bd[0];
-        cart[1][1] = bd[1];
-        cart[1][2] = bd[2];
-        // c basis vector.
-        cd[0] = c * cos_beta;
-        cd[1] = c * beta_term;
-        cd[2] = c * gamma_term;
-        cart[2][0] = cd[0];
-        cart[2][1] = cd[1];
-        cart[2][2] = cd[2];
-        c00 = cart[0][0];
-        c10 = cart[1][0];
-        c20 = cart[2][0];
-        c01 = cart[0][1];
-        c11 = cart[1][1];
-        c21 = cart[2][1];
-        c02 = cart[0][2];
-        c12 = cart[1][2];
-        c22 = cart[2][2];
+        // a is the first row of A^(-1).
+        Ai[0][0] = a;
+        Ai[0][1] = 0.0;
+        Ai[0][2] = 0.0;
+        // b is the second row of A^(-1).
+        Ai[1][0] = b * cos_gamma;
+        Ai[1][1] = b * sin_gamma;
+        Ai[1][2] = 0.0;
+        // c is the third row of A^(-1).
+        Ai[2][0] = c * cos_beta;
+        Ai[2][1] = c * beta_term;
+        Ai[2][2] = c * gamma_term;
+        Ai00 = Ai[0][0];
+        Ai10 = Ai[1][0];
+        Ai20 = Ai[2][0];
+        Ai01 = Ai[0][1];
+        Ai11 = Ai[1][1];
+        Ai21 = Ai[2][1];
+        Ai02 = Ai[0][2];
+        Ai12 = Ai[1][2];
+        Ai22 = Ai[2][2];
 
-        // a* basis vector = b x c / volume.
-        cross(bd, cd, as);
-        scalar(as, 1.0 / volume, as);
-        recip[0][0] = as[0];
-        recip[1][0] = as[1];
-        recip[2][0] = as[2];
-        // b* basis vector = c x a / volume.
-        cross(cd, ad, bs);
-        scalar(bs, 1.0 / volume, bs);
-        recip[0][1] = bs[0];
-        recip[1][1] = bs[1];
-        recip[2][1] = bs[2];
-        // c* basis vector = a x b / volume.
-        cross(ad, bd, cs);
-        scalar(cs, 1.0 / volume, cs);
-        recip[0][2] = cs[0];
-        recip[1][2] = cs[1];
-        recip[2][2] = cs[2];
-        r00 = recip[0][0];
-        r01 = recip[0][1];
-        r02 = recip[0][2];
-        r10 = recip[1][0];
-        r11 = recip[1][1];
-        r12 = recip[1][2];
-        r20 = recip[2][0];
-        r21 = recip[2][1];
-        r22 = recip[2][2];
-
-        assert (abs(dot(ad, as) - 1.0) < tolerance);
-        assert (abs(dot(bd, bs) - 1.0) < tolerance);
-        assert (abs(dot(cd, cs) - 1.0) < tolerance);
-        assert (abs(dot(ad, bs)) < tolerance);
-        assert (abs(dot(ad, cs)) < tolerance);
-        assert (abs(dot(bd, as)) < tolerance);
-        assert (abs(dot(bd, cs)) < tolerance);
-        assert (abs(dot(cd, as)) < tolerance);
-        assert (abs(dot(cd, bs)) < tolerance);
+        // Invert A^-1 to get A
+        RealMatrix m = new Array2DRowRealMatrix(Ai, true);
+        m = new LUDecompositionImpl(m).getSolver().getInverse();
+        A = m.getData();
+        // The columns of A are the reciprocal basis vectors
+        A00 = A[0][0];
+        A01 = A[0][1];
+        A02 = A[0][2];
+        A10 = A[1][0];
+        A11 = A[1][1];
+        A12 = A[1][2];
+        A20 = A[2][0];
+        A21 = A[2][1];
+        A22 = A[2][2];
 
         G[0][0] = a * a;
         G[0][1] = a * b * cos_gamma;
@@ -402,7 +338,7 @@ public class Crystal {
         G[2][2] = c * c;
 
         // invert G to yield Gstar
-        RealMatrix m = new Array2DRowRealMatrix(G, true);
+        m = new Array2DRowRealMatrix(G, true);
         m = new LUDecompositionImpl(m).getSolver().getInverse();
         Gstar = m.getData();
     }
@@ -714,17 +650,17 @@ public class Crystal {
             double yc = y[i];
             double zc = z[i];
             // Convert to fractional coordinates.
-            double xi = xc * r00 + yc * r10 + zc * r20;
-            double yi = xc * r01 + yc * r11 + zc * r21;
-            double zi = xc * r02 + yc * r12 + zc * r22;
+            double xi = xc * A00 + yc * A10 + zc * A20;
+            double yi = xc * A01 + yc * A11 + zc * A21;
+            double zi = xc * A02 + yc * A12 + zc * A22;
             // Apply Symmetry Operator.
             double fx = rot00 * xi + rot01 * yi + rot02 * zi + t0;
             double fy = rot10 * xi + rot11 * yi + rot12 * zi + t1;
             double fz = rot20 * xi + rot21 * yi + rot22 * zi + t2;
             // Convert back to Cartesian coordinates.
-            mateX[i] = fx * c00 + fy * c10 + fz * c20;
-            mateY[i] = fx * c01 + fy * c11 + fz * c21;
-            mateZ[i] = fx * c02 + fy * c12 + fz * c22;
+            mateX[i] = fx * Ai00 + fy * Ai10 + fz * Ai20;
+            mateY[i] = fx * Ai01 + fy * Ai11 + fz * Ai21;
+            mateZ[i] = fx * Ai02 + fy * Ai12 + fz * Ai22;
         }
     }
 
@@ -761,17 +697,17 @@ public class Crystal {
         double yc = xyz[1];
         double zc = xyz[2];
         // Convert to fractional coordinates.
-        double xi = xc * r00 + yc * r10 + zc * r20;
-        double yi = xc * r01 + yc * r11 + zc * r21;
-        double zi = xc * r02 + yc * r12 + zc * r22;
+        double xi = xc * A00 + yc * A10 + zc * A20;
+        double yi = xc * A01 + yc * A11 + zc * A21;
+        double zi = xc * A02 + yc * A12 + zc * A22;
         // Apply Symmetry Operator.
         double fx = rot[0][0] * xi + rot[0][1] * yi + rot[0][2] * zi + trans[0];
         double fy = rot[1][0] * xi + rot[1][1] * yi + rot[1][2] * zi + trans[1];
         double fz = rot[2][0] * xi + rot[2][1] * yi + rot[2][2] * zi + trans[2];
         // Convert back to Cartesian coordinates.
-        mate[0] = fx * c00 + fy * c10 + fz * c20;
-        mate[1] = fx * c01 + fy * c11 + fz * c21;
-        mate[2] = fx * c02 + fy * c12 + fz * c22;
+        mate[0] = fx * Ai00 + fy * Ai10 + fz * Ai20;
+        mate[1] = fx * Ai01 + fy * Ai11 + fz * Ai21;
+        mate[2] = fx * Ai02 + fy * Ai12 + fz * Ai22;
     }
 
     /**
@@ -784,7 +720,6 @@ public class Crystal {
     public void applyFracSymOp(double xyz[], double mate[], SymOp symOp) {
         double rot[][] = symOp.rot;
         double trans[] = symOp.tr;
-        // Convert to fractional coordinates.
         double xi = xyz[0];
         double yi = xyz[1];
         double zi = xyz[2];
@@ -814,17 +749,17 @@ public class Crystal {
         double yc = xyz[1];
         double zc = xyz[2];
         // Convert to fractional coordinates.
-        double xi = xc * r00 + yc * r10 + zc * r20;
-        double yi = xc * r01 + yc * r11 + zc * r21;
-        double zi = xc * r02 + yc * r12 + zc * r22;
+        double xi = xc * A00 + yc * A10 + zc * A20;
+        double yi = xc * A01 + yc * A11 + zc * A21;
+        double zi = xc * A02 + yc * A12 + zc * A22;
         // Apply Symmetry Operator.
         double fx = rot[0][0] * xi + rot[0][1] * yi + rot[0][2] * zi;
         double fy = rot[1][0] * xi + rot[1][1] * yi + rot[1][2] * zi;
         double fz = rot[2][0] * xi + rot[2][1] * yi + rot[2][2] * zi;
         // Convert back to Cartesian coordinates.
-        mate[0] = fx * c00 + fy * c10 + fz * c20;
-        mate[1] = fx * c01 + fy * c11 + fz * c21;
-        mate[2] = fx * c02 + fy * c12 + fz * c22;
+        mate[0] = fx * Ai00 + fy * Ai10 + fz * Ai20;
+        mate[1] = fx * Ai01 + fy * Ai11 + fz * Ai21;
+        mate[2] = fx * Ai02 + fy * Ai12 + fz * Ai22;
     }
 
     /**
@@ -918,17 +853,17 @@ public class Crystal {
             double yc = y[i];
             double zc = z[i];
             // Convert to fractional coordinates.
-            double xi = xc * r00 + yc * r10 + zc * r20;
-            double yi = xc * r01 + yc * r11 + zc * r21;
-            double zi = xc * r02 + yc * r12 + zc * r22;
+            double xi = xc * A00 + yc * A10 + zc * A20;
+            double yi = xc * A01 + yc * A11 + zc * A21;
+            double zi = xc * A02 + yc * A12 + zc * A22;
             // Apply Symmetry Operator.
             double fx = rot00 * xi + rot01 * yi + rot02 * zi;
             double fy = rot10 * xi + rot11 * yi + rot12 * zi;
             double fz = rot20 * xi + rot21 * yi + rot22 * zi;
             // Convert back to Cartesian coordinates.
-            mateX[i] = fx * c00 + fy * c10 + fz * c20;
-            mateY[i] = fx * c01 + fy * c11 + fz * c21;
-            mateZ[i] = fx * c02 + fy * c12 + fz * c22;
+            mateX[i] = fx * Ai00 + fy * Ai10 + fz * Ai20;
+            mateY[i] = fx * Ai01 + fy * Ai11 + fz * Ai21;
+            mateZ[i] = fx * Ai02 + fy * Ai12 + fz * Ai22;
         }
     }
 
@@ -938,17 +873,17 @@ public class Crystal {
             double xc = x[i];
             double yc = y[i];
             double zc = z[i];
-            xf[i] = xc * r00 + yc * r10 + zc * r20;
-            yf[i] = xc * r01 + yc * r11 + zc * r21;
-            zf[i] = xc * r02 + yc * r12 + zc * r22;
+            xf[i] = xc * A00 + yc * A10 + zc * A20;
+            yf[i] = xc * A01 + yc * A11 + zc * A21;
+            zf[i] = xc * A02 + yc * A12 + zc * A22;
         }
     }
 
     public void toFractionalCoordinates(double x, double y,
             double z, double xf, double yf, double zf) {
-        xf = x * r00 + y * r10 + z * r20;
-        yf = x * r01 + y * r11 + z * r21;
-        zf = x * r02 + y * r12 + z * r22;
+        xf = x * A00 + y * A10 + z * A20;
+        yf = x * A01 + y * A11 + z * A21;
+        zf = x * A02 + y * A12 + z * A22;
     }
 
     public void toFractionalCoordinates(int n, double cart[], double frac[]) {
@@ -962,9 +897,9 @@ public class Crystal {
             double xc = cart[iX];
             double yc = cart[iY];
             double zc = cart[iZ];
-            frac[iX] = xc * r00 + yc * r10 + zc * r20;
-            frac[iY] = xc * r01 + yc * r11 + zc * r21;
-            frac[iZ] = xc * r02 + yc * r12 + zc * r22;
+            frac[iX] = xc * A00 + yc * A10 + zc * A20;
+            frac[iY] = xc * A01 + yc * A11 + zc * A21;
+            frac[iZ] = xc * A02 + yc * A12 + zc * A22;
         }
     }
 
@@ -972,9 +907,9 @@ public class Crystal {
         double xc = x[0];
         double yc = x[1];
         double zc = x[2];
-        xf[0] = xc * r00 + yc * r10 + zc * r20;
-        xf[1] = xc * r01 + yc * r11 + zc * r21;
-        xf[2] = xc * r02 + yc * r12 + zc * r22;
+        xf[0] = xc * A00 + yc * A10 + zc * A20;
+        xf[1] = xc * A01 + yc * A11 + zc * A21;
+        xf[2] = xc * A02 + yc * A12 + zc * A22;
 
     }
 
@@ -984,17 +919,17 @@ public class Crystal {
             double xi = xf[i];
             double yi = yf[i];
             double zi = zf[i];
-            x[i] = xi * c00 + yi * c10 + zi * c20;
-            y[i] = xi * c01 + yi * c11 + zi * c21;
-            z[i] = xi * c02 + yi * c12 + zi * c22;
+            x[i] = xi * Ai00 + yi * Ai10 + zi * Ai20;
+            y[i] = xi * Ai01 + yi * Ai11 + zi * Ai21;
+            z[i] = xi * Ai02 + yi * Ai12 + zi * Ai22;
         }
     }
 
     public void toCartesianCoordinates(double xf, double yf,
             double zf, double x, double y, double z) {
-        x = xf * c00 + yf * c10 + zf * c20;
-        y = xf * c01 + yf * c11 + zf * c21;
-        z = xf * c02 + yf * c12 + zf * c22;
+        x = xf * Ai00 + yf * Ai10 + zf * Ai20;
+        y = xf * Ai01 + yf * Ai11 + zf * Ai21;
+        z = xf * Ai02 + yf * Ai12 + zf * Ai22;
     }
 
     public void toCartesianCoordinates(int n, double frac[], double cart[]) {
@@ -1008,9 +943,9 @@ public class Crystal {
             double xf = frac[iX];
             double yf = frac[iY];
             double zf = frac[iZ];
-            cart[iX] = xf * c00 + yf * c10 + zf * c20;
-            cart[iY] = xf * c01 + yf * c11 + zf * c21;
-            cart[iZ] = xf * c02 + yf * c12 + zf * c22;
+            cart[iX] = xf * Ai00 + yf * Ai10 + zf * Ai20;
+            cart[iY] = xf * Ai01 + yf * Ai11 + zf * Ai21;
+            cart[iZ] = xf * Ai02 + yf * Ai12 + zf * Ai22;
         }
     }
 
@@ -1018,9 +953,9 @@ public class Crystal {
         double fx = xf[0];
         double fy = xf[1];
         double fz = xf[2];
-        x[0] = fx * c00 + fy * c10 + fz * c20;
-        x[1] = fx * c01 + fy * c11 + fz * c21;
-        x[2] = fx * c02 + fy * c12 + fz * c22;
+        x[0] = fx * Ai00 + fy * Ai10 + fz * Ai20;
+        x[1] = fx * Ai01 + fy * Ai11 + fz * Ai21;
+        x[2] = fx * Ai02 + fy * Ai12 + fz * Ai22;
     }
 
     public void toFractionalCoordinatesTINKER(double x[], double xf[]) {

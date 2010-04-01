@@ -30,11 +30,11 @@ package ffx.crystal;
 public class SymOp {
 
     /**
-     * The rotation matrix.
+     * The rotation matrix in fractional coordinates.
      */
     public final double[][] rot;
     /**
-     * The translation vector.
+     * The translation vector in fractional coordinates.
      */
     public final double[] tr;
 

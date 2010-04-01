@@ -99,13 +99,13 @@ public class ScaleBulkEnergy implements Optimizable {
         this.freer = refinementdata.freer;
         this.n = n;
 
-        recipt = transpose3(crystal.recip);
-        j11 = mat3mat3(mat3mat3(crystal.recip, u11), recipt);
-        j22 = mat3mat3(mat3mat3(crystal.recip, u22), recipt);
-        j33 = mat3mat3(mat3mat3(crystal.recip, u33), recipt);
-        j12 = mat3mat3(mat3mat3(crystal.recip, u12), recipt);
-        j13 = mat3mat3(mat3mat3(crystal.recip, u13), recipt);
-        j23 = mat3mat3(mat3mat3(crystal.recip, u23), recipt);
+        recipt = transpose3(crystal.A);
+        j11 = mat3mat3(mat3mat3(crystal.A, u11), recipt);
+        j22 = mat3mat3(mat3mat3(crystal.A, u22), recipt);
+        j33 = mat3mat3(mat3mat3(crystal.A, u33), recipt);
+        j12 = mat3mat3(mat3mat3(crystal.A, u12), recipt);
+        j13 = mat3mat3(mat3mat3(crystal.A, u13), recipt);
+        j23 = mat3mat3(mat3mat3(crystal.A, u23), recipt);
     }
 
     public double target(double x[], double g[],
@@ -133,7 +133,7 @@ public class ScaleBulkEnergy implements Optimizable {
                 model_b[i] = x[refinementdata.solvent_n + crystal.scale_b[i]];
             }
         }
-        double ustar[][] = mat3mat3(mat3symvec6(crystal.recip, model_b), recipt);
+        double ustar[][] = mat3mat3(mat3symvec6(crystal.A, model_b), recipt);
 
         r = rf = rfree = rfreef = sum = sumfo = 0.0;
         for (HKL ih : reflectionlist.hkllist) {
