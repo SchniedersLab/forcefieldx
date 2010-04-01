@@ -41,8 +41,7 @@ import jcuda.driver.*;
 import jcuda.jcufft.*;
 
 /**
- * Compute a 3D FFT or Convolution using a Java Native Interface
- * bridge to OpenCL.
+ * Compute a 3D Convolution using Java wrappers to the CUDA Driver API.
  *
  * @author Michal J. Schnieders
  * @since 1.0

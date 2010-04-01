@@ -188,6 +188,12 @@
             <type>jar</type>
         </dependency>
         <dependency>
+            <groupId>com.kenai.ffx</groupId>
+            <artifactId>xray</artifactId>
+            <version>${project.version}</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
             <groupId>org.codehaus.groovy</groupId>
             <artifactId>groovy-all</artifactId>
             <version>1.7.0</version>
