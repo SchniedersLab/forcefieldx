@@ -1,0 +1,180 @@
+REMARK coordinates from minimization and B-factor refinement                    
+REMARK refinement resolution: 7.62 - 0.43 A                                     
+REMARK starting r= 0.0630 free_r= 0.0672                                        
+REMARK final    r= 0.0515 free_r= 0.0555                                        
+REMARK rmsd bonds= 0.025712  rmsd angles=  2.56047                              
+REMARK B rmsd for bonded mainchain atoms=  0.003  target= 1.5                   
+REMARK B rmsd for bonded sidechain atoms=  0.005  target= 2.0                   
+REMARK B rmsd for angle mainchain atoms=  0.003  target= 2.0                    
+REMARK B rmsd for angle sidechain atoms=  0.005  target= 2.5                    
+REMARK target= mlf  final wa= 0.25                                              
+REMARK final rweight=  0.1000 (with wa= 0.25)                                   
+REMARK cycles= 3 coordinate steps= 10 B-factor steps= 5                         
+REMARK sg= P1 a= 13.096 b= 5.343 c= 15.926 alpha= 90.00 beta= 108.56 gamma= 90.0
+REMARK topology file 1  : CNS_TOPPAR:protein-allhdg.top                         
+REMARK topology file 2  : CNS_TOPPAR:dna-rna.top                                
+REMARK topology file 3  : CNS_TOPPAR:water.top                                  
+REMARK topology file 4  : CNS_TOPPAR:ion.top                                    
+REMARK parameter file 1  : CNS_TOPPAR:protein-allhdg.param                      
+REMARK parameter file 2  : CNS_TOPPAR:dna-rna_rep.param                         
+REMARK parameter file 3  : CNS_TOPPAR:water_rep.param                           
+REMARK parameter file 4  : CNS_TOPPAR:ion.param                                 
+REMARK molecular structure file: alamet.mtf                                     
+REMARK input coordinates: refine.pdb                                            
+REMARK reflection file= alamet.cns                                              
+REMARK ncs= none                                                                
+REMARK Anisotropic B-factor tensor Ucart of atomic model without isotropic compo
+REMARK   B11=  -0.052 B22=  -0.078 B33=   0.130                                 
+REMARK   B12=   0.034 B13=   0.124 B23=  -0.003                                 
+REMARK Isotropic component added to coordinate array B:    0.001                
+REMARK bulk solvent: probe radius=1, shrink value=1                             
+REMARK bulk solvent: density level= 0.1 e/A^3, B-factor= 1.125155E-03 A^2       
+REMARK reflections with |Fobs|/sigma_F < 0.0 rejected                           
+REMARK reflections with |Fobs| > 1000 * rms(Fobs) rejected                      
+REMARK fft gridding factor = 0.33, B factor offset = 0 A^2, Elimit = 19         
+REMARK theoretical total number of refl. in resol. range:     27830 ( 100.0 % ) 
+REMARK number of unobserved reflections (no entry or |F|=0):   6150 (  22.1 % ) 
+REMARK number of reflections rejected:                            0 (   0.0 % ) 
+REMARK total number of reflections used:                      21680 (  77.9 % ) 
+REMARK number of reflections in working set:                  19742 (  70.9 % ) 
+REMARK number of reflections in test set:                      1938 (   7.0 % ) 
+REMARK   3                                                                      
+REMARK   3 reduced chi version: redchi0.15                                      
+REMARK   3 refinement run date: 2010-03-26T20:02:56.485388Z                     
+REMARK   3                                                                      
+REMARK   3 -- signal to noise cutoff: -1 --                                     
+REMARK   3 # HKL: 22344 # estimated parameters: 504                             
+REMARK   3                                                                      
+REMARK   3 resol.        |# rfl(R) |# rfl(cv)|  # bin  | # miss  |%complete     
+REMARK   3   7.62   0.93 |    1529 |     151 |    1680 |    1093 |   60.58      
+REMARK   3   0.93   0.74 |    2255 |     220 |    2475 |     297 |   89.29      
+REMARK   3   0.74   0.64 |    2432 |     240 |    2672 |     104 |   96.25      
+REMARK   3   0.64   0.58 |    2438 |     240 |    2678 |      93 |   96.64      
+REMARK   3   0.58   0.54 |    2444 |     240 |    2684 |      88 |   96.83      
+REMARK   3   0.54   0.51 |    2453 |     241 |    2694 |      85 |   96.94      
+REMARK   3   0.51   0.48 |    2437 |     240 |    2677 |      91 |   96.71      
+REMARK   3   0.48   0.46 |    2439 |     240 |    2679 |      95 |   96.58      
+REMARK   3   0.46   0.45 |    1840 |     181 |    2021 |     752 |   72.88      
+REMARK   3   0.45   0.43 |      77 |       7 |      84 |    2685 |    3.03      
+REMARK   3   7.62   0.43 |   20344 |    2000 |   22344 |    5383 |   80.59      
+REMARK   3                                                                      
+REMARK   3 overall statistics by refinement round:                              
+REMARK   3 resol.        |    R    |  R free | chi R/n |chi Rf/n |  chi/n       
+REMARK   3   7.62   0.43 |   14.27 |   15.09 |   10.19 |   10.64 |   10.23      
+CRYST1   13.096    5.343   15.926  90.00 108.56  90.00 P 1                      
+REMARK FILENAME="/Data/xtal/examples/alamet/anisou/refine.pdb"                  
+REMARK DATE:21-Jun-2008  12:51:23       created by user: schnied                
+REMARK VERSION:1.2                                                              
+ATOM      1  CA  ALA A   1       6.371  -0.262  -5.117  1.00  2.34      A    C+0
+ANISOU    1  CA  ALA A   1      296    296    296      0      0      0  A    C+0
+ATOM      2  CB  ALA A   1       5.152  -0.161  -6.034  1.00  3.30      A    C+0
+ANISOU    2  CB  ALA A   1      418    418    418      0      0      0  A    C+0
+ATOM      3  C   ALA A   1       6.126   0.564  -3.857  1.00  0.87      A    C+0
+ANISOU    3  C   ALA A   1      110    110    110      0      0      0  A    C+0
+ATOM      4  O   ALA A   1       6.418   1.759  -3.804  1.00  1.08      A    O+0
+ANISOU    4  O   ALA A   1      137    137    137      0      0      0  A    O+0
+ATOM      5  N   ALA A   1       7.569   0.267  -5.819  1.00  0.82      A    N+0
+ANISOU    5  N   ALA A   1      104    104    104      0      0      0  A    N+0
+ATOM      6  N   MET A   2       5.527  -0.110  -2.871  1.00  0.92      A    N+0
+ANISOU    6  N   MET A   2      117    117    117      0      0      0  A    N+0
+ATOM      7  CA  MET A   2       5.082   0.522  -1.633  1.00  0.81      A    C+0
+ANISOU    7  CA  MET A   2      103    103    103      0      0      0  A    C+0
+ATOM      8  CB  MET A   2       3.702   1.164  -1.801  1.00  1.06      A    C+0
+ANISOU    8  CB  MET A   2      134    134    134      0      0      0  A    C+0
+ATOM      9  CG  MET A   2       2.583   0.138  -1.958  1.00  1.22      A    C+0
+ANISOU    9  CG  MET A   2      155    155    155      0      0      0  A    C+0
+ATOM     10  SD  MET A   2       0.984   0.979  -2.077  1.00  1.63      A    S+0
+ANISOU   10  SD  MET A   2      206    206    206      0      0      0  A    S+0
+ATOM     11  CE  MET A   2      -0.087  -0.471  -2.006  1.00  1.88      A    C+0
+ANISOU   11  CE  MET A   2      238    238    238      0      0      0  A    C+0
+ATOM     12  C   MET A   2       5.091  -0.518  -0.497  1.00  0.78      A    C+0
+ANISOU   12  C   MET A   2       99     99     99      0      0      0  A    C+0
+ATOM     13  O   MET A   2       4.785  -0.100   0.639  1.00  1.03      A    O+0
+ANISOU   13  O   MET A   2      130    130    130      0      0      0  A    O+0
+ATOM     14  OXT MET A   2       5.368  -1.707  -0.783  1.00  0.94      A    O  
+ANISOU   14  OXT MET A   2      119    119    119      0      0      0  A    O  
+ATOM     15  CA  ALA B   1      -6.348   0.242   5.137  1.00  0.50      B    C+0
+ANISOU   15  CA  ALA B   1       63     63     63      0      0      0  B    C+0
+ATOM     16  CB  ALA B   1      -5.133   0.136   6.053  1.00  0.67      B    C+0
+ANISOU   16  CB  ALA B   1       85     85     85      0      0      0  B    C+0
+ATOM     17  C   ALA B   1      -6.107  -0.572   3.869  1.00  0.82      B    C+0
+ANISOU   17  C   ALA B   1      104    104    104      0      0      0  B    C+0
+ATOM     18  O   ALA B   1      -6.368  -1.793   3.820  1.00  1.02      B    O+0
+ANISOU   18  O   ALA B   1      129    129    129      0      0      0  B    O+0
+ATOM     19  N   ALA B   1      -7.541  -0.267   5.843  1.00  0.91      B    N+0
+ANISOU   19  N   ALA B   1      115    115    115      0      0      0  B    N+0
+ATOM     20  N   MET B   2      -5.508   0.106   2.879  1.00  0.91      B    N+0
+ANISOU   20  N   MET B   2      115    115    115      0      0      0  B    N+0
+ATOM     21  CA  MET B   2      -5.065  -0.525   1.646  1.00  0.84      B    C+0
+ANISOU   21  CA  MET B   2      106    106    106      0      0      0  B    C+0
+ATOM     22  CB  MET B   2      -3.672  -1.168   1.795  1.00  0.97      B    C+0
+ANISOU   22  CB  MET B   2      123    123    123      0      0      0  B    C+0
+ATOM     23  CG  MET B   2      -2.558  -0.143   1.969  1.00  1.34      B    C+0
+ANISOU   23  CG  MET B   2      170    170    170      0      0      0  B    C+0
+ATOM     24  SD  MET B   2      -0.963  -0.994   2.090  1.00  1.62      B    S+0
+ANISOU   24  SD  MET B   2      205    205    205      0      0      0  B    S+0
+ATOM     25  CE  MET B   2       0.122   0.445   2.021  1.00  1.91      B    C+0
+ANISOU   25  CE  MET B   2      242    242    242      0      0      0  B    C+0
+ATOM     26  C   MET B   2      -5.080   0.504   0.514  1.00  0.84      B    C+0
+ANISOU   26  C   MET B   2      106    106    106      0      0      0  B    C+0
+ATOM     27  O   MET B   2      -4.803   0.107  -0.657  1.00  1.02      B    O+0
+ANISOU   27  O   MET B   2      129    129    129      0      0      0  B    O+0
+ATOM     28  OXT MET B   2      -5.352   1.706   0.802  1.00  1.07      B    O  
+ANISOU   28  OXT MET B   2      136    136    136      0      0      0  B    O  
+ATOM     29  CA  ALA C   1      -3.817  -2.932  -2.420  1.00  0.85      C    C+0
+ANISOU   29  CA  ALA C   1      108    108    108      0      0      0  C    C+0
+ATOM     30  CB  ALA C   1      -2.598  -2.837  -1.508  1.00  1.39      C    C+0
+ANISOU   30  CB  ALA C   1      176    176    176      0      0      0  C    C+0
+ATOM     31  C   ALA C   1      -3.572  -2.111  -3.672  1.00  0.88      C    C+0
+ANISOU   31  C   ALA C   1      111    111    111      0      0      0  C    C+0
+ATOM     32  O   ALA C   1      -3.856  -0.913  -3.726  1.00  1.08      C    O+0
+ANISOU   32  O   ALA C   1      137    137    137      0      0      0  C    O+0
+ATOM     33  N   ALA C   1      -5.007  -2.413  -1.711  1.00  0.89      C    N+0
+ANISOU   33  N   ALA C   1      113    113    113      0      0      0  C    N+0
+ATOM     34  N   MET C   2      -2.969  -2.779  -4.664  1.00  0.93      C    N+0
+ANISOU   34  N   MET C   2      118    118    118      0      0      0  C    N+0
+ATOM     35  CA  MET C   2      -2.527  -2.155  -5.903  1.00  0.83      C    C+0
+ANISOU   35  CA  MET C   2      105    105    105      0      0      0  C    C+0
+ATOM     36  CB  MET C   2      -1.142  -1.508  -5.740  1.00  1.03      C    C+0
+ANISOU   36  CB  MET C   2      130    130    130      0      0      0  C    C+0
+ATOM     37  CG  MET C   2      -0.026  -2.537  -5.573  1.00  1.18      C    C+0
+ANISOU   37  CG  MET C   2      149    149    149      0      0      0  C    C+0
+ATOM     38  SD  MET C   2       1.572  -1.697  -5.452  1.00  1.56      C    S+0
+ANISOU   38  SD  MET C   2      198    198    198      0      0      0  C    S+0
+ATOM     39  CE  MET C   2       2.645  -3.144  -5.529  1.00  1.93      C    C+0
+ANISOU   39  CE  MET C   2      244    244    244      0      0      0  C    C+0
+ATOM     40  C   MET C   2      -2.538  -3.188  -7.038  1.00  0.78      C    C+0
+ANISOU   40  C   MET C   2       99     99     99      0      0      0  C    C+0
+ATOM     41  O   MET C   2      -2.235  -2.779  -8.190  1.00  1.03      C    O+0
+ANISOU   41  O   MET C   2      130    130    130      0      0      0  C    O+0
+ATOM     42  OXT MET C   2      -2.816  -4.381  -6.750  1.00  1.05      C    O  
+ANISOU   42  OXT MET C   2      133    133    133      0      0      0  C    O  
+ATOM     43  CA  ALA D   1       3.831   2.914   2.423  1.00  0.82      D    C+0
+ANISOU   43  CA  ALA D   1      104    104    104      0      0      0  D    C+0
+ATOM     44  CB  ALA D   1       2.619   2.799   1.503  1.00  1.14      D    C+0
+ANISOU   44  CB  ALA D   1      144    144    144      0      0      0  D    C+0
+ATOM     45  C   ALA D   1       3.591   2.096   3.699  1.00  0.82      D    C+0
+ANISOU   45  C   ALA D   1      104    104    104      0      0      0  D    C+0
+ATOM     46  O   ALA D   1       3.860   0.876   3.747  1.00  1.04      D    O+0
+ANISOU   46  O   ALA D   1      132    132    132      0      0      0  D    O+0
+ATOM     47  N   ALA D   1       5.035   2.396   1.725  1.00  0.83      D    N+0
+ANISOU   47  N   ALA D   1      105    105    105      0      0      0  D    N+0
+ATOM     48  N   MET D   2       2.996   2.780   4.684  1.00  0.89      D    N+0
+ANISOU   48  N   MET D   2      113    113    113      0      0      0  D    N+0
+ATOM     49  CA  MET D   2       2.551   2.140   5.915  1.00  0.83      D    C+0
+ANISOU   49  CA  MET D   2      105    105    105      0      0      0  D    C+0
+ATOM     50  CB  MET D   2       1.162   1.503   5.761  1.00  1.01      D    C+0
+ANISOU   50  CB  MET D   2      128    128    128      0      0      0  D    C+0
+ATOM     51  CG  MET D   2       0.046   2.525   5.598  1.00  1.36      D    C+0
+ANISOU   51  CG  MET D   2      172    172    172      0      0      0  D    C+0
+ATOM     52  SD  MET D   2      -1.550   1.673   5.477  1.00  1.53      D    S+0
+ANISOU   52  SD  MET D   2      194    194    194      0      0      0  D    S+0
+ATOM     53  CE  MET D   2      -2.634   3.115   5.542  1.00  1.84      D    C+0
+ANISOU   53  CE  MET D   2      233    233    233      0      0      0  D    C+0
+ATOM     54  C   MET D   2       2.563   3.178   7.049  1.00  0.86      D    C+0
+ANISOU   54  C   MET D   2      109    109    109      0      0      0  D    C+0
+ATOM     55  O   MET D   2       2.283   2.770   8.203  1.00  1.09      D    O+0
+ANISOU   55  O   MET D   2      138    138    138      0      0      0  D    O+0
+ATOM     56  OXT MET D   2       2.834   4.375   6.763  1.00  0.98      D    O  
+ANISOU   56  OXT MET D   2      124    124    124      0      0      0  D    O  
+END

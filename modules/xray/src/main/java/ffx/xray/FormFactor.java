@@ -32,6 +32,7 @@ import static ffx.numerics.VectorMath.mat3mat3;
 import static ffx.numerics.VectorMath.scalarmat3mat3;
 import static ffx.numerics.VectorMath.vec3mat3;
 import static ffx.numerics.VectorMath.rsq;
+import static ffx.numerics.VectorMath.b2u;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
@@ -70,7 +71,6 @@ public class FormFactor {
 
     private static final Logger logger = Logger.getLogger(ffx.xray.FormFactor.class.getName());
     private static final double twopi2 = 2.0 * PI * PI;
-    private static final double eightpi2 = 8.0 * PI * PI;
     private static final double twopi32 = pow(2.0 * PI, -1.5);
     private static final double vx[] = {1.0, 0.0, 0.0};
     private static final double vy[] = {0.0, 1.0, 0.0};
@@ -358,7 +358,7 @@ public class FormFactor {
 
     public FormFactor(Atom atom, double badd, double xyz[]) {
         this.atom = atom;
-        this.uadd = badd / eightpi2;
+        this.uadd = b2u(badd);
         double ffactor[][] = new double[2][6];
         ffactor = getFormFactor("" + atom.getAtomType().atomicNumber);
         int i;
@@ -387,7 +387,6 @@ public class FormFactor {
             u[0][0][2] = u[0][2][0] = uaniso[4];
             u[0][1][2] = u[0][2][1] = uaniso[5];
 
-
             RealMatrix m = new Array2DRowRealMatrix(u[0], true);
             EigenDecompositionImpl evd = new EigenDecompositionImpl(m, 0.01);
             if (evd.getRealEigenvalue(0) <= 0.0
@@ -398,20 +397,20 @@ public class FormFactor {
                 sb.append("resetting ANISOU based on isotropic B: (" + biso + ")\n");
                 logger.warning(sb.toString());
 
-                uaniso[0] = uaniso[1] = uaniso[2] = biso / eightpi2;
+                uaniso[0] = uaniso[1] = uaniso[2] = b2u(biso);
                 uaniso[3] = uaniso[4] = uaniso[5] = 0.0;
                 atom.setAnisou(uaniso);
             }
         } else {
             uaniso = new double[6];
-            uaniso[0] = uaniso[1] = uaniso[2] = biso / eightpi2;
+            uaniso[0] = uaniso[1] = uaniso[2] = b2u(biso);
             uaniso[3] = uaniso[4] = uaniso[5] = 0.0;
         }
 
         for (i = 0; i < n; i++) {
-            u[i][0][0] = uaniso[0] + (b[i] / eightpi2) + uadd;
-            u[i][1][1] = uaniso[1] + (b[i] / eightpi2) + uadd;
-            u[i][2][2] = uaniso[2] + (b[i] / eightpi2) + uadd;
+            u[i][0][0] = uaniso[0] + b2u(b[i]) + uadd;
+            u[i][1][1] = uaniso[1] + b2u(b[i]) + uadd;
+            u[i][2][2] = uaniso[2] + b2u(b[i]) + uadd;
             u[i][0][1] = u[i][1][0] = uaniso[3];
             u[i][0][2] = u[i][2][0] = uaniso[4];
             u[i][1][2] = u[i][2][1] = uaniso[5];
@@ -424,7 +423,7 @@ public class FormFactor {
             ainv[i] = a[i] / sqrt(det);
             b[i] = pow(det, 0.33333333333);
             det = determinant3(uinv[i]);
-            binv[i] = pow(det, 0.3333333333);
+            binv[i] = pow(det, 0.33333333333);
         }
     }
 
@@ -489,7 +488,7 @@ public class FormFactor {
 
     public double rho(double xyz[]) {
         double dxyz[] = new double[3];
-        diff(xyz, this.xyz, dxyz);
+        diff(this.xyz, xyz, dxyz);
         double sum = 0.0;
 
         for (int i = 0; i < n; i++) {
@@ -500,7 +499,7 @@ public class FormFactor {
 
     public double rho_gauss(double xyz[], double sd) {
         double dxyz[] = new double[3];
-        diff(xyz, this.xyz, dxyz);
+        diff(this.xyz, xyz, dxyz);
         return rho_gauss(rsq(dxyz), sd);
     }
 
@@ -511,15 +510,13 @@ public class FormFactor {
 
     public void rho_grad(double xyz[], double scale) {
         double dxyz[] = new double[3];
-        diff(xyz, this.xyz, dxyz);
+        diff(this.xyz, xyz, dxyz);
         double r2 = rsq(dxyz);
         double aex;
         double jmat[][][] = new double[6][3][3];
         double gradp[] = {0.0, 0.0, 0.0, 0.0, 0.0};
         double gradu[] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-
         double rho;
-        double g[];
 
         for (int i = 0; i < n; i++) {
             aex = ainv[i] * exp(-0.5 * Crystal.quad_form(dxyz, uinv[i]));
@@ -548,22 +545,19 @@ public class FormFactor {
 
         // x, y, z
         atom.addToXYZGradient(
-                scale * occ * twopi32 * gradp[0],
-                scale * occ * twopi32 * gradp[1],
-                scale * occ * twopi32 * gradp[2]);
+                scale * occ * -twopi32 * gradp[0],
+                scale * occ * -twopi32 * gradp[1],
+                scale * occ * -twopi32 * gradp[2]);
         // occ
-        atom.setOccupancyGradient(scale * twopi32 * gradp[3]);
+        atom.addToOccupancyGradient(scale * twopi32 * gradp[3]);
         // Biso
-        atom.setTempFactorGradient(scale * occ * twopi32 * gradp[4]);
+        atom.addToTempFactorGradient(scale * b2u(occ * twopi32 * gradp[4]));
         // Uaniso
         if (atom.getAnisou() != null) {
-            g = atom.getAnisouGradient();
-            g[0] = scale * occ * twopi32 * gradu[0];
-            g[1] = scale * occ * twopi32 * gradu[1];
-            g[2] = scale * occ * twopi32 * gradu[2];
-            g[3] = scale * occ * twopi32 * gradu[3];
-            g[4] = scale * occ * twopi32 * gradu[4];
-            g[5] = scale * occ * twopi32 * gradu[5];
+            for (int i = 0; i < 6; i++) {
+                gradu[i] *= scale * occ * twopi32;
+            }
+            atom.addToAnisouGradient(gradu);
         }
     }
 

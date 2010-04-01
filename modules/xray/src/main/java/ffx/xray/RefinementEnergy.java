@@ -70,6 +70,7 @@ public class RefinementEnergy implements Optimizable {
         double e = 0.0;
         switch (refinementMode) {
             case COORDINATES:
+            case BFACTORS:
                 // Compute the energy and gradient for the chemical term.
                 e = potentialEnergy.energyAndGradient(x, g);
                 // compute new structure factors
@@ -87,10 +88,6 @@ public class RefinementEnergy implements Optimizable {
                 crs_fs.computeAtomicGradients(refinementdata.dfs,
                 refinementdata.freer, refinementdata.rfreeflag);
                  */
-
-                return e;
-            case BFACTORS:
-                // Compute the energy and gradient for the X-ray target.
 
                 return e;
             default:

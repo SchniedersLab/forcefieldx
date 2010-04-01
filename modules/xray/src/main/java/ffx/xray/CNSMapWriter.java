@@ -55,11 +55,8 @@ public class CNSMapWriter {
 
     public void write(double data[]) {
         try {
-            if (logger.isLoggable(Level.INFO)) {
-                StringBuffer sb = new StringBuffer();
-                sb.append(String.format("\nwriting CNS map file: \"%s\"\n", filename));
-                logger.info(sb.toString());
-            }
+            StringBuffer sb = new StringBuffer();
+            sb.append(String.format("\nwriting CNS map file: \"%s\"\n", filename));
 
             PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(filename)));
             double mean = 0.0;
@@ -103,7 +100,12 @@ public class CNSMapWriter {
 
             out.println("   -9999");
             out.printf("%12.4E%12.4E\n", mean, sd);
+            sb.append(String.format("map mean: %g standard dev.: %g",
+                    mean, sd));
             out.close();
+            if (logger.isLoggable(Level.INFO)) {
+                logger.info(sb.toString());
+            }
         } catch (Exception e) {
             String message = "Fatal exception evaluating structure factors.\n";
             logger.log(Level.SEVERE, message, e);

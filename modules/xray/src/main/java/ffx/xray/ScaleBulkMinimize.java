@@ -25,6 +25,7 @@ import java.util.logging.Logger;
 
 import ffx.algorithms.Terminatable;
 import ffx.crystal.Crystal;
+import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
 import ffx.numerics.LBFGS;
 import ffx.numerics.LineSearch.LineSearchResult;
@@ -89,6 +90,31 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         }
 
         bulksolventenergy.setOptimizationScaling(scaling);
+
+        setInitialScale();
+    }
+
+    public void setInitialScale() {
+        double fc[][] = refinementdata.fc;
+        double fo[][] = refinementdata.fsigf;
+
+        double e = bulksolventenergy.energyAndGradient(x, grad);
+        double fct, sumfofc, sumfc;
+        sumfofc = sumfc = 0.0;
+        for (HKL ih : reflectionlist.hkllist) {
+            int i = ih.index();
+            if (Double.isNaN(fc[i][0])
+                    || Double.isNaN(fo[i][0])
+                    || fo[i][1] <= 0.0) {
+                continue;
+            }
+
+            fct = refinementdata.fctot_f(i);
+            sumfofc += fo[i][0] * fct;
+            sumfc += fct * fct;
+        }
+
+        x[0] = Math.log(4.0 * sumfofc / sumfc);
     }
 
     public void ksbsGridOptimize() {
@@ -130,7 +156,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
             return;
         }
 
-        if (refinementdata.binarysolvent){
+        if (refinementdata.binarysolvent) {
             binaryradGridOptimize();
         } else {
             asdGridOptimize();

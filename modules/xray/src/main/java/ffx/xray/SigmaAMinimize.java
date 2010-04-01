@@ -73,9 +73,9 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
         for (int i = 0; i < refinementdata.nparams; i++) {
             // for optimizationscaling, best to move to 0.0
             x[i] = refinementdata.sigmaa[i] - 1.0;
-            scaling[i] = 1.0;
+            scaling[i] = 5.0;
             x[i + refinementdata.nparams] = refinementdata.sigmaw[i];
-            scaling[i + refinementdata.nparams] = 1.0;
+            scaling[i + refinementdata.nparams] = 15.0;
         }
 
         sigmaaenergy.setOptimizationScaling(scaling);
@@ -123,13 +123,17 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
                     - x[spline.i1() + refinementdata.nparams])
                     / nmean[spline.i1()];
         }
+
+        for (int i = 0; i < refinementdata.nparams; i++) {
+            x[i] -= x[i + refinementdata.nparams];
+        }
     }
 
     public double calculateLikelihood() {
         sigmaaenergy.energyAndGradient(x, grad);
         return refinementdata.llkr;
     }
-    
+
     public double calculateLikelihoodFree() {
         return sigmaaenergy.energyAndGradient(x, grad);
     }
