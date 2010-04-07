@@ -293,6 +293,7 @@ public class CrystalReciprocalSpace {
             densityGrid[i] = 0.0;
         }
 
+        int nfree=0;
         StringBuffer sb = new StringBuffer();
         long symtime = -System.nanoTime();
         int nsym = crystal.spaceGroup.symOps.size();
@@ -307,13 +308,13 @@ public class CrystalReciprocalSpace {
             // cross validation check!!!
             if (freer != null) {
                 if (freer[ih.index()] == flag) {
+                    nfree++;
                     continue;
                 }
             }
 
             c.re(fc[0]);
             c.im(fc[1]);
-
             // scale
             c = c.times(2.0 / fftscale);
 
@@ -358,6 +359,7 @@ public class CrystalReciprocalSpace {
             }
             long permanentDensityTime = System.nanoTime() - startTime;
             sb.append(String.format(" Grid Atomic Gradients: %8.3f\n", permanentDensityTime * toSeconds));
+            sb.append(String.format(" %d reflections ignored (cross validation set)", nfree));
         } catch (Exception e) {
             String message = "Exception computing atomic gradients.";
             logger.log(Level.SEVERE, message, e);

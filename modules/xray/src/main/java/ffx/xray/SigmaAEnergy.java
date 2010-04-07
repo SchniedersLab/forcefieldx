@@ -203,6 +203,7 @@ public class SigmaAEnergy implements Optimizable {
             double ect2 = pow(ect.abs(), 2.0);
             double kect2 = pow(kect.abs(), 2.0);
 
+            // FOM
             double d = 2.0 * sigeo * sigeo + epsc * wai;
             double d2 = d * d;
             double fomx = 2.0 * eo * sai * kect.abs() / d;
@@ -219,14 +220,7 @@ public class SigmaAEnergy implements Optimizable {
             }
             double llk = cf * log(d) + (eo2 + sa2 * kect2) / d - inot;
 
-            // derivatives
-            double dfcr = (2.0 * sa2 * km2 * ecscale * fct.re()) / d - ((2.0 * eo * sai * kmems * sqrt(ecscale) * fct.re()) / (d * fct.abs())) * dinot;
-            double dfci = (2.0 * sa2 * km2 * ecscale * fct.im()) / d - ((2.0 * eo * sai * kmems * sqrt(ecscale) * fct.im()) / (d * fct.abs())) * dinot;
-            double dfsr = (2.0 * sa2 * km2 * ecscale * ksebs * fct.re()) / d - ((2.0 * eo * sai * kmems * sqrt(ecscale) * ksebs * fct.re()) / (d * fct.abs())) * dinot;
-            double dfsi = (2.0 * sa2 * km2 * ecscale * ksebs * fct.im()) / d - ((2.0 * eo * sai * kmems * sqrt(ecscale) * ksebs * fct.im()) / (d * fct.abs())) * dinot;
-            double dfsa = 2.0 * sai * kect2 / d - (2.0 * eo * kect.abs() / d) * dinot;
-            double dfwa = epsc * (cf / d - (eo2 + sa2 * kect2) / d2 + (2.0 * eo * sai * kect.abs() / d2) * dinot);
-
+            // map coefficients
             double f = dinot * eo;
             double phi = kect.phase();
             fomphi[i][0] = dinot;
@@ -235,7 +229,7 @@ public class SigmaAEnergy implements Optimizable {
             ComplexNumber mfo2 = new ComplexNumber(2.0 * f * cos(phi), 2.0 * f * sin(phi));
             ComplexNumber dfcc = new ComplexNumber(sai * kect.abs() * cos(phi), sai * kect.abs() * sin(phi));
 
-            // map and derivative coefficients
+            // set up map coefficients
             fofc1[i][0] = 0.0;
             fofc1[i][1] = 0.0;
             fofc2[i][0] = 0.0;
@@ -267,6 +261,17 @@ public class SigmaAEnergy implements Optimizable {
             // 2mFo - DFc
             fofc2[i][0] = mfo2.minus(dfcc).times(1.0 / sqrt(eoscale)).re();
             fofc2[i][1] = mfo2.minus(dfcc).times(1.0 / sqrt(eoscale)).im();
+
+            // derivatives
+            double dfp1 = 2.0 * sa2 * km2 * ecscale;
+            double dfp2 = 2.0 * eo * sai * kmems * sqrt(ecscale);
+            double dfcr = (dfp1 * fct.re()) / d - ((dfp2 * fct.re()) / (d * fct.abs())) * dinot;
+            double dfci = (dfp1 * fct.im()) / d - ((dfp2 * fct.im()) / (d * fct.abs())) * dinot;
+            double dfsr = (dfp1 * ksebs * fct.re()) / d - ((dfp2 * ksebs * fct.re()) / (d * fct.abs())) * dinot;
+            double dfsi = (dfp1 * ksebs * fct.im()) / d - ((dfp2 * ksebs * fct.im()) / (d * fct.abs())) * dinot;
+            double dfsa = 2.0 * sai * kect2 / d - (2.0 * eo * kect.abs() / d) * dinot;
+            double dfwa = epsc * (cf / d - (eo2 + sa2 * kect2) / d2 + (2.0 * eo * sai * kect.abs() / d2) * dinot);
+
             // partial LLK wrt Fc or Fs
             dfc[i][0] = dfcr * dfscale;
             dfc[i][1] = dfci * dfscale;

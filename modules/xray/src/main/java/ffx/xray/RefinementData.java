@@ -35,7 +35,7 @@ import java.util.Random;
  */
 public class RefinementData {
 
-    private static final Logger logger = Logger.getLogger(CrystalStats.class.getName());
+    private static final Logger logger = Logger.getLogger(RefinementData.class.getName());
     public final int n;
     public final int scale_n;
     public final int solvent_n;
@@ -72,6 +72,7 @@ public class RefinementData {
     public double foesq[];
     // bulk solvent parameters
     public boolean binarysolvent;
+    public boolean gridsearch;
     public double solvent_binaryrad;
     public double solvent_a, solvent_sd;
     // scaling coefficients
@@ -88,6 +89,7 @@ public class RefinementData {
         int npar = properties.getInt("nbins", 10);
         boolean bulksolvent = properties.getBoolean("bulksolvent", true);
         binarysolvent = properties.getBoolean("binarysolvent", false);
+        gridsearch = properties.getBoolean("gridsearch", true);
 
         if (logger.isLoggable(Level.INFO)) {
             StringBuffer sb = new StringBuffer();
@@ -96,6 +98,7 @@ public class RefinementData {
             sb.append("  n bins: " + npar + "\n");
             sb.append("  bulk solvent: " + bulksolvent + "\n");
             sb.append("  binary solvent: " + binarysolvent + "\n");
+            sb.append("  solvent grid search: " + gridsearch + "\n");
             logger.info(sb.toString());
         }
 

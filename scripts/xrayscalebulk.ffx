@@ -1,0 +1,21 @@
+// Force Field X Imports
+import ffx.xray.XRayStructure;
+
+// input PDB file (data must also be present as filename.[mtz/cif/ent])
+String filename = "examples/1N7S.pdb";
+
+// output following scaling, sigmaA and likelihood calculation
+// String outputfile = "examples/1N7S_ffx.mtz";
+String outputfile = null;
+
+// Things below this line normally do not need to be changed.
+// ===============================================================================================
+
+open filename;
+XRayStructure structure = new XRayStructure(active, active.getProperties());
+structure.scalebulkfit();
+structure.printstats();
+
+if (outputfile != null){
+  structure.writedata(outputfile);
+}
