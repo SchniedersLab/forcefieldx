@@ -119,6 +119,7 @@ public class SpatialDensityRegion extends ParallelRegion {
     private final int gridSize;
     private double grid[] = null;
     private float floatGrid[] = null;
+    private double initValue = 0.0;
     private SpatialDensityLoop spatialDensityLoop[];
     private GridInitLoop gridInitLoop;
 
@@ -271,15 +272,19 @@ public class SpatialDensityRegion extends ParallelRegion {
         public void run(int lb, int ub) {
             if (floatGrid != null) {
                 for (int i = lb; i <= ub; i++) {
-                    floatGrid[i] = 0.0f;
+                    floatGrid[i] = (float) initValue;
                 }
             }
             if (grid != null) {
                 for (int i = lb; i <= ub; i++) {
-                    grid[i] = 0.0;
+                    grid[i] = initValue;
                 }
             }
         }
+    }
+
+    public void setInitValue(double initValue) {
+        this.initValue = initValue;
     }
 
     @Override

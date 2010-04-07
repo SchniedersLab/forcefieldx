@@ -222,12 +222,12 @@ public class ReciprocalSpace {
         }
         if (!cudaFFT) {
             complexFFT3D = new Complex3DParallel(fftX, fftY, fftZ, fftTeam, recipSchedule);
-            complexFFT3D.setRecip(createReciprocalLattice());
+            complexFFT3D.setRecip(generalizedInfluenceFunction());
             cudaFFT3D = null;
             cudaThread = null;
         } else {
             complexFFT3D = null;
-            double temp[] = createReciprocalLattice();
+            double temp[] = generalizedInfluenceFunction();
             for (int i = 0; i < complexFFT3DSpace / 2; i++) {
                 floatRecip[i] = (float) temp[i];
             }
@@ -636,7 +636,7 @@ public class ReciprocalSpace {
                     int i0 = igrd0;
                     for (int ith1 = 0; ith1 < bSplineOrder; ith1++) {
                         final int i = mod(++i0, fftX);
-                        final int ii = iComplex3D(i, j, k, fftX, fftY, fftZ);
+                        final int ii = iComplex3D(i, j, k, fftX, fftY);
                         final double splxi[] = splx[ith1];
                         final double dq = splxi[0] * term0 + splxi[1] * term1 + splxi[2] * term2;
                         if (cudaFFT) {
@@ -671,6 +671,9 @@ public class ReciprocalSpace {
         public void gridDensity(int iSymm, int n) {
             double ind[] = inducedDipole[iSymm][n];
             final double find[] = fractionalDipole[iSymm][n];
+
+
+
             find[0] = a[0][0] * ind[0] + a[0][1] * ind[1] + a[0][2] * ind[2];
             find[1] = a[1][0] * ind[0] + a[1][1] * ind[1] + a[1][2] * ind[2];
             find[2] = a[2][0] * ind[0] + a[2][1] * ind[1] + a[2][2] * ind[2];
@@ -715,7 +718,7 @@ public class ReciprocalSpace {
                     int i0 = igrd0;
                     for (int ith1 = 0; ith1 < bSplineOrder; ith1++) {
                         final int i = mod(++i0, fftX);
-                        final int ii = iComplex3D(i, j, k, fftX, fftY, fftZ);
+                        final int ii = iComplex3D(i, j, k, fftX, fftY);
                         final double splxi[] = splx[ith1];
                         final double dq = splxi[0] * term0 + splxi[1] * term1;
                         final double pq = splxi[0] * termp0 + splxi[1] * termp1;
@@ -825,7 +828,7 @@ public class ReciprocalSpace {
                             double t3 = 0.0;
                             for (int ith1 = 0; ith1 < bSplineOrder; ith1++) {
                                 final int i = mod(++i0, fftX);
-                                final int ii = iComplex3D(i, j, k, fftX, fftY, fftZ);
+                                final int ii = iComplex3D(i, j, k, fftX, fftY);
                                 double tq;
                                 if (cudaFFT) {
                                     tq = floatGrid[ii];
@@ -1029,7 +1032,7 @@ public class ReciprocalSpace {
                             double t3p = 0.0;
                             for (int ith1 = 0; ith1 < bSplineOrder; ith1++) {
                                 final int i = mod(++i0, fftX);
-                                final int ii = iComplex3D(i, j, k, fftX, fftY, fftZ);
+                                final int ii = iComplex3D(i, j, k, fftX, fftY);
                                 double tq, tp;
                                 if (cudaFFT) {
                                     tq = floatGrid[ii];
@@ -1167,29 +1170,26 @@ public class ReciprocalSpace {
         }
     }
 
-    private double[] createReciprocalLattice() {
+    private double[] generalizedInfluenceFunction() {
 
-        double reciprocalFactor[] = new double[complexFFT3DSpace / 2];
+        double influenceFunction[] = new double[complexFFT3DSpace / 2];
 
-        int maxfft = fftX;
-        if (fftY > maxfft) {
-            maxfft = fftY;
-        }
-        if (fftZ > maxfft) {
-            maxfft = fftZ;
-        }
+
         double bsModX[] = new double[fftX];
         double bsModY[] = new double[fftY];
         double bsModZ[] = new double[fftZ];
-        double bsarray[] = new double[maxfft];
+        int maxfft = max(max(fftX,fftY),fftZ);
+        double bsArray[] = new double[maxfft];
         double c[] = new double[bSplineOrder];
+
         bSpline(0.0, bSplineOrder, c);
         for (int i = 1; i < bSplineOrder + 1; i++) {
-            bsarray[i] = c[i - 1];
-        }
-        discreteFTMod(bsModX, bsarray, fftX, bSplineOrder);
-        discreteFTMod(bsModY, bsarray, fftY, bSplineOrder);
-        discreteFTMod(bsModZ, bsarray, fftZ, bSplineOrder);
+            bsArray[i] = c[i - 1];
+        }        
+        discreteFTMod(bsModX, bsArray, fftX, bSplineOrder);
+        discreteFTMod(bsModY, bsArray, fftY, bSplineOrder);
+        discreteFTMod(bsModZ, bsArray, fftZ, bSplineOrder);
+
         double r00 = crystal.A[0][0];
         double r01 = crystal.A[0][1];
         double r02 = crystal.A[0][2];
@@ -1200,55 +1200,55 @@ public class ReciprocalSpace {
         double r21 = crystal.A[2][1];
         double r22 = crystal.A[2][2];
         int ntot = fftX * fftY * fftZ;
-        double pterm = (PI / aewald) * (PI / aewald);
-        double volterm = PI * crystal.volume;
-        int nff = fftX * fftY;
-        int nf1 = (fftX + 1) / 2;
-        int nf2 = (fftY + 1) / 2;
-        int nf3 = (fftZ + 1) / 2;
+        double piTerm = (PI / aewald) * (PI / aewald);
+        double volTerm = PI * crystal.volume;
+        int nfXY = fftX * fftY;
+        int nX_2 = (fftX + 1) / 2;
+        int nY_2 = (fftY + 1) / 2;
+        int nZ_2 = (fftZ + 1) / 2;
+
         for (int i = 0; i < ntot - 1; i++) {
-            int k3 = (i + 1) / nff;
-            int j = i - k3 * nff + 1;
-            int k2 = j / fftX;
-            int k1 = j - k2 * fftX;
-            int m1 = k1;
-            int m2 = k2;
-            int m3 = k3;
-            if (k1 + 1 > nf1) {
-                m1 -= fftX;
+            int kZ = (i + 1) / nfXY;
+            int j = i - kZ * nfXY + 1;
+            int kY = j / fftX;
+            int kX = j - kY * fftX;
+            int h = kX;
+            int k = kY;
+            int l = kZ;
+            if (kX >= nX_2) {
+                h -= fftX;
             }
-            if (k2 + 1 > nf2) {
-                m2 -= fftY;
+            if (kY >= nY_2) {
+                k -= fftY;
             }
-            if (k3 + 1 > nf3) {
-                m3 -= fftZ;
+            if (kZ >= nZ_2) {
+                l -= fftZ;
             }
-            double s1 = r00 * m1 + r01 * m2 + r02 * m3;
-            double s2 = r10 * m1 + r11 * m2 + r12 * m3;
-            double s3 = r20 * m1 + r21 * m2 + r22 * m3;
-            double ssq = s1 * s1 + s2 * s2 + s3 * s3;
-            double term = -pterm * ssq;
+            double sX = r00 * h + r01 * k + r02 * l;
+            double sY = r10 * h + r11 * k + r12 * l;
+            double sZ = r20 * h + r21 * k + r22 * l;
+            double sSquared = sX * sX + sY * sY + sZ * sZ;
+            double term = -piTerm * sSquared;
             double expterm = 0.0;
             if (term > -50.0) {
-                double denom = ssq * volterm * bsModX[k1] * bsModY[k2] * bsModZ[k3];
+                double denom = sSquared * volTerm * bsModX[kX] * bsModY[kY] * bsModZ[kZ];
                 expterm = exp(term) / denom;
                 if (crystal.aperiodic()) {
-                    expterm *= (1.0 - cos(PI * crystal.a * sqrt(ssq)));
+                    expterm *= (1.0 - cos(PI * crystal.a * sqrt(sSquared)));
                 }
             }
-            int ii = iComplex3D(k1, k2, k3, fftX, fftY, fftZ) / 2;
-            reciprocalFactor[ii] = expterm;
-            //reciprocalFactor[ii] = 1.0;
+            int ii = iComplex3D(kX, kY, kZ, fftX, fftY) / 2;
+            influenceFunction[ii] = expterm;
         }
         /**
          *  Account for the zeroth grid point for a periodic system.
          */
-        reciprocalFactor[0] = 0.0;
+        influenceFunction[0] = 0.0;
         if (crystal.aperiodic()) {
-            reciprocalFactor[0] = 0.5 * PI / crystal.a;
+            influenceFunction[0] = 0.5 * PI / crystal.a;
         }
 
-        return reciprocalFactor;
+        return influenceFunction;
     }
 
     private void fractionalToCartesianPhi(double frac[][], double cart[][]) {
@@ -1355,8 +1355,8 @@ public class ReciprocalSpace {
     }
 
     /**
-     * Computes the modulus of the discrete Fourier fft of "bsarray" and stores
-     * it in "bsmod".
+     * Computes the modulus of the discrete Fourier Transform of
+     * "bsarray" and stores it in "bsmod".
      *
      * @param bsmod
      * @param bsarray

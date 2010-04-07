@@ -20,6 +20,7 @@
  */
 package ffx.crystal;
 
+import java.util.Vector;
 import static java.lang.Math.*;
 
 import static ffx.numerics.VectorMath.mat3mat3;
@@ -30,8 +31,10 @@ import java.util.logging.Logger;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.math.linear.Array2DRowRealMatrix;
+import org.apache.commons.math.linear.ArrayRealVector;
 import org.apache.commons.math.linear.LUDecompositionImpl;
 import org.apache.commons.math.linear.RealMatrix;
+import org.apache.commons.math.linear.RealVector;
 
 /**
  * The Crystal class encapsulates the lattice parameters and space group that
@@ -77,6 +80,10 @@ public class Crystal {
      */
     private final SpaceGroup.CrystalSystem crystalSystem;
     /**
+     * Copy of symmetry operators in Cartesian coordinates.
+     */
+    private final Vector<SymOp> symOpsCartesian;
+    /**
      * The crystal unit cell volume.
      */
     public final double volume;
@@ -118,7 +125,6 @@ public class Crystal {
     private final double cos_gamma;
     private final double beta_term;
     private final double gamma_term;
-    private final double tolerance = 1.0e-10;
     private boolean aperiodic;
     public int scale_flag;
     public int scale_b[] = new int[6];
@@ -341,6 +347,35 @@ public class Crystal {
         m = new Array2DRowRealMatrix(G, true);
         m = new LUDecompositionImpl(m).getSolver().getInverse();
         Gstar = m.getData();
+
+        symOpsCartesian = new Vector<SymOp>();
+        Vector<SymOp> symOps = spaceGroup.symOps;
+        int nSymm = symOps.size();
+        for (int i=0; i<nSymm; i++) {
+            SymOp symOp = symOps.get(i);
+            // rot_c = A^(-1).rot_f.A
+            m = new Array2DRowRealMatrix(symOp.rot);
+            RealMatrix toFrac = new Array2DRowRealMatrix(A);
+            RealMatrix toCart = new Array2DRowRealMatrix(Ai);
+            rot = m.preMultiply(toCart).multiply(toFrac).getData();
+            // tr_c = tr_f.A^(-1)
+            double tr[] = toCart.preMultiply(symOp.tr);
+            symOpsCartesian.add(new SymOp(rot, tr));
+        }
+
+        /**
+        double temp[] = {1.0/3.0, 1.0/7.0, 1.0/9.0};
+        double ret[] = {0,0,0};
+        for (int i=0; i < nSymm; i++) {
+            SymOp symOp = symOps.get(i);
+            SymOp symOpCart = symOpsCartesian.get(i);
+            applySymOp(temp, ret, symOp);
+            logger.info(String.format("Applied a fractional symmetry operator: %8.3f, %8.3f, %8.3f",
+                    ret[0], ret[1], ret[2]));
+            applyCartesianSymOp(temp, ret, symOpCart);
+            logger.info(String.format("Applied a Cartesian symmetry operator:  %8.3f, %8.3f, %8.3f",
+                    ret[0], ret[1], ret[2]));
+        } */
     }
 
     public static Crystal checkProperties(CompositeConfiguration properties) {
@@ -609,8 +644,8 @@ public class Crystal {
     /**
      * Apply a symmetry operator to an array of Cartesian coordinates. If the
      * arrays x, y or z are null or not of length n, the method returns
-     * immediately. If xs, ys or zs are null or not of length n, new arrays are
-     * allocated.
+     * immediately. If mateX, mateY or mateZ are null or not of length n,
+     * new arrays are allocated.
      *
      * @param n
      *            Number of atoms.
@@ -631,8 +666,15 @@ public class Crystal {
      */
     public void applySymOp(int n, double x[], double y[], double z[],
             double mateX[], double mateY[], double mateZ[], SymOp symOp) {
+        if (x == null || y == null || z == null) return;
+        if (x.length < n || y.length < n || z.length < n) return;
+        if (mateX == null || mateX.length < n) mateX = new double[n];
+        if (mateY == null || mateY.length < n) mateY = new double[n];
+        if (mateZ == null || mateZ.length < n) mateZ = new double[n];
+
         final double rot[][] = symOp.rot;
         final double trans[] = symOp.tr;
+
         final double rot00 = rot[0][0];
         final double rot10 = rot[1][0];
         final double rot20 = rot[2][0];
@@ -684,7 +726,26 @@ public class Crystal {
     }
 
     /**
-     * Apply a symmetry operator to one set of coordinates.
+     * Apply a fractional symmetry operator to one set of coordinates.
+     *
+     * @param xyz   Input coordinates.
+     * @param mate  Symmetry mate coordinates.
+     * @param symOp The symmetry operator.
+     */
+    public void applyCartesianSymOp(double xyz[], double mate[], SymOp symOp) {
+        double rot[][] = symOp.rot;
+        double trans[] = symOp.tr;
+        double xc = xyz[0];
+        double yc = xyz[1];
+        double zc = xyz[2];
+        // Apply Symmetry Operator.
+        mate[0] = rot[0][0] * xc + rot[0][1] * yc + rot[0][2] * zc + trans[0];
+        mate[1] = rot[1][0] * xc + rot[1][1] * yc + rot[1][2] * zc + trans[1];
+        mate[2] = rot[2][0] * xc + rot[2][1] * yc + rot[2][2] * zc + trans[2];
+    }
+
+    /**
+     * Apply a fractional symmetry operator to one set of coordinates.
      *
      * @param xyz   Input coordinates.
      * @param mate  Symmetry mate coordinates.

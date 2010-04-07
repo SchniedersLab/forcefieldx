@@ -1,18 +1,25 @@
 
 import ffx.potential.PotentialEnergy;
 
-// Turn off elec and vdw
-System.setProperty("mpoleterm","false");
-System.setProperty("polarizeterm","false");
-// System.setProperty("vdwterm","false");
-
 // Name of the file (PDB or XYZ) to evaluate the energy of.
-String filename = "examples/watersmall.xyz";
+String filename = "examples/alamet.xyz";
 open(filename); 
 potentialEnergy = new PotentialEnergy(active);
-potentialEnergy.energy(false,true);
+for (int i=0; i<10; i++) {
+   potentialEnergy.energy(false,true);
+}
 
-File minFile = new File(filename);
-minimize(0.1);
+filename = "examples/alamet-unitcell.xyz";
+open(filename); 
+potentialEnergy = new PotentialEnergy(active);
+for (int i=0; i<10; i++) {
+   potentialEnergy.energy(false,true);
+}
 
+filename = "examples/alamet-replicated.xyz";
+open(filename); 
+potentialEnergy = new PotentialEnergy(active);
+for (int i=0; i<10; i++) {
+   potentialEnergy.energy(false,true);
+}
 

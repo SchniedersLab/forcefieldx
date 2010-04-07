@@ -60,6 +60,8 @@ import ffx.potential.parameters.ForceField.ForceFieldBoolean;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.ForceField.ForceFieldString;
 import ffx.potential.parameters.ForceField.ForceFieldType;
+import org.apache.commons.math.linear.Array2DRowRealMatrix;
+import org.apache.commons.math.linear.RealMatrix;
 
 /**
  * This Particle Mesh Ewald class implements PME for the AMOEBA polarizable
@@ -3343,11 +3345,22 @@ public class ParticleMeshEwald implements LambdaInterface {
                                 } else {
                                     for (int k = 0; k < 3; k++) {
                                         double[] localQuadrupolek = tempQuadrupole[k];
-                                        quadrupolei[j] += rotmati[k] * (rotmatj[0] * localQuadrupolek[0] + rotmatj[1] * localQuadrupolek[1] + rotmatj[2] * localQuadrupolek[2]);
+                                        quadrupolei[j] += rotmati[k]
+                                                          * (rotmatj[0] * localQuadrupolek[0]
+                                                             + rotmatj[1] * localQuadrupolek[1]
+                                                             + rotmatj[2] * localQuadrupolek[2]);
                                     }
                                 }
                             }
                         }
+
+                        /** R.Q.R^t is correct.
+                        RealMatrix quad = new Array2DRowRealMatrix(tempQuadrupole);
+                        RealMatrix rot = new Array2DRowRealMatrix(rotmat);
+                        quad = rot.multiply(quad).multiply(rot.transpose());
+                        logger.info(format("%d %8.3f %8.3f", ii, quad.getEntry(0,0), quadrupole[0][0]));
+                        logger.info(format("%d %8.3f %8.3f\n", ii, quad.getEntry(0,1), quadrupole[0][1]));
+                         */
                         double scale = 1.0;
                         Atom a = atoms[ii];
                         if (a.applyLambda()) {
@@ -3395,16 +3408,6 @@ public class ParticleMeshEwald implements LambdaInterface {
         }
 
         private class ExpandInducedDipoleLoop extends IntegerForLoop {
-
-            // Temporary work arrays.
-            private final double tempInducedDipole[] = new double[3];
-            private final double tempInducedDipolep[] = new double[3];
-            private final double induced[] = new double[3];
-            private final double inducedp[] = new double[3];
-            // Extra padding to avert cache interference.
-            private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
-            private long pad8, pad9, pada, padb, padc, padd, pade, padf;
-
             @Override
             public IntegerSchedule schedule() {
                 return pairWiseSchedule;
@@ -3414,37 +3417,9 @@ public class ParticleMeshEwald implements LambdaInterface {
             public void run(int lb, int ub) {
                 for (int s = 1; s < nSymm; s++) {
                     SymOp symOp = crystal.spaceGroup.symOps.get(s);
-                    double rot[][] = symOp.rot;
                     for (int ii = lb; ii <= ub; ii++) {
-                        induced[0] = 0.0;
-                        induced[1] = 0.0;
-                        induced[2] = 0.0;
-                        inducedp[0] = 0.0;
-                        inducedp[1] = 0.0;
-                        inducedp[2] = 0.0;
-                        double in[] = inducedDipole[0][ii];
-                        tempInducedDipole[0] = in[0];
-                        tempInducedDipole[1] = in[1];
-                        tempInducedDipole[2] = in[2];
-                        in = inducedDipolep[0][ii];
-                        tempInducedDipolep[0] = in[0];
-                        tempInducedDipolep[1] = in[1];
-                        tempInducedDipolep[2] = in[2];
-                        for (int i = 0; i < 3; i++) {
-                            double[] rotmati = rot[i];
-                            for (int j = 0; j < 3; j++) {
-                                induced[i] += rotmati[j] * tempInducedDipole[j];
-                                inducedp[i] += rotmati[j] * tempInducedDipolep[j];
-                            }
-                        }
-                        double[] out = inducedDipole[s][ii];
-                        out[0] = induced[0];
-                        out[1] = induced[1];
-                        out[2] = induced[2];
-                        out = inducedDipolep[s][ii];
-                        out[0] = inducedp[0];
-                        out[1] = inducedp[1];
-                        out[2] = inducedp[2];
+                        crystal.applySymRot(inducedDipole[0][ii], inducedDipole[s][ii], symOp);
+                        crystal.applySymRot(inducedDipolep[0][ii], inducedDipolep[s][ii], symOp);
                     }
                 }
             }

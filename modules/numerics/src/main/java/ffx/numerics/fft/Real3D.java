@@ -180,7 +180,7 @@ public class Real3D {
         }
     }
 
-    public static int iReal3D(int i, int j, int k, int nX, int nY, int nZ) {
+    public static int iReal3D(int i, int j, int k, int nX, int nY) {
         int xSide = nX + 2;
         int xySlice = xSide * nY;
         return i + j * xSide + k * xySlice;

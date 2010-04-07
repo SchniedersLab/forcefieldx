@@ -328,14 +328,14 @@ public class CrystalReciprocalSpace {
                 int l = Crystal.mod(ij.l(), fftZ);
 
                 if (h < halfFFTX + 1) {
-                    final int ii = iComplex3D(h, k, l, fftX, fftY, fftZ);
+                    final int ii = iComplex3D(h, k, l, fftX, fftY);
                     densityGrid[ii] += c.phase_shift(shift).re();
                     densityGrid[ii + 1] += -c.phase_shift(shift).im();
                 } else {
                     h = (fftX - h) % fftX;
                     k = (fftY - k) % fftY;
                     l = (fftZ - l) % fftZ;
-                    final int ii = iComplex3D(h, k, l, fftX, fftY, fftZ);
+                    final int ii = iComplex3D(h, k, l, fftX, fftY);
                     densityGrid[ii] += c.phase_shift(shift).re();
                     densityGrid[ii + 1] += c.phase_shift(shift).im();
                 }
@@ -412,7 +412,7 @@ public class CrystalReciprocalSpace {
                 int l = Crystal.mod(ij.l(), fftZ);
 
                 if (h < halfFFTX + 1) {
-                    final int ii = iComplex3D(h, k, l, fftX, fftY, fftZ);
+                    final int ii = iComplex3D(h, k, l, fftX, fftY);
                     c.re(densityGrid[ii]);
                     c.im(densityGrid[ii + 1]);
                     fc[0] += c.phase_shift(shift).re();
@@ -421,7 +421,7 @@ public class CrystalReciprocalSpace {
                     h = (fftX - h) % fftX;
                     k = (fftY - k) % fftY;
                     l = (fftZ - l) % fftZ;
-                    final int ii = iComplex3D(h, k, l, fftX, fftY, fftZ);
+                    final int ii = iComplex3D(h, k, l, fftX, fftY);
                     c.re(densityGrid[ii]);
                     c.im(-densityGrid[ii + 1]);
                     fc[0] += c.phase_shift(shift).re();
@@ -477,7 +477,7 @@ public class CrystalReciprocalSpace {
         for (int k = 0; k < fftZ; k++) {
             for (int j = 0; j < fftY; j++) {
                 for (int i = 0; i < fftX; i++) {
-                    final int ii = iComplex3D(i, j, k, fftX, fftY, fftZ);
+                    final int ii = iComplex3D(i, j, k, fftX, fftY);
                     if (binarysolvent) {
                         densityGrid[ii] = 1.0 - densityGrid[ii];
                     } else {
@@ -523,7 +523,7 @@ public class CrystalReciprocalSpace {
                 int l = Crystal.mod(ij.l(), fftZ);
 
                 if (h < halfFFTX + 1) {
-                    final int ii = iComplex3D(h, k, l, fftX, fftY, fftZ);
+                    final int ii = iComplex3D(h, k, l, fftX, fftY);
                     c.re(densityGrid[ii]);
                     c.im(densityGrid[ii + 1]);
                     fc[0] += c.phase_shift(shift).re();
@@ -532,7 +532,7 @@ public class CrystalReciprocalSpace {
                     h = (fftX - h) % fftX;
                     k = (fftY - k) % fftY;
                     l = (fftZ - l) % fftZ;
-                    final int ii = iComplex3D(h, k, l, fftX, fftY, fftZ);
+                    final int ii = iComplex3D(h, k, l, fftX, fftY);
                     c.re(densityGrid[ii]);
                     c.im(-densityGrid[ii + 1]);
                     fc[0] += c.phase_shift(shift).re();
@@ -606,7 +606,7 @@ public class CrystalReciprocalSpace {
                         xf[2] = iz / (double) fftZ;
                         crystal.toCartesianCoordinates(xf, xc);
 
-                        final int ii = iComplex3D(gix, giy, giz, fftX, fftY, fftZ);
+                        final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
                         densityGrid[ii] += atomff.rho(xc);
                     }
                 }
@@ -659,7 +659,7 @@ public class CrystalReciprocalSpace {
                     for (int iz = ifrz - gridrad; iz <= ifrz + gridrad; iz++) {
                         int giz = Crystal.mod(iz, fftZ);
 
-                        final int ii = iComplex3D(gix, giy, giz, fftX, fftY, fftZ);
+                        final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
 
                         if (binarysolvent) {
                             densityGrid[ii] = 1.0;
@@ -743,7 +743,7 @@ public class CrystalReciprocalSpace {
                                 xf[2] = iz / (double) fftZ;
                                 crystal.toCartesianCoordinates(xf, xc);
 
-                                final int ii = iComplex3D(gix, giy, giz, fftX, fftY, fftZ);
+                                final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
                                 atomff.rho_grad(xc, densityGrid[ii]);
                             }
                         }
@@ -817,7 +817,7 @@ public class CrystalReciprocalSpace {
                                 xf[2] = iz / (double) fftZ;
                                 crystal.toCartesianCoordinates(xf, xc);
 
-                                final int ii = iComplex3D(gix, giy, giz, fftX, fftY, fftZ);
+                                final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
                                 atomff.rho_gauss_grad(xc, solvent_sd, densityGrid[ii]);
                             }
                         }

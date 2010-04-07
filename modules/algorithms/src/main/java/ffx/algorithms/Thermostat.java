@@ -207,7 +207,6 @@ public abstract class Thermostat {
             yz += yi * zi * m;
         }
 
-
         RealMatrix inertia = new Array2DRowRealMatrix(3,3);
         inertia.setEntry(0, 0, yy + zz);
         inertia.setEntry(1, 0, -xy);
