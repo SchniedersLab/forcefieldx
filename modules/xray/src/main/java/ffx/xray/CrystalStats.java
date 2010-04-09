@@ -30,6 +30,7 @@ import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
 import ffx.crystal.ReflectionSpline;
 import ffx.numerics.ComplexNumber;
+import ffx.xray.CrystalReciprocalSpace.SolventModel;
 
 /**
  *
@@ -372,9 +373,27 @@ public class CrystalStats {
                 refinementdata.model_b[5],
                 refinementdata.model_b[2]));
         if (refinementdata.solvent_n > 1) {
-            sb.append(String.format("  bulk solvent A: %g sd: %g\n",
-                    refinementdata.solvent_a,
-                    refinementdata.solvent_sd));
+            if (refinementdata.crs_fs != null) {
+                switch (refinementdata.crs_fs.solventmodel) {
+                    case (SolventModel.BINARY):
+                        sb.append("  bulk solvent model: binary mask\n");
+                        sb.append(String.format("  bulk solvent atom radius: %g\n",
+                                refinementdata.solvent_binaryrad));
+                        break;
+                    case (SolventModel.POLYNOMIAL):
+                        sb.append("  bulk solvent model: polynomial switch\n");
+                        sb.append(String.format("  bulk solvent atom radius: %g window size: %g\n",
+                                refinementdata.solvent_a,
+                                refinementdata.solvent_sd));
+                        break;
+                    case (SolventModel.GAUSSIAN):
+                        sb.append("  bulk solvent model: Gaussian\n");
+                        sb.append(String.format("  bulk solvent A: %g sd: %g\n",
+                                refinementdata.solvent_a,
+                                refinementdata.solvent_sd));
+                        break;
+                }
+            }
             sb.append(String.format("  bulk solvent scale: %g  B: %g\n\n",
                     refinementdata.solvent_k,
                     refinementdata.solvent_ueq * 8.0 * Math.PI * Math.PI));

@@ -32,6 +32,7 @@ import ffx.crystal.ReflectionList;
 import ffx.crystal.Resolution;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
+import ffx.xray.CrystalReciprocalSpace.SolventModel;
 
 /**
  *
@@ -54,6 +55,11 @@ public class XRayStructure {
 
     public XRayStructure(MolecularAssembly assembly,
             CompositeConfiguration properties) {
+        this(assembly, properties, SolventModel.POLYNOMIAL);
+    }
+
+    public XRayStructure(MolecularAssembly assembly,
+            CompositeConfiguration properties, int solventmodel) {
         // String name = assembly.getName();
         String name = assembly.getFile().getPath();
         name = name.substring(0, name.lastIndexOf(".pdb"));
@@ -91,7 +97,7 @@ public class XRayStructure {
             } else {
                 reflectionlist = ciffilter.getReflectionList(ciffile);
             }
-            if (reflectionlist == null){
+            if (reflectionlist == null) {
                 logger.severe("MTZ/CIF file does not contain full crystal information!");
             }
         } else {
@@ -112,19 +118,56 @@ public class XRayStructure {
 
         // set up FFT and run it
         ParallelTeam parallelTeam = new ParallelTeam();
-        crs_fc = new CrystalReciprocalSpace(reflectionlist,
-                atomarray, parallelTeam, parallelTeam, false);
-        crs_fc.computeDensity(refinementdata.fc);
+        crs_fc = new CrystalReciprocalSpace(reflectionlist, atomarray,
+                parallelTeam, parallelTeam, false);
         refinementdata.setCrystalReciprocalSpaceFc(crs_fc);
         crs_fs = new CrystalReciprocalSpace(reflectionlist, atomarray,
-                parallelTeam, parallelTeam, true, refinementdata.binarysolvent);
-        crs_fs.computeDensity(refinementdata.fs);
+                parallelTeam, parallelTeam, true, solventmodel);
         refinementdata.setCrystalReciprocalSpaceFs(crs_fs);
 
         crystalstats = new CrystalStats(reflectionlist, refinementdata);
     }
 
+    public void setSolventBinaryrad(double rad) {
+        crs_fs.setSolventBinaryrad(rad);
+        refinementdata.solvent_binaryrad = rad;
+    }
+
+    public void setSolventA(double a) {
+        crs_fs.setSolventA(a);
+        refinementdata.solvent_a = a;
+    }
+
+    public void setSolventsd(double sd) {
+        crs_fs.setSolventsd(sd);
+        refinementdata.solvent_sd = sd;
+    }
+
+    public void timings() {
+        logger.info("performing 10 Fc calculations for timing...");
+        for (int i = 0; i < 10; i++) {
+            crs_fc.computeDensity(refinementdata.fc);
+        }
+
+        logger.info("performing 10 Fs calculations for timing...");
+        for (int i = 0; i < 10; i++) {
+            crs_fs.computeDensity(refinementdata.fs);
+        }
+    }
+
     public void scalebulkfit() {
+        // reset some values
+        refinementdata.solvent_k = 0.33;
+        refinementdata.solvent_ueq = 50.0 / (8.0 * Math.PI * Math.PI);
+        refinementdata.model_k = 0.0;
+        for (int i = 0; i < 6; i++) {
+            refinementdata.model_b[i] = 0.0;
+        }
+
+        // run FFTs
+        crs_fc.computeDensity(refinementdata.fc);
+        crs_fs.computeDensity(refinementdata.fs);
+
         // initialize minimizers
         scalebulkminimize = new ScaleBulkMinimize(reflectionlist, refinementdata, crs_fs);
         splineminimize = new SplineMinimize(reflectionlist,
@@ -147,8 +190,16 @@ public class XRayStructure {
         scaled = true;
     }
 
+    public void printscaleandr() {
+        if (!scaled) {
+            scalebulkfit();
+        }
+        crystalstats.print_scalestats();
+        crystalstats.print_rstats();
+    }
+
     public void printstats() {
-        if (!scaled){
+        if (!scaled) {
             scalebulkfit();
         }
         crystalstats.print_scalestats();

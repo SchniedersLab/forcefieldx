@@ -60,7 +60,7 @@ public class FiniteDifferenceTest {
                         "ala met anisou",
                         "ffx/xray/structures/alamet.pdb",
                         "ffx/xray/structures/alamet.mtz"},
-                    {false,
+                    {true,
                         "NSF D2",
                         "ffx/xray/structures/1NSF.pdb",
                         "ffx/xray/structures/1NSF.mtz"}
@@ -147,14 +147,9 @@ public class FiniteDifferenceTest {
         crs.computeDensity(refinementdata.fc);
         refinementdata.setCrystalReciprocalSpaceFc(crs);
         crs = new CrystalReciprocalSpace(reflectionlist, atomarray,
-                parallelTeam, parallelTeam, true, refinementdata.binarysolvent);
+                parallelTeam, parallelTeam, true);
         crs.computeDensity(refinementdata.fs);
         refinementdata.setCrystalReciprocalSpaceFs(crs);
-
-        System.out.println("crystal res: " + reflectionlist.resolution.res_limit() + " " + reflectionlist.resolution.invressq_limit());
-        System.out.println("crystal vol: " + reflectionlist.crystal.volume);
-        System.out.println("crystal grid vol: "
-                + refinementdata.crs_fc.getXDim() * refinementdata.crs_fc.getYDim() * refinementdata.crs_fc.getZDim());
 
         ScaleBulkMinimize scalebulkminimize =
                 new ScaleBulkMinimize(reflectionlist, refinementdata, crs);
@@ -170,8 +165,6 @@ public class FiniteDifferenceTest {
                 refinementdata, refinementdata.spline,
                 SplineEnergy.Type.FOFC);
         splineminimize.minimize(7, 1e-5);
-
-        System.out.println("starting likelihood: " + refinementdata.llkr);
 
         CrystalStats crystalstats = new CrystalStats(reflectionlist, refinementdata);
         crystalstats.print_scalestats();

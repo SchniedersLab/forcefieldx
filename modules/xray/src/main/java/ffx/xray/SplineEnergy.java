@@ -46,7 +46,7 @@ import ffx.numerics.Optimizable;
  */
 public class SplineEnergy implements Optimizable {
 
-    public interface Type {
+    public static interface Type {
 
         public static final int FOFC = 1;
         public static final int F1F2 = 2;

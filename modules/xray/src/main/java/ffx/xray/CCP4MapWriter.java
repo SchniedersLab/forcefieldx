@@ -101,8 +101,8 @@ public class CCP4MapWriter {
             if (logger.isLoggable(Level.INFO)) {
                 StringBuffer sb = new StringBuffer();
                 sb.append(String.format("\nwriting CCP4 map file: \"%s\"\n", filename));
-                sb.append(String.format("map mean: %g standard dev.: %g",
-                        mean, sd));
+                sb.append(String.format("map min: %g max: %g mean: %g standard dev.: %g",
+                        min, max, mean, sd));
                 logger.info(sb.toString());
             }
 

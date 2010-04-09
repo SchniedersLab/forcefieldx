@@ -75,10 +75,8 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
             x[i] = refinementdata.sigmaa[i] - 1.0;
             scaling[i] = 1.0;
             x[i + refinementdata.nparams] = refinementdata.sigmaw[i];
-            scaling[i + refinementdata.nparams] = 20.0;
+            scaling[i + refinementdata.nparams] = 2.0;
         }
-
-        sigmaaenergy.setOptimizationScaling(scaling);
 
         // generate Es
         int type = SplineEnergy.Type.FCTOESQ;
@@ -98,6 +96,7 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
         for (int i = 0; i < refinementdata.nparams; i++) {
             nmean[i] = 0;
         }
+        double mean = 0.0, tot = 0.0;
         double fc[][] = refinementdata.fctot;
         double fo[][] = refinementdata.fsigf;
         for (HKL ih : reflectionlist.hkllist) {
@@ -118,15 +117,21 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
             double wi = pow(eo - ec, 2.0) / epsc;
 
             nmean[spline.i1()]++;
+            tot++;
 
             x[spline.i1() + refinementdata.nparams] += (wi
                     - x[spline.i1() + refinementdata.nparams])
                     / nmean[spline.i1()];
+            mean += (wi - mean) / tot;
         }
 
+        System.out.println("starting mean w: " + mean + " w scaling: " + 1.0 / mean);
         for (int i = 0; i < refinementdata.nparams; i++) {
             x[i] -= x[i + refinementdata.nparams];
+            scaling[i + refinementdata.nparams] = 1.0 / mean;
         }
+
+        sigmaaenergy.setOptimizationScaling(scaling);
     }
 
     public double calculateLikelihood() {
