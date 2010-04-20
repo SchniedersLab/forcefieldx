@@ -20,11 +20,7 @@
  */
 package ffx.xray;
 
-import ffx.crystal.Crystal;
-import ffx.crystal.HKL;
-import ffx.crystal.ReflectionList;
-import ffx.crystal.Resolution;
-import ffx.crystal.SpaceGroup;
+import org.apache.commons.configuration.CompositeConfiguration;
 
 import java.io.File;
 import java.io.DataInputStream;
@@ -37,6 +33,12 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import ffx.crystal.Crystal;
+import ffx.crystal.HKL;
+import ffx.crystal.ReflectionList;
+import ffx.crystal.Resolution;
+import ffx.crystal.SpaceGroup;
 
 /**
  *
@@ -104,6 +106,10 @@ public class MTZFilter {
     }
      */
     public ReflectionList getReflectionList(File mtzFile) {
+        return getReflectionList(mtzFile, null);
+    }
+
+    public ReflectionList getReflectionList(File mtzFile, CompositeConfiguration properties) {
         ByteOrder b = ByteOrder.nativeOrder();
         FileInputStream fis;
         DataInputStream dis;
@@ -183,7 +189,12 @@ public class MTZFilter {
 
         Crystal crystal = new Crystal(d.cell[0], d.cell[1], d.cell[2],
                 d.cell[3], d.cell[4], d.cell[5], SpaceGroup.spaceGroupNames[sgnum - 1]);
-        Resolution resolution = new Resolution(0.9999 * reshigh);
+
+        double sampling = 1.0 / 1.5;
+        if (properties != null) {
+            sampling = properties.getDouble("sampling", 1.0 / 1.5);
+        }
+        Resolution resolution = new Resolution(0.9999 * reshigh, sampling);
 
         return new ReflectionList(crystal, resolution);
     }

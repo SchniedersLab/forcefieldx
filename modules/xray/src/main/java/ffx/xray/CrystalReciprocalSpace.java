@@ -285,9 +285,10 @@ public class CrystalReciprocalSpace {
 
     public void deltaX(int n, double delta) {
         Vector<SymOp> symops = crystal.spaceGroup.symOps;
-        double xyz[] = atoms[n].getXYZ();
-        xyz[0] += delta;
+        double xyz[] = new double[3];
         double symxyz[] = new double[3];
+        atoms[n].getXYZ(xyz);
+        xyz[0] += delta;
         for (int i = 0; i < nSymm; i++) {
             crystal.applySymOp(xyz, symxyz, symops.get(i));
             coordinates[i][0][n] = symxyz[0];
@@ -296,9 +297,10 @@ public class CrystalReciprocalSpace {
 
     public void deltaY(int n, double delta) {
         Vector<SymOp> symops = crystal.spaceGroup.symOps;
-        double xyz[] = atoms[n].getXYZ();
-        xyz[1] += delta;
+        double xyz[] = new double[3];
         double symxyz[] = new double[3];
+        atoms[n].getXYZ(xyz);
+        xyz[1] += delta;
         for (int i = 0; i < nSymm; i++) {
             crystal.applySymOp(xyz, symxyz, symops.get(i));
             coordinates[i][1][n] = symxyz[1];
@@ -307,9 +309,10 @@ public class CrystalReciprocalSpace {
 
     public void deltaZ(int n, double delta) {
         Vector<SymOp> symops = crystal.spaceGroup.symOps;
-        double xyz[] = atoms[n].getXYZ();
-        xyz[2] += delta;
+        double xyz[] = new double[3];
         double symxyz[] = new double[3];
+        atoms[n].getXYZ(xyz);
+        xyz[2] += delta;
         for (int i = 0; i < nSymm; i++) {
             crystal.applySymOp(xyz, symxyz, symops.get(i));
             coordinates[i][2][n] = symxyz[2];
@@ -770,8 +773,11 @@ public class CrystalReciprocalSpace {
                 double xc[] = new double[3];
                 double xf[] = new double[3];
                 for (int n = lb; n <= ub; n++) {
-                    FormFactor atomff = new FormFactor(atoms[n], 0.0);
-                    crystal.toFractionalCoordinates(atoms[n].getXYZ(), uvw);
+                    double xyz[] = {coordinates[0][0][n],
+                        coordinates[0][1][n],
+                        coordinates[0][2][n]};
+                    FormFactor atomff = new FormFactor(atoms[n], 0.0, xyz);
+                    crystal.toFractionalCoordinates(xyz, uvw);
 
                     // Logic to loop within the cutoff box.
                     final double frx = fftX * uvw[0];
@@ -844,8 +850,11 @@ public class CrystalReciprocalSpace {
                 double xc[] = new double[3];
                 double xf[] = new double[3];
                 for (int n = lb; n <= ub; n++) {
-                    FormFactor atomff = new FormFactor(atoms[n], 0.0);
-                    crystal.toFractionalCoordinates(atoms[n].getXYZ(), uvw);
+                    double xyz[] = {coordinates[0][0][n],
+                        coordinates[0][1][n],
+                        coordinates[0][2][n]};
+                    FormFactor atomff = new FormFactor(atoms[n], 0.0, xyz);
+                    crystal.toFractionalCoordinates(xyz, uvw);
 
                     // Logic to loop within the cutoff box.
                     final double frx = fftX * uvw[0];

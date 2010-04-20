@@ -372,7 +372,7 @@ public class CrystalStats {
                 refinementdata.model_b[4],
                 refinementdata.model_b[5],
                 refinementdata.model_b[2]));
-        if (refinementdata.solvent_n > 1) {
+        if (refinementdata.bulksolvent) {
             if (refinementdata.crs_fs != null) {
                 switch (refinementdata.crs_fs.solventmodel) {
                     case (SolventModel.BINARY):
@@ -394,10 +394,12 @@ public class CrystalStats {
                         break;
                 }
             }
-            sb.append(String.format("  bulk solvent scale: %g  B: %g\n\n",
+            sb.append(String.format("  bulk solvent scale: %g  B: %g\n",
                     refinementdata.solvent_k,
                     refinementdata.solvent_ueq * 8.0 * Math.PI * Math.PI));
         }
+        sb.append(String.format("  likelihood: %g (free set: %g)\n\n",
+                refinementdata.llkr, refinementdata.llkf));
         logger.info(sb.toString());
     }
 

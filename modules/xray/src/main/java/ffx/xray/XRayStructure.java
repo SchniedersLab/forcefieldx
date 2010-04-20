@@ -44,13 +44,14 @@ public class XRayStructure {
     private final Crystal crystal;
     private final Resolution resolution;
     private final ReflectionList reflectionlist;
-    private final RefinementData refinementdata;
-    private final CrystalReciprocalSpace crs_fc;
-    private final CrystalReciprocalSpace crs_fs;
-    private ScaleBulkMinimize scalebulkminimize;
-    private SigmaAMinimize sigmaaminimize;
-    private SplineMinimize splineminimize;
-    private CrystalStats crystalstats;
+    final RefinementData refinementdata;
+    final CrystalReciprocalSpace crs_fc;
+    final CrystalReciprocalSpace crs_fs;
+    List<Atom> atomlist;
+    ScaleBulkMinimize scalebulkminimize;
+    SigmaAMinimize sigmaaminimize;
+    SplineMinimize splineminimize;
+    CrystalStats crystalstats;
     private boolean scaled = false;
 
     public XRayStructure(MolecularAssembly assembly,
@@ -93,9 +94,9 @@ public class XRayStructure {
         Resolution resolutioninit = Resolution.checkProperties(properties);
         if (crystalinit == null || resolutioninit == null) {
             if (mtzfile != null) {
-                reflectionlist = mtzfilter.getReflectionList(mtzfile);
+                reflectionlist = mtzfilter.getReflectionList(mtzfile, properties);
             } else {
-                reflectionlist = ciffilter.getReflectionList(ciffile);
+                reflectionlist = ciffilter.getReflectionList(ciffile, properties);
             }
             if (reflectionlist == null) {
                 logger.severe("MTZ/CIF file does not contain full crystal information!");
@@ -113,7 +114,7 @@ public class XRayStructure {
             ciffilter.readFile(ciffile, reflectionlist, refinementdata);
         }
 
-        List<Atom> atomlist = assembly.getAtomList();
+        atomlist = assembly.getAtomList();
         Atom atomarray[] = atomlist.toArray(new Atom[atomlist.size()]);
 
         // set up FFT and run it
@@ -121,9 +122,13 @@ public class XRayStructure {
         crs_fc = new CrystalReciprocalSpace(reflectionlist, atomarray,
                 parallelTeam, parallelTeam, false);
         refinementdata.setCrystalReciprocalSpaceFc(crs_fc);
-        crs_fs = new CrystalReciprocalSpace(reflectionlist, atomarray,
-                parallelTeam, parallelTeam, true, solventmodel);
-        refinementdata.setCrystalReciprocalSpaceFs(crs_fs);
+        if (refinementdata.bulksolvent) {
+            crs_fs = new CrystalReciprocalSpace(reflectionlist, atomarray,
+                    parallelTeam, parallelTeam, true, solventmodel);
+            refinementdata.setCrystalReciprocalSpaceFs(crs_fs);
+        } else {
+            crs_fs = null;
+        }
 
         crystalstats = new CrystalStats(reflectionlist, refinementdata);
     }
@@ -166,7 +171,9 @@ public class XRayStructure {
 
         // run FFTs
         crs_fc.computeDensity(refinementdata.fc);
-        crs_fs.computeDensity(refinementdata.fs);
+        if (refinementdata.bulksolvent) {
+            crs_fs.computeDensity(refinementdata.fs);
+        }
 
         // initialize minimizers
         scalebulkminimize = new ScaleBulkMinimize(reflectionlist, refinementdata, crs_fs);
@@ -174,7 +181,7 @@ public class XRayStructure {
                 refinementdata, refinementdata.spline, SplineEnergy.Type.FOFC);
 
         // minimize
-        if (refinementdata.solvent_n > 1
+        if (refinementdata.bulksolvent
                 && refinementdata.gridsearch) {
             scalebulkminimize.minimize(7, 1e-2);
             scalebulkminimize.GridOptimize();

@@ -596,9 +596,9 @@ public class FormFactor {
         double rho = exp(-r2 / (2.0 * sd2));
 
         double g[] = new double[3];
-        g[0] = scale * (rho * dxyz[0] / sd2);
-        g[1] = scale * (rho * dxyz[1] / sd2);
-        g[2] = scale * (rho * dxyz[2] / sd2);
+        g[0] = scale * (rho * -dxyz[0] / sd2);
+        g[1] = scale * (rho * -dxyz[1] / sd2);
+        g[2] = scale * (rho * -dxyz[2] / sd2);
 
         atom.addToXYZGradient(g[0], g[1], g[2]);
     }
