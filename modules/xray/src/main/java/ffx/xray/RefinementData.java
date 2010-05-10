@@ -71,7 +71,7 @@ public class RefinementData {
     public double fcesq[];
     public double foesq[];
     // bulk solvent parameters
-    public boolean binarysolvent;
+    public boolean bulksolvent;
     public boolean gridsearch;
     public double solvent_binaryrad;
     public double solvent_a, solvent_sd;
@@ -87,9 +87,8 @@ public class RefinementData {
 
         int rflag = properties.getInt("rfreeflag", 1);
         int npar = properties.getInt("nbins", 10);
-        boolean bulksolvent = properties.getBoolean("bulksolvent", true);
-        binarysolvent = properties.getBoolean("binarysolvent", false);
-        gridsearch = properties.getBoolean("gridsearch", true);
+        bulksolvent = properties.getBoolean("bulksolvent", true);
+        gridsearch = properties.getBoolean("gridsearch", false);
 
         if (logger.isLoggable(Level.INFO)) {
             StringBuffer sb = new StringBuffer();
@@ -97,15 +96,12 @@ public class RefinementData {
             sb.append("  R Free flag: " + rflag + "\n");
             sb.append("  n bins: " + npar + "\n");
             sb.append("  bulk solvent: " + bulksolvent + "\n");
-            sb.append("  binary solvent: " + binarysolvent + "\n");
             sb.append("  solvent grid search: " + gridsearch + "\n");
             logger.info(sb.toString());
         }
 
         this.n = reflectionlist.hkllist.size();
         this.scale_n = reflectionlist.crystal.scale_n;
-        this.solvent_a = 11.5;
-        this.solvent_sd = 0.75;
         this.solvent_n = bulksolvent ? 3 : 1;
         this.nparams = npar;
         this.rfreeflag = rflag;

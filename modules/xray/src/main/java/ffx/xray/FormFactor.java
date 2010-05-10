@@ -31,6 +31,7 @@ import static ffx.numerics.VectorMath.dot;
 import static ffx.numerics.VectorMath.mat3mat3;
 import static ffx.numerics.VectorMath.scalarmat3mat3;
 import static ffx.numerics.VectorMath.vec3mat3;
+import static ffx.numerics.VectorMath.r;
 import static ffx.numerics.VectorMath.rsq;
 import static ffx.numerics.VectorMath.b2u;
 
@@ -360,7 +361,7 @@ public class FormFactor {
         this.atom = atom;
         this.uadd = b2u(badd);
         double ffactor[][] = new double[2][6];
-        ffactor = getFormFactor("" + atom.getAtomType().atomicNumber);
+        ffactor = getFormFactor("" + atom.getAtomicNumber());
         int i;
         for (i = 0; i < 6; i++) {
             if (ffactor[0][i] < 0.01) {
@@ -508,6 +509,31 @@ public class FormFactor {
         return exp(-rsq / (2.0 * sd2));
     }
 
+    public double rho_poly(double xyz[], double arad, double w) {
+        double dxyz[] = new double[3];
+        diff(this.xyz, xyz, dxyz);
+        return rho_poly(r(dxyz), arad, w);
+    }
+
+    public double rho_poly(double ri, double arad, double w) {
+        double bi = arad - w;
+        double ei = arad + w;
+        if (ri <= bi) {
+            return 0.0;
+        }
+        if (ri >= ei) {
+            return 1.0;
+        }
+
+        double d = ri - arad + w;
+        double d2 = d * d;
+        double d3 = d2 * d;
+        double w2 = w * w;
+        double w3 = w2 * w;
+
+        return 0.75 * d2 / w2 - 0.25 * d3 / w3;
+    }
+
     public void rho_grad(double xyz[], double scale) {
         double dxyz[] = new double[3];
         diff(this.xyz, xyz, dxyz);
@@ -563,16 +589,46 @@ public class FormFactor {
 
     public void rho_gauss_grad(double xyz[], double sd, double scale) {
         double dxyz[] = new double[3];
-        diff(xyz, this.xyz, dxyz);
+        diff(this.xyz, xyz, dxyz);
         double r2 = rsq(dxyz);
         double sd2 = sd * sd;
 
         double rho = exp(-r2 / (2.0 * sd2));
 
         double g[] = new double[3];
-        g[0] = scale * -rho * dxyz[0] / sd2;
-        g[1] = scale * -rho * dxyz[1] / sd2;
-        g[2] = scale * -rho * dxyz[2] / sd2;
+        g[0] = scale * (rho * -dxyz[0] / sd2);
+        g[1] = scale * (rho * -dxyz[1] / sd2);
+        g[2] = scale * (rho * -dxyz[2] / sd2);
+
+        atom.addToXYZGradient(g[0], g[1], g[2]);
+    }
+
+    public void rho_poly_grad(double xyz[], double arad, double w, double scale) {
+        double dxyz[] = new double[3];
+        diff(this.xyz, xyz, dxyz);
+        double ri = r(dxyz);
+        double bi = arad - w;
+        double ei = arad + w;
+        if (ri <= bi) {
+            return;
+        }
+        if (ri >= ei) {
+            return;
+        }
+
+        double d = ri - arad + w;
+        double d2 = d * d;
+        double d3 = d2 * d;
+        double w2 = w * w;
+        double w3 = w2 * w;
+
+        double rho = 0.75 * d2 / w2 - 0.25 * d3 / w3;
+
+        double g[] = new double[3];
+        double dp = 1.5 * d / (w2 * ri) - 0.75 * d2 / (w3 * ri);
+        g[0] = (scale / rho) * (dp * dxyz[0]);
+        g[1] = (scale / rho) * (dp * dxyz[1]);
+        g[2] = (scale / rho) * (dp * dxyz[2]);
 
         atom.addToXYZGradient(g[0], g[1], g[2]);
     }

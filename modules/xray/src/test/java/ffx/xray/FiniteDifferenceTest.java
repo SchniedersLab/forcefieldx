@@ -56,11 +56,11 @@ public class FiniteDifferenceTest {
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
-                    {true,
+                    {false,
                         "ala met anisou",
                         "ffx/xray/structures/alamet.pdb",
                         "ffx/xray/structures/alamet.mtz"},
-                    {false,
+                    {true,
                         "NSF D2",
                         "ffx/xray/structures/1NSF.pdb",
                         "ffx/xray/structures/1NSF.mtz"}
@@ -147,14 +147,9 @@ public class FiniteDifferenceTest {
         crs.computeDensity(refinementdata.fc);
         refinementdata.setCrystalReciprocalSpaceFc(crs);
         crs = new CrystalReciprocalSpace(reflectionlist, atomarray,
-                parallelTeam, parallelTeam, true, refinementdata.binarysolvent);
+                parallelTeam, parallelTeam, true);
         crs.computeDensity(refinementdata.fs);
         refinementdata.setCrystalReciprocalSpaceFs(crs);
-
-        System.out.println("crystal res: " + reflectionlist.resolution.res_limit() + " " + reflectionlist.resolution.invressq_limit());
-        System.out.println("crystal vol: " + reflectionlist.crystal.volume);
-        System.out.println("crystal grid vol: "
-                + refinementdata.crs_fc.getXDim() * refinementdata.crs_fc.getYDim() * refinementdata.crs_fc.getZDim());
 
         ScaleBulkMinimize scalebulkminimize =
                 new ScaleBulkMinimize(reflectionlist, refinementdata, crs);
@@ -170,8 +165,6 @@ public class FiniteDifferenceTest {
                 refinementdata, refinementdata.spline,
                 SplineEnergy.Type.FOFC);
         splineminimize.minimize(7, 1e-5);
-
-        System.out.println("starting likelihood: " + refinementdata.llkr);
 
         CrystalStats crystalstats = new CrystalStats(reflectionlist, refinementdata);
         crystalstats.print_scalestats();
@@ -221,13 +214,13 @@ public class FiniteDifferenceTest {
             refinementdata.crs_fc.deltaX(i, delta);
             refinementdata.crs_fc.computeDensity(refinementdata.fc);
             llk1 = sigmaaminimize.calculateLikelihood();
-            refinementdata.crs_fc.deltaX(i, -2.0 * delta);
+            refinementdata.crs_fc.deltaX(i, -delta);
             refinementdata.crs_fc.computeDensity(refinementdata.fc);
             llk2 = sigmaaminimize.calculateLikelihood();
             fd = (llk1 - llk2) / (2.0 * delta);
             System.out.print(String.format("+x: %g -x: %g dfx: %g fdx: %g ratio: %g\n",
                     llk1 - llk0, llk2 - llk0, gxyz[0], fd, gxyz[0] / fd));
-            refinementdata.crs_fc.deltaX(i, delta);
+            refinementdata.crs_fc.deltaX(i, 0.0);
 
             nmean++;
             mean += (gxyz[0] / fd - mean) / nmean;
@@ -235,13 +228,13 @@ public class FiniteDifferenceTest {
             refinementdata.crs_fc.deltaY(i, delta);
             refinementdata.crs_fc.computeDensity(refinementdata.fc);
             llk1 = sigmaaminimize.calculateLikelihood();
-            refinementdata.crs_fc.deltaY(i, -2.0 * delta);
+            refinementdata.crs_fc.deltaY(i, -delta);
             refinementdata.crs_fc.computeDensity(refinementdata.fc);
             llk2 = sigmaaminimize.calculateLikelihood();
             fd = (llk1 - llk2) / (2.0 * delta);
             System.out.print(String.format("+y: %g -y: %g dfy: %g fdy: %g ratio: %g\n",
                     llk1 - llk0, llk2 - llk0, gxyz[1], fd, gxyz[1] / fd));
-            refinementdata.crs_fc.deltaY(i, delta);
+            refinementdata.crs_fc.deltaY(i, 0.0);
 
             nmean++;
             mean += (gxyz[1] / fd - mean) / nmean;
@@ -249,13 +242,13 @@ public class FiniteDifferenceTest {
             refinementdata.crs_fc.deltaZ(i, delta);
             refinementdata.crs_fc.computeDensity(refinementdata.fc);
             llk1 = sigmaaminimize.calculateLikelihood();
-            refinementdata.crs_fc.deltaZ(i, -2.0 * delta);
+            refinementdata.crs_fc.deltaZ(i, -delta);
             refinementdata.crs_fc.computeDensity(refinementdata.fc);
             llk2 = sigmaaminimize.calculateLikelihood();
             fd = (llk1 - llk2) / (2.0 * delta);
             System.out.print(String.format("+z: %g -z: %g dfz: %g fdz: %g ratio: %g\n",
                     llk1 - llk0, llk2 - llk0, gxyz[2], fd, gxyz[2] / fd));
-            refinementdata.crs_fc.deltaZ(i, delta);
+            refinementdata.crs_fc.deltaZ(i, 0.0);
 
             nmean++;
             mean += (gxyz[2] / fd - mean) / nmean;

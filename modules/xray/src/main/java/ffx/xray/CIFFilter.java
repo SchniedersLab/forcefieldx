@@ -20,6 +20,8 @@
  */
 package ffx.xray;
 
+import org.apache.commons.configuration.CompositeConfiguration;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -69,6 +71,10 @@ public class CIFFilter {
     }
 
     public ReflectionList getReflectionList(File cifFile) {
+        return getReflectionList(cifFile, null);
+    }
+
+    public ReflectionList getReflectionList(File cifFile, CompositeConfiguration properties) {
         try {
             BufferedReader br = new BufferedReader(new FileReader(cifFile));
 
@@ -147,7 +153,11 @@ public class CIFFilter {
 
         Crystal crystal = new Crystal(cell[0], cell[1], cell[2],
                 cell[3], cell[4], cell[5], SpaceGroup.spaceGroupNames[sgnum - 1]);
-        Resolution resolution = new Resolution(0.9999 * reshigh);
+        double sampling = 1.0 / 1.5;
+        if (properties != null) {
+            sampling = properties.getDouble("sampling", 1.0 / 1.5);
+        }
+        Resolution resolution = new Resolution(0.9999 * reshigh, sampling);
 
         ReflectionList reflectionlist = new ReflectionList(crystal, resolution);
         return reflectionlist;

@@ -30,6 +30,7 @@ import ffx.crystal.ReflectionList;
 import ffx.numerics.LBFGS;
 import ffx.numerics.LineSearch.LineSearchResult;
 import ffx.numerics.OptimizationListener;
+import ffx.xray.CrystalReciprocalSpace.SolventModel;
 
 /**
  *
@@ -156,7 +157,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
             return;
         }
 
-        if (refinementdata.binarysolvent) {
+        if (crs.solventmodel == SolventModel.BINARY) {
             binaryradGridOptimize();
         } else {
             asdGridOptimize();
@@ -169,14 +170,19 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         }
 
         double min = Double.MAX_VALUE;
-        double a = refinementdata.solvent_a;
+        double a = crs.solvent_a;
+        double sd = crs.solvent_sd;
         double amin = a - 1.0;
         double amax = (a + 1.0) / 0.9999;
         double astep = 0.5;
-        double sd = refinementdata.solvent_sd;
         double sdmin = sd - 0.15;
         double sdmax = (sd + 0.15) / 0.9999;
         double sdstep = 0.05;
+        if (crs.solventmodel == SolventModel.POLYNOMIAL) {
+            amin = a - 0.2;
+            amax = (a + 0.2) / 0.9999;
+            astep = 0.1;
+        }
         for (double i = amin; i <= amax; i += astep) {
             crs.setSolventA(i);
             for (double j = sdmin; j <= sdmax; j += sdstep) {
@@ -207,7 +213,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         }
 
         double min = Double.MAX_VALUE;
-        double r = 2.0;
+        double r = crs.solvent_binaryrad;
         double rmin = r - 1.5;
         double rmax = (r + 1.5) / 0.9999;
         double rstep = 0.5;
@@ -224,6 +230,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         }
         System.out.println("minrad: " + r + " min: " + min);
         crs.setSolventBinaryrad(r);
+        refinementdata.solvent_binaryrad = r;
         crs.computeDensity(refinementdata.fs);
     }
 
@@ -258,6 +265,12 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         if (refinementdata.solvent_n > 1) {
             refinementdata.solvent_k = x[1] / scaling[1];
             refinementdata.solvent_ueq = x[2] / scaling[2];
+
+            if (crs != null) {
+                refinementdata.solvent_binaryrad = crs.solvent_binaryrad;
+                refinementdata.solvent_a = crs.solvent_a;
+                refinementdata.solvent_sd = crs.solvent_sd;
+            }
         }
         for (int i = 0; i < 6; i++) {
             if (crystal.scale_b[i] >= 0) {

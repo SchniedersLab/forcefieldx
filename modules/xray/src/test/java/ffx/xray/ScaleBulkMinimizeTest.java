@@ -54,24 +54,24 @@ public class ScaleBulkMinimizeTest {
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
-                    {false,
+                    {true,
                         "NSF D2 domain test",
                         "ffx/xray/structures/1NSF.pdb",
                         "ffx/xray/structures/1NSF.mtz",
                         null,
-                        25.34,
-                        25.62,
-                        0.8932,
-                        0.1531},
+                        25.39,
+                        25.59,
+                        0.8934,
+                        0.1522},
                     {true,
                         "SNARE complex",
                         "ffx/xray/structures/1N7S.pdb",
                         "ffx/xray/structures/1N7S.mtz",
                         null,
-                        19.65,
-                        21.79,
-                        0.9317,
-                        0.1368}
+                        19.60,
+                        21.74,
+                        0.9312,
+                        0.1365}
                 });
     }
     private final String info;
@@ -175,7 +175,7 @@ public class ScaleBulkMinimizeTest {
         crs.computeDensity(refinementdata.fc);
         refinementdata.setCrystalReciprocalSpaceFc(crs);
         crs = new CrystalReciprocalSpace(reflectionlist, atomarray,
-                parallelTeam, parallelTeam, true, refinementdata.binarysolvent);
+                parallelTeam, parallelTeam, true);
         crs.computeDensity(refinementdata.fs);
         refinementdata.setCrystalReciprocalSpaceFs(crs);
 
@@ -204,8 +204,12 @@ public class ScaleBulkMinimizeTest {
 
         ScaleBulkMinimize scalebulkminimize =
                 new ScaleBulkMinimize(reflectionlist, refinementdata, crs);
-        scalebulkminimize.minimize(7, 1e-2);
-        scalebulkminimize.GridOptimize();
+        /*
+        if (refinementdata.solvent_n > 1) {
+            scalebulkminimize.minimize(7, 1e-2);
+            scalebulkminimize.GridOptimize();
+        }
+        */
         scalebulkminimize.minimize(7, 1e-4);
 
         SigmaAMinimize sigmaaminimize = new SigmaAMinimize(reflectionlist,

@@ -189,7 +189,7 @@ public class SigmaAEnergy implements Optimizable {
             // structure factors
             ComplexNumber fcc = new ComplexNumber(fc[i][0], fc[i][1]);
             ComplexNumber fsc = new ComplexNumber(fs[i][0], fs[i][1]);
-            ComplexNumber fct = (refinementdata.solvent_n > 1)
+            ComplexNumber fct = refinementdata.bulksolvent
                     ? fcc.plus(fsc.times(ksebs)) : fcc;
             ComplexNumber kfct = fct.times(kmems);
 

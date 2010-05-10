@@ -175,7 +175,7 @@ public class MTZWriter {
                 bb.order(b).putFloat(fmapdata);
 
                 // F/sigF (2)
-                // this should be user definable!
+                // FIXME: this should be user definable!
                 colname.add("FO");
                 coltype[3] = 'F';
                 fmapdata = (float) refinementdata.f(i);

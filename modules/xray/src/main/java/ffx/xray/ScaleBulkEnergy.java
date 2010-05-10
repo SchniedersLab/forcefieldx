@@ -121,8 +121,8 @@ public class ScaleBulkEnergy implements Optimizable {
 
         int scale_n = crystal.scale_n;
         double model_k = x[0];
-        double solvent_k = 0.0;
-        double solvent_ueq = 0.0;
+        double solvent_k = refinementdata.solvent_k;
+        double solvent_ueq = refinementdata.solvent_ueq;
         if (refinementdata.solvent_n > 1) {
             solvent_k = x[1];
             solvent_ueq = x[2];
@@ -155,7 +155,7 @@ public class ScaleBulkEnergy implements Optimizable {
             // structure factors
             ComplexNumber fcc = refinementdata.fc(i);
             ComplexNumber fsc = refinementdata.fs(i);
-            ComplexNumber fct = (refinementdata.solvent_n > 1)
+            ComplexNumber fct = refinementdata.bulksolvent
                     ? fcc.plus(fsc.times(ksebs)) : fcc;
             ComplexNumber kfct = fct.times(kmebm);
 
