@@ -20,6 +20,8 @@
  */
 package ffx.potential.parsers;
 
+import static java.lang.String.format;
+
 import static ffx.potential.parsers.INTFilter.intxyz;
 import static ffx.potential.parsers.PDBFilter.ResiduePosition.FIRST_RESIDUE;
 import static ffx.potential.parsers.PDBFilter.ResiduePosition.MIDDLE_RESIDUE;
@@ -577,6 +579,7 @@ public final class PDBFilter extends SystemFilter {
          * Loop over chains.
          */
         if (chainNames != null) {
+            logger.info(format(" Assigning atom types for %d chains.", chainNames.length));
             for (String chain : chainNames) {
                 Polymer polymer = molecularAssembly.getPolymer(chain, false);
                 ArrayList<Residue> residues = polymer.getResidues();
@@ -664,57 +667,64 @@ public final class PDBFilter extends SystemFilter {
 
         // Assign ion atom types.
         ArrayList<MSNode> ions = molecularAssembly.getIons();
-        for (MSNode m : ions) {
-            Molecule ion = (Molecule) m;
-            String name = ion.getResidueName().toUpperCase();
-            HETATOMS hetatm = HETATOMS.valueOf(name);
-            Atom atom = ion.getAtomList().get(0);
-            if (ion.getAtomList().size() != 1) {
-                logger.severe("Check residue " + ion.toString() + " of chain " + ion.getPolymerName() + ".");
-            }
-            try {
-                switch (hetatm) {
-                    case NA:
-                        atom.setAtomType(findAtomType(2003));
-                        break;
-                    case K:
-                        atom.setAtomType(findAtomType(2004));
-                        break;
-                    case MG:
-                    case MG2:
-                        atom.setAtomType(findAtomType(2005));
-                        break;
-                    case CA:
-                    case CA2:
-                        atom.setAtomType(findAtomType(2006));
-                        break;
-                    case CL:
-                        atom.setAtomType(findAtomType(2003));
-                        break;
-                    default:
-                        logger.severe("Check residue " + ion.getResidueName() + " of chain " + ion.getPolymerName() + ".");
+        if (ions != null && ions.size() > 0) {
+            logger.info(format(" Assigning atom types for %d ions.", ions.size()));
+            for (MSNode m : ions) {
+                Molecule ion = (Molecule) m;
+                String name = ion.getResidueName().toUpperCase();
+                HETATOMS hetatm = HETATOMS.valueOf(name);
+                Atom atom = ion.getAtomList().get(0);
+                if (ion.getAtomList().size() != 1) {
+                    logger.severe("Check residue " + ion.toString() + " of chain " + ion.getPolymerName() + ".");
                 }
-            } catch (Exception e) {
-                String message = "Error assigning atom types.";
-                logger.log(Level.SEVERE, message, e);
+                try {
+                    switch (hetatm) {
+                        case NA:
+                            atom.setAtomType(findAtomType(2003));
+                            break;
+                        case K:
+                            atom.setAtomType(findAtomType(2004));
+                            break;
+                        case MG:
+                        case MG2:
+                            atom.setAtomType(findAtomType(2005));
+                            break;
+                        case CA:
+                        case CA2:
+                            atom.setAtomType(findAtomType(2006));
+                            break;
+                        case CL:
+                            atom.setAtomType(findAtomType(2003));
+                            break;
+                        default:
+                            logger.severe("Check residue " + ion.getResidueName() + " of chain " + ion.getPolymerName() + ".");
+                    }
+                } catch (Exception e) {
+                    String message = "Error assigning atom types.";
+                    logger.log(Level.SEVERE, message, e);
+                }
             }
         }
         // Assign water atom types.
         ArrayList<MSNode> water = molecularAssembly.getWaters();
-        for (MSNode m : water) {
-            Molecule wat = (Molecule) m;
-            try {
-                Atom O = setHeavyAtom(wat, "O", null, 2001);
-                Atom H1 = setHydrogenAtom(wat, "H1", O, 0.96e0, null, 109.5e0, null, 120.0e0, 0, 2002);
-                Atom H2 = setHydrogenAtom(wat, "H2", O, 0.96e0, H1, 109.5e0, null, 120.0e0, 0, 2002);
-            } catch (Exception e) {
-                String message = "Error assigning atom types to a water.";
-                logger.log(Level.SEVERE, message, e);
+        if (water != null && water.size() > 0) {
+            logger.info(format(" Assigning atom types for %d waters.", water.size()));
+            for (MSNode m : water) {
+                Molecule wat = (Molecule) m;
+                try {
+                    Atom O = setHeavyAtom(wat, "O", null, 2001);
+                    Atom H1 = setHydrogenAtom(wat, "H1", O, 0.96e0, null, 109.5e0, null, 120.0e0, 0, 2002);
+                    Atom H2 = setHydrogenAtom(wat, "H2", O, 0.96e0, H1, 109.5e0, null, 120.0e0, 0, 2002);
+                } catch (Exception e) {
+                    String message = "Error assigning atom types to a water.";
+                    logger.log(Level.SEVERE, message, e);
+                }
             }
         }
         // Assign small molecule atom types.
         ArrayList<MSNode> molecules = molecularAssembly.getMolecules();
         for (MSNode m : molecules) {
+            logger.warning("Deleting unrecognized molecule " + m.toString() + ".");
             molecularAssembly.deleteMolecule((Molecule) m);
         }
     }
@@ -1958,34 +1968,36 @@ public final class PDBFilter extends SystemFilter {
             int serial = 1;
             // Loop over biomolecular chains
             String chains[] = molecularAssembly.getChainNames();
-            for (String chain : chains) {
-                if (chain.equalsIgnoreCase("Blank")) {
-                    sb.setCharAt(21, ' ');
-                } else {
-                    sb.setCharAt(21, chain.toUpperCase().charAt(0));
-                }
-                Polymer polymer = molecularAssembly.getPolymer(chain, false);
-                // Loop over residues
-                ArrayList<Residue> residues = polymer.getResidues();
-                for (Residue residue : residues) {
-                    String resName = residue.getName();
-                    if (resName.length() > 3) {
-                        resName = resName.substring(0, 3);
+            if (chains != null) {
+                for (String chain : chains) {
+                    if (chain.equalsIgnoreCase("Blank")) {
+                        sb.setCharAt(21, ' ');
+                    } else {
+                        sb.setCharAt(21, chain.toUpperCase().charAt(0));
                     }
-                    int resID = residue.getResidueNumber();
-                    sb.replace(17, 20, padLeft(resName.toUpperCase(), 3));
-                    sb.replace(22, 26, String.format("%4d", resID));
-                    // Loop over atoms
-                    ArrayList<Atom> residueAtoms = residue.getAtomList();
-                    for (Atom atom : residueAtoms) {
-                        writeAtom(atom, serial++, sb, anisouSB, bw);
+                    Polymer polymer = molecularAssembly.getPolymer(chain, false);
+                    // Loop over residues
+                    ArrayList<Residue> residues = polymer.getResidues();
+                    for (Residue residue : residues) {
+                        String resName = residue.getName();
+                        if (resName.length() > 3) {
+                            resName = resName.substring(0, 3);
+                        }
+                        int resID = residue.getResidueNumber();
+                        sb.replace(17, 20, padLeft(resName.toUpperCase(), 3));
+                        sb.replace(22, 26, String.format("%4d", resID));
+                        // Loop over atoms
+                        ArrayList<Atom> residueAtoms = residue.getAtomList();
+                        for (Atom atom : residueAtoms) {
+                            writeAtom(atom, serial++, sb, anisouSB, bw);
+                        }
                     }
+                    terSB.replace(6, 11, String.format("%5d", serial++));
+                    terSB.replace(12, 16, "    ");
+                    terSB.replace(16, 26, sb.substring(16, 26));
+                    bw.write(terSB.toString());
+                    bw.newLine();
                 }
-                terSB.replace(6, 11, String.format("%5d", serial++));
-                terSB.replace(12, 16, "    ");
-                terSB.replace(16, 26, sb.substring(16, 26));
-                bw.write(terSB.toString());
-                bw.newLine();
             }
             sb.replace(0, 6, "HETATM");
             sb.setCharAt(21, 'A');
