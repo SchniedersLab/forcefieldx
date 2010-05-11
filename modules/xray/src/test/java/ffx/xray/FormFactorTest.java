@@ -63,7 +63,7 @@ public class FormFactorTest {
         carbon.setAtomType(atomType);
         carbon.setAltLoc('A');
         carbon.setAnisou(anisou);
-        carbonff = new FormFactor(carbon);
+        carbonff = new FormFactor(carbon, false);
     }
 
     @After

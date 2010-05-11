@@ -385,11 +385,11 @@ public class Crystal {
         double alpha = properties.getDouble("alpha", -1.0);
         double beta = properties.getDouble("beta", -1.0);
         double gamma = properties.getDouble("gamma", -1.0);
-        String sg = properties.getString("spacegroup", "");
+        String sg = properties.getString("spacegroup", null);
 
         if (a < 0.0 || b < 0.0 || c < 0.0
                 || alpha < 0.0 || beta < 0.0 || gamma < 0.0
-                || sg.isEmpty()) {
+                || sg == null) {
             return null;
         }
 

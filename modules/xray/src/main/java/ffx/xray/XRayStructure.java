@@ -20,6 +20,8 @@
  */
 package ffx.xray;
 
+import static org.apache.commons.io.FilenameUtils.removeExtension;
+
 import java.io.File;
 import java.util.List;
 import java.util.logging.Logger;
@@ -56,14 +58,24 @@ public class XRayStructure {
 
     public XRayStructure(MolecularAssembly assembly,
             CompositeConfiguration properties) {
-        this(assembly, properties, SolventModel.POLYNOMIAL);
+        this(new MolecularAssembly[]{assembly}, properties, SolventModel.POLYNOMIAL);
     }
 
     public XRayStructure(MolecularAssembly assembly,
             CompositeConfiguration properties, int solventmodel) {
+        this(new MolecularAssembly[]{assembly}, properties, solventmodel);
+    }
+
+    public XRayStructure(MolecularAssembly assembly[],
+            CompositeConfiguration properties) {
+        this(assembly, properties, SolventModel.POLYNOMIAL);
+    }
+
+    public XRayStructure(MolecularAssembly assembly[],
+            CompositeConfiguration properties, int solventmodel) {
         // String name = assembly.getName();
-        String name = assembly.getFile().getPath();
-        name = name.substring(0, name.lastIndexOf(".pdb"));
+        String name = assembly[0].getFile().getPath();
+        name = removeExtension(name);
 
         // load the structure
         File tmp = new File(name + ".mtz");
@@ -114,8 +126,48 @@ public class XRayStructure {
             ciffilter.readFile(ciffile, reflectionlist, refinementdata);
         }
 
-        atomlist = assembly.getAtomList();
+        atomlist = assembly[0].getAtomList();
+        for (int i = 1; i < assembly.length; i++) {
+            List<Atom> tmplist = assembly[i].getAtomList();
+            int tmpsize = tmplist.size();
+            for (int j = 0; j < tmpsize; j++) {
+                Atom tmpatom = tmplist.get(j);
+                Character c = tmpatom.getAltLoc();
+                if (c == null) {
+                    continue;
+                }
+                if (!c.equals(' ')
+                        && !c.equals('A')) {
+                    atomlist.add(tmpatom);
+                }
+            }
+        }
         Atom atomarray[] = atomlist.toArray(new Atom[atomlist.size()]);
+
+        // initialize atomic form factors
+        for (int i = 0; i < atomarray.length; i++) {
+            FormFactor atomff =
+                    new FormFactor(atomarray[i], refinementdata.use_3g, 2.0);
+
+            double arad = 2.4;
+            double xyz[] = new double[3];
+            xyz[0] = atomarray[i].getX() + arad;
+            xyz[1] = atomarray[i].getY();
+            xyz[2] = atomarray[i].getZ();
+            while (true) {
+                double rho = atomff.rho(xyz);
+                if (rho > 0.1) {
+                    arad += 0.5;
+                } else if (rho > 0.001) {
+                    arad += 0.1;
+                } else {
+                    arad += 0.2;
+                    atomarray[i].setFormFactorWidth(arad);
+                    break;
+                }
+                xyz[0] = atomarray[i].getX() + arad;
+            }
+        }
 
         // set up FFT and run it
         ParallelTeam parallelTeam = new ParallelTeam();
@@ -129,23 +181,30 @@ public class XRayStructure {
         } else {
             crs_fs = null;
         }
+        crs_fc.setUse3G(refinementdata.use_3g);
 
         crystalstats = new CrystalStats(reflectionlist, refinementdata);
     }
 
     public void setSolventBinaryrad(double rad) {
-        crs_fs.setSolventBinaryrad(rad);
-        refinementdata.solvent_binaryrad = rad;
+        if (refinementdata.bulksolvent) {
+            crs_fs.setSolventBinaryrad(rad);
+            refinementdata.solvent_binaryrad = rad;
+        }
     }
 
     public void setSolventA(double a) {
-        crs_fs.setSolventA(a);
-        refinementdata.solvent_a = a;
+        if (refinementdata.bulksolvent) {
+            crs_fs.setSolventA(a);
+            refinementdata.solvent_a = a;
+        }
     }
 
     public void setSolventsd(double sd) {
-        crs_fs.setSolventsd(sd);
-        refinementdata.solvent_sd = sd;
+        if (refinementdata.bulksolvent) {
+            crs_fs.setSolventsd(sd);
+            refinementdata.solvent_sd = sd;
+        }
     }
 
     public void timings() {
@@ -154,9 +213,21 @@ public class XRayStructure {
             crs_fc.computeDensity(refinementdata.fc);
         }
 
-        logger.info("performing 10 Fs calculations for timing...");
-        for (int i = 0; i < 10; i++) {
-            crs_fs.computeDensity(refinementdata.fs);
+        if (refinementdata.bulksolvent) {
+            logger.info("performing 10 Fs calculations for timing...");
+            for (int i = 0; i < 10; i++) {
+                crs_fs.computeDensity(refinementdata.fs);
+            }
+        }
+    }
+
+    public void writeSolventMask(String filename) {
+        // CNSMapWriter mapwriter = new CNSMapWriter((int) crs_fs.getXDim(),
+        if (refinementdata.bulksolvent) {
+            CCP4MapWriter mapwriter = new CCP4MapWriter((int) crs_fs.getXDim(),
+                    (int) crs_fs.getYDim(), (int) crs_fs.getZDim(),
+                    crystal, filename);
+            mapwriter.write(crs_fs.df_map);
         }
     }
 

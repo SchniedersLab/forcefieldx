@@ -147,11 +147,12 @@ public class CCP4MapWriter {
             bb.order(b).putFloat((float) max);
             bb.order(b).putFloat((float) mean);
 
-            bb.order(b).putInt(crystal.spaceGroup.number);
+            // bb.order(b).putInt(crystal.spaceGroup.number);
+            bb.order(b).putInt(1);
 
             // symmetry bytes - should set this up at some point
             // imapdata = swap ? ByteSwap.swap(320) : 320;
-            bb.order(b).putInt(0);
+            bb.order(b).putInt(80);
 
             bb.order(b).putInt(0);
 
@@ -184,22 +185,25 @@ public class CCP4MapWriter {
 
             StringBuffer sb = new StringBuffer();
             sb.append("map data from ffx");
-            sb.setLength(80);
+            while (sb.length() < 80) {
+                sb.append(" ");
+            }
             dos.writeBytes(sb.toString());
 
             sb = new StringBuffer();
-            sb.append(" ");
-            sb.setLength(80);
+            while (sb.length() < 80) {
+                sb.append(" ");
+            }
             for (int i = 0; i < 9; i++) {
                 dos.writeBytes(sb.toString());
             }
 
-            /*
             sb = new StringBuffer();
             sb.append("x,y,z");
-            sb.setLength(80);
+            while (sb.length() < 80) {
+                sb.append(" ");
+            }
             dos.writeBytes(sb.toString());
-             */
 
             bb.rewind();
             for (int k = 0; k < nz; k++) {
@@ -209,12 +213,16 @@ public class CCP4MapWriter {
                         // int index = k * (ny * (nx + 2)) + j * (nx + 2) + i;
                         fmapdata = (float) data[index];
                         bb.order(b).putFloat(fmapdata);
-                        if (!bb.hasRemaining()){
+                        if (!bb.hasRemaining()) {
                             dos.write(bytes);
                             bb.rewind();
                         }
                     }
                 }
+            }
+            if (bb.position() > 0){
+                dos.write(bytes);
+                bb.rewind();
             }
 
             dos.close();

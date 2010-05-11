@@ -46,6 +46,7 @@ public class CIFFilter {
     private static final Logger logger = Logger.getLogger(MTZFilter.class.getName());
     private double cell[] = {-1.0, -1.0, -1.0, -1.0, -1.0, -1.0};
     private double reshigh = -1.0;
+    private String sgname = null;
     private int sgnum = -1;
     private int h = -1, k = -1, l = -1, fo = -1, sigfo = -1, rfree = -1;
     private int nall, nobs;
@@ -53,13 +54,13 @@ public class CIFFilter {
     private static enum Header {
 
         d_resolution_high, number_all, number_obs, length_a, length_b, length_c,
-        angle_alpha, angle_beta, angle_gamma, Int_Tables_number, crystal_id,
-        wavelength_id, scale_group_code, status, index_h, index_k, index_l,
-        F_meas_au, F_meas_sigma_au, NOVALUE;
+        angle_alpha, angle_beta, angle_gamma, Int_Tables_number,
+        space_group_name_H_M, crystal_id, wavelength_id, scale_group_code,
+        status, index_h, index_k, index_l, F_meas_au, F_meas_sigma_au, NOVALUE;
 
         public static Header toHeader(String str) {
             try {
-                return valueOf(str);
+                return valueOf(str.replace('-', '_'));
             } catch (Exception ex) {
                 return NOVALUE;
             }
@@ -91,6 +92,7 @@ public class CIFFilter {
                         || strarray[0].startsWith("_cell")
                         || strarray[0].startsWith("_symmetry")) {
                     String cifarray[] = strarray[0].split("\\.+");
+
                     switch (Header.toHeader(cifarray[1])) {
                         case d_resolution_high:
                             reshigh = Double.parseDouble(strarray[1]);
@@ -122,6 +124,10 @@ public class CIFFilter {
                         case Int_Tables_number:
                             sgnum = Integer.parseInt(strarray[1]);
                             break;
+                        case space_group_name_H_M:
+                            String sgnamearray[] = str.split("'+");
+                            sgname = sgnamearray[1];
+                            break;
                     }
                 }
             }
@@ -132,6 +138,10 @@ public class CIFFilter {
             return null;
         }
 
+        if (sgnum < 0 && sgname != null){
+            sgnum = SpaceGroup.spaceGroupNumber(SpaceGroup.pdb2ShortName(sgname));
+        }
+        
         if (sgnum < 0 || reshigh < 0 || cell[0] < 0) {
             logger.info("insufficient information in CIF header to generate Reflection List");
             return null;
@@ -224,7 +234,7 @@ public class CIFFilter {
                     break;
                 }
 
-                String strarray[] = str.split("\\s+");
+                String strarray[] = str.trim().split("\\s+");
 
                 int ih = Integer.parseInt(strarray[h]);
                 int ik = Integer.parseInt(strarray[k]);

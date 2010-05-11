@@ -11,8 +11,8 @@ String outputfile = null;
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 
-open filename;
-XRayStructure structure = new XRayStructure(active, active.getProperties());
+systems = open(filename);
+XRayStructure structure = new XRayStructure(systems, systems[0].getProperties());
 structure.scalebulkfit();
 structure.printstats();
 
