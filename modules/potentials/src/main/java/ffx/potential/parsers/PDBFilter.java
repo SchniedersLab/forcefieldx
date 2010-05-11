@@ -46,13 +46,11 @@ import ffx.crystal.SpaceGroup;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
-import ffx.potential.bonded.Utilities.FileType;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.MSGroup;
 import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.Molecule;
-import ffx.potential.bonded.Utilities;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.BioType;
@@ -89,6 +87,7 @@ public final class PDBFilter extends SystemFilter {
      * Keep track of altLoc Characters.
      */
     private Vector<Character> altLocs = new Vector<Character>();
+    private Character currentAltLoc = 'A';
     /**
      * Keep track of ATOM record serial numbers to match them with ANISOU
      * records.
@@ -105,16 +104,16 @@ public final class PDBFilter extends SystemFilter {
     /**
      * Parse the PDB File from a local disk
      */
-    public PDBFilter(MolecularAssembly f) {
-        super(f);
+    public PDBFilter(MolecularAssembly molecularAssembly) {
+        super(molecularAssembly);
     }
 
     /**
      * Parse the PDB File from a URL.
      */
-    public PDBFilter(MolecularAssembly f, String pdb, String vrml) {
-        super(f);
-        pdbURL = pdb;
+    public PDBFilter(MolecularAssembly molecularAssembly, String pdbURL, String vrml) {
+        super(molecularAssembly);
+        this.pdbURL = pdbURL;
     }
 
     private enum Card {
@@ -122,6 +121,16 @@ public final class PDBFilter extends SystemFilter {
         ANISOU, ATOM, CONECT, CRYST1, HELIX, HETATM, LINK, SHEET, SSBOND, TURN,
         REMARK
     };
+
+    public void setAltID(MolecularAssembly molecularAssembly,
+            Character c) {
+        setMolecularSystem(molecularAssembly);
+        currentAltLoc = c;
+    }
+
+    public Vector<Character> getAltLocs() {
+        return altLocs;
+    }
 
     /**
      * Parse the PDB File
@@ -133,17 +142,15 @@ public final class PDBFilter extends SystemFilter {
         BufferedWriter bw = null;
         try {
             setFileRead(false);
+            File pdbFile = null;
             if (pdbURL == null) {
                 // Open a data stream to the PDB file
-                File pdbFile = molecularAssembly.getFile();
+                pdbFile = activeMolecularAssembly.getFile();
                 if (pdbFile == null || !pdbFile.exists() || !pdbFile.canRead()) {
                     return false;
                 }
                 FileReader fr = new FileReader(pdbFile);
                 br = new BufferedReader(fr);
-                if (logger.isLoggable(Level.INFO)) {
-                    logger.info(" Opening " + pdbFile.getName());
-                }
             } else {
                 try {
                     URL url = new URL(pdbURL);
@@ -165,7 +172,7 @@ public final class PDBFilter extends SystemFilter {
                 }
                 // The downloaded PBD file will be echoed to the local file
                 // system (if the file does not already exist)
-                File pdbFile = molecularAssembly.getFile();
+                pdbFile = activeMolecularAssembly.getFile();
                 if (pdbFile != null && !pdbFile.exists()) {
                     fw = new FileWriter(pdbFile);
                     bw = new BufferedWriter(fw);
@@ -181,6 +188,12 @@ public final class PDBFilter extends SystemFilter {
             ArrayList<String[]> links = new ArrayList<String[]>();
             Vector<String[]> structs = new Vector<String[]>();
             // While the END parameter is not read in, load atoms
+            if (currentAltLoc == 'A') {
+                logger.info("\n Reading " + pdbFile.getName());
+            } else {
+                logger.info("\n Reading " + pdbFile.getName() + " alternate location " + currentAltLoc + ".");
+            }
+            systems.add(activeMolecularAssembly);
             String pdbLine = br.readLine();
             while ((pdbLine != null) && (!pdbLine.startsWith("END"))) {
                 int len = pdbLine.length();
@@ -217,6 +230,12 @@ public final class PDBFilter extends SystemFilter {
                         Integer serial = new Integer(pdbLine.substring(6, 11).trim());
                         String name = pdbLine.substring(12, 16).trim().intern();
                         Character altLoc = new Character(pdbLine.substring(16, 17).toUpperCase().charAt(0));
+                        if (!altLocs.contains(altLoc)) {
+                            altLocs.add(altLoc);
+                        }
+                        if (!altLoc.equals(' ') && !altLoc.equals(currentAltLoc)) {
+                            break;
+                        }
                         String resName = pdbLine.substring(17, 20).trim().intern();
                         String chainID = null;
                         if (!useSegID) {
@@ -268,6 +287,9 @@ public final class PDBFilter extends SystemFilter {
                         if (!altLocs.contains(altLoc)) {
                             altLocs.add(altLoc);
                         }
+                        if (!altLoc.equals(' ') && !altLoc.equals(currentAltLoc)) {
+                            break;
+                        }
                         resName = pdbLine.substring(17, 20).trim().intern();
                         chainID = null;
                         if (!useSegID) {
@@ -286,10 +308,9 @@ public final class PDBFilter extends SystemFilter {
                         double occupancy = new Double(pdbLine.substring(54, 60).trim());
                         double tempFactor = new Double(pdbLine.substring(60, 66).trim());
                         Atom a = new Atom(0, name, altLoc, d, resName, resSeq, chainID, occupancy, tempFactor);
-                        Atom prev = (Atom) molecularAssembly.addMSNode(a);
+                        Atom prev = (Atom) activeMolecularAssembly.addMSNode(a);
                         if (prev != a) {
                             atoms.put(serial, prev);
-                            //prev.addAltLoc(altLoc, d, occupancy, tempFactor);
                         } else {
                             atoms.put(serial, a);
                             a.setXYZIndex(xyzIndex++);
@@ -319,6 +340,9 @@ public final class PDBFilter extends SystemFilter {
                         if (!altLocs.contains(altLoc)) {
                             altLocs.add(altLoc);
                         }
+                        if (!altLoc.equals(' ') && !altLoc.equals(currentAltLoc)) {
+                            break;
+                        }
                         resName = pdbLine.substring(17, 20).trim().intern();
                         chainID = null;
                         if (!useSegID) {
@@ -338,10 +362,9 @@ public final class PDBFilter extends SystemFilter {
                         tempFactor = new Double(pdbLine.substring(60, 66).trim());
                         a = new Atom(0, name, altLoc, d, resName, resSeq, chainID, occupancy, tempFactor);
                         a.setHetero(true);
-                        prev = (Atom) molecularAssembly.addMSNode(a);
+                        prev = (Atom) activeMolecularAssembly.addMSNode(a);
                         if (prev != a) {
                             atoms.put(serial, prev);
-                            //prev.addAltLoc(altLoc, d, occupancy, tempFactor);
                         } else {
                             atoms.put(serial, a);
                             a.setXYZIndex(xyzIndex++);
@@ -455,21 +478,12 @@ public final class PDBFilter extends SystemFilter {
             }
             br.close();
             xyzIndex--;
-            if (logger.isLoggable(Level.INFO)) {
-                logger.info(" Read " + xyzIndex + " atoms");
-                StringBuffer altLocString = new StringBuffer(" Alternate locations [ ");
-                for (Character c : altLocs) {
-                    altLocString.append("(" + c + ") ");
-                }
-                altLocString.append("]");
-                logger.info(altLocString.toString());
-            }
             // Assign Secondary Structure Based on PDB Info
             for (String[] s : structs) {
                 if (s[1].equalsIgnoreCase(" ")) {
                     s[1] = "Blank".intern();
                 }
-                Polymer p = molecularAssembly.getPolymer(s[1], false);
+                Polymer p = activeMolecularAssembly.getPolymer(s[1], false);
                 if (p != null) {
                     for (int i = Integer.parseInt(s[3]); i <= Integer.parseInt(s[4]); i++) {
                         Residue r = p.getResidue(i);
@@ -551,7 +565,7 @@ public final class PDBFilter extends SystemFilter {
 
     public void renumberAtoms() {
         int index = 1;
-        for (Atom a : molecularAssembly.getAtomList()) {
+        for (Atom a : activeMolecularAssembly.getAtomList()) {
             a.xyzIndex = index++;
         }
         index--;
@@ -573,7 +587,7 @@ public final class PDBFilter extends SystemFilter {
         /**
          * To Do: Look for cyclic peptides and disulfides.
          */
-        String[] chainNames = molecularAssembly.getChainNames();
+        String[] chainNames = activeMolecularAssembly.getChainNames();
 
         /**
          * Loop over chains.
@@ -581,7 +595,7 @@ public final class PDBFilter extends SystemFilter {
         if (chainNames != null) {
             logger.info(format(" Assigning atom types for %d chains.", chainNames.length));
             for (String chain : chainNames) {
-                Polymer polymer = molecularAssembly.getPolymer(chain, false);
+                Polymer polymer = activeMolecularAssembly.getPolymer(chain, false);
                 ArrayList<Residue> residues = polymer.getResidues();
                 int numberOfResidues = residues.size();
 
@@ -666,7 +680,7 @@ public final class PDBFilter extends SystemFilter {
         }
 
         // Assign ion atom types.
-        ArrayList<MSNode> ions = molecularAssembly.getIons();
+        ArrayList<MSNode> ions = activeMolecularAssembly.getIons();
         if (ions != null && ions.size() > 0) {
             logger.info(format(" Assigning atom types for %d ions.", ions.size()));
             for (MSNode m : ions) {
@@ -706,7 +720,7 @@ public final class PDBFilter extends SystemFilter {
             }
         }
         // Assign water atom types.
-        ArrayList<MSNode> water = molecularAssembly.getWaters();
+        ArrayList<MSNode> water = activeMolecularAssembly.getWaters();
         if (water != null && water.size() > 0) {
             logger.info(format(" Assigning atom types for %d waters.", water.size()));
             for (MSNode m : water) {
@@ -722,10 +736,10 @@ public final class PDBFilter extends SystemFilter {
             }
         }
         // Assign small molecule atom types.
-        ArrayList<MSNode> molecules = molecularAssembly.getMolecules();
+        ArrayList<MSNode> molecules = activeMolecularAssembly.getMolecules();
         for (MSNode m : molecules) {
             logger.warning("Deleting unrecognized molecule " + m.toString() + ".");
-            molecularAssembly.deleteMolecule((Molecule) m);
+            activeMolecularAssembly.deleteMolecule((Molecule) m);
         }
     }
 
@@ -1940,8 +1954,8 @@ public final class PDBFilter extends SystemFilter {
             if (!append) {
                 newFile = version(saveFile);
             }
-            molecularAssembly.setFile(newFile);
-            molecularAssembly.setName(newFile.getName());
+            activeMolecularAssembly.setFile(newFile);
+            activeMolecularAssembly.setName(newFile.getName());
             fw = new FileWriter(newFile, append);
             bw = new BufferedWriter(fw);
 // =============================================================================
@@ -1967,7 +1981,7 @@ public final class PDBFilter extends SystemFilter {
 //ATOM      2  CA  ILE A  16      60.793  72.149  -9.511  1.00  6.91           C
             int serial = 1;
             // Loop over biomolecular chains
-            String chains[] = molecularAssembly.getChainNames();
+            String chains[] = activeMolecularAssembly.getChainNames();
             if (chains != null) {
                 for (String chain : chains) {
                     if (chain.equalsIgnoreCase("Blank")) {
@@ -1975,7 +1989,7 @@ public final class PDBFilter extends SystemFilter {
                     } else {
                         sb.setCharAt(21, chain.toUpperCase().charAt(0));
                     }
-                    Polymer polymer = molecularAssembly.getPolymer(chain, false);
+                    Polymer polymer = activeMolecularAssembly.getPolymer(chain, false);
                     // Loop over residues
                     ArrayList<Residue> residues = polymer.getResidues();
                     for (Residue residue : residues) {
@@ -2002,7 +2016,7 @@ public final class PDBFilter extends SystemFilter {
             sb.replace(0, 6, "HETATM");
             sb.setCharAt(21, 'A');
             int resID = 1;
-            Polymer polymer = molecularAssembly.getPolymer("A", false);
+            Polymer polymer = activeMolecularAssembly.getPolymer("A", false);
             if (polymer != null) {
                 ArrayList<Residue> residues = polymer.getResidues();
                 for (Residue residue : residues) {
@@ -2014,7 +2028,7 @@ public final class PDBFilter extends SystemFilter {
             }
 
             // Loop over molecules, ions and then water.
-            ArrayList<MSNode> molecules = molecularAssembly.getMolecules();
+            ArrayList<MSNode> molecules = activeMolecularAssembly.getMolecules();
             // Write out molecules.
             for (MSNode node : molecules) {
                 Molecule molecule = (Molecule) node;
@@ -2028,7 +2042,7 @@ public final class PDBFilter extends SystemFilter {
                 }
             }
             // Write out ions.
-            ArrayList<MSNode> ions = molecularAssembly.getIons();
+            ArrayList<MSNode> ions = activeMolecularAssembly.getIons();
             for (MSNode node : ions) {
                 Molecule molecule = (Molecule) node;
                 String resName = molecule.getName();
@@ -2044,7 +2058,7 @@ public final class PDBFilter extends SystemFilter {
                 }
             }
             // Write out water.
-            ArrayList<MSNode> water = molecularAssembly.getWaters();
+            ArrayList<MSNode> water = activeMolecularAssembly.getWaters();
             for (MSNode node : water) {
                 Molecule molecule = (Molecule) node;
                 String chain = molecule.getPolymerName();

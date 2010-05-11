@@ -100,7 +100,7 @@ public class TinkerSimulation implements ActionListener {
                     reader = new Thread(openFile);
                     reader.start();
                 } else if (simulationFilter.fileRead()) {
-                    system = (FFXSystem) simulationFilter.getMolecularSystem();
+                    system = (FFXSystem) simulationFilter.getActiveMolecularSystem();
                     simulationFilter = null;
                 }
             }

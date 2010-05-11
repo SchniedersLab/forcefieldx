@@ -307,7 +307,7 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
     }
 
     /**
-     * Sets the FSystem s to be active.
+     * Sets the FFXSystem s to be active.
      */
     public void setActive(FFXSystem s) {
         if (s == activeSystem) {

@@ -30,6 +30,7 @@ import ffx.potential.bonded.Utilities.FileType;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.parameters.ForceField;
+import java.util.Vector;
 
 /**
  * The SystemFilter class is the base class for most Force Field X file parsers.
@@ -131,7 +132,8 @@ public abstract class SystemFilter {
      */
     protected ArrayList<Atom> atomList = null;
     protected ArrayList<Bond> bondList = null;
-    protected MolecularAssembly molecularAssembly = null;
+    protected MolecularAssembly activeMolecularAssembly = null;
+    protected Vector<MolecularAssembly> systems = new Vector<MolecularAssembly>();
     protected FileType fileType = FileType.UNK;
     protected CompositeConfiguration properties;
     protected ForceField forceField = null;
@@ -146,20 +148,21 @@ public abstract class SystemFilter {
     /**
      * SystemFilter constructor.
      *
-     * @param f
+     * @param molecularAssembly
      *            MolecularAssembly
      */
-    public SystemFilter(MolecularAssembly f) {
-        molecularAssembly = f;
+    public SystemFilter(MolecularAssembly molecularAssembly) {
+        this.activeMolecularAssembly = molecularAssembly;
     }
 
-    public SystemFilter(MolecularAssembly f, ForceField mm) {
-        this(f);
-        forceField = mm;
+    public SystemFilter(MolecularAssembly molecularAssembly, ForceField forceField) {
+        this(molecularAssembly);
+        this.forceField = forceField;
     }
 
-    public SystemFilter(MolecularAssembly f, ForceField mm, CompositeConfiguration properties) {
-        this(f, mm);
+    public SystemFilter(MolecularAssembly molecularAssembly,
+            ForceField forceField, CompositeConfiguration properties) {
+        this(molecularAssembly, forceField);
         this.properties = properties;
     }
 
@@ -191,8 +194,13 @@ public abstract class SystemFilter {
     /**
      * Return the MolecularSystem that has been read in
      */
-    public MolecularAssembly getMolecularSystem() {
-        return molecularAssembly;
+    public MolecularAssembly getActiveMolecularSystem() {
+        return activeMolecularAssembly;
+    }
+
+    public MolecularAssembly[] getMolecularAssemblys() {
+        MolecularAssembly assemblies[] = new MolecularAssembly[systems.size()];
+        return systems.toArray(assemblies);
     }
 
     public FileType getType() {
@@ -204,20 +212,20 @@ public abstract class SystemFilter {
      */
     public abstract boolean readFile();
 
-    public void setFileRead(boolean b) {
-        fileRead = b;
+    public void setFileRead(boolean fileRead) {
+        this.fileRead = fileRead;
     }
 
-    public void setForceField(ForceField f) {
-        forceField = f;
+    public void setForceField(ForceField forceField) {
+        this.forceField = forceField;
     }
 
     public void setProperties(CompositeConfiguration properties) {
         this.properties = properties;
     }
 
-    public void setMolecularSystem(MolecularAssembly f) {
-        molecularAssembly = f;
+    public void setMolecularSystem(MolecularAssembly molecularAssembly) {
+        activeMolecularAssembly = molecularAssembly;
     }
 
     public void setType(FileType fileType) {

@@ -27,6 +27,10 @@ import ffx.potential.bonded.Utilities;
 import ffx.potential.bonded.Utilities.FileType;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.SystemFilter;
+import java.io.File;
+import java.util.Vector;
+import java.util.logging.Level;
+import org.apache.commons.io.FilenameUtils;
 
 /**
  * The FileOpener class opens a file into Force Field X using a filter
@@ -65,12 +69,47 @@ public class FileOpener
         FFXSystem ffxSystem = null;
         // Continue if the file was read in successfully.
         if (systemFilter.readFile()) {
-            ffxSystem = (FFXSystem) systemFilter.getMolecularSystem();
+            ffxSystem = (FFXSystem) systemFilter.getActiveMolecularSystem();
             if (!(systemFilter instanceof PDBFilter)) {
                 Utilities.biochemistry(ffxSystem, systemFilter.getAtomList());
             }
             // Add the system to the multiscale hierarchy.
             mainPanel.getHierarchy().addSystemNode(ffxSystem);
+
+            // Check if there are alternate conformers
+            if (systemFilter instanceof PDBFilter) {
+                PDBFilter pdbFilter = (PDBFilter) systemFilter;
+                Vector<Character> altLocs = pdbFilter.getAltLocs();
+                StringBuffer altLocString = new StringBuffer(" Alternate locations [ ");
+                for (Character c : altLocs) {
+                    // Do not report the root conformer.
+                    if (c == ' ') {
+                        continue;
+                    }
+                    altLocString.append("(" + c + ") ");
+                }
+                altLocString.append("]");
+                logger.info(altLocString.toString());
+
+                /**
+                 * Alternate conformers may have different chemistry, so they
+                 * each need to be their own FFX system.
+                 */
+                for (Character c : altLocs) {
+                    if (c.equals(' ') || c.equals('A')) {
+                        continue;
+                    }
+                    FFXSystem newSystem = new FFXSystem(ffxSystem.getFile(),
+                                                        "Alternate Location " + c, ffxSystem.getProperties());
+                    newSystem.setForceField(ffxSystem.getForceField());
+                    pdbFilter.setAltID(newSystem, c);
+                    if (pdbFilter.readFile()) {
+                        String fileName = ffxSystem.getFile().getAbsolutePath();
+                        newSystem.setName(FilenameUtils.getBaseName(fileName) + " " + c);
+                        mainPanel.getHierarchy().addSystemNode(newSystem);
+                    }
+                }
+            }
         }
         mainPanel.setCursor(Cursor.getDefaultCursor());
         if (timer) {

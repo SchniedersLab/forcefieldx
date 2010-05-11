@@ -127,7 +127,7 @@ public class XYZFilter extends SystemFilter {
      */
     @Override
     public boolean readFile() {
-        File xyzFile = molecularAssembly.getFile();
+        File xyzFile = activeMolecularAssembly.getFile();
         if (forceField == null) {
             logger.warning("No force field is associated with " + xyzFile.toString());
             return false;
@@ -149,7 +149,7 @@ public class XYZFilter extends SystemFilter {
                 return false;
             }
             if (tokens.length == 2) {
-                getMolecularSystem().setName(tokens[1]);
+                getActiveMolecularSystem().setName(tokens[1]);
             }
             logger.info("\n Opening " + xyzFile.getName() + " with " + numberOfAtoms + " atoms\n");
             // The header line is reasonable - prepare to parse atom lines.
@@ -166,12 +166,12 @@ public class XYZFilter extends SystemFilter {
                 }
                 data = br.readLine();
                 if (data == null) {
-                    logger.warning("Check atom " + (i + 1) + " in " + molecularAssembly.getFile().getName());
+                    logger.warning("Check atom " + (i + 1) + " in " + activeMolecularAssembly.getFile().getName());
                     return false;
                 }
                 tokens = data.trim().split(" +");
                 if (tokens == null || tokens.length < 6) {
-                    logger.warning("Check atom " + (i + 1) + " in " + molecularAssembly.getFile().getName());
+                    logger.warning("Check atom " + (i + 1) + " in " + activeMolecularAssembly.getFile().getName());
                     return false;
                 }
                 // Valid number of tokens, so try to parse this line.
@@ -187,7 +187,7 @@ public class XYZFilter extends SystemFilter {
                 int type = Integer.parseInt(tokens[5]);
                 AtomType atomType = forceField.getAtomType(Integer.toString(type));
                 if (atomType == null) {
-                    logger.warning("Check Atom Type for Atom " + (i + 1) + " in " + molecularAssembly.getFile().getName());
+                    logger.warning("Check Atom Type for Atom " + (i + 1) + " in " + activeMolecularAssembly.getFile().getName());
                     return false;
                 }
                 Atom a = new Atom(i + 1, atomName, atomType, d[i]);
@@ -251,7 +251,7 @@ public class XYZFilter extends SystemFilter {
                     int a2 = bonds[i - 1][j];
                     if (a1 < a2) {
                         if (a1 > numberOfAtoms || a1 < 1 || a2 > numberOfAtoms || a2 < 1) {
-                            logger.warning("Check the Bond Bewteen " + a1 + " and " + a2 + " in " + molecularAssembly.getFile().getName());
+                            logger.warning("Check the Bond Bewteen " + a1 + " and " + a2 + " in " + activeMolecularAssembly.getFile().getName());
                             return false;
                         }
                         // Check for bidirectional connection
@@ -265,13 +265,13 @@ public class XYZFilter extends SystemFilter {
                             }
                         }
                         if (!bidirectional) {
-                            logger.warning("Check the Bond Bewteen " + a1 + " and " + a2 + " in " + molecularAssembly.getFile().getName());
+                            logger.warning("Check the Bond Bewteen " + a1 + " and " + a2 + " in " + activeMolecularAssembly.getFile().getName());
                             return false;
                         }
                         Atom atom1 = atomList.get(a1 - 1);
                         Atom atom2 = atomList.get(a2 - 1);
                         if (atom1 == null || atom2 == null) {
-                            logger.warning("Check the Bond Bewteen " + a1 + " and " + a2 + " in " + molecularAssembly.getFile().getName());
+                            logger.warning("Check the Bond Bewteen " + a1 + " and " + a2 + " in " + activeMolecularAssembly.getFile().getName());
                             return false;
                         }
                         Bond bond = new Bond(atom1, atom2);
@@ -302,9 +302,9 @@ public class XYZFilter extends SystemFilter {
         // If the first entry was read successfully, reopen the
         // archive file and read the rest of the coordinates
         try {
-            logger.info("Trying to parse " + molecularAssembly.getFile() + " as an archive.");
+            logger.info("Trying to parse " + activeMolecularAssembly.getFile() + " as an archive.");
             BufferedReader bin = new BufferedReader(new FileReader(
-                    molecularAssembly.getFile()));
+                    activeMolecularAssembly.getFile()));
             String data = null;
             int numatoms = atomList.size();
             int cycle = 1;
@@ -340,7 +340,7 @@ public class XYZFilter extends SystemFilter {
                     }
                     String[] tokens = data.trim().split(" +");
                     if (tokens == null || tokens.length < 6) {
-                        logger.warning("Check atom " + (i + 1) + ", archive entry " + (cycle + 1) + " in " + molecularAssembly.getFile().getName());
+                        logger.warning("Check atom " + (i + 1) + ", archive entry " + (cycle + 1) + " in " + activeMolecularAssembly.getFile().getName());
                         return false;
                     }
                     coords[i][0] = Double.parseDouble(tokens[2]);
@@ -355,7 +355,7 @@ public class XYZFilter extends SystemFilter {
                 }
                 cycle++;
             }
-            molecularAssembly.setCycles(cycle);
+            activeMolecularAssembly.setCycles(cycle);
             setFileRead(true);
             return true;
         } catch (FileNotFoundException e) {
@@ -376,21 +376,21 @@ public class XYZFilter extends SystemFilter {
             if (!append) {
                 newFile = version(saveFile);
             }
-            molecularAssembly.setFile(newFile);
-            molecularAssembly.setName(newFile.getName());
+            activeMolecularAssembly.setFile(newFile);
+            activeMolecularAssembly.setName(newFile.getName());
             FileWriter fw = new FileWriter(newFile, append);
             BufferedWriter bw = new BufferedWriter(fw);
 
             // XYZ File First Line
-            int numberOfAtoms = molecularAssembly.getAtomList().size();
-            String output = format("%7d  %s\n", numberOfAtoms, molecularAssembly.toString());
+            int numberOfAtoms = activeMolecularAssembly.getAtomList().size();
+            String output = format("%7d  %s\n", numberOfAtoms, activeMolecularAssembly.toString());
             bw.write(output);
             Atom a2;
             StringBuffer line;
             StringBuffer lines[] = new StringBuffer[numberOfAtoms];
             // XYZ File Atom Lines
-            ArrayList<Atom> atoms = molecularAssembly.getAtomList();
-            Vector3d offset = molecularAssembly.getOffset();
+            ArrayList<Atom> atoms = activeMolecularAssembly.getAtomList();
+            Vector3d offset = activeMolecularAssembly.getOffset();
             for (Atom a : atoms) {
                 line = new StringBuffer(format(
                         "%7d %3s%14.8f%14.8f%14.8f%6d", a.getXYZIndex(), a.getAtomType().name, a.getX() - offset.x, a.getY() - offset.y, a.getZ() - offset.z, a.getType()));
@@ -406,14 +406,14 @@ public class XYZFilter extends SystemFilter {
                 }
             } catch (Exception e) {
                 logger.severe(
-                        "Their was an unexpected error writing to " + getMolecularSystem().toString() + "\n" + e + "\nForce Field Xplor will continue...");
+                        "Their was an unexpected error writing to " + getActiveMolecularSystem().toString() + "\n" + e + "\nForce Field Xplor will continue...");
                 return false;
             }
             bw.close();
             fw.close();
         } catch (IOException e) {
             logger.severe(
-                    "Their was an unexpected error writing to " + getMolecularSystem().toString() + "\n" + e + "\nForce Field Xplor will continue...");
+                    "Their was an unexpected error writing to " + getActiveMolecularSystem().toString() + "\n" + e + "\nForce Field Xplor will continue...");
             return false;
         }
         return true;
@@ -428,21 +428,21 @@ public class XYZFilter extends SystemFilter {
             if (!append) {
                 newFile = version(saveFile);
             }
-            molecularAssembly.setFile(newFile);
-            molecularAssembly.setName(newFile.getName());
+            activeMolecularAssembly.setFile(newFile);
+            activeMolecularAssembly.setName(newFile.getName());
             FileWriter fw = new FileWriter(newFile, append);
             BufferedWriter bw = new BufferedWriter(fw);
             int nSymm = crystal.spaceGroup.symOps.size();
             // XYZ File First Line
-            int numberOfAtoms = molecularAssembly.getAtomList().size() * nSymm;
-            String output = format("%7d %s\n", numberOfAtoms, molecularAssembly.toString());
+            int numberOfAtoms = activeMolecularAssembly.getAtomList().size() * nSymm;
+            String output = format("%7d %s\n", numberOfAtoms, activeMolecularAssembly.toString());
             bw.write(output);
             Atom a2;
             StringBuffer line;
             StringBuffer lines[] = new StringBuffer[numberOfAtoms];
             // XYZ File Atom Lines
-            ArrayList<Atom> atoms = molecularAssembly.getAtomList();
-            Vector3d offset = molecularAssembly.getOffset();
+            ArrayList<Atom> atoms = activeMolecularAssembly.getAtomList();
+            Vector3d offset = activeMolecularAssembly.getOffset();
             double xyz[] = new double[3];
             Vector<SymOp> symOps = crystal.spaceGroup.symOps;
             int ii = 0;
@@ -473,14 +473,14 @@ public class XYZFilter extends SystemFilter {
                 }
             } catch (Exception e) {
                 logger.severe(
-                        "Their was an unexpected error writing to " + getMolecularSystem().toString() + "\n" + e + "\nForce Field X will continue...");
+                        "Their was an unexpected error writing to " + getActiveMolecularSystem().toString() + "\n" + e + "\nForce Field X will continue...");
                 return false;
             }
             bw.close();
             fw.close();
         } catch (IOException e) {
             logger.severe(
-                    "Their was an unexpected error writing to " + getMolecularSystem().toString() + "\n" + e + "\nForce Field X will continue...");
+                    "Their was an unexpected error writing to " + getActiveMolecularSystem().toString() + "\n" + e + "\nForce Field X will continue...");
             return false;
         }
         return true;

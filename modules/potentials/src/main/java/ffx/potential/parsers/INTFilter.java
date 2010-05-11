@@ -192,7 +192,7 @@ public class INTFilter extends SystemFilter {
      */
     @Override
     public boolean readFile() {
-        File intFile = molecularAssembly.getFile();
+        File intFile = activeMolecularAssembly.getFile();
         if (forceField == null) {
             logger.warning("No force field is associated with " + intFile.toString());
             return false;
@@ -224,7 +224,7 @@ public class INTFilter extends SystemFilter {
             }
             if (tokens.length >= 2) {
                 tokens = data.trim().split(" +", 2);
-                molecularAssembly.setName(tokens[1]);
+                activeMolecularAssembly.setName(tokens[1]);
             }
             logger.info("  Opening " + intFile.getName() + " with " + numberOfAtoms + " atoms");
             double d[] = {0.0d, 0.0d, 0.0d};
@@ -240,12 +240,12 @@ public class INTFilter extends SystemFilter {
                 }
                 data = br.readLine();
                 if (data == null) {
-                    logger.severe("  Check atom " + (i + 1) + " in " + molecularAssembly.getFile().getName());
+                    logger.severe("  Check atom " + (i + 1) + " in " + activeMolecularAssembly.getFile().getName());
                     return false;
                 }
                 tokens = data.trim().split(" +");
                 if (tokens == null || tokens.length < 3) {
-                    logger.severe("  Check atom " + (i + 1) + " in " + molecularAssembly.getFile().getName());
+                    logger.severe("  Check atom " + (i + 1) + " in " + activeMolecularAssembly.getFile().getName());
                     return false;
                 }
                 // Atom number, name, type
@@ -253,7 +253,7 @@ public class INTFilter extends SystemFilter {
                 int type = Integer.parseInt(tokens[2]);
                 AtomType atomType = forceField.getAtomType(String.valueOf(type));
                 if (atomType == null) {
-                    logger.severe("  Check atom " + (i + 1) + " in " + molecularAssembly.getFile().getName());
+                    logger.severe("  Check atom " + (i + 1) + " in " + activeMolecularAssembly.getFile().getName());
                     return false;
                 }
                 Atom atom = new Atom(i + 1, name, atomType, d);
@@ -299,7 +299,7 @@ public class INTFilter extends SystemFilter {
                         } else {
                             tokens = data.trim().split(" +");
                             if (tokens.length != 2) {
-                                logger.severe("  Check Additional Bond Pair: " + (zadd.size() + 1) + " in " + molecularAssembly.getFile().getName());
+                                logger.severe("  Check Additional Bond Pair: " + (zadd.size() + 1) + " in " + activeMolecularAssembly.getFile().getName());
                                 return false;
                             }
                             int pair[] = new int[2];
@@ -313,7 +313,7 @@ public class INTFilter extends SystemFilter {
                         data = br.readLine();
                         tokens = data.trim().split(" +");
                         if (tokens.length != 2) {
-                            logger.severe("  Check Bond Pair to Remove: " + (zadd.size() + 1) + " in " + molecularAssembly.getFile().getName());
+                            logger.severe("  Check Bond Pair to Remove: " + (zadd.size() + 1) + " in " + activeMolecularAssembly.getFile().getName());
                             return false;
                         }
                         int pair[] = new int[2];
