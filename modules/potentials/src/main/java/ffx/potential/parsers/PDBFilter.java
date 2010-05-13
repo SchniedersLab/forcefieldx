@@ -215,6 +215,7 @@ public final class PDBFilter extends SystemFilter {
         // First atom is #1, to match xyz file format
         int xyzIndex = 1;
         setFileRead(false);
+        systems.add(activeMolecularAssembly);
 
         // Temporary Check
         if (files == null) {
@@ -229,6 +230,9 @@ public final class PDBFilter extends SystemFilter {
         try {
             for (int i = 0; i < files.length; i++) {
                 currentFile = files[i];
+                currentChainID = null;
+                currentSegID = null;
+                
                 File pdbFile = null;
                 if (pdbURL == null) {
                     // Open a data stream to the PDB file
@@ -277,7 +281,7 @@ public final class PDBFilter extends SystemFilter {
                 } else {
                     logger.info(" Reading " + pdbFile.getName() + " alternate location " + currentAltLoc + ".");
                 }
-                systems.add(activeMolecularAssembly);
+
                 String pdbLine = br.readLine();
                 while ((pdbLine != null) && (!pdbLine.startsWith("END"))) {
                     int len = pdbLine.length();

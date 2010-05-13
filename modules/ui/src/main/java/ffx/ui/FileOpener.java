@@ -22,15 +22,13 @@ package ffx.ui;
 
 import java.awt.Cursor;
 import java.util.logging.Logger;
+import java.util.Vector;
+
+import org.apache.commons.io.FilenameUtils;
 
 import ffx.potential.bonded.Utilities;
-import ffx.potential.bonded.Utilities.FileType;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.SystemFilter;
-import java.io.File;
-import java.util.Vector;
-import java.util.logging.Level;
-import org.apache.commons.io.FilenameUtils;
 
 /**
  * The FileOpener class opens a file into Force Field X using a filter
@@ -81,16 +79,20 @@ public class FileOpener
             if (systemFilter instanceof PDBFilter) {
                 PDBFilter pdbFilter = (PDBFilter) systemFilter;
                 Vector<Character> altLocs = pdbFilter.getAltLocs();
-                StringBuffer altLocString = new StringBuffer(" Alternate locations [ ");
-                for (Character c : altLocs) {
-                    // Do not report the root conformer.
-                    if (c == ' ') {
-                        continue;
+                if (altLocs.size() > 1 || altLocs.get(0) != ' ') {
+                    StringBuffer altLocString = new StringBuffer(" Alternate locations [ ");
+                    for (Character c : altLocs) {
+                        // Do not report the root conformer.
+                        if (c == ' ') {
+                            continue;
+                        }
+                        altLocString.append("(" + c + ") ");
                     }
-                    altLocString.append("(" + c + ") ");
+                    altLocString.append("]");
+                    logger.info(altLocString.toString());
+                } else {
+                    logger.info(" No alternate conformers detected.");
                 }
-                altLocString.append("]");
-                logger.info(altLocString.toString());
 
                 /**
                  * Alternate conformers may have different chemistry, so they

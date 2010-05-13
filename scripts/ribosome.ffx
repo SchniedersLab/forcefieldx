@@ -1,8 +1,7 @@
 
-String[] files = ["tests/ribosome/2J00.a.pdb", "tests/ribosome/2J01.a.pdb",
-                  "tests/ribosome/2J02.a.pdb", "tests/ribosome/2J03.a.pdb"] as String[];
+String[] files = ["tests/ribosome/2J00.a.pdb","tests/ribosome/2J01.a.pdb",
+                  "tests/ribosome/2J02.a.pdb","tests/ribosome/2J03.a.pdb"] as String[];
 active = open(files);
-
 
 
 
