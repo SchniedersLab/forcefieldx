@@ -22,15 +22,15 @@ package ffx.potential.parsers;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Vector;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 
-import ffx.potential.bonded.MolecularAssembly;
-import ffx.potential.bonded.Utilities.FileType;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
+import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.bonded.Utilities.FileType;
 import ffx.potential.parameters.ForceField;
-import java.util.Vector;
 
 /**
  * The SystemFilter class is the base class for most Force Field X file parsers.
@@ -127,16 +127,48 @@ public abstract class SystemFilter {
         return previousFile;
     }
     /**
-     * The atomList and bondList are filled by the filters that extend 
-     * this base class.
+     * The atomList is filled by filters that extend SystemFilter.
      */
     protected ArrayList<Atom> atomList = null;
+    /**
+     * The bondList may be filled by the filters that extend SystemFilter.
+     */
     protected ArrayList<Bond> bondList = null;
+    /**
+     * The current MolecularAssembly being populated. Note that more than one
+     * MolecularAssembly should be defined for PDB files with
+     * alternate locations.
+     */
     protected MolecularAssembly activeMolecularAssembly = null;
+    /**
+     * All MolecularAssembly instances defined. More than one
+     * MolecularAssembly should be defined for PDB entries with
+     * alternate locations.
+     */
     protected Vector<MolecularAssembly> systems = new Vector<MolecularAssembly>();
+    /**
+     * File currently being read.
+     */
+    protected File currentFile = null;
+    /**
+     * Append multiple files into one MolecularAssembly.
+     */
+    protected File files[] = null;
+    /**
+     * The file format being handled.
+     */
     protected FileType fileType = FileType.UNK;
+    /**
+     * Properties associated with this file.
+     */
     protected CompositeConfiguration properties;
+    /**
+     * The molecular mechanics force field being used.
+     */
     protected ForceField forceField = null;
+    /**
+     * True after the file has been read successfully.
+     */
     protected boolean fileRead = false;
 
     /**
@@ -207,6 +239,14 @@ public abstract class SystemFilter {
         return fileType;
     }
 
+    public File getFile() {
+        return currentFile;
+    }
+
+    public File[] getFiles() {
+        return files;
+    }
+
     /**
      * This method is different for each subclass and must be overidden
      */
@@ -230,6 +270,17 @@ public abstract class SystemFilter {
 
     public void setType(FileType fileType) {
         this.fileType = fileType;
+    }
+
+    public void setFile(File file) {
+        this.currentFile = file;
+        files = new File[1];
+        files[0] = file;
+    }
+
+    public void setFiles(File files[]) {
+        this.files = files;
+        this.currentFile = files[0];
     }
 
     /**

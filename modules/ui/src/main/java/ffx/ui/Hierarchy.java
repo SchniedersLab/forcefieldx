@@ -319,10 +319,6 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
             if (mainPanel.getKeywordPanel() != null) {
                 mainPanel.getKeywordPanel().loadActive(activeSystem);
             }
-            /*
-            if (mainPanel.getModelingPanel() != null) {
-                mainPanel.getModelingPanel().loadActive(activeSystem);
-            } */
             if (mainPanel.getModelingShell() != null) {
                 mainPanel.getModelingShell().sync();
             }

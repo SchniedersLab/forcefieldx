@@ -23,7 +23,6 @@ package ffx.potential.bonded;
 import static ffx.utilities.HashCodeUtil.hash;
 import static ffx.utilities.HashCodeUtil.SEED;
 
-import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
@@ -187,7 +186,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      *
      * @since 1.0
      */
-    private String chainID = null;
+    private Character chainID = null;
     /**
      * Array of altLoc identifiers defined for this atom.
      *
@@ -242,9 +241,9 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * @since 1.0
      */
     private double anisouGradient[];
+    private String segID = null;
     private double formFactorWidth = 3.0;
     private int formFactorIndex = 0;
-
     private ArrayList<Vector3d> trajectory;
     // Molecular Mechanics Info
     private AtomType atomType = null;
@@ -339,7 +338,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     public Atom(int xyzIndex, String name,
                 Character altLoc, double[] d, String resName, int resSeq,
-                String chainID, double occupancy, double tempFactor) {
+                Character chainID, double occupancy, double tempFactor) {
         this(xyzIndex, name, null, d);
         this.resName = resName;
         this.resSeq = resSeq;
@@ -347,6 +346,20 @@ public class Atom extends MSNode implements Comparable<Atom> {
         this.altLoc = altLoc;
         this.occupancy = occupancy;
         this.tempFactor = tempFactor;
+    }
+
+    public Atom(int xyzIndex, String name,
+                Character altLoc, double[] d, String resName, int resSeq,
+                Character chainID, double occupancy, double tempFactor,
+                String segID) {
+        this(xyzIndex, name, null, d);
+        this.resName = resName;
+        this.resSeq = resSeq;
+        this.chainID = chainID;
+        this.altLoc = altLoc;
+        this.occupancy = occupancy;
+        this.tempFactor = tempFactor;
+        this.segID = segID;
     }
 
     public void addTrajectoryCoords(Vector3d coords, int position) {
@@ -396,10 +409,10 @@ public class Atom extends MSNode implements Comparable<Atom> {
         }
         Atom other = (Atom) object;
 
-        return (other.chainID != null && other.chainID.equals(chainID)
-                && other.resName != null && other.resName.equals(resName)
+        return (other.resName != null && other.resName.equals(resName)
                 && other.resSeq == resSeq
-                && other.name != null && other.name.equals(name));
+                && other.name != null && other.name.equals(name)
+                && other.segID != null && other.segID.equals(segID));
     }
 
     public ArrayList<Angle> getAngles() {
@@ -476,7 +489,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      *
      * @return String
      */
-    public String getChain() {
+    public Character getChainID() {
         if (chainID != null) {
             return chainID;
         }
@@ -484,8 +497,12 @@ public class Atom extends MSNode implements Comparable<Atom> {
         if (p == null) {
             return null;
         }
-        chainID = p.getName();
+        chainID = p.getName().charAt(0);
         return chainID;
+    }
+
+    public String getSegID() {
+        return segID;
     }
 
     /**
@@ -673,9 +690,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
         temp.set(xyz);
     }
 
-    // public final Vector3f getnewV3D(){ return new Vector3f(v3f); }
     /**
-     * Gets the van der Waals radius return van der Waals radius
+     * Gets the van der Waals radius.
      */
     public double getVDWR() {
         return 1.0;

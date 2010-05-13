@@ -110,6 +110,7 @@ import ffx.potential.parameters.ForceField.ForceFieldString;
 import ffx.potential.parsers.FFXFileFilter;
 import ffx.ui.properties.FFXLocale;
 import ffx.utilities.Keyword;
+import java.util.Vector;
 
 /**
  * The MainPanel class is the main container for Force Field X, handles
@@ -1034,7 +1035,7 @@ public final class MainPanel extends JPanel implements ActionListener,
         // Create the CompositeConfiguration properties.
         CompositeConfiguration properties = Keyword.loadProperties(file);
 
-        // Create a FFXSystem for this file.
+        // Create an FFXSystem for this file.
         FFXSystem newSystem = new FFXSystem(file, commandDescription, properties);
         SystemFilter systemFilter = null;
 
@@ -1050,6 +1051,62 @@ public final class MainPanel extends JPanel implements ActionListener,
             systemFilter = new PDBFilter(newSystem);
         }
 
+        systemFilter.setFile(file);
+        forceFieldFilter = new ForceFieldFilter(properties);
+        ForceField forceField = forceFieldFilter.parse();
+        newSystem.setForceField(forceField);
+        systemFilter.setForceField(forceField);
+        systemFilter.setProperties(properties);
+
+        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+        activeFilter = systemFilter;
+        FileOpener openFile = new FileOpener(systemFilter, this);
+        openThread = new Thread(openFile);
+        openThread.start();
+        setPanel(GRAPHICS);
+
+        return openThread;
+    }
+
+        /**
+     * Attempts to load the supplied file
+     *
+     * @param file
+     *            File to open
+     * @param commandDescription
+     *            Description of the command that created this file.
+     */
+    public Thread open(File files[], String commandDescription) {
+        if (files == null || !files[0].isFile() || !files[0].canRead()) {
+            return null;
+        }
+        File file = new File(FilenameUtils.normalize(files[0].getAbsolutePath()));
+        // Set the Current Working Directory based on this file.
+        setCWD(file.getParentFile());
+
+        // Get "filename" from "filename.extension".
+        String name = file.getName();
+        String extension = FilenameUtils.getExtension(name);
+
+        // Create the CompositeConfiguration properties.
+        CompositeConfiguration properties = Keyword.loadProperties(file);
+
+        // Create an FFXSystem for this file.
+        FFXSystem newSystem = new FFXSystem(file, commandDescription, properties);
+        SystemFilter systemFilter = null;
+
+        // Decide which parser to use.
+        if (xyzFileFilter.acceptDeep(file)) {
+            // Use the TINKER Cartesian Coordinate File Parser.
+            systemFilter = new XYZFilter(newSystem);
+        } else if (intFileFilter.acceptDeep(file)) {
+            // Use the TINKER Internal Coordinate File Parser.
+            systemFilter = new INTFilter(newSystem);
+        } else {
+            // Use the PDB File Parser.
+            systemFilter = new PDBFilter(newSystem);
+        }
+        systemFilter.setFiles(files);
         forceFieldFilter = new ForceFieldFilter(properties);
         ForceField forceField = forceFieldFilter.parse();
         newSystem.setForceField(forceField);
@@ -1079,6 +1136,36 @@ public final class MainPanel extends JPanel implements ActionListener,
                 }
             }
         }
+
+        MolecularAssembly systems[] = activeFilter.getMolecularAssemblys();
+        if (systems != null) {
+            int n = systems.length;
+            FFXSystem ffxSystems[] = new FFXSystem[n];
+            FFXSystem allSystems[] = getHierarchy().getSystems();
+            int total = allSystems.length;
+            for (int i = 0; i < n; i++) {
+                ffxSystems[i] = allSystems[total - n + i];
+            }
+            return ffxSystems;
+        } else {
+            return null;
+        }
+    }
+
+    public FFXSystem[] openWait(String files[]) {
+        Thread thread = open(files);
+        while (thread != null && thread.isAlive()) {
+            synchronized (this) {
+                try {
+                    wait(1);
+                } catch (Exception e) {
+                    String message = "Exception waiting for " + files[0] + " to open.";
+                    logger.log(Level.WARNING, message, e);
+                    return null;
+                }
+            }
+        }
+
         MolecularAssembly systems[] = activeFilter.getMolecularAssemblys();
         if (systems != null) {
             int n = systems.length;
@@ -1109,6 +1196,30 @@ public final class MainPanel extends JPanel implements ActionListener,
             }
         }
         return open(f, null);
+    }
+
+    public Thread open(String name[]) {
+        if (name == null) {
+            return null;
+        }
+        int n = name.length;
+        File files[] = new File[n];
+
+        // Check for an absolute pathname
+        for (int i = 0; i < n; i++) {
+            String currentFile = name[i];
+            File file = new File(currentFile);
+            if (!file.exists()) {
+                // Check for a file in the CWD
+                file = new File(pwd + File.separator + currentFile);
+                if (!file.exists()) {
+                    logger.warning(currentFile + ": could not be found.");
+                    return null;
+                }
+            }
+            files[i] = file;
+        }
+        return open(files, null);
     }
 
     /**

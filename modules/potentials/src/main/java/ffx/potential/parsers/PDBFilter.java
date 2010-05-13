@@ -68,26 +68,74 @@ import ffx.potential.parsers.PDBFilter.ResiduePosition;
 public final class PDBFilter extends SystemFilter {
 
     private static final Logger logger = Logger.getLogger(PDBFilter.class.getName());
-    private String pdbURL = null;
-
-    public static String pdbForID(String id) {
-        if (id.length() != 4) {
-            return null;
-        }
-        return "http://www.rcsb.org/pdb/files/" + id.toLowerCase() + ".pdb.gz";
-    }
-
-    public static String cifForID(String id) {
-        if (id.length() != 4) {
-            return null;
-        }
-        return "http://www.rcsb.org/pdb/files/" + id.toLowerCase() + ".cif.gz";
-    }
     /**
-     * Keep track of altLoc Characters.
+     * URL of the PDB file from the RCSB website (www.rcsb.org).
+     */
+    private String pdbURL = null;
+    /**
+     * List of altLoc characters seen in the PDB file.
      */
     private Vector<Character> altLocs = new Vector<Character>();
+    /**
+     * The current altLoc - ie. the one we are defining a chemical system for.
+     */
     private Character currentAltLoc = 'A';
+    /**
+     * List of segIDs defined for the PDB file.
+     *
+     * The expectation is for chain naming from A-Z, then from 0-9. For large
+     * systems, chain names are sometimes reused due to limitations in
+     * the PBD format.
+     *
+     * However, we define segIDs to always be unique. For the first A-Z,0-9
+     * series chainID == segID. Then, for second A-Z,0-9 series, the
+     * segID = 1A-1Z,10-19, and for the third series segID = 2A-2Z,20-29,
+     * and so on.
+     */
+    private Vector<String> segIDs = new Vector<String>();
+    private Character currentChainID = null;
+    private String currentSegID = null;
+
+    /**
+     * Convert possibly duplicate chain IDs into unique segIDs.
+     * @param c chain ID just read.
+     * @return a unique segID.
+     */
+    private String getSegID(Character c) {
+        if (c.equals(' ')) {
+            c = 'A';
+        }
+
+        // If the chain ID has not changed, return the existing segID.
+        if (c.equals(currentChainID)) {
+            return currentSegID;
+        }
+
+
+        // Loop through existing segIDs to find the first one that is unused.
+        int n = segIDs.size();
+        int count = 0;
+        for (int i = 0; i < n; i++) {
+            String segID = segIDs.get(i);
+            if (segID.endsWith(c.toString())) {
+                count++;
+            }
+        }
+
+        // If the count is greater than 0, then append it.
+        String newSegID = null;
+        if (count == 0) {
+            newSegID = c.toString();
+        } else {
+            newSegID = Integer.toString(count) + c.toString() ;
+        }
+
+        segIDs.add(newSegID);
+        currentChainID = c;
+        currentSegID = newSegID;
+
+        return newSegID;
+    }
     /**
      * Keep track of ATOM record serial numbers to match them with ANISOU
      * records.
@@ -122,12 +170,35 @@ public final class PDBFilter extends SystemFilter {
         REMARK
     };
 
-    public void setAltID(MolecularAssembly molecularAssembly,
-            Character c) {
-        setMolecularSystem(molecularAssembly);
-        currentAltLoc = c;
+    public static String pdbForID(String id) {
+        if (id.length() != 4) {
+            return null;
+        }
+        return "http://www.rcsb.org/pdb/files/" + id.toLowerCase() + ".pdb.gz";
     }
 
+    public static String cifForID(String id) {
+        if (id.length() != 4) {
+            return null;
+        }
+        return "http://www.rcsb.org/pdb/files/" + id.toLowerCase() + ".cif.gz";
+    }
+
+    /**
+     * Specify the alternate location.
+     * @param molecularAssembly The MolecularAssembly to populate.
+     * @param altLoc The alternate location to use.
+     */
+    public void setAltID(MolecularAssembly molecularAssembly,
+                         Character altLoc) {
+        setMolecularSystem(molecularAssembly);
+        currentAltLoc = altLoc;
+    }
+
+    /**
+     * Get the list of alternate locations encountered.
+     * @return the alternate location list.
+     */
     public Vector<Character> getAltLocs() {
         return altLocs;
     }
@@ -137,78 +208,91 @@ public final class PDBFilter extends SystemFilter {
      */
     @Override
     public boolean readFile() {
+
         FileWriter fw = null;
         BufferedReader br = null;
         BufferedWriter bw = null;
-        try {
-            setFileRead(false);
-            File pdbFile = null;
-            if (pdbURL == null) {
-                // Open a data stream to the PDB file
-                pdbFile = activeMolecularAssembly.getFile();
-                if (pdbFile == null || !pdbFile.exists() || !pdbFile.canRead()) {
-                    return false;
-                }
-                FileReader fr = new FileReader(pdbFile);
-                br = new BufferedReader(fr);
+        // First atom is #1, to match xyz file format
+        int xyzIndex = 1;
+        setFileRead(false);
+
+        // Temporary Check
+        if (files == null) {
+            files = new File[1];
+            if (currentFile != null) {
+                files[0] = currentFile;
             } else {
-                try {
-                    URL url = new URL(pdbURL);
-                    GZIPInputStream is = new GZIPInputStream(url.openStream());
-                    br = new BufferedReader(new InputStreamReader(is));
-                    int retry = 0;
-                    while (!br.ready() && retry < 10) {
-                        synchronized (this) {
-                            if (logger.isLoggable(Level.INFO)) {
-                                logger.info("Waiting on Network");
+                files[0] = activeMolecularAssembly.getFile();
+            }
+        }
+
+        try {
+            for (int i = 0; i < files.length; i++) {
+                currentFile = files[i];
+                File pdbFile = null;
+                if (pdbURL == null) {
+                    // Open a data stream to the PDB file
+                    pdbFile = currentFile;
+                    if (pdbFile == null || !pdbFile.exists() || !pdbFile.canRead()) {
+                        return false;
+                    }
+                    FileReader fr = new FileReader(pdbFile);
+                    br = new BufferedReader(fr);
+                } else {
+                    try {
+                        URL url = new URL(pdbURL);
+                        GZIPInputStream is = new GZIPInputStream(url.openStream());
+                        br = new BufferedReader(new InputStreamReader(is));
+                        int retry = 0;
+                        while (!br.ready() && retry < 10) {
+                            synchronized (this) {
+                                if (logger.isLoggable(Level.INFO)) {
+                                    logger.info("Waiting on Network");
+                                }
+                                wait(50);
+                                retry++;
                             }
-                            wait(50);
-                            retry++;
+                        }
+                    } catch (Exception e) {
+                        logger.exiting(PDBFilter.class.getName(), "readFile", e);
+                        return false;
+                    }
+                    // The downloaded PBD file will be echoed to the local file
+                    // system (if the file does not already exist)
+                    pdbFile = activeMolecularAssembly.getFile();
+                    if (pdbFile != null && !pdbFile.exists()) {
+                        fw = new FileWriter(pdbFile);
+                        bw = new BufferedWriter(fw);
+                        if (logger.isLoggable(Level.INFO)) {
+                            logger.info(" Saving to: " + pdbFile.getAbsolutePath());
                         }
                     }
-                } catch (Exception e) {
-                    logger.exiting(PDBFilter.class.getName(), "readFile", e);
-                    return false;
                 }
-                // The downloaded PBD file will be echoed to the local file
-                // system (if the file does not already exist)
-                pdbFile = activeMolecularAssembly.getFile();
-                if (pdbFile != null && !pdbFile.exists()) {
-                    fw = new FileWriter(pdbFile);
-                    bw = new BufferedWriter(fw);
-                    if (logger.isLoggable(Level.INFO)) {
-                        logger.info(" Saving to: " + pdbFile.getAbsolutePath());
+                String[] connect;
+                ArrayList<String[]> links = new ArrayList<String[]>();
+                Vector<String[]> structs = new Vector<String[]>();
+                // While the END parameter is not read in, load atoms
+                if (currentAltLoc == 'A') {
+                    logger.info(" Reading " + pdbFile.getName());
+                } else {
+                    logger.info(" Reading " + pdbFile.getName() + " alternate location " + currentAltLoc + ".");
+                }
+                systems.add(activeMolecularAssembly);
+                String pdbLine = br.readLine();
+                while ((pdbLine != null) && (!pdbLine.startsWith("END"))) {
+                    int len = pdbLine.length();
+                    String identity = pdbLine;
+                    if (len > 6) {
+                        identity = pdbLine.substring(0, 6).trim().toUpperCase().intern();
                     }
-                }
-            }
-            // First atom is #1, to match xyz file format
-            int xyzIndex = 1;
-            boolean useSegID = properties.getBoolean("ffx.useSegID", false);
-            String[] connect;
-            ArrayList<String[]> links = new ArrayList<String[]>();
-            Vector<String[]> structs = new Vector<String[]>();
-            // While the END parameter is not read in, load atoms
-            if (currentAltLoc == 'A') {
-                logger.info("\n Reading " + pdbFile.getName());
-            } else {
-                logger.info("\n Reading " + pdbFile.getName() + " alternate location " + currentAltLoc + ".");
-            }
-            systems.add(activeMolecularAssembly);
-            String pdbLine = br.readLine();
-            while ((pdbLine != null) && (!pdbLine.startsWith("END"))) {
-                int len = pdbLine.length();
-                String identity = pdbLine;
-                if (len > 6) {
-                    identity = pdbLine.substring(0, 6).trim().toUpperCase().intern();
-                }
-                Card card = null;
-                try {
-                    card = Card.valueOf(identity);
-                } catch (Exception e) {
-                    card = Card.REMARK;
-                }
-                switch (card) {
-                    case ANISOU:
+                    Card card = null;
+                    try {
+                        card = Card.valueOf(identity);
+                    } catch (Exception e) {
+                        card = Card.REMARK;
+                    }
+                    switch (card) {
+                        case ANISOU:
 // =============================================================================
 //  1 - 6        Record name   "ANISOU"
 //  7 - 11       Integer       serial         Atom serial number.
@@ -227,43 +311,32 @@ public final class PDBFilter extends SystemFilter {
 // 77 - 78       LString(2)    element        Element symbol, right-justified.
 // 79 - 80       LString(2)    charge         Charge on the atom.
 // =============================================================================
-                        Integer serial = new Integer(pdbLine.substring(6, 11).trim());
-                        String name = pdbLine.substring(12, 16).trim().intern();
-                        Character altLoc = new Character(pdbLine.substring(16, 17).toUpperCase().charAt(0));
-                        if (!altLocs.contains(altLoc)) {
-                            altLocs.add(altLoc);
-                        }
-                        if (!altLoc.equals(' ') && !altLoc.equals(currentAltLoc)) {
+                            Integer serial = new Integer(pdbLine.substring(6, 11).trim());
+                            Character altLoc = new Character(pdbLine.substring(16, 17).toUpperCase().charAt(0));
+                            if (!altLocs.contains(altLoc)) {
+                                altLocs.add(altLoc);
+                            }
+                            if (!altLoc.equals(' ') && !altLoc.equals('A')
+                                && !altLoc.equals(currentAltLoc)) {
+                                break;
+                            }
+                            double adp[] = new double[6];
+                            adp[0] = new Integer(pdbLine.substring(28, 35).trim()) * 1.0e-4;
+                            adp[1] = new Integer(pdbLine.substring(35, 42).trim()) * 1.0e-4;
+                            adp[2] = new Integer(pdbLine.substring(42, 49).trim()) * 1.0e-4;
+                            adp[3] = new Integer(pdbLine.substring(49, 56).trim()) * 1.0e-4;
+                            adp[4] = new Integer(pdbLine.substring(56, 63).trim()) * 1.0e-4;
+                            adp[5] = new Integer(pdbLine.substring(63, 70).trim()) * 1.0e-4;
+                            if (atoms.containsKey(serial)) {
+                                Atom a = atoms.get(serial);
+                                a.setAltLoc(altLoc);
+                                a.setAnisou(adp);
+                            } else {
+                                logger.info("No ATOM record for ANISOU serial number " + serial + ".");
+                                logger.info("The following ANISOU record will be ignored:\n" + pdbLine);
+                            }
                             break;
-                        }
-                        String resName = pdbLine.substring(17, 20).trim().intern();
-                        String chainID = null;
-                        if (!useSegID) {
-                            chainID = pdbLine.substring(21, 22).intern();
-                        } else {
-                            chainID = pdbLine.substring(72, 76).intern();
-                        }
-                        if (chainID.equalsIgnoreCase(" ")) {
-                            chainID = "Blank".intern();
-                        }
-                        int resSeq = Integer.decode(pdbLine.substring(22, 26).trim()).intValue();
-                        double adp[] = new double[6];
-                        adp[0] = new Integer(pdbLine.substring(28, 35).trim()) * 1.0e-4;
-                        adp[1] = new Integer(pdbLine.substring(35, 42).trim()) * 1.0e-4;
-                        adp[2] = new Integer(pdbLine.substring(42, 49).trim()) * 1.0e-4;
-                        adp[3] = new Integer(pdbLine.substring(49, 56).trim()) * 1.0e-4;
-                        adp[4] = new Integer(pdbLine.substring(56, 63).trim()) * 1.0e-4;
-                        adp[5] = new Integer(pdbLine.substring(63, 70).trim()) * 1.0e-4;
-                        if (atoms.containsKey(serial)) {
-                            Atom a = atoms.get(serial);
-                            a.setAltLoc(altLoc);
-                            a.setAnisou(adp);
-                        } else {
-                            logger.info("No ATOM record for ANISOU serial number " + serial + ".");
-                            logger.info("The following ANISOU record will be ignored:\n" + pdbLine);
-                        }
-                        break;
-                    case ATOM:
+                        case ATOM:
 // =============================================================================
 //  1 -  6        Record name   "ATOM  "
 //  7 - 11        Integer       serial       Atom serial number.
@@ -281,42 +354,37 @@ public final class PDBFilter extends SystemFilter {
 // 77 - 78        LString(2)    element      Element symbol, right-justified.
 // 79 - 80        LString(2)    charge       Charge  on the atom.
 // =============================================================================
-                        serial = new Integer(pdbLine.substring(6, 11).trim());
-                        name = pdbLine.substring(12, 16).trim().intern();
-                        altLoc = new Character(pdbLine.substring(16, 17).toUpperCase().charAt(0));
-                        if (!altLocs.contains(altLoc)) {
-                            altLocs.add(altLoc);
-                        }
-                        if (!altLoc.equals(' ') && !altLoc.equals(currentAltLoc)) {
+                            serial = new Integer(pdbLine.substring(6, 11).trim());
+                            String name = pdbLine.substring(12, 16).trim().intern();
+                            altLoc = new Character(pdbLine.substring(16, 17).toUpperCase().charAt(0));
+                            if (!altLocs.contains(altLoc)) {
+                                altLocs.add(altLoc);
+                            }
+                            if (!altLoc.equals(' ') && !altLoc.equals('A')
+                                && !altLoc.equals(currentAltLoc)) {
+                                break;
+                            }
+                            String resName = pdbLine.substring(17, 20).trim().intern();
+                            Character chainID = pdbLine.substring(21, 22).charAt(0);
+                            String segID = getSegID(chainID);
+                            int resSeq = new Integer(pdbLine.substring(22, 26).trim());
+                            double d[] = new double[3];
+                            d[0] = new Double(pdbLine.substring(30, 38).trim());
+                            d[1] = new Double(pdbLine.substring(38, 46).trim());
+                            d[2] = new Double(pdbLine.substring(46, 54).trim());
+                            double occupancy = new Double(pdbLine.substring(54, 60).trim());
+                            double tempFactor = new Double(pdbLine.substring(60, 66).trim());
+                            Atom a = new Atom(0, name, altLoc, d, resName, resSeq,
+                                              chainID, occupancy, tempFactor, segID);
+                            Atom prev = (Atom) activeMolecularAssembly.addMSNode(a);
+                            if (prev != a) {
+                                atoms.put(serial, prev);
+                            } else {
+                                atoms.put(serial, a);
+                                a.setXYZIndex(xyzIndex++);
+                            }
                             break;
-                        }
-                        resName = pdbLine.substring(17, 20).trim().intern();
-                        chainID = null;
-                        if (!useSegID) {
-                            chainID = pdbLine.substring(21, 22).intern();
-                        } else {
-                            chainID = pdbLine.substring(72, 76).intern();
-                        }
-                        if (chainID.equalsIgnoreCase(" ")) {
-                            chainID = "Blank".intern();
-                        }
-                        resSeq = new Integer(pdbLine.substring(22, 26).trim());
-                        double d[] = new double[3];
-                        d[0] = new Double(pdbLine.substring(30, 38).trim());
-                        d[1] = new Double(pdbLine.substring(38, 46).trim());
-                        d[2] = new Double(pdbLine.substring(46, 54).trim());
-                        double occupancy = new Double(pdbLine.substring(54, 60).trim());
-                        double tempFactor = new Double(pdbLine.substring(60, 66).trim());
-                        Atom a = new Atom(0, name, altLoc, d, resName, resSeq, chainID, occupancy, tempFactor);
-                        Atom prev = (Atom) activeMolecularAssembly.addMSNode(a);
-                        if (prev != a) {
-                            atoms.put(serial, prev);
-                        } else {
-                            atoms.put(serial, a);
-                            a.setXYZIndex(xyzIndex++);
-                        }
-                        break;
-                    case HETATM:
+                        case HETATM:
 // =============================================================================
 //  1 - 6        Record name    "HETATM"
 //  7 - 11       Integer        serial        Atom serial number.
@@ -334,49 +402,43 @@ public final class PDBFilter extends SystemFilter {
 // 77 - 78       LString(2)     element       Element symbol; right-justified.
 // 79 - 80       LString(2)     charge        Charge on the atom.
 // =============================================================================
-                        serial = new Integer(pdbLine.substring(6, 11).trim());
-                        name = pdbLine.substring(12, 16).trim().intern();
-                        altLoc = new Character(pdbLine.substring(16, 17).toUpperCase().charAt(0));
-                        if (!altLocs.contains(altLoc)) {
-                            altLocs.add(altLoc);
-                        }
-                        if (!altLoc.equals(' ') && !altLoc.equals(currentAltLoc)) {
+                            serial = new Integer(pdbLine.substring(6, 11).trim());
+                            name = pdbLine.substring(12, 16).trim().intern();
+                            altLoc = new Character(pdbLine.substring(16, 17).toUpperCase().charAt(0));
+                            if (!altLocs.contains(altLoc)) {
+                                altLocs.add(altLoc);
+                            }
+                            if (!altLoc.equals(' ') && !altLoc.equals(currentAltLoc)) {
+                                break;
+                            }
+                            resName = pdbLine.substring(17, 20).trim().intern();
+                            chainID = pdbLine.substring(21, 22).charAt(0);
+                            segID = getSegID(chainID);
+                            resSeq = new Integer(pdbLine.substring(22, 26).trim());
+                            d = new double[3];
+                            d[0] = new Double(pdbLine.substring(30, 38).trim());
+                            d[1] = new Double(pdbLine.substring(38, 46).trim());
+                            d[2] = new Double(pdbLine.substring(46, 54).trim());
+                            occupancy = new Double(pdbLine.substring(54, 60).trim());
+                            tempFactor = new Double(pdbLine.substring(60, 66).trim());
+                            a = new Atom(0, name, altLoc, d, resName, resSeq, chainID,
+                                         occupancy, tempFactor, segID);
+                            a.setHetero(true);
+                            prev = (Atom) activeMolecularAssembly.addMSNode(a);
+                            if (prev != a) {
+                                atoms.put(serial, prev);
+                            } else {
+                                atoms.put(serial, a);
+                                a.setXYZIndex(xyzIndex++);
+                            }
                             break;
-                        }
-                        resName = pdbLine.substring(17, 20).trim().intern();
-                        chainID = null;
-                        if (!useSegID) {
-                            chainID = pdbLine.substring(21, 22).intern();
-                        } else {
-                            chainID = pdbLine.substring(72, 76).intern();
-                        }
-                        if (chainID.equalsIgnoreCase(" ")) {
-                            chainID = "Blank".intern();
-                        }
-                        resSeq = new Integer(pdbLine.substring(22, 26).trim());
-                        d = new double[3];
-                        d[0] = new Double(pdbLine.substring(30, 38).trim());
-                        d[1] = new Double(pdbLine.substring(38, 46).trim());
-                        d[2] = new Double(pdbLine.substring(46, 54).trim());
-                        occupancy = new Double(pdbLine.substring(54, 60).trim());
-                        tempFactor = new Double(pdbLine.substring(60, 66).trim());
-                        a = new Atom(0, name, altLoc, d, resName, resSeq, chainID, occupancy, tempFactor);
-                        a.setHetero(true);
-                        prev = (Atom) activeMolecularAssembly.addMSNode(a);
-                        if (prev != a) {
-                            atoms.put(serial, prev);
-                        } else {
-                            atoms.put(serial, a);
-                            a.setXYZIndex(xyzIndex++);
-                        }
-                        break;
-                    case CONECT:
-                        connect = new String[2];
-                        connect[0] = pdbLine.substring(7, 11).trim();
-                        connect[1] = pdbLine.substring(12, 16).trim();
-                        links.add(connect);
-                        break;
-                    case CRYST1:
+                        case CONECT:
+                            connect = new String[2];
+                            connect[0] = pdbLine.substring(7, 11).trim();
+                            connect[1] = pdbLine.substring(12, 16).trim();
+                            links.add(connect);
+                            break;
+                        case CRYST1:
 // =============================================================================
 //  7 - 15       Real(9.3)     a              a (Angstroms).
 // 16 - 24       Real(9.3)     b              b (Angstroms).
@@ -387,112 +449,98 @@ public final class PDBFilter extends SystemFilter {
 // 56 - 66       LString       sGroup         Space  group.
 // 67 - 70       Integer       z              Z value.
 // =============================================================================
-                        double aaxis = new Double(pdbLine.substring(6, 15).trim());
-                        double baxis = new Double(pdbLine.substring(15, 24).trim());
-                        double caxis = new Double(pdbLine.substring(24, 33).trim());
-                        double alpha = new Double(pdbLine.substring(33, 40).trim());
-                        double beta = new Double(pdbLine.substring(40, 47).trim());
-                        double gamma = new Double(pdbLine.substring(47, 54).trim());
-                        int limit = 66;
-                        if (len < 66) {
-                            limit = len;
-                        }
-                        String sg = pdbLine.substring(55, limit).trim();
-                        properties.addProperty("a-axis", aaxis);
-                        properties.addProperty("b-axis", baxis);
-                        properties.addProperty("c-axis", caxis);
-                        properties.addProperty("alpha", alpha);
-                        properties.addProperty("beta", beta);
-                        properties.addProperty("gamma", gamma);
-                        properties.addProperty("spacegroup", SpaceGroup.pdb2ShortName(sg));
-                    case SSBOND:
-                        connect = new String[6];
-                        connect[0] = pdbLine.substring(15, 16);
-                        // Polymers
-                        connect[1] = pdbLine.substring(29, 30);
-                        connect[2] = pdbLine.substring(17, 21).trim();
-                        // Residues
-                        connect[3] = pdbLine.substring(31, 35).trim();
-                        connect[4] = new String("SG");
-                        // Atoms
-                        connect[5] = new String("SG");
-                        links.add(connect);
-                        break;
-                    case LINK:
-                        connect = new String[6];
-                        connect[0] = pdbLine.substring(21, 22);
-                        // Polymers
-                        connect[1] = pdbLine.substring(51, 52);
-                        connect[2] = pdbLine.substring(22, 26).trim();
-                        // Residues
-                        connect[3] = pdbLine.substring(52, 56).trim();
-                        connect[4] = pdbLine.substring(12, 16).trim();
-                        // Atoms
-                        connect[5] = pdbLine.substring(42, 46).trim();
-                        links.add(connect);
-                        break;
-                    case HELIX:
-                        String[] struct = new String[6];
-                        struct[0] = pdbLine.substring(0, 6).trim(); // HELIX
-                        struct[1] = pdbLine.substring(19, 20); // Polymers
-                        struct[2] = pdbLine.substring(31, 32);
-                        struct[3] = pdbLine.substring(21, 25).trim(); // Residue
-                        struct[4] = pdbLine.substring(33, 37).trim();
-                        struct[5] = pdbLine.substring(38, 40).trim();
-                        structs.add(struct);
-                        break;
-                    case SHEET:
-                        struct = new String[6];
-                        struct[0] = pdbLine.substring(0, 6).trim(); // SHEET
-                        struct[1] = pdbLine.substring(21, 22); // Polymers
-                        struct[2] = pdbLine.substring(32, 33);
-                        struct[3] = pdbLine.substring(22, 26).trim(); // Residue
-                        struct[4] = pdbLine.substring(33, 37).trim();
-                        struct[5] = pdbLine.substring(38, 40).trim(); // Strand
-                        structs.add(struct);
-                        break;
-                    case TURN:
-                        struct = new String[6];
-                        struct[0] = pdbLine.substring(0, 6).trim(); // TURN
-                        struct[1] = pdbLine.substring(19, 20); // Polymers
-                        struct[2] = pdbLine.substring(30, 31);
-                        struct[3] = pdbLine.substring(20, 24).trim(); // Residue
-                        struct[4] = pdbLine.substring(31, 35).trim();
-                        structs.add(struct);
-                        break;
-                    default:
-                        /**
-                         * Do nothing for the other cards.
-                         */
-                        break;
+                            double aaxis = new Double(pdbLine.substring(6, 15).trim());
+                            double baxis = new Double(pdbLine.substring(15, 24).trim());
+                            double caxis = new Double(pdbLine.substring(24, 33).trim());
+                            double alpha = new Double(pdbLine.substring(33, 40).trim());
+                            double beta = new Double(pdbLine.substring(40, 47).trim());
+                            double gamma = new Double(pdbLine.substring(47, 54).trim());
+                            int limit = 66;
+                            if (len < 66) {
+                                limit = len;
+                            }
+                            String sg = pdbLine.substring(55, limit).trim();
+                            properties.addProperty("a-axis", aaxis);
+                            properties.addProperty("b-axis", baxis);
+                            properties.addProperty("c-axis", caxis);
+                            properties.addProperty("alpha", alpha);
+                            properties.addProperty("beta", beta);
+                            properties.addProperty("gamma", gamma);
+                            properties.addProperty("spacegroup", SpaceGroup.pdb2ShortName(sg));
+                        case SSBOND:
+                            connect = new String[6];
+                            connect[0] = pdbLine.substring(15, 16);
+                            // Polymers
+                            connect[1] = pdbLine.substring(29, 30);
+                            connect[2] = pdbLine.substring(17, 21).trim();
+                            // Residues
+                            connect[3] = pdbLine.substring(31, 35).trim();
+                            connect[4] = new String("SG");
+                            // Atoms
+                            connect[5] = new String("SG");
+                            links.add(connect);
+                            break;
+                        case LINK:
+                            connect = new String[6];
+                            connect[0] = pdbLine.substring(21, 22);
+                            // Polymers
+                            connect[1] = pdbLine.substring(51, 52);
+                            connect[2] = pdbLine.substring(22, 26).trim();
+                            // Residues
+                            connect[3] = pdbLine.substring(52, 56).trim();
+                            connect[4] = pdbLine.substring(12, 16).trim();
+                            // Atoms
+                            connect[5] = pdbLine.substring(42, 46).trim();
+                            links.add(connect);
+                            break;
+                        case HELIX:
+                            String[] struct = new String[6];
+                            struct[0] = pdbLine.substring(0, 6).trim(); // HELIX
+                            struct[1] = pdbLine.substring(19, 20); // Polymers
+                            struct[2] = pdbLine.substring(31, 32);
+                            struct[3] = pdbLine.substring(21, 25).trim(); // Residue
+                            struct[4] = pdbLine.substring(33, 37).trim();
+                            struct[5] = pdbLine.substring(38, 40).trim();
+                            structs.add(struct);
+                            break;
+                        case SHEET:
+                            struct = new String[6];
+                            struct[0] = pdbLine.substring(0, 6).trim(); // SHEET
+                            struct[1] = pdbLine.substring(21, 22); // Polymers
+                            struct[2] = pdbLine.substring(32, 33);
+                            struct[3] = pdbLine.substring(22, 26).trim(); // Residue
+                            struct[4] = pdbLine.substring(33, 37).trim();
+                            struct[5] = pdbLine.substring(38, 40).trim(); // Strand
+                            structs.add(struct);
+                            break;
+                        case TURN:
+                            struct = new String[6];
+                            struct[0] = pdbLine.substring(0, 6).trim(); // TURN
+                            struct[1] = pdbLine.substring(19, 20); // Polymers
+                            struct[2] = pdbLine.substring(30, 31);
+                            struct[3] = pdbLine.substring(20, 24).trim(); // Residue
+                            struct[4] = pdbLine.substring(31, 35).trim();
+                            structs.add(struct);
+                            break;
+                        default:
+                            /**
+                             * Do nothing for the other cards.
+                             */
+                            break;
+                    }
+                    if (bw != null) {
+                        bw.write(pdbLine);
+                        bw.newLine();
+                    }
+                    pdbLine = br.readLine();
                 }
                 if (bw != null) {
-                    bw.write(pdbLine);
-                    bw.newLine();
+                    bw.flush();
+                    bw.close();
                 }
-                pdbLine = br.readLine();
+                br.close();
             }
-            if (bw != null) {
-                bw.flush();
-                bw.close();
-            }
-            br.close();
             xyzIndex--;
-            // Assign Secondary Structure Based on PDB Info
-            for (String[] s : structs) {
-                if (s[1].equalsIgnoreCase(" ")) {
-                    s[1] = "Blank".intern();
-                }
-                Polymer p = activeMolecularAssembly.getPolymer(s[1], false);
-                if (p != null) {
-                    for (int i = Integer.parseInt(s[3]); i <= Integer.parseInt(s[4]); i++) {
-                        Residue r = p.getResidue(i);
-                        if (r != null) {
-                            r.setSSType(Residue.SSType.valueOf(s[0]));
-                        }
-                    }
-                }
-            }
             setFileRead(true);
         } catch (IOException e) {
             logger.exiting(PDBFilter.class.getName(), "readFile", e);
@@ -587,18 +635,16 @@ public final class PDBFilter extends SystemFilter {
         /**
          * To Do: Look for cyclic peptides and disulfides.
          */
-        String[] chainNames = activeMolecularAssembly.getChainNames();
+        Polymer[] polymers = activeMolecularAssembly.getChains();
 
         /**
          * Loop over chains.
          */
-        if (chainNames != null) {
-            logger.info(format(" Assigning atom types for %d chains.", chainNames.length));
-            for (String chain : chainNames) {
-                Polymer polymer = activeMolecularAssembly.getPolymer(chain, false);
+        if (polymers != null) {
+            logger.info(format(" Assigning atom types for %d chains.", polymers.length));
+            for (Polymer polymer : polymers) {
                 ArrayList<Residue> residues = polymer.getResidues();
                 int numberOfResidues = residues.size();
-
                 /**
                  * Check if all residues are known amino acids.
                  */
@@ -628,7 +674,8 @@ public final class PDBFilter extends SystemFilter {
                     try {
                         assignAminoAcidAtomTypes(residues);
                         if (logger.isLoggable(Level.INFO)) {
-                            logger.info(" Atom type assignment completed for amino acid chain " + chain + ".");
+                            logger.info(" Atom type assignment completed for AA chain "
+                                        + polymer.getName() + ".");
                         }
                     } catch (MissingHeavyAtomException missingHeavyAtomException) {
                         logger.severe(missingHeavyAtomException.toString());
@@ -645,6 +692,22 @@ public final class PDBFilter extends SystemFilter {
                 for (int residueNumber = 0; residueNumber < numberOfResidues; residueNumber++) {
                     Residue residue = residues.get(residueNumber);
                     String name = residue.getName().toUpperCase();
+                    /**
+                     * Convert 1-character nucleic acid names
+                     * to 3-character names.
+                     */
+                    if (name.length() == 1) {
+                        if (name.equals("A")) {
+                            name = NucleicAcid3.ADE.toString();
+                        } else if (name.equals("C")) {
+                            name = NucleicAcid3.CYT.toString();
+                        } else if (name.equals("G")) {
+                            name = NucleicAcid3.GUA.toString();
+                        } else if (name.equals("U")) {
+                            name = NucleicAcid3.URI.toString();
+                        }
+                        residue.setName(name);
+                    }
                     NucleicAcid3 nucleicAcid = NucleicAcid3.UNK;
                     for (int a = 0; a < numberOfKnownNucleicAcids; a++) {
                         NucleicAcid3 nucleic = knownNucleicAcids[a];
@@ -667,7 +730,8 @@ public final class PDBFilter extends SystemFilter {
                     try {
                         assignNucleicAcidAtomTypes(residues);
                         if (logger.isLoggable(Level.INFO)) {
-                            logger.info("Atom type assignment completed for nucleic acid chain " + chain + ".");
+                            logger.info(" Atom type assignment completed for NA chain "
+                                        + polymer.getName() + ".");
                         }
                     } catch (MissingHeavyAtomException missingHeavyAtomException) {
                         logger.severe(missingHeavyAtomException.toString());
@@ -689,7 +753,7 @@ public final class PDBFilter extends SystemFilter {
                 HETATOMS hetatm = HETATOMS.valueOf(name);
                 Atom atom = ion.getAtomList().get(0);
                 if (ion.getAtomList().size() != 1) {
-                    logger.severe("Check residue " + ion.toString() + " of chain " + ion.getPolymerName() + ".");
+                    logger.severe("Check residue " + ion.toString() + " of chain " + ion.getChainID() + ".");
                 }
                 try {
                     switch (hetatm) {
@@ -711,7 +775,7 @@ public final class PDBFilter extends SystemFilter {
                             atom.setAtomType(findAtomType(2003));
                             break;
                         default:
-                            logger.severe("Check residue " + ion.getResidueName() + " of chain " + ion.getPolymerName() + ".");
+                            logger.severe("Check residue " + ion.getResidueName() + " of chain " + ion.getChainID() + ".");
                     }
                 } catch (Exception e) {
                     String message = "Error assigning atom types.";
@@ -776,6 +840,18 @@ public final class PDBFilter extends SystemFilter {
                     break;
                 }
             }
+            /**
+             * Do atom name conversions.
+             */
+            ArrayList<Atom> resAtoms = residue.getAtomList();
+            int natoms = resAtoms.size();
+            for (int i = 0; i < natoms; i++) {
+                Atom atom = resAtoms.get(i);
+                String name = atom.getName();
+                name = name.replace('\'', '*');
+                atom.setName(name);
+            }
+
             /**
              * Check if the sugar is deoxyribose and change the residue
              * name if necessary.
@@ -1981,15 +2057,10 @@ public final class PDBFilter extends SystemFilter {
 //ATOM      2  CA  ILE A  16      60.793  72.149  -9.511  1.00  6.91           C
             int serial = 1;
             // Loop over biomolecular chains
-            String chains[] = activeMolecularAssembly.getChainNames();
-            if (chains != null) {
-                for (String chain : chains) {
-                    if (chain.equalsIgnoreCase("Blank")) {
-                        sb.setCharAt(21, ' ');
-                    } else {
-                        sb.setCharAt(21, chain.toUpperCase().charAt(0));
-                    }
-                    Polymer polymer = activeMolecularAssembly.getPolymer(chain, false);
+            Polymer polymers[] = activeMolecularAssembly.getChains();
+            if (polymers != null) {
+                for (Polymer polymer : polymers) {
+                    sb.setCharAt(21, polymer.getChainID());
                     // Loop over residues
                     ArrayList<Residue> residues = polymer.getResidues();
                     for (Residue residue : residues) {
@@ -2016,7 +2087,7 @@ public final class PDBFilter extends SystemFilter {
             sb.replace(0, 6, "HETATM");
             sb.setCharAt(21, 'A');
             int resID = 1;
-            Polymer polymer = activeMolecularAssembly.getPolymer("A", false);
+            Polymer polymer = activeMolecularAssembly.getPolymer('A', "A", false);
             if (polymer != null) {
                 ArrayList<Residue> residues = polymer.getResidues();
                 for (Residue residue : residues) {
@@ -2061,12 +2132,8 @@ public final class PDBFilter extends SystemFilter {
             ArrayList<MSNode> water = activeMolecularAssembly.getWaters();
             for (MSNode node : water) {
                 Molecule molecule = (Molecule) node;
-                String chain = molecule.getPolymerName();
-                if (chain == null || chain.equalsIgnoreCase("Blank")) {
-                    sb.setCharAt(21, ' ');
-                } else {
-                    sb.setCharAt(21, chain.toUpperCase().charAt(0));
-                }
+                Character chainID = molecule.getChainID();
+                sb.setCharAt(21, chainID);
                 String resName = "HOH";
                 sb.replace(17, 20, padLeft(resName.toUpperCase(), 3));
                 sb.replace(22, 26, String.format("%4d", resID++));

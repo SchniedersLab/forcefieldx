@@ -196,12 +196,28 @@ public class Residue extends MSGroup {
         Ramachandran[15] = "Beta-Hairpin 3' (i+1)    [  57.0   47.0]";
         Ramachandran[16] = "Beta-Hairpin 3' (i+2)    [ -80.0  -10.0]";
     }
-    private int resNumber; // Residue number in the Polymer
-    private SSType ssType = SSType.NONE; // Secondary Structure Type
+    /**
+     * The residue number of this atom in a chain.
+     */
+    private int resNumber;
+    /**
+     * Possibly redundant PDB chain ID.
+     */
+    private Character chainID;
+    /**
+     * Unique segID.
+     */
+    private String segID;
+    /**
+     * Secondary structure type.
+     */
+    private SSType ssType = SSType.NONE;
+    /**
+     * Residue type.
+     */
     protected ResidueType residueType = ResidueType.UNK;
     private AA3 aa;
     private NA3 na;
-    private String chainName;
 
     /**
      * Default Constructor where num is this Residue's position in the Polymer.
@@ -228,6 +244,18 @@ public class Residue extends MSGroup {
     }
 
     /**
+     * Name is the residue's 3 letter abbreviation and num is its position in
+     * the Polymer.
+     */
+    public Residue(String name, int resNumber, ResidueType rt, Character chainID,
+            String segID) {
+        this(name, rt);
+        this.resNumber = resNumber;
+        this.chainID = chainID;
+        this.segID = segID;
+    }
+
+    /**
      * As above, with atoms being a FNode with this Residue's atoms as child
      * nodes
      */
@@ -244,18 +272,34 @@ public class Residue extends MSGroup {
      */
     @Override
     public MSNode addMSNode(MSNode o) {
+        Atom currentAtom = null;
         if (o instanceof Atom) {
-            MSNode node = getAtomNode().contains(o);
-            if (node == null) {
-                getAtomNode().add(o);
+            currentAtom = (Atom) getAtomNode().contains(o);
+            if (currentAtom == null) {
+                currentAtom = (Atom) o;
+                getAtomNode().add(currentAtom);
                 setFinalized(false);
             } else {
-                return node;
+                /**
+                 * Allow overwriting of the root alternate
+                 * conformer (' ' or 'A').
+                 */
+                Atom newAtom = (Atom) o;
+                Character currentAlt = currentAtom.getAltLoc();
+                Character newAlt = newAtom.getAltLoc();
+                if (currentAlt.equals(' ') || currentAlt.equals('A')) {
+                    if (!newAlt.equals(' ') && !newAlt.equals('A')) {
+                        getAtomNode().remove(currentAtom);
+                        currentAtom = newAtom;
+                        getAtomNode().add(currentAtom);
+                        setFinalized(false);
+                    }
+                }
             }
         } else {
             logger.warning("Can't add MSNode to Residue, not of type Atom");
         }
-        return o;
+        return currentAtom;
     }
 
     private void assignResidueType() {
@@ -363,8 +407,8 @@ public class Residue extends MSGroup {
     /**
      * Returns this Residues Parent Polymer name.
      */
-    public String getPolymer() {
-        return new String(chainName);
+    public Character getChainID() {
+        return chainID;
     }
 
     // Public data access methods
@@ -441,8 +485,12 @@ public class Residue extends MSGroup {
         resNumber = n;
     }
 
-    public void setPolymer(String n) {
-        chainName = new String(n);
+    public void setChainID(Character c) {
+        chainID = c;
+    }
+
+    public String getSegID() {
+        return segID;
     }
 
     public void setSSType(SSType ss) {

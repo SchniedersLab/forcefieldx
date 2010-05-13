@@ -38,7 +38,7 @@ import ffx.potential.bonded.Residue.ResidueType;
 import ffx.numerics.VectorMath;
 
 /**
- * The Polymer class encapsulates a polypeptide or polynucleotide chain.
+ * The Polymer class encapsulates a peptide or nucleotide chain.
  */
 public class Polymer extends MSGroup {
 
@@ -63,60 +63,51 @@ public class Polymer extends MSGroup {
     }
     private boolean link = false;
     private int polymerNumber;
+    private Character chainID;
 
     /**
-     * Default Polymer Construtor
+     * Polymer constructor.
+     * @param chainID Possibly redundant PDB chainID.
+     * @param segID Unique identifier from A-Z,0-9, then 1A-1Z,10-19, etc.
      */
-    public Polymer() {
-        super();
-        polymerNumber = ++count;
-    }
-
-    public Polymer(String n) {
-        super(n);
-        polymerNumber = ++count;
-    }
-
-    /**
-     * Polymer Constructor
-     *
-     * @param n
-     *            Polymer indentifier, generally a letter in PDB files (ie
-     *            A,B,C,etc)
-     */
-    public Polymer(String n, boolean l) {
-        this(n);
-        link = l;
+    public Polymer(Character chainID, String segID) {
+        super(segID);
+        this.chainID = chainID;
+        this.polymerNumber = ++count;
     }
 
     /**
-     * Polymer Constructor
-     *
-     * @param n
-     *            Polymer indentifier, generally a letter in PDB files (ie
-     *            A,B,C,etc)
-     * @param residues
-     *            Represents a FNode where the Polymer's residues have been
-     *            attached
+     * Polymer constructor.
+     * @param chainID Possibly redundant PDB chainID.
+     * @param segID Unique identifier from A-Z,0-9, then 1A-1Z,10-19, etc.
      */
-    public Polymer(String n, MSNode residues) {
-        super(n, residues);
+    public Polymer(Character chainID, String segID, boolean link) {
+        this(chainID, segID);
+        this.link = link;
+    }
+
+    /**
+     * Polymer Constructor.
+     * @param segID A unique identifier from A-Z,0-9, then 1A-1Z,10-19, etc.
+     * @param residues Represents a MSNode where the Polymer's residues have
+     *              been attached.
+     */
+    public Polymer(Character chainID, String segID, MSNode residues) {
+        super(segID, residues);
+        this.chainID = chainID;
         polymerNumber = ++count;
     }
 
     /**
      * A generic method for adding a MSNode to the Polymer.
-     *
-     * @param o
-     *            If the MSNode is a Residue, it will be added to the Polymer,
-     *            so long as its sequence number is not already in use.
+     * @param msNode If the MSNode is a Residue instance, it will be added to
+     *               the Polymer.
      */
     @Override
-    public MSNode addMSNode(MSNode o) {
-        assert (o instanceof Residue);
-        getAtomNode().add(o);
-
-        return o;
+    public MSNode addMSNode(MSNode msNode) {
+        assert (msNode instanceof Residue);
+        getAtomNode().add(msNode);
+        return msNode;
     }
 
     /**
@@ -150,10 +141,10 @@ public class Polymer extends MSGroup {
     /**
      * Overidden equals method.
      *
-     * @param object
-     *            Object to compare
+     * @param object Object to compare
      * @return True if object is not <b>this</b> Polymer, is of Class Polymer,
-     *         and both object and this Polymer have identical names
+     *         and both object and this Polymer have identical names (note
+     *         that Polymer names are based on unique segIDs.
      */
     @Override
     public boolean equals(Object object) {
@@ -236,6 +227,10 @@ public class Polymer extends MSGroup {
 
     public boolean getLink() {
         return link;
+    }
+
+    public Character getChainID() {
+        return chainID;
     }
 
     /**
@@ -326,28 +321,33 @@ public class Polymer extends MSGroup {
         if (resName.length() == 1) {
             try {
                 Residue.NA1.valueOf(resName);
-                residue = new Residue(resName, resNum, Residue.ResidueType.NA);
+                residue = new Residue(resName, resNum, Residue.ResidueType.NA,
+                                      chainID, getName());
             } catch (Exception e) {
                 try {
                     Residue.AA1.valueOf(resName);
-                    residue = new Residue(resName, resNum, Residue.ResidueType.AA);
+                    residue = new Residue(resName, resNum, Residue.ResidueType.AA,
+                                          chainID, getName());
                 } catch (Exception ex) {
                 }
             }
         } else if (resName.length() == 2 || resName.length() == 3) {
             try {
                 Residue.NA3.valueOf(resName);
-                residue = new Residue(resName, resNum, Residue.ResidueType.NA);
+                residue = new Residue(resName, resNum, Residue.ResidueType.NA,
+                                      chainID, getName());
             } catch (Exception e) {
                 try {
                     Residue.AA3.valueOf(resName);
-                    residue = new Residue(resName, resNum, Residue.ResidueType.AA);
+                    residue = new Residue(resName, resNum, Residue.ResidueType.AA,
+                                          chainID, getName());
                 } catch (Exception ex) {
                 }
             }
         }
         if (residue == null) {
-            residue = new Residue(resName, resNum, Residue.ResidueType.UNK);
+            residue = new Residue(resName, resNum, Residue.ResidueType.UNK,
+                                  chainID, getName());
         }
         addMSNode(residue);
         return residue;
@@ -360,7 +360,7 @@ public class Polymer extends MSGroup {
 
     @Override
     public void setColor(RendererCache.ColorModel newColorModel, Color3f color,
-            Material mat) {
+                         Material mat) {
         // If coloring by Polymer, pass this Polymer's color
         if (newColorModel == RendererCache.ColorModel.POLYMER) {
             int index = polymerNumber % 10;
@@ -383,7 +383,7 @@ public class Polymer extends MSGroup {
 
     @Override
     public void setView(RendererCache.ViewModel newViewModel,
-            List<BranchGroup> newShapes) {
+                        List<BranchGroup> newShapes) {
         for (ListIterator li = getAtomNodeList().listIterator(); li.hasNext();) {
             MSGroup atomGroup = (MSGroup) li.next();
             atomGroup.setView(newViewModel, newShapes);

@@ -153,29 +153,28 @@ public class MolecularAssembly extends MSGroup {
         ArrayList Polymers = getAtomNodeList();
         if (o instanceof Atom) {
             Atom atom = (Atom) o;
-            MSNode node = null;
             if (!atom.isHetero()) {
                 return getResidue(atom, true);
-
             } else {
                 return getMolecule(atom, true);
             }
         } else if (o instanceof Residue) {
-            Residue g = (Residue) o;
-            String key = g.getPolymer();
-            int index = Polymers.indexOf(new Polymer(key));
+            Residue residue = (Residue) o;
+            Character chainID = residue.getChainID();
+            String segID = residue.getSegID();
+            int index = Polymers.indexOf(new Polymer(chainID, segID));
             /**
              * See if the polymer already exists.
              */
             if (index != -1) {
                 Polymer c = (Polymer) Polymers.get(index);
                 setFinalized(false);
-                return c.addMSNode(g);
+                return c.addMSNode(residue);
             } else {
-                Polymer newc = new Polymer(key);
+                Polymer newc = new Polymer(chainID, segID);
                 getAtomNode().add(newc);
                 setFinalized(false);
-                return newc.addMSNode(g);
+                return newc.addMSNode(residue);
             }
         } else if (o instanceof Polymer) {
             Polymer c = (Polymer) o;
@@ -419,8 +418,8 @@ public class MolecularAssembly extends MSGroup {
                     long occupiedMemory = runtime.totalMemory() - runtime.freeMemory();
                     long MB = 1024 * 1024;
                     logger.fine("\nIn-Use Memory   (Mb): " + occupiedMemory / MB
-                              + "\nFree Memory     (Mb): " + runtime.freeMemory() / MB
-                              + "\nTotal Memory    (Mb): " + runtime.totalMemory() / MB);
+                                + "\nFree Memory     (Mb): " + runtime.freeMemory() / MB
+                                + "\nTotal Memory    (Mb): " + runtime.totalMemory() / MB);
                 }
             }
             for (MSNode m : molecules.getChildList()) {
@@ -528,7 +527,7 @@ public class MolecularAssembly extends MSGroup {
         return null;
     }
 
-    public String[] getChainNames() {
+        public String[] getChainNames() {
         ArrayList<String> temp = new ArrayList<String>();
         for (ListIterator li = getAtomNodeList().listIterator(); li.hasNext();) {
             MSNode node = (MSNode) li.next();
@@ -547,6 +546,20 @@ public class MolecularAssembly extends MSGroup {
         }
 
         return names;
+    }
+
+    public Polymer[] getChains() {
+        ArrayList<Polymer> polymers = new ArrayList<Polymer>();
+        for (ListIterator li = getAtomNodeList().listIterator(); li.hasNext();) {
+            MSNode node = (MSNode) li.next();
+            if (node instanceof Polymer) {
+                polymers.add((Polymer) node);
+            }
+        }
+        if (polymers.size() == 0) {
+            return null;
+        }
+        return polymers.toArray(new Polymer[polymers.size()]);
     }
 
     public int getCurrentCycle() {
@@ -604,17 +617,19 @@ public class MolecularAssembly extends MSGroup {
         return originToRot;
     }
 
-    public Polymer getPolymer(
-            String chainName, boolean create) {
+    public Polymer getPolymer(Character chainID, String segID, boolean create) {
         for (ListIterator li = getAtomNodeList().listIterator(); li.hasNext();) {
             MSNode node = (MSNode) li.next();
-            if (node instanceof Polymer && node.getName().equals(chainName)) {
-                return (Polymer) node;
+            if (node instanceof Polymer) {
+                Polymer polymer = (Polymer) node;
+                if (polymer.getName().equals(segID)
+                        && polymer.getChainID().equals(chainID)) {
+                    return (Polymer) node;
+                }
             }
-
         }
         if (create) {
-            Polymer polymer = new Polymer(chainName, true);
+            Polymer polymer = new Polymer(chainID, segID, true);
             addMSNode(polymer);
             return polymer;
         }
@@ -623,11 +638,12 @@ public class MolecularAssembly extends MSGroup {
     }
 
     private Atom getResidue(Atom atom, boolean create) {
-        String chainName = atom.getChain();
+        Character chainID = atom.getChainID();
         String resName = atom.getResidueName();
         int resNum = atom.getResidueNumber();
+        String segID = atom.getSegID();
         // Find/Create the chain
-        Polymer polymer = getPolymer(chainName, create);
+        Polymer polymer = getPolymer(chainID, segID, create);
         if (polymer == null) {
             return null;
         }
@@ -683,13 +699,14 @@ public class MolecularAssembly extends MSGroup {
     }
 
     private Atom getMolecule(Atom atom, boolean create) {
-        String chainName = atom.getChain();
         String resName = atom.getResidueName();
         int resNum = atom.getResidueNumber();
+        Character chainID = atom.getChainID();
+        String segID = atom.getSegID();
         ArrayList<MSNode> list = ions.getChildList();
         for (MSNode node : list) {
             Molecule m = (Molecule) node;
-            if (m.getPolymerName().equalsIgnoreCase(chainName) && m.getResidueName().equalsIgnoreCase(resName)
+            if (m.getSegID().equalsIgnoreCase(segID) && m.getResidueName().equalsIgnoreCase(resName)
                 && m.getResidueNumber() == resNum) {
                 Atom exists = (Atom) m.contains(atom);
                 if (exists != null) {
@@ -703,23 +720,22 @@ public class MolecularAssembly extends MSGroup {
         list = water.getChildList();
         for (MSNode node : list) {
             Molecule m = (Molecule) node;
-            if (m.getPolymerName().equalsIgnoreCase(chainName) && m.getResidueName().equalsIgnoreCase(resName)
+            if (m.getSegID().equalsIgnoreCase(segID)
+                && m.getResidueName().equalsIgnoreCase(resName)
                 && m.getResidueNumber() == resNum) {
-
                 Atom exists = (Atom) m.contains(atom);
                 if (exists != null) {
                     return exists;
                 }
-
                 m.addMSNode(atom);
-
                 return atom;
             }
         }
         list = molecules.getChildList();
         for (MSNode node : list) {
             Molecule m = (Molecule) node;
-            if (m.getPolymerName().equalsIgnoreCase(chainName) && m.getResidueName().equalsIgnoreCase(resName)
+            if (m.getSegID().equalsIgnoreCase(segID)
+                && m.getResidueName().equalsIgnoreCase(resName)
                 && m.getResidueNumber() == resNum) {
 
                 Atom exists = (Atom) m.contains(atom);
@@ -732,7 +748,7 @@ public class MolecularAssembly extends MSGroup {
             }
         }
         if (create) {
-            Molecule m = new Molecule(resName, resNum, chainName);
+            Molecule m = new Molecule(resName, resNum, chainID, segID);
             m.addMSNode(atom);
             if (resName.equalsIgnoreCase("HOH") || resName.equalsIgnoreCase("WAT")) {
                 water.add(m);

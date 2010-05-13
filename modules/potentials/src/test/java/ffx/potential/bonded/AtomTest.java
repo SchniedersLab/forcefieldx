@@ -90,7 +90,7 @@ public class AtomTest {
         Character altLoc = 'A';
         String r = "GLY";
         int n = 1;
-        String c = "A";
+        Character c = 'A';
         Atom actualReturn = new Atom(xyznum, id, altLoc, d, r, n, c, 0.0, 0.0);
         assertEquals("return value", "GLY", actualReturn.getResidueName());
     }
@@ -149,7 +149,7 @@ public class AtomTest {
 
     @Before
     public void setUp() {
-        atom = new Atom(1, "C", 'A', d, "GLY", 1, "A", 0.0, 0.0);
+        atom = new Atom(1, "C", 'A', d, "GLY", 1, 'A', 0.0, 0.0);
         atom2 = new Atom("C");
         atom3 = new Atom("O");
         b = new Bond(atom, atom2);

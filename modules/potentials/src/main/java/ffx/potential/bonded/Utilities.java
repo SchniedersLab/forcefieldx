@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Vector;
 import java.util.logging.Logger;
 
 /**
@@ -35,7 +36,7 @@ import java.util.logging.Logger;
 public final class Utilities {
 
     private static final Logger logger = Logger.getLogger(Utilities.class.getName());
-    
+
     /**
      * An enumeration of recognized file types.
      */
@@ -75,7 +76,6 @@ public final class Utilities {
      * case.
      */
     static private Hashtable<String, String> sidechainStoichiometry = new Hashtable<String, String>();
-
     private static final double p4 = 15.236;
     private static final double p5 = 1.254;
     private static final double p5inv = 1.0 / 1.254;
@@ -317,6 +317,7 @@ public final class Utilities {
         int waterNum = 0;
         int ionNum = 0;
         int heteroNum = 0;
+        Vector<String> segIDs = new Vector<String>();
         while (atoms.size() > 0) {
             // Nitrogens are used to "seed" a backbone search rather than carbon
             // because a carbon can be separated from the backbone by a sulfur
@@ -381,7 +382,9 @@ public final class Utilities {
                 }
                 backbone = findPolymer(atoms, seed, null);
             }
-            Polymer c = new Polymer(polymerLookup(num), true);
+            Character chainID = getChainID(num);
+            String segID = getSegID(chainID, segIDs);
+            Polymer c = new Polymer(chainID, segID, true);
             if (backbone.size() > 2 && divideBackbone(backbone, c)) {
                 for (Atom a : c.getAtomList()) {
                     atoms.remove(a);
@@ -404,6 +407,38 @@ public final class Utilities {
                 m.addMSNode(hetero);
             }
         }
+    }
+
+    /**
+     * Convert possibly duplicate chainID into a unique segID.
+     * @param c chain ID just read.
+     * @return a unique segID.
+     */
+    private static String getSegID(Character c, Vector<String> segIDs) {
+        if (c == null || c.equals(' ')) {
+            c = 'A';
+        }
+
+        // Loop through existing segIDs to find the first one that is unused.
+        int n = segIDs.size();
+        int m = 0;
+        for (int i = 0; i < n; i++) {
+            String segID = segIDs.get(i);
+            if (segID.endsWith(c.toString())) {
+                m++;
+            }
+        }
+
+        // If the count is greater than 0, then append it.
+        String newSegID = null;
+        if (m == 0) {
+            newSegID = c.toString();
+        } else {
+            newSegID = c.toString() + Integer.toString(m);
+        }
+
+        segIDs.add(newSegID);
+        return newSegID;
     }
 
     /**
@@ -1131,19 +1166,30 @@ public final class Utilities {
     }
 
     /**
-     * Determine a unique string for given the polymer number.
-     *
-     * @param i
-     *            int
-     * @return String
+     * Determine chainID for a given polymer number.
+     * @param i int
+     * @return Character
      */
-    public static String polymerLookup(int i) {
-        if (i > 25) {
-            int repeat = i / 25;
-            i = i % 25;
-            return String.valueOf((char) (i + 65)) + repeat;
+    public static Character getChainID(int i) {
+        if (i > 35) {
+            i = i % 36;
         }
-        return String.valueOf((char) (i + 65));
+        Character c = null;
+        if (i < 26) {
+            /**
+             * 65 is 'A'.
+             * 90 is 'Z'.
+             */
+            c = Character.valueOf((char) (i + 65));
+        } else {
+            i -= 26;
+            /**
+             * 48 is '0'.
+             * 57 is '9'.
+             */
+            c = Character.valueOf((char) (i + 48));
+        }
+        return c;
     }
 
     /**

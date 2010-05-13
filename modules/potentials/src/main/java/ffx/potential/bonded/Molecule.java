@@ -40,9 +40,13 @@ public class Molecule extends MSGroup {
      */
     private String residueName = null;
     /**
-     * Polymer name assigned in PDB files.
+     * Possibly redundant chainID assigned in PDB files.
      */
-    private String polymerName = null;
+    private Character chainID = null;
+    /**
+     * Unique segID.
+     */
+    private String segID = null;
 
     public Molecule() {
     }
@@ -50,17 +54,17 @@ public class Molecule extends MSGroup {
     public Molecule(String name) {
         super(name);
         residueName = name;
-        polymerName = "A";
+        chainID = 'A';
     }
 
-    public Molecule(String name, int residueNum, String polymerName) {
+    public Molecule(String name, int residueNum, 
+            Character chainID, String segID) {
         super(name + "-" + residueNum);
         this.residueName = name;
         this.residueNum = residueNum;
-        this.polymerName = polymerName;
-        if (!polymerName.equalsIgnoreCase(" ") && !polymerName.equalsIgnoreCase("Blank")) {
-            this.setName(name + "-" + residueNum + " " + polymerName);
-        }
+        this.chainID = chainID;
+        this.segID = segID;
+        this.setName(name + "-" + residueNum + " " + segID);
     }
 
     public String getResidueName() {
@@ -71,8 +75,12 @@ public class Molecule extends MSGroup {
         return residueNum;
     }
 
-    public String getPolymerName() {
-        return polymerName;
+    public Character getChainID() {
+        return chainID;
+    }
+
+    public String getSegID() {
+        return segID;
     }
 
     /**

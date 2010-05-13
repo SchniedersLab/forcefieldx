@@ -75,6 +75,7 @@ public class FileOpener
             }
             // Add the system to the multiscale hierarchy.
             mainPanel.getHierarchy().addSystemNode(ffxSystem);
+            mainPanel.getHierarchy().setActive(ffxSystem);
 
             // Check if there are alternate conformers
             if (systemFilter instanceof PDBFilter) {
