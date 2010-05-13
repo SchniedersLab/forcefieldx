@@ -81,6 +81,7 @@ public class RefinementData {
     public double model_b[] = new double[6];
     // settings
     public final int rfreeflag;
+    public final boolean use_3g;
 
     public RefinementData(CompositeConfiguration properties,
             ReflectionList reflectionlist) {
@@ -89,10 +90,12 @@ public class RefinementData {
         int npar = properties.getInt("nbins", 10);
         bulksolvent = properties.getBoolean("bulksolvent", true);
         gridsearch = properties.getBoolean("gridsearch", false);
+        use_3g = properties.getBoolean("use_3g", true);
 
         if (logger.isLoggable(Level.INFO)) {
             StringBuffer sb = new StringBuffer();
             sb.append("\nRefinement data settings:\n");
+            sb.append("  using cctbx 3 Gaussians: " + use_3g + "\n");
             sb.append("  R Free flag: " + rflag + "\n");
             sb.append("  n bins: " + npar + "\n");
             sb.append("  bulk solvent: " + bulksolvent + "\n");

@@ -125,7 +125,7 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
             mean += (wi - mean) / tot;
         }
 
-        System.out.println("starting mean w: " + mean + " w scaling: " + 1.0 / mean);
+        logger.fine("starting mean w: " + mean + " w scaling: " + 1.0 / mean);
         for (int i = 0; i < refinementdata.nparams; i++) {
             x[i] -= x[i + refinementdata.nparams];
             scaling[i + refinementdata.nparams] = 1.0 / mean;

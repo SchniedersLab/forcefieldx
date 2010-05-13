@@ -60,18 +60,18 @@ public class ScaleBulkMinimizeTest {
                         "ffx/xray/structures/1NSF.mtz",
                         null,
                         25.39,
-                        25.59,
-                        0.8934,
-                        0.1522},
+                        25.54,
+                        0.8940,
+                        0.1515},
                     {true,
                         "SNARE complex",
                         "ffx/xray/structures/1N7S.pdb",
                         "ffx/xray/structures/1N7S.mtz",
                         null,
                         19.60,
-                        21.74,
-                        0.9312,
-                        0.1365}
+                        21.76,
+                        0.9311,
+                        0.1361}
                 });
     }
     private final String info;

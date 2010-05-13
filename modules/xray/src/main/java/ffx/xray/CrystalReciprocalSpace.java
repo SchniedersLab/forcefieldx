@@ -20,17 +20,17 @@
  */
 package ffx.xray;
 
-import edu.rit.pj.IntegerForLoop;
 import static java.lang.Math.exp;
 import static ffx.numerics.fft.Complex3D.iComplex3D;
+
+import edu.rit.pj.IntegerForLoop;
+import edu.rit.pj.IntegerSchedule;
+import edu.rit.pj.ParallelRegion;
+import edu.rit.pj.ParallelTeam;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.Vector;
-
-import edu.rit.pj.IntegerSchedule;
-import edu.rit.pj.ParallelRegion;
-import edu.rit.pj.ParallelTeam;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
@@ -53,6 +53,12 @@ import ffx.potential.nonbonded.SpatialDensityRegion;
  * @see <a href="http://dx.doi.org/10.1107/S0567739477001211" target="_blank">
  * L. F. Ten Eyck, Acta Cryst. (1977). A33, 486-492.
  *
+ * @see <a href="http://dx.doi.org/10.1107/S0365110X55001862" target="_blank">
+ * J. Waser, Acta Cryst. (1955). 8, 595.</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1107/S0108767388009183" target="_blank">
+ * A. T. Brunger, Acta Cryst. (1989). A45, 42-50.</a>
+ *
  * @see <a href="http://dx.doi.org/10.1002/jcc.1032" target="_blank">
  * J. A. Grant, B. T. Pickup, A. Nicholls, J. Comp. Chem. (2001). 22, 608-640
  *
@@ -70,13 +76,14 @@ public class CrystalReciprocalSpace {
     private static final Logger logger = Logger.getLogger(CrystalReciprocalSpace.class.getName());
     private static double toSeconds = 0.000000001;
     private static double badd = 2.0;
-    private double arad = 2.0;
+    private double arad = 4.5;
     private int aradgrid;
     private final Crystal crystal;
     private final Resolution resolution;
     private final ReflectionList reflectionlist;
     private boolean solvent = false;
     protected int solventmodel;
+    private boolean use_3g = true;
     protected double solvent_a;
     protected double solvent_sd;
     protected double solvent_binaryrad;
@@ -170,6 +177,7 @@ public class CrystalReciprocalSpace {
                 case SolventModel.BINARY:
                     solvent_binaryrad = 0.8;
                     aradgrid = (int) Math.floor(solvent_binaryrad * nX / crystal.a) + 1;
+                    df_map = new double[complexFFT3DSpace];
                     break;
                 case SolventModel.GAUSSIAN:
                     arad = 3.0;
@@ -281,6 +289,10 @@ public class CrystalReciprocalSpace {
     public void setSolventBinaryrad(double rad) {
         this.solvent_binaryrad = rad;
         aradgrid = (int) Math.floor(solvent_binaryrad * fftX / crystal.a) + 1;
+    }
+
+    public void setUse3G(boolean use_3g) {
+        this.use_3g = use_3g;
     }
 
     public void deltaX(int n, double delta) {
@@ -542,14 +554,9 @@ public class CrystalReciprocalSpace {
                 bulkfrc * 100.0));
 
         // need to copy density for gradient calculation
-        if (solventmodel == SolventModel.GAUSSIAN
-                || solventmodel == SolventModel.POLYNOMIAL) {
-            assert (df_map != null);
-            int nmap = densityGrid.length;
-            for (int i = 0; i < nmap; i++) {
-                df_map[i] = densityGrid[i];
-            }
-        }
+        assert (df_map != null);
+        int nmap = densityGrid.length;
+        System.arraycopy(densityGrid, 0, df_map, 0, nmap);
 
         // CCP4MapWriter mapout = new CCP4MapWriter(fftX, fftY, fftZ, crystal, "/tmp/foo.map");
         // mapout.write(densityGrid);
@@ -634,9 +641,11 @@ public class CrystalReciprocalSpace {
             double xyz[] = {coordinates[iSymm][0][n],
                 coordinates[iSymm][1][n],
                 coordinates[iSymm][2][n]};
-            FormFactor atomff = new FormFactor(atoms[n], badd, xyz);
+            FormFactor atomff = new FormFactor(atoms[n], use_3g, badd, xyz);
             double uvw[] = new double[3];
             crystal.toFractionalCoordinates(xyz, uvw);
+            final int frad = Math.min(aradgrid,
+                    (int) Math.floor(atoms[n].getFormFactorWidth() * fftX / crystal.a) + 1);
 
             // Logic to loop within the cutoff box.
             final double frx = fftX * uvw[0];
@@ -650,11 +659,11 @@ public class CrystalReciprocalSpace {
 
             double xc[] = new double[3];
             double xf[] = new double[3];
-            for (int ix = ifrx - aradgrid; ix <= ifrx + aradgrid; ix++) {
+            for (int ix = ifrx - frad; ix <= ifrx + frad; ix++) {
                 int gix = Crystal.mod(ix, fftX);
-                for (int iy = ifry - aradgrid; iy <= ifry + aradgrid; iy++) {
+                for (int iy = ifry - frad; iy <= ifry + frad; iy++) {
                     int giy = Crystal.mod(iy, fftY);
-                    for (int iz = ifrz - aradgrid; iz <= ifrz + aradgrid; iz++) {
+                    for (int iz = ifrz - frad; iz <= ifrz + frad; iz++) {
                         int giz = Crystal.mod(iz, fftZ);
 
                         xf[0] = ix / (double) fftX;
@@ -687,7 +696,7 @@ public class CrystalReciprocalSpace {
             double xyz[] = {coordinates[iSymm][0][n],
                 coordinates[iSymm][1][n],
                 coordinates[iSymm][2][n]};
-            FormFactor atomff = new FormFactor(atoms[n], 0.0, xyz);
+            FormFactor atomff = new FormFactor(atoms[n], use_3g, 0.0, xyz);
             double uvw[] = new double[3];
             crystal.toFractionalCoordinates(xyz, uvw);
 
@@ -768,7 +777,6 @@ public class CrystalReciprocalSpace {
 
             @Override
             public void run(final int lb, final int ub) {
-                final int dfrad = aradgrid;
                 double uvw[] = new double[3];
                 double xc[] = new double[3];
                 double xf[] = new double[3];
@@ -776,8 +784,10 @@ public class CrystalReciprocalSpace {
                     double xyz[] = {coordinates[0][0][n],
                         coordinates[0][1][n],
                         coordinates[0][2][n]};
-                    FormFactor atomff = new FormFactor(atoms[n], 0.0, xyz);
+                    FormFactor atomff = new FormFactor(atoms[n], use_3g, 0.0, xyz);
                     crystal.toFractionalCoordinates(xyz, uvw);
+                    final int dfrad = Math.min(aradgrid,
+                            (int) Math.floor(atoms[n].getFormFactorWidth() * fftX / crystal.a) + 1);
 
                     // Logic to loop within the cutoff box.
                     final double frx = fftX * uvw[0];
@@ -853,7 +863,7 @@ public class CrystalReciprocalSpace {
                     double xyz[] = {coordinates[0][0][n],
                         coordinates[0][1][n],
                         coordinates[0][2][n]};
-                    FormFactor atomff = new FormFactor(atoms[n], 0.0, xyz);
+                    FormFactor atomff = new FormFactor(atoms[n], use_3g, 0.0, xyz);
                     crystal.toFractionalCoordinates(xyz, uvw);
 
                     // Logic to loop within the cutoff box.
