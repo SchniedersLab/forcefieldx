@@ -157,18 +157,6 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
             return;
         }
 
-        if (crs.solventmodel == SolventModel.BINARY) {
-            binaryradGridOptimize();
-        } else {
-            asdGridOptimize();
-        }
-    }
-
-    public void asdGridOptimize() {
-        if (crs == null) {
-            return;
-        }
-
         double min = Double.MAX_VALUE;
         double a = crs.solvent_a;
         double sd = crs.solvent_sd;
@@ -178,7 +166,8 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         double sdmin = sd - 0.15;
         double sdmax = (sd + 0.15) / 0.9999;
         double sdstep = 0.05;
-        if (crs.solventmodel == SolventModel.POLYNOMIAL) {
+        if (crs.solventmodel == SolventModel.BINARY
+                || crs.solventmodel == SolventModel.POLYNOMIAL) {
             amin = a - 0.2;
             amax = (a + 0.2) / 0.9999;
             astep = 0.1;
@@ -204,33 +193,6 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         crs.setSolventsd(sd);
         refinementdata.solvent_a = a;
         refinementdata.solvent_sd = sd;
-        crs.computeDensity(refinementdata.fs);
-    }
-
-    public void binaryradGridOptimize() {
-        if (crs == null) {
-            return;
-        }
-
-        double min = Double.MAX_VALUE;
-        double r = crs.solvent_binaryrad;
-        double rmin = r - 1.5;
-        double rmax = (r + 1.5) / 0.9999;
-        double rstep = 0.5;
-        for (double i = rmin; i <= rmax; i += rstep) {
-            crs.setSolventBinaryrad(i);
-            crs.computeDensity(refinementdata.fs);
-            double sum = bulksolventenergy.energyAndGradient(x, grad);
-
-            System.out.println("rad: " + i + " sum: " + sum);
-            if (sum < min) {
-                min = sum;
-                r = i;
-            }
-        }
-        System.out.println("minrad: " + r + " min: " + min);
-        crs.setSolventBinaryrad(r);
-        refinementdata.solvent_binaryrad = r;
         crs.computeDensity(refinementdata.fs);
     }
 
@@ -267,7 +229,6 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
             refinementdata.solvent_ueq = x[2] / scaling[2];
 
             if (crs != null) {
-                refinementdata.solvent_binaryrad = crs.solvent_binaryrad;
                 refinementdata.solvent_a = crs.solvent_a;
                 refinementdata.solvent_sd = crs.solvent_sd;
             }

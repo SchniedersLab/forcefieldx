@@ -86,7 +86,6 @@ public class CrystalReciprocalSpace {
     private boolean use_3g = true;
     protected double solvent_a;
     protected double solvent_sd;
-    protected double solvent_binaryrad;
     protected double df_map[];
     private final int nSymm;
     private final Atom atoms[];
@@ -175,8 +174,10 @@ public class CrystalReciprocalSpace {
         } else {
             switch (solventmodel) {
                 case SolventModel.BINARY:
-                    solvent_binaryrad = 0.8;
-                    aradgrid = (int) Math.floor(solvent_binaryrad * nX / crystal.a) + 1;
+                    arad = 3.5;
+                    aradgrid = (int) Math.floor(arad * nX / crystal.a) + 1;
+                    solvent_a = 1.0;
+                    solvent_sd = 1.0;
                     df_map = new double[complexFFT3DSpace];
                     break;
                 case SolventModel.GAUSSIAN:
@@ -284,11 +285,6 @@ public class CrystalReciprocalSpace {
 
     public void setSolventsd(double s) {
         this.solvent_sd = s;
-    }
-
-    public void setSolventBinaryrad(double rad) {
-        this.solvent_binaryrad = rad;
-        aradgrid = (int) Math.floor(solvent_binaryrad * fftX / crystal.a) + 1;
     }
 
     public void setUse3G(boolean use_3g) {
@@ -529,6 +525,59 @@ public class CrystalReciprocalSpace {
         }
 
         long startTime = System.nanoTime();
+        if (solventmodel == SolventModel.BINARY) {
+            /*
+             * need to shrink mask
+             * first, copy densitygrid to df_map
+             * temporarily to store original map
+             */
+            int nmap = densityGrid.length;
+            System.arraycopy(densityGrid, 0, df_map, 0, nmap);
+
+            // Logic to loop within the cutoff box.
+            double xyz[] = {solvent_sd, solvent_sd, solvent_sd};
+            double uvw[] = new double[3];
+            crystal.toFractionalCoordinates(xyz, uvw);
+            final double frx = fftX * uvw[0];
+            final int ifrx = (int) frx;
+
+            final double fry = fftY * uvw[1];
+            final int ifry = (int) fry;
+
+            final double frz = fftZ * uvw[2];
+            final int ifrz = (int) frz;
+
+            for (int k = 0; k < fftZ; k++) {
+                for (int j = 0; j < fftY; j++) {
+                    for (int i = 0; i < fftX; i++) {
+                        final int ii = iComplex3D(i, j, k, fftX, fftY);
+
+                        if (densityGrid[ii] == 1.0) {
+                            continue;
+                        }
+
+                        for (int iz = k - ifrz; iz <= k + ifrz; iz++) {
+                            int giz = Crystal.mod(iz, fftZ);
+                            for (int iy = j - ifry; iy <= j + ifry; iy++) {
+                                int giy = Crystal.mod(iy, fftY);
+                                for (int ix = i - ifrx; ix <= i + ifrx; ix++) {
+                                    int gix = Crystal.mod(ix, fftX);
+
+                                    final int jj = iComplex3D(gix, giy, giz, fftX, fftY);
+
+                                    if (densityGrid[jj] == 1.0) {
+                                        df_map[ii] = 1.0;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            // copy back
+            System.arraycopy(df_map, 0, densityGrid, 0, nmap);
+        }
+
         double ngrid = 0.0;
         double bulkfrc = 0.0;
         double min, max, mean;
@@ -721,17 +770,15 @@ public class CrystalReciprocalSpace {
 
                         final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
 
-                        if (solventmodel == SolventModel.BINARY) {
-                            densityGrid[ii] = 0.0;
-                            continue;
-                        }
-
                         xf[0] = ix / (double) fftX;
                         xf[1] = iy / (double) fftY;
                         xf[2] = iz / (double) fftZ;
                         crystal.toCartesianCoordinates(xf, xc);
 
-                        if (solventmodel == SolventModel.GAUSSIAN) {
+                        if (solventmodel == SolventModel.BINARY) {
+                            // FIXME: atoms[n].getVDWR(); instead of 2.0!
+                            densityGrid[ii] *= atomff.rho_binary(xc, 2.0 + solvent_a);
+                        } else if (solventmodel == SolventModel.GAUSSIAN) {
                             densityGrid[ii] += atomff.rho_gauss(xc, solvent_sd);
                         } else if (solventmodel == SolventModel.POLYNOMIAL) {
                             densityGrid[ii] *= atomff.rho_poly(xc, solvent_a, solvent_sd);

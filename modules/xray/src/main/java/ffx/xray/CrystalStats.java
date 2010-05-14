@@ -377,8 +377,9 @@ public class CrystalStats {
                 switch (refinementdata.crs_fs.solventmodel) {
                     case (SolventModel.BINARY):
                         sb.append("  bulk solvent model: binary mask\n");
-                        sb.append(String.format("  bulk solvent atom radius: %g\n",
-                                refinementdata.solvent_binaryrad));
+                        sb.append(String.format("  bulk solvent probe radius: %g shrink radius: %g\n",
+                                refinementdata.solvent_a,
+                                refinementdata.solvent_sd));
                         break;
                     case (SolventModel.POLYNOMIAL):
                         sb.append("  bulk solvent model: polynomial switch\n");

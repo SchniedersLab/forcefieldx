@@ -186,13 +186,6 @@ public class XRayStructure {
         crystalstats = new CrystalStats(reflectionlist, refinementdata);
     }
 
-    public void setSolventBinaryrad(double rad) {
-        if (refinementdata.bulksolvent) {
-            crs_fs.setSolventBinaryrad(rad);
-            refinementdata.solvent_binaryrad = rad;
-        }
-    }
-
     public void setSolventA(double a) {
         if (refinementdata.bulksolvent) {
             crs_fs.setSolventA(a);

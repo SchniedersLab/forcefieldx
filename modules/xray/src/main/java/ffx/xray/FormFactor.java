@@ -640,6 +640,20 @@ public class FormFactor {
         return occ * twopi32 * sum;
     }
 
+    public double rho_binary(double xyz[], double proberad) {
+        double dxyz[] = new double[3];
+        diff(this.xyz, xyz, dxyz);
+        return rho_binary(r(dxyz), proberad);
+    }
+
+    public double rho_binary(double r, double proberad) {
+        if (r <= proberad) {
+            return 0.0;
+        } else {
+            return 1.0;
+        }
+    }
+
     public double rho_gauss(double xyz[], double sd) {
         double dxyz[] = new double[3];
         diff(this.xyz, xyz, dxyz);
