@@ -59,9 +59,9 @@ public abstract class SpatialDensityLoop extends IntegerForLoop {
     public void run(int lb, int ub) {
         // Loop over work cells
         for (int icell = lb; icell <= ub; icell++) {
-            int ia = region.workA[icell];
-            int ib = region.workB[icell];
-            int ic = region.workC[icell];
+            int ia = region.actualA[icell];
+            int ib = region.actualB[icell];
+            int ic = region.actualC[icell];
             switch (octant) {
                 // Case 0 -> In place.
                 case 0:

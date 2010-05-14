@@ -60,8 +60,6 @@ import ffx.potential.parameters.ForceField.ForceFieldBoolean;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.ForceField.ForceFieldString;
 import ffx.potential.parameters.ForceField.ForceFieldType;
-import org.apache.commons.math.linear.Array2DRowRealMatrix;
-import org.apache.commons.math.linear.RealMatrix;
 
 /**
  * This Particle Mesh Ewald class implements PME for the AMOEBA polarizable
@@ -3703,29 +3701,25 @@ public class ParticleMeshEwald implements LambdaInterface {
      */
     private void assignMultipoles() {
         if (forceField == null) {
-            String message = "Fatal exception: No force field is defined.\n";
+            String message = "No force field is defined.\n";
             logger.log(Level.SEVERE, message);
-            System.exit(-1);
         }
         if (forceField.getForceFieldTypeCount(ForceFieldType.MULTIPOLE) < 1) {
-            String message = "Fatal exception: Force field has no multipole types.\n";
+            String message = "Force field has no multipole types.\n";
             logger.log(Level.SEVERE, message);
-            System.exit(-1);
             return;
         }
         if (nAtoms < 1) {
-            String message = "Fatal exception: No atoms are defined.\n";
+            String message = "No atoms are defined.\n";
             logger.log(Level.SEVERE, message);
-            System.exit(-1);
             return;
         }
         for (int i = 0; i < nAtoms; i++) {
             if (!assignMultipole(i)) {
                 Atom atom = atoms[i];
-                String message = "Fatal exception: No multipole could be assigned to atom:\n"
+                String message = "No multipole could be assigned to atom:\n"
                                  + atom + "\nof type:\n" + atom.getAtomType();
                 logger.log(Level.SEVERE, message);
-                System.exit(-1);
             }
         }
         /**

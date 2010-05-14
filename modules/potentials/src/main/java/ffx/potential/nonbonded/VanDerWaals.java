@@ -244,6 +244,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
             coordinates[i3 + ZZ] = xyz[ZZ];
             atomClass[i] = ai.getAtomType().atomClass;
             VDWType vdwType = forceField.getVDWType(Integer.toString(atomClass[i]));
+            ai.setVDWType(vdwType);
             ArrayList<Bond> bonds = ai.getBonds();
             int numBonds = bonds.size();
             if (vdwType.reductionFactor > 0.0 && numBonds == 1) {
@@ -300,7 +301,6 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         threeC3 = 3.0 * c3;
         fourC4 = 4.0 * c4;
         fiveC5 = 5.0 * c5;
-
 
         /**
          * Initialize the soft core lambda masks.
@@ -363,6 +363,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
             String message = "Fatal exception expanding coordinates.\n";
             logger.log(Level.SEVERE, message, e);
         }
+
         /**
          * Build the neighbor-list using the reduced coordinates.
          */

@@ -58,7 +58,7 @@ public class FormFactorTest {
         double anisou[] = new double[6];
         anisou[0] = anisou[1] = anisou[2] = 1.0;
         anisou[3] = anisou[4] = anisou[5] = 0.0;
-        carbon = new Atom(1, "C", 'A', d, "ALA", 1, 'A', 1.0, 20.0);
+        carbon = new Atom(1, "C", 'A', d, "ALA", 1, 'A', 1.0, 20.0,"A");
         AtomType atomType = new AtomType(1, 1, "C", null, 6, 12.01, 1);
         carbon.setAtomType(atomType);
         carbon.setAltLoc('A');

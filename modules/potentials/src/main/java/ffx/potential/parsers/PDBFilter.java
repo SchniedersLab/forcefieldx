@@ -127,7 +127,7 @@ public final class PDBFilter extends SystemFilter {
         if (count == 0) {
             newSegID = c.toString();
         } else {
-            newSegID = Integer.toString(count) + c.toString() ;
+            newSegID = Integer.toString(count) + c.toString();
         }
 
         segIDs.add(newSegID);
@@ -232,7 +232,7 @@ public final class PDBFilter extends SystemFilter {
                 currentFile = files[i];
                 currentChainID = null;
                 currentSegID = null;
-                
+
                 File pdbFile = null;
                 if (pdbURL == null) {
                     // Open a data stream to the PDB file
@@ -1451,10 +1451,17 @@ public final class PDBFilter extends SystemFilter {
                     }
                 }
                 if (OXT == null) {
-                    OXT = new Atom("OXT", atomType, new double[3]);
+                    String resName = C.getResidueName();
+                    int resSeq = C.getResidueNumber();
+                    Character chainID = C.getChainID();
+                    Character altLoc = C.getAltLoc();
+                    String segID = C.getSegID();
+                    double occupancy = C.getOccupancy();
+                    double tempFactor = C.getTempFactor();
+                    OXT = new Atom(0, "OXT", altLoc, new double[3], resName, resSeq, chainID,
+                                   occupancy, tempFactor, segID);
+                    OXT.setAtomType(atomType);
                     residue.addMSNode(OXT);
-                    OXT.setOccupancy(C.getOccupancy());
-                    OXT.setTempFactor(C.getTempFactor());
                     intxyz(OXT, C, 1.25e0, CA, 117.0e0, O, 126.0, 1);
                 } else {
                     OXT.setAtomType(atomType);
@@ -1952,14 +1959,19 @@ public final class PDBFilter extends SystemFilter {
         }
         Atom atom = (Atom) residue.getAtomNode(atomName);
         if (atom == null) {
-            atom = new Atom(atomName, atomType, new double[3]);
+            String resName = ia.getResidueName();
+            int resSeq = ia.getResidueNumber();
+            Character chainID = ia.getChainID();
+            Character altLoc = ia.getAltLoc();
+            String segID = ia.getSegID();
+            double occupancy = ia.getOccupancy();
+            double tempFactor = ia.getTempFactor();
+            atom = new Atom(0, atomName, altLoc, new double[3], resName, resSeq, chainID,
+                            occupancy, tempFactor, segID);
             residue.addMSNode(atom);
-            atom.setOccupancy(ia.getOccupancy());
-            atom.setTempFactor(ia.getTempFactor());
             intxyz(atom, ia, bond, ib, angle1, ic, angle2, chiral);
-        } else {
-            atom.setAtomType(atomType);
         }
+        atom.setAtomType(atomType);
         bond(ia, atom);
         return atom;
     }

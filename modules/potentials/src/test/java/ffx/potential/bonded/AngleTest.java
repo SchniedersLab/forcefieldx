@@ -98,11 +98,11 @@ public class AngleTest {
 
 	@Before
 	public void setUp() {
-		a1 = new Atom("A1", null, a1d);
-		a2 = new Atom("A2", null, a2d);
-		a3 = new Atom("A3", null, a3d);
-		a4 = new Atom("A4", null, a4d);
-		a5 = new Atom("A5", null, a5d);
+		a1 = new Atom("A1"); a1.setXYZ(a1d);
+		a2 = new Atom("A2"); a2.setXYZ(a2d);
+		a3 = new Atom("A3"); a3.setXYZ(a3d);
+		a4 = new Atom("A4"); a4.setXYZ(a4d);
+		a5 = new Atom("A5"); a5.setXYZ(a5d);
 		b1 = new Bond(a1, a2);
 		b2 = new Bond(a2, a3);
 		b3 = new Bond(a3, a4);

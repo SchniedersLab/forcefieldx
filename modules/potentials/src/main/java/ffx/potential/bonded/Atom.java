@@ -48,6 +48,7 @@ import ffx.potential.bonded.RendererCache.ViewModel;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.PolarizeType;
+import ffx.potential.parameters.VDWType;
 
 /**
  * The Atom class represents a single atom and defines its alternate
@@ -101,14 +102,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
         Rn, Fr, Ra, Ac, Th, Pa, U, Np, Pu, Am, Cm, Bk, Cf, Es, Fm, Md, No, Lr,
         Rf, Db, Sg, Bh, Hs, Mt;
     }
-    /**
-     *
-     */
-    private static final long serialVersionUID = 1L;
-    // Theses "max" values are used for relative vector display
     private static Point3d point3d = new Point3d();
     private static Point2d point2d = new Point2d();
-    private static double[] y = {0.0d, 1.0d, 0.0d};
     public static Hashtable<Integer, Color3f> AtomColor = new Hashtable<Integer, Color3f>();
     public static Hashtable<Integer, Float> AtomVDW = new Hashtable<Integer, Float>();
     /**
@@ -245,10 +240,12 @@ public class Atom extends MSNode implements Comparable<Atom> {
     private double formFactorWidth = 3.0;
     private int formFactorIndex = 0;
     private ArrayList<Vector3d> trajectory;
+
     // Molecular Mechanics Info
     private AtomType atomType = null;
     private MultipoleType multipoleType = null;
     private PolarizeType polarizeType = null;
+    private VDWType vdwType = null;
     private Atom[] multipoleReferenceSites = null;
     private double globalDipole[] = null;
     private double globalQuadrupole[][] = null;
@@ -299,16 +296,19 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     /**
-     * Constructor
-     *
-     * @param name The Atom's PDB name.
+     * Constructor used when parsing XYZ files.
+     * 
+     * @param xyzIndex Contiguous, unique atom index between 1..nAtoms.
+     * @param name The Atom's molecular mechanics name.
      * @param atomType Molecular mechanics atom type.
      * @param xyz Cartesian coordinates.
-     *
+     * 
      * @since 1.0
      */
-    public Atom(String name, AtomType atomType, double[] xyz) {
+    public Atom(int xyzIndex, String name, AtomType atomType, double[] xyz) {
+        //this(name, atomType, xyz);
         this(name);
+        this.xyzIndex = xyzIndex;
         this.atomType = atomType;
         this.xyz = xyz;
         this.xyzGradient = new double[3];
@@ -319,40 +319,26 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     /**
-     * Constructor used when parsing XYZ files.
-     * 
-     * @param xyzIndex Contiguous, unique atom index between 0..nAtoms.
-     * @param name The Atom's molecular mechanics name.
-     * @param atomType Molecular mechanics atom type.
-     * @param xyz Cartesian coordinates.
-     * 
-     * @since 1.0
-     */
-    public Atom(int xyzIndex, String name, AtomType atomType, double[] xyz) {
-        this(name, atomType, xyz);
-        this.xyzIndex = xyzIndex;
-    }
-
-    /**
      * Constructor used when parsing PDB files.
+     *
+     * @param xyzIndex Contiguous, unique atom index between 1..nAtoms.
+     * @param name The Atom's molecular mechanics name.
+     * @param altLoc The alternate locations (' ' or 'A' or 'B' etc.).
+     * @param xyz Cartesian coordinates.
+     * @param resName Residue name.
+     * @param resSeq Residue sequence number.
+     * @param chainID Possible redundant chain ID.
+     * @param occupancy Crystallographic occupancy.
+     * @param tempFactor Crystallographic B-factor.
+     * @param segID Unique segment ID.
+     *
+     * @since 1.0.
      */
     public Atom(int xyzIndex, String name,
-                Character altLoc, double[] d, String resName, int resSeq,
-                Character chainID, double occupancy, double tempFactor) {
-        this(xyzIndex, name, null, d);
-        this.resName = resName;
-        this.resSeq = resSeq;
-        this.chainID = chainID;
-        this.altLoc = altLoc;
-        this.occupancy = occupancy;
-        this.tempFactor = tempFactor;
-    }
-
-    public Atom(int xyzIndex, String name,
-                Character altLoc, double[] d, String resName, int resSeq,
+                Character altLoc, double[] xyz, String resName, int resSeq,
                 Character chainID, double occupancy, double tempFactor,
                 String segID) {
-        this(xyzIndex, name, null, d);
+        this(xyzIndex, name, null, xyz);
         this.resName = resName;
         this.resSeq = resSeq;
         this.chainID = chainID;
@@ -604,7 +590,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     public Atom[] getMultipoleReferenceSites() {
-        return this.multipoleReferenceSites;
+        return multipoleReferenceSites;
     }
 
     public MultipoleType getMultipoleType() {
@@ -915,6 +901,14 @@ public class Atom extends MSNode implements Comparable<Atom> {
 
     public void setAtomType(AtomType atomType) {
         this.atomType = atomType;
+    }
+
+    public void setVDWType(VDWType vdwType) {
+        this.vdwType = vdwType;
+    }
+
+    public VDWType getVDWType() {
+        return vdwType;
     }
 
     public void setTempFactor(double tempFactor) {

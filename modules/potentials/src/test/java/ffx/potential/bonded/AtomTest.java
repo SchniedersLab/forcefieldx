@@ -67,14 +67,6 @@ public class AtomTest {
     }
 
     @Test(timeout = 500)
-    public void Atom_constructor2() {
-        String i = "C";
-        AtomType mmdata = null;
-        Atom actualReturn = new Atom(i, mmdata, d);
-        assertEquals("return value", "C", actualReturn.getName());
-    }
-
-    @Test(timeout = 500)
     public void Atom_constructor3() {
         int index = 0;
         String i = "N";
@@ -91,7 +83,7 @@ public class AtomTest {
         String r = "GLY";
         int n = 1;
         Character c = 'A';
-        Atom actualReturn = new Atom(xyznum, id, altLoc, d, r, n, c, 0.0, 0.0);
+        Atom actualReturn = new Atom(xyznum, id, altLoc, d, r, n, c, 0.0, 0.0,"A");
         assertEquals("return value", "GLY", actualReturn.getResidueName());
     }
 
@@ -149,7 +141,7 @@ public class AtomTest {
 
     @Before
     public void setUp() {
-        atom = new Atom(1, "C", 'A', d, "GLY", 1, 'A', 0.0, 0.0);
+        atom = new Atom(1, "C", 'A', d, "GLY", 1, 'A', 0.0, 0.0,"A");
         atom2 = new Atom("C");
         atom3 = new Atom("O");
         b = new Bond(atom, atom2);

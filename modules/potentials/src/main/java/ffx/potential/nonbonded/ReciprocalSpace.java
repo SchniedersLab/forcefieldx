@@ -79,14 +79,12 @@ public class ReciprocalSpace {
     private final double coordinates[][][];
     private final Crystal crystal;
     private final int nSymm;
-
     private final double fractionalMultipole[][][];
     private final double fractionalDipole[][][];
     private final double fractionalDipolep[][][];
     private final double fractionalMultipolePhi[][];
     private final double fractionalInducedDipolePhi[][];
     private final double fractionalInducedDipolepPhi[][];
-    
     private final int fftX, fftY, fftZ;
     private final int complexFFT3DSpace;
     private final double aewald;
@@ -95,7 +93,6 @@ public class ReciprocalSpace {
     private final double densityGrid[];
     private final float floatGrid[];
     private final float floatRecip[];
-
     private final ParallelTeam parallelTeam;
     private final int threadCount;
     private final BSplineRegion bSplineRegion;
@@ -104,7 +101,6 @@ public class ReciprocalSpace {
     private final PolarizationDensityLoop polarizationDensityLoops[];
     private final PermanentPhiRegion permanentPhi;
     private final PolarizationPhiRegion polarizationPhi;
-
     private final ParallelTeam fftTeam;
     private final Complex3DParallel complexFFT3D;
     private final boolean cudaFFT;
@@ -170,7 +166,7 @@ public class ReciprocalSpace {
             floatGrid = null;
             floatRecip = null;
         }
-         
+
         if (logger.isLoggable(Level.INFO)) {
             StringBuffer sb = new StringBuffer();
             sb.append(format(" B-Spline order:         %8d\n", bSplineOrder));
@@ -190,10 +186,10 @@ public class ReciprocalSpace {
         bSplineRegion = new BSplineRegion();
         if (cudaFFT) {
             spatialDensityRegion = new SpatialDensityRegion(fftX, fftY, fftZ, floatGrid, bSplineOrder, nSymm,
-                                                            threadCount, crystal, atoms, coordinates);
+                                                            1, threadCount, crystal, atoms, coordinates);
         } else {
-            spatialDensityRegion = new SpatialDensityRegion(fftX, fftY, fftZ, densityGrid, bSplineOrder, nSymm, 
-                                                            threadCount, crystal, atoms, coordinates);
+            spatialDensityRegion = new SpatialDensityRegion(fftX, fftY, fftZ, densityGrid, bSplineOrder, nSymm,
+                                                            1, threadCount, crystal, atoms, coordinates);
         }
         permanentDensityLoops = new PermanentDensityLoop[threadCount];
         polarizationDensityLoops = new PolarizationDensityLoop[threadCount];
@@ -1178,14 +1174,14 @@ public class ReciprocalSpace {
         double bsModX[] = new double[fftX];
         double bsModY[] = new double[fftY];
         double bsModZ[] = new double[fftZ];
-        int maxfft = max(max(fftX,fftY),fftZ);
+        int maxfft = max(max(fftX, fftY), fftZ);
         double bsArray[] = new double[maxfft];
         double c[] = new double[bSplineOrder];
 
         bSpline(0.0, bSplineOrder, c);
         for (int i = 1; i < bSplineOrder + 1; i++) {
             bsArray[i] = c[i - 1];
-        }        
+        }
         discreteFTMod(bsModX, bsArray, fftX, bSplineOrder);
         discreteFTMod(bsModY, bsArray, fftY, bSplineOrder);
         discreteFTMod(bsModZ, bsArray, fftZ, bSplineOrder);

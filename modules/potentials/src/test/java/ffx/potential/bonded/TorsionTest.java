@@ -79,10 +79,10 @@ public class TorsionTest {
 
 	@Before
 	public void setUp() {
-		a1 = new Atom("A1", null, a1d);
-		a2 = new Atom("A2", null, a2d);
-		a3 = new Atom("A3", null, a3d);
-		a4 = new Atom("A4", null, a4d);
+		a1 = new Atom("A1"); a1.setXYZ(a1d);
+		a2 = new Atom("A2"); a2.setXYZ(a2d);
+		a3 = new Atom("A3"); a3.setXYZ(a3d);
+		a4 = new Atom("A4"); a4.setXYZ(a4d);
 		assertNotNull(a1);
 		assertNotNull(a2);
 		assertNotNull(a3);

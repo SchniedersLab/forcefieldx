@@ -20,6 +20,7 @@
  */
 package ffx.ui;
 
+import ffx.potential.PotentialEnergy;
 import java.awt.Cursor;
 import java.util.logging.Logger;
 import java.util.Vector;
@@ -73,7 +74,8 @@ public class FileOpener
             }
             // Add the system to the multiscale hierarchy.
             mainPanel.getHierarchy().addSystemNode(ffxSystem);
-            mainPanel.getHierarchy().setActive(ffxSystem);
+            PotentialEnergy energy = new PotentialEnergy(ffxSystem);
+            ffxSystem.setPotential(energy);
 
             // Check if there are alternate conformers
             if (systemFilter instanceof PDBFilter) {
@@ -110,6 +112,8 @@ public class FileOpener
                         String fileName = ffxSystem.getFile().getAbsolutePath();
                         newSystem.setName(FilenameUtils.getBaseName(fileName) + " " + c);
                         mainPanel.getHierarchy().addSystemNode(newSystem);
+                        energy = new PotentialEnergy(newSystem);
+                        newSystem.setPotential(energy);
                     }
                 }
             }
