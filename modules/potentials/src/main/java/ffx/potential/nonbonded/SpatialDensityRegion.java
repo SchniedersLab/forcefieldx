@@ -444,8 +444,9 @@ public class SpatialDensityRegion extends ParallelRegion {
                         }
                     }
                 }
+                // If there is work in this chunk, include it.
                 if (empty > 0) {
-                    actualC[actualWork] = ia;
+                    actualA[actualWork] = ia;
                     actualB[actualWork] = ib;
                     actualC[actualWork++] = ic;
                 }
