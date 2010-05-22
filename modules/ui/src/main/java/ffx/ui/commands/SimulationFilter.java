@@ -46,10 +46,10 @@ public final class SimulationFilter extends SystemFilter {
     Hashtable<Integer, AtomType> atomTypes = new Hashtable<Integer, AtomType>();
 
     public SimulationFilter(TinkerSystem sys, MolecularAssembly m) {
-        super(m);
+        super(new File(""), m, null, null);
         system = sys;
-        setType(FileType.SIM);
-        setFileRead(false);
+        fileType = FileType.SIM;
+        fileRead = false;
     }
 
     @Override

@@ -160,9 +160,7 @@ public class ScaleBulkMinimizeTest {
         MolecularAssembly molecularAssembly = new MolecularAssembly(name);
         molecularAssembly.setFile(structure);
         molecularAssembly.setForceField(forceField);
-        PDBFilter pdbfile = new PDBFilter(molecularAssembly);
-        pdbfile.setForceField(forceField);
-        pdbfile.setProperties(properties);
+        PDBFilter pdbfile = new PDBFilter(structure, molecularAssembly, forceField, properties);
         pdbfile.readFile();
 
         List<Atom> atomlist = molecularAssembly.getAtomList();

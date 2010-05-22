@@ -6,6 +6,6 @@ String filename = "modules/xray/src/main/java/ffx/xray/structures/1EXR.pdb";
 systems = open(filename);
 
 for (int i=0; i < systems.length; i++ ) {
-   PotentialEnergy potentialEnergy = new PotentialEnergy(systems[i]);
+   PotentialEnergy potentialEnergy = systems[i].getPotentialEnergy();
    potentialEnergy.energy(true,true);
 }

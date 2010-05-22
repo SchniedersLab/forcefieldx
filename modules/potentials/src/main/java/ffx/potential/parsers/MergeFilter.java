@@ -38,7 +38,7 @@ import ffx.potential.bonded.MolecularAssembly;
 public class MergeFilter extends SystemFilter {
 
     public MergeFilter(MolecularAssembly f, ArrayList<Atom> a, ArrayList<Bond> b) {
-        super(f);
+        super(new File(""), f, null, null);
         atomList = a;
         bondList = b;
     }

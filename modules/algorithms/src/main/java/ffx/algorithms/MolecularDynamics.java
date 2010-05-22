@@ -190,8 +190,10 @@ public class MolecularDynamics implements Terminatable, Runnable {
 
 
             if (xyzFilter == null) {
-                xyzFilter = new XYZFilter(molecularAssembly);
+                xyzFilter = new XYZFilter(file, molecularAssembly,
+                        molecularAssembly.getForceField(), properties);
             }
+
             if (dynFilter == null) {
                 dynFilter = new DYNFilter(molecularAssembly);
             }

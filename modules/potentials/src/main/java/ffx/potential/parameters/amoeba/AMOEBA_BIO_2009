@@ -662,7 +662,7 @@ atom    367     77  Be+   "Beryllium Ion Be+2"         4    9.0120  0
 atom    368     78  Mg+   "Magnesium Ion Mg+2"        12   24.3050  0
 atom    369     79  Ca+   "Calcium Ion Ca+2"          20   40.0780  0
 atom    370     80  Cl-   "Chloride Ion Cl-"          17   35.4530  0
-
+atom    371     81  Zn+   "Zinc (II)"                 30   65.4090  0
 
 biotype      1  N     "Glycine"                      1
 biotype      2  CA    "Glycine"                      2
@@ -1572,7 +1572,7 @@ biotype   2004  K     "Potassium Ion"              364
 biotype   2005  MG    "Magnesium Ion"              368
 biotype   2006  CA    "Calcium Ion"                369
 biotype   2007  CL    "Chloride Ion"               370
-
+biotype   2008  ZN    "Znic Ion (+2)"              371
 
 bond      1      2   375.0   1.4370
 bond      1      3   482.0   1.3450
@@ -3854,6 +3854,11 @@ multipole    370      0      0         -1.00000 \
                                         0.00000 \
                                         0.00000  0.00000 \
                                         0.00000  0.00000  0.00000
+multipole   371    0    0               2.00000 \
+                                        0.00000    0.00000    0.00000 \
+                                        0.00000 \
+                                        0.00000    0.00000 \
+                                        0.00000    0.00000    0.00000
 
 
 opbend      1      3      0      0  107.90
@@ -4345,7 +4350,7 @@ polarize    367   0.010  0.065
 polarize    368   0.080  0.095
 polarize    369   0.550  0.110
 polarize    370   4.000  0.390
-
+polarize    371   0.260  0.2096
 
 strbnd      2      1      3    7.20    7.20
 strbnd      2      1      4    4.30    4.30
@@ -10691,4 +10696,4 @@ vdw     77  1.880000000  0.091000000
 vdw     78  2.550000000  0.850000000
 vdw     79  3.130000000  1.600000000
 vdw     80  4.130000000  0.340000000
-
+vdw     81  2.680000000  0.222000000

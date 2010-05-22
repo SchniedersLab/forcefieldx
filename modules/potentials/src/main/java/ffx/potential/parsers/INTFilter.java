@@ -22,6 +22,8 @@ package ffx.potential.parsers;
 
 import static java.lang.Math.*;
 
+import static ffx.numerics.VectorMath.*;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -30,7 +32,7 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import static ffx.numerics.VectorMath.*;
+import org.apache.commons.configuration.CompositeConfiguration;
 
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
@@ -38,6 +40,7 @@ import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.Utilities.FileType;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
+import java.util.List;
 
 /**
  * The INTFilter class parses TINKER internal coordinate (*.INT) files.
@@ -65,21 +68,16 @@ public class INTFilter extends SystemFilter {
     private static double xtmp, ztmp;
     private static double eps = 0.0000001d;
 
-    /**
-     * Default Constructor
-     */
-    public INTFilter() {
-        setType(FileType.INT);
+    public INTFilter(List<File> files, MolecularAssembly molecularAssembly,
+                     ForceField forceField, CompositeConfiguration properties) {
+        super(files, molecularAssembly, forceField, properties);
+        fileType = FileType.INT;
     }
 
-    public INTFilter(MolecularAssembly sys) {
-        super(sys);
-        setType(FileType.INT);
-    }
-
-    public INTFilter(MolecularAssembly sys, ForceField forceField) {
-        super(sys, forceField);
-        setType(FileType.INT);
+    public INTFilter(File file, MolecularAssembly molecularAssembly,
+                     ForceField forceField, CompositeConfiguration properties) {
+        super(file, molecularAssembly, forceField, properties);
+        fileType = FileType.INT;
     }
 
     /**

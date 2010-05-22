@@ -20,8 +20,10 @@
  */
 package ffx.potential.nonbonded;
 
-import edu.rit.pj.IntegerForLoop;
 import java.util.logging.Logger;
+
+import edu.rit.pj.IntegerForLoop;
+import edu.rit.pj.IntegerSchedule;
 
 /**
  * Loop over a list of atoms and assign their density to a grid.
@@ -33,21 +35,28 @@ import java.util.logging.Logger;
 public abstract class SpatialDensityLoop extends IntegerForLoop {
 
     private static final Logger logger = Logger.getLogger(SpatialDensityLoop.class.getName());
-
     private int nSymm;
-
     private final SpatialDensityRegion region;
     private int octant = 0;
+    private final SpatialDensitySchedule spatialDensitySchedule;
 
-    public SpatialDensityLoop(SpatialDensityRegion region, int nSymm) {
+    public SpatialDensityLoop(SpatialDensityRegion region, int nSymm,
+                              int atomsPerChunk[]) {
         this.region = region;
         this.nSymm = nSymm;
+        this.spatialDensitySchedule = new SpatialDensitySchedule(region.nThreads,
+                                                                 region.nAtoms, atomsPerChunk, 0.9);
         assert (nSymm <= region.nSymm);
+    }
+
+    @Override
+    public IntegerSchedule schedule() {
+        return spatialDensitySchedule;
     }
 
     public void setNsymm(int nSymm) {
         this.nSymm = nSymm;
-        assert(nSymm <= region.nSymm);
+        assert (nSymm <= region.nSymm);
     }
 
     public SpatialDensityLoop setOctant(int octant) {
@@ -112,5 +121,4 @@ public abstract class SpatialDensityLoop extends IntegerForLoop {
     }
 
     public abstract void gridDensity(int iSymm, int iAtom);
-
 }

@@ -551,7 +551,7 @@ public class ReciprocalSpace {
         private final BSplineRegion bSplines;
 
         public PermanentDensityLoop(SpatialDensityRegion region, BSplineRegion splines) {
-            super(region, region.nSymm);
+            super(region, region.nSymm, region.actualCount);
             this.bSplines = splines;
         }
 
@@ -653,7 +653,7 @@ public class ReciprocalSpace {
         private final BSplineRegion bSplines;
 
         public PolarizationDensityLoop(SpatialDensityRegion region, BSplineRegion splines) {
-            super(region, region.nSymm);
+            super(region, region.nSymm, region.actualCount);
             this.bSplines = splines;
         }
 

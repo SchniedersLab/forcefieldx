@@ -221,7 +221,7 @@ public class PotentialEnergyTest {
         ForceField forceField = forceFieldFilter.parse();
         molecularAssembly.setForceField(forceField);
 
-        XYZFilter xyzFilter = new XYZFilter(molecularAssembly, forceField);
+        XYZFilter xyzFilter = new XYZFilter(structure, molecularAssembly, forceField, properties);
         boolean expectedReturn = true;
         boolean actualReturn = xyzFilter.readFile();
         assertEquals(info, expectedReturn, actualReturn);

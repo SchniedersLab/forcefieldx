@@ -688,7 +688,7 @@ public class CrystalReciprocalSpace {
         }
 
         public AtomicDensityLoop(SpatialDensityRegion region) {
-            super(region, region.nSymm);
+            super(region, region.nSymm, region.actualCount);
         }
 
         @Override
@@ -743,7 +743,7 @@ public class CrystalReciprocalSpace {
         }
 
         public SolventDensityLoop(SpatialDensityRegion region) {
-            super(region, region.nSymm);
+            super(region, region.nSymm, region.actualCount);
         }
 
         @Override

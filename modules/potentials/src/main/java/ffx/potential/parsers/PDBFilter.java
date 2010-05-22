@@ -51,10 +51,14 @@ import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.MSGroup;
 import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.Molecule;
+import ffx.potential.bonded.Utilities.FileType;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.BioType;
+import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.PDBFilter.ResiduePosition;
+import java.util.List;
+import org.apache.commons.configuration.CompositeConfiguration;
 
 /**
  * The PDBFilter class parses data from a Protein DataBank (*.PDB) file. The
@@ -68,10 +72,6 @@ import ffx.potential.parsers.PDBFilter.ResiduePosition;
 public final class PDBFilter extends SystemFilter {
 
     private static final Logger logger = Logger.getLogger(PDBFilter.class.getName());
-    /**
-     * URL of the PDB file from the RCSB website (www.rcsb.org).
-     */
-    private String pdbURL = null;
     /**
      * List of altLoc characters seen in the PDB file.
      */
@@ -142,26 +142,19 @@ public final class PDBFilter extends SystemFilter {
      */
     private HashMap<Integer, Atom> atoms = new HashMap<Integer, Atom>();
 
-    /**
-     * Default Constructor
-     */
-    public PDBFilter() {
-        super();
-    }
-
-    /**
-     * Parse the PDB File from a local disk
-     */
-    public PDBFilter(MolecularAssembly molecularAssembly) {
-        super(molecularAssembly);
+    public PDBFilter(List<File> files, MolecularAssembly molecularAssembly,
+                     ForceField forceField, CompositeConfiguration properties) {
+        super(files, molecularAssembly, forceField, properties);
+        this.fileType = FileType.PDB;
     }
 
     /**
      * Parse the PDB File from a URL.
      */
-    public PDBFilter(MolecularAssembly molecularAssembly, String pdbURL, String vrml) {
-        super(molecularAssembly);
-        this.pdbURL = pdbURL;
+    public PDBFilter(File file, MolecularAssembly molecularAssembly,
+                     ForceField forceField, CompositeConfiguration properties) {
+        super(file, molecularAssembly, forceField, properties);
+        this.fileType = FileType.PDB;
     }
 
     private enum Card {
@@ -217,61 +210,18 @@ public final class PDBFilter extends SystemFilter {
         setFileRead(false);
         systems.add(activeMolecularAssembly);
 
-        // Temporary Check
-        if (files == null) {
-            files = new File[1];
-            if (currentFile != null) {
-                files[0] = currentFile;
-            } else {
-                files[0] = activeMolecularAssembly.getFile();
-            }
-        }
-
         try {
-            for (int i = 0; i < files.length; i++) {
-                currentFile = files[i];
+            for (int i = 0; i < files.size(); i++) {
+                currentFile = files.get(i);
                 currentChainID = null;
                 currentSegID = null;
-
-                File pdbFile = null;
-                if (pdbURL == null) {
-                    // Open a data stream to the PDB file
-                    pdbFile = currentFile;
-                    if (pdbFile == null || !pdbFile.exists() || !pdbFile.canRead()) {
-                        return false;
-                    }
-                    FileReader fr = new FileReader(pdbFile);
-                    br = new BufferedReader(fr);
-                } else {
-                    try {
-                        URL url = new URL(pdbURL);
-                        GZIPInputStream is = new GZIPInputStream(url.openStream());
-                        br = new BufferedReader(new InputStreamReader(is));
-                        int retry = 0;
-                        while (!br.ready() && retry < 10) {
-                            synchronized (this) {
-                                if (logger.isLoggable(Level.INFO)) {
-                                    logger.info("Waiting on Network");
-                                }
-                                wait(50);
-                                retry++;
-                            }
-                        }
-                    } catch (Exception e) {
-                        logger.exiting(PDBFilter.class.getName(), "readFile", e);
-                        return false;
-                    }
-                    // The downloaded PBD file will be echoed to the local file
-                    // system (if the file does not already exist)
-                    pdbFile = activeMolecularAssembly.getFile();
-                    if (pdbFile != null && !pdbFile.exists()) {
-                        fw = new FileWriter(pdbFile);
-                        bw = new BufferedWriter(fw);
-                        if (logger.isLoggable(Level.INFO)) {
-                            logger.info(" Saving to: " + pdbFile.getAbsolutePath());
-                        }
-                    }
+                File pdbFile = currentFile;
+                if (pdbFile == null || !pdbFile.exists() || !pdbFile.canRead()) {
+                    return false;
                 }
+                FileReader fr = new FileReader(pdbFile);
+                br = new BufferedReader(fr);
+
                 String[] connect;
                 ArrayList<String[]> links = new ArrayList<String[]>();
                 Vector<String[]> structs = new Vector<String[]>();

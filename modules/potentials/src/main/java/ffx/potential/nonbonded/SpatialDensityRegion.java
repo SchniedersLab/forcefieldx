@@ -28,6 +28,7 @@ import edu.rit.pj.ParallelRegion;
 
 import ffx.crystal.Crystal;
 import ffx.potential.bonded.Atom;
+import java.util.logging.Level;
 
 /**
  * This class implements a spatial decomposition based on partitioning a
@@ -69,6 +70,7 @@ public class SpatialDensityRegion extends ParallelRegion {
      * (actualWork is less than or equal to nWork).
      */
     private int actualWork;
+    public int actualCount[];
     /**
      * A temporary array that holds the index of the cell each atom is assigned
      * to.
@@ -134,7 +136,8 @@ public class SpatialDensityRegion extends ParallelRegion {
     private final double yf[];
     private final double zf[];
     private final Crystal crystal;
-    private final int nAtoms;
+    public final int nAtoms;
+    public final int nThreads;
     private final int gridSize;
     private double grid[] = null;
     private float floatGrid[] = null;
@@ -173,6 +176,7 @@ public class SpatialDensityRegion extends ParallelRegion {
         this.nSymm = nSymm;
         this.atoms = atoms;
         this.nAtoms = atoms.length;
+        this.nThreads = threadCount;
 
         gridInitLoop = new GridInitLoop();
         gridSize = gX * gY * gZ * 2;
@@ -250,6 +254,7 @@ public class SpatialDensityRegion extends ParallelRegion {
         actualA = new int[nWork];
         actualB = new int[nWork];
         actualC = new int[nWork];
+        actualCount = new int [nWork];
         int index = 0;
         for (int h = 0; h < nA; h += 2) {
             for (int k = 0; k < nB; k += 2) {
@@ -313,24 +318,24 @@ public class SpatialDensityRegion extends ParallelRegion {
     @Override
     public void run() {
         int ti = getThreadIndex();
-        int work1 = actualWork - 1;
+        int actualWork1 = actualWork - 1;
         SpatialDensityLoop loop = spatialDensityLoop[ti];
         try {
             execute(0, gridSize - 1, gridInitLoop);
-            execute(0, work1, loop.setOctant(0));
+            execute(0, actualWork1, loop.setOctant(0));
             // Fractional chunks along the C-axis.
             if (nC > 1) {
-                execute(0, work1, loop.setOctant(1));
+                execute(0, actualWork1, loop.setOctant(1));
                 // Fractional chunks along the B-axis.
                 if (nB > 1) {
-                    execute(0, work1, loop.setOctant(2));
-                    execute(0, work1, loop.setOctant(3));
+                    execute(0, actualWork1, loop.setOctant(2));
+                    execute(0, actualWork1, loop.setOctant(3));
                     // Fractional chunks along the A-axis.
                     if (nA > 1) {
-                        execute(0, work1, loop.setOctant(4));
-                        execute(0, work1, loop.setOctant(5));
-                        execute(0, work1, loop.setOctant(6));
-                        execute(0, work1, loop.setOctant(7));
+                        execute(0, actualWork1, loop.setOctant(4));
+                        execute(0, actualWork1, loop.setOctant(5));
+                        execute(0, actualWork1, loop.setOctant(6));
+                        execute(0, actualWork1, loop.setOctant(7));
                     }
                 }
             }
@@ -397,9 +402,11 @@ public class SpatialDensityRegion extends ParallelRegion {
                     cellB[i] = b;
                     cellC[i] = c;
                 }
+
                 // The cell index of this atom.
                 final int index = a + b * nA + c * nAB;
                 cellIndexs[i] = index;
+
                 // The offset of this atom from the beginning of the cell.
                 cellOffsets[i] = cellCounts[index]++;
             }
@@ -430,29 +437,36 @@ public class SpatialDensityRegion extends ParallelRegion {
                 int ia = workA[icell];
                 int ib = workB[icell];
                 int ic = workC[icell];
-                int empty = count(ia, ib, ic);
+                int ii = count(ia, ib, ic);
                 // Fractional chunks along the C-axis.
-                if (nC > 1 && empty == 0) {
-                    empty += count(ia, ib, ic + 1);
+                if (nC > 1) {
+                    ii += count(ia, ib, ic + 1);
                     // Fractional chunks along the B-axis.
-                    if (nB > 1 && empty == 0) {
-                        empty += count(ia, ib + 1, ic);
-                        empty += count(ia, ib + 1, ic + 1);
+                    if (nB > 1) {
+                        ii += count(ia, ib + 1, ic);
+                        ii += count(ia, ib + 1, ic + 1);
                         // Fractional chunks along the A-axis.
-                        if (nA > 1 && empty == 0) {
-                            empty += count(ia + 1, ib, ic);
-                            empty += count(ia + 1, ib, ic + 1);
-                            empty += count(ia + 1, ib + 1, ic);
-                            empty += count(ia + 1, ib + 1, ic + 1);
+                        if (nA > 1) {
+                            ii += count(ia + 1, ib, ic);
+                            ii += count(ia + 1, ib, ic + 1);
+                            ii += count(ia + 1, ib + 1, ic);
+                            ii += count(ia + 1, ib + 1, ic + 1);
                         }
                     }
                 }
+
                 // If there is work in this chunk, include it.
-                if (empty > 0) {
+                if (ii > 0) {
                     actualA[actualWork] = ia;
                     actualB[actualWork] = ib;
-                    actualC[actualWork++] = ic;
+                    actualC[actualWork] = ic;
+                    actualCount[actualWork++] = ii;
                 }
+            }
+
+            if (logger.isLoggable(Level.FINE)) {
+                logger.fine(String.format(" Empty chunks: %d out of %d.",
+                    nWork-actualWork, nWork));
             }
         }
     }

@@ -20,7 +20,6 @@
  */
 package ffx.ui;
 
-import ffx.crystal.Crystal;
 import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.Cursor;
@@ -79,6 +78,7 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.SystemUtils;
 
+import ffx.crystal.Crystal;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.MSNode;
@@ -86,10 +86,8 @@ import ffx.potential.bonded.MSRoot;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.ROLS;
 import ffx.potential.bonded.RendererCache;
-import ffx.potential.bonded.Utilities.FileType;
 import ffx.potential.parsers.ARCFileFilter;
 import ffx.potential.parsers.DYNFileFilter;
-import ffx.potential.parsers.DYNFilter;
 import ffx.potential.parsers.ForceFieldFileFilter;
 import ffx.potential.parsers.ForceFieldFilter;
 import ffx.potential.parsers.INTFileFilter;
@@ -110,7 +108,10 @@ import ffx.potential.parameters.ForceField.ForceFieldString;
 import ffx.potential.parsers.FFXFileFilter;
 import ffx.ui.properties.FFXLocale;
 import ffx.utilities.Keyword;
-import java.util.Vector;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.util.List;
+import java.util.zip.GZIPInputStream;
 
 /**
  * The MainPanel class is the main container for Force Field X, handles
@@ -1034,29 +1035,24 @@ public final class MainPanel extends JPanel implements ActionListener,
 
         // Create the CompositeConfiguration properties.
         CompositeConfiguration properties = Keyword.loadProperties(file);
-
         // Create an FFXSystem for this file.
         FFXSystem newSystem = new FFXSystem(file, commandDescription, properties);
-        SystemFilter systemFilter = null;
-
-        // Decide which parser to use.
-        if (xyzFileFilter.acceptDeep(file)) {
-            // Use the TINKER Cartesian Coordinate File Parser.
-            systemFilter = new XYZFilter(newSystem);
-        } else if (intFileFilter.acceptDeep(file)) {
-            // Use the TINKER Internal Coordinate File Parser.
-            systemFilter = new INTFilter(newSystem);
-        } else {
-            // Use the PDB File Parser.
-            systemFilter = new PDBFilter(newSystem);
-        }
-
-        systemFilter.setFile(file);
         forceFieldFilter = new ForceFieldFilter(properties);
         ForceField forceField = forceFieldFilter.parse();
         newSystem.setForceField(forceField);
-        systemFilter.setForceField(forceField);
-        systemFilter.setProperties(properties);
+        SystemFilter systemFilter = null;
+
+        // Decide what parser to use.
+        if (xyzFileFilter.acceptDeep(file)) {
+            // Use the TINKER Cartesian Coordinate File Parser.
+            systemFilter = new XYZFilter(file, newSystem, forceField, properties);
+        } else if (intFileFilter.acceptDeep(file)) {
+            // Use the TINKER Internal Coordinate File Parser.
+            systemFilter = new INTFilter(file, newSystem, forceField, properties);
+        } else {
+            // Use the PDB File Parser.
+            systemFilter = new PDBFilter(file, newSystem, forceField, properties);
+        }
 
         setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         activeFilter = systemFilter;
@@ -1064,11 +1060,10 @@ public final class MainPanel extends JPanel implements ActionListener,
         openThread = new Thread(openFile);
         openThread.start();
         setPanel(GRAPHICS);
-
         return openThread;
     }
 
-        /**
+    /**
      * Attempts to load the supplied file
      *
      * @param file
@@ -1076,11 +1071,11 @@ public final class MainPanel extends JPanel implements ActionListener,
      * @param commandDescription
      *            Description of the command that created this file.
      */
-    public Thread open(File files[], String commandDescription) {
-        if (files == null || !files[0].isFile() || !files[0].canRead()) {
+    public Thread open(List<File> files, String commandDescription) {
+        if (files == null) {
             return null;
         }
-        File file = new File(FilenameUtils.normalize(files[0].getAbsolutePath()));
+        File file = new File(FilenameUtils.normalize(files.get(0).getAbsolutePath()));
         // Set the Current Working Directory based on this file.
         setCWD(file.getParentFile());
 
@@ -1090,28 +1085,24 @@ public final class MainPanel extends JPanel implements ActionListener,
 
         // Create the CompositeConfiguration properties.
         CompositeConfiguration properties = Keyword.loadProperties(file);
+        forceFieldFilter = new ForceFieldFilter(properties);
+        ForceField forceField = forceFieldFilter.parse();
 
         // Create an FFXSystem for this file.
         FFXSystem newSystem = new FFXSystem(file, commandDescription, properties);
+        newSystem.setForceField(forceField);
+        // Decide what parser to use.
         SystemFilter systemFilter = null;
-
-        // Decide which parser to use.
         if (xyzFileFilter.acceptDeep(file)) {
             // Use the TINKER Cartesian Coordinate File Parser.
-            systemFilter = new XYZFilter(newSystem);
+            systemFilter = new XYZFilter(files, newSystem, forceField, properties);
         } else if (intFileFilter.acceptDeep(file)) {
             // Use the TINKER Internal Coordinate File Parser.
-            systemFilter = new INTFilter(newSystem);
+            systemFilter = new INTFilter(files, newSystem, forceField, properties);
         } else {
             // Use the PDB File Parser.
-            systemFilter = new PDBFilter(newSystem);
+            systemFilter = new PDBFilter(files, newSystem, forceField, properties);
         }
-        systemFilter.setFiles(files);
-        forceFieldFilter = new ForceFieldFilter(properties);
-        ForceField forceField = forceFieldFilter.parse();
-        newSystem.setForceField(forceField);
-        systemFilter.setForceField(forceField);
-        systemFilter.setProperties(properties);
 
         setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         activeFilter = systemFilter;
@@ -1203,7 +1194,7 @@ public final class MainPanel extends JPanel implements ActionListener,
             return null;
         }
         int n = name.length;
-        File files[] = new File[n];
+        List<File> files = new ArrayList<File>();
 
         // Check for an absolute pathname
         for (int i = 0; i < n; i++) {
@@ -1217,7 +1208,7 @@ public final class MainPanel extends JPanel implements ActionListener,
                     return null;
                 }
             }
-            files[i] = file;
+            files.add(file);
         }
         return open(files, null);
     }
@@ -1238,13 +1229,6 @@ public final class MainPanel extends JPanel implements ActionListener,
         if (code == null || code.length() != 4) {
             return;
         }
-        // Example
-        String pdbAddress = PDBFilter.pdbForID(code);
-        logger.log(Level.INFO, " Downloading " + pdbAddress);
-        // Example
-        // http://www.fli-leibniz.de/cgi-bin/nucauto.pl?COLOR=black&TYPE=model&CODE=1crn
-        // String vrmlAddress = "http://www.fli-leibniz.de/cgi-bin/molscript.pl?COLOR=black&TYPE=VRML&CODE=" + code;
-        // logger.log(Level.INFO, vrmlAddress);
         try {
             // Get the PDB File
             String fileName = code + ".pdb";
@@ -1255,9 +1239,53 @@ public final class MainPanel extends JPanel implements ActionListener,
             ForceField forceField = forceFieldFilter.parse();
             FFXSystem newSystem = new FFXSystem(pdbFile, "PDB", properties);
             newSystem.setForceField(forceField);
-            PDBFilter pdbFilter = new PDBFilter(newSystem, pdbAddress, null);
-            pdbFilter.setForceField(forceField);
-            pdbFilter.setProperties(properties);
+
+            if (!pdbFile.exists()) {
+                String pdbAddress = PDBFilter.pdbForID(code);
+                String message = String.format(" Downloading %s." + pdbAddress);
+                logger.log(Level.INFO, message);
+                BufferedWriter bw = null;
+                BufferedReader br = null;
+                try {
+                    URL url = new URL(pdbAddress);
+                    GZIPInputStream is = new GZIPInputStream(url.openStream());
+                    br = new BufferedReader(new InputStreamReader(is));
+                    int retry = 0;
+                    while (!br.ready() && retry < 10) {
+                        synchronized (this) {
+                            if (logger.isLoggable(Level.INFO)) {
+                                logger.info("Waiting on Network");
+                            }
+                            wait(50);
+                            retry++;
+                        }
+                    }
+                    FileWriter fw = new FileWriter(pdbFile);
+                    bw = new BufferedWriter(fw);
+                    if (logger.isLoggable(Level.INFO)) {
+                        logger.info(" Saving to: " + pdbFile.getAbsolutePath());
+                    }
+                    while (br.ready()) {
+                        bw.write(br.readLine());
+                        bw.newLine();
+                    }
+                } catch (Exception ex) {
+                    logger.log(Level.WARNING, " Exception reading PDB file " + pdbFile, ex);
+                    return;
+                } finally {
+                    if (bw != null) {
+                        bw.flush();
+                        bw.close();
+                    }
+                    if (br != null) {
+                        br.close();
+                    }
+                }
+            } else {
+                String message = String.format(" Reading the local copy of the PDB file %s.", pdbFile);
+                logger.warning(message);
+            }
+            PDBFilter pdbFilter = new PDBFilter(pdbFile, newSystem, forceField, properties);
             setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
             FileOpener openFile = new FileOpener(pdbFilter, this);
             openThread = new Thread(openFile);
@@ -1439,7 +1467,6 @@ public final class MainPanel extends JPanel implements ActionListener,
     public void saveAsXYZ(File file) {
         FFXSystem system = hierarchy.getActive();
         if (system != null && !system.isClosing()) {
-            SystemFilter filter = new XYZFilter();
             File saveFile = file;
             if (saveFile == null) {
                 resetFileChooser();
@@ -1453,7 +1480,7 @@ public final class MainPanel extends JPanel implements ActionListener,
                 }
             }
             if (saveFile != null) {
-                filter.setMolecularSystem(system);
+                SystemFilter filter = new XYZFilter(saveFile, system, null, null);
                 if (filter.writeFile(saveFile, false)) {
                     // Refresh Panels with the new System name
                     hierarchy.setActive(system);
@@ -1472,7 +1499,6 @@ public final class MainPanel extends JPanel implements ActionListener,
     public void saveAsP1(File file) {
         FFXSystem system = hierarchy.getActive();
         if (system != null && !system.isClosing()) {
-            XYZFilter filter = new XYZFilter();
             File saveFile = file;
             if (saveFile == null) {
                 resetFileChooser();
@@ -1486,7 +1512,7 @@ public final class MainPanel extends JPanel implements ActionListener,
                 }
             }
             if (saveFile != null) {
-                filter.setMolecularSystem(system);
+                XYZFilter filter = new XYZFilter(saveFile, system, null, null);
                 ForceField forceField = system.getForceField();
                 final double a = forceField.getDouble(ForceFieldDouble.A_AXIS, 10.0);
                 final double b = forceField.getDouble(ForceFieldDouble.B_AXIS, a);
@@ -1515,7 +1541,6 @@ public final class MainPanel extends JPanel implements ActionListener,
     public void saveAsPDB(File file) {
         FFXSystem system = hierarchy.getActive();
         if (system != null && !system.isClosing()) {
-            SystemFilter filter = new PDBFilter();
             File saveFile = file;
             if (saveFile == null) {
                 resetFileChooser();
@@ -1529,8 +1554,8 @@ public final class MainPanel extends JPanel implements ActionListener,
                 }
             }
             if (saveFile != null) {
-                filter.setMolecularSystem(system);
-                if (filter.writeFile(saveFile, false)) {
+                PDBFilter pdbFilter = new PDBFilter(saveFile, system, null, null);
+                if (pdbFilter.writeFile(saveFile, false)) {
                     // Refresh Panels with the new System name
                     hierarchy.setActive(system);
                 }

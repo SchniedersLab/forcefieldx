@@ -31,6 +31,7 @@ import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.Utilities.FileType;
 import ffx.potential.parameters.ForceField;
+import java.util.List;
 
 /**
  * The SystemFilter class is the base class for most Force Field X file parsers.
@@ -153,7 +154,7 @@ public abstract class SystemFilter {
     /**
      * Append multiple files into one MolecularAssembly.
      */
-    protected File files[] = null;
+    protected List<File> files = null;
     /**
      * The file format being handled.
      */
@@ -171,30 +172,26 @@ public abstract class SystemFilter {
      */
     protected boolean fileRead = false;
 
-    /**
-     * Default constructor.
-     */
-    public SystemFilter() {
-    }
-
-    /**
-     * SystemFilter constructor.
-     *
-     * @param molecularAssembly
-     *            MolecularAssembly
-     */
-    public SystemFilter(MolecularAssembly molecularAssembly) {
+    public SystemFilter(List<File> files, MolecularAssembly molecularAssembly,
+                        ForceField forceField, CompositeConfiguration properties) {
+        this.files = files;
+        if (files != null) {
+            this.currentFile = files.get(0);
+        }
         this.activeMolecularAssembly = molecularAssembly;
-    }
-
-    public SystemFilter(MolecularAssembly molecularAssembly, ForceField forceField) {
-        this(molecularAssembly);
         this.forceField = forceField;
+        this.properties = properties;
     }
 
-    public SystemFilter(MolecularAssembly molecularAssembly,
-            ForceField forceField, CompositeConfiguration properties) {
-        this(molecularAssembly, forceField);
+    public SystemFilter(File file, MolecularAssembly molecularAssembly,
+                        ForceField forceField, CompositeConfiguration properties) {
+        files = new ArrayList<File>();
+        if (file != null) {
+            files.add(file);
+        }
+        this.currentFile = file;
+        this.activeMolecularAssembly = molecularAssembly;
+        this.forceField = forceField;
         this.properties = properties;
     }
 
@@ -243,7 +240,7 @@ public abstract class SystemFilter {
         return currentFile;
     }
 
-    public File[] getFiles() {
+    public List<File> getFiles() {
         return files;
     }
 
@@ -274,13 +271,19 @@ public abstract class SystemFilter {
 
     public void setFile(File file) {
         this.currentFile = file;
-        files = new File[1];
-        files[0] = file;
+        files = new ArrayList<File>();
+        if (file != null) {
+            files.add(file);
+        }
     }
 
-    public void setFiles(File files[]) {
+    public void setFiles(List<File> files) {
         this.files = files;
-        this.currentFile = files[0];
+        if (files != null) {
+        this.currentFile = files.get(0);
+        } else {
+            this.currentFile = null;
+        }
     }
 
     /**

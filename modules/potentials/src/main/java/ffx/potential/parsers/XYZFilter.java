@@ -45,6 +45,9 @@ import ffx.potential.bonded.Bond;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
+import java.util.List;
+import java.util.logging.Level;
+import org.apache.commons.configuration.CompositeConfiguration;
 
 /**
  * The XYZFilter class parses TINKER Cartesian coordinate (*.XYZ) files.
@@ -56,6 +59,8 @@ import ffx.potential.parameters.ForceField;
 public class XYZFilter extends SystemFilter {
 
     private static final Logger logger = Logger.getLogger(XYZFilter.class.getName());
+    private BufferedReader bin = null;
+    private int snapShot;
 
     public static boolean readOnto(File newFile, MolecularAssembly oldSystem) {
         if (newFile == null || !newFile.exists() || oldSystem == null) {
@@ -107,19 +112,16 @@ public class XYZFilter extends SystemFilter {
         }
     }
 
-    public XYZFilter() {
-        super();
-        setType(FileType.XYZ);
+    public XYZFilter(List<File> files, MolecularAssembly system, 
+            ForceField forceField, CompositeConfiguration properties) {
+        super(files, system, forceField, properties);
+        this.fileType = FileType.XYZ;
     }
 
-    public XYZFilter(MolecularAssembly system) {
-        super(system);
-        setType(FileType.XYZ);
-    }
-
-    public XYZFilter(MolecularAssembly system, ForceField forceField) {
-        super(system, forceField);
-        setType(FileType.XYZ);
+    public XYZFilter(File file, MolecularAssembly system,
+            ForceField forceField, CompositeConfiguration properties) {
+        super(file, system, forceField, properties);
+        this.fileType = FileType.XYZ;
     }
 
     /**
@@ -128,8 +130,9 @@ public class XYZFilter extends SystemFilter {
     @Override
     public boolean readFile() {
         File xyzFile = activeMolecularAssembly.getFile();
+
         if (forceField == null) {
-            logger.warning("No force field is associated with " + xyzFile.toString());
+            logger.warning(" No force field is associated with " + xyzFile.toString());
             return false;
         }
         try {
@@ -288,9 +291,10 @@ public class XYZFilter extends SystemFilter {
                     }
                 }
             }
+            /*
             if (getType() == FileType.ARC) {
-                return readtrajectory();
-            }
+            return readtrajectory();
+            } */
             return true;
         } catch (IOException e) {
             logger.severe(e.toString());
@@ -298,12 +302,103 @@ public class XYZFilter extends SystemFilter {
         return false;
     }
 
+    /**
+     * Reads the next snap-shot of an archive into the activeMolecularAssembly.
+     * After calling this function, a BufferedReader will remain open until the
+     * <code>close</code> method is called.
+     * 
+     * @return true if successful.
+     */
+    public boolean readNext() {
+        try {
+            String data = null;
+            Atom atoms[] = activeMolecularAssembly.getAtomArray();
+            int nSystem = atoms.length;
+
+            if (bin == null || !bin.ready()) {
+                bin = new BufferedReader(new FileReader(currentFile));
+                // Read past the first N + 1 non-blank lines
+                for (int i = 0; i < nSystem + 1; i++) {
+                    data = bin.readLine();
+                    while (data != null && data.trim().equals("")) {
+                        data = bin.readLine();
+                    }
+                }
+                snapShot = 1;
+            }
+
+            snapShot++;
+            logger.info(String.format(" Reading snapshot %d of %s.",
+                                      snapShot, activeMolecularAssembly));
+
+            data = bin.readLine();
+            // Read past blank lines
+            while (data != null && data.trim().equals("")) {
+                data = bin.readLine();
+            }
+            try {
+                int nArchive = Integer.parseInt(data.trim().split(" +")[0]);
+                if (nArchive != nSystem) {
+                    String message = String.format("Number of atoms mismatch (Archive: %d, System: %d).", nArchive, nSystem);
+                    logger.warning(message);
+                    return false;
+                }
+            } catch (Exception e) {
+                logger.severe(e.toString());
+                return false;
+            }
+            for (int i = 0; i < nSystem; i++) {
+                data = bin.readLine();
+                // Read past blank lines
+                while (data != null && data.trim().equals("")) {
+                    data = bin.readLine();
+                }
+                String[] tokens = data.trim().split(" +");
+                if (tokens == null || tokens.length < 6) {
+                    String message = String.format("Check atom %d in %s.", (i + 1),
+                                                   currentFile.getName());
+                    logger.warning(message);
+                    return false;
+                }
+                double x = Double.parseDouble(tokens[2]);
+                double y = Double.parseDouble(tokens[3]);
+                double z = Double.parseDouble(tokens[4]);
+                int xyzIndex = atoms[i].getXYZIndex();
+                if (xyzIndex != i + 1) {
+                    String message = String.format("Archive atom index %d being read onto system atom index %d.", i + 1, xyzIndex);
+                    logger.warning(message);
+                }
+                atoms[i].moveTo(x, y, z);
+            }
+        } catch (FileNotFoundException e) {
+            String message = String.format("Exception opening file %s.", currentFile);
+            logger.log(Level.WARNING, message, e);
+        } catch (IOException e) {
+            String message = String.format("Exception reading from file %s.",
+                                           currentFile);
+            logger.log(Level.WARNING, message, e);
+        }
+        return false;
+    }
+
+    public void close() {
+        if (bin != null) {
+            try {
+                bin.close();
+            } catch (Exception e) {
+                String message = String.format("Exception closing file %s.",
+                                               activeMolecularAssembly.getFile());
+                logger.log(Level.WARNING, message, e);
+            }
+        }
+    }
+
     public boolean readtrajectory() {
         // If the first entry was read successfully, reopen the
         // archive file and read the rest of the coordinates
         try {
-            logger.info("Trying to parse " + activeMolecularAssembly.getFile() + " as an archive.");
-            BufferedReader bin = new BufferedReader(new FileReader(
+            logger.info(" Trying to parse " + activeMolecularAssembly.getFile() + " as an archive.");
+            bin = new BufferedReader(new FileReader(
                     activeMolecularAssembly.getFile()));
             String data = null;
             int numatoms = atomList.size();
@@ -350,7 +445,7 @@ public class XYZFilter extends SystemFilter {
                 for (Atom a : atomList) {
                     int i = a.xyzIndex - 1;
                     Vector3d v3d = new Vector3d(coords[i][0], coords[i][1],
-                            coords[i][2]);
+                                                coords[i][2]);
                     a.addTrajectoryCoords(v3d, cycle);
                 }
                 cycle++;
