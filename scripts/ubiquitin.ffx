@@ -1,9 +1,13 @@
 
 import ffx.potential.PotentialEnergy;
 
+//System.setProperty("pj.nt","16");
+
 open ("examples/ubiquitin.xyz")
 
 PotentialEnergy e = energy();
+
+return;
 
 for (int i=0; i<10; i++) {
    e.energy(true,true);

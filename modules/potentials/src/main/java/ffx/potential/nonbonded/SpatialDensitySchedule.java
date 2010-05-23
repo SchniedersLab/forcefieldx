@@ -34,24 +34,26 @@ import java.util.logging.Logger;
 public class SpatialDensitySchedule extends IntegerSchedule {
 
     private static Logger logger = Logger.getLogger(SpatialDensitySchedule.class.getName());
-    private final int nThreads;
     private final int nAtoms;
     private final int atomsPerChunk[];
     private final double loadBalancePercentage;
-    private final boolean threadDone[];
-    private final Range ranges[];
+    private int nThreads;
+    private Range chunkRange;
+    private boolean threadDone[];
+    private Range ranges[];
 
     public SpatialDensitySchedule(int nThreads, int nAtoms,
-            int atomsPerChunk[], double loadBalancePercentage) {
+                                  int atomsPerChunk[], double loadBalancePercentage) {
         this.nAtoms = nAtoms;
         this.atomsPerChunk = atomsPerChunk;
         this.nThreads = nThreads;
-        ranges = new Range[nThreads];
+
         threadDone = new boolean[nThreads];
+        ranges = new Range[nThreads];
 
         if (loadBalancePercentage > 0.01 && loadBalancePercentage <= 1.0) {
             this.loadBalancePercentage = loadBalancePercentage;
-        } else  {
+        } else {
             this.loadBalancePercentage = 1.0;
         }
     }
@@ -66,45 +68,21 @@ public class SpatialDensitySchedule extends IntegerSchedule {
     }
 
     @Override
-    public void start(int nThreads, Range range) {
+    public void start(int nThreads, Range chunkRange) {
+        this.nThreads = nThreads;
+        this.chunkRange = chunkRange;
 
-        assert(nThreads == this.nThreads);
-
-        int lb = range.lb();
-        int ub = range.ub();
-
-        // Null out the thread ranges.
-        for (int i=0; i < nThreads; i++) {
-            ranges[i] = null;
+        if (nThreads != threadDone.length) {
+            threadDone = new boolean[nThreads];
+        }
+        for (int i = 0; i < nThreads; i++) {
             threadDone[i] = false;
         }
 
-        int threadID = 0;
-        int start = 0;
-        int total = 0;
-
-        int goal = (int) (nAtoms * loadBalancePercentage / nThreads);
-        for (int i=lb; i<=ub; i++) {
-            // Count the number of atoms in each work chunk.
-            total += atomsPerChunk[i];
-            // Check if the load balancing goal has been reached.
-            if (total > goal) {
-                int stop = i;
-                // Define the range for this thread.
-                ranges[threadID++] = new Range(start, stop);
-                // Initialization for all, but the last thread.
-                if (threadID < nThreads - 1) {
-                    start = i+1;
-                    total = 0;
-                } else {
-                    // The last thread gets the rest of the work chunks.
-                    start = i + 1;
-                    stop = ub;
-                    ranges[threadID] = new Range(start, stop);
-                    break;
-                }
-            }
+        if (nThreads != ranges.length) {
+            ranges = new Range[nThreads];
         }
+        defineRanges();
     }
 
     @Override
@@ -114,5 +92,59 @@ public class SpatialDensitySchedule extends IntegerSchedule {
             return ranges[threadID];
         }
         return null;
+    }
+
+    private void defineRanges() {
+        int lb = chunkRange.lb();
+        int ub = chunkRange.ub();
+        int thread = 0;
+        int start = 0;
+        int total = 0;
+        int goal = (int) (nAtoms * loadBalancePercentage / nThreads);
+        for (int i = lb; i <= ub; i++) {
+            // Count the number of atoms in each work chunk.
+            total += atomsPerChunk[i];
+            // Check if the load balancing goal has been reached.
+            if (total > goal) {
+                int stop = i;
+                // Define the range for this thread.
+                Range current = ranges[thread];
+                if (current == null
+                    || current.lb() != start
+                    || current.ub() != stop) {
+                    ranges[thread] = new Range(start, stop);
+                }
+
+                // Initialization for the next thread.
+                thread++;
+                start = i + 1;
+                total = 0;
+                // The last thread gets the rest of the work chunks.
+                if (thread == nThreads - 1) {
+                    stop = ub;
+                    current = ranges[thread];
+                    if (current == null
+                        || current.lb() != start
+                        || current.ub() != stop) {
+                        ranges[thread] = new Range(start, stop);
+                    }
+                    break;
+                }
+            } else if (i == ub) {
+                // The final range may not meet the goal.
+                int stop = i;
+                Range current = ranges[thread];
+                if (current == null
+                    || current.lb() != start
+                    || current.ub() != stop) {
+                    ranges[thread] = new Range(start, stop);
+                }
+            }
+        }
+
+        // No work for remaining threads.
+        for (int i=thread + 1; i < nThreads; i++) {
+            ranges[i] = null;
+        }
     }
 }
