@@ -45,12 +45,14 @@ import java.util.Random;
 public class Bussi extends Thermostat {
 
     private double tau;
+    private final Random random;
 
     public Bussi(int n, double x[], double v[], double mass[], double targetTemperature,
             double tau) {
         super(n, x, v, mass, targetTemperature);
         this.name = Thermostats.BUSSI;
         this.tau = tau;
+        this.random = new Random();
     }
 
     public Bussi(int n, double x[], double v[], double mass[], double targetTemperature) {
@@ -85,7 +87,6 @@ public class Bussi extends Thermostat {
     @Override
     public void fullStep(double dt) {
         kineticEnergy();
-        Random random = new Random();
         double exptau = exp(-dt / tau);
         double ratio = targetTemperature / currentTemperature;
         double rate = (1.0 - exptau) * ratio / dof;

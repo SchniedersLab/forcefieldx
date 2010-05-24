@@ -2400,6 +2400,14 @@ public class ParticleMeshEwald implements LambdaInterface {
                     final Atom ai = atoms[i];
                     if (iSymm == 0) {
                         for (Atom ak : ai.get1_5s()) {
+                            /*
+                            dx_local[0] = ak.getX() - ai.getX();
+                            dx_local[1] = ak.getY() - ai.getY();
+                            dx_local[2] = ak.getZ() - ai.getZ();
+                            final double r2 = crystal.image(dx_local);
+                            if (r2 > off2) {
+                                logger.warning("Needed Ewald interaction is outside the cutoff: " + ai + ak);
+                            } */
                             masking_local[ak.xyzIndex - 1] = m15scale;
                         }
                         for (Torsion torsion : ai.getTorsions()) {
@@ -3300,6 +3308,8 @@ public class ParticleMeshEwald implements LambdaInterface {
                         tempQuadrupole[1][0] = in[t110];
                         tempQuadrupole[2][0] = in[t101];
                         tempQuadrupole[2][1] = in[t011];
+
+                        // Check for chiral flipping.
                         if (frame[ii] == MultipoleType.MultipoleFrameDefinition.ZTHENX
                             && referenceSites.length == 3) {
                             localOrigin[0] = x[ii];
@@ -3330,6 +3340,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                                 tempQuadrupole[1][0] = -tempQuadrupole[1][0];
                                 tempQuadrupole[1][2] = -tempQuadrupole[1][2];
                                 tempQuadrupole[2][1] = -tempQuadrupole[2][1];
+                                //logger.info("Chiral flip of atom " + atoms[ii]);
                             }
                         }
                         for (int i = 0; i < 3; i++) {
@@ -3535,7 +3546,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                     //double uwsin = sqrt(1.0 - uwcos * uwcos);
                     //double vwcos = dot(v, w);
                     //double vwsin = sqrt(1.0 - vwcos * vwcos);
-        /*
+                    /*
                      * Negative of dot product of torque with unit vectors gives result of
                      * infinitesimal rotation along these vectors.
                      */

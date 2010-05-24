@@ -52,7 +52,7 @@ public abstract class Thermostat {
 
     public enum Thermostats {
 
-        BERENDSEN, BUSSI, ISOTHERMAL
+         ADIABATIC, BERENDSEN, BUSSI;
     };
     protected double targetTemperature;
     protected double currentTemperature;

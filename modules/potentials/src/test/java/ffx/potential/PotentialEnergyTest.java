@@ -318,11 +318,11 @@ public class PotentialEnergyTest {
         double numeric[] = new double[3];
         double xyz[] = new double[3];
 
-        ArrayList<Atom> atoms = molecularAssembly.getAtomList();
-        int n = atoms.size();
+        Atom[] atoms = molecularAssembly.getAtomArray();
+        int n = atoms.length;
         Random random = new Random();
         int i = random.nextInt(n);
-        Atom a0 = atoms.get(i);
+        Atom a0 = atoms[i];
 
         a0.getXYZGradient(analytic);
         a0.getXYZ(xyz);

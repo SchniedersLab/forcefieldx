@@ -105,22 +105,22 @@ public class MolecularDynamics implements Terminatable, Runnable {
         aPrevious = new double[dof];
         grad = new double[dof];
 
-        if (requestedThermostat != null) {
-            switch (requestedThermostat) {
-                case ISOTHERMAL:
-                    thermostat = null;
-                    break;
-                case BERENDSEN:
-                    double tau = properties.getDouble("tau-temperature", 0.2);
-                    thermostat = new Berendsen(n, x, v, mass, 300.0, tau);
-                    break;
-                case BUSSI:
-                default:
-                    tau = properties.getDouble("tau-temperature", 0.2);
-                    thermostat = new Bussi(n, x, v, mass, 300.0, tau);
-            }
-        } else {
-            thermostat = null;
+        if (requestedThermostat == null) {
+            requestedThermostat = Thermostats.ADIABATIC;
+        }
+        
+        switch (requestedThermostat) {
+            case ADIABATIC:
+            default:
+                thermostat = new Adiabatic(n, x, v, mass);
+                break;
+            case BERENDSEN:
+                double tau = properties.getDouble("tau-temperature", 0.2);
+                thermostat = new Berendsen(n, x, v, mass, 300.0, tau);
+                break;
+            case BUSSI:
+                tau = properties.getDouble("tau-temperature", 0.2);
+                thermostat = new Bussi(n, x, v, mass, 300.0, tau);
         }
 
         done = true;
@@ -185,13 +185,13 @@ public class MolecularDynamics implements Terminatable, Runnable {
                 this.dyn = dyn;
                 loadRestart = true;
             }
-            
+
             logger.info(" Restart file will be written to " + this.dyn.getAbsolutePath());
 
 
             if (xyzFilter == null) {
                 xyzFilter = new XYZFilter(file, molecularAssembly,
-                        molecularAssembly.getForceField(), properties);
+                                          molecularAssembly.getForceField(), properties);
             }
 
             if (dynFilter == null) {
@@ -227,7 +227,7 @@ public class MolecularDynamics implements Terminatable, Runnable {
         }
 
         logger.info(" Molecular dynamics starting up");
-        if (thermostat != null) {
+        if (!(thermostat instanceof Adiabatic)) {
             logger.info(format(" Sampling the NVT ensemble via a %s thermostat", thermostat.name));
         } else {
             logger.info(format(" Sampling the NVE ensemble"));
@@ -270,7 +270,7 @@ public class MolecularDynamics implements Terminatable, Runnable {
         /**
          * Set the target temperature.
          */
-        if (thermostat != null) {
+        if (!(thermostat instanceof Adiabatic)) {
             thermostat.setTargetTemperature(temperature);
         }
 
@@ -297,7 +297,7 @@ public class MolecularDynamics implements Terminatable, Runnable {
             /**
              * Initialize atomic velocities.
              */
-            if (thermostat != null && initVelocities) {
+            if (initVelocities) {
                 thermostat.maxwell();
             } else {
                 for (int i = 0; i < dof; i++) {
@@ -325,7 +325,6 @@ public class MolecularDynamics implements Terminatable, Runnable {
         thermostat.kineticEnergy();
         kinetic = thermostat.getKineticEnergy();
         currentTemp = thermostat.getCurrentTemperture();
-
         total = kinetic + potential;
 
         /**
@@ -353,21 +352,15 @@ public class MolecularDynamics implements Terminatable, Runnable {
         for (int step = 1; step <= nSteps; step++) {
             beeman(dt);
 
-            if (thermostat != null) {
-                /**
-                 * Update the kinetic energy to the full-step value
-                 * so that restarted trajectories report an initial temperature
-                 * exactly equal to the last temperature printed out.
-                 */
-                thermostat.centerOfMassMotion(true, false);
-                thermostat.kineticEnergy();
-                kinetic = thermostat.getKineticEnergy();
-                currentTemp = thermostat.getCurrentTemperture();
-            } else {
-                kinetic = Double.MIN_VALUE;
-                currentTemp = Double.MIN_VALUE;
-            }
-
+            /**
+             * Update the kinetic energy to the full-step value
+             * so that restarted trajectories report an initial temperature
+             * exactly equal to the last temperature printed out.
+             */
+            //thermostat.centerOfMassMotion(true, false);
+            thermostat.kineticEnergy();
+            kinetic = thermostat.getKineticEnergy();
+            currentTemp = thermostat.getCurrentTemperture();
             total = kinetic + potential;
             if (step % printFrequency == 0) {
                 time = System.nanoTime() - time;
@@ -428,11 +421,7 @@ public class MolecularDynamics implements Terminatable, Runnable {
     private void beeman(final double dt) {
         final double dt_8 = 0.125 * dt;
         final double dt2_8 = dt * dt_8;
-
-        if (thermostat != null) {
-            thermostat.halfStep(dt);
-        }
-
+        thermostat.halfStep(dt);
         /**
          * Store the current atom positions, then find new atom positions
          * and half-step velocities via Beeman recusion.
@@ -443,12 +432,10 @@ public class MolecularDynamics implements Terminatable, Runnable {
             x[i] += v[i] * dt + temp * dt2_8;
             v[i] += temp * dt_8;
         }
-
         /**
          * Compute the potential energy and gradients.
          */
         potential = potentialEnergy.energyAndGradient(x, grad);
-
         /**
          * Use Newton's second law to get the next acceleration and find
          * the full-step velocities using the Beeman recusion.
@@ -461,9 +448,6 @@ public class MolecularDynamics implements Terminatable, Runnable {
                 v[index] += (3.0 * a[index] + aPrevious[index]) * dt_8;
             }
         }
-
-        if (thermostat != null) {
-            thermostat.fullStep(dt);
-        }
+        thermostat.fullStep(dt);
     }
 }
