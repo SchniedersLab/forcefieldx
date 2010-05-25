@@ -81,7 +81,7 @@ public class MolecularAssembly extends MSGroup {
     private Vector3d offset;
     private int cycles = 1;
     private int currentCycle = 1;
-    private Vector<String> altLoc = null;
+    private List<String> altLoc = null;
     // Data Nodes
     private MSNode ions = new MSNode("Ions");
     private MSNode water = new MSNode("Waters");
@@ -435,7 +435,7 @@ public class MolecularAssembly extends MSGroup {
                 molecule.finalize(true);
             }
             if (logger.isLoggable(Level.FINE)) {
-                StringBuffer sb = new StringBuffer("\nTime to create bonded energy terms\n\n");
+                StringBuilder sb = new StringBuilder("\nTime to create bonded energy terms\n\n");
                 sb.append(String.format("Bond Streching     %10.3f\n", bondTime * 1.0e-9));
                 sb.append(String.format("Angle Bending      %10.3f\n", angleTime * 1.0e-9));
                 sb.append(String.format("Stretch-Bend       %10.3f\n", stretchBendTime * 1.0e-9));
@@ -649,12 +649,7 @@ public class MolecularAssembly extends MSGroup {
         }
         Residue res = polymer.getResidue(resName, resNum, create);
         if (create && res != null) {
-            Atom exists = (Atom) res.contains(atom);
-            if (exists != null) {
-                return exists;
-            }
-            res.addMSNode(atom);
-            return atom;
+            return (Atom) res.addMSNode(atom);
         }
         return null;
     }
@@ -708,13 +703,7 @@ public class MolecularAssembly extends MSGroup {
             Molecule m = (Molecule) node;
             if (m.getSegID().equalsIgnoreCase(segID) && m.getResidueName().equalsIgnoreCase(resName)
                 && m.getResidueNumber() == resNum) {
-                Atom exists = (Atom) m.contains(atom);
-                if (exists != null) {
-                    return exists;
-                }
-
-                m.addMSNode(atom);
-                return atom;
+                    return (Atom) m.addMSNode(atom);
             }
         }
         list = water.getChildList();
@@ -723,12 +712,7 @@ public class MolecularAssembly extends MSGroup {
             if (m.getSegID().equalsIgnoreCase(segID)
                 && m.getResidueName().equalsIgnoreCase(resName)
                 && m.getResidueNumber() == resNum) {
-                Atom exists = (Atom) m.contains(atom);
-                if (exists != null) {
-                    return exists;
-                }
-                m.addMSNode(atom);
-                return atom;
+                return (Atom) m.addMSNode(atom);
             }
         }
         list = molecules.getChildList();
@@ -737,14 +721,7 @@ public class MolecularAssembly extends MSGroup {
             if (m.getSegID().equalsIgnoreCase(segID)
                 && m.getResidueName().equalsIgnoreCase(resName)
                 && m.getResidueNumber() == resNum) {
-
-                Atom exists = (Atom) m.contains(atom);
-                if (exists != null) {
-                    return exists;
-                }
-
-                m.addMSNode(atom);
-                return atom;
+                return (Atom) m.addMSNode(atom);
             }
         }
         if (create) {

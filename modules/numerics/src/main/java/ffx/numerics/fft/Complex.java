@@ -148,7 +148,7 @@ public class Complex {
          * Report a failed factorization.
          */
         if (product != n) {
-            StringBuffer sb = new StringBuffer(
+            StringBuilder sb = new StringBuilder(
                     "FFT factorization failed for n = " + n + "\n");
             for (int i = 0; i < nf; i++) {
                 sb.append(" " + ret[i]);
@@ -159,7 +159,7 @@ public class Complex {
             System.exit(-1);
         } else {
             if (logger.isLoggable(Level.FINE)) {
-                StringBuffer sb = new StringBuffer("FFT factorization for n = "
+                StringBuilder sb = new StringBuilder("FFT factorization for n = "
                         + n + " = ");
                 for (int i = 0; i < nf - 1; i++) {
                     sb.append(ret[i] + " * ");

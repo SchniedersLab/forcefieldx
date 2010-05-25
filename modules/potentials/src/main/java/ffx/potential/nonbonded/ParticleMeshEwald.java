@@ -30,7 +30,6 @@ import static ffx.potential.parameters.MultipoleType.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -282,7 +281,7 @@ public class ParticleMeshEwald implements LambdaInterface {
     private long realSpaceTime;
     private long reciprocalSpaceTime;
     private long bsplineTime, densityTime, realAndFFTTime, phiTime;
-    private static double toSeconds = 0.000000001;
+    private static double toSeconds = 1.0e-9;
     /**
      * Conversion from electron^2/Ang to Kcal/mole
      */
@@ -389,7 +388,7 @@ public class ParticleMeshEwald implements LambdaInterface {
         }
         setEwaldParameters();
         if (logger.isLoggable(Level.INFO)) {
-            StringBuffer sb = new StringBuffer(" PARTICLE MESH EWALD\n");
+            StringBuilder sb = new StringBuilder(" PARTICLE MESH EWALD\n");
             sb.append(format(" Real space cut-off:     %8.3f\n", off));
             sb.append(format(" Ewald coefficient:      %8.3f", aewald));
             logger.info(sb.toString());
@@ -497,16 +496,12 @@ public class ParticleMeshEwald implements LambdaInterface {
      */
     @Override
     public void setLambda(double lambda) {
-
         assert (lambda >= 0.0 && lambda <= 1.0);
-
         this.lambda = lambda;
-
-
         /**
          * Log the new lambda value.
          */
-        StringBuffer sb = new StringBuffer(" Multipoles and polarizabilities will be scaled for:\n");
+        StringBuilder sb = new StringBuilder(" Multipoles and polarizabilities will be scaled for:\n");
         boolean scaleAtoms = false;
         for (int i = 0; i < nAtoms; i++) {
             if (atoms[i].applyLambda()) {
@@ -621,7 +616,7 @@ public class ParticleMeshEwald implements LambdaInterface {
         selfConsistentField(logger.isLoggable(Level.FINE));
 
         if (logger.isLoggable(Level.FINE)) {
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             sb.append(format("\n b-Spline:   %8.3f (sec)\n", bsplineTime * toSeconds));
             sb.append(format(" Density:    %8.3f (sec)\n", densityTime * toSeconds));
             sb.append(format(" Real + FFT: %8.3f (sec)\n", realAndFFTTime * toSeconds));
@@ -676,7 +671,7 @@ public class ParticleMeshEwald implements LambdaInterface {
             reciprocalSpaceTime += time;
         }
         if (logger.isLoggable(Level.FINE)) {
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             sb.append(format("\n Total Time =    Real +   Recip (sec)\n"));
             sb.append(format("   %8.3f =%8.3f +%8.3f\n", toSeconds * (realSpaceTime + reciprocalSpaceTime), toSeconds * realSpaceTime,
                              toSeconds * reciprocalSpaceTime));
@@ -697,6 +692,8 @@ public class ParticleMeshEwald implements LambdaInterface {
             try {
                 parallelTeam.execute(torqueRegion);
             } catch (Exception e) {
+                String message = "Exception calculating torques.";
+                logger.log(Level.SEVERE, message, e);
             }
             for (int i = 0; i < nAtoms; i++) {
                 atoms[i].addToXYZGradient(sharedGrad[0].get(i), sharedGrad[1].get(i), sharedGrad[2].get(i));
@@ -798,10 +795,10 @@ public class ParticleMeshEwald implements LambdaInterface {
         }
 
         if (polarization == Polarization.MUTUAL) {
-            StringBuffer sb = null;
+            StringBuilder sb = null;
             long directTime = System.nanoTime() - startTime;
             if (print) {
-                sb = new StringBuffer(
+                sb = new StringBuilder(
                         "\n SELF-CONSISTENT FIELD\n"
                         + " Iter     RMS Change (Debyes)   Time\n");
             }
@@ -929,7 +926,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                 logger.info(sb.toString());
             }
             if (false) {
-                sb = new StringBuffer();
+                sb = new StringBuilder();
                 for (int i = 0; i < 100; i++) {
                     sb.append(format(
                             "Induced Dipole  %d %15.8f %15.8f %15.8f\n", i + 1,
@@ -1099,7 +1096,11 @@ public class ParticleMeshEwald implements LambdaInterface {
             final double fPhi[] = fractionalMultipolePhi[i];
             final double mpole[] = pole[i];
             final double fmpole[] = fpole[i];
-            double e = fmpole[t000] * fPhi[t000] + fmpole[t100] * fPhi[t100] + fmpole[t010] * fPhi[t010] + fmpole[t001] * fPhi[t001] + fmpole[t200] * fPhi[t200] + fmpole[t020] * fPhi[t020] + fmpole[t002] * fPhi[t002] + fmpole[t110] * fPhi[t110] + fmpole[t101] * fPhi[t101] + fmpole[t011] * fPhi[t011];
+            double e = fmpole[t000] * fPhi[t000] + fmpole[t100] * fPhi[t100]
+                       + fmpole[t010] * fPhi[t010] + fmpole[t001] * fPhi[t001]
+                       + fmpole[t200] * fPhi[t200] + fmpole[t020] * fPhi[t020]
+                       + fmpole[t002] * fPhi[t002] + fmpole[t110] * fPhi[t110]
+                       + fmpole[t101] * fPhi[t101] + fmpole[t011] * fPhi[t011];
             erecip += e;
             if (gradient) {
                 double gx = fmpole[t000] * fPhi[t100] + fmpole[t100] * fPhi[t200] + fmpole[t010] * fPhi[t110] + fmpole[t001] * fPhi[t101] + fmpole[t200] * fPhi[t300] + fmpole[t020] * fPhi[t120] + fmpole[t002] * fPhi[t102] + fmpole[t110] * fPhi[t210] + fmpole[t101] * fPhi[t201] + fmpole[t011] * fPhi[t111];
@@ -2300,7 +2301,7 @@ public class ParticleMeshEwald implements LambdaInterface {
             @Override
             public void run(int lb, int ub) {
                 long startTime = System.nanoTime();
-                Vector<SymOp> symOps = crystal.spaceGroup.symOps;
+                List<SymOp> symOps = crystal.spaceGroup.symOps;
                 for (iSymm = 0; iSymm < nSymm; iSymm++) {
                     if (gradient && iSymm > 0) {
                         for (int j = 0; j < nAtoms; j++) {
@@ -2406,7 +2407,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                             dx_local[2] = ak.getZ() - ai.getZ();
                             final double r2 = crystal.image(dx_local);
                             if (r2 > off2) {
-                                logger.warning("Needed Ewald interaction is outside the cutoff: " + ai + ak);
+                            logger.warning("Needed Ewald interaction is outside the cutoff: " + ai + ak);
                             } */
                             masking_local[ak.xyzIndex - 1] = m15scale;
                         }
@@ -3117,7 +3118,7 @@ public class ParticleMeshEwald implements LambdaInterface {
 
             @Override
             public void run(int lb, int ub) {
-                Vector<SymOp> symOps = crystal.spaceGroup.symOps;
+                List<SymOp> symOps = crystal.spaceGroup.symOps;
                 for (int iSymm = 1; iSymm < nSymm; iSymm++) {
                     SymOp symOp = symOps.get(iSymm);
                     double xs[] = coordinates[iSymm][0];
@@ -3267,8 +3268,8 @@ public class ParticleMeshEwald implements LambdaInterface {
                                 rotmat[1][0] = xAxis[1];
                                 rotmat[2][0] = xAxis[2];
                                 break;
-                            default:
                             case ZTHENX:
+                            default:
                                 index = referenceSites[0];
                                 zAxis[0] = x[index];
                                 zAxis[1] = y[index];
@@ -3387,6 +3388,21 @@ public class ParticleMeshEwald implements LambdaInterface {
                         out[t110] = scale * quadrupole[0][1] * quadrupoleScale;
                         out[t101] = scale * quadrupole[0][2] * quadrupoleScale;
                         out[t011] = scale * quadrupole[1][2] * quadrupoleScale;
+
+                        /* No rotation (useful for checking non-torque parts
+                         * of the multipole gradient
+                        out[t000] = scale * in[t000];
+                        out[t100] = scale * in[t100] * dipoleScale;
+                        out[t010] = scale * in[t010] * dipoleScale;
+                        out[t001] = scale * in[t001] * dipoleScale;
+                        out[t200] = scale * in[t200] * quadrupoleScale;
+                        out[t020] = scale * in[t020] * quadrupoleScale;
+                        out[t002] = scale * in[t002] * quadrupoleScale;
+                        out[t110] = scale * in[t110] * quadrupoleScale;
+                        out[t101] = scale * in[t101] * quadrupoleScale;
+                        out[t011] = scale * in[t011] * quadrupoleScale;
+                         */
+
                         PolarizeType polarizeType = a.getPolarizeType();
                         polarizability[ii] = scale * polarizeType.polarizability;
                     }
@@ -3417,6 +3433,7 @@ public class ParticleMeshEwald implements LambdaInterface {
         }
 
         private class ExpandInducedDipoleLoop extends IntegerForLoop {
+
             @Override
             public IntegerSchedule schedule() {
                 return pairWiseSchedule;
@@ -3481,15 +3498,15 @@ public class ParticleMeshEwald implements LambdaInterface {
             @Override
             public void run(int lb, int ub) {
                 for (int i = lb; i <= ub; i++) {
-                    int ax[] = axisAtom[i];
+                    final int ax[] = axisAtom[i];
+                    // Ions, for example, have no torque.
                     if (ax == null || ax.length < 2) {
-                        return;
+                        continue;
                     }
-                    int ia = ax[0];
-                    int ib = i;
-                    int ic = ax[1];
+                    final int ia = ax[0];
+                    final int ib = i;
+                    final int ic = ax[1];
                     int id = 0;
-
                     trq[0] = sharedTorque[0].get(i);
                     trq[1] = sharedTorque[1].get(i);
                     trq[2] = sharedTorque[2].get(i);
@@ -3736,7 +3753,7 @@ public class ParticleMeshEwald implements LambdaInterface {
         /**
          * Check for multipoles that were not assigned correctly.
          */
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         for (int i = 0; i < nAtoms; i++) {
             boolean flag = false;
             for (int j = 0; j < 10; j++) {
@@ -3767,7 +3784,6 @@ public class ParticleMeshEwald implements LambdaInterface {
         if (atomType == null) {
             String message = "Fatal exception: Multipoles can only be assigned to atoms that have been typed.";
             logger.severe(message);
-            System.exit(-1);
         }
         PolarizeType polarizeType = forceField.getPolarizeType(atomType.getKey());
         if (polarizeType != null) {
@@ -3775,7 +3791,6 @@ public class ParticleMeshEwald implements LambdaInterface {
         } else {
             String message = "Fatal Exception: No polarization type was found for " + atom.toString();
             logger.severe(message);
-            System.exit(-1);
         }
         MultipoleType multipoleType = null;
         String key = null;
@@ -4000,8 +4015,8 @@ public class ParticleMeshEwald implements LambdaInterface {
         /**
          * Find directly connected group members for each atom.
          */
-        Vector<Integer> group = new Vector<Integer>();
-        Vector<Integer> polarizationGroup = new Vector<Integer>();
+        List<Integer> group = new ArrayList<Integer>();
+        List<Integer> polarizationGroup = new ArrayList<Integer>();
         for (Atom ai : atoms) {
             group.clear();
             polarizationGroup.clear();
@@ -4044,8 +4059,8 @@ public class ParticleMeshEwald implements LambdaInterface {
          * Find 1-2 group relationships.
          */
         int mask[] = new int[nAtoms];
-        Vector<Integer> list = new Vector<Integer>();
-        Vector<Integer> keep = new Vector<Integer>();
+        List<Integer> list = new ArrayList<Integer>();
+        List<Integer> keep = new ArrayList<Integer>();
         for (int i = 0; i < nAtoms; i++) {
             mask[i] = -1;
         }
@@ -4125,9 +4140,9 @@ public class ParticleMeshEwald implements LambdaInterface {
      *            The bonds of the seed atom are queried for inclusion in the
      *            group.
      */
-    private void growGroup(Vector<Integer> polarizationGroup,
-                           Vector<Integer> group, Atom seed) {
-        ArrayList<Bond> bonds = seed.getBonds();
+    private void growGroup(List<Integer> polarizationGroup,
+                           List<Integer> group, Atom seed) {
+        List<Bond> bonds = seed.getBonds();
         for (Bond bi : bonds) {
             Atom aj = bi.get1_2(seed);
             int tj = aj.getType();

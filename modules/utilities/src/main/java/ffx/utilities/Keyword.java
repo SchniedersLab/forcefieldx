@@ -94,7 +94,7 @@ public class Keyword {
 
     @Override
     public String toString() {
-        StringBuffer sb = new StringBuffer(keyword + " ");
+        StringBuilder sb = new StringBuilder(keyword + " ");
         for (String s : data) {
             sb.append(s);
         }

@@ -242,7 +242,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         }
 
         if (logger.isLoggable(Level.INFO)) {
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             mtime += System.nanoTime();
             sb.append(String.format("minimizer time: %g\n", mtime * toSeconds));
             logger.info(sb.toString());

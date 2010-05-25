@@ -148,7 +148,7 @@ public class CIFFilter {
         }
 
         if (logger.isLoggable(Level.INFO)) {
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             sb.append(String.format("\nOpening %s\n", cifFile.getName()));
             sb.append(String.format("setting up Reflection List based on CIF:\n"));
             sb.append(String.format("  spacegroup #: %d (name: %s)\n",
@@ -285,7 +285,7 @@ public class CIFFilter {
             return false;
         }
 
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append(String.format("\nOpening %s\n", cifFile.getName()));
         sb.append(String.format("# HKL read in:                             %d\n",
                 nread));

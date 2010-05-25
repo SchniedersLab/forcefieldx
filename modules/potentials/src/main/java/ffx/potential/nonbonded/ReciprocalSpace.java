@@ -168,7 +168,7 @@ public class ReciprocalSpace {
         }
 
         if (logger.isLoggable(Level.INFO)) {
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             sb.append(format(" B-Spline order:         %8d\n", bSplineOrder));
             sb.append(format(" Grid density:           %8.3f\n", density));
             sb.append(format(" Grid dimensions:           (%d,%d,%d)", fftX, fftY, fftZ));

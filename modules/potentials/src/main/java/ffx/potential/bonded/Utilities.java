@@ -23,10 +23,9 @@ package ffx.potential.bonded;
 import static ffx.numerics.VectorMath.diff;
 
 import java.util.ArrayList;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Vector;
 import java.util.logging.Logger;
 
 /**
@@ -75,7 +74,7 @@ public final class Utilities {
      * single character for nucleic acids, or an integer indicating a special
      * case.
      */
-    static private Hashtable<String, String> sidechainStoichiometry = new Hashtable<String, String>();
+    private static final HashMap<String, String> sidechainStoichiometry = new HashMap<String, String>();
     private static final double p4 = 15.236;
     private static final double p5 = 1.254;
     private static final double p5inv = 1.0 / 1.254;
@@ -210,7 +209,7 @@ public final class Utilities {
                     return null;
             }
         }
-        StringBuffer key = new StringBuffer();
+        StringBuilder key = new StringBuilder();
         int atomCount = 0;
         for (int i = 0; i < 5; i++) {
             if (bins[i] != 0) {
@@ -317,7 +316,7 @@ public final class Utilities {
         int waterNum = 0;
         int ionNum = 0;
         int heteroNum = 0;
-        Vector<String> segIDs = new Vector<String>();
+        List<String> segIDs = new ArrayList<String>();
         while (atoms.size() > 0) {
             // Nitrogens are used to "seed" a backbone search rather than carbon
             // because a carbon can be separated from the backbone by a sulfur
@@ -414,7 +413,7 @@ public final class Utilities {
      * @param c chain ID just read.
      * @return a unique segID.
      */
-    private static String getSegID(Character c, Vector<String> segIDs) {
+    private static String getSegID(Character c, List<String> segIDs) {
         if (c == null || c.equals(' ')) {
             c = 'A';
         }

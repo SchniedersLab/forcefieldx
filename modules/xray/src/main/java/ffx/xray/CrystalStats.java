@@ -101,7 +101,7 @@ public class CrystalStats {
             }
         }
 
-        StringBuffer sb = new StringBuffer("\n");
+        StringBuilder sb = new StringBuilder("\n");
         sb.append("# reflections (for 100% complete): " + refinementdata.n + "\n");
         sb.append(String.format("%15s | %8s|%9s| %7s | %7s |%s\n",
                 "res. range", "#HKL (R)", "#HKL (cv)", "#bin", "#miss",
@@ -309,7 +309,7 @@ public class CrystalStats {
             s[n][2] += (fomphi[i][0] - s[n][2]) / nhkl[n];
         }
 
-        StringBuffer sb = new StringBuffer("\n");
+        StringBuilder sb = new StringBuilder("\n");
         sb.append(String.format("%15s | %7s | %7s | %7s | %7s | %7s\n",
                 "res. range", "  R", "Rfree", "s", "w", "FOM"));
         for (int i = 0; i < n; i++) {
@@ -351,7 +351,7 @@ public class CrystalStats {
             scale[b] += (fh - scale[b]) / nhkl[b];
         }
 
-        StringBuffer sb = new StringBuffer("\n");
+        StringBuilder sb = new StringBuilder("\n");
         sb.append(String.format("  Fc to Fo scale: %4.2f\n",
                 exp(0.25 * refinementdata.model_k)));
         sb.append("  Fc to Fo spline scale: ");
@@ -445,7 +445,7 @@ public class CrystalStats {
             sn[n][2] += ((fo[i][0] / fo[i][1]) - sn[n][2]) / nhkl[n];
         }
 
-        StringBuffer sb = new StringBuffer("\n");
+        StringBuilder sb = new StringBuilder("\n");
         sb.append(String.format("%15s | %8s | %8s | %8s \n",
                 "res. range", "signal", "sigma", "s/n"));
         for (int i = 0; i < n; i++) {

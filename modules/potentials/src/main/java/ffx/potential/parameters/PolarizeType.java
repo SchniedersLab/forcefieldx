@@ -101,7 +101,7 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
      */
     @Override
     public String toString() {
-        StringBuffer polarizeString = new StringBuffer(String.format(
+        StringBuilder polarizeString = new StringBuilder(String.format(
                 "polarize  %5d  %6.3f %6.3f", type, polarizability, thole));
         if (polarizationGroup != null) {
             for (int a : polarizationGroup) {

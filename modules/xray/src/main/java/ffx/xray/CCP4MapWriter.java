@@ -99,7 +99,7 @@ public class CCP4MapWriter {
 
         try {
             if (logger.isLoggable(Level.INFO)) {
-                StringBuffer sb = new StringBuffer();
+                StringBuilder sb = new StringBuilder();
                 sb.append(String.format("\nwriting CCP4 map file: \"%s\"\n", filename));
                 sb.append(String.format("map min: %g max: %g mean: %g standard dev.: %g",
                         min, max, mean, sd));
@@ -183,14 +183,14 @@ public class CCP4MapWriter {
             bb.order(b).putInt(1);
             dos.write(bytes, offset, 12);
 
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             sb.append("map data from ffx");
             while (sb.length() < 80) {
                 sb.append(" ");
             }
             dos.writeBytes(sb.toString());
 
-            sb = new StringBuffer();
+            sb = new StringBuilder();
             while (sb.length() < 80) {
                 sb.append(" ");
             }
@@ -198,7 +198,7 @@ public class CCP4MapWriter {
                 dos.writeBytes(sb.toString());
             }
 
-            sb = new StringBuffer();
+            sb = new StringBuilder();
             sb.append("x,y,z");
             while (sb.length() < 80) {
                 sb.append(" ");

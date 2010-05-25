@@ -481,13 +481,13 @@ public class XYZFilter extends SystemFilter {
             String output = format("%7d  %s\n", numberOfAtoms, activeMolecularAssembly.toString());
             bw.write(output);
             Atom a2;
-            StringBuffer line;
-            StringBuffer lines[] = new StringBuffer[numberOfAtoms];
+            StringBuilder line;
+            StringBuilder lines[] = new StringBuilder[numberOfAtoms];
             // XYZ File Atom Lines
             ArrayList<Atom> atoms = activeMolecularAssembly.getAtomList();
             Vector3d offset = activeMolecularAssembly.getOffset();
             for (Atom a : atoms) {
-                line = new StringBuffer(format(
+                line = new StringBuilder(format(
                         "%7d %3s%14.8f%14.8f%14.8f%6d", a.getXYZIndex(), a.getAtomType().name, a.getX() - offset.x, a.getY() - offset.y, a.getZ() - offset.z, a.getType()));
                 for (Bond b : a.getBonds()) {
                     a2 = b.get1_2(a);
@@ -533,8 +533,8 @@ public class XYZFilter extends SystemFilter {
             String output = format("%7d %s\n", numberOfAtoms, activeMolecularAssembly.toString());
             bw.write(output);
             Atom a2;
-            StringBuffer line;
-            StringBuffer lines[] = new StringBuffer[numberOfAtoms];
+            StringBuilder line;
+            StringBuilder lines[] = new StringBuilder[numberOfAtoms];
             // XYZ File Atom Lines
             ArrayList<Atom> atoms = activeMolecularAssembly.getAtomList();
             Vector3d offset = activeMolecularAssembly.getOffset();
@@ -552,7 +552,7 @@ public class XYZFilter extends SystemFilter {
                     xyz[2] = a.getZ() - offset.z;
                     crystal.applySymOp(xyz, xyz, symOp);
                     int type = a.getType();
-                    line = new StringBuffer(format(
+                    line = new StringBuilder(format(
                             "%7d %3s%14.8f%14.8f%14.8f%6d", index, id, xyz[0],
                             xyz[1], xyz[2], type));
                     for (Bond b : a.getBonds()) {

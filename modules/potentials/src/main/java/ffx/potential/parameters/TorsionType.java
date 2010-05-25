@@ -116,7 +116,7 @@ public final class TorsionType extends BaseType implements Comparator<String> {
      */
     @Override
     public String toString() {
-        StringBuffer torsionBuffer = new StringBuffer("torsion");
+        StringBuilder torsionBuffer = new StringBuilder("torsion");
         for (int i : atomClasses) {
             torsionBuffer.append(String.format(" %5d", i));
         }

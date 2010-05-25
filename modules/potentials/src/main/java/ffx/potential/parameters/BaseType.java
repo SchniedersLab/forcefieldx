@@ -51,7 +51,7 @@ public abstract class BaseType {
         if (keys == null) {
             key = null;
         } else {
-            StringBuffer keyBuffer = new StringBuffer(Integer.toString(keys[0]));
+            StringBuilder keyBuffer = new StringBuilder(Integer.toString(keys[0]));
             for (int i = 1; i < keys.length; i++) {
                 keyBuffer.append(" " + keys[i]);
             }

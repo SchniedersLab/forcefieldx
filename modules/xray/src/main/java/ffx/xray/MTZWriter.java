@@ -85,7 +85,7 @@ public class MTZWriter {
 
         try {
             if (logger.isLoggable(Level.INFO)) {
-                StringBuffer sb = new StringBuffer();
+                StringBuilder sb = new StringBuilder();
                 sb.append(String.format("\nwriting MTZ HKL file: \"%s\"\n",
                         filename));
                 logger.info(sb.toString());
@@ -102,7 +102,7 @@ public class MTZWriter {
             String mapstr;
 
             // header
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             sb.append("MTZ ");
             dos.writeBytes(sb.toString());
 
@@ -121,7 +121,7 @@ public class MTZWriter {
             bb.order(b).putInt(imapdata);
             dos.write(bytes, offset, 8);
 
-            sb = new StringBuffer();
+            sb = new StringBuilder();
             sb.append(" ");
             sb.setLength(68);
             dos.writeBytes(sb.toString());
@@ -283,7 +283,7 @@ public class MTZWriter {
             }
 
             // header
-            sb = new StringBuffer();
+            sb = new StringBuilder();
             sb.append("VERS MTZ:V1.1 ");
             while (sb.length() < 80) {
                 sb.append(" ");
@@ -292,28 +292,28 @@ public class MTZWriter {
 
             Date now = new Date();
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss ");
-            sb = new StringBuffer();
+            sb = new StringBuilder();
             sb.append("TITLE FFX output: " + sdf.format(now));
             while (sb.length() < 80) {
                 sb.append(" ");
             }
             dos.writeBytes(sb.toString());
 
-            sb = new StringBuffer();
+            sb = new StringBuilder();
             sb.append(String.format("NCOL %8d %12d %8d", ncol, n, 0));
             while (sb.length() < 80) {
                 sb.append(" ");
             }
             dos.writeBytes(sb.toString());
 
-            sb = new StringBuffer();
+            sb = new StringBuilder();
             sb.append("SORT    0    0    0    0    0 ");
             while (sb.length() < 80) {
                 sb.append(" ");
             }
             dos.writeBytes(sb.toString());
 
-            sb = new StringBuffer();
+            sb = new StringBuilder();
             char cdata = sg.shortName.charAt(0);
             if (cdata == 'H') {
                 cdata = 'R';
@@ -331,7 +331,7 @@ public class MTZWriter {
             dos.writeBytes(sb.toString());
 
             for (int i = 0; i < sg.symOps.size(); i++) {
-                sb = new StringBuffer();
+                sb = new StringBuilder();
                 sb.append("SYMM ");
                 SymOp symop = sg.symOps.get(i);
                 sb.append(symop.toXYZString());
@@ -341,7 +341,7 @@ public class MTZWriter {
                 dos.writeBytes(sb.toString());
             }
 
-            sb = new StringBuffer();
+            sb = new StringBuilder();
             sb.append(String.format("RESO %8.6f%13s%8.6f",
                     res[0], " ", res[1]));
             while (sb.length() < 80) {
@@ -349,35 +349,35 @@ public class MTZWriter {
             }
             dos.writeBytes(sb.toString());
 
-            sb = new StringBuffer();
+            sb = new StringBuilder();
             sb.append("VALM NAN ");
             while (sb.length() < 80) {
                 sb.append(" ");
             }
             dos.writeBytes(sb.toString());
 
-            sb = new StringBuffer();
+            sb = new StringBuilder();
             sb.append("NDIF        1 ");
             while (sb.length() < 80) {
                 sb.append(" ");
             }
             dos.writeBytes(sb.toString());
 
-            sb = new StringBuffer();
+            sb = new StringBuilder();
             sb.append("PROJECT       1 project ");
             while (sb.length() < 80) {
                 sb.append(" ");
             }
             dos.writeBytes(sb.toString());
 
-            sb = new StringBuffer();
+            sb = new StringBuilder();
             sb.append("CRYSTAL       1 crystal ");
             while (sb.length() < 80) {
                 sb.append(" ");
             }
             dos.writeBytes(sb.toString());
 
-            sb = new StringBuffer();
+            sb = new StringBuilder();
             sb.append("DATASET       1 dataset ");
             while (sb.length() < 80) {
                 sb.append(" ");
@@ -385,14 +385,14 @@ public class MTZWriter {
             dos.writeBytes(sb.toString());
 
             for (int j = 0; j < ncol; j++) {
-                sb = new StringBuffer();
+                sb = new StringBuilder();
                 sb.append(String.format("COLUMN %-30s %c %17.4f %17.4f    1",
                         colname.get(j), coltype[j],
                         colminmax[j][0], colminmax[j][1]));
                 dos.writeBytes(sb.toString());
             }
 
-            sb = new StringBuffer();
+            sb = new StringBuilder();
             sb.append(String.format("CELL %10.4f %9.4f %9.4f %9.4f %9.4f %9.4f ",
                     crystal.a, crystal.b, crystal.c,
                     crystal.alpha, crystal.beta, crystal.gamma));
@@ -401,7 +401,7 @@ public class MTZWriter {
             }
             dos.writeBytes(sb.toString());
 
-            sb = new StringBuffer();
+            sb = new StringBuilder();
             sb.append(String.format("DCELL %9d %10.4f %9.4f %9.4f %9.4f %9.4f %9.4f ",
                     1, crystal.a, crystal.b, crystal.c,
                     crystal.alpha, crystal.beta, crystal.gamma));
@@ -410,21 +410,21 @@ public class MTZWriter {
             }
             dos.writeBytes(sb.toString());
 
-            sb = new StringBuffer();
+            sb = new StringBuilder();
             sb.append("DWAVEL        1    1.00000 ");
             while (sb.length() < 80) {
                 sb.append(" ");
             }
             dos.writeBytes(sb.toString());
 
-            sb = new StringBuffer();
+            sb = new StringBuilder();
             sb.append("END ");
             while (sb.length() < 80) {
                 sb.append(" ");
             }
             dos.writeBytes(sb.toString());
 
-            sb = new StringBuffer();
+            sb = new StringBuilder();
             sb.append("MTZENDOFHEADERS ");
             while (sb.length() < 80) {
                 sb.append(" ");

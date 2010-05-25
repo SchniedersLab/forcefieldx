@@ -176,7 +176,7 @@ public class MTZFilter {
         dataset d = (dataset) datasets.get(c.id - 1);
 
         if (logger.isLoggable(Level.INFO)) {
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             sb.append(String.format("\nOpening %s\n", mtzFile.getName()));
             sb.append(String.format("setting up Reflection List based on MTZ:\n"));
             sb.append(String.format("  spacegroup #: %d (name: %s)\n",
@@ -298,7 +298,7 @@ public class MTZFilter {
                     }
                 }
             }
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             sb.append(String.format("\nOpening %s\n", mtzFile.getName()));
             sb.append(String.format("MTZ file type (machine stamp): %s\n",
                     stampstr));
@@ -447,7 +447,7 @@ public class MTZFilter {
 
         // TODO: allow user to set mtz strings to look for in properties
         int nc = 0;
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         for (Iterator i = columns.iterator(); i.hasNext(); nc++) {
             column c = (column) i.next();
             String label = c.label.trim();
@@ -489,7 +489,7 @@ public class MTZFilter {
     }
 
     static void print_header(MTZFilter mfile) {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append("title: " + mfile.title + "\n");
         sb.append("sg: " + mfile.sgname + " sgnum: " + mfile.sgnum + "\n");
         sb.append("res: " + mfile.reslow + " " + mfile.reshigh + "\n");

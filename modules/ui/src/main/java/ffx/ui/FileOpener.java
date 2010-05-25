@@ -20,14 +20,17 @@
  */
 package ffx.ui;
 
-import ffx.potential.PotentialEnergy;
+import static java.lang.String.format;
+
 import java.awt.Cursor;
+
+import java.util.List;
 import java.util.logging.Logger;
-import java.util.Vector;
 
 import org.apache.commons.io.FilenameUtils;
 
 import ffx.potential.bonded.Utilities;
+import ffx.potential.PotentialEnergy;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.SystemFilter;
 
@@ -80,15 +83,15 @@ public class FileOpener
             // Check if there are alternate conformers
             if (systemFilter instanceof PDBFilter) {
                 PDBFilter pdbFilter = (PDBFilter) systemFilter;
-                Vector<Character> altLocs = pdbFilter.getAltLocs();
+                List<Character> altLocs = pdbFilter.getAltLocs();
                 if (altLocs.size() > 1 || altLocs.get(0) != ' ') {
-                    StringBuffer altLocString = new StringBuffer(" Alternate locations [ ");
+                    StringBuilder altLocString = new StringBuilder(" Alternate locations [ ");
                     for (Character c : altLocs) {
                         // Do not report the root conformer.
                         if (c == ' ') {
                             continue;
                         }
-                        altLocString.append("(" + c + ") ");
+                        altLocString.append(format("(%s) ", c));
                     }
                     altLocString.append("]");
                     logger.info(altLocString.toString());
@@ -108,6 +111,7 @@ public class FileOpener
                                                         "Alternate Location " + c, ffxSystem.getProperties());
                     newSystem.setForceField(ffxSystem.getForceField());
                     pdbFilter.setAltID(newSystem, c);
+                    pdbFilter.clearSegIDs();
                     if (pdbFilter.readFile()) {
                         String fileName = ffxSystem.getFile().getAbsolutePath();
                         newSystem.setName(FilenameUtils.getBaseName(fileName) + " " + c);

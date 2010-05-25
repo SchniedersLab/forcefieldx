@@ -160,7 +160,7 @@ public class FFXSystem extends MolecularAssembly {
     }
 
     public String toFFString() {
-        StringBuffer sb = new StringBuffer(toString());
+        StringBuilder sb = new StringBuilder(toString());
         if (forceField != null) {
             String ff = forceField.toString("forcefield");
             if (ff != null) {
@@ -177,7 +177,7 @@ public class FFXSystem extends MolecularAssembly {
         if (getFile() == null) {
             return toFFString();
         }
-        StringBuffer sb = new StringBuffer(getFile().getAbsolutePath());
+        StringBuilder sb = new StringBuilder(getFile().getAbsolutePath());
         if (forceField != null) {
             String ff = forceField.toString("forcefield");
             if (ff != null) {

@@ -232,7 +232,7 @@ public class CrystalReciprocalSpace {
         densityGrid = new double[complexFFT3DSpace];
 
         if (logger.isLoggable(Level.INFO)) {
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             sb.append(String.format(" Form Factor Grid Radius        %d\n",
                                     aradgrid));
             sb.append(String.format(" Grid density:               %8.3f\n",
@@ -351,7 +351,7 @@ public class CrystalReciprocalSpace {
         }
 
         int nfree = 0;
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         long symtime = -System.nanoTime();
         int nsym = crystal.spaceGroup.symOps.size();
         // int nsym = 1;
@@ -429,7 +429,7 @@ public class CrystalReciprocalSpace {
     }
 
     public void computeAtomicDensity(double hkldata[][]) {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         // clear out the reflection data
         int n = reflectionlist.hkllist.size();
         for (int i = 0; i < n; i++) {
@@ -512,7 +512,7 @@ public class CrystalReciprocalSpace {
     }
 
     public void computeSolventDensity(double hkldata[][]) {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         // clear out the reflection data
         int n = reflectionlist.hkllist.size();
         for (int i = 0; i < n; i++) {

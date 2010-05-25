@@ -188,7 +188,7 @@ public class SplineEnergy implements Optimizable {
         }
 
         if (print) {
-            StringBuffer sb = new StringBuffer("\n");
+            StringBuilder sb = new StringBuilder("\n");
             sb.append(" Computed Potential Energy\n");
             sb.append(String.format("   residual:  %8.3f\n",
                     sum / sumfo));

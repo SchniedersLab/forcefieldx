@@ -312,7 +312,7 @@ public class SigmaAEnergy implements Optimizable {
         refinementdata.llkf = sum;
 
         if (print) {
-            StringBuffer sb = new StringBuffer("\n");
+            StringBuilder sb = new StringBuilder("\n");
             sb.append(" sigmaA[s and w] fit using ONLY Rfree reflections\n");
             sb.append(String.format("      # HKL: %10d (free set) %10d (working set) %10d (total)\n",
                     nsum, nsumr, nsum + nsumr));

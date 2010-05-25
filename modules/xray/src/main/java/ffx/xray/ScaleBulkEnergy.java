@@ -246,7 +246,7 @@ public class ScaleBulkEnergy implements Optimizable {
         }
 
         if (print) {
-            StringBuffer sb = new StringBuffer("\n");
+            StringBuilder sb = new StringBuilder("\n");
             sb.append(" Bulk solvent and scale fit\n");
             sb.append(String.format("   residual:  %8.3f\n", sum / sumfo));
             sb.append(String.format("   R:  %8.3f  Rfree:  %8.3f\n",

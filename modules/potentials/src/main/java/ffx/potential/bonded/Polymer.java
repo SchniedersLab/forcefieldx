@@ -25,10 +25,10 @@ import static ffx.utilities.HashCodeUtil.SEED;
 
 import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Vector;
+import java.util.Map;
 
 import javax.media.j3d.BranchGroup;
 import javax.media.j3d.Material;
@@ -47,7 +47,7 @@ public class Polymer extends MSGroup {
     private static int count = 0;
     private static double[] da = new double[3];
     private static double[] db = new double[3];
-    public static Hashtable<Integer, Color3f> polymerColor = new Hashtable<Integer, Color3f>();
+    public static Map<Integer, Color3f> polymerColor = new HashMap<Integer, Color3f>();
 
     static {
         polymerColor.put(0, RendererCache.RED);
@@ -239,10 +239,10 @@ public class Polymer extends MSGroup {
      * @return An ArrayList of Dihedral objects representing the Phi/Psi angles
      *         of the Polymer, useful for creating Ramachandran plots
      */
-    public Vector<ArrayList<Torsion>> getPhiPsiList() {
+    public List<ArrayList<Torsion>> getPhiPsiList() {
         MSNode dihedrals;
         ListIterator li, lj;
-        Vector<ArrayList<Torsion>> phipsi = new Vector<ArrayList<Torsion>>();
+        List<ArrayList<Torsion>> phipsi = new ArrayList<ArrayList<Torsion>>();
         ArrayList<Torsion> phi = new ArrayList<Torsion>();
         ArrayList<Torsion> psi = new ArrayList<Torsion>();
         phipsi.add(phi);

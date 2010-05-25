@@ -391,13 +391,13 @@ public class INTFilter extends SystemFilter {
          * int numatoms = M.getAtomList().size(); String blanks = new
          * String(" "); int len = (new String("" + numatoms)).length();
          * bw.write(blanks.substring(0, 6 - len) + numatoms + " " + M.toString()
-         * + "\n"); Atom a, a2; Bond b; ArrayList bonds; StringBuffer line;
-         * StringBuffer lines[] = new StringBuffer[numatoms]; String indexS, id,
+         * + "\n"); Atom a, a2; Bond b; ArrayList bonds; StringBuilder line;
+         * StringBuilder lines[] = new StringBuilder[numatoms]; String indexS, id,
          * type, xS, yS, zS; int xi, yi, zi; // XYZ File Atom Lines List atoms =
          * M.getAtomList(); Vector3d offset = M.getOffset(); for (ListIterator
          * li = atoms.listIterator(); li.hasNext(); ) { a = (Atom) li.next();
          * indexS = new String("" + a.getXYZIndex()); line = new
-         * StringBuffer(blanks.substring(0, 6 - indexS.length()) + indexS +
+         * StringBuilder(blanks.substring(0, 6 - indexS.length()) + indexS +
          * " "); id = a.getID(); line.append(id + blanks.substring(0, 3 -
          * id.length())); xS = formatCoord.format(a.getX() - offset.x); yS =
          * formatCoord.format(a.getY() - offset.y); zS =

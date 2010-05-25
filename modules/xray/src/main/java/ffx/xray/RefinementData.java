@@ -92,7 +92,7 @@ public class RefinementData {
         use_3g = properties.getBoolean("use_3g", true);
 
         if (logger.isLoggable(Level.INFO)) {
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             sb.append("\nRefinement data settings:\n");
             sb.append("  using cctbx 3 Gaussians: " + use_3g + "\n");
             sb.append("  R Free flag: " + rflag + "\n");
@@ -166,7 +166,7 @@ public class RefinementData {
         }
 
         if (logger.isLoggable(Level.INFO)) {
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             sb.append("\ninternally flagging Rfree reflections\n");
             sb.append("  flagging 5% of observed data reflections\n");
             sb.append(String.format("  selected %d of %d reflections\n",

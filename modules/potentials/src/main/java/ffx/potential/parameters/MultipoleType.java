@@ -149,7 +149,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
      * @return String
      */
     public String toBohrString() {
-        StringBuffer multipoleBuffer = new StringBuffer("multipole");
+        StringBuilder multipoleBuffer = new StringBuilder("multipole");
         if (frameDefinition == MultipoleFrameDefinition.BISECTOR) {
             multipoleBuffer.append(String.format("  %5d", frameAtomTypes[0]));
             multipoleBuffer.append(String.format("  %5d", -frameAtomTypes[1]));
@@ -190,7 +190,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
      * @return String
      */
     public String toDebyeString() {
-        StringBuffer multipoleBuffer = new StringBuffer("multipole");
+        StringBuilder multipoleBuffer = new StringBuilder("multipole");
         if (frameDefinition == MultipoleFrameDefinition.BISECTOR) {
             multipoleBuffer.append(String.format("  %5d", frameAtomTypes[0]));
             multipoleBuffer.append(String.format("  %5d", -frameAtomTypes[1]));

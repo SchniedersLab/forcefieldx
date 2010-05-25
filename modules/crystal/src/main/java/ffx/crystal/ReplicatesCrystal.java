@@ -128,7 +128,7 @@ public class ReplicatesCrystal extends Crystal {
      */
     @Override
     public String toString() {
-        StringBuffer sb = new StringBuffer(unitCell.toString());
+        StringBuilder sb = new StringBuilder(unitCell.toString());
         sb.append(String.format(
                 " Replicates cell (%7.3f, %7.3f, %7.3f, %7.3f, %7.3f, %7.3f)\n", a,
                 b, c, alpha, beta, gamma));

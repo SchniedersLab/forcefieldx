@@ -565,7 +565,7 @@ public final class VectorMath {
     }
 
     public static void printVector(double v[]) {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         for (int i = 0; i < v.length; i++) {
             sb.append(String.format("%g ", v[i]));
         }

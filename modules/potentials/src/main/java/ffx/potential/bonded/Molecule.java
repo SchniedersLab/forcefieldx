@@ -88,18 +88,36 @@ public class Molecule extends MSGroup {
      */
     @Override
     public MSNode addMSNode(MSNode o) {
+        Atom currentAtom = null;
         if (o instanceof Atom) {
-            MSNode node = getAtomNode().contains(o);
-            if (node == null) {
-                getAtomNode().add(o);
+            Atom newAtom = (Atom) o;
+            Character newAlt = newAtom.getAltLoc();
+            MSNode atoms = getAtomNode();
+            currentAtom = (Atom) atoms.contains(newAtom);
+            if (currentAtom == null) {
+                currentAtom = newAtom;
+                atoms.add(newAtom);
                 setFinalized(false);
             } else {
-                return node;
+                /**
+                 * Allow overwriting of the root alternate
+                 * conformer (' ' or 'A').
+                 */
+                Character currentAlt = currentAtom.getAltLoc();
+                if (currentAlt.equals(' ') || currentAlt.equals('A')) {
+                    if (!newAlt.equals(' ') && !newAlt.equals('A')) {
+                        newAtom.xyzIndex = currentAtom.xyzIndex;
+                        atoms.remove(currentAtom);
+                        currentAtom = newAtom;
+                        atoms.add(currentAtom);
+                        setFinalized(false);
+                    }
+                }
             }
         } else {
-            logger.warning("Can not add " + o.getClass() + " to a Molecule, not of type Atom");
+            logger.warning("Only an Atom can be added to a Residue.");
         }
-        return o;
+        return currentAtom;
     }
 
     @Override

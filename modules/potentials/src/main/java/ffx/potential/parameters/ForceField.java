@@ -23,9 +23,12 @@ package ffx.potential.parameters;
 import java.io.File;
 import java.net.URL;
 import java.util.Arrays;
+import java.util.EnumMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.NavigableSet;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.logging.Logger;
 
@@ -85,7 +88,7 @@ public class ForceField {
     /**
      * A map between a Force_Field and its internal parameter file.
      */
-    private static final TreeMap<Force_Field, URL> forceFields = new TreeMap<Force_Field, URL>();
+    private static final Map<Force_Field, URL> forceFields = new EnumMap<Force_Field,URL>(Force_Field.class);
 
     static {
         ClassLoader cl = ForceField.class.getClassLoader();
@@ -97,20 +100,20 @@ public class ForceField {
     public URL forceFieldURL;
     public File keywordFile;
     private final CompositeConfiguration properties;
-    private final TreeMap<String, AngleType> angleTypes;
-    private final TreeMap<String, AtomType> atomTypes;
-    private final TreeMap<String, BioType> bioTypes;
-    private final TreeMap<String, BondType> bondTypes;
-    private final TreeMap<String, MultipoleType> multipoleTypes;
-    private final TreeMap<String, OutOfPlaneBendType> outOfPlaneBendTypes;
-    private final TreeMap<String, PolarizeType> polarizeTypes;
-    private final TreeMap<String, StretchBendType> stretchBendTypes;
-    private final TreeMap<String, PiTorsionType> piTorsionTypes;
-    private final TreeMap<String, TorsionType> torsionTypes;
-    private final TreeMap<String, TorsionTorsionType> torsionTorsionTypes;
-    private final TreeMap<String, UreyBradleyType> ureyBradleyTypes;
-    private final TreeMap<String, VDWType> vanderWaalsTypes;
-    private final TreeMap<ForceFieldType, TreeMap> forceFieldTypes;
+    private final Map<String, AngleType> angleTypes;
+    private final Map<String, AtomType> atomTypes;
+    private final Map<String, BioType> bioTypes;
+    private final Map<String, BondType> bondTypes;
+    private final Map<String, MultipoleType> multipoleTypes;
+    private final Map<String, OutOfPlaneBendType> outOfPlaneBendTypes;
+    private final Map<String, PolarizeType> polarizeTypes;
+    private final Map<String, StretchBendType> stretchBendTypes;
+    private final Map<String, PiTorsionType> piTorsionTypes;
+    private final Map<String, TorsionType> torsionTypes;
+    private final Map<String, TorsionTorsionType> torsionTorsionTypes;
+    private final Map<String, UreyBradleyType> ureyBradleyTypes;
+    private final Map<String, VDWType> vanderWaalsTypes;
+    private final Map<ForceFieldType, Map> forceFieldTypes;
 
     public static URL getForceFieldURL(Force_Field forceField) {
         if (forceField != null) {
@@ -152,7 +155,7 @@ public class ForceField {
         ureyBradleyTypes = new TreeMap<String, UreyBradleyType>(new UreyBradleyType(new int[3], 0, 0));
         vanderWaalsTypes = new TreeMap<String, VDWType>(new VDWType(0, 0, 0, 0));
 
-        forceFieldTypes = new TreeMap<ForceFieldType, TreeMap>();
+        forceFieldTypes = new EnumMap<ForceFieldType, Map>(ForceFieldType.class);
         forceFieldTypes.put(ForceFieldType.ANGLE, angleTypes);
         forceFieldTypes.put(ForceFieldType.ATOM, atomTypes);
         forceFieldTypes.put(ForceFieldType.BOND, bondTypes);
@@ -281,13 +284,13 @@ public class ForceField {
         String key = normalizeKey(forceFieldDouble.toString());
         try {
             double old = getDouble(forceFieldDouble);
-            logger.info("Clearing " + key + " with value " + old);
             properties.clearProperty(key);
+            logger.info(String.format(" Removed %s with value %8.3f.", key, old));
         } catch (Exception e) {
             // Property does not exist yet.
         } finally {
-            logger.info("Adding " + key + " with value " + value);
             properties.addProperty(key, value);
+            logger.info(String.format(" Added %s with value %8.3f.", key, value));
         }
     }
 
@@ -306,12 +309,12 @@ public class ForceField {
         String key = normalizeKey(forceFieldInteger.toString());
         try {
             int old = getInteger(forceFieldInteger);
-            logger.info("Clearing " + key + " with value " + old);
+            logger.info(String.format(" Clearing %s with value %d.", key, old));
             properties.clearProperty(key);
         } catch (Exception e) {
             // Property does not exist yet.
         } finally {
-            logger.info("Adding " + key + " with value " + value);
+            logger.info(String.format(" Adding %s with value %d.", key, value));
             properties.addProperty(key, value);
         }
     }
@@ -331,13 +334,13 @@ public class ForceField {
         String key = normalizeKey(forceFieldString.toString());
         try {
             String old = getString(forceFieldString);
-            logger.info("Clearing " + key + " with value " + old);
             properties.clearProperty(key);
+            logger.info(String.format(" Removed %s with value %s.", key, old));
         } catch (Exception e) {
             // Property does not exist yet.
         } finally {
-            logger.info("Adding " + key + " with value " + value);
             properties.addProperty(key, value);
+            logger.info(String.format(" Added %s with value %s.", key, value));
         }
     }
 
@@ -355,13 +358,13 @@ public class ForceField {
         String key = normalizeKey(forceFieldBoolean.toString());
         try {
             boolean old = getBoolean(forceFieldBoolean);
-            logger.info("Clearing " + key + " with value " + old);
             properties.clearProperty(key);
+            logger.info(String.format(" Cleared %s with value %s.", key, Boolean.toString(old)));
         } catch (Exception e) {
             // Property does not exist yet.
         } finally {
-            logger.info("Adding " + key + " with value " + value);
             properties.addProperty(key, value);
+            logger.info(String.format(" Added %s with value %s.", key, Boolean.toString(value)));
         }
     }
 
@@ -375,19 +378,19 @@ public class ForceField {
      */
     public void addForceFieldType(BaseType type) {
         if (type == null) {
-            logger.info("Null force field type ignored.");
+            logger.info(" Null force field type ignored.");
             return;
         }
-        TreeMap treeMap = forceFieldTypes.get(type.forceFieldType);
+        Map treeMap = forceFieldTypes.get(type.forceFieldType);
         if (treeMap == null) {
-            logger.info("Unrecognized force field type ignored " + type.forceFieldType);
+            logger.info(" Unrecognized force field type ignored " + type.forceFieldType);
             type.print();
         }
         if (treeMap.containsKey(type.key)) {
-            logger.fine("A force field entry of type " + type.forceFieldType
+            logger.fine(" A force field entry of type " + type.forceFieldType
                     + " already exists with the key: " + type.key
-                    + "\nThe (discarded) old entry:\n" + treeMap.get(type.key).
-                    toString() + "\nThe new entry:\n" + type.toString());
+                    + "\n The (discarded) old entry: " + treeMap.get(type.key).
+                    toString() + "\n The new entry: " + type.toString());
         }
         Class baseTypeClass = type.getClass();
         treeMap.put(type.key, baseTypeClass.cast(type));
@@ -449,7 +452,7 @@ public class ForceField {
         return vanderWaalsTypes.get(key);
     }
 
-    public TreeMap<String, VDWType> getVDWTypes() {
+    public Map<String, VDWType> getVDWTypes() {
         return vanderWaalsTypes;
     }
 
@@ -546,15 +549,15 @@ public class ForceField {
      * @return String
      */
     public String toString(ForceFieldType type) {
-        StringBuffer stringBuffer = new StringBuffer("\n");
-        TreeMap t = forceFieldTypes.get(type);
+        StringBuilder sb = new StringBuilder("\n");
+        Map t = forceFieldTypes.get(type);
         if (t.size() > 0) {
-            NavigableSet set = t.navigableKeySet();
+            Set set = t.keySet();
             Iterator i = set.iterator();
             while (i.hasNext()) {
-                stringBuffer.append(t.get(i.next()) + "\n");
+                sb.append(t.get(i.next())).append("\n");
             }
-            return stringBuffer.toString();
+            return sb.toString();
         }
         return "";
     }

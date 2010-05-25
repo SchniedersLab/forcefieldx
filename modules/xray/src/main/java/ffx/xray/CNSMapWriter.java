@@ -55,7 +55,7 @@ public class CNSMapWriter {
 
     public void write(double data[]) {
         try {
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             sb.append(String.format("\nwriting CNS map file: \"%s\"\n", filename));
 
             PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(filename)));

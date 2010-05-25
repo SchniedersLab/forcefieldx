@@ -73,7 +73,7 @@ public abstract class SystemFilter {
             int hundred = (i - 1000 * thousand) / 100;
             int tens = (i - 1000 * thousand - 100 * hundred) / 10;
             int ones = i - 1000 * thousand - 100 * hundred - 10 * tens;
-            StringBuffer newFileString = new StringBuffer(oldFile.getAbsolutePath());
+            StringBuilder newFileString = new StringBuilder(oldFile.getAbsolutePath());
             if (thousand != 0) {
                 newFileString.append('_').append(thousand).append(hundred).append(tens).append(ones);
             } else if (hundred != 0) {
@@ -112,7 +112,7 @@ public abstract class SystemFilter {
             int hundred = (i - 1000 * thousand) / 100;
             int tens = (i - 1000 * thousand - 100 * hundred) / 10;
             int ones = i - 1000 * thousand - 100 * hundred - 10 * tens;
-            StringBuffer newFileString = new StringBuffer(baseFile.getAbsolutePath());
+            StringBuilder newFileString = new StringBuilder(baseFile.getAbsolutePath());
             if (thousand != 0) {
                 newFileString.append('_').append(thousand).append(hundred).append(tens).append(ones);
             } else if (hundred != 0) {

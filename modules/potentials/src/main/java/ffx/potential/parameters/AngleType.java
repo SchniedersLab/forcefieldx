@@ -88,7 +88,7 @@ public final class AngleType extends BaseType implements Comparator<String> {
      */
     @Override
     public String toString() {
-        StringBuffer angleString = new StringBuffer(String.format(
+        StringBuilder angleString = new StringBuilder(String.format(
                 "angle  %5d  %5d  %5d  %6.2f", atomClasses[0], atomClasses[1],
                 atomClasses[2], forceConstant));
         for (double eq : angle) {

@@ -33,14 +33,13 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.Vector;
+import java.util.HashMap;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.HashMap;
-import java.util.zip.GZIPInputStream;
+
+import org.apache.commons.configuration.CompositeConfiguration;
 
 import ffx.crystal.SpaceGroup;
 import ffx.potential.bonded.MolecularAssembly;
@@ -57,8 +56,6 @@ import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.BioType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.PDBFilter.ResiduePosition;
-import java.util.List;
-import org.apache.commons.configuration.CompositeConfiguration;
 
 /**
  * The PDBFilter class parses data from a Protein DataBank (*.PDB) file. The
@@ -75,7 +72,7 @@ public final class PDBFilter extends SystemFilter {
     /**
      * List of altLoc characters seen in the PDB file.
      */
-    private Vector<Character> altLocs = new Vector<Character>();
+    private List<Character> altLocs = new ArrayList<Character>();
     /**
      * The current altLoc - ie. the one we are defining a chemical system for.
      */
@@ -92,9 +89,13 @@ public final class PDBFilter extends SystemFilter {
      * segID = 1A-1Z,10-19, and for the third series segID = 2A-2Z,20-29,
      * and so on.
      */
-    private Vector<String> segIDs = new Vector<String>();
+    private List<String> segIDs = new ArrayList<String>();
     private Character currentChainID = null;
     private String currentSegID = null;
+
+    public void clearSegIDs() {
+        segIDs.clear();
+    }
 
     /**
      * Convert possibly duplicate chain IDs into unique segIDs.
@@ -192,7 +193,7 @@ public final class PDBFilter extends SystemFilter {
      * Get the list of alternate locations encountered.
      * @return the alternate location list.
      */
-    public Vector<Character> getAltLocs() {
+    public List<Character> getAltLocs() {
         return altLocs;
     }
 
@@ -224,7 +225,7 @@ public final class PDBFilter extends SystemFilter {
 
                 String[] connect;
                 ArrayList<String[]> links = new ArrayList<String[]>();
-                Vector<String[]> structs = new Vector<String[]>();
+                List<String[]> structs = new ArrayList<String[]>();
                 // While the END parameter is not read in, load atoms
                 if (currentAltLoc == 'A') {
                     logger.info(" Reading " + pdbFile.getName());
@@ -328,14 +329,16 @@ public final class PDBFilter extends SystemFilter {
                             d[2] = new Double(pdbLine.substring(46, 54).trim());
                             double occupancy = new Double(pdbLine.substring(54, 60).trim());
                             double tempFactor = new Double(pdbLine.substring(60, 66).trim());
-                            Atom a = new Atom(0, name, altLoc, d, resName, resSeq,
+                            Atom newAtom = new Atom(0, name, altLoc, d, resName, resSeq,
                                               chainID, occupancy, tempFactor, segID);
-                            Atom prev = (Atom) activeMolecularAssembly.addMSNode(a);
-                            if (prev != a) {
-                                atoms.put(serial, prev);
+                            Atom returnedAtom = (Atom) activeMolecularAssembly.addMSNode(newAtom);
+                            if (returnedAtom != newAtom) {
+                                // A previously added atom has been retained.
+                                atoms.put(serial, returnedAtom);
                             } else {
-                                atoms.put(serial, a);
-                                a.setXYZIndex(xyzIndex++);
+                                // The new atom has been added.
+                                atoms.put(serial, newAtom);
+                                newAtom.setXYZIndex(xyzIndex++);
                             }
                             break;
                         case HETATM:
@@ -375,15 +378,17 @@ public final class PDBFilter extends SystemFilter {
                             d[2] = new Double(pdbLine.substring(46, 54).trim());
                             occupancy = new Double(pdbLine.substring(54, 60).trim());
                             tempFactor = new Double(pdbLine.substring(60, 66).trim());
-                            a = new Atom(0, name, altLoc, d, resName, resSeq, chainID,
+                            newAtom = new Atom(0, name, altLoc, d, resName, resSeq, chainID,
                                          occupancy, tempFactor, segID);
-                            a.setHetero(true);
-                            prev = (Atom) activeMolecularAssembly.addMSNode(a);
-                            if (prev != a) {
-                                atoms.put(serial, prev);
+                            newAtom.setHetero(true);
+                            returnedAtom = (Atom) activeMolecularAssembly.addMSNode(newAtom);
+                            if (returnedAtom != newAtom) {
+                                // A previously added atom has been retained.
+                                atoms.put(serial, returnedAtom);
                             } else {
-                                atoms.put(serial, a);
-                                a.setXYZIndex(xyzIndex++);
+                                // The new atom has been added.
+                                atoms.put(serial, newAtom);
+                                newAtom.setXYZIndex(xyzIndex++);
                             }
                             break;
                         case CONECT:
@@ -1838,7 +1843,7 @@ public final class PDBFilter extends SystemFilter {
 
         @Override
         public String toString() {
-            StringBuffer sb = new StringBuffer(super.toString());
+            StringBuilder sb = new StringBuilder(super.toString());
             sb.append("Atom " + atom.toString());
             if (residue != null) {
                 sb.append("\nof residue " + residue.toString());
@@ -1866,7 +1871,7 @@ public final class PDBFilter extends SystemFilter {
 
         @Override
         public String toString() {
-            StringBuffer sb = new StringBuffer(super.toString());
+            StringBuilder sb = new StringBuilder(super.toString());
             if (atomType != null) {
                 sb.append("\nAn atom of type:\n" + atomType.toString() + "\n");
             } else {
@@ -1981,9 +1986,9 @@ public final class PDBFilter extends SystemFilter {
             return false;
         }
         // Create StringBuffers for ATOM, ANISOU and TER records.
-        StringBuffer sb = new StringBuffer("ATOM  ");
-        StringBuffer anisouSB = new StringBuffer("ANISOU");
-        StringBuffer terSB = new StringBuffer("TER   ");
+        StringBuilder sb = new StringBuilder("ATOM  ");
+        StringBuilder anisouSB = new StringBuilder("ANISOU");
+        StringBuilder terSB = new StringBuilder("TER   ");
         for (int i = 6; i < 80; i++) {
             sb.append(' ');
             anisouSB.append(' ');
@@ -2121,8 +2126,8 @@ public final class PDBFilter extends SystemFilter {
         return true;
     }
 
-    public void writeAtom(Atom atom, int serial, StringBuffer sb,
-                          StringBuffer anisouSB, BufferedWriter bw)
+    public void writeAtom(Atom atom, int serial, StringBuilder sb,
+                          StringBuilder anisouSB, BufferedWriter bw)
             throws IOException {
         String name = atom.getID();
         if (name.length() > 4) {

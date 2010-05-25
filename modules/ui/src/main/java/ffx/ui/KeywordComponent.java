@@ -525,13 +525,13 @@ public final class KeywordComponent implements MouseListener, ActionListener,
             if (!active || !init) {
                 return null;
             }
-            StringBuffer s;
+            StringBuilder s;
             // Torsion entries are long...
             if (!keyword.equalsIgnoreCase("TORSION")) {
-                s = new StringBuffer(keyword
+                s = new StringBuilder(keyword
                         + spaces.substring(0, 18 - keyword.length()));
             } else {
-                s = new StringBuffer(keyword);
+                s = new StringBuilder(keyword);
             }
             for (Component c : keywordValues) {
                 if (c instanceof JCheckBox) {
@@ -542,7 +542,7 @@ public final class KeywordComponent implements MouseListener, ActionListener,
                         }
                     } else if (cb.getText().equalsIgnoreCase(keyword)) {
                         if (!cb.isSelected()) {
-                            s = new StringBuffer();
+                            s = new StringBuilder();
                         }
                     } else {
                         if (cb.isSelected()) {
@@ -579,7 +579,7 @@ public final class KeywordComponent implements MouseListener, ActionListener,
                             entries[i] = (String) cb.getItemAt(i);
                         }
                         java.util.Arrays.sort(entries);
-                        StringBuffer sb = new StringBuffer();
+                        StringBuilder sb = new StringBuilder();
                         for (int i = 0; i < count; i++) {
                             sb.append(keyword
                                     + spaces.substring(0, 18 - keyword.length()));

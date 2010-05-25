@@ -25,10 +25,11 @@ import static java.lang.Math.pow;
 import static java.lang.Math.sqrt;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.Map;
 import java.util.TreeMap;
-import java.util.Vector;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
@@ -186,7 +187,8 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         nSymm = this.crystal.spaceGroup.getNumberOfSymOps();
 
         // Set up the Buffered-14-7 parameters.
-        TreeMap<String, VDWType> vdwTypes = forceField.getVDWTypes();
+        Map<String, VDWType> map = forceField.getVDWTypes();
+        TreeMap<String, VDWType> vdwTypes = new TreeMap<String, VDWType>(map);
         maxClass = 0;
         for (VDWType vdwType : vdwTypes.values()) {
             if (vdwType.atomClass > maxClass) {
@@ -670,7 +672,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         /**
          * Set up the lambda
          */
-        StringBuffer sb = new StringBuffer(" van der Waals soft core will be applied to:\n");
+        StringBuilder sb = new StringBuilder(" van der Waals soft core will be applied to:\n");
         boolean softAtoms = false;
         for (int i = 0; i < nAtoms; i++) {
             isSoft[i] = atoms[i].applyLambda();
@@ -786,7 +788,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                         reducedXYZ[iZ] = z;
                     }
                 }
-                Vector<SymOp> symOps = crystal.spaceGroup.symOps;
+                List<SymOp> symOps = crystal.spaceGroup.symOps;
                 for (int iSymOp = 1; iSymOp < nSymm; iSymOp++) {
                     SymOp symOp = symOps.get(iSymOp);
                     double xyz[] = reduced[iSymOp];
@@ -874,7 +876,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
              * Loop over symmetry operators. Interactions between atoms in the
              * asymmetric unit and those in symmetry mates count 1/2 strength.
              */
-            Vector<SymOp> symOps = crystal.spaceGroup.symOps;
+            List<SymOp> symOps = crystal.spaceGroup.symOps;
             for (int iSymOp = 0; iSymOp < nSymm; iSymOp++) {
                 double e = 0.0;
                 SymOp symOp = symOps.get(iSymOp);

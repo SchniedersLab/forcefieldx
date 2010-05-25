@@ -24,6 +24,7 @@ import static ffx.utilities.HashCodeUtil.hash;
 import static ffx.utilities.HashCodeUtil.SEED;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.ListIterator;
@@ -140,11 +141,10 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
      */
     public ArrayList<Atom> getAtomList() {
         ArrayList<Atom> arrayList = new ArrayList<Atom>();
-        Enumeration e = depthFirstEnumeration();
-        while (e.hasMoreElements()) {
-            MSNode dataNode = (MSNode) e.nextElement();
-            if (dataNode instanceof Atom) {
-                arrayList.add((Atom) dataNode);
+        List<MSNode> list = Collections.list(depthFirstEnumeration());
+        for (MSNode node : list) {
+            if (node instanceof Atom) {
+                arrayList.add((Atom) node);
             }
         }
         return arrayList;
@@ -155,9 +155,8 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
      * the argument, that MSNode is returned.
      */
     public MSNode contains(MSNode msNode) {
-        Enumeration e = depthFirstEnumeration();
-        while (e.hasMoreElements()) {
-            MSNode node = (MSNode) e.nextElement();
+        List<MSNode> list = Collections.list(depthFirstEnumeration());
+        for (MSNode node : list) {
             if (node.equals(msNode)) {
                 return node;
             }
@@ -364,7 +363,7 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
 
     @Override
     public void setColor(RendererCache.ColorModel colorModel, Color3f color,
-            Material mat) {
+                         Material mat) {
         for (Enumeration e = children(); e.hasMoreElements();) {
             MSNode node = (MSNode) e.nextElement();
             node.setColor(colorModel, color, mat);
@@ -388,7 +387,7 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
 
     @Override
     public void setView(RendererCache.ViewModel viewModel,
-            List<BranchGroup> newShapes) {
+                        List<BranchGroup> newShapes) {
         for (Enumeration e = children(); e.hasMoreElements();) {
             MSNode node = (MSNode) e.nextElement();
             node.setView(viewModel, newShapes);

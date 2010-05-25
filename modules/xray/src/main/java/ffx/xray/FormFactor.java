@@ -523,7 +523,7 @@ public class FormFactor {
         biso = atom.getTempFactor();
 
         if (occ <= 0.0 && biso <= 0.0) {
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             sb.append("zero occ/B for atom: " + atom.toString() + "\n");
             sb.append("(atom will not contribute to electron density calculation)\n");
             logger.warning(sb.toString());
@@ -544,7 +544,7 @@ public class FormFactor {
             if (evd.getRealEigenvalue(0) <= 0.0
                     || evd.getRealEigenvalue(1) <= 0.0
                     || evd.getRealEigenvalue(2) <= 0.0) {
-                StringBuffer sb = new StringBuffer();
+                StringBuilder sb = new StringBuilder();
                 sb.append("non-positive definite ANISOU for atom: " + atom.toString() + "\n");
                 sb.append("resetting ANISOU based on isotropic B: (" + biso + ")\n");
                 logger.warning(sb.toString());

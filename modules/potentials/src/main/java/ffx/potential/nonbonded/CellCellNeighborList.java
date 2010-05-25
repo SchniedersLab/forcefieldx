@@ -332,7 +332,7 @@ public class CellCellNeighborList extends ParallelRegion {
             nNeighborC = 1;
         }
 
-        StringBuffer sb = new StringBuffer("\n NEIGHBOR LIST BUILDER\n");
+        StringBuilder sb = new StringBuilder("\n NEIGHBOR LIST BUILDER\n");
         nAB = nA * nB;
         nCells = nAB * nC;
 
@@ -403,7 +403,7 @@ public class CellCellNeighborList extends ParallelRegion {
             long totalTime = cellTime + verletTime;
 
             if (print) {
-                StringBuffer sb = new StringBuffer(" The cutoff is " + cutoff + " angstroms.\n");
+                StringBuilder sb = new StringBuilder(" The cutoff is " + cutoff + " angstroms.\n");
                 final double toSeconds = 0.000000001;
                 sb.append(  format(" Assignment to cells:    %8.3f\n", cellTime * toSeconds)
                           + format(" Atom-Cell Verlet lists: %8.3f\n", verletTime * toSeconds)

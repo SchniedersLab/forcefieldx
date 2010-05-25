@@ -293,7 +293,7 @@ public class PMEWisdom {
             }
         }
 
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append(String.format("\nRMS Gradient Tolerance: %6.3e\n",
                 gradientTolerance));
         sb.append(String.format("RMS Gradient Error:     %6.3e\n", previousRMS));

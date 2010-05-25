@@ -20,11 +20,13 @@
  */
 package ffx.potential.bonded;
 
+import static java.lang.String.format;
+
 import static ffx.utilities.HashCodeUtil.hash;
 import static ffx.utilities.HashCodeUtil.SEED;
 
 import java.util.ArrayList;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -49,6 +51,7 @@ import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.PolarizeType;
 import ffx.potential.parameters.VDWType;
+import java.util.Map;
 
 /**
  * The Atom class represents a single atom and defines its alternate
@@ -60,7 +63,7 @@ import ffx.potential.parameters.VDWType;
  */
 public class Atom extends MSNode implements Comparable<Atom> {
 
-    private Logger logger = Logger.getLogger(Atom.class.getName());
+    private static final Logger logger = Logger.getLogger(Atom.class.getName());
 
     /**
      * Implementation of the Comparable interface.
@@ -104,13 +107,13 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
     private static Point3d point3d = new Point3d();
     private static Point2d point2d = new Point2d();
-    public static Hashtable<Integer, Color3f> AtomColor = new Hashtable<Integer, Color3f>();
-    public static Hashtable<Integer, Float> AtomVDW = new Hashtable<Integer, Float>();
+    public static final Map<Integer, Color3f> AtomColor = new HashMap<Integer, Color3f>();
+    public static final Map<Integer, Float> AtomVDW = new HashMap<Integer, Float>();
     /**
      * Hybridizations
      */
     public static final int SP = 2, SP2 = 3, SP3 = 4;
-    public final static Hashtable<String, Integer> hybridTable = new Hashtable<String, Integer>();
+    public static final Map<String, Integer> hybridTable = new HashMap<String, Integer>();
 
     static {
         AtomColor.put(0, RendererCache.RED);
@@ -564,8 +567,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * @return atom ID
      */
     public String getIdent() {
-        String s = new String(atomType.environment);
-        return s;
+        return atomType.environment;
     }
 
     /**
@@ -986,7 +988,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     public void setFormFactorIndex(int formFactorIndex) {
-        formFactorIndex = formFactorIndex;
+        this.formFactorIndex = formFactorIndex;
     }
 
     public int getFormFactorIndex() {
@@ -1170,9 +1172,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
         }
         for (int i = 0; i < 3; i++) {
             globalDipole[i] = dipole[i];
-            for (int j = 0; j < 3; j++) {
-                globalQuadrupole[i][j] = quadrupole[i][j];
-            }
+            System.arraycopy(quadrupole[i], 0, globalQuadrupole[i], 0, 3);
         }
     }
 
@@ -1309,7 +1309,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
             if (multipoleType == null || globalDipole == null || globalQuadrupole == null) {
                 return null;
             }
-            StringBuffer multipoleBuffer = new StringBuffer(toString());
+            StringBuilder multipoleBuffer = new StringBuilder(toString());
             multipoleBuffer.append(String.format("\n%11$s % 7.5f\n" + "%11$s % 7.5f % 7.5f % 7.5f\n" + "%11$s % 7.5f\n" + "%11$s % 7.5f % 7.5f\n" + "%11$s % 7.5f % 7.5f % 7.5f",
                                                  multipoleType.charge, globalDipole[0], globalDipole[1],
                                                  globalDipole[2], globalQuadrupole[0][0],
@@ -1323,7 +1323,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
 
     public String toShortString() {
         if (shortString == null) {
-            shortString = new String("" + xyzIndex + "-" + name);
+            shortString = format("%d-%s", xyzIndex, name);
         }
         return shortString;
     }
@@ -1333,8 +1333,12 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     @Override
     public String toString() {
-        return String.format("%7d-%s (%7.2f,%7.2f,%7.2f)", xyzIndex, name,
-                             xyz[0], xyz[1], xyz[2]);
+        if (altLoc != null && altLoc != ' ') {
+                    return String.format("%s %7d-%s %s %d (%7.2f,%7.2f,%7.2f) %s", altLoc, xyzIndex, name,
+                             resName, resSeq, xyz[0], xyz[1], xyz[2], segID);
+        }
+        return String.format("%7d-%s %s %d (%7.2f,%7.2f,%7.2f) %s", xyzIndex, name, resName, resSeq,
+                             xyz[0], xyz[1], xyz[2], segID);
     }
 
     /**

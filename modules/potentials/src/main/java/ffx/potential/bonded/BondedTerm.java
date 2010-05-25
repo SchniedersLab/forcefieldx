@@ -46,7 +46,7 @@ public abstract class BondedTerm extends MSNode {
      * reversed for help in finding corresponding Molecular Mechanics file
      * entries for the Term.
      */
-    private static StringBuffer idtemp = new StringBuffer();
+    private static StringBuilder idtemp = new StringBuilder();
     protected String id;
     public Atom atoms[]; // Atoms that are used to form this term
     public Bond bonds[]; // Bonds that are used to form this term

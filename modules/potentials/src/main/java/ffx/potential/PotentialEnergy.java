@@ -21,6 +21,7 @@
 package ffx.potential;
 
 import static java.lang.Math.max;
+import static java.lang.String.format;
 
 import static ffx.numerics.VectorMath.*;
 
@@ -49,14 +50,12 @@ import ffx.potential.bonded.StretchBend;
 import ffx.potential.bonded.Torsion;
 import ffx.potential.bonded.TorsionTorsion;
 import ffx.potential.bonded.UreyBradley;
-import ffx.potential.nonbonded.CellCellVanDerWaals;
 import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.VanDerWaals;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldBoolean;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.ForceField.ForceFieldString;
-
 
 /**
  * Compute the potential energy and derivatives of an AMOEBA system.
@@ -128,7 +127,7 @@ public class PotentialEnergy implements Optimizable, DifferentiableMultivariateR
 
     public PotentialEnergy(MolecularAssembly molecularAssembly) {
         parallelTeam = new ParallelTeam();
-        logger.info(" Parallel Java Threads: " + parallelTeam.getThreadCount());
+        logger.info(format(" Parallel Java Threads: %d", parallelTeam.getThreadCount()));
 
         ForceField forceField = molecularAssembly.getForceField();
 
@@ -453,7 +452,7 @@ public class PotentialEnergy implements Optimizable, DifferentiableMultivariateR
         totalNonBondedEnergy = vanDerWaalsEnergy + totalElectrostaticEnergy;
         totalEnergy = totalBondedEnergy + totalNonBondedEnergy;
         if (print) {
-            StringBuffer sb = new StringBuffer("\n");
+            StringBuilder sb = new StringBuilder("\n");
             if (gradient) {
                 sb.append(" Computed Potential Energy and Atomic Coordinate Gradients\n");
             } else {
@@ -471,7 +470,7 @@ public class PotentialEnergy implements Optimizable, DifferentiableMultivariateR
 
     @Override
     public String toString() {
-        StringBuffer sb = new StringBuffer("\n");
+        StringBuilder sb = new StringBuilder("\n");
         if (bondTerm) {
             sb.append(String.format(" %s %16.8f %12d %12.3f\n",
                                     "Bond Streching    ", bondEnergy, bonds.length,

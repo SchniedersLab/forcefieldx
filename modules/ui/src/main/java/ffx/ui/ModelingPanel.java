@@ -297,7 +297,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
             }
         }
         // Create the condensed sequence view.
-        StringBuffer sequence = new StringBuffer();
+        StringBuilder sequence = new StringBuilder();
         for (int i = 0; i < acidComboBox.getItemCount(); i++) {
             String s[] = ((String) acidComboBox.getItemAt(i)).trim().toUpperCase().split(" +");
             if (s.length > 1) {
@@ -380,7 +380,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
      * @return
      */
     private String createCommandInput() {
-        StringBuffer commandlineparams = new StringBuffer(activeCommand.toLowerCase()
+        StringBuilder commandlineparams = new StringBuilder(activeCommand.toLowerCase()
                 + " ");
         // The next token on the command line is the structure file name, except
         // for protein and nucleic.
@@ -407,7 +407,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
             boolean newLine = true;
             // The optionString will collect the parameters for this Option,
             // then append them to the CommandTextArea.
-            StringBuffer optionString = new StringBuffer();
+            StringBuilder optionString = new StringBuilder();
             JPanel optionPanel = (JPanel) optionsTabbedPane.getComponentAt(i);
             int numOptions = optionPanel.getComponentCount();
             String title = optionsTabbedPane.getTitleAt(i);
@@ -505,7 +505,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
                         if (postProcess != null
                                 && postProcess.equalsIgnoreCase("ATOMPAIRS")) {
                             String tokens[] = conditionalInput.split(" +");
-                            StringBuffer atomPairs = new StringBuffer();
+                            StringBuilder atomPairs = new StringBuilder();
                             int atomNumber = 0;
                             for (String token : tokens) {
                                 atomPairs.append(token);

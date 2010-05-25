@@ -120,8 +120,8 @@ public final class KeywordPanel extends JPanel implements ActionListener {
     // The gridPanel holds an array of KeywordComponents.
     private JPanel gridPanel = new JPanel(gridBagLayout);
     // Lines in Keyword files that are comments, unrecognized keywords, or
-    // keywords where editing is not supported are stored in a big StringBuffer.
-    private StringBuffer commentStringBuffer = new StringBuffer();
+    // keywords where editing is not supported are stored in a big StringBuilder.
+    private StringBuilder commentStringBuffer = new StringBuilder();
     // This component shows what the saved Key file will look like (WYSIWYG).
     private JTextArea flatfileTextArea;
     // A simple label if no Keyword File is open.
@@ -357,7 +357,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
             currentSystem = null;
             currentKeyFile = null;
             // Reset the View
-            commentStringBuffer = new StringBuffer();
+            commentStringBuffer = new StringBuilder();
             statusLabel.setText("  ");
             loadKeywordGroup();
         }
@@ -789,7 +789,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
 
     public boolean saveKeywords(File keyFile,
             LinkedHashMap<String, KeywordComponent> keywordHashMap,
-            StringBuffer comments) {
+            StringBuilder comments) {
         synchronized (this) {
             FileWriter fw = null;
             BufferedWriter bw = null;

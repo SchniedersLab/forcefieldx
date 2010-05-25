@@ -51,7 +51,7 @@ public class SymOp {
 
     @Override
     public String toString() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append(" Rotation operator:\n");
         sb.append(String.format(" [[%4.1f,%4.1f,%4.1f]\n  [%4.1f,%4.1f,%4.1f]\n  [%4.1f,%4.1f,%4.1f]]\n",
                 rot[0][0], rot[0][1], rot[0][2],
@@ -89,7 +89,7 @@ public class SymOp {
     }
 
     public String toXYZString() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         for (int i = 0; i < 3; i++) {
             boolean s = false;
             if (rot[i][0] < 0.0) {
