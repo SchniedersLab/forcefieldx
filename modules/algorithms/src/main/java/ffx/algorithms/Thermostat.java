@@ -52,7 +52,7 @@ public abstract class Thermostat {
 
     public enum Thermostats {
 
-         ADIABATIC, BERENDSEN, BUSSI;
+        ADIABATIC, BERENDSEN, BUSSI;
     };
     protected double targetTemperature;
     protected double currentTemperature;
@@ -67,7 +67,7 @@ public abstract class Thermostat {
 
     public Thermostat(int n, double x[], double v[], double mass[], double t) {
         this.n = n;
-        this.dof = n * 3 - 6;
+        this.dof = n * 3 - 3;
         this.x = x;
         this.v = v;
         this.mass = mass;
@@ -102,7 +102,7 @@ public abstract class Thermostat {
      *
      * @since 1.0
      */
-    public void setTargetTemperature(double t) {
+    public final void setTargetTemperature(double t) {
         /**
          * Obey the Third Law of Thermodynamics.
          */
@@ -128,17 +128,17 @@ public abstract class Thermostat {
         centerOfMassMotion(true, true);
         kineticEnergy();
     }
-    protected double mTot;
-    protected final double com[] = new double[3];
-    protected final double lm[] = new double[3];
-    protected final double am[] = new double[3];
+    protected double totalMass;
+    protected final double centerOfMass[] = new double[3];
+    protected final double linearMomentum[] = new double[3];
+    protected final double angularMomentum[] = new double[3];
 
     protected void centerOfMassMotion(boolean remove, boolean print) {
-        mTot = 0.0;
+        totalMass = 0.0;
         for (int i = 0; i < 3; i++) {
-            com[i] = 0.0;
-            lm[i] = 0.0;
-            am[i] = 0.0;
+            centerOfMass[i] = 0.0;
+            linearMomentum[i] = 0.0;
+            angularMomentum[i] = 0.0;
         }
 
         for (int index = 0, i = 0; i < n; i++) {
@@ -149,32 +149,32 @@ public abstract class Thermostat {
             double vy = v[index++];
             double zz = x[index];
             double vz = v[index++];
-            mTot += m;
-            com[0] += xx * m;
-            com[1] += yy * m;
-            com[2] += zz * m;
-            lm[0] += vx * m;
-            lm[1] += vy * m;
-            lm[2] += vz * m;
-            am[0] += (yy * vz - zz * vy) * m;
-            am[1] += (zz * vx - xx * vz) * m;
-            am[2] += (xx * vy - yy * vx) * m;
+            totalMass += m;
+            centerOfMass[0] += xx * m;
+            centerOfMass[1] += yy * m;
+            centerOfMass[2] += zz * m;
+            linearMomentum[0] += vx * m;
+            linearMomentum[1] += vy * m;
+            linearMomentum[2] += vz * m;
+            angularMomentum[0] += (yy * vz - zz * vy) * m;
+            angularMomentum[1] += (zz * vx - xx * vz) * m;
+            angularMomentum[2] += (xx * vy - yy * vx) * m;
         }
 
-        am[0] -= (com[1] * lm[2] - com[2] * lm[1]) / mTot;
-        am[1] -= (com[2] * lm[0] - com[0] * lm[2]) / mTot;
-        am[2] -= (com[0] * lm[1] - com[1] * lm[0]) / mTot;
-        com[0] /= mTot;
-        com[1] /= mTot;
-        com[2] /= mTot;
-        lm[0] /= mTot;
-        lm[1] /= mTot;
-        lm[2] /= mTot;
+        angularMomentum[0] -= (centerOfMass[1] * linearMomentum[2] - centerOfMass[2] * linearMomentum[1]) / totalMass;
+        angularMomentum[1] -= (centerOfMass[2] * linearMomentum[0] - centerOfMass[0] * linearMomentum[2]) / totalMass;
+        angularMomentum[2] -= (centerOfMass[0] * linearMomentum[1] - centerOfMass[1] * linearMomentum[0]) / totalMass;
+        centerOfMass[0] /= totalMass;
+        centerOfMass[1] /= totalMass;
+        centerOfMass[2] /= totalMass;
+        linearMomentum[0] /= totalMass;
+        linearMomentum[1] /= totalMass;
+        linearMomentum[2] /= totalMass;
 
         if (print) {
-        logger.info(String.format(" Center of Mass   (%12.3f,%12.3f,%12.3f)", com[0], com[1], com[2]));
-        logger.info(String.format(" Linear Momemtum  (%12.3f,%12.3f,%12.3f)", lm[0], lm[1], lm[2]));
-        logger.info(String.format(" Angular Momemtum (%12.3f,%12.3f,%12.3f)", am[0], am[1], am[2]));
+            logger.info(String.format(" Center of Mass   (%12.3f,%12.3f,%12.3f)", centerOfMass[0], centerOfMass[1], centerOfMass[2]));
+            logger.info(String.format(" Linear Momemtum  (%12.3f,%12.3f,%12.3f)", linearMomentum[0], linearMomentum[1], linearMomentum[2]));
+            logger.info(String.format(" Angular Momemtum (%12.3f,%12.3f,%12.3f)", angularMomentum[0], angularMomentum[1], angularMomentum[2]));
         }
 
         if (remove) {
@@ -185,7 +185,7 @@ public abstract class Thermostat {
 
     /**
      * Remove center of mass translational and rotational velocity by
-     * inverting the moment of intertia tensor.
+     * inverting the moment of inertia tensor.
      */
     private void removeCenterOfMassMotion(boolean print) {
         double xx = 0.0;
@@ -196,9 +196,9 @@ public abstract class Thermostat {
         double yz = 0.0;
         for (int index = 0, i = 0; i < n; i++) {
             double m = mass[i];
-            double xi = x[index++] - com[0];
-            double yi = x[index++] - com[1];
-            double zi = x[index++] - com[2];
+            double xi = x[index++] - centerOfMass[0];
+            double yi = x[index++] - centerOfMass[1];
+            double zi = x[index++] - centerOfMass[2];
             xx += xi * xi * m;
             yy += yi * yi * m;
             zz += zi * zi * m;
@@ -207,7 +207,7 @@ public abstract class Thermostat {
             yz += yi * zi * m;
         }
 
-        RealMatrix inertia = new Array2DRowRealMatrix(3,3);
+        RealMatrix inertia = new Array2DRowRealMatrix(3, 3);
         inertia.setEntry(0, 0, yy + zz);
         inertia.setEntry(1, 0, -xy);
         inertia.setEntry(2, 0, -xz);
@@ -224,27 +224,39 @@ public abstract class Thermostat {
         xy = inertia.getEntry(0, 1);
         xz = inertia.getEntry(0, 2);
         yz = inertia.getEntry(1, 2);
-        double ox = am[0]*xx + am[1]*xy + am[2]*xz;
-        double oy = am[0]*xy + am[1]*yy + am[2]*yz;
-        double oz = am[0]*xz + am[1]*yz + am[2]*zz;
+        double ox = angularMomentum[0] * xx + angularMomentum[1] * xy + angularMomentum[2] * xz;
+        double oy = angularMomentum[0] * xy + angularMomentum[1] * yy + angularMomentum[2] * yz;
+        double oz = angularMomentum[0] * xz + angularMomentum[1] * yz + angularMomentum[2] * zz;
         /**
-         * Remove center of mass translational and rotational velocity.
+         * Remove center of mass translational momentum.
          */
         for (int index = 0, i = 0; i < n; i++) {
-            double xi = x[index++] - com[0];
-            double yi = x[index++] - com[1];
-            double zi = x[index] - com[2];
-            index -= 2;
-            v[index++] += (-lm[0] - oy*zi + oz*yi);
-            v[index++] += (-lm[1] - oz*xi + ox*zi);
-            v[index++] += (-lm[2] - ox*yi + oy*xi);
+            v[index++] -= linearMomentum[0];
+            v[index++] -= linearMomentum[1];
+            v[index++] -= linearMomentum[2];
+        }
+
+        /**
+         * Only remove center of mass rotational momentum for 
+         * non-periodic systems.
+         */
+        if (false) {
+            for (int index = 0, i = 0; i < n; i++) {
+                double xi = x[index++] - centerOfMass[0];
+                double yi = x[index++] - centerOfMass[1];
+                double zi = x[index] - centerOfMass[2];
+                index -= 2;
+                v[index++] += (-oy * zi + oz * yi);
+                v[index++] += (-oz * xi + ox * zi);
+                v[index++] += (-ox * yi + oy * xi);
+            }
         }
         /**
          * Update the degrees of freedom.
          */
         if (print) {
-            logger.info(String.format(" Center of mass motion removed.\n" +
-                " Total degress of freedom %d - 6 = %d", 3*n, dof));
+            logger.info(String.format(" Center of mass motion removed.\n"
+                                      + " Total degress of freedom %d - 3 = %d", 3 * n, dof));
         }
     }
 
@@ -262,8 +274,8 @@ public abstract class Thermostat {
             v2 += velocity * velocity;
             e += mass[i] * v2;
         }
+        currentTemperature = e / (kB * dof);
         e *= 0.5 / convert;
-        currentTemperature = convert * e / (0.5 * kB * dof);
         kineticEnergy = e;
     }
 

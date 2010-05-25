@@ -358,7 +358,7 @@ public class MolecularDynamics implements Terminatable, Runnable {
              * exactly equal to the last temperature printed out.
              */
             //thermostat.centerOfMassMotion(true, false);
-            thermostat.kineticEnergy();
+            //thermostat.kineticEnergy();
             kinetic = thermostat.getKineticEnergy();
             currentTemp = thermostat.getCurrentTemperture();
             total = kinetic + potential;
@@ -421,10 +421,13 @@ public class MolecularDynamics implements Terminatable, Runnable {
     private void beeman(final double dt) {
         final double dt_8 = 0.125 * dt;
         final double dt2_8 = dt * dt_8;
+        /**
+         * Do half-step thermostat operation.
+         */
         thermostat.halfStep(dt);
         /**
          * Store the current atom positions, then find new atom positions
-         * and half-step velocities via Beeman recusion.
+         * and half-step velocities via Beeman recursion.
          */
         for (int i = 0; i < dof; i++) {
             xPrevious[i] = x[i];
@@ -448,6 +451,13 @@ public class MolecularDynamics implements Terminatable, Runnable {
                 v[index] += (3.0 * a[index] + aPrevious[index]) * dt_8;
             }
         }
+        /**
+         * Compute the full-step kinetic energy.
+         */
+        thermostat.kineticEnergy();
+        /**
+         * Do full-step thermostat operation.
+         */
         thermostat.fullStep(dt);
     }
 }

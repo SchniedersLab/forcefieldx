@@ -86,7 +86,6 @@ public class Bussi extends Thermostat {
      */
     @Override
     public void fullStep(double dt) {
-        kineticEnergy();
         double exptau = exp(-dt / tau);
         double ratio = targetTemperature / currentTemperature;
         double rate = (1.0 - exptau) * ratio / dof;

@@ -77,7 +77,6 @@ public class Berendsen extends Thermostat {
      */
     @Override
     public void fullStep(double dt) {
-        kineticEnergy();
         double ratio = targetTemperature/currentTemperature;
         double scale = sqrt(1.0 + (dt/tau)*(ratio-1.0));
         for (int i=0; i<3*n; i++) {
