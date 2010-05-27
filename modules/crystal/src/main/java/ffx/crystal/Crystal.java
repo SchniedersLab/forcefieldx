@@ -31,10 +31,8 @@ import java.util.logging.Logger;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.math.linear.Array2DRowRealMatrix;
-import org.apache.commons.math.linear.ArrayRealVector;
 import org.apache.commons.math.linear.LUDecompositionImpl;
 import org.apache.commons.math.linear.RealMatrix;
-import org.apache.commons.math.linear.RealVector;
 
 /**
  * The Crystal class encapsulates the lattice parameters and space group that
@@ -111,7 +109,6 @@ public class Crystal {
      * the reciprocal space metric matrix.
      */
     public final double Gstar[][];
-
     private final double half_a;
     private final double half_b;
     private final double half_c;
@@ -351,7 +348,7 @@ public class Crystal {
         symOpsCartesian = new Vector<SymOp>();
         Vector<SymOp> symOps = spaceGroup.symOps;
         int nSymm = symOps.size();
-        for (int i=0; i<nSymm; i++) {
+        for (int i = 0; i < nSymm; i++) {
             SymOp symOp = symOps.get(i);
             // rot_c = A^(-1).rot_f.A
             m = new Array2DRowRealMatrix(symOp.rot);
@@ -367,14 +364,14 @@ public class Crystal {
         double temp[] = {1.0/3.0, 1.0/7.0, 1.0/9.0};
         double ret[] = {0,0,0};
         for (int i=0; i < nSymm; i++) {
-            SymOp symOp = symOps.get(i);
-            SymOp symOpCart = symOpsCartesian.get(i);
-            applySymOp(temp, ret, symOp);
-            logger.info(String.format("Applied a fractional symmetry operator: %8.3f, %8.3f, %8.3f",
-                    ret[0], ret[1], ret[2]));
-            applyCartesianSymOp(temp, ret, symOpCart);
-            logger.info(String.format("Applied a Cartesian symmetry operator:  %8.3f, %8.3f, %8.3f",
-                    ret[0], ret[1], ret[2]));
+        SymOp symOp = symOps.get(i);
+        SymOp symOpCart = symOpsCartesian.get(i);
+        applySymOp(temp, ret, symOp);
+        logger.info(String.format("Applied a fractional symmetry operator: %8.3f, %8.3f, %8.3f",
+        ret[0], ret[1], ret[2]));
+        applyCartesianSymOp(temp, ret, symOpCart);
+        logger.info(String.format("Applied a Cartesian symmetry operator:  %8.3f, %8.3f, %8.3f",
+        ret[0], ret[1], ret[2]));
         } */
     }
 
@@ -387,10 +384,22 @@ public class Crystal {
         double gamma = properties.getDouble("gamma", -1.0);
         String sg = properties.getString("spacegroup", null);
 
+        sg = SpaceGroup.pdb2ShortName(sg);
+
         if (a < 0.0 || b < 0.0 || c < 0.0
                 || alpha < 0.0 || beta < 0.0 || gamma < 0.0
                 || sg == null) {
             return null;
+        }
+
+        // check the space group name is valid
+        SpaceGroup spaceGroup = SpaceGroup.spaceGroupFactory(sg);
+        if (spaceGroup == null) {
+            sg = sg.replaceAll(" ", "");
+            spaceGroup = SpaceGroup.spaceGroupFactory(sg);
+            if (spaceGroup == null) {
+                return null;
+            }
         }
 
         return new Crystal(a, b, c, alpha, beta, gamma, sg);
@@ -666,11 +675,21 @@ public class Crystal {
      */
     public void applySymOp(int n, double x[], double y[], double z[],
             double mateX[], double mateY[], double mateZ[], SymOp symOp) {
-        if (x == null || y == null || z == null) return;
-        if (x.length < n || y.length < n || z.length < n) return;
-        if (mateX == null || mateX.length < n) mateX = new double[n];
-        if (mateY == null || mateY.length < n) mateY = new double[n];
-        if (mateZ == null || mateZ.length < n) mateZ = new double[n];
+        if (x == null || y == null || z == null) {
+            return;
+        }
+        if (x.length < n || y.length < n || z.length < n) {
+            return;
+        }
+        if (mateX == null || mateX.length < n) {
+            mateX = new double[n];
+        }
+        if (mateY == null || mateY.length < n) {
+            mateY = new double[n];
+        }
+        if (mateZ == null || mateZ.length < n) {
+            mateZ = new double[n];
+        }
 
         final double rot[][] = symOp.rot;
         final double trans[] = symOp.tr;

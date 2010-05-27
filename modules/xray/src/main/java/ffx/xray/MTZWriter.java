@@ -130,12 +130,12 @@ public class MTZWriter {
             Vector<String> colname = new Vector<String>(ncol);
             char coltype[] = new char[ncol];
             double res[] = new double[2];
-            res[0] = Double.MAX_VALUE;
-            res[1] = Double.MIN_VALUE;
+            res[0] = Double.POSITIVE_INFINITY;
+            res[1] = Double.NEGATIVE_INFINITY;
             float colminmax[][] = new float[ncol][2];
             for (int i = 0; i < ncol; i++) {
-                colminmax[i][0] = Float.MAX_VALUE;
-                colminmax[i][1] = Float.MIN_VALUE;
+                colminmax[i][0] = Float.POSITIVE_INFINITY;
+                colminmax[i][1] = Float.NEGATIVE_INFINITY;
             }
             for (HKL ih : reflectionlist.hkllist) {
                 int i = ih.index();

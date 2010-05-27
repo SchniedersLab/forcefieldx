@@ -69,8 +69,8 @@ public class CrystalStats {
         int nhkl[][] = new int[n][3];
 
         for (int i = 0; i < n; i++) {
-            res[i][0] = Double.MIN_VALUE;
-            res[i][1] = Double.MAX_VALUE;
+            res[i][0] = Double.NEGATIVE_INFINITY;
+            res[i][1] = Double.POSITIVE_INFINITY;
         }
 
         for (HKL ih : reflectionlist.hkllist) {
@@ -256,8 +256,8 @@ public class CrystalStats {
                 refinementdata.sigmaa.length);
 
         for (int i = 0; i < n; i++) {
-            res[i][0] = Double.MIN_VALUE;
-            res[i][1] = Double.MAX_VALUE;
+            res[i][0] = Double.NEGATIVE_INFINITY;
+            res[i][1] = Double.POSITIVE_INFINITY;
         }
 
         for (HKL ih : reflectionlist.hkllist) {
@@ -372,28 +372,19 @@ public class CrystalStats {
                 refinementdata.model_b[4],
                 refinementdata.model_b[5],
                 refinementdata.model_b[2]));
-        if (refinementdata.bulksolvent) {
-            if (refinementdata.crs_fs != null) {
-                switch (refinementdata.crs_fs.solventmodel) {
-                    case (SolventModel.BINARY):
-                        sb.append("  bulk solvent model: binary mask\n");
-                        sb.append(String.format("  bulk solvent probe radius: %g shrink radius: %g\n",
-                                refinementdata.solvent_a,
-                                refinementdata.solvent_sd));
-                        break;
-                    case (SolventModel.POLYNOMIAL):
-                        sb.append("  bulk solvent model: polynomial switch\n");
-                        sb.append(String.format("  bulk solvent atom radius: %g window size: %g\n",
-                                refinementdata.solvent_a,
-                                refinementdata.solvent_sd));
-                        break;
-                    case (SolventModel.GAUSSIAN):
-                        sb.append("  bulk solvent model: Gaussian\n");
-                        sb.append(String.format("  bulk solvent A: %g sd: %g\n",
-                                refinementdata.solvent_a,
-                                refinementdata.solvent_sd));
-                        break;
-                }
+        if (refinementdata.crs.solventmodel != SolventModel.NONE) {
+            switch (refinementdata.crs.solventmodel) {
+                case (SolventModel.BINARY):
+                    sb.append("  bulk solvent model: binary mask\n");
+                    sb.append(String.format("  bulk solvent probe radius: %g shrink radius: %g\n",
+                            refinementdata.solvent_a,
+                            refinementdata.solvent_b));
+                    break;
+                case (SolventModel.GAUSSIAN):
+                    sb.append("  bulk solvent model: Gaussian\n");
+                    sb.append(String.format("  bulk solvent A: %g\n",
+                            refinementdata.solvent_a));
+                    break;
             }
             sb.append(String.format("  bulk solvent scale: %g  B: %g\n",
                     refinementdata.solvent_k,
@@ -410,8 +401,8 @@ public class CrystalStats {
         double sn[][] = new double[n + 1][3];
 
         for (int i = 0; i < n; i++) {
-            res[i][0] = Double.MIN_VALUE;
-            res[i][1] = Double.MAX_VALUE;
+            res[i][0] = Double.NEGATIVE_INFINITY;
+            res[i][1] = Double.POSITIVE_INFINITY;
         }
 
         for (HKL ih : reflectionlist.hkllist) {

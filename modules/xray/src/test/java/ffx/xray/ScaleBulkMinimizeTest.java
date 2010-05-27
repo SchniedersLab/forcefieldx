@@ -31,6 +31,7 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import ffx.crystal.Crystal;
 import ffx.crystal.ReflectionList;
 import ffx.crystal.Resolution;
+import ffx.potential.PotentialEnergy;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.parameters.ForceField;
@@ -59,19 +60,19 @@ public class ScaleBulkMinimizeTest {
                         "ffx/xray/structures/1NSF.pdb",
                         "ffx/xray/structures/1NSF.mtz",
                         null,
+                        25.14,
                         25.39,
-                        25.54,
-                        0.8940,
-                        0.1515},
+                        0.8946,
+                        0.1513},
                     {true,
                         "SNARE complex",
                         "ffx/xray/structures/1N7S.pdb",
                         "ffx/xray/structures/1N7S.mtz",
                         null,
-                        19.60,
-                        21.76,
-                        0.9311,
-                        0.1361}
+                        19.44,
+                        21.54,
+                        0.9310,
+                        0.1363}
                 });
     }
     private final String info;
@@ -162,6 +163,8 @@ public class ScaleBulkMinimizeTest {
         molecularAssembly.setForceField(forceField);
         PDBFilter pdbfile = new PDBFilter(structure, molecularAssembly, forceField, properties);
         pdbfile.readFile();
+        molecularAssembly.finalize(true);
+        PotentialEnergy energy = new PotentialEnergy(molecularAssembly);
 
         List<Atom> atomlist = molecularAssembly.getAtomList();
         Atom atomarray[] = atomlist.toArray(new Atom[atomlist.size()]);
@@ -169,13 +172,9 @@ public class ScaleBulkMinimizeTest {
         // set up FFT and run it
         ParallelTeam parallelTeam = new ParallelTeam();
         CrystalReciprocalSpace crs = new CrystalReciprocalSpace(reflectionlist,
-                atomarray, parallelTeam, parallelTeam, false);
-        crs.computeDensity(refinementdata.fc);
-        refinementdata.setCrystalReciprocalSpaceFc(crs);
-        crs = new CrystalReciprocalSpace(reflectionlist, atomarray,
-                parallelTeam, parallelTeam, true);
-        crs.computeDensity(refinementdata.fs);
-        refinementdata.setCrystalReciprocalSpaceFs(crs);
+                atomarray, parallelTeam, parallelTeam);
+        crs.computeDensity(refinementdata.fc, refinementdata.fs);
+        refinementdata.setCrystalReciprocalSpace(crs);
 
         /*
         try {

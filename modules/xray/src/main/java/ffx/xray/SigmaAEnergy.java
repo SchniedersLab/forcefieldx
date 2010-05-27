@@ -46,6 +46,7 @@ import ffx.crystal.ReflectionList;
 import ffx.crystal.ReflectionSpline;
 import ffx.numerics.ComplexNumber;
 import ffx.numerics.Optimizable;
+import ffx.xray.CrystalReciprocalSpace.SolventModel;
 
 /**
  *
@@ -128,10 +129,10 @@ public class SigmaAEnergy implements Optimizable {
         this.n = refinementdata.nparams;
 
         // initialize params
-        assert (refinementdata.crs_fc != null);
-        double fftgrid = 2.0 * refinementdata.crs_fc.getXDim()
-                * refinementdata.crs_fc.getYDim()
-                * refinementdata.crs_fc.getZDim();
+        assert (refinementdata.crs != null);
+        double fftgrid = 2.0 * refinementdata.crs.getXDim()
+                * refinementdata.crs.getYDim()
+                * refinementdata.crs.getZDim();
         dfscale = (crystal.volume * crystal.volume) / fftgrid;
         recipt = transpose3(crystal.A);
         this.spline = new ReflectionSpline(reflectionlist, n);
@@ -189,8 +190,8 @@ public class SigmaAEnergy implements Optimizable {
             // structure factors
             ComplexNumber fcc = new ComplexNumber(fc[i][0], fc[i][1]);
             ComplexNumber fsc = new ComplexNumber(fs[i][0], fs[i][1]);
-            ComplexNumber fct = refinementdata.bulksolvent
-                    ? fcc.plus(fsc.times(ksebs)) : fcc;
+            ComplexNumber fct = (refinementdata.crs.solventmodel == SolventModel.NONE)
+                    ? fcc : fcc.plus(fsc.times(ksebs));
             ComplexNumber kfct = fct.times(kmems);
 
             ComplexNumber ecc = fcc.times(sqrt(ecscale));
