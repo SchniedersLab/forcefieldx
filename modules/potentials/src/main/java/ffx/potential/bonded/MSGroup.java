@@ -20,6 +20,8 @@
  */
 package ffx.potential.bonded;
 
+import static java.lang.String.format;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
@@ -283,7 +285,9 @@ public abstract class MSGroup extends MSNode {
                                     newTorsionNode.add(torsion);
                                     torsions.add(torsion);
                                 } else {
-                                    logger.severe("No TorsionType for key: " + key);
+                                    logger.severe(format("No TorsionType for key: %s\n%s\n%s\n%s\n%s\n",
+                                            key,toString(),bond1.toString(),
+                                            middleBond.toString(),bond3.toString()));
                                 }
                             }
                         }
@@ -567,7 +571,8 @@ public abstract class MSGroup extends MSNode {
                                 torsions.add(torsion);
                                 newTorsionNode.add(torsion);
                             } else {
-                                logger.severe("No TorsionType for key: " + key);
+                                    logger.severe(format("No TorsionType for key: %s\n%s\n%s\n%s\n%s\n",
+                                            key,toString(),bond1.toString(),bond1.toString(),bond3.toString()));
                             }
                         }
                     }

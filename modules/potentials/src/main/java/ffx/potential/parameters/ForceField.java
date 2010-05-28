@@ -20,6 +20,8 @@
  */
 package ffx.potential.parameters;
 
+import static java.lang.String.format;
+
 import java.io.File;
 import java.net.URL;
 import java.util.Arrays;
@@ -27,7 +29,6 @@ import java.util.EnumMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.NavigableSet;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.logging.Logger;
@@ -483,9 +484,8 @@ public class ForceField {
                 String key2 = Integer.toString(type);
                 PolarizeType polarizeType2 = polarizeTypes.get(key2);
                 if (polarizeType2 == null) {
-                    logger.severe("Polarize type " + key
-                            + "references nonexistant polarize type " + key2);
-                    continue;
+                    logger.severe(format("Polarize type %s references nonexistant polarize type %s.",
+                            key, key2));
                 }
                 int types2[] = polarizeType2.polarizationGroup;
                 if (types2 == null) {

@@ -33,6 +33,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -224,16 +225,16 @@ public final class PDBFilter extends SystemFilter {
                 br = new BufferedReader(fr);
 
                 String[] connect;
-                ArrayList<String[]> links = new ArrayList<String[]>();
+                List<String[]> links = new ArrayList<String[]>();
                 List<String[]> structs = new ArrayList<String[]>();
-                // While the END parameter is not read in, load atoms
                 if (currentAltLoc == 'A') {
-                    logger.info(" Reading " + pdbFile.getName());
+                    logger.info(format(" Reading %s.", pdbFile.getName()));
                 } else {
-                    logger.info(" Reading " + pdbFile.getName() + " alternate location " + currentAltLoc + ".");
+                    logger.info(format(" Reading %s alternate location %s.", pdbFile.getName(),
+                                       currentAltLoc));
                 }
-
                 String pdbLine = br.readLine();
+                // While the END parameter is not read in, load atoms
                 while ((pdbLine != null) && (!pdbLine.startsWith("END"))) {
                     int len = pdbLine.length();
                     String identity = pdbLine;
@@ -287,8 +288,8 @@ public final class PDBFilter extends SystemFilter {
                                 a.setAltLoc(altLoc);
                                 a.setAnisou(adp);
                             } else {
-                                logger.info("No ATOM record for ANISOU serial number " + serial + ".");
-                                logger.info("The following ANISOU record will be ignored:\n" + pdbLine);
+                                logger.info(format(" No ATOM record for ANISOU serial number %d has been found.", serial));
+                                logger.info(format(" This ANISOU record will be ignored:\n %s", pdbLine));
                             }
                             break;
                         case ATOM:
@@ -330,7 +331,7 @@ public final class PDBFilter extends SystemFilter {
                             double occupancy = new Double(pdbLine.substring(54, 60).trim());
                             double tempFactor = new Double(pdbLine.substring(60, 66).trim());
                             Atom newAtom = new Atom(0, name, altLoc, d, resName, resSeq,
-                                              chainID, occupancy, tempFactor, segID);
+                                                    chainID, occupancy, tempFactor, segID);
                             Atom returnedAtom = (Atom) activeMolecularAssembly.addMSNode(newAtom);
                             if (returnedAtom != newAtom) {
                                 // A previously added atom has been retained.
@@ -379,7 +380,7 @@ public final class PDBFilter extends SystemFilter {
                             occupancy = new Double(pdbLine.substring(54, 60).trim());
                             tempFactor = new Double(pdbLine.substring(60, 66).trim());
                             newAtom = new Atom(0, name, altLoc, d, resName, resSeq, chainID,
-                                         occupancy, tempFactor, segID);
+                                               occupancy, tempFactor, segID);
                             newAtom.setHetero(true);
                             returnedAtom = (Atom) activeMolecularAssembly.addMSNode(newAtom);
                             if (returnedAtom != newAtom) {
@@ -434,9 +435,9 @@ public final class PDBFilter extends SystemFilter {
                             connect[2] = pdbLine.substring(17, 21).trim();
                             // Residues
                             connect[3] = pdbLine.substring(31, 35).trim();
-                            connect[4] = new String("SG");
+                            connect[4] = "SG";
                             // Atoms
-                            connect[5] = new String("SG");
+                            connect[5] = "SG";
                             links.add(connect);
                             break;
                         case LINK:
@@ -611,15 +612,14 @@ public final class PDBFilter extends SystemFilter {
                 for (int residueNumber = 0; residueNumber < numberOfResidues; residueNumber++) {
                     Residue residue = residues.get(residueNumber);
                     String name = residue.getName().toUpperCase();
-                    AminoAcid3 aminoAcid = AminoAcid3.UNK;
-                    for (int a = 0; a < numberOfKnownAminoAcids; a++) {
-                        AminoAcid3 amino = knownAminoAcids[a];
+                    AminoAcid3 aminoAcid = null;
+                    for (AminoAcid3 amino : aminoAcidList) {
                         if (amino.toString().equalsIgnoreCase(name)) {
                             aminoAcid = amino;
                             break;
                         }
                     }
-                    if (aminoAcid == AminoAcid3.UNK) {
+                    if (aminoAcid == null) {
                         isProtein = false;
                         break;
                     }
@@ -632,10 +632,7 @@ public final class PDBFilter extends SystemFilter {
                 if (isProtein) {
                     try {
                         assignAminoAcidAtomTypes(residues);
-                        if (logger.isLoggable(Level.INFO)) {
-                            logger.info(" Atom type assignment completed for AA chain "
-                                        + polymer.getName() + ".");
-                        }
+                        logger.info(format(" Assigned atom types for amino acid chain %s.", polymer.getName()));
                     } catch (MissingHeavyAtomException missingHeavyAtomException) {
                         logger.severe(missingHeavyAtomException.toString());
                     } catch (MissingAtomTypeException missingAtomTypeException) {
@@ -652,7 +649,7 @@ public final class PDBFilter extends SystemFilter {
                     Residue residue = residues.get(residueNumber);
                     String name = residue.getName().toUpperCase();
                     /**
-                     * Convert 1-character nucleic acid names
+                     * Convert 1 and 2-character nucleic acid names
                      * to 3-character names.
                      */
                     if (name.length() == 1) {
@@ -665,17 +662,23 @@ public final class PDBFilter extends SystemFilter {
                         } else if (name.equals("U")) {
                             name = NucleicAcid3.URI.toString();
                         }
-                        residue.setName(name);
+                    } else if (name.length() == 2) {
+                        if (name.equals("YG")) {
+                            name = NucleicAcid3.YYG.toString();
+                        }
                     }
-                    NucleicAcid3 nucleicAcid = NucleicAcid3.UNK;
-                    for (int a = 0; a < numberOfKnownNucleicAcids; a++) {
-                        NucleicAcid3 nucleic = knownNucleicAcids[a];
-                        if (nucleic.toString().equalsIgnoreCase(name)) {
+                    residue.setName(name);
+                    NucleicAcid3 nucleicAcid = null;
+                    for (NucleicAcid3 nucleic : nucleicAcidList) {
+                        String nuc3 = nucleic.toString();
+                        nuc3 = nuc3.substring(nuc3.length() - 3);
+                        if (nuc3.equalsIgnoreCase(name)) {
                             nucleicAcid = nucleic;
                             break;
                         }
                     }
-                    if (nucleicAcid == NucleicAcid3.UNK) {
+                    if (nucleicAcid == null) {
+                        logger.info(format("Nucleic acid was not recognized %s.", name));
                         isNucleicAcid = false;
                         break;
                     }
@@ -688,10 +691,7 @@ public final class PDBFilter extends SystemFilter {
                 if (isNucleicAcid) {
                     try {
                         assignNucleicAcidAtomTypes(residues);
-                        if (logger.isLoggable(Level.INFO)) {
-                            logger.info(" Atom type assignment completed for NA chain "
-                                        + polymer.getName() + ".");
-                        }
+                        logger.info(format(" Assigned atom types for nucleic acid chain %s.", polymer.getName()));
                     } catch (MissingHeavyAtomException missingHeavyAtomException) {
                         logger.severe(missingHeavyAtomException.toString());
                     } catch (MissingAtomTypeException missingAtomTypeException) {
@@ -709,10 +709,10 @@ public final class PDBFilter extends SystemFilter {
             for (MSNode m : ions) {
                 Molecule ion = (Molecule) m;
                 String name = ion.getResidueName().toUpperCase();
-                HETATOMS hetatm = HETATOMS.valueOf(name);
+                HetAtoms hetatm = HetAtoms.valueOf(name);
                 Atom atom = ion.getAtomList().get(0);
                 if (ion.getAtomList().size() != 1) {
-                    logger.severe("Check residue " + ion.toString() + " of chain " + ion.getChainID() + ".");
+                    logger.severe(format(" Check residue %s of chain %s.", ion.toString(), ion.getChainID()));
                 }
                 try {
                     switch (hetatm) {
@@ -731,10 +731,14 @@ public final class PDBFilter extends SystemFilter {
                             atom.setAtomType(findAtomType(2006));
                             break;
                         case CL:
-                            atom.setAtomType(findAtomType(2003));
+                            atom.setAtomType(findAtomType(2007));
+                            break;
+                        case ZN:
+                        case ZN2:
+                            atom.setAtomType(findAtomType(2008));
                             break;
                         default:
-                            logger.severe("Check residue " + ion.getResidueName() + " of chain " + ion.getChainID() + ".");
+                            logger.severe(format(" Check residue %s of chain %s.", ion.toString(), ion.getChainID()));
                     }
                 } catch (Exception e) {
                     String message = "Error assigning atom types.";
@@ -761,7 +765,7 @@ public final class PDBFilter extends SystemFilter {
         // Assign small molecule atom types.
         ArrayList<MSNode> molecules = activeMolecularAssembly.getMolecules();
         for (MSNode m : molecules) {
-            logger.warning("Deleting unrecognized molecule " + m.toString() + ".");
+            logger.log(Level.WARNING, format("Deleting unrecognized molecule %s.", m.toString()));
             activeMolecularAssembly.deleteMolecule((Molecule) m);
         }
     }
@@ -789,20 +793,21 @@ public final class PDBFilter extends SystemFilter {
              */
             Residue residue = residues.get(residueNumber);
             String residueName = residue.getName().toUpperCase();
-            NucleicAcid3 nucleicAcid = NucleicAcid3.UNK;
+            NucleicAcid3 nucleicAcid = null;
             int naNumber = -1;
-            for (int n = 0; n < numberOfKnownNucleicAcids; n++) {
-                NucleicAcid3 amino = knownNucleicAcids[n];
-                if (amino.toString().equalsIgnoreCase(residueName)) {
-                    nucleicAcid = amino;
-                    naNumber = n;
+            for (NucleicAcid3 nucleic : nucleicAcidList) {
+                naNumber++;
+                String nuc3 = nucleic.toString();
+                nuc3 = nuc3.substring(nuc3.length() - 3);
+                if (nuc3.equalsIgnoreCase(residueName)) {
+                    nucleicAcid = nucleic;
                     break;
                 }
             }
             /**
              * Do atom name conversions.
              */
-            ArrayList<Atom> resAtoms = residue.getAtomList();
+            List<Atom> resAtoms = residue.getAtomList();
             int natoms = resAtoms.size();
             for (int i = 0; i < natoms; i++) {
                 Atom atom = resAtoms.get(i);
@@ -957,7 +962,15 @@ public final class PDBFilter extends SystemFilter {
                 setHydrogenAtom(residue, "H2*2", C2s, 1.09e0, C3s, 109.5e0, C1s, 109.5e0, 1, h22Typ[naNumber]);
             } else {
                 setHydrogenAtom(residue, "H2*", C2s, 1.09e0, C3s, 109.5e0, C1s, 109.5e0, -1, h21Typ[naNumber]);
-                setHydrogenAtom(residue, "HO*", O2s, 1.00e0, C2s, 109.5e0, C3s, 180.0e0, 0, h22Typ[naNumber]);
+                // Add the O2' Methyl for OMC and OMG
+                if (nucleicAcid == NucleicAcid3.OMC || nucleicAcid == NucleicAcid3.OMG) {
+                    Atom CM2 = setHeavyAtom(residue, "CM2", O2s, 1427);
+                    Atom HM21 = setHydrogenAtom(residue, "HM21", CM2, 1.08e0, O2s, 109.5e0, C2s, 0.0e0, 0, 1428);
+                    setHydrogenAtom(residue, "HM22", CM2, 1.08e0, O2s, 109.5e0, HM21, 109.5e0, 1, 1429);
+                    setHydrogenAtom(residue, "HM23", CM2, 1.08e0, O2s, 109.5e0, HM21, 109.5e0, -1, 1430);
+                } else {
+                    setHydrogenAtom(residue, "HO*", O2s, 1.00e0, C2s, 109.5e0, C3s, 180.0e0, 0, h22Typ[naNumber]);
+                }
             }
             setHydrogenAtom(residue, "H1*", C1s, 1.09e0, O4s, 109.5e0, C2s, 109.5e0, -1, h1Typ[naNumber]);
             if (position == LAST_RESIDUE) {
@@ -977,8 +990,8 @@ public final class PDBFilter extends SystemFilter {
              * Do some checks on the current base to make sure all atoms
              * have been assigned an atom type.
              */
-            ArrayList<Atom> atoms = residue.getAtomList();
-            for (Atom atom : atoms) {
+            resAtoms = residue.getAtomList();
+            for (Atom atom : resAtoms) {
                 AtomType atomType = atom.getAtomType();
                 if (atomType == null) {
                     MissingAtomTypeException missingAtomTypeException = new MissingAtomTypeException(residue, atom);
@@ -990,9 +1003,8 @@ public final class PDBFilter extends SystemFilter {
                     if (atom == O3s && numberOfBonds == atomType.valence - 1 && position != LAST_RESIDUE) {
                         continue;
                     }
-                    System.out.println("An atom for residue " + residueName
-                                       + " has the wrong number of bonds.\n" + atom.toString());
-                    System.out.println("Expected: " + atomType.valence + " Actual: " + numberOfBonds);
+                    logger.log(Level.WARNING, format(" An atom for residue %s has the wrong number of bonds:\n %s", residueName, atom.toString()));
+                    logger.log(Level.WARNING, format(" Expected: %d Actual: %d.", atomType.valence, numberOfBonds));
                 }
             }
 
@@ -1045,7 +1057,33 @@ public final class PDBFilter extends SystemFilter {
                 setHydrogenAtom(residue, "H62", N6, 1.00e0, C6, 120.0e0, N7, 0.0e0, 0, 1029);
                 setHydrogenAtom(residue, "H2", C2, 1.08e0, N3, 115.4e0, C4, 180.0e0, 0, 1026);
                 break;
+            case M1MA:
+                Atom CM1;
+                Atom HM11;
+                N9 = setHeavyAtom(residue, "N9", C1s, 1605);
+                C8 = setHeavyAtom(residue, "C8", N9, 1609);
+                N7 = setHeavyAtom(residue, "N7", C8, 1608);
+                C5 = setHeavyAtom(residue, "C5", N7, 1607);
+                C6 = setHeavyAtom(residue, "C6", C5, 1613);
+                N6 = setHeavyAtom(residue, "N6", C6, 1615);
+                N1 = setHeavyAtom(residue, "N1", C6, 1612);
+                C2 = setHeavyAtom(residue, "C2", N1, 1611);
+                N3 = setHeavyAtom(residue, "N3", C2, 1610);
+                C4 = setHeavyAtom(residue, "C4", N3, 1606);
+                CM1 = setHeavyAtom(residue, "CM1", N1, 1619);
+                bond(C4, C5);
+                bond(C4, N9);
+                setHydrogenAtom(residue, "H2", C2, 1.08e0, N3, 115.4e0, C4, 180.0e0, 0, 1614);
+                setHydrogenAtom(residue, "H6", C6, 1.08e0, C5, 109.5e0, C4, 180.0e0, 0, 1623);
+                setHydrogenAtom(residue, "H8", C8, 1.08e0, N7, 123.1e0, C5, 180.0e0, 0, 1618);
+                setHydrogenAtom(residue, "HN61", N6, 1.00e0, C6, 109.5e0, C5, 0.0e0, 0, 1616);
+                setHydrogenAtom(residue, "HN62", N6, 1.00e0, C6, 109.5e0, C5, 109.5e0, 0, 1617);
+                HM11 = setHydrogenAtom(residue, "HM11", CM1, 1.08e0, N1, 109.5e0, C2, 0.0e0, 0, 1620);
+                setHydrogenAtom(residue, "HM12", CM1, 1.08e0, N1, 109.5e0, HM11, 109.5e0, 1, 1621);
+                setHydrogenAtom(residue, "HM13", CM1, 1.08e0, N1, 109.5e0, HM11, 109.5e0, -1, 1622);
+                break;
             case CYT:
+            case OMC:
                 Atom O2;
                 Atom N4;
                 N1 = setHeavyAtom(residue, "N1", C1s, 1078);
@@ -1062,7 +1100,28 @@ public final class PDBFilter extends SystemFilter {
                 setHydrogenAtom(residue, "H5", C5, 1.08e0, C4, 121.6e0, N3, 180.0e0, 0, 1088);
                 setHydrogenAtom(residue, "H6", C6, 1.08e0, C5, 119.4e0, C4, 180.0e0, 0, 1089);
                 break;
+            case M5MC:
+                Atom CM5;
+                Atom HM51;
+                N1 = setHeavyAtom(residue, "N1", C1s, 1508);
+                C2 = setHeavyAtom(residue, "C2", N1, 1509);
+                O2 = setHeavyAtom(residue, "O2", C2, 1514);
+                N3 = setHeavyAtom(residue, "N3", C2, 1510);
+                C4 = setHeavyAtom(residue, "C4", N3, 1511);
+                N4 = setHeavyAtom(residue, "N4", C4, 1515);
+                C5 = setHeavyAtom(residue, "C5", C4, 1512);
+                C6 = setHeavyAtom(residue, "C6", C5, 1513);
+                CM5 = setHeavyAtom(residue, "CM5", C5, 1519);
+                bond(C6, N1);
+                setHydrogenAtom(residue, "H41", N4, 1.00e0, C4, 120.0e0, N3, 0.0e0, 0, 1516);
+                setHydrogenAtom(residue, "H42", N4, 1.00e0, C4, 120.0e0, N3, 180.0e0, 0, 1517);
+                setHydrogenAtom(residue, "H6", C6, 1.08e0, C5, 119.4e0, C4, 180.0e0, 0, 1518);
+                HM51 = setHydrogenAtom(residue, "HM51", CM5, 1.08e0, C5, 109.5e0, C4, 0.0e0, 0, 1520);
+                setHydrogenAtom(residue, "HM52", CM5, 1.08e0, C5, 109.5e0, HM51, 109.5e0, 1, 1521);
+                setHydrogenAtom(residue, "HM53", CM5, 1.08e0, C5, 109.5e0, HM51, 109.5e0, -1, 1522);
+                break;
             case GUA:
+            case OMG:
                 Atom O6;
                 Atom N2;
                 N9 = setHeavyAtom(residue, "N9", C1s, 1047);
@@ -1083,6 +1142,153 @@ public final class PDBFilter extends SystemFilter {
                 setHydrogenAtom(residue, "H21", N2, 1.00e0, C2, 120.0e0, N1, 0.0e0, 0, 1058);
                 setHydrogenAtom(residue, "H22", N2, 1.00e0, C2, 120.0e0, N1, 180.0e0, 0, 1059);
                 break;
+            case YYG:
+                Atom C10,
+                 C11,
+                 C12,
+                 C3,
+                 C13,
+                 C14,
+                 C15,
+                 C16,
+                 O17,
+                 O18,
+                 C19,
+                 N20,
+                 C21,
+                 O22,
+                 O23,
+                 C24,
+                 H31,
+                 H101,
+                 H191,
+                 H241;
+                N9 = setHeavyAtom(residue, "N9", C1s, 1640);
+                C8 = setHeavyAtom(residue, "C8", N9, 1644);
+                N7 = setHeavyAtom(residue, "N7", C8, 1643);
+                C5 = setHeavyAtom(residue, "C5", N7, 1642);
+                C6 = setHeavyAtom(residue, "C6", C5, 1648);
+                O6 = setHeavyAtom(residue, "O6", C6, 1650);
+                N1 = setHeavyAtom(residue, "N1", C6, 1647);
+                C2 = setHeavyAtom(residue, "C2", N1, 1646);
+                N2 = setHeavyAtom(residue, "N2", C2, 1649);
+                N3 = setHeavyAtom(residue, "N3", C2, 1645);
+                C3 = setHeavyAtom(residue, "C3", N3, 1652);
+                C4 = setHeavyAtom(residue, "C4", N3, 1641);
+                C11 = setHeavyAtom(residue, "C11", N2, 1657);
+                C10 = setHeavyAtom(residue, "C10", C11, 1658);
+                C12 = setHeavyAtom(residue, "C12", C11, 1656);
+                C13 = setHeavyAtom(residue, "C13", C12, 1662);
+                C14 = setHeavyAtom(residue, "C14", C13, 1665);
+                C15 = setHeavyAtom(residue, "C15", C14, 1668);
+                C16 = setHeavyAtom(residue, "C16", C15, 1675);
+                O17 = setHeavyAtom(residue, "O17", C16, 1676);
+                O18 = setHeavyAtom(residue, "O18", C16, 1674);
+                C19 = setHeavyAtom(residue, "C19", O18, 1670);
+                N20 = setHeavyAtom(residue, "N20", C15, 1677);
+                C21 = setHeavyAtom(residue, "C21", N20, 1679);
+                O22 = setHeavyAtom(residue, "O22", C21, 1680);
+                O23 = setHeavyAtom(residue, "O23", C21, 1681);
+                C24 = setHeavyAtom(residue, "C24", O23, 1682);
+                bond(C4, C5);
+                bond(C4, N9);
+                bond(N1, C12);
+                setHydrogenAtom(residue, "H8", C8, 1.08e0, N7, 123.0e0, C5, 180.0e0, 0, 1651);
+                H31 = setHydrogenAtom(residue, "H31", C3, 1.08e0, N3, 109.5e0, C4, 0.0e0, 0, 1653);
+                setHydrogenAtom(residue, "H32", C3, 1.08e0, N3, 109.5e0, H31, 109.5e0, 1, 1654);
+                setHydrogenAtom(residue, "H33", C3, 1.08e0, N3, 109.5e0, H31, 109.5e0, -1, 1655);
+                H101 = setHydrogenAtom(residue, "H101", C10, 1.08e0, C11, 109.5e0, N2, 0.0e0, 0, 1659);
+                setHydrogenAtom(residue, "H102", C10, 1.08e0, C11, 109.5e0, H101, 109.5e0, 1, 1660);
+                setHydrogenAtom(residue, "H103", C10, 1.08e0, C11, 109.5e0, H101, 109.5e0, -1, 1661);
+                setHydrogenAtom(residue, "H131", C13, 1.08e0, C12, 109.5e0, C14, 109.5e0, 1, 1663);
+                setHydrogenAtom(residue, "H132", C13, 1.08e0, C12, 109.5e0, C14, 109.5e0, -1, 1664);
+                setHydrogenAtom(residue, "H141", C14, 1.08e0, C13, 109.5e0, C15, 109.5e0, 1, 1666);
+                setHydrogenAtom(residue, "H142", C14, 1.08e0, C13, 109.5e0, C15, 109.5e0, -1, 1667);
+                setHydrogenAtom(residue, "H15", C15, 1.08e0, C14, 109.5e0, O18, 180.e0, 0, 1669);
+                H191 = setHydrogenAtom(residue, "H191", C19, 1.08e0, O18, 109.5e0, C16, 0.0e0, 0, 1671);
+                setHydrogenAtom(residue, "H192", C19, 1.08e0, O18, 109.5e0, H191, 109.5e0, 1, 1672);
+                setHydrogenAtom(residue, "H193", C19, 1.08e0, O18, 109.5e0, H191, 109.5e0, -1, 1673);
+                setHydrogenAtom(residue, "HN2", N20, 1.00e0, C15, 109.5e0, O22, 180.0e0, 0, 1678);
+                H241 = setHydrogenAtom(residue, "H241", C24, 1.08e0, O23, 109.5e0, C21, 0.0e0, 0, 1683);
+                setHydrogenAtom(residue, "H242", C24, 1.08e0, O23, 109.5e0, H241, 109.5e0, 1, 1684);
+                setHydrogenAtom(residue, "H243", C24, 1.08e0, O23, 109.5e0, H241, 109.5e0, -1, 1685);
+
+                break;
+            case M2MG:
+                Atom CM2;
+                Atom HM21;
+                N9 = setHeavyAtom(residue, "N9", C1s, 1316);
+                C8 = setHeavyAtom(residue, "C8", N9, 1320);
+                N7 = setHeavyAtom(residue, "N7", C8, 1319);
+                C5 = setHeavyAtom(residue, "C5", N7, 1318);
+                C6 = setHeavyAtom(residue, "C6", C5, 1324);
+                O6 = setHeavyAtom(residue, "O6", C6, 1328);
+                N1 = setHeavyAtom(residue, "N1", C6, 1323);
+                C2 = setHeavyAtom(residue, "C2", N1, 1322);
+                N2 = setHeavyAtom(residue, "N2", C2, 1326);
+                N3 = setHeavyAtom(residue, "N3", C2, 1321);
+                C4 = setHeavyAtom(residue, "C4", N3, 1317);
+                CM2 = setHeavyAtom(residue, "CM2", N2, 1330);
+                bond(C4, C5);
+                bond(C4, N9);
+                setHydrogenAtom(residue, "H8", C8, 1.08e0, N7, 123.0e0, C5, 180.0e0, 0, 1329);
+                setHydrogenAtom(residue, "H1", N1, 1.00e0, C6, 117.4e0, C5, 180.0e0, 0, 1325);
+                setHydrogenAtom(residue, "H2", N2, 1.00e0, C2, 120.0e0, N1, 0.0e0, 0, 1327);
+                HM21 = setHydrogenAtom(residue, "HM21", CM2, 1.08e0, N2, 109.5e0, C2, 0.0e0, 0, 1331);
+                setHydrogenAtom(residue, "HM22", CM2, 1.08e0, N2, 109.5e0, HM21, 109.5e0, 1, 1332);
+                setHydrogenAtom(residue, "HM23", CM2, 1.08e0, N2, 109.5e0, HM21, 109.5e0, -1, 1333);
+                break;
+            case M2G:
+                N9 = setHeavyAtom(residue, "N9", C1s, 1379);
+                C8 = setHeavyAtom(residue, "C8", N9, 1383);
+                N7 = setHeavyAtom(residue, "N7", C8, 1382);
+                C5 = setHeavyAtom(residue, "C5", N7, 1381);
+                C6 = setHeavyAtom(residue, "C6", C5, 1387);
+                O6 = setHeavyAtom(residue, "O6", C6, 1390);
+                N1 = setHeavyAtom(residue, "N1", C6, 1386);
+                C2 = setHeavyAtom(residue, "C2", N1, 1385);
+                N2 = setHeavyAtom(residue, "N2", C2, 1389);
+                N3 = setHeavyAtom(residue, "N3", C2, 1384);
+                C4 = setHeavyAtom(residue, "C4", N3, 1380);
+                CM1 = setHeavyAtom(residue, "CM1", N2, 1392);
+                CM2 = setHeavyAtom(residue, "CM2", N2, 1396);
+                bond(C4, C5);
+                bond(C4, N9);
+                setHydrogenAtom(residue, "H8", C8, 1.08e0, N7, 123.0e0, C5, 180.0e0, 0, 1391);
+                setHydrogenAtom(residue, "H1", N1, 1.00e0, C6, 117.4e0, C5, 180.0e0, 0, 1388);
+                HM11 = setHydrogenAtom(residue, "HM11", CM1, 1.08e0, N2, 109.5e0, C2, 0.0e0, 0, 1393);
+                setHydrogenAtom(residue, "HM12", CM1, 1.08e0, N2, 109.5e0, HM11, 109.5e0, 1, 1394);
+                setHydrogenAtom(residue, "HM13", CM1, 1.08e0, N2, 109.5e0, HM11, 109.5e0, -1, 1395);
+                HM21 = setHydrogenAtom(residue, "HM21", CM2, 1.08e0, N2, 109.5e0, C2, 0.0e0, 0, 1397);
+                setHydrogenAtom(residue, "HM22", CM2, 1.08e0, N2, 109.5e0, HM21, 109.5e0, 1, 1398);
+                setHydrogenAtom(residue, "HM23", CM2, 1.08e0, N2, 109.5e0, HM21, 109.5e0, -1, 1399);
+                break;
+            case M7MG:
+                Atom CM7;
+                Atom HM71;
+                N9 = setHeavyAtom(residue, "N9", C1s, 1539);
+                C8 = setHeavyAtom(residue, "C8", N9, 1543);
+                N7 = setHeavyAtom(residue, "N7", C8, 1542);
+                C5 = setHeavyAtom(residue, "C5", N7, 1541);
+                C6 = setHeavyAtom(residue, "C6", C5, 1547);
+                O6 = setHeavyAtom(residue, "O6", C6, 1552);
+                N1 = setHeavyAtom(residue, "N1", C6, 1546);
+                C2 = setHeavyAtom(residue, "C2", N1, 1545);
+                N2 = setHeavyAtom(residue, "N2", C2, 1549);
+                N3 = setHeavyAtom(residue, "N3", C2, 1544);
+                C4 = setHeavyAtom(residue, "C4", N3, 1540);
+                CM7 = setHeavyAtom(residue, "CM7", N7, 1555);
+                bond(C4, C5);
+                bond(C4, N9);
+                setHydrogenAtom(residue, "H81", C8, 1.08e0, N7, 109.5e0, N9, 109.5e0, 1, 1553);
+                setHydrogenAtom(residue, "H82", C8, 1.08e0, N7, 109.5e0, N9, 109.5e0, -1, 1554);
+                setHydrogenAtom(residue, "H1", N1, 1.00e0, C6, 117.4e0, C5, 180.0e0, 0, 1548);
+                setHydrogenAtom(residue, "H21", N2, 1.00e0, C2, 120.0e0, N1, 0.0e0, 0, 1550);
+                setHydrogenAtom(residue, "H22", N2, 1.00e0, C2, 120.0e0, N1, 180.0e0, 0, 1551);
+                HM71 = setHydrogenAtom(residue, "HM71", CM7, 1.08e0, N7, 109.5e0, C8, 0.0e0, 0, 1556);
+                setHydrogenAtom(residue, "HM72", CM7, 1.08e0, N7, 109.5e0, HM71, 109.5e0, 1, 1557);
+                setHydrogenAtom(residue, "HM73", CM7, 1.08e0, N7, 109.5e0, HM71, 109.5e0, -1, 1558);
+                break;
             case URI:
                 Atom O4;
                 N1 = setHeavyAtom(residue, "N1", C1s, 1106);
@@ -1097,6 +1303,56 @@ public final class PDBFilter extends SystemFilter {
                 setHydrogenAtom(residue, "H3", N3, 1.00e0, C2, 116.5e0, N1, 180.0e0, 0, 1113);
                 setHydrogenAtom(residue, "H5", C5, 1.08e0, C4, 120.4e0, N3, 180.0e0, 0, 1115);
                 setHydrogenAtom(residue, "H6", C6, 1.08e0, C5, 118.6e0, C4, 180.0e0, 0, 1116);
+                break;
+            case PSU:
+                // C1s bonds to C5 in PsuedoUridine
+                C5 = setHeavyAtom(residue, "C5", C1s, 1485);
+                C6 = setHeavyAtom(residue, "C6", C5, 1486);
+                N1 = setHeavyAtom(residue, "N1", C6, 1481);
+                C2 = setHeavyAtom(residue, "C2", N1, 1482);
+                O2 = setHeavyAtom(residue, "O2", C2, 1487);
+                N3 = setHeavyAtom(residue, "N3", C2, 1483);
+                C4 = setHeavyAtom(residue, "C4", N3, 1484);
+                O4 = setHeavyAtom(residue, "O4", C4, 1489);
+                bond(C4, C5);
+                setHydrogenAtom(residue, "H1", N1, 1.00e0, C2, 120.0e0, O2, 0.0e0, 0, 1491);
+                setHydrogenAtom(residue, "H3", N3, 1.00e0, C2, 120.0e0, O2, 0.0e0, 0, 1488);
+                setHydrogenAtom(residue, "H6", C6, 1.08e0, C5, 120.0e0, C1s, 0.0e0, 0, 1490);
+                break;
+            case H2U:
+                N1 = setHeavyAtom(residue, "N1", C1s, 1350);
+                C2 = setHeavyAtom(residue, "C2", N1, 1351);
+                O2 = setHeavyAtom(residue, "O2", C2, 1356);
+                N3 = setHeavyAtom(residue, "N3", C2, 1352);
+                C4 = setHeavyAtom(residue, "C4", N3, 1353);
+                O4 = setHeavyAtom(residue, "O4", C4, 1358);
+                C5 = setHeavyAtom(residue, "C5", C4, 1354);
+                C6 = setHeavyAtom(residue, "C6", C5, 1355);
+                bond(C6, N1);
+                setHydrogenAtom(residue, "H3", N3, 1.00e0, C2, 116.5e0, N1, 180.0e0, 0, 1357);
+                setHydrogenAtom(residue, "H51", C5, 1.08e0, C4, 109.5e0, C6, 109.5e0, 1, 1359);
+                setHydrogenAtom(residue, "H52", C5, 1.08e0, C4, 109.5e0, C6, 109.5e0, -1, 1360);
+                setHydrogenAtom(residue, "H61", C6, 1.08e0, C5, 109.5e0, N1, 109.5e0, 1, 1361);
+                setHydrogenAtom(residue, "H62", C6, 1.08e0, C5, 109.5e0, N1, 109.5e0, -1, 1362);
+                break;
+            case M5MU:
+                Atom C5M;
+                Atom H5M1;
+                N1 = setHeavyAtom(residue, "N1", C1s, 1575);
+                C2 = setHeavyAtom(residue, "C2", N1, 1576);
+                O2 = setHeavyAtom(residue, "O2", C2, 1581);
+                N3 = setHeavyAtom(residue, "N3", C2, 1577);
+                C4 = setHeavyAtom(residue, "C4", N3, 1578);
+                O4 = setHeavyAtom(residue, "O4", C4, 1583);
+                C5 = setHeavyAtom(residue, "C5", C4, 1579);
+                C6 = setHeavyAtom(residue, "C6", C5, 1580);
+                C5M = setHeavyAtom(residue, "C5M", C5, 1585);
+                bond(C6, N1);
+                setHydrogenAtom(residue, "H3", N3, 1.00e0, C2, 116.5e0, N1, 180.0e0, 0, 1582);
+                setHydrogenAtom(residue, "H6", C6, 1.08e0, C5, 118.6e0, C4, 180.0e0, 0, 1584);
+                H5M1 = setHydrogenAtom(residue, "H5M1", C5M, 1.08e0, C5, 109.5e0, C6, 0.0e0, 0, 1586);
+                setHydrogenAtom(residue, "H5M2", C5M, 1.08e0, C5, 109.5e0, H5M1, 109.5e0, 1, 1587);
+                setHydrogenAtom(residue, "H5M3", C5M, 1.08e0, C5, 109.5e0, H5M1, 109.5e0, -1, 1588);
                 break;
             case DAD:
                 N9 = setHeavyAtom(residue, "N9", C1s, 1132);
@@ -1213,12 +1469,10 @@ public final class PDBFilter extends SystemFilter {
             }
             AminoAcid3 aminoAcid = AminoAcid3.UNK;
             int aminoAcidNumber = -1;
-            for (int a = 0; a
-                            < numberOfKnownAminoAcids; a++) {
-                AminoAcid3 amino = knownAminoAcids[a];
+            for (AminoAcid3 amino : aminoAcidList) {
+                aminoAcidNumber++;
                 if (amino.toString().equalsIgnoreCase(residueName)) {
                     aminoAcid = amino;
-                    aminoAcidNumber = a;
                     break;
                 }
             }
@@ -1231,8 +1485,8 @@ public final class PDBFilter extends SystemFilter {
             int expected = aminoAcidHeavyAtoms[aminoAcidNumber];
             if (aminoAcid != AminoAcid3.GLY && expected >= 4) {
                 int actual = 0;
-                ArrayList<Atom> atoms = residue.getAtomList();
-                for (Atom atom : atoms) {
+                List<Atom> resAtoms = residue.getAtomList();
+                for (Atom atom : resAtoms) {
                     String label = atom.getName().toUpperCase();
                     if (!(label.equalsIgnoreCase("OXT") || label.equalsIgnoreCase("OT2"))) {
                         if (!label.startsWith("H")) {
@@ -1275,12 +1529,10 @@ public final class PDBFilter extends SystemFilter {
             }
             aminoAcid = AminoAcid3.UNK;
             aminoAcidNumber = -1;
-            for (int a = 0; a
-                            < numberOfKnownAminoAcids; a++) {
-                AminoAcid3 amino = knownAminoAcids[a];
+            for (AminoAcid3 amino : aminoAcidList) {
+                aminoAcidNumber++;
                 if (amino.toString().equalsIgnoreCase(residueName)) {
                     aminoAcid = amino;
-                    aminoAcidNumber = a;
                     break;
                 }
             }
@@ -1427,8 +1679,8 @@ public final class PDBFilter extends SystemFilter {
              * Do some checks on the current residue to make sure all atoms
              * have been assigned an atom type.
              */
-            ArrayList<Atom> atoms = residue.getAtomList();
-            for (Atom atom : atoms) {
+            List<Atom> resAtoms = residue.getAtomList();
+            for (Atom atom : resAtoms) {
                 atomType = atom.getAtomType();
                 if (atomType == null) {
                     MissingAtomTypeException missingAtomTypeException = new MissingAtomTypeException(residue, atom);
@@ -1439,9 +1691,8 @@ public final class PDBFilter extends SystemFilter {
                     if (atom == C && numberOfBonds == atomType.valence - 1 && position != LAST_RESIDUE) {
                         continue;
                     }
-                    System.out.println("An atom for residue " + residueName
-                                       + " has the wrong number of bonds.\n" + atom.toString());
-                    System.out.println("Expected: " + atomType.valence + " Actual: " + numberOfBonds);
+                    logger.warning(format(" An atom for residue %s has the wrong number of bonds:\n %s", residueName, atom.toString()));
+                    logger.warning(format(" Expected: %d Actual: %d.", atomType.valence, numberOfBonds));
                 }
             }
             /**
@@ -1844,11 +2095,11 @@ public final class PDBFilter extends SystemFilter {
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder(super.toString());
-            sb.append("Atom " + atom.toString());
+            sb.append(format(" Atom %s", atom.toString()));
             if (residue != null) {
-                sb.append("\nof residue " + residue.toString());
+                sb.append(format("\n of residue %s", residue.toString()));
             }
-            sb.append("\ncould not be assigned an atom type.\n");
+            sb.append("\n could not be assigned an atom type.\n");
             return sb.toString();
         }
     }
@@ -1873,13 +2124,13 @@ public final class PDBFilter extends SystemFilter {
         public String toString() {
             StringBuilder sb = new StringBuilder(super.toString());
             if (atomType != null) {
-                sb.append("\nAn atom of type:\n" + atomType.toString() + "\n");
+                sb.append(format("\n An atom of type\n %s\n", atomType.toString()));
             } else {
-                sb.append("\nAtom " + atomName + " ");
+                sb.append(format("\n Atom %s", atomName));
             }
-            sb.append("was not found");
+            sb.append(" was not found");
             if (bondedTo != null) {
-                sb.append(" bonded to atom " + bondedTo);
+                sb.append(format(" bonded to atom %s ", bondedTo));
             }
             sb.append(".\n");
             return sb.toString();
@@ -1939,7 +2190,7 @@ public final class PDBFilter extends SystemFilter {
         String key = BondType.sortKey(c);
         BondType bondType = forceField.getBondType(key);
         if (bondType == null) {
-            System.out.println("No BondType for key: " + key + "\n" + a1.toString() + "\n" + a2.toString());
+            logger.severe(format("No BondType for key: %s\n %s\n %s", key, a1.toString(), a2.toString()));
         } else {
             bond.setBondType(bondType);
         }
@@ -1959,10 +2210,11 @@ public final class PDBFilter extends SystemFilter {
             if (atomType != null) {
                 return atomType;
             } else {
-                System.out.println("The atom type " + bioType.atomType + " was not found.");
+                logger.severe(format("The atom type %s was not found for biotype %s.", bioType.atomType,
+                                     bioType.toString()));
             }
         } else {
-            //System.out.println("The biotype look-up " + lookUp + " was not found.");
+            logger.severe(format("The biotype %s was not found.", bioType.toString()));
         }
         return null;
     }
@@ -2195,6 +2447,11 @@ public final class PDBFilter extends SystemFilter {
         FIRST_RESIDUE, MIDDLE_RESIDUE, LAST_RESIDUE
     };
 
+    private enum HetAtoms {
+
+        HOH, H2O, WAT, NA, K, MG, MG2, CA, CA2, CL, ZN, ZN2
+    };
+
     public enum AminoAcid1 {
 
         G, A, V, L, I, S, T, C, c, P, F, Y, W, H, U, Z,
@@ -2204,54 +2461,51 @@ public final class PDBFilter extends SystemFilter {
     public enum AminoAcid3 {
 
         GLY, ALA, VAL, LEU, ILE, SER, THR, CYS, CYX, PRO, PHE, TYR, TRP, HIS,
-        HID, HIE,
-        ASP, ASN, GLU, GLN, MET, LYS, ARG, ORN, AIB, PCA, FOR, ACE, NH2, NME,
-        UNK
+        HID, HIE, ASP, ASN, GLU, GLN, MET, LYS, ARG, ORN, AIB, PCA, FOR, ACE,
+        NH2, NME, UNK
     };
+    static final List<AminoAcid3> aminoAcidList = Arrays.asList(AminoAcid3.values());
     public final int aminoAcidHeavyAtoms[] = {4, 5, 7, 8, 8, 6, 7, 6, 6, 7, 11, 12, 14, 10, 10, 10,
                                               8, 8, 9, 9, 8, 9, 11, 8, 6, 8, 0, 0, 0, 0, 0};
-    static AminoAcid3 knownAminoAcids[] = AminoAcid3.values();
-    static int numberOfKnownAminoAcids = knownAminoAcids.length;
 
     public enum NucleicAcid1 {
 
         A, G, C, U, D, B, I, T, O, W, H, X
     };
 
+    /**
+     * Since enumeration values must start with a letter, an 'M' is added
+     * to modified bases whose IUPAC name starts with an integer.
+     */
     public enum NucleicAcid3 {
 
-        ADE, GUA, CYT, URI, DAD, DGU, DCY, DTY, MP1, DP2, TP3, UNK
+        ADE, GUA, CYT, URI, DAD, DGU, DCY, DTY, MP1, DP2, TP3, UNK, M2MG, H2U,
+        M2G, OMC, OMG, PSU, M5MC, M7MG, M5MU, M1MA, YYG
     };
-    static NucleicAcid3 knownNucleicAcids[] = NucleicAcid3.values();
-    static int numberOfKnownNucleicAcids = knownNucleicAcids.length;
-
-    private enum HETATOMS {
-
-        HOH, H2O, WAT, NA, K, MG, MG2, CA, CA2, CL
-    };
+    static final List<NucleicAcid3> nucleicAcidList = Arrays.asList(NucleicAcid3.values());
     /**
      * Biotype keys for nucleic acid backbone atom types.
      */
-    private final int o5Typ[] = {1001, 1031, 1062, 1090, 1117, 1146, 1176, 1203, 0, 0, 0, 0};
-    private final int c5Typ[] = {1002, 1032, 1063, 1091, 1118, 1147, 1177, 1204, 0, 0, 0, 0};
-    private final int h51Typ[] = {1003, 1033, 1064, 1092, 1119, 1148, 1178, 1205, 0, 0, 0, 0};
-    private final int h52Typ[] = {1004, 1034, 1065, 1093, 1120, 1149, 1179, 1206, 0, 0, 0, 0};
-    private final int c4Typ[] = {1005, 1035, 1066, 1094, 1121, 1150, 1180, 1207, 0, 0, 0, 0};
-    private final int h4Typ[] = {1006, 1036, 1067, 1095, 1122, 1151, 1181, 1208, 0, 0, 0, 0};
-    private final int o4Typ[] = {1007, 1037, 1068, 1096, 1123, 1152, 1182, 1209, 0, 0, 0, 0};
-    private final int c1Typ[] = {1008, 1038, 1069, 1097, 1124, 1153, 1183, 1210, 0, 0, 0, 0};
-    private final int h1Typ[] = {1009, 1039, 1070, 1098, 1125, 1154, 1184, 1211, 0, 0, 0, 0};
-    private final int c3Typ[] = {1010, 1040, 1071, 1099, 1126, 1155, 1185, 1212, 0, 0, 0, 0};
-    private final int h3Typ[] = {1011, 1041, 1072, 1100, 1127, 1156, 1186, 1213, 0, 0, 0, 0};
-    private final int c2Typ[] = {1012, 1042, 1073, 1101, 1128, 1157, 1187, 1214, 0, 0, 0, 0};
-    private final int h21Typ[] = {1013, 1043, 1074, 1102, 1129, 1158, 1188, 1215, 0, 0, 0, 0};
-    private final int h22Typ[] = {1015, 1045, 1076, 1104, 1130, 1159, 1189, 1216, 0, 0, 0, 0};
-    private final int o3Typ[] = {1016, 1046, 1077, 1105, 1131, 1160, 1190, 1217, 0, 0, 0, 0};
-    private final int o2Typ[] = {1014, 1044, 1075, 1103, 0, 0, 0, 0, 0, 0, 0, 0};
-    private final int pTyp[] = {1230, 1230, 1230, 1230, 1242, 1242, 1242, 1242, 0, 0, 0, 0};
-    private final int opTyp[] = {1231, 1231, 1231, 1231, 1243, 1243, 1243, 1243, 0, 0, 0, 0};
-    private final int h5tTyp[] = {1233, 1233, 1233, 1233, 1245, 1245, 1245, 1245, 0, 0, 0, 0};
-    private final int h3tTyp[] = {1238, 1238, 1238, 1238, 1250, 1250, 1250, 1250, 0, 0, 0, 0};
+    private final int o5Typ[] = {1001, 1031, 1062, 1090, 1117, 1146, 1176, 1203, 0, 0, 0, 0, 1300, 1334, 1363, 1400, 1431, 1465, 1492, 1523, 1559, 1589, 1624};
+    private final int c5Typ[] = {1002, 1032, 1063, 1091, 1118, 1147, 1177, 1204, 0, 0, 0, 0, 1301, 1335, 1364, 1401, 1432, 1466, 1493, 1524, 1560, 1590, 1625};
+    private final int h51Typ[] = {1003, 1033, 1064, 1092, 1119, 1148, 1178, 1205, 0, 0, 0, 0, 1302, 1336, 1365, 1402, 1433, 1467, 1494, 1525, 1561, 1591, 1626};
+    private final int h52Typ[] = {1004, 1034, 1065, 1093, 1120, 1149, 1179, 1206, 0, 0, 0, 0, 1303, 1337, 1366, 1403, 1434, 1468, 1495, 1526, 1562, 1592, 1627};
+    private final int c4Typ[] = {1005, 1035, 1066, 1094, 1121, 1150, 1180, 1207, 0, 0, 0, 0, 1304, 1338, 1367, 1404, 1435, 1469, 1496, 1527, 1563, 1593, 1628};
+    private final int h4Typ[] = {1006, 1036, 1067, 1095, 1122, 1151, 1181, 1208, 0, 0, 0, 0, 1305, 1339, 1368, 1405, 1436, 1470, 1497, 1528, 1564, 1594, 1629};
+    private final int o4Typ[] = {1007, 1037, 1068, 1096, 1123, 1152, 1182, 1209, 0, 0, 0, 0, 1306, 1340, 1369, 1406, 1437, 1471, 1498, 1529, 1565, 1595, 1630};
+    private final int c1Typ[] = {1008, 1038, 1069, 1097, 1124, 1153, 1183, 1210, 0, 0, 0, 0, 1307, 1341, 1370, 1407, 1438, 1472, 1499, 1530, 1566, 1596, 1631};
+    private final int h1Typ[] = {1009, 1039, 1070, 1098, 1125, 1154, 1184, 1211, 0, 0, 0, 0, 1308, 1342, 1371, 1408, 1439, 1473, 1500, 1531, 1567, 1597, 1632};
+    private final int c3Typ[] = {1010, 1040, 1071, 1099, 1126, 1155, 1185, 1212, 0, 0, 0, 0, 1309, 1343, 1372, 1409, 1440, 1474, 1501, 1532, 1568, 1598, 1633};
+    private final int h3Typ[] = {1011, 1041, 1072, 1100, 1127, 1156, 1186, 1213, 0, 0, 0, 0, 1310, 1344, 1373, 1410, 1441, 1475, 1502, 1533, 1569, 1599, 1634};
+    private final int c2Typ[] = {1012, 1042, 1073, 1101, 1128, 1157, 1187, 1214, 0, 0, 0, 0, 1311, 1345, 1374, 1411, 1442, 1476, 1503, 1534, 1570, 1600, 1635};
+    private final int h21Typ[] = {1013, 1043, 1074, 1102, 1129, 1158, 1188, 1215, 0, 0, 0, 0, 1312, 1346, 1375, 1412, 1443, 1477, 1504, 1535, 1571, 1601, 1636};
+    private final int o2Typ[] = {1014, 1044, 1075, 1103, 0, 0, 0, 0, 0, 0, 0, 0, 1313, 1347, 1376, 1413, 1444, 1478, 1505, 1536, 1572, 1602, 1637};
+    private final int h22Typ[] = {1015, 1045, 1076, 1104, 1130, 1159, 1189, 1216, 0, 0, 0, 0, 1314, 1348, 1377, 0, 0, 1479, 1506, 1537, 1573, 1603, 1638};
+    private final int o3Typ[] = {1016, 1046, 1077, 1105, 1131, 1160, 1190, 1217, 0, 0, 0, 0, 1315, 1349, 1378, 1414, 1445, 1480, 1507, 1538, 1574, 1604, 1639};
+    private final int pTyp[] = {1230, 1230, 1230, 1230, 1242, 1242, 1242, 1242, 0, 0, 0, 0, 1230, 1230, 1230, 1230, 1230, 1230, 1230, 1230, 1230, 1230, 1230};
+    private final int opTyp[] = {1231, 1231, 1231, 1231, 1243, 1243, 1243, 1243, 0, 0, 0, 0, 1231, 1231, 1231, 1231, 1231, 1231, 1231, 1231, 1231, 1231, 1231};
+    private final int h5tTyp[] = {1233, 1233, 1233, 1233, 1245, 1245, 1245, 1245, 0, 0, 0, 0, 1233, 1233, 1233, 1233, 1233, 1233, 1233, 1233, 1233, 1233, 1233};
+    private final int h3tTyp[] = {1238, 1238, 1238, 1238, 1250, 1250, 1250, 1250, 0, 0, 0, 0, 1238, 1238, 1238, 1238, 1238, 1238, 1238, 1238, 1238, 1238, 1238};
     /**
      * Biotype keys for amino acid backbone atom types.
      *
