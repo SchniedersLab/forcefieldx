@@ -57,12 +57,16 @@ public class CCP4MapWriter {
     }
 
     public void write(double data[]) {
+        write(data, false);
+    }
+
+    public void write(double data[], boolean norm) {
         ByteOrder b = ByteOrder.nativeOrder();
         FileOutputStream fos;
         DataOutputStream dos;
 
-        double min = Double.MAX_VALUE;
-        double max = Double.MIN_VALUE;
+        double min = Double.POSITIVE_INFINITY;
+        double max = Double.NEGATIVE_INFINITY;
         double mean = 0.0;
         double sd = 0.0;
 
@@ -96,6 +100,19 @@ public class CCP4MapWriter {
             }
         }
         sd = sqrt(sd / n);
+
+        if (norm) {
+            for (int k = 0; k < nz; k++) {
+                for (int j = 0; j < ny; j++) {
+                    for (int i = 0; i < nx; i++) {
+                        int index = 2 * (i + nx * (j + ny * k));
+                        data[index] = (data[index]) - mean / sd;
+                    }
+                }
+            }
+            // recurse
+            write(data, false);
+        }
 
         try {
             if (logger.isLoggable(Level.INFO)) {
@@ -220,7 +237,7 @@ public class CCP4MapWriter {
                     }
                 }
             }
-            if (bb.position() > 0){
+            if (bb.position() > 0) {
                 dos.write(bytes);
                 bb.rewind();
             }

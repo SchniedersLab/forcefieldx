@@ -80,9 +80,11 @@ public class FormFactorTest {
         ff = FormFactor.getFormFactor("6");
 
         assertEquals("carbon form factors should be correct",
-                2.09921, ff[0][0], 0.0001);
+                5, (int) ff[0][0]);
         assertEquals("carbon form factors should be correct",
-                13.18997, ff[1][0], 0.0001);
+                2.09921, ff[1][0], 0.0001);
+        assertEquals("carbon form factors should be correct",
+                13.18997, ff[2][0], 0.0001);
     }
 
     @Test

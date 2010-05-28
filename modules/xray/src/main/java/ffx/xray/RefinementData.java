@@ -38,7 +38,6 @@ public class RefinementData {
     private static final Logger logger = Logger.getLogger(RefinementData.class.getName());
     public final int n;
     public final int scale_n;
-    public final int solvent_n;
     // data
     public final double fsigf[][];
     public final int freer[];
@@ -62,7 +61,7 @@ public class RefinementData {
     public double llkr, llkf;
     // reciprocal space reference
     // for structure factor calculations and computing derivatives
-    protected CrystalReciprocalSpace crs_fc, crs_fs;
+    protected CrystalReciprocalSpace crs;
     // spline scaling coefficients
     public final int nparams;
     public double spline[];
@@ -71,9 +70,8 @@ public class RefinementData {
     public double fcesq[];
     public double foesq[];
     // bulk solvent parameters
-    public boolean bulksolvent;
     public boolean gridsearch;
-    public double solvent_a, solvent_sd;
+    public double solvent_a, solvent_b;
     // scaling coefficients
     public double solvent_k, solvent_ueq;
     public double model_k;
@@ -81,15 +79,16 @@ public class RefinementData {
     // settings
     public final int rfreeflag;
     public final boolean use_3g;
+    public final double sigmaatol;
 
     public RefinementData(CompositeConfiguration properties,
             ReflectionList reflectionlist) {
 
         int rflag = properties.getInt("rfreeflag", 1);
         int npar = properties.getInt("nbins", 10);
-        bulksolvent = properties.getBoolean("bulksolvent", true);
         gridsearch = properties.getBoolean("gridsearch", false);
         use_3g = properties.getBoolean("use_3g", true);
+        sigmaatol = properties.getDouble("sigmaatol", 1.0);
 
         if (logger.isLoggable(Level.INFO)) {
             StringBuilder sb = new StringBuilder();
@@ -97,14 +96,13 @@ public class RefinementData {
             sb.append("  using cctbx 3 Gaussians: " + use_3g + "\n");
             sb.append("  R Free flag: " + rflag + "\n");
             sb.append("  n bins: " + npar + "\n");
-            sb.append("  bulk solvent: " + bulksolvent + "\n");
             sb.append("  solvent grid search: " + gridsearch + "\n");
+            sb.append("  sigma A fit tolerance: " + sigmaatol + "\n");
             logger.info(sb.toString());
         }
 
         this.n = reflectionlist.hkllist.size();
         this.scale_n = reflectionlist.crystal.scale_n;
-        this.solvent_n = bulksolvent ? 3 : 1;
         this.nparams = npar;
         this.rfreeflag = rflag;
         fsigf = new double[n][2];
@@ -139,12 +137,8 @@ public class RefinementData {
         model_k = 0.0;
     }
 
-    public void setCrystalReciprocalSpaceFc(CrystalReciprocalSpace crs) {
-        this.crs_fc = crs;
-    }
-
-    public void setCrystalReciprocalSpaceFs(CrystalReciprocalSpace crs) {
-        this.crs_fs = crs;
+    public void setCrystalReciprocalSpace(CrystalReciprocalSpace crs) {
+        this.crs = crs;
     }
 
     public void generateRFree() {

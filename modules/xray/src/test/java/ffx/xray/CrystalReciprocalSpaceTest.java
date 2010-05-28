@@ -33,6 +33,7 @@ import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.ForceFieldFilter;
 import ffx.potential.parsers.PDBFilter;
+import ffx.potential.PotentialEnergy;
 import ffx.utilities.Keyword;
 
 import edu.rit.pj.ParallelTeam;
@@ -102,6 +103,8 @@ public class CrystalReciprocalSpaceTest {
         molecularAssembly.setForceField(forceField);
         PDBFilter pdbfile = new PDBFilter(structure, molecularAssembly, forceField, properties);
         pdbfile.readFile();
+        molecularAssembly.finalize(true);
+        PotentialEnergy energy = new PotentialEnergy(molecularAssembly);
 
         List<Atom> atomlist = molecularAssembly.getAtomList();
         Atom atomarray[] = atomlist.toArray(new Atom[atomlist.size()]);
@@ -110,8 +113,8 @@ public class CrystalReciprocalSpaceTest {
         ParallelTeam parallelTeam = new ParallelTeam();
         CrystalReciprocalSpace crs =
                 new CrystalReciprocalSpace(reflectionlist, atomarray,
-                parallelTeam, parallelTeam, false);
-        crs.computeAtomicDensity(refinementdata.fc);
+                parallelTeam, parallelTeam);
+        crs.computeAtomicDensity(refinementdata.fc, refinementdata.fs);
 
         // tests
         ComplexNumber b = new ComplexNumber(-828.584, -922.704);
@@ -122,9 +125,9 @@ public class CrystalReciprocalSpaceTest {
                 + a.divides(b).toString());
 
         assertEquals("1 1 4 reflection should be correct",
-                -748.901728, a.re(), 0.001);
+                -752.706890, a.re(), 0.001);
         assertEquals("1 1 4 reflection should be correct",
-                -1016.912464, a.im(), 0.001);
+                -1015.246797, a.im(), 0.001);
 
         b.re(-70.4582);
         b.im(-486.142);
@@ -135,9 +138,9 @@ public class CrystalReciprocalSpaceTest {
                 + a.divides(b).toString());
 
         assertEquals("2 1 10 reflection should be correct",
-                -72.774463, a.re(), 0.001);
+                -66.762657, a.re(), 0.001);
         assertEquals("2 1 10 reflection should be correct",
-                -411.406622, a.im(), 0.001);
+                -412.814297, a.im(), 0.001);
     }
 
     @Test
@@ -168,6 +171,8 @@ public class CrystalReciprocalSpaceTest {
         molecularAssembly.setForceField(forceField);
         PDBFilter pdbfile = new PDBFilter(structure, molecularAssembly, forceField, properties);
         pdbfile.readFile();
+        molecularAssembly.finalize(true);
+        PotentialEnergy energy = new PotentialEnergy(molecularAssembly);
 
         List<Atom> atomlist = molecularAssembly.getAtomList();
         Atom atomarray[] = atomlist.toArray(new Atom[atomlist.size()]);
@@ -176,8 +181,8 @@ public class CrystalReciprocalSpaceTest {
         ParallelTeam parallelTeam = new ParallelTeam();
         CrystalReciprocalSpace crs =
                 new CrystalReciprocalSpace(reflectionlist, atomarray,
-                parallelTeam, parallelTeam, false);
-        crs.computeAtomicDensity(refinementdata.fc);
+                parallelTeam, parallelTeam);
+        crs.computeAtomicDensity(refinementdata.fc, refinementdata.fs);
 
         // tests
         ComplexNumber b = new ComplexNumber(-496.999, 431.817);
@@ -188,9 +193,9 @@ public class CrystalReciprocalSpaceTest {
                 + a.divides(b).toString());
 
         assertEquals("1 9 4 reflection should be correct",
-                -496.109236, a.re(), 0.001);
+                -495.900431, a.re(), 0.001);
         assertEquals("1 9 4 reflection should be correct",
-                460.422306, a.im(), 0.001);
+                460.085071, a.im(), 0.001);
 
         b.re(-129.767);
         b.im(-76.9812);
@@ -201,8 +206,8 @@ public class CrystalReciprocalSpaceTest {
                 + a.divides(b).toString());
 
         assertEquals("5 26 8 reflection should be correct",
-                -123.895053, a.re(), 0.001);
+                -123.887605, a.re(), 0.001);
         assertEquals("5 26 8 reflection should be correct",
-                -73.102731, a.im(), 0.001);
+                -73.198759, a.im(), 0.001);
     }
 }
