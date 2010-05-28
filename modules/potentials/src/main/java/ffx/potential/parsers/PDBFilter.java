@@ -2213,9 +2213,11 @@ public final class PDBFilter extends SystemFilter {
                 logger.severe(format("The atom type %s was not found for biotype %s.", bioType.atomType,
                                      bioType.toString()));
             }
-        } else {
-            logger.severe(format("The biotype %s was not found.", bioType.toString()));
         }
+        /*
+        else {
+            logger.severe(format("The biotype %s was not found.", bioType.toString()));
+        } */
         return null;
     }
 
