@@ -141,6 +141,37 @@ public class FiniteDifferenceTest {
         List<Atom> atomlist = molecularAssembly.getAtomList();
         atomarray = atomlist.toArray(new Atom[atomlist.size()]);
 
+        // initialize atomic form factors
+        for (int i = 0; i < atomarray.length; i++) {
+            FormFactor atomff =
+                    new FormFactor(atomarray[i], refinementdata.use_3g, 2.0);
+            atomarray[i].setFormFactorIndex(atomff.ffindex);
+
+            if (atomarray[i].getOccupancy() == 0.0) {
+                atomarray[i].setFormFactorWidth(1.0);
+                continue;
+            }
+
+            double arad = 2.4;
+            double xyz[] = new double[3];
+            xyz[0] = atomarray[i].getX() + arad;
+            xyz[1] = atomarray[i].getY();
+            xyz[2] = atomarray[i].getZ();
+            while (true) {
+                double rho = atomff.rho(xyz);
+                if (rho > 0.1) {
+                    arad += 0.5;
+                } else if (rho > 0.001) {
+                    arad += 0.1;
+                } else {
+                    arad += 0.2;
+                    atomarray[i].setFormFactorWidth(arad);
+                    break;
+                }
+                xyz[0] = atomarray[i].getX() + arad;
+            }
+        }
+
         // set up FFT and run it
         ParallelTeam parallelTeam = new ParallelTeam();
         CrystalReciprocalSpace crs = new CrystalReciprocalSpace(reflectionlist,
