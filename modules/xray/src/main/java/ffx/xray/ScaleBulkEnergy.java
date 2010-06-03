@@ -158,7 +158,7 @@ public class ScaleBulkEnergy implements Optimizable {
             // structure factors
             ComplexNumber fcc = refinementdata.fc(i);
             ComplexNumber fsc = refinementdata.fs(i);
-            ComplexNumber fct = (refinementdata.crs.solventmodel == SolventModel.NONE)
+            ComplexNumber fct = (refinementdata.crs_fs.solventmodel == SolventModel.NONE)
                     ? fcc : fcc.plus(fsc.times(ksebs));
             ComplexNumber kfct = fct.times(kmebm);
 

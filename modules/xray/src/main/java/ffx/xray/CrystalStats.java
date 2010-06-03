@@ -372,18 +372,25 @@ public class CrystalStats {
                 refinementdata.model_b[4],
                 refinementdata.model_b[5],
                 refinementdata.model_b[2]));
-        if (refinementdata.crs.solventmodel != SolventModel.NONE) {
-            switch (refinementdata.crs.solventmodel) {
+        if (refinementdata.crs_fs.solventmodel != SolventModel.NONE) {
+            switch (refinementdata.crs_fs.solventmodel) {
                 case (SolventModel.BINARY):
                     sb.append("  bulk solvent model: binary mask\n");
                     sb.append(String.format("  bulk solvent probe radius: %g shrink radius: %g\n",
                             refinementdata.solvent_a,
                             refinementdata.solvent_b));
                     break;
+                case (SolventModel.POLYNOMIAL):
+                    sb.append("  bulk solvent model: polynomial switch\n");
+                    sb.append(String.format("  bulk solvent a: %g w: %g\n",
+                            refinementdata.solvent_a,
+                            refinementdata.solvent_b));
+                    break;
                 case (SolventModel.GAUSSIAN):
                     sb.append("  bulk solvent model: Gaussian\n");
-                    sb.append(String.format("  bulk solvent A: %g\n",
-                            refinementdata.solvent_a));
+                    sb.append(String.format("  bulk solvent A: %g sd scale: %g\n",
+                            refinementdata.solvent_a,
+                            refinementdata.solvent_b));
                     break;
             }
             sb.append(String.format("  bulk solvent scale: %g  B: %g\n",
