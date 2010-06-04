@@ -78,6 +78,7 @@ public class ModelingShell extends Console implements AlgorithmListener {
     private Rectangle scrollTo = new Rectangle(0, 0, 0, 0);
     private long time;
     private long subTime;
+    public boolean scriptRunning;
     private static final double toSeconds = 1.0e-9;
 
     public ModelingShell(MainPanel m) {
@@ -178,11 +179,6 @@ public class ModelingShell extends Console implements AlgorithmListener {
             ImageIcon icon = new ImageIcon(iconURL);
             frame.setIconImage(icon.getImage());
 
-            JDialog dialog = getRunWaitDialog();
-            dialog.setTitle("Force Field X Script");
-            Box box = (Box) dialog.getContentPane().getComponent(0);
-            JLabel label = (JLabel) box.getComponent(0);
-            label.setText("The script is executing. Please wait.");
             clearOutput();
         }
 
@@ -196,7 +192,7 @@ public class ModelingShell extends Console implements AlgorithmListener {
             after();
         } catch (Exception e) {
             String message = "Error evaluating script.";
-            logger.log(Level.WARNING, message ,e);
+            logger.log(Level.WARNING, message, e);
         }
     }
 
@@ -249,39 +245,111 @@ public class ModelingShell extends Console implements AlgorithmListener {
     }
 
     public void md(int nStep, double timeStep, double printInterval,
-            double saveInterval, double temperature, boolean initVelocities,
-            File dyn) {
+                   double saveInterval, double temperature, boolean initVelocities,
+                   File dyn) {
         if (interrupted || terminatableAlgorithm != null) {
             return;
         }
         FFXSystem active = mainPanel.getHierarchy().getActive();
         if (active != null) {
             MolecularDynamics molecularDynamics = new MolecularDynamics(active,
-                    active.getProperties(), this, Thermostats.BUSSI);
+                                                                        active.getProperties(), this, Thermostats.BUSSI);
             terminatableAlgorithm = molecularDynamics;
             molecularDynamics.dynamic(nStep, timeStep, printInterval,
-                    saveInterval, temperature, initVelocities, dyn);
+                                      saveInterval, temperature, initVelocities, dyn);
             terminatableAlgorithm = null;
         }
     }
 
+    /*
     @Override
-    public void runScript(EventObject evt) {
-        scriptStartup();
-        super.runScript(evt);
+    public void runScript() {
+    runScript(null);
     }
 
     @Override
-    public void runScript() {
-        runScript(null);
+    public void runScript(EventObject evt) {
+    scriptStartup();
+    super.runScript(evt);
+    }
+
+    @Override
+    public void runSelectedScript() {
+    runSelectedScript(null);
     }
 
     @Override
     public void runSelectedScript(EventObject evt) {
-        scriptStartup();
-        super.runSelectedScript(evt);
+    scriptStartup();
+    super.runSelectedScript(evt);
+    } */
+    /**
+     * Return false if user elects to cancel.
+     *
+     * @return The result of the <code>fileSave</code> method.
+     */
+    @Override
+    public boolean askToSaveFile() {
+        File file = (File) getScriptFile();
+        if (file == null || !getDirty()) {
+            return true;
+        }
+        switch (JOptionPane.showConfirmDialog((Component) getFrame(),
+                                              "Save changes to " + file.getName() + "?",
+                                              "Force Field X Shell", JOptionPane.YES_NO_CANCEL_OPTION)) {
+            case JOptionPane.YES_OPTION:
+                return fileSave();
+            case JOptionPane.NO_OPTION:
+                return true;
+            default:
+                return false;
+        }
     }
 
+    /**
+     * Print out the Force Field X promo.
+     */
+    @Override
+    final public void clearOutput() {
+        if (!java.awt.GraphicsEnvironment.isHeadless()) {
+            JTextPane output = getOutputArea();
+            output.setText("");
+            appendOutput(MainPanel.border + MainPanel.title
+                         + MainPanel.aboutString + "\n" + MainPanel.border, getCommandStyle());
+        }
+    }
+
+    /*
+    @Override
+    public void clearOutput(EventObject evt) {
+    clearOutput();
+    }
+
+    @Override
+    public void fileNewWindow() {
+    mainPanel.resetShell();
+    }
+
+    @Override
+    public void fileNewWindow(EventObject evt) {
+    fileNewWindow();
+    }
+
+    @Override
+    public void showAbout() {
+    mainPanel.about();
+    }
+
+    @Override
+    public void showAbout(EventObject evt) {
+    showAbout();
+    }
+
+    @Override
+    public void updateTitle() {
+    JFrame frame = (JFrame) getFrame();
+    frame.setTitle("Force Field X Shell");
+    } */
     private void scriptStartup() {
         clearOutput();
         Object name = getScriptFile();
@@ -295,21 +363,16 @@ public class ModelingShell extends Console implements AlgorithmListener {
         }
     }
 
-    @Override
-    public void runSelectedScript() {
-        runSelectedScript(null);
-    }
-
     public void before() {
         interrupted = false;
         terminatableAlgorithm = null;
         time = System.nanoTime();
         subTime = time;
         if (!headless) {
-        outputSize = getOutputArea().getVisibleRect();
-        scrollTo.x = 0;
-        scrollTo.height = outputSize.height;
-        scrollTo.width = outputSize.width;
+            outputSize = getOutputArea().getVisibleRect();
+            scrollTo.x = 0;
+            scrollTo.height = outputSize.height;
+            scrollTo.width = outputSize.width;
         }
     }
 
@@ -383,96 +446,28 @@ public class ModelingShell extends Console implements AlgorithmListener {
             });
         }
     }
-
     /**
      * Confirm whether to interrupt the running thread.
      * @param evt
      */
-    @Override
+    /* @Override
     public void confirmRunInterrupt(EventObject evt) {
-        int rc = JOptionPane.showConfirmDialog((Component) getFrame(), "Attempt to interrupt script?",
-                "Force Field X Shell", JOptionPane.YES_NO_OPTION);
-        if (rc == JOptionPane.YES_OPTION) {
-            interrupted = true;
-            if (terminatableAlgorithm != null) {
-                terminatableAlgorithm.terminate();
-            }
-            Thread thread = getRunThread();
-            if (thread != null) {
-                thread.interrupt();
-            }
-        }
+    int rc = JOptionPane.showConfirmDialog((Component) getFrame(), "Attempt to interrupt script?",
+    "Force Field X Shell", JOptionPane.YES_NO_OPTION);
+    if (rc == JOptionPane.YES_OPTION) {
+    interrupted = true;
+    if (terminatableAlgorithm != null) {
+    terminatableAlgorithm.terminate();
     }
-
-    /**
-     * Return false if user elects to cancel.
-     *
-     * @return The result of the <code>fileSave</code> method.
-     */
-    @Override
-    public boolean askToSaveFile() {
-        File file = (File) getScriptFile();
-        if (file == null || !getDirty()) {
-            return true;
-        }
-        switch (JOptionPane.showConfirmDialog((Component) getFrame(),
-                "Save changes to " + file.getName() + "?",
-                "Force Field X Shell", JOptionPane.YES_NO_CANCEL_OPTION)) {
-            case JOptionPane.YES_OPTION:
-                return fileSave();
-            case JOptionPane.NO_OPTION:
-                return true;
-            default:
-                return false;
-        }
+    Thread thread = getRunThread();
+    if (thread != null) {
+    thread.interrupt();
     }
-
-    /**
-     * Print out the Force Field X promo.
-     */
-    @Override
-    public void clearOutput() {
-        if (!java.awt.GraphicsEnvironment.isHeadless()) {
-            JTextPane output = getOutputArea();
-            output.setText("");
-            appendOutput(MainPanel.border + MainPanel.title
-                    + MainPanel.aboutString + "\n" + MainPanel.border, getCommandStyle());
-        }
     }
-
-    @Override
-    public void clearOutput(EventObject evt) {
-        clearOutput();
-    }
-
-    @Override
-    public void fileNewWindow() {
-        mainPanel.resetShell();
-    }
-
-    @Override
-    public void fileNewWindow(EventObject evt) {
-        fileNewWindow();
-    }
-
-    @Override
-    public void showAbout() {
-        mainPanel.about();
-    }
-
-    @Override
-    public void showAbout(EventObject evt) {
-        showAbout();
-    }
-
-    @Override
-    public void updateTitle() {
-        JFrame frame = (JFrame) getFrame();
-        frame.setTitle("Force Field X Shell");
-    }
+    } */
     private static final Preferences preferences = Preferences.userNodeForPackage(ModelingShell.class);
 
-    public void loadPrefs() {
+    final public void loadPrefs() {
     }
 
     public void savePrefs() {

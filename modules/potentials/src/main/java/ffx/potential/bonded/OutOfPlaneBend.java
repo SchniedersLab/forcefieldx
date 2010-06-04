@@ -244,7 +244,7 @@ public class OutOfPlaneBend extends BondedTerm implements
      * Log details for this Out-of-Plane Bend energy term.
      */
     public void log() {
-        logger.info(String.format("%s %6d-%s %6d-%s %6.4f %10.4f",
+        logger.info(String.format(" %s %6d-%s %6d-%s %6.4f %10.4f",
                 "Out-of-Plane Bend", atoms[1].getXYZIndex(), atoms[1].getAtomType().name, atoms[3].getXYZIndex(), atoms[3].getAtomType().name, value, energy));
     }
 

@@ -112,7 +112,7 @@ public class UreyBradley extends BondedTerm implements Comparable<UreyBradley> {
      * Log details for this Angle energy term.
      */
     public void log() {
-        logger.info(String.format("%s %6d-%s %6d-%s %6.4f  %6.4f  %10.4f",
+        logger.info(String.format(" %s %6d-%s %6d-%s %6.4f  %6.4f  %10.4f",
                 "Urey-Bradley", atoms[0].getXYZIndex(), atoms[0].getAtomType().name,
                 atoms[2].getXYZIndex(), atoms[2].getAtomType().name, ureyBradleyType.distance, value,
                 energy));

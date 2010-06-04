@@ -20,6 +20,7 @@
  */
 package ffx.potential.bonded;
 
+import static java.lang.String.format;
 import static java.lang.Math.*;
 
 import static ffx.numerics.VectorMath.*;
@@ -110,23 +111,19 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
      */
     public Angle(Bond b1, Bond b2) {
         super();
-        bonds = new Bond[2];
-        bonds[0] = b1;
-        bonds[1] = b2;
-        b1.setAngleWith(b2);
-        b2.setAngleWith(b1);
         Atom a2 = b1.getCommonAtom(b2);
         Atom a1 = b1.get1_2(a2);
         Atom a3 = b2.get1_2(a2);
+        b1.setAngleWith(b2);
+        b2.setAngleWith(b1);
         atoms = new Atom[3];
+        bonds = new Bond[2];
         atoms[1] = a2;
-        if (a1.xyzIndex < a3.xyzIndex) {
-            atoms[0] = a1;
-            atoms[2] = a3;
-        } else {
-            atoms[0] = a3;
-            atoms[2] = a1;
-        }
+        atoms[0] = a1;
+        atoms[2] = a3;
+        bonds[0] = b1;
+        bonds[1] = b2;
+        
         a1.setAngle(this);
         a2.setAngle(this);
         a3.setAngle(this);
@@ -391,7 +388,7 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
         switch (angleMode) {
             case HARMONIC:
                 logger.info(String.format(
-                        "%s %6d-%s %6d-%s %6d-%s %6.4f  %6.4f  %10.4f", "Angle",
+                        " %8s %6d-%s %6d-%s %6d-%s %7.4f  %7.4f  %10.4f", "Angle",
                         atoms[0].getXYZIndex(), atoms[0].getAtomType().name,
                         atoms[1].getXYZIndex(), atoms[1].getAtomType().name,
                         atoms[2].getXYZIndex(), atoms[2].getAtomType().name,
@@ -399,7 +396,7 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
                 break;
             case IN_PLANE:
                 logger.info(String.format(
-                        "%s %6d-%s %6d-%s %6d-%s %6.4f  %6.4f  %10.4f", "Angle-IP",
+                        " %8s %6d-%s %6d-%s %6d-%s %7.4f  %7.4f  %10.4f", "Angle-IP",
                         atoms[0].getXYZIndex(), atoms[0].getAtomType().name,
                         atoms[1].getXYZIndex(), atoms[1].getAtomType().name,
                         atoms[2].getXYZIndex(), atoms[2].getAtomType().name,

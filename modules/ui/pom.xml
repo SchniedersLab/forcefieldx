@@ -195,7 +195,8 @@
         <dependency>
             <groupId>org.codehaus.groovy</groupId>
             <artifactId>groovy-all</artifactId>
-            <version>1.7.0</version>
+            <version>1.8.0</version>
+            <classifier>beta-1-SNAPSHOT</classifier>
         </dependency>
         <dependency>
             <groupId>macosx</groupId>
@@ -207,7 +208,7 @@
             <groupId>javax.help</groupId>
             <artifactId>javahelp</artifactId>
             <type>jar</type>
-            <version>2.0.02</version>
+            <version>2.0.05</version>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>
@@ -219,7 +220,7 @@
             <groupId>commons-lang</groupId>
             <artifactId>commons-lang</artifactId>
             <type>jar</type>
-            <version>2.4</version>
+            <version>2.5</version>
         </dependency>
         <dependency>
             <groupId>commons-configuration</groupId>

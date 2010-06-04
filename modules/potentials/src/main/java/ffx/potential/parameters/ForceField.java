@@ -388,7 +388,7 @@ public class ForceField {
             type.print();
         }
         if (treeMap.containsKey(type.key)) {
-            logger.fine(" A force field entry of type " + type.forceFieldType
+            logger.warning(" A force field entry of type " + type.forceFieldType
                     + " already exists with the key: " + type.key
                     + "\n The (discarded) old entry: " + treeMap.get(type.key).
                     toString() + "\n The new entry: " + type.toString());
@@ -413,10 +413,6 @@ public class ForceField {
         return bioTypes.get(key);
     }
 
-    /*
-    public ChargeType getChargeType(String key) {
-    return chargeTypes.get(key);
-    } */
     public MultipoleType getMultipoleType(String key) {
         return multipoleTypes.get(key);
     }

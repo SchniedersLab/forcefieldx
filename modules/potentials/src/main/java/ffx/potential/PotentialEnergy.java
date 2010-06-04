@@ -31,11 +31,6 @@ import java.util.logging.Logger;
 
 import edu.rit.pj.ParallelTeam;
 
-import org.apache.commons.math.FunctionEvaluationException;
-import org.apache.commons.math.analysis.DifferentiableMultivariateRealFunction;
-import org.apache.commons.math.analysis.MultivariateRealFunction;
-import org.apache.commons.math.analysis.MultivariateVectorialFunction;
-
 import ffx.crystal.Crystal;
 import ffx.crystal.ReplicatesCrystal;
 import ffx.numerics.Optimizable;
@@ -63,7 +58,7 @@ import ffx.potential.parameters.ForceField.ForceFieldString;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-public class PotentialEnergy implements Optimizable, DifferentiableMultivariateRealFunction {
+public class PotentialEnergy implements Optimizable {
 
     private static final Logger logger = Logger.getLogger(PotentialEnergy.class.getName());
     private final Atom[] atoms;
@@ -121,8 +116,6 @@ public class PotentialEnergy implements Optimizable, DifferentiableMultivariateR
     protected long torsionTorsionTime, vanDerWaalsTime, electrostaticTime;
     protected long totalTime;
     protected double[] optimizationScaling = null;
-    private final EnergyGradient energyGradient;
-    private final EnergyPartialDerivative energyPartialDerivative;
     private static final double toSeconds = 0.000000001;
 
     public PotentialEnergy(MolecularAssembly molecularAssembly) {
@@ -320,8 +313,6 @@ public class PotentialEnergy implements Optimizable, DifferentiableMultivariateR
             particleMeshEwald = null;
         }
 
-        energyGradient = new EnergyGradient(this);
-        energyPartialDerivative = new EnergyPartialDerivative(energyGradient);
         molecularAssembly.setPotential(this);
 
     }
@@ -639,94 +630,4 @@ public class PotentialEnergy implements Optimizable, DifferentiableMultivariateR
         }
     }
 
-    @Override
-    public MultivariateRealFunction partialDerivative(int k) {
-        energyPartialDerivative.setPartialDerivative(k);
-        return energyPartialDerivative;
-    }
-
-    @Override
-    public MultivariateVectorialFunction gradient() {
-        return energyGradient;
-    }
-
-    @Override
-    public double value(double[] coords) throws FunctionEvaluationException, IllegalArgumentException {
-        /**
-         * Unscale the coordinates.
-         */
-        if (optimizationScaling != null) {
-            int len = coords.length;
-            for (int i = 0; i < len; i++) {
-                coords[i] /= optimizationScaling[i];
-            }
-        }
-        setCoordinates(coords);
-        if (optimizationScaling != null) {
-            int len = coords.length;
-            for (int i = 0; i < len; i++) {
-                coords[i] *= optimizationScaling[i];
-            }
-        }
-        return energy(false, false);
-    }
-
-    private class EnergyPartialDerivative implements MultivariateRealFunction {
-
-        private final EnergyGradient energyGradient;
-        private int k = 0;
-
-        public EnergyPartialDerivative(EnergyGradient energyGradient) {
-            this.energyGradient = energyGradient;
-        }
-
-        public void setPartialDerivative(int k) {
-            this.k = k;
-        }
-
-        @Override
-        public double value(double[] doubles) throws FunctionEvaluationException, IllegalArgumentException {
-            logger.info("EnergyPartialDerivative value called.");
-            double gradients[] = energyGradient.value(doubles);
-            return gradients[k];
-        }
-    }
-
-    private class EnergyGradient implements MultivariateVectorialFunction {
-
-        private final PotentialEnergy potentialEnergy;
-        private final double gradients[];
-
-        public EnergyGradient(PotentialEnergy potentialEnergy) {
-            this.potentialEnergy = potentialEnergy;
-            gradients = new double[potentialEnergy.nAtoms * 3];
-        }
-
-        @Override
-        public double[] value(double[] coords) throws FunctionEvaluationException, IllegalArgumentException {
-            /**
-             * Unscale the coordinates.
-             */
-            if (optimizationScaling != null) {
-                int len = coords.length;
-                for (int i = 0; i < len; i++) {
-                    coords[i] /= optimizationScaling[i];
-                }
-            }
-            potentialEnergy.setCoordinates(coords);
-            potentialEnergy.energy(true, false);
-            potentialEnergy.getGradients(gradients);
-            /**
-             * Scale the coordinates and gradients.
-             */
-            if (optimizationScaling != null) {
-                int len = coords.length;
-                for (int i = 0; i < len; i++) {
-                    coords[i] *= optimizationScaling[i];
-                    gradients[i] /= optimizationScaling[i];
-                }
-            }
-            return gradients;
-        }
-    }
 }

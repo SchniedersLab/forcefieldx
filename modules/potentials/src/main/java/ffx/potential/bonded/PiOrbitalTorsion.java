@@ -274,7 +274,7 @@ public class PiOrbitalTorsion extends BondedTerm {
      * Log details for this Pi-Orbital Torsion energy term.
      */
     public void log() {
-        logger.info(String.format("%s %6d-%s %6d-%s %10.4f %10.4f",
+        logger.info(String.format(" %s %6d-%s %6d-%s %10.4f %10.4f",
                 "Pi-Orbital Torsion", atoms[2].getXYZIndex(), atoms[2].getAtomType().name,
                 atoms[3].getXYZIndex(), atoms[3].getAtomType().name, value, energy));
     }

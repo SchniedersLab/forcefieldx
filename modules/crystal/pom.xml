@@ -27,6 +27,20 @@
             </roles>
             <timezone>-7</timezone>
         </developer>
+        <developer>
+            <id>schnied</id>
+            <name>Michael J. Schnieders</name>
+            <email>schnied@stanford.edu</email>
+            <url>http://www.stanford.edu/~schnied</url>
+            <organization>Postdoc, Pande and Brunger Labs, Stanford University
+            </organization>
+            <organizationUrl>http://ffx.kenai.com</organizationUrl>
+            <roles>
+                <role>Director of Force Field X</role>
+            </roles>
+            <timezone>-7</timezone>
+        </developer>
+
     </developers>
 
     <reporting>
@@ -71,7 +85,7 @@
             <groupId>commons-math</groupId>
             <artifactId>commons-math</artifactId>
             <type>jar</type>
-            <version>2.0</version>
+            <version>2.1</version>
         </dependency>
     </dependencies>
 

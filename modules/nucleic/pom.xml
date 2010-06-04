@@ -39,9 +39,6 @@
         </plugins>
     </reporting>
 
-    <dependencies>
-    </dependencies>
-
     <profiles>
         <profile>
             <id>Mac OS X</id>

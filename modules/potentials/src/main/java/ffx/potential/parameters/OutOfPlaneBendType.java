@@ -41,7 +41,7 @@ public final class OutOfPlaneBendType extends BaseType implements Comparator<Str
      */
     public final int atomClasses[];
     /**
-     * Force constant (Kcal/mol).
+     * Force constant (Kcal/mol/Angstrom).
      */
     public final double forceConstant;
 

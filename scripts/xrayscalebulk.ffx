@@ -19,3 +19,7 @@ structure.printstats();
 if (outputfile != null){
   structure.writedata(outputfile);
 }
+
+structure.timings();
+
+

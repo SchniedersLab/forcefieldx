@@ -206,10 +206,8 @@ public abstract class MSGroup extends MSNode {
             StretchBendType stretchBendType = forceField.getStretchBendType(angle.getAngleType().getKey());
             if (stretchBendType != null) {
                 StretchBend newStretchBend = new StretchBend(angle);
-                if (stretchBendType.forceConstants[newStretchBend.nh] != 0.0) {
-                    newStretchBend.stretchBendType = stretchBendType;
-                    newStretchBendNode.insert(newStretchBend, 0);
-                }
+                newStretchBend.setStretchBendType(stretchBendType);
+                newStretchBendNode.insert(newStretchBend, 0);
             }
         }
         newStretchBendNode.setName("Stretch-Bends (" + newStretchBendNode.getChildCount() + ")");
@@ -242,7 +240,7 @@ public abstract class MSGroup extends MSNode {
             if (centralAtom.isTrigonal()) {
                 Atom atom4 = angle.getTrigonalAtom();
                 String key = atom4.getAtomType().atomClass + " " + centralAtom.getAtomType().atomClass
-                        + " 0 0";
+                             + " 0 0";
                 OutOfPlaneBendType outOfPlaneBendType = forceField.getOutOfPlaneBendType(key);
                 if (outOfPlaneBendType != null) {
                     angle.setAngleMode(AngleMode.IN_PLANE, atom4);
@@ -280,14 +278,14 @@ public abstract class MSGroup extends MSNode {
                                 TorsionType torsionType = forceField.getTorsionType(key);
                                 if (torsionType != null) {
                                     Torsion torsion = new Torsion(bond1,
-                                            middleBond, bond3);
+                                                                  middleBond, bond3);
                                     torsion.torsionType = torsionType;
                                     newTorsionNode.add(torsion);
                                     torsions.add(torsion);
                                 } else {
                                     logger.severe(format("No TorsionType for key: %s\n%s\n%s\n%s\n%s\n",
-                                            key,toString(),bond1.toString(),
-                                            middleBond.toString(),bond3.toString()));
+                                                         key, toString(), bond1.toString(),
+                                                         middleBond.toString(), bond3.toString()));
                                 }
                             }
                         }
@@ -360,18 +358,18 @@ public abstract class MSGroup extends MSNode {
                                 for (Torsion t : torsions) {
                                     if (!reversed) {
                                         if (t.compare(atoms[0], atoms[1],
-                                                atoms[2], atoms[3])) {
+                                                      atoms[2], atoms[3])) {
                                             torsionTorsion.torsions[0] = t;
                                         } else if (t.compare(atoms[1],
-                                                atoms[2], atoms[3], atoms[4])) {
+                                                                 atoms[2], atoms[3], atoms[4])) {
                                             torsionTorsion.torsions[1] = t;
                                         }
                                     } else {
                                         if (t.compare(atoms[4], atoms[3],
-                                                atoms[2], atoms[1])) {
+                                                      atoms[2], atoms[1])) {
                                             torsionTorsion.torsions[0] = t;
                                         } else if (t.compare(atoms[3],
-                                                atoms[2], atoms[1], atoms[0])) {
+                                                                 atoms[2], atoms[1], atoms[0])) {
                                             torsionTorsion.torsions[1] = t;
                                         }
                                     }
@@ -517,10 +515,8 @@ public abstract class MSGroup extends MSNode {
             StretchBendType stretchBendType = ff.getStretchBendType(angle.getAngleType().getKey());
             if (stretchBendType != null) {
                 StretchBend sb = new StretchBend(angle);
-                if (stretchBendType.forceConstants[sb.nh] != 0.0) {
-                    sb.setStretchBendType(stretchBendType);
-                    newStretchBendNode.insert(sb, 0);
-                }
+                sb.setStretchBendType(stretchBendType);
+                newStretchBendNode.insert(sb, 0);
             }
             String key = angle.getAngleType().getKey();
             UreyBradleyType ureyBradleyType = ff.getUreyBradleyType(key);
@@ -537,7 +533,7 @@ public abstract class MSGroup extends MSNode {
                 if (outOfPlaneBendType != null) {
                     angle.setAngleMode(AngleMode.IN_PLANE, atom4);
                     OutOfPlaneBend outOfPlaneBend = new OutOfPlaneBend(angle,
-                            atom4);
+                                                                       atom4);
                     outOfPlaneBend.outOfPlaneBendType = outOfPlaneBendType;
                     newOutOfPlaneNode.insert(outOfPlaneBend, 0);
                 }
@@ -566,13 +562,13 @@ public abstract class MSGroup extends MSNode {
                             TorsionType torsionType = ff.getTorsionType(key);
                             if (torsionType != null) {
                                 Torsion torsion = new Torsion(bond1, bond,
-                                        bond3);
+                                                              bond3);
                                 torsion.torsionType = torsionType;
                                 torsions.add(torsion);
                                 newTorsionNode.add(torsion);
                             } else {
-                                    logger.severe(format("No TorsionType for key: %s\n%s\n%s\n%s\n%s\n",
-                                            key,toString(),bond1.toString(),bond1.toString(),bond3.toString()));
+                                logger.severe(format("No TorsionType for key: %s\n%s\n%s\n%s\n%s\n",
+                                                     key, toString(), bond1.toString(), bond1.toString(), bond3.toString()));
                             }
                         }
                     }
@@ -632,18 +628,18 @@ public abstract class MSGroup extends MSNode {
                                 for (Torsion t : torsions) {
                                     if (!reversed) {
                                         if (t.compare(atoms[0], atoms[1],
-                                                atoms[2], atoms[3])) {
+                                                      atoms[2], atoms[3])) {
                                             torsionTorsion.torsions[0] = t;
                                         } else if (t.compare(atoms[1],
-                                                atoms[2], atoms[3], atoms[4])) {
+                                                                 atoms[2], atoms[3], atoms[4])) {
                                             torsionTorsion.torsions[1] = t;
                                         }
                                     } else {
                                         if (t.compare(atoms[4], atoms[3],
-                                                atoms[2], atoms[1])) {
+                                                      atoms[2], atoms[1])) {
                                             torsionTorsion.torsions[0] = t;
                                         } else if (t.compare(atoms[3],
-                                                atoms[2], atoms[1], atoms[0])) {
+                                                                 atoms[2], atoms[1], atoms[0])) {
                                             torsionTorsion.torsions[1] = t;
                                         }
                                     }
@@ -657,8 +653,8 @@ public abstract class MSGroup extends MSNode {
         }
         newTorsionTorsionNode.setName("Torsion-Torsions (" + newTorsionTorsionNode.getChildCount() + ")");
         Joint j = new Joint(group1, group2, newBondNode, newAngleNode,
-                newStretchBendNode, newUreyBradleyNode, newOutOfPlaneNode,
-                newTorsionNode, newPiOrbitalTorsionNode, newTorsionTorsionNode);
+                            newStretchBendNode, newUreyBradleyNode, newOutOfPlaneNode,
+                            newTorsionNode, newPiOrbitalTorsionNode, newTorsionTorsionNode);
         return j;
     }
 
@@ -971,7 +967,7 @@ public abstract class MSGroup extends MSNode {
 
     @Override
     public void setColor(RendererCache.ColorModel newColorModel, Color3f color,
-            Material mat) {
+                         Material mat) {
         if (newColorModel == RendererCache.ColorModel.MOLECULE && (color == null || mat == null)) {
             return;
         }
@@ -1037,7 +1033,7 @@ public abstract class MSGroup extends MSNode {
 
     @Override
     public void setView(RendererCache.ViewModel newViewModel,
-            List<BranchGroup> newShapes) {
+                        List<BranchGroup> newShapes) {
         atomNode.setView(newViewModel, newShapes);
         bondNode.setView(newViewModel, newShapes);
     }

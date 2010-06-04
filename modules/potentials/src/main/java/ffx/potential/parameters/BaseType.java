@@ -53,7 +53,8 @@ public abstract class BaseType {
         } else {
             StringBuilder keyBuffer = new StringBuilder(Integer.toString(keys[0]));
             for (int i = 1; i < keys.length; i++) {
-                keyBuffer.append(" " + keys[i]);
+                keyBuffer.append(" ");
+                keyBuffer.append(keys[i]);
             }
             key = keyBuffer.toString();
         }
@@ -89,8 +90,8 @@ public abstract class BaseType {
      * @since 1.0
      */
     public void log() {
-        if (logger.isLoggable(Level.FINE)) {
-            logger.fine(toString());
+        if (logger.isLoggable(Level.INFO)) {
+            logger.info(toString());
         }
     }
 

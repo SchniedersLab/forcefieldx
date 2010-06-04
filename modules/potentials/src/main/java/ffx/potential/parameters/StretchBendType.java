@@ -35,7 +35,7 @@ import java.util.Comparator;
 public final class StretchBendType extends BaseType implements Comparator<String> {
 
     /**
-     * Atom class for this out-of-plane angle bending type.
+     * Atom class for this stretch-bend type.
      */
     public final int atomClasses[];
     /**
@@ -52,7 +52,25 @@ public final class StretchBendType extends BaseType implements Comparator<String
      *            double[]
      */
     public StretchBendType(int atomClasses[], double forceConstants[]) {
-        super(ForceField.ForceFieldType.STRBND, sortKey(atomClasses));
+        /**
+         * Pass the key from sorted classes to the super constructor.
+         */
+        super(ForceField.ForceFieldType.STRBND, sortKey(Arrays.copyOf(atomClasses, 3)));
+
+        /**
+         * Sort the atom classes and force constants in tandem.
+         */
+        if (atomClasses[0] > atomClasses[2]) {
+            int temp = atomClasses[0];
+            double f = forceConstants[0];
+
+            atomClasses[0] = atomClasses[2];
+            forceConstants[0] = forceConstants[1];
+
+            atomClasses[2] = temp;
+            forceConstants[1] = f;
+        }
+
         this.atomClasses = atomClasses;
         this.forceConstants = forceConstants;
     }
@@ -72,6 +90,7 @@ public final class StretchBendType extends BaseType implements Comparator<String
             int temp = c[0];
             c[0] = c[2];
             c[2] = temp;
+
         }
         String key = c[0] + " " + c[1] + " " + c[2];
         return key;

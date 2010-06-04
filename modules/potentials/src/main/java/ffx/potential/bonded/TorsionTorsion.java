@@ -284,10 +284,10 @@ public class TorsionTorsion extends BondedTerm {
     }
 
     /*
-     * Log details for this Angle energy term.
+     * Log details for this Torsion-Torsion energy term.
      */
     public void log() {
-        logger.info(String.format("%s %6d-%s %6d-%s %6d-%s %6d-%s %10.4f",
+        logger.info(String.format(" %s %6d-%s %6d-%s %6d-%s %6d-%s %10.4f",
                 "Torsional-Torsion", atoms[0].getXYZIndex(), atoms[0].getAtomType().name, atoms[1].getXYZIndex(),
                 atoms[1].getAtomType().name, atoms[2].getXYZIndex(), atoms[2].getAtomType().name,
                 atoms[3].getXYZIndex(), atoms[3].getAtomType().name, energy));
