@@ -21,10 +21,8 @@
 package ffx.xray;
 
 import ffx.numerics.Optimizable;
-import ffx.potential.PotentialEnergy;
 import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.MolecularAssembly;
-import ffx.xray.CrystalReciprocalSpace.SolventModel;
+import ffx.xray.RefinementEnergy.RefinementMode;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -35,91 +33,93 @@ import java.util.logging.Logger;
  *
  * @since 1.0
  */
-public class RefinementEnergy implements Optimizable {
+public class XRayEnergy implements Optimizable {
 
-    private static final Logger logger = Logger.getLogger(RefinementEnergy.class.getName());
-
-    public enum RefinementMode {
-
-        COORDINATES, BFACTORS, COORDINATES_AND_BFACTORS
-    }
-    private final MolecularAssembly molecularAssembly;
+    private static final Logger logger = Logger.getLogger(XRayEnergy.class.getName());
     private final XRayStructure xraystructure;
     private final SigmaAMinimize sigmaaminimize;
     private final CrystalReciprocalSpace crs_fc;
     private final CrystalReciprocalSpace crs_fs;
     private final RefinementData refinementdata;
-    private final Atom atomArray[];
-    private PotentialEnergy potentialEnergy;
+    private final Atom atomarray[];
+    private final int nAtoms;
     private RefinementMode refinementMode;
-    private double weight = 1.0;
+    protected double[] optimizationScaling = null;
 
-    public RefinementEnergy(MolecularAssembly molecularAssembly,
-            XRayStructure xraystructure) {
-        this.molecularAssembly = molecularAssembly;
+    public XRayEnergy(XRayStructure xraystructure, RefinementMode refinementmode) {
         this.xraystructure = xraystructure;
         this.refinementdata = xraystructure.refinementdata;
         this.crs_fc = refinementdata.crs_fc;
         this.crs_fs = refinementdata.crs_fs;
         this.sigmaaminimize = xraystructure.sigmaaminimize;
-        this.refinementMode = RefinementMode.COORDINATES;
-        this.atomArray = molecularAssembly.getAtomArray();
-        potentialEnergy = new PotentialEnergy(molecularAssembly);
+        this.refinementMode = refinementmode;
+        this.atomarray = xraystructure.atomarray;
+        this.nAtoms = atomarray.length;
     }
 
     @Override
     public double energyAndGradient(double[] x, double[] g) {
         double e = 0.0;
+        int natoms = atomarray.length;
         switch (refinementMode) {
             case COORDINATES:
-            case BFACTORS:
-                // Compute the energy and gradient for the chemical term.
-                e = potentialEnergy.energyAndGradient(x, g);
+                for (int i = 0; i < natoms; i++) {
+                    atomarray[i].setXYZGradient(0.0, 0.0, 0.0);
+                }
+                // update coordinates
+                crs_fc.setCoordinates(x);
+                crs_fs.setCoordinates(x);
+
                 // compute new structure factors
                 crs_fc.computeDensity(refinementdata.fc);
                 crs_fs.computeDensity(refinementdata.fs);
-                // update sigmaA
-                // sigmaaminimize.minimize(7, 1e-1);
-                // e += refinementdata.llkr;
+
                 // compute crystal likelihood
-                e += sigmaaminimize.calculateLikelihood();
+                e = sigmaaminimize.calculateLikelihood();
+
                 // compute the crystal gradients (requires inverse FFT)
                 crs_fc.computeAtomicGradients(refinementdata.dfc,
                         refinementdata.freer, refinementdata.rfreeflag);
-                if (crs_fs.solventmodel == SolventModel.GAUSSIAN
-                        || crs_fs.solventmodel == SolventModel.POLYNOMIAL) {
-                    crs_fs.computeAtomicGradients(refinementdata.dfs,
-                            refinementdata.freer, refinementdata.rfreeflag);
-                }
-                return e;
+                crs_fs.computeAtomicGradients(refinementdata.dfs,
+                        refinementdata.freer, refinementdata.rfreeflag);
+                getXYZGradients(g);
+
+                break;
+            case BFACTORS:
+                break;
+            case COORDINATES_AND_BFACTORS:
+                break;
             default:
-                String message = "Joint coordinate + bfactor refinement is not implemented.";
+                String message = "refinement mode not implemented.";
                 logger.log(Level.SEVERE, message);
+                break;
         }
         return e;
     }
 
+    public void getXYZGradients(double g[]) {
+        assert (g != null && g.length == nAtoms * 3);
+        double grad[] = new double[3];
+        int index = 0;
+        for (Atom a : atomarray) {
+            a.getXYZGradient(grad);
+            g[index++] = grad[0];
+            g[index++] = grad[1];
+            g[index++] = grad[2];
+        }
+    }
+
     @Override
     public void setOptimizationScaling(double[] scaling) {
-        switch (refinementMode) {
-            case COORDINATES:
-                potentialEnergy.setOptimizationScaling(scaling);
-                break;
-            default:
-                String message = "Only coordinate refinement is implemented.";
-                logger.log(Level.SEVERE, message);
+        if (scaling != null && scaling.length == nAtoms * 3) {
+            optimizationScaling = scaling;
+        } else {
+            optimizationScaling = null;
         }
     }
 
     @Override
     public double[] getOptimizationScaling() {
-        switch (refinementMode) {
-            case COORDINATES:
-                return potentialEnergy.getOptimizationScaling();
-            default:
-                String message = "Only coordinate refinement is implemented.";
-                logger.log(Level.SEVERE, message);
-        }
-        return null;
+        return optimizationScaling;
     }
 }

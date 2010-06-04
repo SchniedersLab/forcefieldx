@@ -51,6 +51,7 @@ public class XRayStructure {
     final CrystalReciprocalSpace crs_fs;
     final int solventmodel;
     List<Atom> atomlist;
+    Atom atomarray[];
     ScaleBulkMinimize scalebulkminimize;
     SigmaAMinimize sigmaaminimize;
     SplineMinimize splineminimize;
@@ -144,7 +145,7 @@ public class XRayStructure {
                 }
             }
         }
-        Atom atomarray[] = atomlist.toArray(new Atom[atomlist.size()]);
+        atomarray = atomlist.toArray(new Atom[atomlist.size()]);
 
         // initialize atomic form factors
         for (int i = 0; i < atomarray.length; i++) {
@@ -158,12 +159,24 @@ public class XRayStructure {
             }
 
             double arad = 2.4;
+            // double arad = 2.0;
             double xyz[] = new double[3];
             xyz[0] = atomarray[i].getX() + arad;
             xyz[1] = atomarray[i].getY();
             xyz[2] = atomarray[i].getZ();
             while (true) {
                 double rho = atomff.rho(xyz);
+                /*
+                if (rho > 1.0) {
+                arad += 0.5;
+                } else if (rho > 0.01) {
+                arad += 0.1;
+                } else {
+                arad += 0.2;
+                atomarray[i].setFormFactorWidth(arad);
+                break;
+                }
+                 */
                 if (rho > 0.1) {
                     arad += 0.5;
                 } else if (rho > 0.001) {
@@ -191,39 +204,22 @@ public class XRayStructure {
         crystalstats = new CrystalStats(reflectionlist, refinementdata);
     }
 
-    public void setSolventA(double a) {
-        if (solventmodel != SolventModel.NONE) {
-            crs_fs.setSolventA(a);
-            refinementdata.solvent_a = a;
+    public void printscaleandr() {
+        if (!scaled) {
+            scalebulkfit();
         }
+        crystalstats.print_scalestats();
+        crystalstats.print_rstats();
     }
 
-    public void setSolventB(double b) {
-        if (solventmodel != SolventModel.NONE) {
-            crs_fs.setSolventB(b);
-            refinementdata.solvent_b = b;
+    public void printstats() {
+        if (!scaled) {
+            scalebulkfit();
         }
-    }
-
-    public void timings() {
-        logger.info("performing 10 Fc calculations for timing...");
-        for (int i = 0; i < 10; i++) {
-            crs_fc.computeDensity(refinementdata.fc);
-        }
-        logger.info("performing 10 Fs calculations for timing...");
-        for (int i = 0; i < 10; i++) {
-            crs_fs.computeDensity(refinementdata.fs);
-        }
-    }
-
-    public void writeSolventMask(String filename) {
-        // CNSMapWriter mapwriter = new CNSMapWriter((int) crs_fs.getXDim(),
-        if (solventmodel != SolventModel.NONE) {
-            CCP4MapWriter mapwriter = new CCP4MapWriter((int) crs_fs.getXDim(),
-                    (int) crs_fs.getYDim(), (int) crs_fs.getZDim(),
-                    crystal, filename);
-            mapwriter.write(crs_fs.solventGrid);
-        }
+        crystalstats.print_scalestats();
+        crystalstats.print_hklstats();
+        crystalstats.print_snstats();
+        crystalstats.print_rstats();
     }
 
     public void scalebulkfit() {
@@ -263,22 +259,39 @@ public class XRayStructure {
         scaled = true;
     }
 
-    public void printscaleandr() {
-        if (!scaled) {
-            scalebulkfit();
+    public void setSolventA(double a) {
+        if (solventmodel != SolventModel.NONE) {
+            crs_fs.setSolventA(a);
+            refinementdata.solvent_a = a;
         }
-        crystalstats.print_scalestats();
-        crystalstats.print_rstats();
     }
 
-    public void printstats() {
-        if (!scaled) {
-            scalebulkfit();
+    public void setSolventB(double b) {
+        if (solventmodel != SolventModel.NONE) {
+            crs_fs.setSolventB(b);
+            refinementdata.solvent_b = b;
         }
-        crystalstats.print_scalestats();
-        crystalstats.print_hklstats();
-        crystalstats.print_snstats();
-        crystalstats.print_rstats();
+    }
+
+    public void timings() {
+        logger.info("performing 10 Fc calculations for timing...");
+        for (int i = 0; i < 10; i++) {
+            crs_fc.computeDensity(refinementdata.fc);
+        }
+        logger.info("performing 10 Fs calculations for timing...");
+        for (int i = 0; i < 10; i++) {
+            crs_fs.computeDensity(refinementdata.fs);
+        }
+        logger.info("performing 10 Fc gradient calculations for timing...");
+        for (int i = 0; i < 10; i++) {
+            crs_fc.computeAtomicGradients(refinementdata.dfc,
+                    refinementdata.freer, refinementdata.rfreeflag);
+        }
+        logger.info("performing 10 Fs gradient calculations for timing...");
+        for (int i = 0; i < 10; i++) {
+            crs_fs.computeAtomicGradients(refinementdata.dfs,
+                    refinementdata.freer, refinementdata.rfreeflag);
+        }
     }
 
     public void writedata(String filename) {
@@ -289,5 +302,14 @@ public class XRayStructure {
             mtzwriter = new MTZWriter(reflectionlist, refinementdata, filename, true);
         }
         mtzwriter.write();
+    }
+
+    public void writeSolventMask(String filename) {
+        if (solventmodel != SolventModel.NONE) {
+            CCP4MapWriter mapwriter = new CCP4MapWriter((int) crs_fs.getXDim(),
+                    (int) crs_fs.getYDim(), (int) crs_fs.getZDim(),
+                    crystal, filename);
+            mapwriter.write(crs_fs.solventGrid);
+        }
     }
 }
