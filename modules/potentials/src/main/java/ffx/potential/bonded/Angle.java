@@ -20,7 +20,6 @@
  */
 package ffx.potential.bonded;
 
-import static java.lang.String.format;
 import static java.lang.Math.*;
 
 import static ffx.numerics.VectorMath.*;
@@ -41,7 +40,6 @@ import ffx.potential.parameters.AngleType;
 public class Angle extends BondedTerm implements Comparable<Angle> {
 
     private static final Logger logger = Logger.getLogger(Angle.class.getName());
-    private static final long serialVersionUID = 1L;
 
     public enum AngleMode {
 
@@ -52,14 +50,43 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
      */
     public AngleType angleType;
     /**
-     * Number of hydrogens on the central atom that are not part of this Angle.
-     */
-    public int nh = 0;
-    /**
      * AngleMode for this angle.
      */
     private AngleMode angleMode = AngleMode.HARMONIC;
+    /**
+     * Number of hydrogens on the central atom that are not part of this Angle.
+     */
+    public int nh = 0;
     private Atom atom4 = null;
+
+    /**
+     * Angle constructor
+     *
+     * @param b1
+     *            Bond that forms one leg of the angle
+     * @param b2
+     *            Bond that forms the other leg of the angle
+     */
+    public Angle(Bond b1, Bond b2) {
+        super();
+        Atom a2 = b1.getCommonAtom(b2);
+        Atom a1 = b1.get1_2(a2);
+        Atom a3 = b2.get1_2(a2);
+        b1.setAngleWith(b2);
+        b2.setAngleWith(b1);
+        atoms = new Atom[3];
+        bonds = new Bond[2];
+        atoms[1] = a2;
+        atoms[0] = a1;
+        atoms[2] = a3;
+        bonds[0] = b1;
+        bonds[1] = b2;
+
+        a1.setAngle(this);
+        a2.setAngle(this);
+        a3.setAngle(this);
+        setID_Key(false);
+    }
 
     public void setAngleMode(AngleMode mode, Atom a4) {
         angleMode = mode;
@@ -99,35 +126,6 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
      */
     public AngleType getAngleType() {
         return angleType;
-    }
-
-    /**
-     * Angle constructor
-     *
-     * @param b1
-     *            Bond that forms one leg of the angle
-     * @param b2
-     *            Bond that forms the other leg of the angle
-     */
-    public Angle(Bond b1, Bond b2) {
-        super();
-        Atom a2 = b1.getCommonAtom(b2);
-        Atom a1 = b1.get1_2(a2);
-        Atom a3 = b2.get1_2(a2);
-        b1.setAngleWith(b2);
-        b2.setAngleWith(b1);
-        atoms = new Atom[3];
-        bonds = new Bond[2];
-        atoms[1] = a2;
-        atoms[0] = a1;
-        atoms[2] = a3;
-        bonds[0] = b1;
-        bonds[1] = b2;
-        
-        a1.setAngle(this);
-        a2.setAngle(this);
-        a3.setAngle(this);
-        setID_Key(false);
     }
 
     /**
@@ -220,52 +218,6 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
     public void update() {
         energy(false);
     }
-    /**
-     * Vector from Atom 1 to Atom 0.
-     */
-    protected static final double v10[] = new double[3];
-    /**
-     * Vector from Atom 1 to Atom 2.
-     */
-    protected static final double v12[] = new double[3];
-    /**
-     * Vector from Atom 3 to Atom 0.
-     */
-    protected static final double v30[] = new double[3];
-    /**
-     * Vector from Atom 2 to Atom 0.
-     */
-    protected static final double v20[] = new double[3];
-    /**
-     * Vector v10 cross v30.
-     */
-    protected static final double p[] = new double[3];
-    protected static final double ip[] = new double[3];
-    protected static final double jp[] = new double[3];
-    protected static final double kp[] = new double[3];
-    protected static final double lp[] = new double[3];
-    /**
-     * Gradient on atom 0.
-     */
-    protected static final double g0[] = new double[3];
-    /**
-     * Gradient on Atom 1.
-     */
-    protected static final double g1[] = new double[3];
-    /**
-     * Gradient on Atom 2.
-     */
-    protected static final double g2[] = new double[3];
-    protected static final double g3[] = new double[3];
-    private static final double ded0[] = new double[3];
-    private static final double ded2[] = new double[3];
-    private static final double dedp[] = new double[3];
-    private static final double x21[] = new double[3];
-    private static final double x01[] = new double[3];
-    private static final double xp2[] = new double[3];
-    private static final double xd2[] = new double[3];
-    private static final double dpd0[] = new double[3];
-    private static final double dpd2[] = new double[3];
 
     /**
      * Evaluate this Angle energy.
@@ -381,7 +333,7 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
         return energy;
     }
 
-    /*
+    /**
      * Log details for this Angle energy term.
      */
     public void log() {
@@ -449,4 +401,52 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
         assert (!(this0 == a0 && this1 == a1 && this2 == a2));
         return 0;
     }
+
+    /**
+     * Vector from Atom 1 to Atom 0.
+     */
+    protected static final double v10[] = new double[3];
+    /**
+     * Vector from Atom 1 to Atom 2.
+     */
+    protected static final double v12[] = new double[3];
+    /**
+     * Vector from Atom 3 to Atom 0.
+     */
+    protected static final double v30[] = new double[3];
+    /**
+     * Vector from Atom 2 to Atom 0.
+     */
+    protected static final double v20[] = new double[3];
+    /**
+     * Vector v10 cross v30.
+     */
+    protected static final double p[] = new double[3];
+    protected static final double ip[] = new double[3];
+    protected static final double jp[] = new double[3];
+    protected static final double kp[] = new double[3];
+    protected static final double lp[] = new double[3];
+    /**
+     * Gradient on atom 0.
+     */
+    protected static final double g0[] = new double[3];
+    /**
+     * Gradient on Atom 1.
+     */
+    protected static final double g1[] = new double[3];
+    /**
+     * Gradient on Atom 2.
+     */
+    protected static final double g2[] = new double[3];
+    protected static final double g3[] = new double[3];
+    private static final double ded0[] = new double[3];
+    private static final double ded2[] = new double[3];
+    private static final double dedp[] = new double[3];
+    private static final double x21[] = new double[3];
+    private static final double x01[] = new double[3];
+    private static final double xp2[] = new double[3];
+    private static final double xd2[] = new double[3];
+    private static final double dpd0[] = new double[3];
+    private static final double dpd2[] = new double[3];
+
 }

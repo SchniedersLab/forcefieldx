@@ -64,17 +64,34 @@ public class RefinementEnergy implements Optimizable {
         this.sigmaaminimize = xraystructure.sigmaaminimize;
         this.refinementMode = RefinementMode.COORDINATES;
         this.atomArray = molecularAssembly.getAtomArray();
-        potentialEnergy = new PotentialEnergy(molecularAssembly);
+        potentialEnergy = molecularAssembly.getPotentialEnergy();
+        if (potentialEnergy == null) {
+            potentialEnergy = new PotentialEnergy(molecularAssembly);
+            molecularAssembly.setPotential(potentialEnergy);
+        }
     }
 
+    /**
+     * Implementation of the {@link Optimizable} interface for the RefinementEnergy.
+     *
+     * @param x
+     * @param g
+     * @return
+     */
     @Override
     public double energyAndGradient(double[] x, double[] g) {
         double e = 0.0;
+
         switch (refinementMode) {
             case COORDINATES:
+                double g1[] = new double[g.length];
+                // Compute the chemical energy and gradient.
+                e = potentialEnergy.energyAndGradient(x, g1);
+
+                // Compute the X-ray target energy and gradient.
+                // e += XRayEnergy.energyAndGradient(x, g2);
+                break;
             case BFACTORS:
-                // Compute the energy and gradient for the chemical term.
-                e = potentialEnergy.energyAndGradient(x, g);
                 // compute new structure factors
                 crs_fc.computeDensity(refinementdata.fc);
                 crs_fs.computeDensity(refinementdata.fs);
@@ -91,9 +108,12 @@ public class RefinementEnergy implements Optimizable {
                     crs_fs.computeAtomicGradients(refinementdata.dfs,
                             refinementdata.freer, refinementdata.rfreeflag);
                 }
-                return e;
+                break;
+            case COORDINATES_AND_BFACTORS:
+
+                break;
             default:
-                String message = "Joint coordinate + bfactor refinement is not implemented.";
+                String message = "Unknown refinment mode.";
                 logger.log(Level.SEVERE, message);
         }
         return e;

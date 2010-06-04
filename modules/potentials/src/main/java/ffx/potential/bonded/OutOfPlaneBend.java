@@ -39,20 +39,11 @@ public class OutOfPlaneBend extends BondedTerm implements
         Comparable<OutOfPlaneBend> {
 
     private static final Logger logger = Logger.getLogger(OutOfPlaneBend.class.getName());
-    private static final long serialVersionUID = 1L;
+
     /**
      * Force field parameters to compute the Out-of-Plane Bend energy.
      */
     public OutOfPlaneBendType outOfPlaneBendType = null;
-
-    /**
-     * Set a reference to the force field parameters for <b>this</b> Angle.
-     *
-     * @param a
-     */
-    public void setAngleType(OutOfPlaneBendType a) {
-        outOfPlaneBendType = a;
-    }
 
     /**
      * OutOfPlaneBend constructor.
@@ -77,84 +68,21 @@ public class OutOfPlaneBend extends BondedTerm implements
     }
 
     /**
+     * Set a reference to the force field parameters for <b>this</b> Angle.
+     *
+     * @param a
+     */
+    public void setAngleType(OutOfPlaneBendType a) {
+        outOfPlaneBendType = a;
+    }
+
+    /**
      * Update recomputes OutOfPlaneBend value and energy.
      */
     @Override
     public void update() {
         energy(false);
     }
-    /**
-     * Vector from Atom 1 to Atom 0.
-     */
-    protected static final double v10[] = new double[3];
-    /**
-     * Vector from Atom 1 to Atom 2.
-     */
-    protected static final double v12[] = new double[3];
-    /**
-     * Vector from Atom 1 to Atom 3.
-     */
-    protected static final double v13[] = new double[3];
-    /**
-     * Vector from Atom 3 to Atom 0.
-     */
-    protected static final double v30[] = new double[3];
-    /**
-     * Vector from Atom 3 to Atom 2.
-     */
-    protected static final double v32[] = new double[3];
-    /**
-     * Vector v12 cross v13.
-     */
-    protected static final double p[] = new double[3];
-    /**
-     * Gradient on atom 0.
-     */
-    protected static final double g0[] = new double[3];
-    /**
-     * Gradient on Atom 1.
-     */
-    protected static final double g1[] = new double[3];
-    /**
-     * Gradient on Atom 2.
-     */
-    protected static final double g2[] = new double[3];
-    /**
-     * Gradient on Atom 3.
-     */
-    protected static final double g3[] = new double[3];
-    /**
-     * Work array.
-     */
-    protected static final double sv30[] = new double[3];
-    /**
-     * Work array.
-     */
-    protected static final double sv32[] = new double[3];
-    /**
-     * Work array.
-     */
-    protected static final double dcda[] = new double[3];
-    /**
-     * Work array.
-     */
-    protected static final double dcdc[] = new double[3];
-    /**
-     * Work array.
-     */
-    protected static final double dcdd[] = new double[3];
-    /**
-     * Work array.
-     */
-    protected static final double deda[] = new double[3];
-    /**
-     * Work array.
-     */
-    protected static final double dedc[] = new double[3];
-    /**
-     * Work array.
-     */
-    protected static final double dedd[] = new double[3];
 
     /**
      * Evaluate this Out-of-Plane Bend energy.
@@ -240,7 +168,7 @@ public class OutOfPlaneBend extends BondedTerm implements
         return energy;
     }
 
-    /*
+    /**
      * Log details for this Out-of-Plane Bend energy term.
      */
     public void log() {
@@ -282,4 +210,78 @@ public class OutOfPlaneBend extends BondedTerm implements
         }
         return 0;
     }
+
+    /**
+     * Vector from Atom 1 to Atom 0.
+     */
+    protected static final double v10[] = new double[3];
+    /**
+     * Vector from Atom 1 to Atom 2.
+     */
+    protected static final double v12[] = new double[3];
+    /**
+     * Vector from Atom 1 to Atom 3.
+     */
+    protected static final double v13[] = new double[3];
+    /**
+     * Vector from Atom 3 to Atom 0.
+     */
+    protected static final double v30[] = new double[3];
+    /**
+     * Vector from Atom 3 to Atom 2.
+     */
+    protected static final double v32[] = new double[3];
+    /**
+     * Vector v12 cross v13.
+     */
+    protected static final double p[] = new double[3];
+    /**
+     * Gradient on atom 0.
+     */
+    protected static final double g0[] = new double[3];
+    /**
+     * Gradient on Atom 1.
+     */
+    protected static final double g1[] = new double[3];
+    /**
+     * Gradient on Atom 2.
+     */
+    protected static final double g2[] = new double[3];
+    /**
+     * Gradient on Atom 3.
+     */
+    protected static final double g3[] = new double[3];
+    /**
+     * Work array.
+     */
+    protected static final double sv30[] = new double[3];
+    /**
+     * Work array.
+     */
+    protected static final double sv32[] = new double[3];
+    /**
+     * Work array.
+     */
+    protected static final double dcda[] = new double[3];
+    /**
+     * Work array.
+     */
+    protected static final double dcdc[] = new double[3];
+    /**
+     * Work array.
+     */
+    protected static final double dcdd[] = new double[3];
+    /**
+     * Work array.
+     */
+    protected static final double deda[] = new double[3];
+    /**
+     * Work array.
+     */
+    protected static final double dedc[] = new double[3];
+    /**
+     * Work array.
+     */
+    protected static final double dedd[] = new double[3];
+
 }

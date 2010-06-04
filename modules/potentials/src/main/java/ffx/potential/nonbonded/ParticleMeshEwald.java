@@ -4017,6 +4017,7 @@ public class ParticleMeshEwald implements LambdaInterface {
          */
         List<Integer> group = new ArrayList<Integer>();
         List<Integer> polarizationGroup = new ArrayList<Integer>();
+        int g11 = 0;
         for (Atom ai : atoms) {
             group.clear();
             polarizationGroup.clear();
@@ -4045,9 +4046,8 @@ public class ParticleMeshEwald implements LambdaInterface {
                         ip11[index][j++] = k;
                     }
                 }
-                //g11 += ip11[index].length;
-                //if (index < 2489)
-                //System.out.println(format("%d %d", index + 1, g11));
+                g11 += ip11[index].length;
+                System.out.println(format("%d %d", index + 1, g11));
             } else {
                 String message = "The polarize keyword was not found for atom "
                                  + (index + 1) + " with type " + ai.getType();

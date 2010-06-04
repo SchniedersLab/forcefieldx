@@ -174,9 +174,9 @@ public class ForceFieldFilter {
         try {
             int numConfigs = properties.getNumberOfConfigurations();
             /**
-             * Loop over the configurations starting with lowest precendence.
-             * This way higher precendence entries will overwrite lower
-             * precendence entries within the ForceField instance.
+             * Loop over the configurations starting with lowest precedence.
+             * This way higher precedence entries will overwrite lower
+             * precedence entries within the ForceField instance.
              */
             for (int n = numConfigs - 1; n >= 0; n--) {
                 Configuration config = properties.getConfiguration(n);
@@ -360,6 +360,8 @@ public class ForceFieldFilter {
                             }
                             continue;
                         } catch (Exception e) {
+                            //String message = "Exception parsing force field parametesr.\n";
+                            //logger.log(Level.WARNING, message, e);
                         }
                     }
                 }
@@ -721,6 +723,7 @@ public class ForceFieldFilter {
             PolarizeType polarizeType = new PolarizeType(atomType,
                     polarizability, thole, polarizationGroup);
             forceField.addForceFieldType(polarizeType);
+            //polarizeType.log();
         } catch (Exception e) {
             String message = "Exception parsing POLARIZE type:\n" + input + "\n";
             logger.log(Level.SEVERE, message, e);
