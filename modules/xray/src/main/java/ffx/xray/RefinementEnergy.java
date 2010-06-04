@@ -39,7 +39,7 @@ public class RefinementEnergy implements Optimizable {
 
     private static final Logger logger = Logger.getLogger(RefinementEnergy.class.getName());
 
-    enum RefinementMode {
+    public enum RefinementMode {
 
         COORDINATES, BFACTORS, COORDINATES_AND_BFACTORS
     }

@@ -241,9 +241,9 @@ public class CrystalReciprocalSpace {
         if (logger.isLoggable(Level.INFO)) {
             StringBuilder sb = new StringBuilder();
             if (solvent) {
-                sb.append(String.format("\n Bulk solvent model type:       %s\n",
+                sb.append(String.format("\n Bulk solvent grid settings:\n"));
+                sb.append(String.format(" Bulk solvent model type:       %s\n",
                         solventname));
-                sb.append(String.format(" Bulk solvent grid settings:\n"));
             } else {
                 sb.append(String.format("\n Atomic grid settings:\n"));
             }
@@ -345,6 +345,26 @@ public class CrystalReciprocalSpace {
         }
     }
 
+    public void setCoordinates(double coords[]) {
+        assert (coords != null && coords.length == nAtoms * 3);
+        Vector<SymOp> symops = crystal.spaceGroup.symOps;
+        double xyz[] = new double[3];
+        double symxyz[] = new double[3];
+
+        int index = 0;
+        for (int i = 0; i < nAtoms; i++) {
+            xyz[0] = coords[index++];
+            xyz[1] = coords[index++];
+            xyz[2] = coords[index++];
+            for (int j = 0; j < nSymm; j++) {
+                crystal.applySymOp(xyz, symxyz, symops.get(j));
+                coordinates[j][0][i] = symxyz[0];
+                coordinates[j][1][i] = symxyz[1];
+                coordinates[j][2][i] = symxyz[2];
+            }
+        }
+    }
+
     public void computeDensity(double hkldata[][]) {
         if (solvent) {
             if (solventmodel != SolventModel.NONE) {
@@ -357,6 +377,10 @@ public class CrystalReciprocalSpace {
 
     public void computeAtomicGradients(double hkldata[][],
             int freer[], int flag) {
+
+        if (solvent && solventmodel == SolventModel.NONE) {
+            return;
+        }
 
         // zero out the density
         for (int i = 0; i < complexFFT3DSpace; i++) {
