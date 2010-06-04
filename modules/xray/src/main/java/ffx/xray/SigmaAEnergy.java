@@ -129,10 +129,10 @@ public class SigmaAEnergy implements Optimizable {
         this.n = refinementdata.nparams;
 
         // initialize params
-        assert (refinementdata.crs != null);
-        double fftgrid = 2.0 * refinementdata.crs.getXDim()
-                * refinementdata.crs.getYDim()
-                * refinementdata.crs.getZDim();
+        assert (refinementdata.crs_fc != null);
+        double fftgrid = 2.0 * refinementdata.crs_fc.getXDim()
+                * refinementdata.crs_fc.getYDim()
+                * refinementdata.crs_fc.getZDim();
         dfscale = (crystal.volume * crystal.volume) / fftgrid;
         recipt = transpose3(crystal.A);
         this.spline = new ReflectionSpline(reflectionlist, n);
@@ -190,7 +190,7 @@ public class SigmaAEnergy implements Optimizable {
             // structure factors
             ComplexNumber fcc = new ComplexNumber(fc[i][0], fc[i][1]);
             ComplexNumber fsc = new ComplexNumber(fs[i][0], fs[i][1]);
-            ComplexNumber fct = (refinementdata.crs.solventmodel == SolventModel.NONE)
+            ComplexNumber fct = (refinementdata.crs_fs.solventmodel == SolventModel.NONE)
                     ? fcc : fcc.plus(fsc.times(ksebs));
             ComplexNumber kfct = fct.times(kmems);
 
@@ -270,6 +270,8 @@ public class SigmaAEnergy implements Optimizable {
             double dfci = (dfp1 * fct.im()) / d - ((dfp2 * fct.im()) / (d * fct.abs())) * dinot;
             double dfsr = (dfp1 * ksebs * fct.re()) / d - ((dfp2 * ksebs * fct.re()) / (d * fct.abs())) * dinot;
             double dfsi = (dfp1 * ksebs * fct.im()) / d - ((dfp2 * ksebs * fct.im()) / (d * fct.abs())) * dinot;
+            // double dfsr = ((dfp2 * ksebs * fct.re()) / (d * fct.abs())) * dinot - (dfp1 * ksebs * fct.re()) / d;
+            // double dfsi = ((dfp2 * ksebs * fct.im()) / (d * fct.abs())) * dinot - (dfp1 * ksebs * fct.im()) / d;
             double dfsa = 2.0 * sai * kect2 / d - (2.0 * eo * kect.abs() / d) * dinot;
             double dfwa = epsc * (cf / d - (eo2 + sa2 * kect2) / d2 + (2.0 * eo * sai * kect.abs() / d2) * dinot);
 

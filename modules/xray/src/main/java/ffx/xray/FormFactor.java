@@ -676,15 +676,23 @@ public class FormFactor {
             charge = (int) atom.getMultipoleType().charge;
         }
 
-        if (formfactors.containsKey(key + "_" + charge)) {
-            ffactor = getFormFactor(key + "_" + charge);
-        } else {
-            ffactor = getFormFactor(key);
-            if (use_3g && formfactors.containsKey(key + "_3g")) {
-                ffactor = getFormFactor(key + "_3g");
+        int atomindex = atom.getFormFactorIndex();
+        if (atomindex < 0) {
+            if (formfactors.containsKey(key + "_" + charge)) {
+                ffactor = getFormFactor(key + "_" + charge);
+            } else {
+                ffactor = getFormFactor(key);
+                if (use_3g && formfactors.containsKey(key + "_3g")) {
+                    ffactor = getFormFactor(key + "_3g");
+                }
             }
+            ffindex = (int) ffactor[0][0];
+            atom.setFormFactorIndex(ffindex);
+        } else {
+            ffindex = atomindex;
+            ffactor = ffactors[atomindex];
         }
-        ffindex = (int) ffactor[0][0];
+
         int i;
         for (i = 0; i < ffactor[1].length; i++) {
             if (ffactor[1][i] < 0.01) {
@@ -844,18 +852,17 @@ public class FormFactor {
         }
     }
 
-    /*
     public double rho_gauss(double xyz[], double sd) {
-    double dxyz[] = new double[3];
-    diff(this.xyz, xyz, dxyz);
-    return rho_gauss(rsq(dxyz), sd);
+        double dxyz[] = new double[3];
+        diff(this.xyz, xyz, dxyz);
+        return rho_gauss(rsq(dxyz), sd);
     }
 
     public double rho_gauss(double rsq, double sd) {
-    double sd2 = sd * sd;
-    return exp(-rsq / (2.0 * sd2));
+        double sd2 = sd * sd;
+        return exp(-rsq / sd2);
     }
-     */
+
     public double rho_poly(double xyz[], double arad, double w) {
         double dxyz[] = new double[3];
         diff(this.xyz, xyz, dxyz);
@@ -882,18 +889,10 @@ public class FormFactor {
     }
 
     public void rho_grad(double xyz[], double dfc) {
-        rho_grad_n(xyz, n, dfc, 0.0);
-    }
-
-    public void rho_grad(double xyz[], double dfc, double dfs) {
-        rho_grad_n(xyz, n, dfc, dfs);
+        rho_grad_n(xyz, n, dfc);
     }
 
     public void rho_grad_n(double xyz[], int ng, double dfc) {
-        rho_grad_n(xyz, ng, dfc, 0.0);
-    }
-
-    public void rho_grad_n(double xyz[], int ng, double dfc, double dfs) {
         assert (ng > 0 && ng <= n);
         double dxyz[] = new double[3];
         diff(this.xyz, xyz, dxyz);
@@ -935,12 +934,6 @@ public class FormFactor {
                 dfc * occ * -twopi32 * gradp[1],
                 dfc * occ * -twopi32 * gradp[2]);
 
-        // bulk solvent derivative
-        atom.addToXYZGradient(
-                dfs * occ * -twopi32 * gradp[0],
-                dfs * occ * -twopi32 * gradp[1],
-                dfs * occ * -twopi32 * gradp[2]);
-
         // occ
         atom.addToOccupancyGradient(dfc * twopi32 * gradp[3]);
         // Biso
@@ -954,23 +947,22 @@ public class FormFactor {
         }
     }
 
-    /*
-    public void rho_gauss_grad(double xyz[], double sd, double scale) {
-    double dxyz[] = new double[3];
-    diff(this.xyz, xyz, dxyz);
-    double r2 = rsq(dxyz);
-    double sd2 = sd * sd;
+    public void rho_gauss_grad(double xyz[], double sd, double dfc) {
+        double dxyz[] = new double[3];
+        diff(this.xyz, xyz, dxyz);
+        double r2 = rsq(dxyz);
+        double sd2 = sd * sd;
 
-    double rho = exp(-r2 / (2.0 * sd2));
+        double rho = exp(-r2 / sd2);
 
-    double g[] = new double[3];
-    g[0] = scale * (rho * -dxyz[0] / sd2);
-    g[1] = scale * (rho * -dxyz[1] / sd2);
-    g[2] = scale * (rho * -dxyz[2] / sd2);
+        double g[] = new double[3];
+        g[0] = dfc * (2.0 * rho * -dxyz[0] / sd2);
+        g[1] = dfc * (2.0 * rho * -dxyz[1] / sd2);
+        g[2] = dfc * (2.0 * rho * -dxyz[2] / sd2);
 
-    atom.addToXYZGradient(g[0], g[1], g[2]);
+        atom.addToXYZGradient(g[0], g[1], g[2]);
     }
-     */
+
     public void rho_poly_grad(double xyz[], double arad, double w, double dfs) {
         double dxyz[] = new double[3];
         diff(this.xyz, xyz, dxyz);
@@ -994,6 +986,7 @@ public class FormFactor {
 
         double g[] = new double[3];
         double dp = 1.5 * d / (w2 * ri) - 0.75 * d2 / (w3 * ri);
+
         g[0] = (dfs / rho) * (dp * dxyz[0]);
         g[1] = (dfs / rho) * (dp * dxyz[1]);
         g[2] = (dfs / rho) * (dp * dxyz[2]);

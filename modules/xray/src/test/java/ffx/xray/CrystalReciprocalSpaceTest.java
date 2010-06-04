@@ -114,7 +114,7 @@ public class CrystalReciprocalSpaceTest {
         CrystalReciprocalSpace crs =
                 new CrystalReciprocalSpace(reflectionlist, atomarray,
                 parallelTeam, parallelTeam);
-        crs.computeAtomicDensity(refinementdata.fc, refinementdata.fs);
+        crs.computeAtomicDensity(refinementdata.fc);
 
         // tests
         ComplexNumber b = new ComplexNumber(-828.584, -922.704);
@@ -182,7 +182,7 @@ public class CrystalReciprocalSpaceTest {
         CrystalReciprocalSpace crs =
                 new CrystalReciprocalSpace(reflectionlist, atomarray,
                 parallelTeam, parallelTeam);
-        crs.computeAtomicDensity(refinementdata.fc, refinementdata.fs);
+        crs.computeAtomicDensity(refinementdata.fc);
 
         // tests
         ComplexNumber b = new ComplexNumber(-496.999, 431.817);

@@ -47,7 +47,8 @@ public class XRayStructure {
     private final Resolution resolution;
     private final ReflectionList reflectionlist;
     final RefinementData refinementdata;
-    final CrystalReciprocalSpace crs;
+    final CrystalReciprocalSpace crs_fc;
+    final CrystalReciprocalSpace crs_fs;
     final int solventmodel;
     List<Atom> atomlist;
     ScaleBulkMinimize scalebulkminimize;
@@ -58,7 +59,7 @@ public class XRayStructure {
 
     public XRayStructure(MolecularAssembly assembly,
             CompositeConfiguration properties) {
-        this(new MolecularAssembly[]{assembly}, properties, SolventModel.GAUSSIAN);
+        this(new MolecularAssembly[]{assembly}, properties, SolventModel.POLYNOMIAL);
     }
 
     public XRayStructure(MolecularAssembly assembly,
@@ -68,7 +69,7 @@ public class XRayStructure {
 
     public XRayStructure(MolecularAssembly assembly[],
             CompositeConfiguration properties) {
-        this(assembly, properties, SolventModel.GAUSSIAN);
+        this(assembly, properties, SolventModel.POLYNOMIAL);
     }
 
     public XRayStructure(MolecularAssembly assembly[],
@@ -149,6 +150,7 @@ public class XRayStructure {
         for (int i = 0; i < atomarray.length; i++) {
             FormFactor atomff =
                     new FormFactor(atomarray[i], refinementdata.use_3g, 2.0);
+            atomarray[i].setFormFactorIndex(atomff.ffindex);
 
             if (atomarray[i].getOccupancy() == 0.0) {
                 atomarray[i].setFormFactorWidth(1.0);
@@ -177,24 +179,28 @@ public class XRayStructure {
 
         // set up FFT and run it
         ParallelTeam parallelTeam = new ParallelTeam();
-        crs = new CrystalReciprocalSpace(reflectionlist, atomarray,
-                parallelTeam, parallelTeam, solventmodel);
-        refinementdata.setCrystalReciprocalSpace(crs);
-        crs.setUse3G(refinementdata.use_3g);
+        crs_fc = new CrystalReciprocalSpace(reflectionlist, atomarray,
+                parallelTeam, parallelTeam, false);
+        refinementdata.setCrystalReciprocalSpace_fc(crs_fc);
+        crs_fc.setUse3G(refinementdata.use_3g);
+        crs_fs = new CrystalReciprocalSpace(reflectionlist, atomarray,
+                parallelTeam, parallelTeam, true, solventmodel);
+        refinementdata.setCrystalReciprocalSpace_fs(crs_fs);
+        crs_fs.setUse3G(refinementdata.use_3g);
 
         crystalstats = new CrystalStats(reflectionlist, refinementdata);
     }
 
     public void setSolventA(double a) {
         if (solventmodel != SolventModel.NONE) {
-            crs.setSolventA(a);
+            crs_fs.setSolventA(a);
             refinementdata.solvent_a = a;
         }
     }
 
     public void setSolventB(double b) {
         if (solventmodel != SolventModel.NONE) {
-            crs.setSolventB(b);
+            crs_fs.setSolventB(b);
             refinementdata.solvent_b = b;
         }
     }
@@ -202,17 +208,21 @@ public class XRayStructure {
     public void timings() {
         logger.info("performing 10 Fc calculations for timing...");
         for (int i = 0; i < 10; i++) {
-            crs.computeDensity(refinementdata.fc, refinementdata.fs);
+            crs_fc.computeDensity(refinementdata.fc);
+        }
+        logger.info("performing 10 Fs calculations for timing...");
+        for (int i = 0; i < 10; i++) {
+            crs_fs.computeDensity(refinementdata.fs);
         }
     }
 
     public void writeSolventMask(String filename) {
         // CNSMapWriter mapwriter = new CNSMapWriter((int) crs_fs.getXDim(),
         if (solventmodel != SolventModel.NONE) {
-            CCP4MapWriter mapwriter = new CCP4MapWriter((int) crs.getXDim(),
-                    (int) crs.getYDim(), (int) crs.getZDim(),
+            CCP4MapWriter mapwriter = new CCP4MapWriter((int) crs_fs.getXDim(),
+                    (int) crs_fs.getYDim(), (int) crs_fs.getZDim(),
                     crystal, filename);
-            mapwriter.write(crs.solventGrid);
+            mapwriter.write(crs_fs.solventGrid);
         }
     }
 
@@ -226,10 +236,13 @@ public class XRayStructure {
         }
 
         // run FFTs
-        crs.computeDensity(refinementdata.fc, refinementdata.fs);
+        crs_fc.computeDensity(refinementdata.fc);
+        if (solventmodel != SolventModel.NONE) {
+            crs_fs.computeDensity(refinementdata.fs);
+        }
 
         // initialize minimizers
-        scalebulkminimize = new ScaleBulkMinimize(reflectionlist, refinementdata, crs);
+        scalebulkminimize = new ScaleBulkMinimize(reflectionlist, refinementdata, crs_fs);
         splineminimize = new SplineMinimize(reflectionlist,
                 refinementdata, refinementdata.spline, SplineEnergy.Type.FOFC);
 

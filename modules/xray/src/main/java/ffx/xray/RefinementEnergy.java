@@ -46,7 +46,8 @@ public class RefinementEnergy implements Optimizable {
     private final MolecularAssembly molecularAssembly;
     private final XRayStructure xraystructure;
     private final SigmaAMinimize sigmaaminimize;
-    private final CrystalReciprocalSpace crs;
+    private final CrystalReciprocalSpace crs_fc;
+    private final CrystalReciprocalSpace crs_fs;
     private final RefinementData refinementdata;
     private final Atom atomArray[];
     private PotentialEnergy potentialEnergy;
@@ -58,7 +59,8 @@ public class RefinementEnergy implements Optimizable {
         this.molecularAssembly = molecularAssembly;
         this.xraystructure = xraystructure;
         this.refinementdata = xraystructure.refinementdata;
-        this.crs = refinementdata.crs;
+        this.crs_fc = refinementdata.crs_fc;
+        this.crs_fs = refinementdata.crs_fs;
         this.sigmaaminimize = xraystructure.sigmaaminimize;
         this.refinementMode = RefinementMode.COORDINATES;
         this.atomArray = molecularAssembly.getAtomArray();
@@ -74,23 +76,21 @@ public class RefinementEnergy implements Optimizable {
                 // Compute the energy and gradient for the chemical term.
                 e = potentialEnergy.energyAndGradient(x, g);
                 // compute new structure factors
-                crs.computeDensity(refinementdata.fc, refinementdata.fs);
+                crs_fc.computeDensity(refinementdata.fc);
+                crs_fs.computeDensity(refinementdata.fs);
                 // update sigmaA
                 // sigmaaminimize.minimize(7, 1e-1);
                 // e += refinementdata.llkr;
                 // compute crystal likelihood
                 e += sigmaaminimize.calculateLikelihood();
                 // compute the crystal gradients (requires inverse FFT)
-                crs.computeAtomicGradients(refinementdata.dfc,
-                        refinementdata.dfs, refinementdata.fs,
+                crs_fc.computeAtomicGradients(refinementdata.dfc,
                         refinementdata.freer, refinementdata.rfreeflag);
-                /*
-                if (refinementdata.bulksolvent
-                && crs_fs.solventmodel != SolventModel.BINARY) {
-                crs_fs.computeAtomicGradients(refinementdata.dfs,
-                refinementdata.freer, refinementdata.rfreeflag);
+                if (crs_fs.solventmodel == SolventModel.GAUSSIAN
+                        || crs_fs.solventmodel == SolventModel.POLYNOMIAL) {
+                    crs_fs.computeAtomicGradients(refinementdata.dfs,
+                            refinementdata.freer, refinementdata.rfreeflag);
                 }
-                 */
                 return e;
             default:
                 String message = "Joint coordinate + bfactor refinement is not implemented.";

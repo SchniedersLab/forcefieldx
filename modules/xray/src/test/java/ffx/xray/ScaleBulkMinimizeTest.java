@@ -60,19 +60,19 @@ public class ScaleBulkMinimizeTest {
                         "ffx/xray/structures/1NSF.pdb",
                         "ffx/xray/structures/1NSF.mtz",
                         null,
-                        25.14,
-                        25.39,
-                        0.8946,
-                        0.1513},
+                        25.08,
+                        25.41,
+                        0.8949,
+                        0.1508},
                     {true,
                         "SNARE complex",
                         "ffx/xray/structures/1N7S.pdb",
                         "ffx/xray/structures/1N7S.mtz",
                         null,
-                        19.44,
+                        19.37,
                         21.54,
-                        0.9310,
-                        0.1363}
+                        0.9311,
+                        0.1362}
                 });
     }
     private final String info;
@@ -172,9 +172,13 @@ public class ScaleBulkMinimizeTest {
         // set up FFT and run it
         ParallelTeam parallelTeam = new ParallelTeam();
         CrystalReciprocalSpace crs = new CrystalReciprocalSpace(reflectionlist,
-                atomarray, parallelTeam, parallelTeam);
-        crs.computeDensity(refinementdata.fc, refinementdata.fs);
-        refinementdata.setCrystalReciprocalSpace(crs);
+                atomarray, parallelTeam, parallelTeam, false);
+        crs.computeDensity(refinementdata.fc);
+        refinementdata.setCrystalReciprocalSpace_fc(crs);
+        crs = new CrystalReciprocalSpace(reflectionlist,
+                atomarray, parallelTeam, parallelTeam, true);
+        crs.computeDensity(refinementdata.fs);
+        refinementdata.setCrystalReciprocalSpace_fs(crs);
 
         /*
         try {

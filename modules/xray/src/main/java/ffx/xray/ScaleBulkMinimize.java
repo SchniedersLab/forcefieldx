@@ -177,7 +177,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
             for (double j = bmin; j <= bmax; j += bstep) {
                 crs.setSolventB(j);
 
-                crs.computeDensity(refinementdata.fc, refinementdata.fs);
+                crs.computeDensity(refinementdata.fs);
                 double sum = bulksolventenergy.energyAndGradient(x, grad);
 
                 System.out.println("a: " + i + " b: " + j + " sum: " + sum);
@@ -193,7 +193,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         crs.setSolventB(b);
         refinementdata.solvent_a = a;
         refinementdata.solvent_b = b;
-        crs.computeDensity(refinementdata.fc, refinementdata.fs);
+        crs.computeDensity(refinementdata.fs);
     }
 
     public ScaleBulkEnergy minimize() {

@@ -61,7 +61,8 @@ public class RefinementData {
     public double llkr, llkf;
     // reciprocal space reference
     // for structure factor calculations and computing derivatives
-    protected CrystalReciprocalSpace crs;
+    protected CrystalReciprocalSpace crs_fc;
+    protected CrystalReciprocalSpace crs_fs;
     // spline scaling coefficients
     public final int nparams;
     public double spline[];
@@ -137,8 +138,12 @@ public class RefinementData {
         model_k = 0.0;
     }
 
-    public void setCrystalReciprocalSpace(CrystalReciprocalSpace crs) {
-        this.crs = crs;
+    public void setCrystalReciprocalSpace_fc(CrystalReciprocalSpace crs) {
+        this.crs_fc = crs;
+    }
+
+    public void setCrystalReciprocalSpace_fs(CrystalReciprocalSpace crs) {
+        this.crs_fs = crs;
     }
 
     public void generateRFree() {

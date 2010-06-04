@@ -240,8 +240,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     private double anisouGradient[];
     private String segID = null;
-    private double formFactorWidth = 3.0;
-    private int formFactorIndex = 0;
+    private double formFactorWidth = 3.5;
+    private int formFactorIndex = -1;
     private ArrayList<Vector3d> trajectory;
 
     // Molecular Mechanics Info
