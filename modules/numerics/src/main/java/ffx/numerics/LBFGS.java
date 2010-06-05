@@ -29,6 +29,7 @@ import static java.util.Arrays.fill;
 import java.util.logging.Logger;
 
 import ffx.numerics.LineSearch.LineSearchResult;
+import java.util.Arrays;
 
 /**
  * This class implements the limited-memory Broyden-Fletcher-Goldfarb-Shanno
@@ -164,6 +165,10 @@ public class LBFGS {
 
         double rms = sqrt(n);
         double scaling[] = optimizationSystem.getOptimizationScaling();
+        if (scaling == null) {
+            scaling = new double[n];
+            Arrays.fill(scaling, 1.0);
+        }
 
         /**
          * Initial search direction is the steepest decent direction.
