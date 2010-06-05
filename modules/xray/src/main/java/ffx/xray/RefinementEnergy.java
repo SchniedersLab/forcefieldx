@@ -45,30 +45,28 @@ public class RefinementEnergy implements Optimizable {
     }
     private final MolecularAssembly molecularAssembly;
     private final XRayStructure xraystructure;
-    private final SigmaAMinimize sigmaaminimize;
-    private final CrystalReciprocalSpace crs_fc;
-    private final CrystalReciprocalSpace crs_fs;
-    private final RefinementData refinementdata;
-    private final Atom atomArray[];
     private PotentialEnergy potentialEnergy;
+    private XRayEnergy xrayEnergy;
     private RefinementMode refinementMode;
     private double weight = 1.0;
+    private double gChemical[];
+    private double gXray[];
 
     public RefinementEnergy(MolecularAssembly molecularAssembly,
             XRayStructure xraystructure) {
         this.molecularAssembly = molecularAssembly;
         this.xraystructure = xraystructure;
-        this.refinementdata = xraystructure.refinementdata;
-        this.crs_fc = refinementdata.crs_fc;
-        this.crs_fs = refinementdata.crs_fs;
-        this.sigmaaminimize = xraystructure.sigmaaminimize;
         this.refinementMode = RefinementMode.COORDINATES;
-        this.atomArray = molecularAssembly.getAtomArray();
         potentialEnergy = molecularAssembly.getPotentialEnergy();
         if (potentialEnergy == null) {
             potentialEnergy = new PotentialEnergy(molecularAssembly);
             molecularAssembly.setPotential(potentialEnergy);
         }
+        if (!xraystructure.scaled){
+            xraystructure.scalebulkfit();
+        }
+        xrayEnergy = new XRayEnergy(xraystructure, refinementMode);
+
     }
 
     /**
@@ -81,36 +79,35 @@ public class RefinementEnergy implements Optimizable {
     @Override
     public double energyAndGradient(double[] x, double[] g) {
         double e = 0.0;
-
         switch (refinementMode) {
             case COORDINATES:
-                double g1[] = new double[g.length];
+                int n = x.length;
                 // Compute the chemical energy and gradient.
-                e = potentialEnergy.energyAndGradient(x, g1);
+                if (gChemical == null || gChemical.length != n) {
+                    gChemical = new double[n];
+                }
+                e = potentialEnergy.energyAndGradient(x, gChemical);
 
                 // Compute the X-ray target energy and gradient.
-                // e += XRayEnergy.energyAndGradient(x, g2);
-                break;
-            case BFACTORS:
-                // compute new structure factors
-                crs_fc.computeDensity(refinementdata.fc);
-                crs_fs.computeDensity(refinementdata.fs);
-                // update sigmaA
-                // sigmaaminimize.minimize(7, 1e-1);
-                // e += refinementdata.llkr;
-                // compute crystal likelihood
-                e += sigmaaminimize.calculateLikelihood();
-                // compute the crystal gradients (requires inverse FFT)
-                crs_fc.computeAtomicGradients(refinementdata.dfc,
-                        refinementdata.freer, refinementdata.rfreeflag);
-                if (crs_fs.solventmodel == SolventModel.GAUSSIAN
-                        || crs_fs.solventmodel == SolventModel.POLYNOMIAL) {
-                    crs_fs.computeAtomicGradients(refinementdata.dfs,
-                            refinementdata.freer, refinementdata.rfreeflag);
+                if (gXray == null || gXray.length != n) {
+                    gXray = new double[n];
+                }
+                e += weight * xrayEnergy.energyAndGradient(x, gXray);
+
+                // Add the chemical and X-ray gradients.
+                for (int i=0; i<n; i++) {
+                    g[i] = gChemical[i] + weight * gXray[i];
                 }
                 break;
+            case BFACTORS:
+                // Compute the X-ray target energy and gradient.
+                e = xrayEnergy.energyAndGradient(x, g);
+                break;
             case COORDINATES_AND_BFACTORS:
-
+                // Compute the chemical energy and gradient.
+                e = potentialEnergy.energyAndGradient(x, g);
+                // Compute the X-ray target energy and gradient.
+                e += xrayEnergy.energyAndGradient(x, g);
                 break;
             default:
                 String message = "Unknown refinment mode.";

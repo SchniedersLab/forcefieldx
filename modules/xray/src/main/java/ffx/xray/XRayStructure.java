@@ -56,7 +56,7 @@ public class XRayStructure {
     SigmaAMinimize sigmaaminimize;
     SplineMinimize splineminimize;
     CrystalStats crystalstats;
-    private boolean scaled = false;
+    protected boolean scaled = false;
 
     public XRayStructure(MolecularAssembly assembly,
             CompositeConfiguration properties) {
