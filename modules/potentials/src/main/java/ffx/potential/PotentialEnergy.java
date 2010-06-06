@@ -556,7 +556,7 @@ public class PotentialEnergy implements Optimizable {
 
     @Override
     public void setOptimizationScaling(double scaling[]) {
-        if (scaling != null && scaling.length == nAtoms * 3) {
+        if (scaling != null) {
             optimizationScaling = scaling;
         } else {
             optimizationScaling = null;
@@ -596,7 +596,7 @@ public class PotentialEnergy implements Optimizable {
     }
 
     public void getGradients(double g[]) {
-        assert (g != null && g.length == nAtoms * 3);
+        assert (g != null);
         double grad[] = new double[3];
         int index = 0;
         for (Atom a : atoms) {
@@ -608,7 +608,7 @@ public class PotentialEnergy implements Optimizable {
     }
 
     private void setCoordinates(double coords[]) {
-        assert (coords != null && coords.length == nAtoms * 3);
+        assert (coords != null);
         int index = 0;
         for (Atom a : atoms) {
             double x = coords[index++];
@@ -619,7 +619,7 @@ public class PotentialEnergy implements Optimizable {
     }
 
     public void getCoordinates(double x[]) {
-        assert (x != null && x.length == nAtoms * 3);
+        assert (x != null);
         double xyz[] = new double[3];
         int index = 0;
         for (Atom a : atoms) {

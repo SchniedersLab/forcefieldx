@@ -397,7 +397,7 @@ public class CrystalStats {
                     refinementdata.solvent_k,
                     refinementdata.solvent_ueq * 8.0 * Math.PI * Math.PI));
         }
-        sb.append(String.format("  likelihood: %g (free set: %g)\n\n",
+        sb.append(String.format("  -log likelihood: %g (free set: %g)\n\n",
                 refinementdata.llkr, refinementdata.llkf));
         logger.info(sb.toString());
     }

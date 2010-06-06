@@ -1,22 +1,17 @@
-import ffx.numerics.LBFGS;
-import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.xray.XRayStructure;
-import ffx.xray.RefinementEnergy;
+import ffx.xray.RefinementMinimize;
+import ffx.xray.RefinementMinimize.RefinementMode;
 
 open("examples/1N7S.pdb");
 
 XRayStructure xray = new XRayStructure(active, active.getProperties());
-RefinementEnergy refinementEnergy = new RefinementEnergy(active, xray);
+RefinementMinimize refinementMinimize = new RefinementMinimize(active, xray, RefinementMode.COORDINATES_AND_BFACTORS);
 
-Atom[] atoms = active.getAtomArray();
-int n = atoms.length * 3;
-double[] x = new double[n];
-double[] g = new double[n];
+refinementMinimize.minimize();
 
-active.getPotentialEnergy().getCoordinates(x);
-double e = refinementEnergy.energyAndGradient(x, g);
-double eps = 0.1;
-LBFGS.minimize(n, 7, x, e, g, eps, refinementEnergy, null);
+xray.scalebulkfit();
+xray.printstats();
 
-
+xray.writedata("/tmp/1N7S_refine.mtz");
+saveAsPDB(new File("/tmp/1N7S_refine.pdb"));

@@ -41,6 +41,7 @@ import ffx.potential.parsers.ForceFieldFilter;
 import ffx.potential.parsers.PDBFilter;
 import ffx.utilities.Keyword;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
+import ffx.xray.RefinementMinimize.RefinementMode;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -214,7 +215,8 @@ public class FiniteDifferenceTest {
 
         // compute gradients
         refinementdata.crs_fc.computeAtomicGradients(refinementdata.dfc,
-                refinementdata.freer, refinementdata.rfreeflag);
+                refinementdata.freer, refinementdata.rfreeflag,
+                RefinementMode.COORDINATES_AND_BFACTORS);
 
         int natoms = atomarray.length;
         double llk0 = refinementdata.llkr;

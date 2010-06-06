@@ -35,6 +35,7 @@ import ffx.crystal.Resolution;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
+import ffx.xray.RefinementMinimize.RefinementMode;
 
 /**
  *
@@ -285,12 +286,14 @@ public class XRayStructure {
         logger.info("performing 10 Fc gradient calculations for timing...");
         for (int i = 0; i < 10; i++) {
             crs_fc.computeAtomicGradients(refinementdata.dfc,
-                    refinementdata.freer, refinementdata.rfreeflag);
+                    refinementdata.freer, refinementdata.rfreeflag,
+                    RefinementMode.COORDINATES_AND_BFACTORS);
         }
         logger.info("performing 10 Fs gradient calculations for timing...");
         for (int i = 0; i < 10; i++) {
             crs_fs.computeAtomicGradients(refinementdata.dfs,
-                    refinementdata.freer, refinementdata.rfreeflag);
+                    refinementdata.freer, refinementdata.rfreeflag,
+                    RefinementMode.COORDINATES_AND_BFACTORS);
         }
     }
 

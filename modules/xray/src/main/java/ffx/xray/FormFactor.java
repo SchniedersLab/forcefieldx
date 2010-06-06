@@ -38,6 +38,7 @@ import static ffx.numerics.VectorMath.b2u;
 import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
 import ffx.potential.bonded.Atom;
+import ffx.xray.RefinementMinimize.RefinementMode;
 
 import java.util.HashMap;
 import java.util.logging.Logger;
@@ -644,6 +645,7 @@ public class FormFactor {
     private double xyz[] = new double[3];
     private final double biso;
     private final double uadd;
+    private final boolean hasanisou;
     private final double uaniso[];
     private final double occ;
     private final double a[] = new double[6];
@@ -717,6 +719,7 @@ public class FormFactor {
         }
 
         if (atom.getAnisou() != null) {
+            hasanisou = true;
             // first check the ANISOU is valid
             uaniso = atom.getAnisou();
             u[0][0][0] = uaniso[0];
@@ -741,6 +744,7 @@ public class FormFactor {
                 atom.setAnisou(uaniso);
             }
         } else {
+            hasanisou = false;
             uaniso = new double[6];
             uaniso[0] = uaniso[1] = uaniso[2] = b2u(biso);
             uaniso[3] = uaniso[4] = uaniso[5] = 0.0;
@@ -888,11 +892,11 @@ public class FormFactor {
         return 0.75 * d2 / w2 - 0.25 * d3 / w3;
     }
 
-    public void rho_grad(double xyz[], double dfc) {
-        rho_grad_n(xyz, n, dfc);
+    public void rho_grad(double xyz[], double dfc, RefinementMode refinementmode) {
+        rho_grad_n(xyz, n, dfc, refinementmode);
     }
 
-    public void rho_grad_n(double xyz[], int ng, double dfc) {
+    public void rho_grad_n(double xyz[], int ng, double dfc, RefinementMode refinementmode) {
         assert (ng > 0 && ng <= n);
         double dxyz[] = new double[3];
         diff(this.xyz, xyz, dxyz);
@@ -903,51 +907,79 @@ public class FormFactor {
         double gradu[] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
         double rho;
 
+        boolean refinexyz = false;
+        boolean refineb = false;
+        boolean refineanisou = false;
+        if (refinementmode == RefinementMode.COORDINATES
+                || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS) {
+            refinexyz = true;
+        }
+        if (refinementmode == RefinementMode.BFACTORS
+                || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS) {
+            refineb = true;
+            if (hasanisou) {
+                refineanisou = true;
+            }
+        }
         for (int i = 0; i < ng; i++) {
             aex = ainv[i] * exp(-0.5 * Crystal.quad_form(dxyz, uinv[i]));
 
-            gradp[0] += aex * dot(vec3mat3(dxyz, uinv[i]), vx);
-            gradp[1] += aex * dot(vec3mat3(dxyz, uinv[i]), vy);
-            gradp[2] += aex * dot(vec3mat3(dxyz, uinv[i]), vz);
-            gradp[3] += aex;
-            gradp[4] += aex * 0.5 * (r2 * binv[i] * binv[i] - 3.0 * binv[i]);
+            if (refinexyz) {
+                gradp[0] += aex * dot(vec3mat3(dxyz, uinv[i]), vx);
+                gradp[1] += aex * dot(vec3mat3(dxyz, uinv[i]), vy);
+                gradp[2] += aex * dot(vec3mat3(dxyz, uinv[i]), vz);
+                gradp[3] += aex;
+            }
+            if (refineb) {
+                gradp[4] += aex * 0.5 * (r2 * binv[i] * binv[i] - 3.0 * binv[i]);
 
-            jmat[0] = mat3mat3(scalarmat3mat3(-1.0, uinv[i], u11), uinv[i]);
-            jmat[1] = mat3mat3(scalarmat3mat3(-1.0, uinv[i], u22), uinv[i]);
-            jmat[2] = mat3mat3(scalarmat3mat3(-1.0, uinv[i], u33), uinv[i]);
-            jmat[3] = mat3mat3(scalarmat3mat3(-1.0, uinv[i], u12), uinv[i]);
-            jmat[4] = mat3mat3(scalarmat3mat3(-1.0, uinv[i], u13), uinv[i]);
-            jmat[5] = mat3mat3(scalarmat3mat3(-1.0, uinv[i], u23), uinv[i]);
+                if (refineanisou) {
+                    jmat[0] = mat3mat3(scalarmat3mat3(-1.0, uinv[i], u11), uinv[i]);
+                    jmat[1] = mat3mat3(scalarmat3mat3(-1.0, uinv[i], u22), uinv[i]);
+                    jmat[2] = mat3mat3(scalarmat3mat3(-1.0, uinv[i], u33), uinv[i]);
+                    jmat[3] = mat3mat3(scalarmat3mat3(-1.0, uinv[i], u12), uinv[i]);
+                    jmat[4] = mat3mat3(scalarmat3mat3(-1.0, uinv[i], u13), uinv[i]);
+                    jmat[5] = mat3mat3(scalarmat3mat3(-1.0, uinv[i], u23), uinv[i]);
 
-            gradu[0] += aex * 0.5 * (-Crystal.quad_form(dxyz, jmat[0]) - uinv[i][0][0]);
-            gradu[1] += aex * 0.5 * (-Crystal.quad_form(dxyz, jmat[1]) - uinv[i][1][1]);
-            gradu[2] += aex * 0.5 * (-Crystal.quad_form(dxyz, jmat[2]) - uinv[i][2][2]);
-            gradu[3] += aex * 0.5 * (-Crystal.quad_form(dxyz, jmat[3]) - uinv[i][0][1] * 2.0);
-            gradu[4] += aex * 0.5 * (-Crystal.quad_form(dxyz, jmat[4]) - uinv[i][0][2] * 2.0);
-            gradu[5] += aex * 0.5 * (-Crystal.quad_form(dxyz, jmat[5]) - uinv[i][1][2] * 2.0);
+                    gradu[0] += aex * 0.5 * (-Crystal.quad_form(dxyz, jmat[0]) - uinv[i][0][0]);
+                    gradu[1] += aex * 0.5 * (-Crystal.quad_form(dxyz, jmat[1]) - uinv[i][1][1]);
+                    gradu[2] += aex * 0.5 * (-Crystal.quad_form(dxyz, jmat[2]) - uinv[i][2][2]);
+                    gradu[3] += aex * 0.5 * (-Crystal.quad_form(dxyz, jmat[3]) - uinv[i][0][1] * 2.0);
+                    gradu[4] += aex * 0.5 * (-Crystal.quad_form(dxyz, jmat[4]) - uinv[i][0][2] * 2.0);
+                    gradu[5] += aex * 0.5 * (-Crystal.quad_form(dxyz, jmat[5]) - uinv[i][1][2] * 2.0);
+                }
+            }
         }
         rho = occ * twopi32 * gradp[3];
 
         // x, y, z
-        atom.addToXYZGradient(
-                dfc * occ * -twopi32 * gradp[0],
-                dfc * occ * -twopi32 * gradp[1],
-                dfc * occ * -twopi32 * gradp[2]);
+        if (refinexyz) {
+            atom.addToXYZGradient(
+                    dfc * occ * -twopi32 * gradp[0],
+                    dfc * occ * -twopi32 * gradp[1],
+                    dfc * occ * -twopi32 * gradp[2]);
+        }
 
         // occ
         atom.addToOccupancyGradient(dfc * twopi32 * gradp[3]);
         // Biso
-        atom.addToTempFactorGradient(dfc * b2u(occ * twopi32 * gradp[4]));
-        // Uaniso
-        if (atom.getAnisou() != null) {
-            for (int i = 0; i < 6; i++) {
-                gradu[i] *= dfc * occ * twopi32;
+        if (refineb) {
+            atom.addToTempFactorGradient(dfc * b2u(occ * twopi32 * gradp[4]));
+            // Uaniso
+            if (hasanisou) {
+                for (int i = 0; i < 6; i++) {
+                    gradu[i] *= dfc * occ * twopi32;
+                }
+                atom.addToAnisouGradient(gradu);
             }
-            atom.addToAnisouGradient(gradu);
         }
     }
 
-    public void rho_gauss_grad(double xyz[], double sd, double dfc) {
+    public void rho_gauss_grad(double xyz[], double sd, double dfc,
+            RefinementMode refinementmode) {
+        if (refinementmode == RefinementMode.BFACTORS){
+            return;
+        }
         double dxyz[] = new double[3];
         diff(this.xyz, xyz, dxyz);
         double r2 = rsq(dxyz);
@@ -963,7 +995,11 @@ public class FormFactor {
         atom.addToXYZGradient(g[0], g[1], g[2]);
     }
 
-    public void rho_poly_grad(double xyz[], double arad, double w, double dfs) {
+    public void rho_poly_grad(double xyz[], double arad, double w, double dfs,
+            RefinementMode refinementmode) {
+        if (refinementmode == RefinementMode.BFACTORS){
+            return;
+        }
         double dxyz[] = new double[3];
         diff(this.xyz, xyz, dxyz);
         double ri = r(dxyz);

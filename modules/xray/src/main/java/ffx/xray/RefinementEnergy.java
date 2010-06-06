@@ -22,9 +22,9 @@ package ffx.xray;
 
 import ffx.numerics.Optimizable;
 import ffx.potential.PotentialEnergy;
-import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
-import ffx.xray.CrystalReciprocalSpace.SolventModel;
+import ffx.xray.RefinementMinimize.RefinementMode;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -38,35 +38,36 @@ import java.util.logging.Logger;
 public class RefinementEnergy implements Optimizable {
 
     private static final Logger logger = Logger.getLogger(RefinementEnergy.class.getName());
-
-    public enum RefinementMode {
-
-        COORDINATES, BFACTORS, COORDINATES_AND_BFACTORS
-    }
     private final MolecularAssembly molecularAssembly;
     private final XRayStructure xraystructure;
-    private PotentialEnergy potentialEnergy;
-    private XRayEnergy xrayEnergy;
+    protected PotentialEnergy potentialEnergy;
+    protected XRayEnergy xrayEnergy;
     private RefinementMode refinementMode;
+    private final int nxyz;
+    private final int nb;
+    private final int nocc;
+    private final int n;
     private double weight = 1.0;
     private double gChemical[];
     private double gXray[];
 
     public RefinementEnergy(MolecularAssembly molecularAssembly,
-            XRayStructure xraystructure) {
+            XRayStructure xraystructure, int nxyz, int nb, int nocc,
+            RefinementMode refinementmode) {
         this.molecularAssembly = molecularAssembly;
         this.xraystructure = xraystructure;
-        this.refinementMode = RefinementMode.COORDINATES;
+        this.refinementMode = refinementmode;
+        this.nxyz = nxyz;
+        this.nb = nb;
+        this.nocc = nocc;
+        this.n = nxyz + nb + nocc;
         potentialEnergy = molecularAssembly.getPotentialEnergy();
         if (potentialEnergy == null) {
             potentialEnergy = new PotentialEnergy(molecularAssembly);
             molecularAssembly.setPotential(potentialEnergy);
         }
-        if (!xraystructure.scaled){
-            xraystructure.scalebulkfit();
-        }
-        xrayEnergy = new XRayEnergy(xraystructure, refinementMode);
-
+        xrayEnergy = new XRayEnergy(xraystructure, nxyz, nb, nocc,
+                refinementMode);
     }
 
     /**
@@ -79,9 +80,31 @@ public class RefinementEnergy implements Optimizable {
     @Override
     public double energyAndGradient(double[] x, double[] g) {
         double e = 0.0;
+        Arrays.fill(g, 0.0);
         switch (refinementMode) {
             case COORDINATES:
-                int n = x.length;
+                // Compute the chemical energy and gradient.
+                if (gChemical == null || gChemical.length != nxyz) {
+                    gChemical = new double[nxyz];
+                }
+                e = potentialEnergy.energyAndGradient(x, gChemical);
+
+                // Compute the X-ray target energy and gradient.
+                if (gXray == null || gXray.length != nxyz) {
+                    gXray = new double[nxyz];
+                }
+                e += weight * xrayEnergy.energyAndGradient(x, gXray);
+
+                // Add the chemical and X-ray gradients.
+                for (int i = 0; i < nxyz; i++) {
+                    g[i] = gChemical[i] + weight * gXray[i];
+                }
+                break;
+            case BFACTORS:
+                // Compute the X-ray target energy and gradient.
+                e = xrayEnergy.energyAndGradient(x, g);
+                break;
+            case COORDINATES_AND_BFACTORS:
                 // Compute the chemical energy and gradient.
                 if (gChemical == null || gChemical.length != n) {
                     gChemical = new double[n];
@@ -95,19 +118,9 @@ public class RefinementEnergy implements Optimizable {
                 e += weight * xrayEnergy.energyAndGradient(x, gXray);
 
                 // Add the chemical and X-ray gradients.
-                for (int i=0; i<n; i++) {
+                for (int i = 0; i < nxyz; i++) {
                     g[i] = gChemical[i] + weight * gXray[i];
                 }
-                break;
-            case BFACTORS:
-                // Compute the X-ray target energy and gradient.
-                e = xrayEnergy.energyAndGradient(x, g);
-                break;
-            case COORDINATES_AND_BFACTORS:
-                // Compute the chemical energy and gradient.
-                e = potentialEnergy.energyAndGradient(x, g);
-                // Compute the X-ray target energy and gradient.
-                e += xrayEnergy.energyAndGradient(x, g);
                 break;
             default:
                 String message = "Unknown refinment mode.";
@@ -120,10 +133,13 @@ public class RefinementEnergy implements Optimizable {
     public void setOptimizationScaling(double[] scaling) {
         switch (refinementMode) {
             case COORDINATES:
+            case BFACTORS:
+            case COORDINATES_AND_BFACTORS:
                 potentialEnergy.setOptimizationScaling(scaling);
+                xrayEnergy.setOptimizationScaling(scaling);
                 break;
             default:
-                String message = "Only coordinate refinement is implemented.";
+                String message = "Unknown refinement mode.";
                 logger.log(Level.SEVERE, message);
         }
     }
@@ -132,9 +148,11 @@ public class RefinementEnergy implements Optimizable {
     public double[] getOptimizationScaling() {
         switch (refinementMode) {
             case COORDINATES:
+            case BFACTORS:
+            case COORDINATES_AND_BFACTORS:
                 return potentialEnergy.getOptimizationScaling();
             default:
-                String message = "Only coordinate refinement is implemented.";
+                String message = "Unknown refinement mode.";
                 logger.log(Level.SEVERE, message);
         }
         return null;

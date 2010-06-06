@@ -22,7 +22,7 @@ package ffx.xray;
 
 import ffx.numerics.Optimizable;
 import ffx.potential.bonded.Atom;
-import ffx.xray.RefinementEnergy.RefinementMode;
+import ffx.xray.RefinementMinimize.RefinementMode;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -37,33 +37,47 @@ public class XRayEnergy implements Optimizable {
 
     private static final Logger logger = Logger.getLogger(XRayEnergy.class.getName());
     private final XRayStructure xraystructure;
-    private final SigmaAMinimize sigmaaminimize;
     private final CrystalReciprocalSpace crs_fc;
     private final CrystalReciprocalSpace crs_fs;
     private final RefinementData refinementdata;
     private final Atom atomarray[];
     private final int nAtoms;
+    private final int nxyz;
+    private final int nb;
+    private final int nocc;
     private RefinementMode refinementMode;
     protected double[] optimizationScaling = null;
 
-    public XRayEnergy(XRayStructure xraystructure, RefinementMode refinementmode) {
+    public XRayEnergy(XRayStructure xraystructure, int nxyz, int nb, int nocc,
+            RefinementMode refinementmode) {
         this.xraystructure = xraystructure;
         this.refinementdata = xraystructure.refinementdata;
         this.crs_fc = refinementdata.crs_fc;
         this.crs_fs = refinementdata.crs_fs;
-        this.sigmaaminimize = xraystructure.sigmaaminimize;
         this.refinementMode = refinementmode;
         this.atomarray = xraystructure.atomarray;
         this.nAtoms = atomarray.length;
+        this.nxyz = nxyz;
+        this.nb = nb;
+        this.nocc = nocc;
     }
 
     @Override
     public double energyAndGradient(double[] x, double[] g) {
         double e = 0.0;
-        int natoms = atomarray.length;
+        double ganisou[] = new double[6];
+        /**
+         * Unscale the coordinates.
+         */
+        if (optimizationScaling != null) {
+            int len = x.length;
+            for (int i = 0; i < len; i++) {
+                x[i] /= optimizationScaling[i];
+            }
+        }
         switch (refinementMode) {
             case COORDINATES:
-                for (int i = 0; i < natoms; i++) {
+                for (int i = 0; i < nAtoms; i++) {
                     atomarray[i].setXYZGradient(0.0, 0.0, 0.0);
                 }
                 // update coordinates
@@ -75,26 +89,137 @@ public class XRayEnergy implements Optimizable {
                 crs_fs.computeDensity(refinementdata.fs);
 
                 // compute crystal likelihood
-                e = sigmaaminimize.calculateLikelihood();
+                e = xraystructure.sigmaaminimize.calculateLikelihood();
 
                 // compute the crystal gradients (requires inverse FFT)
                 crs_fc.computeAtomicGradients(refinementdata.dfc,
-                        refinementdata.freer, refinementdata.rfreeflag);
+                        refinementdata.freer, refinementdata.rfreeflag,
+                        refinementMode);
                 crs_fs.computeAtomicGradients(refinementdata.dfs,
-                        refinementdata.freer, refinementdata.rfreeflag);
+                        refinementdata.freer, refinementdata.rfreeflag,
+                        refinementMode);
+
+                // pack gradients into gradient array
                 getXYZGradients(g);
 
                 break;
             case BFACTORS:
+                for (int i = 0; i < nAtoms; i++) {
+                    atomarray[i].setTempFactorGradient(0.0);
+                    if (atomarray[i].getAnisou() != null) {
+                        atomarray[i].setAnisouGradient(ganisou);
+                    }
+                }
+
+                // update B factors
+                setBFactors(x, 0);
+
+                // compute new structure factors
+                crs_fc.computeDensity(refinementdata.fc);
+                crs_fs.computeDensity(refinementdata.fs);
+
+                // compute crystal likelihood
+                e = xraystructure.sigmaaminimize.calculateLikelihood();
+
+                // compute the crystal gradients (requires inverse FFT)
+                crs_fc.computeAtomicGradients(refinementdata.dfc,
+                        refinementdata.freer, refinementdata.rfreeflag,
+                        refinementMode);
+                crs_fs.computeAtomicGradients(refinementdata.dfs,
+                        refinementdata.freer, refinementdata.rfreeflag,
+                        refinementMode);
+
+                // pack gradients into gradient array
+                getBFactorGradients(g, 0);
+
                 break;
             case COORDINATES_AND_BFACTORS:
+                for (int i = 0; i < nAtoms; i++) {
+                    atomarray[i].setXYZGradient(0.0, 0.0, 0.0);
+                    atomarray[i].setTempFactorGradient(0.0);
+                    if (atomarray[i].getAnisou() != null) {
+                        atomarray[i].setAnisouGradient(ganisou);
+                    }
+                }
+                // update coordinates
+                crs_fc.setCoordinates(x);
+                crs_fs.setCoordinates(x);
+                // update B factors
+                setBFactors(x, nxyz);
+
+                // compute new structure factors
+                crs_fc.computeDensity(refinementdata.fc);
+                crs_fs.computeDensity(refinementdata.fs);
+
+                // compute crystal likelihood
+                e = xraystructure.sigmaaminimize.calculateLikelihood();
+
+                // compute the crystal gradients (requires inverse FFT)
+                crs_fc.computeAtomicGradients(refinementdata.dfc,
+                        refinementdata.freer, refinementdata.rfreeflag,
+                        refinementMode);
+                crs_fs.computeAtomicGradients(refinementdata.dfs,
+                        refinementdata.freer, refinementdata.rfreeflag,
+                        refinementMode);
+
+                // pack gradients into gradient array
+                getXYZGradients(g);
+                getBFactorGradients(g, nxyz);
+
                 break;
             default:
                 String message = "refinement mode not implemented.";
                 logger.log(Level.SEVERE, message);
                 break;
         }
+        /**
+         * Scale the coordinates and gradients.
+         */
+        if (optimizationScaling != null) {
+            int len = x.length;
+            for (int i = 0; i < len; i++) {
+                x[i] *= optimizationScaling[i];
+                g[i] /= optimizationScaling[i];
+            }
+        }
         return e;
+    }
+
+    public void getBFactorGradients(double g[], int offset) {
+        assert (g != null);
+        double grad[];
+        int index = offset;
+        for (Atom a : atomarray) {
+            if (a.getAnisou() == null) {
+                g[index++] = a.getTempFactorGradient();
+            } else {
+                grad = a.getAnisouGradient();
+                g[index++] = grad[0];
+                g[index++] = grad[1];
+                g[index++] = grad[2];
+                g[index++] = grad[3];
+                g[index++] = grad[4];
+                g[index++] = grad[5];
+            }
+        }
+    }
+
+    public void getBFactors(double x[], int offset) {
+        double anisou[] = new double[6];
+        int index = offset;
+        for (Atom a : atomarray) {
+            if (a.getAnisou() == null) {
+                x[index++] = a.getTempFactor();
+            } else {
+                anisou = a.getAnisou();
+                x[index++] = anisou[0];
+                x[index++] = anisou[1];
+                x[index++] = anisou[2];
+                x[index++] = anisou[3];
+                x[index++] = anisou[4];
+                x[index++] = anisou[5];
+            }
+        }
     }
 
     public void getXYZGradients(double g[]) {
@@ -106,6 +231,24 @@ public class XRayEnergy implements Optimizable {
             g[index++] = grad[0];
             g[index++] = grad[1];
             g[index++] = grad[2];
+        }
+    }
+
+    public void setBFactors(double x[], int offset) {
+        double anisou[] = new double[6];
+        int index = offset;
+        for (Atom a : atomarray) {
+            if (a.getAnisou() == null) {
+                a.setTempFactor(x[index++]);
+            } else {
+                anisou[0] = x[index++];
+                anisou[1] = x[index++];
+                anisou[2] = x[index++];
+                anisou[3] = x[index++];
+                anisou[4] = x[index++];
+                anisou[5] = x[index++];
+                a.setAnisou(anisou);
+            }
         }
     }
 

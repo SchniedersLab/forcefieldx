@@ -38,7 +38,7 @@ import ffx.xray.CrystalReciprocalSpace.SolventModel;
  */
 public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
 
-    private static final Logger logger = Logger.getLogger(SplineEnergy.class.getName());
+    private static final Logger logger = Logger.getLogger(ScaleBulkMinimize.class.getName());
     private static double toSeconds = 0.000000001;
     private static final double eightpi2 = 8.0 * Math.PI * Math.PI;
     private final ReflectionList reflectionlist;

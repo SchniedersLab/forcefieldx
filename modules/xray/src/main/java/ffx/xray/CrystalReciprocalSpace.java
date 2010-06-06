@@ -42,6 +42,7 @@ import ffx.numerics.fft.Complex3DParallel;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.SpatialDensityLoop;
 import ffx.potential.nonbonded.SpatialDensityRegion;
+import ffx.xray.RefinementMinimize.RefinementMode;
 
 /**
  * Structure factor calculation (including bulk solvent structure factors)
@@ -273,7 +274,7 @@ public class CrystalReciprocalSpace {
                         new SolventDensityLoop(spatialDensityRegion);
             }
             atomicGradientRegion = null;
-            solventGradientRegion = new SolventGradientRegion();
+            solventGradientRegion = new SolventGradientRegion(RefinementMode.COORDINATES_AND_BFACTORS);
         } else {
             /**
              * Create nSymm pieces of work per thread; the empty pieces will
@@ -290,7 +291,7 @@ public class CrystalReciprocalSpace {
                 atomicDensityLoops[i] =
                         new AtomicDensityLoop(spatialDensityRegion);
             }
-            atomicGradientRegion = new AtomicGradientRegion();
+            atomicGradientRegion = new AtomicGradientRegion(RefinementMode.COORDINATES_AND_BFACTORS);
             solventGradientRegion = null;
         }
         complexFFT3D = new Complex3DParallel(fftX, fftY, fftZ, fftTeam);
@@ -346,7 +347,7 @@ public class CrystalReciprocalSpace {
     }
 
     public void setCoordinates(double coords[]) {
-        assert (coords != null && coords.length == nAtoms * 3);
+        assert (coords != null);
         Vector<SymOp> symops = crystal.spaceGroup.symOps;
         double xyz[] = new double[3];
         double symxyz[] = new double[3];
@@ -376,7 +377,7 @@ public class CrystalReciprocalSpace {
     }
 
     public void computeAtomicGradients(double hkldata[][],
-            int freer[], int flag) {
+            int freer[], int flag, RefinementMode refinementmode) {
 
         if (solvent && solventmodel == SolventModel.NONE) {
             return;
@@ -447,8 +448,10 @@ public class CrystalReciprocalSpace {
         long permanentDensityTime = 0;
         try {
             if (solvent) {
+                solventGradientRegion.setRefinementMode(refinementmode);
                 parallelTeam.execute(solventGradientRegion);
             } else {
+                atomicGradientRegion.setRefinementMode(refinementmode);
                 parallelTeam.execute(atomicGradientRegion);
             }
             permanentDensityTime = System.nanoTime() - startTime;
@@ -857,12 +860,22 @@ public class CrystalReciprocalSpace {
     private class AtomicGradientRegion extends ParallelRegion {
 
         private final AtomicGradientLoop atomicGradientLoop[];
+        private RefinementMode refinementmode;
 
-        public AtomicGradientRegion() {
+        public AtomicGradientRegion(RefinementMode refinementmode) {
+            this.refinementmode = refinementmode;
             atomicGradientLoop = new AtomicGradientLoop[threadCount];
             for (int i = 0; i < threadCount; i++) {
                 atomicGradientLoop[i] = new AtomicGradientLoop();
             }
+        }
+
+        public RefinementMode getRefinementMode(){
+            return refinementmode;
+        }
+
+        public void setRefinementMode(RefinementMode refinementmode){
+            this.refinementmode = refinementmode;
         }
 
         @Override
@@ -917,7 +930,7 @@ public class CrystalReciprocalSpace {
                                 crystal.toCartesianCoordinates(xf, xc);
 
                                 final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
-                                atomff.rho_grad(xc, densityGrid[ii]);
+                                atomff.rho_grad(xc, densityGrid[ii], refinementmode);
                             }
                         }
                     }
@@ -929,12 +942,22 @@ public class CrystalReciprocalSpace {
     private class SolventGradientRegion extends ParallelRegion {
 
         private final SolventGradientLoop solventGradientLoop[];
+        private RefinementMode refinementmode;
 
-        public SolventGradientRegion() {
+        public SolventGradientRegion(RefinementMode refinementmode) {
+            this.refinementmode = refinementmode;
             solventGradientLoop = new SolventGradientLoop[threadCount];
             for (int i = 0; i < threadCount; i++) {
                 solventGradientLoop[i] = new SolventGradientLoop();
             }
+        }
+
+        public RefinementMode getRefinementMode(){
+            return refinementmode;
+        }
+
+        public void setRefinementMode(RefinementMode refinementmode){
+            this.refinementmode = refinementmode;
         }
 
         @Override
@@ -1008,10 +1031,12 @@ public class CrystalReciprocalSpace {
 
                                 if (solventmodel == SolventModel.GAUSSIAN) {
                                     atomff.rho_gauss_grad(xc, vdwr * solvent_b,
-                                            densityGrid[ii] * -solvent_a * solventGrid[ii]);
+                                            densityGrid[ii] * -solvent_a * solventGrid[ii],
+                                            refinementmode);
                                 } else if (solventmodel == SolventModel.POLYNOMIAL) {
                                     atomff.rho_poly_grad(xc, vdwr + solvent_a, solvent_b,
-                                            densityGrid[ii] * solventGrid[ii]);
+                                            densityGrid[ii] * solventGrid[ii],
+                                            refinementmode);
                                 }
                             }
                         }
