@@ -25,8 +25,10 @@ import java.util.logging.Level;
 
 import ffx.numerics.LBFGS;
 import ffx.numerics.LineSearch.LineSearchResult;
+import ffx.numerics.Optimizable;
 import ffx.numerics.OptimizationListener;
 import ffx.potential.PotentialEnergy;
+import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
 
 /**
@@ -44,7 +46,7 @@ public class Minimize implements OptimizationListener, Terminatable {
     private final double[] grad;
     private final double[] scaling;
     private final MolecularAssembly molecularAssembly;
-    private final PotentialEnergy potentialEnergy;
+    private final Optimizable optimizable;
     private AlgorithmListener algorithmListener;
     private boolean done = false;
     private boolean terminate = false;
@@ -58,18 +60,16 @@ public class Minimize implements OptimizationListener, Terminatable {
         algorithmListener = listener;
         n = molecularAssembly.getAtomList().size() * 3;
         if (molecularAssembly.getPotentialEnergy() == null) {
-            potentialEnergy = new PotentialEnergy(molecularAssembly);
-            molecularAssembly.setPotential(potentialEnergy);
-        } else {
-            potentialEnergy = molecularAssembly.getPotentialEnergy();
+            molecularAssembly.setPotential(new PotentialEnergy(molecularAssembly));
         }
+        optimizable = molecularAssembly.getPotentialEnergy();
         x = new double[n];
         grad = new double[n];
         scaling = new double[n];
         for (int i = 0; i < n; i++) {
             scaling[i] = 12.0;
         }
-        potentialEnergy.setOptimizationScaling(scaling);
+        optimizable.setOptimizationScaling(scaling);
     }
 
     @Override
@@ -86,18 +86,28 @@ public class Minimize implements OptimizationListener, Terminatable {
         }
     }
 
-    public PotentialEnergy minimize() {
+    public Optimizable minimize() {
         return minimize(1.0);
     }
 
-    public PotentialEnergy minimize(double eps) {
+    public Optimizable minimize(double eps) {
         return minimize(7, eps);
     }
 
-    public PotentialEnergy minimize(int m, double eps) {
+    public Optimizable minimize(int m, double eps) {
 
         time = System.nanoTime();
-        potentialEnergy.getCoordinates(x);
+
+        Atom[] atoms = molecularAssembly.getAtomArray();
+        double xyz[] = new double[3];
+        int index = 0;
+        for (int i=0; i < atoms.length; i++) {
+            atoms[i].getXYZ(xyz);
+            x[index++] = xyz[0];
+            x[index++] = xyz[1];
+            x[index++] = xyz[2];
+        }
+
         /**
          * Scale coordinates.
          */
@@ -106,10 +116,10 @@ public class Minimize implements OptimizationListener, Terminatable {
         }
         done = false;
         int status = 2;
-        double e = potentialEnergy.energyAndGradient(x, grad);
-        status = LBFGS.minimize(n, m, x, e, grad, eps, potentialEnergy, this);
+        double e = optimizable.energyAndGradient(x, grad);
+        status = LBFGS.minimize(n, m, x, e, grad, eps, optimizable, this);
         done = true;
-        
+
         switch (status) {
             case 0:
                 logger.info(String.format("\n Optimization achieved convergence criteria: %8.5f\n", grms));
@@ -120,7 +130,7 @@ public class Minimize implements OptimizationListener, Terminatable {
             default:
                 logger.warning("\n Optimization failed.\n");
         }
-        return potentialEnergy;
+        return optimizable;
     }
 
     /**
@@ -207,5 +217,4 @@ public class Minimize implements OptimizationListener, Terminatable {
         }
         return true;
     }
-
 }

@@ -601,9 +601,19 @@ public class PotentialEnergy implements Optimizable {
         int index = 0;
         for (Atom a : atoms) {
             a.getXYZGradient(grad);
-            g[index++] = grad[0];
-            g[index++] = grad[1];
-            g[index++] = grad[2];
+            double gx = grad[0];
+            double gy = grad[1];
+            double gz = grad[2];
+            if (gx == Double.NaN || gx == Double.NEGATIVE_INFINITY || gx == Double.POSITIVE_INFINITY
+                || gy == Double.NaN || gy == Double.NEGATIVE_INFINITY || gy == Double.POSITIVE_INFINITY
+                || gz == Double.NaN || gz == Double.NEGATIVE_INFINITY || gz == Double.POSITIVE_INFINITY) {
+                String message = format("The gradient of atom %s is (%8.3f,%8.3f,%8.3f).",
+                                        a.toString(), gx, gy, gz);
+                logger.warning(message);
+            }
+            g[index++] = gx;
+            g[index++] = gy;
+            g[index++] = gz;
         }
     }
 
@@ -629,5 +639,4 @@ public class PotentialEnergy implements Optimizable {
             x[index++] = xyz[2];
         }
     }
-
 }

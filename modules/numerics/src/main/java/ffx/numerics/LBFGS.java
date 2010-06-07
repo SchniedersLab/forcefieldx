@@ -183,9 +183,16 @@ public class LBFGS {
         double gnorm = 0.0;
         for (int i = 0; i < n; i++) {
             double gi = g[i];
+            if (gi == Double.NaN || gi == Double.NEGATIVE_INFINITY || gi == Double.POSITIVE_INFINITY) {
+                String message = format("The gradient of variable %d is %8.3f.", i, gi);
+                logger.warning(message);
+                return 1;
+            }
             double gis = gi * scaling[i];
             gnorm += gi * gi;
             grms += gis * gis;
+
+
         }
         gnorm = sqrt(gnorm);
         grms = sqrt(grms) / rms;

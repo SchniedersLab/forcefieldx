@@ -56,9 +56,9 @@ import org.jdesktop.j3d.loaders.vrml97.VrmlLoader;
 import org.jdesktop.j3d.loaders.vrml97.VrmlScene;
 
 import com.sun.j3d.utils.picking.PickTool;
+import ffx.crystal.Crystal;
 
 import ffx.potential.parameters.ForceField;
-import ffx.potential.bonded.Utilities.FileType;
 import ffx.numerics.VectorMath;
 import ffx.potential.PotentialEnergy;
 import java.util.Arrays;
@@ -133,6 +133,13 @@ public class MolecularAssembly extends MSGroup {
 
     public PotentialEnergy getPotentialEnergy() {
         return potentialEnergy;
+    }
+
+    public Crystal getCrystal() {
+        if (potentialEnergy == null) {
+            return null;
+        }
+        return potentialEnergy.getCrystal();
     }
 
     public ForceField getForceField() {
@@ -527,7 +534,7 @@ public class MolecularAssembly extends MSGroup {
         return null;
     }
 
-        public String[] getChainNames() {
+    public String[] getChainNames() {
         ArrayList<String> temp = new ArrayList<String>();
         for (ListIterator li = getAtomNodeList().listIterator(); li.hasNext();) {
             MSNode node = (MSNode) li.next();
@@ -623,7 +630,7 @@ public class MolecularAssembly extends MSGroup {
             if (node instanceof Polymer) {
                 Polymer polymer = (Polymer) node;
                 if (polymer.getName().equals(segID)
-                        && polymer.getChainID().equals(chainID)) {
+                    && polymer.getChainID().equals(chainID)) {
                     return (Polymer) node;
                 }
             }
@@ -703,7 +710,7 @@ public class MolecularAssembly extends MSGroup {
             Molecule m = (Molecule) node;
             if (m.getSegID().equalsIgnoreCase(segID) && m.getResidueName().equalsIgnoreCase(resName)
                 && m.getResidueNumber() == resNum) {
-                    return (Atom) m.addMSNode(atom);
+                return (Atom) m.addMSNode(atom);
             }
         }
         list = water.getChildList();

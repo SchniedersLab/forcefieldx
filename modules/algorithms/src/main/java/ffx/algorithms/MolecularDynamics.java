@@ -32,6 +32,7 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 
 import ffx.algorithms.Thermostat.Thermostats;
+import ffx.numerics.Optimizable;
 import ffx.potential.PotentialEnergy;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
@@ -45,7 +46,7 @@ import ffx.potential.parsers.XYZFilter;
  *
  * @since 1.0
  */
-public class MolecularDynamics implements Terminatable, Runnable {
+public class MolecularDynamics implements Runnable, Terminatable {
 
     private static final Logger logger = Logger.getLogger(MolecularDynamics.class.getName());
     private final int n;
@@ -63,7 +64,7 @@ public class MolecularDynamics implements Terminatable, Runnable {
     private double total;
     private double dt;
     private final MolecularAssembly molecularAssembly;
-    private final PotentialEnergy potentialEnergy;
+    private final Optimizable potentialEnergy;
     private final CompositeConfiguration properties;
     private final Atom atoms[];
     private AlgorithmListener algorithmListener;
@@ -87,11 +88,9 @@ public class MolecularDynamics implements Terminatable, Runnable {
         this.molecularAssembly = assembly;
         this.algorithmListener = listener;
         if (molecularAssembly.getPotentialEnergy() == null) {
-            potentialEnergy = new PotentialEnergy(molecularAssembly);
-            molecularAssembly.setPotential(potentialEnergy);
-        } else {
-            potentialEnergy = molecularAssembly.getPotentialEnergy();
+            molecularAssembly.setPotential(new PotentialEnergy(molecularAssembly));
         }
+        potentialEnergy = molecularAssembly.getPotentialEnergy();
         this.properties = properties;
         atoms = molecularAssembly.getAtomArray();
         n = atoms.length;
@@ -108,7 +107,7 @@ public class MolecularDynamics implements Terminatable, Runnable {
         if (requestedThermostat == null) {
             requestedThermostat = Thermostats.ADIABATIC;
         }
-        
+
         switch (requestedThermostat) {
             case ADIABATIC:
             default:
@@ -374,12 +373,11 @@ public class MolecularDynamics implements Terminatable, Runnable {
                 } else {
                     logger.warning(String.format(" Appending snap shot to " + archive.getName() + " failed"));
                 }
-                if (dynFilter.writeFile(dyn, potentialEnergy.getCrystal(), x, v, a, aPrevious)) {
+                if (dynFilter.writeFile(dyn, molecularAssembly.getCrystal(), x, v, a, aPrevious)) {
                     logger.info(String.format(" Wrote restart file to " + dyn.getName()));
                 } else {
                     logger.info(String.format(" Writing restart file to " + dyn.getName() + " failed"));
                 }
-
             }
 
             if (algorithmListener != null && step % printFrequency == 0) {

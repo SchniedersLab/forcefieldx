@@ -54,6 +54,7 @@ import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.MolecularDynamics;
 import ffx.algorithms.Terminatable;
 import ffx.algorithms.Thermostat.Thermostats;
+import ffx.numerics.Optimizable;
 
 import ffx.potential.PotentialEnergy;
 import ffx.potential.bonded.MSNode;
@@ -229,7 +230,7 @@ public class ModelingShell extends Console implements AlgorithmListener {
         return null;
     }
 
-    public PotentialEnergy minimize(double eps) {
+    public Optimizable minimize(double eps) {
         if (interrupted || terminatableAlgorithm != null) {
             return null;
         }
@@ -237,7 +238,7 @@ public class ModelingShell extends Console implements AlgorithmListener {
         if (active != null) {
             Minimize minimize = new Minimize(active, this);
             terminatableAlgorithm = minimize;
-            PotentialEnergy energy = minimize.minimize(eps);
+            Optimizable energy = minimize.minimize(eps);
             terminatableAlgorithm = null;
             return energy;
         }

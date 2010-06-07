@@ -1114,7 +1114,7 @@ public final class PDBFilter extends SystemFilter {
                 CM5 = setHeavyAtom(residue, "CM5", C5, 1519);
                 bond(C6, N1);
                 setHydrogenAtom(residue, "H41", N4, 1.00e0, C4, 120.0e0, N3, 0.0e0, 0, 1516);
-                setHydrogenAtom(residue, "H42", N4, 1.00e0, C4, 120.0e0, N3, 180.0e0, 0, 1517);
+                setHydrogenAtom(residue, "H42", N4, 1.00e0, C4, 120.0e0, C5, 0.0e0, 0, 1517);
                 setHydrogenAtom(residue, "H6", C6, 1.08e0, C5, 119.4e0, C4, 180.0e0, 0, 1518);
                 HM51 = setHydrogenAtom(residue, "HM51", CM5, 1.08e0, C5, 109.5e0, C4, 0.0e0, 0, 1520);
                 setHydrogenAtom(residue, "HM52", CM5, 1.08e0, C5, 109.5e0, HM51, 109.5e0, 1, 1521);
@@ -1212,7 +1212,6 @@ public final class PDBFilter extends SystemFilter {
                 H241 = setHydrogenAtom(residue, "H241", C24, 1.08e0, O23, 109.5e0, C21, 0.0e0, 0, 1683);
                 setHydrogenAtom(residue, "H242", C24, 1.08e0, O23, 109.5e0, H241, 109.5e0, 1, 1684);
                 setHydrogenAtom(residue, "H243", C24, 1.08e0, O23, 109.5e0, H241, 109.5e0, -1, 1685);
-
                 break;
             case M2MG:
                 Atom CM2;
@@ -1284,7 +1283,7 @@ public final class PDBFilter extends SystemFilter {
                 setHydrogenAtom(residue, "H82", C8, 1.08e0, N7, 109.5e0, N9, 109.5e0, -1, 1554);
                 setHydrogenAtom(residue, "H1", N1, 1.00e0, C6, 117.4e0, C5, 180.0e0, 0, 1548);
                 setHydrogenAtom(residue, "H21", N2, 1.00e0, C2, 120.0e0, N1, 0.0e0, 0, 1550);
-                setHydrogenAtom(residue, "H22", N2, 1.00e0, C2, 120.0e0, N1, 180.0e0, 0, 1551);
+                setHydrogenAtom(residue, "H22", N2, 1.00e0, C2, 120.0e0, N3, 0.0e0, 0, 1551);
                 HM71 = setHydrogenAtom(residue, "HM71", CM7, 1.08e0, N7, 109.5e0, C8, 0.0e0, 0, 1556);
                 setHydrogenAtom(residue, "HM72", CM7, 1.08e0, N7, 109.5e0, HM71, 109.5e0, 1, 1557);
                 setHydrogenAtom(residue, "HM73", CM7, 1.08e0, N7, 109.5e0, HM71, 109.5e0, -1, 1558);
