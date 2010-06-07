@@ -12872,8 +12872,8 @@ biotype   1592  H5*   "1-MeAdenosine"             293
 biotype   1593  C4*   "1-MeAdenosine"             294
 biotype   1594  H4*   "1-MeAdenosine"             295
 biotype   1595  O4*   "1-MeAdenosine"             296
-biotype   1596  C1*   "1-MeAdenosine"             417
-biotype   1597  H1*   "1-MeAdenosine"             418
+biotype   1596  C1*   "1-MeAdenosine"             297
+biotype   1597  H1*   "1-MeAdenosine"             298
 biotype   1598  C3*   "1-MeAdenosine"             299
 biotype   1599  H3*   "1-MeAdenosine"             300
 biotype   1600  C2*   "1-MeAdenosine"             301

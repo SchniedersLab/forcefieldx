@@ -4052,7 +4052,6 @@ public class ParticleMeshEwald implements LambdaInterface {
                 String message = "The polarize keyword was not found for atom "
                                  + (index + 1) + " with type " + ai.getType();
                 logger.severe(message);
-                System.exit(-1);
             }
         }
         /**
