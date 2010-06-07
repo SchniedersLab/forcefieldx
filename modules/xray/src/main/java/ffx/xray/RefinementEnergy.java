@@ -66,8 +66,12 @@ public class RefinementEnergy implements Optimizable {
             potentialEnergy = new PotentialEnergy(molecularAssembly);
             molecularAssembly.setPotential(potentialEnergy);
         }
-        xrayEnergy = new XRayEnergy(xraystructure, nxyz, nb, nocc,
-                refinementMode);
+        xrayEnergy = xraystructure.getXRayEnergy();
+        if (xrayEnergy == null){
+            xrayEnergy = new XRayEnergy(xraystructure, nxyz, nb, nocc,
+                    refinementMode);
+            xraystructure.setXRayEnergy(xrayEnergy);
+        }
     }
 
     /**

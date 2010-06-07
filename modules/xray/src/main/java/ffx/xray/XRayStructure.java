@@ -58,6 +58,7 @@ public class XRayStructure {
     SplineMinimize splineminimize;
     CrystalStats crystalstats;
     protected boolean scaled = false;
+    XRayEnergy xrayenergy = null;
 
     public XRayStructure(MolecularAssembly assembly,
             CompositeConfiguration properties) {
@@ -203,6 +204,14 @@ public class XRayStructure {
         crs_fs.setUse3G(refinementdata.use_3g);
 
         crystalstats = new CrystalStats(reflectionlist, refinementdata);
+    }
+
+    public XRayEnergy getXRayEnergy(){
+        return xrayenergy;
+    }
+
+    public void setXRayEnergy(XRayEnergy xrayenergy){
+        this.xrayenergy = xrayenergy;
     }
 
     public void printscaleandr() {
