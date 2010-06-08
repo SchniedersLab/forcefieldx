@@ -125,7 +125,7 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
         double dt = (highTemperature - lowTemperature) / annealingSteps;
         for (int i = 0; i < annealingSteps; i++) {
             double temperature = highTemperature - dt * i;
-            molecularDynamics.dynamic(mdSteps, 1.0, 0.01, -1.0, temperature, true, null);
+            molecularDynamics.dynamic(mdSteps, 1.0, 0.001, 0.0, temperature, true, null);
             if (terminate) {
                 logger.info(String.format("\n Terminating at temperature %8.3f.\n", temperature));
                 break;
