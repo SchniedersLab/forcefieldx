@@ -87,6 +87,10 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
                 break;
             case BFACTORS:
                 for (Atom a : atomarray) {
+                    // ignore hydrogens!!!
+                    if (a.getAtomicNumber() == 1){
+                        continue;
+                    }
                     if (a.getAnisou() == null) {
                         nb++;
                     } else {
@@ -97,6 +101,10 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
             case COORDINATES_AND_BFACTORS:
                 nxyz = nAtoms * 3;
                 for (Atom a : atomarray) {
+                    // ignore hydrogens!!!
+                    if (a.getAtomicNumber() == 1){
+                        continue;
+                    }
                     if (a.getAnisou() == null) {
                         nb++;
                     } else {
