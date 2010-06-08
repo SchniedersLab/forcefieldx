@@ -746,7 +746,16 @@ public class FormFactor {
         } else {
             hasanisou = false;
             uaniso = new double[6];
-            uaniso[0] = uaniso[1] = uaniso[2] = b2u(biso);
+            if (biso < 0.0) {
+                StringBuilder sb = new StringBuilder();
+                sb.append("negative B factor for atom: " + atom.toString() + "\n");
+                sb.append("resetting B to 0.1\n");
+                logger.warning(sb.toString());
+                atom.setTempFactor(0.1);
+                uaniso[0] = uaniso[1] = uaniso[2] = b2u(0.1);
+            } else {
+                uaniso[0] = uaniso[1] = uaniso[2] = b2u(biso);
+            }
             uaniso[3] = uaniso[4] = uaniso[5] = 0.0;
         }
 
@@ -977,7 +986,7 @@ public class FormFactor {
 
     public void rho_gauss_grad(double xyz[], double sd, double dfc,
             RefinementMode refinementmode) {
-        if (refinementmode == RefinementMode.BFACTORS){
+        if (refinementmode == RefinementMode.BFACTORS) {
             return;
         }
         double dxyz[] = new double[3];
@@ -997,7 +1006,7 @@ public class FormFactor {
 
     public void rho_poly_grad(double xyz[], double arad, double w, double dfs,
             RefinementMode refinementmode) {
-        if (refinementmode == RefinementMode.BFACTORS){
+        if (refinementmode == RefinementMode.BFACTORS) {
             return;
         }
         double dxyz[] = new double[3];

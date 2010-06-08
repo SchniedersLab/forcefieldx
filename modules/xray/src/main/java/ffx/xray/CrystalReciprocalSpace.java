@@ -366,18 +366,27 @@ public class CrystalReciprocalSpace {
         }
     }
 
-    public void computeDensity(double hkldata[][]) {
+    public void computeDensity(double hkldata[][]){
+        computeDensity(hkldata, false);
+    }
+
+    public void computeDensity(double hkldata[][], boolean print) {
         if (solvent) {
             if (solventmodel != SolventModel.NONE) {
-                computeSolventDensity(hkldata);
+                computeSolventDensity(hkldata, print);
             }
         } else {
-            computeAtomicDensity(hkldata);
+            computeAtomicDensity(hkldata, print);
         }
+    }
+    public void computeAtomicGradients(double hkldata[][],
+            int freer[], int flag, RefinementMode refinementmode) {
+        computeAtomicGradients(hkldata, freer, flag, refinementmode, false);
     }
 
     public void computeAtomicGradients(double hkldata[][],
-            int freer[], int flag, RefinementMode refinementmode) {
+            int freer[], int flag, RefinementMode refinementmode,
+            boolean print) {
 
         if (solvent && solventmodel == SolventModel.NONE) {
             return;
@@ -472,12 +481,16 @@ public class CrystalReciprocalSpace {
             sb.append(String.format(" %d reflections ignored (cross validation set)\n", nfree));
         }
 
-        if (logger.isLoggable(Level.INFO)) {
+        if (logger.isLoggable(Level.INFO) && print) {
             logger.info(sb.toString());
         }
     }
 
-    public void computeAtomicDensity(double hkldata[][]) {
+    public void computeAtomicDensity(double hkldata[][]){
+        computeAtomicDensity(hkldata, false);
+    }
+
+    public void computeAtomicDensity(double hkldata[][], boolean print) {
         StringBuilder sb = new StringBuilder();
         // clear out the reflection data
         int n = reflectionlist.hkllist.size();
@@ -557,12 +570,16 @@ public class CrystalReciprocalSpace {
         sb.append(String.format(" Atomic FFT: %8.3f\n", fftTime * toSeconds));
         sb.append(String.format(" Atomic symmetry/scaling: %8.3f\n", symtime * toSeconds));
 
-        if (logger.isLoggable(Level.INFO)) {
+        if (logger.isLoggable(Level.INFO) && print) {
             logger.info(sb.toString());
         }
     }
 
-    public void computeSolventDensity(double hkldata[][]) {
+    public void computeSolventDensity(double hkldata[][]){
+        computeSolventDensity(hkldata, false);
+    }
+
+    public void computeSolventDensity(double hkldata[][], boolean print) {
         StringBuilder sb = new StringBuilder();
         // clear out the reflection data
         int n = reflectionlist.hkllist.size();
@@ -725,7 +742,7 @@ public class CrystalReciprocalSpace {
         sb.append(String.format(" Solvent FFT: %8.3f\n", fftTime * toSeconds));
         sb.append(String.format(" Solvent symmetry/scaling: %8.3f\n", symtime * toSeconds));
 
-        if (logger.isLoggable(Level.INFO)) {
+        if (logger.isLoggable(Level.INFO) && print) {
             logger.info(sb.toString());
         }
     }

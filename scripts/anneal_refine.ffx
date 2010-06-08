@@ -2,6 +2,7 @@ import ffx.algorithms.SimulatedAnnealing;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.xray.XRayStructure;
 import ffx.xray.RefinementEnergy;
+import ffx.xray.RefinementMinimize;
 import ffx.xray.RefinementMinimize.RefinementMode;
 
 open("examples/1N7S.pdb");
@@ -22,3 +23,15 @@ int annealingSteps = 10;
 int mdSteps = 5;
 
 simulatedAnnealing.anneal(highTemperature, lowTemperature, annealingSteps, mdSteps);
+
+xray.scalebulkfit();
+xray.printstats();
+
+RefinementMinimize refinementMinimize = new RefinementMinimize(active, xray, RefinementMode.COORDINATES_AND_BFACTORS);
+refinementMinimize.minimize(0.5);
+
+xray.scalebulkfit();
+xray.printstats();
+
+xray.writedata("/tmp/1N7S_anneal_refine.mtz");
+saveAsPDB(new File("/tmp/1N7S_anneal_refine.pdb"));

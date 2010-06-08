@@ -460,6 +460,7 @@ public class MTZFilter {
             } else if ((label.equalsIgnoreCase("free")
                     || label.equalsIgnoreCase("freer")
                     || label.equalsIgnoreCase("freerflag")
+                    || label.equalsIgnoreCase("freer_flag")
                     || label.equalsIgnoreCase("rfree")
                     || label.equalsIgnoreCase("rfreeflag")
                     || label.equalsIgnoreCase("r-free-flags")
