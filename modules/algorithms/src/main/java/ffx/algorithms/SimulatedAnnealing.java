@@ -97,7 +97,7 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
 
         logger.info(String.format(" Initial temperature:    %8.3f (Kelvin)", highTemperature));
         logger.info(String.format(" Final temperature:      %8.3f (Kelvin)", lowTemperature));
-        logger.info(String.format(" Annealing steps: %8d", annealingSteps));
+        logger.info(String.format(" Annealing steps:        %8d", annealingSteps));
         logger.info(String.format(" MD steps/temperature:   %8d", mdSteps));
 
         Thread dynamicThread = new Thread(this);
