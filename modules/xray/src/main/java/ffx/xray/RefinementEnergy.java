@@ -67,7 +67,7 @@ public class RefinementEnergy implements Optimizable {
             molecularAssembly.setPotential(potentialEnergy);
         }
         xrayEnergy = xraystructure.getXRayEnergy();
-        if (xrayEnergy == null){
+        if (xrayEnergy == null) {
             xrayEnergy = new XRayEnergy(xraystructure, nxyz, nb, nocc,
                     refinementMode);
             xraystructure.setXRayEnergy(xrayEnergy);
@@ -124,6 +124,12 @@ public class RefinementEnergy implements Optimizable {
                 // Add the chemical and X-ray gradients.
                 for (int i = 0; i < nxyz; i++) {
                     g[i] = gChemical[i] + weight * gXray[i];
+                }
+                // bfactors, occ
+                if (n > nxyz) {
+                    for (int i = nxyz; i < n; i++) {
+                        g[i] = weight * gXray[i];
+                    }
                 }
                 break;
             default:

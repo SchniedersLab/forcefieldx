@@ -185,6 +185,14 @@ public class XRayEnergy implements Optimizable {
         return e;
     }
 
+    public RefinementMode getRefinementMode() {
+        return refinementMode;
+    }
+
+    public void setRefinementMode(RefinementMode refinementmode) {
+        this.refinementMode = refinementmode;
+    }
+
     public int getNXYZ() {
         return nxyz;
     }
@@ -217,6 +225,10 @@ public class XRayEnergy implements Optimizable {
         double grad[];
         int index = offset;
         for (Atom a : atomarray) {
+            // ignore hydrogens!!!
+            if (a.getAtomicNumber() == 1) {
+                continue;
+            }
             if (a.getAnisou() == null) {
                 tmp = a.getTempFactorGradient();
                 if (Math.abs(tmp) > maxgrad) {
@@ -258,6 +270,10 @@ public class XRayEnergy implements Optimizable {
         double anisou[] = new double[6];
         int index = offset;
         for (Atom a : atomarray) {
+            // ignore hydrogens!!!
+            if (a.getAtomicNumber() == 1) {
+                continue;
+            }
             if (a.getAnisou() == null) {
                 x[index++] = a.getTempFactor();
             } else {
@@ -300,6 +316,10 @@ public class XRayEnergy implements Optimizable {
         double anisou[] = new double[6];
         int index = offset;
         for (Atom a : atomarray) {
+            // ignore hydrogens!!!
+            if (a.getAtomicNumber() == 1) {
+                continue;
+            }
             if (a.getAnisou() == null) {
                 a.setTempFactor(x[index++]);
             } else {
@@ -310,6 +330,14 @@ public class XRayEnergy implements Optimizable {
                 anisou[4] = x[index++];
                 anisou[5] = x[index++];
                 a.setAnisou(anisou);
+            }
+        }
+
+        // set hydrogen based on bonded atom
+        for (Atom a : atomarray) {
+            if (a.getAtomicNumber() == 1) {
+                Atom b = a.getBonds().get(0).get1_2(a);
+                a.setTempFactor(b.getTempFactor());
             }
         }
     }
