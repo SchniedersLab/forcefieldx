@@ -383,7 +383,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
             if (terminate) {
                 logger.info(String.format("\n Terminating after %8d time steps\n", step));
-                done = true;
                 break;
             }
         }
@@ -391,6 +390,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
         if (!terminate) {
             logger.info(String.format(" Completed %8d time steps\n", nSteps));
         }
+
+        done = true;
+        terminate = false;
     }
 
     @Override

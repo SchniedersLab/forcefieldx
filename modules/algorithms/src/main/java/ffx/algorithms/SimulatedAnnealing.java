@@ -72,8 +72,6 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
         done = false;
         logger.info(" Simulated annealing starting up");
 
-
-
         if (annealingSteps <= 0) {
             annealingSteps = 1;
         }
@@ -130,7 +128,6 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
             molecularDynamics.dynamic(mdSteps, 1.0, 0.01, -1.0, temperature, true, null);
             if (terminate) {
                 logger.info(String.format("\n Terminating at temperature %8.3f.\n", temperature));
-                done = true;
                 break;
             }
         }
@@ -138,6 +135,9 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
         if (!terminate) {
             logger.info(String.format(" Completed %8d annealing steps\n", annealingSteps));
         }
+
+        done = true;
+        terminate = false;
     }
 
     @Override
