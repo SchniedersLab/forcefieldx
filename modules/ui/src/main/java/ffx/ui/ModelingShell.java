@@ -254,7 +254,9 @@ public class ModelingShell extends Console implements AlgorithmListener {
         FFXSystem active = mainPanel.getHierarchy().getActive();
         if (active != null) {
             MolecularDynamics molecularDynamics = new MolecularDynamics(active,
-                                                                        active.getProperties(), this, Thermostats.BUSSI);
+                                                                        active.getPotentialEnergy(),
+                                                                        active.getProperties(),
+                                                                        this, Thermostats.BUSSI);
             terminatableAlgorithm = molecularDynamics;
             molecularDynamics.dynamic(nStep, timeStep, printInterval,
                                       saveInterval, temperature, initVelocities, dyn);

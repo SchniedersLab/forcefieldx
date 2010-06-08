@@ -83,14 +83,13 @@ public class MolecularDynamics implements Runnable, Terminatable {
     private boolean loadRestart = false;
 
     public MolecularDynamics(MolecularAssembly assembly,
+                             Optimizable potentialEnergy,
                              CompositeConfiguration properties,
-                             AlgorithmListener listener, Thermostats requestedThermostat) {
+                             AlgorithmListener listener,
+                             Thermostats requestedThermostat) {
         this.molecularAssembly = assembly;
         this.algorithmListener = listener;
-        if (molecularAssembly.getPotentialEnergy() == null) {
-            molecularAssembly.setPotential(new PotentialEnergy(molecularAssembly));
-        }
-        potentialEnergy = molecularAssembly.getPotentialEnergy();
+        this.potentialEnergy = potentialEnergy;
         this.properties = properties;
         atoms = molecularAssembly.getAtomArray();
         n = atoms.length;
@@ -216,6 +215,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
                         final double saveInterval, final double temperature, final boolean initVelocities,
                         final File dyn) {
 
+        init(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);
+
         /**
          * Return if already running; Could happen if two threads call
          * dynamic on the same MolecularDynamics instance.
@@ -224,6 +225,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
             logger.warning("Programming error - a thread invoked dynamic when it was already running.");
             return;
         }
+        done = false;
 
         logger.info(" Molecular dynamics starting up");
         if (!(thermostat instanceof Adiabatic)) {
@@ -235,11 +237,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
         if (dyn != null) {
             logger.info(format(" Continuing from " + dyn.getAbsolutePath()));
         }
-
-        init(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);
-
-        // Now we're committed!
-        done = false;
 
         logger.info(String.format(" Number of steps:     %8d", nSteps));
         logger.info(String.format(" Time step:           %8.3f (fsec)", timeStep));

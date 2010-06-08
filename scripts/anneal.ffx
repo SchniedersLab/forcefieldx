@@ -1,0 +1,26 @@
+
+import ffx.algorithms.SimulatedAnnealing;
+import ffx.potential.bonded.MolecularAssembly;
+import ffx.xray.XRayStructure;
+import ffx.xray.RefinementEnergy;
+import ffx.xray.RefinementMinimize.RefinementMode;
+
+open("examples/1N7S.pdb");
+
+XRayStructure xray = new XRayStructure(active, active.getProperties());
+xray.scalebulkfit();
+xray.printstats();
+
+RefinementEnergy refinementEnergy = new RefinementEnergy(active, xray, 3 * active.getAtomArray().length, 
+                                                         0, 0, RefinementMode.COORDINATES);
+SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(active, refinementEnergy, 
+                                                               active.getProperties(), null);
+
+double highTemperature = 1000.0;
+double lowTemperature = 100.0;
+int annealingSteps = 10;
+int mdSteps = 5;
+
+simulatedAnnealing.anneal(highTemperature, lowTemperature, annealingSteps, mdSteps);
+
+
