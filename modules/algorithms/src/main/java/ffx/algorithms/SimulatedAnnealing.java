@@ -72,6 +72,8 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
         done = false;
         logger.info(" Simulated annealing starting up");
 
+
+
         if (annealingSteps <= 0) {
             annealingSteps = 1;
         }

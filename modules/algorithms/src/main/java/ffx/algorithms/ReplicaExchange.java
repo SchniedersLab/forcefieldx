@@ -63,7 +63,8 @@ public class ReplicaExchange implements Terminatable {
             threads = new Thread[nReplicas];
             for (int i = 0; i < nReplicas; i++) {
                 molecularAssembly[i] = assembly[i];
-                replicas[i] = new MolecularDynamics(molecularAssembly[i], properties, listener, Thermostats.BUSSI);
+                replicas[i] = new MolecularDynamics(molecularAssembly[i], molecularAssembly[i].getPotentialEnergy(),
+                        properties, listener, Thermostats.BUSSI);
             }
         }
         this.algorithmListener = listener;
