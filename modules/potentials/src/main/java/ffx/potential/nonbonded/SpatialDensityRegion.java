@@ -28,6 +28,7 @@ import edu.rit.pj.ParallelRegion;
 
 import ffx.crystal.Crystal;
 import ffx.potential.bonded.Atom;
+import java.util.Arrays;
 import java.util.logging.Level;
 
 /**
@@ -40,19 +41,19 @@ import java.util.logging.Level;
  */
 public class SpatialDensityRegion extends ParallelRegion {
 
-    private static final Logger logger = Logger.getLogger(SpatialDensityRegion.class.getName());
+    protected static final Logger logger = Logger.getLogger(SpatialDensityRegion.class.getName());
     /**
      * The number of divisions along the A-axis.
      */
-    private int nA;
+    protected int nA;
     /**
      * The number of divisions along the B-axis.
      */
-    private int nB;
+    protected int nB;
     /**
      * The number of divisions along the C-Axis.
      */
-    private int nC;
+    protected int nC;
     /**
      * The number of cells in one plane (nDivisions^2).
      */
@@ -69,25 +70,13 @@ public class SpatialDensityRegion extends ParallelRegion {
      * Number of octant work cells with at least one atom 
      * (actualWork is less than or equal to nWork).
      */
-    private int actualWork;
+    protected int actualWork;
     public int actualCount[];
     /**
      * A temporary array that holds the index of the cell each atom is assigned
      * to.
      */
     private final int cellIndex[][];
-    /**
-     * The cell indices of each atom along a A-axis.
-     */
-    private final int cellA[];
-    /**
-     * The cell indices of each atom along a B-axis.
-     */
-    private final int cellB[];
-    /**
-     * The cell indices of each atom along a C-axis.
-     */
-    private final int cellC[];
     /**
      * The A index of each octant (0..nA - 1) that may not have any atoms.
      */
@@ -130,19 +119,19 @@ public class SpatialDensityRegion extends ParallelRegion {
      */
     protected final int cellStart[][];
     public int nSymm;
-    private final double coordinates[][][];
-    private final Atom atoms[];
+    protected final double coordinates[][][];
+    protected final boolean select[][];
     private final double xf[];
     private final double yf[];
     private final double zf[];
-    private final Crystal crystal;
+    protected final Crystal crystal;
     public final int nAtoms;
     public final int nThreads;
     private final int gridSize;
     private double grid[] = null;
     private float floatGrid[] = null;
     private double initValue = 0.0;
-    private SpatialDensityLoop spatialDensityLoop[];
+    protected SpatialDensityLoop spatialDensityLoop[];
     private GridInitLoop gridInitLoop;
 
     public SpatialDensityRegion(int gX, int gY, int gZ, double grid[],
@@ -169,12 +158,11 @@ public class SpatialDensityRegion extends ParallelRegion {
          * Chop up the 3D unit cell domain into fractional coordinate chunks to
          * allow multiple threads to put charge density onto the grid without
          * needing the same grid point. First, we partition the X-axis, then
-         * the Y-axis, and finally the Z-axis if necesary.
+         * the Y-axis, and finally the Z-axis if necessary.
          */
         this.crystal = crystal;
         this.coordinates = coordinates;
         this.nSymm = nSymm;
-        this.atoms = atoms;
         this.nAtoms = atoms.length;
         this.nThreads = threadCount;
 
@@ -254,7 +242,7 @@ public class SpatialDensityRegion extends ParallelRegion {
         actualA = new int[nWork];
         actualB = new int[nWork];
         actualC = new int[nWork];
-        actualCount = new int [nWork];
+        actualCount = new int[nWork];
         int index = 0;
         for (int h = 0; h < nA; h += 2) {
             for (int k = 0; k < nB; k += 2) {
@@ -265,19 +253,21 @@ public class SpatialDensityRegion extends ParallelRegion {
                 }
             }
         }
+        select = new boolean[nSymm][nAtoms];
+        for (int i = 0; i < nSymm; i++) {
+            Arrays.fill(select[0], true);
+        }
         cellList = new int[nSymm][nAtoms];
         cellIndex = new int[nSymm][nAtoms];
         cellOffset = new int[nSymm][nAtoms];
         cellStart = new int[nSymm][nCells];
         cellCount = new int[nSymm][nCells];
-        cellA = new int[nAtoms];
-        cellB = new int[nAtoms];
-        cellC = new int[nAtoms];
 
+        /*
         assignAtomsToCells();
         logger.info(String.format(" Grid chunks per thread:    %d / %d = %8.3f\n",
-                                  actualWork, threadCount, ((double) actualWork) / threadCount));
-
+        actualWork, threadCount, ((double) actualWork) / threadCount));
+         */
     }
 
     public void setDensityLoop(SpatialDensityLoop loops[]) {
@@ -345,10 +335,22 @@ public class SpatialDensityRegion extends ParallelRegion {
     }
 
     /**
+     * Select atoms that should be assigned to cells. The default is to
+     * include all atoms, which is set up in the constructor. This function
+     * should be over-ridden by subclasses that want finer control.
+     */
+    public void selectAtoms() {
+        return;
+    }
+
+    /**
      * Assign asymmetric and symmetry mate atoms to cells. This is very fast;
      * there is little to be gained from parallelizing it at this point.
      */
     public void assignAtomsToCells() {
+        // Call the selectAtoms method of subclasses.
+        selectAtoms();
+
         // Zero out the cell counts.
         for (int iSymm = 0; iSymm < nSymm; iSymm++) {
             final int cellIndexs[] = cellIndex[iSymm];
@@ -356,19 +358,24 @@ public class SpatialDensityRegion extends ParallelRegion {
             final int cellStarts[] = cellStart[iSymm];
             final int cellLists[] = cellList[iSymm];
             final int cellOffsets[] = cellOffset[iSymm];
+            final boolean selected[] = select[iSymm];
             for (int i = 0; i < nCells; i++) {
                 cellCounts[i] = 0;
             }
 
             // Convert to fractional coordinates.
-            final double redi[][] = coordinates[iSymm];
-            final double x[] = redi[0];
-            final double y[] = redi[1];
-            final double z[] = redi[2];
+            final double xyz[][] = coordinates[iSymm];
+            final double x[] = xyz[0];
+            final double y[] = xyz[1];
+            final double z[] = xyz[2];
             crystal.toFractionalCoordinates(nAtoms, x, y, z, xf, yf, zf);
 
             // Assign each atom to a cell using fractional coordinates.
             for (int i = 0; i < nAtoms; i++) {
+                if (!selected[i]) {
+                    continue;
+                }
+
                 double xu = xf[i];
                 double yu = yf[i];
                 double zu = zf[i];
@@ -397,11 +404,6 @@ public class SpatialDensityRegion extends ParallelRegion {
                 final int a = (int) Math.floor(xu * nA);
                 final int b = (int) Math.floor(yu * nB);
                 final int c = (int) Math.floor(zu * nC);
-                if (iSymm == 0) {
-                    cellA[i] = a;
-                    cellB[i] = b;
-                    cellC[i] = c;
-                }
 
                 // The cell index of this atom.
                 final int index = a + b * nA + c * nAB;
@@ -420,6 +422,9 @@ public class SpatialDensityRegion extends ParallelRegion {
 
             // Move atom locations into a list ordered by cell.
             for (int i = 0; i < nAtoms; i++) {
+                if (!selected[i]) {
+                    continue;
+                }
                 final int index = cellIndexs[i];
                 cellLists[cellStarts[index]++] = i;
             }
@@ -466,7 +471,7 @@ public class SpatialDensityRegion extends ParallelRegion {
 
             if (logger.isLoggable(Level.FINE)) {
                 logger.fine(String.format(" Empty chunks: %d out of %d.",
-                    nWork-actualWork, nWork));
+                                          nWork - actualWork, nWork));
             }
         }
     }

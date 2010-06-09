@@ -215,6 +215,8 @@ public class NeighborList extends ParallelRegion {
      */
     private final VerletListLoop verletListLoop[];
     private long time;
+    private long cellTime, verletTime, totalTime;
+    private double toSeconds = 1.0e-9;
     private int len = 1000;
 
     /**
@@ -304,16 +306,16 @@ public class NeighborList extends ParallelRegion {
      *
      * @param coordinates The coordinates of each atom [nSymm][x/y/z][nAtoms].
      * @param lists The neighbor lists [nSymm][nAtoms][nPairs].
-     * @param rebuild If true, the list is rebuilt even if no atom has moved
+     * @param forceRebuild If true, the list is rebuilt even if no atom has moved
      *      half the buffer size.
      *
      * @since 1.0
      */
     public void buildList(final double coordinates[][], final int lists[][][],
-                          boolean rebuild, boolean print) {
+                          boolean forceRebuild, boolean log) {
         this.coordinates = coordinates;
         this.lists = lists;
-        if (rebuild || motion()) {
+        if (forceRebuild || motion()) {
             /**
              * Save the current coordinates.
              */
@@ -328,31 +330,19 @@ public class NeighborList extends ParallelRegion {
                 previous[iZ] = current[iZ];
             }
 
-            long cellTime = -System.nanoTime();
+            cellTime = -System.nanoTime();
             assignAtomsToCells();
             cellTime += System.nanoTime();
 
-            long verletTime = -System.nanoTime();
+            verletTime = -System.nanoTime();
             createVerletLists();
             verletTime += System.nanoTime();
-            long totalTime = cellTime + verletTime;
+            totalTime = cellTime + verletTime;
 
-            if (print) {
-                StringBuilder sb = new StringBuilder(" The cutoff is " + cutoff + " angstroms.\n");
-                final double toSeconds = 0.000000001;
-                sb.append(format(" Assignment to cells: %8.3f\n", cellTime * toSeconds)
-                          + format(" Verlet lists:        %8.3f\n", verletTime * toSeconds)
-                          + format(" Total:               %8.3f (sec)\n", totalTime * toSeconds));
-                sb.append(format(" Neighbors in the asymmetric unit: %12d\n", asymmetricUnitCount));
-                if (nSymm > 1) {
-                    int num = (int) (asymmetricUnitCount * nSymm + symmetryMateCount * (nSymm * 0.5));
-                    double speedup = ((double) num) / (asymmetricUnitCount + symmetryMateCount);
-                    sb.append(format(" Neighbors in symmetry mates:      %12d\n", symmetryMateCount));
-                    sb.append(format(" Neighbors in the unit cell:       %12d\n", num));
-                    sb.append(format(" Space group speed up factor:      %12.3f\n", speedup));
-                }
-                logger.info(sb.toString() + "\n");
+            if (log) {
+                log();
             }
+
             int atomCount[] = new int[nAtoms];
             for (int iSymm = 0; iSymm < nSymm; iSymm++) {
                 for (int i = 0; i < nAtoms; i++) {
@@ -360,6 +350,23 @@ public class NeighborList extends ParallelRegion {
                 }
             }
         }
+    }
+
+    private void log() {
+        StringBuilder sb = new StringBuilder(" The cutoff is " + cutoff + " angstroms.\n");
+        sb.append(format(" Assignment to cells: %8.3f\n", cellTime * toSeconds));
+        sb.append(format(" Verlet lists:        %8.3f\n", verletTime * toSeconds));
+        sb.append(format(" Total:               %8.3f (sec)\n", totalTime * toSeconds));
+        sb.append(format(" Neighbors in the asymmetric unit: %12d\n", asymmetricUnitCount));
+        if (nSymm > 1) {
+            int num = (int) (asymmetricUnitCount * nSymm + symmetryMateCount * (nSymm * 0.5));
+            double speedup = ((double) num) / (asymmetricUnitCount + symmetryMateCount);
+            sb.append(format(" Neighbors in symmetry mates:      %12d\n", symmetryMateCount));
+            sb.append(format(" Neighbors in the unit cell:       %12d\n", num));
+            sb.append(format(" Space group speed up factor:      %12.3f\n", speedup));
+        }
+        sb.append("\n");
+        logger.info(sb.toString());
     }
 
     /**
