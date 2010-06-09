@@ -88,7 +88,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
             case BFACTORS:
                 for (Atom a : atomarray) {
                     // ignore hydrogens!!!
-                    if (a.getAtomicNumber() == 1){
+                    if (a.getAtomicNumber() == 1) {
                         continue;
                     }
                     if (a.getAnisou() == null) {
@@ -102,7 +102,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
                 nxyz = nAtoms * 3;
                 for (Atom a : atomarray) {
                     // ignore hydrogens!!!
-                    if (a.getAtomicNumber() == 1){
+                    if (a.getAtomicNumber() == 1) {
                         continue;
                     }
                     if (a.getAnisou() == null) {
@@ -122,7 +122,10 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
         scaling = new double[n];
 
         // FIXME: alternate conformers!?!
-        refinementenergy.potentialEnergy.getCoordinates(x);
+        if (refinementmode == RefinementMode.COORDINATES
+                || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS) {
+            refinementenergy.potentialEnergy.getCoordinates(x);
+        }
 
         if (refinementmode == RefinementMode.BFACTORS
                 || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS) {

@@ -219,9 +219,6 @@ public class XRayEnergy implements Optimizable {
 
     public void getBFactorGradients(double g[], int offset) {
         assert (g != null);
-        double tmp;
-        double maxgrad = -1.0;
-        Atom max = null;
         double grad[];
         int index = offset;
         for (Atom a : atomarray) {
@@ -230,38 +227,15 @@ public class XRayEnergy implements Optimizable {
                 continue;
             }
             if (a.getAnisou() == null) {
-                tmp = a.getTempFactorGradient();
-                if (Math.abs(tmp) > maxgrad) {
-                    max = a;
-                }
-                g[index++] = tmp;
+                g[index++] = a.getTempFactorGradient();
             } else {
                 grad = a.getAnisouGradient();
-                if (Math.abs(grad[0]) > maxgrad
-                        || Math.abs(grad[1]) > maxgrad
-                        || Math.abs(grad[2]) > maxgrad
-                        || Math.abs(grad[3]) > maxgrad
-                        || Math.abs(grad[4]) > maxgrad
-                        || Math.abs(grad[5]) > maxgrad) {
-                    max = a;
-                }
                 g[index++] = grad[0];
                 g[index++] = grad[1];
                 g[index++] = grad[2];
                 g[index++] = grad[3];
                 g[index++] = grad[4];
                 g[index++] = grad[5];
-            }
-        }
-
-        if (max != null) {
-            if (max.getAnisou() == null) {
-                logger.info(String.format("max B factor gradient: %s grad: %8.3g\n",
-                        max.toString(), max.getTempFactorGradient()));
-            } else {
-                grad = max.getAnisouGradient();
-                logger.info(String.format("max B factor gradient: %s grad: %8.3g %8.3g %8.3g %8.3g %8.3g %8.3g\n",
-                        max.toString(), grad[0], grad[1], grad[2], grad[3], grad[4], grad[5]));
             }
         }
     }
@@ -290,25 +264,13 @@ public class XRayEnergy implements Optimizable {
 
     public void getXYZGradients(double g[]) {
         assert (g != null && g.length == nAtoms * 3);
-        double maxgrad = -1.0;
-        Atom max = null;
         double grad[] = new double[3];
         int index = 0;
         for (Atom a : atomarray) {
             a.getXYZGradient(grad);
-            if (Math.abs(grad[0]) > maxgrad
-                    || Math.abs(grad[1]) > maxgrad
-                    || Math.abs(grad[2]) > maxgrad) {
-                max = a;
-            }
             g[index++] = grad[0];
             g[index++] = grad[1];
             g[index++] = grad[2];
-        }
-        if (max != null) {
-            max.getXYZGradient(grad);
-            logger.info(String.format("max X-ray xyz gradient: %s grad: %8.3g %8.3g %8.3g\n",
-                    max.toString(), grad[0], grad[1], grad[2]));
         }
     }
 
