@@ -268,10 +268,10 @@ public class SigmaAEnergy implements Optimizable {
             double dfp2 = 2.0 * eo * sai * kmems * sqrt(ecscale);
             double dfcr = (dfp1 * fct.re()) / d - ((dfp2 * fct.re()) / (d * fct.abs())) * dinot;
             double dfci = (dfp1 * fct.im()) / d - ((dfp2 * fct.im()) / (d * fct.abs())) * dinot;
-            double dfsr = (dfp1 * ksebs * fct.re()) / d - ((dfp2 * ksebs * fct.re()) / (d * fct.abs())) * dinot;
-            double dfsi = (dfp1 * ksebs * fct.im()) / d - ((dfp2 * ksebs * fct.im()) / (d * fct.abs())) * dinot;
-            // double dfsr = ((dfp2 * ksebs * fct.re()) / (d * fct.abs())) * dinot - (dfp1 * ksebs * fct.re()) / d;
-            // double dfsi = ((dfp2 * ksebs * fct.im()) / (d * fct.abs())) * dinot - (dfp1 * ksebs * fct.im()) / d;
+            // double dfsr = (dfp1 * ksebs * fct.re()) / d - ((dfp2 * ksebs * fct.re()) / (d * fct.abs())) * dinot;
+            // double dfsi = (dfp1 * ksebs * fct.im()) / d - ((dfp2 * ksebs * fct.im()) / (d * fct.abs())) * dinot;
+            double dfsr = ((dfp2 * ksebs * fct.re()) / (d * fct.abs())) * dinot - (dfp1 * ksebs * fct.re()) / d;
+            double dfsi = ((dfp2 * ksebs * fct.im()) / (d * fct.abs())) * dinot - (dfp1 * ksebs * fct.im()) / d;
             double dfsa = 2.0 * sai * kect2 / d - (2.0 * eo * kect.abs() / d) * dinot;
             double dfwa = epsc * (cf / d - (eo2 + sa2 * kect2) / d2 + (2.0 * eo * sai * kect.abs() / d2) * dinot);
 

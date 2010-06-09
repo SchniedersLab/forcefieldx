@@ -270,6 +270,14 @@ public class SpatialDensityRegion extends ParallelRegion {
          
     }
 
+    public double[] getGrid() {
+        return grid;
+    }
+
+    public float[] getFloatGrid() {
+        return floatGrid;
+    }
+
     public int getNsymm() {
         return nSymm;
     }
