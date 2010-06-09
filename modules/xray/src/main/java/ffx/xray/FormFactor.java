@@ -1032,9 +1032,14 @@ public class FormFactor {
         double g[] = new double[3];
         double dp = 1.5 * d / (w2 * ri) - 0.75 * d2 / (w3 * ri);
 
+        /*
         g[0] = (dfs / rho) * (dp * dxyz[0]);
         g[1] = (dfs / rho) * (dp * dxyz[1]);
         g[2] = (dfs / rho) * (dp * dxyz[2]);
+         */
+        g[0] = (dfs / rho) * (-dp * dxyz[0]);
+        g[1] = (dfs / rho) * (-dp * dxyz[1]);
+        g[2] = (dfs / rho) * (-dp * dxyz[2]);
 
         atom.addToXYZGradient(g[0], g[1], g[2]);
     }
