@@ -255,7 +255,7 @@ public class SpatialDensityRegion extends ParallelRegion {
         }
         select = new boolean[nSymm][nAtoms];
         for (int i = 0; i < nSymm; i++) {
-            Arrays.fill(select[0], true);
+            Arrays.fill(select[i], true);
         }
         cellList = new int[nSymm][nAtoms];
         cellIndex = new int[nSymm][nAtoms];
@@ -263,11 +263,11 @@ public class SpatialDensityRegion extends ParallelRegion {
         cellStart = new int[nSymm][nCells];
         cellCount = new int[nSymm][nCells];
 
-        /*
-        assignAtomsToCells();
-        logger.info(String.format(" Grid chunks per thread:    %d / %d = %8.3f\n",
-        actualWork, threadCount, ((double) actualWork) / threadCount));
-         */
+        
+        //assignAtomsToCells();
+        //logger.info(String.format(" Grid chunks per thread:    %d / %d = %8.3f\n",
+        //actualWork, threadCount, ((double) actualWork) / threadCount));
+         
     }
 
     public void setDensityLoop(SpatialDensityLoop loops[]) {

@@ -25,4 +25,8 @@ boolean initVelocities = true
 
 // Go!
 open filename;
+energy();
+return;
+
+
 md(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);
