@@ -268,7 +268,7 @@ public class CrystalReciprocalSpace {
             bulkSpatialDensityRegion =
                     new BulkSolventDensityRegion(fftX, fftY, fftZ,
                     solventGrid, (aradgrid + 2) * 2, bulknsym, minWork,
-                    threadCount, crystal, atoms, coordinates, 4.0);
+                    threadCount, crystal, atoms, coordinates, 4.0, parallelTeam);
             if (solventmodel == SolventModel.GAUSSIAN) {
                 spatialDensityRegion.setInitValue(0.0);
             } else {

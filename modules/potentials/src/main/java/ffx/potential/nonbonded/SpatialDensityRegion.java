@@ -20,6 +20,8 @@
  */
 package ffx.potential.nonbonded;
 
+import java.util.Arrays;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import edu.rit.pj.IntegerForLoop;
@@ -28,8 +30,6 @@ import edu.rit.pj.ParallelRegion;
 
 import ffx.crystal.Crystal;
 import ffx.potential.bonded.Atom;
-import java.util.Arrays;
-import java.util.logging.Level;
 
 /**
  * This class implements a spatial decomposition based on partitioning a
@@ -261,13 +261,7 @@ public class SpatialDensityRegion extends ParallelRegion {
         cellIndex = new int[nSymm][nAtoms];
         cellOffset = new int[nSymm][nAtoms];
         cellStart = new int[nSymm][nCells];
-        cellCount = new int[nSymm][nCells];
-
-        
-        //assignAtomsToCells();
-        //logger.info(String.format(" Grid chunks per thread:    %d / %d = %8.3f\n",
-        //actualWork, threadCount, ((double) actualWork) / threadCount));
-         
+        cellCount = new int[nSymm][nCells];         
     }
 
     public double[] getGrid() {
@@ -328,6 +322,7 @@ public class SpatialDensityRegion extends ParallelRegion {
          */
 
         loop.setNsymm(nSymm);
+
         try {
             execute(0, gridSize - 1, gridInitLoop);
             execute(0, actualWork1, loop.setOctant(0));

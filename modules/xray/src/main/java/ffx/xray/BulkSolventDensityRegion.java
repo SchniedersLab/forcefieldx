@@ -20,11 +20,14 @@
  */
 package ffx.xray;
 
+import java.util.Arrays;
+
+import edu.rit.pj.ParallelTeam;
+
 import ffx.crystal.Crystal;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.SpatialDensityLoop;
 import ffx.potential.nonbonded.SpatialDensityRegion;
-import java.util.Arrays;
 
 /**
  * This class implements a spatial decomposition based on partitioning a
@@ -38,39 +41,33 @@ import java.util.Arrays;
  */
 public class BulkSolventDensityRegion extends SpatialDensityRegion {
 
-    /**
-     * Atoms within cutoff angstroms of an asymmetric unit atom will
-     * be selected.
-     */
-    private double cutoff2;
+    private final BulkSolventList bulkSolventList;
 
     public BulkSolventDensityRegion(int gX, int gY, int gZ, double grid[],
-                                    int basisSize, int nSymm, int minWork,
-                                    int threadCount, Crystal crystal,
-                                    Atom atoms[], double coordinates[][][],
-                                    double cutoff) {
+            int basisSize, int nSymm, int minWork,
+            int threadCount, Crystal crystal,
+            Atom atoms[], double coordinates[][][],
+            double cutoff, ParallelTeam parallelTeam) {
         super(gX, gY, gZ, grid, basisSize, nSymm, minWork,
-              threadCount, crystal, atoms, coordinates);
-
-        this.cutoff2 = cutoff * cutoff;
+                threadCount, crystal, atoms, coordinates);
         // Asymmetric unit atoms never selected by this class.
         Arrays.fill(select[0], false);
+        bulkSolventList = new BulkSolventList(crystal, atoms, cutoff, parallelTeam);
     }
 
     public BulkSolventDensityRegion(int gX, int gY, int gZ, float grid[],
-                                    int basisSize, int nSymm, int minWork,
-                                    int threadCount, Crystal crystal,
-                                    Atom atoms[], double coordinates[][][],
-                                    double cutoff) {
+            int basisSize, int nSymm, int minWork,
+            int threadCount, Crystal crystal,
+            Atom atoms[], double coordinates[][][],
+            double cutoff, ParallelTeam parallelTeam) {
         super(gX, gY, gZ, grid, basisSize, nSymm, minWork,
-              threadCount, crystal, atoms, coordinates);
-
-        this.cutoff2 = cutoff * cutoff;
+                threadCount, crystal, atoms, coordinates);
         // Asymmetric unit atoms are always not selected by this class.
         Arrays.fill(select[0], false);
+        bulkSolventList = new BulkSolventList(crystal, atoms, cutoff, parallelTeam);
     }
 
-       @Override
+    @Override
     public void run() {
         int ti = getThreadIndex();
         int actualWork1 = actualWork - 1;
@@ -100,37 +97,6 @@ public class BulkSolventDensityRegion extends SpatialDensityRegion {
 
     @Override
     public void selectAtoms() {
-        final double xyz[][] = coordinates[0];
-        final double x[] = xyz[0];
-        final double y[] = xyz[1];
-        final double z[] = xyz[2];
-        for (int iSymm = 1; iSymm < nSymm; iSymm++) {
-            boolean selected[] = select[iSymm];
-            Arrays.fill(selected, false);
-            final double xyzs[][] = coordinates[iSymm];
-            final double xs[] = xyzs[0];
-            final double ys[] = xyzs[1];
-            final double zs[] = xyzs[2];
-            // loop over symmetry mate atoms
-            for (int i = 0; i < nAtoms; i++) {
-                double xsi = xs[i];
-                double ysi = ys[i];
-                double zsi = zs[i];
-                /**
-                 * Loop over asymmetric unit atoms looking for an interaction
-                 * distance within the cutoff.
-                 */
-                for (int j=0; j < nAtoms; j++) {
-                    double xr = xsi - x[j];
-                    double yr = ysi - y[j];
-                    double zr = zsi - z[j];
-                    double r2 = crystal.image(xr,yr,zr);
-                    if (r2 < cutoff2) {
-                        selected[i] = true;
-                        break;
-                    }
-                }
-            }
-        }
+        bulkSolventList.buildList(coordinates, select, true);
     }
 }
