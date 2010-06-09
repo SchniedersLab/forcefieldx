@@ -53,7 +53,7 @@ public class BulkSolventDensityRegion extends SpatialDensityRegion {
               threadCount, crystal, atoms, coordinates);
 
         this.cutoff2 = cutoff * cutoff;
-        // Asymmetric unit atoms are always not selected by this class.
+        // Asymmetric unit atoms never selected by this class.
         Arrays.fill(select[0], false);
     }
 
