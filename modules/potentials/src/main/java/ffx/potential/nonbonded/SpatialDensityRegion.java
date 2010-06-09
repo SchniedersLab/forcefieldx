@@ -118,7 +118,7 @@ public class SpatialDensityRegion extends ParallelRegion {
      * The index of the first atom in each cell. [nsymm][ncell]
      */
     protected final int cellStart[][];
-    public int nSymm;
+    protected final int nSymm;
     protected final double coordinates[][][];
     protected final boolean select[][];
     private final double xf[];
@@ -270,6 +270,10 @@ public class SpatialDensityRegion extends ParallelRegion {
          
     }
 
+    public int getNsymm() {
+        return nSymm;
+    }
+
     public void setDensityLoop(SpatialDensityLoop loops[]) {
         spatialDensityLoop = loops;
     }
@@ -310,6 +314,12 @@ public class SpatialDensityRegion extends ParallelRegion {
         int ti = getThreadIndex();
         int actualWork1 = actualWork - 1;
         SpatialDensityLoop loop = spatialDensityLoop[ti];
+        /**
+         * This lets the same SpatialDensityLoops be used with different
+         * SpatialDensityRegions.
+         */
+
+        loop.setNsymm(nSymm);
         try {
             execute(0, gridSize - 1, gridInitLoop);
             execute(0, actualWork1, loop.setOctant(0));
