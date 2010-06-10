@@ -20,9 +20,12 @@
  */
 package ffx.potential.nonbonded;
 
+import static java.lang.String.format;
+
+import java.util.logging.Logger;
+
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.util.Range;
-import java.util.logging.Logger;
 
 /**
  * A fixed schedule that load balances work chunks across threads.
@@ -102,10 +105,12 @@ public class SpatialDensitySchedule extends IntegerSchedule {
         int total = 0;
         int goal = (int) (nAtoms * loadBalancePercentage / nThreads);
         for (int i = lb; i <= ub; i++) {
+            int chunksLeft = ub - i + 1;
+            int threadsLeft = nThreads - thread;
             // Count the number of atoms in each work chunk.
             total += atomsPerChunk[i];
             // Check if the load balancing goal has been reached.
-            if (total > goal) {
+            if (total > goal || chunksLeft <= threadsLeft) {
                 int stop = i;
                 // Define the range for this thread.
                 Range current = ranges[thread];
@@ -113,6 +118,7 @@ public class SpatialDensitySchedule extends IntegerSchedule {
                     || current.lb() != start
                     || current.ub() != stop) {
                     ranges[thread] = new Range(start, stop);
+                    logger.info(format("Range for thread %d %s %d.", thread+1, ranges[thread], total));
                 }
 
                 // Initialization for the next thread.
@@ -127,6 +133,7 @@ public class SpatialDensitySchedule extends IntegerSchedule {
                         || current.lb() != start
                         || current.ub() != stop) {
                         ranges[thread] = new Range(start, stop);
+                    logger.info(format("Range for thread %d %s %d.", thread+1, ranges[thread], total));
                     }
                     break;
                 }
@@ -138,6 +145,7 @@ public class SpatialDensitySchedule extends IntegerSchedule {
                     || current.lb() != start
                     || current.ub() != stop) {
                     ranges[thread] = new Range(start, stop);
+                    logger.info(format("Range for thread %d %s %d.", thread+1, ranges[thread], total));
                 }
             }
         }

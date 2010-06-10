@@ -287,22 +287,13 @@ public class XRayStructure {
         logger.info("performing 10 Fc calculations for timing...");
         for (int i = 0; i < 10; i++) {
             crs_fc.computeDensity(refinementdata.fc, true);
-        }
-        logger.info("performing 10 Fs calculations for timing...");
-        for (int i = 0; i < 10; i++) {
             crs_fs.computeDensity(refinementdata.fs, true);
-        }
-        logger.info("performing 10 Fc gradient calculations for timing...");
-        for (int i = 0; i < 10; i++) {
             crs_fc.computeAtomicGradients(refinementdata.dfc,
                     refinementdata.freer, refinementdata.rfreeflag,
-                    RefinementMode.COORDINATES_AND_BFACTORS, true);
-        }
-        logger.info("performing 10 Fs gradient calculations for timing...");
-        for (int i = 0; i < 10; i++) {
+                    RefinementMode.COORDINATES, true);
             crs_fs.computeAtomicGradients(refinementdata.dfs,
                     refinementdata.freer, refinementdata.rfreeflag,
-                    RefinementMode.COORDINATES_AND_BFACTORS, true);
+                    RefinementMode.COORDINATES, true);
         }
     }
 
