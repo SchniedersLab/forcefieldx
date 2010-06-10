@@ -118,7 +118,7 @@ public class SpatialDensitySchedule extends IntegerSchedule {
                     || current.lb() != start
                     || current.ub() != stop) {
                     ranges[thread] = new Range(start, stop);
-                    logger.info(format("Range for thread %d %s %d.", thread+1, ranges[thread], total));
+                    //logger.info(format("Range for thread %d %s %d.", thread+1, ranges[thread], total));
                 }
 
                 // Initialization for the next thread.
@@ -133,7 +133,7 @@ public class SpatialDensitySchedule extends IntegerSchedule {
                         || current.lb() != start
                         || current.ub() != stop) {
                         ranges[thread] = new Range(start, stop);
-                    logger.info(format("Range for thread %d %s %d.", thread+1, ranges[thread], total));
+                    //logger.info(format("Range for thread %d %s %d.", thread+1, ranges[thread], total));
                     }
                     break;
                 }
@@ -145,7 +145,7 @@ public class SpatialDensitySchedule extends IntegerSchedule {
                     || current.lb() != start
                     || current.ub() != stop) {
                     ranges[thread] = new Range(start, stop);
-                    logger.info(format("Range for thread %d %s %d.", thread+1, ranges[thread], total));
+                    //logger.info(format("Range for thread %d %s %d.", thread+1, ranges[thread], total));
                 }
             }
         }
