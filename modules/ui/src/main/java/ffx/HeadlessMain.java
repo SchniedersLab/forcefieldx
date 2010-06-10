@@ -20,7 +20,10 @@
  */
 package ffx;
 
+import static java.lang.String.format;
+
 import java.io.File;
+import java.util.List;
 import java.util.logging.Logger;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
@@ -43,7 +46,7 @@ public class HeadlessMain {
     /**
      * Main does some window initializations.
      */
-    public HeadlessMain(File commandLineFile, LogHandler logHandler) {
+    public HeadlessMain(File commandLineFile, List<String> argList, LogHandler logHandler) {
         stopWatch.start();
         // Create the MainPanel and MainMenu, then add them to the JFrame
         mainPanel = new MainPanel();
@@ -52,19 +55,24 @@ public class HeadlessMain {
         // Finally, open the supplied file if necessary.
         if (commandLineFile != null) {
             if (commandLineFile.exists()) {
+                mainPanel.getModelingShell().setArgList(argList);
                 mainPanel.open(commandLineFile, null);
             } else {
-                logger.warning(commandLineFile.toString() + " was not found.");
+                logger.warning(format("%s was not found.", commandLineFile.toString()));
             }
         }
         if (System.getProperty("ffx.timer") != null) {
-            logger.info("\nStart-up Time (msec): " + stopWatch.getTime());
+            StringBuilder sb = new StringBuilder();
+            sb.append(format("\n Start-up Time (msec): %s.", stopWatch.getTime()));
             Runtime runtime = Runtime.getRuntime();
             runtime.runFinalization();
             runtime.gc();
             long occupiedMemory = runtime.totalMemory() - runtime.freeMemory();
             long KB = 1024;
-            logger.info("\nIn-Use Memory   (Kb): " + occupiedMemory / KB + "\nFree Memory     (Kb): " + runtime.freeMemory() / KB + "\nTotal Memory    (Kb): " + runtime.totalMemory() / KB);
+            sb.append(format("\n In-Use Memory   (Kb): %d", occupiedMemory / KB));
+            sb.append(format("\n Free Memory     (Kb): %d", runtime.freeMemory() / KB));
+            sb.append(format("\n Total Memory    (Kb): %d", runtime.totalMemory() / KB));
+            logger.info(sb.toString());
         }
     }
 

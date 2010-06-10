@@ -79,7 +79,7 @@ public class Launcher {
                     "javax.help/javahelp.jar",
                     "junit/junit.jar",
                     "jline/jline.jar"
-        }));
+                }));
         if ("64".equals(System.getProperty("sun.arch.data.model"))) {
             // Linux 64-bit
             ffxFiles.add("jogl-64/libgluegen-rt.so");

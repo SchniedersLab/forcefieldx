@@ -27,16 +27,12 @@ import java.awt.EventQueue;
 import java.awt.Rectangle;
 import java.io.File;
 import java.net.URL;
-import java.util.EventObject;
 import java.util.prefs.Preferences;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.swing.Box;
 import javax.swing.ImageIcon;
-import javax.swing.JDialog;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JTextPane;
 import javax.swing.SwingUtilities;
@@ -61,6 +57,7 @@ import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.RendererCache.ColorModel;
 import ffx.potential.bonded.RendererCache.ViewModel;
+import java.util.List;
 
 /**
  * The ModelingShell is used to script Multiscale Modeling Routines via the
@@ -184,6 +181,10 @@ public class ModelingShell extends Console implements AlgorithmListener {
         }
 
         loadPrefs();
+    }
+
+    public void setArgList(List<String> argList) {
+        setVariable("args", argList);
     }
 
     public void headlessRun(File file) {

@@ -2,24 +2,14 @@
 import ffx.potential.PotentialEnergy;
 
 // Name of the file (PDB or XYZ) to evaluate the energy of.
-String filename = "examples/alamet.xyz";
-open(filename); 
-potentialEnergy = active.getPotentialEnergy();
-for (int i=0; i<10; i++) {
-   potentialEnergy.energy(false,true);
+String filename = args[0];
+if (filename == null) {
+   filename = "examples/1n7s.P212121.xyz";
 }
 
-filename = "examples/alamet-unitcell.xyz";
 open(filename); 
 potentialEnergy = active.getPotentialEnergy();
-for (int i=0; i<10; i++) {
-   potentialEnergy.energy(false,true);
-}
+potentialEnergy.energy(false,true);
+return;
 
-filename = "examples/alamet-replicated.xyz";
-open(filename); 
-potentialEnergy = active.getPotentialEnergy();
-for (int i=0; i<10; i++) {
-   potentialEnergy.energy(false,true);
-}
 

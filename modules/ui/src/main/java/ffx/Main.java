@@ -20,11 +20,15 @@
  */
 package ffx;
 
+import static java.lang.String.format;
+
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.GraphicsEnvironment;
 import java.io.File;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
@@ -42,6 +46,7 @@ import org.apache.commons.lang.time.StopWatch;
 import ffx.ui.LogHandler;
 import ffx.ui.MainPanel;
 import ffx.ui.macosx.OSXAdapter;
+
 
 /**
  * The Main class is the entry point to the graphical user interface version of
@@ -82,7 +87,7 @@ public class Main extends JFrame {
             logHandler.setLevel(level);
             ffxLogger.addHandler(logHandler);
             ffxLogger.setLevel(level);
-           
+
         } catch (Exception e) {
             System.err.println(e.toString());
         }
@@ -95,6 +100,7 @@ public class Main extends JFrame {
 
         // If a file was supplied on the command line, get its absolute path
         File commandLineFile = null;
+        List<String> argList = new ArrayList<String>();
         if (args != null && args.length > 0) {
             commandLineFile = new File(args[0]);
             // Resolve a relavtive path
@@ -102,14 +108,20 @@ public class Main extends JFrame {
                 commandLineFile = new File(FilenameUtils.normalize(
                         commandLineFile.getAbsolutePath()));
             }
+            // Convert the of the args to a list
+            int nArgs = args.length;
+            if (nArgs > 1) {
+                for (int i=1; i<nArgs; i++) {
+                    argList.add(args[i]);
+                }
+            }
         }
         logger.info(MainPanel.border);
         logger.info(MainPanel.title);
         logger.info(MainPanel.aboutString);
         logger.info(MainPanel.border);
-        logger.info("\n Log level is set to " + level.toString());
         if (!GraphicsEnvironment.isHeadless()) {
-            logger.info(" Starting up the graphical user interface");
+            logger.info("\n Starting up the graphical user interface");
             // Some Mac OS X specific features that help FFX look native.
             // These need to be set before the MainPanel is created.
             if (SystemUtils.IS_OS_MAC_OSX) {
@@ -119,17 +131,18 @@ public class Main extends JFrame {
             UIManager.put("swing.boldMetal", Boolean.FALSE);
             setDefaultLookAndFeelDecorated(false);
             // Initialize the main frame and Force Field X MainPanel
-            Main m = new Main(commandLineFile);
+            Main m = new Main(commandLineFile, argList);
         } else {
-            logger.info(" Starting up the command line interface");
-            HeadlessMain m = new HeadlessMain(commandLineFile, logHandler);
+            logger.info("\n Starting up the command line interface");
+            HeadlessMain m = new HeadlessMain(commandLineFile, argList, logHandler);
         }
+        logger.info(" Log level is set to " + level.toString());
     }
 
     /**
      * Main does some window initializations.
      */
-    public Main(File commandLineFile) {
+    public Main(File commandLineFile, List<String> argList) {
         super("Force Field X");
         // Start the clock.
         stopWatch.start();
@@ -172,19 +185,24 @@ public class Main extends JFrame {
         // Finally, open the supplied file if necessary.
         if (commandLineFile != null) {
             if (commandLineFile.exists()) {
+                mainPanel.getModelingShell().setArgList(argList);
                 mainPanel.open(commandLineFile, null);
             } else {
-                logger.warning(commandLineFile.toString() + " was not found.");
+                logger.warning(format("%s was not found.", commandLineFile.toString()));
             }
         }
         if (System.getProperty("ffx.timer") != null) {
-            logger.info("\nStart-up Time (msec): " + stopWatch.getTime());
+            StringBuilder sb = new StringBuilder();
+            sb.append(format("\n Start-up Time (msec): %s.", stopWatch.getTime()));
             Runtime runtime = Runtime.getRuntime();
             runtime.runFinalization();
             runtime.gc();
             long occupiedMemory = runtime.totalMemory() - runtime.freeMemory();
             long KB = 1024;
-            logger.info("\nIn-Use Memory   (Kb): " + occupiedMemory / KB + "\nFree Memory     (Kb): " + runtime.freeMemory() / KB + "\nTotal Memory    (Kb): " + runtime.totalMemory() / KB);
+            sb.append(format("\n In-Use Memory   (Kb): %d", occupiedMemory / KB));
+            sb.append(format("\n Free Memory     (Kb): %d", runtime.freeMemory() / KB));
+            sb.append(format("\n Total Memory    (Kb): %d", runtime.totalMemory() / KB));
+            logger.info(sb.toString());
         }
     }
 
