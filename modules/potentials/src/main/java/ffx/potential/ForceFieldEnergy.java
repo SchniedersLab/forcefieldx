@@ -33,7 +33,7 @@ import edu.rit.pj.ParallelTeam;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.ReplicatesCrystal;
-import ffx.numerics.Optimizable;
+import ffx.numerics.Potential;
 import ffx.potential.bonded.ROLS;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
@@ -58,9 +58,9 @@ import ffx.potential.parameters.ForceField.ForceFieldString;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-public class PotentialEnergy implements Optimizable {
+public class ForceFieldEnergy implements Potential {
 
-    private static final Logger logger = Logger.getLogger(PotentialEnergy.class.getName());
+    private static final Logger logger = Logger.getLogger(ForceFieldEnergy.class.getName());
     private final Atom[] atoms;
     private final Crystal crystal;
     private final ParallelTeam parallelTeam;
@@ -118,7 +118,7 @@ public class PotentialEnergy implements Optimizable {
     protected double[] optimizationScaling = null;
     private static final double toSeconds = 0.000000001;
 
-    public PotentialEnergy(MolecularAssembly molecularAssembly) {
+    public ForceFieldEnergy(MolecularAssembly molecularAssembly) {
         parallelTeam = new ParallelTeam();
         logger.info(format(" Parallel Java Threads: %d", parallelTeam.getThreadCount()));
 
@@ -555,7 +555,7 @@ public class PotentialEnergy implements Optimizable {
     }
 
     @Override
-    public void setOptimizationScaling(double scaling[]) {
+    public void setScaling(double scaling[]) {
         if (scaling != null) {
             optimizationScaling = scaling;
         } else {
@@ -564,7 +564,7 @@ public class PotentialEnergy implements Optimizable {
     }
 
     @Override
-    public double[] getOptimizationScaling() {
+    public double[] getScaling() {
         return optimizationScaling;
     }
 
@@ -628,8 +628,12 @@ public class PotentialEnergy implements Optimizable {
         }
     }
 
-    public void getCoordinates(double x[]) {
-        assert (x != null);
+    @Override
+    public double[] getCoordinates(double x[]) {
+        int n = getNumberOfVariables();
+        if (x == null || x.length < n) {
+            x = new double[n];
+        }
         double xyz[] = new double[3];
         int index = 0;
         for (Atom a : atoms) {
@@ -638,5 +642,25 @@ public class PotentialEnergy implements Optimizable {
             x[index++] = xyz[1];
             x[index++] = xyz[2];
         }
+        return x;
+    }
+
+    @Override
+    public double[] getMass() {
+        int n = getNumberOfVariables();
+        double mass[] = new double[n];
+        int i=0;
+        for (Atom a : atoms) {
+            double m = a.getMass();
+            mass[i++] = m;
+            mass[i++] = m;
+            mass[i++] = m;
+        }
+        return mass;
+    }
+
+    @Override
+    public int getNumberOfVariables() {
+        return nAtoms * 3;
     }
 }

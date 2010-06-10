@@ -79,7 +79,7 @@ public class Berendsen extends Thermostat {
     public void fullStep(double dt) {
         double ratio = targetTemperature/currentTemperature;
         double scale = sqrt(1.0 + (dt/tau)*(ratio-1.0));
-        for (int i=0; i<3*n; i++) {
+        for (int i=0; i<dof; i++) {
             v[i] *= scale;
         }
     }

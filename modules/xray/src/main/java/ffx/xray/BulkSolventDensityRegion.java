@@ -97,6 +97,6 @@ public class BulkSolventDensityRegion extends SpatialDensityRegion {
 
     @Override
     public void selectAtoms() {
-        bulkSolventList.buildList(coordinates, select, true);
+        bulkSolventList.buildList(coordinates, select, false);
     }
 }

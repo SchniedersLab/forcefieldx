@@ -20,8 +20,8 @@
  */
 package ffx.xray;
 
-import ffx.numerics.Optimizable;
-import ffx.potential.PotentialEnergy;
+import ffx.numerics.Potential;
+import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.xray.RefinementMinimize.RefinementMode;
 import java.util.Arrays;
@@ -35,12 +35,12 @@ import java.util.logging.Logger;
  *
  * @since 1.0
  */
-public class RefinementEnergy implements Optimizable {
+public class RefinementEnergy implements Potential {
 
     private static final Logger logger = Logger.getLogger(RefinementEnergy.class.getName());
     private final MolecularAssembly molecularAssembly;
     private final XRayStructure xraystructure;
-    protected PotentialEnergy potentialEnergy;
+    protected ForceFieldEnergy potentialEnergy;
     protected XRayEnergy xrayEnergy;
     private RefinementMode refinementMode;
     private final int nxyz;
@@ -63,7 +63,7 @@ public class RefinementEnergy implements Optimizable {
         this.n = nxyz + nb + nocc;
         potentialEnergy = molecularAssembly.getPotentialEnergy();
         if (potentialEnergy == null) {
-            potentialEnergy = new PotentialEnergy(molecularAssembly);
+            potentialEnergy = new ForceFieldEnergy(molecularAssembly);
             molecularAssembly.setPotential(potentialEnergy);
         }
         if (!xraystructure.scaled) {
@@ -149,13 +149,13 @@ public class RefinementEnergy implements Optimizable {
     }
 
     @Override
-    public void setOptimizationScaling(double[] scaling) {
+    public void setScaling(double[] scaling) {
         switch (refinementMode) {
             case COORDINATES:
             case BFACTORS:
             case COORDINATES_AND_BFACTORS:
-                potentialEnergy.setOptimizationScaling(scaling);
-                xrayEnergy.setOptimizationScaling(scaling);
+                potentialEnergy.setScaling(scaling);
+                xrayEnergy.setScaling(scaling);
                 break;
             default:
                 String message = "Unknown refinement mode.";
@@ -164,16 +164,31 @@ public class RefinementEnergy implements Optimizable {
     }
 
     @Override
-    public double[] getOptimizationScaling() {
+    public double[] getScaling() {
         switch (refinementMode) {
             case COORDINATES:
             case BFACTORS:
             case COORDINATES_AND_BFACTORS:
-                return potentialEnergy.getOptimizationScaling();
+                return potentialEnergy.getScaling();
             default:
                 String message = "Unknown refinement mode.";
                 logger.log(Level.SEVERE, message);
         }
         return null;
+    }
+
+    @Override
+    public double[] getMass() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public int getNumberOfVariables() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public double[] getCoordinates(double[] parameters) {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 }

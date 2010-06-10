@@ -73,7 +73,7 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
             }
             scaling[i] = 1.0;
         }
-        splineenergy.setOptimizationScaling(scaling);
+        splineenergy.setScaling(scaling);
     }
 
     public SplineEnergy minimize() {

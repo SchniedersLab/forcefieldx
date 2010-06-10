@@ -37,7 +37,7 @@ import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
 import ffx.numerics.ComplexNumber;
-import ffx.numerics.Optimizable;
+import ffx.numerics.Potential;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
 
 /**
@@ -60,7 +60,7 @@ import ffx.xray.CrystalReciprocalSpace.SolventModel;
  * @see <a href="http://dx.doi.org/10.1006/jmbi.1994.1633" target="_blank">
  * J. S. Jiang, A. T. Brunger, JMB (1994) 243, 100-115.
  */
-public class ScaleBulkEnergy implements Optimizable {
+public class ScaleBulkEnergy implements Potential {
 
     private static final Logger logger = Logger.getLogger(ScaleBulkEnergy.class.getName());
     private static final double twopi2 = 2.0 * PI * PI;
@@ -291,7 +291,7 @@ public class ScaleBulkEnergy implements Optimizable {
     }
 
     @Override
-    public void setOptimizationScaling(double[] scaling) {
+    public void setScaling(double[] scaling) {
         if (scaling != null && scaling.length == n) {
             optimizationScaling = scaling;
         } else {
@@ -300,7 +300,22 @@ public class ScaleBulkEnergy implements Optimizable {
     }
 
     @Override
-    public double[] getOptimizationScaling() {
+    public double[] getScaling() {
         return optimizationScaling;
+    }
+
+    @Override
+    public double[] getMass() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public int getNumberOfVariables() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public double[] getCoordinates(double[] parameters) {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 }

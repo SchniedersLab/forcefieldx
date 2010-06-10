@@ -21,15 +21,14 @@
 package ffx.numerics;
 
 import static java.lang.Math.*;
-import static java.lang.System.arraycopy;
 import static java.lang.String.format;
+import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
 
-
+import java.util.Arrays;
 import java.util.logging.Logger;
 
 import ffx.numerics.LineSearch.LineSearchResult;
-import java.util.Arrays;
 
 /**
  * This class implements the limited-memory Broyden-Fletcher-Goldfarb-Shanno
@@ -135,7 +134,7 @@ public class LBFGS {
      *            G RMS &lt; EPS
      *		</code>
      *
-     * @param optimizationSystem Implements the {@link Optimizable} interface
+     * @param potential Implements the {@link Optimizable} interface
      *        to supply function values and gradients.
      *
      * @param listener Implements the {@link OptimizationListener} interface
@@ -146,7 +145,8 @@ public class LBFGS {
      * @since 1.0
      */
     public static int minimize(int n, int mSave, double[] x, double f, double[] g,
-                               double eps, Optimizable optimizationSystem, OptimizationListener listener) {
+                               double eps, Potential potential,
+                               OptimizationListener listener) {
 
         assert (n > 0);
         assert (mSave > 0);
@@ -154,7 +154,7 @@ public class LBFGS {
         assert (g != null && g.length >= n);
 
         if (mSave > n) {
-            logger.warning(format("Resetting the number of saved L-BFGS vectors to n " + n));
+            logger.warning(format("Resetting the number of saved L-BFGS vectors to %d.", n));
             mSave = n;
         }
 
@@ -164,7 +164,7 @@ public class LBFGS {
         int maxErrors = 2;
 
         double rms = sqrt(n);
-        double scaling[] = optimizationSystem.getOptimizationScaling();
+        double scaling[] = potential.getScaling();
         if (scaling == null) {
             scaling = new double[n];
             Arrays.fill(scaling, 1.0);
@@ -183,7 +183,9 @@ public class LBFGS {
         double gnorm = 0.0;
         for (int i = 0; i < n; i++) {
             double gi = g[i];
-            if (gi == Double.NaN || gi == Double.NEGATIVE_INFINITY || gi == Double.POSITIVE_INFINITY) {
+            if (gi == Double.NaN || 
+                    gi == Double.NEGATIVE_INFINITY ||
+                    gi == Double.POSITIVE_INFINITY) {
                 String message = format("The gradient of variable %d is %8.3f.", i, gi);
                 logger.warning(message);
                 return 1;
@@ -191,8 +193,6 @@ public class LBFGS {
             double gis = gi * scaling[i];
             gnorm += gi * gi;
             grms += gis * gis;
-
-
         }
         gnorm = sqrt(gnorm);
         grms = sqrt(grms) / rms;
@@ -292,7 +292,7 @@ public class LBFGS {
              */
             nFunctionEvals[0] = 0;
             f = lineSearch.search(n, x, f, g, p, angle, df,
-                                  info, nFunctionEvals, optimizationSystem);
+                                  info, nFunctionEvals, potential);
             evaluations += nFunctionEvals[0];
 
             /**

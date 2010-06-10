@@ -50,9 +50,9 @@ import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.MolecularDynamics;
 import ffx.algorithms.Terminatable;
 import ffx.algorithms.Thermostat.Thermostats;
-import ffx.numerics.Optimizable;
+import ffx.numerics.Potential;
 
-import ffx.potential.PotentialEnergy;
+import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.RendererCache.ColorModel;
@@ -214,15 +214,15 @@ public class ModelingShell extends Console implements AlgorithmListener {
         }
     }
 
-    public PotentialEnergy energy() {
+    public ForceFieldEnergy energy() {
         if (interrupted) {
             return null;
         }
         MolecularAssembly active = mainPanel.getHierarchy().getActive();
         if (active != null) {
-            PotentialEnergy energy = active.getPotentialEnergy();
+            ForceFieldEnergy energy = active.getPotentialEnergy();
             if (energy == null) {
-                energy = new PotentialEnergy(active);
+                energy = new ForceFieldEnergy(active);
                 active.setPotential(energy);
             }
             energy.energy(false, true);
@@ -231,7 +231,7 @@ public class ModelingShell extends Console implements AlgorithmListener {
         return null;
     }
 
-    public Optimizable minimize(double eps) {
+    public Potential minimize(double eps) {
         if (interrupted || terminatableAlgorithm != null) {
             return null;
         }
@@ -239,7 +239,7 @@ public class ModelingShell extends Console implements AlgorithmListener {
         if (active != null) {
             Minimize minimize = new Minimize(active, this);
             terminatableAlgorithm = minimize;
-            Optimizable energy = minimize.minimize(eps);
+            Potential energy = minimize.minimize(eps);
             terminatableAlgorithm = null;
             return energy;
         }

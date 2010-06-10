@@ -58,21 +58,20 @@ public abstract class Thermostat {
     protected double currentTemperature;
     protected double kT;
     protected double kineticEnergy;
-    protected int n;
     protected int dof;
     protected double x[];
     protected double v[];
     protected double mass[];
     protected Thermostats name;
 
-    public Thermostat(int n, double x[], double v[], double mass[], double t) {
-        this.n = n;
-        this.dof = n * 3 - 3;
+    public Thermostat(int dof, double x[], double v[], double mass[], double t) {
+        this.dof = dof;
         this.x = x;
         this.v = v;
         this.mass = mass;
+        assert (x.length == dof);
         assert (v.length == dof);
-        assert (mass.length == n);
+        assert (mass.length == dof);
         setTargetTemperature(t);
     }
 
@@ -117,13 +116,9 @@ public abstract class Thermostat {
      */
     public void maxwell() {
         Random random = new Random();
-        for (int index = 0, i = 0; i < n; i++) {
+        for (int i = 0; i < dof; i++) {
             double m = mass[i];
-            double variance = m * kT;
-            double sd = Math.sqrt(variance);
-            v[index++] = random.nextGaussian() * sd / m;
-            v[index++] = random.nextGaussian() * sd / m;
-            v[index++] = random.nextGaussian() * sd / m;
+            v[i++] = random.nextGaussian() * Math.sqrt(m * kT) / m;
         }
         centerOfMassMotion(true, true);
         kineticEnergy();
@@ -141,8 +136,8 @@ public abstract class Thermostat {
             angularMomentum[i] = 0.0;
         }
 
-        for (int index = 0, i = 0; i < n; i++) {
-            double m = mass[i];
+        for (int index = 0, i = 0; i < dof/3; i++) {
+            double m = mass[index];
             double xx = x[index];
             double vx = v[index++];
             double yy = x[index];
@@ -194,8 +189,8 @@ public abstract class Thermostat {
         double xy = 0.0;
         double xz = 0.0;
         double yz = 0.0;
-        for (int index = 0, i = 0; i < n; i++) {
-            double m = mass[i];
+        for (int index = 0, i = 0; i < dof/3; i++) {
+            double m = mass[index];
             double xi = x[index++] - centerOfMass[0];
             double yi = x[index++] - centerOfMass[1];
             double zi = x[index++] - centerOfMass[2];
@@ -230,7 +225,7 @@ public abstract class Thermostat {
         /**
          * Remove center of mass translational momentum.
          */
-        for (int index = 0, i = 0; i < n; i++) {
+        for (int index = 0, i = 0; i < dof/3; i++) {
             v[index++] -= linearMomentum[0];
             v[index++] -= linearMomentum[1];
             v[index++] -= linearMomentum[2];
@@ -241,7 +236,7 @@ public abstract class Thermostat {
          * non-periodic systems.
          */
         if (false) {
-            for (int index = 0, i = 0; i < n; i++) {
+            for (int index = 0, i = 0; i < dof/3; i++) {
                 double xi = x[index++] - centerOfMass[0];
                 double yi = x[index++] - centerOfMass[1];
                 double zi = x[index] - centerOfMass[2];
@@ -256,7 +251,7 @@ public abstract class Thermostat {
          */
         if (print) {
             logger.info(String.format(" Center of mass motion removed.\n"
-                                      + " Total degress of freedom %d - 3 = %d", 3 * n, dof));
+                                      + " Total degress of freedom %d - 3 = %d", dof, dof-3));
         }
     }
 
@@ -265,16 +260,12 @@ public abstract class Thermostat {
      */
     protected void kineticEnergy() {
         double e = 0.0;
-        for (int index = 0, i = 0; i < n; i++) {
-            double velocity = v[index++];
+        for (int i = 0; i < dof; i++) {
+            double velocity = v[i];
             double v2 = velocity * velocity;
-            velocity = v[index++];
-            v2 += velocity * velocity;
-            velocity = v[index++];
-            v2 += velocity * velocity;
             e += mass[i] * v2;
         }
-        currentTemperature = e / (kB * dof);
+        currentTemperature = e / (kB * (dof - 3));
         e *= 0.5 / convert;
         kineticEnergy = e;
     }

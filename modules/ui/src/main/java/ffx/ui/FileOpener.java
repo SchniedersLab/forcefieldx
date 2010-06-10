@@ -30,7 +30,7 @@ import java.util.logging.Logger;
 import org.apache.commons.io.FilenameUtils;
 
 import ffx.potential.bonded.Utilities;
-import ffx.potential.PotentialEnergy;
+import ffx.potential.ForceFieldEnergy;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.SystemFilter;
 
@@ -77,7 +77,7 @@ public class FileOpener
             }
             // Add the system to the multiscale hierarchy.
             mainPanel.getHierarchy().addSystemNode(ffxSystem);
-            PotentialEnergy energy = new PotentialEnergy(ffxSystem);
+            ForceFieldEnergy energy = new ForceFieldEnergy(ffxSystem);
             ffxSystem.setPotential(energy);
 
             // Check if there are alternate conformers
@@ -116,7 +116,7 @@ public class FileOpener
                         String fileName = ffxSystem.getFile().getAbsolutePath();
                         newSystem.setName(FilenameUtils.getBaseName(fileName) + " " + c);
                         mainPanel.getHierarchy().addSystemNode(newSystem);
-                        energy = new PotentialEnergy(newSystem);
+                        energy = new ForceFieldEnergy(newSystem);
                         newSystem.setPotential(energy);
                     }
                 }

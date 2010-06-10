@@ -33,7 +33,7 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import ffx.crystal.Crystal;
 import ffx.crystal.ReflectionList;
 import ffx.crystal.Resolution;
-import ffx.potential.PotentialEnergy;
+import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.parameters.ForceField;
@@ -137,7 +137,7 @@ public class FiniteDifferenceTest {
         PDBFilter pdbfile = new PDBFilter(structure, molecularAssembly, forceField, properties);
         pdbfile.readFile();
         molecularAssembly.finalize(true);
-        PotentialEnergy energy = new PotentialEnergy(molecularAssembly);
+        ForceFieldEnergy energy = new ForceFieldEnergy(molecularAssembly);
 
         List<Atom> atomlist = molecularAssembly.getAtomList();
         atomarray = atomlist.toArray(new Atom[atomlist.size()]);

@@ -47,16 +47,16 @@ public class Bussi extends Thermostat {
     private double tau;
     private final Random random;
 
-    public Bussi(int n, double x[], double v[], double mass[], double targetTemperature,
+    public Bussi(int dof, double x[], double v[], double mass[], double targetTemperature,
             double tau) {
-        super(n, x, v, mass, targetTemperature);
+        super(dof, x, v, mass, targetTemperature);
         this.name = Thermostats.BUSSI;
         this.tau = tau;
         this.random = new Random();
     }
 
-    public Bussi(int n, double x[], double v[], double mass[], double targetTemperature) {
-        this(n, x, v, mass, targetTemperature, 0.2e0);
+    public Bussi(int dof, double x[], double v[], double mass[], double targetTemperature) {
+        this(dof, x, v, mass, targetTemperature, 0.2e0);
     }
 
     public void setTau(double tau) {
@@ -99,7 +99,7 @@ public class Bussi extends Thermostat {
         if (r + sqrt(exptau / rate) < 0.0) {
             scale = -scale;
         }
-        for (int i = 0; i < 3 * n; i++) {
+        for (int i = 0; i < dof; i++) {
             v[i] *= scale;
         }
     }

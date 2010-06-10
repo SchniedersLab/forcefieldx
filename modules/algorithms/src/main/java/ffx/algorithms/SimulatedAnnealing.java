@@ -20,12 +20,15 @@
  */
 package ffx.algorithms;
 
-import ffx.algorithms.Thermostat.Thermostats;
-import ffx.numerics.Optimizable;
-import ffx.potential.bonded.MolecularAssembly;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import org.apache.commons.configuration.CompositeConfiguration;
+
+import ffx.algorithms.Thermostat.Thermostats;
+import ffx.numerics.Potential;
+import ffx.potential.bonded.MolecularAssembly;
+
 
 /**
  * Run NVT molecular dynamics at a series of temperatures.
@@ -45,14 +48,14 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
     private boolean done, terminate;
 
     public SimulatedAnnealing(MolecularAssembly assembly,
-                              Optimizable potentialEnergy,
+                              Potential potentialEnergy,
                               CompositeConfiguration properties,
                               AlgorithmListener listener) {
 
         molecularDynamics = new MolecularDynamics(assembly,
                                                   potentialEnergy, properties,
                                                   listener,
-                                                  Thermostats.BUSSI);
+                                                  Thermostats.BERENDSEN);
         done = true;
     }
 

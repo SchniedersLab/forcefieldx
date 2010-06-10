@@ -35,7 +35,6 @@ import edu.rit.pj.reduction.SharedBooleanArray;
 
 import ffx.crystal.Crystal;
 import ffx.potential.bonded.Atom;
-import java.util.Arrays;
 
 /**
  * The BulkSolventList class builds a list of atoms in symmetry mates that are
@@ -230,7 +229,6 @@ public class BulkSolventList extends ParallelRegion {
             nC = 1;
         }
 
-        StringBuilder sb = new StringBuilder("\n BULK SOLVENT LIST BUILDER\n");
         nAB = nA * nB;
         nCells = nAB * nC;
 
@@ -253,7 +251,6 @@ public class BulkSolventList extends ParallelRegion {
         for (int i = 0; i < nSymm; i++) {
             sharedSelect[i] = new SharedBooleanArray(nAtoms);
         }
-        logger.info(sb.toString());
     }
 
     /**

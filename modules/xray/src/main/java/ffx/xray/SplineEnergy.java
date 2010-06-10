@@ -32,7 +32,7 @@ import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
 import ffx.crystal.ReflectionSpline;
 import ffx.numerics.ComplexNumber;
-import ffx.numerics.Optimizable;
+import ffx.numerics.Potential;
 
 /**
  *
@@ -44,7 +44,12 @@ import ffx.numerics.Optimizable;
  * K. Cowtan, J. Appl. Cryst. (2002). 35, 655-663
  *
  */
-public class SplineEnergy implements Optimizable {
+public class SplineEnergy implements Potential {
+
+    @Override
+    public double[] getCoordinates(double[] parameters) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 
     public static interface Type {
 
@@ -234,7 +239,7 @@ public class SplineEnergy implements Optimizable {
     }
 
     @Override
-    public void setOptimizationScaling(double[] scaling) {
+    public void setScaling(double[] scaling) {
         if (scaling != null && scaling.length == nparams) {
             optimizationScaling = scaling;
         } else {
@@ -243,7 +248,17 @@ public class SplineEnergy implements Optimizable {
     }
 
     @Override
-    public double[] getOptimizationScaling() {
+    public double[] getScaling() {
         return optimizationScaling;
+    }
+
+    @Override
+    public double[] getMass() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public int getNumberOfVariables() {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 }

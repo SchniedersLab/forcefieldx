@@ -131,7 +131,7 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
             scaling[i + refinementdata.nparams] = 1.0 / mean;
         }
 
-        sigmaaenergy.setOptimizationScaling(scaling);
+        sigmaaenergy.setScaling(scaling);
     }
 
     public double calculateLikelihood() {

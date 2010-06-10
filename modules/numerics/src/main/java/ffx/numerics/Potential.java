@@ -21,15 +21,17 @@
 package ffx.numerics;
 
 /**
- * The OptimizationInterface defines methods required by optimizers.
+ * The Potential interface defines methods required by an optimizer or molecular
+ * dynamics.
  *
  * @author Michael J. Schnieders
+ *
  * @since 1.0
  */
-public interface Optimizable {
+public interface Potential {
 
     /**
-     * This method is called repeatedly by the optimizer to compute the
+     * This method is called repeatedly to compute the
      * function energy and gradient.
      * 
      * @param x Input parameters.
@@ -42,22 +44,46 @@ public interface Optimizable {
     public abstract double energyAndGradient(double x[], double g[]);
 
     /**
-     * Scale the optimization problem. A good choice is the square root of the
-     * median eigenvalue of a typical Hessian.
+     * Scale the problem. A good choice for optimization is the square root
+     * of the median eigenvalue of a typical Hessian.
      * 
      * @param scaling The scaling value to use for each variable.
      * 
      * @since 1.0
      */
-    public abstract void setOptimizationScaling(double scaling[]);
+    public abstract void setScaling(double scaling[]);
 
     /**
-     * Get the scaling for the optimization problem.
+     * Get the problem scaling.
      *
      * @return The scaling value used for each variable.
      * 
      * @since 1.0
      */
-    public abstract double[] getOptimizationScaling();
+    public abstract double[] getScaling();
 
+    /**
+     * Load the current value of the parameters. If the supplied array is null
+     * or not large enough, a new one should be created.
+     * The filled array is returned.
+     *
+     * @param parameters Supplied array.
+     * @return The array filled with paramter values.
+     */
+    public abstract double[] getCoordinates(double[] parameters);
+
+    /**
+     * Get the mass of each degree of freedom. This is required for molecular
+     * dynamics.
+     *
+     * @return The mass of each degree of freedom.
+     */
+    public abstract double[] getMass();
+
+    /**
+     * Get the number of variables being operated on.
+     *
+     * @return Number of variables.
+     */
+    public abstract int getNumberOfVariables();
 }

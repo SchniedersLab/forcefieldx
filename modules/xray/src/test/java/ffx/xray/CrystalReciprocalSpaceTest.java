@@ -33,7 +33,7 @@ import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.ForceFieldFilter;
 import ffx.potential.parsers.PDBFilter;
-import ffx.potential.PotentialEnergy;
+import ffx.potential.ForceFieldEnergy;
 import ffx.utilities.Keyword;
 
 import edu.rit.pj.ParallelTeam;
@@ -104,7 +104,7 @@ public class CrystalReciprocalSpaceTest {
         PDBFilter pdbfile = new PDBFilter(structure, molecularAssembly, forceField, properties);
         pdbfile.readFile();
         molecularAssembly.finalize(true);
-        PotentialEnergy energy = new PotentialEnergy(molecularAssembly);
+        ForceFieldEnergy energy = new ForceFieldEnergy(molecularAssembly);
 
         List<Atom> atomlist = molecularAssembly.getAtomList();
         Atom atomarray[] = atomlist.toArray(new Atom[atomlist.size()]);
@@ -172,7 +172,7 @@ public class CrystalReciprocalSpaceTest {
         PDBFilter pdbfile = new PDBFilter(structure, molecularAssembly, forceField, properties);
         pdbfile.readFile();
         molecularAssembly.finalize(true);
-        PotentialEnergy energy = new PotentialEnergy(molecularAssembly);
+        ForceFieldEnergy energy = new ForceFieldEnergy(molecularAssembly);
 
         List<Atom> atomlist = molecularAssembly.getAtomList();
         Atom atomarray[] = atomlist.toArray(new Atom[atomlist.size()]);

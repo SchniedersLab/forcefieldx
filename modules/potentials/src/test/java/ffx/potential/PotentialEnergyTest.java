@@ -146,7 +146,7 @@ public class PotentialEnergyTest {
     private double permanentEnergy;
     private Polarization polarization;
     private double polarizationEnergy;
-    private final PotentialEnergy energy;
+    private final ForceFieldEnergy energy;
     private boolean mpoleTerm;
     private final double tolerance = 1.0e-3;
     private final double gradientTolerance = 1.0e-4;
@@ -229,7 +229,7 @@ public class PotentialEnergyTest {
         molecularAssembly.finalize(true);
 
         nAtoms = molecularAssembly.getAtomArray().length;
-        energy = new PotentialEnergy(molecularAssembly);
+        energy = new ForceFieldEnergy(molecularAssembly);
         mpoleTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.MPOLETERM, true);
 
         String polar = forceField.getString(ForceFieldString.POLARIZATION,

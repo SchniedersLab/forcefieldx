@@ -45,7 +45,7 @@ import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
 import ffx.crystal.ReflectionSpline;
 import ffx.numerics.ComplexNumber;
-import ffx.numerics.Optimizable;
+import ffx.numerics.Potential;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
 
 /**
@@ -77,7 +77,7 @@ import ffx.xray.CrystalReciprocalSpace.SolventModel;
  * @see <a href="http://dx.doi.org/10.1107/S0108767396004370" target="_blank">
  * N. S. Pannu and R. J. Read, Acta Cryst. (1996). A52, 659-668.</a>
  */
-public class SigmaAEnergy implements Optimizable {
+public class SigmaAEnergy implements Potential {
 
     private static final Logger logger = Logger.getLogger(SigmaAEnergy.class.getName());
     private static final double twopi2 = 2.0 * PI * PI;
@@ -359,7 +359,7 @@ public class SigmaAEnergy implements Optimizable {
     }
 
     @Override
-    public void setOptimizationScaling(double[] scaling) {
+    public void setScaling(double[] scaling) {
         if (scaling != null && scaling.length == n * 2) {
             optimizationScaling = scaling;
         } else {
@@ -368,7 +368,7 @@ public class SigmaAEnergy implements Optimizable {
     }
 
     @Override
-    public double[] getOptimizationScaling() {
+    public double[] getScaling() {
         return optimizationScaling;
     }
 
@@ -397,5 +397,20 @@ public class SigmaAEnergy implements Optimizable {
                 + 0.5 * sim_B * log(z * z + 1.0)
                 + sim_r * atan(z)
                 + x + 1.0;
+    }
+
+    @Override
+    public double[] getMass() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public int getNumberOfVariables() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public double[] getCoordinates(double[] parameters) {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 }

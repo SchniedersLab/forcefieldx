@@ -60,7 +60,7 @@ import ffx.crystal.Crystal;
 
 import ffx.potential.parameters.ForceField;
 import ffx.numerics.VectorMath;
-import ffx.potential.PotentialEnergy;
+import ffx.potential.ForceFieldEnergy;
 import java.util.Arrays;
 
 /**
@@ -77,7 +77,7 @@ public class MolecularAssembly extends MSGroup {
     // MolecularSystem member variables
     private File file;
     protected ForceField forceField;
-    private PotentialEnergy potentialEnergy;
+    private ForceFieldEnergy potentialEnergy;
     private Vector3d offset;
     private int cycles = 1;
     private int currentCycle = 1;
@@ -127,11 +127,11 @@ public class MolecularAssembly extends MSGroup {
         this.forceField = forceField;
     }
 
-    public void setPotential(PotentialEnergy potentialEnergy) {
+    public void setPotential(ForceFieldEnergy potentialEnergy) {
         this.potentialEnergy = potentialEnergy;
     }
 
-    public PotentialEnergy getPotentialEnergy() {
+    public ForceFieldEnergy getPotentialEnergy() {
         return potentialEnergy;
     }
 

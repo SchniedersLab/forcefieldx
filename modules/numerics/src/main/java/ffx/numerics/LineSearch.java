@@ -48,7 +48,7 @@ public class LineSearch {
         Success, WideAngle, ScaleStep, IntplnErr, ReSearch, BadIntpln;
     };
     private final int n;
-    private Optimizable optimizationSystem;
+    private Potential optimizationSystem;
     private int functionEvaluations[];
     private LineSearchResult info[];
     private double[] x;
@@ -314,7 +314,7 @@ public class LineSearch {
      */
     public double search(int n, double[] x, double f, double[] g,
                          double[] p, double angle[], double fMove, LineSearchResult[] info,
-                         int[] functionEvaluations, Optimizable optimizationSystem) {
+                         int[] functionEvaluations, Potential optimizationSystem) {
 
         assert (n > 0);
 

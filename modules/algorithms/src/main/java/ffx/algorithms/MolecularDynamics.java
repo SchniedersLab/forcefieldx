@@ -23,8 +23,6 @@ package ffx.algorithms;
 import static java.lang.String.format;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -32,8 +30,7 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 
 import ffx.algorithms.Thermostat.Thermostats;
-import ffx.numerics.Optimizable;
-import ffx.potential.PotentialEnergy;
+import ffx.numerics.Potential;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.parsers.DYNFilter;
@@ -49,7 +46,6 @@ import ffx.potential.parsers.XYZFilter;
 public class MolecularDynamics implements Runnable, Terminatable {
 
     private static final Logger logger = Logger.getLogger(MolecularDynamics.class.getName());
-    private final int n;
     private final int dof;
     private final double[] x;
     private final double[] xPrevious;
@@ -64,9 +60,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
     private double total;
     private double dt;
     private final MolecularAssembly molecularAssembly;
-    private final Optimizable potentialEnergy;
+    private final Potential potentialEnergy;
     private final CompositeConfiguration properties;
-    private final Atom atoms[];
     private AlgorithmListener algorithmListener;
     private Thermostat thermostat;
     private File archive = null;
@@ -83,19 +78,16 @@ public class MolecularDynamics implements Runnable, Terminatable {
     private boolean loadRestart = false;
 
     public MolecularDynamics(MolecularAssembly assembly,
-                             Optimizable potentialEnergy,
-                             CompositeConfiguration properties,
-                             AlgorithmListener listener,
-                             Thermostats requestedThermostat) {
+            Potential potentialEnergy,
+            CompositeConfiguration properties,
+            AlgorithmListener listener,
+            Thermostats requestedThermostat) {
         this.molecularAssembly = assembly;
         this.algorithmListener = listener;
         this.potentialEnergy = potentialEnergy;
         this.properties = properties;
-        atoms = molecularAssembly.getAtomArray();
-        n = atoms.length;
-
-        mass = new double[n];
-        dof = n * 3;
+        mass = potentialEnergy.getMass();
+        dof = potentialEnergy.getNumberOfVariables();
         x = new double[dof];
         xPrevious = new double[dof];
         v = new double[dof];
@@ -110,15 +102,15 @@ public class MolecularDynamics implements Runnable, Terminatable {
         switch (requestedThermostat) {
             case ADIABATIC:
             default:
-                thermostat = new Adiabatic(n, x, v, mass);
+                thermostat = new Adiabatic(dof / 3, x, v, mass);
                 break;
             case BERENDSEN:
                 double tau = properties.getDouble("tau-temperature", 0.2);
-                thermostat = new Berendsen(n, x, v, mass, 300.0, tau);
+                thermostat = new Berendsen(dof / 3, x, v, mass, 300.0, tau);
                 break;
             case BUSSI:
                 tau = properties.getDouble("tau-temperature", 0.2);
-                thermostat = new Bussi(n, x, v, mass, 300.0, tau);
+                thermostat = new Bussi(dof / 3, x, v, mass, 300.0, tau);
         }
 
         done = true;
@@ -137,8 +129,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     public void init(final int nSteps, final double timeStep, final double printInterval,
-                     final double saveInterval, final double temperature, final boolean initVelocities,
-                     final File dyn) {
+            final double saveInterval, final double temperature, final boolean initVelocities,
+            final File dyn) {
 
         /**
          * Return if already running.
@@ -189,7 +181,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
             if (xyzFilter == null) {
                 xyzFilter = new XYZFilter(file, molecularAssembly,
-                                          molecularAssembly.getForceField(), properties);
+                        molecularAssembly.getForceField(), properties);
             }
 
             if (dynFilter == null) {
@@ -212,8 +204,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * @param initVelocities
      */
     public void dynamic(final int nSteps, final double timeStep, final double printInterval,
-                        final double saveInterval, final double temperature, final boolean initVelocities,
-                        final File dyn) {
+            final double saveInterval, final double temperature, final boolean initVelocities,
+            final File dyn) {
 
         init(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);
 
@@ -270,26 +262,11 @@ public class MolecularDynamics implements Runnable, Terminatable {
             thermostat.setTargetTemperature(temperature);
         }
 
-        /**
-         * Initialize atomic masses.
-         */
-        for (int i = 0; i < n; i++) {
-            Atom atom = atoms[i];
-            mass[i] = atom.getMass();
-        }
-
         if (!loadRestart) {
             /**
              * Initialize atomic coordinates.
              */
-            int j = 0;
-            for (int i = 0; i < n; i++) {
-                Atom atom = atoms[i];
-                double xyz[] = atom.getXYZ();
-                x[j++] = xyz[0];
-                x[j++] = xyz[1];
-                x[j++] = xyz[2];
-            }
+            potentialEnergy.getCoordinates(x);
             /**
              * Initialize atomic velocities.
              */
@@ -312,7 +289,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
         /**
          * Compute the current potential energy.
          */
-        potentialEnergy.setOptimizationScaling(null);
+        potentialEnergy.setScaling(null);
         potential = potentialEnergy.energyAndGradient(x, grad);
 
         /**
@@ -327,13 +304,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
          * Initialize current and previous accelerations.
          */
         if (!loadRestart) {
-            int index = 0;
-            for (int i = 0; i < n; i++) {
-                double m = mass[i];
-                for (int j = 0; j < 3; j++, index++) {
-                    a[index] = -Thermostat.convert * grad[index] / m;
-                    aPrevious[index] = a[index];
-                }
+            for (int i = 0; i < dof; i++) {
+                a[i] = -Thermostat.convert * grad[i] / mass[i];
+                aPrevious[i] = a[i];
             }
         }
 
@@ -358,7 +331,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
             if (step % 100 == 0) {
                 thermostat.centerOfMassMotion(true, false);
             }
-            
+
             kinetic = thermostat.getKineticEnergy();
             currentTemp = thermostat.getCurrentTemperture();
             total = kinetic + potential;
@@ -444,13 +417,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
          * Use Newton's second law to get the next acceleration and find
          * the full-step velocities using the Beeman recusion.
          */
-        for (int index = 0, i = 0; i < n; i++) {
-            double m = mass[i];
-            for (int j = 0; j < 3; j++, index++) {
-                aPrevious[index] = a[index];
-                a[index] = -Thermostat.convert * grad[index] / m;
-                v[index] += (3.0 * a[index] + aPrevious[index]) * dt_8;
-            }
+        for (int i = 0; i < dof; i++) {
+            aPrevious[i] = a[i];
+            a[i] = -Thermostat.convert * grad[i] / mass[i];
+            v[i] += (3.0 * a[i] + aPrevious[i]) * dt_8;
         }
         /**
          * Compute the full-step kinetic energy.

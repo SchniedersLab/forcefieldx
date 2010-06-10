@@ -136,7 +136,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
             scaling[i] = 1.0;
         }
 
-        refinementenergy.setOptimizationScaling(scaling);
+        refinementenergy.setScaling(scaling);
     }
 
     public RefinementEnergy minimize() {

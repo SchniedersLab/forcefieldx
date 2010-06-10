@@ -20,7 +20,7 @@
  */
 package ffx.xray;
 
-import ffx.numerics.Optimizable;
+import ffx.numerics.Potential;
 import ffx.potential.bonded.Atom;
 import ffx.xray.RefinementMinimize.RefinementMode;
 import java.util.logging.Level;
@@ -33,7 +33,7 @@ import java.util.logging.Logger;
  *
  * @since 1.0
  */
-public class XRayEnergy implements Optimizable {
+public class XRayEnergy implements Potential {
 
     private static final Logger logger = Logger.getLogger(XRayEnergy.class.getName());
     private final XRayStructure xraystructure;
@@ -305,7 +305,7 @@ public class XRayEnergy implements Optimizable {
     }
 
     @Override
-    public void setOptimizationScaling(double[] scaling) {
+    public void setScaling(double[] scaling) {
         if (scaling != null && scaling.length == nAtoms * 3) {
             optimizationScaling = scaling;
         } else {
@@ -314,7 +314,22 @@ public class XRayEnergy implements Optimizable {
     }
 
     @Override
-    public double[] getOptimizationScaling() {
+    public double[] getScaling() {
         return optimizationScaling;
+    }
+
+    @Override
+    public double[] getMass() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public int getNumberOfVariables() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public double[] getCoordinates(double[] parameters) {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 }
