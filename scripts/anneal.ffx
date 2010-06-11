@@ -1,24 +1,32 @@
+// SIMULATED ANNEALING 
+
 import ffx.algorithms.SimulatedAnnealing;
-import ffx.potential.bonded.MolecularAssembly;
-import ffx.xray.XRayStructure;
-import ffx.xray.RefinementEnergy;
-import ffx.xray.RefinementMinimize.RefinementMode;
 
-open("examples/1N7S.pdb");
+// Name of the file (PDB or XYZ).
+String filename = args[0];
+if (filename == null) {
+   filename = "examples/1n7s.P212121.xyz";
+}
 
-XRayStructure xray = new XRayStructure(active, active.getProperties());
-
-xray.scalebulkfit();
-xray.printstats();
-
-RefinementEnergy refinementEnergy = new RefinementEnergy(active, xray,
-		 3 * active.getAtomArray().length, 0, 0, RefinementMode.COORDINATES);
-SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(active, refinementEnergy,
-		 active.getProperties(), null);
-
+// High temperature starting point.
 double highTemperature = 1000.0;
-double lowTemperature = 100.0;
-int annealingSteps = 10;
-int mdSteps = 5;
 
+// Low temperature end point.
+double lowTemperature = 10.0;
+
+// Number of annealing steps.
+int annealingSteps = 10;
+
+// Number of molecular dynamics steps at each temperature.
+int mdSteps = 100;
+
+// Things below this line normally do not need to be changed.
+// ===============================================================================================
+
+println("\n Running simulated annealing on " + filename);
+open(filename);
+
+SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(active, active.getPotentialEnergy(),
+		 active.getProperties(), null);
 simulatedAnnealing.anneal(highTemperature, lowTemperature, annealingSteps, mdSteps);
+

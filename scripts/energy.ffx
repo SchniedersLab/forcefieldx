@@ -1,15 +1,16 @@
+// ENERGY
 
-import ffx.potential.PotentialEnergy;
-
-// Name of the file (PDB or XYZ) to evaluate the energy of.
+// Name of the file (PDB or XYZ).
 String filename = args[0];
 if (filename == null) {
    filename = "examples/1n7s.P212121.xyz";
 }
 
-open(filename); 
-potentialEnergy = active.getPotentialEnergy();
-potentialEnergy.energy(false,true);
-return;
+// Things below this line normally do not need to be changed.
+// ===============================================================================================
 
+println("\n Running energy on " + filename);
+
+open(filename); 
+energy();
 

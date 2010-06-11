@@ -27,6 +27,7 @@ import java.awt.EventQueue;
 import java.awt.Rectangle;
 import java.io.File;
 import java.net.URL;
+import java.util.List;
 import java.util.prefs.Preferences;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -57,7 +58,7 @@ import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.RendererCache.ColorModel;
 import ffx.potential.bonded.RendererCache.ViewModel;
-import java.util.List;
+
 
 /**
  * The ModelingShell is used to script Multiscale Modeling Routines via the
@@ -216,8 +217,14 @@ public class ModelingShell extends Console implements AlgorithmListener {
 
     public ForceFieldEnergy energy() {
         if (interrupted) {
+            logger.info("Algorithm interrupted - skipping energy.");
             return null;
         }
+        if ( terminatableAlgorithm != null ) {
+            logger.info("Algorithm already running - skipping energy.");
+            return null;
+        }
+
         MolecularAssembly active = mainPanel.getHierarchy().getActive();
         if (active != null) {
             ForceFieldEnergy energy = active.getPotentialEnergy();
@@ -232,16 +239,23 @@ public class ModelingShell extends Console implements AlgorithmListener {
     }
 
     public Potential minimize(double eps) {
-        if (interrupted || terminatableAlgorithm != null) {
+        if (interrupted) {
+            logger.info("Algorithm interrupted - skipping minimization.");
+            return null;
+        }
+        if ( terminatableAlgorithm != null ) {
+            logger.info("Algorithm already running - skipping minimization.");
             return null;
         }
         MolecularAssembly active = mainPanel.getHierarchy().getActive();
         if (active != null) {
             Minimize minimize = new Minimize(active, this);
             terminatableAlgorithm = minimize;
-            Potential energy = minimize.minimize(eps);
+            Potential potential = minimize.minimize(eps);
             terminatableAlgorithm = null;
-            return energy;
+            return potential;
+        } else {
+            logger.info("No active system - skipping minimization.");
         }
         return null;
     }

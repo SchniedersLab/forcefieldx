@@ -1,0 +1,24 @@
+// MINIMIZE
+
+// Name of the file (PDB or XYZ).
+String filename = args[0];
+if (filename == null) {
+   filename = "examples/1n7s.P212121.xyz";
+}
+
+// Set the RMS gradient per atom convergence criteria
+String epsString = args[1];
+double eps = 1.0;
+if (epsString != null) {
+   eps = Double.parseDouble(epsString);
+}
+
+// Things below this line normally do not need to be changed.
+// ===============================================================================================
+
+println("\n Running minimize on " + filename);
+open(filename);
+
+println("\n RMS gradient convergence criteria: " + eps);
+e = minimize(eps);
+

@@ -1,17 +1,26 @@
+// MOLECULAR DYNAMICS
+
+// Apache Imports
+import org.apache.commons.io.FilenameUtils;
 
 // Force Field X Imports
 import ffx.algorithms.MolecularDynamics;
 import ffx.algorithms.Thermostat.Thermostats;
 
-// Structure File (XYZ or PDB)
-String filename = "examples/3DB3.P62.xyz";
+// Name of the file (PDB or XYZ).
+String filename = args[0];
+if (filename == null) {
+   filename = "examples/1n7s.P212121.xyz";
+}
 
-// Restart file (uncomment only 1 of the 2 lines below)
-File dyn = null;
-//File dyn = new File("examples/3DB3.P62.dyn");
+// Restart File
+File dyn = new File(FilenameUtils.removeExtension(filename) + ".dyn"); 
+if (!dyn.exists()) {
+   dyn = null;
+} 
 
 // Number of molecular dynamics steps
-int nSteps = 100;
+int nSteps = 1000000;
 
 // Time step in femtoseconds.
 double timeStep = 1.0;
@@ -20,13 +29,13 @@ double timeStep = 1.0;
 double printInterval = 0.01;
 
 // Frequency to save out coordinates in picoseconds.
-double saveInterval = 0.01;
+double saveInterval = 0.1;
 
 // Temperature in degrees Kelvin.
 double temperature = 300.0;
 
-// Thermostat (BERENDSEN or BUSSI)
-Thermostats thermostat = Thermostats.BUSSI;
+// Thermostats [ ADIABATIC, BERENDSEN, BUSSI ]
+Thermostats thermostat = Thermostats.BERENDSEN;
 
 // Reset velocities (ignored if a restart file is given)
 boolean initVelocities = true;
@@ -34,7 +43,9 @@ boolean initVelocities = true;
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 
-open filename;
-MolecularDynamics molDyn = new MolecularDynamics(active, active.getProperties(), null, thermostat);
+println("\n Running molecular dynmaics on " + filename);
+
+open(filename);
+MolecularDynamics molDyn = new MolecularDynamics(active, active.getPotentialEnergy(), active.getProperties(), null, thermostat);
 molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);
 

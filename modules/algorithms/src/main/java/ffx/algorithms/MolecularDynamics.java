@@ -31,7 +31,6 @@ import org.apache.commons.io.FilenameUtils;
 
 import ffx.algorithms.Thermostat.Thermostats;
 import ffx.numerics.Potential;
-import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.parsers.DYNFilter;
 import ffx.potential.parsers.XYZFilter;
@@ -118,6 +117,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
     public void setThermostat(Thermostat thermostat) {
         this.thermostat = thermostat;
+    }
+
+    public Thermostat getThermostat() {
+        return thermostat;
     }
 
     public void setArchiveFile(File archive) {

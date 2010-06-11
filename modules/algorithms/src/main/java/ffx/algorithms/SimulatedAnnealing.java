@@ -56,6 +56,8 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
                                                   potentialEnergy, properties,
                                                   listener,
                                                   Thermostats.BERENDSEN);
+        Berendsen berendsen = (Berendsen) molecularDynamics.getThermostat();
+        berendsen.setTau(0.01);
         done = true;
     }
 
@@ -101,11 +103,11 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
         logger.info(String.format(" Annealing steps:        %8d", annealingSteps));
         logger.info(String.format(" MD steps/temperature:   %8d", mdSteps));
 
-        Thread dynamicThread = new Thread(this);
-        dynamicThread.start();
+        Thread annealingThread = new Thread(this);
+        annealingThread.start();
         synchronized (this) {
             try {
-                while (dynamicThread.isAlive()) {
+                while (annealingThread.isAlive()) {
                     wait(100);
                 }
             } catch (Exception e) {
@@ -125,7 +127,7 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
         done = false;
         terminate = false;
 
-        double dt = (highTemperature - lowTemperature) / annealingSteps;
+        double dt = (highTemperature - lowTemperature) / (annealingSteps-1);
         for (int i = 0; i < annealingSteps; i++) {
             double temperature = highTemperature - dt * i;
             molecularDynamics.dynamic(mdSteps, 1.0, 0.001, 0.0, temperature, true, null);
