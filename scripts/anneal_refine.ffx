@@ -1,5 +1,4 @@
 import ffx.algorithms.SimulatedAnnealing;
-import ffx.potential.bonded.MolecularAssembly;
 import ffx.xray.XRayStructure;
 import ffx.xray.RefinementEnergy;
 import ffx.xray.RefinementMinimize;
@@ -13,15 +12,17 @@ xray.scalebulkfit();
 xray.printstats();
 
 RefinementEnergy refinementEnergy = new RefinementEnergy(active, xray,
-   3 * active.getAtomArray().length, 0, 0, RefinementMode.COORDINATES);
+  3 * active.getAtomArray().length, 0, 0, RefinementMode.COORDINATES);
 SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(active, refinementEnergy,
-   active.getProperties(), null);
-RefinementMinimize refinementMinimize = new RefinementMinimize(active, xray, RefinementMode.COORDINATES);
+  active.getProperties(), null);
+RefinementMinimize refinementMinimize = new RefinementMinimize(active, xray,
+  RefinementMode.COORDINATES);
+
+refinementMinimize.minimize(2.5);
 
 int macrocycles = 3;
 
 for (i = 0; i < macrocycles; i++) {
-  refinementMinimize.minimize(1.0);
   xray.scalebulkfit();
   xray.printstats();
 
@@ -31,6 +32,10 @@ for (i = 0; i < macrocycles; i++) {
   int mdSteps = 5;
   simulatedAnnealing.anneal(highTemperature, lowTemperature, annealingSteps, mdSteps);
 
+  xray.scalebulkfit();
+  xray.printstats();
+
+  refinementMinimize.minimize(1.0);
 }
 
 xray.writedata("/tmp/1N7S_anneal_refine.mtz");

@@ -25,6 +25,7 @@ import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.xray.RefinementMinimize.RefinementMode;
 import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -38,9 +39,9 @@ import java.util.logging.Logger;
 public class RefinementEnergy implements Potential {
 
     private static final Logger logger = Logger.getLogger(RefinementEnergy.class.getName());
-    private final MolecularAssembly molecularAssembly;
+    private final MolecularAssembly molecularAssembly[];
     private final XRayStructure xraystructure;
-    protected ForceFieldEnergy potentialEnergy;
+    private final List<Integer> xindex[];
     protected XRayEnergy xrayEnergy;
     private RefinementMode refinementMode;
     private final int nxyz;
@@ -48,23 +49,30 @@ public class RefinementEnergy implements Potential {
     private final int nocc;
     private final int n;
     private double weight = 1.0;
-    private double gChemical[];
+    private double xChemical[][];
+    private double gChemical[][];
     private double gXray[];
+    protected double[] optimizationScaling = null;
 
-    public RefinementEnergy(MolecularAssembly molecularAssembly,
+    public RefinementEnergy(MolecularAssembly molecularAssembly[],
             XRayStructure xraystructure, int nxyz, int nb, int nocc,
             RefinementMode refinementmode) {
         this.molecularAssembly = molecularAssembly;
         this.xraystructure = xraystructure;
+        xindex = xraystructure.xindex;
         this.refinementMode = refinementmode;
         this.nxyz = nxyz;
         this.nb = nb;
         this.nocc = nocc;
         this.n = nxyz + nb + nocc;
-        potentialEnergy = molecularAssembly.getPotentialEnergy();
-        if (potentialEnergy == null) {
-            potentialEnergy = new ForceFieldEnergy(molecularAssembly);
-            molecularAssembly.setPotential(potentialEnergy);
+
+        for (MolecularAssembly ma : molecularAssembly) {
+            ForceFieldEnergy fe = ma.getPotentialEnergy();
+            if (fe == null) {
+                fe = new ForceFieldEnergy(ma);
+                ma.setPotential(fe);
+            }
+            fe.setScaling(null);
         }
         if (!xraystructure.scaled) {
             xraystructure.scalebulkfit();
@@ -81,6 +89,16 @@ public class RefinementEnergy implements Potential {
             xrayEnergy.setNOcc(nocc);
             xrayEnergy.setRefinementMode(refinementmode);
         }
+        xrayEnergy.setScaling(null);
+
+        int assemblysize = molecularAssembly.length;
+        xChemical = new double[assemblysize][];
+        gChemical = new double[assemblysize][];
+        for (int i = 0; i < assemblysize; i++) {
+            int len = molecularAssembly[i].getAtomArray().length * 3;
+            xChemical[i] = new double[len];
+            gChemical[i] = new double[len];
+        }
     }
 
     /**
@@ -94,13 +112,31 @@ public class RefinementEnergy implements Potential {
     public double energyAndGradient(double[] x, double[] g) {
         double e = 0.0;
         Arrays.fill(g, 0.0);
+
+        if (optimizationScaling != null) {
+            int len = x.length;
+            for (int i = 0; i < len; i++) {
+                x[i] /= optimizationScaling[i];
+            }
+        }
+
+        int assemblysize = molecularAssembly.length;
         switch (refinementMode) {
             case COORDINATES:
                 // Compute the chemical energy and gradient.
-                if (gChemical == null || gChemical.length != nxyz) {
-                    gChemical = new double[nxyz];
+                for (int i = 0; i < assemblysize; i++) {
+                    ForceFieldEnergy fe = molecularAssembly[i].getPotentialEnergy();
+                    getAssemblyi(i, x, xChemical[i]);
+                    double curE = fe.energyAndGradient(xChemical[i], gChemical[i]);
+                    e += (curE - e) / (i + 1);
+                    setAssemblyi(i, g, gChemical[i]);
                 }
-                e = potentialEnergy.energyAndGradient(x, gChemical);
+                // normalize gradients for multiple-counted atoms
+                if (assemblysize > 1) {
+                    for (int i = 0; i < nxyz; i++) {
+                        g[i] /= assemblysize;
+                    }
+                }
 
                 // Compute the X-ray target energy and gradient.
                 if (gXray == null || gXray.length != nxyz) {
@@ -110,7 +146,7 @@ public class RefinementEnergy implements Potential {
 
                 // Add the chemical and X-ray gradients.
                 for (int i = 0; i < nxyz; i++) {
-                    g[i] = gChemical[i] + weight * gXray[i];
+                    g[i] += weight * gXray[i];
                 }
                 break;
             case BFACTORS:
@@ -119,10 +155,19 @@ public class RefinementEnergy implements Potential {
                 break;
             case COORDINATES_AND_BFACTORS:
                 // Compute the chemical energy and gradient.
-                if (gChemical == null || gChemical.length != n) {
-                    gChemical = new double[n];
+                for (int i = 0; i < assemblysize; i++) {
+                    ForceFieldEnergy fe = molecularAssembly[i].getPotentialEnergy();
+                    getAssemblyi(i, x, xChemical[i]);
+                    double curE = fe.energyAndGradient(xChemical[i], gChemical[i]);
+                    e += (curE - e) / (i + 1);
+                    setAssemblyi(i, g, gChemical[i]);
                 }
-                e = potentialEnergy.energyAndGradient(x, gChemical);
+                // normalize gradients for multiple-counted atoms
+                if (assemblysize > 1) {
+                    for (int i = 0; i < nxyz; i++) {
+                        g[i] /= assemblysize;
+                    }
+                }
 
                 // Compute the X-ray target energy and gradient.
                 if (gXray == null || gXray.length != n) {
@@ -132,8 +177,9 @@ public class RefinementEnergy implements Potential {
 
                 // Add the chemical and X-ray gradients.
                 for (int i = 0; i < nxyz; i++) {
-                    g[i] = gChemical[i] + weight * gXray[i];
+                    g[i] += weight * gXray[i];
                 }
+
                 // bfactors, occ
                 if (n > nxyz) {
                     for (int i = nxyz; i < n; i++) {
@@ -145,50 +191,61 @@ public class RefinementEnergy implements Potential {
                 String message = "Unknown refinment mode.";
                 logger.log(Level.SEVERE, message);
         }
+
+        if (optimizationScaling != null) {
+            int len = x.length;
+            for (int i = 0; i < len; i++) {
+                x[i] *= optimizationScaling[i];
+                g[i] /= optimizationScaling[i];
+            }
+        }
         return e;
+    }
+
+    public void getAssemblyi(int i, double x[], double xchem[]) {
+        assert (x != null && xchem != null);
+        for (int j = 0; j < xchem.length; j += 3) {
+            int index = (j + 1) / 3;
+            int aindex = xindex[i].get(index) * 3;
+            xchem[j] = x[aindex];
+            xchem[j + 1] = x[aindex + 1];
+            xchem[j + 2] = x[aindex + 2];
+        }
+    }
+
+    public void setAssemblyi(int i, double x[], double xchem[]) {
+        assert (x != null && xchem != null);
+        for (int j = 0; j < xchem.length; j += 3) {
+            int index = (j + 1) / 3;
+            int aindex = xindex[i].get(index) * 3;
+            x[aindex] += xchem[j];
+            x[aindex + 1] += xchem[j + 1];
+            x[aindex + 2] += xchem[j + 2];
+        }
     }
 
     @Override
     public void setScaling(double[] scaling) {
-        switch (refinementMode) {
-            case COORDINATES:
-            case BFACTORS:
-            case COORDINATES_AND_BFACTORS:
-                potentialEnergy.setScaling(scaling);
-                xrayEnergy.setScaling(scaling);
-                break;
-            default:
-                String message = "Unknown refinement mode.";
-                logger.log(Level.SEVERE, message);
-        }
+        optimizationScaling = scaling;
     }
 
     @Override
     public double[] getScaling() {
-        switch (refinementMode) {
-            case COORDINATES:
-            case BFACTORS:
-            case COORDINATES_AND_BFACTORS:
-                return potentialEnergy.getScaling();
-            default:
-                String message = "Unknown refinement mode.";
-                logger.log(Level.SEVERE, message);
-        }
-        return null;
+        return optimizationScaling;
     }
 
     @Override
     public double[] getMass() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return xrayEnergy.getMass();
     }
 
     @Override
     public int getNumberOfVariables() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return n;
     }
 
     @Override
     public double[] getCoordinates(double[] parameters) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return xrayEnergy.getCoordinates(parameters);
     }
 }

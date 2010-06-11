@@ -197,6 +197,15 @@ public final class VectorMath {
                 - m[0][2] * m[1][1] * m[2][0]);
     }
 
+    public static double determinant3(double m[]) {
+        return (m[0] * m[1] * m[2]
+                - m[0] * m[5] * m[5]
+                + m[3] * m[5] * m[4]
+                - m[3] * m[3] * m[2]
+                + m[4] * m[3] * m[5]
+                - m[4] * m[1] * m[4]);
+    }
+
     /**
      * Finds the difference between two vectors
      *

@@ -20,6 +20,8 @@
  */
 package ffx.xray;
 
+import static ffx.numerics.VectorMath.determinant3;
+
 import ffx.numerics.Potential;
 import ffx.potential.bonded.Atom;
 import ffx.xray.RefinementMinimize.RefinementMode;
@@ -47,6 +49,7 @@ public class XRayEnergy implements Potential {
     private int nocc;
     private RefinementMode refinementMode;
     protected double[] optimizationScaling = null;
+    private double bmass = 12.0;
 
     public XRayEnergy(XRayStructure xraystructure, int nxyz, int nb, int nocc,
             RefinementMode refinementmode) {
@@ -263,7 +266,7 @@ public class XRayEnergy implements Potential {
     }
 
     public void getXYZGradients(double g[]) {
-        assert (g != null && g.length == nAtoms * 3);
+        assert (g != null);
         double grad[] = new double[3];
         int index = 0;
         for (Atom a : atomarray) {
@@ -272,6 +275,22 @@ public class XRayEnergy implements Potential {
             g[index++] = grad[1];
             g[index++] = grad[2];
         }
+    }
+
+    @Override
+    public double[] getCoordinates(double x[]) {
+        int n = getNumberOfVariables();
+        assert (x != null);
+        double xyz[] = new double[3];
+        int index = 0;
+        for (Atom a : atomarray) {
+            a.getXYZ(xyz);
+            x[index++] = xyz[0];
+            x[index++] = xyz[1];
+            x[index++] = xyz[2];
+        }
+
+        return x;
     }
 
     public void setBFactors(double x[], int offset) {
@@ -292,6 +311,8 @@ public class XRayEnergy implements Potential {
                 anisou[4] = x[index++];
                 anisou[5] = x[index++];
                 a.setAnisou(anisou);
+                double det = Math.pow(determinant3(anisou), 0.3333);
+                a.setTempFactor(det);
             }
         }
 
@@ -304,13 +325,22 @@ public class XRayEnergy implements Potential {
         }
     }
 
+    public void setCoordinates(double x[]) {
+        int n = getNumberOfVariables();
+        assert (x != null);
+        double xyz[] = new double[3];
+        int index = 0;
+        for (Atom a : atomarray) {
+            xyz[0] = x[index++];
+            xyz[2] = x[index++];
+            xyz[2] = x[index++];
+            a.moveTo(xyz);
+        }
+    }
+
     @Override
     public void setScaling(double[] scaling) {
-        if (scaling != null && scaling.length == nAtoms * 3) {
-            optimizationScaling = scaling;
-        } else {
-            optimizationScaling = null;
-        }
+        optimizationScaling = scaling;
     }
 
     @Override
@@ -320,16 +350,35 @@ public class XRayEnergy implements Potential {
 
     @Override
     public double[] getMass() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        double mass[] = new double[nxyz + nb + nocc];
+        int i = 0;
+        for (Atom a : atomarray) {
+            double m = a.getMass();
+            mass[i++] = m;
+            mass[i++] = m;
+            mass[i++] = m;
+        }
+        for (Atom a : atomarray) {
+            // ignore hydrogens!!!
+            if (a.getAtomicNumber() == 1) {
+                continue;
+            }
+            if (a.getAnisou() == null) {
+                mass[i++] = bmass;
+            } else {
+                mass[i++] = bmass;
+                mass[i++] = bmass;
+                mass[i++] = bmass;
+                mass[i++] = bmass;
+                mass[i++] = bmass;
+                mass[i++] = bmass;
+            }
+        }
+        return mass;
     }
 
     @Override
     public int getNumberOfVariables() {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    @Override
-    public double[] getCoordinates(double[] parameters) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return nxyz + nb + nocc;
     }
 }
