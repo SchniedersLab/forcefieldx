@@ -42,7 +42,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
     }
     private static final Logger logger = Logger.getLogger(RefinementMinimize.class.getName());
     private static double toSeconds = 0.000000001;
-    private final MolecularAssembly molecularAssembly;
+    private final MolecularAssembly molecularAssembly[];
     private final XRayStructure xraystructure;
     private final Atom atomarray[];
     private final int nAtoms;
@@ -63,11 +63,17 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
 
     public RefinementMinimize(MolecularAssembly molecularAssembly,
             XRayStructure xraystructure) {
-        this(molecularAssembly, xraystructure,
+        this(new MolecularAssembly[]{molecularAssembly}, xraystructure,
                 RefinementMode.COORDINATES_AND_BFACTORS);
     }
 
     public RefinementMinimize(MolecularAssembly molecularAssembly,
+            XRayStructure xraystructure, RefinementMode refinementmode) {
+        this(new MolecularAssembly[]{molecularAssembly}, xraystructure,
+                refinementmode);
+    }
+
+    public RefinementMinimize(MolecularAssembly molecularAssembly[],
             XRayStructure xraystructure, RefinementMode refinementmode) {
         this.molecularAssembly = molecularAssembly;
         this.xraystructure = xraystructure;
@@ -121,10 +127,9 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
         grad = new double[n];
         scaling = new double[n];
 
-        // FIXME: alternate conformers!?!
         if (refinementmode == RefinementMode.COORDINATES
                 || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS) {
-            refinementenergy.potentialEnergy.getCoordinates(x);
+            refinementenergy.xrayEnergy.getCoordinates(x);
         }
 
         if (refinementmode == RefinementMode.BFACTORS

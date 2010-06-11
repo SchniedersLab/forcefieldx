@@ -36,6 +36,7 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
 import ffx.xray.RefinementMinimize.RefinementMode;
+import java.util.ArrayList;
 
 /**
  *
@@ -53,6 +54,7 @@ public class XRayStructure {
     final int solventmodel;
     List<Atom> atomlist;
     Atom atomarray[];
+    List<Integer> xindex[];
     ScaleBulkMinimize scalebulkminimize;
     SigmaAMinimize sigmaaminimize;
     SplineMinimize splineminimize;
@@ -131,19 +133,33 @@ public class XRayStructure {
             ciffilter.readFile(ciffile, reflectionlist, refinementdata);
         }
 
-        atomlist = assembly[0].getAtomList();
+        xindex = new List[assembly.length];
+        for (int i = 0; i < assembly.length; i++) {
+            xindex[i] = new ArrayList<Integer>();
+        }
+        atomlist = new ArrayList<Atom>();
+        int index = 0;
+        List<Atom> alist = assembly[0].getAtomList();
+        for (Atom a : alist) {
+            for (int i = 0; i < assembly.length; i++) {
+                xindex[i].add(index);
+            }
+            index++;
+            atomlist.add(a);
+        }
+
         for (int i = 1; i < assembly.length; i++) {
-            List<Atom> tmplist = assembly[i].getAtomList();
-            int tmpsize = tmplist.size();
-            for (int j = 0; j < tmpsize; j++) {
-                Atom tmpatom = tmplist.get(j);
-                Character c = tmpatom.getAltLoc();
+            alist = assembly[i].getAtomList();
+            int aindex = 0;
+            for (Atom a : alist) {
+                Character c = a.getAltLoc();
                 if (c == null) {
                     continue;
                 }
                 if (!c.equals(' ')
                         && !c.equals('A')) {
-                    atomlist.add(tmpatom);
+                    xindex[i].add(index++);
+                    atomlist.add(a);
                 }
             }
         }
@@ -168,17 +184,6 @@ public class XRayStructure {
             xyz[2] = atomarray[i].getZ();
             while (true) {
                 double rho = atomff.rho(xyz);
-                /*
-                if (rho > 1.0) {
-                arad += 0.5;
-                } else if (rho > 0.01) {
-                arad += 0.1;
-                } else {
-                arad += 0.2;
-                atomarray[i].setFormFactorWidth(arad);
-                break;
-                }
-                 */
                 if (rho > 0.1) {
                     arad += 0.5;
                 } else if (rho > 0.001) {
@@ -206,11 +211,11 @@ public class XRayStructure {
         crystalstats = new CrystalStats(reflectionlist, refinementdata);
     }
 
-    public XRayEnergy getXRayEnergy(){
+    public XRayEnergy getXRayEnergy() {
         return xrayenergy;
     }
 
-    public void setXRayEnergy(XRayEnergy xrayenergy){
+    public void setXRayEnergy(XRayEnergy xrayenergy) {
         this.xrayenergy = xrayenergy;
     }
 

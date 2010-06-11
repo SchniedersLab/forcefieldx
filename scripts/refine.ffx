@@ -1,29 +1,23 @@
-import ffx.potential.PotentialEnergy;
-import ffx.potential.bonded.MolecularAssembly;
 import ffx.xray.XRayStructure;
 import ffx.xray.RefinementMinimize;
 import ffx.xray.RefinementMinimize.RefinementMode;
 
 //System.setProperty "pj.nt", "1";
 
-open("examples/1N7S.pdb");
-
-PotentialEnergy potentialEnergy = active.getPotentialEnergy();
-
-for (int i=0;i<10;i++) {
-//   potentialEnergy.energy(true,true);
+String filename = args[0];
+if (filename == null){
+  filename = "examples/1N7S.pdb";
 }
 
-XRayStructure xray = new XRayStructure(active, active.getProperties());
+systems = open(filename);
+
+XRayStructure xray = new XRayStructure(systems, systems[0].getProperties());
 
 xray.scalebulkfit();
 xray.printstats();
 
-xray.timings();
-return;
-
-
-RefinementMinimize refinementMinimize = new RefinementMinimize(active, xray, RefinementMode.COORDINATES_AND_BFACTORS);
+RefinementMinimize refinementMinimize = new RefinementMinimize(systems, xray,
+  RefinementMode.COORDINATES_AND_BFACTORS);
 refinementMinimize.minimize();
 
 xray.scalebulkfit();
