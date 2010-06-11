@@ -1,5 +1,8 @@
 // MINIMIZE
 
+// Apache Imports
+import org.apache.commons.io.FilenameUtils;
+
 // Name of the file (PDB or XYZ).
 String filename = args[0];
 if (filename == null) {
@@ -21,4 +24,6 @@ open(filename);
 
 println("\n RMS gradient convergence criteria: " + eps);
 e = minimize(eps);
+
+saveAsPDB(new File(FilenameUtils.removeExtension(filename) + ".min.pdb"));
 
