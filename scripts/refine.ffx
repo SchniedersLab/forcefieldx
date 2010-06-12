@@ -1,8 +1,10 @@
+
+// Apache Imports
+import org.apache.commons.io.FilenameUtils;
+
 import ffx.xray.XRayStructure;
 import ffx.xray.RefinementMinimize;
 import ffx.xray.RefinementMinimize.RefinementMode;
-
-//System.setProperty "pj.nt", "1";
 
 String filename = args[0];
 if (filename == null){
@@ -23,5 +25,7 @@ refinementMinimize.minimize();
 xray.scalebulkfit();
 xray.printstats();
 
-xray.writedata("/tmp/1N7S_refine.mtz");
-saveAsPDB(new File("/tmp/1N7S_refine.pdb"));
+filename = FilenameUtils.removeExtension(filename);
+
+xray.writedata(filename + ".refine.mtz");
+saveAsPDB(new File(filename + ".refine.pdb"));

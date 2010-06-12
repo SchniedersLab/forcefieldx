@@ -43,6 +43,7 @@ import java.util.logging.Logger;
 import org.apache.commons.configuration.CompositeConfiguration;
 
 import ffx.crystal.SpaceGroup;
+import ffx.numerics.VectorMath;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
@@ -51,6 +52,7 @@ import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.MSGroup;
 import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.Molecule;
+import ffx.potential.bonded.Utilities;
 import ffx.potential.bonded.Utilities.FileType;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.BondType;
@@ -603,7 +605,7 @@ public final class PDBFilter extends SystemFilter {
         if (polymers != null) {
             logger.info(format(" Assigning atom types for %d chains.", polymers.length));
             for (Polymer polymer : polymers) {
-                ArrayList<Residue> residues = polymer.getResidues();
+                List<Residue> residues = polymer.getResidues();
                 int numberOfResidues = residues.size();
                 /**
                  * Check if all residues are known amino acids.
@@ -631,7 +633,12 @@ public final class PDBFilter extends SystemFilter {
                  */
                 if (isProtein) {
                     try {
-                        assignAminoAcidAtomTypes(residues);
+                        // Detect main chain breaks!
+                        List<List<Residue>> residueLists = findChainBreaks(residues, 3.0);
+
+                        for (List<Residue> subChain : residueLists) {
+                            assignAminoAcidAtomTypes(subChain);
+                        }
                         logger.info(format(" Assigned atom types for amino acid chain %s.", polymer.getName()));
                     } catch (MissingHeavyAtomException missingHeavyAtomException) {
                         logger.severe(missingHeavyAtomException.toString());
@@ -770,13 +777,79 @@ public final class PDBFilter extends SystemFilter {
         }
     }
 
+    private List<List<Residue>> findChainBreaks(List<Residue> residues, double cutoff) {
+        List<List<Residue>> subChains = new ArrayList<List<Residue>>();
+
+        List<Residue> subChain = null;
+        Residue previousResidue = null;
+        Atom pC = null;
+
+        for (Residue residue : residues) {
+            List<Atom> resAtoms = residue.getAtomList();
+
+            if (pC == null) {
+                /**
+                 * Initialization.
+                 */
+                subChain = new ArrayList<Residue>();
+                subChain.add(residue);
+                subChains.add(subChain);
+            } else {
+                /**
+                 * Find the Nitrogen of the current residue.
+                 */
+                Atom N = null;
+                for (Atom a : resAtoms) {
+                    if (a.getName().equalsIgnoreCase("N")) {
+                        N = a;
+                        break;
+                    }
+                }
+
+                /**
+                 * Compute the distance between the previous carbonyl carbon
+                 * and the current nitrogen.
+                 */
+                double r = VectorMath.dist(pC.getXYZ(), N.getXYZ());
+                if (r > cutoff) {
+                    /**
+                     * Start a new chain.
+                     */
+                    subChain = new ArrayList<Residue>();
+                    subChain.add(residue);
+                    subChains.add(subChain);
+                    logger.info(format(" Chain break between residues %s and %s\n based on a C-N bond distance of %8.3f A.",
+                            previousResidue.toString(), residue.toString(), r));
+                } else {
+                    /**
+                     * Continue the current chain.
+                     */
+                    subChain.add(residue);
+                }
+            }
+
+            /**
+             * Save the carbonyl carbon.
+             */
+            for (Atom a : resAtoms) {
+                if (a.getName().equalsIgnoreCase("C")) {
+                    pC = a;
+                    break;
+                }
+            }
+            previousResidue = residue;
+        }
+
+        return subChains;
+    }
+
     /**
      * Assign atom types for a nucleic acid polymer.
      *
      * @param residues
      * @throws ffx.potential.parsers.PDBFilter.MissingHeavyAtomException
      */
-    private void assignNucleicAcidAtomTypes(ArrayList<Residue> residues)
+    private void assignNucleicAcidAtomTypes(List<Residue> residues)
             throws MissingHeavyAtomException, MissingAtomTypeException {
         /**
          * A reference to the O3* atom of the previous base.
@@ -1436,7 +1509,7 @@ public final class PDBFilter extends SystemFilter {
      *
      * @since 1.0
      */
-    private void assignAminoAcidAtomTypes(ArrayList<Residue> residues)
+    private void assignAminoAcidAtomTypes(List<Residue> residues)
             throws MissingHeavyAtomException, MissingAtomTypeException {
         Atom pC = null;
         Atom pCA = null;
@@ -1695,7 +1768,7 @@ public final class PDBFilter extends SystemFilter {
                 }
             }
             /**
-             * Remember the current C-alpha and carboxyl C atoms for use
+             * Remember the current C-alpha and carbonyl C atoms for use
              * with the next residue.
              */
             pCA = CA;
@@ -2215,7 +2288,7 @@ public final class PDBFilter extends SystemFilter {
         }
         /*
         else {
-            logger.severe(format("The biotype %s was not found.", bioType.toString()));
+        logger.severe(format("The biotype %s was not found.", bioType.toString()));
         } */
         return null;
     }

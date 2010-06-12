@@ -28,6 +28,7 @@ import static ffx.utilities.HashCodeUtil.SEED;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
 import javax.media.j3d.Appearance;
@@ -51,7 +52,6 @@ import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.PolarizeType;
 import ffx.potential.parameters.VDWType;
-import java.util.Map;
 
 /**
  * The Atom class represents a single atom and defines its alternate
@@ -243,7 +243,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
     private double formFactorWidth = 3.5;
     private int formFactorIndex = -1;
     private ArrayList<Vector3d> trajectory;
-
     // Molecular Mechanics Info
     private AtomType atomType = null;
     private MultipoleType multipoleType = null;
@@ -1009,6 +1008,10 @@ public class Atom extends MSNode implements Comparable<Atom> {
         bonds.add(b);
     }
 
+    public void removeBond(Bond b) {
+        bonds.remove(b);
+    }
+
     public void set1_5(Atom a) {
         one_5s.add(a);
     }
@@ -1334,8 +1337,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
     @Override
     public String toString() {
         if (altLoc != null && altLoc != ' ') {
-                    return String.format("%s %7d-%s %s %d (%7.2f,%7.2f,%7.2f) %s", altLoc, xyzIndex, name,
-                             resName, resSeq, xyz[0], xyz[1], xyz[2], segID);
+            return String.format("%s %7d-%s %s %d (%7.2f,%7.2f,%7.2f) %s", altLoc, xyzIndex, name,
+                                 resName, resSeq, xyz[0], xyz[1], xyz[2], segID);
         }
         return String.format("%7d-%s %s %d (%7.2f,%7.2f,%7.2f) %s", xyzIndex, name, resName, resSeq,
                              xyz[0], xyz[1], xyz[2], segID);

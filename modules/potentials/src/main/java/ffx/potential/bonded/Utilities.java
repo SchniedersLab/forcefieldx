@@ -741,7 +741,9 @@ public final class Utilities {
     public static Atom findAlphaCarbon(Atom a) {
         for (Bond b : a.getBonds()) {
             Atom alpha = b.get1_2(a);
-            if (alpha.getAtomicNumber() == 6 && findCO(alpha) != null && formsBondsWith(alpha, 7)) {
+            if (alpha.getAtomicNumber() == 6
+                && findCO(alpha) != null
+                && formsBondsWith(alpha, 7)) {
                 return alpha;
             }
         }
@@ -821,6 +823,23 @@ public final class Utilities {
             Atom carbon = b.get1_2(adjacent);
             if (carbon.getAtomicNumber() == 6 && numberOfBondsWith(carbon, 6) == 2 && numberOfBondsWith(carbon, 8) >= 1) {
                 return carbon;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Returns the first nitrogen atom found that is bonded to the
+     * adjacent atom.
+     * 
+     * @param adjacent Atom
+     * @return Atom a nitrogen atom.
+     */
+    public static Atom findN(Atom adjacent) {
+        for (Bond b : adjacent.getBonds()) {
+            Atom nitrogen = b.get1_2(adjacent);
+            if (nitrogen.getAtomicNumber() == 7) {
+                return nitrogen;
             }
         }
         return null;
@@ -1283,6 +1302,4 @@ public final class Utilities {
             a1.setBornRadius(convert / gpi);
         }
     }
-
-
 }
