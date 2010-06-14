@@ -52,7 +52,6 @@ import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.MSGroup;
 import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.Molecule;
-import ffx.potential.bonded.Utilities;
 import ffx.potential.bonded.Utilities.FileType;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.BondType;
@@ -62,8 +61,11 @@ import ffx.potential.parsers.PDBFilter.ResiduePosition;
 
 /**
  * The PDBFilter class parses data from a Protein DataBank (*.PDB) file. The
- * following records are recognized: ANISOU, ATOM, CONECT, CRYST1, HELIX,
- * HETATM, LINK, SHEET, SSBOND, TURN, REMARK. The rest are ignored.
+ * following records are recognized: ANISOU, ATOM, CONECT, CRYST1, END, HELIX,
+ * HETATM, LINK, SHEET, SSBOND, REMARK. The rest are currently ignored.
+ *
+ * @see <a href="http://www.wwpdb.org/documentation/format32/v3.2.html">
+ *  PDB format 3.2</a>
  *
  * @author Michael J. Schnieders
  *
@@ -72,6 +74,15 @@ import ffx.potential.parsers.PDBFilter.ResiduePosition;
 public final class PDBFilter extends SystemFilter {
 
     private static final Logger logger = Logger.getLogger(PDBFilter.class.getName());
+
+    /**
+     * PDB records that are recognized.
+     */
+    private enum Record {
+
+        ANISOU, ATOM, CONECT, CRYST1, END, HELIX, HETATM, LINK, SHEET,
+        SSBOND, REMARK
+    };
     /**
      * List of altLoc characters seen in the PDB file.
      */
@@ -161,12 +172,6 @@ public final class PDBFilter extends SystemFilter {
         this.fileType = FileType.PDB;
     }
 
-    private enum Card {
-
-        ANISOU, ATOM, CONECT, CRYST1, HELIX, HETATM, LINK, SHEET, SSBOND, TURN,
-        REMARK
-    };
-
     public static String pdbForID(String id) {
         if (id.length() != 4) {
             return null;
@@ -205,53 +210,77 @@ public final class PDBFilter extends SystemFilter {
      */
     @Override
     public boolean readFile() {
-
-        BufferedReader br = null;
-        BufferedWriter bw = null;
         // First atom is #1, to match xyz file format
         int xyzIndex = 1;
         setFileRead(false);
         systems.add(activeMolecularAssembly);
-        /**
-         * SSBOND records may be invalid if chain IDs are reused.
-         * They are applied to the A conformer and not alternate conformers.
-         */
-        List<String[]> links = new ArrayList<String[]>();
+
+        List<String> conects = new ArrayList<String>();
+        List<String> links = new ArrayList<String>();
         List<String> ssbonds = new ArrayList<String>();
-        List<String[]> structs = new ArrayList<String[]>();
+        List<String> structs = new ArrayList<String>();
+        BufferedReader br = null;
         try {
             for (int i = 0; i < files.size(); i++) {
                 currentFile = files.get(i);
-                currentChainID = null;
-                currentSegID = null;
-                File pdbFile = currentFile;
-                if (pdbFile == null || !pdbFile.exists() || !pdbFile.canRead()) {
+                /**
+                 * Check that the current file exists and that we can read it.
+                 */
+                if (currentFile == null || !currentFile.exists() || !currentFile.canRead()) {
                     return false;
                 }
-                FileReader fr = new FileReader(pdbFile);
+                /**
+                 * Open the current file for parsing.
+                 */
+                FileReader fr = new FileReader(currentFile);
                 br = new BufferedReader(fr);
-                String[] connect;
+                /**
+                 * Echo the alternate location is being parsed.
+                 */
                 if (currentAltLoc == 'A') {
-                    logger.info(format(" Reading %s.", pdbFile.getName()));
+                    logger.info(format(" Reading %s", currentFile.getName()));
                 } else {
-                    logger.info(format(" Reading %s alternate location %s.", pdbFile.getName(),
-                                       currentAltLoc));
+                    logger.info(format(" Reading %s alternate location %s",
+                                       currentFile.getName(), currentAltLoc));
                 }
+                /**
+                 * Reset the current chain and segID.
+                 */
+                currentChainID = null;
+                currentSegID = null;
+                /**
+                 * Read the first line of the file.
+                 */
                 String line = br.readLine();
-                // While the END parameter is not read in, load atoms
-                while ((line != null) && (!line.startsWith("END"))) {
-                    int len = line.length();
+                /**
+                 * Until the END record is found, parse the file.
+                 */
+                while (line != null) {
                     String identity = line;
-                    if (len > 6) {
-                        identity = line.substring(0, 6).trim().toUpperCase().intern();
+                    if (line.length() > 6) {
+                        identity = line.substring(0, 6);
                     }
-                    Card card = null;
+                    identity = identity.trim().toUpperCase();
+                    Record record = null;
                     try {
-                        card = Card.valueOf(identity);
+                        record = Record.valueOf(identity);
                     } catch (Exception e) {
-                        card = Card.REMARK;
+                        /**
+                         * Continue until the record is recognized.
+                         */
+                        line = br.readLine();
+                        continue;
                     }
-                    switch (card) {
+                    /**
+                     * Switch on the known record.
+                     */
+                    switch (record) {
+                        case END:
+                            /**
+                             * Setting "line" to null will exit the loop.
+                             */
+                            line = null;
+                            continue;
                         case ANISOU:
 // =============================================================================
 //  1 - 6        Record name   "ANISOU"
@@ -315,7 +344,7 @@ public final class PDBFilter extends SystemFilter {
 // 79 - 80        LString(2)    charge       Charge  on the atom.
 // =============================================================================
                             serial = new Integer(line.substring(6, 11).trim());
-                            String name = line.substring(12, 16).trim().intern();
+                            String name = line.substring(12, 16).trim();
                             altLoc = new Character(line.substring(16, 17).toUpperCase().charAt(0));
                             if (!altLocs.contains(altLoc)) {
                                 altLocs.add(altLoc);
@@ -324,7 +353,7 @@ public final class PDBFilter extends SystemFilter {
                                 && !altLoc.equals(currentAltLoc)) {
                                 break;
                             }
-                            String resName = line.substring(17, 20).trim().intern();
+                            String resName = line.substring(17, 20).trim();
                             Character chainID = line.substring(21, 22).charAt(0);
                             String segID = getSegID(chainID);
                             int resSeq = new Integer(line.substring(22, 26).trim());
@@ -365,7 +394,7 @@ public final class PDBFilter extends SystemFilter {
 // 79 - 80       LString(2)     charge        Charge on the atom.
 // =============================================================================
                             serial = new Integer(line.substring(6, 11).trim());
-                            name = line.substring(12, 16).trim().intern();
+                            name = line.substring(12, 16).trim();
                             altLoc = new Character(line.substring(16, 17).toUpperCase().charAt(0));
                             if (!altLocs.contains(altLoc)) {
                                 altLocs.add(altLoc);
@@ -373,7 +402,7 @@ public final class PDBFilter extends SystemFilter {
                             if (!altLoc.equals(' ') && !altLoc.equals(currentAltLoc)) {
                                 break;
                             }
-                            resName = line.substring(17, 20).trim().intern();
+                            resName = line.substring(17, 20).trim();
                             chainID = line.substring(21, 22).charAt(0);
                             segID = getSegID(chainID);
                             resSeq = new Integer(line.substring(22, 26).trim());
@@ -396,14 +425,12 @@ public final class PDBFilter extends SystemFilter {
                                 newAtom.setXYZIndex(xyzIndex++);
                             }
                             break;
-                        case CONECT:
-                            connect = new String[2];
-                            connect[0] = line.substring(7, 11).trim();
-                            connect[1] = line.substring(12, 16).trim();
-                            links.add(connect);
-                            break;
                         case CRYST1:
 // =============================================================================
+// The CRYST1 record presents the unit cell parameters, space group, and Z 
+// value. If the structure was not determined by crystallographic means, CRYST1 
+// simply provides the unitary values, with an appropriate REMARK.
+// 
 //  7 - 15       Real(9.3)     a              a (Angstroms).
 // 16 - 24       Real(9.3)     b              b (Angstroms).
 // 25 - 33       Real(9.3)     c              c (Angstroms).
@@ -420,8 +447,8 @@ public final class PDBFilter extends SystemFilter {
                             double beta = new Double(line.substring(40, 47).trim());
                             double gamma = new Double(line.substring(47, 54).trim());
                             int limit = 66;
-                            if (len < 66) {
-                                limit = len;
+                            if (line.length() < 66) {
+                                limit = line.length();
                             }
                             String sg = line.substring(55, limit).trim();
                             properties.addProperty("a-axis", aaxis);
@@ -432,68 +459,159 @@ public final class PDBFilter extends SystemFilter {
                             properties.addProperty("gamma", gamma);
                             properties.addProperty("spacegroup", SpaceGroup.pdb2ShortName(sg));
                             break;
+                        case CONECT:
+// =============================================================================
+//  7 - 11        Integer        serial       Atom  serial number
+// 12 - 16        Integer        serial       Serial number of bonded atom
+// 17 - 21        Integer        serial       Serial number of bonded atom
+// 22 - 26        Integer        serial       Serial number of bonded atom
+// 27 - 31        Integer        serial       Serial number of bonded atom
+//
+// CONECT records involving atoms for which the coordinates are not present
+// in the entry (e.g., symmetry-generated) are not given.
+// CONECT records involving atoms for which the coordinates are missing due 
+// to disorder, are also not provided.
+// =============================================================================
+                            conects.add(line);
+                            break;
+                        case LINK:
+// =============================================================================
+// The LINK records specify connectivity between residues that is not implied by
+// the primary structure. Connectivity is expressed in terms of the atom names.
+// They also include the distance associated with the each linkage following the
+// symmetry operations at the end of each record.
+// 13 - 16         Atom           name1           Atom name.
+// 17              Character      altLoc1         Alternate location indicator.
+// 18 - 20         Residue name   resName1        Residue  name.
+// 22              Character      chainID1        Chain identifier.
+// 23 - 26         Integer        resSeq1         Residue sequence number.
+// 27              AChar          iCode1          Insertion code.
+// 43 - 46         Atom           name2           Atom name.
+// 47              Character      altLoc2         Alternate location indicator.
+// 48 - 50         Residue name   resName2        Residue name.
+// 52              Character      chainID2        Chain identifier.
+// 53 - 56         Integer        resSeq2         Residue sequence number.
+// 57              AChar          iCode2          Insertion code.
+// 60 - 65         SymOP          sym1            Symmetry operator atom 1.
+// 67 - 72         SymOP          sym2            Symmetry operator atom 2.
+// 74 – 78         Real(5.2)      Length          Link distance
+// =============================================================================
+                            Character a1 = line.charAt(21);
+                            Character a2 = line.charAt(52);
+                            if (a1 != a2) {
+                                logger.warning(format(" Ignoring LINK record as alternate locations do not match\n %s.", line));
+                                break;
+                            }
+                            if (currentAltLoc == 'A') {
+                                if ((a1 == ' ' || a1 == 'A')
+                                    && (a2 == ' ' || a2 == 'A')) {
+                                    links.add(line);
+                                }
+                            } else {
+                                if (a1 == currentAltLoc && a2 == currentAltLoc) {
+                                    links.add(line);
+                                }
+                            }
+                            break;
                         case SSBOND:
+                            /**
+                             * SSBOND records may be invalid if chain IDs are
+                             * reused.
+                             *
+                             * They are applied to the A conformer and not
+                             * alternate conformers.
+                             */
                             if (currentAltLoc == 'A') {
                                 ssbonds.add(line);
                             }
                             break;
-                        case LINK:
-                            connect = new String[6];
-                            connect[0] = line.substring(21, 22);
-                            // Polymers
-                            connect[1] = line.substring(51, 52);
-                            connect[2] = line.substring(22, 26).trim();
-                            // Residues
-                            connect[3] = line.substring(52, 56).trim();
-                            connect[4] = line.substring(12, 16).trim();
-                            // Atoms
-                            connect[5] = line.substring(42, 46).trim();
-                            links.add(connect);
-                            break;
                         case HELIX:
-                            String[] struct = new String[6];
-                            struct[0] = line.substring(0, 6).trim(); // HELIX
-                            struct[1] = line.substring(19, 20); // Polymers
-                            struct[2] = line.substring(31, 32);
-                            struct[3] = line.substring(21, 25).trim(); // Residue
-                            struct[4] = line.substring(33, 37).trim();
-                            struct[5] = line.substring(38, 40).trim();
-                            structs.add(struct);
-                            break;
+// =============================================================================
+// HELIX records are used to identify the position of helices in the molecule.
+// Helices are named, numbered, and classified by type. The residues where the
+// helix begins and ends are noted, as well as the total length.
+//
+//  8 - 10        Integer        serNum        Serial number of the helix. This starts
+//                                             at 1  and increases incrementally.
+// 12 - 14        LString(3)     helixID       Helix  identifier. In addition to a serial
+//                                             number, each helix is given an
+//                                             alphanumeric character helix identifier.
+// 16 - 18        Residue name   initResName   Name of the initial residue.
+// 20             Character      initChainID   Chain identifier for the chain containing
+//                                             this  helix.
+// 22 - 25        Integer        initSeqNum    Sequence number of the initial residue.
+// 26             AChar          initICode     Insertion code of the initial residue.
+// 28 - 30        Residue  name  endResName    Name of the terminal residue of the helix.
+// 32             Character      endChainID    Chain identifier for the chain containing
+//                                             this  helix.
+// 34 - 37        Integer        endSeqNum     Sequence number of the terminal residue.
+// 38             AChar          endICode      Insertion code of the terminal residue.
+// 39 - 40        Integer        helixClass    Helix class (see below).
+// 41 - 70        String         comment       Comment about this helix.
+// 72 - 76        Integer        length        Length of this helix.
+//
+//                                      CLASS NUMBER
+// TYPE OF  HELIX                     (COLUMNS 39 - 40)
+// --------------------------------------------------------------
+// Right-handed alpha (default)                1
+// Right-handed omega                          2
+// Right-handed pi                             3
+// Right-handed gamma                          4
+// Right-handed 3 - 10                         5
+// Left-handed alpha                           6
+// Left-handed omega                           7
+// Left-handed gamma                           8
+// 2 - 7 ribbon/helix                          9
+// Polyproline                                10
+// =============================================================================
                         case SHEET:
-                            struct = new String[6];
-                            struct[0] = line.substring(0, 6).trim(); // SHEET
-                            struct[1] = line.substring(21, 22); // Polymers
-                            struct[2] = line.substring(32, 33);
-                            struct[3] = line.substring(22, 26).trim(); // Residue
-                            struct[4] = line.substring(33, 37).trim();
-                            struct[5] = line.substring(38, 40).trim(); // Strand
-                            structs.add(struct);
-                            break;
-                        case TURN:
-                            struct = new String[6];
-                            struct[0] = line.substring(0, 6).trim(); // TURN
-                            struct[1] = line.substring(19, 20); // Polymers
-                            struct[2] = line.substring(30, 31);
-                            struct[3] = line.substring(20, 24).trim(); // Residue
-                            struct[4] = line.substring(31, 35).trim();
-                            structs.add(struct);
+// =============================================================================
+// SHEET records are used to identify the position of sheets in the molecule. 
+// Sheets are both named and numbered. The residues where the sheet begins and 
+// ends are noted.
+//
+//  8 - 10        Integer       strand         Strand  number which starts at 1 for each
+//                                             strand within a sheet and increases by one.
+// 12 - 14        LString(3)    sheetID        Sheet  identifier.
+// 15 - 16        Integer       numStrands     Number  of strands in sheet.
+// 18 - 20        Residue name  initResName    Residue  name of initial residue.
+// 22             Character     initChainID    Chain identifier of initial residue
+//                                             in strand.
+// 23 - 26        Integer       initSeqNum     Sequence number of initial residue
+//                                             in strand.
+// 27             AChar         initICode      Insertion code of initial residue
+//                                             in  strand.
+// 29 - 31        Residue name  endResName     Residue name of terminal residue.
+// 33             Character     endChainID     Chain identifier of terminal residue.
+// 34 - 37        Integer       endSeqNum      Sequence number of terminal residue.
+// 38             AChar         endICode       Insertion code of terminal residue.
+// 39 - 40        Integer       sense          Sense of strand with respect to previous
+//                                             strand in the sheet. 0 if first strand,
+//                                             1 if  parallel,and -1 if anti-parallel.
+// 42 - 45        Atom          curAtom        Registration.  Atom name in current strand.
+// 46 - 48        Residue name  curResName     Registration.  Residue name in current strand
+// 50             Character     curChainId     Registration. Chain identifier in
+//                                             current strand.
+// 51 - 54        Integer       curResSeq      Registration.  Residue sequence number
+//                                             in current strand.
+// 55             AChar         curICode       Registration. Insertion code in
+//                                             current strand.
+// 57 - 60        Atom          prevAtom       Registration.  Atom name in previous strand.
+// 61 - 63        Residue name  prevResName    Registration.  Residue name in
+//                                             previous strand.
+// 65             Character     prevChainId    Registration.  Chain identifier in
+//                                             previous  strand.
+// 66 - 69        Integer       prevResSeq     Registration. Residue sequence number
+//                                             in previous strand.
+// 70             AChar         prevICode      Registration.  Insertion code in
+//                                             previous strand.
+// =============================================================================
+                            structs.add(line);
                             break;
                         default:
-                            /**
-                             * Do nothing for the other cards.
-                             */
                             break;
                     }
-                    if (bw != null) {
-                        bw.write(line);
-                        bw.newLine();
-                    }
                     line = br.readLine();
-                }
-                if (bw != null) {
-                    bw.flush();
-                    bw.close();
                 }
                 br.close();
             }
@@ -503,8 +621,12 @@ public final class PDBFilter extends SystemFilter {
             logger.exiting(PDBFilter.class.getName(), "readFile", e);
             return false;
         }
-// Process disulfide bond records
 // =============================================================================
+// The SSBOND record identifies each disulfide bond in protein and polypeptide
+// structures by identifying the two residues involved in the bond.
+// The disulfide bond distance is included after the symmetry operations at
+// the end of the SSBOND record.
+//
 //  8 - 10        Integer         serNum       Serial number.
 // 12 - 14        LString(3)      "CYS"        Residue name.
 // 16             Character       chainID1     Chain identifier.
@@ -516,6 +638,12 @@ public final class PDBFilter extends SystemFilter {
 // 36             AChar           icode2       Insertion code.
 // 60 - 65        SymOP           sym1         Symmetry oper for 1st resid
 // 67 - 72        SymOP           sym2         Symmetry oper for 2nd resid
+// 74 – 78        Real(5.2)      Length        Disulfide bond distance
+//
+// If SG of cysteine is disordered then there are possible alternate linkages.
+// wwPDB practice is to put together all possible SSBOND records. This is
+// problematic because the alternate location identifier is not specified in
+// the SSBOND record.
 // =============================================================================
         List<Bond> ssBondList = new ArrayList<Bond>();
         for (String ssbond : ssbonds) {
@@ -546,26 +674,34 @@ public final class PDBFilter extends SystemFilter {
                 if (SG2 == null) {
                     SG2.getName();
                 }
-                r1.setName("CYX");
-                r2.setName("CYX");
-                for (Atom atom : atoms1) {
-                    atom.setResName("CYX");
+                double d = VectorMath.dist(SG1.getXYZ(), SG2.getXYZ());
+                if (d < 3.0) {
+                    r1.setName("CYX");
+                    r2.setName("CYX");
+                    for (Atom atom : atoms1) {
+                        atom.setResName("CYX");
+                    }
+                    for (Atom atom : atoms2) {
+                        atom.setResName("CYX");
+                    }
+                    Bond bond = new Bond(SG1, SG2);
+                    ssBondList.add(bond);
+                } else {
+                    String message = format("Ignoring [%s]\n due to distance %8.3f A.", ssbond, d);
+                    logger.log(Level.WARNING, message);
                 }
-                for (Atom atom : atoms2) {
-                    atom.setResName("CYX");
-                }
-                Bond bond = new Bond(SG1, SG2);
-                ssBondList.add(bond);
             } catch (Exception e) {
-                String message = format("Ignoring %s.", ssbond);
+                String message = format("Ignoring [%s]", ssbond);
                 logger.log(Level.WARNING, message, e);
             }
         }
         assignAtomTypes();
         renumberAtoms();
+        StringBuilder sb = new StringBuilder("\n DISULFIDE BONDS:\n");
         for (Bond bond : ssBondList) {
             Atom a1 = bond.getAtom(0);
             Atom a2 = bond.getAtom(1);
+
             int c[] = new int[2];
             c[0] = a1.getAtomType().atomClass;
             c[1] = a2.getAtomType().atomClass;
@@ -576,10 +712,17 @@ public final class PDBFilter extends SystemFilter {
             } else {
                 bond.setBondType(bondType);
             }
-            logger.info(format(" Disulfide bond between atoms\n %s and\n %s.", a1, a2));
+            double d = VectorMath.dist(a1.getXYZ(), a2.getXYZ());
+            Polymer c1 = activeMolecularAssembly.getChain(a1.getSegID());
+            Polymer c2 = activeMolecularAssembly.getChain(a2.getSegID());
+            Residue r1 = c1.getResidue(a1.getResidueNumber());
+            Residue r2 = c2.getResidue(a2.getResidueNumber());
+            sb.append(format(" S-S distance of %6.2f for %s and %s.\n", d, r1.toString(), r2.toString()));
             bondList.add(bond);
         }
-
+        if (ssBondList.size() > 0) {
+            logger.info(sb.toString());
+        }
         return true;
     }
 
@@ -613,7 +756,7 @@ public final class PDBFilter extends SystemFilter {
          * Loop over chains.
          */
         if (polymers != null) {
-            logger.info(format(" Assigning atom types for %d chains.", polymers.length));
+            logger.info(format("\n Assigning atom types for %d chains.", polymers.length));
             for (Polymer polymer : polymers) {
                 List<Residue> residues = polymer.getResidues();
                 int numberOfResidues = residues.size();
@@ -649,7 +792,7 @@ public final class PDBFilter extends SystemFilter {
                         for (List<Residue> subChain : residueLists) {
                             assignAminoAcidAtomTypes(subChain);
                         }
-                        logger.info(format(" Assigned atom types for amino acid chain %s.", polymer.getName()));
+                        logger.info(format(" Amino acid chain %s finished.", polymer.getName()));
                     } catch (MissingHeavyAtomException missingHeavyAtomException) {
                         logger.severe(missingHeavyAtomException.toString());
                     } catch (MissingAtomTypeException missingAtomTypeException) {
@@ -708,7 +851,7 @@ public final class PDBFilter extends SystemFilter {
                 if (isNucleicAcid) {
                     try {
                         assignNucleicAcidAtomTypes(residues);
-                        logger.info(format(" Assigned atom types for nucleic acid chain %s.", polymer.getName()));
+                        logger.info(format(" Nucleic acid chain %s finished.", polymer.getName()));
                     } catch (MissingHeavyAtomException missingHeavyAtomException) {
                         logger.severe(missingHeavyAtomException.toString());
                     } catch (MissingAtomTypeException missingAtomTypeException) {
@@ -793,6 +936,7 @@ public final class PDBFilter extends SystemFilter {
         List<Residue> subChain = null;
         Residue previousResidue = null;
         Atom pC = null;
+        StringBuilder sb = new StringBuilder("\n CHAIN BREAKS:");
 
         for (Residue residue : residues) {
             List<Atom> resAtoms = residue.getAtomList();
@@ -828,8 +972,8 @@ public final class PDBFilter extends SystemFilter {
                     subChain = new ArrayList<Residue>();
                     subChain.add(residue);
                     subChains.add(subChain);
-                    logger.info(format(" Chain break between residues %s and %s\n based on a C-N bond distance of %8.3f A.",
-                                       previousResidue.toString(), residue.toString(), r));
+                    sb.append(format("\n C-N distance of %6.2f A for %s and %s.",
+                                     r, previousResidue.toString(), residue.toString()));
                 } else {
                     /**
                      * Continue the current chain.
@@ -848,6 +992,10 @@ public final class PDBFilter extends SystemFilter {
                 }
             }
             previousResidue = residue;
+        }
+
+        if (subChains.size() > 1) {
+            logger.info(sb.toString());
         }
 
         return subChains;

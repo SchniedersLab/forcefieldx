@@ -86,6 +86,12 @@ public class LBFGS {
     public static final int intMax = 5;
 
     /**
+     * Make the constructor private so that the L-BFGS cannot be instantiated.
+     */
+    private LBFGS() {
+    }
+
+    /**
      * This method solves the unconstrained minimization problem
      * <pre>
      *     min f(x),    x = (x1,x2,...,x_n),
@@ -147,7 +153,7 @@ public class LBFGS {
     public static int minimize(int n, int mSave, double[] x, double f, double[] g,
                                double eps, Potential potential,
                                OptimizationListener listener) {
-        return minimize(n, mSave, x, f, g, eps, Integer.MAX_VALUE, potential, listener);
+        return minimize(n, mSave, x, f, g, eps, Integer.MAX_VALUE - 1, potential, listener);
 
     }
 
@@ -206,12 +212,12 @@ public class LBFGS {
      * @param listener Implements the {@link OptimizationListener} interface
      *        and will be notified after each successful step.
      *
-     * @return status code (0 = success, -1 = failed)
+     * @return status code (0 = success, 1 = max iterations reached, -1 = failed)
      *
      * @since 1.0
      */
-    public static int minimize(int n, int mSave, double[] x, double f, double[] g,
-                               double eps, int maxIterations, Potential potential,
+    public static int minimize(final int n, int mSave, final double[] x, double f, double[] g,
+                               final double eps, final int maxIterations, Potential potential,
                                OptimizationListener listener) {
 
         assert (n > 0);
@@ -221,7 +227,7 @@ public class LBFGS {
         assert (g != null && g.length >= n);
 
         if (mSave > n) {
-            logger.warning(format("Resetting the number of saved L-BFGS vectors to %d.", n));
+            logger.warning(format(" Resetting the number of saved L-BFGS vectors to %d.", n));
             mSave = n;
         }
 
@@ -310,12 +316,11 @@ public class LBFGS {
 
         while (true) {
             iterations++;
-
             if (iterations > maxIterations) {
-                logger.info(" Maximum number of iterations reached.");
-                return 0;
+                logger.info(format(" Maximum number of iterations reached: %d.",
+                        maxIterations));
+                return 1;
             }
-
 
             int muse = min(iterations - 1, mSave);
             m++;
@@ -360,6 +365,7 @@ public class LBFGS {
             }
             arraycopy(x, 0, prevX, 0, n);
             arraycopy(g, 0, prevG, 0, n);
+
             /**
              * Perform the line search along the new conjugate direction
              */

@@ -1,15 +1,18 @@
-// ENERGY
+// SAVE AS XYZ
+
+import org.apache.commons.io.FilenameUtils;
 
 // Name of the file (PDB or XYZ).
 String filename = args[0];
 if (filename == null) {
-   filename = "examples/1n7s.P212121.xyz";
+   filename = "examples/1N7S.PDB";
 }
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 
-println("\n Running energy on " + filename);
+println("\n Writing out XYZ for " + filename);
 
-open(filename); 
-energy();
+open(filename);
+filename = FilenameUtils.removeExtension(filename) + ".xyz";
+save(new File(filename));

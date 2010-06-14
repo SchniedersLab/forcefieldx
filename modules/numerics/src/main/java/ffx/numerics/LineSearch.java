@@ -68,7 +68,7 @@ public class LineSearch {
      *
      * @since 1.0
      */
-    public LineSearch(int n) {
+    protected LineSearch(int n) {
         s = new double[n];
         x0 = new double[n];
         this.n = n;
