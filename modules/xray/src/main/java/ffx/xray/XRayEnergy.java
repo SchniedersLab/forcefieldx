@@ -20,7 +20,10 @@
  */
 package ffx.xray;
 
+import static ffx.algorithms.Thermostat.kB;
 import static ffx.numerics.VectorMath.determinant3;
+import static ffx.numerics.VectorMath.b2u;
+import static ffx.numerics.VectorMath.u2b;
 
 import ffx.numerics.Potential;
 import ffx.potential.bonded.Atom;
@@ -49,7 +52,9 @@ public class XRayEnergy implements Potential {
     private int nocc;
     private RefinementMode refinementMode;
     protected double[] optimizationScaling = null;
-    private double bmass = 12.0;
+    private double bmass;
+    private double temp = 0.01;
+    private double kT32;
 
     public XRayEnergy(XRayStructure xraystructure, int nxyz, int nb, int nocc,
             RefinementMode refinementmode) {
@@ -63,6 +68,12 @@ public class XRayEnergy implements Potential {
         this.nxyz = nxyz;
         this.nb = nb;
         this.nocc = nocc;
+
+        bmass = refinementdata.bmass;
+        double res2 = xraystructure.resolution.invressq_limit();
+        kT32 = 1.5 * kB * temp * refinementdata.bresweight / res2;
+
+        logger.info("B restraint weight: " + kT32);
     }
 
     @Override
@@ -132,6 +143,9 @@ public class XRayEnergy implements Potential {
                         refinementdata.freer, refinementdata.rfreeflag,
                         refinementMode);
 
+                // add B restraints
+                e += getBFactorRestraints();
+
                 // pack gradients into gradient array
                 getBFactorGradients(g, 0);
 
@@ -164,6 +178,9 @@ public class XRayEnergy implements Potential {
                 crs_fs.computeAtomicGradients(refinementdata.dfs,
                         refinementdata.freer, refinementdata.rfreeflag,
                         refinementMode);
+
+                // add B restraints
+                e += getBFactorRestraints();
 
                 // pack gradients into gradient array
                 getXYZGradients(g);
@@ -244,7 +261,7 @@ public class XRayEnergy implements Potential {
     }
 
     public void getBFactors(double x[], int offset) {
-        double anisou[] = new double[6];
+        double anisou[];
         int index = offset;
         for (Atom a : atomarray) {
             // ignore hydrogens!!!
@@ -294,7 +311,6 @@ public class XRayEnergy implements Potential {
     }
 
     public void setBFactors(double x[], int offset) {
-        double anisou[] = new double[6];
         int index = offset;
         for (Atom a : atomarray) {
             // ignore hydrogens!!!
@@ -304,15 +320,24 @@ public class XRayEnergy implements Potential {
             if (a.getAnisou() == null) {
                 a.setTempFactor(x[index++]);
             } else {
+                double anisou[] = new double[6];
                 anisou[0] = x[index++];
                 anisou[1] = x[index++];
                 anisou[2] = x[index++];
                 anisou[3] = x[index++];
                 anisou[4] = x[index++];
                 anisou[5] = x[index++];
+                double det = determinant3(anisou);
+                if (det < 0.0) {
+                    System.out.println(a.toString() + " determinant negative! Resetting ANISOU.");
+                    det = b2u(a.getTempFactor());
+                    anisou[0] = anisou[1] = anisou[2] = det;
+                    anisou[3] = anisou[4] = anisou[5] = 0.0;
+                } else {
+                    det = Math.pow(det, 0.3333);
+                    a.setTempFactor(u2b(det));
+                }
                 a.setAnisou(anisou);
-                double det = Math.pow(determinant3(anisou), 0.3333);
-                a.setTempFactor(det);
             }
         }
 
@@ -336,6 +361,49 @@ public class XRayEnergy implements Potential {
             xyz[2] = x[index++];
             a.moveTo(xyz);
         }
+    }
+
+    public double getBFactorRestraints() {
+        double c = kT32 * Math.log(4.0 * Math.PI);
+        double pi6 = 512.0 * Math.pow(Math.PI, 6.0);
+        double anisou[];
+        double banisou[] = new double[6];
+        double gradb;
+        double det;
+        double gradu[] = new double[6];
+        double e = 0.0;
+
+        for (Atom a : atomarray) {
+            double biso = a.getTempFactor();
+            // ignore hydrogens!!!
+            if (a.getAtomicNumber() == 1) {
+                continue;
+            }
+            if (a.getAnisou() == null) {
+                e += -kT32 * Math.log(Math.pow(biso, 3.0)) + c;
+                gradb = -3.0 * kT32 / biso;
+                a.addToTempFactorGradient(gradb);
+            } else {
+                anisou = a.getAnisou();
+                for (int i = 0; i < 6; i++) {
+                    banisou[i] = u2b(anisou[i]);
+                    // banisou[i] = anisou[i];
+                }
+                det = determinant3(banisou);
+                e += b2u(-kT32 * Math.log(det) + c);
+                gradu[0] = -kT32 * ((pi6 * (-banisou[0] * banisou[0] + banisou[1] * banisou[2])) / det);
+                gradu[1] = -kT32 * ((pi6 * (-banisou[4] * banisou[4] + banisou[0] * banisou[2])) / det);
+                gradu[2] = -kT32 * ((pi6 * (-banisou[3] * banisou[3] + banisou[0] * banisou[1])) / det);
+                gradu[3] = -kT32 * ((2.0 * pi6 * (banisou[4] * banisou[5] - banisou[3] * banisou[2])) / det);
+                gradu[4] = -kT32 * ((2.0 * pi6 * (banisou[3] * banisou[5] - banisou[4] * banisou[1])) / det);
+                gradu[5] = -kT32 * ((2.0 * pi6 * (banisou[3] * banisou[4] - banisou[5] * banisou[0])) / det);
+                for (int i = 0; i < 6; i++) {
+                    gradu[i] = b2u(gradu[i]);
+                }
+                a.addToAnisouGradient(gradu);
+            }
+        }
+        return e;
     }
 
     @Override

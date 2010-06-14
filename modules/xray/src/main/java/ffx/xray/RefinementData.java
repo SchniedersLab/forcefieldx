@@ -81,6 +81,10 @@ public class RefinementData {
     public final int rfreeflag;
     public final boolean use_3g;
     public final double sigmaatol;
+    public final double bresweight;
+    public final double bmass;
+    public final int maxXYZIterations;
+    public final int maxBIterations;
 
     public RefinementData(CompositeConfiguration properties,
             ReflectionList reflectionlist) {
@@ -90,6 +94,10 @@ public class RefinementData {
         gridsearch = properties.getBoolean("gridsearch", false);
         use_3g = properties.getBoolean("use_3g", true);
         sigmaatol = properties.getDouble("sigmaatol", 1.0);
+        bresweight = properties.getDouble("bresweight", 1.0);
+        bmass = properties.getDouble("bmass", 12.0);
+        maxXYZIterations = properties.getInt("maxXYZiterations", 100);
+        maxBIterations = properties.getInt("maxBiterations", 25);
 
         if (logger.isLoggable(Level.INFO)) {
             StringBuilder sb = new StringBuilder();
@@ -99,6 +107,10 @@ public class RefinementData {
             sb.append("  n bins: " + npar + "\n");
             sb.append("  solvent grid search: " + gridsearch + "\n");
             sb.append("  sigma A fit tolerance: " + sigmaatol + "\n");
+            sb.append("  B restraint weight: " + bresweight + "\n");
+            sb.append("  B Lagrangian mass: " + bmass + "\n");
+            sb.append("  max number XYZ refinement iterations: " + maxXYZIterations + "\n");
+            sb.append("  max number B refinement iterations: " + maxBIterations + "\n");
             logger.info(sb.toString());
         }
 
