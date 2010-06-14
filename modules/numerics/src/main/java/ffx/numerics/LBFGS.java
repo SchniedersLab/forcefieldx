@@ -305,15 +305,14 @@ public class LBFGS {
         LineSearchResult info[] = {LineSearchResult.Success};
         int nFunctionEvals[] = {0};
         double angle[] = {0.0};
-        //logger.info(format("Gnorm: %8.3f", gnorm));
         double df = 0.5 * stepMax * gnorm;
         int m = -1;
 
         while (true) {
             iterations++;
 
-            if (iterations >= maxIterations) {
-                logger.info("Maximum number of iterations reached.");
+            if (iterations > maxIterations) {
+                logger.info(" Maximum number of iterations reached.");
                 return 0;
             }
 

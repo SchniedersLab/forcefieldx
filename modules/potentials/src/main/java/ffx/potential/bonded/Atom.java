@@ -649,6 +649,10 @@ public class Atom extends MSNode implements Comparable<Atom> {
         return resSeq;
     }
 
+    public void setResName(String resName) {
+        this.resName = resName;
+    }
+
     /**
      * Gets the Sigma value
      *
