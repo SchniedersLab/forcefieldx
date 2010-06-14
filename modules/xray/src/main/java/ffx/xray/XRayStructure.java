@@ -45,22 +45,22 @@ import java.util.ArrayList;
 public class XRayStructure {
 
     private static final Logger logger = Logger.getLogger(XRayStructure.class.getName());
-    private final Crystal crystal;
-    private final Resolution resolution;
-    private final ReflectionList reflectionlist;
-    final RefinementData refinementdata;
-    final CrystalReciprocalSpace crs_fc;
-    final CrystalReciprocalSpace crs_fs;
-    final int solventmodel;
-    List<Atom> atomlist;
-    Atom atomarray[];
-    List<Integer> xindex[];
-    ScaleBulkMinimize scalebulkminimize;
-    SigmaAMinimize sigmaaminimize;
-    SplineMinimize splineminimize;
-    CrystalStats crystalstats;
+    protected final Crystal crystal;
+    protected final Resolution resolution;
+    protected final ReflectionList reflectionlist;
+    protected final RefinementData refinementdata;
+    protected final CrystalReciprocalSpace crs_fc;
+    protected final CrystalReciprocalSpace crs_fs;
+    public final int solventmodel;
+    protected List<Atom> atomlist;
+    protected final Atom atomarray[];
+    protected List<Integer> xindex[];
+    protected ScaleBulkMinimize scalebulkminimize;
+    protected SigmaAMinimize sigmaaminimize;
+    protected SplineMinimize splineminimize;
+    protected CrystalStats crystalstats;
     protected boolean scaled = false;
-    XRayEnergy xrayenergy = null;
+    protected XRayEnergy xrayenergy = null;
 
     public XRayStructure(MolecularAssembly assembly,
             CompositeConfiguration properties) {

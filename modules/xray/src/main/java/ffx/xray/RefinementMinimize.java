@@ -44,6 +44,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
     private static double toSeconds = 0.000000001;
     private final MolecularAssembly molecularAssembly[];
     private final XRayStructure xraystructure;
+    private final RefinementData refinementdata;
     private final Atom atomarray[];
     private final int nAtoms;
     private final RefinementEnergy refinementenergy;
@@ -77,6 +78,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
             XRayStructure xraystructure, RefinementMode refinementmode) {
         this.molecularAssembly = molecularAssembly;
         this.xraystructure = xraystructure;
+        this.refinementdata = xraystructure.refinementdata;
         this.refinementMode = refinementmode;
         this.atomarray = xraystructure.atomarray;
         this.nAtoms = atomarray.length;
@@ -153,6 +155,11 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
     }
 
     public RefinementEnergy minimize(int m, double eps) {
+        refinementenergy.xrayEnergy.setNXYZ(nxyz);
+        refinementenergy.xrayEnergy.setNB(nb);
+        refinementenergy.xrayEnergy.setNOcc(nocc);
+        refinementenergy.xrayEnergy.setRefinementMode(refinementMode);
+        xraystructure.setXRayEnergy(refinementenergy.xrayEnergy);
 
         switch (refinementMode) {
             case COORDINATES:
@@ -171,7 +178,12 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
         long mtime = -System.nanoTime();
         time = -System.nanoTime();
         done = false;
-        int status = LBFGS.minimize(n, m, x, e, grad, eps, refinementenergy, this);
+        int status = 0;
+        if (refinementMode == RefinementMode.BFACTORS) {
+            status = LBFGS.minimize(n, m, x, e, grad, eps, refinementdata.maxBIterations, refinementenergy, this);
+        } else {
+            status = LBFGS.minimize(n, m, x, e, grad, eps, refinementdata.maxXYZIterations, refinementenergy, this);
+        }
         done = true;
         switch (status) {
             case 0:

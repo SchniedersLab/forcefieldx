@@ -749,9 +749,9 @@ public class FormFactor {
             if (biso < 0.0) {
                 StringBuilder sb = new StringBuilder();
                 sb.append("negative B factor for atom: " + atom.toString() + "\n");
-                sb.append("resetting B to 0.1\n");
+                sb.append("resetting B to 0.01\n");
                 logger.warning(sb.toString());
-                atom.setTempFactor(0.1);
+                atom.setTempFactor(0.01);
                 uaniso[0] = uaniso[1] = uaniso[2] = b2u(0.1);
             } else {
                 uaniso[0] = uaniso[1] = uaniso[2] = b2u(biso);
