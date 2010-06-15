@@ -301,13 +301,13 @@ public class FiniteDifferenceTest {
                 double anisou[] = atomarray[i].getAnisou();
                 for (int j = 0; j < 6; j++) {
                     double tmpu = anisou[j];
-                    anisou[j] = tmpu + b2u(delta);
+                    anisou[j] = tmpu + delta;
                     refinementdata.crs_fc.computeDensity(refinementdata.fc);
                     llk1 = sigmaaminimize.calculateLikelihood();
-                    anisou[j] = tmpu - b2u(delta);
+                    anisou[j] = tmpu - delta;
                     refinementdata.crs_fc.computeDensity(refinementdata.fc);
                     llk2 = sigmaaminimize.calculateLikelihood();
-                    fd = (llk1 - llk2) / (2.0 * b2u(delta));
+                    fd = (llk1 - llk2) / (2.0 * delta);
                     System.out.print(String.format("+u%d: %g -u%d: %g dfu%d: %g fdu%d: %g ratio: %g\n",
                             j, llk1 - llk0, j, llk2 - llk0, j, anisoug[j], j, fd, anisoug[j] / fd));
                     anisou[j] = tmpu;

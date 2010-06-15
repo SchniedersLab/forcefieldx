@@ -144,7 +144,7 @@ public class XRayEnergy implements Potential {
                         refinementMode);
 
                 // add B restraints
-                e += getBFactorRestraints();
+                // e += getBFactorRestraints();
 
                 // pack gradients into gradient array
                 getBFactorGradients(g, 0);
@@ -272,6 +272,9 @@ public class XRayEnergy implements Potential {
                 x[index++] = a.getTempFactor();
             } else {
                 anisou = a.getAnisou();
+                System.out.println(String.format("%s %g %g %g %g %g %g (get B)",
+                        a.toString(), anisou[0], anisou[1], anisou[2],
+                        anisou[3], anisou[4], anisou[5]));
                 x[index++] = anisou[0];
                 x[index++] = anisou[1];
                 x[index++] = anisou[2];
@@ -320,7 +323,7 @@ public class XRayEnergy implements Potential {
             if (a.getAnisou() == null) {
                 a.setTempFactor(x[index++]);
             } else {
-                double anisou[] = new double[6];
+                double anisou[] = a.getAnisou();
                 anisou[0] = x[index++];
                 anisou[1] = x[index++];
                 anisou[2] = x[index++];
@@ -329,11 +332,17 @@ public class XRayEnergy implements Potential {
                 anisou[5] = x[index++];
                 double det = determinant3(anisou);
                 if (det < 0.0) {
-                    System.out.println(a.toString() + " determinant negative! Resetting ANISOU.");
+                    System.out.println(String.format("%s %g %g %g %g %g %g (negative det)",
+                            a.toString(), anisou[0], anisou[1], anisou[2],
+                            anisou[3], anisou[4], anisou[5]));
+                    // System.out.println(a.toString() + " determinant negative! Resetting ANISOU.");
                     det = b2u(a.getTempFactor());
                     anisou[0] = anisou[1] = anisou[2] = det;
                     anisou[3] = anisou[4] = anisou[5] = 0.0;
                 } else {
+                    System.out.println(String.format("%s %g %g %g %g %g %g (det OK)",
+                            a.toString(), anisou[0], anisou[1], anisou[2],
+                            anisou[3], anisou[4], anisou[5]));
                     det = Math.pow(det, 0.3333);
                     a.setTempFactor(u2b(det));
                 }
@@ -387,7 +396,6 @@ public class XRayEnergy implements Potential {
                 anisou = a.getAnisou();
                 for (int i = 0; i < 6; i++) {
                     banisou[i] = u2b(anisou[i]);
-                    // banisou[i] = anisou[i];
                 }
                 det = determinant3(banisou);
                 e += b2u(-kT32 * Math.log(det) + c);
@@ -420,26 +428,32 @@ public class XRayEnergy implements Potential {
     public double[] getMass() {
         double mass[] = new double[nxyz + nb + nocc];
         int i = 0;
-        for (Atom a : atomarray) {
-            double m = a.getMass();
-            mass[i++] = m;
-            mass[i++] = m;
-            mass[i++] = m;
-        }
-        for (Atom a : atomarray) {
-            // ignore hydrogens!!!
-            if (a.getAtomicNumber() == 1) {
-                continue;
+        if (refinementMode == RefinementMode.COORDINATES
+                || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS) {
+            for (Atom a : atomarray) {
+                double m = a.getMass();
+                mass[i++] = m;
+                mass[i++] = m;
+                mass[i++] = m;
             }
-            if (a.getAnisou() == null) {
-                mass[i++] = bmass;
-            } else {
-                mass[i++] = bmass;
-                mass[i++] = bmass;
-                mass[i++] = bmass;
-                mass[i++] = bmass;
-                mass[i++] = bmass;
-                mass[i++] = bmass;
+        }
+        if (refinementMode == RefinementMode.BFACTORS
+                || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS) {
+            for (Atom a : atomarray) {
+                // ignore hydrogens!!!
+                if (a.getAtomicNumber() == 1) {
+                    continue;
+                }
+                if (a.getAnisou() == null) {
+                    mass[i++] = bmass;
+                } else {
+                    mass[i++] = bmass;
+                    mass[i++] = bmass;
+                    mass[i++] = bmass;
+                    mass[i++] = bmass;
+                    mass[i++] = bmass;
+                    mass[i++] = bmass;
+                }
             }
         }
         return mass;

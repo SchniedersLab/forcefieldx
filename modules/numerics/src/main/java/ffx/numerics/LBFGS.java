@@ -154,7 +154,6 @@ public class LBFGS {
                                double eps, Potential potential,
                                OptimizationListener listener) {
         return minimize(n, mSave, x, f, g, eps, Integer.MAX_VALUE - 1, potential, listener);
-
     }
 
     /**

@@ -977,7 +977,7 @@ public class FormFactor {
             // Uaniso
             if (hasanisou) {
                 for (int i = 0; i < 6; i++) {
-                    gradu[i] *= dfc * occ * twopi32;
+                    gradu[i] = dfc * occ * twopi32 * gradu[i];
                 }
                 atom.addToAnisouGradient(gradu);
             }
