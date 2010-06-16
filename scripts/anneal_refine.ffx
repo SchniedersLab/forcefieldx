@@ -12,7 +12,7 @@ xray.scalebulkfit();
 xray.printstats();
 
 RefinementEnergy refinementEnergy = new RefinementEnergy(active, xray,
-  3 * active.getAtomArray().length, 0, 0, RefinementMode.COORDINATES);
+  RefinementMode.COORDINATES);
 SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(active, refinementEnergy,
   active.getProperties(), null);
 RefinementMinimize refinementMinimize = new RefinementMinimize(active, xray,

@@ -219,6 +219,10 @@ public class XRayStructure {
         this.xrayenergy = xrayenergy;
     }
 
+    public Atom[] getAtomArray() {
+        return atomarray;
+    }
+
     public void printscaleandr() {
         if (!scaled) {
             scalebulkfit();

@@ -131,7 +131,7 @@ public class XRayEnergy implements Potential {
                 }
 
                 // update B factors
-                setBFactors(x, 0);
+                setBFactors(x);
 
                 // compute new structure factors
                 crs_fc.computeDensity(refinementdata.fc);
@@ -172,7 +172,7 @@ public class XRayEnergy implements Potential {
                 crs_fc.setCoordinates(x);
                 crs_fs.setCoordinates(x);
                 // update B factors
-                setBFactors(x, nxyz);
+                setBFactors(x);
 
                 // compute new structure factors
                 crs_fc.computeDensity(refinementdata.fc);
@@ -270,9 +270,9 @@ public class XRayEnergy implements Potential {
         }
     }
 
-    public void getBFactors(double x[], int offset) {
+    public void getBFactors(double x[]) {
         double anisou[];
-        int index = offset;
+        int index = nxyz;
         for (Atom a : atomarray) {
             // ignore hydrogens!!!
             if (a.getAtomicNumber() == 1) {
@@ -320,9 +320,9 @@ public class XRayEnergy implements Potential {
         return x;
     }
 
-    public void setBFactors(double x[], int offset) {
+    public void setBFactors(double x[]) {
         double tmpanisou[] = new double[6];
-        int index = offset;
+        int index = nxyz;
         for (Atom a : atomarray) {
             // ignore hydrogens!!!
             if (a.getAtomicNumber() == 1) {
