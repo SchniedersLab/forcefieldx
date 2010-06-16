@@ -20,6 +20,8 @@
  */
 package ffx.xray;
 
+import static ffx.numerics.VectorMath.b2u;
+
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -100,7 +102,16 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
                         continue;
                     }
                     if (a.getAnisou() == null) {
-                        nb++;
+                        if (refinementdata.addanisou) {
+                            double anisou[] = new double[6];
+                            double u = b2u(a.getTempFactor());
+                            anisou[0] = anisou[1] = anisou[2] = u;
+                            anisou[3] = anisou[4] = anisou[5] = 0.0;
+                            a.setAnisou(anisou);
+                            nb += 6;
+                        } else {
+                            nb++;
+                        }
                     } else {
                         nb += 6;
                     }
@@ -129,18 +140,45 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
         grad = new double[n];
         scaling = new double[n];
 
+        double xyzscale = 1.0;
+        double anisouscale = 80.0;
+        double bisoscale = 1.0;
+        if (refinementmode == RefinementMode.COORDINATES_AND_BFACTORS) {
+            bisoscale = 0.5;
+        }
+
         if (refinementmode == RefinementMode.COORDINATES
                 || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS) {
             refinementenergy.xrayEnergy.getCoordinates(x);
+
+            for (int i = 0; i < nxyz; i++) {
+                x[i] *= xyzscale;
+                scaling[i] = xyzscale;
+            }
         }
 
-        if (refinementmode == RefinementMode.BFACTORS
-                || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS) {
+        if (refinementMode == RefinementMode.BFACTORS
+                || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS) {
             refinementenergy.xrayEnergy.getBFactors(x, nxyz);
-        }
 
-        for (int i = 0; i < n; i++) {
-            scaling[i] = 1.0;
+            int i = nxyz;
+            for (Atom a : atomarray) {
+                // ignore hydrogens!!!
+                if (a.getAtomicNumber() == 1) {
+                    continue;
+                }
+                if (a.getAnisou() == null) {
+                    x[i] *= bisoscale;
+                    scaling[i] = bisoscale;
+                    i++;
+                } else {
+                    for (int j = 0; j < 6; j++) {
+                        x[i + j] *= anisouscale;
+                        scaling[i + j] = anisouscale;
+                    }
+                    i += 6;
+                }
+            }
         }
 
         refinementenergy.setScaling(scaling);

@@ -128,7 +128,9 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
         logger.info("starting mean w: " + mean + " w scaling: " + 1.0 / mean);
         for (int i = 0; i < refinementdata.nparams; i++) {
             x[i] -= x[i + refinementdata.nparams];
+            x[i] *= scaling[i];
             scaling[i + refinementdata.nparams] = 1.0 / mean;
+            x[i + refinementdata.nparams] *= scaling[i + refinementdata.nparams];
         }
 
         sigmaaenergy.setScaling(scaling);

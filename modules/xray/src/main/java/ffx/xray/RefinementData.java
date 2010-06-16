@@ -85,6 +85,8 @@ public class RefinementData {
     public final double bmass;
     public final int maxXYZIterations;
     public final int maxBIterations;
+    public final double xweight;
+    public final boolean addanisou;
 
     public RefinementData(CompositeConfiguration properties,
             ReflectionList reflectionlist) {
@@ -98,6 +100,8 @@ public class RefinementData {
         bmass = properties.getDouble("bmass", 12.0);
         maxXYZIterations = properties.getInt("maxXYZiterations", 100);
         maxBIterations = properties.getInt("maxBiterations", 25);
+        xweight = properties.getDouble("xweight", 1.0);
+        addanisou = properties.getBoolean("addanisou", false);
 
         if (logger.isLoggable(Level.INFO)) {
             StringBuilder sb = new StringBuilder();
@@ -111,6 +115,8 @@ public class RefinementData {
             sb.append("  B Lagrangian mass: " + bmass + "\n");
             sb.append("  max number XYZ refinement iterations: " + maxXYZIterations + "\n");
             sb.append("  max number B refinement iterations: " + maxBIterations + "\n");
+            sb.append("  X-ray refinement weight: " + xweight + "\n");
+            sb.append("  add ANISOU for refinement: " + addanisou + "\n");
             logger.info(sb.toString());
         }
 

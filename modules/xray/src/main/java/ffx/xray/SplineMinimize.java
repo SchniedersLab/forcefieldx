@@ -115,20 +115,20 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
 
         /*
         if (iter == 0) {
-        logger.info("\n Limited Memory BFGS Quasi-Newton Optimization: \n\n");
-        logger.info(" Cycle       Energy      G RMS    Delta E   Delta X    Angle  Evals     Time\n");
+            logger.info("\n Limited Memory BFGS Quasi-Newton Optimization: \n\n");
+            logger.info(" Cycle       Energy      G RMS    Delta E   Delta X    Angle  Evals     Time\n");
         }
         if (info == null) {
-        logger.info(String.format("%6d %13.4g %11.4g\n",
-        iter, f, grms));
+            logger.info(String.format("%6d %13.4g %11.4g\n",
+                    iter, f, grms));
         } else {
-        if (info == LineSearchResult.Success) {
-        logger.info(String.format("%6d %13.4g %11.4g %11.4g %10.4g %9.2g %7d %8.3g\n",
-        iter, f, grms, df, xrms, angle, nfun, seconds));
-        } else {
-        logger.info(String.format("%6d %13.4g %11.4g %11.4g %10.4g %9.2g %7d %8s\n",
-        iter, f, grms, df, xrms, angle, nfun, info.toString()));
-        }
+            if (info == LineSearchResult.Success) {
+                logger.info(String.format("%6d %13.4g %11.4g %11.4g %10.4g %9.2g %7d %8.3g\n",
+                        iter, f, grms, df, xrms, angle, nfun, seconds));
+            } else {
+                logger.info(String.format("%6d %13.4g %11.4g %11.4g %10.4g %9.2g %7d %8s\n",
+                        iter, f, grms, df, xrms, angle, nfun, info.toString()));
+            }
         }
          */
 

@@ -165,6 +165,14 @@ public class SigmaAEnergy implements Potential {
             sa[i] = 1.0 + x[i];
             wa[i] = x[n + i];
         }
+
+        // cheap method of preventing negative w values
+        for (int i = 0; i < n; i++){
+            if (wa[i] <= 0.0){
+                wa[i] = 1e-6;
+            }
+        }
+
         nsum = nsumr = 0;
         sum = sumr = 0.0;
         for (HKL ih : reflectionlist.hkllist) {

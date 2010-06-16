@@ -48,7 +48,7 @@ public class RefinementEnergy implements Potential {
     private final int nb;
     private final int nocc;
     private final int n;
-    private double weight = 1.0;
+    private double weight;
     private double xChemical[][];
     private double gChemical[][];
     private double gXray[];
@@ -59,6 +59,7 @@ public class RefinementEnergy implements Potential {
             RefinementMode refinementmode) {
         this.molecularAssembly = molecularAssembly;
         this.xraystructure = xraystructure;
+        this.weight = xraystructure.refinementdata.xweight;
         xindex = xraystructure.xindex;
         this.refinementMode = refinementmode;
         this.nxyz = nxyz;
