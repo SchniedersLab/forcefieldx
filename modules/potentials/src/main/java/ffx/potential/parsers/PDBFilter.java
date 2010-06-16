@@ -696,8 +696,7 @@ public final class PDBFilter extends SystemFilter {
             }
         }
         assignAtomTypes();
-        renumberAtoms();
-        StringBuilder sb = new StringBuilder("\n DISULFIDE BONDS:\n");
+        StringBuilder sb = new StringBuilder(" Disulfide Bonds:");
         for (Bond bond : ssBondList) {
             Atom a1 = bond.getAtom(0);
             Atom a2 = bond.getAtom(1);
@@ -717,12 +716,18 @@ public final class PDBFilter extends SystemFilter {
             Polymer c2 = activeMolecularAssembly.getChain(a2.getSegID());
             Residue r1 = c1.getResidue(a1.getResidueNumber());
             Residue r2 = c2.getResidue(a2.getResidueNumber());
-            sb.append(format(" S-S distance of %6.2f for %s and %s.\n", d, r1.toString(), r2.toString()));
+            sb.append(format("\n S-S distance of %6.2f for %s and %s.", d, r1.toString(), r2.toString()));
             bondList.add(bond);
         }
         if (ssBondList.size() > 0) {
             logger.info(sb.toString());
         }
+
+        /**
+         * Finally, renumber atoms, since missing atoms may have been created.
+         */
+        renumberAtoms();
+
         return true;
     }
 
@@ -733,7 +738,7 @@ public final class PDBFilter extends SystemFilter {
         }
         index--;
         if (logger.isLoggable(Level.INFO)) {
-            logger.info(String.format(" Total number of atoms: %d", index));
+            logger.info(String.format(" Total number of atoms: %d\n", index));
         }
     }
 
@@ -786,13 +791,12 @@ public final class PDBFilter extends SystemFilter {
                  */
                 if (isProtein) {
                     try {
+                        logger.info(format(" Amino acid chain %s", polymer.getName()));
                         // Detect main chain breaks!
                         List<List<Residue>> residueLists = findChainBreaks(residues, 3.0);
-
                         for (List<Residue> subChain : residueLists) {
                             assignAminoAcidAtomTypes(subChain);
                         }
-                        logger.info(format(" Amino acid chain %s finished.", polymer.getName()));
                     } catch (MissingHeavyAtomException missingHeavyAtomException) {
                         logger.severe(missingHeavyAtomException.toString());
                     } catch (MissingAtomTypeException missingAtomTypeException) {
@@ -850,8 +854,8 @@ public final class PDBFilter extends SystemFilter {
                  */
                 if (isNucleicAcid) {
                     try {
+                        logger.info(format(" Nucleic acid chain %s", polymer.getName()));
                         assignNucleicAcidAtomTypes(residues);
-                        logger.info(format(" Nucleic acid chain %s finished.", polymer.getName()));
                     } catch (MissingHeavyAtomException missingHeavyAtomException) {
                         logger.severe(missingHeavyAtomException.toString());
                     } catch (MissingAtomTypeException missingAtomTypeException) {
@@ -936,7 +940,7 @@ public final class PDBFilter extends SystemFilter {
         List<Residue> subChain = null;
         Residue previousResidue = null;
         Atom pC = null;
-        StringBuilder sb = new StringBuilder("\n CHAIN BREAKS:");
+        StringBuilder sb = new StringBuilder(" Chain Breaks:");
 
         for (Residue residue : residues) {
             List<Atom> resAtoms = residue.getAtomList();

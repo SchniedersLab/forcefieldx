@@ -95,8 +95,6 @@ public class FileOpener
                     }
                     altLocString.append("]");
                     logger.info(altLocString.toString());
-                } else {
-                    logger.info(" No alternate conformers detected.");
                 }
 
                 /**
