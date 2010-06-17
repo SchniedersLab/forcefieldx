@@ -20,8 +20,11 @@
  */
 package ffx.xray;
 
+import static ffx.numerics.VectorMath.b2u;
+
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
+import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.xray.RefinementMinimize.RefinementMode;
 import java.util.Arrays;
@@ -40,32 +43,129 @@ public class RefinementEnergy implements Potential {
 
     private static final Logger logger = Logger.getLogger(RefinementEnergy.class.getName());
     private final MolecularAssembly molecularAssembly[];
-    private final XRayStructure xraystructure;
+    private final RefinementData refinementdata;
+    private final Atom[] atomarray;
+    private final int nAtoms;
     private final List<Integer> xindex[];
     protected XRayEnergy xrayEnergy;
     private RefinementMode refinementMode;
-    private final int nxyz;
-    private final int nb;
-    private final int nocc;
-    private final int n;
+    private int nxyz;
+    private int nb;
+    private int nocc;
+    private int n;
     private double weight;
     private double xChemical[][];
     private double gChemical[][];
     private double gXray[];
     protected double[] optimizationScaling = null;
 
+    public RefinementEnergy(MolecularAssembly molecularAssembly,
+            XRayStructure xraystructure, RefinementMode refinementmode) {
+        this(new MolecularAssembly[]{molecularAssembly}, xraystructure,
+                refinementmode, null);
+    }
+
+    public RefinementEnergy(MolecularAssembly molecularAssembly,
+            XRayStructure xraystructure, RefinementMode refinementmode,
+            double scaling[]) {
+        this(new MolecularAssembly[]{molecularAssembly}, xraystructure,
+                refinementmode, scaling);
+    }
+
     public RefinementEnergy(MolecularAssembly molecularAssembly[],
-            XRayStructure xraystructure, int nxyz, int nb, int nocc,
-            RefinementMode refinementmode) {
+            XRayStructure xraystructure, RefinementMode refinementmode,
+            double scaling[]) {
         this.molecularAssembly = molecularAssembly;
-        this.xraystructure = xraystructure;
-        this.weight = xraystructure.refinementdata.xweight;
-        xindex = xraystructure.xindex;
+        this.refinementdata = xraystructure.refinementdata;
+        this.atomarray = xraystructure.atomarray;
+        this.nAtoms = atomarray.length;
+        this.xindex = xraystructure.xindex;
+        this.weight = refinementdata.xweight;
         this.refinementMode = refinementmode;
-        this.nxyz = nxyz;
-        this.nb = nb;
-        this.nocc = nocc;
-        this.n = nxyz + nb + nocc;
+        this.optimizationScaling = scaling;
+
+        // determine size of fit
+        n = nxyz = nb = nocc = 0;
+        switch (refinementmode) {
+            case COORDINATES:
+                nxyz = nAtoms * 3;
+                break;
+            case BFACTORS:
+                for (Atom a : atomarray) {
+                    // ignore hydrogens!!!
+                    if (a.getAtomicNumber() == 1) {
+                        continue;
+                    }
+                    if (a.getAnisou() == null) {
+                        if (refinementdata.addanisou) {
+                            double anisou[] = new double[6];
+                            double u = b2u(a.getTempFactor());
+                            anisou[0] = anisou[1] = anisou[2] = u;
+                            anisou[3] = anisou[4] = anisou[5] = 0.0;
+                            a.setAnisou(anisou);
+                            nb += 6;
+                        } else {
+                            nb++;
+                        }
+                    } else {
+                        nb += 6;
+                    }
+                }
+                break;
+            case COORDINATES_AND_BFACTORS:
+                nxyz = nAtoms * 3;
+                for (Atom a : atomarray) {
+                    // ignore hydrogens!!!
+                    if (a.getAtomicNumber() == 1) {
+                        continue;
+                    }
+                    if (a.getAnisou() == null) {
+                        nb++;
+                    } else {
+                        nb += 6;
+                    }
+                }
+                break;
+        }
+        n = nxyz + nb + nocc;
+
+        if (scaling == null) {
+            scaling = new double[n];
+
+            double xyzscale = 1.0;
+            double anisouscale = 80.0;
+            double bisoscale = 1.0;
+            if (refinementmode == RefinementMode.COORDINATES_AND_BFACTORS) {
+                bisoscale = 0.2;
+            }
+
+            if (refinementmode == RefinementMode.COORDINATES
+                    || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS) {
+                for (int i = 0; i < nxyz; i++) {
+                    scaling[i] = xyzscale;
+                }
+            }
+
+            if (refinementMode == RefinementMode.BFACTORS
+                    || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS) {
+                int i = nxyz;
+                for (Atom a : atomarray) {
+                    // ignore hydrogens!!!
+                    if (a.getAtomicNumber() == 1) {
+                        continue;
+                    }
+                    if (a.getAnisou() == null) {
+                        scaling[i] = bisoscale;
+                        i++;
+                    } else {
+                        for (int j = 0; j < 6; j++) {
+                            scaling[i + j] = anisouscale;
+                        }
+                        i += 6;
+                    }
+                }
+            }
+        }
 
         for (MolecularAssembly ma : molecularAssembly) {
             ForceFieldEnergy fe = ma.getPotentialEnergy();
@@ -235,6 +335,16 @@ public class RefinementEnergy implements Potential {
         return optimizationScaling;
     }
 
+    public void scale(double x[]) {
+        if (optimizationScaling == null) {
+            return;
+        }
+
+        for (int i = 0; i < n; i++) {
+            x[i] *= optimizationScaling[i];
+        }
+    }
+
     @Override
     public double[] getMass() {
         return xrayEnergy.getMass();
@@ -242,7 +352,7 @@ public class RefinementEnergy implements Potential {
 
     @Override
     public int getNumberOfVariables() {
-        return n;
+        return xrayEnergy.getNumberOfVariables();
     }
 
     @Override
