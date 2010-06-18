@@ -20,8 +20,6 @@
  */
 package ffx.xray;
 
-import static ffx.numerics.VectorMath.b2u;
-
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -51,6 +49,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
     private final int nAtoms;
     private final RefinementEnergy refinementenergy;
     private RefinementMode refinementMode;
+    private final int nxyz;
     private final int n;
     private final double x[];
     private final double grad[];
@@ -94,23 +93,54 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
         refinementenergy = new RefinementEnergy(molecularAssembly,
                 xraystructure, refinementmode, null);
 
+        this.nxyz = refinementenergy.nxyz;
         this.n = refinementenergy.getNumberOfVariables();
 
         x = new double[n];
         grad = new double[n];
-        scaling = refinementenergy.optimizationScaling;
+        scaling = new double[n];
 
+        refinementenergy.xrayEnergy.getCoordinates(x);
+
+        double xyzscale = 1.0;
+        double anisouscale = 80.0;
+        double bisoscale = 1.0;
+        if (refinementmode == RefinementMode.COORDINATES_AND_BFACTORS) {
+            bisoscale = 0.2;
+        }
+
+        // set up scaling
         if (refinementmode == RefinementMode.COORDINATES
                 || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS) {
-            refinementenergy.xrayEnergy.getCoordinates(x);
+            for (int i = 0; i < nxyz; i++) {
+                scaling[i] = xyzscale;
+                x[i] *= xyzscale;
+            }
         }
 
         if (refinementMode == RefinementMode.BFACTORS
                 || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS) {
-            refinementenergy.xrayEnergy.getBFactors(x);
+            int i = nxyz;
+            for (Atom a : atomarray) {
+                // ignore hydrogens!!!
+                if (a.getAtomicNumber() == 1) {
+                    continue;
+                }
+                if (a.getAnisou() == null) {
+                    scaling[i] = bisoscale;
+                    x[i] *= bisoscale;
+                    i++;
+                } else {
+                    for (int j = 0; j < 6; j++) {
+                        scaling[i + j] = anisouscale;
+                        x[i + j] *= anisouscale;
+                    }
+                    i += 6;
+                }
+            }
         }
-        
-        refinementenergy.scale(x);
+
+        refinementenergy.setScaling(scaling);
     }
 
     public RefinementEnergy minimize() {
