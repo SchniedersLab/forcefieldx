@@ -1,5 +1,20 @@
+// SAVE AS PDB
 
-String name = "examples/1n7s.P1.xyz"
-File file = new File(name)
-open name
-saveAsPDB file
+import org.apache.commons.io.FilenameUtils;
+
+// Name of the file (PDB or XYZ).
+String filename = args[0];
+if (filename == null) {
+   println("Usage: ffx saveAsPDB.ffx <filname>");
+   return;
+}
+
+// Things below this line normally do not need to be changed.
+// ===============================================================================================
+
+println("\n Writing out PDB for " + filename);
+
+open(filename);
+filename = FilenameUtils.removeExtension(filename) + ".pdb";
+saveAsPDB(new File(filename));
+

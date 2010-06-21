@@ -20,6 +20,7 @@
  */
 package ffx.potential.parsers;
 
+import ffx.crystal.Crystal;
 import static java.lang.String.format;
 
 import static ffx.potential.parsers.INTFilter.intxyz;
@@ -496,8 +497,8 @@ public final class PDBFilter extends SystemFilter {
 // 67 - 72         SymOP          sym2            Symmetry operator atom 2.
 // 74 – 78         Real(5.2)      Length          Link distance
 // =============================================================================
-                            Character a1 = line.charAt(21);
-                            Character a2 = line.charAt(52);
+                            Character a1 = line.charAt(16);
+                            Character a2 = line.charAt(46);
                             if (a1 != a2) {
                                 logger.warning(format(" Ignoring LINK record as alternate locations do not match\n %s.", line));
                                 break;
@@ -724,14 +725,14 @@ public final class PDBFilter extends SystemFilter {
         }
 
         /**
-         * Finally, renumber atoms, since missing atoms may have been created.
+         * Finally, re-number the atoms, since missing atoms may have been created.
          */
-        renumberAtoms();
+        numberAtoms();
 
         return true;
     }
 
-    public void renumberAtoms() {
+    public void numberAtoms() {
         int index = 1;
         for (Atom a : activeMolecularAssembly.getAtomList()) {
             a.xyzIndex = index++;
@@ -1047,7 +1048,7 @@ public final class PDBFilter extends SystemFilter {
             for (int i = 0; i < natoms; i++) {
                 Atom atom = resAtoms.get(i);
                 String name = atom.getName();
-                name = name.replace('\'', '*');
+                name = name.replace('*', '\'');
                 atom.setName(name);
             }
 
@@ -1056,7 +1057,7 @@ public final class PDBFilter extends SystemFilter {
              * name if necessary.
              */
             boolean isDNA = false;
-            Atom O2s = (Atom) residue.getAtomNode("O2*");
+            Atom O2s = (Atom) residue.getAtomNode("O2\'");
             if (O2s == null) {
                 /**
                  * Assume deoxyribose (DNA) since there is an O2* atom.
@@ -1124,7 +1125,7 @@ public final class PDBFilter extends SystemFilter {
             Atom O5s = null;
             if (position == FIRST_RESIDUE) {
                 /**
-                 * The 5' O5* oxygen of the nucleic acid is generally
+                 * The 5' O5' oxygen of the nucleic acid is generally
                  * terminated by
                  * 1.) A phosphate group PO3 (-3).
                  * 2.) A hydrogen.
@@ -1138,49 +1139,49 @@ public final class PDBFilter extends SystemFilter {
                         setHeavyAtom(residue, "OP1", P, 1248);
                         setHeavyAtom(residue, "OP2", P, 1248);
                         setHeavyAtom(residue, "OP3", P, 1248);
-                        O5s = setHeavyAtom(residue, "O5*", P, 1246);
+                        O5s = setHeavyAtom(residue, "O5\'", P, 1246);
                     } else {
                         P = setHeavyAtom(residue, "P", null, 1235);
                         setHeavyAtom(residue, "OP1", P, 1236);
                         setHeavyAtom(residue, "OP2", P, 1236);
                         setHeavyAtom(residue, "OP3", P, 1236);
-                        O5s = setHeavyAtom(residue, "O5*", P, 1234);
+                        O5s = setHeavyAtom(residue, "O5\'", P, 1234);
                     }
                 } else {
                     if (isDNA) {
-                        O5s = setHeavyAtom(residue, "O5*", P, 1244);
+                        O5s = setHeavyAtom(residue, "O5\'", P, 1244);
                     } else {
-                        O5s = setHeavyAtom(residue, "O5*", P, 1232);
+                        O5s = setHeavyAtom(residue, "O5\'", P, 1232);
                     }
                 }
             } else {
                 P = setHeavyAtom(residue, "P", pO3s, pTyp[naNumber]);
                 setHeavyAtom(residue, "OP1", P, opTyp[naNumber]);
                 setHeavyAtom(residue, "OP2", P, opTyp[naNumber]);
-                O5s = setHeavyAtom(residue, "O5*", P, o5Typ[naNumber]);
+                O5s = setHeavyAtom(residue, "O5\'", P, o5Typ[naNumber]);
             }
             /**
              * Build the ribose sugar atoms of the current base.
              */
-            Atom C5s = setHeavyAtom(residue, "C5*", O5s, c5Typ[naNumber]);
-            Atom C4s = setHeavyAtom(residue, "C4*", C5s, c4Typ[naNumber]);
-            Atom O4s = setHeavyAtom(residue, "O4*", C4s, o4Typ[naNumber]);
-            Atom C1s = setHeavyAtom(residue, "C1*", O4s, c1Typ[naNumber]);
-            Atom C3s = setHeavyAtom(residue, "C3*", C4s, c3Typ[naNumber]);
-            Atom C2s = setHeavyAtom(residue, "C2*", C3s, c2Typ[naNumber]);
+            Atom C5s = setHeavyAtom(residue, "C5\'", O5s, c5Typ[naNumber]);
+            Atom C4s = setHeavyAtom(residue, "C4\'", C5s, c4Typ[naNumber]);
+            Atom O4s = setHeavyAtom(residue, "O4\'", C4s, o4Typ[naNumber]);
+            Atom C1s = setHeavyAtom(residue, "C1\'", O4s, c1Typ[naNumber]);
+            Atom C3s = setHeavyAtom(residue, "C3\'", C4s, c3Typ[naNumber]);
+            Atom C2s = setHeavyAtom(residue, "C2\'", C3s, c2Typ[naNumber]);
             bond(C2s, C1s);
             Atom O3s = null;
             if (position == LAST_RESIDUE) {
                 if (isDNA) {
-                    O3s = setHeavyAtom(residue, "O3*", C3s, 1249);
+                    O3s = setHeavyAtom(residue, "O3\'", C3s, 1249);
                 } else {
-                    O3s = setHeavyAtom(residue, "O3*", C3s, 1237);
+                    O3s = setHeavyAtom(residue, "O3\'", C3s, 1237);
                 }
             } else {
-                O3s = setHeavyAtom(residue, "O3*", C3s, o3Typ[naNumber]);
+                O3s = setHeavyAtom(residue, "O3\'", C3s, o3Typ[naNumber]);
             }
             if (!isDNA) {
-                O2s = setHeavyAtom(residue, "O2*", C2s, o2Typ[naNumber]);
+                O2s = setHeavyAtom(residue, "O2\'", C2s, o2Typ[naNumber]);
             }
             /**
              * Build the backbone hydrogen atoms.
@@ -1188,15 +1189,15 @@ public final class PDBFilter extends SystemFilter {
             if (position == FIRST_RESIDUE && P == null) {
                 setHydrogenAtom(residue, "H5T", O5s, 1.00e0, C5s, 109.5e0, C4s, 180.0e0, 0, h5tTyp[naNumber]);
             }
-            setHydrogenAtom(residue, "H5*1", C5s, 1.09e0, O5s, 109.5e0, C4s, 109.5e0, 1, h51Typ[naNumber]);
-            setHydrogenAtom(residue, "H5*2", C5s, 1.09e0, O5s, 109.5e0, C4s, 109.5e0, -1, h52Typ[naNumber]);
-            setHydrogenAtom(residue, "H4*", C4s, 1.09e0, C5s, 109.5e0, C3s, 109.5e0, -1, h4Typ[naNumber]);
-            setHydrogenAtom(residue, "H3*", C3s, 1.09e0, C4s, 109.5e0, C2s, 109.5e0, -1, h3Typ[naNumber]);
+            setHydrogenAtom(residue, "H5\'1", C5s, 1.09e0, O5s, 109.5e0, C4s, 109.5e0, 1, h51Typ[naNumber]);
+            setHydrogenAtom(residue, "H5\'2", C5s, 1.09e0, O5s, 109.5e0, C4s, 109.5e0, -1, h52Typ[naNumber]);
+            setHydrogenAtom(residue, "H4\'", C4s, 1.09e0, C5s, 109.5e0, C3s, 109.5e0, -1, h4Typ[naNumber]);
+            setHydrogenAtom(residue, "H3\'", C3s, 1.09e0, C4s, 109.5e0, C2s, 109.5e0, -1, h3Typ[naNumber]);
             if (isDNA) {
-                setHydrogenAtom(residue, "H2*1", C2s, 1.09e0, C3s, 109.5e0, C1s, 109.5e0, -1, h21Typ[naNumber]);
-                setHydrogenAtom(residue, "H2*2", C2s, 1.09e0, C3s, 109.5e0, C1s, 109.5e0, 1, h22Typ[naNumber]);
+                setHydrogenAtom(residue, "H2\'1", C2s, 1.09e0, C3s, 109.5e0, C1s, 109.5e0, -1, h21Typ[naNumber]);
+                setHydrogenAtom(residue, "H2\'2", C2s, 1.09e0, C3s, 109.5e0, C1s, 109.5e0, 1, h22Typ[naNumber]);
             } else {
-                setHydrogenAtom(residue, "H2*", C2s, 1.09e0, C3s, 109.5e0, C1s, 109.5e0, -1, h21Typ[naNumber]);
+                setHydrogenAtom(residue, "H2\'", C2s, 1.09e0, C3s, 109.5e0, C1s, 109.5e0, -1, h21Typ[naNumber]);
                 // Add the O2' Methyl for OMC and OMG
                 if (nucleicAcid == NucleicAcid3.OMC || nucleicAcid == NucleicAcid3.OMG) {
                     Atom CM2 = setHeavyAtom(residue, "CM2", O2s, 1427);
@@ -1204,10 +1205,10 @@ public final class PDBFilter extends SystemFilter {
                     setHydrogenAtom(residue, "HM22", CM2, 1.08e0, O2s, 109.5e0, HM21, 109.5e0, 1, 1429);
                     setHydrogenAtom(residue, "HM23", CM2, 1.08e0, O2s, 109.5e0, HM21, 109.5e0, -1, 1430);
                 } else {
-                    setHydrogenAtom(residue, "HO*", O2s, 1.00e0, C2s, 109.5e0, C3s, 180.0e0, 0, h22Typ[naNumber]);
+                    setHydrogenAtom(residue, "HO\'", O2s, 1.00e0, C2s, 109.5e0, C3s, 180.0e0, 0, h22Typ[naNumber]);
                 }
             }
-            setHydrogenAtom(residue, "H1*", C1s, 1.09e0, O4s, 109.5e0, C2s, 109.5e0, -1, h1Typ[naNumber]);
+            setHydrogenAtom(residue, "H1\'", C1s, 1.09e0, O4s, 109.5e0, C2s, 109.5e0, -1, h1Typ[naNumber]);
             if (position == LAST_RESIDUE) {
                 setHydrogenAtom(residue, "H3T", O3s, 1.00e0, C3s, 109.5e0, C4s, 180.0e0, 0, h3tTyp[naNumber]);
             }
@@ -2473,7 +2474,7 @@ public final class PDBFilter extends SystemFilter {
         if (saveFile == null) {
             return false;
         }
-        // Create StringBuffers for ATOM, ANISOU and TER records.
+        // Create StringBuilders for ATOM, ANISOU and TER records.
         StringBuilder sb = new StringBuilder("ATOM  ");
         StringBuilder anisouSB = new StringBuilder("ANISOU");
         StringBuilder terSB = new StringBuilder("TER   ");
@@ -2493,6 +2494,23 @@ public final class PDBFilter extends SystemFilter {
             activeMolecularAssembly.setName(newFile.getName());
             fw = new FileWriter(newFile, append);
             bw = new BufferedWriter(fw);
+// =============================================================================
+// The CRYST1 record presents the unit cell parameters, space group, and Z
+// value. If the structure was not determined by crystallographic means, CRYST1
+// simply provides the unitary values, with an appropriate REMARK.
+//
+//  7 - 15       Real(9.3)     a              a (Angstroms).
+// 16 - 24       Real(9.3)     b              b (Angstroms).
+// 25 - 33       Real(9.3)     c              c (Angstroms).
+// 34 - 40       Real(7.2)     alpha          alpha (degrees).
+// 41 - 47       Real(7.2)     beta           beta (degrees).
+// 48 - 54       Real(7.2)     gamma          gamma (degrees).
+// 56 - 66       LString       sGroup         Space  group.
+// 67 - 70       Integer       z              Z value.
+// =============================================================================
+            Crystal c = activeMolecularAssembly.getCrystal();
+            bw.write(format("CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f %10s\n", c.a, c.b, c.c, c.alpha, c.beta,
+                            c.gamma, padRight(c.spaceGroup.pdbName, 10)));
 // =============================================================================
 //  1 -  6        Record name   "ATOM  "
 //  7 - 11        Integer       serial       Atom serial number.
@@ -2562,7 +2580,10 @@ public final class PDBFilter extends SystemFilter {
             // Write out molecules.
             for (MSNode node : molecules) {
                 Molecule molecule = (Molecule) node;
-                String resName = "MOL";
+                String resName = molecule.getResidueName();
+                if (resName.length() > 3) {
+                    resName = resName.substring(0, 3);
+                }
                 sb.replace(17, 20, padLeft(resName.toUpperCase(), 3));
                 sb.replace(22, 26, String.format("%4d", resID++));
                 // Loop over atoms
@@ -2575,7 +2596,7 @@ public final class PDBFilter extends SystemFilter {
             ArrayList<MSNode> ions = activeMolecularAssembly.getIons();
             for (MSNode node : ions) {
                 Molecule molecule = (Molecule) node;
-                String resName = molecule.getName();
+                String resName = molecule.getResidueName();
                 if (resName.length() > 3) {
                     resName = resName.substring(0, 3);
                 }
