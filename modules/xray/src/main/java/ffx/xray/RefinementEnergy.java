@@ -49,9 +49,9 @@ public class RefinementEnergy implements Potential {
     private final List<Integer> xindex[];
     protected XRayEnergy xrayEnergy;
     private RefinementMode refinementMode;
-    private int nxyz;
-    private int nb;
-    private int nocc;
+    protected int nxyz;
+    protected int nb;
+    protected int nocc;
     private int n;
     private double weight;
     private double xChemical[][];
@@ -129,44 +129,7 @@ public class RefinementEnergy implements Potential {
         }
         n = nxyz + nb + nocc;
 
-        if (scaling == null) {
-            scaling = new double[n];
-
-            double xyzscale = 1.0;
-            double anisouscale = 80.0;
-            double bisoscale = 1.0;
-            if (refinementmode == RefinementMode.COORDINATES_AND_BFACTORS) {
-                bisoscale = 0.2;
-            }
-
-            if (refinementmode == RefinementMode.COORDINATES
-                    || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS) {
-                for (int i = 0; i < nxyz; i++) {
-                    scaling[i] = xyzscale;
-                }
-            }
-
-            if (refinementMode == RefinementMode.BFACTORS
-                    || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS) {
-                int i = nxyz;
-                for (Atom a : atomarray) {
-                    // ignore hydrogens!!!
-                    if (a.getAtomicNumber() == 1) {
-                        continue;
-                    }
-                    if (a.getAnisou() == null) {
-                        scaling[i] = bisoscale;
-                        i++;
-                    } else {
-                        for (int j = 0; j < 6; j++) {
-                            scaling[i + j] = anisouscale;
-                        }
-                        i += 6;
-                    }
-                }
-            }
-        }
-
+        // initialize force field and Xray energies
         for (MolecularAssembly ma : molecularAssembly) {
             ForceFieldEnergy fe = ma.getPotentialEnergy();
             if (fe == null) {
@@ -333,16 +296,6 @@ public class RefinementEnergy implements Potential {
     @Override
     public double[] getScaling() {
         return optimizationScaling;
-    }
-
-    public void scale(double x[]) {
-        if (optimizationScaling == null) {
-            return;
-        }
-
-        for (int i = 0; i < n; i++) {
-            x[i] *= optimizationScaling[i];
-        }
     }
 
     @Override

@@ -72,7 +72,10 @@ public class XRayEnergy implements Potential {
         bmass = refinementdata.bmass;
         kT32 = 1.5 * kB * temp * refinementdata.bresweight;
 
-        logger.info("total B restraint weight: " + temp * refinementdata.bresweight);
+        if (refinementMode == RefinementMode.BFACTORS
+                || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS) {
+            logger.info("total B restraint weight: " + temp * refinementdata.bresweight);
+        }
     }
 
     @Override
@@ -270,28 +273,6 @@ public class XRayEnergy implements Potential {
         }
     }
 
-    public void getBFactors(double x[]) {
-        double anisou[];
-        int index = nxyz;
-        for (Atom a : atomarray) {
-            // ignore hydrogens!!!
-            if (a.getAtomicNumber() == 1) {
-                continue;
-            }
-            if (a.getAnisou() == null) {
-                x[index++] = a.getTempFactor();
-            } else {
-                anisou = a.getAnisou();
-                x[index++] = anisou[0];
-                x[index++] = anisou[1];
-                x[index++] = anisou[2];
-                x[index++] = anisou[3];
-                x[index++] = anisou[4];
-                x[index++] = anisou[5];
-            }
-        }
-    }
-
     public void getXYZGradients(double g[]) {
         assert (g != null);
         double grad[] = new double[3];
@@ -306,15 +287,40 @@ public class XRayEnergy implements Potential {
 
     @Override
     public double[] getCoordinates(double x[]) {
-        int n = getNumberOfVariables();
         assert (x != null);
         double xyz[] = new double[3];
         int index = 0;
-        for (Atom a : atomarray) {
-            a.getXYZ(xyz);
-            x[index++] = xyz[0];
-            x[index++] = xyz[1];
-            x[index++] = xyz[2];
+
+        if (refinementMode == RefinementMode.COORDINATES
+                || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS) {
+            for (Atom a : atomarray) {
+                a.getXYZ(xyz);
+                x[index++] = xyz[0];
+                x[index++] = xyz[1];
+                x[index++] = xyz[2];
+            }
+        }
+
+        if (refinementMode == RefinementMode.BFACTORS
+                || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS) {
+            double anisou[];
+            for (Atom a : atomarray) {
+                // ignore hydrogens!!!
+                if (a.getAtomicNumber() == 1) {
+                    continue;
+                }
+                if (a.getAnisou() == null) {
+                    x[index++] = a.getTempFactor();
+                } else {
+                    anisou = a.getAnisou();
+                    x[index++] = anisou[0];
+                    x[index++] = anisou[1];
+                    x[index++] = anisou[2];
+                    x[index++] = anisou[3];
+                    x[index++] = anisou[4];
+                    x[index++] = anisou[5];
+                }
+            }
         }
 
         return x;
@@ -323,13 +329,20 @@ public class XRayEnergy implements Potential {
     public void setBFactors(double x[]) {
         double tmpanisou[] = new double[6];
         int index = nxyz;
+        int nneg = 0;
         for (Atom a : atomarray) {
             // ignore hydrogens!!!
             if (a.getAtomicNumber() == 1) {
                 continue;
             }
             if (a.getAnisou() == null) {
-                a.setTempFactor(x[index++]);
+                double biso = x[index++];
+                if (biso > 0.0) {
+                    a.setTempFactor(biso);
+                } else {
+                    nneg++;
+                    a.setTempFactor(0.01);
+                }
             } else {
                 double anisou[] = a.getAnisou();
                 tmpanisou[0] = x[index++];
@@ -340,13 +353,18 @@ public class XRayEnergy implements Potential {
                 tmpanisou[5] = x[index++];
                 double det = determinant3(tmpanisou);
                 if (det > 0.0) {
-                    for (int i = 0; i < 6; i++) {
-                        anisou[i] = tmpanisou[i];
-                    }
+                    System.arraycopy(tmpanisou, 0, anisou, 0, 6);
                     det = Math.pow(det, 0.3333);
                     a.setTempFactor(u2b(det));
+                } else {
+                    nneg++;
                 }
             }
+        }
+
+        if (nneg > 0) {
+            logger.info(nneg + " of " + nAtoms
+                    + " atoms with negative B factors! Attempting to correct....");
         }
 
         // set hydrogen based on bonded atom
