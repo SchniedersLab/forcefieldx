@@ -264,7 +264,6 @@ public class XRayEnergy implements Potential {
             if (refinementdata.residuebfactor) {
                 if (resnum != a.getResidueNumber()) {
                     if (nres > 0) {
-                        g[index] /= nres;
                         index++;
                     }
                     g[index] = a.getTempFactorGradient();
