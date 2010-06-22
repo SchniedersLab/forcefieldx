@@ -148,10 +148,18 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
     }
 
     public RefinementEnergy minimize(double eps) {
-        return minimize(7, eps);
+        return minimize(7, eps, Integer.MAX_VALUE - 2);
     }
 
-    public RefinementEnergy minimize(int m, double eps) {
+    public RefinementEnergy minimize(int maxiter) {
+	return minimize(7, 1.0, maxiter);
+    }
+
+    public RefinementEnergy minimize(double eps, int maxiter) {
+	return minimize(7, eps, maxiter);
+    }
+
+    public RefinementEnergy minimize(int m, double eps, int maxiter) {
         refinementenergy.xrayEnergy.setRefinementMode(refinementMode);
         xraystructure.setXRayEnergy(refinementenergy.xrayEnergy);
 
@@ -173,11 +181,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
         time = -System.nanoTime();
         done = false;
         int status = 0;
-        if (refinementMode == RefinementMode.BFACTORS) {
-            status = LBFGS.minimize(n, m, x, e, grad, eps, refinementdata.maxBIterations, refinementenergy, this);
-        } else {
-            status = LBFGS.minimize(n, m, x, e, grad, eps, refinementdata.maxXYZIterations, refinementenergy, this);
-        }
+	status = LBFGS.minimize(n, m, x, e, grad, eps, maxiter, refinementenergy, this);
         done = true;
         switch (status) {
             case 0:
