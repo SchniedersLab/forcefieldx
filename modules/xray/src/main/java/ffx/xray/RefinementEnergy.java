@@ -90,13 +90,17 @@ public class RefinementEnergy implements Potential {
             case COORDINATES:
                 nxyz = nAtoms * 3;
                 break;
+            case COORDINATES_AND_BFACTORS:
+                nxyz = nAtoms * 3;
             case BFACTORS:
+                int resnum = -1;
                 for (Atom a : atomarray) {
                     // ignore hydrogens!!!
                     if (a.getAtomicNumber() == 1) {
                         continue;
                     }
                     if (a.getAnisou() == null) {
+                        a.getResidueNumber();
                         if (refinementdata.addanisou) {
                             double anisou[] = new double[6];
                             double u = b2u(a.getTempFactor());
@@ -104,23 +108,14 @@ public class RefinementEnergy implements Potential {
                             anisou[3] = anisou[4] = anisou[5] = 0.0;
                             a.setAnisou(anisou);
                             nb += 6;
+                        } else if (refinementdata.residuebfactor){
+                            if (resnum != a.getResidueNumber()){
+                                nb++;
+                                resnum = a.getResidueNumber();
+                            }
                         } else {
                             nb++;
                         }
-                    } else {
-                        nb += 6;
-                    }
-                }
-                break;
-            case COORDINATES_AND_BFACTORS:
-                nxyz = nAtoms * 3;
-                for (Atom a : atomarray) {
-                    // ignore hydrogens!!!
-                    if (a.getAtomicNumber() == 1) {
-                        continue;
-                    }
-                    if (a.getAnisou() == null) {
-                        nb++;
                     } else {
                         nb += 6;
                     }

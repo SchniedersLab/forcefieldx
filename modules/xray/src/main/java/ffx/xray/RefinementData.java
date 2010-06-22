@@ -83,8 +83,9 @@ public class RefinementData {
     public final double sigmaatol;
     public final double bresweight;
     public final double bmass;
-    public final double xweight;
+    public final boolean residuebfactor;
     public final boolean addanisou;
+    public final double xweight;
 
     public RefinementData(CompositeConfiguration properties,
             ReflectionList reflectionlist) {
@@ -95,9 +96,10 @@ public class RefinementData {
         use_3g = properties.getBoolean("use_3g", true);
         sigmaatol = properties.getDouble("sigmaatol", 1.0);
         bresweight = properties.getDouble("bresweight", 1.0);
-        bmass = properties.getDouble("bmass", 12.0);
-        xweight = properties.getDouble("xweight", 1.0);
+        bmass = properties.getDouble("bmass", 5.0);
+        residuebfactor = properties.getBoolean("residuebfactor", false);
         addanisou = properties.getBoolean("addanisou", false);
+        xweight = properties.getDouble("xweight", 1.0);
 
         if (logger.isLoggable(Level.INFO)) {
             StringBuilder sb = new StringBuilder();
@@ -109,8 +111,9 @@ public class RefinementData {
             sb.append("  sigma A fit tolerance: " + sigmaatol + "\n");
             sb.append("  B restraint weight: " + bresweight + "\n");
             sb.append("  B Lagrangian mass: " + bmass + "\n");
-            sb.append("  X-ray refinement weight: " + xweight + "\n");
+            sb.append("  B factors refined by residue: " + residuebfactor + "\n");
             sb.append("  add ANISOU for refinement: " + addanisou + "\n");
+            sb.append("  X-ray refinement weight: " + xweight + "\n");
             logger.info(sb.toString());
         }
 

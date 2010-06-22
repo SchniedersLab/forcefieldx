@@ -254,12 +254,27 @@ public class XRayEnergy implements Potential {
         assert (g != null);
         double grad[];
         int index = offset;
+        int resnum = -1;
+        int nres = 0;
         for (Atom a : atomarray) {
             // ignore hydrogens!!!
             if (a.getAtomicNumber() == 1) {
                 continue;
             }
-            if (a.getAnisou() == null) {
+            if (refinementdata.residuebfactor) {
+                if (resnum != a.getResidueNumber()) {
+                    if (nres > 0) {
+                        g[index] /= nres;
+                        index++;
+                    }
+                    g[index] = a.getTempFactorGradient();
+                    resnum = a.getResidueNumber();
+                    nres = 1;
+                } else {
+                    g[index] += a.getTempFactorGradient();
+                    nres++;
+                }
+            } else if (a.getAnisou() == null) {
                 g[index++] = a.getTempFactorGradient();
             } else {
                 grad = a.getAnisouGradient();
@@ -304,12 +319,27 @@ public class XRayEnergy implements Potential {
         if (refinementMode == RefinementMode.BFACTORS
                 || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS) {
             double anisou[];
+            double resnum = -1;
+            int nres = 0;
             for (Atom a : atomarray) {
                 // ignore hydrogens!!!
                 if (a.getAtomicNumber() == 1) {
                     continue;
                 }
-                if (a.getAnisou() == null) {
+                if (refinementdata.residuebfactor) {
+                    if (resnum != a.getResidueNumber()) {
+                        if (nres > 0) {
+                            x[index] /= nres;
+                            index++;
+                        }
+                        x[index] = a.getTempFactor();
+                        resnum = a.getResidueNumber();
+                        nres = 1;
+                    } else {
+                        x[index] += a.getTempFactor();
+                        nres++;
+                    }
+                } else if (a.getAnisou() == null) {
                     x[index++] = a.getTempFactor();
                 } else {
                     anisou = a.getAnisou();
@@ -330,13 +360,25 @@ public class XRayEnergy implements Potential {
         double tmpanisou[] = new double[6];
         int index = nxyz;
         int nneg = 0;
+        int resnum = -1;
         for (Atom a : atomarray) {
             // ignore hydrogens!!!
             if (a.getAtomicNumber() == 1) {
                 continue;
             }
             if (a.getAnisou() == null) {
-                double biso = x[index++];
+                double biso = x[index];
+                if (refinementdata.residuebfactor) {
+                    if (resnum != a.getResidueNumber()) {
+                        if (resnum > -1) {
+                            index++;
+                        }
+                        biso = x[index];
+                        resnum = a.getResidueNumber();
+                    }
+                } else {
+                    index++;
+                }
                 if (biso > 0.0) {
                     a.setTempFactor(biso);
                 } else {

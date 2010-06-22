@@ -121,12 +121,22 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
         if (refinementMode == RefinementMode.BFACTORS
                 || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS) {
             int i = nxyz;
+            int resnum = -1;
             for (Atom a : atomarray) {
                 // ignore hydrogens!!!
                 if (a.getAtomicNumber() == 1) {
                     continue;
                 }
-                if (a.getAnisou() == null) {
+                if (refinementdata.residuebfactor) {
+                    if (resnum != a.getResidueNumber()) {
+                        if (resnum > -1) {
+                            i++;
+                        }
+                        scaling[i] = bisoscale;
+                        x[i] *= bisoscale;
+                        resnum = a.getResidueNumber();
+                    }
+                } else if (a.getAnisou() == null) {
                     scaling[i] = bisoscale;
                     x[i] *= bisoscale;
                     i++;
@@ -152,11 +162,11 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
     }
 
     public RefinementEnergy minimize(int maxiter) {
-	return minimize(7, 1.0, maxiter);
+        return minimize(7, 1.0, maxiter);
     }
 
     public RefinementEnergy minimize(double eps, int maxiter) {
-	return minimize(7, eps, maxiter);
+        return minimize(7, eps, maxiter);
     }
 
     public RefinementEnergy minimize(int m, double eps, int maxiter) {
@@ -181,7 +191,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
         time = -System.nanoTime();
         done = false;
         int status = 0;
-	status = LBFGS.minimize(n, m, x, e, grad, eps, maxiter, refinementenergy, this);
+        status = LBFGS.minimize(n, m, x, e, grad, eps, maxiter, refinementenergy, this);
         done = true;
         switch (status) {
             case 0:
