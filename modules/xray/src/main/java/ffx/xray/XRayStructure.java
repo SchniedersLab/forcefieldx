@@ -150,7 +150,6 @@ public class XRayStructure {
 
         for (int i = 1; i < assembly.length; i++) {
             alist = assembly[i].getAtomList();
-            int aindex = 0;
             for (Atom a : alist) {
                 Character c = a.getAltLoc();
                 if (c == null) {
@@ -166,22 +165,22 @@ public class XRayStructure {
         atomarray = atomlist.toArray(new Atom[atomlist.size()]);
 
         // initialize atomic form factors
-        for (int i = 0; i < atomarray.length; i++) {
+        for (Atom a : atomarray) {
             FormFactor atomff =
-                    new FormFactor(atomarray[i], refinementdata.use_3g, 2.0);
-            atomarray[i].setFormFactorIndex(atomff.ffindex);
+                    new FormFactor(a, refinementdata.use_3g, 2.0);
+            a.setFormFactorIndex(atomff.ffindex);
 
-            if (atomarray[i].getOccupancy() == 0.0) {
-                atomarray[i].setFormFactorWidth(1.0);
+            if (a.getOccupancy() == 0.0) {
+                a.setFormFactorWidth(1.0);
                 continue;
             }
 
             double arad = 2.4;
             // double arad = 2.0;
             double xyz[] = new double[3];
-            xyz[0] = atomarray[i].getX() + arad;
-            xyz[1] = atomarray[i].getY();
-            xyz[2] = atomarray[i].getZ();
+            xyz[0] = a.getX() + arad;
+            xyz[1] = a.getY();
+            xyz[2] = a.getZ();
             while (true) {
                 double rho = atomff.rho(xyz);
                 if (rho > 0.1) {
@@ -190,10 +189,10 @@ public class XRayStructure {
                     arad += 0.1;
                 } else {
                     arad += 0.2;
-                    atomarray[i].setFormFactorWidth(arad);
+                    a.setFormFactorWidth(arad);
                     break;
                 }
-                xyz[0] = atomarray[i].getX() + arad;
+                xyz[0] = a.getX() + arad;
             }
         }
 

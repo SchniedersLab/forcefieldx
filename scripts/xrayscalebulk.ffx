@@ -2,7 +2,10 @@
 import ffx.xray.XRayStructure;
 
 // input PDB file (data must also be present as filename.[mtz/cif/ent])
-String filename = "examples/1N7S.pdb";
+String filename = args[0];
+if (filename == null){
+  filename = "examples/1N7S.pdb";
+}
 
 // output following scaling, sigmaA and likelihood calculation
 // String outputfile = "examples/1N7S_ffx.mtz";
@@ -15,11 +18,10 @@ systems = open(filename);
 XRayStructure structure = new XRayStructure(systems, systems[0].getProperties());
 structure.scalebulkfit();
 structure.printstats();
+energy();
 
 if (outputfile != null){
   structure.writedata(outputfile);
 }
 
-structure.timings();
-
-
+// structure.timings();

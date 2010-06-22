@@ -175,7 +175,7 @@ public class CIFFilter {
 
     public boolean readFile(File cifFile, ReflectionList reflectionlist,
             RefinementData refinementdata) {
-        int nread, nnan, nres, nignore;
+        int nread, nnan, nres, nignore, ncifignore;
 
         try {
             BufferedReader br = new BufferedReader(new FileReader(cifFile));
@@ -227,10 +227,10 @@ public class CIFFilter {
             br.reset();
 
             // read in data
-            nread = nnan = nres = nignore = 0;
+            nread = nnan = nres = nignore = ncifignore = 0;
             while ((str = br.readLine()) != null) {
                 // reached end, break
-                if (str.startsWith("#END")) {
+                if (str.trim().startsWith("#END")) {
                     break;
                 }
 
@@ -251,6 +251,12 @@ public class CIFFilter {
                         } else if (strarray[rfree].charAt(0) == 'x') {
                             isnull = true;
                             nnan++;
+                        } else if (strarray[rfree].charAt(0) == '<'
+                                || strarray[rfree].charAt(0) == '-'
+                                || strarray[rfree].charAt(0) == 'h'
+                                || strarray[rfree].charAt(0) == 'l'){
+                            isnull = true;
+                            ncifignore++;
                         } else {
                             refinementdata.freer(hkl.index(),
                                     Integer.parseInt(strarray[rfree]));
@@ -291,6 +297,8 @@ public class CIFFilter {
                 nread));
         sb.append(String.format("# HKL with NaN (ignored):                  %d\n",
                 nnan));
+        sb.append(String.format("# HKL NOT read in (status <, -, h or l):  %d\n",
+                ncifignore));
         sb.append(String.format("# HKL NOT read in (too high resolution):   %d\n",
                 nres));
         sb.append(String.format("# HKL NOT read in (not in internal list?): %d\n",
