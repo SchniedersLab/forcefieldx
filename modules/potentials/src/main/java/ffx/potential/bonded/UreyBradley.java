@@ -41,6 +41,7 @@ public class UreyBradley extends BondedTerm implements Comparable<UreyBradley> {
      * Force field parameters to compute the Stretch-Bend energy.
      */
     public UreyBradleyType ureyBradleyType = null;
+    public double rigidScale = 1.0;
     /**
      * The Angle this UreyBradley term is based on.
      */
@@ -48,6 +49,10 @@ public class UreyBradley extends BondedTerm implements Comparable<UreyBradley> {
 
     public void setUreyBradleyType(UreyBradleyType a) {
         ureyBradleyType = a;
+    }
+
+    public void setRigidScale(double rigidScale) {
+        this.rigidScale = rigidScale;
     }
 
     /**
@@ -93,9 +98,9 @@ public class UreyBradley extends BondedTerm implements Comparable<UreyBradley> {
         value = r(v20);
         double dv = value - ureyBradleyType.distance;
         double dv2 = dv * dv;
-        energy = units * ureyBradleyType.forceConstant * dv2 * (1.0 + cubic * dv + quartic * dv2);
+        energy = units * rigidScale * ureyBradleyType.forceConstant * dv2 * (1.0 + cubic * dv + quartic * dv2);
         if (gradient) {
-            double deddt = 2.0 * units * ureyBradleyType.forceConstant * dv * (1.0 + 1.5 * cubic * dv + 2.0 * quartic * dv2);
+            double deddt = 2.0 * units * rigidScale * ureyBradleyType.forceConstant * dv * (1.0 + 1.5 * cubic * dv + 2.0 * quartic * dv2);
             double de = 0.0;
             if (value > 0.0) {
                 de = deddt / value;
@@ -113,9 +118,9 @@ public class UreyBradley extends BondedTerm implements Comparable<UreyBradley> {
      */
     public void log() {
         logger.info(String.format(" %s %6d-%s %6d-%s %6.4f  %6.4f  %10.4f",
-                "Urey-Bradley", atoms[0].getXYZIndex(), atoms[0].getAtomType().name,
-                atoms[2].getXYZIndex(), atoms[2].getAtomType().name, ureyBradleyType.distance, value,
-                energy));
+                                  "Urey-Bradley", atoms[0].getXYZIndex(), atoms[0].getAtomType().name,
+                                  atoms[2].getXYZIndex(), atoms[2].getAtomType().name, ureyBradleyType.distance, value,
+                                  energy));
     }
 
     @Override

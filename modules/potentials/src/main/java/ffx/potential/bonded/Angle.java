@@ -57,6 +57,7 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
      * Number of hydrogens on the central atom that are not part of this Angle.
      */
     public int nh = 0;
+    private double rigidScale = 1.0;
     private Atom atom4 = null;
 
     /**
@@ -118,6 +119,10 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
         while (angleType.angle.length <= nh) {
             nh--;
         }
+    }
+
+    public void setRigidScale(double rigidScale) {
+        this.rigidScale = rigidScale;
     }
 
     /**
@@ -244,9 +249,10 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
                     double dv2 = dv * dv;
                     double dv3 = dv2 * dv;
                     double dv4 = dv2 * dv2;
-                    energy = units * angleType.forceConstant * dv2 * (1.0 + cubic * dv + quartic * dv2 + quintic * dv3 + sextic * dv4);
+                    energy = units * rigidScale * angleType.forceConstant * dv2 * (1.0 + cubic * dv + quartic * dv2 + quintic * dv3 + sextic * dv4);
                     if (gradient) {
-                        double deddt = units * angleType.forceConstant * dv * toDegrees(2.0 + 3.0 * cubic * dv + 4.0 * quartic * dv2 + 5.0 * quintic * dv3 + 6.0 * sextic * dv4);
+                        double deddt = units * rigidScale * angleType.forceConstant * dv
+                                       * toDegrees(2.0 + 3.0 * cubic * dv + 4.0 * quartic * dv2 + 5.0 * quintic * dv3 + 6.0 * sextic * dv4);
                         double rp = r(p);
                         rp = max(rp, 0.000001);
                         double terma = -deddt / (rab2 * rp);
@@ -401,7 +407,6 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
         assert (!(this0 == a0 && this1 == a1 && this2 == a2));
         return 0;
     }
-
     /**
      * Vector from Atom 1 to Atom 0.
      */
@@ -448,5 +453,4 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
     private static final double xd2[] = new double[3];
     private static final double dpd0[] = new double[3];
     private static final double dpd2[] = new double[3];
-
 }

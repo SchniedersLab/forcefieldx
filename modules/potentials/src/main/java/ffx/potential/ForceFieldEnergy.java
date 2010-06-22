@@ -140,6 +140,9 @@ public class ForceFieldEnergy implements Potential {
         atoms = molecularAssembly.getAtomArray();
         nAtoms = atoms.length;
 
+        boolean rigidHydrogens = forceField.getBoolean(ForceFieldBoolean.RIGID_HYDROGENS, false);
+        double rigidScale = forceField.getDouble(ForceFieldDouble.RIGID_SCALE, 10.0);
+
         // Collect, count, pack and sort bonds.
         if (bondTerm) {
             ArrayList<ROLS> bond = molecularAssembly.getBondList();
@@ -184,6 +187,32 @@ public class ForceFieldEnergy implements Potential {
             ureyBradleys = null;
         }
 
+        /**
+         * Set a multiplier on the force constants of bonded terms containing
+         * hydrogens.
+         */
+        if (rigidHydrogens) {
+            for (Bond bond : bonds) {
+                if (bond.containsHydrogen()) {
+                    bond.setRigidScale(rigidScale);
+                }
+            }
+            for (Angle angle : angles) {
+                if (angle.containsHydrogen()) {
+                    angle.setRigidScale(rigidScale);
+                }
+            }
+            for (StretchBend stretchBend : stretchBends) {
+                if (stretchBend.containsHydrogen()) {
+                    stretchBend.setRigidScale(rigidScale);
+                }
+            }
+            for (UreyBradley ureyBradley : ureyBradleys) {
+                if (ureyBradley.containsHydrogen()) {
+                    ureyBradley.setRigidScale(rigidScale);
+                }
+            }
+        }
 
         // Collect, count, pack and sort out-of-plane-bends.
         if (outOfPlaneBendTerm) {
@@ -649,7 +678,7 @@ public class ForceFieldEnergy implements Potential {
     public double[] getMass() {
         int n = getNumberOfVariables();
         double mass[] = new double[n];
-        int i=0;
+        int i = 0;
         for (Atom a : atoms) {
             double m = a.getMass();
             mass[i++] = m;

@@ -77,6 +77,15 @@ public abstract class BondedTerm extends MSNode {
         return true;
     }
 
+    public boolean containsHydrogen() {
+        for (Atom atom : atoms) {
+            if (atom.isHydrogen()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * Overidden method that returns true if object is equals to this, is of
      * the same Class and has the same id.
@@ -164,7 +173,7 @@ public abstract class BondedTerm extends MSNode {
 
     @Override
     public void setColor(RendererCache.ColorModel newColorModel, Color3f color,
-            Material mat) {
+                         Material mat) {
         if (atoms == null) {
             return;
         }
@@ -238,7 +247,7 @@ public abstract class BondedTerm extends MSNode {
 
     @Override
     public void setView(RendererCache.ViewModel newViewModel,
-            List<BranchGroup> newShapes) {
+                        List<BranchGroup> newShapes) {
         if (atoms == null) {
             return;
         }

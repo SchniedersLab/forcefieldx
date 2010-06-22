@@ -366,6 +366,17 @@ public class Atom extends MSNode implements Comparable<Atom> {
         return hetatm;
     }
 
+    public boolean isHydrogen() {
+        if (atomType == null) {
+            return false;
+        }
+        if (atomType.atomicNumber == 1) {
+            return true;
+        }
+
+        return false;
+    }
+
     @Override
     public void drawLabel(Canvas3D canvas, J3DGraphics2D g2d, Node node) {
         if (RendererCache.labelAtoms) {

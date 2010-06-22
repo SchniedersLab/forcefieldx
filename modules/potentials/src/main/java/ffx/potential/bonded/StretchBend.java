@@ -44,6 +44,7 @@ public class StretchBend extends BondedTerm implements Comparable<StretchBend> {
      * Force field parameters to compute the Stretch-Bend energy.
      */
     private StretchBendType stretchBendType = null;
+    private double rigidScale = 1.0;
     /**
      * Angle this Stretch-Bend is based on.
      */
@@ -66,6 +67,10 @@ public class StretchBend extends BondedTerm implements Comparable<StretchBend> {
             force0 = units * stretchBendType.forceConstants[1];
             force1 = units * stretchBendType.forceConstants[0];
         }
+    }
+
+    public void setRigidScale(double rigidScale) {
+        this.rigidScale = rigidScale;
     }
 
     /**
@@ -92,7 +97,6 @@ public class StretchBend extends BondedTerm implements Comparable<StretchBend> {
     public void update() {
         energy(false);
     }
-
     protected static final double v10[] = new double[3];
     protected static final double v12[] = new double[3];
     protected static final double p[] = new double[3];
@@ -138,24 +142,24 @@ public class StretchBend extends BondedTerm implements Comparable<StretchBend> {
             double e1 = rcb - bond1Eq;
             double dt = value - angleEq;
             double dr = force0 * e0 + force1 * e1;
-            energy = dr * dt;
+            energy = rigidScale * dr * dt;
             if (gradient) {
                 // angle chain rule terms
-                double term1 = -dr * toDegrees(1.0 / (rab2*rp));
-                double term2 = dr * toDegrees(1.0 / (rcb2*rp));
+                double term1 = -rigidScale * dr * toDegrees(1.0 / (rab2 * rp));
+                double term2 = rigidScale * dr * toDegrees(1.0 / (rcb2 * rp));
                 cross(v10, p, dta);
                 scalar(dta, term1, dta);
                 cross(v12, p, dtc);
                 scalar(dtc, term2, dtc);
 
                 // bond chain rule terms
-                term1 = force0 * dt / rab;
-                term2 = force1 * dt / rcb;
+                term1 = rigidScale * force0 * dt / rab;
+                term2 = rigidScale * force1 * dt / rcb;
                 scalar(v10, term1, v10);
                 scalar(v12, term2, v12);
 
-                sum(dta,v10,g0);
-                sum(dtc,v12,g2);
+                sum(dta, v10, g0);
+                sum(dtc, v12, g2);
                 sum(g0, g2, g1);
                 scalar(g1, -1.0, g1);
                 atoms[0].addToXYZGradient(g0[0], g0[1], g0[2]);
@@ -168,11 +172,11 @@ public class StretchBend extends BondedTerm implements Comparable<StretchBend> {
 
     public void log() {
         logger.info(String.format(" %s %6d-%s %6d-%s %6d-%s"
-                + "%7.4f %10.4f",
-                "Stretch-Bend", atoms[0].getXYZIndex(),
-                atoms[0].getAtomType().name, atoms[1].getXYZIndex(),
-                atoms[1].getAtomType().name, atoms[2].getXYZIndex(),
-                atoms[2].getAtomType().name, value, energy));
+                                  + "%7.4f %10.4f",
+                                  "Stretch-Bend", atoms[0].getXYZIndex(),
+                                  atoms[0].getAtomType().name, atoms[1].getXYZIndex(),
+                                  atoms[1].getAtomType().name, atoms[2].getXYZIndex(),
+                                  atoms[2].getAtomType().name, value, energy));
     }
 
     /**
@@ -181,7 +185,7 @@ public class StretchBend extends BondedTerm implements Comparable<StretchBend> {
     @Override
     public String toString() {
         return String.format("%s  (%7.2f,%7.2f,%7.1f,%7.2f)", id,
-                bonds[0].value, bonds[1].value, angle.value, energy);
+                             bonds[0].value, bonds[1].value, angle.value, energy);
     }
 
     @Override

@@ -92,12 +92,13 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
      */
     public static final float BUFF = 0.7f;
     public BondType bondType = null;
+    private double rigidScale = 1.0;
     private static final float a0col[] = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
-        0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+                                          0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
     private static final float f4a[] = {0.0f, 0.0f, 0.0f, 0.9f};
     private static final float f4b[] = {0.0f, 0.0f, 0.0f, 0.9f};
     private static float f16[] = {0.0f, 0.0f, 0.0f, 0.9f, 0.0f, 0.0f, 0.0f,
-        0.9f, 0.0f, 0.0f, 0.0f, 0.9f, 0.0f, 0.0f, 0.0f, 0.9f};
+                                  0.9f, 0.0f, 0.0f, 0.0f, 0.9f, 0.0f, 0.0f, 0.0f, 0.9f};
     // Some static variables used for computing cylinder orientations
     private static double d;
     private static double a13d[] = new double[3];
@@ -174,6 +175,10 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
      */
     public void setBondType(BondType bondType) {
         this.bondType = bondType;
+    }
+
+    public void setRigidScale(double rigidScale) {
+        this.rigidScale = rigidScale;
     }
 
     /**
@@ -272,7 +277,7 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
     private void initJ3D(List<BranchGroup> newShapes) {
         detail = RendererCache.detail;
         branchGroup = RendererCache.doubleCylinderFactory(atoms[0], atoms[1],
-                detail);
+                                                          detail);
         cy1tg = (TransformGroup) branchGroup.getChild(0);
         cy2tg = (TransformGroup) branchGroup.getChild(1);
         cy1 = (Shape3D) cy1tg.getChild(0);
@@ -322,7 +327,7 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
     }
 
     public void setBondTransform3d(Transform3D t3d, double[] pos,
-            double[] orient, double len, boolean newRot) {
+                                   double[] orient, double len, boolean newRot) {
         // Bond Orientation
         if (newRot) {
             angle = angle(orient, y);
@@ -399,7 +404,7 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
      */
     @Override
     public void setView(RendererCache.ViewModel newViewModel,
-            List<BranchGroup> newShapes) {
+                        List<BranchGroup> newShapes) {
         switch (newViewModel) {
             case WIREFRAME:
                 viewModel = ViewModel.WIREFRAME;
@@ -589,9 +594,9 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
         value = r(v10);
         double dv = value - bondType.distance;
         double dv2 = dv * dv;
-        energy = units * bondType.forceConstant * dv2 * (1.0 + cubic * dv + quartic * dv2);
+        energy = units * rigidScale * bondType.forceConstant * dv2 * (1.0 + cubic * dv + quartic * dv2);
         if (gradient) {
-            double deddt = 2.0 * units * bondType.forceConstant * dv * (1.0 + 1.5 * cubic * dv + 2.0 * quartic * dv2);
+            double deddt = 2.0 * units * rigidScale * bondType.forceConstant * dv * (1.0 + 1.5 * cubic * dv + 2.0 * quartic * dv2);
             double de = 0.0;
             if (value > 0.0) {
                 de = deddt / value;
@@ -609,8 +614,8 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
      */
     public void log() {
         logger.info(String.format(" %s %6d-%s %6d-%s %6.4f  %6.4f  %10.4f",
-                "Bond", atoms[0].getXYZIndex(), atoms[0].getAtomType().name,
-                atoms[1].getXYZIndex(), atoms[1].getAtomType().name,
-                bondType.distance, value, energy));
+                                  "Bond", atoms[0].getXYZIndex(), atoms[0].getAtomType().name,
+                                  atoms[1].getXYZIndex(), atoms[1].getAtomType().name,
+                                  bondType.distance, value, energy));
     }
 }
