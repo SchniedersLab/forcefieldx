@@ -1098,14 +1098,18 @@ public class Crystal {
 
     @Override
     public String toString() {
-        return String.format(
-                " Unit cell (%7.3f, %7.3f, %7.3f, %7.3f, %7.3f, %7.3f)\n", a,
-                b, c, alpha, beta, gamma)
-                + String.format(
-                " Space group number %d (%s, Nsymm = %d)\n",
-                spaceGroup.number,
-                spaceGroup.shortName,
-                spaceGroup.getNumberOfSymOps());
+        StringBuilder sb = new StringBuilder("\n Unit Cell\n");
+        sb.append(String.format(" A:                                    %8.3f\n", a));
+        sb.append(String.format(" B:                                    %8.3f\n", b));
+        sb.append(String.format(" C:                                    %8.3f\n", c));
+        sb.append(String.format(" Alpha:                                %8.3f\n", alpha));
+        sb.append(String.format(" Beta:                                 %8.3f\n", beta));
+        sb.append(String.format(" Gamma:                                %8.3f\n", gamma));
+        sb.append(String.format(" Space group\n"));
+        sb.append(String.format(" Number:                                    %3d\n", spaceGroup.number));
+        sb.append(String.format(" Symbol:                               %8s\n", spaceGroup.shortName));
+        sb.append(String.format(" Number of Symmetry Operators:              %3d", spaceGroup.getNumberOfSymOps()));
+        return sb.toString();
     }
     private static final int XX = 0;
     private static final int YY = 1;

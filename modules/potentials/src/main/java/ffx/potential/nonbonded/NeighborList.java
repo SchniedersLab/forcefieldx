@@ -276,12 +276,11 @@ public class NeighborList extends ParallelRegion {
             nC = 1;
         }
 
-        StringBuilder sb = new StringBuilder("\n NEIGHBOR LIST BUILDER\n");
+        StringBuilder sb = new StringBuilder("\n Neighbor List Builder\n");
         nAB = nA * nB;
         nCells = nAB * nC;
-
-        sb.append(" The unit cell is partitioned into " + nCells
-                  + " volumes (" + (nAtoms * nSymm / nCells) + " atoms/cell)");
+        sb.append(format(" Sub-volumes:                          %8d\n", nCells));
+        sb.append(format(" Average atoms per sub-volume:         %8d", nAtoms * nSymm / nCells));
 
         cellList = new int[nSymm][nAtoms];
         cellIndex = new int[nSymm][nAtoms];
@@ -354,19 +353,17 @@ public class NeighborList extends ParallelRegion {
     }
 
     private void log() {
-        StringBuilder sb = new StringBuilder(" The cutoff is " + cutoff + " angstroms.\n");
-        sb.append(format(" Assignment to cells: %8.3f\n", cellTime * toSeconds));
-        sb.append(format(" Verlet lists:        %8.3f\n", verletTime * toSeconds));
-        sb.append(format(" Total:               %8.3f (sec)\n", totalTime * toSeconds));
+        StringBuilder sb = new StringBuilder(format(" Buffer:                                  %5.2f (A)\n", buffer));
+        sb.append(format(" Cut-off:                                 %5.2f (A)\n", cutoff));
+        sb.append(format(" Total:                                   %5.2f (A)\n", total));
         sb.append(format(" Neighbors in the asymmetric unit: %12d\n", asymmetricUnitCount));
         if (nSymm > 1) {
             int num = (int) (asymmetricUnitCount * nSymm + symmetryMateCount * (nSymm * 0.5));
             double speedup = ((double) num) / (asymmetricUnitCount + symmetryMateCount);
             sb.append(format(" Neighbors in symmetry mates:      %12d\n", symmetryMateCount));
             sb.append(format(" Neighbors in the unit cell:       %12d\n", num));
-            sb.append(format(" Space group speed up factor:      %12.3f\n", speedup));
+            sb.append(format(" Space group speed up factor:          %8.3f\n", speedup));
         }
-        sb.append("\n");
         logger.info(sb.toString());
     }
 

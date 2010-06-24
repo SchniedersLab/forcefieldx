@@ -388,9 +388,14 @@ public class ParticleMeshEwald implements LambdaInterface {
         }
         setEwaldParameters();
         if (logger.isLoggable(Level.INFO)) {
-            StringBuilder sb = new StringBuilder(" PARTICLE MESH EWALD\n");
-            sb.append(format(" Real space cut-off:     %8.3f\n", off));
-            sb.append(format(" Ewald coefficient:      %8.3f", aewald));
+            StringBuilder sb = new StringBuilder("\n Electrostatics\n");
+            sb.append(format(" Polarization:                         %8s\n", polarization.toString()));
+            if (polarization == Polarization.MUTUAL) {
+                sb.append(format(" SCF convergence criteria:            %8.3e\n", poleps));
+                sb.append(format(" SOR parameter                         %8.3f\n", polsor));
+            }
+            sb.append(format(" Real space cut-off:                   %8.3f (A)\n", off));
+            sb.append(format(" Ewald coefficient:                    %8.3f", aewald));
             logger.info(sb.toString());
         }
 
@@ -445,7 +450,7 @@ public class ParticleMeshEwald implements LambdaInterface {
         }
         if (available) {
             pairWiseSchedule = IntegerSchedule.parse(pairWiseStrategy);
-            logger.info(" Electrostatics pairwise schedule " + pairWiseStrategy);
+            logger.info(format(" Electrostatics pairwise schedule: %s", pairWiseStrategy));
         } else {
             pairWiseSchedule = IntegerSchedule.fixed();
         }

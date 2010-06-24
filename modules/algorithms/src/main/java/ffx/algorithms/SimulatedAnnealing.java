@@ -56,8 +56,6 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
                                                   potentialEnergy, properties,
                                                   listener,
                                                   Thermostats.BERENDSEN);
-        Berendsen berendsen = (Berendsen) molecularDynamics.getThermostat();
-        berendsen.setTau(0.01);
         done = true;
     }
 

@@ -224,7 +224,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
         logger.info(" Molecular dynamics starting up");
         if (!(thermostat instanceof Adiabatic)) {
-            logger.info(format(" Sampling the NVT ensemble via a %s thermostat", thermostat.name));
+            logger.info(format(" Sampling the NVT ensemble using a %s", thermostat.toString()));
         } else {
             logger.info(format(" Sampling the NVE ensemble"));
         }

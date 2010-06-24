@@ -23,6 +23,7 @@ package ffx.potential.nonbonded;
 import static java.lang.Math.PI;
 import static java.lang.Math.pow;
 import static java.lang.Math.sqrt;
+import static java.lang.String.format;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -370,7 +371,13 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
          * Build the neighbor-list using the reduced coordinates.
          */
         neighborList.buildList(reduced, neighborLists, true, true);
+
+        logger.info(" Van der Waals");
+        logger.info(format(" Switch Start:                            %5.3f (A)", cut));
+        logger.info(format(" Cut-Off:                                 %5.3f (A)", off));
+        logger.info(format(" Long-Range Correction:                   %B", doLongRangeCorrection));
     }
+
 
     private double getLongRangeCorrection() {
         /**

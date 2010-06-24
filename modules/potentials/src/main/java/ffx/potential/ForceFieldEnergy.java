@@ -120,10 +120,14 @@ public class ForceFieldEnergy implements Potential {
 
     public ForceFieldEnergy(MolecularAssembly molecularAssembly) {
         parallelTeam = new ParallelTeam();
-        logger.info(format(" Parallel Java Threads: %d", parallelTeam.getThreadCount()));
+        logger.info(format(" Constructing Force Field"));
+        logger.info(format("\n SMP threads:                        %10d", parallelTeam.getThreadCount()));
+
+        // Get a reference to the sorted atom array.
+        atoms = molecularAssembly.getAtomArray();
+        nAtoms = atoms.length;
 
         ForceField forceField = molecularAssembly.getForceField();
-
         bondTerm = forceField.getBoolean(ForceFieldBoolean.BONDTERM, true);
         angleTerm = forceField.getBoolean(ForceFieldBoolean.ANGLETERM, true);
         stretchBendTerm = forceField.getBoolean(ForceFieldBoolean.STRBNDTERM, true);
@@ -135,125 +139,6 @@ public class ForceFieldEnergy implements Potential {
         vanDerWaalsTerm = forceField.getBoolean(ForceFieldBoolean.VDWTERM, true);
         multipoleTerm = forceField.getBoolean(ForceFieldBoolean.MPOLETERM, true);
         polarizationTerm = forceField.getBoolean(ForceFieldBoolean.POLARIZETERM, true);
-
-        // Get a reference to the sorted atom array.
-        atoms = molecularAssembly.getAtomArray();
-        nAtoms = atoms.length;
-
-        boolean rigidHydrogens = forceField.getBoolean(ForceFieldBoolean.RIGID_HYDROGENS, false);
-        double rigidScale = forceField.getDouble(ForceFieldDouble.RIGID_SCALE, 10.0);
-
-        // Collect, count, pack and sort bonds.
-        if (bondTerm) {
-            ArrayList<ROLS> bond = molecularAssembly.getBondList();
-            nBonds = bond.size();
-            bonds = bond.toArray(new Bond[nBonds]);
-            Arrays.sort(bonds);
-        } else {
-            nBonds = 0;
-            bonds = null;
-        }
-
-        // Collect, count, pack and sort angles.
-        if (angleTerm) {
-            ArrayList<ROLS> angle = molecularAssembly.getAngleList();
-            nAngles = angle.size();
-            angles = angle.toArray(new Angle[nAngles]);
-            Arrays.sort(angles);
-        } else {
-            nAngles = 0;
-            angles = null;
-        }
-
-        // Collect, count, pack and sort stretch-bends.
-        if (stretchBendTerm) {
-            ArrayList<ROLS> stretchBend = molecularAssembly.getStretchBendList();
-            nStretchBends = stretchBend.size();
-            stretchBends = stretchBend.toArray(new StretchBend[nStretchBends]);
-            Arrays.sort(stretchBends);
-        } else {
-            nStretchBends = 0;
-            stretchBends = null;
-        }
-
-        // Collect, count, pack and sort Urey-Brandleys.
-        if (ureyBradleyTerm) {
-            ArrayList<ROLS> ureyBradley = molecularAssembly.getUreyBradleyList();
-            nUreyBradleys = ureyBradley.size();
-            ureyBradleys = ureyBradley.toArray(new UreyBradley[nUreyBradleys]);
-            Arrays.sort(ureyBradleys);
-        } else {
-            nUreyBradleys = 0;
-            ureyBradleys = null;
-        }
-
-        /**
-         * Set a multiplier on the force constants of bonded terms containing
-         * hydrogens.
-         */
-        if (rigidHydrogens) {
-            for (Bond bond : bonds) {
-                if (bond.containsHydrogen()) {
-                    bond.setRigidScale(rigidScale);
-                }
-            }
-            for (Angle angle : angles) {
-                if (angle.containsHydrogen()) {
-                    angle.setRigidScale(rigidScale);
-                }
-            }
-            for (StretchBend stretchBend : stretchBends) {
-                if (stretchBend.containsHydrogen()) {
-                    stretchBend.setRigidScale(rigidScale);
-                }
-            }
-            for (UreyBradley ureyBradley : ureyBradleys) {
-                if (ureyBradley.containsHydrogen()) {
-                    ureyBradley.setRigidScale(rigidScale);
-                }
-            }
-        }
-
-        // Collect, count, pack and sort out-of-plane-bends.
-        if (outOfPlaneBendTerm) {
-            ArrayList<ROLS> outOfPlaneBend = molecularAssembly.getOutOfPlaneBendList();
-            nOutOfPlaneBends = outOfPlaneBend.size();
-            outOfPlaneBends = outOfPlaneBend.toArray(new OutOfPlaneBend[nOutOfPlaneBends]);
-            Arrays.sort(outOfPlaneBends);
-        } else {
-            nOutOfPlaneBends = 0;
-            outOfPlaneBends = null;
-        }
-
-        // Collect, count, pack and sort torsions.
-        if (torsionTerm) {
-            ArrayList<ROLS> torsion = molecularAssembly.getTorsionList();
-            nTorsions = torsion.size();
-            torsions = torsion.toArray(new Torsion[nTorsions]);
-        } else {
-            nTorsions = 0;
-            torsions = null;
-        }
-
-        // Collect, count, pack and sort pi-orbital torsions.
-        if (piOrbitalTorsionTerm) {
-            ArrayList<ROLS> piOrbitalTorsion = molecularAssembly.getPiOrbitalTorsionList();
-            nPiOrbitalTorsions = piOrbitalTorsion.size();
-            piOrbitalTorsions = piOrbitalTorsion.toArray(new PiOrbitalTorsion[nPiOrbitalTorsions]);
-        } else {
-            nPiOrbitalTorsions = 0;
-            piOrbitalTorsions = null;
-        }
-
-        // Collect, count, pack and sort torsion-torsions.
-        if (torsionTorsionTerm) {
-            ArrayList<ROLS> torsionTorsion = molecularAssembly.getTorsionTorsionList();
-            nTorsionTorsions = torsionTorsion.size();
-            torsionTorsions = torsionTorsion.toArray(new TorsionTorsion[nTorsionTorsions]);
-        } else {
-            nTorsionTorsions = 0;
-            torsionTorsions = null;
-        }
 
         // Define the cutoff lengths.
         double vdwOff = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, 9.0);
@@ -327,6 +212,132 @@ public class ForceFieldEnergy implements Potential {
         }
 
         logger.info(crystal.toString());
+
+        boolean rigidHydrogens = forceField.getBoolean(ForceFieldBoolean.RIGID_HYDROGENS, false);
+        double rigidScale = forceField.getDouble(ForceFieldDouble.RIGID_SCALE, 10.0);
+
+        logger.info("\n Bonded Terms\n");
+        // Collect, count, pack and sort bonds.
+        if (bondTerm) {
+            ArrayList<ROLS> bond = molecularAssembly.getBondList();
+            nBonds = bond.size();
+            bonds = bond.toArray(new Bond[nBonds]);
+            Arrays.sort(bonds);
+            logger.info(format(" Bonds:                              %10d", nBonds));
+        } else {
+            nBonds = 0;
+            bonds = null;
+        }
+
+        // Collect, count, pack and sort angles.
+        if (angleTerm) {
+            ArrayList<ROLS> angle = molecularAssembly.getAngleList();
+            nAngles = angle.size();
+            angles = angle.toArray(new Angle[nAngles]);
+            Arrays.sort(angles);
+            logger.info(format(" Angles:                             %10d", nAngles));
+        } else {
+            nAngles = 0;
+            angles = null;
+        }
+
+        // Collect, count, pack and sort stretch-bends.
+        if (stretchBendTerm) {
+            ArrayList<ROLS> stretchBend = molecularAssembly.getStretchBendList();
+            nStretchBends = stretchBend.size();
+            stretchBends = stretchBend.toArray(new StretchBend[nStretchBends]);
+            Arrays.sort(stretchBends);
+            logger.info(format(" Stretch-Bends:                      %10d", nStretchBends));
+        } else {
+            nStretchBends = 0;
+            stretchBends = null;
+        }
+
+        // Collect, count, pack and sort Urey-Bradleys.
+        if (ureyBradleyTerm) {
+            ArrayList<ROLS> ureyBradley = molecularAssembly.getUreyBradleyList();
+            nUreyBradleys = ureyBradley.size();
+            ureyBradleys = ureyBradley.toArray(new UreyBradley[nUreyBradleys]);
+            Arrays.sort(ureyBradleys);
+            logger.info(format(" Urey-Bradleys:                      %10d", nUreyBradleys));
+        } else {
+            nUreyBradleys = 0;
+            ureyBradleys = null;
+        }
+
+        /**
+         * Set a multiplier on the force constants of bonded terms containing
+         * hydrogens.
+         */
+        if (rigidHydrogens) {
+            for (Bond bond : bonds) {
+                if (bond.containsHydrogen()) {
+                    bond.setRigidScale(rigidScale);
+                }
+            }
+            for (Angle angle : angles) {
+                if (angle.containsHydrogen()) {
+                    angle.setRigidScale(rigidScale);
+                }
+            }
+            for (StretchBend stretchBend : stretchBends) {
+                if (stretchBend.containsHydrogen()) {
+                    stretchBend.setRigidScale(rigidScale);
+                }
+            }
+            for (UreyBradley ureyBradley : ureyBradleys) {
+                if (ureyBradley.containsHydrogen()) {
+                    ureyBradley.setRigidScale(rigidScale);
+                }
+            }
+        }
+
+        // Collect, count, pack and sort out-of-plane bends.
+        if (outOfPlaneBendTerm) {
+            ArrayList<ROLS> outOfPlaneBend = molecularAssembly.getOutOfPlaneBendList();
+            nOutOfPlaneBends = outOfPlaneBend.size();
+            outOfPlaneBends = outOfPlaneBend.toArray(new OutOfPlaneBend[nOutOfPlaneBends]);
+            Arrays.sort(outOfPlaneBends);
+            logger.info(format(" Out-of-Plane Bends:                 %10d", nOutOfPlaneBends));
+        } else {
+            nOutOfPlaneBends = 0;
+            outOfPlaneBends = null;
+        }
+
+        // Collect, count, pack and sort torsions.
+        if (torsionTerm) {
+            ArrayList<ROLS> torsion = molecularAssembly.getTorsionList();
+            nTorsions = torsion.size();
+            torsions = torsion.toArray(new Torsion[nTorsions]);
+            logger.info(format(" Torsions:                           %10d", nTorsions));
+        } else {
+            nTorsions = 0;
+            torsions = null;
+        }
+
+        // Collect, count, pack and sort pi-orbital torsions.
+        if (piOrbitalTorsionTerm) {
+            ArrayList<ROLS> piOrbitalTorsion = molecularAssembly.getPiOrbitalTorsionList();
+            nPiOrbitalTorsions = piOrbitalTorsion.size();
+            piOrbitalTorsions = piOrbitalTorsion.toArray(new PiOrbitalTorsion[nPiOrbitalTorsions]);
+            logger.info(format(" Pi-Orbital Torsions:                %10d", nPiOrbitalTorsions));
+        } else {
+            nPiOrbitalTorsions = 0;
+            piOrbitalTorsions = null;
+        }
+
+        // Collect, count, pack and sort torsion-torsions.
+        if (torsionTorsionTerm) {
+            ArrayList<ROLS> torsionTorsion = molecularAssembly.getTorsionTorsionList();
+            nTorsionTorsions = torsionTorsion.size();
+            torsionTorsions = torsionTorsion.toArray(new TorsionTorsion[nTorsionTorsions]);
+            logger.info(format(" Torsion-Torsions:                   %10d", nTorsionTorsions));
+        } else {
+            nTorsionTorsions = 0;
+            torsionTorsions = null;
+        }
+
+        logger.info("\n Non-Bonded Terms");
 
         if (vanDerWaalsTerm) {
             //vanderWaals = new CellCellVanDerWaals(forceField, atoms, crystal, parallelTeam);
