@@ -283,6 +283,14 @@ public class RefinementEnergy implements Potential {
         }
     }
 
+    public double getXWeight(){
+        return this.weight;
+    }
+
+    public void setXWeight(double weight){
+        this.weight = weight;
+    }
+
     @Override
     public void setScaling(double[] scaling) {
         optimizationScaling = scaling;

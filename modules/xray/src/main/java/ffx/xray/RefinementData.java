@@ -80,6 +80,7 @@ public class RefinementData {
     // settings
     public final int rfreeflag;
     public final boolean use_3g;
+    public final double xrayscaletol;
     public final double sigmaatol;
     public final double bresweight;
     public final double bmass;
@@ -94,6 +95,7 @@ public class RefinementData {
         int npar = properties.getInt("nbins", 10);
         gridsearch = properties.getBoolean("gridsearch", false);
         use_3g = properties.getBoolean("use_3g", true);
+        xrayscaletol = properties.getDouble("xrayscaletol", 1e-4);
         sigmaatol = properties.getDouble("sigmaatol", 1.0);
         bresweight = properties.getDouble("bresweight", 1.0);
         bmass = properties.getDouble("bmass", 5.0);
@@ -108,6 +110,7 @@ public class RefinementData {
             sb.append("  R Free flag: " + rflag + "\n");
             sb.append("  n bins: " + npar + "\n");
             sb.append("  solvent grid search: " + gridsearch + "\n");
+            sb.append("  X-ray scale fit tolerance: " + xrayscaletol + "\n");
             sb.append("  sigma A fit tolerance: " + sigmaatol + "\n");
             sb.append("  B restraint weight: " + bresweight + "\n");
             sb.append("  B Lagrangian mass: " + bmass + "\n");
