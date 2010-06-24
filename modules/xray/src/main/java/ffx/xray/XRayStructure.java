@@ -266,7 +266,7 @@ public class XRayStructure {
             scalebulkminimize.minimize(7, 1e-2);
             scalebulkminimize.GridOptimize();
         }
-        scalebulkminimize.minimize(7, 1e-4);
+        scalebulkminimize.minimize(7, refinementdata.xrayscaletol);
 
         // sigmaA / LLK calculation
         sigmaaminimize = new SigmaAMinimize(reflectionlist, refinementdata);

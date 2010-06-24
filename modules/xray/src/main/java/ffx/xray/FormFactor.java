@@ -75,7 +75,7 @@ import org.apache.commons.math.linear.RealMatrix;
  * M. J. Schnieders, T. D. Fenn, V. S. Pande and A. T. Brunger,
  * Acta Cryst. (2009). D65 952-965.
  */
-public class FormFactor {
+public final class FormFactor {
 
     private static final Logger logger = Logger.getLogger(ffx.xray.FormFactor.class.getName());
     private static final double twopi2 = 2.0 * PI * PI;
@@ -643,10 +643,10 @@ public class FormFactor {
     private final Atom atom;
     protected final int ffindex;
     private double xyz[] = new double[3];
-    private final double biso;
+    private double biso;
     private final double uadd;
-    private final boolean hasanisou;
-    private final double uaniso[];
+    private boolean hasanisou;
+    private double uaniso[] = null;
     private final double occ;
     private final double a[] = new double[6];
     private final double ainv[] = new double[6];
@@ -671,7 +671,7 @@ public class FormFactor {
     public FormFactor(Atom atom, boolean use_3g, double badd, double xyz[]) {
         this.atom = atom;
         this.uadd = b2u(badd);
-        double ffactor[][] = new double[3][6];
+        double ffactor[][];
         String key = "" + atom.getAtomicNumber();
         int charge = 0;
         if (atom.getMultipoleType() != null) {
@@ -718,65 +718,7 @@ public class FormFactor {
             logger.warning(sb.toString());
         }
 
-        if (atom.getAnisou() != null) {
-            hasanisou = true;
-            // first check the ANISOU is valid
-            uaniso = atom.getAnisou();
-            u[0][0][0] = uaniso[0];
-            u[0][1][1] = uaniso[1];
-            u[0][2][2] = uaniso[2];
-            u[0][0][1] = u[0][1][0] = uaniso[3];
-            u[0][0][2] = u[0][2][0] = uaniso[4];
-            u[0][1][2] = u[0][2][1] = uaniso[5];
-
-            RealMatrix m = new Array2DRowRealMatrix(u[0], true);
-            EigenDecompositionImpl evd = new EigenDecompositionImpl(m, 0.01);
-            if (evd.getRealEigenvalue(0) <= 0.0
-                    || evd.getRealEigenvalue(1) <= 0.0
-                    || evd.getRealEigenvalue(2) <= 0.0) {
-                StringBuilder sb = new StringBuilder();
-                sb.append("non-positive definite ANISOU for atom: " + atom.toString() + "\n");
-                sb.append("resetting ANISOU based on isotropic B: (" + biso + ")\n");
-                logger.warning(sb.toString());
-
-                uaniso[0] = uaniso[1] = uaniso[2] = b2u(biso);
-                uaniso[3] = uaniso[4] = uaniso[5] = 0.0;
-                atom.setAnisou(uaniso);
-            }
-        } else {
-            hasanisou = false;
-            uaniso = new double[6];
-            if (biso < 0.0) {
-                StringBuilder sb = new StringBuilder();
-                sb.append("negative B factor for atom: " + atom.toString() + "\n");
-                sb.append("resetting B to 0.01\n");
-                logger.warning(sb.toString());
-                atom.setTempFactor(0.01);
-                uaniso[0] = uaniso[1] = uaniso[2] = b2u(0.1);
-            } else {
-                uaniso[0] = uaniso[1] = uaniso[2] = b2u(biso);
-            }
-            uaniso[3] = uaniso[4] = uaniso[5] = 0.0;
-        }
-
-        for (i = 0; i < n; i++) {
-            u[i][0][0] = uaniso[0] + b2u(b[i]) + uadd;
-            u[i][1][1] = uaniso[1] + b2u(b[i]) + uadd;
-            u[i][2][2] = uaniso[2] + b2u(b[i]) + uadd;
-            u[i][0][1] = u[i][1][0] = uaniso[3];
-            u[i][0][2] = u[i][2][0] = uaniso[4];
-            u[i][1][2] = u[i][2][1] = uaniso[5];
-
-            RealMatrix m = new Array2DRowRealMatrix(u[i], true);
-            m = new LUDecompositionImpl(m).getSolver().getInverse();
-            uinv[i] = m.getData();
-
-            double det = determinant3(u[i]);
-            ainv[i] = a[i] / sqrt(det);
-            b[i] = pow(det, 0.33333333333);
-            det = determinant3(uinv[i]);
-            binv[i] = pow(det, 0.33333333333);
-        }
+        updateB();
     }
 
     public static int getFormFactorIndex(String atom) {
@@ -1048,5 +990,76 @@ public class FormFactor {
         this.xyz[0] = xyz[0];
         this.xyz[1] = xyz[1];
         this.xyz[2] = xyz[2];
+    }
+
+    public void updateB() {
+        biso = atom.getTempFactor();
+
+        // check if anisou changed
+        if (atom.getAnisou() == null) {
+            if (uaniso == null) {
+                uaniso = new double[6];
+            }
+            hasanisou = false;
+        } else {
+            hasanisou = true;
+        }
+
+        if (hasanisou) {
+            // first check the ANISOU is valid
+            uaniso = atom.getAnisou();
+            u[0][0][0] = uaniso[0];
+            u[0][1][1] = uaniso[1];
+            u[0][2][2] = uaniso[2];
+            u[0][0][1] = u[0][1][0] = uaniso[3];
+            u[0][0][2] = u[0][2][0] = uaniso[4];
+            u[0][1][2] = u[0][2][1] = uaniso[5];
+
+            RealMatrix m = new Array2DRowRealMatrix(u[0], true);
+            EigenDecompositionImpl evd = new EigenDecompositionImpl(m, 0.01);
+            if (evd.getRealEigenvalue(0) <= 0.0
+                    || evd.getRealEigenvalue(1) <= 0.0
+                    || evd.getRealEigenvalue(2) <= 0.0) {
+                StringBuilder sb = new StringBuilder();
+                sb.append("non-positive definite ANISOU for atom: " + atom.toString() + "\n");
+                sb.append("resetting ANISOU based on isotropic B: (" + biso + ")\n");
+                logger.warning(sb.toString());
+
+                uaniso[0] = uaniso[1] = uaniso[2] = b2u(biso);
+                uaniso[3] = uaniso[4] = uaniso[5] = 0.0;
+                atom.setAnisou(uaniso);
+            }
+        } else {
+            if (biso < 0.0) {
+                StringBuilder sb = new StringBuilder();
+                sb.append("negative B factor for atom: " + atom.toString() + "\n");
+                sb.append("resetting B to 0.01\n");
+                logger.warning(sb.toString());
+                atom.setTempFactor(0.01);
+                uaniso[0] = uaniso[1] = uaniso[2] = b2u(0.01);
+            } else {
+                uaniso[0] = uaniso[1] = uaniso[2] = b2u(biso);
+            }
+            uaniso[3] = uaniso[4] = uaniso[5] = 0.0;
+        }
+
+        for (int i = 0; i < n; i++) {
+            u[i][0][0] = uaniso[0] + b2u(b[i]) + uadd;
+            u[i][1][1] = uaniso[1] + b2u(b[i]) + uadd;
+            u[i][2][2] = uaniso[2] + b2u(b[i]) + uadd;
+            u[i][0][1] = u[i][1][0] = uaniso[3];
+            u[i][0][2] = u[i][2][0] = uaniso[4];
+            u[i][1][2] = u[i][2][1] = uaniso[5];
+
+            RealMatrix m = new Array2DRowRealMatrix(u[i], true);
+            m = new LUDecompositionImpl(m).getSolver().getInverse();
+            uinv[i] = m.getData();
+
+            double det = determinant3(u[i]);
+            ainv[i] = a[i] / sqrt(det);
+            // b[i] = pow(det, 0.33333333333);
+            det = determinant3(uinv[i]);
+            binv[i] = pow(det, 0.33333333333);
+        }
     }
 }
