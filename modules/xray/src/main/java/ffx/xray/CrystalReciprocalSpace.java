@@ -828,7 +828,7 @@ public class CrystalReciprocalSpace {
                 coordinates[iSymm][2][n]};
             FormFactor atomff = ffactors[n];
             atomff.setXYZ(xyz);
-            atomff.updateB();
+            atomff.updateB(badd);
             crystal.toFractionalCoordinates(xyz, uvw);
             final int frad = Math.min(aradgrid,
                     (int) Math.floor(atoms[n].getFormFactorWidth() * fftX / crystal.a) + 1);
@@ -884,7 +884,7 @@ public class CrystalReciprocalSpace {
                 coordinates[iSymm][2][n]};
             FormFactor atomff = ffactors[n];
             atomff.setXYZ(xyz);
-            atomff.updateB();
+            atomff.updateB(badd);
             crystal.toFractionalCoordinates(xyz, uvw);
             double vdwr = atoms[n].getVDWType().radius * 0.5;
             int frad = aradgrid;
@@ -990,7 +990,7 @@ public class CrystalReciprocalSpace {
                         coordinates[0][2][n]};
                     FormFactor atomff = ffactors[n];
                     atomff.setXYZ(xyz);
-                    atomff.updateB();
+                    atomff.updateB(0.0);
                     crystal.toFractionalCoordinates(xyz, uvw);
                     final int dfrad = Math.min(aradgrid,
                             (int) Math.floor(atoms[n].getFormFactorWidth() * fftX / crystal.a) + 1);
@@ -1073,7 +1073,7 @@ public class CrystalReciprocalSpace {
                         coordinates[0][2][n]};
                     FormFactor atomff = ffactors[n];
                     atomff.setXYZ(xyz);
-                    atomff.updateB();
+                    atomff.updateB(0.0);
                     crystal.toFractionalCoordinates(xyz, uvw);
                     double vdwr = atoms[n].getVDWType().radius * 0.5;
                     int dfrad = aradgrid;

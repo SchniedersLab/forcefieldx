@@ -34,6 +34,7 @@ import static ffx.numerics.VectorMath.vec3mat3;
 import static ffx.numerics.VectorMath.r;
 import static ffx.numerics.VectorMath.rsq;
 import static ffx.numerics.VectorMath.b2u;
+import static ffx.numerics.VectorMath.u2b;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
@@ -644,7 +645,7 @@ public final class FormFactor {
     protected final int ffindex;
     private double xyz[] = new double[3];
     private double biso;
-    private final double uadd;
+    private double uadd;
     private boolean hasanisou;
     private double uaniso[] = null;
     private final double occ;
@@ -993,7 +994,12 @@ public final class FormFactor {
     }
 
     public void updateB() {
+        updateB(u2b(uadd));
+    }
+
+    public void updateB(double badd){
         biso = atom.getTempFactor();
+        uadd = b2u(badd);
 
         // check if anisou changed
         if (atom.getAnisou() == null) {
