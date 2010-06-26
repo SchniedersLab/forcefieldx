@@ -393,7 +393,8 @@ public class ForceFieldEnergy implements Potential {
 
         // Zero out the Cartesian coordinate gradient for each atom.
         if (gradient) {
-            for (Atom atom : atoms) {
+            for (int i=0; i<nAtoms; i++) {
+                Atom atom = atoms[i];
                 atom.setXYZGradient(0.0, 0.0, 0.0);
             }
         }
