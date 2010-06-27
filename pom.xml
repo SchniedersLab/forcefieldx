@@ -272,7 +272,7 @@
                         <argument>-Djava.library.path=bin/${platform}/jogl-${bit}</argument>
                         <argument>-classpath</argument>
                         <argument>bin/ffx-all.jar</argument>
-                        <argument>ffx.Main</argument>
+                        <argument>ffx.Launcher</argument>
                         <argument>scripts/saveAsPDB.ffx</argument>
                     </arguments>
                 </configuration>

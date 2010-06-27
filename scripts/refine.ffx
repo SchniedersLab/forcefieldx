@@ -1,31 +1,69 @@
-
-// Apache Imports
 import org.apache.commons.io.FilenameUtils;
 
+import ffx.algorithms.SimulatedAnnealing;
+import ffx.potential.ForceFieldEnergy;
+import ffx.potential.parameters.ForceField;
+import ffx.potential.parameters.ForceField.ForceFieldString;
+import ffx.potential.parameters.ForceField.ForceFieldBoolean;
+import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.xray.XRayStructure;
+import ffx.xray.RefinementEnergy;
 import ffx.xray.RefinementMinimize;
 import ffx.xray.RefinementMinimize.RefinementMode;
 
+// Name of the file (PDB or XYZ).
 String filename = args[0];
-if (filename == null){
-  filename = "examples/1N7S.pdb";
+if (filename == null) {
+   return;
 }
 
-systems = open(filename);
+System.setProperty("polarization","direct");
+System.setProperty("tau-temperature","0.001");
+open(filename);
+energy();
 
-XRayStructure xray = new XRayStructure(systems, systems[0].getProperties());
+// Do an initial loose optimization without an SCF.
+XRayStructure xray = new XRayStructure(active, active.getProperties());
+xray.scalebulkfit();
+xray.printstats();
+RefinementEnergy refinementEnergy = new RefinementEnergy(active, xray, RefinementMode.COORDINATES);
+RefinementMinimize refinementMinimize = new RefinementMinimize(active, xray, RefinementMode.COORDINATES);
+refinementMinimize.minimize(1.0);
+
+// Create a new ForceFieldEnergy instance with an SCF.
+ForceField forceField = active.getForceField();
+forceField.addForceFieldString(ForceFieldString.POLARIZATION, "mutual");
+forceField.addForceFieldDouble(ForceFieldDouble.POLAR_EPS, 0.01);
+ForceFieldEnergy forceFieldEnergy = new ForceFieldEnergy(active);
 
 xray.scalebulkfit();
 xray.printstats();
+energy();
 
-RefinementMinimize refinementMinimize = new RefinementMinimize(systems, xray,
-  RefinementMode.COORDINATES_AND_BFACTORS);
-refinementMinimize.minimize();
+double highTemperature = 500.0;
+double lowTemperature = 100.0;
+int annealingSteps = 5;
+int mdSteps = 1000;
+RefinementEnergy refinementEnergy = new RefinementEnergy(active, xray, RefinementMode.COORDINATES_AND_BFACTORS);
+SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(active, refinementEnergy, active.getProperties(), null);
+simulatedAnnealing.anneal(highTemperature, lowTemperature, annealingSteps, mdSteps);
 
 xray.scalebulkfit();
 xray.printstats();
+refinementMinimize = new RefinementMinimize(active, xray, RefinementMode.COORDINATES);
+refinementMinimize.minimize(0.25);
+
+xray.scalebulkfit();
+xray.printstats();
+refinementEnergy = new RefinementEnergy(active, xray, RefinementMode.BFACTORS);
+refinementMinimize = new RefinementMinimize(active, xray, RefinementMode.BFACTORS);
+refinementMinimize.minimize(0.01);
+
+xray.scalebulkfit();
+xray.printstats();
+energy();
 
 filename = FilenameUtils.removeExtension(filename);
+xray.writedata(filename + "_refine.mtz");
+saveAsPDB(new File(filename + "_refine.pdb"));
 
-xray.writedata(filename + ".refine.mtz");
-saveAsPDB(new File(filename + ".refine.pdb"));
