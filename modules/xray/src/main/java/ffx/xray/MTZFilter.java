@@ -282,10 +282,10 @@ public class MTZFilter {
                 HKL hkl = reflectionlist.getHKL(ih, ik, il);
                 if (hkl != null) {
                     if (fo > 0 && sigfo > 0) {
-                        refinementdata.fsigf(hkl.index(), data[fo], data[sigfo]);
+                        refinementdata.set_fsigf(hkl.index(), data[fo], data[sigfo]);
                     }
                     if (rfree > 0) {
-                        refinementdata.freer(hkl.index(), (int) data[rfree]);
+                        refinementdata.set_freer(hkl.index(), (int) data[rfree]);
                     }
                     nread++;
                 } else {

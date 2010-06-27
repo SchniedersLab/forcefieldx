@@ -119,7 +119,7 @@ public class CrystalReciprocalSpaceTest {
         // tests
         ComplexNumber b = new ComplexNumber(-828.584, -922.704);
         HKL hkl = reflectionlist.getHKL(1, 1, 4);
-        ComplexNumber a = refinementdata.fc(hkl.index());
+        ComplexNumber a = refinementdata.get_fc(hkl.index());
         System.out.println("1 1 4: " + a.toString() + " | "
                 + b.toString() + " | "
                 + a.divides(b).toString());
@@ -132,7 +132,7 @@ public class CrystalReciprocalSpaceTest {
         b.re(-70.4582);
         b.im(-486.142);
         hkl = reflectionlist.getHKL(2, 1, 10);
-        a = refinementdata.fc(hkl.index());
+        a = refinementdata.get_fc(hkl.index());
         System.out.println("2 1 10: " + a.toString() + " | "
                 + b.toString() + " | "
                 + a.divides(b).toString());
@@ -187,7 +187,7 @@ public class CrystalReciprocalSpaceTest {
         // tests
         ComplexNumber b = new ComplexNumber(-496.999, 431.817);
         HKL hkl = reflectionlist.getHKL(1, 9, 4);
-        ComplexNumber a = refinementdata.fc(hkl.index());
+        ComplexNumber a = refinementdata.get_fc(hkl.index());
         System.out.println("1 9 4: " + a.toString() + " | "
                 + b.toString() + " | "
                 + a.divides(b).toString());
@@ -200,7 +200,7 @@ public class CrystalReciprocalSpaceTest {
         b.re(-129.767);
         b.im(-76.9812);
         hkl = reflectionlist.getHKL(5, 26, 8);
-        a = refinementdata.fc(hkl.index());
+        a = refinementdata.get_fc(hkl.index());
         System.out.println("5 26 8: " + a.toString() + " | "
                 + b.toString() + " | "
                 + a.divides(b).toString());

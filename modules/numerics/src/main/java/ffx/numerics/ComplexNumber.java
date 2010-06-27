@@ -72,6 +72,12 @@ public class ComplexNumber {
         this.im = im;
     }
 
+    public void copy(ComplexNumber b){
+        ComplexNumber a = this;
+        this.re = b.re;
+        this.im = b.im;
+    }
+
     public double abs() {
         return hypot(re, im);
     }
@@ -83,6 +89,16 @@ public class ComplexNumber {
     public ComplexNumber phase_shift(double s) {
         ComplexNumber sc = new ComplexNumber(Math.cos(s), Math.sin(s));
         return this.times(sc);
+    }
+
+    public void phase_shift_ip(double s){
+        ComplexNumber a = this;
+        double sr = Math.cos(s);
+        double si = Math.sin(s);
+        double real = a.re * sr - a.im * si;
+        double imag = a.re * si + a.im * sr;
+        a.re = real;
+        a.im = imag;
     }
 
     // static version of phase_shift
@@ -99,12 +115,10 @@ public class ComplexNumber {
         return new ComplexNumber(real, imag);
     }
 
-    // a static version of plus
-    public static ComplexNumber plus(ComplexNumber a, ComplexNumber b) {
-        double real = a.re + b.re;
-        double imag = a.im + b.im;
-        ComplexNumber sum = new ComplexNumber(real, imag);
-        return sum;
+    public void plus_ip(ComplexNumber b) {
+        ComplexNumber a = this;
+        a.re += b.re;
+        a.im += b.im;
     }
 
     // return a new Complex object whose value is (this - b)
@@ -115,12 +129,10 @@ public class ComplexNumber {
         return new ComplexNumber(real, imag);
     }
 
-    // a static version of plus
-    public static ComplexNumber minus(ComplexNumber a, ComplexNumber b) {
-        double real = a.re - b.re;
-        double imag = a.im - b.im;
-        ComplexNumber sum = new ComplexNumber(real, imag);
-        return sum;
+    public void minus_ip(ComplexNumber b) {
+        ComplexNumber a = this;
+        a.re -= b.re;
+        a.im -= b.im;
     }
 
     // return a new Complex object whose value is (this * b)
@@ -131,11 +143,12 @@ public class ComplexNumber {
         return new ComplexNumber(real, imag);
     }
 
-    // a static version of times
-    public ComplexNumber times(ComplexNumber a, ComplexNumber b) {
+    public void times_ip(ComplexNumber b) {
+        ComplexNumber a = this;
         double real = a.re * b.re - a.im * b.im;
         double imag = a.re * b.im + a.im * b.re;
-        return new ComplexNumber(real, imag);
+        a.re = real;
+        a.im = imag;
     }
 
     // return a new object whose value is (this * alpha)
@@ -143,9 +156,10 @@ public class ComplexNumber {
         return new ComplexNumber(alpha * re, alpha * im);
     }
 
-    // a static version of times
-    public static ComplexNumber times(double alpha, ComplexNumber a) {
-        return new ComplexNumber(alpha * a.re, alpha * a.im);
+    public void times_ip(double alpha) {
+        ComplexNumber a = this;
+        a.re *= alpha;
+        a.im *= alpha;
     }
 
     // return a new Complex object whose value is the conjugate of this
@@ -153,10 +167,21 @@ public class ComplexNumber {
         return new ComplexNumber(re, -im);
     }
 
+    public void conjugate_ip() {
+        this.im = -this.im;
+    }
+
     // return a new Complex object whose value is the reciprocal of this
     public ComplexNumber reciprocal() {
         double scale = re * re + im * im;
         return new ComplexNumber(re / scale, -im / scale);
+    }
+
+    public void reciprocal_ip(){
+        ComplexNumber a = this;
+        double scale = re * re + im * im;
+        a.re = re / scale;
+        a.im = -im / scale;
     }
 
     // return a / b

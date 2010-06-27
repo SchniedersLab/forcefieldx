@@ -110,6 +110,25 @@ public class SigmaAEnergy implements Potential {
     private final double dfs[][];
     protected double[] optimizationScaling = null;
     private final double recipt[][];
+    private double sa[];
+    private double wa[];
+    private double resm[][] = new double[3][3];
+    private double resv[] = new double[3];
+    private double ihc[] = new double[3];
+    private double model_b[] = new double[6];
+    private double ustar[][] = new double[3][3];
+    private ComplexNumber resc = new ComplexNumber();
+    private ComplexNumber fcc = new ComplexNumber();
+    private ComplexNumber fsc = new ComplexNumber();
+    private ComplexNumber fct = new ComplexNumber();
+    private ComplexNumber kfct = new ComplexNumber();
+    private ComplexNumber ecc = new ComplexNumber();
+    private ComplexNumber esc = new ComplexNumber();
+    private ComplexNumber ect = new ComplexNumber();
+    private ComplexNumber kect = new ComplexNumber();
+    private ComplexNumber mfo = new ComplexNumber();
+    private ComplexNumber mfo2 = new ComplexNumber();
+    private ComplexNumber dfcc = new ComplexNumber();
 
     public SigmaAEnergy(ReflectionList reflectionlist,
             RefinementData refinementdata) {
@@ -136,6 +155,8 @@ public class SigmaAEnergy implements Potential {
         dfscale = (crystal.volume * crystal.volume) / fftgrid;
         recipt = transpose3(crystal.A);
         this.spline = new ReflectionSpline(reflectionlist, n);
+        sa = new double[n];
+        wa = new double[n];
     }
 
     public double target(double x[], double g[],
@@ -153,22 +174,19 @@ public class SigmaAEnergy implements Potential {
         double model_k = refinementdata.model_k;
         double solvent_k = refinementdata.solvent_k;
         double solvent_ueq = refinementdata.solvent_ueq;
-        double model_b[] = new double[6];
-        for (int i = 0; i < 6; i++) {
-            model_b[i] = refinementdata.model_b[i];
-        }
-        double ustar[][] = mat3mat3(mat3symvec6(crystal.A, model_b), recipt);
+        System.arraycopy(refinementdata.model_b, 0, model_b, 0, 6);
+        // generate Ustar
+        mat3symvec6(crystal.A, model_b, resm);
+        mat3mat3(resm, recipt, ustar);
 
-        double sa[] = new double[n];
-        double wa[] = new double[n];
         for (int i = 0; i < n; i++) {
             sa[i] = 1.0 + x[i];
             wa[i] = x[n + i];
         }
 
         // cheap method of preventing negative w values
-        for (int i = 0; i < n; i++){
-            if (wa[i] <= 0.0){
+        for (int i = 0; i < n; i++) {
+            if (wa[i] <= 0.0) {
                 wa[i] = 1e-6;
             }
         }
@@ -179,8 +197,11 @@ public class SigmaAEnergy implements Potential {
             int i = ih.index();
 
             // constants
-            double ihc[] = {ih.h(), ih.k(), ih.l()};
-            double u = model_k - dot(vec3mat3(ihc, ustar), ihc);
+            ihc[0] = ih.h();
+            ihc[1] = ih.k();
+            ihc[2] = ih.l();
+            vec3mat3(ihc, ustar, resv);
+            double u = model_k - dot(resv, ihc);
             double s = Crystal.invressq(crystal, ih);
             double ebs = exp(-twopi2 * solvent_ueq * s);
             double ksebs = solvent_k * ebs;
@@ -196,16 +217,25 @@ public class SigmaAEnergy implements Potential {
             double sa2 = pow(sai, 2.0);
 
             // structure factors
-            ComplexNumber fcc = new ComplexNumber(fc[i][0], fc[i][1]);
-            ComplexNumber fsc = new ComplexNumber(fs[i][0], fs[i][1]);
-            ComplexNumber fct = (refinementdata.crs_fs.solventmodel == SolventModel.NONE)
-                    ? fcc : fcc.plus(fsc.times(ksebs));
-            ComplexNumber kfct = fct.times(kmems);
+            refinementdata.get_fc_ip(i, fcc);
+            refinementdata.get_fs_ip(i, fsc);
+            fct.copy(fcc);
+            if (refinementdata.crs_fs.solventmodel != SolventModel.NONE) {
+                resc.copy(fsc);
+                resc.times_ip(ksebs);
+                fct.plus_ip(resc);
+            }
+            kfct.copy(fct);
+            kfct.times_ip(kmems);
 
-            ComplexNumber ecc = fcc.times(sqrt(ecscale));
-            ComplexNumber esc = fsc.times(sqrt(ecscale));
-            ComplexNumber ect = fct.times(sqrt(ecscale));
-            ComplexNumber kect = kfct.times(sqrt(ecscale));
+            ecc.copy(fcc);
+            ecc.times_ip(sqrt(ecscale));
+            esc.copy(fsc);
+            esc.times_ip(sqrt(ecscale));
+            ect.copy(fct);
+            ect.times_ip(sqrt(ecscale));
+            kect.copy(kfct);
+            kect.times_ip(sqrt(ecscale));
             double eo = fo[i][0] * sqrt(eoscale);
             double sigeo = fo[i][1] * sqrt(eoscale);
             double eo2 = pow(eo, 2.0);
@@ -234,9 +264,12 @@ public class SigmaAEnergy implements Potential {
             double phi = kect.phase();
             fomphi[i][0] = dinot;
             fomphi[i][1] = phi;
-            ComplexNumber mfo = new ComplexNumber(f * cos(phi), f * sin(phi));
-            ComplexNumber mfo2 = new ComplexNumber(2.0 * f * cos(phi), 2.0 * f * sin(phi));
-            ComplexNumber dfcc = new ComplexNumber(sai * kect.abs() * cos(phi), sai * kect.abs() * sin(phi));
+            mfo.re(f * cos(phi));
+            mfo.im(f * sin(phi));
+            mfo2.re(2.0 * f * cos(phi));
+            mfo2.im(2.0 * f * sin(phi));
+            dfcc.re(sai * kect.abs() * cos(phi));
+            dfcc.im(sai * kect.abs() * sin(phi));
 
             // set up map coefficients
             fofc1[i][0] = 0.0;
@@ -249,15 +282,15 @@ public class SigmaAEnergy implements Potential {
             dfs[i][1] = 0.0;
             if (Double.isNaN(fctot[i][0])) {
                 if (!Double.isNaN(fo[i][0])) {
-                    fofc2[i][0] = mfo.times(1.0 / sqrt(eoscale)).re();
-                    fofc2[i][1] = mfo.times(1.0 / sqrt(eoscale)).im();
+                    fofc2[i][0] = mfo.re() / sqrt(eoscale);
+                    fofc2[i][1] = mfo.im() / sqrt(eoscale);
                 }
                 continue;
             }
             if (Double.isNaN(fo[i][0])) {
                 if (!Double.isNaN(fctot[i][0])) {
-                    fofc2[i][0] = dfcc.times(1.0 / sqrt(eoscale)).re();
-                    fofc2[i][1] = dfcc.times(1.0 / sqrt(eoscale)).im();
+                    fofc2[i][0] = dfcc.re() / sqrt(eoscale);
+                    fofc2[i][1] = dfcc.im() / sqrt(eoscale);
                 }
                 continue;
             }
@@ -265,11 +298,15 @@ public class SigmaAEnergy implements Potential {
             fctot[i][0] = kfct.re();
             fctot[i][1] = kfct.im();
             // mFo - DFc
-            fofc1[i][0] = mfo.minus(dfcc).times(1.0 / sqrt(eoscale)).re();
-            fofc1[i][1] = mfo.minus(dfcc).times(1.0 / sqrt(eoscale)).im();
+            resc.copy(mfo);
+            resc.minus_ip(dfcc);
+            fofc1[i][0] = resc.re() / sqrt(eoscale);
+            fofc1[i][1] = resc.im() / sqrt(eoscale);
             // 2mFo - DFc
-            fofc2[i][0] = mfo2.minus(dfcc).times(1.0 / sqrt(eoscale)).re();
-            fofc2[i][1] = mfo2.minus(dfcc).times(1.0 / sqrt(eoscale)).im();
+            resc.copy(mfo2);
+            resc.minus_ip(dfcc);
+            fofc2[i][0] = resc.re() / sqrt(eoscale);
+            fofc2[i][1] = resc.im() / sqrt(eoscale);
 
             // derivatives
             double dfp1 = 2.0 * sa2 * km2 * ecscale;

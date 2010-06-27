@@ -104,17 +104,17 @@ public class MTZFilterTest {
 
         HKL hkl = reflectionlist.getHKL(-10, 1, 1);
         assertEquals("-10 1 1 FP value should be correct",
-                229.90, refinementdata.f(hkl.index()), 0.02);
+                229.90, refinementdata.get_f(hkl.index()), 0.02);
         assertEquals("-10 1 1 SIGFP value should be correct",
-                2.50, refinementdata.sigf(hkl.index()), 0.02);
+                2.50, refinementdata.get_sigf(hkl.index()), 0.02);
         assertEquals("-10 1 1 FREE value should be correct",
-                1, refinementdata.freer(hkl.index()));
+                1, refinementdata.get_freer(hkl.index()));
 
         hkl = reflectionlist.getHKL(-10, 1, 10);
         assertEquals("-10 1 10 FP value should be NaN",
-                Double.NaN, refinementdata.f(hkl.index()), 0.1);
+                Double.NaN, refinementdata.get_f(hkl.index()), 0.1);
         assertEquals("-10 1 10 SIGFP value should be NaN",
-                Double.NaN, refinementdata.sigf(hkl.index()), 0.1);
+                Double.NaN, refinementdata.get_sigf(hkl.index()), 0.1);
     }
 
     @Test

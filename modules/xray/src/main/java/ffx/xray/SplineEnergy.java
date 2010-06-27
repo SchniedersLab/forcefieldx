@@ -72,6 +72,7 @@ public class SplineEnergy implements Potential {
     private final double fo[][];
     private final int freer[];
     protected double[] optimizationScaling = null;
+    private ComplexNumber fct = new ComplexNumber();
 
     public SplineEnergy(ReflectionList reflectionlist,
             RefinementData refinementdata, int nparams, int type) {
@@ -121,14 +122,14 @@ public class SplineEnergy implements Potential {
             // spline setup
             double fh = spline.f(s, x);
 
-            ComplexNumber fct = refinementdata.fctot(i);
+            refinementdata.get_fctot_ip(i, fct);
 
             double f1, f2, d, d2, dr, w;
             f1 = f2 = d = d2 = dr = w = 0.0;
             switch (type) {
                 case Type.FOFC:
                     w = 1.0;
-                    f1 = refinementdata.f(i);
+                    f1 = refinementdata.get_f(i);
                     f2 = fct.abs();
                     d = f1 - fh * f2;
                     d2 = d * d;
@@ -138,7 +139,7 @@ public class SplineEnergy implements Potential {
                 case Type.F1F2:
                     w = 2.0 / ih.epsilonc();
                     f1 = pow(fct.abs(), 2.0) / eps;
-                    f2 = pow(refinementdata.f(i), 2.0) / eps;
+                    f2 = pow(refinementdata.get_f(i), 2.0) / eps;
                     d = fh * f1 - f2;
                     d2 = d * d / f1;
                     dr = 2.0 * d;
@@ -154,7 +155,7 @@ public class SplineEnergy implements Potential {
                     break;
                 case Type.FOTOESQ:
                     w = 2.0 / ih.epsilonc();
-                    f1 = pow(refinementdata.f(i) / sqrt(eps), 2.0);
+                    f1 = pow(refinementdata.get_f(i) / sqrt(eps), 2.0);
                     d = f1 * fh - 1.0;
                     d2 = d * d / f1;
                     dr = 2.0 * d;
