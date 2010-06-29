@@ -2047,6 +2047,11 @@ public final class PDBFilter extends SystemFilter {
                 SG = setHeavyAtom(residue, "SG", CB, 95);
                 setHydrogenAtom(residue, "HB2", CB, 1.10e0, CA, 109.5e0, SG, 107.5e0, 1, 94);
                 setHydrogenAtom(residue, "HB3", CB, 1.10e0, CA, 109.5e0, SG, 107.5e0, -1, 94);
+                List<Atom> resAtoms = residue.getAtomList();
+                for (Atom atom : resAtoms) {
+                    atom.setResName("CYS");
+                }
+                residue.setName("CYS");
                 break;
             case PRO:
                 CB = setHeavyAtom(residue, "CB", CA, 101);
@@ -2512,7 +2517,64 @@ public final class PDBFilter extends SystemFilter {
             bw.write(format("CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f %10s\n", c.a, c.b, c.c, c.alpha, c.beta,
                             c.gamma, padRight(c.spaceGroup.pdbName, 10)));
 // =============================================================================
-//  1 -  6        Record name   "ATOM  "
+// The SSBOND record identifies each disulfide bond in protein and polypeptide
+// structures by identifying the two residues involved in the bond.
+// The disulfide bond distance is included after the symmetry operations at
+// the end of the SSBOND record.
+//
+//  8 - 10        Integer         serNum       Serial number.
+// 12 - 14        LString(3)      "CYS"        Residue name.
+// 16             Character       chainID1     Chain identifier.
+// 18 - 21        Integer         seqNum1      Residue sequence number.
+// 22             AChar           icode1       Insertion code.
+// 26 - 28        LString(3)      "CYS"        Residue name.
+// 30             Character       chainID2     Chain identifier.
+// 32 - 35        Integer         seqNum2      Residue sequence number.
+// 36             AChar           icode2       Insertion code.
+// 60 - 65        SymOP           sym1         Symmetry oper for 1st resid
+// 67 - 72        SymOP           sym2         Symmetry oper for 2nd resid
+// 74 – 78        Real(5.2)      Length        Disulfide bond distance
+//
+// If SG of cysteine is disordered then there are possible alternate linkages.
+// wwPDB practice is to put together all possible SSBOND records. This is
+// problematic because the alternate location identifier is not specified in
+// the SSBOND record.
+// =============================================================================
+            int serNum = 1;
+            Polymer polymers[] = activeMolecularAssembly.getChains();
+            if (polymers != null) {
+                for (Polymer polymer : polymers) {
+                    ArrayList<Residue> residues = polymer.getResidues();
+                    for (Residue residue : residues) {
+                        if (residue.getName().equalsIgnoreCase("CYS")) {
+                            List<Atom> cysAtoms = residue.getAtomList();
+                            Atom SG1 = null;
+                            for (Atom atom : cysAtoms) {
+                                if (atom.getName().equalsIgnoreCase("SG")) {
+                                    SG1 = atom;
+                                    break;
+                                }
+                            }
+                            List<Bond> bonds = SG1.getBonds();
+                            for (Bond bond : bonds) {
+                                Atom SG2 = bond.get1_2(SG1);
+                                if (SG2.getName().equalsIgnoreCase("SG")) {
+                                    if (SG1.xyzIndex < SG2.xyzIndex) {
+                                       bond.energy(false);
+                                       bw.write(format("SSBOND %3d CYS %1s %4d    CYS %1s %4d %36s %5.2f\n",
+                                               serNum++,
+                                               SG1.getChainID().toString(), SG1.getResidueNumber(),
+                                               SG2.getChainID().toString(), SG2.getResidueNumber(),
+                                               "", bond.getValue()));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+// =============================================================================
+//
 //  7 - 11        Integer       serial       Atom serial number.
 // 13 - 16        Atom          name         Atom name.
 // 17             Character     altLoc       Alternate location indicator.
@@ -2534,7 +2596,6 @@ public final class PDBFilter extends SystemFilter {
 //ATOM      2  CA  ILE A  16      60.793  72.149  -9.511  1.00  6.91           C
             int serial = 1;
             // Loop over biomolecular chains
-            Polymer polymers[] = activeMolecularAssembly.getChains();
             if (polymers != null) {
                 for (Polymer polymer : polymers) {
                     sb.setCharAt(21, polymer.getChainID());
@@ -2577,6 +2638,7 @@ public final class PDBFilter extends SystemFilter {
 
             // Loop over molecules, ions and then water.
             ArrayList<MSNode> molecules = activeMolecularAssembly.getMolecules();
+
             // Write out molecules.
             for (MSNode node : molecules) {
                 Molecule molecule = (Molecule) node;
@@ -2592,6 +2654,7 @@ public final class PDBFilter extends SystemFilter {
                     writeAtom(atom, serial++, sb, anisouSB, bw);
                 }
             }
+
             // Write out ions.
             ArrayList<MSNode> ions = activeMolecularAssembly.getIons();
             for (MSNode node : ions) {

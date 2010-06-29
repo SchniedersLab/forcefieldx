@@ -120,7 +120,7 @@ public class FFXClassLoader extends ClassLoader {
         try {
             tmpFile = File.createTempFile("extension", suffix);
         } catch (Exception e) {
-            System.out.println("Could not extract a Force Field X library.");
+            System.out.println(" Could not extract a Force Field X library.");
             System.err.println(e.toString());
             System.exit(-1);
         }

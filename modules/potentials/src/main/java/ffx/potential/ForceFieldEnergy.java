@@ -216,7 +216,15 @@ public class ForceFieldEnergy implements Potential {
         boolean rigidHydrogens = forceField.getBoolean(ForceFieldBoolean.RIGID_HYDROGENS, false);
         double rigidScale = forceField.getDouble(ForceFieldDouble.RIGID_SCALE, 10.0);
 
+        if (rigidScale <= 1.0) {
+            rigidScale = 1.0;
+        }
+
         logger.info("\n Bonded Terms\n");
+        if (rigidHydrogens && rigidScale > 1.0) {
+            logger.info(format(" Rigid hydrogens:                    %10.2f", rigidScale));
+        }
+
         // Collect, count, pack and sort bonds.
         if (bondTerm) {
             ArrayList<ROLS> bond = molecularAssembly.getBondList();
@@ -270,24 +278,32 @@ public class ForceFieldEnergy implements Potential {
          * hydrogens.
          */
         if (rigidHydrogens) {
-            for (Bond bond : bonds) {
-                if (bond.containsHydrogen()) {
-                    bond.setRigidScale(rigidScale);
+            if (bonds != null) {
+                for (Bond bond : bonds) {
+                    if (bond.containsHydrogen()) {
+                        bond.setRigidScale(rigidScale);
+                    }
                 }
             }
-            for (Angle angle : angles) {
-                if (angle.containsHydrogen()) {
-                    angle.setRigidScale(rigidScale);
+            if (angles != null) {
+                for (Angle angle : angles) {
+                    if (angle.containsHydrogen()) {
+                        angle.setRigidScale(rigidScale);
+                    }
                 }
             }
-            for (StretchBend stretchBend : stretchBends) {
-                if (stretchBend.containsHydrogen()) {
-                    stretchBend.setRigidScale(rigidScale);
+            if (stretchBends != null) {
+                for (StretchBend stretchBend : stretchBends) {
+                    if (stretchBend.containsHydrogen()) {
+                        stretchBend.setRigidScale(rigidScale);
+                    }
                 }
             }
-            for (UreyBradley ureyBradley : ureyBradleys) {
-                if (ureyBradley.containsHydrogen()) {
-                    ureyBradley.setRigidScale(rigidScale);
+            if (ureyBradleys != null) {
+                for (UreyBradley ureyBradley : ureyBradleys) {
+                    if (ureyBradley.containsHydrogen()) {
+                        ureyBradley.setRigidScale(rigidScale);
+                    }
                 }
             }
         }
@@ -393,7 +409,7 @@ public class ForceFieldEnergy implements Potential {
 
         // Zero out the Cartesian coordinate gradient for each atom.
         if (gradient) {
-            for (int i=0; i<nAtoms; i++) {
+            for (int i = 0; i < nAtoms; i++) {
                 Atom atom = atoms[i];
                 atom.setXYZGradient(0.0, 0.0, 0.0);
             }

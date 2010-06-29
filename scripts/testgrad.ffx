@@ -27,7 +27,7 @@ energy.energyAndGradient(x,analytic);
 
 double[] g = new double[3*n];
 
-double step = 0.00001;
+double step = 1.0e-5;
 double e = 0.0;
 double orig = 0.0;
 double gradientTolerance = 1.0e-3;
@@ -72,15 +72,13 @@ for (int i=0; i<n; i++) {
    double dz = analytic[i2] - numeric[2];
    double len = Math.sqrt(dx * dx + dy * dy + dz * dz);
    if (len > gradientTolerance) {
-      println(a0.toShortString() + String.format(" failed: %10.6f.", len) + String.format(
-              "\nAnalytic: (%12.4f, %12.4f, %12.4f)\n",
-              analytic[i0], analytic[i1], analytic[i2]) + String.format("Numeric:  (%12.4f, %12.4f, %12.4f)\n",
-                                                                      numeric[0], numeric[1], numeric[2]));
+      println(" " + a0.toShortString() + String.format(" failed: %10.6f.", len) + String.format(
+              "\n Analytic: (%12.4f, %12.4f, %12.4f)\n", analytic[i0], analytic[i1], analytic[i2]) 
+              + String.format(" Numeric:  (%12.4f, %12.4f, %12.4f)\n", numeric[0], numeric[1], numeric[2]));
       return;
    } else {
-      println(a0.toShortString() + String.format(" passed: %10.6f.", len) + String.format(
-              "\nAnalytic: (%12.4f, %12.4f, %12.4f)\n",
-              analytic[i0], analytic[i1], analytic[i2]) + String.format("Numeric:  (%12.4f, %12.4f, %12.4f)\n",
-                                                                      numeric[0], numeric[1], numeric[2]));
+      println(" " + a0.toShortString() + String.format(" passed: %10.6f.", len) + String.format(
+              "\n Analytic: (%12.4f, %12.4f, %12.4f)\n", analytic[i0], analytic[i1], analytic[i2]) 
+              + String.format(" Numeric:  (%12.4f, %12.4f, %12.4f)\n", numeric[0], numeric[1], numeric[2]));
    }
 }
