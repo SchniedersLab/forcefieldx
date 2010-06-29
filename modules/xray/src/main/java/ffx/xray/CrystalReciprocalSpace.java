@@ -445,6 +445,7 @@ public class CrystalReciprocalSpace {
         // int nsym = 1;
         Vector<SymOp> symops = crystal.spaceGroup.symOps;
         ComplexNumber c = new ComplexNumber();
+        ComplexNumber cj = new ComplexNumber();
         HKL ij = new HKL();
         for (HKL ih : reflectionlist.hkllist) {
             double fc[] = hkldata[ih.index()];
@@ -467,6 +468,7 @@ public class CrystalReciprocalSpace {
 
             // apply symmetry
             for (int j = 0; j < nsym; j++) {
+                cj.copy(c);
                 crystal.applyTransSymRot(ih, ij, symops.get(j));
                 double shift = Crystal.sym_phase_shift(ih, symops.get(j));
 
@@ -476,17 +478,17 @@ public class CrystalReciprocalSpace {
 
                 if (h < halfFFTX + 1) {
                     final int ii = iComplex3D(h, k, l, fftX, fftY);
-                    c.phase_shift_ip(shift);
-                    densityGrid[ii] += c.re();
-                    densityGrid[ii + 1] += -c.im();
+                    cj.phase_shift_ip(shift);
+                    densityGrid[ii] += cj.re();
+                    densityGrid[ii + 1] += -cj.im();
                 } else {
                     h = (fftX - h) % fftX;
                     k = (fftY - k) % fftY;
                     l = (fftZ - l) % fftZ;
                     final int ii = iComplex3D(h, k, l, fftX, fftY);
-                    c.phase_shift_ip(shift);
-                    densityGrid[ii] += c.re();
-                    densityGrid[ii + 1] += c.im();
+                    cj.phase_shift_ip(shift);
+                    densityGrid[ii] += cj.re();
+                    densityGrid[ii + 1] += cj.im();
                 }
             }
         }
@@ -819,6 +821,7 @@ public class CrystalReciprocalSpace {
 
     private class AtomicDensityLoop extends SpatialDensityLoop {
 
+        final double xyz[] = new double[3];
         final double uvw[] = new double[3];
         final double xc[] = new double[3];
         final double xf[] = new double[3];
@@ -831,12 +834,11 @@ public class CrystalReciprocalSpace {
 
         @Override
         public void gridDensity(int iSymm, int n) {
-            double xyz[] = {coordinates[iSymm][0][n],
-                coordinates[iSymm][1][n],
-                coordinates[iSymm][2][n]};
+            xyz[0] = coordinates[iSymm][0][n];
+            xyz[1] = coordinates[iSymm][1][n];
+            xyz[2] = coordinates[iSymm][2][n];
             FormFactor atomff = ffactors[n];
-            atomff.setXYZ(xyz);
-            atomff.updateB(badd);
+            atomff.update(xyz, badd);
             crystal.toFractionalCoordinates(xyz, uvw);
             final int frad = Math.min(aradgrid,
                     (int) Math.floor(atoms[n].getFormFactorWidth() * fftX / crystal.a) + 1);
@@ -875,6 +877,7 @@ public class CrystalReciprocalSpace {
 
     private class SolventDensityLoop extends SpatialDensityLoop {
 
+        final double xyz[] = new double[3];
         final double uvw[] = new double[3];
         final double xc[] = new double[3];
         final double xf[] = new double[3];
@@ -887,12 +890,11 @@ public class CrystalReciprocalSpace {
 
         @Override
         public void gridDensity(int iSymm, int n) {
-            double xyz[] = {coordinates[iSymm][0][n],
-                coordinates[iSymm][1][n],
-                coordinates[iSymm][2][n]};
+            xyz[0] = coordinates[iSymm][0][n];
+            xyz[1] = coordinates[iSymm][1][n];
+            xyz[2] = coordinates[iSymm][2][n];
             FormFactor atomff = ffactors[n];
-            atomff.setXYZ(xyz);
-            atomff.updateB(badd);
+            atomff.update(xyz, badd);
             crystal.toFractionalCoordinates(xyz, uvw);
             double vdwr = atoms[n].getVDWType().radius * 0.5;
             int frad = aradgrid;
@@ -983,6 +985,7 @@ public class CrystalReciprocalSpace {
 
         private class AtomicGradientLoop extends IntegerForLoop {
 
+            final double xyz[] = new double[3];
             final double uvw[] = new double[3];
             final double xc[] = new double[3];
             final double xf[] = new double[3];
@@ -993,12 +996,11 @@ public class CrystalReciprocalSpace {
             @Override
             public void run(final int lb, final int ub) {
                 for (int n = lb; n <= ub; n++) {
-                    double xyz[] = {coordinates[0][0][n],
-                        coordinates[0][1][n],
-                        coordinates[0][2][n]};
+                    xyz[0] = coordinates[0][0][n];
+                    xyz[1] = coordinates[0][1][n];
+                    xyz[2] = coordinates[0][2][n];
                     FormFactor atomff = ffactors[n];
-                    atomff.setXYZ(xyz);
-                    atomff.updateB(0.0);
+                    atomff.update(xyz, 0.0);
                     crystal.toFractionalCoordinates(xyz, uvw);
                     final int dfrad = Math.min(aradgrid,
                             (int) Math.floor(atoms[n].getFormFactorWidth() * fftX / crystal.a) + 1);
@@ -1066,6 +1068,7 @@ public class CrystalReciprocalSpace {
 
         private class SolventGradientLoop extends IntegerForLoop {
 
+            double xyz[] = new double[3];
             double uvw[] = new double[3];
             double xc[] = new double[3];
             double xf[] = new double[3];
@@ -1076,12 +1079,11 @@ public class CrystalReciprocalSpace {
             @Override
             public void run(final int lb, final int ub) {
                 for (int n = lb; n <= ub; n++) {
-                    double xyz[] = {coordinates[0][0][n],
-                        coordinates[0][1][n],
-                        coordinates[0][2][n]};
+                    xyz[0] = coordinates[0][0][n];
+                    xyz[1] = coordinates[0][1][n];
+                    xyz[2] = coordinates[0][2][n];
                     FormFactor atomff = ffactors[n];
-                    atomff.setXYZ(xyz);
-                    atomff.updateB(0.0);
+                    atomff.update(xyz, 0.0);
                     crystal.toFractionalCoordinates(xyz, uvw);
                     double vdwr = atoms[n].getVDWType().radius * 0.5;
                     int dfrad = aradgrid;

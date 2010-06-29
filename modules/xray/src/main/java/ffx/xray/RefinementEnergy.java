@@ -100,7 +100,6 @@ public class RefinementEnergy implements Potential {
                         continue;
                     }
                     if (a.getAnisou() == null) {
-                        a.getResidueNumber();
                         if (refinementdata.addanisou) {
                             double anisou[] = new double[6];
                             double u = b2u(a.getTempFactor());

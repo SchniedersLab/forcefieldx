@@ -28,6 +28,7 @@ import static java.lang.Math.sqrt;
 import static ffx.numerics.VectorMath.determinant3;
 import static ffx.numerics.VectorMath.diff;
 import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.mat3inverse;
 import static ffx.numerics.VectorMath.mat3mat3;
 import static ffx.numerics.VectorMath.scalarmat3mat3;
 import static ffx.numerics.VectorMath.vec3mat3;
@@ -44,11 +45,6 @@ import java.util.Arrays;
 
 import java.util.HashMap;
 import java.util.logging.Logger;
-
-import org.apache.commons.math.linear.Array2DRowRealMatrix;
-import org.apache.commons.math.linear.EigenDecompositionImpl;
-import org.apache.commons.math.linear.LUDecompositionImpl;
-import org.apache.commons.math.linear.RealMatrix;
 
 /**
  *
@@ -645,24 +641,24 @@ public final class FormFactor {
     private final Atom atom;
     protected final int ffindex;
     private double xyz[] = new double[3];
+    private double dxyz[] = new double[3];
     private double biso;
     private double uadd;
     private boolean hasanisou;
     private double uaniso[] = null;
-    private final double occ;
+    private double occ;
     private final double a[] = new double[6];
-    private final double ainv[] = new double[6];
+    private double ainv[] = new double[6];
     private final double b[] = new double[6];
-    private final double binv[] = new double[6];
-    private final double u[][][] = new double[6][3][3];
-    private final double uinv[][][] = new double[6][3][3];
+    private double binv[] = new double[6];
+    private double u[][][] = new double[6][3][3];
+    private double uinv[][][] = new double[6][3][3];
     private final int n;
     private double jmat[][][] = new double[6][3][3];
     private double gradp[] = new double[6];
     private double gradu[] = new double[6];
     private double resv[] = new double[3];
     private double resm[][] = new double[3][3];
-    private RealMatrix m;
 
     public FormFactor(Atom atom) {
         this(atom, true, 0.0, atom.getXYZ());
@@ -713,22 +709,16 @@ public final class FormFactor {
         }
         n = i;
         assert (n > 0);
-        this.xyz[0] = xyz[0];
-        this.xyz[1] = xyz[1];
-        this.xyz[2] = xyz[2];
         occ = atom.getOccupancy();
-        biso = atom.getTempFactor();
 
-        if (occ <= 0.0 && biso <= 0.0) {
+        if (occ <= 0.0) {
             StringBuilder sb = new StringBuilder();
-            sb.append("zero occ/B for atom: " + atom.toString() + "\n");
+            sb.append("zero occ for atom: " + atom.toString() + "\n");
             sb.append("(atom will not contribute to electron density calculation)\n");
             logger.warning(sb.toString());
         }
 
-        m = new Array2DRowRealMatrix(3, 3);
-
-        updateB();
+        update(xyz, uadd);
     }
 
     public static int getFormFactorIndex(String atom) {
@@ -779,9 +769,13 @@ public final class FormFactor {
     }
 
     public double f(HKL hkl) {
+        return f_n(hkl, n);
+    }
+
+    public double f_n(HKL hkl, int ng) {
         double sum = 0.0;
 
-        for (int i = 0; i < n; i++) {
+        for (int i = 0; i < ng; i++) {
             sum += a[i] * exp(-twopi2 * Crystal.quad_form(hkl, u[i]));
         }
         return occ * sum;
@@ -793,7 +787,6 @@ public final class FormFactor {
 
     public double rho_n(double xyz[], int ng) {
         assert (ng > 0 && ng <= n);
-        double dxyz[] = new double[3];
         diff(this.xyz, xyz, dxyz);
         double sum = 0.0;
 
@@ -804,7 +797,6 @@ public final class FormFactor {
     }
 
     public double rho_binary(double xyz[], double proberad) {
-        double dxyz[] = new double[3];
         diff(this.xyz, xyz, dxyz);
         return rho_binary(r(dxyz), proberad);
     }
@@ -818,7 +810,6 @@ public final class FormFactor {
     }
 
     public double rho_gauss(double xyz[], double sd) {
-        double dxyz[] = new double[3];
         diff(this.xyz, xyz, dxyz);
         return rho_gauss(rsq(dxyz), sd);
     }
@@ -829,7 +820,6 @@ public final class FormFactor {
     }
 
     public double rho_poly(double xyz[], double arad, double w) {
-        double dxyz[] = new double[3];
         diff(this.xyz, xyz, dxyz);
         return rho_poly(r(dxyz), arad, w);
     }
@@ -859,7 +849,6 @@ public final class FormFactor {
 
     public void rho_grad_n(double xyz[], int ng, double dfc, RefinementMode refinementmode) {
         assert (ng > 0 && ng <= n);
-        double dxyz[] = new double[3];
         diff(this.xyz, xyz, dxyz);
         double r2 = rsq(dxyz);
         double aex;
@@ -947,7 +936,6 @@ public final class FormFactor {
         if (refinementmode == RefinementMode.BFACTORS) {
             return;
         }
-        double dxyz[] = new double[3];
         diff(this.xyz, xyz, dxyz);
         double r2 = rsq(dxyz);
         double sd2 = sd * sd;
@@ -967,7 +955,6 @@ public final class FormFactor {
         if (refinementmode == RefinementMode.BFACTORS) {
             return;
         }
-        double dxyz[] = new double[3];
         diff(this.xyz, xyz, dxyz);
         double ri = r(dxyz);
         double bi = arad - w;
@@ -997,17 +984,14 @@ public final class FormFactor {
         atom.addToXYZGradient(g[0], g[1], g[2]);
     }
 
-    public void setXYZ(double xyz[]) {
+    public void update(double xyz[]) {
+        update(xyz, u2b(uadd));
+    }
+
+    public void update(double xyz[], double badd) {
         this.xyz[0] = xyz[0];
         this.xyz[1] = xyz[1];
         this.xyz[2] = xyz[2];
-    }
-
-    public void updateB() {
-        updateB(u2b(uadd));
-    }
-
-    public void updateB(double badd) {
         biso = atom.getTempFactor();
         uadd = b2u(badd);
 
@@ -1024,23 +1008,9 @@ public final class FormFactor {
         if (hasanisou) {
             // first check the ANISOU is valid
             uaniso = atom.getAnisou();
-            u[0][0][0] = uaniso[0];
-            u[0][1][1] = uaniso[1];
-            u[0][2][2] = uaniso[2];
-            u[0][0][1] = u[0][1][0] = uaniso[3];
-            u[0][0][2] = u[0][2][0] = uaniso[4];
-            u[0][1][2] = u[0][2][1] = uaniso[5];
+            double det = determinant3(uaniso);
 
-            for (int i = 0; i < 3; i++) {
-                for (int j = 0; j < 3; j++) {
-                    m.setEntry(i, j, u[0][i][j]);
-                }
-            }
-            // RealMatrix m = new Array2DRowRealMatrix(u[0], true);
-            EigenDecompositionImpl evd = new EigenDecompositionImpl(m, 0.01);
-            if (evd.getRealEigenvalue(0) <= 0.0
-                    || evd.getRealEigenvalue(1) <= 0.0
-                    || evd.getRealEigenvalue(2) <= 0.0) {
+            if (det <= 1e-10) {
                 StringBuilder sb = new StringBuilder();
                 sb.append("non-positive definite ANISOU for atom: " + atom.toString() + "\n");
                 sb.append("resetting ANISOU based on isotropic B: (" + biso + ")\n");
@@ -1048,7 +1018,6 @@ public final class FormFactor {
 
                 uaniso[0] = uaniso[1] = uaniso[2] = b2u(biso);
                 uaniso[3] = uaniso[4] = uaniso[5] = 0.0;
-                atom.setAnisou(uaniso);
             }
         } else {
             if (biso < 0.0) {
@@ -1072,14 +1041,7 @@ public final class FormFactor {
             u[i][0][2] = u[i][2][0] = uaniso[4];
             u[i][1][2] = u[i][2][1] = uaniso[5];
 
-            for (int j = 0; j < 3; j++) {
-                for (int k = 0; k < 3; k++) {
-                    m.setEntry(j, k, u[i][j][k]);
-                }
-            }
-            // RealMatrix m = new Array2DRowRealMatrix(u[i], true);
-            m = new LUDecompositionImpl(m).getSolver().getInverse();
-            uinv[i] = m.getData();
+            mat3inverse(u[i], uinv[i]);
 
             double det = determinant3(u[i]);
             ainv[i] = a[i] / sqrt(det);

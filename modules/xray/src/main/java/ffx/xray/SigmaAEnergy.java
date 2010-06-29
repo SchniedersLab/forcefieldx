@@ -239,7 +239,6 @@ public class SigmaAEnergy implements Potential {
             double eo = fo[i][0] * sqrt(eoscale);
             double sigeo = fo[i][1] * sqrt(eoscale);
             double eo2 = pow(eo, 2.0);
-            double ect2 = pow(ect.abs(), 2.0);
             double kect2 = pow(kect.abs(), 2.0);
 
             // FOM
@@ -393,8 +392,7 @@ public class SigmaAEnergy implements Potential {
 
         if (optimizationScaling != null) {
             int len = x.length;
-            for (int i = 0; i
-                    < len; i++) {
+            for (int i = 0; i < len; i++) {
                 x[i] *= optimizationScaling[i];
                 g[i] /= optimizationScaling[i];
             }

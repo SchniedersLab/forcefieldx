@@ -74,8 +74,8 @@ public class ComplexNumber {
 
     public void copy(ComplexNumber b){
         ComplexNumber a = this;
-        this.re = b.re;
-        this.im = b.im;
+        a.re = b.re;
+        a.im = b.im;
     }
 
     public double abs() {

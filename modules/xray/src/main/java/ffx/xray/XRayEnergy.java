@@ -106,7 +106,7 @@ public class XRayEnergy implements Potential {
                 // compute crystal likelihood
                 e = xraystructure.sigmaaminimize.calculateLikelihood();
 
-                // compute the crystal gradients (requires inverse FFT)
+                // compute the crystal gradients
                 crs_fc.computeAtomicGradients(refinementdata.dfc,
                         refinementdata.freer, refinementdata.rfreeflag,
                         refinementMode);
@@ -143,7 +143,7 @@ public class XRayEnergy implements Potential {
                 // compute crystal likelihood
                 e = xraystructure.sigmaaminimize.calculateLikelihood();
 
-                // compute the crystal gradients (requires inverse FFT)
+                // compute the crystal gradients
                 crs_fc.computeAtomicGradients(refinementdata.dfc,
                         refinementdata.freer, refinementdata.rfreeflag,
                         refinementMode);
@@ -155,7 +155,7 @@ public class XRayEnergy implements Potential {
                 e += getBFactorRestraints();
 
                 // pack gradients into gradient array
-                getBFactorGradients(g, 0);
+                getBFactorGradients(g);
 
                 break;
             case COORDINATES_AND_BFACTORS:
@@ -184,7 +184,7 @@ public class XRayEnergy implements Potential {
                 // compute crystal likelihood
                 e = xraystructure.sigmaaminimize.calculateLikelihood();
 
-                // compute the crystal gradients (requires inverse FFT)
+                // compute the crystal gradients
                 crs_fc.computeAtomicGradients(refinementdata.dfc,
                         refinementdata.freer, refinementdata.rfreeflag,
                         refinementMode);
@@ -197,7 +197,7 @@ public class XRayEnergy implements Potential {
 
                 // pack gradients into gradient array
                 getXYZGradients(g);
-                getBFactorGradients(g, nxyz);
+                getBFactorGradients(g);
 
                 break;
             default:
@@ -250,10 +250,10 @@ public class XRayEnergy implements Potential {
         this.nocc = nocc;
     }
 
-    public void getBFactorGradients(double g[], int offset) {
+    public void getBFactorGradients(double g[]) {
         assert (g != null);
         double grad[];
-        int index = offset;
+        int index = nxyz;
         int resnum = -1;
         int nres = 0;
         for (Atom a : atomarray) {
@@ -263,7 +263,7 @@ public class XRayEnergy implements Potential {
             }
             if (refinementdata.residuebfactor) {
                 if (resnum != a.getResidueNumber()) {
-                    if (nres > 0) {
+                    if (resnum > 0) {
                         index++;
                     }
                     g[index] = a.getTempFactorGradient();
@@ -327,7 +327,7 @@ public class XRayEnergy implements Potential {
                 }
                 if (refinementdata.residuebfactor) {
                     if (resnum != a.getResidueNumber()) {
-                        if (nres > 0) {
+                        if (resnum > 0) {
                             x[index] /= nres;
                             index++;
                         }
@@ -378,6 +378,7 @@ public class XRayEnergy implements Potential {
                 } else {
                     index++;
                 }
+
                 if (biso > 0.0) {
                     a.setTempFactor(biso);
                 } else {
@@ -424,7 +425,7 @@ public class XRayEnergy implements Potential {
         int index = 0;
         for (Atom a : atomarray) {
             xyz[0] = x[index++];
-            xyz[2] = x[index++];
+            xyz[1] = x[index++];
             xyz[2] = x[index++];
             a.moveTo(xyz);
         }

@@ -413,6 +413,32 @@ public final class VectorMath {
     }
 
     /**
+     * inverse of a 3x3 matrix
+     *
+     * @param m input matrix
+     *
+     * @return matrix inverse
+     */
+    public static double[][] mat3inverse(double m[][]){
+        double res[][] = new double[3][3];
+        mat3inverse(m, res);
+        return res;
+    }
+
+    public static void mat3inverse(double m[][], double res[][]){
+        double det = determinant3(m);
+        res[0][0] = (m[1][1] * m[2][2] - m[1][2] * m[2][1]) / det;
+        res[0][1] = (m[0][2] * m[2][1] - m[0][1] * m[2][2]) / det;
+        res[0][2] = (m[0][1] * m[1][2] - m[0][2] * m[1][1]) / det;
+        res[1][0] = (m[1][2] * m[2][0] - m[1][0] * m[2][2]) / det;
+        res[1][1] = (m[0][0] * m[2][2] - m[0][2] * m[2][0]) / det;
+        res[1][2] = (m[0][2] * m[1][0] - m[0][0] * m[1][2]) / det;
+        res[2][0] = (m[1][0] * m[2][1] - m[1][1] * m[2][0]) / det;
+        res[2][1] = (m[0][1] * m[2][0] - m[0][0] * m[2][1]) / det;
+        res[2][2] = (m[0][0] * m[1][1] - m[0][1] * m[1][0]) / det;
+    }
+
+    /**
      * vector times a matrix
      *
      * @param v input vector
