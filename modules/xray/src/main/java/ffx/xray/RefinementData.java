@@ -168,7 +168,7 @@ public class RefinementData {
         Random generator = new Random();
         int nfree = 0;
         for (int i = 0; i < n; i++) {
-            if (Double.isNaN(fsigf[i][0])){
+            if (Double.isNaN(fsigf[i][0])) {
                 freer[i] = 0;
                 continue;
             }
@@ -193,36 +193,36 @@ public class RefinementData {
         }
     }
 
-    public void f(int i, double f) {
+    public void set_f(int i, double f) {
         fsigf[i][0] = f;
     }
 
-    public double f(int i) {
+    public double get_f(int i) {
         return fsigf[i][0];
     }
 
-    public void sigf(int i, double sigf) {
+    public void set_sigf(int i, double sigf) {
         fsigf[i][1] = sigf;
     }
 
-    public double sigf(int i) {
+    public double get_sigf(int i) {
         return fsigf[i][1];
     }
 
-    public void fsigf(int i, double f, double sigf) {
+    public void set_fsigf(int i, double f, double sigf) {
         fsigf[i][0] = f;
         fsigf[i][1] = sigf;
     }
 
-    public double[] fsigf(int i) {
+    public double[] get_fsigf(int i) {
         return fsigf[i];
     }
 
-    public void freer(int i, int f) {
+    public void set_freer(int i, int f) {
         freer[i] = f;
     }
 
-    public int freer(int i) {
+    public int get_freer(int i) {
         return freer[i];
     }
 
@@ -234,13 +234,18 @@ public class RefinementData {
         return (freer[i] == rfreeflag);
     }
 
-    public void fc(int i, ComplexNumber c) {
+    public void set_fc(int i, ComplexNumber c) {
         fc[i][0] = c.re();
         fc[i][1] = c.im();
     }
 
-    public ComplexNumber fc(int i) {
+    public ComplexNumber get_fc(int i) {
         return new ComplexNumber(fc[i][0], fc[i][1]);
+    }
+
+    public void get_fc_ip(int i, ComplexNumber c) {
+        c.re(fc[i][0]);
+        c.im(fc[i][1]);
     }
 
     public double fc_f(int i) {
@@ -255,13 +260,18 @@ public class RefinementData {
         return c.phase();
     }
 
-    public void fs(int i, ComplexNumber c) {
+    public void set_fs(int i, ComplexNumber c) {
         fs[i][0] = c.re();
         fs[i][1] = c.im();
     }
 
-    public ComplexNumber fs(int i) {
+    public ComplexNumber get_fs(int i) {
         return new ComplexNumber(fs[i][0], fs[i][1]);
+    }
+
+    public void get_fs_ip(int i, ComplexNumber c) {
+        c.re(fs[i][0]);
+        c.im(fs[i][1]);
     }
 
     public double fs_f(int i) {
@@ -276,13 +286,18 @@ public class RefinementData {
         return c.phase();
     }
 
-    public void fctot(int i, ComplexNumber c) {
+    public void set_fctot(int i, ComplexNumber c) {
         fctot[i][0] = c.re();
         fctot[i][1] = c.im();
     }
 
-    public ComplexNumber fctot(int i) {
+    public ComplexNumber get_fctot(int i) {
         return new ComplexNumber(fctot[i][0], fctot[i][1]);
+    }
+
+    public void get_fctot_ip(int i, ComplexNumber c) {
+        c.re(fctot[i][0]);
+        c.im(fctot[i][1]);
     }
 
     public double fctot_f(int i) {
@@ -297,13 +312,18 @@ public class RefinementData {
         return c.phase();
     }
 
-    public void fofc2(int i, ComplexNumber c) {
+    public void set_fofc2(int i, ComplexNumber c) {
         fofc2[i][0] = c.re();
         fofc2[i][1] = c.im();
     }
 
-    public ComplexNumber fofc2(int i) {
+    public ComplexNumber get_fofc2(int i) {
         return new ComplexNumber(fofc2[i][0], fofc2[i][1]);
+    }
+
+    public void get_fofc2_ip(int i, ComplexNumber c) {
+        c.re(fofc2[i][0]);
+        c.im(fofc2[i][1]);
     }
 
     public double fofc2_f(int i) {
@@ -318,13 +338,18 @@ public class RefinementData {
         return c.phase();
     }
 
-    public void fofc1(int i, ComplexNumber c) {
+    public void set_fofc1(int i, ComplexNumber c) {
         fofc1[i][0] = c.re();
         fofc1[i][1] = c.im();
     }
 
-    public ComplexNumber fofc1(int i) {
+    public ComplexNumber get_fofc1(int i) {
         return new ComplexNumber(fofc1[i][0], fofc1[i][1]);
+    }
+
+    public void get_fofc1_ip(int i, ComplexNumber c) {
+        c.re(fofc1[i][0]);
+        c.im(fofc1[i][1]);
     }
 
     public double fofc1_f(int i) {

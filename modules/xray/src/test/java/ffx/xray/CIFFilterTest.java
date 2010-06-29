@@ -62,17 +62,17 @@ public class CIFFilterTest {
 
         HKL hkl = reflectionlist.getHKL(58, 0, 13);
         assertEquals("58 0 13 F should be correct",
-                99.7, refinementdata.f(hkl.index()), 0.01);
+                99.7, refinementdata.get_f(hkl.index()), 0.01);
         assertEquals("58 0 13 sigF should be correct",
-                69.7, refinementdata.sigf(hkl.index()), 0.01);
+                69.7, refinementdata.get_sigf(hkl.index()), 0.01);
         assertEquals("58 0 13 freeR value should be correct",
                 1, refinementdata.freer[hkl.index()]);
 
         hkl = reflectionlist.getHKL(28, 20, 5);
         assertEquals("28 20 5 F should be correct",
-                428.1, refinementdata.f(hkl.index()), 0.01);
+                428.1, refinementdata.get_f(hkl.index()), 0.01);
         assertEquals("28 20 5 sigF should be correct",
-                10.1, refinementdata.sigf(hkl.index()), 0.01);
+                10.1, refinementdata.get_sigf(hkl.index()), 0.01);
         assertEquals("28 20 5 freeR value should be correct",
                 0, refinementdata.freer[hkl.index()]);
     }
@@ -101,17 +101,17 @@ public class CIFFilterTest {
 
         HKL hkl = reflectionlist.getHKL(-21, -6, 7);
         assertEquals("-21 -6 7 F should be correct",
-                18.6, refinementdata.f(hkl.index()), 0.01);
+                18.6, refinementdata.get_f(hkl.index()), 0.01);
         assertEquals("-21 -6 7 sigF should be correct",
-                3.6, refinementdata.sigf(hkl.index()), 0.01);
+                3.6, refinementdata.get_sigf(hkl.index()), 0.01);
         assertEquals("-21 -6 7 freeR value should be correct",
                 0, refinementdata.freer[hkl.index()]);
 
         hkl = reflectionlist.getHKL(-21, -6, 8);
         assertEquals("-21 -6 7 F should be correct",
-                20.2, refinementdata.f(hkl.index()), 0.01);
+                20.2, refinementdata.get_f(hkl.index()), 0.01);
         assertEquals("-21 -6 7 sigF should be correct",
-                5.0, refinementdata.sigf(hkl.index()), 0.01);
+                5.0, refinementdata.get_sigf(hkl.index()), 0.01);
         assertEquals("-21 -6 7 freeR value should be correct",
                 1, refinementdata.freer[hkl.index()]);
     }

@@ -178,7 +178,7 @@ public class MTZWriter {
                 // FIXME: this should be user definable!
                 colname.add("FO");
                 coltype[3] = 'F';
-                fmapdata = (float) refinementdata.f(i);
+                fmapdata = (float) refinementdata.get_f(i);
                 if (!Double.isNaN(fmapdata)) {
                     colminmax[3][0] = Math.min(fmapdata, colminmax[3][0]);
                     colminmax[3][1] = Math.max(fmapdata, colminmax[3][1]);
@@ -186,7 +186,7 @@ public class MTZWriter {
                 bb.order(b).putFloat(fmapdata);
                 colname.add("SIGFO");
                 coltype[4] = 'Q';
-                fmapdata = (float) refinementdata.sigf(i);
+                fmapdata = (float) refinementdata.get_sigf(i);
                 if (!Double.isNaN(fmapdata)) {
                     colminmax[4][0] = Math.min(fmapdata, colminmax[4][0]);
                     colminmax[4][1] = Math.max(fmapdata, colminmax[4][1]);
@@ -196,7 +196,7 @@ public class MTZWriter {
                 // free R (1)
                 colname.add("FreeR");
                 coltype[5] = 'I';
-                fmapdata = (float) refinementdata.freer(i);
+                fmapdata = (float) refinementdata.get_freer(i);
                 if (!Double.isNaN(fmapdata)) {
                     colminmax[5][0] = Math.min(fmapdata, colminmax[5][0]);
                     colminmax[5][1] = Math.max(fmapdata, colminmax[5][1]);

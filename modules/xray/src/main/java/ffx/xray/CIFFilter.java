@@ -245,9 +245,9 @@ public class CIFFilter {
 
                     if (rfree > 0) {
                         if (strarray[rfree].charAt(0) == 'o') {
-                            refinementdata.freer(hkl.index(), 0);
+                            refinementdata.set_freer(hkl.index(), 0);
                         } else if (strarray[rfree].charAt(0) == 'f') {
-                            refinementdata.freer(hkl.index(), 1);
+                            refinementdata.set_freer(hkl.index(), 1);
                         } else if (strarray[rfree].charAt(0) == 'x') {
                             isnull = true;
                             nnan++;
@@ -258,17 +258,17 @@ public class CIFFilter {
                             isnull = true;
                             ncifignore++;
                         } else {
-                            refinementdata.freer(hkl.index(),
+                            refinementdata.set_freer(hkl.index(),
                                     Integer.parseInt(strarray[rfree]));
                         }
                     }
 
                     if (fo > 0 && sigfo > 0 && !isnull) {
-                        refinementdata.fsigf(hkl.index(),
+                        refinementdata.set_fsigf(hkl.index(),
                                 Double.parseDouble(strarray[fo]),
                                 Double.parseDouble(strarray[sigfo]));
                     } else {
-                        refinementdata.fsigf(hkl.index(),
+                        refinementdata.set_fsigf(hkl.index(),
                                 Double.NaN,
                                 Double.NaN);
                     }

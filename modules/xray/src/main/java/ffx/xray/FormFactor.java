@@ -40,6 +40,7 @@ import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
 import ffx.potential.bonded.Atom;
 import ffx.xray.RefinementMinimize.RefinementMode;
+import java.util.Arrays;
 
 import java.util.HashMap;
 import java.util.logging.Logger;
@@ -656,6 +657,12 @@ public final class FormFactor {
     private final double u[][][] = new double[6][3][3];
     private final double uinv[][][] = new double[6][3][3];
     private final int n;
+    private double jmat[][][] = new double[6][3][3];
+    private double gradp[] = new double[6];
+    private double gradu[] = new double[6];
+    private double resv[] = new double[3];
+    private double resm[][] = new double[3][3];
+    private RealMatrix m;
 
     public FormFactor(Atom atom) {
         this(atom, true, 0.0, atom.getXYZ());
@@ -718,6 +725,8 @@ public final class FormFactor {
             sb.append("(atom will not contribute to electron density calculation)\n");
             logger.warning(sb.toString());
         }
+
+        m = new Array2DRowRealMatrix(3, 3);
 
         updateB();
     }
@@ -854,10 +863,9 @@ public final class FormFactor {
         diff(this.xyz, xyz, dxyz);
         double r2 = rsq(dxyz);
         double aex;
-        double jmat[][][] = new double[6][3][3];
-        double gradp[] = {0.0, 0.0, 0.0, 0.0, 0.0};
-        double gradu[] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
         double rho;
+        Arrays.fill(gradp, 0.0);
+        Arrays.fill(gradu, 0.0);
 
         boolean refinexyz = false;
         boolean refineb = false;
@@ -877,21 +885,28 @@ public final class FormFactor {
             aex = ainv[i] * exp(-0.5 * Crystal.quad_form(dxyz, uinv[i]));
 
             if (refinexyz) {
-                gradp[0] += aex * dot(vec3mat3(dxyz, uinv[i]), vx);
-                gradp[1] += aex * dot(vec3mat3(dxyz, uinv[i]), vy);
-                gradp[2] += aex * dot(vec3mat3(dxyz, uinv[i]), vz);
+                vec3mat3(dxyz, uinv[i], resv);
+                gradp[0] += aex * dot(resv, vx);
+                gradp[1] += aex * dot(resv, vy);
+                gradp[2] += aex * dot(resv, vz);
                 gradp[3] += aex;
             }
             if (refineb) {
                 gradp[4] += aex * 0.5 * (r2 * binv[i] * binv[i] - 3.0 * binv[i]);
 
                 if (refineanisou) {
-                    jmat[0] = mat3mat3(scalarmat3mat3(-1.0, uinv[i], u11), uinv[i]);
-                    jmat[1] = mat3mat3(scalarmat3mat3(-1.0, uinv[i], u22), uinv[i]);
-                    jmat[2] = mat3mat3(scalarmat3mat3(-1.0, uinv[i], u33), uinv[i]);
-                    jmat[3] = mat3mat3(scalarmat3mat3(-1.0, uinv[i], u12), uinv[i]);
-                    jmat[4] = mat3mat3(scalarmat3mat3(-1.0, uinv[i], u13), uinv[i]);
-                    jmat[5] = mat3mat3(scalarmat3mat3(-1.0, uinv[i], u23), uinv[i]);
+                    scalarmat3mat3(-1.0, uinv[i], u11, resm);
+                    mat3mat3(resm, uinv[i], jmat[0]);
+                    scalarmat3mat3(-1.0, uinv[i], u22, resm);
+                    mat3mat3(resm, uinv[i], jmat[1]);
+                    scalarmat3mat3(-1.0, uinv[i], u33, resm);
+                    mat3mat3(resm, uinv[i], jmat[2]);
+                    scalarmat3mat3(-1.0, uinv[i], u12, resm);
+                    mat3mat3(resm, uinv[i], jmat[3]);
+                    scalarmat3mat3(-1.0, uinv[i], u13, resm);
+                    mat3mat3(resm, uinv[i], jmat[4]);
+                    scalarmat3mat3(-1.0, uinv[i], u23, resm);
+                    mat3mat3(resm, uinv[i], jmat[5]);
 
                     gradu[0] += aex * 0.5 * (-Crystal.quad_form(dxyz, jmat[0]) - uinv[i][0][0]);
                     gradu[1] += aex * 0.5 * (-Crystal.quad_form(dxyz, jmat[1]) - uinv[i][1][1]);
@@ -975,11 +990,6 @@ public final class FormFactor {
         double g[] = new double[3];
         double dp = 1.5 * d / (w2 * ri) - 0.75 * d2 / (w3 * ri);
 
-        /*
-        g[0] = (dfs / rho) * (dp * dxyz[0]);
-        g[1] = (dfs / rho) * (dp * dxyz[1]);
-        g[2] = (dfs / rho) * (dp * dxyz[2]);
-         */
         g[0] = (dfs / rho) * (-dp * dxyz[0]);
         g[1] = (dfs / rho) * (-dp * dxyz[1]);
         g[2] = (dfs / rho) * (-dp * dxyz[2]);
@@ -997,7 +1007,7 @@ public final class FormFactor {
         updateB(u2b(uadd));
     }
 
-    public void updateB(double badd){
+    public void updateB(double badd) {
         biso = atom.getTempFactor();
         uadd = b2u(badd);
 
@@ -1021,7 +1031,12 @@ public final class FormFactor {
             u[0][0][2] = u[0][2][0] = uaniso[4];
             u[0][1][2] = u[0][2][1] = uaniso[5];
 
-            RealMatrix m = new Array2DRowRealMatrix(u[0], true);
+            for (int i = 0; i < 3; i++) {
+                for (int j = 0; j < 3; j++) {
+                    m.setEntry(i, j, u[0][i][j]);
+                }
+            }
+            // RealMatrix m = new Array2DRowRealMatrix(u[0], true);
             EigenDecompositionImpl evd = new EigenDecompositionImpl(m, 0.01);
             if (evd.getRealEigenvalue(0) <= 0.0
                     || evd.getRealEigenvalue(1) <= 0.0
@@ -1057,7 +1072,12 @@ public final class FormFactor {
             u[i][0][2] = u[i][2][0] = uaniso[4];
             u[i][1][2] = u[i][2][1] = uaniso[5];
 
-            RealMatrix m = new Array2DRowRealMatrix(u[i], true);
+            for (int j = 0; j < 3; j++) {
+                for (int k = 0; k < 3; k++) {
+                    m.setEntry(j, k, u[i][j][k]);
+                }
+            }
+            // RealMatrix m = new Array2DRowRealMatrix(u[i], true);
             m = new LUDecompositionImpl(m).getSolver().getInverse();
             uinv[i] = m.getData();
 
