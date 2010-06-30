@@ -28,6 +28,7 @@ import static ffx.numerics.VectorMath.u2b;
 import ffx.numerics.Potential;
 import ffx.potential.bonded.Atom;
 import ffx.xray.RefinementMinimize.RefinementMode;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -255,27 +256,13 @@ public class XRayEnergy implements Potential {
         double grad[];
         int index = nxyz;
         int resnum = -1;
-        int nres = 0;
+        int nres = refinementdata.nresiduebfactor + 1;
         for (Atom a : atomarray) {
             // ignore hydrogens!!!
             if (a.getAtomicNumber() == 1) {
                 continue;
             }
-            if (refinementdata.residuebfactor) {
-                if (resnum != a.getResidueNumber()) {
-                    if (resnum > 0) {
-                        index++;
-                    }
-                    g[index] = a.getTempFactorGradient();
-                    resnum = a.getResidueNumber();
-                    nres = 1;
-                } else {
-                    g[index] += a.getTempFactorGradient();
-                    nres++;
-                }
-            } else if (a.getAnisou() == null) {
-                g[index++] = a.getTempFactorGradient();
-            } else {
+            if (a.getAnisou() != null) {
                 grad = a.getAnisouGradient();
                 g[index++] = grad[0];
                 g[index++] = grad[1];
@@ -283,6 +270,24 @@ public class XRayEnergy implements Potential {
                 g[index++] = grad[3];
                 g[index++] = grad[4];
                 g[index++] = grad[5];
+            } else if (refinementdata.residuebfactor) {
+                if (resnum != a.getResidueNumber()) {
+                    if (nres >= refinementdata.nresiduebfactor) {
+                        if (resnum > -1
+                                && index < nxyz + nb - 1) {
+                            index++;
+                        }
+                        nres = 1;
+                    } else {
+                        nres++;
+                    }
+                    g[index] += a.getTempFactorGradient();
+                    resnum = a.getResidueNumber();
+                } else {
+                    g[index] += a.getTempFactorGradient();
+                }
+            } else {
+                g[index++] = a.getTempFactorGradient();
             }
         }
     }
@@ -304,6 +309,7 @@ public class XRayEnergy implements Potential {
         assert (x != null);
         double xyz[] = new double[3];
         int index = 0;
+        Arrays.fill(x, 0.0);
 
         if (refinementMode == RefinementMode.COORDINATES
                 || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS) {
@@ -318,29 +324,15 @@ public class XRayEnergy implements Potential {
         if (refinementMode == RefinementMode.BFACTORS
                 || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS) {
             double anisou[];
-            double resnum = -1;
-            int nres = 0;
+            int resnum = -1;
+            int nat = 0;
+            int nres = refinementdata.nresiduebfactor + 1;
             for (Atom a : atomarray) {
                 // ignore hydrogens!!!
                 if (a.getAtomicNumber() == 1) {
                     continue;
                 }
-                if (refinementdata.residuebfactor) {
-                    if (resnum != a.getResidueNumber()) {
-                        if (resnum > 0) {
-                            x[index] /= nres;
-                            index++;
-                        }
-                        x[index] = a.getTempFactor();
-                        resnum = a.getResidueNumber();
-                        nres = 1;
-                    } else {
-                        x[index] += a.getTempFactor();
-                        nres++;
-                    }
-                } else if (a.getAnisou() == null) {
-                    x[index++] = a.getTempFactor();
-                } else {
+                if (a.getAnisou() != null) {
                     anisou = a.getAnisou();
                     x[index++] = anisou[0];
                     x[index++] = anisou[1];
@@ -348,6 +340,34 @@ public class XRayEnergy implements Potential {
                     x[index++] = anisou[3];
                     x[index++] = anisou[4];
                     x[index++] = anisou[5];
+                } else if (refinementdata.residuebfactor) {
+                    if (resnum != a.getResidueNumber()) {
+                        if (nres >= refinementdata.nresiduebfactor) {
+                            if (resnum > -1
+                                    && index < nxyz + nb - 1) {
+                                x[index] /= nat;
+                                index++;
+                            }
+                            nat = 1;
+                            nres = 1;
+                        } else {
+                            nres++;
+                            nat++;
+                        }
+                        x[index] += a.getTempFactor();
+                        resnum = a.getResidueNumber();
+                    } else {
+                        x[index] += a.getTempFactor();
+                        nat++;
+                    }
+                } else {
+                    x[index++] = a.getTempFactor();
+                }
+            }
+
+            if (refinementdata.residuebfactor) {
+                if (nat > 1) {
+                    x[index] /= nat;
                 }
             }
         }
@@ -360,6 +380,7 @@ public class XRayEnergy implements Potential {
         int index = nxyz;
         int nneg = 0;
         int resnum = -1;
+        int nres = refinementdata.nresiduebfactor + 1;
         for (Atom a : atomarray) {
             // ignore hydrogens!!!
             if (a.getAtomicNumber() == 1) {
@@ -369,10 +390,16 @@ public class XRayEnergy implements Potential {
                 double biso = x[index];
                 if (refinementdata.residuebfactor) {
                     if (resnum != a.getResidueNumber()) {
-                        if (resnum > -1) {
-                            index++;
+                        if (nres >= refinementdata.nresiduebfactor) {
+                            if (resnum > -1
+                                    && index < nxyz + nb - 1) {
+                                index++;
+                                biso = x[index];
+                            }
+                            nres = 1;
+                        } else {
+                            nres++;
                         }
-                        biso = x[index];
                         resnum = a.getResidueNumber();
                     }
                 } else {
@@ -496,23 +523,11 @@ public class XRayEnergy implements Potential {
                 mass[i++] = m;
             }
         }
+
         if (refinementMode == RefinementMode.BFACTORS
                 || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS) {
-            for (Atom a : atomarray) {
-                // ignore hydrogens!!!
-                if (a.getAtomicNumber() == 1) {
-                    continue;
-                }
-                if (a.getAnisou() == null) {
-                    mass[i++] = bmass;
-                } else {
-                    mass[i++] = bmass;
-                    mass[i++] = bmass;
-                    mass[i++] = bmass;
-                    mass[i++] = bmass;
-                    mass[i++] = bmass;
-                    mass[i++] = bmass;
-                }
+            for (int j = i; j < nxyz + nb + nocc; j++) {
+                mass[j] = bmass;
             }
         }
         return mass;

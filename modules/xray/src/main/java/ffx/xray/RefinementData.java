@@ -82,11 +82,12 @@ public class RefinementData {
     public final boolean use_3g;
     public final double xrayscaletol;
     public final double sigmaatol;
+    public final double xweight;
     public final double bresweight;
     public final double bmass;
     public final boolean residuebfactor;
+    public final int nresiduebfactor;
     public final boolean addanisou;
-    public final double xweight;
 
     public RefinementData(CompositeConfiguration properties,
             ReflectionList reflectionlist) {
@@ -97,11 +98,12 @@ public class RefinementData {
         use_3g = properties.getBoolean("use_3g", true);
         xrayscaletol = properties.getDouble("xrayscaletol", 1e-4);
         sigmaatol = properties.getDouble("sigmaatol", 1.0);
+        xweight = properties.getDouble("xweight", 1.0);
         bresweight = properties.getDouble("bresweight", 1.0);
         bmass = properties.getDouble("bmass", 5.0);
         residuebfactor = properties.getBoolean("residuebfactor", false);
+        nresiduebfactor = properties.getInt("nresiduebfactor", 1);
         addanisou = properties.getBoolean("addanisou", false);
-        xweight = properties.getDouble("xweight", 1.0);
 
         if (logger.isLoggable(Level.INFO)) {
             StringBuilder sb = new StringBuilder();
@@ -112,11 +114,12 @@ public class RefinementData {
             sb.append("  solvent grid search: " + gridsearch + "\n");
             sb.append("  X-ray scale fit tolerance: " + xrayscaletol + "\n");
             sb.append("  sigma A fit tolerance: " + sigmaatol + "\n");
+            sb.append("  X-ray refinement weight: " + xweight + "\n");
             sb.append("  B restraint weight: " + bresweight + "\n");
             sb.append("  B Lagrangian mass: " + bmass + "\n");
             sb.append("  B factors refined by residue: " + residuebfactor + "\n");
+            sb.append("    (if true, num. residues per B: " + nresiduebfactor + ")\n");
             sb.append("  add ANISOU for refinement: " + addanisou + "\n");
-            sb.append("  X-ray refinement weight: " + xweight + "\n");
             logger.info(sb.toString());
         }
 

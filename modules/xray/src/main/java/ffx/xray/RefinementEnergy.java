@@ -94,6 +94,7 @@ public class RefinementEnergy implements Potential {
                 nxyz = nAtoms * 3;
             case BFACTORS:
                 int resnum = -1;
+                int nres = refinementdata.nresiduebfactor + 1;
                 for (Atom a : atomarray) {
                     // ignore hydrogens!!!
                     if (a.getAtomicNumber() == 1) {
@@ -107,9 +108,14 @@ public class RefinementEnergy implements Potential {
                             anisou[3] = anisou[4] = anisou[5] = 0.0;
                             a.setAnisou(anisou);
                             nb += 6;
-                        } else if (refinementdata.residuebfactor){
-                            if (resnum != a.getResidueNumber()){
-                                nb++;
+                        } else if (refinementdata.residuebfactor) {
+                            if (resnum != a.getResidueNumber()) {
+                                if (nres >= refinementdata.nresiduebfactor) {
+                                    nb++;
+                                    nres = 1;
+                                } else {
+                                    nres++;
+                                }
                                 resnum = a.getResidueNumber();
                             }
                         } else {
@@ -117,6 +123,11 @@ public class RefinementEnergy implements Potential {
                         }
                     } else {
                         nb += 6;
+                    }
+                }
+                if (refinementdata.residuebfactor) {
+                    if (nres < refinementdata.nresiduebfactor) {
+                        nb--;
                     }
                 }
                 break;
@@ -282,11 +293,11 @@ public class RefinementEnergy implements Potential {
         }
     }
 
-    public double getXWeight(){
+    public double getXWeight() {
         return this.weight;
     }
 
-    public void setXWeight(double weight){
+    public void setXWeight(double weight) {
         this.weight = weight;
     }
 
