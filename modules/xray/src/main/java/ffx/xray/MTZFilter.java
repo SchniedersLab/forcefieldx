@@ -88,6 +88,7 @@ public class MTZFilter {
     private boolean headerparsed = false;
     private String title;
     private int h, k, l, fo, sigfo, rfree;
+    private int dsetoffset = 1;
     public int ncol;
     public int nrfl;
     public int nbatches;
@@ -173,7 +174,7 @@ public class MTZFilter {
         }
 
         column c = (column) columns.get(fo);
-        dataset d = (dataset) datasets.get(c.id - 1);
+        dataset d = (dataset) datasets.get(c.id - dsetoffset);
 
         if (logger.isLoggable(Level.INFO)) {
             StringBuilder sb = new StringBuilder();
@@ -377,16 +378,23 @@ public class MTZFilter {
                 break;
             case COL:
             case COLUMN:
+                ndset = Integer.parseInt(strarray[5]);
+                if (ndset == 0) {
+                    dsetoffset = 0;
+                }
                 col = new column();
                 columns.add(col);
                 col.label = strarray[1];
                 col.type = strarray[2].charAt(0);
-                col.id = Integer.parseInt(strarray[5]);
+                col.id = ndset;
                 break;
             case PROJECT:
                 ndset = Integer.parseInt(strarray[1]);
+                if (ndset == 0) {
+                    dsetoffset = 0;
+                }
                 try {
-                    dset = (dataset) datasets.get(ndset - 1);
+                    dset = (dataset) datasets.get(ndset - dsetoffset);
                 } catch (IndexOutOfBoundsException e) {
                     dset = new dataset();
                     datasets.add(dset);
@@ -397,8 +405,11 @@ public class MTZFilter {
                 break;
             case DATASET:
                 ndset = Integer.parseInt(strarray[1]);
+                if (ndset == 0) {
+                    dsetoffset = 0;
+                }
                 try {
-                    dset = (dataset) datasets.get(ndset - 1);
+                    dset = (dataset) datasets.get(ndset - dsetoffset);
                 } catch (IndexOutOfBoundsException e) {
                     dset = new dataset();
                     datasets.add(dset);
@@ -407,8 +418,11 @@ public class MTZFilter {
                 break;
             case DCELL:
                 ndset = Integer.parseInt(strarray[1]);
+                if (ndset == 0) {
+                    dsetoffset = 0;
+                }
                 try {
-                    dset = (dataset) datasets.get(ndset - 1);
+                    dset = (dataset) datasets.get(ndset - dsetoffset);
                 } catch (IndexOutOfBoundsException e) {
                     dset = new dataset();
                     datasets.add(dset);
@@ -422,8 +436,11 @@ public class MTZFilter {
                 break;
             case DWAVEL:
                 ndset = Integer.parseInt(strarray[1]);
+                if (ndset == 0) {
+                    dsetoffset = 0;
+                }
                 try {
-                    dset = (dataset) datasets.get(ndset - 1);
+                    dset = (dataset) datasets.get(ndset - dsetoffset);
                 } catch (IndexOutOfBoundsException e) {
                     dset = new dataset();
                     datasets.add(dset);
