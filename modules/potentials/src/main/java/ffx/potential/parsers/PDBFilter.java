@@ -59,6 +59,7 @@ import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.BioType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.PDBFilter.ResiduePosition;
+import ffx.utilities.Hybrid36;
 
 /**
  * The PDBFilter class parses data from a Protein DataBank (*.PDB) file. The
@@ -301,7 +302,7 @@ public final class PDBFilter extends SystemFilter {
 // 77 - 78       LString(2)    element        Element symbol, right-justified.
 // 79 - 80       LString(2)    charge         Charge on the atom.
 // =============================================================================
-                            Integer serial = new Integer(line.substring(6, 11).trim());
+                            Integer serial = new Integer(Hybrid36.decode(5, line.substring(6, 11)));
                             Character altLoc = new Character(line.substring(16, 17).toUpperCase().charAt(0));
                             if (!altLocs.contains(altLoc)) {
                                 altLocs.add(altLoc);
@@ -344,7 +345,7 @@ public final class PDBFilter extends SystemFilter {
 // 77 - 78        LString(2)    element      Element symbol, right-justified.
 // 79 - 80        LString(2)    charge       Charge  on the atom.
 // =============================================================================
-                            serial = new Integer(line.substring(6, 11).trim());
+                            serial = new Integer(Hybrid36.decode(5, line.substring(6, 11)));
                             String name = line.substring(12, 16).trim();
                             altLoc = new Character(line.substring(16, 17).toUpperCase().charAt(0));
                             if (!altLocs.contains(altLoc)) {
@@ -357,7 +358,7 @@ public final class PDBFilter extends SystemFilter {
                             String resName = line.substring(17, 20).trim();
                             Character chainID = line.substring(21, 22).charAt(0);
                             String segID = getSegID(chainID);
-                            int resSeq = new Integer(line.substring(22, 26).trim());
+                            int resSeq = new Integer(Hybrid36.decode(4, line.substring(22, 26)));
                             double d[] = new double[3];
                             d[0] = new Double(line.substring(30, 38).trim());
                             d[1] = new Double(line.substring(38, 46).trim());
@@ -394,7 +395,7 @@ public final class PDBFilter extends SystemFilter {
 // 77 - 78       LString(2)     element       Element symbol; right-justified.
 // 79 - 80       LString(2)     charge        Charge on the atom.
 // =============================================================================
-                            serial = new Integer(line.substring(6, 11).trim());
+                            serial = new Integer(Hybrid36.decode(5, line.substring(6, 11)));
                             name = line.substring(12, 16).trim();
                             altLoc = new Character(line.substring(16, 17).toUpperCase().charAt(0));
                             if (!altLocs.contains(altLoc)) {
@@ -406,7 +407,7 @@ public final class PDBFilter extends SystemFilter {
                             resName = line.substring(17, 20).trim();
                             chainID = line.substring(21, 22).charAt(0);
                             segID = getSegID(chainID);
-                            resSeq = new Integer(line.substring(22, 26).trim());
+                            resSeq = new Integer(Hybrid36.decode(4, line.substring(22, 26)));
                             d = new double[3];
                             d[0] = new Double(line.substring(30, 38).trim());
                             d[1] = new Double(line.substring(38, 46).trim());
@@ -651,8 +652,8 @@ public final class PDBFilter extends SystemFilter {
             try {
                 Polymer c1 = activeMolecularAssembly.getChain(ssbond.substring(15, 16));
                 Polymer c2 = activeMolecularAssembly.getChain(ssbond.substring(29, 30));
-                Residue r1 = c1.getResidue(Integer.parseInt(ssbond.substring(17, 21).trim()));
-                Residue r2 = c2.getResidue(Integer.parseInt(ssbond.substring(31, 35).trim()));
+                Residue r1 = c1.getResidue(Hybrid36.decode(4, ssbond.substring(17, 21)));
+                Residue r2 = c2.getResidue(Hybrid36.decode(4, ssbond.substring(31, 35)));
                 List<Atom> atoms1 = r1.getAtomList();
                 List<Atom> atoms2 = r2.getAtomList();
                 Atom SG1 = null;
@@ -1049,6 +1050,7 @@ public final class PDBFilter extends SystemFilter {
                 Atom atom = resAtoms.get(i);
                 String name = atom.getName();
                 name = name.replace('*', '\'');
+                name = name.replace('D', 'H');
                 atom.setName(name);
             }
 
@@ -1647,8 +1649,8 @@ public final class PDBFilter extends SystemFilter {
                 N1 = setHeavyAtom(residue, "N1", C1s, 1218);
                 C2 = setHeavyAtom(residue, "C2", N1, 1219);
                 O2 = setHeavyAtom(residue, "O2", C2, 1224);
-                N3 = setHeavyAtom(residue, "N3", O2, 1220);
-                C4 = setHeavyAtom(residue, "C4", C2, 1221);
+                N3 = setHeavyAtom(residue, "N3", C2, 1220);
+                C4 = setHeavyAtom(residue, "C4", N3, 1221);
                 O4 = setHeavyAtom(residue, "O4", C4, 1226);
                 C5 = setHeavyAtom(residue, "C5", C4, 1222);
                 C7 = setHeavyAtom(residue, "C7", C5, 1227);
@@ -2563,8 +2565,8 @@ public final class PDBFilter extends SystemFilter {
                                        bond.energy(false);
                                        bw.write(format("SSBOND %3d CYS %1s %4d    CYS %1s %4d %36s %5.2f\n",
                                                serNum++,
-                                               SG1.getChainID().toString(), SG1.getResidueNumber(),
-                                               SG2.getChainID().toString(), SG2.getResidueNumber(),
+                                               SG1.getChainID().toString(), Hybrid36.encode(4, SG1.getResidueNumber()),
+                                               SG2.getChainID().toString(), Hybrid36.encode(4, SG2.getResidueNumber()),
                                                "", bond.getValue()));
                                     }
                                 }
@@ -2608,14 +2610,14 @@ public final class PDBFilter extends SystemFilter {
                         }
                         int resID = residue.getResidueNumber();
                         sb.replace(17, 20, padLeft(resName.toUpperCase(), 3));
-                        sb.replace(22, 26, String.format("%4d", resID));
+                        sb.replace(22, 26, String.format("%4d", Hybrid36.encode(4,resID)));
                         // Loop over atoms
                         ArrayList<Atom> residueAtoms = residue.getAtomList();
                         for (Atom atom : residueAtoms) {
                             writeAtom(atom, serial++, sb, anisouSB, bw);
                         }
                     }
-                    terSB.replace(6, 11, String.format("%5d", serial++));
+                    terSB.replace(6, 11, String.format("%5d", Hybrid36.encode(5,serial++)));
                     terSB.replace(12, 16, "    ");
                     terSB.replace(16, 26, sb.substring(16, 26));
                     bw.write(terSB.toString());
@@ -2647,7 +2649,7 @@ public final class PDBFilter extends SystemFilter {
                     resName = resName.substring(0, 3);
                 }
                 sb.replace(17, 20, padLeft(resName.toUpperCase(), 3));
-                sb.replace(22, 26, String.format("%4d", resID++));
+                sb.replace(22, 26, String.format("%4d", Hybrid36.encode(4, resID++)));
                 // Loop over atoms
                 ArrayList<Atom> residueAtoms = molecule.getAtomList();
                 for (Atom atom : residueAtoms) {
@@ -2664,7 +2666,7 @@ public final class PDBFilter extends SystemFilter {
                     resName = resName.substring(0, 3);
                 }
                 sb.replace(17, 20, padLeft(resName.toUpperCase(), 3));
-                sb.replace(22, 26, String.format("%4d", resID++));
+                sb.replace(22, 26, String.format("%4d", Hybrid36.encode(4, resID++)));
                 // Loop over atoms
                 ArrayList<Atom> residueAtoms = molecule.getAtomList();
                 for (Atom atom : residueAtoms) {
@@ -2679,7 +2681,7 @@ public final class PDBFilter extends SystemFilter {
                 sb.setCharAt(21, chainID);
                 String resName = "HOH";
                 sb.replace(17, 20, padLeft(resName.toUpperCase(), 3));
-                sb.replace(22, 26, String.format("%4d", resID++));
+                sb.replace(22, 26, String.format("%4d", Hybrid36.encode(4, resID++)));
                 // Loop over atoms
                 ArrayList<Atom> residueAtoms = molecule.getAtomList();
                 for (Atom atom : residueAtoms) {
@@ -2714,7 +2716,7 @@ public final class PDBFilter extends SystemFilter {
             }
         }
         double xyz[] = atom.getXYZ();
-        sb.replace(6, 16, String.format("%5d " + padLeft(name.toUpperCase(), 4), serial));
+        sb.replace(6, 16, String.format("%5d " + padLeft(name.toUpperCase(), 4), Hybrid36.encode(5, serial)));
         Character altLoc = atom.getAltLoc();
         if (altLoc != null) {
             sb.setCharAt(16, altLoc);
