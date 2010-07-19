@@ -297,7 +297,7 @@ public class CIFFilter {
                 nread));
         sb.append(String.format("# HKL with NaN (ignored):                  %d\n",
                 nnan));
-        sb.append(String.format("# HKL NOT read in (status <, -, h or l):  %d\n",
+        sb.append(String.format("# HKL NOT read in (status <, -, h or l):   %d\n",
                 ncifignore));
         sb.append(String.format("# HKL NOT read in (too high resolution):   %d\n",
                 nres));

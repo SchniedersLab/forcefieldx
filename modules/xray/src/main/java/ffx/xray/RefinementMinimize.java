@@ -50,6 +50,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
     private final RefinementEnergy refinementenergy;
     private RefinementMode refinementMode;
     private final int nxyz;
+    private final int nb;
     private final int n;
     private final double x[];
     private final double grad[];
@@ -94,6 +95,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
                 xraystructure, refinementmode, null);
 
         this.nxyz = refinementenergy.nxyz;
+        this.nb = refinementenergy.nb;
         this.n = refinementenergy.getNumberOfVariables();
 
         x = new double[n];
@@ -122,30 +124,39 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
                 || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS) {
             int i = nxyz;
             int resnum = -1;
+            int nres = refinementdata.nresiduebfactor + 1;
             for (Atom a : atomarray) {
                 // ignore hydrogens!!!
                 if (a.getAtomicNumber() == 1) {
                     continue;
                 }
-                if (refinementdata.residuebfactor) {
-                    if (resnum != a.getResidueNumber()) {
-                        if (resnum > -1) {
-                            i++;
-                        }
-                        scaling[i] = bisoscale;
-                        x[i] *= bisoscale;
-                        resnum = a.getResidueNumber();
-                    }
-                } else if (a.getAnisou() == null) {
-                    scaling[i] = bisoscale;
-                    x[i] *= bisoscale;
-                    i++;
-                } else {
+                if (a.getAnisou() != null) {
                     for (int j = 0; j < 6; j++) {
                         scaling[i + j] = anisouscale;
                         x[i + j] *= anisouscale;
                     }
                     i += 6;
+                } else if (refinementdata.residuebfactor) {
+                    if (resnum != a.getResidueNumber()) {
+                        if (nres >= refinementdata.nresiduebfactor) {
+                            if (resnum > -1
+                                    && i < nxyz + nb - 1) {
+                                i++;
+                            }
+                            if (i < nxyz + nb) {
+                                scaling[i] = bisoscale;
+                                x[i] *= bisoscale;
+                            }
+                            nres = 1;
+                        } else {
+                            nres++;
+                        }
+                        resnum = a.getResidueNumber();
+                    }
+                } else {
+                    scaling[i] = bisoscale;
+                    x[i] *= bisoscale;
+                    i++;
                 }
             }
         }
