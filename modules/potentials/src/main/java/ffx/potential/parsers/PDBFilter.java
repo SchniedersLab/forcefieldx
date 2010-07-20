@@ -2563,7 +2563,7 @@ public final class PDBFilter extends SystemFilter {
                                 if (SG2.getName().equalsIgnoreCase("SG")) {
                                     if (SG1.xyzIndex < SG2.xyzIndex) {
                                        bond.energy(false);
-                                       bw.write(format("SSBOND %3d CYS %1s %4d    CYS %1s %4d %36s %5.2f\n",
+                                       bw.write(format("SSBOND %3d CYS %1s %4s    CYS %1s %4s %36s %5.2f\n",
                                                serNum++,
                                                SG1.getChainID().toString(), Hybrid36.encode(4, SG1.getResidueNumber()),
                                                SG2.getChainID().toString(), Hybrid36.encode(4, SG2.getResidueNumber()),
@@ -2610,14 +2610,14 @@ public final class PDBFilter extends SystemFilter {
                         }
                         int resID = residue.getResidueNumber();
                         sb.replace(17, 20, padLeft(resName.toUpperCase(), 3));
-                        sb.replace(22, 26, String.format("%4d", Hybrid36.encode(4,resID)));
+                        sb.replace(22, 26, String.format("%4s", Hybrid36.encode(4,resID)));
                         // Loop over atoms
                         ArrayList<Atom> residueAtoms = residue.getAtomList();
                         for (Atom atom : residueAtoms) {
                             writeAtom(atom, serial++, sb, anisouSB, bw);
                         }
                     }
-                    terSB.replace(6, 11, String.format("%5d", Hybrid36.encode(5,serial++)));
+                    terSB.replace(6, 11, String.format("%5s", Hybrid36.encode(5,serial++)));
                     terSB.replace(12, 16, "    ");
                     terSB.replace(16, 26, sb.substring(16, 26));
                     bw.write(terSB.toString());
@@ -2649,7 +2649,7 @@ public final class PDBFilter extends SystemFilter {
                     resName = resName.substring(0, 3);
                 }
                 sb.replace(17, 20, padLeft(resName.toUpperCase(), 3));
-                sb.replace(22, 26, String.format("%4d", Hybrid36.encode(4, resID++)));
+                sb.replace(22, 26, String.format("%4s", Hybrid36.encode(4, resID++)));
                 // Loop over atoms
                 ArrayList<Atom> residueAtoms = molecule.getAtomList();
                 for (Atom atom : residueAtoms) {
@@ -2666,7 +2666,7 @@ public final class PDBFilter extends SystemFilter {
                     resName = resName.substring(0, 3);
                 }
                 sb.replace(17, 20, padLeft(resName.toUpperCase(), 3));
-                sb.replace(22, 26, String.format("%4d", Hybrid36.encode(4, resID++)));
+                sb.replace(22, 26, String.format("%4s", Hybrid36.encode(4, resID++)));
                 // Loop over atoms
                 ArrayList<Atom> residueAtoms = molecule.getAtomList();
                 for (Atom atom : residueAtoms) {
@@ -2681,7 +2681,7 @@ public final class PDBFilter extends SystemFilter {
                 sb.setCharAt(21, chainID);
                 String resName = "HOH";
                 sb.replace(17, 20, padLeft(resName.toUpperCase(), 3));
-                sb.replace(22, 26, String.format("%4d", Hybrid36.encode(4, resID++)));
+                sb.replace(22, 26, String.format("%4s", Hybrid36.encode(4, resID++)));
                 // Loop over atoms
                 ArrayList<Atom> residueAtoms = molecule.getAtomList();
                 for (Atom atom : residueAtoms) {
@@ -2716,7 +2716,7 @@ public final class PDBFilter extends SystemFilter {
             }
         }
         double xyz[] = atom.getXYZ();
-        sb.replace(6, 16, String.format("%5d " + padLeft(name.toUpperCase(), 4), Hybrid36.encode(5, serial)));
+        sb.replace(6, 16, String.format("%5s " + padLeft(name.toUpperCase(), 4), Hybrid36.encode(5, serial)));
         Character altLoc = atom.getAltLoc();
         if (altLoc != null) {
             sb.setCharAt(16, altLoc);
