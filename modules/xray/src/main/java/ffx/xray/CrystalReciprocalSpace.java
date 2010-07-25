@@ -272,45 +272,49 @@ public class CrystalReciprocalSpace {
 
         if (solvent) {
             int minWork = nSymm;
-            spatialDensityRegion =
-                    new SpatialDensityRegion(fftX, fftY, fftZ,
-                    densityGrid, (aradgrid + 2) * 2, nSymm, minWork,
-                    threadCount, crystal, atoms, coordinates);
+
             if (solventmodel != SolventModel.NONE) {
+                spatialDensityRegion =
+                        new SpatialDensityRegion(fftX, fftY, fftZ,
+                        densityGrid, (aradgrid + 2) * 2, nSymm, minWork,
+                        threadCount, crystal, atoms, coordinates);
                 bulkSpatialDensityRegion =
                         new BulkSolventDensityRegion(fftX, fftY, fftZ,
                         solventGrid, (aradgrid + 2) * 2, bulknsym, minWork,
                         threadCount, crystal, atoms, coordinates, 4.0, parallelTeam);
-            } else {
-                bulkSpatialDensityRegion = null;
-            }
-            if (solventmodel == SolventModel.GAUSSIAN) {
-                spatialDensityRegion.setInitValue(0.0);
-            } else {
-                spatialDensityRegion.setInitValue(1.0);
-            }
+                if (solventmodel == SolventModel.GAUSSIAN) {
+                    spatialDensityRegion.setInitValue(0.0);
+                } else {
+                    spatialDensityRegion.setInitValue(1.0);
+                }
 
-            atomicDensityLoops = null;
-            solventDensityLoops = new SolventDensityLoop[threadCount];
-            for (int i = 0; i < threadCount; i++) {
-                solventDensityLoops[i] =
-                        new SolventDensityLoop(spatialDensityRegion);
-            }
-            spatialDensityRegion.setDensityLoop(solventDensityLoops);
+                atomicDensityLoops = null;
+                solventDensityLoops = new SolventDensityLoop[threadCount];
+                for (int i = 0; i < threadCount; i++) {
+                    solventDensityLoops[i] =
+                            new SolventDensityLoop(spatialDensityRegion);
+                }
+                spatialDensityRegion.setDensityLoop(solventDensityLoops);
 
-            if (solventmodel != SolventModel.NONE) {
                 bulkSolventDensityLoops = new SolventDensityLoop[threadCount];
                 for (int i = 0; i < threadCount; i++) {
                     bulkSolventDensityLoops[i] =
                             new SolventDensityLoop(bulkSpatialDensityRegion);
                 }
                 bulkSpatialDensityRegion.setDensityLoop(bulkSolventDensityLoops);
+
+                atomicGradientRegion = null;
+                solventGradientRegion = new SolventGradientRegion(RefinementMode.COORDINATES_AND_BFACTORS);
             } else {
+                spatialDensityRegion = null;
+                bulkSpatialDensityRegion = null;
+                atomicDensityLoops = null;
+                solventDensityLoops = null;
                 bulkSolventDensityLoops = null;
+                atomicGradientRegion = null;
+                solventGradientRegion = null;
             }
 
-            atomicGradientRegion = null;
-            solventGradientRegion = new SolventGradientRegion(RefinementMode.COORDINATES_AND_BFACTORS);
         } else {
             /**
              * Create nSymm pieces of work per thread; the empty pieces will
