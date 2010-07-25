@@ -127,28 +127,38 @@ public class ReciprocalSpace {
         cudaFFT = forceField.getBoolean(ForceField.ForceFieldBoolean.CUDAFFT, false);
 
         // Set default FFT grid size from unit cell dimensions.
-        int nX = (int) Math.floor(crystal.a * density) + 1;
-        int nY = (int) Math.floor(crystal.b * density) + 1;
-        int nZ = (int) Math.floor(crystal.c * density) + 1;
-        if (nX % 2 != 0) {
-            nX += 1;
+        int nX = forceField.getInteger(ForceFieldInteger.PME_GRIDX, -1);
+        if (nX < 2) {
+            nX = (int) Math.floor(crystal.a * density) + 1;
+            if (nX % 2 != 0) {
+                nX += 1;
+            }
+            while (!Complex.preferredDimension(nX)) {
+                nX += 2;
+            }
         }
-        if (nY % 2 != 0) {
-            nY += 1;
+        int nY = forceField.getInteger(ForceFieldInteger.PME_GRIDY, -1);
+        if (nY < 2) {
+            nY = (int) Math.floor(crystal.b * density) + 1;
+            if (nY % 2 != 0) {
+                nY += 1;
+            }
+            while (!Complex.preferredDimension(nY)) {
+                nY += 2;
+            }
         }
-        if (nZ % 2 != 0) {
-            nZ += 1;
+        int nZ = forceField.getInteger(ForceFieldInteger.PME_GRIDZ, -1);
+        if (nZ < 2) {
+            nZ = (int) Math.floor(crystal.c * density) + 1;
+            if (nZ % 2 != 0) {
+                nZ += 1;
+            }
+            while (!Complex.preferredDimension(nZ)) {
+                nZ += 2;
+            }
         }
 
-        while (!Complex.preferredDimension(nX)) {
-            nX += 2;
-        }
-        while (!Complex.preferredDimension(nY)) {
-            nY += 2;
-        }
-        while (!Complex.preferredDimension(nZ)) {
-            nZ += 2;
-        }
+
 
         fftX = nX;
         fftY = nY;
