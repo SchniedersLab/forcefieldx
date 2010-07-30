@@ -74,6 +74,7 @@ public class RefinementData {
     public boolean gridsearch;
     public double solvent_a, solvent_b;
     // scaling coefficients
+    public boolean splinefit;
     public double solvent_k, solvent_ueq;
     public double model_k;
     public double model_b[] = new double[6];
@@ -95,6 +96,7 @@ public class RefinementData {
         int rflag = properties.getInt("rfreeflag", 1);
         int npar = properties.getInt("nbins", 10);
         gridsearch = properties.getBoolean("gridsearch", false);
+        splinefit = properties.getBoolean("splinefit", true);
         use_3g = properties.getBoolean("use_3g", true);
         xrayscaletol = properties.getDouble("xrayscaletol", 1e-4);
         sigmaatol = properties.getDouble("sigmaatol", 1.0);
@@ -109,6 +111,7 @@ public class RefinementData {
             StringBuilder sb = new StringBuilder();
             sb.append("\nRefinement data settings:\n");
             sb.append("  using cctbx 3 Gaussians: " + use_3g + "\n");
+            sb.append("  resolution dependent spline scale: " + splinefit + "\n");
             sb.append("  R Free flag: " + rflag + "\n");
             sb.append("  n bins: " + npar + "\n");
             sb.append("  solvent grid search: " + gridsearch + "\n");

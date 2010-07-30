@@ -22,7 +22,12 @@ package ffx.xray;
 
 import static org.apache.commons.io.FilenameUtils.removeExtension;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.logging.Level;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -30,13 +35,13 @@ import edu.rit.pj.ParallelTeam;
 import org.apache.commons.configuration.CompositeConfiguration;
 
 import ffx.crystal.Crystal;
+import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
 import ffx.crystal.Resolution;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
 import ffx.xray.RefinementMinimize.RefinementMode;
-import java.util.ArrayList;
 
 /**
  *
@@ -86,7 +91,7 @@ public class XRayStructure {
 
         // load the structure
         File tmp = new File(name + ".mtz");
-        File mtzfile = null, ciffile = null;
+        File mtzfile = null, ciffile = null, cnsfile = null;
         if (tmp.exists()) {
             logger.info("data file: " + tmp.getName());
             mtzfile = tmp;
@@ -101,7 +106,19 @@ public class XRayStructure {
                     logger.info("data file: " + tmp.getName());
                     ciffile = tmp;
                 } else {
-                    logger.severe("no input data found!");
+                    tmp = new File(name + ".cns");
+                    if (tmp.exists()) {
+                        logger.info("data file: " + tmp.getName());
+                        cnsfile = tmp;
+                    } else {
+                        tmp = new File(name + ".hkl");
+                        if (tmp.exists()) {
+                            logger.info("data file: " + tmp.getName());
+                            cnsfile = tmp;
+                        } else {
+                            logger.severe("no input data found!");
+                        }
+                    }
                 }
             }
         }
@@ -109,16 +126,22 @@ public class XRayStructure {
         // read in Fo/sigFo/FreeR
         MTZFilter mtzfilter = new MTZFilter();
         CIFFilter ciffilter = new CIFFilter();
+        CNSFilter cnsfilter = new CNSFilter();
         Crystal crystalinit = Crystal.checkProperties(properties);
         Resolution resolutioninit = Resolution.checkProperties(properties);
         if (crystalinit == null || resolutioninit == null) {
             if (mtzfile != null) {
                 reflectionlist = mtzfilter.getReflectionList(mtzfile, properties);
-            } else {
+            } else if (ciffile != null) {
                 reflectionlist = ciffilter.getReflectionList(ciffile, properties);
+            } else if (cnsfile != null) {
+                reflectionlist = cnsfilter.getReflectionList(cnsfile, properties);
+            } else {
+                reflectionlist = null;
             }
+
             if (reflectionlist == null) {
-                logger.severe("MTZ/CIF file does not contain full crystal information!");
+                logger.severe("MTZ/CIF/CNS file does not contain full crystal information!");
             }
         } else {
             reflectionlist = new ReflectionList(crystalinit, resolutioninit);
@@ -129,8 +152,10 @@ public class XRayStructure {
         refinementdata = new RefinementData(properties, reflectionlist);
         if (mtzfile != null) {
             mtzfilter.readFile(mtzfile, reflectionlist, refinementdata);
-        } else {
+        } else if (ciffile != null) {
             ciffilter.readFile(ciffile, reflectionlist, refinementdata);
+        } else {
+            cnsfilter.readFile(cnsfile, reflectionlist, refinementdata);
         }
 
         xindex = new List[assembly.length];
@@ -272,7 +297,9 @@ public class XRayStructure {
         sigmaaminimize = new SigmaAMinimize(reflectionlist, refinementdata);
         sigmaaminimize.minimize(7, refinementdata.sigmaatol);
 
-        splineminimize.minimize(7, 1e-5);
+        if (refinementdata.splinefit) {
+            splineminimize.minimize(7, 1e-5);
+        }
 
         scaled = true;
     }
@@ -313,6 +340,26 @@ public class XRayStructure {
             mtzwriter = new MTZWriter(reflectionlist, refinementdata, filename, true);
         }
         mtzwriter.write();
+    }
+
+    public void writeSolventMaskCNS(String filename) {
+        try {
+            PrintWriter cnsfile = new PrintWriter(new BufferedWriter(new FileWriter(filename)));
+            cnsfile.println(" ANOMalous=FALSE");
+            cnsfile.println(" DECLare NAME=FS DOMAin=RECIprocal TYPE=COMP END");
+            for (HKL ih : reflectionlist.hkllist) {
+                int i = ih.index();
+                cnsfile.printf(" INDE %d %d %d FS= %.4f %.4f\n",
+                        ih.h(), ih.k(), ih.l(),
+                        refinementdata.fs_f(i),
+                        Math.toDegrees(refinementdata.fs_phi(i)));
+            }
+            cnsfile.close();
+        } catch (Exception e) {
+            String message = "Fatal exception evaluating structure factors.\n";
+            logger.log(Level.SEVERE, message, e);
+            System.exit(-1);
+        }
     }
 
     public void writeSolventMask(String filename) {

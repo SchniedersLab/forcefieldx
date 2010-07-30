@@ -43,7 +43,7 @@ import ffx.crystal.SpaceGroup;
  */
 public class CIFFilter {
 
-    private static final Logger logger = Logger.getLogger(MTZFilter.class.getName());
+    private static final Logger logger = Logger.getLogger(CIFFilter.class.getName());
     private double cell[] = {-1.0, -1.0, -1.0, -1.0, -1.0, -1.0};
     private double reshigh = -1.0;
     private String sgname = null;
