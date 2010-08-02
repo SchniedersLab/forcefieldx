@@ -59,6 +59,9 @@ import ffx.xray.RefinementMinimize.RefinementMode;
  * @see <a href="http://dx.doi.org/10.1107/S0108767388009183" target="_blank">
  * A. T. Brunger, Acta Cryst. (1989). A45, 42-50.</a>
  *
+ * @see <a href="http://dx.doi.org/10.1107/97809553602060000551" target="_blank">
+ * G. Bricogne, Int. Tables Cryst. (2006). Vol. B, ch. 1.3, pp. 25-98.</a>
+ *
  * @see <a href="http://dx.doi.org/10.1002/jcc.1032" target="_blank">
  * J. A. Grant, B. T. Pickup, A. Nicholls, J. Comp. Chem. (2001). 22, 608-640
  *

@@ -416,6 +416,9 @@ public class XRayEnergy implements Potential {
                 } else {
                     nneg++;
                     a.setTempFactor(0.01);
+                    if (nneg < 5) {
+                        logger.info("isotropic atom: " + a.toString() + " negative B factor");
+                    }
                 }
             } else {
                 double anisou[] = a.getAnisou();
@@ -432,6 +435,12 @@ public class XRayEnergy implements Potential {
                     a.setTempFactor(u2b(det));
                 } else {
                     nneg++;
+                    a.setTempFactor(0.1);
+                    anisou[0] = anisou[1] = anisou[2] = b2u(0.1);
+                    anisou[3] = anisou[4] = anisou[5] = 0.0;
+                    if (nneg < 5) {
+                        logger.info("anisotropic atom: " + a.toString() + " negative ANISOU");
+                    }
                 }
             }
         }
@@ -469,9 +478,10 @@ public class XRayEnergy implements Potential {
         double c = kTbnonzero * Math.log(4.0 * Math.PI);
         double pi6 = 512.0 * Math.pow(Math.PI, 6.0);
         double anisou[];
-        double banisou[] = new double[6];
+        double banisou1[] = new double[6];
+        double banisou2[] = new double[6];
         double gradb;
-        double det;
+        double det1, det2;
         double gradu[] = new double[6];
         double e = 0.0;
 
@@ -500,6 +510,9 @@ public class XRayEnergy implements Potential {
                         if (a2.getAtomicNumber() == 1) {
                             continue;
                         }
+                        if (a2.xyzIndex < a1.xyzIndex) {
+                            continue;
+                        }
                         if (!a1.getAltLoc().equals(' ')
                                 && !a1.getAltLoc().equals('A')
                                 && a2.getAltLoc().equals(' ')) {
@@ -511,26 +524,84 @@ public class XRayEnergy implements Potential {
                         bdiff = b1 - b2;
                         e += kTbsim * Math.pow(bdiff, 2.0);
                         gradb = 2.0 * kTbsim * bdiff;
-                        a.addToTempFactorGradient(gradb);
+                        a1.addToTempFactorGradient(gradb);
+                        a2.addToTempFactorGradient(-gradb);
                     }
                 }
             } else {
                 anisou = a.getAnisou();
                 for (int i = 0; i < 6; i++) {
-                    banisou[i] = u2b(anisou[i]);
+                    banisou1[i] = u2b(anisou[i]);
                 }
-                det = determinant3(banisou);
-                e += -kTbnonzero * Math.log(det) + c;
-                gradu[0] = -kTbnonzero * ((pi6 * (-banisou[0] * banisou[0] + banisou[1] * banisou[2])) / det);
-                gradu[1] = -kTbnonzero * ((pi6 * (-banisou[4] * banisou[4] + banisou[0] * banisou[2])) / det);
-                gradu[2] = -kTbnonzero * ((pi6 * (-banisou[3] * banisou[3] + banisou[0] * banisou[1])) / det);
-                gradu[3] = -kTbnonzero * ((2.0 * pi6 * (banisou[4] * banisou[5] - banisou[3] * banisou[2])) / det);
-                gradu[4] = -kTbnonzero * ((2.0 * pi6 * (banisou[3] * banisou[5] - banisou[4] * banisou[1])) / det);
-                gradu[5] = -kTbnonzero * ((2.0 * pi6 * (banisou[3] * banisou[4] - banisou[5] * banisou[0])) / det);
+                det1 = determinant3(banisou1);
+                e += -kTbnonzero * Math.log(det1) + c;
+                gradu[0] = -kTbnonzero * ((pi6 * (-banisou1[0] * banisou1[0] + banisou1[1] * banisou1[2])) / det1);
+                gradu[1] = -kTbnonzero * ((pi6 * (-banisou1[4] * banisou1[4] + banisou1[0] * banisou1[2])) / det1);
+                gradu[2] = -kTbnonzero * ((pi6 * (-banisou1[3] * banisou1[3] + banisou1[0] * banisou1[1])) / det1);
+                gradu[3] = -kTbnonzero * ((2.0 * pi6 * (banisou1[4] * banisou1[5] - banisou1[3] * banisou1[2])) / det1);
+                gradu[4] = -kTbnonzero * ((2.0 * pi6 * (banisou1[3] * banisou1[5] - banisou1[4] * banisou1[1])) / det1);
+                gradu[5] = -kTbnonzero * ((2.0 * pi6 * (banisou1[3] * banisou1[4] - banisou1[5] * banisou1[0])) / det1);
                 for (int i = 0; i < 6; i++) {
                     gradu[i] = b2u(gradu[i]);
                 }
                 a.addToAnisouGradient(gradu);
+
+                if (refinementdata.bsimweight > 0.0) {
+                    ArrayList<Bond> bonds = a.getBonds();
+                    for (Bond b : bonds) {
+                        if (a.compareTo(b.getAtom(0)) == 0) {
+                            a1 = b.getAtom(0);
+                            a2 = b.getAtom(1);
+                        } else {
+                            a1 = b.getAtom(1);
+                            a2 = b.getAtom(0);
+                        }
+                        // ignore hydrogens!!!
+                        if (a2.getAtomicNumber() == 1) {
+                            continue;
+                        }
+                        if (a2.xyzIndex < a1.xyzIndex) {
+                            continue;
+                        }
+                        if (a2.getAnisou() == null) {
+                            continue;
+                        }
+                        if (!a1.getAltLoc().equals(' ')
+                                && !a1.getAltLoc().equals('A')
+                                && a2.getAltLoc().equals(' ')) {
+                            continue;
+                        }
+
+                        anisou = a2.getAnisou();
+                        for (int i = 0; i < 6; i++) {
+                            banisou2[i] = u2b(anisou[i]);
+                        }
+                        det2 = determinant3(banisou2);
+                        bdiff = det1 - det2;
+                        e += kTbsim * Math.pow(bdiff, 2.0);
+                        gradb = 2.0 * kTbsim * bdiff;
+                        gradu[0] = gradb * (banisou1[1] * banisou1[2] - banisou1[5] * banisou1[5]);
+                        gradu[1] = gradb * (banisou1[0] * banisou1[2] - banisou1[4] * banisou1[4]);
+                        gradu[2] = gradb * (banisou1[0] * banisou1[1] - banisou1[3] * banisou1[3]);
+                        gradu[3] = gradb * (2.0 * banisou1[4] * banisou1[5] - banisou1[2] * banisou1[3]);
+                        gradu[4] = gradb * (2.0 * banisou1[3] * banisou1[5] - banisou1[1] * banisou1[4]);
+                        gradu[5] = gradb * (2.0 * banisou1[3] * banisou1[4] - banisou1[0] * banisou1[5]);
+                        for (int i = 0; i < 6; i++) {
+                            gradu[i] = b2u(gradu[i]);
+                        }
+                        a1.addToAnisouGradient(gradu);
+                        gradu[0] = gradb * (banisou2[5] * banisou2[5] - banisou2[1] * banisou2[2]);
+                        gradu[1] = gradb * (banisou2[4] * banisou2[4] - banisou2[0] * banisou2[2]);
+                        gradu[2] = gradb * (banisou2[3] * banisou2[3] - banisou2[0] * banisou2[1]);
+                        gradu[3] = gradb * (2.0 * banisou2[2] * banisou2[3] - banisou2[4] * banisou2[5]);
+                        gradu[4] = gradb * (2.0 * banisou2[1] * banisou2[4] - banisou2[3] * banisou2[5]);
+                        gradu[5] = gradb * (2.0 * banisou2[0] * banisou2[5] - banisou2[3] * banisou2[4]);
+                        for (int i = 0; i < 6; i++) {
+                            gradu[i] = b2u(gradu[i]);
+                        }
+                        a2.addToAnisouGradient(gradu);
+                    }
+                }
             }
         }
         return e;
