@@ -126,9 +126,9 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
 
         double min = Double.POSITIVE_INFINITY;
         double k = refinementdata.solvent_k;
-        double kmin = 0.1;
-        double kmax = 0.8;
-        double kstep = 0.1;
+        double kmin = 0.05;
+        double kmax = 0.9;
+        double kstep = 0.05;
         double b = refinementdata.solvent_ueq;
         double bmin = 10.0;
         double bmax = 200.0;
@@ -163,19 +163,18 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         double b = crs.solvent_b;
         double amin = a - 1.0;
         double amax = (a + 1.0) / 0.9999;
-        double astep = 0.5;
+        double astep = 0.25;
         double bmin = b - 0.2;
         double bmax = (b + 0.2) / 0.9999;
-        double bstep = 0.1;
+        double bstep = 0.05;
         if (crs.solventmodel == SolventModel.BINARY) {
             amin = a - 0.2;
             amax = (a + 0.2) / 0.9999;
-            astep = 0.1;
+            astep = 0.05;
         }
         for (double i = amin; i <= amax; i += astep) {
-            crs.setSolventA(i);
             for (double j = bmin; j <= bmax; j += bstep) {
-                crs.setSolventB(j);
+                crs.setSolventAB(i, j);
 
                 crs.computeDensity(refinementdata.fs);
                 double sum = bulksolventenergy.energyAndGradient(x, grad);
@@ -189,8 +188,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
             }
         }
         System.out.println("mina: " + a + " minb: " + b + " min: " + min);
-        crs.setSolventA(a);
-        crs.setSolventB(b);
+        crs.setSolventAB(a, b);
         refinementdata.solvent_a = a;
         refinementdata.solvent_b = b;
         crs.computeDensity(refinementdata.fs);

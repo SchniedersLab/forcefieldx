@@ -95,7 +95,11 @@ public class CrystalReciprocalSpace {
     private final int nAtoms;
     // not final for purposes of finite differences
     private double coordinates[][][];
-    private final FormFactor ffactors[];
+    private final XRayFormFactor ffactors[];
+    private final SolventBinaryFormFactor binaryffactors[];
+    private final SolventPolyFormFactor polyffactors[];
+    private final SolventGaussFormFactor gaussffactors[];
+    private final FormFactor solventffactors[];
     private final int fftX, fftY, fftZ;
     private final double fftscale;
     private final int complexFFT3DSpace;
@@ -181,39 +185,69 @@ public class CrystalReciprocalSpace {
 
         String solventname = "none";
         if (solvent) {
+            badd = 0.0;
+            ffactors = null;
+            double vdwr;
             switch (solventmodel) {
                 case SolventModel.BINARY:
                     solventname = "binary";
                     solvent_a = 1.0;
                     solvent_b = 1.0;
                     solventGrid = new double[complexFFT3DSpace];
+                    binaryffactors = new SolventBinaryFormFactor[nAtoms];
+                    for (int i = 0; i < nAtoms; i++) {
+                        vdwr = atoms[i].getVDWType().radius * 0.5;
+                        binaryffactors[i] = new SolventBinaryFormFactor(atoms[i], vdwr + solvent_a);
+                    }
+                    polyffactors = null;
+                    gaussffactors = null;
+                    solventffactors = binaryffactors;
                     break;
                 case SolventModel.GAUSSIAN:
                     solventname = "Gaussian";
                     solvent_a = 11.5;
                     solvent_b = 0.55;
                     solventGrid = new double[complexFFT3DSpace];
+                    binaryffactors = null;
+                    polyffactors = null;
+                    gaussffactors = new SolventGaussFormFactor[nAtoms];
+                    for (int i = 0; i < nAtoms; i++) {
+                        vdwr = atoms[i].getVDWType().radius * 0.5;
+                        gaussffactors[i] = new SolventGaussFormFactor(atoms[i], vdwr * solvent_b);
+                    }
+                    solventffactors = gaussffactors;
                     break;
                 case SolventModel.POLYNOMIAL:
                     solventname = "polynomial switch";
                     solvent_a = 0.0;
                     solvent_b = 0.8;
                     solventGrid = new double[complexFFT3DSpace];
+                    binaryffactors = null;
+                    polyffactors = new SolventPolyFormFactor[nAtoms];
+                    for (int i = 0; i < nAtoms; i++) {
+                        vdwr = atoms[i].getVDWType().radius * 0.5;
+                        polyffactors[i] = new SolventPolyFormFactor(atoms[i], vdwr + solvent_a, solvent_b);
+                    }
+                    gaussffactors = null;
+                    solventffactors = polyffactors;
                     break;
                 default:
+                    binaryffactors = null;
+                    polyffactors = null;
+                    gaussffactors = null;
+                    solventffactors = null;
                     break;
             }
-        }
-
-        // set up form factors
-        if (solvent) {
-            badd = 0.0;
         } else {
             badd = 2.0;
-        }
-        ffactors = new FormFactor[nAtoms];
-        for (int i = 0; i < nAtoms; i++) {
-            ffactors[i] = new FormFactor(atoms[i], use_3g, badd);
+            ffactors = new XRayFormFactor[nAtoms];
+            for (int i = 0; i < nAtoms; i++) {
+                ffactors[i] = new XRayFormFactor(atoms[i], use_3g, badd);
+            }
+            binaryffactors = null;
+            polyffactors = null;
+            gaussffactors = null;
+            solventffactors = null;
         }
 
         // determine number of grid points to sample density on
@@ -345,16 +379,43 @@ public class CrystalReciprocalSpace {
         complexFFT3D = new Complex3DParallel(fftX, fftY, fftZ, fftTeam);
     }
 
-    public void setSolventA(double a) {
+    public void setSolventAB(double a, double b) {
+        double vdwr;
         this.solvent_a = a;
-    }
-
-    public void setSolventB(double b) {
         this.solvent_b = b;
+        if (!solvent) {
+            return;
+        }
+        switch (solventmodel) {
+            case SolventModel.BINARY:
+                for (int i = 0; i < nAtoms; i++) {
+                    vdwr = atoms[i].getVDWType().radius * 0.5;
+                    binaryffactors[i] = new SolventBinaryFormFactor(atoms[i], vdwr + solvent_a);
+                }
+                break;
+            case SolventModel.GAUSSIAN:
+                for (int i = 0; i < nAtoms; i++) {
+                    vdwr = atoms[i].getVDWType().radius * 0.5;
+                    gaussffactors[i] = new SolventGaussFormFactor(atoms[i], vdwr * solvent_b);
+                }
+                break;
+            case SolventModel.POLYNOMIAL:
+                for (int i = 0; i < nAtoms; i++) {
+                    vdwr = atoms[i].getVDWType().radius * 0.5;
+                    polyffactors[i] = new SolventPolyFormFactor(atoms[i], vdwr + solvent_a, solvent_b);
+                }
+                break;
+        }
     }
 
     public void setUse3G(boolean use_3g) {
         this.use_3g = use_3g;
+        if (solvent) {
+            return;
+        }
+        for (int i = 0; i < nAtoms; i++) {
+            ffactors[i] = new XRayFormFactor(atoms[i], use_3g, badd);
+        }
     }
 
     public void deltaX(int n, double delta) {
@@ -844,7 +905,7 @@ public class CrystalReciprocalSpace {
             xyz[0] = coordinates[iSymm][0][n];
             xyz[1] = coordinates[iSymm][1][n];
             xyz[2] = coordinates[iSymm][2][n];
-            FormFactor atomff = ffactors[n];
+            XRayFormFactor atomff = ffactors[n];
             atomff.update(xyz, badd);
             crystal.toFractionalCoordinates(xyz, uvw);
             final int frad = Math.min(aradgrid,
@@ -875,7 +936,7 @@ public class CrystalReciprocalSpace {
                         crystal.toCartesianCoordinates(xf, xc);
 
                         final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
-                        grid[ii] += atomff.rho(xc);
+                        grid[ii] = atomff.rho(grid[ii], xc);
                     }
                 }
             }
@@ -900,8 +961,8 @@ public class CrystalReciprocalSpace {
             xyz[0] = coordinates[iSymm][0][n];
             xyz[1] = coordinates[iSymm][1][n];
             xyz[2] = coordinates[iSymm][2][n];
-            FormFactor atomff = ffactors[n];
-            atomff.update(xyz, badd);
+            FormFactor solventff = solventffactors[n];
+            solventff.update(xyz);
             crystal.toFractionalCoordinates(xyz, uvw);
             double vdwr = atoms[n].getVDWType().radius * 0.5;
             int frad = aradgrid;
@@ -945,14 +1006,7 @@ public class CrystalReciprocalSpace {
                         crystal.toCartesianCoordinates(xf, xc);
 
                         final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
-
-                        if (solventmodel == SolventModel.BINARY) {
-                            grid[ii] *= atomff.rho_binary(xc, vdwr + solvent_a);
-                        } else if (solventmodel == SolventModel.GAUSSIAN) {
-                            grid[ii] += atomff.rho_gauss(xc, vdwr * solvent_b);
-                        } else if (solventmodel == SolventModel.POLYNOMIAL) {
-                            grid[ii] *= atomff.rho_poly(xc, vdwr + solvent_a, solvent_b);
-                        }
+                        grid[ii] = solventff.rho(grid[ii], xc);
                     }
                 }
             }
@@ -1006,7 +1060,7 @@ public class CrystalReciprocalSpace {
                     xyz[0] = coordinates[0][0][n];
                     xyz[1] = coordinates[0][1][n];
                     xyz[2] = coordinates[0][2][n];
-                    FormFactor atomff = ffactors[n];
+                    XRayFormFactor atomff = ffactors[n];
                     atomff.update(xyz, 0.0);
                     crystal.toFractionalCoordinates(xyz, uvw);
                     final int dfrad = Math.min(aradgrid,
@@ -1089,10 +1143,11 @@ public class CrystalReciprocalSpace {
                     xyz[0] = coordinates[0][0][n];
                     xyz[1] = coordinates[0][1][n];
                     xyz[2] = coordinates[0][2][n];
-                    FormFactor atomff = ffactors[n];
-                    atomff.update(xyz, 0.0);
+                    FormFactor solventff = solventffactors[n];
+                    solventff.update(xyz);
                     crystal.toFractionalCoordinates(xyz, uvw);
                     double vdwr = atoms[n].getVDWType().radius * 0.5;
+                    double dfcmult = 1.0;
                     int dfrad = aradgrid;
                     switch (solventmodel) {
                         case SolventModel.BINARY:
@@ -1102,6 +1157,7 @@ public class CrystalReciprocalSpace {
                         case SolventModel.GAUSSIAN:
                             dfrad = Math.min(aradgrid,
                                     (int) Math.floor((vdwr * solvent_b + 2.0) * fftX / crystal.a) + 1);
+                            dfcmult = solvent_a;
                             break;
                         case SolventModel.POLYNOMIAL:
                             dfrad = Math.min(aradgrid,
@@ -1134,21 +1190,9 @@ public class CrystalReciprocalSpace {
                                 crystal.toCartesianCoordinates(xf, xc);
 
                                 final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
-
-                                if (solventmodel == SolventModel.GAUSSIAN) {
-                                    atomff.rho_gauss_grad(xc, vdwr * solvent_b,
-                                            densityGrid[ii] * solvent_a * solventGrid[ii],
-                                            refinementmode);
-                                    /*
-                                    atomff.rho_gauss_grad(xc, vdwr * solvent_b,
-                                    densityGrid[ii] * -solvent_a * solventGrid[ii],
-                                    refinementmode);
-                                     */
-                                } else if (solventmodel == SolventModel.POLYNOMIAL) {
-                                    atomff.rho_poly_grad(xc, vdwr + solvent_a, solvent_b,
-                                            densityGrid[ii] * solventGrid[ii],
-                                            refinementmode);
-                                }
+                                solventff.rho_grad(xc,
+                                        densityGrid[ii] * dfcmult * solventGrid[ii],
+                                        refinementmode);
                             }
                         }
                     }

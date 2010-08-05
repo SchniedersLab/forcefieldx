@@ -191,8 +191,8 @@ public class XRayStructure {
 
         // initialize atomic form factors
         for (Atom a : atomarray) {
-            FormFactor atomff =
-                    new FormFactor(a, refinementdata.use_3g, 2.0);
+            XRayFormFactor atomff =
+                    new XRayFormFactor(a, refinementdata.use_3g, 2.0);
             a.setFormFactorIndex(atomff.ffindex);
 
             if (a.getOccupancy() == 0.0) {
@@ -207,7 +207,7 @@ public class XRayStructure {
             xyz[1] = a.getY();
             xyz[2] = a.getZ();
             while (true) {
-                double rho = atomff.rho(xyz);
+                double rho = atomff.rho(0.0, xyz);
                 if (rho > 0.1) {
                     arad += 0.5;
                 } else if (rho > 0.001) {
@@ -304,17 +304,11 @@ public class XRayStructure {
         scaled = true;
     }
 
-    public void setSolventA(double a) {
+    public void setSolventAB(double a, double b) {
         if (solventmodel != SolventModel.NONE) {
-            crs_fs.setSolventA(a);
             refinementdata.solvent_a = a;
-        }
-    }
-
-    public void setSolventB(double b) {
-        if (solventmodel != SolventModel.NONE) {
-            crs_fs.setSolventB(b);
-            refinementdata.solvent_b = b;
+            refinementdata.solvent_b =b;
+            crs_fs.setSolventAB(a, b);
         }
     }
 

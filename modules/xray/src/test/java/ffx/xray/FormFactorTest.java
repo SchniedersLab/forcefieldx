@@ -38,7 +38,7 @@ import static org.junit.Assert.*;
 public class FormFactorTest {
 
     private Atom carbon;
-    private FormFactor carbonff;
+    private XRayFormFactor carbonff;
 
     public FormFactorTest() {
     }
@@ -63,7 +63,7 @@ public class FormFactorTest {
         carbon.setAtomType(atomType);
         carbon.setAltLoc('A');
         carbon.setAnisou(anisou);
-        carbonff = new FormFactor(carbon, false);
+        carbonff = new XRayFormFactor(carbon, false);
     }
 
     @After
@@ -75,9 +75,9 @@ public class FormFactorTest {
         double ff[][] = new double[2][6];
 
         assertNotNull("carbon form factors should exist",
-                FormFactor.getFormFactor("6"));
+                XRayFormFactor.getFormFactor("6"));
 
-        ff = FormFactor.getFormFactor("6");
+        ff = XRayFormFactor.getFormFactor("6");
 
         assertEquals("carbon form factors should be correct",
                 5, (int) ff[0][0]);
@@ -95,6 +95,6 @@ public class FormFactorTest {
 
         double xyz[] = {1.0, 1.0, 1.0};
         assertEquals("carbon (1 1 1) electron density should be correct",
-                0.081937, carbonff.rho(xyz), 0.000001);
+                0.081937, carbonff.rho(0.0, xyz), 0.000001);
     }
 }

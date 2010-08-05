@@ -144,8 +144,8 @@ public class FiniteDifferenceTest {
 
         // initialize atomic form factors
         for (int i = 0; i < atomarray.length; i++) {
-            FormFactor atomff =
-                    new FormFactor(atomarray[i], refinementdata.use_3g, 2.0);
+            XRayFormFactor atomff =
+                    new XRayFormFactor(atomarray[i], refinementdata.use_3g, 2.0);
             atomarray[i].setFormFactorIndex(atomff.ffindex);
 
             if (atomarray[i].getOccupancy() == 0.0) {
@@ -159,7 +159,7 @@ public class FiniteDifferenceTest {
             xyz[1] = atomarray[i].getY();
             xyz[2] = atomarray[i].getZ();
             while (true) {
-                double rho = atomff.rho(xyz);
+                double rho = atomff.rho(0.0, xyz);
                 if (rho > 0.1) {
                     arad += 0.5;
                 } else if (rho > 0.001) {

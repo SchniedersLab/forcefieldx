@@ -102,7 +102,7 @@ public class RefinementData {
         xrayscaletol = properties.getDouble("xrayscaletol", 1e-4);
         sigmaatol = properties.getDouble("sigmaatol", 1.0);
         xweight = properties.getDouble("xweight", 1.0);
-        bsimweight = properties.getDouble("bsimweight", 0.0);
+        bsimweight = properties.getDouble("bsimweight", 1.0);
         bnonzeroweight = properties.getDouble("bnonzeroweight", 1.0);
         bmass = properties.getDouble("bmass", 5.0);
         residuebfactor = properties.getBoolean("residuebfactor", false);
