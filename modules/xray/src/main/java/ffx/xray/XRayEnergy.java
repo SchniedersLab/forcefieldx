@@ -28,10 +28,11 @@ import static ffx.numerics.VectorMath.u2b;
 import ffx.numerics.Potential;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
+import ffx.potential.bonded.Molecule;
+import ffx.potential.bonded.Residue;
 import ffx.xray.RefinementMinimize.RefinementMode;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -54,11 +55,15 @@ public class XRayEnergy implements Potential {
     private int nb;
     private int nocc;
     private RefinementMode refinementMode;
+    private boolean refinexyz = false;
+    private boolean refineocc = false;
+    private boolean refineb = false;
     protected double[] optimizationScaling = null;
     private double bmass;
     private double temp = 0.1;
     private double kTbnonzero;
     private double kTbsim;
+    private double occmass;
 
     public XRayEnergy(XRayStructure xraystructure, int nxyz, int nb, int nocc,
             RefinementMode refinementmode) {
@@ -76,9 +81,11 @@ public class XRayEnergy implements Potential {
         bmass = refinementdata.bmass;
         kTbnonzero = 1.5 * kB * temp * refinementdata.bnonzeroweight;
         kTbsim = 0.01 * kB * temp * refinementdata.bsimweight;
+        occmass = refinementdata.occmass;
 
-        if (refinementMode == RefinementMode.BFACTORS
-                || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS) {
+        setRefinementBooleans();
+
+        if (refineb) {
             logger.info("total B non-zero restraint weight: " + temp * refinementdata.bnonzeroweight);
             logger.info("total B similarity restraint weight: " + temp * refinementdata.bsimweight);
         }
@@ -96,78 +103,21 @@ public class XRayEnergy implements Potential {
                 x[i] /= optimizationScaling[i];
             }
         }
-        switch (refinementMode) {
-            case COORDINATES:
-                for (Atom a : atomarray) {
-                    a.setXYZGradient(0.0, 0.0, 0.0);
-                }
-                // update coordinates
-                crs_fc.setCoordinates(x);
-                crs_fs.setCoordinates(x);
 
-                // compute new structure factors
-                crs_fc.computeDensity(refinementdata.fc);
-                crs_fs.computeDensity(refinementdata.fs);
+        if (refinexyz) {
+            for (Atom a : atomarray) {
+                a.setXYZGradient(0.0, 0.0, 0.0);
+            }
 
-                // compute crystal likelihood
-                e = xraystructure.sigmaaminimize.calculateLikelihood();
+            // update coordinates
+            crs_fc.setCoordinates(x);
+            crs_fs.setCoordinates(x);
+        }
 
-                // compute the crystal gradients
-                crs_fc.computeAtomicGradients(refinementdata.dfc,
-                        refinementdata.freer, refinementdata.rfreeflag,
-                        refinementMode);
-                crs_fs.computeAtomicGradients(refinementdata.dfs,
-                        refinementdata.freer, refinementdata.rfreeflag,
-                        refinementMode);
-
-                // pack gradients into gradient array
-                getXYZGradients(g);
-
-                break;
-            case BFACTORS:
-                for (Atom a : atomarray) {
-                    a.setTempFactorGradient(0.0);
-                    if (a.getAnisou() != null) {
-                        if (a.getAnisouGradient() == null) {
-                            double ganisou[] = new double[6];
-                            a.setAnisouGradient(ganisou);
-                        } else {
-                            double ganisou[] = a.getAnisouGradient();
-                            ganisou[0] = ganisou[1] = ganisou[2] = 0.0;
-                            ganisou[3] = ganisou[4] = ganisou[5] = 0.0;
-                        }
-                    }
-                }
-
-                // update B factors
-                setBFactors(x);
-
-                // compute new structure factors
-                crs_fc.computeDensity(refinementdata.fc);
-                crs_fs.computeDensity(refinementdata.fs);
-
-                // compute crystal likelihood
-                e = xraystructure.sigmaaminimize.calculateLikelihood();
-
-                // compute the crystal gradients
-                crs_fc.computeAtomicGradients(refinementdata.dfc,
-                        refinementdata.freer, refinementdata.rfreeflag,
-                        refinementMode);
-                crs_fs.computeAtomicGradients(refinementdata.dfs,
-                        refinementdata.freer, refinementdata.rfreeflag,
-                        refinementMode);
-
-                // add B restraints
-                e += getBFactorRestraints();
-
-                // pack gradients into gradient array
-                getBFactorGradients(g);
-
-                break;
-            case COORDINATES_AND_BFACTORS:
-                for (Atom a : atomarray) {
-                    a.setXYZGradient(0.0, 0.0, 0.0);
-                    a.setTempFactorGradient(0.0);
+        if (refineb) {
+            for (Atom a : atomarray) {
+                a.setTempFactorGradient(0.0);
+                if (a.getAnisou() != null) {
                     if (a.getAnisouGradient() == null) {
                         double ganisou[] = new double[6];
                         a.setAnisouGradient(ganisou);
@@ -177,40 +127,54 @@ public class XRayEnergy implements Potential {
                         ganisou[3] = ganisou[4] = ganisou[5] = 0.0;
                     }
                 }
-                // update coordinates
-                crs_fc.setCoordinates(x);
-                crs_fs.setCoordinates(x);
-                // update B factors
-                setBFactors(x);
+            }
 
-                // compute new structure factors
-                crs_fc.computeDensity(refinementdata.fc);
-                crs_fs.computeDensity(refinementdata.fs);
-
-                // compute crystal likelihood
-                e = xraystructure.sigmaaminimize.calculateLikelihood();
-
-                // compute the crystal gradients
-                crs_fc.computeAtomicGradients(refinementdata.dfc,
-                        refinementdata.freer, refinementdata.rfreeflag,
-                        refinementMode);
-                crs_fs.computeAtomicGradients(refinementdata.dfs,
-                        refinementdata.freer, refinementdata.rfreeflag,
-                        refinementMode);
-
-                // add B restraints
-                e += getBFactorRestraints();
-
-                // pack gradients into gradient array
-                getXYZGradients(g);
-                getBFactorGradients(g);
-
-                break;
-            default:
-                String message = "refinement mode not implemented.";
-                logger.log(Level.SEVERE, message);
-                break;
+            // update B factors
+            setBFactors(x);
         }
+
+        if (refineocc) {
+            for (Atom a : atomarray) {
+                a.setOccupancyGradient(0.0);
+            }
+
+            // update occupancies
+            setOccupancies(x);
+        }
+
+        // compute new structure factors
+        crs_fc.computeDensity(refinementdata.fc);
+        crs_fs.computeDensity(refinementdata.fs);
+
+        // compute crystal likelihood
+        e = xraystructure.sigmaaminimize.calculateLikelihood();
+
+        // compute the crystal gradients
+        crs_fc.computeAtomicGradients(refinementdata.dfc,
+                refinementdata.freer, refinementdata.rfreeflag,
+                refinementMode);
+        crs_fs.computeAtomicGradients(refinementdata.dfs,
+                refinementdata.freer, refinementdata.rfreeflag,
+                refinementMode);
+
+        if (refinexyz) {
+            // pack gradients into gradient array
+            getXYZGradients(g);
+        }
+
+        if (refineb) {
+            // add B restraints
+            e += getBFactorRestraints();
+
+            // pack gradients into gradient array
+            getBFactorGradients(g);
+        }
+
+        if (refineocc) {
+            // pack gradients into gradient array
+            getOccupancyGradients(x, g);
+        }
+
         /**
          * Scale the coordinates and gradients.
          */
@@ -230,6 +194,28 @@ public class XRayEnergy implements Potential {
 
     public void setRefinementMode(RefinementMode refinementmode) {
         this.refinementMode = refinementmode;
+        setRefinementBooleans();
+    }
+
+    private void setRefinementBooleans() {
+        if (refinementMode == RefinementMode.COORDINATES
+                || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS
+                || refinementMode == RefinementMode.COORDINATES_AND_OCCUPANCIES
+                || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
+            refinexyz = true;
+        }
+
+        if (refinementMode == RefinementMode.BFACTORS
+                || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS
+                || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
+            refineb = true;
+        }
+
+        if (refinementMode == RefinementMode.OCCUPANCIES
+                || refinementMode == RefinementMode.COORDINATES_AND_OCCUPANCIES
+                || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
+            refineocc = true;
+        }
     }
 
     public int getNXYZ() {
@@ -297,6 +283,51 @@ public class XRayEnergy implements Potential {
         }
     }
 
+    public void getOccupancyGradients(double x[], double g[]) {
+        double ave;
+        int index = nxyz + nb;
+
+        // first: alternate residues
+        for (ArrayList<Residue> list : xraystructure.altresidues) {
+            ave = 0.0;
+            for (Residue r : list) {
+                for (Atom a : r.getAtomList()) {
+                    ave += a.getOccupancyGradient();
+                }
+            }
+            ave /= list.size();
+            for (Residue r : list) {
+                for (Atom a : r.getAtomList()) {
+                    g[index] += a.getOccupancyGradient();
+                }
+                if (list.size() > 1) {
+                    g[index] -= ave;
+                }
+                index++;
+            }
+        }
+
+        // now the molecules (HETATMs)
+        for (ArrayList<Molecule> list : xraystructure.altmolecules) {
+            ave = 0.0;
+            for (Molecule m : list) {
+                for (Atom a : m.getAtomList()) {
+                    ave += a.getOccupancyGradient();
+                }
+            }
+            ave /= list.size();
+            for (Molecule m : list) {
+                for (Atom a : m.getAtomList()) {
+                    g[index] += a.getOccupancyGradient();
+                }
+                if (list.size() > 1) {
+                    g[index] -= ave;
+                }
+                index++;
+            }
+        }
+    }
+
     public void getXYZGradients(double g[]) {
         assert (g != null);
         double grad[] = new double[3];
@@ -316,8 +347,7 @@ public class XRayEnergy implements Potential {
         int index = 0;
         Arrays.fill(x, 0.0);
 
-        if (refinementMode == RefinementMode.COORDINATES
-                || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS) {
+        if (refinexyz) {
             for (Atom a : atomarray) {
                 a.getXYZ(xyz);
                 x[index++] = xyz[0];
@@ -326,8 +356,7 @@ public class XRayEnergy implements Potential {
             }
         }
 
-        if (refinementMode == RefinementMode.BFACTORS
-                || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS) {
+        if (refineb) {
             double anisou[];
             int resnum = -1;
             int nat = 0;
@@ -373,6 +402,21 @@ public class XRayEnergy implements Potential {
             if (refinementdata.residuebfactor) {
                 if (nat > 1) {
                     x[index] /= nat;
+                }
+            }
+        }
+
+        if (refineocc) {
+            for (ArrayList<Residue> list : xraystructure.altresidues) {
+                for (Residue r : list) {
+                    Atom a = r.getAtomList().get(0);
+                    x[index++] = a.getOccupancy();
+                }
+            }
+            for (ArrayList<Molecule> list : xraystructure.altmolecules) {
+                for (Molecule m : list) {
+                    Atom a = m.getAtomList().get(0);
+                    x[index++] = a.getOccupancy();
                 }
             }
         }
@@ -469,6 +513,27 @@ public class XRayEnergy implements Potential {
             xyz[1] = x[index++];
             xyz[2] = x[index++];
             a.moveTo(xyz);
+        }
+    }
+
+    public void setOccupancies(double x[]) {
+        double occ = 0.0;
+        int index = nxyz + nb;
+        for (ArrayList<Residue> list : xraystructure.altresidues) {
+            for (Residue r : list) {
+                occ = x[index++];
+                for (Atom a : r.getAtomList()) {
+                    a.setOccupancy(occ);
+                }
+            }
+        }
+        for (ArrayList<Molecule> list : xraystructure.altmolecules) {
+            for (Molecule m : list) {
+                occ = x[index++];
+                for (Atom a : m.getAtomList()) {
+                    a.setOccupancy(occ);
+                }
+            }
         }
     }
 
@@ -624,8 +689,7 @@ public class XRayEnergy implements Potential {
     public double[] getMass() {
         double mass[] = new double[nxyz + nb + nocc];
         int i = 0;
-        if (refinementMode == RefinementMode.COORDINATES
-                || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS) {
+        if (refinexyz) {
             for (Atom a : atomarray) {
                 double m = a.getMass();
                 mass[i++] = m;
@@ -634,10 +698,15 @@ public class XRayEnergy implements Potential {
             }
         }
 
-        if (refinementMode == RefinementMode.BFACTORS
-                || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS) {
-            for (int j = i; j < nxyz + nb + nocc; j++) {
+        if (refineb) {
+            for (int j = i; j < nxyz + nb; i++, j++) {
                 mass[j] = bmass;
+            }
+        }
+
+        if (refineocc) {
+            for (int j = i; j < nxyz + nb + nocc; i++, j++) {
+                mass[j] = occmass;
             }
         }
         return mass;

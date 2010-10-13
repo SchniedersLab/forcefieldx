@@ -39,7 +39,10 @@ import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
 import ffx.crystal.Resolution;
 import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.bonded.Molecule;
+import ffx.potential.bonded.Residue;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
 import ffx.xray.RefinementMinimize.RefinementMode;
 
@@ -60,6 +63,8 @@ public class XRayStructure {
     protected List<Atom> atomlist;
     protected final Atom atomarray[];
     protected List<Integer> xindex[];
+    protected ArrayList<ArrayList<Residue>> altresidues;
+    protected ArrayList<ArrayList<Molecule>> altmolecules;
     protected ScaleBulkMinimize scalebulkminimize;
     protected SigmaAMinimize sigmaaminimize;
     protected SplineMinimize splineminimize;
@@ -156,6 +161,94 @@ public class XRayStructure {
             ciffilter.readFile(ciffile, reflectionlist, refinementdata);
         } else {
             cnsfilter.readFile(cnsfile, reflectionlist, refinementdata);
+        }
+
+        // FIXME: assembly crystal can have replicates (and when PDB is written, too)
+        if (!crystal.equals(assembly[0].getCrystal())) {
+            // logger.severe("PDB and reflection file crystal information do not match! (check CRYST1 record?)");
+        }
+
+        // build alternate conformer list for occupancy refinement (if necessary)
+        altresidues = new ArrayList<ArrayList<Residue>>();
+        altmolecules = new ArrayList<ArrayList<Molecule>>();
+        ArrayList<MSNode> nlist0 = assembly[0].getNodeList();
+        ArrayList<Residue> rtmp = null;
+        ArrayList<Molecule> mtmp = null;
+        Residue r0 = null;
+        Molecule m0 = null;
+        Character c0 = ' ';
+        double occ;
+        for (int i = 0; i < nlist0.size(); i++) {
+            MSNode node = nlist0.get(i);
+            if (node instanceof Residue) {
+                r0 = (Residue) node;
+                m0 = null;
+                c0 = r0.getAtomList().get(0).getAltLoc();
+                occ = r0.getAtomList().get(0).getOccupancy();
+                if (!c0.equals(' ')
+                        || occ < 1.0) {
+                    rtmp = new ArrayList<Residue>();
+                    rtmp.add(r0);
+                    altresidues.add(rtmp);
+                }
+            } else if (node instanceof Molecule
+                    && refinementdata.refinemolocc) {
+                r0 = null;
+                m0 = (Molecule) node;
+                c0 = m0.getAtomList().get(0).getAltLoc();
+                occ = m0.getAtomList().get(0).getOccupancy();
+                if (!c0.equals(' ')
+                        || occ < 1.0) {
+                    mtmp = new ArrayList<Molecule>();
+                    mtmp.add(m0);
+                    altmolecules.add(mtmp);
+                }
+            } else {
+                c0 = ' ';
+            }
+            if (!c0.equals(' ')) {
+                for (int j = 1; j < assembly.length; j++) {
+                    ArrayList<MSNode> nlist = assembly[j].getNodeList();
+                    Residue r;
+                    Molecule m;
+                    Character c = 'A';
+                    if (r0 != null
+                            && nlist.size() > i) {
+                        r = (Residue) nlist.get(i);
+                        c = r.getAtomList().get(0).getAltLoc();
+                        if (!c.equals(' ')
+                                && !c.equals('A')) {
+                            if (rtmp != null) {
+                                rtmp.add(r);
+                            }
+                        }
+                    } else if (m0 != null
+                            && nlist.size() > i) {
+                        m = (Molecule) nlist.get(i);
+                        c = m.getAtomList().get(0).getAltLoc();
+                        if (!c.equals(' ')
+                                && !c.equals('A')) {
+                            if (mtmp != null) {
+                                mtmp.add(m);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        for (ArrayList<Residue> list : altresidues) {
+            if (list.size() == 1){
+                Residue r = list.get(0);
+                logger.info("residue: " + r.toString() + ": single conformer, non-unity occupancy: occupancy will be refined independently!");
+            }
+        }
+
+        for (ArrayList<Molecule> list : altmolecules) {
+            if (list.size() == 1){
+                Molecule m = list.get(0);
+                logger.info("molecule: " + m.toString() + ": single conformer, non-unity occupancy: occupancy will be refined independently!");
+            }
         }
 
         xindex = new List[assembly.length];
@@ -259,7 +352,21 @@ public class XRayStructure {
         if (!scaled) {
             scalebulkfit();
         }
+
+        int nat = 0;
+        int nnonh = 0;
+        for (Atom a : atomlist) {
+            if (a.getOccupancy() == 0.0) {
+                continue;
+            }
+            nat++;
+            if (a.getAtomicNumber() == 1) {
+                continue;
+            }
+            nnonh++;
+        }
         crystalstats.print_scalestats();
+        crystalstats.print_dpistats(nnonh, nat);
         crystalstats.print_hklstats();
         crystalstats.print_snstats();
         crystalstats.print_rstats();
@@ -307,7 +414,7 @@ public class XRayStructure {
     public void setSolventAB(double a, double b) {
         if (solventmodel != SolventModel.NONE) {
             refinementdata.solvent_a = a;
-            refinementdata.solvent_b =b;
+            refinementdata.solvent_b = b;
             crs_fs.setSolventAB(a, b);
         }
     }

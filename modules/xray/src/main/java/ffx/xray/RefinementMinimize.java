@@ -29,6 +29,9 @@ import ffx.numerics.LineSearch.LineSearchResult;
 import ffx.numerics.OptimizationListener;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.bonded.Molecule;
+import ffx.potential.bonded.Residue;
+import java.util.ArrayList;
 
 /**
  *
@@ -38,7 +41,8 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
 
     public enum RefinementMode {
 
-        COORDINATES, BFACTORS, COORDINATES_AND_BFACTORS
+        COORDINATES, BFACTORS, COORDINATES_AND_BFACTORS, OCCUPANCIES,
+        COORDINATES_AND_OCCUPANCIES, COORDINATES_AND_BFACTORS_AND_OCCUPANCIES
     }
     private static final Logger logger = Logger.getLogger(RefinementMinimize.class.getName());
     private static double toSeconds = 0.000000001;
@@ -51,6 +55,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
     private RefinementMode refinementMode;
     private final int nxyz;
     private final int nb;
+    private final int nocc;
     private final int n;
     private final double x[];
     private final double grad[];
@@ -96,6 +101,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
 
         this.nxyz = refinementenergy.nxyz;
         this.nb = refinementenergy.nb;
+        this.nocc = refinementenergy.nocc;
         this.n = refinementenergy.getNumberOfVariables();
 
         x = new double[n];
@@ -107,21 +113,31 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
         double xyzscale = 1.0;
         double anisouscale = 80.0;
         double bisoscale = 1.0;
-        if (refinementmode == RefinementMode.COORDINATES_AND_BFACTORS) {
+        double occscale = 15.0;
+        if (refinementmode == RefinementMode.COORDINATES_AND_BFACTORS
+                || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
             bisoscale = 0.2;
+        }
+
+        if (refinementmode == RefinementMode.COORDINATES_AND_OCCUPANCIES
+                || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
+            occscale = 10.0;
         }
 
         // set up scaling
         if (refinementmode == RefinementMode.COORDINATES
-                || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS) {
+                || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS
+                || refinementmode == RefinementMode.COORDINATES_AND_OCCUPANCIES
+                || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
             for (int i = 0; i < nxyz; i++) {
                 scaling[i] = xyzscale;
                 x[i] *= xyzscale;
             }
         }
 
-        if (refinementMode == RefinementMode.BFACTORS
-                || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS) {
+        if (refinementmode == RefinementMode.BFACTORS
+                || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS
+                || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
             int i = nxyz;
             int resnum = -1;
             int nres = refinementdata.nresiduebfactor + 1;
@@ -161,6 +177,26 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
             }
         }
 
+        if (refinementmode == RefinementMode.OCCUPANCIES
+                || refinementmode == RefinementMode.COORDINATES_AND_OCCUPANCIES
+                || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
+            int i = nxyz + nb;
+            for (ArrayList<Residue> list : xraystructure.altresidues) {
+                for (int j = 0; j < list.size(); j++) {
+                    scaling[i] = occscale;
+                    x[i] *= occscale;
+                    i++;
+                }
+            }
+            for (ArrayList<Molecule> list : xraystructure.altmolecules) {
+                for (int j = 0; j < list.size(); j++) {
+                    scaling[i] = occscale;
+                    x[i] *= occscale;
+                    i++;
+                }
+            }
+        }
+
         refinementenergy.setScaling(scaling);
     }
 
@@ -193,6 +229,15 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
                 break;
             case COORDINATES_AND_BFACTORS:
                 logger.info("Beginning X-ray refinement - mode: coordinates and bfactors nparams: " + n);
+                break;
+            case OCCUPANCIES:
+                logger.info("Beginning X-ray refinement - mode: occupancies nparams: " + n);
+                break;
+            case COORDINATES_AND_OCCUPANCIES:
+                logger.info("Beginning X-ray refinement - mode: coordinates and occupancies nparams: " + n);
+                break;
+            case COORDINATES_AND_BFACTORS_AND_OCCUPANCIES:
+                logger.info("Beginning X-ray refinement - mode: coordinates and bfactors and occupancies nparams: " + n);
                 break;
         }
 

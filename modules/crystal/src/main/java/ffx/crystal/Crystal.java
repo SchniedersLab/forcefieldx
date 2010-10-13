@@ -23,6 +23,7 @@ package ffx.crystal;
 import java.util.Vector;
 import static java.lang.Math.*;
 
+import ffx.utilities.HashCodeUtil;
 import static ffx.numerics.VectorMath.mat3mat3;
 import static ffx.numerics.VectorMath.mat3symvec6;
 import static ffx.numerics.VectorMath.transpose3;
@@ -403,6 +404,39 @@ public class Crystal {
         }
 
         return new Crystal(a, b, c, alpha, beta, gamma, sg);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (!(obj instanceof Crystal)) {
+            return false;
+        }
+        if (this == obj) {
+            return true;
+        }
+        return (this.a == ((Crystal) obj).a
+                && this.b == ((Crystal) obj).b
+                && this.c == ((Crystal) obj).c
+                && this.alpha == ((Crystal) obj).alpha
+                && this.beta == ((Crystal) obj).beta
+                && this.gamma == ((Crystal) obj).gamma
+                && this.spaceGroup.number == ((Crystal) obj).spaceGroup.number);
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = HashCodeUtil.SEED;
+        hash = HashCodeUtil.hash(hash, this.a);
+        hash = HashCodeUtil.hash(hash, this.b);
+        hash = HashCodeUtil.hash(hash, this.c);
+        hash = HashCodeUtil.hash(hash, this.alpha);
+        hash = HashCodeUtil.hash(hash, this.beta);
+        hash = HashCodeUtil.hash(hash, this.gamma);
+        hash = HashCodeUtil.hash(hash, this.spaceGroup.number);
+        return hash;
     }
 
     /**
