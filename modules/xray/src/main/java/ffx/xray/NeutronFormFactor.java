@@ -304,16 +304,27 @@ public final class NeutronFormFactor implements FormFactor {
         boolean refinexyz = false;
         boolean refineb = false;
         boolean refineanisou = false;
+        boolean refineocc = false;
         if (refinementmode == RefinementMode.COORDINATES
-                || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS) {
+                || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS
+                || refinementmode == RefinementMode.COORDINATES_AND_OCCUPANCIES
+                || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
             refinexyz = true;
         }
         if (refinementmode == RefinementMode.BFACTORS
-                || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS) {
+                || refinementmode == RefinementMode.BFACTORS_AND_OCCUPANCIES
+                || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS
+                || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
             refineb = true;
             if (hasanisou) {
                 refineanisou = true;
             }
+        }
+        if (refinementmode == RefinementMode.OCCUPANCIES
+                || refinementmode == RefinementMode.BFACTORS_AND_OCCUPANCIES
+                || refinementmode == RefinementMode.COORDINATES_AND_OCCUPANCIES
+                || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
+            refineocc = true;
         }
 
         aex = ainv[0] * exp(-0.5 * Crystal.quad_form(dxyz, uinv[0]));
@@ -323,8 +334,12 @@ public final class NeutronFormFactor implements FormFactor {
             gradp[0] += aex * dot(resv, vx);
             gradp[1] += aex * dot(resv, vy);
             gradp[2] += aex * dot(resv, vz);
+        }
+
+        if (refineocc) {
             gradp[3] += aex;
         }
+
         if (refineb) {
             gradp[4] += aex * 0.5 * (r2 * binv[0] * binv[0] - 3.0 * binv[0]);
 
@@ -361,7 +376,10 @@ public final class NeutronFormFactor implements FormFactor {
         }
 
         // occ
-        atom.addToOccupancyGradient(dfc * twopi32 * gradp[3]);
+        if (refineocc) {
+            atom.addToOccupancyGradient(dfc * twopi32 * gradp[3]);
+        }
+
         // Biso
         if (refineb) {
             atom.addToTempFactorGradient(dfc * b2u(occ * twopi32 * gradp[4]));
@@ -386,6 +404,17 @@ public final class NeutronFormFactor implements FormFactor {
         this.xyz[2] = xyz[2];
         biso = atom.getTempFactor();
         uadd = b2u(badd);
+        occ = atom.getOccupancy();
+
+        // check occ is valid
+        if (occ < 0.0) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("negative occupancy for atom: " + atom.toString() + "\n");
+            sb.append("resetting to 0.0\n");
+            logger.warning(sb.toString());
+            occ = 0.0;
+            atom.setOccupancy(0.0);
+        }
 
         // check if anisou changed
         if (atom.getAnisou() == null) {

@@ -42,7 +42,8 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
     public enum RefinementMode {
 
         COORDINATES, BFACTORS, COORDINATES_AND_BFACTORS, OCCUPANCIES,
-        COORDINATES_AND_OCCUPANCIES, COORDINATES_AND_BFACTORS_AND_OCCUPANCIES
+        BFACTORS_AND_OCCUPANCIES, COORDINATES_AND_OCCUPANCIES,
+        COORDINATES_AND_BFACTORS_AND_OCCUPANCIES
     }
     private static final Logger logger = Logger.getLogger(RefinementMinimize.class.getName());
     private static double toSeconds = 0.000000001;
@@ -121,7 +122,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
 
         if (refinementmode == RefinementMode.COORDINATES_AND_OCCUPANCIES
                 || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
-            occscale = 10.0;
+            occscale = 15.0;
         }
 
         // set up scaling
@@ -136,6 +137,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
         }
 
         if (refinementmode == RefinementMode.BFACTORS
+                || refinementmode == RefinementMode.BFACTORS_AND_OCCUPANCIES
                 || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS
                 || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
             int i = nxyz;
@@ -178,6 +180,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
         }
 
         if (refinementmode == RefinementMode.OCCUPANCIES
+                || refinementmode == RefinementMode.BFACTORS_AND_OCCUPANCIES
                 || refinementmode == RefinementMode.COORDINATES_AND_OCCUPANCIES
                 || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
             int i = nxyz + nb;
@@ -235,6 +238,9 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
                 break;
             case COORDINATES_AND_OCCUPANCIES:
                 logger.info("Beginning X-ray refinement - mode: coordinates and occupancies nparams: " + n);
+                break;
+            case BFACTORS_AND_OCCUPANCIES:
+                logger.info("Beginning X-ray refinement - mode: bfactors and occupancies nparams: " + n);
                 break;
             case COORDINATES_AND_BFACTORS_AND_OCCUPANCIES:
                 logger.info("Beginning X-ray refinement - mode: coordinates and bfactors and occupancies nparams: " + n);

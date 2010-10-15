@@ -821,6 +821,7 @@ public final class XRayFormFactor implements FormFactor {
             refinexyz = true;
         }
         if (refinementmode == RefinementMode.BFACTORS
+                || refinementmode == RefinementMode.BFACTORS_AND_OCCUPANCIES
                 || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS
                 || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
             refineb = true;
@@ -829,6 +830,7 @@ public final class XRayFormFactor implements FormFactor {
             }
         }
         if (refinementmode == RefinementMode.OCCUPANCIES
+                || refinementmode == RefinementMode.BFACTORS_AND_OCCUPANCIES
                 || refinementmode == RefinementMode.COORDINATES_AND_OCCUPANCIES
                 || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
             refineocc = true;

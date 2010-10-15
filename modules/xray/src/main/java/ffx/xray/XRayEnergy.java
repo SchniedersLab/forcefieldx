@@ -198,6 +198,11 @@ public class XRayEnergy implements Potential {
     }
 
     private void setRefinementBooleans() {
+        // reset, if previously set
+        refinexyz = false;
+        refineb = false;
+        refineocc = false;
+
         if (refinementMode == RefinementMode.COORDINATES
                 || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS
                 || refinementMode == RefinementMode.COORDINATES_AND_OCCUPANCIES
@@ -206,12 +211,14 @@ public class XRayEnergy implements Potential {
         }
 
         if (refinementMode == RefinementMode.BFACTORS
+                || refinementMode == RefinementMode.BFACTORS_AND_OCCUPANCIES
                 || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS
                 || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
             refineb = true;
         }
 
         if (refinementMode == RefinementMode.OCCUPANCIES
+                || refinementMode == RefinementMode.BFACTORS_AND_OCCUPANCIES
                 || refinementMode == RefinementMode.COORDINATES_AND_OCCUPANCIES
                 || refinementMode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
             refineocc = true;

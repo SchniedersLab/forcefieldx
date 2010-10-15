@@ -100,8 +100,10 @@ public class RefinementEnergy implements Potential {
                 nxyz = nAtoms * 3;
             case BFACTORS:
             case OCCUPANCIES:
+            case BFACTORS_AND_OCCUPANCIES:
                 // bfactor params
                 if (refinementmode == RefinementMode.BFACTORS
+                        || refinementmode == RefinementMode.BFACTORS_AND_OCCUPANCIES
                         || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS
                         || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
                     int resnum = -1;
@@ -145,6 +147,7 @@ public class RefinementEnergy implements Potential {
 
                 // occupancy params
                 if (refinementmode == RefinementMode.OCCUPANCIES
+                        || refinementmode == RefinementMode.BFACTORS_AND_OCCUPANCIES
                         || refinementmode == RefinementMode.COORDINATES_AND_OCCUPANCIES
                         || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
                     for (ArrayList<Residue> list : xraystructure.altresidues) {
@@ -244,6 +247,7 @@ public class RefinementEnergy implements Potential {
                 break;
             case BFACTORS:
             case OCCUPANCIES:
+            case BFACTORS_AND_OCCUPANCIES:
                 // Compute the X-ray target energy and gradient.
                 e = xrayEnergy.energyAndGradient(x, g);
                 break;
