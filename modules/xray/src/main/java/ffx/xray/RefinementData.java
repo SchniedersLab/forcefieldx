@@ -90,6 +90,8 @@ public class RefinementData {
     public final boolean residuebfactor;
     public final int nresiduebfactor;
     public final boolean addanisou;
+    public final boolean refinemolocc;
+    public final double occmass;
 
     public RefinementData(CompositeConfiguration properties,
             ReflectionList reflectionlist) {
@@ -108,24 +110,28 @@ public class RefinementData {
         residuebfactor = properties.getBoolean("residuebfactor", false);
         nresiduebfactor = properties.getInt("nresiduebfactor", 1);
         addanisou = properties.getBoolean("addanisou", false);
+        refinemolocc = properties.getBoolean("refinemolocc", false);
+        occmass = properties.getDouble("occmass", 10.0);
 
         if (logger.isLoggable(Level.INFO)) {
             StringBuilder sb = new StringBuilder();
             sb.append("\nRefinement data settings:\n");
-            sb.append("  using cctbx 3 Gaussians: " + use_3g + "\n");
-            sb.append("  resolution dependent spline scale: " + splinefit + "\n");
-            sb.append("  R Free flag: " + rflag + "\n");
-            sb.append("  n bins: " + npar + "\n");
-            sb.append("  solvent grid search: " + gridsearch + "\n");
-            sb.append("  X-ray scale fit tolerance: " + xrayscaletol + "\n");
-            sb.append("  sigma A fit tolerance: " + sigmaatol + "\n");
-            sb.append("  X-ray refinement weight: " + xweight + "\n");
-            sb.append("  B similarity weight: " + bsimweight + "\n");
-            sb.append("  B non-zero weight: " + bnonzeroweight + "\n");
-            sb.append("  B Lagrangian mass: " + bmass + "\n");
-            sb.append("  B factors refined by residue: " + residuebfactor + "\n");
-            sb.append("    (if true, num. residues per B: " + nresiduebfactor + ")\n");
-            sb.append("  add ANISOU for refinement: " + addanisou + "\n");
+            sb.append("  using cctbx 3 Gaussians (use_3g):" + use_3g + "\n");
+            sb.append("  resolution dependent spline scale (splinefit): " + splinefit + "\n");
+            sb.append("  R Free flag (rfreeflag):" + rflag + "\n");
+            sb.append("  n bins (nbins): " + npar + "\n");
+            sb.append("  solvent grid search (gridsearch): " + gridsearch + "\n");
+            sb.append("  X-ray scale fit tolerance (xrayscaletol): " + xrayscaletol + "\n");
+            sb.append("  sigma A fit tolerance (sigmaatol): " + sigmaatol + "\n");
+            sb.append("  X-ray refinement weight (xweight): " + xweight + "\n");
+            sb.append("  B similarity weight (bsimweight): " + bsimweight + "\n");
+            sb.append("  B non-zero weight (bnonzeroweight): " + bnonzeroweight + "\n");
+            sb.append("  B Lagrangian mass (bmass): " + bmass + "\n");
+            sb.append("  B factors refined by residue (residuebfactor): " + residuebfactor + "\n");
+            sb.append("    (if true, num. residues per B (nresiduebfactor): " + nresiduebfactor + ")\n");
+            sb.append("  add ANISOU for refinement (addanisou): " + addanisou + "\n");
+            sb.append("  refine occupancies on molecules (HETATMs - refinemolocc): " + refinemolocc + "\n");
+            sb.append("  Occupancy Lagrangian mass (occmass): " + occmass + "\n");
             logger.info(sb.toString());
         }
 

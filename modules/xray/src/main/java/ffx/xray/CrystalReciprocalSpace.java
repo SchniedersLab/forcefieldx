@@ -341,7 +341,7 @@ public class CrystalReciprocalSpace {
                 bulkSpatialDensityRegion.setDensityLoop(bulkSolventDensityLoops);
 
                 atomicGradientRegion = null;
-                solventGradientRegion = new SolventGradientRegion(RefinementMode.COORDINATES_AND_BFACTORS);
+                solventGradientRegion = new SolventGradientRegion(RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES);
             } else {
                 spatialDensityRegion = null;
                 bulkSpatialDensityRegion = null;
@@ -373,7 +373,7 @@ public class CrystalReciprocalSpace {
             }
             spatialDensityRegion.setDensityLoop(atomicDensityLoops);
 
-            atomicGradientRegion = new AtomicGradientRegion(RefinementMode.COORDINATES_AND_BFACTORS);
+            atomicGradientRegion = new AtomicGradientRegion(RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES);
             solventGradientRegion = null;
         }
         complexFFT3D = new Complex3DParallel(fftX, fftY, fftZ, fftTeam);

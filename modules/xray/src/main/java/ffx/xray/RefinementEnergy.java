@@ -26,7 +26,10 @@ import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.bonded.Molecule;
+import ffx.potential.bonded.Residue;
 import ffx.xray.RefinementMinimize.RefinementMode;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
@@ -91,43 +94,67 @@ public class RefinementEnergy implements Potential {
                 nxyz = nAtoms * 3;
                 break;
             case COORDINATES_AND_BFACTORS:
+            case COORDINATES_AND_OCCUPANCIES:
+            case COORDINATES_AND_BFACTORS_AND_OCCUPANCIES:
+                // coordinate params
                 nxyz = nAtoms * 3;
             case BFACTORS:
-                int resnum = -1;
-                int nres = refinementdata.nresiduebfactor + 1;
-                for (Atom a : atomarray) {
-                    // ignore hydrogens!!!
-                    if (a.getAtomicNumber() == 1) {
-                        continue;
-                    }
-                    if (a.getAnisou() == null) {
-                        if (refinementdata.addanisou) {
-                            double anisou[] = new double[6];
-                            double u = b2u(a.getTempFactor());
-                            anisou[0] = anisou[1] = anisou[2] = u;
-                            anisou[3] = anisou[4] = anisou[5] = 0.0;
-                            a.setAnisou(anisou);
-                            nb += 6;
-                        } else if (refinementdata.residuebfactor) {
-                            if (resnum != a.getResidueNumber()) {
-                                if (nres >= refinementdata.nresiduebfactor) {
-                                    nb++;
-                                    nres = 1;
-                                } else {
-                                    nres++;
+            case OCCUPANCIES:
+            case BFACTORS_AND_OCCUPANCIES:
+                // bfactor params
+                if (refinementmode == RefinementMode.BFACTORS
+                        || refinementmode == RefinementMode.BFACTORS_AND_OCCUPANCIES
+                        || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS
+                        || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
+                    int resnum = -1;
+                    int nres = refinementdata.nresiduebfactor + 1;
+                    for (Atom a : atomarray) {
+                        // ignore hydrogens!!!
+                        if (a.getAtomicNumber() == 1) {
+                            continue;
+                        }
+                        if (a.getAnisou() == null) {
+                            if (refinementdata.addanisou) {
+                                double anisou[] = new double[6];
+                                double u = b2u(a.getTempFactor());
+                                anisou[0] = anisou[1] = anisou[2] = u;
+                                anisou[3] = anisou[4] = anisou[5] = 0.0;
+                                a.setAnisou(anisou);
+                                nb += 6;
+                            } else if (refinementdata.residuebfactor) {
+                                if (resnum != a.getResidueNumber()) {
+                                    if (nres >= refinementdata.nresiduebfactor) {
+                                        nb++;
+                                        nres = 1;
+                                    } else {
+                                        nres++;
+                                    }
+                                    resnum = a.getResidueNumber();
                                 }
-                                resnum = a.getResidueNumber();
+                            } else {
+                                nb++;
                             }
                         } else {
-                            nb++;
+                            nb += 6;
                         }
-                    } else {
-                        nb += 6;
+                    }
+                    if (refinementdata.residuebfactor) {
+                        if (nres < refinementdata.nresiduebfactor) {
+                            nb--;
+                        }
                     }
                 }
-                if (refinementdata.residuebfactor) {
-                    if (nres < refinementdata.nresiduebfactor) {
-                        nb--;
+
+                // occupancy params
+                if (refinementmode == RefinementMode.OCCUPANCIES
+                        || refinementmode == RefinementMode.BFACTORS_AND_OCCUPANCIES
+                        || refinementmode == RefinementMode.COORDINATES_AND_OCCUPANCIES
+                        || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
+                    for (ArrayList<Residue> list : xraystructure.altresidues) {
+                        nocc += list.size();
+                    }
+                    for (ArrayList<Molecule> list : xraystructure.altmolecules) {
+                        nocc += list.size();
                     }
                 }
                 break;
@@ -219,10 +246,14 @@ public class RefinementEnergy implements Potential {
                 }
                 break;
             case BFACTORS:
+            case OCCUPANCIES:
+            case BFACTORS_AND_OCCUPANCIES:
                 // Compute the X-ray target energy and gradient.
                 e = xrayEnergy.energyAndGradient(x, g);
                 break;
             case COORDINATES_AND_BFACTORS:
+            case COORDINATES_AND_OCCUPANCIES:
+            case COORDINATES_AND_BFACTORS_AND_OCCUPANCIES:
                 // Compute the chemical energy and gradient.
                 for (int i = 0; i < assemblysize; i++) {
                     ForceFieldEnergy fe = molecularAssembly[i].getPotentialEnergy();
@@ -257,7 +288,7 @@ public class RefinementEnergy implements Potential {
                 }
                 break;
             default:
-                String message = "Unknown refinment mode.";
+                String message = "Unknown refinement mode.";
                 logger.log(Level.SEVERE, message);
         }
 

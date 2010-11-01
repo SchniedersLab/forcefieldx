@@ -64,74 +64,6 @@ public class CrystalStats {
                 refinementdata.spline.length);
     }
 
-    public void print_hklstats() {
-        double res[][] = new double[n][2];
-        int nhkl[][] = new int[n][3];
-
-        for (int i = 0; i < n; i++) {
-            res[i][0] = Double.NEGATIVE_INFINITY;
-            res[i][1] = Double.POSITIVE_INFINITY;
-        }
-
-        for (HKL ih : reflectionlist.hkllist) {
-            int i = ih.index();
-            int b = ih.bin();
-
-            // ignored cases
-            if (Double.isNaN(fo[i][0])
-                    || fo[i][1] <= 0.0) {
-                nhkl[b][2]++;
-                continue;
-            }
-
-            // determine res limits of each bin
-            double r = Crystal.res(crystal, ih);
-            if (r > res[b][0]) {
-                res[b][0] = r;
-            }
-            if (r < res[b][1]) {
-                res[b][1] = r;
-            }
-
-            // count the reflection
-            if (freer[i] == refinementdata.rfreeflag) {
-                nhkl[b][1]++;
-            } else {
-                nhkl[b][0]++;
-            }
-        }
-
-        StringBuilder sb = new StringBuilder("\n");
-        sb.append("# reflections (for 100% complete): " + refinementdata.n + "\n");
-        sb.append(String.format("%15s | %8s|%9s| %7s | %7s |%s\n",
-                "res. range", "#HKL (R)", "#HKL (cv)", "#bin", "#miss",
-                "%complete"));
-        for (int i = 0; i < n; i++) {
-            sb.append(String.format("%7.3f %7.3f | ", res[i][0], res[i][1]));
-            sb.append(String.format("%7d | %7d | %7d | %7d | ",
-                    nhkl[i][0], nhkl[i][1], nhkl[i][0] + nhkl[i][1],
-                    nhkl[i][2]));
-            sb.append(String.format("%5.2f\n", (((double) nhkl[i][0] + nhkl[i][1])
-                    / (nhkl[i][0] + nhkl[i][1] + nhkl[i][2])) * 100.0));
-        }
-
-        sb.append(String.format("%7.3f %7.3f | ", res[0][0], res[n - 1][1]));
-        int sum1 = 0;
-        int sum2 = 0;
-        int sum3 = 0;
-        for (int i = 0; i < n; i++) {
-            sum1 += nhkl[i][0];
-            sum2 += nhkl[i][1];
-            sum3 += nhkl[i][2];
-        }
-        sb.append(String.format("%7d | %7d | %7d | %7d | ",
-                sum1, sum2, sum1 + sum2, sum3));
-        sb.append(String.format("%5.2f\n\n",
-                (((double) sum1 + sum2) / (sum1 + sum2 + sum3)) * 100.0));
-
-        logger.info(sb.toString());
-    }
-
     public double get_r() {
         double sum = 0.0;
         double sumfo = 0.0;
@@ -244,6 +176,111 @@ public class CrystalStats {
         }
 
         return sum;
+    }
+
+    public void print_dpistats(int natoms, int nnonhatoms) {
+        int nhkli = 0;
+        int nhklo = refinementdata.n;
+        double rfree = get_rfree() * 0.01;
+        double res = reflectionlist.resolution.res_limit();
+        for (HKL ih : reflectionlist.hkllist) {
+            int i = ih.index();
+
+            // ignored cases
+            if (Double.isNaN(fo[i][0])
+                    || fo[i][1] <= 0.0) {
+                continue;
+            }
+            nhkli++;
+        }
+
+        double va = Math.pow(crystal.volume / crystal.spaceGroup.getNumberOfSymOps(), 0.3333);
+        double blowdpih = 1.28 * Math.sqrt(natoms) * va
+                * Math.pow(nhkli, -0.8333) * rfree;
+
+        double blowdpi = 1.28 * Math.sqrt(nnonhatoms) * va
+                * Math.pow(nhkli, -0.8333) * rfree;
+
+        double natni = Math.sqrt((double) natoms / nhkli);
+        double noni = Math.pow((double) nhkli / nhklo, -0.3333);
+        double cruickdpih = natni * noni * rfree * res;
+
+        natni = Math.sqrt((double) nnonhatoms / nhkli);
+        double cruickdpi = natni * noni * rfree * res;
+
+        StringBuilder sb = new StringBuilder("\n");
+        sb.append(String.format("Blow DPI (eqn 7): %7.4f nonH atoms: %7.4f\n", blowdpih, blowdpi));
+        sb.append(String.format("Cruickshank DPI (eqn 27): %7.4f nonH atoms: %7.4f\n", cruickdpih, cruickdpi));
+        sb.append(String.format("Acta Cryst (1999) D55, 583-601 and Acta Cryst (2002) D58, 792-797\n\n"));
+        logger.info(sb.toString());
+    }
+
+    public void print_hklstats() {
+        double res[][] = new double[n][2];
+        int nhkl[][] = new int[n][3];
+
+        for (int i = 0; i < n; i++) {
+            res[i][0] = Double.NEGATIVE_INFINITY;
+            res[i][1] = Double.POSITIVE_INFINITY;
+        }
+
+        for (HKL ih : reflectionlist.hkllist) {
+            int i = ih.index();
+            int b = ih.bin();
+
+            // ignored cases
+            if (Double.isNaN(fo[i][0])
+                    || fo[i][1] <= 0.0) {
+                nhkl[b][2]++;
+                continue;
+            }
+
+            // determine res limits of each bin
+            double r = Crystal.res(crystal, ih);
+            if (r > res[b][0]) {
+                res[b][0] = r;
+            }
+            if (r < res[b][1]) {
+                res[b][1] = r;
+            }
+
+            // count the reflection
+            if (freer[i] == refinementdata.rfreeflag) {
+                nhkl[b][1]++;
+            } else {
+                nhkl[b][0]++;
+            }
+        }
+
+        StringBuilder sb = new StringBuilder("\n");
+        sb.append("# reflections (for 100% complete): " + refinementdata.n + "\n");
+        sb.append(String.format("%15s | %8s|%9s| %7s | %7s |%s\n",
+                "res. range", "#HKL (R)", "#HKL (cv)", "#bin", "#miss",
+                "%complete"));
+        for (int i = 0; i < n; i++) {
+            sb.append(String.format("%7.3f %7.3f | ", res[i][0], res[i][1]));
+            sb.append(String.format("%7d | %7d | %7d | %7d | ",
+                    nhkl[i][0], nhkl[i][1], nhkl[i][0] + nhkl[i][1],
+                    nhkl[i][2]));
+            sb.append(String.format("%5.2f\n", (((double) nhkl[i][0] + nhkl[i][1])
+                    / (nhkl[i][0] + nhkl[i][1] + nhkl[i][2])) * 100.0));
+        }
+
+        sb.append(String.format("%7.3f %7.3f | ", res[0][0], res[n - 1][1]));
+        int sum1 = 0;
+        int sum2 = 0;
+        int sum3 = 0;
+        for (int i = 0; i < n; i++) {
+            sum1 += nhkl[i][0];
+            sum2 += nhkl[i][1];
+            sum3 += nhkl[i][2];
+        }
+        sb.append(String.format("%7d | %7d | %7d | %7d | ",
+                sum1, sum2, sum1 + sum2, sum3));
+        sb.append(String.format("%5.2f\n\n",
+                (((double) sum1 + sum2) / (sum1 + sum2 + sum3)) * 100.0));
+
+        logger.info(sb.toString());
     }
 
     public void print_rstats() {
