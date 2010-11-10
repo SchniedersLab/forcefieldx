@@ -32,6 +32,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import org.apache.commons.configuration.CompositeConfiguration;
+
 /**
  * Uses some methods from:
  * Cowtan, K. 2002. Generic representation and evaluation of properties as a
@@ -53,6 +55,11 @@ public class ReflectionList {
     public double minres, maxres;
 
     public ReflectionList(Crystal crystal, Resolution resolution) {
+        this(crystal, resolution, null);
+    }
+
+    public ReflectionList(Crystal crystal, Resolution resolution,
+            CompositeConfiguration properties) {
         this.crystal = crystal;
         spaceGroup = crystal.spaceGroup;
         crystalSystem = spaceGroup.crystalSystem;
@@ -119,10 +126,15 @@ public class ReflectionList {
             hist[i] /= hist[hist.length - 1];
         }
 
-        // assign each reflection to a bin in the range (0-9)
+        // assign each reflection to a bin in the range (0-nbins)
+        int nbins = 10;
+        if (properties != null) {
+            nbins = properties.getInt("nbins", 10);
+        }
+        double nbinsd = (double) nbins;
         for (HKL ih : hkllist) {
-            int bin = (int) (10.0 * ordinal(Crystal.invressq(this.crystal, ih)));
-            ih.bin = min(bin, 9);
+            int bin = (int) (nbinsd * ordinal(Crystal.invressq(this.crystal, ih)));
+            ih.bin = min(bin, nbins - 1);
         }
     }
 

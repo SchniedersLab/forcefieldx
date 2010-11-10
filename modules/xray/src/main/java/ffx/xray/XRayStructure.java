@@ -149,7 +149,8 @@ public class XRayStructure {
                 logger.severe("MTZ/CIF/CNS file does not contain full crystal information!");
             }
         } else {
-            reflectionlist = new ReflectionList(crystalinit, resolutioninit);
+            reflectionlist = new ReflectionList(crystalinit, resolutioninit,
+                    properties);
         }
 
         crystal = reflectionlist.crystal;

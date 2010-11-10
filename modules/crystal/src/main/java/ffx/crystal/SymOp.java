@@ -94,42 +94,28 @@ public class SymOp {
             boolean s = false;
             if (rot[i][0] < 0.0) {
                 sb.append("-X");
-                if (tr[0] > 0.0) {
-                    sb.append(trtoString(tr[0]));
-                }
                 s = true;
             } else if (rot[i][0] > 0.0) {
                 sb.append("X");
-                if (tr[0] > 0.0) {
-                    sb.append(trtoString(tr[0]));
-                }
                 s = true;
             }
             if (rot[i][1] < 0.0) {
                 sb.append("-Y");
-                if (tr[1] > 0.0) {
-                    sb.append(trtoString(tr[1]));
-                }
                 s = true;
             } else if (rot[i][1] > 0.0) {
                 sb.append(s ? "+Y" : "Y");
-                if (tr[1] > 0.0) {
-                    sb.append(trtoString(tr[1]));
-                }
                 s = true;
             }
             if (rot[i][2] < 0.0) {
                 sb.append("-Z");
-                if (tr[2] > 0.0) {
-                    sb.append(trtoString(tr[2]));
-                }
                 s = true;
             } else if (rot[i][2] > 0.0) {
                 sb.append(s ? "+Z" : "Z");
-                if (tr[2] > 0.0) {
-                    sb.append(trtoString(tr[2]));
-                }
                 s = true;
+            }
+
+            if (tr[i] > 0.0) {
+                sb.append(trtoString(tr[i]));
             }
 
             if (i < 2) {

@@ -116,9 +116,9 @@ public class RefinementData {
         if (logger.isLoggable(Level.INFO)) {
             StringBuilder sb = new StringBuilder();
             sb.append("\nRefinement data settings:\n");
-            sb.append("  using cctbx 3 Gaussians (use_3g):" + use_3g + "\n");
+            sb.append("  using cctbx 3 Gaussians (use_3g): " + use_3g + "\n");
             sb.append("  resolution dependent spline scale (splinefit): " + splinefit + "\n");
-            sb.append("  R Free flag (rfreeflag):" + rflag + "\n");
+            sb.append("  R Free flag (rfreeflag): " + rflag + "\n");
             sb.append("  n bins (nbins): " + npar + "\n");
             sb.append("  solvent grid search (gridsearch): " + gridsearch + "\n");
             sb.append("  X-ray scale fit tolerance (xrayscaletol): " + xrayscaletol + "\n");

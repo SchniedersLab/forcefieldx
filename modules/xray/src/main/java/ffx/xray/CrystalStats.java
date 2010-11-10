@@ -288,7 +288,7 @@ public class CrystalStats {
         double nhkl[] = new double[n + 1];
         double r[][] = new double[n + 1][2];
         double sumfo[][] = new double[n + 1][2];
-        double s[][] = new double[n + 1][3];
+        double s[][] = new double[n + 1][4];
         ReflectionSpline sigmaaspline = new ReflectionSpline(reflectionlist,
                 refinementdata.sigmaa.length);
 
@@ -313,6 +313,7 @@ public class CrystalStats {
             double fh = spline.f(ss, refinementdata.spline);
             double sa = sigmaaspline.f(ss, refinementdata.sigmaa);
             double wa = sigmaaspline.f(ss, refinementdata.sigmaw);
+            double eoscale = sigmaaspline.f(ss, refinementdata.foesq);
 
             // determine res limits of each bin
             double rs = Crystal.res(crystal, ih);
@@ -340,28 +341,31 @@ public class CrystalStats {
             nhkl[n]++;
             s[b][0] += (sa - s[b][0]) / nhkl[b];
             s[b][1] += (wa - s[b][1]) / nhkl[b];
-            s[b][2] += (fomphi[i][0] - s[b][2]) / nhkl[b];
+            s[b][2] += ((wa / Math.sqrt(eoscale)) - s[b][2]) / nhkl[b];
+            s[b][3] += (fomphi[i][0] - s[b][3]) / nhkl[b];
             s[n][0] += (sa - s[n][0]) / nhkl[n];
             s[n][1] += (wa - s[n][1]) / nhkl[n];
-            s[n][2] += (fomphi[i][0] - s[n][2]) / nhkl[n];
+            s[n][2] += ((wa / Math.sqrt(eoscale)) - s[n][2]) / nhkl[n];
+            s[n][3] += (fomphi[i][0] - s[n][3]) / nhkl[n];
         }
 
         StringBuilder sb = new StringBuilder("\n");
-        sb.append(String.format("%15s | %7s | %7s | %7s | %7s | %7s\n",
-                "res. range", "  R", "Rfree", "s", "w", "FOM"));
+        sb.append("s and w are analagous to D and sum_wc - J. Appl. Cryst. (2005) 38, 193-198\n\n");
+        sb.append(String.format("%15s | %7s | %7s | %7s | %7s | %7s | %7s\n",
+                "res. range", "  R", "Rfree", "s", "w(E)", "w(F)", "FOM"));
         for (int i = 0; i < n; i++) {
             sb.append(String.format("%7.3f %7.3f | ", res[i][0], res[i][1]));
-            sb.append(String.format("%7.2f | %7.2f | %7.4f | %7.4f | %7.4f\n",
+            sb.append(String.format("%7.2f | %7.2f | %7.4f | %7.4f | %7.2f | %7.4f\n",
                     (r[i][0] / sumfo[i][0]) * 100.0,
                     (r[i][1] / sumfo[i][1]) * 100.0,
-                    s[i][0], s[i][1], s[i][2]));
+                    s[i][0], s[i][1], s[i][2], s[i][3]));
         }
 
         sb.append(String.format("%7.3f %7.3f | ", res[0][0], res[n - 1][1]));
-        sb.append(String.format("%7.2f | %7.2f | %7.4f | %7.4f | %7.4f\n\n",
+        sb.append(String.format("%7.2f | %7.2f | %7.4f | %7.4f | %7.2f | %7.4f\n\n",
                 (r[n][0] / sumfo[n][0]) * 100.0,
                 (r[n][1] / sumfo[n][1]) * 100.0,
-                s[n][0], s[n][1], s[n][2]));
+                s[n][0], s[n][1], s[n][2], s[n][3]));
 
         logger.info(sb.toString());
     }
