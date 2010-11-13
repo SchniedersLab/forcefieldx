@@ -169,7 +169,8 @@ public class CIFFilter {
         }
         Resolution resolution = new Resolution(0.9999 * reshigh, sampling);
 
-        ReflectionList reflectionlist = new ReflectionList(crystal, resolution);
+        ReflectionList reflectionlist = new ReflectionList(crystal, resolution,
+                properties);
         return reflectionlist;
     }
 

@@ -197,7 +197,7 @@ public class MTZFilter {
         }
         Resolution resolution = new Resolution(0.9999 * reshigh, sampling);
 
-        return new ReflectionList(crystal, resolution);
+        return new ReflectionList(crystal, resolution, properties);
     }
 
     public boolean readFile(File mtzFile, ReflectionList reflectionlist,
