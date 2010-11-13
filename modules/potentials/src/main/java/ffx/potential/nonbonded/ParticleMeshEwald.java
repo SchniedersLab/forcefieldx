@@ -2795,6 +2795,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                     tyi_local[k] += ttm3y;
                     tzi_local[k] += ttm3z;
                 } else {
+                    /*
                     gxi_local[i] += 0.5 * ftm2x;
                     gyi_local[i] += 0.5 * ftm2y;
                     gzi_local[i] += 0.5 * ftm2z;
@@ -2806,7 +2807,14 @@ public class ParticleMeshEwald implements LambdaInterface {
                     tzi_local[i] += 0.5 * ttm2z;
                     txk_local[k] += 0.5 * ttm3x;
                     tyk_local[k] += 0.5 * ttm3y;
-                    tzk_local[k] += 0.5 * ttm3z;
+                    tzk_local[k] += 0.5 * ttm3z; */
+
+                    gxi_local[i] += ftm2x;
+                    gyi_local[i] += ftm2y;
+                    gzi_local[i] += ftm2z;
+                    txi_local[i] += ttm2x;
+                    tyi_local[i] += ttm2y;
+                    tzi_local[i] += ttm2z;
                 }
                 return e;
             }
@@ -3066,6 +3074,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                     tyi_local[k] += ttm3iy;
                     tzi_local[k] += ttm3iz;
                 } else {
+                    /*
                     gxi_local[i] += 0.5 * ftm2ix;
                     gyi_local[i] += 0.5 * ftm2iy;
                     gzi_local[i] += 0.5 * ftm2iz;
@@ -3078,6 +3087,13 @@ public class ParticleMeshEwald implements LambdaInterface {
                     txk_local[k] += 0.5 * ttm3ix;
                     tyk_local[k] += 0.5 * ttm3iy;
                     tzk_local[k] += 0.5 * ttm3iz;
+                     */
+                    gxi_local[i] += ftm2ix;
+                    gyi_local[i] += ftm2iy;
+                    gzi_local[i] += ftm2iz;
+                    txi_local[i] += ttm2ix;
+                    tyi_local[i] += ttm2iy;
+                    tzi_local[i] += ttm2iz;
                 }
                 return ei;
             }

@@ -550,13 +550,16 @@ public class Real3DParallel {
                 "Initializing a %d cubed grid for %d CPUs.\n"
                 + "The best timing out of %d repititions will be used.",
                 dim, ncpu, reps));
+
         Real3D real3D = new Real3D(dim, dim, dim);
         ParallelTeam parallelTeam = new ParallelTeam(ncpu);
         Real3DParallel real3DParallel = new Real3DParallel(dim, dim, dim,
                 parallelTeam);
+
         final int dimCubed = (dim + 2) * dim * dim;
         final double data[] = new double[dimCubed];
         final double work[] = new double[dimCubed];
+
         // Parallel Array Initialization.
         try {
             parallelTeam.execute(new ParallelRegion() {
@@ -564,18 +567,18 @@ public class Real3DParallel {
                 @Override
                 public void run() {
                     try {
-                        execute(0, (dim + 2) / 2 - 1, new IntegerForLoop() {
+                        execute(0, dim - 1, new IntegerForLoop() {
 
                             @Override
                             public void run(int lb, int ub) {
                                 Random randomNumberGenerator = new Random(1);
-                                int index = dim * dim * lb * 2;
+                                int index = dim * dim * lb;
                                 for (int z = lb; z <= ub; z++) {
                                     for (int y = 0; y < dim; y++) {
                                         for (int x = 0; x < dim; x++) {
                                             double randomNumber = randomNumberGenerator.nextDouble();
                                             data[index] = randomNumber;
-                                            index += 2;
+                                            index ++;
                                         }
                                     }
                                 }
@@ -591,6 +594,7 @@ public class Real3DParallel {
             System.out.println(e.toString());
             System.exit(-1);
         }
+
         double toSeconds = 0.000000001;
         long parTime = Long.MAX_VALUE;
         long seqTime = Long.MAX_VALUE;

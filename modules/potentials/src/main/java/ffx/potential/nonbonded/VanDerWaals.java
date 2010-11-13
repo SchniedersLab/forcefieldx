@@ -60,7 +60,7 @@ import ffx.potential.parameters.VDWType;
  * @since 1.0
  */
 public class VanDerWaals extends ParallelRegion implements MaskingInterface,
-        LambdaInterface {
+                                                           LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(VanDerWaals.class.getName());
     /**
@@ -180,7 +180,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
      * @since 1.0
      */
     public VanDerWaals(ForceField forceField, Atom[] atoms,
-            Crystal crystal, ParallelTeam parallelTeam) {
+                       Crystal crystal, ParallelTeam parallelTeam) {
         this.atoms = atoms;
         this.parallelTeam = parallelTeam;
         this.crystal = crystal;
@@ -378,7 +378,6 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         logger.info(format(" Long-Range Correction:                   %B", doLongRangeCorrection));
     }
 
-
     private double getLongRangeCorrection() {
         /**
          * Long range correction.
@@ -456,8 +455,8 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                 // Correct for softCore vdW that are being turned off.
                 if (lambda < 1.0) {
                     total -= (softRadCount[i] * radCount[j]
-                            + (radCount[i] - softRadCount[i]) * softRadCount[j])
-                            * (1.0 - lambda) * trapezoid;
+                              + (radCount[i] - softRadCount[i]) * softRadCount[j])
+                             * (1.0 - lambda) * trapezoid;
                 }
             }
         }
@@ -665,9 +664,9 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         int classi = atoms[i].getAtomType().atomClass;
         int classk = atoms[k].getAtomType().atomClass;
         logger.info(String.format("%s %6d-%s %6d-%s %10.4f  %10.4f  %10.4f",
-                "VDW", atoms[i].xyzIndex, atoms[i].getAtomType().name,
-                atoms[k].xyzIndex, atoms[k].getAtomType().name,
-                radEps[classi][classk * 3 + RADMIN] / dhal, r, eij));
+                                  "VDW", atoms[i].xyzIndex, atoms[i].getAtomType().name,
+                                  atoms[k].xyzIndex, atoms[k].getAtomType().name,
+                                  radEps[classi][classk * 3 + RADMIN] / dhal, r, eij));
     }
 
     @Override
@@ -712,7 +711,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         if (doLongRangeCorrection) {
             longRangeCorrection = getLongRangeCorrection();
             logger.info(String.format(" Long-range vdW correction %12.8f (kcal/mole).",
-                    longRangeCorrection));
+                                      longRangeCorrection));
         } else {
             longRangeCorrection = 0.0;
         }
@@ -794,7 +793,18 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                         reducedXYZ[iY] = y;
                         reducedXYZ[iZ] = z;
                     }
+                    /*
+                    if (i == 0) {
+                        in[0] = reducedXYZ[iX];
+                        in[1] = reducedXYZ[iY];
+                        in[2] = reducedXYZ[iZ];
+                        crystal.toFractionalCoordinates(in, out);
+                        atoms[i].print();
+                        logger.info(format("%5d %d CART %10.8f %10.8f %10.8f", i, 0, in[0], in[1], in[2]));
+                        logger.info(format("%5d %d FRAC %10.8f %10.8f %10.8f", i, 0, out[0], out[1], out[2]));
+                    } */
                 }
+
                 List<SymOp> symOps = crystal.spaceGroup.symOps;
                 for (int iSymOp = 1; iSymOp < nSymm; iSymOp++) {
                     SymOp symOp = symOps.get(iSymOp);
@@ -811,6 +821,12 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                         xyz[iX] = out[0];
                         xyz[iY] = out[1];
                         xyz[iZ] = out[2];
+                        /*
+                        if (i == 0) {
+                            crystal.toFractionalCoordinates(out, in);
+                            logger.info(format("%5d %d FRAC %10.8f %10.8f %10.8f",
+                                    i, iSymOp, in[0], in[1], in[2]));
+                        } */
                     }
                 }
             }
@@ -930,6 +946,9 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                         dx_local[0] = xi - xk;
                         dx_local[1] = yi - yk;
                         dx_local[2] = zi - zk;
+                        dx2_local[0] = dx_local[0];
+                        dx2_local[1] = dx_local[1];
+                        dx2_local[2] = dx_local[2];
                         final double r2 = crystal.image(dx_local);
                         if (r2 <= off2 && mask[k] > 0.0) {
                             final double r = sqrt(r2);
@@ -960,6 +979,14 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                                 final double r5 = r2 * r3;
                                 taper = c5 * r5 + c4 * r4 + c3 * r3 + c2 * r2 + c1 * r + c0;
                             }
+                            /*
+                            if (iSymOp > 0 && ((i == 0 && k == 5305) || (i == 5305 && k == 0))) {
+                                logger.info(format("%d %d %d (%12.6f, %12.6f, %12.6f)",
+                                                   iSymOp, i, k, dx2_local[0], dx2_local[1], dx2_local[2]));
+                                logger.info(format("%d %d %d (%12.6f, %12.6f, %12.6f) %12.6f %12.6f",
+                                                   iSymOp, i, k, dx_local[0], dx_local[1], dx_local[2], r, eij * taper));
+                            }*/
+
                             e += eij * taper;
                             count++;
                             if (gradient) {
@@ -974,9 +1001,12 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                                     de = eij * dtaper + de * taper;
                                 }
                                 de /= r;
-                                final double dedx = de * dx_local[0];
-                                final double dedy = de * dx_local[1];
-                                final double dedz = de * dx_local[2];
+                                dx_local[0] *= de;
+                                dx_local[1] *= de;
+                                dx_local[2] *= de;
+                                final double dedx = dx_local[0];
+                                final double dedy = dx_local[1];
+                                final double dedz = dx_local[2];
                                 gxi += dedx * redv;
                                 gyi += dedy * redv;
                                 gzi += dedz * redv;
@@ -987,20 +1017,17 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                                 final double red = reductionValue[k];
                                 final double redkv = 1.0 - red;
                                 if (iSymOp > 0) {
-                                    dx_local[0] = dedx * red;
-                                    dx_local[1] = dedy * red;
-                                    dx_local[2] = dedz * red;
-                                    dx2_local[0] = dedx * redkv;
-                                    dx2_local[1] = dedy * redkv;
-                                    dx2_local[2] = dedz * redkv;
+                                    /*
                                     crystal.applySymRot(dx_local, dx_local, symOp);
-                                    crystal.applySymRot(dx2_local, dx2_local, symOp);
-                                    gxi_local[k] -= 0.5 * dx_local[0];
-                                    gyi_local[k] -= 0.5 * dx_local[1];
-                                    gzi_local[k] -= 0.5 * dx_local[2];
-                                    gxi_local[redk] -= 0.5 * dx2_local[0];
-                                    gyi_local[redk] -= 0.5 * dx2_local[1];
-                                    gzi_local[redk] -= 0.5 * dx2_local[2];
+                                    final double dedxk = dx_local[0];
+                                    final double dedyk = dx_local[1];
+                                    final double dedzk = dx_local[2];
+                                    gxi_local[k] -= 0.5 * dedxk * red;
+                                    gyi_local[k] -= 0.5 * dedyk * red;
+                                    gzi_local[k] -= 0.5 * dedzk * red;
+                                    gxi_local[redk] -= 0.5 * dedxk * redkv;
+                                    gyi_local[redk] -= 0.5 * dedyk * redkv;
+                                    gzi_local[redk] -= 0.5 * dedzk * redkv; */
                                 } else {
                                     gxi_local[k] -= dedx * red;
                                     gyi_local[k] -= dedy * red;
@@ -1013,21 +1040,21 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                         }
                     }
                     if (gradient) {
-                        if (iSymOp > 0) {
+                        /* if (iSymOp > 0) {
                             gxi_local[i] += 0.5 * gxi;
                             gyi_local[i] += 0.5 * gyi;
                             gzi_local[i] += 0.5 * gzi;
                             gxi_local[redi] += 0.5 * gxredi;
                             gyi_local[redi] += 0.5 * gyredi;
                             gzi_local[redi] += 0.5 * gzredi;
-                        } else {
+                        } else { */
                             gxi_local[i] += gxi;
                             gyi_local[i] += gyi;
                             gzi_local[i] += gzi;
                             gxi_local[redi] += gxredi;
                             gyi_local[redi] += gyredi;
                             gzi_local[redi] += gzredi;
-                        }
+                        //}
                     }
                     if (iSymOp == 0) {
                         removeMask(mask, i);

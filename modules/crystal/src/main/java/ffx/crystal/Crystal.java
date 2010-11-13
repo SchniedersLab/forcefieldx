@@ -142,7 +142,7 @@ public class Crystal {
      * @param sg The space group symbol.
      */
     public Crystal(double a, double b, double c, double alpha, double beta,
-            double gamma, String sg) {
+                   double gamma, String sg) {
         this.a = a;
         this.b = b;
         this.c = c;
@@ -161,7 +161,7 @@ public class Crystal {
 
         if (!SpaceGroup.checkRestrictions(crystalSystem, a, b, c, alpha, beta, gamma)) {
             String message = "The lattice parameters do not satisfy the " + crystalSystem
-                    + " crystal system restrictions:/n" + toString();
+                             + " crystal system restrictions:/n" + toString();
             logger.severe(message);
         }
 
@@ -214,25 +214,25 @@ public class Crystal {
 
                     index = 0;
                     if ((rot[1][1] * rot[1][2] == -1)
-                            || (rot[2][1] * rot[2][2] == -1)
-                            || (rot[1][1] * rot[1][2] == 1)
-                            || (rot[2][1] * rot[2][2] == 1)) {
+                        || (rot[2][1] * rot[2][2] == -1)
+                        || (rot[1][1] * rot[1][2] == 1)
+                        || (rot[2][1] * rot[2][2] == 1)) {
                         scale_b[0] = index++;
                         scale_b[1] = index++;
                         scale_b[2] = scale_b[1];
                         hexagonal = true;
                     } else if ((rot[0][0] * rot[0][2] == -1)
-                            || (rot[2][0] * rot[2][2] == -1)
-                            || (rot[0][0] * rot[0][2] == 1)
-                            || (rot[2][0] * rot[2][2] == 1)) {
+                                   || (rot[2][0] * rot[2][2] == -1)
+                                   || (rot[0][0] * rot[0][2] == 1)
+                                   || (rot[2][0] * rot[2][2] == 1)) {
                         scale_b[0] = index++;
                         scale_b[1] = index++;
                         scale_b[2] = scale_b[0];
                         hexagonal = true;
                     } else if ((rot[0][0] * rot[0][1] == -1)
-                            || (rot[1][0] * rot[1][1] == -1)
-                            || (rot[0][0] * rot[0][1] == 1)
-                            || (rot[1][0] * rot[1][1] == 1)) {
+                                   || (rot[1][0] * rot[1][1] == -1)
+                                   || (rot[0][0] * rot[0][1] == 1)
+                                   || (rot[1][0] * rot[1][1] == 1)) {
                         scale_b[0] = index++;
                         scale_b[1] = scale_b[0];
                         scale_b[2] = index++;
@@ -349,16 +349,16 @@ public class Crystal {
         symOpsCartesian = new Vector<SymOp>();
         Vector<SymOp> symOps = spaceGroup.symOps;
         int nSymm = symOps.size();
+        RealMatrix toFrac = new Array2DRowRealMatrix(A);
+        RealMatrix toCart = new Array2DRowRealMatrix(Ai);
         for (int i = 0; i < nSymm; i++) {
             SymOp symOp = symOps.get(i);
-            // rot_c = A^(-1).rot_f.A
             m = new Array2DRowRealMatrix(symOp.rot);
-            RealMatrix toFrac = new Array2DRowRealMatrix(A);
-            RealMatrix toCart = new Array2DRowRealMatrix(Ai);
-            rot = m.preMultiply(toCart).multiply(toFrac).getData();
+            // rot_c = A^(-1).rot_f.A
+            RealMatrix rotMat = m.preMultiply(toCart.transpose()).multiply(toFrac.transpose());
             // tr_c = tr_f.A^(-1)
             double tr[] = toCart.preMultiply(symOp.tr);
-            symOpsCartesian.add(new SymOp(rot, tr));
+            symOpsCartesian.add(new SymOp(rotMat.getData(), tr));
         }
 
         /**
@@ -388,8 +388,8 @@ public class Crystal {
         sg = SpaceGroup.pdb2ShortName(sg);
 
         if (a < 0.0 || b < 0.0 || c < 0.0
-                || alpha < 0.0 || beta < 0.0 || gamma < 0.0
-                || sg == null) {
+            || alpha < 0.0 || beta < 0.0 || gamma < 0.0
+            || sg == null) {
             return null;
         }
 
@@ -473,85 +473,112 @@ public class Crystal {
         if (aperiodic) {
             return x * x + y * y + z * z;
         }
-        switch (crystalSystem) {
-            case CUBIC:
-            case ORTHORHOMBIC:
-            case TETRAGONAL:
-                while (x > half_a) {
-                    x -= a;
-                }
-                while (x < mhalf_a) {
-                    x += a;
-                }
-                while (y > half_b) {
-                    y -= b;
-                }
-                while (y < mhalf_b) {
-                    y += b;
-                }
-                while (z > half_c) {
-                    z -= c;
-                }
-                while (z < mhalf_c) {
-                    z += c;
-                }
-                break;
-            case MONOCLINIC:
-                double zm = z / sin_beta;
-                double xm = x - zm * cos_beta;
-                while (xm > half_a) {
-                    xm -= a;
-                }
-                while (xm < mhalf_a) {
-                    xm += a;
-                }
-                while (y > half_b) {
-                    y -= b;
-                }
-                while (y < mhalf_b) {
-                    y += b;
-                }
-                while (zm > half_c) {
-                    zm -= c;
-                }
-                while (zm < mhalf_c) {
-                    zm += c;
-                }
-                x = xm + zm * cos_beta;
-                z = zm * sin_beta;
-                break;
-            case HEXAGONAL:
-            case TRICLINIC:
-            case TRIGONAL:
-                double zt = z / gamma_term;
-                double yt = (y - zt * beta_term) / sin_gamma;
-                double xt = x - yt * cos_gamma - zt * cos_beta;
-                while (xt > half_a) {
-                    xt -= a;
-                }
-                while (xt < mhalf_a) {
-                    xt += a;
-                }
-                while (yt > half_b) {
-                    yt -= b;
-                }
-                while (yt < mhalf_b) {
-                    yt += b;
-                }
-                while (zt > half_c) {
-                    zt -= c;
-                }
-                while (zt < mhalf_c) {
-                    zt += c;
-                }
-                x = xt + yt * cos_gamma + zt * cos_beta;
-                y = yt * sin_gamma + zt * beta_term;
-                z = zt * gamma_term;
-        }
+
+        double xf = x * A00 + y * A10 + z * A20;
+        double yf = x * A01 + y * A11 + z * A21;
+        double zf = x * A02 + y * A12 + z * A22;
+
+        /**
+        XTEMP=INT(ABS(XTEMP)+HALF)*SIGN(ONE,-XTEMP) +XTEMP
+        YTEMP=INT(ABS(YTEMP)+HALF)*SIGN(ONE,-YTEMP) +YTEMP
+        ZTEMP=INT(ABS(ZTEMP)+HALF)*SIGN(ONE,-ZTEMP) +ZTEMP
+         */
+        xf = floor(abs(xf) + 0.5) * signum(-xf) + xf;
+        yf = floor(abs(yf) + 0.5) * signum(-yf) + yf;
+        zf = floor(abs(zf) + 0.5) * signum(-zf) + zf;
+
+        x = xf * Ai00 + yf * Ai10 + zf * Ai20;
+        y = xf * Ai01 + yf * Ai11 + zf * Ai21;
+        z = xf * Ai02 + yf * Ai12 + zf * Ai22;
+
         xyz[0] = x;
         xyz[1] = y;
         xyz[2] = z;
         return x * x + y * y + z * z;
+
+        /*
+        switch (crystalSystem) {
+        case CUBIC:
+        case ORTHORHOMBIC:
+        case TETRAGONAL:
+        while (x > half_a) {
+        x -= a;
+        }
+        while (x < mhalf_a) {
+        x += a;
+        }
+        while (y > half_b) {
+        y -= b;
+        }
+        while (y < mhalf_b) {
+        y += b;
+        }
+        while (z > half_c) {
+        z -= c;
+        }
+        while (z < mhalf_c) {
+        z += c;
+        }
+        break;
+        case MONOCLINIC:
+        double zm = z / sin_beta;
+        double xm = x - zm * cos_beta;
+        while (xm > half_a) {
+        xm -= a;
+        }
+        while (xm < mhalf_a) {
+        xm += a;
+        }
+        while (y > half_b) {
+        y -= b;
+        }
+        while (y < mhalf_b) {
+        y += b;
+        }
+        while (zm > half_c) {
+        zm -= c;
+        }
+        while (zm < mhalf_c) {
+        zm += c;
+        }
+        x = xm + zm * cos_beta;
+        z = zm * sin_beta;
+        break;
+        case HEXAGONAL:
+        case TRICLINIC:
+        case TRIGONAL:
+        double zt = z / gamma_term;
+        double yt = (y - zt * beta_term) / sin_gamma;
+        double xt = x - yt * cos_gamma - zt * cos_beta;
+        while (xt > half_a) {
+        xt -= a;
+        }
+        while (xt < mhalf_a) {
+        xt += a;
+        }
+        while (yt > half_b) {
+        yt -= b;
+        }
+        while (yt < mhalf_b) {
+        yt += b;
+        }
+        while (zt > half_c) {
+        zt -= c;
+        }
+        while (zt < mhalf_c) {
+        zt += c;
+        }
+        x = xt + yt * cos_gamma + zt * cos_beta;
+        y = yt * sin_gamma + zt * beta_term;
+        z = zt * gamma_term;
+        }
+        xyz[0] = x;
+        xyz[1] = y;
+        xyz[2] = z;
+        return x * x + y * y + z * z; */
+    }
+
+    public void rotateForce() {
     }
 
     /**
@@ -708,7 +735,7 @@ public class Crystal {
      *            The symmetry operator.
      */
     public void applySymOp(int n, double x[], double y[], double z[],
-            double mateX[], double mateY[], double mateZ[], SymOp symOp) {
+                           double mateX[], double mateY[], double mateZ[], SymOp symOp) {
         if (x == null || y == null || z == null) {
             return;
         }
@@ -866,10 +893,12 @@ public class Crystal {
         double xi = xc * A00 + yc * A10 + zc * A20;
         double yi = xc * A01 + yc * A11 + zc * A21;
         double zi = xc * A02 + yc * A12 + zc * A22;
+
         // Apply Symmetry Operator.
         double fx = rot[0][0] * xi + rot[0][1] * yi + rot[0][2] * zi;
         double fy = rot[1][0] * xi + rot[1][1] * yi + rot[1][2] * zi;
         double fz = rot[2][0] * xi + rot[2][1] * yi + rot[2][2] * zi;
+
         // Convert back to Cartesian coordinates.
         mate[0] = fx * Ai00 + fy * Ai10 + fz * Ai20;
         mate[1] = fx * Ai01 + fy * Ai11 + fz * Ai21;
@@ -891,7 +920,6 @@ public class Crystal {
         double h = hkl.h();
         double k = hkl.k();
         double l = hkl.l();
-        // Apply Symmetry Operator.
         double hs = rot[0][0] * h + rot[0][1] * k + rot[0][2] * l;
         double ks = rot[1][0] * h + rot[1][1] * k + rot[1][2] * l;
         double ls = rot[2][0] * h + rot[2][1] * k + rot[2][2] * l;
@@ -950,7 +978,7 @@ public class Crystal {
      *            The symmetry operator.
      */
     public void applySymRot(int n, double x[], double y[], double z[],
-            double mateX[], double mateY[], double mateZ[], SymOp symOp) {
+                            double mateX[], double mateY[], double mateZ[], SymOp symOp) {
         double rot[][] = symOp.rot;
         final double rot00 = rot[0][0];
         final double rot10 = rot[1][0];
@@ -982,7 +1010,7 @@ public class Crystal {
     }
 
     public void toFractionalCoordinates(int n, double x[], double y[],
-            double z[], double xf[], double yf[], double zf[]) {
+                                        double z[], double xf[], double yf[], double zf[]) {
         for (int i = 0; i < n; i++) {
             double xc = x[i];
             double yc = y[i];
@@ -991,13 +1019,6 @@ public class Crystal {
             yf[i] = xc * A01 + yc * A11 + zc * A21;
             zf[i] = xc * A02 + yc * A12 + zc * A22;
         }
-    }
-
-    public void toFractionalCoordinates(double x, double y,
-            double z, double xf, double yf, double zf) {
-        xf = x * A00 + y * A10 + z * A20;
-        yf = x * A01 + y * A11 + z * A21;
-        zf = x * A02 + y * A12 + z * A22;
     }
 
     public void toFractionalCoordinates(int n, double cart[], double frac[]) {
@@ -1017,6 +1038,17 @@ public class Crystal {
         }
     }
 
+    public void toPrimaryCell(double in[], double out[]) {
+        toFractionalCoordinates(in, out);
+        out[0] = mod(out[0], 1.0) - 0.5;
+        out[1] = mod(out[1], 1.0) - 0.5;
+        out[2] = mod(out[2], 1.0) - 0.5;
+        toCartesianCoordinates(out, in);
+        out[0] = in[0];
+        out[1] = in[1];
+        out[2] = in[2];
+    }
+
     public void toFractionalCoordinates(double x[], double xf[]) {
         double xc = x[0];
         double yc = x[1];
@@ -1024,11 +1056,10 @@ public class Crystal {
         xf[0] = xc * A00 + yc * A10 + zc * A20;
         xf[1] = xc * A01 + yc * A11 + zc * A21;
         xf[2] = xc * A02 + yc * A12 + zc * A22;
-
     }
 
     public void toCartesianCoordinates(int n, double xf[], double yf[],
-            double zf[], double x[], double y[], double z[]) {
+                                       double zf[], double x[], double y[], double z[]) {
         for (int i = 0; i < n; i++) {
             double xi = xf[i];
             double yi = yf[i];
@@ -1037,13 +1068,6 @@ public class Crystal {
             y[i] = xi * Ai01 + yi * Ai11 + zi * Ai21;
             z[i] = xi * Ai02 + yi * Ai12 + zi * Ai22;
         }
-    }
-
-    public void toCartesianCoordinates(double xf, double yf,
-            double zf, double x, double y, double z) {
-        x = xf * Ai00 + yf * Ai10 + zf * Ai20;
-        y = xf * Ai01 + yf * Ai11 + zf * Ai21;
-        z = xf * Ai02 + yf * Ai12 + zf * Ai22;
     }
 
     public void toCartesianCoordinates(int n, double frac[], double cart[]) {
@@ -1103,14 +1127,14 @@ public class Crystal {
         double trans[] = symOp.tr;
         // Apply translation
         return -2.0 * PI
-                * (hkl[0] * trans[0] + hkl[1] * trans[1] + hkl[2] * trans[2]);
+               * (hkl[0] * trans[0] + hkl[1] * trans[1] + hkl[2] * trans[2]);
     }
 
     public static double sym_phase_shift(HKL hkl, SymOp symOp) {
         double trans[] = symOp.tr;
         // Apply translation
         return -2.0 * PI
-                * (hkl.h() * trans[0] + hkl.k() * trans[1] + hkl.l() * trans[2]);
+               * (hkl.h() * trans[0] + hkl.k() * trans[1] + hkl.l() * trans[2]);
     }
 
     // this is here as its an atypical mod function used by xtal methods
