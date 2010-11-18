@@ -64,18 +64,18 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
         this.refinementdata = refinementdata;
         this.crystal = reflectionlist.crystal;
 
-        n = refinementdata.nparams * 2;
+        n = refinementdata.nbins * 2;
         sigmaaenergy = new SigmaAEnergy(reflectionlist, refinementdata);
         x = new double[n];
         grad = new double[n];
         scaling = new double[n];
 
-        for (int i = 0; i < refinementdata.nparams; i++) {
+        for (int i = 0; i < refinementdata.nbins; i++) {
             // for optimizationscaling, best to move to 0.0
             x[i] = refinementdata.sigmaa[i] - 1.0;
             scaling[i] = 1.0;
-            x[i + refinementdata.nparams] = refinementdata.sigmaw[i];
-            scaling[i + refinementdata.nparams] = 2.0;
+            x[i + refinementdata.nbins] = refinementdata.sigmaw[i];
+            scaling[i + refinementdata.nbins] = 2.0;
         }
 
         // generate Es
@@ -91,9 +91,9 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
 
         // generate initial w estimate
         ReflectionSpline spline = new ReflectionSpline(reflectionlist,
-                refinementdata.nparams);
-        int nmean[] = new int[refinementdata.nparams];
-        for (int i = 0; i < refinementdata.nparams; i++) {
+                refinementdata.nbins);
+        int nmean[] = new int[refinementdata.nbins];
+        for (int i = 0; i < refinementdata.nbins; i++) {
             nmean[i] = 0;
         }
         double mean = 0.0, tot = 0.0;
@@ -119,18 +119,18 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
             nmean[spline.i1()]++;
             tot++;
 
-            x[spline.i1() + refinementdata.nparams] += (wi
-                    - x[spline.i1() + refinementdata.nparams])
+            x[spline.i1() + refinementdata.nbins] += (wi
+                    - x[spline.i1() + refinementdata.nbins])
                     / nmean[spline.i1()];
             mean += (wi - mean) / tot;
         }
 
         logger.info("starting mean w: " + mean + " w scaling: " + 1.0 / mean);
-        for (int i = 0; i < refinementdata.nparams; i++) {
-            x[i] -= x[i + refinementdata.nparams];
+        for (int i = 0; i < refinementdata.nbins; i++) {
+            x[i] -= x[i + refinementdata.nbins];
             x[i] *= scaling[i];
-            scaling[i + refinementdata.nparams] = 1.0 / mean;
-            x[i + refinementdata.nparams] *= scaling[i + refinementdata.nparams];
+            scaling[i + refinementdata.nbins] = 1.0 / mean;
+            x[i + refinementdata.nbins] *= scaling[i + refinementdata.nbins];
         }
 
         sigmaaenergy.setScaling(scaling);
@@ -173,10 +173,10 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
                 logger.warning("\n Optimization failed.\n");
         }
 
-        for (int i = 0; i < refinementdata.nparams; i++) {
+        for (int i = 0; i < refinementdata.nbins; i++) {
             refinementdata.sigmaa[i] = 1.0 + x[i] / scaling[i];
-            refinementdata.sigmaw[i] = x[i + refinementdata.nparams]
-                    / scaling[i + refinementdata.nparams];
+            refinementdata.sigmaw[i] = x[i + refinementdata.nbins]
+                    / scaling[i + refinementdata.nbins];
         }
 
         if (logger.isLoggable(Level.INFO)) {

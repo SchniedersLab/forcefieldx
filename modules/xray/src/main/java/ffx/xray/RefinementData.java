@@ -40,6 +40,7 @@ public class RefinementData {
     public final int scale_n;
     // data
     public final double fsigf[][];
+    public final double anofsigf[][];
     public final int freer[];
     // calculated atomic structure factors
     public final double fc[][];
@@ -64,7 +65,7 @@ public class RefinementData {
     protected CrystalReciprocalSpace crs_fc;
     protected CrystalReciprocalSpace crs_fs;
     // spline scaling coefficients
-    public final int nparams;
+    public final int nbins;
     public double spline[];
     public double sigmaa[];
     public double sigmaw[];
@@ -97,7 +98,6 @@ public class RefinementData {
             ReflectionList reflectionlist) {
 
         int rflag = properties.getInt("rfreeflag", 1);
-        int npar = properties.getInt("nbins", 10);
         gridsearch = properties.getBoolean("gridsearch", false);
         splinefit = properties.getBoolean("splinefit", true);
         use_3g = properties.getBoolean("use_3g", true);
@@ -119,7 +119,7 @@ public class RefinementData {
             sb.append("  using cctbx 3 Gaussians (use_3g): " + use_3g + "\n");
             sb.append("  resolution dependent spline scale (splinefit): " + splinefit + "\n");
             sb.append("  R Free flag (rfreeflag): " + rflag + "\n");
-            sb.append("  n bins (nbins): " + npar + "\n");
+            sb.append("  n bins (nbins): " + reflectionlist.nbins + "\n");
             sb.append("  solvent grid search (gridsearch): " + gridsearch + "\n");
             sb.append("  X-ray scale fit tolerance (xrayscaletol): " + xrayscaletol + "\n");
             sb.append("  sigma A fit tolerance (sigmaatol): " + sigmaatol + "\n");
@@ -137,9 +137,10 @@ public class RefinementData {
 
         this.n = reflectionlist.hkllist.size();
         this.scale_n = reflectionlist.crystal.scale_n;
-        this.nparams = npar;
         this.rfreeflag = rflag;
+        this.nbins = reflectionlist.nbins;
         fsigf = new double[n][2];
+        anofsigf = new double[n][4];
         freer = new int[n];
         fc = new double[n][2];
         fs = new double[n][2];
@@ -152,16 +153,17 @@ public class RefinementData {
 
         for (int i = 0; i < n; i++) {
             fsigf[i][0] = fsigf[i][1] = Double.NaN;
+            anofsigf[i][0] = anofsigf[i][1] = anofsigf[i][2] = anofsigf[i][3] = Double.NaN;
             fctot[i][0] = fctot[i][1] = Double.NaN;
         }
 
-        spline = new double[nparams * 2];
-        sigmaa = new double[nparams];
-        sigmaw = new double[nparams];
-        fcesq = new double[nparams];
-        foesq = new double[nparams];
-        for (int i = 0; i < nparams; i++) {
-            spline[i] = spline[i + nparams] = sigmaa[i] = fcesq[i] = foesq[i] = 1.0;
+        spline = new double[nbins * 2];
+        sigmaa = new double[nbins];
+        sigmaw = new double[nbins];
+        fcesq = new double[nbins];
+        foesq = new double[nbins];
+        for (int i = 0; i < nbins; i++) {
+            spline[i] = spline[i + nbins] = sigmaa[i] = fcesq[i] = foesq[i] = 1.0;
             sigmaw[i] = 0.05;
         }
 
@@ -208,6 +210,24 @@ public class RefinementData {
         }
     }
 
+    public void generate_fsigf_from_anofsigf() {
+        for (int i = 0; i < n; i++) {
+            if (Double.isNaN(anofsigf[i][0])
+                    && Double.isNaN(anofsigf[i][2])) {
+            } else if (Double.isNaN(anofsigf[i][0])) {
+                fsigf[i][0] = anofsigf[i][2];
+                fsigf[i][1] = anofsigf[i][3];
+            } else if (Double.isNaN(anofsigf[i][2])) {
+                fsigf[i][0] = anofsigf[i][0];
+                fsigf[i][1] = anofsigf[i][1];
+            } else {
+                fsigf[i][0] = (anofsigf[i][0] + anofsigf[i][2]) / 2.0;
+                fsigf[i][1] = Math.sqrt(anofsigf[i][1] * anofsigf[i][1]
+                        + anofsigf[i][3] * anofsigf[i][3]);
+            }
+        }
+    }
+
     public void set_f(int i, double f) {
         fsigf[i][0] = f;
     }
@@ -231,6 +251,48 @@ public class RefinementData {
 
     public double[] get_fsigf(int i) {
         return fsigf[i];
+    }
+
+    public void set_ano_fplus(int i, double f) {
+        anofsigf[i][0] = f;
+    }
+
+    public void set_ano_fminus(int i, double f) {
+        anofsigf[i][2] = f;
+    }
+
+    public double get_ano_fplus(int i) {
+        return anofsigf[i][0];
+    }
+
+    public double get_ano_fminus(int i) {
+        return anofsigf[i][2];
+    }
+
+    public void set_ano_sigfplus(int i, double f) {
+        anofsigf[i][1] = f;
+    }
+
+    public void set_ano_sigfminus(int i, double f) {
+        anofsigf[i][3] = f;
+    }
+
+    public double get_ano_sigfplus(int i) {
+        return anofsigf[i][1];
+    }
+
+    public double get_ano_sigfminus(int i) {
+        return anofsigf[i][3];
+    }
+
+    public void set_ano_fsigfplus(int i, double f, double sigf) {
+        anofsigf[i][0] = f;
+        anofsigf[i][1] = sigf;
+    }
+
+    public void set_ano_fsigfminus(int i, double f, double sigf) {
+        anofsigf[i][2] = f;
+        anofsigf[i][3] = sigf;
     }
 
     public void set_freer(int i, int f) {

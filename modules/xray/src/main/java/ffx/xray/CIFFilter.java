@@ -138,10 +138,10 @@ public class CIFFilter {
             return null;
         }
 
-        if (sgnum < 0 && sgname != null){
+        if (sgnum < 0 && sgname != null) {
             sgnum = SpaceGroup.spaceGroupNumber(SpaceGroup.pdb2ShortName(sgname));
         }
-        
+
         if (sgnum < 0 || reshigh < 0 || cell[0] < 0) {
             logger.info("insufficient information in CIF header to generate Reflection List");
             return null;
@@ -176,7 +176,7 @@ public class CIFFilter {
 
     public boolean readFile(File cifFile, ReflectionList reflectionlist,
             RefinementData refinementdata) {
-        int nread, nnan, nres, nignore, ncifignore;
+        int nread, nnan, nres, nignore, ncifignore, nfriedel;
 
         try {
             BufferedReader br = new BufferedReader(new FileReader(cifFile));
@@ -184,7 +184,6 @@ public class CIFFilter {
             String str;
             int ncol = 0;
             boolean inhkl = false;
-            int hklline;
             while ((str = br.readLine()) != null) {
                 String strarray[] = str.split("\\s+");
 
@@ -228,7 +227,8 @@ public class CIFFilter {
             br.reset();
 
             // read in data
-            nread = nnan = nres = nignore = ncifignore = 0;
+            nread = nnan = nres = nignore = ncifignore = nfriedel = 0;
+            HKL mate = new HKL();
             while ((str = br.readLine()) != null) {
                 // reached end, break
                 if (str.trim().startsWith("#END")) {
@@ -240,7 +240,9 @@ public class CIFFilter {
                 int ih = Integer.parseInt(strarray[h]);
                 int ik = Integer.parseInt(strarray[k]);
                 int il = Integer.parseInt(strarray[l]);
-                HKL hkl = reflectionlist.getHKL(ih, ik, il);
+                boolean friedel = reflectionlist.findSymHKL(ih, ik, il, mate);
+                HKL hkl = reflectionlist.getHKL(mate);
+
                 if (hkl != null) {
                     boolean isnull = false;
 
@@ -255,7 +257,7 @@ public class CIFFilter {
                         } else if (strarray[rfree].charAt(0) == '<'
                                 || strarray[rfree].charAt(0) == '-'
                                 || strarray[rfree].charAt(0) == 'h'
-                                || strarray[rfree].charAt(0) == 'l'){
+                                || strarray[rfree].charAt(0) == 'l') {
                             isnull = true;
                             ncifignore++;
                         } else {
@@ -265,13 +267,16 @@ public class CIFFilter {
                     }
 
                     if (fo > 0 && sigfo > 0 && !isnull) {
-                        refinementdata.set_fsigf(hkl.index(),
-                                Double.parseDouble(strarray[fo]),
-                                Double.parseDouble(strarray[sigfo]));
-                    } else {
-                        refinementdata.set_fsigf(hkl.index(),
-                                Double.NaN,
-                                Double.NaN);
+                        if (friedel) {
+                            refinementdata.set_ano_fsigfminus(hkl.index(),
+                                    Double.parseDouble(strarray[fo]),
+                                    Double.parseDouble(strarray[sigfo]));
+                            nfriedel++;
+                        } else {
+                            refinementdata.set_ano_fsigfplus(hkl.index(),
+                                    Double.parseDouble(strarray[fo]),
+                                    Double.parseDouble(strarray[sigfo]));
+                        }
                     }
 
                     nread++;
@@ -292,10 +297,15 @@ public class CIFFilter {
             return false;
         }
 
+        // set up fsigf from F+ and F-
+        refinementdata.generate_fsigf_from_anofsigf();
+
         StringBuilder sb = new StringBuilder();
         sb.append(String.format("\nOpening %s\n", cifFile.getName()));
         sb.append(String.format("# HKL read in:                             %d\n",
                 nread));
+        sb.append(String.format("# HKL read as friedel mates:               %d\n",
+                nfriedel));
         sb.append(String.format("# HKL with NaN (ignored):                  %d\n",
                 nnan));
         sb.append(String.format("# HKL NOT read in (status <, -, h or l):   %d\n",

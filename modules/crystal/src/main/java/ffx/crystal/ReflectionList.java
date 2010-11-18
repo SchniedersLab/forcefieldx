@@ -51,6 +51,7 @@ public class ReflectionList {
     private final SpaceGroup.LaueSystem laueSystem;
     public final Resolution resolution;
     // for binning reflections based on resolution
+    public int nbins = 10;
     public double hist[] = new double[1001];
     public double minres, maxres;
 
@@ -127,15 +128,7 @@ public class ReflectionList {
         }
 
         // assign each reflection to a bin in the range (0-nbins)
-        int nbins = 10;
-        if (properties != null) {
-            nbins = properties.getInt("nbins", 10);
-        }
-        double nbinsd = (double) nbins;
-        for (HKL ih : hkllist) {
-            int bin = (int) (nbinsd * ordinal(Crystal.invressq(this.crystal, ih)));
-            ih.bin = min(bin, nbins - 1);
-        }
+        setResolutionBins(properties);
     }
 
     public ReflectionList(double a, double b, double c,
@@ -150,6 +143,35 @@ public class ReflectionList {
         return "reflection list with " + this.hkllist.size()
                 + " reflections, spacegroup " + this.spaceGroup.shortName
                 + " resolution limit: " + resolution.res_limit();
+    }
+
+    public boolean findSymHKL(int h, int k, int l, HKL mate){
+        return findSymHKL(new HKL(h, k, l), mate);
+    }
+
+    public boolean findSymHKL(HKL hkl, HKL mate) {
+        int nsym = spaceGroup.numPrimitiveSymEquiv;
+
+        for (int i = 0; i < nsym; i++) {
+            crystal.applySymRot(hkl, mate, spaceGroup.symOps.get(i));
+            if (SpaceGroup.checkLaueRestrictions(laueSystem,
+                    mate.h(), mate.k(), mate.l())) {
+                return false;
+            }
+
+            if (SpaceGroup.checkLaueRestrictions(laueSystem,
+                    -mate.h(), -mate.k(), -mate.l())) {
+                mate.h(-mate.h());
+                mate.k(-mate.k());
+                mate.l(-mate.l());
+                return true;
+            }
+        }
+
+        mate.h(hkl.h());
+        mate.k(hkl.k());
+        mate.l(hkl.l());
+        return false;
     }
 
     public HKL getHKL(int h, int k, int l) {
@@ -174,7 +196,7 @@ public class ReflectionList {
         return hasHKL(hkl.h(), hkl.k(), hkl.l());
     }
 
-    public void getepsilon(HKL hkl) {
+    private void getepsilon(HKL hkl) {
         int epsilon = 1;
         int allowed = 255;
 
@@ -193,7 +215,7 @@ public class ReflectionList {
                 }
             } else if (mate.equals(HKL.neg(hkl))) {
                 // centric reflection
-                allowed = (int) rint(Crystal.mod(-0.5 * shift, PI) / (PI / 12.0));
+                allowed = (int) rint(Crystal.mod(-0.5 * shift, PI) / (PI / HKL.ndiv));
             }
         }
         if (hkl.h() == 0 && hkl.k() == 0 && hkl.l() == 0) {
@@ -210,5 +232,20 @@ public class ReflectionList {
         int i = (int) r;
         r -= floor(r);
         return ((1.0 - r) * hist[i] + r * hist[i + 1]);
+    }
+
+    private void setResolutionBins() {
+        setResolutionBins(null);
+    }
+
+    private void setResolutionBins(CompositeConfiguration properties) {
+        if (properties != null) {
+            nbins = properties.getInt("nbins", 10);
+        }
+        double nbinsd = (double) nbins;
+        for (HKL ih : hkllist) {
+            int bin = (int) (nbinsd * ordinal(Crystal.invressq(this.crystal, ih)));
+            ih.bin = min(bin, nbins - 1);
+        }
     }
 }

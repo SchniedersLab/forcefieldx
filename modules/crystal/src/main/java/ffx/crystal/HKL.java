@@ -30,6 +30,7 @@ import ffx.utilities.HashCodeUtil;
  */
 public class HKL {
 
+    public static final double ndiv = 12.0;
     protected int h;
     protected int k;
     protected int l;
@@ -87,7 +88,7 @@ public class HKL {
     }
 
     @Override
-    public String toString(){
+    public String toString() {
         return this.h() + " " + this.k() + " " + this.l()
                 + "(allowed: " + this.allowed + " eps: " + this.epsilon + ") ";
     }
@@ -153,7 +154,7 @@ public class HKL {
     }
 
     public double allowed() {
-        return ((double) this.allowed) * (PI / 12.0);
+        return ((double) this.allowed) * (PI / ndiv);
     }
 
     public void allowed(int allowed) {

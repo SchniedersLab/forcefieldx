@@ -111,7 +111,7 @@ public class CNSFilter {
 
     public boolean readFile(File cnsFile, ReflectionList reflectionlist,
             RefinementData refinementdata) {
-        int nread, nres, nignore;
+        int nread, nres, nignore, nfriedel;
 
         try {
             BufferedReader br = new BufferedReader(new FileReader(cnsFile));
@@ -124,16 +124,23 @@ public class CNSFilter {
             hashkl = hasfo = hassigfo = hasfree = false;
             ih = ik = il = free = -1;
             fo = sigfo = -1.0;
-            nread = nres = nignore = 0;
+            nread = nres = nignore = nfriedel = 0;
+            HKL mate = new HKL();
             while ((str = br.readLine()) != null) {
                 String strarray[] = str.split("\\s+");
 
                 for (int i = 0; i < strarray.length; i++) {
                     if (strarray[i].toLowerCase().startsWith("inde")) {
                         if (hashkl && hasfo && hassigfo && hasfree) {
-                            HKL hkl = reflectionlist.getHKL(ih, ik, il);
+                            boolean friedel = reflectionlist.findSymHKL(ih, ik, il, mate);
+                            HKL hkl = reflectionlist.getHKL(mate);
                             if (hkl != null) {
-                                refinementdata.set_fsigf(hkl.index(), fo, sigfo);
+                                if (friedel) {
+                                    refinementdata.set_ano_fsigfminus(hkl.index(), fo, sigfo);
+                                    nfriedel++;
+                                } else {
+                                    refinementdata.set_ano_fsigfplus(hkl.index(), fo, sigfo);
+                                }
                                 refinementdata.set_freer(hkl.index(), free);
                                 nread++;
                             } else {
@@ -178,10 +185,15 @@ public class CNSFilter {
             return false;
         }
 
+        // set up fsigf from F+ and F-
+        refinementdata.generate_fsigf_from_anofsigf();
+
         StringBuilder sb = new StringBuilder();
         sb.append(String.format("\nOpening %s\n", cnsFile.getName()));
         sb.append(String.format("# HKL read in:                             %d\n",
                 nread));
+        sb.append(String.format("# HKL read as friedel mates:               %d\n",
+                nfriedel));
         sb.append(String.format("# HKL NOT read in (too high resolution):   %d\n",
                 nres));
         sb.append(String.format("# HKL NOT read in (not in internal list?): %d\n",

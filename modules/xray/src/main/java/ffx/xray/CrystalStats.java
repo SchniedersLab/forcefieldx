@@ -54,7 +54,7 @@ public class CrystalStats {
         this.reflectionlist = reflectionlist;
         this.refinementdata = refinementdata;
         this.crystal = reflectionlist.crystal;
-        this.n = refinementdata.nparams;
+        this.n = refinementdata.nbins;
         this.fo = refinementdata.fsigf;
         this.freer = refinementdata.freer;
         this.fc = refinementdata.fctot;

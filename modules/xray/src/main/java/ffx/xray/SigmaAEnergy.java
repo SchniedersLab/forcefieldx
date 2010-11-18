@@ -145,7 +145,7 @@ public class SigmaAEnergy implements Potential {
         this.fofc2 = refinementdata.fofc2;
         this.dfc = refinementdata.dfc;
         this.dfs = refinementdata.dfs;
-        this.n = refinementdata.nparams;
+        this.n = refinementdata.nbins;
 
         // initialize params
         assert (refinementdata.crs_fc != null);

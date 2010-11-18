@@ -87,7 +87,7 @@ public class MTZFilter {
     final private ArrayList<dataset> datasets = new ArrayList();
     private boolean headerparsed = false;
     private String title;
-    private int h, k, l, fo, sigfo, rfree;
+    private int h, k, l, fo, sigfo, rfree, fplus, sigfplus, fminus, sigfminus, rfreeplus, rfreeminus;
     private int dsetoffset = 1;
     public int ncol;
     public int nrfl;
@@ -166,14 +166,20 @@ public class MTZFilter {
         }
 
         h = k = l = fo = sigfo = rfree = -1;
+        fplus = sigfplus = fminus = sigfminus = rfreeplus = rfreeminus = -1;
         parse_columns();
 
-        if (fo < 0) {
+        if (fo < 0 && fplus < 0) {
             logger.info("insufficient information in MTZ header to generate Reflection List");
             return null;
         }
 
-        column c = (column) columns.get(fo);
+        column c;
+        if (fo > 0) {
+            c = (column) columns.get(fo);
+        } else {
+            c = (column) columns.get(fplus);
+        }
         dataset d = (dataset) datasets.get(c.id - dsetoffset);
 
         if (logger.isLoggable(Level.INFO)) {
@@ -202,6 +208,7 @@ public class MTZFilter {
 
     public boolean readFile(File mtzFile, ReflectionList reflectionlist,
             RefinementData refinementdata) {
+        int nread, nignore, nres, nfriedel;
         ByteOrder b = ByteOrder.nativeOrder();
         FileInputStream fis;
         DataInputStream dis;
@@ -259,6 +266,7 @@ public class MTZFilter {
 
             // column identifiers
             h = k = l = fo = sigfo = rfree = -1;
+            fplus = sigfplus = fminus = sigfminus = rfreeplus = rfreeminus = -1;
             parse_columns();
 
             if (h < 0 || k < 0 || l < 0) {
@@ -268,9 +276,9 @@ public class MTZFilter {
             }
 
             // read in data
-            int nread, nignore, nres;
-            nread = nignore = nres = 0;
+            nread = nignore = nres = nfriedel = 0;
             float data[] = new float[ncol];
+            HKL mate = new HKL();
             for (int i = 0; i < nrfl; i++) {
                 for (int j = 0; j < ncol; j++) {
                     dis.read(bytes, offset, 4);
@@ -280,13 +288,36 @@ public class MTZFilter {
                 int ih = (int) data[h];
                 int ik = (int) data[k];
                 int il = (int) data[l];
-                HKL hkl = reflectionlist.getHKL(ih, ik, il);
+                boolean friedel = reflectionlist.findSymHKL(ih, ik, il, mate);
+                HKL hkl = reflectionlist.getHKL(mate);
+
                 if (hkl != null) {
                     if (fo > 0 && sigfo > 0) {
-                        refinementdata.set_fsigf(hkl.index(), data[fo], data[sigfo]);
+                        if (friedel) {
+                            refinementdata.set_ano_fsigfminus(hkl.index(), data[fo], data[sigfo]);
+                            nfriedel++;
+                        } else {
+                            refinementdata.set_ano_fsigfplus(hkl.index(), data[fo], data[sigfo]);
+                        }
+                    } else {
+                        if (fplus > 0 && sigfplus > 0) {
+                            refinementdata.set_ano_fsigfplus(hkl.index(), data[fplus], data[sigfplus]);
+                        }
+                        if (fminus > 0 && sigfminus > 0) {
+                            refinementdata.set_ano_fsigfminus(hkl.index(), data[fminus], data[sigfminus]);
+                        }
                     }
                     if (rfree > 0) {
                         refinementdata.set_freer(hkl.index(), (int) data[rfree]);
+                    } else {
+                        if (rfreeplus > 0 && rfreeminus > 0) {
+                            // not sure what the correct thing to do here is?
+                            refinementdata.set_freer(hkl.index(), (int) data[rfreeplus]);
+                        } else if (rfreeplus > 0) {
+                            refinementdata.set_freer(hkl.index(), (int) data[rfreeplus]);
+                        } else if (rfreeminus > 0) {
+                            refinementdata.set_freer(hkl.index(), (int) data[rfreeminus]);
+                        }
                     }
                     nread++;
                 } else {
@@ -299,12 +330,18 @@ public class MTZFilter {
                     }
                 }
             }
+
+            // set up fsigf from F+ and F-
+            refinementdata.generate_fsigf_from_anofsigf();
+
             StringBuilder sb = new StringBuilder();
             sb.append(String.format("\nOpening %s\n", mtzFile.getName()));
             sb.append(String.format("MTZ file type (machine stamp): %s\n",
                     stampstr));
             sb.append(String.format("# HKL read in:                             %d\n",
                     nread));
+            sb.append(String.format("# HKL read as friedel mates:               %d\n",
+                    nfriedel));
             sb.append(String.format("# HKL NOT read in (too high resolution):   %d\n",
                     nres));
             sb.append(String.format("# HKL NOT read in (not in internal list?): %d\n",
@@ -315,7 +352,7 @@ public class MTZFilter {
                 logger.info(sb.toString());
             }
 
-            if (rfree < 0) {
+            if (rfree < 0 && rfreeplus < 0 && rfreeminus < 0) {
                 refinementdata.generateRFree();
             }
         } catch (EOFException eof) {
@@ -485,6 +522,26 @@ public class MTZFilter {
                     && c.type == 'I') {
                 sb.append(String.format("Reading R Free column: \"%s\"\n", c.label));
                 rfree = nc;
+            } else if ((label.equalsIgnoreCase("free(+)")
+                    || label.equalsIgnoreCase("freer(+)")
+                    || label.equalsIgnoreCase("freerflag(+)")
+                    || label.equalsIgnoreCase("freer_flag(+)")
+                    || label.equalsIgnoreCase("rfree(+)")
+                    || label.equalsIgnoreCase("rfreeflag(+)")
+                    || label.equalsIgnoreCase("r-free-flags(+)")
+                    || label.equalsIgnoreCase("test(+)"))
+                    && c.type == 'I') {
+                rfreeplus = nc;
+            } else if ((label.equalsIgnoreCase("free(-)")
+                    || label.equalsIgnoreCase("freer(-)")
+                    || label.equalsIgnoreCase("freerflag(-)")
+                    || label.equalsIgnoreCase("freer_flag(-)")
+                    || label.equalsIgnoreCase("rfree(-)")
+                    || label.equalsIgnoreCase("rfreeflag(-)")
+                    || label.equalsIgnoreCase("r-free-flags(-)")
+                    || label.equalsIgnoreCase("test(-)"))
+                    && c.type == 'I') {
+                rfreeminus = nc;
             } else if ((label.equalsIgnoreCase("f")
                     || label.equalsIgnoreCase("fp")
                     || label.equalsIgnoreCase("fo")
@@ -492,6 +549,18 @@ public class MTZFilter {
                     && c.type == 'F') {
                 sb.append(String.format("Reading Fo column: \"%s\"\n", c.label));
                 fo = nc;
+            } else if ((label.equalsIgnoreCase("f(+)")
+                    || label.equalsIgnoreCase("fp(+)")
+                    || label.equalsIgnoreCase("fo(+)")
+                    || label.equalsIgnoreCase("fobs(+)"))
+                    && c.type == 'G') {
+                fplus = nc;
+            } else if ((label.equalsIgnoreCase("f(-)")
+                    || label.equalsIgnoreCase("fp(-)")
+                    || label.equalsIgnoreCase("fo(-)")
+                    || label.equalsIgnoreCase("fobs(-)"))
+                    && c.type == 'G') {
+                fminus = nc;
             } else if ((label.equalsIgnoreCase("sigf")
                     || label.equalsIgnoreCase("sigfp")
                     || label.equalsIgnoreCase("sigfo")
@@ -499,7 +568,24 @@ public class MTZFilter {
                     && c.type == 'Q') {
                 sb.append(String.format("Reading sigFo column: \"%s\"\n", c.label));
                 sigfo = nc;
+            } else if ((label.equalsIgnoreCase("sigf(+)")
+                    || label.equalsIgnoreCase("sigfp(+)")
+                    || label.equalsIgnoreCase("sigfo(+)")
+                    || label.equalsIgnoreCase("sigfobs(+)"))
+                    && c.type == 'L') {
+                sigfplus = nc;
+            } else if ((label.equalsIgnoreCase("sigf(-)")
+                    || label.equalsIgnoreCase("sigfp(-)")
+                    || label.equalsIgnoreCase("sigfo(-)")
+                    || label.equalsIgnoreCase("sigfobs(-)"))
+                    && c.type == 'L') {
+                sigfminus = nc;
             }
+        }
+        if (fo < 0 && sigfo < 0
+                && fplus > 0 && sigfplus > 0
+                && fminus > 0 && sigfminus > 0) {
+            sb.append(String.format("Reading Fplus/Fminus column to fill in Fo\n"));
         }
         if (logger.isLoggable(Level.INFO)) {
             logger.info(sb.toString());

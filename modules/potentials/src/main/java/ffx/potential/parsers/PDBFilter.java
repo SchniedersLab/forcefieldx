@@ -825,6 +825,8 @@ public final class PDBFilter extends SystemFilter {
                             name = NucleicAcid3.CYT.toString();
                         } else if (name.equals("G")) {
                             name = NucleicAcid3.GUA.toString();
+                        } else if (name.equals("T")) {
+                            name = NucleicAcid3.THY.toString();
                         } else if (name.equals("U")) {
                             name = NucleicAcid3.URI.toString();
                         }
@@ -1082,6 +1084,11 @@ public final class PDBFilter extends SystemFilter {
                             residueName = "DGU";
                             residue.setName(residueName);
                             break;
+                        case THY:
+                            nucleicAcid = NucleicAcid3.DTY;
+                            residueName = "DTY";
+                            residue.setName(residueName);
+                            break;
                         default:
                     }
                 }
@@ -1104,6 +1111,11 @@ public final class PDBFilter extends SystemFilter {
                         case DGU:
                             nucleicAcid = NucleicAcid3.GUA;
                             residueName = "GUA";
+                            residue.setName(residueName);
+                            break;
+                        case DTY:
+                            nucleicAcid = NucleicAcid3.THY;
+                            residueName = "THY";
                             residue.setName(residueName);
                             break;
                         default:
@@ -2801,7 +2813,7 @@ public final class PDBFilter extends SystemFilter {
      */
     public enum NucleicAcid3 {
 
-        ADE, GUA, CYT, URI, DAD, DGU, DCY, DTY, MP1, DP2, TP3, UNK, M2MG, H2U,
+        ADE, GUA, CYT, URI, DAD, DGU, DCY, DTY, THY, MP1, DP2, TP3, UNK, M2MG, H2U,
         M2G, OMC, OMG, PSU, M5MC, M7MG, M5MU, M1MA, YYG
     };
     static final List<NucleicAcid3> nucleicAcidList = Arrays.asList(NucleicAcid3.values());
