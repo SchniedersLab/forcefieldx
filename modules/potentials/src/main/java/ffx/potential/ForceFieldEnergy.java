@@ -21,6 +21,7 @@
 package ffx.potential;
 
 import static java.lang.Math.max;
+import static java.lang.Math.sqrt;
 import static java.lang.String.format;
 
 import static ffx.numerics.VectorMath.*;
@@ -96,8 +97,8 @@ public class ForceFieldEnergy implements Potential {
     protected final boolean vanDerWaalsTerm;
     protected final boolean multipoleTerm;
     protected final boolean polarizationTerm;
-    protected double bondEnergy;
-    protected double angleEnergy;
+    protected double bondEnergy, bondRMSD;
+    protected double angleEnergy, angleRMSD;
     protected double stretchBendEnergy;
     protected double ureyBradleyEnergy;
     protected double outOfPlaneBendEnergy;
@@ -397,6 +398,10 @@ public class ForceFieldEnergy implements Potential {
         torsionTorsionEnergy = 0.0;
         totalBondedEnergy = 0.0;
 
+        // Zero out bond and angle RMSDs.
+        bondRMSD = 0.0;
+        angleRMSD = 0.0;
+
         // Zero out the potential energy of each non-bonded term.
         vanDerWaalsEnergy = 0.0;
         permanentMultipoleEnergy = 0.0;
@@ -419,15 +424,22 @@ public class ForceFieldEnergy implements Potential {
             bondTime = System.nanoTime();
             for (int i = 0; i < nBonds; i++) {
                 bondEnergy += bonds[i].energy(gradient);
+                double value = bonds[i].getValue();
+                bondRMSD += value * value;
             }
+            bondRMSD = sqrt(bondRMSD/bonds.length);
             bondTime = System.nanoTime() - bondTime;
         }
+
 
         if (angleTerm) {
             angleTime = System.nanoTime();
             for (int i = 0; i < nAngles; i++) {
                 angleEnergy += angles[i].energy(gradient);
+                double value = angles[i].getValue();
+                angleRMSD += value * value;
             }
+            angleRMSD = sqrt(angleRMSD/angles.length);
             angleTime = System.nanoTime() - angleTime;
         }
 
@@ -520,14 +532,14 @@ public class ForceFieldEnergy implements Potential {
     public String toString() {
         StringBuilder sb = new StringBuilder("\n");
         if (bondTerm) {
-            sb.append(String.format(" %s %16.8f %12d %12.3f\n",
+            sb.append(String.format(" %s %16.8f %12d %12.3f (%8.5f)\n",
                                     "Bond Streching    ", bondEnergy, bonds.length,
-                                    bondTime * toSeconds));
+                                    bondTime * toSeconds, bondRMSD));
         }
         if (angleTerm) {
-            sb.append(String.format(" %s %16.8f %12d %12.3f\n",
+            sb.append(String.format(" %s %16.8f %12d %12.3f (%8.5f)\n",
                                     "Angle Bending     ", angleEnergy, angles.length,
-                                    angleTime * toSeconds));
+                                    angleTime * toSeconds, angleRMSD));
         }
         if (stretchBendTerm) {
             sb.append(String.format(" %s %16.8f %12d %12.3f\n",

@@ -27,7 +27,7 @@
         <developer>
             <id>pren</id>
             <name>Pengyu Ren</name>
-            <organization>Assistant Professor, U. Texas in Austin
+            <organization>Assistant Professor, University of Texas at Austin
             </organization>
             <organizationUrl>http://biomol.bme.utexas.edu/lab</organizationUrl>
             <roles>
@@ -39,10 +39,6 @@
 
     <reporting>
         <plugins>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>jdepend-maven-plugin</artifactId>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jxr-plugin</artifactId>

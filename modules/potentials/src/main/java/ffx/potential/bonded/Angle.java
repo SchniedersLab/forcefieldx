@@ -267,6 +267,7 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
                         atoms[1].addToXYZGradient(g1[0], g1[1], g1[2]);
                         atoms[2].addToXYZGradient(g2[0], g2[1], g2[2]);
                     }
+                    value = dv;
                 }
                 break;
             case IN_PLANE:
@@ -333,6 +334,7 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
                         atoms[2].addToXYZGradient(g2[0], g2[1], g2[2]);
                         atom4.addToXYZGradient(g3[0], g3[1], g3[2]);
                     }
+                    value = dv;
                 }
                 break;
         }

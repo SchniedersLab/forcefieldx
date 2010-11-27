@@ -606,6 +606,7 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
             atoms[0].addToXYZGradient(g0[0], g0[1], g0[2]);
             atoms[1].addToXYZGradient(g1[0], g1[1], g1[2]);
         }
+        value = dv;
         return energy;
     }
 

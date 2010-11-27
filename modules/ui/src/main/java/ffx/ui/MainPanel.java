@@ -693,15 +693,15 @@ public final class MainPanel extends JPanel implements ActionListener,
         }
     }
     public static final String version = "Version 1.0 SNAPSHOT";
-    public static final String date = "March 2010";
+    public static final String date = "January 2011";
     public static final String border =
                                " ______________________________________________________________________________\n";
     public static final String title =
                                "               FORCE FIELD X - Software for Molecular Biophysics\n";
     public static final String aboutString =
                                "                         " + version + "  " + date
-                               + "\n                Copyright (c)  Michael J. Schnieders  2001-2010"
-                               + "\n             Copyright (c)  Force Field X Module Authors  2009-2010"
+                               + "\n                Copyright (c)  Michael J. Schnieders  2001-2011"
+                               + "\n             Copyright (c)  Force Field X Module Authors  2009-2011"
                                + "\n"
                                + "\n                         Module             Copyright (c)"
                                + "\n                         Binding Affinity   Pengyu Ren"
