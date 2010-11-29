@@ -208,7 +208,7 @@ public class MTZFilter {
 
     public boolean readFile(File mtzFile, ReflectionList reflectionlist,
             RefinementData refinementdata) {
-        int nread, nignore, nres, nfriedel;
+        int nread, nignore, nres, nfriedel, ncut;
         ByteOrder b = ByteOrder.nativeOrder();
         FileInputStream fis;
         DataInputStream dis;
@@ -276,7 +276,7 @@ public class MTZFilter {
             }
 
             // read in data
-            nread = nignore = nres = nfriedel = 0;
+            nread = nignore = nres = nfriedel = ncut = 0;
             float data[] = new float[ncol];
             HKL mate = new HKL();
             for (int i = 0; i < nrfl; i++) {
@@ -293,6 +293,12 @@ public class MTZFilter {
 
                 if (hkl != null) {
                     if (fo > 0 && sigfo > 0) {
+                        if (refinementdata.fsigfcutoff > 0.0) {
+                            if ((data[fo] / data[sigfo]) < refinementdata.fsigfcutoff) {
+                                ncut++;
+                                continue;
+                            }
+                        }
                         if (friedel) {
                             refinementdata.set_ano_fsigfminus(hkl.index(), data[fo], data[sigfo]);
                             nfriedel++;
@@ -301,9 +307,21 @@ public class MTZFilter {
                         }
                     } else {
                         if (fplus > 0 && sigfplus > 0) {
+                            if (refinementdata.fsigfcutoff > 0.0) {
+                                if ((data[fplus] / data[sigfplus]) < refinementdata.fsigfcutoff) {
+                                    ncut++;
+                                    continue;
+                                }
+                            }
                             refinementdata.set_ano_fsigfplus(hkl.index(), data[fplus], data[sigfplus]);
                         }
                         if (fminus > 0 && sigfminus > 0) {
+                            if (refinementdata.fsigfcutoff > 0.0) {
+                                if ((data[fminus] / data[sigfminus]) < refinementdata.fsigfcutoff) {
+                                    ncut++;
+                                    continue;
+                                }
+                            }
                             refinementdata.set_ano_fsigfminus(hkl.index(), data[fminus], data[sigfminus]);
                         }
                     }
@@ -346,6 +364,8 @@ public class MTZFilter {
                     nres));
             sb.append(String.format("# HKL NOT read in (not in internal list?): %d\n",
                     nignore));
+            sb.append(String.format("# HKL NOT read in (F/sigF cutoff):         %d\n",
+                    ncut));
             sb.append(String.format("# HKL in internal list:                    %d\n",
                     reflectionlist.hkllist.size()));
             if (logger.isLoggable(Level.INFO)) {

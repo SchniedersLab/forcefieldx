@@ -111,7 +111,7 @@ public class CNSFilter {
 
     public boolean readFile(File cnsFile, ReflectionList reflectionlist,
             RefinementData refinementdata) {
-        int nread, nres, nignore, nfriedel;
+        int nread, nres, nignore, nfriedel, ncut;
 
         try {
             BufferedReader br = new BufferedReader(new FileReader(cnsFile));
@@ -124,7 +124,7 @@ public class CNSFilter {
             hashkl = hasfo = hassigfo = hasfree = false;
             ih = ik = il = free = -1;
             fo = sigfo = -1.0;
-            nread = nres = nignore = nfriedel = 0;
+            nread = nres = nignore = nfriedel = ncut = 0;
             HKL mate = new HKL();
             while ((str = br.readLine()) != null) {
                 String strarray[] = str.split("\\s+");
@@ -135,10 +135,13 @@ public class CNSFilter {
                             boolean friedel = reflectionlist.findSymHKL(ih, ik, il, mate);
                             HKL hkl = reflectionlist.getHKL(mate);
                             if (hkl != null) {
-                                if (friedel) {
+                                if (refinementdata.fsigfcutoff > 0.0
+                                        && (fo / sigfo) < refinementdata.fsigfcutoff) {
+                                    ncut++;
+                                } else if (friedel) {
                                     refinementdata.set_ano_fsigfminus(hkl.index(), fo, sigfo);
                                     nfriedel++;
-                                } else {
+                                } else if (!friedel) {
                                     refinementdata.set_ano_fsigfplus(hkl.index(), fo, sigfo);
                                 }
                                 refinementdata.set_freer(hkl.index(), free);
@@ -198,6 +201,8 @@ public class CNSFilter {
                 nres));
         sb.append(String.format("# HKL NOT read in (not in internal list?): %d\n",
                 nignore));
+        sb.append(String.format("# HKL NOT read in (F/sigF cutoff):         %d\n",
+                ncut));
         sb.append(String.format("# HKL in internal list:                    %d\n",
                 reflectionlist.hkllist.size()));
         if (logger.isLoggable(Level.INFO)) {

@@ -176,7 +176,7 @@ public class CIFFilter {
 
     public boolean readFile(File cifFile, ReflectionList reflectionlist,
             RefinementData refinementdata) {
-        int nread, nnan, nres, nignore, ncifignore, nfriedel;
+        int nread, nnan, nres, nignore, ncifignore, nfriedel, ncut;
 
         try {
             BufferedReader br = new BufferedReader(new FileReader(cifFile));
@@ -227,7 +227,7 @@ public class CIFFilter {
             br.reset();
 
             // read in data
-            nread = nnan = nres = nignore = ncifignore = nfriedel = 0;
+            nread = nnan = nres = nignore = ncifignore = nfriedel = ncut = 0;
             HKL mate = new HKL();
             while ((str = br.readLine()) != null) {
                 // reached end, break
@@ -267,6 +267,15 @@ public class CIFFilter {
                     }
 
                     if (fo > 0 && sigfo > 0 && !isnull) {
+                        if (refinementdata.fsigfcutoff > 0.0) {
+                            double f1 = Double.parseDouble(strarray[fo]);
+                            double sigf1 = Double.parseDouble(strarray[sigfo]);
+                            if ((f1 / sigf1) < refinementdata.fsigfcutoff) {
+                                ncut++;
+                                continue;
+                            }
+                        }
+
                         if (friedel) {
                             refinementdata.set_ano_fsigfminus(hkl.index(),
                                     Double.parseDouble(strarray[fo]),
@@ -314,6 +323,8 @@ public class CIFFilter {
                 nres));
         sb.append(String.format("# HKL NOT read in (not in internal list?): %d\n",
                 nignore));
+        sb.append(String.format("# HKL NOT read in (F/sigF cutoff):         %d\n",
+                ncut));
         sb.append(String.format("# HKL in internal list:                    %d\n",
                 reflectionlist.hkllist.size()));
         if (logger.isLoggable(Level.INFO)) {
