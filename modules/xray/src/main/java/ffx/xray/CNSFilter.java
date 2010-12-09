@@ -112,6 +112,14 @@ public class CNSFilter {
     public boolean readFile(File cnsFile, ReflectionList reflectionlist,
             RefinementData refinementdata) {
         int nread, nres, nignore, nfriedel, ncut;
+        boolean transpose = false;
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("\nOpening %s\n", cnsFile.getName()));
+        if (refinementdata.rfreeflag < 0) {
+            refinementdata.set_freerflag(1);
+            sb.append(String.format("Setting R free flag to CNS default: %d\n", refinementdata.rfreeflag));
+        }
 
         try {
             BufferedReader br = new BufferedReader(new FileReader(cnsFile));
@@ -124,15 +132,51 @@ public class CNSFilter {
             hashkl = hasfo = hassigfo = hasfree = false;
             ih = ik = il = free = -1;
             fo = sigfo = -1.0;
-            nread = nres = nignore = nfriedel = ncut = 0;
+
+            // check if HKLs need to be transposed or not
             HKL mate = new HKL();
+            int nposignore = 0;
+            int ntransignore = 0;
+            while ((str = br.readLine()) != null) {
+                String strarray[] = str.split("\\s+");
+
+                for (int i = 0; i < strarray.length; i++) {
+                    if (strarray[i].toLowerCase().startsWith("inde")) {
+                        if (i < strarray.length - 3) {
+                            ih = Integer.parseInt(strarray[i + 1]);
+                            ik = Integer.parseInt(strarray[i + 2]);
+                            il = Integer.parseInt(strarray[i + 3]);
+                            boolean friedel = reflectionlist.findSymHKL(ih, ik, il, mate, false);
+                            HKL hklpos = reflectionlist.getHKL(mate);
+                            if (hklpos == null) {
+                                nposignore++;
+                            }
+
+                            friedel = reflectionlist.findSymHKL(ih, ik, il, mate, true);
+                            HKL hkltrans = reflectionlist.getHKL(mate);
+                            if (hkltrans == null) {
+                                ntransignore++;
+                            }
+                        }
+                    }
+                }
+            }
+            if (nposignore > ntransignore) {
+                transpose = true;
+            }
+
+            // reopen to start at beginning
+            br = new BufferedReader(new FileReader(cnsFile));
+
+            // read in data
+            nread = nres = nignore = nfriedel = ncut = 0;
             while ((str = br.readLine()) != null) {
                 String strarray[] = str.split("\\s+");
 
                 for (int i = 0; i < strarray.length; i++) {
                     if (strarray[i].toLowerCase().startsWith("inde")) {
                         if (hashkl && hasfo && hassigfo && hasfree) {
-                            boolean friedel = reflectionlist.findSymHKL(ih, ik, il, mate);
+                            boolean friedel = reflectionlist.findSymHKL(ih, ik, il, mate, transpose);
                             HKL hkl = reflectionlist.getHKL(mate);
                             if (hkl != null) {
                                 if (refinementdata.fsigfcutoff > 0.0
@@ -191,8 +235,6 @@ public class CNSFilter {
         // set up fsigf from F+ and F-
         refinementdata.generate_fsigf_from_anofsigf();
 
-        StringBuilder sb = new StringBuilder();
-        sb.append(String.format("\nOpening %s\n", cnsFile.getName()));
         sb.append(String.format("# HKL read in:                             %d\n",
                 nread));
         sb.append(String.format("# HKL read as friedel mates:               %d\n",

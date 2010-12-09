@@ -177,6 +177,14 @@ public class CIFFilter {
     public boolean readFile(File cifFile, ReflectionList reflectionlist,
             RefinementData refinementdata) {
         int nread, nnan, nres, nignore, ncifignore, nfriedel, ncut;
+        boolean transpose = false;
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("\nOpening %s\n", cifFile.getName()));
+        if (refinementdata.rfreeflag < 0) {
+            refinementdata.set_freerflag(1);
+            sb.append(String.format("Setting R free flag to CIF default: %d\n", refinementdata.rfreeflag));
+        }
 
         try {
             BufferedReader br = new BufferedReader(new FileReader(cifFile));
@@ -226,9 +234,66 @@ public class CIFFilter {
             // go back to where the reflections start
             br.reset();
 
+            // check if HKLs need to be transposed or not
+            HKL mate = new HKL();
+            int nposignore = 0;
+            int ntransignore = 0;
+            while ((str = br.readLine()) != null) {
+                // reached end, break
+                if (str.trim().startsWith("#END")) {
+                    break;
+                }
+
+                String strarray[] = str.trim().split("\\s+");
+
+                if (rfree > 0) {
+                    // ignored cases
+                    if (strarray[rfree].charAt(0) == 'x'
+                            || strarray[rfree].charAt(0) == '<'
+                            || strarray[rfree].charAt(0) == '-'
+                            || strarray[rfree].charAt(0) == 'h'
+                            || strarray[rfree].charAt(0) == 'l') {
+                        continue;
+                    }
+                }
+                int ih = Integer.parseInt(strarray[h]);
+                int ik = Integer.parseInt(strarray[k]);
+                int il = Integer.parseInt(strarray[l]);
+                boolean friedel = reflectionlist.findSymHKL(ih, ik, il, mate, false);
+                HKL hklpos = reflectionlist.getHKL(mate);
+                if (hklpos == null) {
+                    nposignore++;
+                }
+
+                friedel = reflectionlist.findSymHKL(ih, ik, il, mate, true);
+                HKL hkltrans = reflectionlist.getHKL(mate);
+                if (hkltrans == null) {
+                    ntransignore++;
+                }
+            }
+            if (nposignore > ntransignore) {
+                transpose = true;
+            }
+
+            // reopen to start at beginning
+            br = new BufferedReader(new FileReader(cifFile));
+            inhkl = false;
+            while ((str = br.readLine()) != null) {
+                String strarray[] = str.split("\\s+");
+
+                if (strarray[0].startsWith("_refln.")) {
+                    br.mark(0);
+                    inhkl = true;
+                } else if (inhkl) {
+                    break;
+                }
+            }
+
+            // go back to where the reflections start
+            br.reset();
+
             // read in data
             nread = nnan = nres = nignore = ncifignore = nfriedel = ncut = 0;
-            HKL mate = new HKL();
             while ((str = br.readLine()) != null) {
                 // reached end, break
                 if (str.trim().startsWith("#END")) {
@@ -240,7 +305,7 @@ public class CIFFilter {
                 int ih = Integer.parseInt(strarray[h]);
                 int ik = Integer.parseInt(strarray[k]);
                 int il = Integer.parseInt(strarray[l]);
-                boolean friedel = reflectionlist.findSymHKL(ih, ik, il, mate);
+                boolean friedel = reflectionlist.findSymHKL(ih, ik, il, mate, transpose);
                 HKL hkl = reflectionlist.getHKL(mate);
 
                 if (hkl != null) {
@@ -309,8 +374,8 @@ public class CIFFilter {
         // set up fsigf from F+ and F-
         refinementdata.generate_fsigf_from_anofsigf();
 
-        StringBuilder sb = new StringBuilder();
-        sb.append(String.format("\nOpening %s\n", cifFile.getName()));
+        sb.append(String.format("HKL data is %s\n",
+                transpose ? "transposed" : "not transposed"));
         sb.append(String.format("# HKL read in:                             %d\n",
                 nread));
         sb.append(String.format("# HKL read as friedel mates:               %d\n",

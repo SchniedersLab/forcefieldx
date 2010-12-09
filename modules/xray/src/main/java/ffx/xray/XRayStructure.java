@@ -89,6 +89,8 @@ public class XRayStructure {
 
     public XRayStructure(MolecularAssembly assembly[],
             CompositeConfiguration properties, int solventmodel) {
+        List<Atom> alist;
+
         // String name = assembly.getName();
         String name = assembly[0].getFile().getPath();
         name = removeExtension(name);
@@ -177,60 +179,70 @@ public class XRayStructure {
         ArrayList<Molecule> mtmp = null;
         Residue r0 = null;
         Molecule m0 = null;
-        Character c0 = ' ';
-        double occ;
+        boolean altconf;
         for (int i = 0; i < nlist0.size(); i++) {
+            altconf = false;
             MSNode node = nlist0.get(i);
             if (node instanceof Residue) {
                 r0 = (Residue) node;
                 m0 = null;
-                c0 = r0.getAtomList().get(0).getAltLoc();
-                occ = r0.getAtomList().get(0).getOccupancy();
-                if (!c0.equals(' ')
-                        || occ < 1.0) {
-                    rtmp = new ArrayList<Residue>();
-                    rtmp.add(r0);
-                    altresidues.add(rtmp);
+                alist = r0.getAtomList();
+                for (Atom a : alist) {
+                    if (!a.getAltLoc().equals(' ')
+                            || a.getOccupancy() < 1.0) {
+                        rtmp = new ArrayList<Residue>();
+                        rtmp.add(r0);
+                        altresidues.add(rtmp);
+                        altconf = true;
+                        break;
+                    }
                 }
             } else if (node instanceof Molecule
                     && refinementdata.refinemolocc) {
                 r0 = null;
                 m0 = (Molecule) node;
-                c0 = m0.getAtomList().get(0).getAltLoc();
-                occ = m0.getAtomList().get(0).getOccupancy();
-                if (!c0.equals(' ')
-                        || occ < 1.0) {
-                    mtmp = new ArrayList<Molecule>();
-                    mtmp.add(m0);
-                    altmolecules.add(mtmp);
+                alist = m0.getAtomList();
+                for (Atom a : alist) {
+                    if (!a.getAltLoc().equals(' ')
+                            || a.getOccupancy() < 1.0) {
+                        rtmp = new ArrayList<Residue>();
+                        rtmp.add(r0);
+                        altresidues.add(rtmp);
+                        altconf = true;
+                        break;
+                    }
                 }
-            } else {
-                c0 = ' ';
+
             }
-            if (!c0.equals(' ')) {
+            if (altconf) {
                 for (int j = 1; j < assembly.length; j++) {
                     ArrayList<MSNode> nlist = assembly[j].getNodeList();
                     Residue r;
                     Molecule m;
-                    Character c = 'A';
                     if (r0 != null
                             && nlist.size() > i) {
                         r = (Residue) nlist.get(i);
-                        c = r.getAtomList().get(0).getAltLoc();
-                        if (!c.equals(' ')
-                                && !c.equals('A')) {
-                            if (rtmp != null) {
-                                rtmp.add(r);
+                        alist = r.getAtomList();
+                        for (Atom a : alist) {
+                            if (!a.getAltLoc().equals(' ')
+                                    || a.getOccupancy() < 1.0) {
+                                if (rtmp != null) {
+                                    rtmp.add(r);
+                                }
+                                break;
                             }
                         }
                     } else if (m0 != null
                             && nlist.size() > i) {
                         m = (Molecule) nlist.get(i);
-                        c = m.getAtomList().get(0).getAltLoc();
-                        if (!c.equals(' ')
-                                && !c.equals('A')) {
-                            if (mtmp != null) {
-                                mtmp.add(m);
+                        alist = m.getAtomList();
+                        for (Atom a : alist) {
+                            if (!a.getAltLoc().equals(' ')
+                                    || a.getOccupancy() < 1.0) {
+                                if (mtmp != null) {
+                                    mtmp.add(m);
+                                }
+                                break;
                             }
                         }
                     }
@@ -239,14 +251,14 @@ public class XRayStructure {
         }
 
         for (ArrayList<Residue> list : altresidues) {
-            if (list.size() == 1){
+            if (list.size() == 1) {
                 Residue r = list.get(0);
                 logger.info("residue: " + r.toString() + ": single conformer, non-unity occupancy: occupancy will be refined independently!");
             }
         }
 
         for (ArrayList<Molecule> list : altmolecules) {
-            if (list.size() == 1){
+            if (list.size() == 1) {
                 Molecule m = list.get(0);
                 logger.info("molecule: " + m.toString() + ": single conformer, non-unity occupancy: occupancy will be refined independently!");
             }
@@ -258,7 +270,7 @@ public class XRayStructure {
         }
         atomlist = new ArrayList<Atom>();
         int index = 0;
-        List<Atom> alist = assembly[0].getAtomList();
+        alist = assembly[0].getAtomList();
         for (Atom a : alist) {
             for (int i = 0; i < assembly.length; i++) {
                 xindex[i].add(index);

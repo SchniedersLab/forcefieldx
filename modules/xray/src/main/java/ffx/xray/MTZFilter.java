@@ -212,6 +212,10 @@ public class MTZFilter {
         ByteOrder b = ByteOrder.nativeOrder();
         FileInputStream fis;
         DataInputStream dis;
+        boolean transpose = false;
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("\nOpening %s\n", mtzFile.getName()));
         try {
             fis = new FileInputStream(mtzFile);
             dis = new DataInputStream(fis);
@@ -257,13 +261,6 @@ public class MTZFilter {
                 parsing = parse_header(mtzstr);
             }
 
-            // reopen to start at beginning
-            fis = new FileInputStream(mtzFile);
-            dis = new DataInputStream(fis);
-
-            // skip initial header
-            dis.skipBytes(80);
-
             // column identifiers
             h = k = l = fo = sigfo = rfree = -1;
             fplus = sigfplus = fminus = sigfminus = rfreeplus = rfreeminus = -1;
@@ -275,10 +272,20 @@ public class MTZFilter {
                 return false;
             }
 
-            // read in data
-            nread = nignore = nres = nfriedel = ncut = 0;
+            // reopen to start at beginning
+            fis = new FileInputStream(mtzFile);
+            dis = new DataInputStream(fis);
+
+            // skip initial header
+            dis.skipBytes(80);
+
+            // check if HKLs need to be transposed or not
             float data[] = new float[ncol];
             HKL mate = new HKL();
+            int nposignore = 0;
+            int ntransignore = 0;
+            int nzero = 0;
+            int none = 0;
             for (int i = 0; i < nrfl; i++) {
                 for (int j = 0; j < ncol; j++) {
                     dis.read(bytes, offset, 4);
@@ -288,7 +295,75 @@ public class MTZFilter {
                 int ih = (int) data[h];
                 int ik = (int) data[k];
                 int il = (int) data[l];
-                boolean friedel = reflectionlist.findSymHKL(ih, ik, il, mate);
+                boolean friedel = reflectionlist.findSymHKL(ih, ik, il, mate, false);
+                HKL hklpos = reflectionlist.getHKL(mate);
+                if (hklpos == null) {
+                    nposignore++;
+                }
+
+                friedel = reflectionlist.findSymHKL(ih, ik, il, mate, true);
+                HKL hkltrans = reflectionlist.getHKL(mate);
+                if (hkltrans == null) {
+                    ntransignore++;
+                }
+                if (rfree > 0) {
+                    if (((int) data[rfree]) == 0) {
+                        nzero++;
+                    } else if (((int) data[rfree]) == 1) {
+                        none++;
+                    }
+                }
+                if (rfreeplus > 0) {
+                    if (((int) data[rfreeplus]) == 0) {
+                        nzero++;
+                    } else if (((int) data[rfreeplus]) == 1) {
+                        none++;
+                    }
+                }
+                if (rfreeminus > 0) {
+                    if (((int) data[rfreeminus]) == 0) {
+                        nzero++;
+                    } else if (((int) data[rfreeminus]) == 1) {
+                        none++;
+                    }
+                }
+            }
+            if (nposignore > ntransignore) {
+                transpose = true;
+            }
+
+            if (none > (nzero * 2)
+                    && refinementdata.rfreeflag < 0) {
+                refinementdata.set_freerflag(0);
+                sb.append(String.format("Setting R free flag to %d based on MTZ file data\n", refinementdata.rfreeflag));
+            } else if (nzero > (none * 2)
+                    && refinementdata.rfreeflag < 0) {
+                refinementdata.set_freerflag(1);
+                sb.append(String.format("Setting R free flag to %d based on MTZ file data\n", refinementdata.rfreeflag));
+            } else if (refinementdata.rfreeflag < 0) {
+                refinementdata.set_freerflag(0);
+                sb.append(String.format("Setting R free flag to MTZ default: %d\n", refinementdata.rfreeflag));
+            }
+
+            // reopen to start at beginning
+            fis = new FileInputStream(mtzFile);
+            dis = new DataInputStream(fis);
+
+            // skip initial header
+            dis.skipBytes(80);
+
+            // read in data
+            nread = nignore = nres = nfriedel = ncut = 0;
+            for (int i = 0; i < nrfl; i++) {
+                for (int j = 0; j < ncol; j++) {
+                    dis.read(bytes, offset, 4);
+                    bb = ByteBuffer.wrap(bytes);
+                    data[j] = bb.order(b).getFloat();
+                }
+                int ih = (int) data[h];
+                int ik = (int) data[k];
+                int il = (int) data[l];
+                boolean friedel = reflectionlist.findSymHKL(ih, ik, il, mate, transpose);
                 HKL hkl = reflectionlist.getHKL(mate);
 
                 if (hkl != null) {
@@ -352,10 +427,10 @@ public class MTZFilter {
             // set up fsigf from F+ and F-
             refinementdata.generate_fsigf_from_anofsigf();
 
-            StringBuilder sb = new StringBuilder();
-            sb.append(String.format("\nOpening %s\n", mtzFile.getName()));
             sb.append(String.format("MTZ file type (machine stamp): %s\n",
                     stampstr));
+            sb.append(String.format("HKL data is %s\n",
+                    transpose ? "transposed" : "not transposed"));
             sb.append(String.format("# HKL read in:                             %d\n",
                     nread));
             sb.append(String.format("# HKL read as friedel mates:               %d\n",

@@ -299,13 +299,17 @@ public class XRayEnergy implements Potential {
             ave = 0.0;
             for (Residue r : list) {
                 for (Atom a : r.getAtomList()) {
-                    ave += a.getOccupancyGradient();
+                    if (a.getOccupancy() < 1.0) {
+                        ave += a.getOccupancyGradient();
+                    }
                 }
             }
             ave /= list.size();
             for (Residue r : list) {
                 for (Atom a : r.getAtomList()) {
-                    g[index] += a.getOccupancyGradient();
+                    if (a.getOccupancy() < 1.0) {
+                        g[index] += a.getOccupancyGradient();
+                    }
                 }
                 if (list.size() > 1) {
                     g[index] -= ave;
@@ -319,13 +323,17 @@ public class XRayEnergy implements Potential {
             ave = 0.0;
             for (Molecule m : list) {
                 for (Atom a : m.getAtomList()) {
-                    ave += a.getOccupancyGradient();
+                    if (a.getOccupancy() < 1.0) {
+                        ave += a.getOccupancyGradient();
+                    }
                 }
             }
             ave /= list.size();
             for (Molecule m : list) {
                 for (Atom a : m.getAtomList()) {
-                    g[index] += a.getOccupancyGradient();
+                    if (a.getOccupancy() < 1.0) {
+                        g[index] += a.getOccupancyGradient();
+                    }
                 }
                 if (list.size() > 1) {
                     g[index] -= ave;
@@ -416,14 +424,22 @@ public class XRayEnergy implements Potential {
         if (refineocc) {
             for (ArrayList<Residue> list : xraystructure.altresidues) {
                 for (Residue r : list) {
-                    Atom a = r.getAtomList().get(0);
-                    x[index++] = a.getOccupancy();
+                    for (Atom a : r.getAtomList()) {
+                        if (a.getOccupancy() < 1.0) {
+                            x[index++] = a.getOccupancy();
+                            break;
+                        }
+                    }
                 }
             }
             for (ArrayList<Molecule> list : xraystructure.altmolecules) {
                 for (Molecule m : list) {
-                    Atom a = m.getAtomList().get(0);
-                    x[index++] = a.getOccupancy();
+                    for (Atom a : m.getAtomList()) {
+                        if (a.getOccupancy() < 1.0) {
+                            x[index++] = a.getOccupancy();
+                            break;
+                        }
+                    }
                 }
             }
         }
@@ -529,8 +545,11 @@ public class XRayEnergy implements Potential {
         for (ArrayList<Residue> list : xraystructure.altresidues) {
             for (Residue r : list) {
                 occ = x[index++];
+                System.out.println("setting: " + r.toString() + " to: " + occ);
                 for (Atom a : r.getAtomList()) {
-                    a.setOccupancy(occ);
+                    if (a.getOccupancy() < 1.0) {
+                        a.setOccupancy(occ);
+                    }
                 }
             }
         }
@@ -538,7 +557,9 @@ public class XRayEnergy implements Potential {
             for (Molecule m : list) {
                 occ = x[index++];
                 for (Atom a : m.getAtomList()) {
-                    a.setOccupancy(occ);
+                    if (a.getOccupancy() < 1.0) {
+                        a.setOccupancy(occ);
+                    }
                 }
             }
         }
