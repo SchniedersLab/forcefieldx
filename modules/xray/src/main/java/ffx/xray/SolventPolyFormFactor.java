@@ -110,6 +110,11 @@ public final class SolventPolyFormFactor implements FormFactor {
 
     @Override
     public void update(double xyz[]) {
+        update(xyz, 0.0);
+    }
+
+    @Override
+    public void update(double xyz[], double badd) {
         this.xyz[0] = xyz[0];
         this.xyz[1] = xyz[1];
         this.xyz[2] = xyz[2];

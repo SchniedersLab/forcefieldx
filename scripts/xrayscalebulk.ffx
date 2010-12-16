@@ -1,11 +1,16 @@
 // Force Field X Imports
-import ffx.xray.XRayStructure;
+import ffx.xray.DiffractionData;
+import ffx.xray.DiffractionFile;
+import ffx.xray.CrystalReciprocalSpace.SolventModel;
 
-// input PDB file (data must also be present as filename.[mtz/cif/ent])
-String filename = args[0];
-if (filename == null){
-  filename = "examples/1N7S.pdb";
+// input PDB file
+String pdbfilename = args[0];
+if (pdbfilename == null){
+  pdbfilename = "examples/1N7S.pdb";
 }
+
+// input data filename string (optional - if not given, data must be present as pdbfilename.[mtz/cif/ent/cns]
+String datafilename = args[1];
 
 // output following scaling, sigmaA and likelihood calculation
 // String outputfile = "examples/1N7S_ffx.mtz";
@@ -14,14 +19,23 @@ String outputfile = null;
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 
-systems = open(filename);
-XRayStructure structure = new XRayStructure(systems, systems[0].getProperties());
-structure.scalebulkfit();
-structure.printstats();
+systems = open(pdbfilename);
+
+DiffractionFile diffractionfile = null;
+if (datafilename != null) {
+  diffractionfile = new DiffractionFile(datafilename, 1.0, false);
+} else {
+  diffractionfile = new DiffractionFile(systems);
+}
+
+DiffractionData diffractiondata = new DiffractionData(systems, systems[0].getProperties(), SolventModel.POLYNOMIAL, diffractionfile);
+
+diffractiondata.scalebulkfit();
+diffractiondata.printstats();
 energy();
 
 if (outputfile != null){
-  structure.writedata(outputfile);
+  diffractiondata.writedata(outputfile);
 }
 
-// structure.timings();
+// diffractiondata.timings();

@@ -45,9 +45,7 @@ import java.util.logging.Logger;
 public class XRayEnergy implements Potential {
 
     private static final Logger logger = Logger.getLogger(XRayEnergy.class.getName());
-    private final XRayStructure xraystructure;
-    private final CrystalReciprocalSpace crs_fc;
-    private final CrystalReciprocalSpace crs_fs;
+    private final DiffractionData diffractiondata;
     private final RefinementData refinementdata;
     private final Atom atomarray[];
     private final int nAtoms;
@@ -65,14 +63,12 @@ public class XRayEnergy implements Potential {
     private double kTbsim;
     private double occmass;
 
-    public XRayEnergy(XRayStructure xraystructure, int nxyz, int nb, int nocc,
+    public XRayEnergy(DiffractionData diffractiondata, int nxyz, int nb, int nocc,
             RefinementMode refinementmode) {
-        this.xraystructure = xraystructure;
-        this.refinementdata = xraystructure.refinementdata;
-        this.crs_fc = refinementdata.crs_fc;
-        this.crs_fs = refinementdata.crs_fs;
+        this.diffractiondata = diffractiondata;
+        this.refinementdata = diffractiondata.refinementdata[0];
         this.refinementMode = refinementmode;
-        this.atomarray = xraystructure.atomarray;
+        this.atomarray = diffractiondata.atomarray;
         this.nAtoms = atomarray.length;
         this.nxyz = nxyz;
         this.nb = nb;
@@ -110,8 +106,7 @@ public class XRayEnergy implements Potential {
             }
 
             // update coordinates
-            crs_fc.setCoordinates(x);
-            crs_fs.setCoordinates(x);
+            diffractiondata.setFFTCoordinates(x);
         }
 
         if (refineb) {
@@ -143,19 +138,13 @@ public class XRayEnergy implements Potential {
         }
 
         // compute new structure factors
-        crs_fc.computeDensity(refinementdata.fc);
-        crs_fs.computeDensity(refinementdata.fs);
+        diffractiondata.computeAtomicDensity();
 
         // compute crystal likelihood
-        e = xraystructure.sigmaaminimize.calculateLikelihood();
+        e = diffractiondata.computeLikelihood();
 
         // compute the crystal gradients
-        crs_fc.computeAtomicGradients(refinementdata.dfc,
-                refinementdata.freer, refinementdata.rfreeflag,
-                refinementMode);
-        crs_fs.computeAtomicGradients(refinementdata.dfs,
-                refinementdata.freer, refinementdata.rfreeflag,
-                refinementMode);
+        diffractiondata.computeAtomicGradients(refinementMode);
 
         if (refinexyz) {
             // pack gradients into gradient array
@@ -295,7 +284,7 @@ public class XRayEnergy implements Potential {
         int index = nxyz + nb;
 
         // first: alternate residues
-        for (ArrayList<Residue> list : xraystructure.altresidues) {
+        for (ArrayList<Residue> list : diffractiondata.altresidues) {
             ave = 0.0;
             for (Residue r : list) {
                 for (Atom a : r.getAtomList()) {
@@ -319,7 +308,7 @@ public class XRayEnergy implements Potential {
         }
 
         // now the molecules (HETATMs)
-        for (ArrayList<Molecule> list : xraystructure.altmolecules) {
+        for (ArrayList<Molecule> list : diffractiondata.altmolecules) {
             ave = 0.0;
             for (Molecule m : list) {
                 for (Atom a : m.getAtomList()) {
@@ -422,7 +411,7 @@ public class XRayEnergy implements Potential {
         }
 
         if (refineocc) {
-            for (ArrayList<Residue> list : xraystructure.altresidues) {
+            for (ArrayList<Residue> list : diffractiondata.altresidues) {
                 for (Residue r : list) {
                     for (Atom a : r.getAtomList()) {
                         if (a.getOccupancy() < 1.0) {
@@ -432,7 +421,7 @@ public class XRayEnergy implements Potential {
                     }
                 }
             }
-            for (ArrayList<Molecule> list : xraystructure.altmolecules) {
+            for (ArrayList<Molecule> list : diffractiondata.altmolecules) {
                 for (Molecule m : list) {
                     for (Atom a : m.getAtomList()) {
                         if (a.getOccupancy() < 1.0) {
@@ -542,7 +531,7 @@ public class XRayEnergy implements Potential {
     public void setOccupancies(double x[]) {
         double occ = 0.0;
         int index = nxyz + nb;
-        for (ArrayList<Residue> list : xraystructure.altresidues) {
+        for (ArrayList<Residue> list : diffractiondata.altresidues) {
             for (Residue r : list) {
                 occ = x[index++];
                 System.out.println("setting: " + r.toString() + " to: " + occ);
@@ -553,7 +542,7 @@ public class XRayEnergy implements Potential {
                 }
             }
         }
-        for (ArrayList<Molecule> list : xraystructure.altmolecules) {
+        for (ArrayList<Molecule> list : diffractiondata.altmolecules) {
             for (Molecule m : list) {
                 occ = x[index++];
                 for (Atom a : m.getAtomList()) {

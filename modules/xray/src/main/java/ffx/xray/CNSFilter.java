@@ -19,9 +19,9 @@ import org.apache.commons.configuration.CompositeConfiguration;
 
 /**
  *
- * @author fenn
+ * @author Tim Fenn
  */
-public class CNSFilter {
+public class CNSFilter implements DiffractionFileFilter {
 
     private static final Logger logger = Logger.getLogger(CNSFilter.class.getName());
     private double cell[] = {-1.0, -1.0, -1.0, -1.0, -1.0, -1.0};
@@ -33,10 +33,12 @@ public class CNSFilter {
     public CNSFilter() {
     }
 
+    @Override
     public ReflectionList getReflectionList(File cnsFile) {
         return getReflectionList(cnsFile, null);
     }
 
+    @Override
     public ReflectionList getReflectionList(File cnsFile, CompositeConfiguration properties) {
         try {
             BufferedReader br = new BufferedReader(new FileReader(cnsFile));
@@ -109,6 +111,7 @@ public class CNSFilter {
         return reflectionlist;
     }
 
+    @Override
     public boolean readFile(File cnsFile, ReflectionList reflectionlist,
             RefinementData refinementdata) {
         int nread, nres, nignore, nfriedel, ncut;

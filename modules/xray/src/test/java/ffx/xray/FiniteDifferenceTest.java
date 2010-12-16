@@ -176,11 +176,11 @@ public class FiniteDifferenceTest {
         // set up FFT and run it
         ParallelTeam parallelTeam = new ParallelTeam();
         CrystalReciprocalSpace crs = new CrystalReciprocalSpace(reflectionlist,
-                atomarray, parallelTeam, parallelTeam, false);
+                atomarray, parallelTeam, parallelTeam, false, false);
         crs.computeDensity(refinementdata.fc);
         refinementdata.setCrystalReciprocalSpace_fc(crs);
         crs = new CrystalReciprocalSpace(reflectionlist,
-                atomarray, parallelTeam, parallelTeam, true, solventmodel);
+                atomarray, parallelTeam, parallelTeam, true, false, solventmodel);
         crs.computeDensity(refinementdata.fs);
         refinementdata.setCrystalReciprocalSpace_fs(crs);
 

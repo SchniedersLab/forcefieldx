@@ -37,11 +37,11 @@ import ffx.crystal.SpaceGroup;
 
 /**
  *
- * @author fenn
+ * @author Tim Fenn
  *
  * CIF file reader
  */
-public class CIFFilter {
+public class CIFFilter implements DiffractionFileFilter {
 
     private static final Logger logger = Logger.getLogger(CIFFilter.class.getName());
     private double cell[] = {-1.0, -1.0, -1.0, -1.0, -1.0, -1.0};
@@ -71,10 +71,12 @@ public class CIFFilter {
     public CIFFilter() {
     }
 
+    @Override
     public ReflectionList getReflectionList(File cifFile) {
         return getReflectionList(cifFile, null);
     }
 
+    @Override
     public ReflectionList getReflectionList(File cifFile, CompositeConfiguration properties) {
         try {
             BufferedReader br = new BufferedReader(new FileReader(cifFile));
@@ -174,6 +176,7 @@ public class CIFFilter {
         return reflectionlist;
     }
 
+    @Override
     public boolean readFile(File cifFile, ReflectionList reflectionlist,
             RefinementData refinementdata) {
         int nread, nnan, nres, nignore, ncifignore, nfriedel, ncut;

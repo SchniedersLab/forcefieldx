@@ -20,8 +20,6 @@
  */
 package ffx.xray;
 
-import static org.apache.commons.io.FilenameUtils.removeExtension;
-
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -50,124 +48,109 @@ import ffx.xray.RefinementMinimize.RefinementMode;
  *
  * @author Tim Fenn
  */
-public class XRayStructure {
+public class DiffractionData {
 
-    private static final Logger logger = Logger.getLogger(XRayStructure.class.getName());
-    protected final Crystal crystal;
-    protected final Resolution resolution;
-    protected final ReflectionList reflectionlist;
-    protected final RefinementData refinementdata;
-    protected final CrystalReciprocalSpace crs_fc;
-    protected final CrystalReciprocalSpace crs_fs;
+    private static final Logger logger = Logger.getLogger(DiffractionData.class.getName());
+    protected final String modelname;
+    protected final DiffractionFile dataname[];
+    protected final int n;
+    protected final Crystal crystal[];
+    protected final Resolution resolution[];
+    protected final ReflectionList reflectionlist[];
+    protected final RefinementData refinementdata[];
+    protected final CrystalReciprocalSpace crs_fc[];
+    protected final CrystalReciprocalSpace crs_fs[];
     public final int solventmodel;
     protected List<Atom> atomlist;
     protected final Atom atomarray[];
     protected List<Integer> xindex[];
     protected ArrayList<ArrayList<Residue>> altresidues;
     protected ArrayList<ArrayList<Molecule>> altmolecules;
-    protected ScaleBulkMinimize scalebulkminimize;
-    protected SigmaAMinimize sigmaaminimize;
-    protected SplineMinimize splineminimize;
-    protected CrystalStats crystalstats;
-    protected boolean scaled = false;
+    protected ScaleBulkMinimize scalebulkminimize[];
+    protected SigmaAMinimize sigmaaminimize[];
+    protected SplineMinimize splineminimize[];
+    protected CrystalStats crystalstats[];
+    protected boolean scaled[];
     protected XRayEnergy xrayenergy = null;
 
-    public XRayStructure(MolecularAssembly assembly,
+    public DiffractionData(MolecularAssembly assembly,
             CompositeConfiguration properties) {
-        this(new MolecularAssembly[]{assembly}, properties, SolventModel.POLYNOMIAL);
+        this(new MolecularAssembly[]{assembly}, properties,
+                SolventModel.POLYNOMIAL, new DiffractionFile(assembly));
     }
 
-    public XRayStructure(MolecularAssembly assembly,
+    public DiffractionData(MolecularAssembly assembly,
+            CompositeConfiguration properties, DiffractionFile... datafile) {
+        this(new MolecularAssembly[]{assembly}, properties,
+                SolventModel.POLYNOMIAL, datafile);
+    }
+
+    public DiffractionData(MolecularAssembly assembly,
             CompositeConfiguration properties, int solventmodel) {
-        this(new MolecularAssembly[]{assembly}, properties, solventmodel);
+        this(new MolecularAssembly[]{assembly}, properties, solventmodel,
+                new DiffractionFile(assembly));
     }
 
-    public XRayStructure(MolecularAssembly assembly[],
+    public DiffractionData(MolecularAssembly assembly[],
             CompositeConfiguration properties) {
-        this(assembly, properties, SolventModel.POLYNOMIAL);
+        this(assembly, properties, SolventModel.POLYNOMIAL,
+                new DiffractionFile(assembly[0]));
     }
 
-    public XRayStructure(MolecularAssembly assembly[],
-            CompositeConfiguration properties, int solventmodel) {
+    public DiffractionData(MolecularAssembly assembly[],
+            CompositeConfiguration properties, DiffractionFile... datafile) {
+        this(assembly, properties, SolventModel.POLYNOMIAL, datafile);
+    }
+
+    public DiffractionData(MolecularAssembly assembly[],
+            CompositeConfiguration properties, int solventmodel,
+            DiffractionFile... datafile) {
         List<Atom> alist;
 
-        // String name = assembly.getName();
-        String name = assembly[0].getFile().getPath();
-        name = removeExtension(name);
         this.solventmodel = solventmodel;
+        this.modelname = assembly[0].getFile().getName();
+        this.dataname = datafile;
+        this.n = datafile.length;
 
-        // load the structure
-        File tmp = new File(name + ".mtz");
-        File mtzfile = null, ciffile = null, cnsfile = null;
-        if (tmp.exists()) {
-            logger.info("data file: " + tmp.getName());
-            mtzfile = tmp;
-        } else {
-            tmp = new File(name + ".cif");
-            if (tmp.exists()) {
-                logger.info("data file: " + tmp.getName());
-                ciffile = tmp;
-            } else {
-                tmp = new File(name + ".ent");
-                if (tmp.exists()) {
-                    logger.info("data file: " + tmp.getName());
-                    ciffile = tmp;
-                } else {
-                    tmp = new File(name + ".cns");
-                    if (tmp.exists()) {
-                        logger.info("data file: " + tmp.getName());
-                        cnsfile = tmp;
-                    } else {
-                        tmp = new File(name + ".hkl");
-                        if (tmp.exists()) {
-                            logger.info("data file: " + tmp.getName());
-                            cnsfile = tmp;
-                        } else {
-                            logger.severe("no input data found!");
-                        }
-                    }
-                }
-            }
-        }
+        crystal = new Crystal[n];
+        resolution = new Resolution[n];
+        reflectionlist = new ReflectionList[n];
+        refinementdata = new RefinementData[n];
+        scalebulkminimize = new ScaleBulkMinimize[n];
+        sigmaaminimize = new SigmaAMinimize[n];
+        splineminimize = new SplineMinimize[n];
+        crystalstats = new CrystalStats[n];
 
         // read in Fo/sigFo/FreeR
-        MTZFilter mtzfilter = new MTZFilter();
-        CIFFilter ciffilter = new CIFFilter();
-        CNSFilter cnsfilter = new CNSFilter();
+        File tmp;
         Crystal crystalinit = Crystal.checkProperties(properties);
         Resolution resolutioninit = Resolution.checkProperties(properties);
         if (crystalinit == null || resolutioninit == null) {
-            if (mtzfile != null) {
-                reflectionlist = mtzfilter.getReflectionList(mtzfile, properties);
-            } else if (ciffile != null) {
-                reflectionlist = ciffilter.getReflectionList(ciffile, properties);
-            } else if (cnsfile != null) {
-                reflectionlist = cnsfilter.getReflectionList(cnsfile, properties);
-            } else {
-                reflectionlist = null;
-            }
+            for (int i = 0; i < n; i++) {
+                tmp = new File(datafile[i].filename);
+                reflectionlist[i] = datafile[i].diffractionfilter.getReflectionList(tmp, properties);
 
-            if (reflectionlist == null) {
-                logger.severe("MTZ/CIF/CNS file does not contain full crystal information!");
+                if (reflectionlist[i] == null) {
+                    logger.severe("MTZ/CIF/CNS file does not contain full crystal information!");
+                }
             }
         } else {
-            reflectionlist = new ReflectionList(crystalinit, resolutioninit,
-                    properties);
+            for (int i = 0; i < n; i++) {
+                reflectionlist[i] = new ReflectionList(crystalinit, resolutioninit,
+                        properties);
+            }
         }
 
-        crystal = reflectionlist.crystal;
-        resolution = reflectionlist.resolution;
-        refinementdata = new RefinementData(properties, reflectionlist);
-        if (mtzfile != null) {
-            mtzfilter.readFile(mtzfile, reflectionlist, refinementdata);
-        } else if (ciffile != null) {
-            ciffilter.readFile(ciffile, reflectionlist, refinementdata);
-        } else {
-            cnsfilter.readFile(cnsfile, reflectionlist, refinementdata);
+        for (int i = 0; i < n; i++) {
+            crystal[i] = reflectionlist[i].crystal;
+            resolution[i] = reflectionlist[i].resolution;
+            refinementdata[i] = new RefinementData(properties, reflectionlist[i]);
+            tmp = new File(datafile[i].filename);
+            datafile[i].diffractionfilter.readFile(tmp, reflectionlist[i], refinementdata[i]);
         }
 
         // FIXME: assembly crystal can have replicates (and when PDB is written, too)
-        if (!crystal.equals(assembly[0].getCrystal())) {
+        if (!crystal[0].equals(assembly[0].getCrystal())) {
             // logger.severe("PDB and reflection file crystal information do not match! (check CRYST1 record?)");
         }
 
@@ -198,7 +181,7 @@ public class XRayStructure {
                     }
                 }
             } else if (node instanceof Molecule
-                    && refinementdata.refinemolocc) {
+                    && refinementdata[0].refinemolocc) {
                 r0 = null;
                 m0 = (Molecule) node;
                 alist = m0.getAtomList();
@@ -212,7 +195,6 @@ public class XRayStructure {
                         break;
                     }
                 }
-
             }
             if (altconf) {
                 for (int j = 1; j < assembly.length; j++) {
@@ -298,7 +280,7 @@ public class XRayStructure {
         // initialize atomic form factors
         for (Atom a : atomarray) {
             XRayFormFactor atomff =
-                    new XRayFormFactor(a, refinementdata.use_3g, 2.0);
+                    new XRayFormFactor(a, refinementdata[0].use_3g, 2.0);
             a.setFormFactorIndex(atomff.ffindex);
 
             if (a.getOccupancy() == 0.0) {
@@ -328,17 +310,63 @@ public class XRayStructure {
         }
 
         // set up FFT and run it
+        crs_fc = new CrystalReciprocalSpace[n];
+        crs_fs = new CrystalReciprocalSpace[n];
         ParallelTeam parallelTeam = new ParallelTeam();
-        crs_fc = new CrystalReciprocalSpace(reflectionlist, atomarray,
-                parallelTeam, parallelTeam, false);
-        refinementdata.setCrystalReciprocalSpace_fc(crs_fc);
-        crs_fc.setUse3G(refinementdata.use_3g);
-        crs_fs = new CrystalReciprocalSpace(reflectionlist, atomarray,
-                parallelTeam, parallelTeam, true, solventmodel);
-        refinementdata.setCrystalReciprocalSpace_fs(crs_fs);
-        crs_fs.setUse3G(refinementdata.use_3g);
+        for (int i = 0; i < n; i++) {
+            crs_fc[i] = new CrystalReciprocalSpace(reflectionlist[i], atomarray,
+                    parallelTeam, parallelTeam, false, dataname[i].neutron);
+            refinementdata[i].setCrystalReciprocalSpace_fc(crs_fc[i]);
+            crs_fc[i].setUse3G(refinementdata[i].use_3g);
+            crs_fc[i].setWeight(dataname[i].weight);
+            crs_fs[i] = new CrystalReciprocalSpace(reflectionlist[i], atomarray,
+                    parallelTeam, parallelTeam, true, dataname[i].neutron,
+                    solventmodel);
+            refinementdata[i].setCrystalReciprocalSpace_fs(crs_fs[i]);
+            crs_fs[i].setUse3G(refinementdata[i].use_3g);
+            crs_fs[i].setWeight(dataname[i].weight);
 
-        crystalstats = new CrystalStats(reflectionlist, refinementdata);
+            crystalstats[i] = new CrystalStats(reflectionlist[i],
+                    refinementdata[i]);
+        }
+
+        scaled = new boolean[n];
+        for (int i = 0; i < n; i++) {
+            scaled[i] = false;
+        }
+    }
+
+    public void setFFTCoordinates(double x[]) {
+        for (int i = 0; i < n; i++) {
+            crs_fc[i].setCoordinates(x);
+            crs_fs[i].setCoordinates(x);
+        }
+    }
+
+    public void computeAtomicGradients(RefinementMode refinementMode) {
+        for (int i = 0; i < n; i++) {
+            crs_fc[i].computeAtomicGradients(refinementdata[i].dfc,
+                    refinementdata[i].freer, refinementdata[i].rfreeflag,
+                    refinementMode);
+            crs_fs[i].computeAtomicGradients(refinementdata[i].dfs,
+                    refinementdata[i].freer, refinementdata[i].rfreeflag,
+                    refinementMode);
+        }
+    }
+
+    public void computeAtomicDensity() {
+        for (int i = 0; i < n; i++) {
+            crs_fc[i].computeDensity(refinementdata[i].fc);
+            crs_fs[i].computeDensity(refinementdata[i].fs);
+        }
+    }
+
+    public double computeLikelihood() {
+        double e = 0.0;
+        for (int i = 0; i < n; i++) {
+            e += dataname[i].weight * sigmaaminimize[i].calculateLikelihood();
+        }
+        return e;
     }
 
     public XRayEnergy getXRayEnergy() {
@@ -354,18 +382,16 @@ public class XRayStructure {
     }
 
     public void printscaleandr() {
-        if (!scaled) {
-            scalebulkfit();
+        for (int i = 0; i < n; i++) {
+            if (!scaled[i]) {
+                scalebulkfit(i);
+            }
+            crystalstats[i].print_scalestats();
+            crystalstats[i].print_rstats();
         }
-        crystalstats.print_scalestats();
-        crystalstats.print_rstats();
     }
 
     public void printstats() {
-        if (!scaled) {
-            scalebulkfit();
-        }
-
         int nat = 0;
         int nnonh = 0;
         for (Atom a : atomlist) {
@@ -378,95 +404,134 @@ public class XRayStructure {
             }
             nnonh++;
         }
-        crystalstats.print_scalestats();
-        crystalstats.print_dpistats(nnonh, nat);
-        crystalstats.print_hklstats();
-        crystalstats.print_snstats();
-        crystalstats.print_rstats();
+
+        for (int i = 0; i < n; i++) {
+            if (!scaled[i]) {
+                scalebulkfit(i);
+            }
+
+            StringBuilder sb = new StringBuilder();
+            sb.append(String.format("statistics for data set %d of %d\nweight: %6.2f is neutron: %s\nmodel: %s data file: %s\n",
+                    i + 1, n, dataname[i].weight, dataname[i].neutron,
+                    modelname, dataname[i].filename));
+            logger.info(sb.toString());
+            
+            crystalstats[i].print_scalestats();
+            crystalstats[i].print_dpistats(nnonh, nat);
+            crystalstats[i].print_hklstats();
+            crystalstats[i].print_snstats();
+            crystalstats[i].print_rstats();
+        }
     }
 
     public void scalebulkfit() {
+        for (int i = 0; i < n; i++) {
+            scalebulkfit(i);
+        }
+    }
+
+    public void scalebulkfit(int i) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("scaling data set %d of %d\nweight: %6.2f is neutron: %s\nmodel: %s data file: %s\n",
+                i + 1, n, dataname[i].weight, dataname[i].neutron,
+                modelname, dataname[i].filename));
+        logger.info(sb.toString());
+
         // reset some values
-        refinementdata.solvent_k = 0.33;
-        refinementdata.solvent_ueq = 50.0 / (8.0 * Math.PI * Math.PI);
-        refinementdata.model_k = 0.0;
-        for (int i = 0; i < 6; i++) {
-            refinementdata.model_b[i] = 0.0;
+        refinementdata[i].solvent_k = 0.33;
+        refinementdata[i].solvent_ueq = 50.0 / (8.0 * Math.PI * Math.PI);
+        refinementdata[i].model_k = 0.0;
+        for (int j = 0; j < 6; j++) {
+            refinementdata[i].model_b[j] = 0.0;
         }
 
         // run FFTs
-        crs_fc.computeDensity(refinementdata.fc);
+        crs_fc[i].computeDensity(refinementdata[i].fc);
         if (solventmodel != SolventModel.NONE) {
-            crs_fs.computeDensity(refinementdata.fs);
+            crs_fs[i].computeDensity(refinementdata[i].fs);
         }
 
         // initialize minimizers
-        scalebulkminimize = new ScaleBulkMinimize(reflectionlist, refinementdata, crs_fs);
-        splineminimize = new SplineMinimize(reflectionlist,
-                refinementdata, refinementdata.spline, SplineEnergy.Type.FOFC);
+        scalebulkminimize[i] = new ScaleBulkMinimize(reflectionlist[i],
+                refinementdata[i], crs_fs[i]);
+        splineminimize[i] = new SplineMinimize(reflectionlist[i],
+                refinementdata[i], refinementdata[i].spline,
+                SplineEnergy.Type.FOFC);
 
         // minimize
         if (solventmodel != SolventModel.NONE
-                && refinementdata.gridsearch) {
-            scalebulkminimize.minimize(7, 1e-2);
-            scalebulkminimize.GridOptimize();
+                && refinementdata[i].gridsearch) {
+            scalebulkminimize[i].minimize(7, 1e-2);
+            scalebulkminimize[i].GridOptimize();
         }
-        scalebulkminimize.minimize(7, refinementdata.xrayscaletol);
+        scalebulkminimize[i].minimize(7, refinementdata[i].xrayscaletol);
 
         // sigmaA / LLK calculation
-        sigmaaminimize = new SigmaAMinimize(reflectionlist, refinementdata);
-        sigmaaminimize.minimize(7, refinementdata.sigmaatol);
+        sigmaaminimize[i] = new SigmaAMinimize(reflectionlist[i], refinementdata[i]);
+        sigmaaminimize[i].minimize(7, refinementdata[i].sigmaatol);
 
-        if (refinementdata.splinefit) {
-            splineminimize.minimize(7, 1e-5);
+        if (refinementdata[i].splinefit) {
+            splineminimize[i].minimize(7, 1e-5);
         }
 
-        scaled = true;
+        scaled[i] = true;
     }
 
     public void setSolventAB(double a, double b) {
-        if (solventmodel != SolventModel.NONE) {
-            refinementdata.solvent_a = a;
-            refinementdata.solvent_b = b;
-            crs_fs.setSolventAB(a, b);
+        for (int i = 0; i < n; i++) {
+            if (solventmodel != SolventModel.NONE) {
+                refinementdata[i].solvent_a = a;
+                refinementdata[i].solvent_b = b;
+                crs_fs[i].setSolventAB(a, b);
+            }
         }
     }
 
     public void timings() {
         logger.info("performing 10 Fc calculations for timing...");
-        for (int i = 0; i < 10; i++) {
-            crs_fc.computeDensity(refinementdata.fc, true);
-            crs_fs.computeDensity(refinementdata.fs, true);
-            crs_fc.computeAtomicGradients(refinementdata.dfc,
-                    refinementdata.freer, refinementdata.rfreeflag,
-                    RefinementMode.COORDINATES, true);
-            crs_fs.computeAtomicGradients(refinementdata.dfs,
-                    refinementdata.freer, refinementdata.rfreeflag,
-                    RefinementMode.COORDINATES, true);
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < 10; j++) {
+                crs_fc[i].computeDensity(refinementdata[i].fc, true);
+                crs_fs[i].computeDensity(refinementdata[i].fs, true);
+                crs_fc[i].computeAtomicGradients(refinementdata[i].dfc,
+                        refinementdata[i].freer, refinementdata[i].rfreeflag,
+                        RefinementMode.COORDINATES, true);
+                crs_fs[i].computeAtomicGradients(refinementdata[i].dfs,
+                        refinementdata[i].freer, refinementdata[i].rfreeflag,
+                        RefinementMode.COORDINATES, true);
+            }
         }
     }
 
     public void writedata(String filename) {
+        writedata(filename, 0);
+    }
+
+    public void writedata(String filename, int i) {
         MTZWriter mtzwriter;
-        if (scaled) {
-            mtzwriter = new MTZWriter(reflectionlist, refinementdata, filename);
+        if (scaled[i]) {
+            mtzwriter = new MTZWriter(reflectionlist[i], refinementdata[i], filename);
         } else {
-            mtzwriter = new MTZWriter(reflectionlist, refinementdata, filename, true);
+            mtzwriter = new MTZWriter(reflectionlist[i], refinementdata[i], filename, true);
         }
         mtzwriter.write();
     }
 
     public void writeSolventMaskCNS(String filename) {
+        writeSolventMaskCNS(filename, 0);
+    }
+
+    public void writeSolventMaskCNS(String filename, int i) {
         try {
             PrintWriter cnsfile = new PrintWriter(new BufferedWriter(new FileWriter(filename)));
             cnsfile.println(" ANOMalous=FALSE");
             cnsfile.println(" DECLare NAME=FS DOMAin=RECIprocal TYPE=COMP END");
-            for (HKL ih : reflectionlist.hkllist) {
-                int i = ih.index();
+            for (HKL ih : reflectionlist[i].hkllist) {
+                int j = ih.index();
                 cnsfile.printf(" INDE %d %d %d FS= %.4f %.4f\n",
                         ih.h(), ih.k(), ih.l(),
-                        refinementdata.fs_f(i),
-                        Math.toDegrees(refinementdata.fs_phi(i)));
+                        refinementdata[i].fs_f(j),
+                        Math.toDegrees(refinementdata[i].fs_phi(j)));
             }
             cnsfile.close();
         } catch (Exception e) {
@@ -477,11 +542,15 @@ public class XRayStructure {
     }
 
     public void writeSolventMask(String filename) {
+        writeSolventMask(filename, 0);
+    }
+
+    public void writeSolventMask(String filename, int i) {
         if (solventmodel != SolventModel.NONE) {
-            CCP4MapWriter mapwriter = new CCP4MapWriter((int) crs_fs.getXDim(),
-                    (int) crs_fs.getYDim(), (int) crs_fs.getZDim(),
-                    crystal, filename);
-            mapwriter.write(crs_fs.solventGrid);
+            CCP4MapWriter mapwriter = new CCP4MapWriter((int) crs_fs[i].getXDim(),
+                    (int) crs_fs[i].getYDim(), (int) crs_fs[i].getZDim(),
+                    crystal[i], filename);
+            mapwriter.write(crs_fs[i].solventGrid);
         }
     }
 }

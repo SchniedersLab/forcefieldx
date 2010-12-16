@@ -50,7 +50,7 @@ import ffx.crystal.SpaceGroup;
  *
  * @see <a href="http://www.ccp4.ac.uk/dist/html/library.html" target="_blank">
  */
-public class MTZFilter {
+public class MTZFilter implements DiffractionFileFilter {
 
     private static final Logger logger = Logger.getLogger(MTZFilter.class.getName());
 
@@ -59,6 +59,7 @@ public class MTZFilter {
         public String label;
         public char type;
         public int id;
+        public double min, max;
     }
 
     private class dataset {
@@ -106,10 +107,12 @@ public class MTZFilter {
     this(readFile(molecularAssembly.getFile()));
     }
      */
+    @Override
     public ReflectionList getReflectionList(File mtzFile) {
         return getReflectionList(mtzFile, null);
     }
 
+    @Override
     public ReflectionList getReflectionList(File mtzFile, CompositeConfiguration properties) {
         ByteOrder b = ByteOrder.nativeOrder();
         FileInputStream fis;
@@ -206,6 +209,7 @@ public class MTZFilter {
         return new ReflectionList(crystal, resolution, properties);
     }
 
+    @Override
     public boolean readFile(File mtzFile, ReflectionList reflectionlist,
             RefinementData refinementdata) {
         int nread, nignore, nres, nfriedel, ncut;
@@ -488,11 +492,10 @@ public class MTZFilter {
             case SORT:
                 break;
             case SYMINF:
+                String[] tmp = str.split("\'+");
                 sgnum = Integer.parseInt(strarray[4]);
-                if (strarray[5].startsWith("'")) {
-                    sgname = strarray[5].substring(1, strarray[5].length() - 1);
-                } else {
-                    sgname = strarray[5];
+                if (tmp.length > 1) {
+                    sgname = tmp[1];
                 }
                 break;
             case SYMM:
@@ -519,6 +522,8 @@ public class MTZFilter {
                 col.label = strarray[1];
                 col.type = strarray[2].charAt(0);
                 col.id = ndset;
+                col.min = Double.parseDouble(strarray[3]);
+                col.max = Double.parseDouble(strarray[4]);
                 break;
             case PROJECT:
                 ndset = Integer.parseInt(strarray[1]);
@@ -687,19 +692,19 @@ public class MTZFilter {
         }
     }
 
-    static void print_header(MTZFilter mfile) {
+    public void print_header() {
         StringBuilder sb = new StringBuilder();
-        sb.append("title: " + mfile.title + "\n");
-        sb.append("sg: " + mfile.sgname + " sgnum: " + mfile.sgnum + "\n");
-        sb.append("res: " + mfile.reslow + " " + mfile.reshigh + "\n");
-        sb.append("nrfl: " + mfile.nrfl + "\n");
-        sb.append("ncol: " + mfile.ncol + "\n");
+        sb.append("MTZ title: " + title + "\n");
+        sb.append("MTZ space group: " + sgname + " space group number: " + sgnum
+                + " (" + SpaceGroup.spaceGroupNames[sgnum - 1] + ")\n");
+        sb.append("MTZ resolution: " + reslow + " - " + reshigh + "\n");
+        sb.append("# reflections: " + nrfl + "\n");
 
         int ndset = 1;
-        for (Iterator i = mfile.datasets.iterator(); i.hasNext(); ndset++) {
+        for (Iterator i = datasets.iterator(); i.hasNext(); ndset++) {
             dataset d = (dataset) i.next();
 
-            sb.append("  dset " + ndset + ": " + d.dataset + "\n");
+            sb.append("  dataset " + ndset + ": " + d.dataset + "\n");
             sb.append("  project " + ndset + ": " + d.project + "\n");
             sb.append("  wavelength " + ndset + ": " + d.lambda + "\n");
             sb.append("  cell " + ndset + ": "
@@ -707,6 +712,16 @@ public class MTZFilter {
                     + d.cell[3] + " " + d.cell[4] + " " + d.cell[5] + "\n");
             sb.append("\n");
         }
+
+        sb.append("# columns: " + ncol + "\n");
+        int nc = 0;
+        for (Iterator i = columns.iterator(); i.hasNext(); nc++) {
+            column c = (column) i.next();
+
+            sb.append(String.format("  column %d: dataset id: %d min: %9.2f max: %9.2f label: %s type: %c\n",
+                    nc, c.id, c.min, c.max, c.label, c.type));
+        }
+
         if (logger.isLoggable(Level.INFO)) {
             logger.info(sb.toString());
         }

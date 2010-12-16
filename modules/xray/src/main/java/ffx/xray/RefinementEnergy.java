@@ -63,26 +63,26 @@ public class RefinementEnergy implements Potential {
     protected double[] optimizationScaling = null;
 
     public RefinementEnergy(MolecularAssembly molecularAssembly,
-            XRayStructure xraystructure, RefinementMode refinementmode) {
-        this(new MolecularAssembly[]{molecularAssembly}, xraystructure,
+            DiffractionData diffractiondata, RefinementMode refinementmode) {
+        this(new MolecularAssembly[]{molecularAssembly}, diffractiondata,
                 refinementmode, null);
     }
 
     public RefinementEnergy(MolecularAssembly molecularAssembly,
-            XRayStructure xraystructure, RefinementMode refinementmode,
+            DiffractionData diffractiondata, RefinementMode refinementmode,
             double scaling[]) {
-        this(new MolecularAssembly[]{molecularAssembly}, xraystructure,
+        this(new MolecularAssembly[]{molecularAssembly}, diffractiondata,
                 refinementmode, scaling);
     }
 
     public RefinementEnergy(MolecularAssembly molecularAssembly[],
-            XRayStructure xraystructure, RefinementMode refinementmode,
+            DiffractionData diffractiondata, RefinementMode refinementmode,
             double scaling[]) {
         this.molecularAssembly = molecularAssembly;
-        this.refinementdata = xraystructure.refinementdata;
-        this.atomarray = xraystructure.atomarray;
+        this.refinementdata = diffractiondata.refinementdata[0];
+        this.atomarray = diffractiondata.atomarray;
         this.nAtoms = atomarray.length;
-        this.xindex = xraystructure.xindex;
+        this.xindex = diffractiondata.xindex;
         this.weight = refinementdata.xweight;
         this.refinementMode = refinementmode;
         this.optimizationScaling = scaling;
@@ -150,10 +150,10 @@ public class RefinementEnergy implements Potential {
                         || refinementmode == RefinementMode.BFACTORS_AND_OCCUPANCIES
                         || refinementmode == RefinementMode.COORDINATES_AND_OCCUPANCIES
                         || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
-                    for (ArrayList<Residue> list : xraystructure.altresidues) {
+                    for (ArrayList<Residue> list : diffractiondata.altresidues) {
                         nocc += list.size();
                     }
-                    for (ArrayList<Molecule> list : xraystructure.altmolecules) {
+                    for (ArrayList<Molecule> list : diffractiondata.altmolecules) {
                         nocc += list.size();
                     }
                 }
@@ -170,15 +170,14 @@ public class RefinementEnergy implements Potential {
             }
             fe.setScaling(null);
         }
-        if (!xraystructure.scaled) {
-            xraystructure.scalebulkfit();
-            xraystructure.printstats();
+        if (!diffractiondata.scaled[0]) {
+            diffractiondata.printstats();
         }
-        xrayEnergy = xraystructure.getXRayEnergy();
+        xrayEnergy = diffractiondata.getXRayEnergy();
         if (xrayEnergy == null) {
-            xrayEnergy = new XRayEnergy(xraystructure, nxyz, nb, nocc,
+            xrayEnergy = new XRayEnergy(diffractiondata, nxyz, nb, nocc,
                     refinementMode);
-            xraystructure.setXRayEnergy(xrayEnergy);
+            diffractiondata.setXRayEnergy(xrayEnergy);
         } else {
             xrayEnergy.setNXYZ(nxyz);
             xrayEnergy.setNB(nb);
