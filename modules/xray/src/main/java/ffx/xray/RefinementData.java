@@ -80,7 +80,8 @@ public class RefinementData {
     public double model_k;
     public double model_b[] = new double[6];
     // settings
-    public final int rfreeflag;
+    public final double fsigfcutoff;
+    public int rfreeflag;
     public final boolean use_3g;
     public final double xrayscaletol;
     public final double sigmaatol;
@@ -97,7 +98,8 @@ public class RefinementData {
     public RefinementData(CompositeConfiguration properties,
             ReflectionList reflectionlist) {
 
-        int rflag = properties.getInt("rfreeflag", 1);
+        int rflag = properties.getInt("rfreeflag", -1);
+        fsigfcutoff = properties.getDouble("fsigfcutoff", -1.0);
         gridsearch = properties.getBoolean("gridsearch", false);
         splinefit = properties.getBoolean("splinefit", true);
         use_3g = properties.getBoolean("use_3g", true);
@@ -118,7 +120,8 @@ public class RefinementData {
             sb.append("\nRefinement data settings:\n");
             sb.append("  using cctbx 3 Gaussians (use_3g): " + use_3g + "\n");
             sb.append("  resolution dependent spline scale (splinefit): " + splinefit + "\n");
-            sb.append("  R Free flag (rfreeflag): " + rflag + "\n");
+            sb.append("  F/sigF cutoff (fsigfcutoff): " + fsigfcutoff + "\n");
+            sb.append("  R Free flag (rfreeflag) (if -1, value will be updated when data is read in): " + rflag + "\n");
             sb.append("  n bins (nbins): " + reflectionlist.nbins + "\n");
             sb.append("  solvent grid search (gridsearch): " + gridsearch + "\n");
             sb.append("  X-ray scale fit tolerance (xrayscaletol): " + xrayscaletol + "\n");
@@ -183,19 +186,30 @@ public class RefinementData {
 
     public void generateRFree() {
         Random generator = new Random();
+        int free;
+        int nonfree;
         int nfree = 0;
+
+        if (rfreeflag == 0) {
+            free = 0;
+            nonfree = 1;
+        } else {
+            free = 1;
+            nonfree = 0;
+        }
+
         for (int i = 0; i < n; i++) {
             if (Double.isNaN(fsigf[i][0])) {
-                freer[i] = 0;
+                freer[i] = nonfree;
                 continue;
             }
 
             int randomi = generator.nextInt(100);
             if (randomi < 5) {
-                freer[i] = 1;
+                freer[i] = free;
                 nfree++;
             } else {
-                freer[i] = 0;
+                freer[i] = nonfree;
             }
         }
 
@@ -293,6 +307,10 @@ public class RefinementData {
     public void set_ano_fsigfminus(int i, double f, double sigf) {
         anofsigf[i][2] = f;
         anofsigf[i][3] = sigf;
+    }
+
+    public void set_freerflag(int i) {
+        rfreeflag = i;
     }
 
     public void set_freer(int i, int f) {

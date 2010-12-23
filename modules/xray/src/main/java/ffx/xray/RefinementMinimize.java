@@ -48,7 +48,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
     private static final Logger logger = Logger.getLogger(RefinementMinimize.class.getName());
     private static double toSeconds = 0.000000001;
     private final MolecularAssembly molecularAssembly[];
-    private final XRayStructure xraystructure;
+    private final DiffractionData diffractiondata;
     private final RefinementData refinementdata;
     private final Atom atomarray[];
     private final int nAtoms;
@@ -68,37 +68,36 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
     private int nSteps;
 
     public RefinementMinimize(MolecularAssembly molecularAssembly,
-            XRayStructure xraystructure) {
-        this(new MolecularAssembly[]{molecularAssembly}, xraystructure,
+            DiffractionData diffractiondata) {
+        this(new MolecularAssembly[]{molecularAssembly}, diffractiondata,
                 RefinementMode.COORDINATES_AND_BFACTORS);
     }
 
     public RefinementMinimize(MolecularAssembly molecularAssembly,
-            XRayStructure xraystructure, RefinementMode refinementmode) {
-        this(new MolecularAssembly[]{molecularAssembly}, xraystructure,
+            DiffractionData diffractiondata, RefinementMode refinementmode) {
+        this(new MolecularAssembly[]{molecularAssembly}, diffractiondata,
                 refinementmode);
     }
 
     public RefinementMinimize(MolecularAssembly molecularAssembly[],
-            XRayStructure xraystructure) {
-        this(molecularAssembly, xraystructure,
+            DiffractionData diffractiondata) {
+        this(molecularAssembly, diffractiondata,
                 RefinementMode.COORDINATES_AND_BFACTORS);
     }
 
     public RefinementMinimize(MolecularAssembly molecularAssembly[],
-            XRayStructure xraystructure, RefinementMode refinementmode) {
+            DiffractionData diffractiondata, RefinementMode refinementmode) {
         this.molecularAssembly = molecularAssembly;
-        this.xraystructure = xraystructure;
-        this.refinementdata = xraystructure.refinementdata;
+        this.diffractiondata = diffractiondata;
+        this.refinementdata = diffractiondata.refinementdata[0];
         this.refinementMode = refinementmode;
-        this.atomarray = xraystructure.atomarray;
+        this.atomarray = diffractiondata.atomarray;
         this.nAtoms = atomarray.length;
-        if (!xraystructure.scaled) {
-            xraystructure.scalebulkfit();
-            xraystructure.printstats();
+        if (!diffractiondata.scaled[0]) {
+            diffractiondata.printstats();
         }
         refinementenergy = new RefinementEnergy(molecularAssembly,
-                xraystructure, refinementmode, null);
+                diffractiondata, refinementmode, null);
 
         this.nxyz = refinementenergy.nxyz;
         this.nb = refinementenergy.nb;
@@ -184,14 +183,14 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
                 || refinementmode == RefinementMode.COORDINATES_AND_OCCUPANCIES
                 || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
             int i = nxyz + nb;
-            for (ArrayList<Residue> list : xraystructure.altresidues) {
+            for (ArrayList<Residue> list : diffractiondata.altresidues) {
                 for (int j = 0; j < list.size(); j++) {
                     scaling[i] = occscale;
                     x[i] *= occscale;
                     i++;
                 }
             }
-            for (ArrayList<Molecule> list : xraystructure.altmolecules) {
+            for (ArrayList<Molecule> list : diffractiondata.altmolecules) {
                 for (int j = 0; j < list.size(); j++) {
                     scaling[i] = occscale;
                     x[i] *= occscale;
@@ -221,7 +220,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
 
     public RefinementEnergy minimize(int m, double eps, int maxiter) {
         refinementenergy.xrayEnergy.setRefinementMode(refinementMode);
-        xraystructure.setXRayEnergy(refinementenergy.xrayEnergy);
+        diffractiondata.setXRayEnergy(refinementenergy.xrayEnergy);
 
         switch (refinementMode) {
             case COORDINATES:
@@ -293,10 +292,16 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
                     iter, f, grms));
         } else {
             if (info == LineSearchResult.Success) {
-                logger.info(String.format("%6d %13.4g %11.4g %11.4g %10.4g %9.2g %7d %8.3g %6.2f %6.2f\n",
-                        iter, f, grms, df, xrms, angle, nfun, seconds,
-                        xraystructure.crystalstats.get_r(),
-                        xraystructure.crystalstats.get_rfree()));
+                StringBuilder sb = new StringBuilder();
+                sb.append(String.format("%6d %13.4g %11.4g %11.4g %10.4g %9.2g %7d %8.3g ",
+                        iter, f, grms, df, xrms, angle, nfun, seconds));
+                for (int i = 0; i < diffractiondata.n; i++) {
+                    sb.append(String.format("%6.2f %6.2f ",
+                            diffractiondata.crystalstats[i].get_r(),
+                            diffractiondata.crystalstats[i].get_rfree()));
+                }
+                sb.append(String.format("\n"));
+                logger.info(sb.toString());
             } else {
                 logger.info(String.format("%6d %13.4g %11.4g %11.4g %10.4g %9.2g %7d %8s\n",
                         iter, f, grms, df, xrms, angle, nfun, info.toString()));

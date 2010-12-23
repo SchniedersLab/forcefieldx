@@ -49,4 +49,9 @@ public interface FormFactor {
      * update the coordinates to the current position
      */
     void update(double xyz[]);
+
+    /*
+     * update the coordinates to the current position and Badd
+     */
+    void update(double xyz[], double badd);
 }

@@ -398,6 +398,7 @@ public final class NeutronFormFactor implements FormFactor {
         update(xyz, u2b(uadd));
     }
 
+    @Override
     public void update(double xyz[], double badd) {
         this.xyz[0] = xyz[0];
         this.xyz[1] = xyz[1];

@@ -50,7 +50,7 @@ import ffx.crystal.SpaceGroup;
  *
  * @see <a href="http://www.ccp4.ac.uk/dist/html/library.html" target="_blank">
  */
-public class MTZFilter {
+public class MTZFilter implements DiffractionFileFilter {
 
     private static final Logger logger = Logger.getLogger(MTZFilter.class.getName());
 
@@ -59,6 +59,7 @@ public class MTZFilter {
         public String label;
         public char type;
         public int id;
+        public double min, max;
     }
 
     private class dataset {
@@ -106,10 +107,12 @@ public class MTZFilter {
     this(readFile(molecularAssembly.getFile()));
     }
      */
+    @Override
     public ReflectionList getReflectionList(File mtzFile) {
         return getReflectionList(mtzFile, null);
     }
 
+    @Override
     public ReflectionList getReflectionList(File mtzFile, CompositeConfiguration properties) {
         ByteOrder b = ByteOrder.nativeOrder();
         FileInputStream fis;
@@ -206,12 +209,17 @@ public class MTZFilter {
         return new ReflectionList(crystal, resolution, properties);
     }
 
+    @Override
     public boolean readFile(File mtzFile, ReflectionList reflectionlist,
             RefinementData refinementdata) {
-        int nread, nignore, nres, nfriedel;
+        int nread, nignore, nres, nfriedel, ncut;
         ByteOrder b = ByteOrder.nativeOrder();
         FileInputStream fis;
         DataInputStream dis;
+        boolean transpose = false;
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("\nOpening %s\n", mtzFile.getName()));
         try {
             fis = new FileInputStream(mtzFile);
             dis = new DataInputStream(fis);
@@ -257,13 +265,6 @@ public class MTZFilter {
                 parsing = parse_header(mtzstr);
             }
 
-            // reopen to start at beginning
-            fis = new FileInputStream(mtzFile);
-            dis = new DataInputStream(fis);
-
-            // skip initial header
-            dis.skipBytes(80);
-
             // column identifiers
             h = k = l = fo = sigfo = rfree = -1;
             fplus = sigfplus = fminus = sigfminus = rfreeplus = rfreeminus = -1;
@@ -275,10 +276,20 @@ public class MTZFilter {
                 return false;
             }
 
-            // read in data
-            nread = nignore = nres = nfriedel = 0;
+            // reopen to start at beginning
+            fis = new FileInputStream(mtzFile);
+            dis = new DataInputStream(fis);
+
+            // skip initial header
+            dis.skipBytes(80);
+
+            // check if HKLs need to be transposed or not
             float data[] = new float[ncol];
             HKL mate = new HKL();
+            int nposignore = 0;
+            int ntransignore = 0;
+            int nzero = 0;
+            int none = 0;
             for (int i = 0; i < nrfl; i++) {
                 for (int j = 0; j < ncol; j++) {
                     dis.read(bytes, offset, 4);
@@ -288,11 +299,85 @@ public class MTZFilter {
                 int ih = (int) data[h];
                 int ik = (int) data[k];
                 int il = (int) data[l];
-                boolean friedel = reflectionlist.findSymHKL(ih, ik, il, mate);
+                boolean friedel = reflectionlist.findSymHKL(ih, ik, il, mate, false);
+                HKL hklpos = reflectionlist.getHKL(mate);
+                if (hklpos == null) {
+                    nposignore++;
+                }
+
+                friedel = reflectionlist.findSymHKL(ih, ik, il, mate, true);
+                HKL hkltrans = reflectionlist.getHKL(mate);
+                if (hkltrans == null) {
+                    ntransignore++;
+                }
+                if (rfree > 0) {
+                    if (((int) data[rfree]) == 0) {
+                        nzero++;
+                    } else if (((int) data[rfree]) == 1) {
+                        none++;
+                    }
+                }
+                if (rfreeplus > 0) {
+                    if (((int) data[rfreeplus]) == 0) {
+                        nzero++;
+                    } else if (((int) data[rfreeplus]) == 1) {
+                        none++;
+                    }
+                }
+                if (rfreeminus > 0) {
+                    if (((int) data[rfreeminus]) == 0) {
+                        nzero++;
+                    } else if (((int) data[rfreeminus]) == 1) {
+                        none++;
+                    }
+                }
+            }
+            if (nposignore > ntransignore) {
+                transpose = true;
+            }
+
+            if (none > (nzero * 2)
+                    && refinementdata.rfreeflag < 0) {
+                refinementdata.set_freerflag(0);
+                sb.append(String.format("Setting R free flag to %d based on MTZ file data\n", refinementdata.rfreeflag));
+            } else if (nzero > (none * 2)
+                    && refinementdata.rfreeflag < 0) {
+                refinementdata.set_freerflag(1);
+                sb.append(String.format("Setting R free flag to %d based on MTZ file data\n", refinementdata.rfreeflag));
+            } else if (refinementdata.rfreeflag < 0) {
+                refinementdata.set_freerflag(0);
+                sb.append(String.format("Setting R free flag to MTZ default: %d\n", refinementdata.rfreeflag));
+            }
+
+            // reopen to start at beginning
+            fis = new FileInputStream(mtzFile);
+            dis = new DataInputStream(fis);
+
+            // skip initial header
+            dis.skipBytes(80);
+
+            // read in data
+            nread = nignore = nres = nfriedel = ncut = 0;
+            for (int i = 0; i < nrfl; i++) {
+                for (int j = 0; j < ncol; j++) {
+                    dis.read(bytes, offset, 4);
+                    bb = ByteBuffer.wrap(bytes);
+                    data[j] = bb.order(b).getFloat();
+                }
+                int ih = (int) data[h];
+                int ik = (int) data[k];
+                int il = (int) data[l];
+                boolean friedel = reflectionlist.findSymHKL(ih, ik, il, mate, transpose);
                 HKL hkl = reflectionlist.getHKL(mate);
 
                 if (hkl != null) {
                     if (fo > 0 && sigfo > 0) {
+                        if (refinementdata.fsigfcutoff > 0.0) {
+                            if ((data[fo] / data[sigfo]) < refinementdata.fsigfcutoff) {
+                                ncut++;
+                                continue;
+                            }
+                        }
                         if (friedel) {
                             refinementdata.set_ano_fsigfminus(hkl.index(), data[fo], data[sigfo]);
                             nfriedel++;
@@ -301,9 +386,21 @@ public class MTZFilter {
                         }
                     } else {
                         if (fplus > 0 && sigfplus > 0) {
+                            if (refinementdata.fsigfcutoff > 0.0) {
+                                if ((data[fplus] / data[sigfplus]) < refinementdata.fsigfcutoff) {
+                                    ncut++;
+                                    continue;
+                                }
+                            }
                             refinementdata.set_ano_fsigfplus(hkl.index(), data[fplus], data[sigfplus]);
                         }
                         if (fminus > 0 && sigfminus > 0) {
+                            if (refinementdata.fsigfcutoff > 0.0) {
+                                if ((data[fminus] / data[sigfminus]) < refinementdata.fsigfcutoff) {
+                                    ncut++;
+                                    continue;
+                                }
+                            }
                             refinementdata.set_ano_fsigfminus(hkl.index(), data[fminus], data[sigfminus]);
                         }
                     }
@@ -334,10 +431,10 @@ public class MTZFilter {
             // set up fsigf from F+ and F-
             refinementdata.generate_fsigf_from_anofsigf();
 
-            StringBuilder sb = new StringBuilder();
-            sb.append(String.format("\nOpening %s\n", mtzFile.getName()));
             sb.append(String.format("MTZ file type (machine stamp): %s\n",
                     stampstr));
+            sb.append(String.format("HKL data is %s\n",
+                    transpose ? "transposed" : "not transposed"));
             sb.append(String.format("# HKL read in:                             %d\n",
                     nread));
             sb.append(String.format("# HKL read as friedel mates:               %d\n",
@@ -346,6 +443,8 @@ public class MTZFilter {
                     nres));
             sb.append(String.format("# HKL NOT read in (not in internal list?): %d\n",
                     nignore));
+            sb.append(String.format("# HKL NOT read in (F/sigF cutoff):         %d\n",
+                    ncut));
             sb.append(String.format("# HKL in internal list:                    %d\n",
                     reflectionlist.hkllist.size()));
             if (logger.isLoggable(Level.INFO)) {
@@ -393,11 +492,10 @@ public class MTZFilter {
             case SORT:
                 break;
             case SYMINF:
+                String[] tmp = str.split("\'+");
                 sgnum = Integer.parseInt(strarray[4]);
-                if (strarray[5].startsWith("'")) {
-                    sgname = strarray[5].substring(1, strarray[5].length() - 1);
-                } else {
-                    sgname = strarray[5];
+                if (tmp.length > 1) {
+                    sgname = tmp[1];
                 }
                 break;
             case SYMM:
@@ -424,6 +522,8 @@ public class MTZFilter {
                 col.label = strarray[1];
                 col.type = strarray[2].charAt(0);
                 col.id = ndset;
+                col.min = Double.parseDouble(strarray[3]);
+                col.max = Double.parseDouble(strarray[4]);
                 break;
             case PROJECT:
                 ndset = Integer.parseInt(strarray[1]);
@@ -592,19 +692,19 @@ public class MTZFilter {
         }
     }
 
-    static void print_header(MTZFilter mfile) {
+    public void print_header() {
         StringBuilder sb = new StringBuilder();
-        sb.append("title: " + mfile.title + "\n");
-        sb.append("sg: " + mfile.sgname + " sgnum: " + mfile.sgnum + "\n");
-        sb.append("res: " + mfile.reslow + " " + mfile.reshigh + "\n");
-        sb.append("nrfl: " + mfile.nrfl + "\n");
-        sb.append("ncol: " + mfile.ncol + "\n");
+        sb.append("MTZ title: " + title + "\n");
+        sb.append("MTZ space group: " + sgname + " space group number: " + sgnum
+                + " (" + SpaceGroup.spaceGroupNames[sgnum - 1] + ")\n");
+        sb.append("MTZ resolution: " + reslow + " - " + reshigh + "\n");
+        sb.append("# reflections: " + nrfl + "\n");
 
         int ndset = 1;
-        for (Iterator i = mfile.datasets.iterator(); i.hasNext(); ndset++) {
+        for (Iterator i = datasets.iterator(); i.hasNext(); ndset++) {
             dataset d = (dataset) i.next();
 
-            sb.append("  dset " + ndset + ": " + d.dataset + "\n");
+            sb.append("  dataset " + ndset + ": " + d.dataset + "\n");
             sb.append("  project " + ndset + ": " + d.project + "\n");
             sb.append("  wavelength " + ndset + ": " + d.lambda + "\n");
             sb.append("  cell " + ndset + ": "
@@ -612,6 +712,16 @@ public class MTZFilter {
                     + d.cell[3] + " " + d.cell[4] + " " + d.cell[5] + "\n");
             sb.append("\n");
         }
+
+        sb.append("# columns: " + ncol + "\n");
+        int nc = 0;
+        for (Iterator i = columns.iterator(); i.hasNext(); nc++) {
+            column c = (column) i.next();
+
+            sb.append(String.format("  column %d: dataset id: %d min: %9.2f max: %9.2f label: %s type: %c\n",
+                    nc, c.id, c.min, c.max, c.label, c.type));
+        }
+
         if (logger.isLoggable(Level.INFO)) {
             logger.info(sb.toString());
         }

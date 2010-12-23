@@ -145,20 +145,31 @@ public class ReflectionList {
                 + " resolution limit: " + resolution.res_limit();
     }
 
-    public boolean findSymHKL(int h, int k, int l, HKL mate){
-        return findSymHKL(new HKL(h, k, l), mate);
+    public boolean findSymHKL(HKL hkl, HKL mate) {
+        return findSymHKL(hkl, mate, false);
     }
 
-    public boolean findSymHKL(HKL hkl, HKL mate) {
+    public boolean findSymHKL(int h, int k, int l, HKL mate) {
+        return findSymHKL(new HKL(h, k, l), mate, false);
+    }
+
+    public boolean findSymHKL(int h, int k, int l, HKL mate, boolean transpose) {
+        return findSymHKL(new HKL(h, k, l), mate, transpose);
+    }
+
+    public boolean findSymHKL(HKL hkl, HKL mate, boolean transpose) {
         int nsym = spaceGroup.numPrimitiveSymEquiv;
 
         for (int i = 0; i < nsym; i++) {
-            crystal.applySymRot(hkl, mate, spaceGroup.symOps.get(i));
+            if (transpose) {
+                crystal.applyTransSymRot(hkl, mate, spaceGroup.symOps.get(i));
+            } else {
+                crystal.applySymRot(hkl, mate, spaceGroup.symOps.get(i));
+            }
             if (SpaceGroup.checkLaueRestrictions(laueSystem,
                     mate.h(), mate.k(), mate.l())) {
                 return false;
             }
-
             if (SpaceGroup.checkLaueRestrictions(laueSystem,
                     -mate.h(), -mate.k(), -mate.l())) {
                 mate.h(-mate.h());
