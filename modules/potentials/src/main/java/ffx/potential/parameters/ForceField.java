@@ -58,16 +58,17 @@ public class ForceField {
 
     public enum ForceFieldString {
 
-        SPACEGROUP, FORCEFIELD, POLARIZATION, VDW_SCHEDULE, REAL_SCHEDULE, RECIP_SCHEDULE
+        SPACEGROUP, FORCEFIELD, POLARIZATION, VDW_SCHEDULE, REAL_SCHEDULE,
+        RECIP_SCHEDULE
     }
 
     public enum ForceFieldDouble {
 
         A_AXIS, B_AXIS, C_AXIS, ALPHA, BETA, GAMMA, POLAR_DAMP, POLAR_SOR,
-        POLAR_EPS, EWALD_CUTOFF, EWALD_ALPHA, PME_SPACING, VDW_CUTOFF,
-        MPOLE_11_SCALE, MPOLE_12_SCALE, MPOLE_13_SCALE, MPOLE_14_SCALE,
-        MPOLE_15_SCALE, POLAR_12_SCALE, POLAR_13_SCALE, DIRECT_11_SCALE,
-        RIGID_SCALE
+        POLAR_EPS, EWALD_CUTOFF, EWALD_ALPHA, EWALD_PRECISION, PME_MESH_DENSITY,
+        VDW_CUTOFF, MPOLE_11_SCALE, MPOLE_12_SCALE, MPOLE_13_SCALE,
+        MPOLE_14_SCALE, MPOLE_15_SCALE, POLAR_12_SCALE, POLAR_13_SCALE,
+        DIRECT_11_SCALE, RIGID_SCALE
     }
 
     public enum ForceFieldInteger {
@@ -85,13 +86,13 @@ public class ForceField {
 
     public enum ForceFieldType {
 
-        KEYWORD, ANGLE, ATOM, BIOTYPE, BOND, CHARGE, MULTIPOLE, OPBEND, PITORS, POLARIZE,
-        STRBND, TORSION, TORTORS, UREYBRAD, VDW
+        KEYWORD, ANGLE, ATOM, BIOTYPE, BOND, CHARGE, MULTIPOLE, OPBEND, PITORS,
+        POLARIZE, STRBND, TORSION, TORTORS, UREYBRAD, VDW
     }
     /**
      * A map between a Force_Field and its internal parameter file.
      */
-    private static final Map<Force_Field, URL> forceFields = new EnumMap<Force_Field,URL>(Force_Field.class);
+    private static final Map<Force_Field, URL> forceFields = new EnumMap<Force_Field, URL>(Force_Field.class);
 
     static {
         ClassLoader cl = ForceField.class.getClassLoader();
@@ -201,7 +202,7 @@ public class ForceField {
     }
 
     public double getDouble(ForceFieldDouble forceFieldDouble,
-            double defaultValue) {
+                            double defaultValue) {
         try {
             return getDouble(forceFieldDouble);
         } catch (Exception e) {
@@ -222,7 +223,7 @@ public class ForceField {
     }
 
     public int getInteger(ForceFieldInteger forceFieldInteger,
-            int defaultValue) {
+                          int defaultValue) {
         try {
             return getInteger(forceFieldInteger);
         } catch (Exception e) {
@@ -243,7 +244,7 @@ public class ForceField {
     }
 
     public String getString(ForceFieldString forceFieldString,
-            String defaultString) {
+                            String defaultString) {
         try {
             return getString(forceFieldString);
         } catch (Exception e) {
@@ -264,7 +265,7 @@ public class ForceField {
     }
 
     public boolean getBoolean(ForceFieldBoolean forceFieldBoolean,
-            Boolean defaultBoolean) {
+                              Boolean defaultBoolean) {
         try {
             return getBoolean(forceFieldBoolean);
         } catch (Exception e) {
@@ -391,8 +392,8 @@ public class ForceField {
         }
         if (treeMap.containsKey(type.key)) {
             logger.warning(" A force field entry of type " + type.forceFieldType
-                    + " already exists with the key: " + type.key
-                    + "\n The (discarded) old entry: " + treeMap.get(type.key).
+                           + " already exists with the key: " + type.key
+                           + "\n The (discarded) old entry: " + treeMap.get(type.key).
                     toString() + "\n The new entry: " + type.toString());
         }
         Class baseTypeClass = type.getClass();
@@ -457,7 +458,7 @@ public class ForceField {
 
     public int getForceFieldTypeCount(ForceFieldType type) {
         TreeMap<String, BaseType> treeMap =
-                (TreeMap<String, BaseType>) forceFieldTypes.get(type);
+                                  (TreeMap<String, BaseType>) forceFieldTypes.get(type);
         if (treeMap == null) {
             logger.warning("Unrecognized Force Field Type: " + type);
             return 0;
@@ -483,7 +484,7 @@ public class ForceField {
                 PolarizeType polarizeType2 = polarizeTypes.get(key2);
                 if (polarizeType2 == null) {
                     logger.severe(format("Polarize type %s references nonexistant polarize type %s.",
-                            key, key2));
+                                         key, key2));
                 }
                 int types2[] = polarizeType2.polarizationGroup;
                 if (types2 == null) {

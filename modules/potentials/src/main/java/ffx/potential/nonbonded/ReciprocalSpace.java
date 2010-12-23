@@ -123,7 +123,7 @@ public class ReciprocalSpace {
 
         threadCount = parallelTeam.getThreadCount();
         bSplineOrder = forceField.getInteger(ForceFieldInteger.PME_ORDER, 5);
-        double density = forceField.getDouble(ForceFieldDouble.PME_SPACING, 1.2);
+        double density = forceField.getDouble(ForceFieldDouble.PME_MESH_DENSITY, 1.2);
         cudaFFT = forceField.getBoolean(ForceField.ForceFieldBoolean.CUDAFFT, false);
 
         // Set default FFT grid size from unit cell dimensions.

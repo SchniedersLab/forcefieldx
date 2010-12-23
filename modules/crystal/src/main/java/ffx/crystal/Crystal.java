@@ -87,11 +87,11 @@ public class Crystal {
      */
     public final double volume;
     /**
-     * Matric to convert from fractional to Cartesian coordinates.
+     * Matrix to convert from fractional to Cartesian coordinates.
      */
     public final double Ai[][] = new double[3][3];
     /**
-     * Entries in the "cart" array.
+     * Entries in the Ai array.
      */
     public final double Ai00, Ai01, Ai02, Ai10, Ai11, Ai12, Ai20, Ai21, Ai22;
     /**
@@ -99,7 +99,7 @@ public class Crystal {
      */
     public final double A[][];
     /**
-     * Entries in the "recip" array.
+     * Entries in the A array.
      */
     public final double A00, A01, A02, A10, A11, A12, A20, A21, A22;
     /**

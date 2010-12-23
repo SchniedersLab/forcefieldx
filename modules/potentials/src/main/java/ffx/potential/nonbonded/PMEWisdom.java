@@ -165,7 +165,7 @@ public class PMEWisdom {
 
         forceField.addForceFieldDouble(ForceFieldDouble.EWALD_CUTOFF, cutoff);
         forceField.addForceFieldDouble(ForceFieldDouble.EWALD_ALPHA, beta);
-        forceField.addForceFieldDouble(ForceFieldDouble.PME_SPACING, 0.5);
+        forceField.addForceFieldDouble(ForceFieldDouble.PME_MESH_DENSITY, 0.5);
         forceField.addForceFieldInteger(ForceFieldInteger.PME_ORDER, 10);
 
         NeighborList neighborList = new NeighborList(null, crystal, atoms, cutoff, buffer,
@@ -237,7 +237,7 @@ public class PMEWisdom {
                     String.format("Evaluating Grid Spacing: %5.3f\n", spacing));
             forceField.addForceFieldDouble(ForceFieldDouble.EWALD_CUTOFF, cutoff);
             forceField.addForceFieldDouble(ForceFieldDouble.EWALD_ALPHA, alpha);
-            forceField.addForceFieldDouble(ForceFieldDouble.PME_SPACING, spacing);
+            forceField.addForceFieldDouble(ForceFieldDouble.PME_MESH_DENSITY, spacing);
             forceField.addForceFieldInteger(ForceFieldInteger.PME_ORDER, order);
             ParticleMeshEwald particleMeshEwald = new ParticleMeshEwald(forceField, atoms, crystal,
                     parallelTeam, neighborLists);
@@ -268,7 +268,7 @@ public class PMEWisdom {
         // Find the best timing for these PME parameters.
         forceField.addForceFieldDouble(ForceFieldDouble.EWALD_CUTOFF, cutoff);
         forceField.addForceFieldDouble(ForceFieldDouble.EWALD_ALPHA, alpha);
-        forceField.addForceFieldDouble(ForceFieldDouble.PME_SPACING, spacing);
+        forceField.addForceFieldDouble(ForceFieldDouble.PME_MESH_DENSITY, spacing);
         forceField.addForceFieldInteger(ForceField.ForceFieldInteger.PME_ORDER,
                 order);
         ParticleMeshEwald particleMeshEwald = new ParticleMeshEwald(forceField,

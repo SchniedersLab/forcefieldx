@@ -473,7 +473,8 @@ public class ParticleMeshEwald implements LambdaInterface {
 
     private void setEwaldParameters() {
         off = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, 7.0);
-        aewald = forceField.getDouble(ForceFieldDouble.EWALD_ALPHA, ewaldCoefficient(off));
+        double ewald_precision =  forceField.getDouble(ForceFieldDouble.EWALD_PRECISION, 1.0e-8);
+        aewald = forceField.getDouble(ForceFieldDouble.EWALD_ALPHA, ewaldCoefficient(off,ewald_precision));
         off2 = off * off;
         alsq2 = 2.0 * aewald * aewald;
         piEwald = 1.0 / (sqrtPi * aewald);
@@ -3674,12 +3675,18 @@ public class ParticleMeshEwald implements LambdaInterface {
         }
     }
 
-    private double ewaldCoefficient(double cutoff) {
+    private double ewaldCoefficient(double cutoff, double precision) {
         /*
          * Set the tolerance value; use of 1.0d-8 results in large Ewald
-         * coefficients that ensure continuity in the gradient
+         * coefficients that ensure continuity in the gradient, but
+         * requires high mesh density.
          */
         double eps = 1.0e-8;
+
+        if (precision < 1.0e-1) {
+            eps = precision;
+        }
+
         /*
          * Get an approximate value from cutoff and tolerance.
          */
