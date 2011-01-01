@@ -446,7 +446,7 @@
         <site>
             <id>kenai</id>
             <name>Kenai Website</name>
-            <url>file:/Data/ffx-project/website</url>
+            <url>file:${website.repo}</url>
             <!-- url>dav:https://kenai.com/website/ffx</url -->
         </site>
         <repository>
