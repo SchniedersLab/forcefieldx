@@ -6,13 +6,13 @@
     xsi:schemaLocation="http://maven.apache.org/DECORATION/1.0.0 http://maven.apache.org/xsd/decoration-1.0.0.xsd">
     <publishDate position="right" format="dd MMM yyyy" />
     <version position="right" />
-    <poweredBy>
+    <!-- poweredBy>
         <logo
             name="Force Field X Development"
-            href="http://kenai.com/projects/ffx"
+            href="http://kenai.com/projects/ffx" 
             img="/images/icon90.png"
             />
-    </poweredBy>
+    </poweredBy -->
     <bannerRight>
         <name>Force Field X</name>
         <src>/images/forcefieldx.png</src>

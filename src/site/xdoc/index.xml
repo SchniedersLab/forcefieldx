@@ -11,13 +11,35 @@
     </properties>
     <body>
         <section name="Introduction">
-            <p align="justify">
-                Force Field X is an open, platform independent, federation of
-                modules that work together to develop computational tools for
-                molecular biophysics. This includes state-of-the-art methods
-                for X-ray crystallography and structure based pharmacuetical
-                engineering.
+            <p>Force Field X is a group of open, platform independent modules for
+               molecular biophysics. Modules include state-of-the-art force fields,
+               electrostatics algorithms, methods for X-ray crystallography
+               refinement and structure based drug design.
             </p>
+            <subsection name="X-Ray Crystallography Refinement with Polarizable AMOEBA Electrostatics">
+                <table>
+                    <thead>
+                        <tr>
+                            <td>Without Electrostatics</td>
+                            <td>Polarizable AMOBEA Electrostatics via Ewald Summation</td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td bgcolor="white">
+                                <p align="center">
+                                    <img src="images/ahelix_noelec.png" alt="No Electrostatics" />
+                                </p>
+                            </td>
+                            <td bgcolor="white">
+                                <p align="left">
+                                    <img src="images/ahelix_mutual.png" alt="AMOEBA PME Electrostatics" />
+                                </p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </subsection>
             <subsection name="Force Field X Parent Project">
                 <p align="justify">
                     The Force Field X parent project provides:
@@ -25,14 +47,17 @@
                 <ul>
                     <li>
                         <a href="project-info.html">Shared infrastructure</a> for the development of modules (like this website,
-                    mailing lists, forums, code repositories, etc.).</li>
+                    mailing lists, forums, code repositories, etc.).
+                    </li>
                     <li>
                         <a href="project-reports.html">Aggregate documentaion</a> of the source code, API documentation,
                         unit testing and known issues.
                     </li>
                     <li>
-                        A variety of <a href="modules/ui/index.html">user interfaces</a> that run on all platforms. This includes a GUI, command
-                        line version, scripting based on Groovy and even dissemination via <a href="webstart.html">Java Webstart</a>.
+                        A variety of
+                        <a href="modules/ui/index.html">user interfaces</a> that run on all platforms. This includes a GUI, command
+                        line version, scripting based on Groovy and even dissemination via
+                        <a href="webstart.html">Java Webstart</a>.
                     </li>
                 </ul>
                 <p>
@@ -47,30 +72,84 @@
                     but so are the borders of states or countries.
 
                     If you have an idea for a new Force Field X Module,
-                    please contact an existing member of the <a href="team-list.html">team</a>.
+                    please contact an existing member of the
+                    <a href="team-list.html">team</a>.
                 </p>
                 <table>
                     <tr>
-                        <th>Force Field X Modules</th><th>Leader(s)</th><th>Publications</th>
+                        <th>Force Field X Modules</th>
+                        <th>Leader(s)</th>
+                        <th>Publications</th>
                     </tr>
-                    <tr><td><a href="modules/algorithms/index.html">Algorithms</a> for optimization and sampling</td>
-                    <td>Dr. Sergio Urahata</td><td></td></tr>
-                    <tr><td><a href="modules/binding/index.html">Binding Affinity</a> for computing binding affinities</td>
-                    <td>Lab of Prof. Pengyu Ren</td><td><a href="modules/binding/publications.html">Publications</a></td></tr>
-                    <tr><td><a href="modules/crystal/index.html">Crystal</a> for space group symmetry operations</td>
-                    <td>Dr. Michael J. Schnieders and Dr. Timothy D. Fenn</td><td></td></tr>
-                    <tr><td><a href="modules/nucleic/index.html">Nucleic Acid</a> simulations</td>
-                    <td>Dr. Chuanjie Wu</td><td></td></tr>
-                    <tr><td><a href="modules/numerics/index.html">Numerics</a> for numerical methods</td>
-                    <td>Community</td><td></td></tr>
-                    <tr><td><a href="modules/potentials/index.html">Potentials</a> for molecular biophyiscs with support for space group symmetry</td>
-                    <td>Dr. Michael J. Schnieders</td><td><a href="modules/potentials/publications.html">Publications</a></td></tr>
-                    <tr><td><a href="modules/ui/index.html">User Interfaces</a> for command line and GUI versions</td>
-                    <td>Community</td><td></td></tr>
-                    <tr><td><a href="modules/utilities/index.html">Utilities</a> for support functions needed by many modules</td>
-                    <td>Community</td><td></td></tr>
-                    <tr><td><a href="modules/xray/index.html">X-Ray Refinement</a> for refinement of X-ray diffraction data sets</td>
-                    <td>Dr. Timothy D. Fenn</td><td><a href="modules/xray/publications.html">Publications</a></td></tr>
+                    <tr>
+                        <td>
+                            <a href="modules/algorithms/index.html">Algorithms</a> for optimization and sampling
+                        </td>
+                        <td>Dr. Sergio Urahata</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="modules/binding/index.html">Binding Affinity</a> for computing binding affinities
+                        </td>
+                        <td>Lab of Prof. Pengyu Ren</td>
+                        <td>
+                            <a href="modules/binding/publications.html">Publications</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="modules/crystal/index.html">Crystal</a> for space group symmetry operations
+                        </td>
+                        <td>Dr. Michael J. Schnieders and Dr. Timothy D. Fenn</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="modules/nucleic/index.html">Nucleic Acid</a> simulations
+                        </td>
+                        <td>Dr. Chuanjie Wu</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="modules/numerics/index.html">Numerics</a> for numerical methods
+                        </td>
+                        <td>Community</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="modules/potentials/index.html">Potentials</a> for molecular biophyiscs with support for space group symmetry
+                        </td>
+                        <td>Dr. Michael J. Schnieders</td>
+                        <td>
+                            <a href="modules/potentials/publications.html">Publications</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="modules/ui/index.html">User Interfaces</a> for command line and GUI versions
+                        </td>
+                        <td>Community</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="modules/utilities/index.html">Utilities</a> for support functions needed by many modules
+                        </td>
+                        <td>Community</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="modules/xray/index.html">X-Ray Refinement</a> for refinement of X-ray diffraction data sets
+                        </td>
+                        <td>Dr. Timothy D. Fenn</td>
+                        <td>
+                            <a href="modules/xray/publications.html">Publications</a>
+                        </td>
+                    </tr>
                 </table>
             </subsection>
         </section>

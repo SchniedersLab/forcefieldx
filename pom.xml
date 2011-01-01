@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" 
+<project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
          http://maven.apache.org/maven-v4_0_0.xsd">
@@ -11,39 +11,18 @@
     <version>1.0.0-SNAPSHOT</version>
     <description>Software for Molecular Biophysics</description>
     <url>http://ffx.kenai.com</url>
-    <inceptionYear>2001</inceptionYear>
-
-    <organization>
-        <!-- This is used to generate the Copyright on the website.
-             Module authors should override this with their name. -->
-        <name>Michael J. Schnieders</name>
-        <url>http://ffx.kenai.com</url>
-    </organization>
-
-    <licenses>
-        <license>
-            <name>GPL version 3</name>
-            <url>http://www.gnu.org/licenses/gpl-3.0-standalone.html</url>
-            <distribution>manual</distribution>
-        </license>
-    </licenses>
-
-    <scm>
-        <url>http://kenai.com/projects/ffx/sources/source/show</url>
-        <connection>scm:git://kenai.com/ffx~source</connection>
-        <developerConnection>scm:git:ssh://${kenai.user.name}@git.kenai.com/ffx~source</developerConnection>
-    </scm>
-
+    <prerequisites>
+        <maven>2.2.1</maven>
+    </prerequisites>
     <issueManagement>
         <system>jira</system>
         <url>http://kenai.com/jira/browse/ffx</url>
     </issueManagement>
-
     <ciManagement>
         <system>Hudson</system>
         <url>http://atbsrv3.stanford.edu:8080/</url>
     </ciManagement>
-
+    <inceptionYear>2001</inceptionYear>
     <mailingLists>
         <mailingList>
             <name>FFX Announcements</name>
@@ -67,28 +46,6 @@
             <unsubscribe>http://kenai.com/projects/ffx/lists</unsubscribe>
         </mailingList>
     </mailingLists>
-
-    <distributionManagement>
-        <downloadUrl>http://ffx.kenai.com</downloadUrl>
-        <site>
-            <id>kenai</id>
-            <name>Kenai Website</name>
-            <url>dav:https://kenai.com/website/ffx</url>
-        </site>
-        <repository>
-            <uniqueVersion>false</uniqueVersion>
-            <id>releases</id>
-            <name>Local Maven Release Repository</name>
-            <url>file:../ffx-release-repo</url>
-        </repository>
-        <snapshotRepository>
-            <uniqueVersion>false</uniqueVersion>
-            <id>snapshots</id>
-            <name>Local Maven SNAPSHOT Repository</name>
-            <url>file:lib</url>
-        </snapshotRepository>
-    </distributionManagement>
-
     <developers>
         <developer>
             <id>schnied</id>
@@ -168,25 +125,34 @@
             <timezone>-5</timezone>
         </developer>
     </developers>
-
-    <modules>
-        <module>modules/algorithms</module>
-        <module>modules/binding</module>
-        <module>modules/crystal</module>
-        <module>modules/nucleic</module>
-        <module>modules/numerics</module>
-        <module>modules/potentials</module>
-        <module>modules/ui</module>
-        <module>modules/utilities</module>
-        <module>modules/xray</module>
-    </modules>
-
+    <licenses>
+        <license>
+            <name>GPL version 3</name>
+            <url>http://www.gnu.org/licenses/gpl-3.0-standalone.html</url>
+            <distribution>manual</distribution>
+        </license>
+    </licenses>
+    <scm>
+        <url>http://kenai.com/projects/ffx/sources/source/show</url>
+        <connection>scm:git://kenai.com/ffx~source</connection>
+        <developerConnection>scm:git:ssh://${kenai.user.name}@git.kenai.com/ffx~source</developerConnection>
+    </scm>
+    <organization>
+        <!-- This is used to generate the Copyright on the website.
+             Module authors should use their name. -->
+        <name>Michael J. Schnieders</name>
+        <url>http://ffx.kenai.com</url>
+    </organization>
     <build>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-site-plugin</artifactId>
-                <version>2.1.1</version>
+                <version>2.2</version>
+                <inherited>true</inherited>
+                <configuration>
+                    <stagingDirectory>/Data/ffx-project/website</stagingDirectory>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -209,35 +175,25 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
                 <version>2.1.2</version>
-                <!-- executions>
+                <executions>
                     <execution>
                         <id>Package Source</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>jar-no-fork</goal>
-                            <goal>test-jar-no-fork</goal>
-                        </goals>
-                    </execution>
-                </executions -->
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.7</version>
-                <configuration>
-                    <quiet>true</quiet>
-                </configuration>
-                <!-- executions>
-                    <execution>
-                        <id>Package Javadocs</id>
                         <phase>package</phase>
                         <goals>
                             <goal>jar</goal>
                             <goal>test-jar</goal>
                         </goals>
                     </execution>
-                </executions -->
+                </executions>
             </plugin>
+            <!-- plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.7</version>
+                <configuration>
+                    <quiet>true</quiet>
+                </configuration>
+            </plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
@@ -293,131 +249,23 @@
                 <configuration>
                     <!-- This prevents Mac OS X from using its old Java3D verion.  -->
                     <useSystemClassLoader>false</useSystemClassLoader>
-                    <systemProperties>
+                    <systemPropertyVariables>
                         <property>
                             <name>j3d.rend</name>
                             <value>jogl</value>
                         </property>
-                    </systemProperties>
+                    </systemPropertyVariables>
+                    <!-- systemProperties>
+                        <property>
+                            <name>j3d.rend</name>
+                            <value>jogl</value>
+                        </property>
+                    </systemProperties -->
                     <argLine>-ms1G -mx1G -Dffx.ci=${ffx.ci} -Djava.library.path=${basedir}/../../bin/${platform}/jogl-${bit}:${basedir}/../../bin/${platform}/jocl-${bit}</argLine>
                 </configuration>
             </plugin>
         </plugins>
     </build>
-
-    <reporting>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-project-info-reports-plugin</artifactId>
-                <version>2.2</version>
-                <inherited>true</inherited>
-                <configuration>
-                    <dependencyDetailsEnabled>false</dependencyDetailsEnabled>
-                    <dependencyLocationsEnabled>false</dependencyLocationsEnabled>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.7</version>
-                <configuration>
-                    <aggregate>true</aggregate>
-                    <quiet>true</quiet>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jxr-plugin</artifactId>
-                <version>2.2</version>
-                <configuration>
-                    <aggregate>true</aggregate>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-report-plugin</artifactId>
-                <version>2.6</version>
-                <configuration>
-                    <aggregate>true</aggregate>
-                </configuration>
-            </plugin>
-            <!-- plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-linkcheck-plugin</artifactId>
-                <version>1.1</version>
-            </plugin -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-changes-plugin</artifactId>
-                <version>2.3</version>
-                <configuration>
-                    <webUser>${kenai.user.name}</webUser>
-                    <webPassword>${kenai.password}</webPassword>
-                    <statusIds>Open, In Progress, Reopened, Resolved, Closed</statusIds>
-                    <resolutionIds>Unresolved, Fixed, Won't Fix, Duplicate, Incomplete, Cannot Reproduce</resolutionIds>
-                </configuration>
-                <reportSets>
-                    <reportSet>
-                        <reports>
-                            <report>jira-report</report>
-                            <report>changes-report</report>
-                        </reports>
-                    </reportSet>
-                </reportSets>
-            </plugin>
-        </plugins>
-    </reporting>
-
-    <repositories>
-        <repository>
-            <name>FFX Dependency Repository</name>
-            <id>ffx.dependency</id>
-            <url>http://kenai.com/projects/ffx/sources/maven-dependency-repo/content</url>
-            <releases>
-                <checksumPolicy>ignore</checksumPolicy>
-                <enabled>true</enabled>
-                <updatePolicy>daily</updatePolicy>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-        <repository>
-            <name>Maven Plugin SNAPSHOTS</name>
-            <id>maven.snapshots</id>
-            <url>http://repository.apache.org/snapshots</url>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
-
-    <dependencies>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.6</version>
-            <type>jar</type>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
-
-    <prerequisites>
-        <maven>2.2.1</maven>
-    </prerequisites>
-
-    <properties>
-        <compileVersion>1.6</compileVersion>
-        <targetVersion>1.6</targetVersion>
-        <!-- Setting the source encoding is required for builds
-             that are platform independent. -->
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
-
     <profiles>
         <profile>
             <id>Mac OS X</id>
@@ -481,4 +329,155 @@
             </properties>
         </profile>
     </profiles>
+    <repositories>
+        <repository>
+            <name>FFX Dependency Repository</name>
+            <id>ffx.dependencies</id>
+            <url>http://kenai.com/projects/ffx/sources/dependency-repo/content</url>
+            <releases>
+                <checksumPolicy>ignore</checksumPolicy>
+                <enabled>true</enabled>
+                <updatePolicy>daily</updatePolicy>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <name>Maven Plugin SNAPSHOTS</name>
+            <id>maven.snapshots</id>
+            <url>http://repository.apache.org/snapshots</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
+    <dependencies>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.6</version>
+            <type>jar</type>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+    <reporting>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-project-info-reports-plugin</artifactId>
+                <version>2.3</version>
+                <inherited>true</inherited>
+                <configuration>
+                    <dependencyDetailsEnabled>false</dependencyDetailsEnabled>
+                    <dependencyLocationsEnabled>false</dependencyLocationsEnabled>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.7</version>
+                <inherited>true</inherited>
+                <configuration>
+                    <quiet>true</quiet>
+                </configuration>
+                <reportSets>
+                    <!-- reportSet>
+                        <id>non-aggregate</id>
+                        <reports>
+                            <report>javadoc</report>
+                        </reports>
+                    </reportSet -->
+                    <reportSet>
+                        <id>aggregate</id>
+                        <reports>
+                            <report>aggregate</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jxr-plugin</artifactId>
+                <version>2.2</version>
+                <configuration>
+                    <aggregate>true</aggregate>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-report-plugin</artifactId>
+                <version>2.6</version>
+                <configuration>
+                    <aggregate>true</aggregate>
+                </configuration>
+            </plugin>
+            <!-- plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-linkcheck-plugin</artifactId>
+                <version>1.1</version>
+            </plugin -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-changes-plugin</artifactId>
+                <version>2.3</version>
+                <configuration>
+                    <webUser>${kenai.user.name}</webUser>
+                    <webPassword>${kenai.password}</webPassword>
+                    <statusIds>Open, In Progress, Reopened, Resolved, Closed</statusIds>
+                    <resolutionIds>Unresolved, Fixed, Won't Fix, Duplicate, Incomplete, Cannot Reproduce</resolutionIds>
+                </configuration>
+                <reportSets>
+                    <reportSet>
+                        <reports>
+                            <!-- report>jira-report</report -->
+                            <report>changes-report</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
+            </plugin>
+        </plugins>
+    </reporting>
+    <distributionManagement>
+        <downloadUrl>http://ffx.kenai.com</downloadUrl>
+        <site>
+            <id>kenai</id>
+            <name>Kenai Website</name>
+            <url>file:/Data/ffx-project/website</url>
+            <!-- url>dav:https://kenai.com/website/ffx</url -->
+        </site>
+        <repository>
+            <uniqueVersion>false</uniqueVersion>
+            <id>releases</id>
+            <name>Local Maven Release Repository</name>
+            <url>file:../releases</url>
+        </repository>
+        <snapshotRepository>
+            <uniqueVersion>false</uniqueVersion>
+            <id>snapshots</id>
+            <name>Local Maven SNAPSHOT Repository</name>
+            <url>file:lib</url>
+        </snapshotRepository>
+    </distributionManagement>
+    <properties>
+        <compileVersion>1.6</compileVersion>
+        <targetVersion>1.6</targetVersion>
+        <!-- Setting the source encoding is required for builds
+             that are platform independent. -->
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+    <modules>
+        <module>modules/algorithms</module>
+        <module>modules/binding</module>
+        <module>modules/crystal</module>
+        <module>modules/nucleic</module>
+        <module>modules/numerics</module>
+        <module>modules/potentials</module>
+        <module>modules/ui</module>
+        <module>modules/utilities</module>
+        <module>modules/xray</module>
+    </modules>
 </project>
