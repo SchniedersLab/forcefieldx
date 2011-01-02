@@ -13,7 +13,26 @@
     <artifactId>algorithms</artifactId>
     <packaging>jar</packaging>
     <name>Algorithms</name>
-
+    <dependencies>
+        <dependency>
+            <groupId>com.kenai.ffx</groupId>
+            <artifactId>potentials</artifactId>
+            <version>${project.version}</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>com.kenai.ffx</groupId>
+            <artifactId>numerics</artifactId>
+            <version>${project.version}</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>commons-math</groupId>
+            <artifactId>commons-math</artifactId>
+            <type>jar</type>
+            <version>2.1</version>
+        </dependency>
+    </dependencies>
     <reporting>
         <plugins>
             <plugin>
@@ -37,25 +56,4 @@
             </plugin>
         </plugins>
     </reporting>
-
-    <dependencies>
-        <dependency>
-            <groupId>com.kenai.ffx</groupId>
-            <artifactId>potentials</artifactId>
-            <version>${project.version}</version>
-            <type>jar</type>
-        </dependency>
-        <dependency>
-            <groupId>com.kenai.ffx</groupId>
-            <artifactId>numerics</artifactId>
-            <version>${project.version}</version>
-            <type>jar</type>
-        </dependency>
-        <dependency>
-            <groupId>commons-math</groupId>
-            <artifactId>commons-math</artifactId>
-            <type>jar</type>
-            <version>2.1</version>
-        </dependency>
-    </dependencies>
 </project>

@@ -34,7 +34,8 @@
         </breadcrumbs>
         <menu name="Overview" inherit="top">
             <item name="Introduction" href="/index.html"/>
-            <item name="Run Force Field X" href="/webstart.html"/>
+            <!-- item name="Run Force Field X" href="/webstart.html"/ -->
+            <item name="Publications" href="/publications.html"/>
             <item name="Download" href="/download.html"/>
             <item name="Source Code" href="/source.html"/>
             <item name="License" href="/license.html"/>
