@@ -453,7 +453,7 @@
             <uniqueVersion>false</uniqueVersion>
             <id>releases</id>
             <name>Local Maven Release Repository</name>
-            <url>file:../releases</url>
+            <url>file:${release.repo}</url>
         </repository>
         <snapshotRepository>
             <uniqueVersion>false</uniqueVersion>

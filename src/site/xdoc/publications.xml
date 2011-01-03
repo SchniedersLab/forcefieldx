@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document
+    xmlns="http://maven.apache.org/XDOC/2.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
+    <properties>
+        <title>Publications</title>
+        <author email="michael.schnieders@gmail.com">Michael J. Schnieders</author>
+    </properties>
+    <body>
+        <section name="Publications">
+            <table>
+                <!-- thead>
+                    <tr>
+                        <th></th>
+                        <th>Publication</th>
+                        <th>Module</th>
+                    </tr>
+                </thead -->
+                <tbody>
+                    <tr>
+                        <td bgcolor="white">
+                            <font color="blue">
+                                <b>2011</b>
+                            </font>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a target="_blank" href="">
+                                <img src="images/pdf.png" alt="PDF"/>
+                            </a>
+                        </td>
+                        <td>
+                            Schnieders, M. J.; Fenn, T. D.; Brunger, A. T.; Pande, V. S., Polarizable atomic multipole X-ray refinement: particle-mesh Ewald electrostatics for macromolecular crystals.
+                            <i>Journal of Chemical Theory and Computation</i>
+                            <b>2011</b> (submitted).
+                        </td>
+                        <td>
+                            <a href="modules/potentials/index.html">Potentials</a>
+                            <br/>
+                            <a href="modules/xray/index.html">X-Ray Refinement</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a target="_blank" href="">
+                                <img src="images/pdf.png" alt="PDF"/>
+                            </a>
+                        </td>
+                        <td>Fenn, T. D.; Schnieders, M. J.; Mustyakimov, M.; Wu, C.; Pande, V. S.; Langan, P.; Brunger, A. T., Reintroducing electrostatics into macromolecular crystallographic refinement: application to neutron crystallography and DNA hydration.
+                            <i>Structure</i>
+                            <b>2011</b> (accepted).
+                        </td>
+                        <td>
+                            <a href="modules/xray/index.html">X-Ray Refinement</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td bgcolor="white">
+                            <font color="blue">
+                                <b>2010</b>
+                            </font>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a target="_blank" href="http://dx.doi.org/10.1016/j.bpj.2010.02.057">
+                                <img src="images/pdf.png" alt="PDF"/>
+                            </a>
+                        </td>
+                        <td>Fenn, T. D.; Schnieders, M. J.; Brunger, A. T.; Pande, V. S., Polarizable atomic multipole X-ray refinement: hydration geometry and application to macromolecules.
+                            <i>Biophysical Journal</i>
+                            <b>2010</b>, 98, (12), 2984-2992.
+                        </td>
+                        <td>
+                            <a href="modules/xray/index.html">X-Ray Refinement</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a target="_blank" href="http://dx.doi.org/10.1107/S0907444910031045">
+                                <img src="images/pdf.png" alt="PDF"/>
+                            </a>
+                        </td>
+                        <td>Fenn, T. D.; Schnieders, M. J.; Brunger, A. T., A smooth and differentiable bulk-solvent model for macromolecular diffraction.
+                            <i>Acta Crystallographica Section D</i>
+                            <b>2010</b>, 66, (9), 1024-1031.
+                        </td>
+                        <td>
+                            <a href="modules/xray/index.html">X-Ray Refinement</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a target="_blank" href="http://dx.doi.org/10.1021/jp910674d">
+                                <img src="images/pdf.png" alt="PDF"/>
+                            </a>
+                        </td>
+                        <td>
+                            Ponder, J. W.; Wu, C.; Ren, P.; Pande, V. S.; Chodera, J. D.; Schnieders, M. J.; Haque, I.; Mobley, D. L.; Lambrecht, D. S.; DiStasio, R. A.; Head-Gordon, M.; Clark, G. N. I.; Johnson, M. E.; Head-Gordon, T., Current Status of the AMOEBA Polarizable Force Field.
+                            <i>The Journal of Physical Chemistry B.</i>
+                            <b>2010</b>, 114, 2549-2564.
+                        </td>
+                        <td>
+                            <a href="modules/potentials/index.html">Potentials</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td bgcolor="white">
+                            <font color="blue">
+                                <b>2009</b>
+                            </font>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="http://dx.doi.org/10.1107/S0907444909022707" target="_blank">
+                                <img src="images/pdf.png" alt="PDF"/>
+                            </a>
+                        </td>
+                        <td>Schnieders, M. J.; Fenn, T. D.; Pande, V. S.; Brunger, A. T., Polarizable atomic multipole X-ray refinement: application to peptide crystals,
+                            <i>Acta Crystallographica Section D</i>
+                            <b>2009</b>, 65, (9), 952-965.
+                        </td>
+                        <td>
+                            <a href="modules/xray/index.html">X-Ray Refinement</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="http://dx.doi.org/10.1109/IEMBS.2009.5335108" target="_blank">
+                                <img src="images/pdf.png" alt="PDF"/>
+                            </a>
+                        </td>
+                        <td>Yue, S.; Dian, J.; Schnieders, M. J.; Ren, P. In
+                            <i>Trypsin-ligand binding free energy calculation with AMOEBA</i>,
+                            Engineering in Medicine and Biology Society. EMBC. Annual International Conference of the IEEE, 2009; 2009; pp 2328-2331.
+                        </td>
+                        <td>
+                            <a href="modules/binding/index.html">Binding Affinity</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="http://dx.doi.org/10.1002/jcc.21268" target="_blank">
+                                <img src="images/pdf.png" alt="PDF"/>
+                            </a>
+                        </td>
+                        <td>
+                            Jiao, D.; Zhang, J. J.; Duke, R. E.; Li, G. H.; Schnieders, M. J.; Ren, P. Y., Trypsin-Ligand Binding Free Energies from Explicit and Implicit Solvent Simulations with Polarizable Potential.
+                            <i>Journal of Computational Chemistry</i>
+                            <b>2009</b>, 30, (11), 1701-1711.
+                        </td>
+                        <td>
+                            <a href="modules/binding/index.html">Binding Affinity</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td bgcolor="white">
+                            <font color="blue">
+                                <b>2008</b>
+                            </font>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="http://dx.doi.org/10.1073/pnas.0711686105" target="_blank">
+                                <img src="images/pdf.png" alt="PDF"/>
+                            </a>
+                        </td>
+                        <td>Jiao, D.; Golubkov, P. A.; Darden, T. A.; Ren, P., Calculation of protein-ligand binding free energy by using a polarizable potential.
+                            <i>Proceedings of the National Academy of Sciences</i>
+                            <b>2008</b>, 105, (17), 6290-6295.
+                        </td>
+                        <td>
+                            <a href="modules/binding/index.html">Binding Affinity</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td bgcolor="white">
+                            <font color="blue">
+                                <b>2007</b>
+                            </font>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a target="_blank" href="http://dx.doi.org/10.1021/ct7001336">
+                                <img src="images/pdf.png" alt="PDF"/>
+                            </a>
+                        </td>
+                        <td>Schnieders, M. J.; Ponder, J. W., Polarizable Atomic Multipole Solutes in a Generalized Kirkwood Continuum.
+                            <i>Journal of Chemical Theory and Computation</i>
+                            <b>2007</b>, 3, (6), 2083-2097.
+                        </td>
+                        <td>
+                            <a href="modules/potentials/index.html">Potentials</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a target="_blank" href="http://dx.doi.org/10.1063/1.2714528">
+                                <img src="images/pdf.png" alt="PDF"/>
+                            </a>
+                        </td>
+                        <td>Schnieders, M. J.; Baker, N. A.; Ren, P.; Ponder, J. W., Polarizable atomic multipole solutes in a Poisson-Boltzmann continuum.
+                            <i>Journal of Chemical Physics</i>
+                            <b>2007</b>, 126, (12).
+                        </td>
+                        <td>
+                            <a href="modules/potentials/index.html">Potentials</a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+    </body>
+</document>
