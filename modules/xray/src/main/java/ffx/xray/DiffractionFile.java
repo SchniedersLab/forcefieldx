@@ -55,7 +55,7 @@ public class DiffractionFile {
 
         if (isExtension(filename, "mtz")) {
             diffractionfilter = new MTZFilter();
-        } else if (isExtension(filename, new String[]{"cif", "ent"})) {
+        } else if (isExtension(filename, new String[]{"cif", "ent", "sf"})) {
             diffractionfilter = new CIFFilter();
         } else if (isExtension(filename, new String[]{"cns", "hkl"})) {
             diffractionfilter = new CNSFilter();
@@ -108,18 +108,24 @@ public class DiffractionFile {
                     logger.info("data file: " + tmp.getName());
                     diffractionfilter = new CIFFilter();
                 } else {
-                    tmp = new File(name + ".cns");
+                    tmp = new File(name + ".sf");
                     if (tmp.exists()) {
                         logger.info("data file: " + tmp.getName());
-                        diffractionfilter = new CNSFilter();
+                        diffractionfilter = new CIFFilter();
                     } else {
-                        tmp = new File(name + ".hkl");
+                        tmp = new File(name + ".cns");
                         if (tmp.exists()) {
                             logger.info("data file: " + tmp.getName());
                             diffractionfilter = new CNSFilter();
                         } else {
-                            logger.severe("no input data found!");
-                            diffractionfilter = null;
+                            tmp = new File(name + ".hkl");
+                            if (tmp.exists()) {
+                                logger.info("data file: " + tmp.getName());
+                                diffractionfilter = new CNSFilter();
+                            } else {
+                                logger.severe("no input data found!");
+                                diffractionfilter = null;
+                            }
                         }
                     }
                 }

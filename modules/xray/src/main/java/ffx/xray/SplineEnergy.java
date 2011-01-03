@@ -41,7 +41,7 @@ import ffx.numerics.Potential;
  * @author Tim Fenn<br>
  *
  * @see <a href="http://dx.doi.org/10.1107/S0021889802013420" target="_blank">
- * K. Cowtan, J. Appl. Cryst. (2002). 35, 655-663
+ * K. Cowtan, J. Appl. Cryst. (2002). 35, 655-663</a>
  *
  */
 public class SplineEnergy implements Potential {

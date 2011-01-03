@@ -6309,7 +6309,7 @@ public class SpaceGroup {
 
     /**
      * Returns the space group number for a given space group name.
-     * @param pdbName The space group name.
+     * @param name The space group name.
      * @return The space group number.
      * @since 1.0
      */

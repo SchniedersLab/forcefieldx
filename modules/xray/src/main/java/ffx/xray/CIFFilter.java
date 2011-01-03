@@ -36,10 +36,10 @@ import ffx.crystal.Resolution;
 import ffx.crystal.SpaceGroup;
 
 /**
+ * CIF file reader
  *
  * @author Tim Fenn
  *
- * CIF file reader
  */
 public class CIFFilter implements DiffractionFileFilter {
 

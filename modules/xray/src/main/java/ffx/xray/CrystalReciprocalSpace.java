@@ -48,10 +48,10 @@ import ffx.xray.RefinementMinimize.RefinementMode;
  * Structure factor calculation (including bulk solvent structure factors)
  * 
  * @see <a href="http://dx.doi.org/10.1107/S0567739473000458" target="_blank">
- * L. F. Ten Eyck, Acta Cryst. (1973). A29, 183-191.
+ * L. F. Ten Eyck, Acta Cryst. (1973). A29, 183-191.</a>
  * 
  * @see <a href="http://dx.doi.org/10.1107/S0567739477001211" target="_blank">
- * L. F. Ten Eyck, Acta Cryst. (1977). A33, 486-492.
+ * L. F. Ten Eyck, Acta Cryst. (1977). A33, 486-492.</a>
  *
  * @see <a href="http://dx.doi.org/10.1107/S0365110X55001862" target="_blank">
  * J. Waser, Acta Cryst. (1955). 8, 595.</a>
@@ -63,10 +63,13 @@ import ffx.xray.RefinementMinimize.RefinementMode;
  * G. Bricogne, Int. Tables Cryst. (2006). Vol. B, ch. 1.3, pp. 25-98.</a>
  *
  * @see <a href="http://dx.doi.org/10.1002/jcc.1032" target="_blank">
- * J. A. Grant, B. T. Pickup, A. Nicholls, J. Comp. Chem. (2001). 22, 608-640
+ * J. A. Grant, B. T. Pickup, A. Nicholls, J. Comp. Chem. (2001). 22, 608-640</a>
  *
  * @see <a href="http://dx.doi.org/10.1006/jmbi.1994.1633" target="_blank">
- * J. S. Jiang, A. T. Brunger, JMB (1994) 243, 100-115.
+ * J. S. Jiang, A. T. Brunger, JMB (1994) 243, 100-115.</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1107/S0907444910031045" target="_blank">
+ * T.D. Fenn, M. J. Schnieders, A. T. Brunger, Acta Cryst. (2010). D66, 1024-1031.</a>
  */
 public class CrystalReciprocalSpace {
 

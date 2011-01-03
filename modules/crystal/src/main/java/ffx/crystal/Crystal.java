@@ -789,9 +789,14 @@ public class Crystal {
     /**
      * Apply a symmetry operator to one set of coordinates.
      *
-     * @param xyz   Input coordinates.
+     * @param h   Input coordinates.
+     * @param k   Input coordinates.
+     * @param l   Input coordinates.
      * @param mate  Symmetry mate coordinates.
      * @param symOp The symmetry operator.
+     * @param nx number of unit cell translations
+     * @param ny number of unit cell translations
+     * @param nz number of unit cell translations
      */
     public void applySymOp(int h, int k, int l, int mate[], SymOp symOp, int nx, int ny, int nz) {
         double rot[][] = symOp.rot;

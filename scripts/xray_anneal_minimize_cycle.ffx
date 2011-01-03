@@ -63,6 +63,8 @@ if (datafilename != null) {
   diffractionfile = new DiffractionFile(active, wA, neutron);
 }
 
+DiffractionData diffractiondata = new DiffractionData(active, active.getProperties(), SolventModel.POLYNOMIAL, diffractionfile);
+
 diffractiondata.scalebulkfit();
 diffractiondata.printstats();
 

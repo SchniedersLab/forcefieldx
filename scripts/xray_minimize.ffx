@@ -4,6 +4,7 @@
 import org.apache.commons.io.FilenameUtils;
 
 // Force Field X Imports
+import ffx.xray.CrystalReciprocalSpace.SolventModel;
 import ffx.xray.DiffractionData;
 import ffx.xray.DiffractionFile;
 import ffx.xray.RefinementMinimize;
@@ -53,7 +54,7 @@ if (datafilename != null) {
   diffractionfile = new DiffractionFile(active, wA, neutron);
 }
 
-DiffractionData diffractiondata = new DiffractionData(active, active.getProperties(), diffractionfile);
+DiffractionData diffractiondata = new DiffractionData(active, active.getProperties(), SolventModel.POLYNOMIAL, diffractionfile);
 
 diffractiondata.scalebulkfit();
 diffractiondata.printstats();

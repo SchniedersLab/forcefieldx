@@ -41,14 +41,13 @@ import ffx.crystal.Resolution;
 import ffx.crystal.SpaceGroup;
 
 /**
- *
+ * This class parses CCP4 MTZ files.<br>
+ * 
  * @author Tim Fenn<br>
  *
- * This method parses CCP4 MTZ files:<br>
- * 
- * @see <a href="http://www.ccp4.ac.uk/html/maplib.html" target="_blank">
+ * @see <a href="http://www.ccp4.ac.uk/html/maplib.html" target="_blank">CCP4 map format</a>
  *
- * @see <a href="http://www.ccp4.ac.uk/dist/html/library.html" target="_blank">
+ * @see <a href="http://www.ccp4.ac.uk/dist/html/library.html" target="_blank">CCP4 library documentation</a>
  */
 public class MTZFilter implements DiffractionFileFilter {
 
