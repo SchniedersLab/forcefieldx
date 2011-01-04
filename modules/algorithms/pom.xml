@@ -13,6 +13,8 @@
     <artifactId>algorithms</artifactId>
     <packaging>jar</packaging>
     <name>Algorithms</name>
+    <description>Algorithms for optimization and sampling.</description>
+
     <dependencies>
         <dependency>
             <groupId>com.kenai.ffx</groupId>

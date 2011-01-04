@@ -13,7 +13,7 @@
     <artifactId>binding</artifactId>
     <packaging>jar</packaging>
     <name>Binding Affinity</name>
-
+    <description>Methods for computing binding affinities.</description>
     <inceptionYear>2008</inceptionYear>
 
     <organization>

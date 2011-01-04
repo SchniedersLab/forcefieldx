@@ -2,7 +2,8 @@
 <document
     xmlns="http://maven.apache.org/XDOC/2.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
+    xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
+    http://maven.apache.org/xsd/xdoc-2.0.xsd">
     <properties>
         <title>Publications</title>
         <author email="michael.schnieders@gmail.com">Michael J. Schnieders</author>
@@ -10,13 +11,13 @@
     <body>
         <section name="Publications">
             <table>
-                <!-- thead>
+                <thead>
                     <tr>
-                        <th></th>
+                        <th>Link</th>
                         <th>Publication</th>
                         <th>Module</th>
                     </tr>
-                </thead -->
+                </thead>
                 <tbody>
                     <tr>
                         <td bgcolor="white">
@@ -27,7 +28,7 @@
                     </tr>
                     <tr>
                         <td>
-                            <a target="_blank" href="">
+                            <a href="">
                                 <img src="images/pdf.png" alt="PDF"/>
                             </a>
                         </td>
@@ -44,7 +45,7 @@
                     </tr>
                     <tr>
                         <td>
-                            <a target="_blank" href="">
+                            <a href="">
                                 <img src="images/pdf.png" alt="PDF"/>
                             </a>
                         </td>

@@ -3,7 +3,8 @@
     name="Force Field X"
     xmlns="http://maven.apache.org/DECORATION/1.0.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/DECORATION/1.0.0 http://maven.apache.org/xsd/decoration-1.0.0.xsd">
+    xsi:schemaLocation="http://maven.apache.org/DECORATION/1.0.0
+    http://maven.apache.org/xsd/decoration-1.0.0.xsd">
     <publishDate position="right" format="dd MMM yyyy" />
     <version position="right" />
     <!-- poweredBy>
@@ -36,11 +37,13 @@
             <item name="Introduction" href="/index.html"/>
             <!-- item name="Run Force Field X" href="/webstart.html"/ -->
             <item name="Publications" href="/publications.html"/>
+            <item name="Examples" href="/examples.html"/>
+            <item name="Project Organization" href="/project.html"/>
             <item name="Download" href="/download.html"/>
             <item name="Source Code" href="/source.html"/>
             <item name="License" href="/license.html"/>
         </menu>
-        <menu name="Force Field X Modules" inherit="top">
+        <menu name="Modules" inherit="top">
             <item name="Algorithms"  href="modules/algorithms/index.html"/>
             <item name="Binding Affinity"  href="modules/binding/index.html"/>
             <item name="Crystal" href="modules/crystal/index.html"/>
