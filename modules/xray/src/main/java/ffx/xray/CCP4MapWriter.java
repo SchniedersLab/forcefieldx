@@ -36,9 +36,9 @@ import ffx.crystal.Crystal;
  *
  * @author Tim Fenn
  *
- * @see <a href="http://www.ccp4.ac.uk/html/maplib.html" target="_blank">
+ * @see <a href="http://www.ccp4.ac.uk/html/maplib.html" target="_blank">CCP4 map format</a>
  *
- * @see <a href="http://www.ccp4.ac.uk/dist/html/library.html" target="_blank">
+ * @see <a href="http://www.ccp4.ac.uk/dist/html/library.html" target="_blank">CCP4 library documentation</a>
  */
 public class CCP4MapWriter {
 

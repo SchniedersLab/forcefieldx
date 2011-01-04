@@ -186,7 +186,6 @@ public class BulkSolventList extends ParallelRegion {
      * @param crystal Definition of the unit cell and space group.
      * @param atoms The atoms to generate Verlet lists for.
      * @param cutoff The cutoff distance.
-     * @param buffer The buffer distance.
      * @param parallelTeam Specifies the parallel environment.
      *
      * @since 1.0
@@ -258,9 +257,7 @@ public class BulkSolventList extends ParallelRegion {
      * lists.
      *
      * @param coordinates The coordinates of each atom [nSymm][nAtoms*3].
-     * @param select The list of selected atoms [nSymm][nAtoms].
-     * @param forceRebuild If true, the list is rebuilt even if no atom has moved
-     *      half the buffer size.
+     * @param selected The list of selected atoms [nSymm][nAtoms].
      *
      * @since 1.0
      */

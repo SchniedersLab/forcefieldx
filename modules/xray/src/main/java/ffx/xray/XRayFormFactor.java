@@ -46,31 +46,27 @@ import java.util.HashMap;
 import java.util.logging.Logger;
 
 /**
+ * This implementation uses the coefficients from Su and Coppens and 
+ * 3 coefficient parameters derived from CCTBX.
  *
  * @author Tim Fenn<br>
  *
- * This implementation uses the coefficients from Su and Coppens:<br>
- *
  * @see <a href="http://dx.doi.org/10.1107/S0108767397004558" target="_blank">
- * Z. Su and P. Coppens, Acta Cryst. (1997). A53, 749-762
+ * Z. Su and P. Coppens, Acta Cryst. (1997). A53, 749-762</a>
  *
  * @see <a href="http://dx.doi.org/10.1107/S010876739800124X" target="_blank">
- * Z. Su and P. Coppens, Acta Cryst. (1998). A54, 357
+ * Z. Su and P. Coppens, Acta Cryst. (1998). A54, 357</a>
  *
- * Source data:<br>
  * @see <a href="http://harker.chem.buffalo.edu/group/groupindex.html" target="_blank">
- *
- * the 3 Gaussian approximations are derived from Grosse-Kunstleve, Sauter and Adams:<br>
+ * The Coppens lab website (Source data)</a>
  *
  * @see <a href="http://www.iucr.org/resources/commissions/crystallographic-computing/newsletters/3" target="_blank">
- * R. W. Grosse-Kunstleve, N. K. Sauter and P. D. Adams. Newsletter of the IUCr
- * Commission on Crystallographic Computing. (2004). 3, 22-31.
- *
- * and form factor equations from:
+ * R. W. Grosse-Kunstleve, N. K. Sauter and P. D. Adams.
+ * Newsletter of the IUCr Commission on Crystallographic Computing. (2004). 3, 22-31.</a>
  *
  * @see <a href="http://dx.doi.org/10.1107/S0907444909022707" target="_blank">
  * M. J. Schnieders, T. D. Fenn, V. S. Pande and A. T. Brunger,
- * Acta Cryst. (2009). D65 952-965.
+ * Acta Cryst. (2009). D65 952-965.</a>
  */
 public final class XRayFormFactor implements FormFactor {
 

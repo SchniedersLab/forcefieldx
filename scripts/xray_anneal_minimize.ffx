@@ -6,6 +6,7 @@ import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldString;
 import ffx.potential.parameters.ForceField.ForceFieldBoolean;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
+import ffx.xray.CrystalReciprocalSpace.SolventModel;
 import ffx.xray.DiffractionData;
 import ffx.xray.DiffractionFile;
 import ffx.xray.RefinementEnergy;
@@ -69,7 +70,15 @@ System.setProperty("tau-temperature","0.001");
 open(modelfilename);
 energy();
 
-DiffractionData diffractiondata = new DiffractionData(active, active.getProperties());
+DiffractionFile diffractionfile = null;
+if (datafilename != null) {
+  diffractionfile = new DiffractionFile(datafilename, 1.0, false);
+} else {
+  diffractionfile = new DiffractionFile(systems);
+}
+
+DiffractionData diffractiondata = new DiffractionData(active, active.getProperties(), SolventModel.POLYNOMIAL, diffractionfile);
+
 diffractiondata.scalebulkfit();
 diffractiondata.printstats();
 

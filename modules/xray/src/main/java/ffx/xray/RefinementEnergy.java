@@ -197,11 +197,11 @@ public class RefinementEnergy implements Potential {
     }
 
     /**
-     * Implementation of the {@link Optimizable} interface for the RefinementEnergy.
+     * Implementation of the {@link Potential} interface for the RefinementEnergy.
      *
-     * @param x
-     * @param g
-     * @return
+     * @param x input params
+     * @param g output gradients
+     * @return energy
      */
     @Override
     public double energyAndGradient(double[] x, double[] g) {
@@ -238,6 +238,20 @@ public class RefinementEnergy implements Potential {
                     gXray = new double[nxyz];
                 }
                 e += weight * xrayEnergy.energyAndGradient(x, gXray);
+
+                /*
+                double normchem = 0.0;
+                for (int i = 0; i < nxyz; i++) {
+                normchem += g[i] * g[i];
+                }
+                normchem = Math.sqrt(normchem) / nxyz;
+                double normxray = 0.0;
+                for (int i = 0; i < nxyz; i++) {
+                normxray += gXray[i] * gXray[i];
+                }
+                normxray = Math.sqrt(normxray) / nxyz;
+                System.out.println("chem: " + normchem + " xray: " + normxray + " weight wa: " + normchem / normxray);
+                 */
 
                 // Add the chemical and X-ray gradients.
                 for (int i = 0; i < nxyz; i++) {

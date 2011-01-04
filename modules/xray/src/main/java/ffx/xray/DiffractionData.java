@@ -91,6 +91,13 @@ public class DiffractionData {
                 new DiffractionFile(assembly));
     }
 
+    public DiffractionData(MolecularAssembly assembly,
+            CompositeConfiguration properties, int solventmodel,
+            DiffractionFile... datafile) {
+        this(new MolecularAssembly[]{assembly}, properties, solventmodel,
+                datafile);
+    }
+
     public DiffractionData(MolecularAssembly assembly[],
             CompositeConfiguration properties) {
         this(assembly, properties, SolventModel.POLYNOMIAL,
@@ -415,7 +422,7 @@ public class DiffractionData {
                     i + 1, n, dataname[i].weight, dataname[i].neutron,
                     modelname, dataname[i].filename));
             logger.info(sb.toString());
-            
+
             crystalstats[i].print_scalestats();
             crystalstats[i].print_dpistats(nnonh, nat);
             crystalstats[i].print_hklstats();
