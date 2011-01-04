@@ -22,30 +22,7 @@
             <directory>scripts</directory>
         </fileSet>
         <fileSet>
-            <directory>lib</directory>
-        </fileSet>
-        <fileSet>
-            <directory>params</directory>
-        </fileSet>
-        <fileSet>
             <directory>examples</directory>
         </fileSet>
     </fileSets>
-    <moduleSets>
-        <moduleSet>
-            <includes>
-                <include>com.kenai.ffx:algorithms</include>
-                <include>com.kenai.ffx:crystal</include>
-                <include>com.kenai.ffx:numerics</include>
-                <include>com.kenai.ffx:parsers</include>
-                <include>com.kenai.ffx:potentials</include>
-                <include>com.kenai.ffx:ui</include>
-            </includes>
-            <binaries>
-                <outputDirectory>lib/com/kenai/ffx/${module.artifactId}/${module.version}</outputDirectory>
-                <unpack>false</unpack>
-                <includeDependencies>false</includeDependencies>
-            </binaries>
-        </moduleSet>
-    </moduleSets>
 </assembly>
