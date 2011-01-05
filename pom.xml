@@ -146,7 +146,6 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-site-plugin</artifactId>
                 <version>2.2</version>
                 <inherited>true</inherited>
@@ -155,7 +154,6 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-scm-plugin</artifactId>
                 <version>1.4</version>
                 <configuration>
@@ -163,7 +161,6 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>2.3.2</version>
                 <configuration>
@@ -172,16 +169,15 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
                 <version>2.1.2</version>
                 <executions>
                     <execution>
-                        <id>Package Source</id>
-                        <phase>package</phase>
+                        <id>attach-source</id>
+                        <phase>verify</phase>
                         <goals>
-                            <goal>jar</goal>
-                            <goal>test-jar</goal>
+                            <goal>jar-no-fork</goal>
+                            <goal>test-jar-no-fork</goal>
                         </goals>
                     </execution>
                 </executions>
@@ -195,7 +191,6 @@
                 </configuration>
             </plugin -->
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>2.2</version>
                 <inherited>false</inherited>
@@ -204,10 +199,18 @@
                         <descriptor>src/assemble/bin.xml</descriptor>
                     </descriptors>
                     <finalName>ffx-${project.version}</finalName>
+                    <outputDirectory>${project.build.directory}/site</outputDirectory>
                 </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <phase>site</phase>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-install-plugin</artifactId>
                 <version>2.3.1</version>
                 <configuration>
@@ -215,10 +218,10 @@
                 </configuration>
             </plugin>
             <plugin>
-                <inherited>false</inherited>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>1.2</version>
+                <inherited>false</inherited>
                 <executions>
                     <execution>
                         <goals>
@@ -243,7 +246,6 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.6</version>
                 <configuration>
@@ -367,7 +369,6 @@
     <reporting>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-project-info-reports-plugin</artifactId>
                 <version>2.3.1</version>
                 <inherited>true</inherited>
@@ -377,7 +378,6 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <version>2.7</version>
                 <inherited>true</inherited>
@@ -385,12 +385,6 @@
                     <quiet>true</quiet>
                 </configuration>
                 <reportSets>
-                    <!-- reportSet>
-                        <id>non-aggregate</id>
-                        <reports>
-                            <report>javadoc</report>
-                        </reports>
-                    </reportSet -->
                     <reportSet>
                         <id>aggregate</id>
                         <reports>
@@ -400,7 +394,6 @@
                 </reportSets>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jxr-plugin</artifactId>
                 <version>2.2</version>
                 <configuration>
@@ -408,7 +401,6 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-report-plugin</artifactId>
                 <version>2.6</version>
                 <configuration>
@@ -421,7 +413,6 @@
                 <version>1.1</version>
             </plugin -->
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-changes-plugin</artifactId>
                 <version>2.3</version>
                 <configuration>
@@ -447,7 +438,7 @@
             <id>kenai</id>
             <name>Kenai Website</name>
             <url>file:${website.repo}</url>
-            <!-- url>dav:https://kenai.com/website/ffx</url -->
+            <url>dav:https://kenai.com/website/ffx</url>
         </site>
         <repository>
             <uniqueVersion>false</uniqueVersion>

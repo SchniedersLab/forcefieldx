@@ -9,7 +9,6 @@
     </properties>
     <body>
         <section name="Source Code">
-            <p>"<i>A (molecular biophysics) algorithm must be seen to be believed</i>." Donald Knuth</p>
             <subsection name="Git the Code">
                 <p>The Force Field X project is hosted at <a target="_blank" href="http://www.kenai.com/projects/ffx/">Kenai</a> with the source code in a GIT repository.
                     "<a target="_blank" href="http://git-scm.com/">Git</a> is a free and open source, distributed version control system designed to handle everything from
