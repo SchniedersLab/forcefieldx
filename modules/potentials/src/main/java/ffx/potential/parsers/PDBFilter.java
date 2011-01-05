@@ -20,7 +20,6 @@
  */
 package ffx.potential.parsers;
 
-import ffx.crystal.Crystal;
 import static java.lang.String.format;
 
 import static ffx.potential.parsers.INTFilter.intxyz;
@@ -43,6 +42,7 @@ import java.util.logging.Logger;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 
+import ffx.crystal.Crystal;
 import ffx.crystal.SpaceGroup;
 import ffx.numerics.VectorMath;
 import ffx.potential.bonded.MolecularAssembly;
@@ -2493,7 +2493,11 @@ public final class PDBFilter extends SystemFilter {
         if (saveFile == null) {
             return false;
         }
-        // Create StringBuilders for ATOM, ANISOU and TER records.
+
+        /**
+         * Create StringBuilders for ATOM, ANISOU and TER records that can
+         * be reused.
+         */
         StringBuilder sb = new StringBuilder("ATOM  ");
         StringBuilder anisouSB = new StringBuilder("ANISOU");
         StringBuilder terSB = new StringBuilder("TER   ");
@@ -2527,7 +2531,7 @@ public final class PDBFilter extends SystemFilter {
 // 56 - 66       LString       sGroup         Space  group.
 // 67 - 70       Integer       z              Z value.
 // =============================================================================
-            Crystal c = activeMolecularAssembly.getCrystal();
+            Crystal c = activeMolecularAssembly.getCrystal().getUnitCell();
             bw.write(format("CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f %10s\n", c.a, c.b, c.c, c.alpha, c.beta,
                             c.gamma, padRight(c.spaceGroup.pdbName, 10)));
 // =============================================================================
@@ -2574,12 +2578,12 @@ public final class PDBFilter extends SystemFilter {
                                 Atom SG2 = bond.get1_2(SG1);
                                 if (SG2.getName().equalsIgnoreCase("SG")) {
                                     if (SG1.xyzIndex < SG2.xyzIndex) {
-                                       bond.energy(false);
-                                       bw.write(format("SSBOND %3d CYS %1s %4s    CYS %1s %4s %36s %5.2f\n",
-                                               serNum++,
-                                               SG1.getChainID().toString(), Hybrid36.encode(4, SG1.getResidueNumber()),
-                                               SG2.getChainID().toString(), Hybrid36.encode(4, SG2.getResidueNumber()),
-                                               "", bond.getValue()));
+                                        bond.energy(false);
+                                        bw.write(format("SSBOND %3d CYS %1s %4s    CYS %1s %4s %36s %5.2f\n",
+                                                        serNum++,
+                                                        SG1.getChainID().toString(), Hybrid36.encode(4, SG1.getResidueNumber()),
+                                                        SG2.getChainID().toString(), Hybrid36.encode(4, SG2.getResidueNumber()),
+                                                        "", bond.getValue()));
                                     }
                                 }
                             }
@@ -2622,14 +2626,14 @@ public final class PDBFilter extends SystemFilter {
                         }
                         int resID = residue.getResidueNumber();
                         sb.replace(17, 20, padLeft(resName.toUpperCase(), 3));
-                        sb.replace(22, 26, String.format("%4s", Hybrid36.encode(4,resID)));
+                        sb.replace(22, 26, String.format("%4s", Hybrid36.encode(4, resID)));
                         // Loop over atoms
                         ArrayList<Atom> residueAtoms = residue.getAtomList();
                         for (Atom atom : residueAtoms) {
                             writeAtom(atom, serial++, sb, anisouSB, bw);
                         }
                     }
-                    terSB.replace(6, 11, String.format("%5s", Hybrid36.encode(5,serial++)));
+                    terSB.replace(6, 11, String.format("%5s", Hybrid36.encode(5, serial++)));
                     terSB.replace(12, 16, "    ");
                     terSB.replace(16, 26, sb.substring(16, 26));
                     bw.write(terSB.toString());
@@ -2813,7 +2817,8 @@ public final class PDBFilter extends SystemFilter {
      */
     public enum NucleicAcid3 {
 
-        ADE, GUA, CYT, URI, DAD, DGU, DCY, DTY, THY, MP1, DP2, TP3, UNK, M2MG, H2U,
+        ADE, GUA, CYT, URI, DAD, DGU, DCY, DTY, THY, MP1, DP2, TP3, UNK, M2MG,
+        H2U,
         M2G, OMC, OMG, PSU, M5MC, M7MG, M5MU, M1MA, YYG
     };
     static final List<NucleicAcid3> nucleicAcidList = Arrays.asList(NucleicAcid3.values());
