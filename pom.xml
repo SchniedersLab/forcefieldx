@@ -438,7 +438,7 @@
             <id>kenai</id>
             <name>Kenai Website</name>
             <url>file:${website.repo}</url>
-            <url>dav:https://kenai.com/website/ffx</url>
+            <!-- url>dav:https://kenai.com/website/ffx</url -->
         </site>
         <repository>
             <uniqueVersion>false</uniqueVersion>
