@@ -13,7 +13,6 @@
     <artifactId>xray</artifactId>
     <packaging>jar</packaging>
     <name>X-Ray Refinement</name>
-
     <developers>
         <developer>
             <id>fenn</id>
@@ -28,42 +27,17 @@
             <timezone>-7</timezone>
         </developer>
     </developers>
-
     <build>
         <resources>
             <resource>
-
                 <directory>${basedir}/src/main/java/ffx/xray/structures</directory>
                 <targetPath>ffx/xray/structures</targetPath>
-
                 <includes>
                     <include>*</include>
                 </includes>
             </resource>
         </resources>
     </build>
-
-    <reporting>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jxr-plugin</artifactId>
-                <configuration>
-                    <linkJavadoc>true</linkJavadoc>
-                    <javadocDir>${project.reporting.outputDirectory}/apidocs</javadocDir>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-project-info-reports-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-report-plugin</artifactId>
-            </plugin>
-        </plugins>
-    </reporting>
-
     <dependencies>
         <dependency>
             <groupId>com.kenai.ffx</groupId>
@@ -102,5 +76,4 @@
             <version>2.1</version>
         </dependency>
     </dependencies>
-
 </project>

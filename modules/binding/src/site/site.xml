@@ -29,5 +29,6 @@
                 href="/publications.html"
                 />
         </menu>
+        <menu ref="parentProject"/>
     </body>
 </project>

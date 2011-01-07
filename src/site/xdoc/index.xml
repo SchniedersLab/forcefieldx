@@ -6,23 +6,28 @@
     http://maven.apache.org/xsd/xdoc-2.0.xsd">
     <properties>
         <title>Home Page</title>
-        <author email="schnied@stanford.edu">
+        <author email="michael.schnieders@gmail.com">
             Michael Schnieders
         </author>
     </properties>
     <body>
         <section name="Introduction">
-            <p>Force Field X is a group of open, platform independent modules for
-               molecular biophysics. Modules include state-of-the-art force fields,
-               electrostatics algorithms, methods for X-ray crystallography
-               refinement and structure based drug design.
+            <p>Force Field X is a group of open source (GPL v. 3), platform independent
+               (Java Runtime Environment) modules for molecular biophysics.
+               Key features include:
             </p>
-            <subsection name="X-Ray Crystallography Refinement with Polarizable AMOEBA Electrostatics">
+            <ul>
+                <li>Polarizable AMOEBA force fields</li>
+                <li>Particle-mesh Ewald electrostatics</li>
+                <li>X-ray crystallography refinement</li>
+                <li>Methods for structure based drug design</li>
+            </ul>
+            <subsection name="X-Ray Crystallography Refinement with Ewald Electrostatics">
                 <table>
                     <thead>
                         <tr>
-                            <td>Without Electrostatics</td>
-                            <td>Polarizable AMOBEA Electrostatics via Ewald Summation</td>
+                            <td>No Electrostatics</td>
+                            <td>Polarizable AMOEBA Electrostatics via Ewald Summation</td>
                         </tr>
                     </thead>
                     <tbody>

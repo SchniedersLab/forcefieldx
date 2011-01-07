@@ -13,7 +13,6 @@
     <artifactId>crystal</artifactId>
     <packaging>jar</packaging>
     <name>Crystal</name>
-
     <developers>
         <developer>
             <id>fenn</id>
@@ -30,7 +29,7 @@
         <developer>
             <id>schnied</id>
             <name>Michael J. Schnieders</name>
-            <email>schnied@stanford.edu</email>
+            <email>michael.schnieders@gmail.com</email>
             <url>http://www.stanford.edu/~schnied</url>
             <organization>Postdoc, Pande and Brunger Labs, Stanford University
             </organization>
@@ -40,30 +39,7 @@
             </roles>
             <timezone>-7</timezone>
         </developer>
-
     </developers>
-
-    <reporting>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jxr-plugin</artifactId>
-                <configuration>
-                    <linkJavadoc>true</linkJavadoc>
-                    <javadocDir>${project.reporting.outputDirectory}/apidocs</javadocDir>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-project-info-reports-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-report-plugin</artifactId>
-            </plugin>
-        </plugins>
-    </reporting>
-
     <dependencies>
         <dependency>
             <groupId>com.kenai.ffx</groupId>
@@ -84,5 +60,4 @@
             <version>2.1</version>
         </dependency>
     </dependencies>
-
 </project>

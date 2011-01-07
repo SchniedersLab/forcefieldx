@@ -50,7 +50,7 @@
         <developer>
             <id>schnied</id>
             <name>Michael J. Schnieders</name>
-            <email>schnied@stanford.edu</email>
+            <email>michael.schnieders@gmail.com</email>
             <url>http://www.stanford.edu/~schnied</url>
             <organization>Postdoc, Ren Lab, University of Texas at Austin</organization>
             <organizationUrl>http://ffx.kenai.com</organizationUrl>
@@ -148,9 +148,9 @@
             <plugin>
                 <artifactId>maven-site-plugin</artifactId>
                 <version>2.2</version>
-                <inherited>true</inherited>
+                <inherited>false</inherited>
                 <configuration>
-                    <stagingDirectory>/Data/ffx-project/website</stagingDirectory>
+                    <generateSitemap>true</generateSitemap>
                 </configuration>
             </plugin>
             <plugin>
@@ -171,25 +171,35 @@
             <plugin>
                 <artifactId>maven-source-plugin</artifactId>
                 <version>2.1.2</version>
+                <inherited>false</inherited>
                 <executions>
                     <execution>
                         <id>attach-source</id>
                         <phase>verify</phase>
                         <goals>
-                            <goal>jar-no-fork</goal>
-                            <goal>test-jar-no-fork</goal>
+                            <goal>aggregate</goal>
                         </goals>
                     </execution>
                 </executions>
             </plugin>
-            <!-- plugin>
-                <groupId>org.apache.maven.plugins</groupId>
+            <plugin>
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <version>2.7</version>
-                <configuration>
-                    <quiet>true</quiet>
-                </configuration>
-            </plugin -->
+                <inherited>false</inherited>
+                <executions>
+                    <execution>
+                        <id>attach-javadoc</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>aggregate</goal>
+                            <goal>aggregate-jar</goal>
+                        </goals>
+                        <configuration>
+                            <quiet>true</quiet>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>2.2</version>
@@ -257,14 +267,24 @@
                             <value>jogl</value>
                         </property>
                     </systemPropertyVariables>
-                    <!-- systemProperties>
-                        <property>
-                            <name>j3d.rend</name>
-                            <value>jogl</value>
-                        </property>
-                    </systemProperties -->
                     <argLine>-ms1G -mx1G -Dffx.ci=${ffx.ci} -Djava.library.path=${basedir}/../../bin/${platform}/jogl-${bit}:${basedir}/../../bin/${platform}/jocl-${bit}</argLine>
                 </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-pdf-plugin</artifactId>
+                <version>1.1</version>
+                <executions>
+                    <execution>
+                        <id>pdf</id>
+                        <phase>site</phase>
+                        <goals>
+                            <goal>pdf</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.reporting.outputDirectory}/site</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
@@ -371,7 +391,7 @@
             <plugin>
                 <artifactId>maven-project-info-reports-plugin</artifactId>
                 <version>2.3.1</version>
-                <inherited>true</inherited>
+                <inherited>false</inherited>
                 <configuration>
                     <dependencyDetailsEnabled>false</dependencyDetailsEnabled>
                     <dependencyLocationsEnabled>false</dependencyLocationsEnabled>
@@ -380,7 +400,7 @@
             <plugin>
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <version>2.7</version>
-                <inherited>true</inherited>
+                <inherited>false</inherited>
                 <configuration>
                     <quiet>true</quiet>
                 </configuration>
@@ -403,6 +423,7 @@
             <plugin>
                 <artifactId>maven-surefire-report-plugin</artifactId>
                 <version>2.6</version>
+                <inherited>false</inherited>
                 <configuration>
                     <aggregate>true</aggregate>
                 </configuration>
@@ -415,6 +436,7 @@
             <plugin>
                 <artifactId>maven-changes-plugin</artifactId>
                 <version>2.3</version>
+                <inherited>false</inherited>
                 <configuration>
                     <webUser>${kenai.user.name}</webUser>
                     <webPassword>${kenai.password}</webPassword>
@@ -437,21 +459,21 @@
         <site>
             <id>kenai</id>
             <name>Kenai Website</name>
-            <url>file:${website.repo}</url>
+            <url>${website.repo}</url>
             <!-- url>dav:https://kenai.com/website/ffx</url -->
         </site>
-        <repository>
-            <uniqueVersion>false</uniqueVersion>
-            <id>releases</id>
-            <name>Local Maven Release Repository</name>
-            <url>file:${release.repo}</url>
-        </repository>
         <snapshotRepository>
             <uniqueVersion>false</uniqueVersion>
             <id>snapshots</id>
             <name>Local Maven SNAPSHOT Repository</name>
-            <url>file:lib</url>
+            <url>${snapshot.repo}</url>
         </snapshotRepository>
+        <repository>
+            <uniqueVersion>false</uniqueVersion>
+            <id>releases</id>
+            <name>Local Maven Release Repository</name>
+            <url>${release.repo}</url>
+        </repository>
     </distributionManagement>
     <properties>
         <compileVersion>1.6</compileVersion>

@@ -13,7 +13,6 @@
     <artifactId>numerics</artifactId>
     <packaging>jar</packaging>
     <name>Numerics</name>
-
     <build>
         <resources>
             <resource>
@@ -54,7 +53,6 @@
             </plugin>
         </plugins>
     </build>
-
     <dependencies>
         <dependency>
             <groupId>commons-io</groupId>
@@ -75,7 +73,6 @@
             <version>3.1.1</version>
         </dependency>
     </dependencies>
-
     <profiles>
         <profile>
             <id>Mac OS X</id>
@@ -128,5 +125,4 @@
             </properties>
         </profile>
     </profiles>
-
 </project>

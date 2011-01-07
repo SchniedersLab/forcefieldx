@@ -31,17 +31,23 @@
     </skin>
     <body>
         <breadcrumbs>
-            <item name="Force Field X" href="http://ffx.kenai.com"/>
+            <item name="Sitemap" href="/sitemap.html"/>
+            <item name="Home" href="/index.html"/>
         </breadcrumbs>
+        <links>
+            <item name=" GIT Repository" href="/source-repository.html"/>
+            <item name=" Mailing Lists" href="/mail-lists.html"/>
+            <item name=" Issue Tracking" href="/issue-tracking.html"/>
+            <item name=" Message Forum" href="http://kenai.com/projects/ffx/forums/user-forum"/>
+            <item name=" Wiki" href="http://kenai.com/projects/ffx/pages/Home"/>
+        </links>
         <menu name="Overview" inherit="top">
             <item name="Introduction" href="/index.html"/>
             <!-- item name="Run Force Field X" href="/webstart.html"/ -->
             <item name="Publications" href="/publications.html"/>
             <item name="Download" href="/download.html"/>
+            <item name="Install" href="/install.html"/>
             <item name="Examples" href="/examples.html"/>
-            <item name="Project Organization" href="/project.html"/>
-            <item name="Source Code" href="/source.html"/>
-            <item name="License" href="/license.html"/>
         </menu>
         <menu name="Modules" inherit="top">
             <item name="Algorithms"  href="modules/algorithms/index.html"/>
@@ -54,7 +60,10 @@
             <item name="Utilities" href="modules/utilities/index.html"/>
             <item name="X-Ray Refinement" href="modules/xray/index.html"/>
         </menu>
-
-        <menu ref="reports" inherit="bottom" />
+        <menu name="For Developers">
+            <item name="Project Organization" href="/project.html"/>
+            <item name="Source Code" href="/source.html"/>
+        </menu>
+        <menu ref="reports"/>
     </body>
 </project>
