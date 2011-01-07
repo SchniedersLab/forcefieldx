@@ -1,10 +1,12 @@
+// XRAY MINIMIZE
+
 // Apache Imports
 import org.apache.commons.io.FilenameUtils;
 
-import ffx.algorithms.SimulatedAnnealing;
+// Force Field X Imports
+import ffx.xray.CrystalReciprocalSpace.SolventModel;
 import ffx.xray.DiffractionData;
 import ffx.xray.DiffractionFile;
-import ffx.xray.RefinementEnergy;
 import ffx.xray.RefinementMinimize;
 import ffx.xray.RefinementMinimize.RefinementMode;
 
@@ -21,26 +23,17 @@ double wA = 1.0;
 boolean neutron = false;
 
 // Set the RMS gradient per atom convergence criteria (optional)
-String epsString = args[2];
+String coordepsString = args[2];
+// default if epsString not given on the command line
+double coordeps = 1.0;
 
-// number of refinement macrocycles
-int ncycles = 3;
+// same, but for B factors
+String bepsString = args[3];
+double beps = 0.01;
 
 // set the maximum number of refinement cycles
 int maxiter = 50000;
 
-// type of refinement
-RefinementMode refinementmode = RefinementMode.COORDINATES_AND_BFACTORS;
-
-// simulated annealing settings:
-// starting temp
-double highTemperature = 1000.0;
-// ending temp
-double lowTemperature = 100.0;
-// number of steps to take between high and low temps
-int annealingSteps = 10;
-// number of MD steps at each annealing step
-int mdSteps = 200;
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
@@ -49,11 +42,15 @@ if (modelfilename == null) {
    modelfilename = "examples/1n7s.P212121.xyz";
 }
 
-double eps = 1.0;
-if (epsString != null) {
-   eps = Double.parseDouble(epsString);
+if (coordepsString != null) {
+   coordeps = Double.parseDouble(coordepsString);
 }
 
+if (bepsString != null) {
+   beps = Double.parseDouble(bepsString);
+}
+
+println("\n Running x-ray minimize on " + modelfilename);
 open(modelfilename);
 
 DiffractionFile diffractionfile = null;
@@ -68,28 +65,15 @@ DiffractionData diffractiondata = new DiffractionData(active, active.getProperti
 diffractiondata.scalebulkfit();
 diffractiondata.printstats();
 
-RefinementEnergy refinementEnergy = new RefinementEnergy(active, diffractiondata, refinementmode);
-SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(active, refinementEnergy, active.getProperties(), null);
-RefinementMinimize refinementMinimize = new RefinementMinimize(active, diffractiondata, refinementmode);
-
-refinementMinimize.minimize(2.5);
+RefinementMinimize refinementMinimize = new RefinementMinimize(active, diffractiondata, RefinementMode.COORDINATES);
+refinementMinimize.minimize(coordeps, maxiter);
 diffractiondata.scalebulkfit();
 diffractiondata.printstats();
 
-int macrocycles = 3;
-
-for (i = 0; i < macrocycles; i++) {
-
-  simulatedAnnealing.anneal(highTemperature, lowTemperature, annealingSteps, mdSteps);
-
-  diffractiondata.scalebulkfit();
-  diffractiondata.printstats();
-
-  refinementMinimize.minimize(eps);
-
-  diffractiondata.scalebulkfit();
-  diffractiondata.printstats();
-}
+refinementMinimize = new RefinementMinimize(active, diffractiondata, RefinementMode.BFACTORS);
+refinementMinimize.minimize(beps, maxiter);
+diffractiondata.scalebulkfit();
+diffractiondata.printstats();
 
 diffractiondata.writedata(FilenameUtils.removeExtension(modelfilename) + "_refine.mtz");
 saveAsPDB(new File(FilenameUtils.removeExtension(modelfilename) + "_refine.pdb"));

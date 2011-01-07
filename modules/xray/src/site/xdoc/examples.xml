@@ -8,10 +8,148 @@
         <author email="fenn@stanford.edu">Timothy D. Fenn</author>
     </properties>
     <body>
-        <section name="Examples">
-            <subsection name="AMOEBA-assisted Refinement at High Resolution">
+        <section name="X-Ray Examples">
+            <subsection name="Prior to using the X-Ray interface">
+                <p>In order to use the X-Ray interface, X-ray reflection data
+                must be provided along with an atomic model. Currently accepted
+                formats include:
+                </p>
+                <ul>
+                    <li>CCP4 MTZ format (preferred)</li>
+                    <li>CIF format</li>
+                    <li>CNS format</li>
+                </ul>
+                <p>If you are using the CIF format, the reflection file should
+                contain the following header information:
+                </p>
+                <ul>
+                    <li>symmetry.Int_Tables_number or symmetry.space_group_name_H-M</li>
+                    <li>cell.length_a, length_b, length_c, angle_alpha, angle_beta, angle_gamma</li>
+                    <li>reflns.d_resolution_high</li>
+                    <li>refln.status (for Rfree), F_meas_au and F_meas_sigma_au</li>
+                </ul>
+                <p>Alternatively, if you are using a CNS file, the reflection
+                file should have a
+                    <source>{sg=P6(1) a=102.1 b=...}</source> header,
+                and the resolution information can be provided in a property
+                file.
+                </p>
+                <p>Any of the data information (resolution, Rfree integer flag,
+                cell lengths/angles) can be overwritten by providing a property
+                file.
+                </p>
             </subsection>
-            <subsection name="AMOEBA-assisted Refinement at Low Resolution">
+            <subsection name="File names/extensions">
+                <p>The atomic coordinates are best provided as a PDB file for
+                the purposes of X-ray usage (as B-factors and occupancies are
+                necessary/relevant). If the coordinates are provided in
+                filename.pdb, then an optional property file can be provided as
+                filename.key or filename.properties. This property file can
+                contain crystal information, force field and/or refinement
+                options. For example:
+                </p>
+                <source>
+a-axis 39.767
+b-axis 51.750
+c-axis 132.938
+alpha 90.00
+beta 90.00
+gamma 90.00
+spacegroup P212121
+resolution 1.7
+rfreeflag 1
+                </source>
+                <p>Which will override any information acquired from the PDB
+                file or reflection file.
+                </p>
+                <p>For the X-ray refinement scripts, reflection files can be
+                provided on the command line. If only a coordinate file name is
+                provided, then the program will search for valid reflection
+                files using the base filename. In the example above, this would
+                result in the program searching for filename.mtz, filename.ent/cif/sf
+                and finally filename.cns/hkl.
+                </p>
+            </subsection>
+            <subsection name="Task: Scaling data/fitting sigmaA parameters">
+                <p>The <b>xrayscalebulk</b> script will perform anisotropic scaling,
+                fit a bulk solvent and compute crystallographic statistics (such
+                as R/Rfree) and optionally write out a MTZ file, without
+                modifying the input coordinates, other than adding hydrogens (if
+                necessary). Here is the output from 2R4R:
+                </p>
+                <source>
+  Fc to Fo scale: 0.56
+  Fc to Fo spline scale: 1.07 0.88 0.95 1.00 1.01 1.04 1.03 1.00 0.99 0.96
+  aniso B tensor:
+    -20.7258 0.00000 6.04607
+    0.00000 34.6983 0.00000
+    6.04607 0.00000 1.82392
+  bulk solvent model: polynomial switch
+  bulk solvent a: 0.00000 w: 0.800000
+  bulk solvent scale: 0.440275  B: 106.995
+  -log likelihood: 18883.5 (free set: 2371.35)
+
+Blow DPI (eqn 7):  0.4694 nonH atoms:  0.6628
+Cruickshank DPI (eqn 27):  0.4775 nonH atoms:  0.6742
+Acta Cryst (1999) D55, 583-601 and Acta Cryst (2002) D58, 792-797
+
+# reflections (for 100% complete): 19906
+     res. range | #HKL (R)|#HKL (cv)|    #bin |   #miss |%complete
+ 85.923   7.475 |    1754 |     216 |    1970 |      20 | 98.99
+  7.473   5.886 |    1786 |     201 |    1987 |       4 | 99.80
+  5.886   5.125 |    1801 |     183 |    1984 |       5 | 99.75
+  5.124   4.643 |    1812 |     176 |    1988 |       1 | 99.95
+  4.643   4.303 |    1786 |     203 |    1989 |       5 | 99.75
+  4.303   4.041 |    1778 |     202 |    1980 |      12 | 99.40
+  4.041   3.838 |    1785 |     187 |    1972 |      20 | 99.00
+  3.838   3.668 |    1790 |     177 |    1967 |      25 | 98.74
+  3.668   3.524 |    1770 |     168 |    1938 |      46 | 97.68
+  3.524   3.400 |    1692 |     204 |    1896 |      97 | 95.13
+ 85.923   3.400 |   17754 |    1917 |   19671 |     235 | 98.82
+
+     res. range |   signal |    sigma |      s/n
+ 85.923   7.475 |   441.80 |    10.74 |    43.62
+  7.473   5.886 |   271.55 |    11.56 |    28.46
+  5.886   5.125 |   286.52 |    15.06 |    23.59
+  5.124   4.643 |   315.70 |    16.80 |    22.69
+  4.643   4.303 |   296.68 |    18.65 |    19.82
+  4.303   4.041 |   257.25 |    21.41 |    15.34
+  4.041   3.838 |   207.39 |    25.19 |    10.32
+  3.838   3.668 |   183.12 |    27.91 |     7.95
+  3.668   3.524 |   162.23 |    30.25 |     6.23
+  3.524   3.400 |   146.64 |    33.67 |     4.97
+ 85.923   3.400 |   258.28 |    20.80 |    18.39
+
+s and w are analagous to D and sum_wc - J. Appl. Cryst. (2005) 38, 193-198
+
+     res. range |       R |   Rfree |       s |    w(E) |    w(F) |     FOM
+ 85.923   7.475 |   30.38 |   34.84 |  0.8436 |  0.2767 |  102.09 |  0.7142
+  7.473   5.886 |   22.53 |   27.91 |  0.8877 |  0.1970 |   43.06 |  0.7984
+  5.886   5.125 |   22.27 |   28.63 |  0.9093 |  0.2577 |   59.00 |  0.7610
+  5.124   4.643 |   17.59 |   22.31 |  0.9349 |  0.1406 |   35.53 |  0.8456
+  4.643   4.303 |   18.55 |   25.56 |  0.9255 |  0.1858 |   44.23 |  0.8104
+  4.303   4.041 |   19.65 |   24.96 |  0.9212 |  0.1970 |   40.53 |  0.7930
+  4.041   3.838 |   20.37 |   24.56 |  0.9297 |  0.1642 |   27.38 |  0.8280
+  3.838   3.668 |   22.52 |   26.61 |  0.8813 |  0.1709 |   24.83 |  0.8156
+  3.668   3.524 |   23.58 |   26.49 |  0.8607 |  0.1773 |   22.55 |  0.8098
+  3.524   3.400 |   28.58 |   32.32 |  0.8550 |  0.2956 |   33.27 |  0.7213
+ 85.923   3.400 |   22.68 |   27.94 |  0.8952 |  0.2059 |   43.32 |  0.7900
+                </source>
+                <p>This output provides all the scaling values, data statistics
+                and model-versus-data statistics required to carry out a quick
+                analysis of a structure. The script can also be easily modified
+                to output a MTZ file containing fourier coefficients (Fo-Fc and
+                2Fo-Fc) for inspection in coot.</p>
+            </subsection>
+            <subsection name="X-Ray refinement">
+                <p>The refinement engine in FFX is set up to be dynamic.
+                Refinement can include simulated annealing, refine coordinates
+                only, B factors only, or both. Example scripts to refine an
+                X-ray structure are provided, although we encourage users to
+                edit and modify the scripts as required for their task.</p>
+                <p>For example, to carry out simulated annealing followed by
+                coordinate and then B-factor refinement, the provided
+                xray_anneal_minimize script should suffice.</p>
             </subsection>
         </section>
     </body>
