@@ -9,7 +9,6 @@
     </properties>
     <body>
         <section name="Potentials Introduction">
-            <p>"<i>If you were dying of thirst, would you want to drink implicit or explicit water</i>?" Dr. Thomas Darden</p>
             <p>
                 The Potentials module computes the potential energy of a
                 molecular system via a classical force field.

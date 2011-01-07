@@ -16,18 +16,9 @@
     </bannerLeft>
     <body>
         <menu name="Binding Affinity">
-            <item
-                name="Introduction"
-                href="/index.html"
-                />
-            <item
-                name="Usage Examples"
-                href="/usage.html"
-                />
-            <item
-                name="Publications"
-                href="/publications.html"
-                />
+            <item name="Introduction" href="/index.html" />
+            <item name="Examples" href="/examples.html" />
+            <item name="Publications" href="/publications.html" />
         </menu>
         <menu ref="parentProject"/>
     </body>

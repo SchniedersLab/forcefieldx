@@ -10,8 +10,37 @@
     </properties>
     <body>
         <section name="Examples">
-            <subsection name="GPCR Refinement" id="gpcr">
-            </subsection>
+            <table>
+                <tr>
+                    <th>Module</th>
+                    <th>Example</th>
+                </tr>
+                <tr>
+                    <td>Binding Affinity</td>
+                    <td>
+                        <a href="modules/binding/examples.html">
+                            Water Solvation Free Energy
+                        </a>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Potentials</td>
+
+                    <td>
+                        <a href="modules/potentials/examples.html">
+                            Dihydrofolate reductase (DHFR) in Water
+                        </a>
+                    </td>
+                </tr>
+                <tr>
+                    <td>X-ray Refinement</td>
+                    <td>
+                        <a href="modules/xray/examples.html">
+                            AMOEBA-assisted refinement at high and low resolution
+                        </a>
+                    </td>
+                </tr>
+            </table>
         </section>
     </body>
 </document>

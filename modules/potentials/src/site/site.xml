@@ -3,7 +3,8 @@
     name="Potentials"
     xmlns="http://maven.apache.org/DECORATION/1.0.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/DECORATION/1.0.0 http://maven.apache.org/xsd/decoration-1.0.0.xsd">
+    xsi:schemaLocation="http://maven.apache.org/DECORATION/1.0.0
+    http://maven.apache.org/xsd/decoration-1.0.0.xsd">
     <bannerRight>
         <name>Force Field X</name>
         <src>images/forcefieldx.png</src>
@@ -16,18 +17,9 @@
     </bannerLeft>
     <body>
         <menu name="Potentials">
-            <item
-                name="Introduction"
-                href="/index.html"
-                />
-            <item
-                name="Usage Examples"
-                href="/usage.html"
-                />
-            <item
-                name="Publications"
-                href="/publications.html"
-                />
+            <item name="Introduction" href="/index.html"/>
+            <item name="Examples" href="/examples.html" />
+            <item name="Publications" href="/publications.html" />
         </menu>
     </body>
 </project>

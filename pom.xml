@@ -458,9 +458,8 @@
         <downloadUrl>http://ffx.kenai.com</downloadUrl>
         <site>
             <id>kenai</id>
-            <name>Kenai Website</name>
+            <name>Force Field X Website Deploy Location</name>
             <url>${website.repo}</url>
-            <!-- url>dav:https://kenai.com/website/ffx</url -->
         </site>
         <snapshotRepository>
             <uniqueVersion>false</uniqueVersion>
@@ -481,9 +480,9 @@
         <!-- Default locations for deploying the website,
              installing jars and releasing jars. These
              can be over-ridden by a developer's settings.xml -->
-        <website.repo>website</website.repo>
-        <snapshot.repo>lib</snapshot.repo>
-        <release.repo>release</release.repo>
+        <website.repo>file:website</website.repo>
+        <snapshot.repo>file:lib</snapshot.repo>
+        <release.repo>file:release</release.repo>
         <!-- Setting the source encoding is required for builds
              that are platform independent. -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

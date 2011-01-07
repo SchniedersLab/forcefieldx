@@ -8,8 +8,10 @@
         <author email="fenn@stanford.edu">Timothy D. Fenn</author>
     </properties>
     <body>
-        <section name="Usage Examples">
-            <subsection name="Stuff">
+        <section name="Examples">
+            <subsection name="AMOEBA-assisted Refinement at High Resolution">
+            </subsection>
+            <subsection name="AMOEBA-assisted Refinement at Low Resolution">
             </subsection>
         </section>
     </body>
