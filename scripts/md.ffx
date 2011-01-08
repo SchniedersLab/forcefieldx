@@ -10,7 +10,8 @@ import ffx.algorithms.Thermostat.Thermostats;
 // Name of the file (PDB or XYZ).
 String filename = args[0];
 if (filename == null) {
-   filename = "examples/1n7s.P212121.xyz";
+   println("\n Usage: ffxc md filename");
+   return;
 }
 
 // Restart File

@@ -1,8 +1,0 @@
-import ffx.potential.PotentialEnergy;
-
-String filename = "examples/dhfr.xyz";
-open filename;
-
-energy = new PotentialEnergy(active);
-energy.energy(false, true);
-

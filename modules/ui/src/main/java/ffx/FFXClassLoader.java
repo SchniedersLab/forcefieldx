@@ -113,18 +113,16 @@ public class FFXClassLoader extends ClassLoader {
     /**
      * Returns the file name of a temporary copy of <code>input</code> content.
      */
-    private String copyInputStreamToTmpFile(InputStream input,
+    public static String copyInputStreamToTmpFile(InputStream input,
                                             String suffix) throws IOException {
-        File tmpFile = null;
-        
+        File tmpFile = null;        
         try {
-            tmpFile = File.createTempFile("extension", suffix);
+            tmpFile = File.createTempFile("tmp.", suffix);
         } catch (Exception e) {
             System.out.println(" Could not extract a Force Field X library.");
             System.err.println(e.toString());
             System.exit(-1);
         }
-
         tmpFile.deleteOnExit();
         OutputStream output = null;
         try {

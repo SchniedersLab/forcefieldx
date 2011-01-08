@@ -31,6 +31,8 @@ import org.apache.commons.lang.time.StopWatch;
 
 import ffx.ui.LogHandler;
 import ffx.ui.MainPanel;
+import java.net.URL;
+import org.apache.commons.io.FilenameUtils;
 
 /**
  * The HeadlessMain class is the entry point to the command line version of
@@ -54,6 +56,24 @@ public class HeadlessMain {
         mainPanel.initialize();
         // Finally, open the supplied file if necessary.
         if (commandLineFile != null) {
+            if (!commandLineFile.exists()) {
+                /**
+                 * See if the commandLineFile is an embedded script.
+                 */
+                String name = commandLineFile.getName() + ".ffx";
+                ClassLoader loader = getClass().getClassLoader();
+                URL embeddedScript = loader.getResource("ffx/scripts/" + name);
+                if (embeddedScript != null) {
+                    try {
+                        commandLineFile = new File(
+                                FFXClassLoader.copyInputStreamToTmpFile(
+                                embeddedScript.openStream(), ".ffx"));
+                    } catch (Exception e) {
+                        logger.warning("Exception extracting embedded script "
+                                       + embeddedScript.toString() + "\n" + e.toString());
+                    }
+                }
+            }
             if (commandLineFile.exists()) {
                 mainPanel.getModelingShell().setArgList(argList);
                 mainPanel.open(commandLineFile, null);

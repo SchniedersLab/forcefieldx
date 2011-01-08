@@ -3,7 +3,8 @@
 // Name of the file (PDB or XYZ).
 String filename = args[0];
 if (filename == null) {
-   filename = "examples/1n7s.P212121.xyz";
+   println("\n Usage: ffxc energy filename");
+   return;
 }
 
 // Things below this line normally do not need to be changed.

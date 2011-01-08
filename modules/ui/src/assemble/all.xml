@@ -63,5 +63,12 @@
             </includes>
             <outputDirectory>jogl-64</outputDirectory>
         </fileSet>
+        <fileSet>
+            <directory>${basedir}/../../scripts</directory>
+            <includes>
+                <include>*.ffx</include>
+            </includes>
+            <outputDirectory>ffx/scripts</outputDirectory>
+        </fileSet>
     </fileSets>
 </assembly>

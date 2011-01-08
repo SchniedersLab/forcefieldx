@@ -114,6 +114,6 @@ diffractiondata.scalebulkfit();
 diffractiondata.printstats();
 energy();
 
-filename = FilenameUtils.removeExtension(filename);
+filename = FilenameUtils.removeExtension(modelfilename);
 diffractiondata.writedata(filename + "_refine.mtz");
 saveAsPDB(new File(filename + "_refine.pdb"));

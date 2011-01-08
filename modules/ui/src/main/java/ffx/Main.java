@@ -47,7 +47,6 @@ import ffx.ui.LogHandler;
 import ffx.ui.MainPanel;
 import ffx.ui.macosx.OSXAdapter;
 
-
 /**
  * The Main class is the entry point to the graphical user interface version of
  * Force Field X.
@@ -111,7 +110,7 @@ public class Main extends JFrame {
             // Convert the of the args to a list
             int nArgs = args.length;
             if (nArgs > 1) {
-                for (int i=1; i<nArgs; i++) {
+                for (int i = 1; i < nArgs; i++) {
                     argList.add(args[i]);
                 }
             }
@@ -183,6 +182,24 @@ public class Main extends JFrame {
             OSXAdapter.macOSXRegistration(mainPanel);
         }
         // Finally, open the supplied file if necessary.
+        if (!commandLineFile.exists()) {
+            /**
+             * See if the commandLineFile is an embedded script.
+             */
+            String name = commandLineFile.getName() + ".ffx";
+            ClassLoader loader = getClass().getClassLoader();
+            URL embeddedScript = loader.getResource("ffx/scripts/" + name);
+            if (embeddedScript != null) {
+                try {
+                    commandLineFile = new File(
+                            FFXClassLoader.copyInputStreamToTmpFile(
+                            embeddedScript.openStream(), ".ffx"));
+                } catch (Exception e) {
+                    logger.warning("Exception extracting embedded script "
+                                   + embeddedScript.toString() + "\n" + e.toString());
+                }
+            }
+        }
         if (commandLineFile != null) {
             if (commandLineFile.exists()) {
                 mainPanel.getModelingShell().setArgList(argList);

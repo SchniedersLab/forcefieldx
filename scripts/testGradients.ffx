@@ -7,7 +7,8 @@ import ffx.potential.bonded.MolecularAssembly;
 // Name of the file (PDB or XYZ).
 String filename = args[0];
 if (filename == null) {
-   filename = "examples/1n7s.P212121.xyz";
+   println("Usage: ffx testGradients filname");
+   return;
 }
 
 // Things below this line normally do not need to be changed.

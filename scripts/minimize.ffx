@@ -6,7 +6,8 @@ import org.apache.commons.io.FilenameUtils;
 // Name of the file (PDB or XYZ).
 String filename = args[0];
 if (filename == null) {
-   filename = "examples/1n7s.P212121.xyz";
+   println("\n Usage: ffxc minimize filename");
+   return;
 }
 
 // Set the RMS gradient per atom convergence criteria
