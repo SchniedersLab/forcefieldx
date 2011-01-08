@@ -242,12 +242,12 @@ public class RefinementEnergy implements Potential {
                 /*
                 double normchem = 0.0;
                 for (int i = 0; i < nxyz; i++) {
-                normchem += g[i] * g[i];
+                    normchem += g[i] * g[i];
                 }
                 normchem = Math.sqrt(normchem) / nxyz;
                 double normxray = 0.0;
                 for (int i = 0; i < nxyz; i++) {
-                normxray += gXray[i] * gXray[i];
+                    normxray += gXray[i] * gXray[i];
                 }
                 normxray = Math.sqrt(normxray) / nxyz;
                 System.out.println("chem: " + normchem + " xray: " + normxray + " weight wa: " + normchem / normxray);
