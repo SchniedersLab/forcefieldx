@@ -195,6 +195,19 @@ public abstract class SystemFilter {
         this.properties = properties;
     }
 
+    public SystemFilter(File file, List<MolecularAssembly> molecularAssemblies,
+                        ForceField forceField, CompositeConfiguration properties) {
+        files = new ArrayList<File>();
+        if (file != null) {
+            files.add(file);
+        }
+        this.currentFile = file;
+        this.systems = new Vector(molecularAssemblies);
+        this.activeMolecularAssembly = systems.firstElement();
+        this.forceField = forceField;
+        this.properties = properties;
+    }
+
     /**
      * Returns true if the read was successful
      */

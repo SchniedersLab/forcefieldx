@@ -174,6 +174,15 @@ public final class PDBFilter extends SystemFilter {
         this.fileType = FileType.PDB;
     }
 
+    /**
+     * Parse the PDB File from a URL.
+     */
+    public PDBFilter(File file, List<MolecularAssembly> molecularAssemblies,
+                     ForceField forceField, CompositeConfiguration properties) {
+        super(file, molecularAssemblies, forceField, properties);
+        this.fileType = FileType.PDB;
+    }
+
     public static String pdbForID(String id) {
         if (id.length() != 4) {
             return null;
@@ -2612,11 +2621,14 @@ public final class PDBFilter extends SystemFilter {
 //123456789012345678901234567890123456789012345678901234567890123456789012345678
 //ATOM      1  N   ILE A  16      60.614  71.140 -10.592  1.00  7.38           N
 //ATOM      2  CA  ILE A  16      60.793  72.149  -9.511  1.00  6.91           C
+            MolecularAssembly molecularAssemblies[] = this.getMolecularAssemblys();
             int serial = 1;
             // Loop over biomolecular chains
             if (polymers != null) {
                 for (Polymer polymer : polymers) {
-                    sb.setCharAt(21, polymer.getChainID());
+                    currentSegID = polymer.getName();
+                    currentChainID = polymer.getChainID();
+                    sb.setCharAt(21, currentChainID);
                     // Loop over residues
                     ArrayList<Residue> residues = polymer.getResidues();
                     for (Residue residue : residues) {
@@ -2629,8 +2641,27 @@ public final class PDBFilter extends SystemFilter {
                         sb.replace(22, 26, String.format("%4s", Hybrid36.encode(4, resID)));
                         // Loop over atoms
                         ArrayList<Atom> residueAtoms = residue.getAtomList();
+                        boolean altLocFound = false;
                         for (Atom atom : residueAtoms) {
                             writeAtom(atom, serial++, sb, anisouSB, bw);
+                            if (atom.getAltLoc() != null) {
+                                altLocFound = true;
+                            }
+                        }
+                        // Write out alternate conformers
+                        if (altLocFound) {
+                            for (int ma = 1; ma < molecularAssemblies.length; ma++) {
+                                MolecularAssembly altMolecularAssembly = molecularAssemblies[ma];
+                                Polymer altPolymer = altMolecularAssembly.getPolymer(currentChainID,
+                                                                                     currentSegID, false);
+                                Residue altResidue = altPolymer.getResidue(resName, resID, false);
+                                residueAtoms = altResidue.getAtomList();
+                                for (Atom atom : residueAtoms) {
+                                    if (atom.getAltLoc() != null) {
+                                        writeAtom(atom, serial++, sb, anisouSB, bw);
+                                    }
+                                }
+                            }
                         }
                     }
                     terSB.replace(6, 11, String.format("%5s", Hybrid36.encode(5, serial++)));
@@ -2656,10 +2687,9 @@ public final class PDBFilter extends SystemFilter {
 
             // Loop over molecules, ions and then water.
             ArrayList<MSNode> molecules = activeMolecularAssembly.getMolecules();
-
             // Write out molecules.
-            for (MSNode node : molecules) {
-                Molecule molecule = (Molecule) node;
+            for (int i=0; i<molecules.size(); i++) {
+                Molecule molecule = (Molecule) molecules.get(i);
                 String resName = molecule.getResidueName();
                 if (resName.length() > 3) {
                     resName = resName.substring(0, 3);
@@ -2667,16 +2697,34 @@ public final class PDBFilter extends SystemFilter {
                 sb.replace(17, 20, padLeft(resName.toUpperCase(), 3));
                 sb.replace(22, 26, String.format("%4s", Hybrid36.encode(4, resID++)));
                 // Loop over atoms
-                ArrayList<Atom> residueAtoms = molecule.getAtomList();
-                for (Atom atom : residueAtoms) {
+                ArrayList<Atom> moleculeAtoms = molecule.getAtomList();
+                boolean altLocFound = false;
+                for (Atom atom : moleculeAtoms) {
                     writeAtom(atom, serial++, sb, anisouSB, bw);
+                    if (atom.getAltLoc() != null) {
+                        altLocFound = true;
+                    }
+                }
+                // Write out alternate conformers
+                if (altLocFound) {
+                    for (int ma = 1; ma < molecularAssemblies.length; ma++) {
+                        MolecularAssembly altMolecularAssembly = molecularAssemblies[ma];
+                        ArrayList<MSNode> altMolecules = altMolecularAssembly.getMolecules();
+                        Molecule altMolecule = (Molecule) altMolecules.get(i);
+                        moleculeAtoms = altMolecule.getAtomList();
+                        for (Atom atom : moleculeAtoms) {
+                            if (atom.getAltLoc() != null) {
+                                writeAtom(atom, serial++, sb, anisouSB, bw);
+                            }
+                        }
+                    }
                 }
             }
 
             // Write out ions.
             ArrayList<MSNode> ions = activeMolecularAssembly.getIons();
-            for (MSNode node : ions) {
-                Molecule molecule = (Molecule) node;
+            for (int i=0; i<ions.size(); i++) {
+                Molecule molecule = (Molecule) ions.get(i);
                 String resName = molecule.getResidueName();
                 if (resName.length() > 3) {
                     resName = resName.substring(0, 3);
@@ -2684,27 +2732,63 @@ public final class PDBFilter extends SystemFilter {
                 sb.replace(17, 20, padLeft(resName.toUpperCase(), 3));
                 sb.replace(22, 26, String.format("%4s", Hybrid36.encode(4, resID++)));
                 // Loop over atoms
-                ArrayList<Atom> residueAtoms = molecule.getAtomList();
-                for (Atom atom : residueAtoms) {
+                ArrayList<Atom> ionsAtoms = molecule.getAtomList();
+                boolean altLocFound = false;
+                for (Atom atom : ionsAtoms) {
                     writeAtom(atom, serial++, sb, anisouSB, bw);
+                    if (atom.getAltLoc() != null) {
+                        altLocFound = true;
+                    }
+                }
+                // Write out alternate conformers
+                if (altLocFound) {
+                    for (int ma = 1; ma < molecularAssemblies.length; ma++) {
+                        MolecularAssembly altMolecularAssembly = molecularAssemblies[ma];
+                        ArrayList<MSNode> altIons = altMolecularAssembly.getIons();
+                        Molecule altIon = (Molecule) altIons.get(i);
+                        ionsAtoms = altIon.getAtomList();
+                        for (Atom atom : ionsAtoms) {
+                            if (atom.getAltLoc() != null) {
+                                writeAtom(atom, serial++, sb, anisouSB, bw);
+                            }
+                        }
+                    }
                 }
             }
+
             // Write out water.
             ArrayList<MSNode> water = activeMolecularAssembly.getWaters();
-            for (MSNode node : water) {
-                Molecule molecule = (Molecule) node;
+            for (int i=0; i<water.size(); i++) {
+                Molecule molecule = (Molecule) water.get(i);
                 Character chainID = molecule.getChainID();
                 sb.setCharAt(21, chainID);
                 String resName = "HOH";
                 sb.replace(17, 20, padLeft(resName.toUpperCase(), 3));
                 sb.replace(22, 26, String.format("%4s", Hybrid36.encode(4, resID++)));
                 // Loop over atoms
-                ArrayList<Atom> residueAtoms = molecule.getAtomList();
-                for (Atom atom : residueAtoms) {
+                ArrayList<Atom> waterAtoms = molecule.getAtomList();
+                boolean altLocFound = false;
+                for (Atom atom : waterAtoms) {
                     writeAtom(atom, serial++, sb, anisouSB, bw);
+                    if (atom.getAltLoc() != null) {
+                        altLocFound = true;
+                    }
+                }
+                // Write out alternate conformers
+                if (altLocFound) {
+                    for (int ma = 1; ma < molecularAssemblies.length; ma++) {
+                        MolecularAssembly altMolecularAssembly = molecularAssemblies[ma];
+                        ArrayList<MSNode> altWaters = altMolecularAssembly.getWaters();
+                        Molecule altWater = (Molecule) altWaters.get(i);
+                        waterAtoms = altWater.getAtomList();
+                        for (Atom atom : waterAtoms) {
+                            if (atom.getAltLoc() != null) {
+                                writeAtom(atom, serial++, sb, anisouSB, bw);
+                            }
+                        }
+                    }
                 }
             }
-
             bw.write("END");
             bw.newLine();
             bw.close();
@@ -2716,9 +2800,10 @@ public final class PDBFilter extends SystemFilter {
         return true;
     }
 
-    public void writeAtom(Atom atom, int serial, StringBuilder sb,
-                          StringBuilder anisouSB, BufferedWriter bw)
+    public boolean writeAtom(Atom atom, int serial, StringBuilder sb,
+                             StringBuilder anisouSB, BufferedWriter bw)
             throws IOException {
+        boolean altLocFound = false;
         String name = atom.getID();
         if (name.length() > 4) {
             name = name.substring(0, 4);
@@ -2736,6 +2821,7 @@ public final class PDBFilter extends SystemFilter {
         Character altLoc = atom.getAltLoc();
         if (altLoc != null) {
             sb.setCharAt(16, altLoc);
+            altLocFound = true;
         } else {
             sb.setCharAt(16, ' ');
         }
@@ -2775,6 +2861,7 @@ public final class PDBFilter extends SystemFilter {
             bw.write(anisouSB.toString());
             bw.newLine();
         }
+        return altLocFound;
     }
 
     /**

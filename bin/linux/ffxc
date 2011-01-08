@@ -88,7 +88,7 @@ fi
 
 CLASSPATH=$CLASSPATH_PREFIX:"$BASEDIR"/ffx-all.jar
 
-EXTRA_JVM_ARGUMENTS="-Xms24G -Xmx24G -Xss4M -XX:MaxPermSize=20G"
+EXTRA_JVM_ARGUMENTS="-Xms1G -Xmx2G -Xss4M -XX:MaxPermSize=1500M"
 
 # For Cygwin, switch paths to Windows format before running java
 if $cygwin; then

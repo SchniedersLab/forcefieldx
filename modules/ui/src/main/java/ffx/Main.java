@@ -176,8 +176,7 @@ public class Main extends JFrame {
         setVisible(true);
         mainPanel.setPanel(MainPanel.GRAPHICS);
         // Mac OS X specific features that help Force Field X look native
-        // on Macs.
-        // This needs to be done after the MainPanel is created.
+        // on Macs. This needs to be done after the MainPanel is created.
         if (SystemUtils.IS_OS_MAC_OSX) {
             OSXAdapter.macOSXRegistration(mainPanel);
         }

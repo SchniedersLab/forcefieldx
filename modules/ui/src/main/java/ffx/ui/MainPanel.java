@@ -110,6 +110,7 @@ import ffx.ui.properties.FFXLocale;
 import ffx.utilities.Keyword;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.util.Arrays;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
 
@@ -1560,6 +1561,26 @@ public final class MainPanel extends JPanel implements ActionListener,
                     hierarchy.setActive(system);
                 }
             }
+        }
+    }
+
+    public void saveAsPDB(MolecularAssembly activeSystems[], File file) {
+        File saveFile = file;
+        if (saveFile == null) {
+            resetFileChooser();
+            fileChooser.setCurrentDirectory(pwd);
+            fileChooser.setFileFilter(pdbFileFilter);
+            fileChooser.setAcceptAllFileFilterUsed(false);
+            int result = fileChooser.showSaveDialog(this);
+            if (result == JFileChooser.APPROVE_OPTION) {
+                saveFile = fileChooser.getSelectedFile();
+                pwd = saveFile.getParentFile();
+            }
+        }
+        if (saveFile != null) {
+            PDBFilter pdbFilter = new PDBFilter(saveFile,
+                                                Arrays.asList(activeSystems), null, null);
+            pdbFilter.writeFile(saveFile, false);
         }
     }
     static final Preferences preferences = Preferences.userNodeForPackage(MainPanel.class);
