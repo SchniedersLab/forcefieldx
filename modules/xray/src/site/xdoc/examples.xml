@@ -149,7 +149,59 @@ s and w are analagous to D and sum_wc - J. Appl. Cryst. (2005) 38, 193-198
                 edit and modify the scripts as required for their task.</p>
                 <p>For example, to carry out simulated annealing followed by
                 coordinate and then B-factor refinement, the provided
-                xray_anneal_minimize script should suffice.</p>
+                xray_anneal_minimize script should suffice. The job can be run 
+                by providing the atomic coordinates and structure factors:</p>
+                <source>ffxc xrayAnnealMinimize 1N7S.pdb 1N7S.mtz</source>
+                <p>The xrayAnnealMinimize script is provided in the scripts
+                directory, which partly contains:</p>
+                <source>
+// Name of the file (PDB or XYZ).
+String modelfilename = args[0];
+
+// input MTZ/CIF/CNS data (optional - if not given, data must be present as pdbfilename.[mtz/cif/ent/cns]
+String datafilename = args[1];
+
+// data weight
+double wA = 1.0;
+
+// is this neutron data?
+boolean neutron = false;
+
+// Set the RMS gradient per atom convergence criteria (optional)
+String coordepsString = args[2];
+// default if epsString not given on the command line
+double coordeps = 1.0;
+
+// same, but for B factors
+String bepsString = args[3];
+double beps = 0.01;
+
+// set the maximum number of refinement cycles
+int maxiter = 50000;
+
+// simulated annealing settings:
+// type of simulated annealing refinement
+RefinementMode refinementmode = RefinementMode.COORDINATES_AND_BFACTORS;
+// starting temp
+double highTemperature = 1000.0;
+// ending temp
+double lowTemperature = 100.0;
+// number of steps to take between high and low temps
+int annealingSteps = 10;
+// number of MD steps at each annealing step
+int mdSteps = 200;
+                </source>
+                <p>So four options can be provided on the command line: the
+                input coordinates (the first argument), the input structure
+                factors (the second argument), the coordinate optimization
+                desired (the third) and B optimization desired (the fourth).
+                However, only the input coordinates are absolutely required to
+                run the script, the remainder have default values the program
+                will try to use if they are not provided. Within the script
+                itself, a number of additional options can be set, such as the
+                type of refinement, weight of the data and simulated annealing
+                parameters.  As mentioned above, these values can be modified
+                as needed by the user, and we encourage you to do so!</p>
             </subsection>
         </section>
     </body>

@@ -245,6 +245,8 @@ public class CIFFilter implements DiffractionFileFilter {
                 // reached end, break
                 if (str.trim().startsWith("#END")) {
                     break;
+                } else if (str.trim().startsWith("#")) {
+                    continue;
                 }
 
                 String strarray[] = str.trim().split("\\s+");
@@ -301,6 +303,8 @@ public class CIFFilter implements DiffractionFileFilter {
                 // reached end, break
                 if (str.trim().startsWith("#END")) {
                     break;
+                } else if (str.trim().startsWith("#")) {
+                    continue;
                 }
 
                 String strarray[] = str.trim().split("\\s+");

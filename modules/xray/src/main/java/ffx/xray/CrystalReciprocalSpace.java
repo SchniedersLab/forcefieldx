@@ -121,7 +121,13 @@ public class CrystalReciprocalSpace {
     private final Complex3DParallel complexFFT3D;
 
     /**
-     * Crystal Reciprocal Space.
+     * Crystal Reciprocal Space constructor, assumes this is not a bulk solvent
+     * mask and is not a neutron data set
+     *
+     * @param reflectionlist the reflectionlist to fill with structure factors
+     * @param atoms array of atoms for structure factor computation
+     * @param fftTeam thread team for parallelization
+     * @param parallelTeam thread team for parallelization
      */
     public CrystalReciprocalSpace(ReflectionList reflectionlist,
             Atom atoms[],
@@ -130,6 +136,16 @@ public class CrystalReciprocalSpace {
                 SolventModel.POLYNOMIAL);
     }
 
+    /**
+     * Crystal Reciprocal Space constructor, assumes this is not a neutron data
+     * set and implements a polynomial bulk solvent mask if needed
+     *
+     * @param reflectionlist the reflectionlist to fill with structure factors
+     * @param atoms array of atoms for structure factor computation
+     * @param fftTeam thread team for parallelization
+     * @param parallelTeam thread team for parallelization
+     * @param solventmask true if this is a bulk solvent mask
+     */
     public CrystalReciprocalSpace(ReflectionList reflectionlist,
             Atom atoms[],
             ParallelTeam fftTeam, ParallelTeam parallelTeam,
@@ -138,6 +154,17 @@ public class CrystalReciprocalSpace {
                 SolventModel.POLYNOMIAL);
     }
 
+    /**
+     * Crystal Reciprocal Space constructor, assumes a polynomial bulk solvent
+     * mask if needed
+     *
+     * @param reflectionlist the reflectionlist to fill with structure factors
+     * @param atoms array of atoms for structure factor computation
+     * @param fftTeam thread team for parallelization
+     * @param parallelTeam thread team for parallelization
+     * @param solventmask true if this is a bulk solvent mask
+     * @param neutron true if this is a neutron structure
+     */
     public CrystalReciprocalSpace(ReflectionList reflectionlist,
             Atom atoms[],
             ParallelTeam fftTeam, ParallelTeam parallelTeam,
@@ -146,6 +173,17 @@ public class CrystalReciprocalSpace {
                 SolventModel.POLYNOMIAL);
     }
 
+    /**
+     * Crystal Reciprocal Space constructor, all parameters provided
+     *
+     * @param reflectionlist the reflectionlist to fill with structure factors
+     * @param atoms array of atoms for structure factor computation
+     * @param fftTeam thread team for parallelization
+     * @param parallelTeam thread team for parallelization
+     * @param solventmask true if this is a bulk solvent mask
+     * @param neutron true if this is a neutron structure
+     * @param solventmodel bulk solvent model type
+     */
     public CrystalReciprocalSpace(ReflectionList reflectionlist,
             Atom atoms[],
             ParallelTeam fftTeam, ParallelTeam parallelTeam,
@@ -384,6 +422,12 @@ public class CrystalReciprocalSpace {
         complexFFT3D = new Complex3DParallel(fftX, fftY, fftZ, fftTeam);
     }
 
+    /**
+     * set the bulk solvent parameters
+     *
+     * @param a added atom width (binary, polynomial only)
+     * @param b falloff of the switch (Gaussian, polynomial only)
+     */
     public void setSolventAB(double a, double b) {
         double vdwr;
         this.solvent_a = a;
@@ -413,6 +457,11 @@ public class CrystalReciprocalSpace {
         }
     }
 
+    /**
+     * should the structure factor computation use 3 Gaussians or 6 for atoms?
+     *
+     * @param use_3g if true, use 3 Gaussian
+     */
     public void setUse3G(boolean use_3g) {
         this.use_3g = use_3g;
         if (solvent || neutron) {
@@ -431,6 +480,12 @@ public class CrystalReciprocalSpace {
         this.weight = weight;
     }
 
+    /**
+     * offset X coordinates (mostly for finite difference checks)
+     *
+     * @param n atom to apply delta to
+     * @param delta amount to shift atom by
+     */
     public void deltaX(int n, double delta) {
         Vector<SymOp> symops = crystal.spaceGroup.symOps;
         double xyz[] = new double[3];
@@ -443,6 +498,12 @@ public class CrystalReciprocalSpace {
         }
     }
 
+    /**
+     * offset Y coordinates (mostly for finite difference checks)
+     *
+     * @param n atom to apply delta to
+     * @param delta amount to shift atom by
+     */
     public void deltaY(int n, double delta) {
         Vector<SymOp> symops = crystal.spaceGroup.symOps;
         double xyz[] = new double[3];
@@ -455,6 +516,12 @@ public class CrystalReciprocalSpace {
         }
     }
 
+    /**
+     * offset Z coordinates (mostly for finite difference checks)
+     *
+     * @param n atom to apply delta to
+     * @param delta amount to shift atom by
+     */
     public void deltaZ(int n, double delta) {
         Vector<SymOp> symops = crystal.spaceGroup.symOps;
         double xyz[] = new double[3];
@@ -467,6 +534,10 @@ public class CrystalReciprocalSpace {
         }
     }
 
+    /**
+     * set atom coordinates
+     * @param coords new coordinate positions (3 params per atom)
+     */
     public void setCoordinates(double coords[]) {
         assert (coords != null);
         Vector<SymOp> symops = crystal.spaceGroup.symOps;
@@ -487,10 +558,21 @@ public class CrystalReciprocalSpace {
         }
     }
 
+    /**
+     * parallelized computation of structure factors
+     *
+     * @param hkldata structure factor list to fill in
+     */
     public void computeDensity(double hkldata[][]) {
         computeDensity(hkldata, false);
     }
 
+    /**
+     * parallelized computation of structure factors
+     *
+     * @param hkldata structure factor list to fill in
+     * @param print if true, print information on timings during the calculation
+     */
     public void computeDensity(double hkldata[][], boolean print) {
         if (solvent) {
             if (solventmodel != SolventModel.NONE) {
@@ -501,11 +583,28 @@ public class CrystalReciprocalSpace {
         }
     }
 
+    /**
+     * compute inverse FFT to determine atomic gradients
+     *
+     * @param hkldata structure factors to apply inverse FFT
+     * @param freer array of free r flags corresponding to hkldata
+     * @param flag Rfree flag value
+     * @param refinementmode refinement mode
+     */
     public void computeAtomicGradients(double hkldata[][],
             int freer[], int flag, RefinementMode refinementmode) {
         computeAtomicGradients(hkldata, freer, flag, refinementmode, false);
     }
 
+    /**
+     * compute inverse FFT to determine atomic gradients
+     *
+     * @param hkldata structure factors to apply inverse FFT
+     * @param freer array of free r flags corresponding to hkldata
+     * @param flag Rfree flag value
+     * @param refinementmode refinement mode
+     * @param print if true, print information on timings during the calculation
+     */
     public void computeAtomicGradients(double hkldata[][],
             int freer[], int flag, RefinementMode refinementmode,
             boolean print) {
@@ -612,10 +711,21 @@ public class CrystalReciprocalSpace {
         }
     }
 
+    /**
+     * parallelized computation of structure factors (identical to compuateDensity)
+     *
+     * @param hkldata structure factor list to fill in
+     */
     public void computeAtomicDensity(double hkldata[][]) {
         computeAtomicDensity(hkldata, false);
     }
 
+    /**
+     * parallelized computation of structure factors (identical to computeDensity)
+     *
+     * @param hkldata structure factor list to fill in
+     * @param print if true, print information on timings during the calculation
+     */
     public void computeAtomicDensity(double hkldata[][], boolean print) {
         StringBuilder sb = new StringBuilder();
         // clear out the reflection data
@@ -703,10 +813,21 @@ public class CrystalReciprocalSpace {
         }
     }
 
+    /**
+     * parallelized computation of bulk solvent structure factors
+     *
+     * @param hkldata structure factor list to fill in
+     */
     public void computeSolventDensity(double hkldata[][]) {
         computeSolventDensity(hkldata, false);
     }
 
+    /**
+     * parallelized computation of bulk solvent structure factors
+     *
+     * @param hkldata structure factor list to fill in
+     * @param print if true, print information on timings during the calculation
+     */
     public void computeSolventDensity(double hkldata[][], boolean print) {
         StringBuilder sb = new StringBuilder();
         // clear out the reflection data

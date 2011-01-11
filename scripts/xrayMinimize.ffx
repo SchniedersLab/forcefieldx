@@ -45,27 +45,29 @@ if (epsString != null) {
 }
 
 println("\n Running x-ray minimize on " + modelfilename);
-open(modelfilename);
+systems = open(modelfilename);
 
 DiffractionFile diffractionfile = null;
 if (datafilename != null) {
   diffractionfile = new DiffractionFile(datafilename, wA, neutron);
 } else {
-  diffractionfile = new DiffractionFile(active, wA, neutron);
+  diffractionfile = new DiffractionFile(systems);
 }
 
-DiffractionData diffractiondata = new DiffractionData(active, active.getProperties(), SolventModel.POLYNOMIAL, diffractionfile);
+DiffractionData diffractiondata = new DiffractionData(systems, systems[0].getProperties(), SolventModel.POLYNOMIAL, diffractionfile);
 
 diffractiondata.scalebulkfit();
 diffractiondata.printstats();
+energy();
 
-RefinementMinimize refinementMinimize = new RefinementMinimize(active, diffractiondata, refinementmode);
+RefinementMinimize refinementMinimize = new RefinementMinimize(systems, diffractiondata, refinementmode);
 
 println("\n RMS gradient convergence criteria: " + eps + " max number of iterations: " + maxiter);
 refinementMinimize.minimize(eps, maxiter);
 
 diffractiondata.scalebulkfit();
 diffractiondata.printstats();
+energy();
 
 diffractiondata.writedata(FilenameUtils.removeExtension(modelfilename) + "_refine.mtz");
-saveAsPDB(new File(FilenameUtils.removeExtension(modelfilename) + "_refine.pdb"));
+saveAsPDB(systems, new File(FilenameUtils.removeExtension(modelfilename) + "_refine.pdb"));

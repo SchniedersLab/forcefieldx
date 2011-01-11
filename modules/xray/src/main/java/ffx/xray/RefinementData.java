@@ -36,48 +36,119 @@ import java.util.Random;
 public class RefinementData {
 
     private static final Logger logger = Logger.getLogger(RefinementData.class.getName());
+    /**
+     * number of reflections in the data set
+     */
     public final int n;
+    /**
+     * number of scale parameters
+     */
     public final int scale_n;
-    // data
+    /**
+     * 2D array of F/sigF data
+     */
     public final double fsigf[][];
+    /**
+     * 2D array of anomalous F/sigF data
+     */
     public final double anofsigf[][];
+    /**
+     * array of Rfree
+     */
     public final int freer[];
-    // calculated atomic structure factors
+    /**
+     * calculated atomic structure factors
+     */
     public final double fc[][];
-    // calculted bulk solvent structure factors
+    /**
+     * calculated bulk solvent structure factors
+     */
     public final double fs[][];
-    // scaled sum of Fc and Fs
+    /**
+     * scaled sum of Fc and Fs
+     */
     public final double fctot[][];
-    // figure of merit and phase
+    /**
+     * figure of merit and phase
+     */
     public final double fomphi[][];
-    // 2mFo - DFc coefficients
+    /**
+     * 2mFo - DFc coefficients
+     */
     public final double fofc2[][];
-    // mFo - DFc coefficients
+    /**
+     * mFo - DFc coefficients
+     */
     public final double fofc1[][];
-    // derivatives wrt Fc
+    /**
+     * derivatives wrt Fc
+     */
     public final double dfc[][];
-    // derivatives wrt Fs
+    /**
+     * derivatives wrt Fs
+     */
     public final double dfs[][];
-    // log likelihoods
+    /**
+     * log likelihoods
+     */
     public double llkr, llkf;
-    // reciprocal space reference
-    // for structure factor calculations and computing derivatives
+    /**
+     * reciprocal space reference for structure factor calculations and
+     * computing derivatives
+     */
     protected CrystalReciprocalSpace crs_fc;
+    /**
+     * reciprocal space reference for bulk solvent structure factor calculations
+     * and computing derivatives
+     */
     protected CrystalReciprocalSpace crs_fs;
-    // spline scaling coefficients
+    /**
+     * number of resolution bins
+     */
     public final int nbins;
+    /**
+     * spine scaling coefficients
+     */
     public double spline[];
+    /**
+     * sigmaA coefficient - s
+     */
     public double sigmaa[];
+    /**
+     * sigmaA coefficient - w
+     */
     public double sigmaw[];
+    /**
+     * scaled, E-like Fc
+     */
     public double fcesq[];
+    /**
+     * scaled, E-like Fo
+     */
     public double foesq[];
-    // bulk solvent parameters
+    /**
+     * if true, grid search bulk solvent params
+     */
     public boolean gridsearch;
+    /**
+     * bulk solvent parameters
+     */
     public double solvent_a, solvent_b;
-    // scaling coefficients
+    /**
+     * fit a scaling spline between Fo and Fc?
+     */
     public boolean splinefit;
+    /**
+     * bulk solvent scale and Ueq
+     */
     public double solvent_k, solvent_ueq;
+    /**
+     * overall model scale
+     */
     public double model_k;
+    /**
+     * model anisotropic B
+     */
     public double model_b[] = new double[6];
     // settings
     public final double fsigfcutoff;
@@ -184,6 +255,9 @@ public class RefinementData {
         this.crs_fs = crs;
     }
 
+    /**
+     * generate 5% of reflections to mark for cross validation/Rfree
+     */
     public void generateRFree() {
         Random generator = new Random();
         int free;
@@ -224,6 +298,9 @@ public class RefinementData {
         }
     }
 
+    /**
+     * generate average F/sigF from anomalous F/sigF
+     */
     public void generate_fsigf_from_anofsigf() {
         for (int i = 0; i < n; i++) {
             if (Double.isNaN(anofsigf[i][0])
@@ -242,6 +319,12 @@ public class RefinementData {
         }
     }
 
+    /**
+     * set amplitude, F
+     *
+     * @param i reflection to set
+     * @param f value of F desired
+     */
     public void set_f(int i, double f) {
         fsigf[i][0] = f;
     }
@@ -250,6 +333,12 @@ public class RefinementData {
         return fsigf[i][0];
     }
 
+    /**
+     * set amplitude sigma, sigF
+     *
+     * @param i reflection to set
+     * @param sigf value of sigF desired
+     */
     public void set_sigf(int i, double sigf) {
         fsigf[i][1] = sigf;
     }
@@ -258,6 +347,13 @@ public class RefinementData {
         return fsigf[i][1];
     }
 
+    /**
+     * set amplitude and sigF
+     *
+     * @param i reflection to set
+     * @param f value of F desired
+     * @param sigf value of sigF desired
+     */
     public void set_fsigf(int i, double f, double sigf) {
         fsigf[i][0] = f;
         fsigf[i][1] = sigf;
@@ -267,10 +363,22 @@ public class RefinementData {
         return fsigf[i];
     }
 
+    /**
+     * set anomalous F+ amplitude
+     *
+     * @param i reflection to set
+     * @param f value of F desired
+     */
     public void set_ano_fplus(int i, double f) {
         anofsigf[i][0] = f;
     }
 
+    /**
+     * set anomalous F- amplitude
+     *
+     * @param i reflection to set
+     * @param f value of F desired
+     */
     public void set_ano_fminus(int i, double f) {
         anofsigf[i][2] = f;
     }
@@ -283,10 +391,22 @@ public class RefinementData {
         return anofsigf[i][2];
     }
 
+    /**
+     * set anomalous sigF+ amplitude
+     *
+     * @param i reflection to set
+     * @param f value of sigF+ desired
+     */
     public void set_ano_sigfplus(int i, double f) {
         anofsigf[i][1] = f;
     }
 
+    /**
+     * set anomalous sigF- amplitude
+     *
+     * @param i reflection to set
+     * @param f value of sigF- desired
+     */
     public void set_ano_sigfminus(int i, double f) {
         anofsigf[i][3] = f;
     }
@@ -299,20 +419,45 @@ public class RefinementData {
         return anofsigf[i][3];
     }
 
+    /**
+     * set anomalous F/sigF+ amplitude
+     *
+     * @param i reflection to set
+     * @param f value of F+ desired
+     * @param sigf value of sigF+
+     */
     public void set_ano_fsigfplus(int i, double f, double sigf) {
         anofsigf[i][0] = f;
         anofsigf[i][1] = sigf;
     }
 
+    /**
+     * set anomalous F/sigF- amplitude
+     *
+     * @param i reflection to set
+     * @param f value of F- desired
+     * @param sigf value of sigF-
+     */
     public void set_ano_fsigfminus(int i, double f, double sigf) {
         anofsigf[i][2] = f;
         anofsigf[i][3] = sigf;
     }
 
+    /**
+     * set FreeR value flag
+     *
+     * @param i if FreeR value is i, it is marked for cross validation
+     */
     public void set_freerflag(int i) {
         rfreeflag = i;
     }
 
+    /**
+     * set FreeR value flag of a reflection
+     *
+     * @param i reflection to set
+     * @param f FreeR value to set reflection to
+     */
     public void set_freer(int i, int f) {
         freer[i] = f;
     }
@@ -329,26 +474,56 @@ public class RefinementData {
         return (freer[i] == rfreeflag);
     }
 
+    /**
+     * set complex Fc
+     *
+     * @param i reflection to set
+     * @param c {@link ComplexNumber} to set reflection to
+     */
     public void set_fc(int i, ComplexNumber c) {
         fc[i][0] = c.re();
         fc[i][1] = c.im();
     }
 
+    /**
+     * get the complex number for a Fc reflection
+     *
+     * @param i reflection to get
+     * @return newly allocated {@link ComplexNumber}
+     */
     public ComplexNumber get_fc(int i) {
         return new ComplexNumber(fc[i][0], fc[i][1]);
     }
 
+    /**
+     * get the complex number for a Fc reflection
+     *
+     * @param i reflection to get
+     * @param c {@link ComplexNumber} to fill
+     */
     public void get_fc_ip(int i, ComplexNumber c) {
         c.re(fc[i][0]);
         c.im(fc[i][1]);
     }
 
+    /**
+     * get the amplitude of a complex Fc
+     *
+     * @param i reflection to get
+     * @return amplitude of Fc
+     */
     public double fc_f(int i) {
         ComplexNumber c = new ComplexNumber(fc[i][0], fc[i][1]);
 
         return c.abs();
     }
 
+    /**
+     * get the phase of a complex Fc
+     *
+     * @param i reflection to get
+     * @return phase of Fc
+     */
     public double fc_phi(int i) {
         ComplexNumber c = new ComplexNumber(fc[i][0], fc[i][1]);
 
@@ -459,10 +634,20 @@ public class RefinementData {
         return c.phase();
     }
 
+    /**
+     * return the current likelihood
+     *
+     * @return the work likelihood (non-Rfree based)
+     */
     public double likelihood_work() {
         return llkr;
     }
 
+    /**
+     * return the current likelihood
+     *
+     * @return the free likelihood (Rfree based)
+     */
     public double likelihood_free() {
         return llkf;
     }

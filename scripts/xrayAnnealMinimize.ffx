@@ -74,7 +74,7 @@ DiffractionFile diffractionfile = null;
 if (datafilename != null) {
   diffractionfile = new DiffractionFile(datafilename, 1.0, false);
 } else {
-  diffractionfile = new DiffractionFile(systems);
+  diffractionfile = new DiffractionFile(active);
 }
 
 DiffractionData diffractiondata = new DiffractionData(active, active.getProperties(), SolventModel.POLYNOMIAL, diffractionfile);
@@ -114,6 +114,5 @@ diffractiondata.scalebulkfit();
 diffractiondata.printstats();
 energy();
 
-filename = FilenameUtils.removeExtension(modelfilename);
-diffractiondata.writedata(filename + "_refine.mtz");
-saveAsPDB(new File(filename + "_refine.pdb"));
+diffractiondata.writedata(FilenameUtils.removeExtension(modelfilename) + "_refine.mtz");
+saveAsPDB(new File(FilenameUtils.removeExtension(modelfilename) + "_refine.pdb"));
