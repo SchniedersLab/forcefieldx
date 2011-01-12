@@ -73,12 +73,28 @@ public class DiffractionData {
     protected boolean scaled[];
     protected XRayEnergy xrayenergy = null;
 
+    /**
+     * construct a diffraction data assembly, assumes an X-ray data set with a
+     * weight of 1.0 using the same name as the molecular assembly
+     *
+     * @param assembly molecular assembly, used as the atomic model for
+     * comparison against the data
+     * @param properties system properties file
+     */
     public DiffractionData(MolecularAssembly assembly,
             CompositeConfiguration properties) {
         this(new MolecularAssembly[]{assembly}, properties,
                 SolventModel.POLYNOMIAL, new DiffractionFile(assembly));
     }
 
+    /**
+     * construct a diffraction data assembly
+     *
+     * @param assembly molecular assembly, used as the atomic model for
+     * comparison against the data
+     * @param properties system properties file
+     * @param datafile one or more {@link DiffractionFile} to be refined against
+     */
     public DiffractionData(MolecularAssembly assembly,
             CompositeConfiguration properties, DiffractionFile... datafile) {
         this(new MolecularAssembly[]{assembly}, properties,

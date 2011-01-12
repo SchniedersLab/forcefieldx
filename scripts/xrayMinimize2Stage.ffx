@@ -51,29 +51,32 @@ if (bepsString != null) {
 }
 
 println("\n Running x-ray minimize on " + modelfilename);
-open(modelfilename);
+systems = open(modelfilename);
 
 DiffractionFile diffractionfile = null;
 if (datafilename != null) {
   diffractionfile = new DiffractionFile(datafilename, wA, neutron);
 } else {
-  diffractionfile = new DiffractionFile(active, wA, neutron);
+  diffractionfile = new DiffractionFile(systems, wA, neutron);
 }
 
-DiffractionData diffractiondata = new DiffractionData(active, active.getProperties(), SolventModel.POLYNOMIAL, diffractionfile);
+DiffractionData diffractiondata = new DiffractionData(systems, systems[0].getProperties(), SolventModel.POLYNOMIAL, diffractionfile);
 
 diffractiondata.scalebulkfit();
 diffractiondata.printstats();
+energy();
 
-RefinementMinimize refinementMinimize = new RefinementMinimize(active, diffractiondata, RefinementMode.COORDINATES);
+RefinementMinimize refinementMinimize = new RefinementMinimize(systems, diffractiondata, RefinementMode.COORDINATES);
 refinementMinimize.minimize(coordeps, maxiter);
 diffractiondata.scalebulkfit();
 diffractiondata.printstats();
 
-refinementMinimize = new RefinementMinimize(active, diffractiondata, RefinementMode.BFACTORS);
+refinementMinimize = new RefinementMinimize(systems, diffractiondata, RefinementMode.BFACTORS);
 refinementMinimize.minimize(beps, maxiter);
 diffractiondata.scalebulkfit();
 diffractiondata.printstats();
 
+energy();
+
 diffractiondata.writedata(FilenameUtils.removeExtension(modelfilename) + "_refine.mtz");
-saveAsPDB(new File(FilenameUtils.removeExtension(modelfilename) + "_refine.pdb"));
+saveAsPDB(systems, new File(FilenameUtils.removeExtension(modelfilename) + "_refine.pdb"));

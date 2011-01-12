@@ -39,14 +39,32 @@ public class DiffractionFile {
     protected final boolean neutron;
     protected final DiffractionFileFilter diffractionfilter;
 
+    /**
+     * read in a diffraction file, weight set to 1.0 and neutron value of false
+     *
+     * @param filename file name to read in
+     */
     public DiffractionFile(String filename) {
         this(filename, 1.0, false);
     }
 
+    /**
+     * read in a diffraction file, neutron value set to false
+     *
+     * @param filename file name to read in
+     * @param weight the weight of the data
+     */
     public DiffractionFile(String filename, double weight) {
         this(filename, weight, false);
     }
 
+    /**
+     * read in a diffraction file
+     *
+     * @param filename file name to read in
+     * @param weight the weight of the data
+     * @param neutron if true, this is a neutron data set
+     */
     public DiffractionFile(String filename, double weight, boolean neutron) {
         File tmp = new File(filename);
         if (!tmp.exists()) {
@@ -81,14 +99,35 @@ public class DiffractionFile {
         this(assembly[0], weight, neutron);
     }
 
+    /**
+     * read in a diffraction file based on the molecular assembly filename,
+     * using a weight of 1.0 and neutron value of false
+     *
+     * @param assembly molecularassembly from which a filename will be determined
+     */
     public DiffractionFile(MolecularAssembly assembly) {
         this(assembly, 1.0, false);
     }
 
+    /**
+     * read in a diffraction file based on the molecular assembly filename,
+     * using a neutron value of false
+     *
+     * @param assembly molecularassembly from which a filename will be determined
+     * @param weight the weight of the data
+     */
     public DiffractionFile(MolecularAssembly assembly, double weight) {
         this(assembly, weight, false);
     }
 
+    /**
+     * read in a diffraction file based on the molecular assembly filename,
+     * using a weight of 1.0 and neutron value of false
+     *
+     * @param assembly molecularassembly from which a filename will be determined
+     * @param weight the weight of the data
+     * @param neutron if true, this is a neutron data set
+     */
     public DiffractionFile(MolecularAssembly assembly, double weight,
             boolean neutron) {
         String name = removeExtension(assembly.getFile().getPath());
