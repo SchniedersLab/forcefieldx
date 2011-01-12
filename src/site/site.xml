@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <project
     name="Force Field X"
-    xmlns="http://maven.apache.org/DECORATION/1.0.0"
+    xmlns="http://maven.apache.org/DECORATION/1.0.1"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/DECORATION/1.0.0
-    http://maven.apache.org/xsd/decoration-1.0.0.xsd">
+    xsi:schemaLocation="http://maven.apache.org/DECORATION/1.0.1
+    http://maven.apache.org/xsd/decoration-1.0.1.xsd">
     <publishDate position="right" format="dd MMM yyyy" />
     <version position="right" />
     <!-- poweredBy>
@@ -14,6 +14,7 @@
             img="/images/icon90.png"
             />
     </poweredBy -->
+
     <bannerRight>
         <name>Force Field X</name>
         <src>/images/forcefieldx.png</src>
@@ -30,6 +31,8 @@
         <version>1.0</version>
     </skin>
     <body>
+        <head>
+        </head>
         <breadcrumbs>
             <item name="Sitemap" href="/sitemap.html"/>
             <item name="Home" href="/index.html"/>

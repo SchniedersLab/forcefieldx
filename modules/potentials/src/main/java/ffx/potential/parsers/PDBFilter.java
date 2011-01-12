@@ -2786,7 +2786,6 @@ public final class PDBFilter extends SystemFilter {
     public void writeAtom(Atom atom, int serial, StringBuilder sb,
                              StringBuilder anisouSB, BufferedWriter bw)
             throws IOException {
-        boolean altLocFound = false;
         String name = atom.getID();
         if (name.length() > 4) {
             name = name.substring(0, 4);
