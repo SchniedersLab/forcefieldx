@@ -286,6 +286,7 @@ public class DiffractionData {
 
         for (int i = 1; i < assembly.length; i++) {
             alist = assembly[i].getAtomList();
+            int subindex = 0;
             for (Atom a : alist) {
                 Character c = a.getAltLoc();
                 if (c == null) {
@@ -293,9 +294,10 @@ public class DiffractionData {
                 }
                 if (!c.equals(' ')
                         && !c.equals('A')) {
-                    xindex[i].add(index++);
+                    xindex[i].set(subindex, index++);
                     atomlist.add(a);
                 }
+                subindex++;
             }
         }
         atomarray = atomlist.toArray(new Atom[atomlist.size()]);
