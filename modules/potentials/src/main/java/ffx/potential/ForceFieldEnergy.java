@@ -422,37 +422,26 @@ public class ForceFieldEnergy implements Potential {
 
         if (bondTerm) {
             bondTime = System.nanoTime();
-            int bondCount = 0;
             for (int i = 0; i < nBonds; i++) {
                 Bond b = bonds[i];
                 bondEnergy += b.energy(gradient);
-                if (!(b.getAtom(0).isHydrogen()
-                      || b.getAtom(1).isHydrogen())) {
-                    bondCount++;
-                    double value = b.getValue();
-                    bondRMSD += value * value;
-                }
+                double value = b.getValue();
+                bondRMSD += value * value;
             }
-            bondRMSD = sqrt(bondRMSD / bondCount);
+            bondRMSD = sqrt(bondRMSD / bonds.length);
             bondTime = System.nanoTime() - bondTime;
         }
 
 
         if (angleTerm) {
             angleTime = System.nanoTime();
-            int angleCount = 0;
             for (int i = 0; i < nAngles; i++) {
                 Angle a = angles[i];
                 angleEnergy += a.energy(gradient);
-                if (!(a.getAtom(0).isHydrogen()
-                      || a.getAtom(1).isHydrogen()
-                      || a.getAtom(2).isHydrogen())) {
-                    angleCount++;
-                    double value = a.getValue();
-                    angleRMSD += value * value;
-                }
+                double value = a.getValue();
+                angleRMSD += value * value;
             }
-            angleRMSD = sqrt(angleRMSD / angleCount);
+            angleRMSD = sqrt(angleRMSD / angles.length);
             angleTime = System.nanoTime() - angleTime;
         }
 
