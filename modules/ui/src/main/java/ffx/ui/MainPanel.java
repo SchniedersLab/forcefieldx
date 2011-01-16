@@ -1067,8 +1067,8 @@ public final class MainPanel extends JPanel implements ActionListener,
     /**
      * Attempts to load the supplied file
      *
-     * @param file
-     *            File to open
+     * @param files
+     *            Files to open
      * @param commandDescription
      *            Description of the command that created this file.
      */

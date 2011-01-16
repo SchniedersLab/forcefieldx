@@ -56,7 +56,6 @@ public class Real3DCuda implements Runnable {
     private boolean doConvolution = false;
     private boolean free = false;
     private boolean dead = false;
-    private int status;
     CUfunction function;
     CUmodule module;
     cufftHandle planR2C, planC2R;
@@ -67,7 +66,7 @@ public class Real3DCuda implements Runnable {
     /**
      * Blocking convolution method.
      * @param data
-     * @return
+     * @return A status flag (0 for success, -1 for failure).
      */
     public int convolution(float data[]) {
         // This would be a programming error.
@@ -90,12 +89,12 @@ public class Real3DCuda implements Runnable {
             }
         }
 
-        return status;
+        return 0;
     }
 
     /**
      * Blocking free method.
-     * @return
+     * @return A status flag (0 for success, -1 for failure).
      */
     public int free() {
         if (dead || doConvolution) {
@@ -115,8 +114,7 @@ public class Real3DCuda implements Runnable {
                 }
             }
         }
-
-        return status;
+        return 0;
     }
 
     @Override

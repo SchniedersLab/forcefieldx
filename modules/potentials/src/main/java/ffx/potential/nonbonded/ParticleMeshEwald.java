@@ -292,12 +292,18 @@ public class ParticleMeshEwald implements LambdaInterface {
     private static final double sqrtPi = sqrt(Math.PI);
 
     /**
+     * ParticleMeshEwald constructor.
      *
-     * @param forceField
-     * @param unOrderedAtoms
-     * @param crystal
-     * @param parallelTeam
-     * @param neighborLists
+     * @param forceField The forceField parameters to use.
+     *
+     * @param atoms An ordered array of Atoms.
+     *
+     * @param crystal The definition of the unit cell, space group symmetry and,
+     *                if necessary, replicates symmetry.
+     *
+     * @param parallelTeam A ParallelTeam that delegates parallelization.
+     *
+     * @param neighborLists The NeighborLists for both van der Waals and PME.
      */
     public ParticleMeshEwald(ForceField forceField, Atom[] atoms,
                              Crystal crystal, ParallelTeam parallelTeam, int neighborLists[][][]) {

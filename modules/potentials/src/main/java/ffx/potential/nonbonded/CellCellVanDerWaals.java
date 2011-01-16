@@ -170,10 +170,10 @@ public class CellCellVanDerWaals extends ParallelRegion implements MaskingInterf
     private final VanDerWaalsLoop vanDerWaalsLoop[];
 
     /**
-     * The VanDerWaals class constructor.
+     * The CellCellVanDerWaals class constructor (under development).
      *
      * @param forceField The ForceField instance contains {@link VDWType} parameters.
-     * @param unOrderedAtoms The Atom array can be unordered.
+     * @param atoms An ordered (by xyzIndex) atom array.
      * @param crystal A valid Crystal is required.
      * @param parallelTeam The parallel environment.
      * @since 1.0

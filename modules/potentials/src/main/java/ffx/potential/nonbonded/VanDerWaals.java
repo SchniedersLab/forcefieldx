@@ -174,7 +174,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
      * The VanDerWaals class constructor.
      *
      * @param forceField The ForceField instance contains {@link VDWType} parameters.
-     * @param unOrderedAtoms The Atom array can be unordered.
+     * @param atoms An ordered (by xyzIndex) atom array.
      * @param crystal A valid Crystal is required.
      * @param parallelTeam The parallel environment.
      * @since 1.0

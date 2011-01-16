@@ -35,7 +35,7 @@ import java.util.logging.Logger;
  *         Derived from Jay Ponder's FORTRAN code (search.f).
  * 
  * @see <a href="http://dasher.wustl.edu/tinker" target="_blank">
- *      Ponders's original FORTRAN code.</a>
+ *      Jay Ponder's original FORTRAN code.</a>
  *
  * @since 1.0
  */
@@ -293,22 +293,32 @@ public class LineSearch {
     /**
      * Minimize a function along a search direction.
      *
-     * This is a unidimensional line search based upon parabolic
-     * extrapolation and cubic interpolation using both function and
-     * gradient values; if forced to search in an uphill direction,
-     * return is after the initial step.
+     * This is a unidimensional line search based upon parabolic extrapolation 
+     * and cubic interpolation using both function and gradient values; if
+     * forced to search in an uphill direction, return is after the initial
+     * step.
      *
-     * @param n number of variables
-     * @param x current variables
-     * @param f current function value
-     * @param g current gradient
-     * @param p search direction
-     * @param angle angle between the gradient and search direction
-     * @param fMove change in function value due to previous step
-     * @param info line search result
-     * @param functionEvaluations number of function evaluations
-     * @param optimizationSystem Instance of the {@link Optimizable} interface
-     * @return Final function value.
+     * @param n Number of variables.
+     *
+     * @param x Current variable values.
+     * 
+     * @param f Current function value.
+     * 
+     * @param g Current gradient values.
+     * 
+     * @param p Search direction.
+     * 
+     * @param angle Angle between the gradient and search direction.
+     * 
+     * @param fMove Change in function value due to previous step.
+     * 
+     * @param info Line search result.
+     * 
+     * @param functionEvaluations Number of function evaluations.
+     * 
+     * @param optimizationSystem Instance of the {@link Potential} interface.
+     * 
+     * @return The final function value.
      *
      * @since 1.0
      */
@@ -353,7 +363,6 @@ public class LineSearch {
          * Store the initial function, then normalize the search
          * vector and find the projected gradient.
          */
-
         f0 = f;
         arraycopy(x, 0, x0, 0, n);
         for (int i = 0; i < n; i++) {
