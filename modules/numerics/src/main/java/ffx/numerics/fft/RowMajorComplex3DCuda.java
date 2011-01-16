@@ -86,7 +86,7 @@ public class RowMajorComplex3DCuda implements Runnable {
             }
         }
 
-        return status;
+        return 0;
     }
 
     /**
