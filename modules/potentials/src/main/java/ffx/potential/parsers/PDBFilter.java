@@ -264,7 +264,7 @@ public final class PDBFilter extends SystemFilter {
                  */
                 String line = br.readLine();
                 /**
-                 * Until the END record is found, parse the file.
+                 * Parse until END is found or to the end of the file.
                  */
                 while (line != null) {
                     String identity = line;
@@ -751,6 +751,42 @@ public final class PDBFilter extends SystemFilter {
         if (logger.isLoggable(Level.INFO)) {
             logger.info(String.format(" Total number of atoms: %d\n", index));
         }
+
+        Polymer[] polymers = activeMolecularAssembly.getChains();
+        for (Polymer p : polymers) {
+            List<Residue> residues = p.getResidues();
+            for (Residue r : residues) {
+                if (r.getResidueNumber() == 22) {
+                    List<Atom> list = r.getAtomList();
+                    for (Atom a : list) {
+                        a.print();
+                    }
+                }
+                r.reOrderAtoms();
+                if (r.getResidueNumber() == 22) {
+                    List<Atom> list = r.getAtomList();
+                    for (Atom a : list) {
+                        a.print();
+                    }
+                }
+            }
+        }
+        List<MSNode> molecules = activeMolecularAssembly.getMolecules();
+        for (MSNode n : molecules) {
+            MSGroup m = (MSGroup) n;
+            m.reOrderAtoms();
+        }
+        List<MSNode> waters = activeMolecularAssembly.getWaters();
+        for (MSNode n : waters) {
+            MSGroup m = (MSGroup) n;
+            m.reOrderAtoms();
+        }
+        List<MSNode> ions = activeMolecularAssembly.getIons();
+        for (MSNode n : ions) {
+            MSGroup m = (MSGroup) n;
+            m.reOrderAtoms();
+        }
+
     }
 
     /**
@@ -2784,7 +2820,7 @@ public final class PDBFilter extends SystemFilter {
     }
 
     public void writeAtom(Atom atom, int serial, StringBuilder sb,
-                             StringBuilder anisouSB, BufferedWriter bw)
+                          StringBuilder anisouSB, BufferedWriter bw)
             throws IOException {
         String name = atom.getID();
         if (name.length() > 4) {

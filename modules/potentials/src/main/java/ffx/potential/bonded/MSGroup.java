@@ -128,6 +128,31 @@ public abstract class MSGroup extends MSNode {
      */
     public abstract MSNode addMSNode(MSNode m);
 
+    public void reOrderAtoms() {
+        ArrayList<Atom> atomList = getAtomList();
+        int nAtoms = atomList.size();
+        Atom atoms[] = new Atom[nAtoms];
+        atoms = atomList.toArray(atoms);
+
+        boolean sorted = false;
+        while (!sorted) {
+            sorted = true;
+            for (int i=1; i<nAtoms; i++) {
+                Atom a1 = atoms[i-1];
+                Atom a2 = atoms[i];
+                if (a1.getName().compareToIgnoreCase(a2.getName()) > 0) {
+                    int i1 = a1.xyzIndex;
+                    int i2 = a2.xyzIndex;
+                    atoms[i-1] = a2;
+                    atoms[i] = a1;
+                    a1.xyzIndex = i2;
+                    a2.xyzIndex = i1;
+                    sorted = false;
+                }
+            }
+        }
+    }
+
     public void collectValenceTerms() {
         MSNode newBondNode = new MSNode("Bonds");
         MSNode newAngleNode = new MSNode("Angles");
