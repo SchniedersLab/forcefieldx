@@ -147,6 +147,7 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
                 arrayList.add((Atom) node);
             }
         }
+        Collections.sort(arrayList);
         return arrayList;
     }
 

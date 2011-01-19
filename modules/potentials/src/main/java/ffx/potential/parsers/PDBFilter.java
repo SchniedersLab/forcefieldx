@@ -756,19 +756,7 @@ public final class PDBFilter extends SystemFilter {
         for (Polymer p : polymers) {
             List<Residue> residues = p.getResidues();
             for (Residue r : residues) {
-                if (r.getResidueNumber() == 22) {
-                    List<Atom> list = r.getAtomList();
-                    for (Atom a : list) {
-                        a.print();
-                    }
-                }
                 r.reOrderAtoms();
-                if (r.getResidueNumber() == 22) {
-                    List<Atom> list = r.getAtomList();
-                    for (Atom a : list) {
-                        a.print();
-                    }
-                }
             }
         }
         List<MSNode> molecules = activeMolecularAssembly.getMolecules();
