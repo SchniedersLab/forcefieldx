@@ -1,4 +1,4 @@
-// XRAY MINIMIZE
+// JOINT XRAY and NEUTRON MINIMIZE
 
 // Apache Imports
 import org.apache.commons.io.FilenameUtils;
@@ -14,17 +14,16 @@ import ffx.xray.RefinementMinimize.RefinementMode;
 String modelfilename = args[0];
 
 // input MTZ/CIF/CNS data (optional - if not given, data must be present as pdbfilename.[mtz/cif/ent/cns]
-String datafilename = args[1];
-
+String xrayfilename = args[1];
 // data weight
-double wA = 1.0;
+double xraywA = 1.0;
 
-// is this neutron data?
-boolean neutron = false;
+String neutronfilename = args[2];
+double neutronwA = 1.0;
 
 // Set the RMS gradient per atom convergence criteria (optional)
-String epsString = args[2];
-//default if epsString is not given on the command line
+String epsString = args[3];
+// default if epsString not given on the command line
 double eps = 1.0;
 
 // set the maximum number of refinement cycles
@@ -38,20 +37,27 @@ RefinementMode refinementmode = RefinementMode.COORDINATES_AND_BFACTORS;
 // ===============================================================================================
 
 if (epsString != null) {
-   eps = Double.parseDouble(epsString);
+   eps = Double.parseDouble(coordepsString);
 }
 
-println("\n Running x-ray minimize on " + modelfilename);
+println("\n Running joint x-ray/neutron minimization on " + modelfilename);
 systems = open(modelfilename);
 
-DiffractionFile diffractionfile = null;
-if (datafilename != null) {
-  diffractionfile = new DiffractionFile(datafilename, wA, neutron);
+DiffractionFile xrayfile = null;
+if (xrayfilename != null) {
+  xrayfile = new DiffractionFile(xrayfilename, xraywA, false);
 } else {
-  diffractionfile = new DiffractionFile(systems);
+  xrayfile = new DiffractionFile(systems, xraywA, false);
 }
 
-DiffractionData diffractiondata = new DiffractionData(systems, systems[0].getProperties(), SolventModel.POLYNOMIAL, diffractionfile);
+DiffractionFile neutronfile = null;
+if (neutronfilename != null) {
+  neutronfile = new DiffractionFile(neutronfilename, neutronwA, true);
+} else {
+  neutronfile = new DiffractionFile(systems, neutronwA, true);
+}
+
+DiffractionData diffractiondata = new DiffractionData(systems, systems[0].getProperties(), SolventModel.POLYNOMIAL, xrayfile, neutronfile);
 
 diffractiondata.scalebulkfit();
 diffractiondata.printstats();
@@ -60,11 +66,12 @@ energy();
 RefinementMinimize refinementMinimize = new RefinementMinimize(systems, diffractiondata, refinementmode);
 
 println("\n RMS gradient convergence criteria: " + eps + " max number of iterations: " + maxiter);
-refinementMinimize.minimize(eps, maxiter);
+refinementMinimize.minimize(deps, maxiter);
 
 diffractiondata.scalebulkfit();
 diffractiondata.printstats();
 energy();
 
-diffractiondata.writedata(FilenameUtils.removeExtension(modelfilename) + "_refine.mtz");
+diffractiondata.writedata(FilenameUtils.removeExtension(modelfilename) + "_xray_refine.mtz", 0);
+diffractiondata.writedata(FilenameUtils.removeExtension(modelfilename) + "_neutron_refine.mtz", 1);
 saveAsPDB(systems, new File(FilenameUtils.removeExtension(modelfilename) + "_refine.pdb"));

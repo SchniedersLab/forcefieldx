@@ -81,7 +81,7 @@ public final class NeutronFormFactor implements FormFactor {
         "La", "Ce", "Pr", "Nd", "Sm", "Eu", "Gd", "Tb", "Dy", "Ho", "Er", "Tm",
         "Yb", "Lu", "Hf", "Ta", "W", "Re", "Os", "Ir", "Pt", "Au", "Hg", "Tl",
         "Pb", "Bi", "Th", "U"};
-    private static final String[] atomsi = {"1", "1", "2", "3", "4", "5", "6",
+    private static final String[] atomsi = {"1_1", "1_2", "2", "3", "4", "5", "6",
         "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19",
         "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31",
         "32", "33", "34", "35", "36", "37", "38", "39", "40", "41", "42", "44",
@@ -213,17 +213,20 @@ public final class NeutronFormFactor implements FormFactor {
         this.atom = atom;
         this.uadd = b2u(badd);
         double ffactor[][];
-        String key = "" + atom.getAtomicNumber();
 
-        int atomindex = atom.getFormFactorIndex();
-        if (atomindex < 0) {
-            ffactor = getFormFactor(key);
-            ffindex = (int) ffactor[0][0];
-            atom.setFormFactorIndex(ffindex);
+        String key = null;
+        if (atom.getAtomicNumber() == 1) {
+            if (atom.isDeuterium()) {
+                key = "" + atom.getAtomicNumber() + "_2";
+            } else {
+                key = "" + atom.getAtomicNumber() + "_1";
+            }
         } else {
-            ffindex = atomindex;
-            ffactor = ffactors[atomindex];
+            key = "" + atom.getAtomicNumber();
         }
+
+        ffactor = getFormFactor(key);
+        ffindex = (int) ffactor[0][0];
 
         System.arraycopy(ffactor[1], 0, a, 0, ffactor[1].length);
         if (a[1] != 0.0) {

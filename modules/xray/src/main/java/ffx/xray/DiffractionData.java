@@ -172,9 +172,8 @@ public class DiffractionData {
             datafile[i].diffractionfilter.readFile(tmp, reflectionlist[i], refinementdata[i]);
         }
 
-        // FIXME: assembly crystal can have replicates (and when PDB is written, too)
         if (!crystal[0].equals(assembly[0].getCrystal())) {
-            // logger.severe("PDB and reflection file crystal information do not match! (check CRYST1 record?)");
+            logger.severe("PDB and reflection file crystal information do not match! (check CRYST1 record?)");
         }
 
         // build alternate conformer list for occupancy refinement (if necessary)
@@ -529,7 +528,9 @@ public class DiffractionData {
     }
 
     public void writedata(String filename) {
-        writedata(filename, 0);
+        for (int i = 0; i < n; i++) {
+            writedata("" + filename + "_i", i);
+        }
     }
 
     public void writedata(String filename, int i) {
@@ -543,7 +544,9 @@ public class DiffractionData {
     }
 
     public void writeSolventMaskCNS(String filename) {
-        writeSolventMaskCNS(filename, 0);
+        for (int i = 0; i < n; i++) {
+            writeSolventMaskCNS("" + filename + "_i", i);
+        }
     }
 
     public void writeSolventMaskCNS(String filename, int i) {
@@ -567,7 +570,9 @@ public class DiffractionData {
     }
 
     public void writeSolventMask(String filename) {
-        writeSolventMask(filename, 0);
+        for (int i = 0; i < n; i++) {
+            writeSolventMask("" + filename + "_i", i);
+        }
     }
 
     public void writeSolventMask(String filename, int i) {

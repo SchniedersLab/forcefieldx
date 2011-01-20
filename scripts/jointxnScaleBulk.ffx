@@ -10,7 +10,9 @@ if (pdbfilename == null){
 }
 
 // input data filename string (optional - if not given, data must be present as pdbfilename.[mtz/cif/ent/cns]
-String datafilename = args[1];
+String xrayfilename = args[1];
+
+String neutronfilename = args[2];
 
 // output following scaling, sigmaA and likelihood calculation
 // String outputfile = "examples/1N7S_ffx.mtz";
@@ -21,14 +23,21 @@ String outputfile = null;
 
 systems = open(pdbfilename);
 
-DiffractionFile diffractionfile = null;
-if (datafilename != null) {
-  diffractionfile = new DiffractionFile(datafilename, 1.0, false);
+DiffractionFile xrayfile = null;
+if (xrayfilename != null) {
+  xrayfile = new DiffractionFile(xrayfilename, 1.0, false);
 } else {
-  diffractionfile = new DiffractionFile(systems, 1.0, false);
+  xrayfile = new DiffractionFile(systems, 1.0, false);
 }
 
-DiffractionData diffractiondata = new DiffractionData(systems, systems[0].getProperties(), SolventModel.POLYNOMIAL, diffractionfile);
+DiffractionFile neutronfile = null;
+if (neutronfilename != null) {
+  neutronfile = new DiffractionFile(neutronfilename, 1.0, true);
+} else {
+  neutronfile = new DiffractionFile(systems, 1.0, true);
+}
+
+DiffractionData diffractiondata = new DiffractionData(systems, systems[0].getProperties(), SolventModel.POLYNOMIAL, xrayfile, neutronfile);
 
 diffractiondata.scalebulkfit();
 diffractiondata.printstats();
