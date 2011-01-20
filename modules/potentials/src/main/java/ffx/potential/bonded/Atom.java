@@ -373,8 +373,13 @@ public class Atom extends MSNode implements Comparable<Atom> {
         if (atomType.atomicNumber == 1) {
             return true;
         }
-
         return false;
+    }
+
+    public boolean isDeuterium() {
+        return (isHydrogen() && (
+                name.charAt(0) == 'D' ||
+                name.charAt(0) == 'd'));
     }
 
     @Override

@@ -241,8 +241,13 @@ public abstract class SystemFilter {
     }
 
     public MolecularAssembly[] getMolecularAssemblys() {
-        MolecularAssembly assemblies[] = new MolecularAssembly[systems.size()];
-        return systems.toArray(assemblies);
+        if (systems.size() > 0) {
+            MolecularAssembly assemblies[] = new MolecularAssembly[systems.size()];
+            return systems.toArray(assemblies);
+        } else {
+            MolecularAssembly assemblies[] = {activeMolecularAssembly};
+            return assemblies;
+        }
     }
 
     public FileType getType() {
@@ -293,7 +298,7 @@ public abstract class SystemFilter {
     public void setFiles(List<File> files) {
         this.files = files;
         if (files != null) {
-        this.currentFile = files.get(0);
+            this.currentFile = files.get(0);
         } else {
             this.currentFile = null;
         }

@@ -1771,7 +1771,7 @@ public final class PDBFilter extends SystemFilter {
                 for (Atom atom : resAtoms) {
                     String label = atom.getName().toUpperCase();
                     if (!(label.equalsIgnoreCase("OXT") || label.equalsIgnoreCase("OT2"))) {
-                        if (!label.startsWith("H")) {
+                        if (!label.startsWith("H") && !label.startsWith("D")) {
                             actual++;
                         }
                     }
@@ -2451,6 +2451,11 @@ public final class PDBFilter extends SystemFilter {
             return null;
         }
         Atom atom = (Atom) residue.getAtomNode(atomName);
+        // It may be a Deuterium
+        if (atom == null) {
+            String dAtomName = atomName.replaceFirst("H", "D");
+            atom = (Atom) residue.getAtomNode(dAtomName);
+        }
         if (atom == null) {
             String resName = ia.getResidueName();
             int resSeq = ia.getResidueNumber();
@@ -2777,7 +2782,10 @@ public final class PDBFilter extends SystemFilter {
                     Molecule water = (Molecule) node;
                     Character chainID = water.getChainID();
                     sb.setCharAt(21, chainID);
-                    String resName = "HOH";
+                    String resName = water.getResidueName();
+                    if (resName.length() > 3) {
+                        resName = resName.substring(0, 3);
+                    }
                     sb.replace(17, 20, padLeft(resName.toUpperCase(), 3));
                     sb.replace(22, 26, String.format("%4s", Hybrid36.encode(4, resID)));
                     boolean wroteAtom = false;
@@ -2834,6 +2842,9 @@ public final class PDBFilter extends SystemFilter {
                                          xyz[0], xyz[1], xyz[2], atom.getOccupancy(), atom.getTempFactor()));
         name = Atom.ElementSymbol.values()[atom.getAtomicNumber() - 1].toString();
         name = name.toUpperCase();
+        if (atom.isDeuterium()) {
+            name = "D";
+        }
         sb.replace(76, 78, padLeft(name, 2));
         sb.replace(78, 80, String.format("%2d", 0));
         bw.write(sb.toString());
