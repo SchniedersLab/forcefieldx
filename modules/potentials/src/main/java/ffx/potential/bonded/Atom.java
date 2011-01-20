@@ -88,7 +88,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
             return 1;
         }
         // There should not be duplicate, identical atom objects.
-        assert (xyzIndex != a0);
+        // assert (xyzIndex != a0);
         return 0;
     }
 
