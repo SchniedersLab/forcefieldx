@@ -59,16 +59,16 @@ public class Molecule extends MSGroup {
 
     public Molecule(String name, int residueNum, 
             Character chainID, String segID) {
-        super(name + "-" + residueNum);
+        super(name + "-" + residueNum + " " + segID);
         this.residueName = name;
         this.residueNum = residueNum;
         this.chainID = chainID;
         this.segID = segID;
-        this.setName(name + "-" + residueNum + " " + segID);
     }
 
+    @Override
     public void setName(String name) {
-        super.setName(name + "-" + residueNum);
+        super.setName(name + "-" + residueNum + " " + segID);
         this.residueName = name;
     }
 
