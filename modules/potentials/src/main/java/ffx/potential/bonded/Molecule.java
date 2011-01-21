@@ -36,7 +36,7 @@ public class Molecule extends MSGroup {
      */
     private int residueNum = -1;
     /**
-     * Residue name assigned in PDB fles.
+     * Residue name assigned in PDB files.
      */
     private String residueName = null;
     /**
@@ -65,6 +65,11 @@ public class Molecule extends MSGroup {
         this.chainID = chainID;
         this.segID = segID;
         this.setName(name + "-" + residueNum + " " + segID);
+    }
+
+    public void setName(String name) {
+        super.setName(name + "-" + residueNum);
+        this.residueName = name;
     }
 
     public String getResidueName() {

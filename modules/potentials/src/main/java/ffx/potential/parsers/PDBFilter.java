@@ -1256,7 +1256,7 @@ public final class PDBFilter extends SystemFilter {
                 }
             }
             setHydrogenAtom(residue, "H1\'", C1s, 1.09e0, O4s, 109.5e0, C2s, 109.5e0, -1, h1Typ[naNumber]);
-            if (position == LAST_RESIDUE) {
+            if (position == LAST_RESIDUE || numberOfResidues == 1) {
                 setHydrogenAtom(residue, "H3T", O3s, 1.00e0, C3s, 109.5e0, C4s, 180.0e0, 0, h3tTyp[naNumber]);
             }
             /**
@@ -1283,7 +1283,8 @@ public final class PDBFilter extends SystemFilter {
                 }
                 int numberOfBonds = atom.getNumBonds();
                 if (numberOfBonds != atomType.valence) {
-                    if (atom == O3s && numberOfBonds == atomType.valence - 1 && position != LAST_RESIDUE) {
+                    if (atom == O3s && numberOfBonds == atomType.valence - 1 
+                            && position != LAST_RESIDUE && numberOfResidues != 1) {
                         continue;
                     }
                     logger.log(Level.WARNING, format(" An atom for residue %s has the wrong number of bonds:\n %s", residueName, atom.toString()));
