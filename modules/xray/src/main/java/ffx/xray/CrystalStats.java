@@ -33,8 +33,9 @@ import ffx.numerics.ComplexNumber;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
 
 /**
+ * Crystal statistics output/logger
  *
- * @author fennt
+ * @author Tim Fenn
  */
 public class CrystalStats {
 
@@ -49,6 +50,12 @@ public class CrystalStats {
     private final double fc[][];
     private final double fomphi[][];
 
+    /**
+     * constructor
+     *
+     * @param reflectionlist {@link ReflectionList} to use for logging
+     * @param refinementdata {@link RefinementData} to use for logging
+     */
     public CrystalStats(ReflectionList reflectionlist,
             RefinementData refinementdata) {
         this.reflectionlist = reflectionlist;
@@ -64,6 +71,11 @@ public class CrystalStats {
                 refinementdata.spline.length);
     }
 
+    /**
+     * simply return the current R value
+     *
+     * @return r value as a percent
+     */
     public double get_r() {
         double sum = 0.0;
         double sumfo = 0.0;
@@ -92,6 +104,11 @@ public class CrystalStats {
         return (sum / sumfo) * 100.0;
     }
 
+    /**
+     * simply return the current Rfree value
+     *
+     * @return rfree value as a percent
+     */
     public double get_rfree() {
         double sum = 0.0;
         double sumfo = 0.0;
@@ -120,6 +137,11 @@ public class CrystalStats {
         return (sum / sumfo) * 100.0;
     }
 
+    /**
+     * simply return the current sigmaA value
+     *
+     * @return sigmaA
+     */
     public double get_sigmaa() {
         double sum = 0.0;
         int nhkl = 0;
@@ -149,6 +171,11 @@ public class CrystalStats {
         return sum;
     }
 
+    /**
+     * simply return the current sigmaW value
+     *
+     * @return sigmaW
+     */
     public double get_sigmaw() {
         double sum = 0.0;
         int nhkl = 0;
@@ -178,6 +205,17 @@ public class CrystalStats {
         return sum;
     }
 
+    /**
+     * output Cruickshank and Blow DPI indices
+     *
+     * @param natoms number of atoms in the structure
+     * @param nnonhatoms number of non-H atoms in the structure
+     *
+     * @see <a href="http://dx.doi.org/10.1107/S0907444998012645" target="_blank">
+     * D. W. J. Cruickshank, Acta Cryst. (1999). D55, 583-601</a>
+     * @see <a href="http://dx.doi.org/10.1107/S0907444902003931" target="_blank">
+     * D. M. Blow, Acta Cryst. (2002). D58, 792-797</a>
+     */
     public void print_dpistats(int natoms, int nnonhatoms) {
         int nhkli = 0;
         int nhklo = refinementdata.n;
@@ -215,6 +253,9 @@ public class CrystalStats {
         logger.info(sb.toString());
     }
 
+    /**
+     * print HKL statistics/completeness info
+     */
     public void print_hklstats() {
         double res[][] = new double[n][2];
         int nhkl[][] = new int[n][3];
@@ -283,6 +324,9 @@ public class CrystalStats {
         logger.info(sb.toString());
     }
 
+    /**
+     * print R factors and associated statistics in a binned fashion
+     */
     public void print_rstats() {
         double res[][] = new double[n][2];
         double nhkl[] = new double[n + 1];
@@ -370,6 +414,9 @@ public class CrystalStats {
         logger.info(sb.toString());
     }
 
+    /**
+     * print scaling and bulk solvent statistics
+     */
     public void print_scalestats() {
         int nhkl[] = new int[n];
         double scale[] = new double[n];
@@ -443,6 +490,9 @@ public class CrystalStats {
         logger.info(sb.toString());
     }
 
+    /**
+     * print signal to noise ratio statistics
+     */
     public void print_snstats() {
         double res[][] = new double[n][2];
         double nhkl[] = new double[n + 1];

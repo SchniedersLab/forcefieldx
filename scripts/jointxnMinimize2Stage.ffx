@@ -33,9 +33,6 @@ double beps = 0.01;
 // set the maximum number of refinement cycles
 int maxiter = 50000;
 
-// type of refinement
-RefinementMode refinementmode = RefinementMode.COORDINATES_AND_BFACTORS;
-
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================

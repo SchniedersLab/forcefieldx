@@ -47,6 +47,15 @@ public class CCP4MapWriter {
     private final Crystal crystal;
     private final int nx, ny, nz;
 
+    /**
+     * construct mapwriter object
+     *
+     * @param nx slices in x
+     * @param ny slices in y
+     * @param nz slices in z
+     * @param crystal {@link Crystal} object
+     * @param filename output filename
+     */
     public CCP4MapWriter(int nx, int ny, int nz, Crystal crystal,
             String filename) {
         this.nx = nx;
@@ -56,10 +65,23 @@ public class CCP4MapWriter {
         this.filename = filename;
     }
 
+    /**
+     * write data to file, does not normalize
+     *
+     * @param data map data to write out - data typically derived from
+     * {@link CrystalReciprocalSpace#computeSolventDensity(double[][], boolean) }
+     */
     public void write(double data[]) {
         write(data, false);
     }
 
+    /**
+     * write data to file, does not normalize
+     *
+     * @param data map data to write out - data typically derived from
+     * {@link CrystalReciprocalSpace#computeSolventDensity(double[][], boolean) }
+     * @param norm should the data be normalized by mean/sd?
+     */
     public void write(double data[], boolean norm) {
         ByteOrder b = ByteOrder.nativeOrder();
         FileOutputStream fos;

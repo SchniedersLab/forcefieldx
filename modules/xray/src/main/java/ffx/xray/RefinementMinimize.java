@@ -34,15 +34,45 @@ import ffx.potential.bonded.Residue;
 import java.util.ArrayList;
 
 /**
+ * Refinement minimization class using {@link OptimizationListener} interface,
+ * constructs a {@link RefinementEnergy} object for this purpose
  *
- * @author fennt
+ * @author Tim Fenn
  */
 public class RefinementMinimize implements OptimizationListener, Terminatable {
 
+    /**
+     * Different refinement mode selection types
+     */
     public enum RefinementMode {
 
-        COORDINATES, BFACTORS, COORDINATES_AND_BFACTORS, OCCUPANCIES,
-        BFACTORS_AND_OCCUPANCIES, COORDINATES_AND_OCCUPANCIES,
+        /**
+         * refine coordinates only
+         */
+        COORDINATES,
+        /**
+         * refine B factors only (if anisotropic, refined as such)
+         */
+        BFACTORS,
+        /**
+         * refine coordinates and B factors (if anisotropic, refined as such)
+         */
+        COORDINATES_AND_BFACTORS,
+        /**
+         * refine occupancies only (alternate conformers are constrained)
+         */
+        OCCUPANCIES,
+        /**
+         * refine B factors and occupancies
+         */
+        BFACTORS_AND_OCCUPANCIES,
+        /**
+         * refine coordinates and occupancies
+         */
+        COORDINATES_AND_OCCUPANCIES,
+        /**
+         * refine all
+         */
         COORDINATES_AND_BFACTORS_AND_OCCUPANCIES
     }
     private static final Logger logger = Logger.getLogger(RefinementMinimize.class.getName());
@@ -67,24 +97,56 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
     private double grms;
     private int nSteps;
 
+    /**
+     * constructor for refinement, assumes coordinates and B factor optimization
+     *
+     * @param molecularAssembly input {@link ffx.potential.bonded.MolecularAssembly}
+     * that will be used as the model
+     * @param diffractiondata input {@link DiffractionData data} for refinement
+     */
     public RefinementMinimize(MolecularAssembly molecularAssembly,
             DiffractionData diffractiondata) {
         this(new MolecularAssembly[]{molecularAssembly}, diffractiondata,
                 RefinementMode.COORDINATES_AND_BFACTORS);
     }
 
+    /**
+     * constructor for refinement
+     *
+     * @param molecularAssembly input {@link ffx.potential.bonded.MolecularAssembly}
+     * that will be used as the model
+     * @param diffractiondata input {@link DiffractionData data} for refinement
+     * @param refinementmode {@link RefinementMinimize.RefinementMode} for refinement
+     */
     public RefinementMinimize(MolecularAssembly molecularAssembly,
             DiffractionData diffractiondata, RefinementMode refinementmode) {
         this(new MolecularAssembly[]{molecularAssembly}, diffractiondata,
                 refinementmode);
     }
 
+    /**
+     * constructor for refinement, assumes coordinates and B factor optimization
+     *
+     * @param molecularAssembly input {@link ffx.potential.bonded.MolecularAssembly}
+     * array (usually containing alternate conformer assemblies) that will be
+     * used as the model
+     * @param diffractiondata input {@link DiffractionData data} for refinement
+     */
     public RefinementMinimize(MolecularAssembly molecularAssembly[],
             DiffractionData diffractiondata) {
         this(molecularAssembly, diffractiondata,
                 RefinementMode.COORDINATES_AND_BFACTORS);
     }
 
+    /**
+     * constructor for refinement
+     *
+     * @param molecularAssembly input {@link ffx.potential.bonded.MolecularAssembly}
+     * array (usually containing alternate conformer assemblies) that will be
+     * used as the model
+     * @param diffractiondata input {@link DiffractionData data} for refinement
+     * @param refinementmode {@link RefinementMinimize.RefinementMode} for refinement
+     */
     public RefinementMinimize(MolecularAssembly molecularAssembly[],
             DiffractionData diffractiondata, RefinementMode refinementmode) {
         this.molecularAssembly = molecularAssembly;
@@ -202,22 +264,54 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
         refinementenergy.setScaling(scaling);
     }
 
+    /**
+     * minimize assuming an eps of 1.0 and Integer.MAX_VALUE cycles
+     *
+     * @return {@link RefinementEnergy} result
+     */
     public RefinementEnergy minimize() {
         return minimize(1.0);
     }
 
+    /**
+     * minimize assuming Integer.MAX_VALUE cycles
+     *
+     * @param eps input gradient rms desired
+     * @return {@link RefinementEnergy} result
+     */
     public RefinementEnergy minimize(double eps) {
         return minimize(7, eps, Integer.MAX_VALUE - 2);
     }
 
+    /**
+     * minimize assuming an eps of 1.0 and limited cycles
+     *
+     * @param maxiter maximum iterations allowed
+     * @return {@link RefinementEnergy} result
+     */
     public RefinementEnergy minimize(int maxiter) {
         return minimize(7, 1.0, maxiter);
     }
 
+    /**
+     * minimize with input eps and cycles
+     *
+     * @param eps input gradient rms desired
+     * @param maxiter maximum iterations allowed
+     * @return {@link RefinementEnergy} result
+     */
     public RefinementEnergy minimize(double eps, int maxiter) {
         return minimize(7, eps, maxiter);
     }
 
+    /**
+     * minimize with input cycles for matrix conditioning, eps and cycles
+     *
+     * @param m number of cycles of matrix updates
+     * @param eps input gradient rms desired
+     * @param maxiter maximum iterations allowed
+     * @return {@link RefinementEnergy} result
+     */
     public RefinementEnergy minimize(int m, double eps, int maxiter) {
         refinementenergy.xrayEnergy.setRefinementMode(refinementMode);
         diffractiondata.setXRayEnergy(refinementenergy.xrayEnergy);

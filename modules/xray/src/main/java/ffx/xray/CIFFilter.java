@@ -67,7 +67,9 @@ public class CIFFilter implements DiffractionFileFilter {
         }
     }
 
-    // null constructor
+    /**
+     * null constructor
+     */
     public CIFFilter() {
     }
 

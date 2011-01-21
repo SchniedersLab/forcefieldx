@@ -166,6 +166,12 @@ public class RefinementData {
     public final boolean refinemolocc;
     public final double occmass;
 
+    /**
+     * allocate data given a {@link ReflectionList}
+     *
+     * @param properties configuration properties
+     * @param reflectionlist {@link ReflectionList} to use to allocate data
+     */
     public RefinementData(CompositeConfiguration properties,
             ReflectionList reflectionlist) {
 

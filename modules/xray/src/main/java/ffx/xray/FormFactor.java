@@ -25,10 +25,10 @@ import ffx.xray.RefinementMinimize.RefinementMode;
 
 /**
  *
- * @author fenn
+ * @author Tim Fenn
  */
 public interface FormFactor {
-    /*
+    /**
      * Compute the real space density rho
      *
      * @param xyz the requested point for evaluating density
@@ -36,21 +36,22 @@ public interface FormFactor {
      */
     double rho(double f, double xyz[]);
 
-    /*
+    /**
      * Compute the real space gradient
      *
      * @param xyz the requested point for evaluating gradient
      * @param dfc the multiplier to apply to the gradient
-     * @param refinementmode determines which components of the gradient will be computed
+     * @param refinementmode {@link RefinementMininimize.RefinementMode}
+     * determines which gradients will be computed
      */
     void rho_grad(double xyz[], double dfc, RefinementMode refinementmode);
 
-    /*
+    /**
      * update the coordinates to the current position
      */
     void update(double xyz[]);
 
-    /*
+    /**
      * update the coordinates to the current position and Badd
      */
     void update(double xyz[], double badd);

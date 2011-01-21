@@ -13,6 +13,10 @@
     <artifactId>xray</artifactId>
     <packaging>jar</packaging>
     <name>X-Ray Refinement</name>
+    <organization>
+        <name>Timothy D. Fenn</name>
+        <url>http://ffx.kenai.com</url>
+    </organization>
     <developers>
         <developer>
             <id>fenn</id>

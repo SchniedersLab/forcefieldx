@@ -73,11 +73,26 @@ import ffx.xray.RefinementMinimize.RefinementMode;
  */
 public class CrystalReciprocalSpace {
 
+    /**
+     * the possible solvent model methods
+     */
     public static interface SolventModel {
 
+        /**
+         * do not model solvent scattering
+         */
         public static final int NONE = 1;
+        /**
+         * the classical binary (0, 1) model
+         */
         public static final int BINARY = 2;
+        /**
+         * a Gaussian switch model
+         */
         public static final int GAUSSIAN = 3;
+        /**
+         * a cubic polynomial switch model (default)
+         */
         public static final int POLYNOMIAL = 4;
     }
     private static final Logger logger = Logger.getLogger(CrystalReciprocalSpace.class.getName());
@@ -124,10 +139,10 @@ public class CrystalReciprocalSpace {
      * Crystal Reciprocal Space constructor, assumes this is not a bulk solvent
      * mask and is not a neutron data set
      *
-     * @param reflectionlist the reflectionlist to fill with structure factors
-     * @param atoms array of atoms for structure factor computation
-     * @param fftTeam thread team for parallelization
-     * @param parallelTeam thread team for parallelization
+     * @param reflectionlist the {@link ReflectionList} to fill with structure factors
+     * @param atoms array of {@link ffx.potential.bonded.Atom atoms} for structure factor computation
+     * @param fftTeam {@link edu.rit.pj.ParallelTeam} for parallelization
+     * @param parallelTeam {@link edu.rit.pj.ParallelTeam} for parallelization
      */
     public CrystalReciprocalSpace(ReflectionList reflectionlist,
             Atom atoms[],
@@ -140,10 +155,10 @@ public class CrystalReciprocalSpace {
      * Crystal Reciprocal Space constructor, assumes this is not a neutron data
      * set and implements a polynomial bulk solvent mask if needed
      *
-     * @param reflectionlist the reflectionlist to fill with structure factors
-     * @param atoms array of atoms for structure factor computation
-     * @param fftTeam thread team for parallelization
-     * @param parallelTeam thread team for parallelization
+     * @param reflectionlist the {@link ReflectionList} to fill with structure factors
+     * @param atoms array of {@link ffx.potential.bonded.Atom atoms} for structure factor computation
+     * @param fftTeam {@link edu.rit.pj.ParallelTeam} for parallelization
+     * @param parallelTeam {@link edu.rit.pj.ParallelTeam} for parallelization
      * @param solventmask true if this is a bulk solvent mask
      */
     public CrystalReciprocalSpace(ReflectionList reflectionlist,
@@ -158,10 +173,10 @@ public class CrystalReciprocalSpace {
      * Crystal Reciprocal Space constructor, assumes a polynomial bulk solvent
      * mask if needed
      *
-     * @param reflectionlist the reflectionlist to fill with structure factors
-     * @param atoms array of atoms for structure factor computation
-     * @param fftTeam thread team for parallelization
-     * @param parallelTeam thread team for parallelization
+     * @param reflectionlist the {@link ReflectionList} to fill with structure factors
+     * @param atoms array of {@link ffx.potential.bonded.Atom atoms} for structure factor computation
+     * @param fftTeam {@link edu.rit.pj.ParallelTeam} for parallelization
+     * @param parallelTeam {@link edu.rit.pj.ParallelTeam} for parallelization
      * @param solventmask true if this is a bulk solvent mask
      * @param neutron true if this is a neutron structure
      */
@@ -176,13 +191,15 @@ public class CrystalReciprocalSpace {
     /**
      * Crystal Reciprocal Space constructor, all parameters provided
      *
-     * @param reflectionlist the reflectionlist to fill with structure factors
-     * @param atoms array of atoms for structure factor computation
-     * @param fftTeam thread team for parallelization
-     * @param parallelTeam thread team for parallelization
+     * @param reflectionlist the {@link ReflectionList} to fill with structure factors
+     * @param atoms array of {@link ffx.potential.bonded.Atom atoms} for structure factor computation
+     * @param fftTeam {@link edu.rit.pj.ParallelTeam} for parallelization
+     * @param parallelTeam {@link edu.rit.pj.ParallelTeam} for parallelization
      * @param solventmask true if this is a bulk solvent mask
      * @param neutron true if this is a neutron structure
      * @param solventmodel bulk solvent model type
+     *
+     * @see CrystalReciprocalSpace.SolventModel
      */
     public CrystalReciprocalSpace(ReflectionList reflectionlist,
             Atom atoms[],
@@ -472,10 +489,20 @@ public class CrystalReciprocalSpace {
         }
     }
 
+    /**
+     * return dataset weight
+     *
+     * @return the weight wA
+     */
     public double getWeight() {
         return weight;
     }
 
+    /**
+     * set the dataset weight
+     *
+     * @param weight desired weight wA
+     */
     public void setWeight(double weight) {
         this.weight = weight;
     }
@@ -483,7 +510,7 @@ public class CrystalReciprocalSpace {
     /**
      * offset X coordinates (mostly for finite difference checks)
      *
-     * @param n atom to apply delta to
+     * @param n {@link ffx.potential.bonded.Atom} to apply delta to
      * @param delta amount to shift atom by
      */
     public void deltaX(int n, double delta) {
@@ -501,7 +528,7 @@ public class CrystalReciprocalSpace {
     /**
      * offset Y coordinates (mostly for finite difference checks)
      *
-     * @param n atom to apply delta to
+     * @param n {@link ffx.potential.bonded.Atom} to apply delta to
      * @param delta amount to shift atom by
      */
     public void deltaY(int n, double delta) {
@@ -519,7 +546,7 @@ public class CrystalReciprocalSpace {
     /**
      * offset Z coordinates (mostly for finite difference checks)
      *
-     * @param n atom to apply delta to
+     * @param n {@link ffx.potential.bonded.Atom} to apply delta to
      * @param delta amount to shift atom by
      */
     public void deltaZ(int n, double delta) {
@@ -562,6 +589,8 @@ public class CrystalReciprocalSpace {
      * parallelized computation of structure factors
      *
      * @param hkldata structure factor list to fill in
+     *
+     * @see RefinementData
      */
     public void computeDensity(double hkldata[][]) {
         computeDensity(hkldata, false);
@@ -572,6 +601,8 @@ public class CrystalReciprocalSpace {
      *
      * @param hkldata structure factor list to fill in
      * @param print if true, print information on timings during the calculation
+     *
+     * @see RefinementData
      */
     public void computeDensity(double hkldata[][], boolean print) {
         if (solvent) {
@@ -589,7 +620,10 @@ public class CrystalReciprocalSpace {
      * @param hkldata structure factors to apply inverse FFT
      * @param freer array of free r flags corresponding to hkldata
      * @param flag Rfree flag value
-     * @param refinementmode refinement mode
+     * @param refinementmode {@link RefinementMinimize.RefinementMode refinement mode}
+     *
+     * @see RefinementMinimize.RefinementMode
+     * @see RefinementData
      */
     public void computeAtomicGradients(double hkldata[][],
             int freer[], int flag, RefinementMode refinementmode) {
@@ -602,8 +636,11 @@ public class CrystalReciprocalSpace {
      * @param hkldata structure factors to apply inverse FFT
      * @param freer array of free r flags corresponding to hkldata
      * @param flag Rfree flag value
-     * @param refinementmode refinement mode
+     * @param refinementmode {@link RefinementMinimize.RefinementMode refinement mode}
      * @param print if true, print information on timings during the calculation
+     *
+     * @see RefinementMinimize.RefinementMode
+     * @see RefinementData
      */
     public void computeAtomicGradients(double hkldata[][],
             int freer[], int flag, RefinementMode refinementmode,
@@ -715,6 +752,8 @@ public class CrystalReciprocalSpace {
      * parallelized computation of structure factors (identical to compuateDensity)
      *
      * @param hkldata structure factor list to fill in
+     *
+     * @see RefinementData
      */
     public void computeAtomicDensity(double hkldata[][]) {
         computeAtomicDensity(hkldata, false);
@@ -725,6 +764,8 @@ public class CrystalReciprocalSpace {
      *
      * @param hkldata structure factor list to fill in
      * @param print if true, print information on timings during the calculation
+     *
+     * @see RefinementData
      */
     public void computeAtomicDensity(double hkldata[][], boolean print) {
         StringBuilder sb = new StringBuilder();
@@ -817,6 +858,8 @@ public class CrystalReciprocalSpace {
      * parallelized computation of bulk solvent structure factors
      *
      * @param hkldata structure factor list to fill in
+     *
+     * @see RefinementData
      */
     public void computeSolventDensity(double hkldata[][]) {
         computeSolventDensity(hkldata, false);
@@ -827,6 +870,8 @@ public class CrystalReciprocalSpace {
      *
      * @param hkldata structure factor list to fill in
      * @param print if true, print information on timings during the calculation
+     *
+     * @see RefinementData
      */
     public void computeSolventDensity(double hkldata[][], boolean print) {
         StringBuilder sb = new StringBuilder();

@@ -63,6 +63,17 @@ public class XRayEnergy implements Potential {
     private double kTbsim;
     private double occmass;
 
+    /**
+     * Diffraction data energy target
+     *
+     * @param diffractiondata {@link DiffractionData} object to associate with
+     * the target
+     * @param nxyz number of xyz parameters
+     * @param nb number of b factor parameters
+     * @param nocc number of occupancy parameters
+     * @param refinementmode the {@link RefinementMinimize.RefinementMode} type
+     * of refinement requested
+     */
     public XRayEnergy(DiffractionData diffractiondata, int nxyz, int nb, int nocc,
             RefinementMode refinementmode) {
         this.diffractiondata = diffractiondata;
@@ -161,7 +172,7 @@ public class XRayEnergy implements Potential {
 
         if (refineocc) {
             // pack gradients into gradient array
-            getOccupancyGradients(x, g);
+            getOccupancyGradients(g);
         }
 
         /**
@@ -186,6 +197,10 @@ public class XRayEnergy implements Potential {
         setRefinementBooleans();
     }
 
+    /**
+     * if the refinement mode has changed, this should be called to update which
+     * parameters are being fit
+     */
     private void setRefinementBooleans() {
         // reset, if previously set
         refinexyz = false;
@@ -214,30 +229,59 @@ public class XRayEnergy implements Potential {
         }
     }
 
+    /**
+     * get the number of xyz parameters being fit
+     * @return the number of xyz parameters
+     */
     public int getNXYZ() {
         return nxyz;
     }
 
+    /**
+     * set the number of xyz parameters
+     * @param nxyz requested number of xyz parameters
+     */
     public void setNXYZ(int nxyz) {
         this.nxyz = nxyz;
     }
 
+    /**
+     * get the number of B factor parameters being fit
+     * @return the number of B factor parameters
+     */
     public int getNB() {
         return nb;
     }
 
+    /**
+     * set the number of B factor parameters
+     * @param nb requested number of B factor parameters
+     */
     public void setNB(int nb) {
         this.nb = nb;
     }
 
+    /**
+     * get the number of occupancy parameters being fit
+     * @return the number of occupancy parameters
+     */
     public int getNOcc() {
         return nocc;
     }
 
+    /**
+     * set the number of occupancy parameters
+     * @param nocc requested number of occupancy parameters
+     */
     public void setNOcc(int nocc) {
         this.nocc = nocc;
     }
 
+    /**
+     * fill gradient array with B factor gradients
+     *
+     * @param g array to add gradients to
+     */
     public void getBFactorGradients(double g[]) {
         assert (g != null);
         double grad[];
@@ -279,7 +323,12 @@ public class XRayEnergy implements Potential {
         }
     }
 
-    public void getOccupancyGradients(double x[], double g[]) {
+    /**
+     * fill gradient array with occupancy gradients
+     *
+     * @param g array to add gradients to
+     */
+    public void getOccupancyGradients(double g[]) {
         double ave;
         int index = nxyz + nb;
 
@@ -332,6 +381,11 @@ public class XRayEnergy implements Potential {
         }
     }
 
+    /**
+     * fill gradient array with xyz gradients
+     *
+     * @param g array to add gradients to
+     */
     public void getXYZGradients(double g[]) {
         assert (g != null);
         double grad[] = new double[3];
@@ -436,6 +490,11 @@ public class XRayEnergy implements Potential {
         return x;
     }
 
+    /**
+     * set atomic B factors based on current position
+     *
+     * @param x current parameters to set B factors with
+     */
     public void setBFactors(double x[]) {
         double tmpanisou[] = new double[6];
         int index = nxyz;
@@ -515,6 +574,11 @@ public class XRayEnergy implements Potential {
         }
     }
 
+    /**
+     * set atomic xyz coordinates based on current position
+     *
+     * @param x current parameters to set coordinates with
+     */
     public void setCoordinates(double x[]) {
         int n = getNumberOfVariables();
         assert (x != null);
@@ -528,13 +592,17 @@ public class XRayEnergy implements Potential {
         }
     }
 
+    /**
+     * set atom occupancies based on current position
+     *
+     * @param x current parameters to set occupancies with
+     */
     public void setOccupancies(double x[]) {
         double occ = 0.0;
         int index = nxyz + nb;
         for (ArrayList<Residue> list : diffractiondata.altresidues) {
             for (Residue r : list) {
                 occ = x[index++];
-                System.out.println("setting: " + r.toString() + " to: " + occ);
                 for (Atom a : r.getAtomList()) {
                     if (a.getOccupancy() < 1.0) {
                         a.setOccupancy(occ);
@@ -554,6 +622,12 @@ public class XRayEnergy implements Potential {
         }
     }
 
+    /**
+     * determine similarity and non-zero B factor restraints (done independently
+     * of getBFactorGradients), affects atomic gradients
+     *
+     * @return energy of the restraint
+     */
     public double getBFactorRestraints() {
         Atom a1, a2;
         double b1, b2, bdiff;

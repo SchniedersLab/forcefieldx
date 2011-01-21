@@ -36,7 +36,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Combine the X-ray target and chemical potential energy.
+ * Combine the X-ray target and chemical potential energy using the
+ * {@link Potential} interface
  *
  * @author Timothy D. Fenn and Michael J. Schnieders
  *
@@ -62,12 +63,29 @@ public class RefinementEnergy implements Potential {
     private double gXray[];
     protected double[] optimizationScaling = null;
 
+    /**
+     * constructor for energy
+     *
+     * @param molecularAssembly input {@link ffx.potential.bonded.MolecularAssembly}
+     * that will be used as the model
+     * @param diffractiondata input {@link DiffractionData data} for refinement
+     * @param refinementmode {@link RefinementMinimize.RefinementMode} for refinement
+     */
     public RefinementEnergy(MolecularAssembly molecularAssembly,
             DiffractionData diffractiondata, RefinementMode refinementmode) {
         this(new MolecularAssembly[]{molecularAssembly}, diffractiondata,
                 refinementmode, null);
     }
 
+    /**
+     * constructor for energy
+     *
+     * @param molecularAssembly input {@link ffx.potential.bonded.MolecularAssembly}
+     * that will be used as the model
+     * @param diffractiondata input {@link DiffractionData data} for refinement
+     * @param refinementmode {@link RefinementMinimize.RefinementMode} for refinement
+     * @param scaling scaling of refinement parameters
+     */
     public RefinementEnergy(MolecularAssembly molecularAssembly,
             DiffractionData diffractiondata, RefinementMode refinementmode,
             double scaling[]) {
@@ -75,6 +93,16 @@ public class RefinementEnergy implements Potential {
                 refinementmode, scaling);
     }
 
+    /**
+     * constructor for energy
+     *
+     * @param molecularAssembly input array of
+     * {@link ffx.potential.bonded.MolecularAssembly} objects (typically for
+     * alternate conformers) that will be used as the model
+     * @param diffractiondata input {@link DiffractionData data} for refinement
+     * @param refinementmode {@link RefinementMinimize.RefinementMode} for refinement
+     * @param scaling scaling of refinement parameters
+     */
     public RefinementEnergy(MolecularAssembly molecularAssembly[],
             DiffractionData diffractiondata, RefinementMode refinementmode,
             double scaling[]) {
@@ -239,7 +267,6 @@ public class RefinementEnergy implements Potential {
                 }
                 e += weight * xrayEnergy.energyAndGradient(x, gXray);
 
-                /*
                 double normchem = 0.0;
                 for (int i = 0; i < nxyz; i++) {
                     normchem += g[i] * g[i];
@@ -251,7 +278,6 @@ public class RefinementEnergy implements Potential {
                 }
                 normxray = Math.sqrt(normxray) / nxyz;
                 System.out.println("chem: " + normchem + " xray: " + normxray + " weight wa: " + normchem / normxray);
-                 */
 
                 // Add the chemical and X-ray gradients.
                 for (int i = 0; i < nxyz; i++) {
@@ -315,6 +341,14 @@ public class RefinementEnergy implements Potential {
         return e;
     }
 
+    /**
+     * get the molecular assembly associated with index i of n, put in xchem
+     *
+     * @param i the desired molecular assembly index to "set" xchem to
+     * @param x all parameters
+     * @param xchem the xchem parameters for the particular molecular assembly
+     * that will be passed to {@link ForceFieldEnergy}
+     */
     public void getAssemblyi(int i, double x[], double xchem[]) {
         assert (x != null && xchem != null);
         for (int j = 0; j < xchem.length; j += 3) {
@@ -326,6 +360,14 @@ public class RefinementEnergy implements Potential {
         }
     }
 
+    /**
+     * get the molecular assembly associated with index i of n, put in x
+     *
+     * @param i the desired molecular assembly index to "set" x to
+     * @param x all parameters
+     * @param xchem the xchem parameters for the particular molecular assembly
+     * that will be passed to {@link ForceFieldEnergy}
+     */
     public void setAssemblyi(int i, double x[], double xchem[]) {
         assert (x != null && xchem != null);
         for (int j = 0; j < xchem.length; j += 3) {
@@ -337,10 +379,20 @@ public class RefinementEnergy implements Potential {
         }
     }
 
+    /**
+     * get the current dataset weight
+     *
+     * @return weight wA
+     */
     public double getXWeight() {
         return this.weight;
     }
 
+    /**
+     * set the current dataset weight
+     *
+     * @param weight requested weight wA
+     */
     public void setXWeight(double weight) {
         this.weight = weight;
     }

@@ -96,7 +96,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         setInitialScale();
     }
 
-    public void setInitialScale() {
+    private void setInitialScale() {
         double fc[][] = refinementdata.fc;
         double fo[][] = refinementdata.fsigf;
 

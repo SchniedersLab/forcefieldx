@@ -86,6 +86,13 @@ public class DiffractionFile {
         this.neutron = neutron;
     }
 
+    /**
+     * read in a diffraction file based on the molecular assembly filename,
+     * using a weight of 1.0 and neutron value of false
+     *
+     * @param assembly {@link ffx.potential.bonded.MolecularAssembly} from which
+     * a filename will be determined
+     */
     public DiffractionFile(MolecularAssembly assembly[]) {
         this(assembly[0], 1.0, false);
     }
@@ -103,7 +110,8 @@ public class DiffractionFile {
      * read in a diffraction file based on the molecular assembly filename,
      * using a weight of 1.0 and neutron value of false
      *
-     * @param assembly molecularassembly from which a filename will be determined
+     * @param assembly {@link ffx.potential.bonded.MolecularAssembly} from which
+     * a filename will be determined
      */
     public DiffractionFile(MolecularAssembly assembly) {
         this(assembly, 1.0, false);
@@ -113,7 +121,8 @@ public class DiffractionFile {
      * read in a diffraction file based on the molecular assembly filename,
      * using a neutron value of false
      *
-     * @param assembly molecularassembly from which a filename will be determined
+     * @param assembly {@link ffx.potential.bonded.MolecularAssembly} from which
+     * a filename will be determined
      * @param weight the weight of the data
      */
     public DiffractionFile(MolecularAssembly assembly, double weight) {
@@ -124,7 +133,8 @@ public class DiffractionFile {
      * read in a diffraction file based on the molecular assembly filename,
      * using a weight of 1.0 and neutron value of false
      *
-     * @param assembly molecularassembly from which a filename will be determined
+     * @param assembly {@link ffx.potential.bonded.MolecularAssembly} from which
+     * a filename will be determined
      * @param weight the weight of the data
      * @param neutron if true, this is a neutron data set
      */
@@ -176,10 +186,20 @@ public class DiffractionFile {
         this.neutron = neutron;
     }
 
+    /**
+     * return the weight of this dataset
+     *
+     * @return weight wA
+     */
     public double getWeight() {
         return weight;
     }
 
+    /**
+     * is this a neutron dataset?
+     *
+     * @return true if neutron
+     */
     public boolean isNeutron() {
         return neutron;
     }

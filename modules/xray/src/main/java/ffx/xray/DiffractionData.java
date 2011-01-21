@@ -31,6 +31,7 @@ import java.util.logging.Logger;
 
 import edu.rit.pj.ParallelTeam;
 import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.io.FilenameUtils;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
@@ -77,8 +78,8 @@ public class DiffractionData {
      * construct a diffraction data assembly, assumes an X-ray data set with a
      * weight of 1.0 using the same name as the molecular assembly
      *
-     * @param assembly molecular assembly, used as the atomic model for
-     * comparison against the data
+     * @param assembly {@link ffx.potential.bonded.MolecularAssembly molecular assembly}
+     * object, used as the atomic model for comparison against the data
      * @param properties system properties file
      */
     public DiffractionData(MolecularAssembly assembly,
@@ -90,8 +91,8 @@ public class DiffractionData {
     /**
      * construct a diffraction data assembly
      *
-     * @param assembly molecular assembly, used as the atomic model for
-     * comparison against the data
+     * @param assembly {@link ffx.potential.bonded.MolecularAssembly molecular assembly}
+     * object, used as the atomic model for comparison against the data
      * @param properties system properties file
      * @param datafile one or more {@link DiffractionFile} to be refined against
      */
@@ -101,12 +102,32 @@ public class DiffractionData {
                 SolventModel.POLYNOMIAL, datafile);
     }
 
+    /**
+     * construct a diffraction data assembly, assumes an X-ray data set with a
+     * weight of 1.0 using the same name as the molecular assembly
+     *
+     * @param assembly {@link ffx.potential.bonded.MolecularAssembly molecular assembly}
+     * object, used as the atomic model for comparison against the data
+     * @param properties system properties file
+     * @param solventmodel the type of solvent model desired -
+     * see {@link CrystalReciprocalSpace.SolventModel bulk solvent model} selections
+     */
     public DiffractionData(MolecularAssembly assembly,
             CompositeConfiguration properties, int solventmodel) {
         this(new MolecularAssembly[]{assembly}, properties, solventmodel,
                 new DiffractionFile(assembly));
     }
 
+    /**
+     * construct a diffraction data assembly
+     *
+     * @param assembly {@link ffx.potential.bonded.MolecularAssembly molecular assembly}
+     * object, used as the atomic model for comparison against the data
+     * @param properties system properties file
+     * @param solventmodel the type of solvent model desired -
+     * see {@link CrystalReciprocalSpace.SolventModel bulk solvent model} selections
+     * @param datafile one or more {@link DiffractionFile} to be refined against
+     */
     public DiffractionData(MolecularAssembly assembly,
             CompositeConfiguration properties, int solventmodel,
             DiffractionFile... datafile) {
@@ -114,17 +135,46 @@ public class DiffractionData {
                 datafile);
     }
 
+    /**
+     * construct a diffraction data assembly, assumes an X-ray data set with a
+     * weight of 1.0 using the same name as the molecular assembly
+     *
+     * @param assembly {@link ffx.potential.bonded.MolecularAssembly molecular assembly}
+     * object array (typically containing alternate conformer assemblies), used
+     * as the atomic model for comparison against the data
+     * @param properties system properties file
+     */
     public DiffractionData(MolecularAssembly assembly[],
             CompositeConfiguration properties) {
         this(assembly, properties, SolventModel.POLYNOMIAL,
                 new DiffractionFile(assembly[0]));
     }
 
+    /**
+     * construct a diffraction data assembly
+     *
+     * @param assembly {@link ffx.potential.bonded.MolecularAssembly molecular assembly}
+     * object array (typically containing alternate conformer assemblies), used
+     * as the atomic model for comparison against the data
+     * @param properties system properties file
+     * @param datafile one or more {@link DiffractionFile} to be refined against
+     */
     public DiffractionData(MolecularAssembly assembly[],
             CompositeConfiguration properties, DiffractionFile... datafile) {
         this(assembly, properties, SolventModel.POLYNOMIAL, datafile);
     }
 
+    /**
+     * construct a diffraction data assembly
+     *
+     * @param assembly {@link ffx.potential.bonded.MolecularAssembly molecular assembly}
+     * object array (typically containing alternate conformer assemblies), used
+     * as the atomic model for comparison against the data
+     * @param properties system properties file
+     * @param solventmodel the type of solvent model desired -
+     * see {@link CrystalReciprocalSpace.SolventModel bulk solvent model} selections
+     * @param datafile one or more {@link DiffractionFile} to be refined against
+     */
     public DiffractionData(MolecularAssembly assembly[],
             CompositeConfiguration properties, int solventmodel,
             DiffractionFile... datafile) {
@@ -172,7 +222,7 @@ public class DiffractionData {
             datafile[i].diffractionfilter.readFile(tmp, reflectionlist[i], refinementdata[i]);
         }
 
-        if (!crystal[0].equals(assembly[0].getCrystal())) {
+        if (!crystal[0].equals(assembly[0].getCrystal().getUnitCell())) {
             logger.severe("PDB and reflection file crystal information do not match! (check CRYST1 record?)");
         }
 
@@ -268,6 +318,7 @@ public class DiffractionData {
             }
         }
 
+        // now build array of atoms that is independent of multiple molecular assemblies
         xindex = new List[assembly.length];
         for (int i = 0; i < assembly.length; i++) {
             xindex[i] = new ArrayList<Integer>();
@@ -360,6 +411,14 @@ public class DiffractionData {
         }
     }
 
+    /**
+     * move the atomic coordinates for the FFT calculation - this is independent
+     * of the {@link Atom} object coordinates as it uses a linearized array
+     *
+     * @param x array of coordinates to move atoms to
+     *
+     * @see CrystalReciprocalSpace#setCoordinates(double[])
+     */
     public void setFFTCoordinates(double x[]) {
         for (int i = 0; i < n; i++) {
             crs_fc[i].setCoordinates(x);
@@ -367,6 +426,15 @@ public class DiffractionData {
         }
     }
 
+    /**
+     * determine the total atomic gradients due to the diffraction data -
+     * performs an inverse FFT
+     *
+     * @param refinementMode the
+     * {@link RefinementMinimize.RefinementMode refinement mode} requested
+     *
+     * @see CrystalReciprocalSpace#computeAtomicGradients(double[][], int[], int, ffx.xray.RefinementMinimize.RefinementMode, boolean) computeAtomicGradients
+     */
     public void computeAtomicGradients(RefinementMode refinementMode) {
         for (int i = 0; i < n; i++) {
             crs_fc[i].computeAtomicGradients(refinementdata[i].dfc,
@@ -378,6 +446,12 @@ public class DiffractionData {
         }
     }
 
+    /**
+     * parallelized call to compute atomic density on a grid, followed by FFT
+     * to compute structure factors.
+     *
+     * @see CrystalReciprocalSpace#computeDensity(double[][], boolean)
+     */
     public void computeAtomicDensity() {
         for (int i = 0; i < n; i++) {
             crs_fc[i].computeDensity(refinementdata[i].fc);
@@ -385,6 +459,13 @@ public class DiffractionData {
         }
     }
 
+    /**
+     * compute total crystallographic likelihood target
+     *
+     * @return the total -log likelihood
+     *
+     * @see SigmaAMinimize#calculateLikelihood()
+     */
     public double computeLikelihood() {
         double e = 0.0;
         for (int i = 0; i < n; i++) {
@@ -393,18 +474,36 @@ public class DiffractionData {
         return e;
     }
 
+    /**
+     * return the associated {@link XRayEnergy} for this data
+     *
+     * @return the {@link XRayEnergy}
+     */
     public XRayEnergy getXRayEnergy() {
         return xrayenergy;
     }
 
+    /**
+     * set the current {@link XRayEnergy} for this data
+     *
+     * @param xrayenergy the {@link XRayEnergy} to associate with the data
+     */
     public void setXRayEnergy(XRayEnergy xrayenergy) {
         this.xrayenergy = xrayenergy;
     }
 
+    /**
+     * return the atomarray for the model associated with this data
+     *
+     * @return an {@link ffx.potential.bonded.Atom} array
+     */
     public Atom[] getAtomArray() {
         return atomarray;
     }
 
+    /**
+     * print scale and R statistics for all datasets associated with the model
+     */
     public void printscaleandr() {
         for (int i = 0; i < n; i++) {
             if (!scaled[i]) {
@@ -415,6 +514,9 @@ public class DiffractionData {
         }
     }
 
+    /**
+     * print all statistics for all datasets associated with the model
+     */
     public void printstats() {
         int nat = 0;
         int nnonh = 0;
@@ -448,12 +550,18 @@ public class DiffractionData {
         }
     }
 
+    /**
+     * scale model and fit bulk solvent to all data
+     */
     public void scalebulkfit() {
         for (int i = 0; i < n; i++) {
             scalebulkfit(i);
         }
     }
 
+    /**
+     * scale model and fit bulk solvent to dataset i of n
+     */
     public void scalebulkfit(int i) {
         StringBuilder sb = new StringBuilder();
         sb.append(String.format("scaling data set %d of %d\nweight: %6.2f is neutron: %s\nmodel: %s data file: %s\n",
@@ -501,6 +609,14 @@ public class DiffractionData {
         scaled[i] = true;
     }
 
+    /**
+     * set the bulk solvent parameters for a given bulk solvent model
+     *
+     * @param a typically the width of the atom
+     * @param b typically the rate with which the atom transitions to bulk
+     *
+     * @see CrystalReciprocalSpace#setSolventAB(double, double)
+     */
     public void setSolventAB(double a, double b) {
         for (int i = 0; i < n; i++) {
             if (solventmodel != SolventModel.NONE) {
@@ -511,6 +627,9 @@ public class DiffractionData {
         }
     }
 
+    /**
+     * perform 10 Fc calculations for the purposes of timings
+     */
     public void timings() {
         logger.info("performing 10 Fc calculations for timing...");
         for (int i = 0; i < n; i++) {
@@ -527,12 +646,31 @@ public class DiffractionData {
         }
     }
 
+    /**
+     * write current datasets to MTZ files
+     *
+     * @param filename output filename, or filename root for multiple datasets
+     *
+     * @see MTZWriter#write()
+     */
     public void writedata(String filename) {
-        for (int i = 0; i < n; i++) {
-            writedata("" + filename + "_i", i);
+        if (n == 1) {
+            writedata(filename, 0);
+        } else {
+            for (int i = 0; i < n; i++) {
+                writedata("" + FilenameUtils.removeExtension(filename) + "_" + i + ".mtz", i);
+            }
         }
     }
 
+    /**
+     * write dataset i to MTZ file
+     *
+     * @param filename output filename
+     * @param i dataset to write out
+     *
+     * @see MTZWriter#write()
+     */
     public void writedata(String filename, int i) {
         MTZWriter mtzwriter;
         if (scaled[i]) {
@@ -543,38 +681,76 @@ public class DiffractionData {
         mtzwriter.write();
     }
 
+    /**
+     * write bulk solvent mask for all datasets to a CNS map file
+     *
+     * @param filename output filename, or output root filename for multiple
+     * datasets
+     */
     public void writeSolventMaskCNS(String filename) {
-        for (int i = 0; i < n; i++) {
-            writeSolventMaskCNS("" + filename + "_i", i);
-        }
-    }
-
-    public void writeSolventMaskCNS(String filename, int i) {
-        try {
-            PrintWriter cnsfile = new PrintWriter(new BufferedWriter(new FileWriter(filename)));
-            cnsfile.println(" ANOMalous=FALSE");
-            cnsfile.println(" DECLare NAME=FS DOMAin=RECIprocal TYPE=COMP END");
-            for (HKL ih : reflectionlist[i].hkllist) {
-                int j = ih.index();
-                cnsfile.printf(" INDE %d %d %d FS= %.4f %.4f\n",
-                        ih.h(), ih.k(), ih.l(),
-                        refinementdata[i].fs_f(j),
-                        Math.toDegrees(refinementdata[i].fs_phi(j)));
+        if (n == 1) {
+            writeSolventMaskCNS(filename, 0);
+        } else {
+            for (int i = 0; i < n; i++) {
+                writeSolventMaskCNS("" + FilenameUtils.removeExtension(filename) + "_" + i + ".map", i);
             }
-            cnsfile.close();
-        } catch (Exception e) {
-            String message = "Fatal exception evaluating structure factors.\n";
-            logger.log(Level.SEVERE, message, e);
-            System.exit(-1);
         }
     }
 
+    /**
+     * write bulk solvent mask for dataset i to a CNS map file
+     *
+     * @param filename output filename
+     * @param i dataset to write out
+     */
+    public void writeSolventMaskCNS(String filename, int i) {
+        if (solventmodel != SolventModel.NONE) {
+            try {
+                PrintWriter cnsfile = new PrintWriter(new BufferedWriter(new FileWriter(filename)));
+                cnsfile.println(" ANOMalous=FALSE");
+                cnsfile.println(" DECLare NAME=FS DOMAin=RECIprocal TYPE=COMP END");
+                for (HKL ih : reflectionlist[i].hkllist) {
+                    int j = ih.index();
+                    cnsfile.printf(" INDE %d %d %d FS= %.4f %.4f\n",
+                            ih.h(), ih.k(), ih.l(),
+                            refinementdata[i].fs_f(j),
+                            Math.toDegrees(refinementdata[i].fs_phi(j)));
+                }
+                cnsfile.close();
+            } catch (Exception e) {
+                String message = "Fatal exception evaluating structure factors.\n";
+                logger.log(Level.SEVERE, message, e);
+                System.exit(-1);
+            }
+        }
+    }
+
+    /**
+     * write bulk solvent mask for all datasets to a CCP4 map file
+     *
+     * @param filename output filename, or output root filename for multiple
+     * datasets
+     *
+     * @see CCP4MapWriter#write(double[], boolean)
+     */
     public void writeSolventMask(String filename) {
-        for (int i = 0; i < n; i++) {
-            writeSolventMask("" + filename + "_i", i);
+        if (n == 1) {
+            writeSolventMask(filename, 0);
+        } else {
+            for (int i = 0; i < n; i++) {
+                writeSolventMask("" + FilenameUtils.removeExtension(filename) + "_" + i + ".map", i);
+            }
         }
     }
 
+    /**
+     * write bulk solvent mask for dataset i to a CCP4 map file
+     *
+     * @param filename output filename
+     * @param i dataset to write out
+     *
+     * @see CCP4MapWriter#write(double[], boolean)
+     */
     public void writeSolventMask(String filename, int i) {
         if (solventmodel != SolventModel.NONE) {
             CCP4MapWriter mapwriter = new CCP4MapWriter((int) crs_fs[i].getXDim(),

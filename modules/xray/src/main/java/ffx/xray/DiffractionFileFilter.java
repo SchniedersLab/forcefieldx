@@ -36,7 +36,7 @@ public interface DiffractionFileFilter {
      * get reflection information from a reflection file
      * 
      * @param file file to read in
-     * @return the reflection list, or null if not enough
+     * @return the {@link ReflectionList}, or null if not enough
      *         information present in the reflection file
      */
     ReflectionList getReflectionList(File file);
@@ -46,7 +46,7 @@ public interface DiffractionFileFilter {
      *
      * @param file file to read in
      * @param properties system properties
-     * @return the reflection list, or null if not enough
+     * @return the {@link ReflectionList}, or null if not enough
      *         information present in the reflection file
      */
     ReflectionList getReflectionList(File file, CompositeConfiguration properties);
@@ -55,8 +55,8 @@ public interface DiffractionFileFilter {
      * read in reflection file
      *
      * @param file file to read in
-     * @param reflectionlist list of reflections to find data indices
-     * @param refinementdata data to fill in
+     * @param reflectionlist the {@link ReflectionList} to find data indices
+     * @param refinementdata the {@link RefinementData} object to fill in
      */
     boolean readFile(File file, ReflectionList reflectionlist, RefinementData refinementdata);
 }
