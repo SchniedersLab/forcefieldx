@@ -1000,13 +1000,6 @@ public abstract class MSGroup extends MSNode {
     }
 
     /**
-     * Sets the MultiScaleGroup's impropers node to t.
-     */
-    /*
-     * public void setImpropers(FNode t){ terms.remove(impropers); impropers =
-     * t; terms.add(impropers); }
-     */
-    /**
      * Sets the MultiScaleGroup's dangelingatoms member to a.
      */
     public void setDangelingAtoms(ArrayList<Atom> a) {

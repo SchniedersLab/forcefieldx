@@ -1085,7 +1085,7 @@ public final class PDBFilter extends SystemFilter {
                 Atom atom = resAtoms.get(i);
                 String name = atom.getName();
                 name = name.replace('*', '\'');
-                name = name.replace('D', 'H');
+                //name = name.replace('D', 'H');
                 atom.setName(name);
             }
 
@@ -1218,7 +1218,7 @@ public final class PDBFilter extends SystemFilter {
             Atom C2s = setHeavyAtom(residue, "C2\'", C3s, c2Typ[naNumber]);
             bond(C2s, C1s);
             Atom O3s = null;
-            if (position == LAST_RESIDUE) {
+            if (position == LAST_RESIDUE || numberOfResidues == 1) {
                 if (isDNA) {
                     O3s = setHeavyAtom(residue, "O3\'", C3s, 1249);
                 } else {
@@ -2818,7 +2818,7 @@ public final class PDBFilter extends SystemFilter {
     public void writeAtom(Atom atom, int serial, StringBuilder sb,
                           StringBuilder anisouSB, BufferedWriter bw)
             throws IOException {
-        String name = atom.getID();
+        String name = atom.getName();
         if (name.length() > 4) {
             name = name.substring(0, 4);
         } else if (name.length() == 1) {

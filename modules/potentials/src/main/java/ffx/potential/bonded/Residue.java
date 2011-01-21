@@ -443,7 +443,7 @@ public class Residue extends MSGroup {
         int count = 0;
         for (ListIterator li = getAtomList().listIterator(); li.hasNext();) {
             a = (Atom) li.next();
-            String id = a.getID();
+            String id = a.getName();
             if (!id.equals("CA") && !id.equals("N") && !id.equals("C")
                 && !id.equals("O")) {
                 a.getV3D(v2);

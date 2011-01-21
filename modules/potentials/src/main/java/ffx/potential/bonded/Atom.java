@@ -154,13 +154,14 @@ public class Atom extends MSNode implements Comparable<Atom> {
         hybridTable.put("19", 0);
         hybridTable.put("26", 8);
     }
+
     private boolean hetatm;
     /**
      * Either the PDB "name" record or the molecular mechanics atom type name.
      *
      * @since 1.0
      */
-    private String name = null;
+    //private String name = null;
     /**
      * Contiguous atom index ranging from 0..nAtoms.
      *
@@ -292,7 +293,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     public Atom(String name) {
         super(name, 1);
-        this.name = name;
+        //this.name = name;
         currentCol = previousCol = RendererCache.toAtomColor(name);
         colorModel = ColorModel.CPK;
     }
@@ -377,6 +378,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     public boolean isDeuterium() {
+        String name = getName();
         return (isHydrogen() && (
                 name.charAt(0) == 'D' ||
                 name.charAt(0) == 'd'));
@@ -415,7 +417,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
 
         return (other.resName != null && other.resName.equals(resName)
                 && other.resSeq == resSeq
-                && other.name != null && other.name.equals(name)
+                && other.getName() != null && other.getName().equals(getName())
                 && other.segID != null && other.segID.equals(segID));
     }
 
@@ -565,15 +567,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     public int getHybridization() {
         return atomType.valence;
-    }
-
-    /**
-     * Gets the ID
-     *
-     * @return ID
-     */
-    public String getID() {
-        return name;
     }
 
     /**
@@ -1346,7 +1339,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
 
     public String toShortString() {
         if (shortString == null) {
-            shortString = format("%d-%s", xyzIndex, name);
+            shortString = format("%d-%s", xyzIndex, getName());
         }
         return shortString;
     }
@@ -1357,10 +1350,10 @@ public class Atom extends MSNode implements Comparable<Atom> {
     @Override
     public String toString() {
         if (altLoc != null && altLoc != ' ') {
-            return String.format("%s %7d-%s %s %d (%7.2f,%7.2f,%7.2f) %s", altLoc, xyzIndex, name,
+            return String.format("%s %7d-%s %s %d (%7.2f,%7.2f,%7.2f) %s", altLoc, xyzIndex, getName(),
                                  resName, resSeq, xyz[0], xyz[1], xyz[2], segID);
         }
-        return String.format("%7d-%s %s %d (%7.2f,%7.2f,%7.2f) %s", xyzIndex, name, resName, resSeq,
+        return String.format("%7d-%s %s %d (%7.2f,%7.2f,%7.2f) %s", xyzIndex, getName(), resName, resSeq,
                              xyz[0], xyz[1], xyz[2], segID);
     }
 
