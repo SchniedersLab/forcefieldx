@@ -41,7 +41,7 @@ public interface FormFactor {
      *
      * @param xyz the requested point for evaluating gradient
      * @param dfc the multiplier to apply to the gradient
-     * @param refinementmode {@link RefinementMininimize.RefinementMode}
+     * @param refinementmode {@link RefinementMinimize.RefinementMode}
      * determines which gradients will be computed
      */
     void rho_grad(double xyz[], double dfc, RefinementMode refinementmode);

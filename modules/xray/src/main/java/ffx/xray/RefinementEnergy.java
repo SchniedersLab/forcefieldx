@@ -22,6 +22,7 @@ package ffx.xray;
 
 import static ffx.numerics.VectorMath.b2u;
 
+import ffx.algorithms.AlgorithmListener;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Atom;
@@ -43,10 +44,11 @@ import java.util.logging.Logger;
  *
  * @since 1.0
  */
-public class RefinementEnergy implements Potential {
+public class RefinementEnergy implements Potential, AlgorithmListener {
 
     private static final Logger logger = Logger.getLogger(RefinementEnergy.class.getName());
     private final MolecularAssembly molecularAssembly[];
+    private final DiffractionData diffractiondata;
     private final RefinementData refinementdata;
     private final Atom[] atomarray;
     private final int nAtoms;
@@ -107,6 +109,7 @@ public class RefinementEnergy implements Potential {
             DiffractionData diffractiondata, RefinementMode refinementmode,
             double scaling[]) {
         this.molecularAssembly = molecularAssembly;
+        this.diffractiondata = diffractiondata;
         this.refinementdata = diffractiondata.refinementdata[0];
         this.atomarray = diffractiondata.atomarray;
         this.nAtoms = atomarray.length;
@@ -420,5 +423,19 @@ public class RefinementEnergy implements Potential {
     @Override
     public double[] getCoordinates(double[] parameters) {
         return xrayEnergy.getCoordinates(parameters);
+    }
+
+    @Override
+    public boolean algorithmUpdate(MolecularAssembly active) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < diffractiondata.n; i++) {
+            sb.append(String.format("     dataset %d: R: %6.2f Rfree: %6.2f\n",
+                    i+1,
+                    diffractiondata.crystalstats[i].get_r(),
+                    diffractiondata.crystalstats[i].get_rfree()));
+        }
+        logger.info(sb.toString());
+
+        return true;
     }
 }
