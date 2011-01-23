@@ -99,7 +99,7 @@ diffractiondata.printstats();
 energy();
 
 RefinementEnergy refinementEnergy = new RefinementEnergy(active, diffractiondata, refinementmode);
-SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(active, refinementEnergy, active.getProperties(), null);
+SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(active, refinementEnergy, active.getProperties(), refinementEnergy);
 simulatedAnnealing.anneal(highTemperature, lowTemperature, annealingSteps, mdSteps);
 
 diffractiondata.scalebulkfit();
