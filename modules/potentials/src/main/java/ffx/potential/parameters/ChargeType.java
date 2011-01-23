@@ -31,7 +31,7 @@ public final class ChargeType extends BaseType {
 	/**
 	 * The atom type that uses this charge parameter.
 	 */
-	public final int atomType;
+	public int atomType;
 	/**
 	 * Partial atomic charge in units of electrons.
 	 */
@@ -50,6 +50,10 @@ public final class ChargeType extends BaseType {
 		this.atomType = atomType;
 		this.charge = charge;
 	}
+
+        public void incrementType(int increment) {
+            this.atomType += increment;
+        }
 
 	/**
 	 * Nicely formatted Charge type.

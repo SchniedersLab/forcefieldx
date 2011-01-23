@@ -31,33 +31,41 @@ import java.util.Comparator;
  */
 public final class BioType extends BaseType implements Comparator<String> {
 
-    public final int index;
-    public final String PDB;
-    public final String residue;
-    public final int atomType;
+    public int index;
+    public final String atomName;
+    public final String moleculeName;
+    public int atomType;
+    public final String bonds[];
 
     /**
      * BioType Constructor.
      *
      * @param index
      *            int
-     * @param PDB
+     * @param atomName
      *            String
-     * @param residue
+     * @param moleculeName
      *            String
      * @param atomType
      *            int
      */
-    public BioType(int index, String PDB, String residue, int atomType) {
+    public BioType(int index, String atomName, String moleculeName, int atomType, String bonds[]) {
         super(ForceField.ForceFieldType.BIOTYPE, Integer.toString(index));
         this.index = index;
-        this.PDB = PDB;
-        if (residue != null) {
-            this.residue = residue.replace(',', ' ');
+        this.atomName = atomName;
+        if (moleculeName != null) {
+            this.moleculeName = moleculeName.replace(',', ' ').replace('"', ' ').trim();
         } else {
-            this.residue = null;
+            this.moleculeName = null;
         }
         this.atomType = atomType;
+        this.bonds = bonds;
+    }
+
+    public void incrementIndexAndType(int indexIncrement, int typeIncrement) {
+        index += indexIncrement;
+        atomType += typeIncrement;
+        setKey(Integer.toString(index));
     }
 
     /**
@@ -67,8 +75,14 @@ public final class BioType extends BaseType implements Comparator<String> {
      */
     @Override
     public String toString() {
-        return String.format("biotype  %5d  %-4s  %-25s  %5d", index, PDB,
-                residue, atomType);
+        StringBuilder sb = new StringBuilder(String.format("biotype  %5d  %-4s  \"%-23s\"  %5d", index, atomName,
+                                                           moleculeName, atomType));
+        if (bonds != null && bonds.length > 0) {
+            for (int i = 0; i < bonds.length; i++) {
+                sb.append(String.format("  %-4s", bonds[i]));
+            }
+        }
+        return sb.toString();
     }
 
     @Override

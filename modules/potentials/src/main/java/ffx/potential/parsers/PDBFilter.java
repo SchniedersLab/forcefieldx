@@ -963,11 +963,48 @@ public final class PDBFilter extends SystemFilter {
                 }
             }
         }
+
+
         // Assign small molecule atom types.
         ArrayList<MSNode> molecules = activeMolecularAssembly.getMolecules();
         for (MSNode m : molecules) {
-            logger.log(Level.WARNING, format("Deleting unrecognized molecule %s.", m.toString()));
-            activeMolecularAssembly.deleteMolecule((Molecule) m);
+            Molecule molecule = (Molecule) m;
+            String moleculeName = molecule.getResidueName();
+            logger.info(" Attempting to patch " + moleculeName);
+            ArrayList<Atom> moleculeAtoms = molecule.getAtomList();
+            boolean patched = true;
+            for (Atom atom : moleculeAtoms) {
+                String atomName = atom.getName();
+                AtomType atomType = forceField.getAtomType(moleculeName, atomName);
+                if (atomType == null) {
+                    logger.info(" No atom type was found for " + atomName + " of " + moleculeName + ".");
+                    patched = false;
+                    break;
+                } else {
+                    atom.setAtomType(atomType);
+                }
+            }
+            // Create bonds
+            if (patched) {
+                for (Atom atom : moleculeAtoms) {
+                    String atomName = atom.getName();
+                    String bonds[] = forceField.getBonds(moleculeName, atomName);
+                    if (bonds != null) {
+                        for (String name : bonds) {
+                            Atom atom2 = molecule.getAtom(name);
+                            if (atom2 != null && !atom.isBonded(atom2)) {
+                                bond(atom, atom2);
+                            }
+                        }
+                    }
+                }
+            }
+            if (!patched) {
+                logger.log(Level.WARNING, format(" Deleting unrecognized molecule %s.", m.toString()));
+                activeMolecularAssembly.deleteMolecule((Molecule) m);
+            } else {
+                logger.info(" Patch for " + moleculeName + " succeeded.");
+            }
         }
     }
 

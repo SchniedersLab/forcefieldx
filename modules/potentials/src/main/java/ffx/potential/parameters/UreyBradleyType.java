@@ -56,11 +56,18 @@ public final class UreyBradleyType extends BaseType implements Comparator<String
      *            double
      */
     public UreyBradleyType(int atomClasses[], double forceConstant,
-            double distance) {
+                           double distance) {
         super(ForceField.ForceFieldType.UREYBRAD, sortKey(atomClasses));
         this.atomClasses = atomClasses;
         this.forceConstant = forceConstant;
         this.distance = distance;
+    }
+
+    public void incrementClasses(int increment) {
+        for (int i = 0; i < atomClasses.length; i++) {
+            atomClasses[i] += increment;
+        }
+        setKey(sortKey(atomClasses));
     }
 
     /**
@@ -91,8 +98,8 @@ public final class UreyBradleyType extends BaseType implements Comparator<String
     @Override
     public String toString() {
         return String.format("ureybrad  %5d  %5d  %5d  %6.2f  %7.4f",
-                atomClasses[0], atomClasses[1], atomClasses[2], forceConstant,
-                distance);
+                             atomClasses[0], atomClasses[1], atomClasses[2], forceConstant,
+                             distance);
     }
     /**
      * Convert bond stretch energy to kcal/mole.

@@ -88,6 +88,15 @@ public class Molecule extends MSGroup {
         return segID;
     }
 
+    public Atom getAtom(String name) {
+        for (Atom a : getAtomList()) {
+            if (a.getName().equalsIgnoreCase(name)) {
+                return a;
+            }
+        }
+        return null;
+    }
+
     /**
      * Allows adding Atom FNodes to the Molecule.
      */

@@ -59,6 +59,13 @@ public final class OutOfPlaneBendType extends BaseType implements Comparator<Str
         this.forceConstant = forceConstant;
     }
 
+    public void incrementClasses(int increment) {
+        for (int i = 0; i < atomClasses.length; i++) {
+            atomClasses[i] += increment;
+        }
+        setKey(sortKey(atomClasses));
+    }
+
     /**
      * This method sorts the atom classes for the out-of-plane angle bending type.
      *
@@ -82,8 +89,8 @@ public final class OutOfPlaneBendType extends BaseType implements Comparator<Str
     @Override
     public String toString() {
         return String.format("opbend  %5d  %5d  %5d  %5d  %6.2f", atomClasses[0],
-                atomClasses[1], atomClasses[2],
-                atomClasses[3], forceConstant);
+                             atomClasses[1], atomClasses[2],
+                             atomClasses[3], forceConstant);
     }
     /**
      * Cubic coefficient in out-of-plane angle bending potential.

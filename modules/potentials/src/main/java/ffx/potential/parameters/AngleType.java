@@ -61,6 +61,13 @@ public final class AngleType extends BaseType implements Comparator<String> {
         this.angle = angle;
     }
 
+    public void incrementClasses(int increment) {
+        for (int i=0; i<atomClasses.length; i++) {
+            atomClasses[i] += increment;
+        }
+        setKey(sortKey(atomClasses));
+    }
+
     /**
      * This method sorts the atom classes as: min, c[1], max
      *

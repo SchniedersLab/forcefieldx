@@ -260,13 +260,7 @@
                 <configuration>
                     <!-- This prevents Mac OS X from using its old Java3D verion.  -->
                     <useSystemClassLoader>false</useSystemClassLoader>
-                    <systemPropertyVariables>
-                        <property>
-                            <name>j3d.rend</name>
-                            <value>jogl</value>
-                        </property>
-                    </systemPropertyVariables>
-                    <argLine>-ms1G -mx1G -Dffx.ci=${ffx.ci} -Djava.library.path=${basedir}/../../bin/${platform}/jogl-${bit}:${basedir}/../../bin/${platform}/jocl-${bit}</argLine>
+                    <argLine>-ms1G -mx1G -Dj3d.rend=jogl -Dffx.ci=${ffx.ci} -Djava.library.path=${basedir}/../../bin/${platform}/jogl-${bit}:${basedir}/../../bin/${platform}/jocl-${bit}</argLine>
                 </configuration>
             </plugin>
             <plugin>

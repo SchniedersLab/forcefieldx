@@ -78,16 +78,6 @@ public class ForceFieldFilter {
     private CompositeConfiguration properties;
     private File forceFieldFile;
 
-    /**
-     * ForceFieldFilter Constructor.
-     */
-    /*
-    public ForceFieldFilter(CompositeConfiguration properties, File forceFieldFile) {
-        forceField = new ForceField(properties, forceFieldFile);
-        this.properties = properties;
-        this.forceFieldFile = forceFieldFile;
-    } */
-
     public ForceFieldFilter(CompositeConfiguration properties) {
         this.properties = properties;
         if (properties.containsKey("parameters")) {
@@ -472,7 +462,7 @@ public class ForceFieldFilter {
         }
         try {
             int index = Integer.parseInt(tokens[1]);
-            String PDB = tokens[2];
+            String atomName = tokens[2];
             // The "residue" string may contain spaces,
             // and is therefore surrounded in quotes located at "first" and
             // "last".
@@ -483,12 +473,20 @@ public class ForceFieldFilter {
                 return;
             }
             // Environment
-            String residue = input.substring(first, last + 1).intern();
+            String moleculeName = input.substring(first, last + 1).intern();
             // Shrink the tokens array to only include entries
             // after the environment field.
             tokens = input.substring(last + 1).trim().split(" +");
             int atomType = Integer.parseInt(tokens[0]);
-            BioType bioType = new BioType(index, PDB, residue, atomType);
+            int bondCount = tokens.length - 1;
+            String bonds[] = null;
+            if (bondCount > 0) {
+                bonds = new String[bondCount];
+                for (int i=0; i<bondCount; i++) {
+                    bonds[i] = tokens[i + 1];
+                }
+            }
+            BioType bioType = new BioType(index, atomName, moleculeName, atomType, bonds);
             forceField.addForceFieldType(bioType);
         } catch (Exception e) {
             String message = "Exception parsing BIOTYPE type:\n" + input + "\n";

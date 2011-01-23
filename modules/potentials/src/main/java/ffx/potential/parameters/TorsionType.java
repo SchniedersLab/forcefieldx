@@ -74,7 +74,7 @@ public final class TorsionType extends BaseType implements Comparator<String> {
      * @param periodicity double[]
      */
     public TorsionType(int atomClasses[], double amplitude[], double phase[],
-            int periodicity[]) {
+                       int periodicity[]) {
         super(ForceField.ForceFieldType.TORSION, sortKey(atomClasses));
         this.atomClasses = atomClasses;
         int max = 1;
@@ -107,6 +107,13 @@ public final class TorsionType extends BaseType implements Comparator<String> {
         }
     }
 
+    public void incrementClasses(int increment) {
+        for (int i = 0; i < atomClasses.length; i++) {
+            atomClasses[i] += increment;
+        }
+        setKey(sortKey(atomClasses));
+    }
+
     /**
      * Nicely formatted Torsion angle.
      *
@@ -122,7 +129,7 @@ public final class TorsionType extends BaseType implements Comparator<String> {
         }
         for (int i = 0; i < amplitude.length; i++) {
             torsionBuffer.append(String.format(" %7.3f %7.3f %1d",
-                    amplitude[i], phase[i], periodicity[i]));
+                                               amplitude[i], phase[i], periodicity[i]));
         }
         return torsionBuffer.toString();
     }

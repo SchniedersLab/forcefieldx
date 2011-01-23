@@ -107,6 +107,13 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
         initMultipole();
     }
 
+    public void incrementType(int increment) {
+        for (int i=0; i<frameAtomTypes.length; i++) {
+            frameAtomTypes[i] += increment;
+        }
+        setKey(frameAtomTypes);
+    }
+
     private void initMultipole() {
         // Check symmetry.
         double check = Math.abs(quadrupole[0][1] - quadrupole[1][0]);

@@ -147,7 +147,7 @@ public class ForceField {
          */
         angleTypes = new TreeMap<String, AngleType>(new AngleType(new int[3], 0, new double[1]));
         atomTypes = new TreeMap<String, AtomType>(new AtomType(0, 0, null, null, 0, 0, 0));
-        bioTypes = new TreeMap<String, BioType>(new BioType(0, null, null, 0));
+        bioTypes = new TreeMap<String, BioType>(new BioType(0, null, null, 0, null));
         bondTypes = new TreeMap<String, BondType>(new BondType(new int[2], 0, 0));
         multipoleTypes = new TreeMap<String, MultipoleType>(new MultipoleType(0, new double[3], new double[3][3], null, null));
         outOfPlaneBendTypes = new TreeMap<String, OutOfPlaneBendType>(new OutOfPlaneBendType(new int[4], 0));
@@ -173,6 +173,101 @@ public class ForceField {
         forceFieldTypes.put(ForceFieldType.TORTORS, torsionTorsionTypes);
         forceFieldTypes.put(ForceFieldType.UREYBRAD, ureyBradleyTypes);
         forceFieldTypes.put(ForceFieldType.VDW, vanderWaalsTypes);
+    }
+
+    /**
+     * Append a 2nd ForceField "patch" to the current ForceField. Note that
+     * only the force field types are appended; properties are ignored.
+     *
+     * @param patch The force field patch to append.
+     */
+    public void append(ForceField patch) {
+        // Determine the highest current atom class, atom type and biotype index.
+        int maxClass = 0;
+        int maxType = 0;
+        int maxBioType = 0;
+        for (AtomType type : atomTypes.values()) {
+            if (type.atomClass > maxClass) {
+                maxClass = type.atomClass;
+            }
+        }
+        for (String key : atomTypes.keySet()) {
+            int type = Integer.parseInt(key);
+            if (type > maxType) {
+                maxType = type;
+            }
+        }
+        for (String key : bioTypes.keySet()) {
+            int type = Integer.parseInt(key);
+            if (type > maxBioType) {
+                maxBioType = type;
+            }
+        }
+
+        for (AngleType patchType : patch.angleTypes.values()) {
+            patchType.incrementClasses(maxClass);
+            angleTypes.put(patchType.getKey(), patchType);
+        }
+
+        for (AtomType patchType : patch.atomTypes.values()) {
+            patchType.incrementClassAndType(maxClass, maxType);
+            atomTypes.put(patchType.getKey(), patchType);
+        }
+
+        for (BioType patchType : patch.bioTypes.values()) {
+            patchType.incrementIndexAndType(maxBioType, maxType);
+            bioTypes.put(patchType.getKey(), patchType);
+        }
+
+        for (BondType patchType : patch.bondTypes.values()) {
+            patchType.incrementClasses(maxClass);
+            bondTypes.put(patchType.getKey(), patchType);
+        }
+
+        for (MultipoleType patchType : patch.multipoleTypes.values()) {
+            patchType.incrementType(maxType);
+            multipoleTypes.put(patchType.getKey(), patchType);
+        }
+
+        for (OutOfPlaneBendType patchType : patch.outOfPlaneBendTypes.values()) {
+            patchType.incrementClasses(maxClass);
+            outOfPlaneBendTypes.put(patchType.getKey(), patchType);
+        }
+
+        for (PiTorsionType patchType : patch.piTorsionTypes.values()) {
+            patchType.incrementClasses(maxClass);
+            piTorsionTypes.put(patchType.getKey(), patchType);
+        }
+
+        for (PolarizeType patchType : patch.polarizeTypes.values()) {
+            patchType.incrementType(maxType);
+            polarizeTypes.put(patchType.getKey(), patchType);
+        }
+
+        for (StretchBendType patchType : patch.stretchBendTypes.values()) {
+            patchType.incrementClasses(maxClass);
+            stretchBendTypes.put(patchType.getKey(), patchType);
+        }
+
+        for (TorsionTorsionType patchType : patch.torsionTorsionTypes.values()) {
+            patchType.incrementClasses(maxClass);
+            torsionTorsionTypes.put(patchType.getKey(), patchType);
+        }
+
+        for (TorsionType patchType : patch.torsionTypes.values()) {
+            patchType.incrementClasses(maxClass);
+            torsionTypes.put(patchType.getKey(), patchType);
+        }
+
+        for (UreyBradleyType patchType : patch.ureyBradleyTypes.values()) {
+            patchType.incrementClasses(maxClass);
+            ureyBradleyTypes.put(patchType.getKey(), patchType);
+        }
+
+        for (VDWType patchType : patch.vanderWaalsTypes.values()) {
+            patchType.incrementClass(maxClass);
+            vanderWaalsTypes.put(patchType.getKey(), patchType);
+        }
     }
 
     /**
@@ -406,6 +501,27 @@ public class ForceField {
 
     public AtomType getAtomType(String key) {
         return atomTypes.get(key);
+    }
+
+    public AtomType getAtomType(String moleculeName, String atomName) {
+        for (BioType bioType : bioTypes.values()) {
+            if (bioType.moleculeName.equalsIgnoreCase(moleculeName)
+                && bioType.atomName.equalsIgnoreCase(atomName)) {
+                String key = Integer.toString(bioType.atomType);
+                return atomTypes.get(key);
+            }
+        }
+        return null;
+    }
+
+    public String[] getBonds(String moleculeName, String atomName) {
+        for (BioType bioType : bioTypes.values()) {
+            if (bioType.moleculeName.equalsIgnoreCase(moleculeName)
+                && bioType.atomName.equalsIgnoreCase(atomName)) {
+                return bioType.bonds;
+            }
+        }
+        return null;
     }
 
     public BondType getBondType(String key) {

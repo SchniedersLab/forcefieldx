@@ -372,6 +372,13 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
         }
     }
 
+    public void incrementClasses(int increment) {
+        for (int i = 0; i < atomClasses.length; i++) {
+            atomClasses[i] += increment;
+        }
+        setKey(sortKey(atomClasses));
+    }
+
     /**
      * Computes the coefficients for an aperiodic interpolating cubic spline.
      *

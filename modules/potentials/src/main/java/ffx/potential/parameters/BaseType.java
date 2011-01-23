@@ -36,7 +36,7 @@ public abstract class BaseType {
 
     private static final Logger logger = Logger.getLogger(BaseType.class.getName());
     protected final ForceFieldType forceFieldType;
-    protected final String key;
+    protected String key;
 
     /**
      * Public constructor.
@@ -70,6 +70,19 @@ public abstract class BaseType {
      */
     public BaseType(ForceFieldType forceFieldType, String key) {
         this.forceFieldType = forceFieldType;
+        this.key = key;
+    }
+
+    public void setKey(int[] keys) {
+        StringBuilder keyBuffer = new StringBuilder(Integer.toString(keys[0]));
+        for (int i = 1; i < keys.length; i++) {
+            keyBuffer.append(" ");
+            keyBuffer.append(keys[i]);
+        }
+        key = keyBuffer.toString();
+    }
+
+    public void setKey(String key) {
         this.key = key;
     }
 

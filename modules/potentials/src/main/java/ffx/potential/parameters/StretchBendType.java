@@ -75,6 +75,13 @@ public final class StretchBendType extends BaseType implements Comparator<String
         this.forceConstants = forceConstants;
     }
 
+    public void incrementClasses(int increment) {
+        for (int i = 0; i < atomClasses.length; i++) {
+            atomClasses[i] += increment;
+        }
+        setKey(sortKey(atomClasses));
+    }
+
     /**
      * This method sorts the atom classes as: min, c[1], max
      *
@@ -104,8 +111,8 @@ public final class StretchBendType extends BaseType implements Comparator<String
     @Override
     public String toString() {
         return String.format("strbnd  %5d  %5d  %5d  %6.2f  %6.2f",
-                atomClasses[0], atomClasses[1], atomClasses[2],
-                forceConstants[0], forceConstants[1]);
+                             atomClasses[0], atomClasses[1], atomClasses[2],
+                             forceConstants[0], forceConstants[1]);
     }
     public static final double units = PI / 180.0;
 

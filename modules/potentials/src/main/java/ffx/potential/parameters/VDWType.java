@@ -43,7 +43,7 @@ public final class VDWType extends BaseType implements Comparator<String> {
     /**
      * The atom class that uses this van der Waals parameter.
      */
-    public final int atomClass;
+    public int atomClass;
     /**
      * The radius of the minimum well depth energy (angstroms).
      */
@@ -74,11 +74,16 @@ public final class VDWType extends BaseType implements Comparator<String> {
      */
     public VDWType(int atomClass, double radius, double wellDepth,
             double reductionFactor) {
-        super(ForceField.ForceFieldType.VDW, new String("" + atomClass));
+        super(ForceField.ForceFieldType.VDW, Integer.toString(atomClass));
         this.atomClass = atomClass;
         this.radius = radius;
         this.wellDepth = wellDepth;
         this.reductionFactor = reductionFactor;
+    }
+
+    public void incrementClass(int increment) {
+        atomClass += increment;
+        setKey(Integer.toString(atomClass));
     }
 
     /**

@@ -62,6 +62,13 @@ public final class BondType extends BaseType implements Comparator<String> {
         this.distance = distance;
     }
 
+    public void incrementClasses(int increment) {
+        for (int i = 0; i < atomClasses.length; i++) {
+            atomClasses[i] += increment;
+        }
+        setKey(sortKey(atomClasses));
+    }
+
     /**
      * Nicely formatted bond stretch string.
      *
@@ -70,7 +77,7 @@ public final class BondType extends BaseType implements Comparator<String> {
     @Override
     public String toString() {
         return String.format("bond  %5d  %5d  %6.1f  %7.4f", atomClasses[0],
-                atomClasses[1], forceConstant, distance);
+                             atomClasses[1], forceConstant, distance);
     }
 
     /**

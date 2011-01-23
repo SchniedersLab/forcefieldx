@@ -37,7 +37,7 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
     /**
      * Atom type number.
      */
-    public final int type;
+    public int type;
     /**
      * Thole damping factor.
      */
@@ -66,8 +66,8 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
      *            int[]
      */
     public PolarizeType(int atomType, double polarizability, double thole,
-            int polarizationGroup[]) {
-        super(ForceField.ForceFieldType.POLARIZE, new String("" + atomType));
+                        int polarizationGroup[]) {
+        super(ForceField.ForceFieldType.POLARIZE, Integer.toString(atomType));
         this.type = atomType;
         this.thole = thole;
         this.polarizability = polarizability;
@@ -76,6 +76,16 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
             pdamp = 0.0;
         } else {
             pdamp = pow(polarizability, sixth);
+        }
+    }
+
+    public void incrementType(int increment) {
+        type += increment;
+        setKey(Integer.toString(type));
+        if (polarizationGroup != null) {
+            for (int i = 0; i < polarizationGroup.length; i++) {
+                polarizationGroup[i] += increment;
+            }
         }
     }
 

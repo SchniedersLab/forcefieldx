@@ -55,6 +55,13 @@ public final class PiTorsionType extends BaseType implements Comparator<String> 
         this.forceConstant = forceConstant;
     }
 
+    public void incrementClasses(int increment) {
+        for (int i = 0; i < atomClasses.length; i++) {
+            atomClasses[i] += increment;
+        }
+        setKey(sortKey(atomClasses));
+    }
+
     /**
      * This method sorts the atom classes as: min, max
      *
@@ -85,7 +92,7 @@ public final class PiTorsionType extends BaseType implements Comparator<String> 
     @Override
     public String toString() {
         return String.format("pitors  %5d  %5d  %4.2f", atomClasses[0],
-                atomClasses[1], forceConstant);
+                             atomClasses[1], forceConstant);
     }
     /**
      * Convert Pi-Torsion energy to kcal/mole.

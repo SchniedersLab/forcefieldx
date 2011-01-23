@@ -34,11 +34,11 @@ public final class AtomType extends BaseType implements Comparator<String> {
     /**
      * Atom type.
      */
-    public final int type;
+    public int type;
     /**
      * Atom class.
      */
-    public final int atomClass;
+    public int atomClass;
     /**
      * Short name (ie CH3/CH2 etc).
      */
@@ -75,7 +75,7 @@ public final class AtomType extends BaseType implements Comparator<String> {
      */
     public AtomType(int type, int atomClass, String name, String environment,
             int atomicNumber, double atomicWeight, int valence) {
-        super(ForceField.ForceFieldType.ATOM, new String("" + type));
+        super(ForceField.ForceFieldType.ATOM, Integer.toString(type));
         this.type = type;
         this.atomClass = atomClass;
         this.name = name;
@@ -83,6 +83,12 @@ public final class AtomType extends BaseType implements Comparator<String> {
         this.atomicNumber = atomicNumber;
         this.atomicWeight = atomicWeight;
         this.valence = valence;
+    }
+
+    public void incrementClassAndType(int classIncrement, int typeIncrement) {
+        atomClass += classIncrement;
+        type += typeIncrement;
+        setKey(Integer.toString(type));
     }
 
     /**

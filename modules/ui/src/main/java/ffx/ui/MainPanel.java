@@ -1038,8 +1038,18 @@ public final class MainPanel extends JPanel implements ActionListener,
         CompositeConfiguration properties = Keyword.loadProperties(file);
         // Create an FFXSystem for this file.
         FFXSystem newSystem = new FFXSystem(file, commandDescription, properties);
+        // Create a Force Field.
         forceFieldFilter = new ForceFieldFilter(properties);
         ForceField forceField = forceFieldFilter.parse();
+        List<String> patches = properties.getList("patch");
+        for (String patch : patches) {
+            logger.info(" Attempting to read force field patch from " + patch + ".");
+            CompositeConfiguration patchConfiguration = new CompositeConfiguration();
+            patchConfiguration.addProperty("parameters", patch);
+            forceFieldFilter = new ForceFieldFilter(patchConfiguration);
+            ForceField patchForceField = forceFieldFilter.parse();
+            forceField.append(patchForceField);
+        }
         newSystem.setForceField(forceField);
         SystemFilter systemFilter = null;
 
