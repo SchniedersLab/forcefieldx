@@ -51,7 +51,6 @@
             <id>schnied</id>
             <name>Michael J. Schnieders</name>
             <email>michael.schnieders@gmail.com</email>
-            <url>http://www.stanford.edu/~schnied</url>
             <organization>Postdoc, Ren Lab, University of Texas at Austin</organization>
             <organizationUrl>http://ffx.kenai.com</organizationUrl>
             <roles>
@@ -492,6 +491,7 @@
     </properties>
     <modules>
         <module>modules/algorithms</module>
+        <module>modules/autoparm</module>
         <module>modules/binding</module>
         <module>modules/cg</module>
         <module>modules/continuum</module>
