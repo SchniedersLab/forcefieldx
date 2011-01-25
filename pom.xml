@@ -75,10 +75,20 @@
             <id>prffx</id>
             <name>Pengyu Ren</name>
             <email>pren@mail.utexas.edu</email>
-            <organization>Assistant Professor, U. of Texas, Austin</organization>
+            <organization>Associate Professor, U. of Texas, Austin</organization>
             <organizationUrl>http://biomol.bme.utexas.edu/lab/</organizationUrl>
             <roles>
                 <role>Binding Affinity Module, Force Field Architect</role>
+            </roles>
+            <timezone>-5</timezone>
+        </developer>
+        <developer>
+            <id>ghli</id>
+            <name>Guohui Li</name>
+            <email>ghli@dicp.ac.cn</email>
+            <organization>Dalian Institute of Chemical Physics, Chinese Academy of Sciences</organization>
+            <roles>
+                <role>Coarse Grain Model</role>
             </roles>
             <timezone>-5</timezone>
         </developer>
@@ -483,6 +493,8 @@
     <modules>
         <module>modules/algorithms</module>
         <module>modules/binding</module>
+        <module>modules/cg</module>
+        <module>modules/continuum</module>
         <module>modules/crystal</module>
         <module>modules/nucleic</module>
         <module>modules/numerics</module>
