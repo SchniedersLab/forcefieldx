@@ -10,7 +10,7 @@
         <version>1.0.0-SNAPSHOT</version>
     </parent>
     <groupId>com.kenai.ffx</groupId>
-    <artifactId>nucleic</artifactId>
+    <artifactId>continuum</artifactId>
     <packaging>jar</packaging>
-    <name>Nucleic Acids</name>
+    <name>Continuum Electrostatics</name>
 </project>
