@@ -77,7 +77,8 @@
             <organization>Associate Professor, U. of Texas, Austin</organization>
             <organizationUrl>http://biomol.bme.utexas.edu/lab/</organizationUrl>
             <roles>
-                <role>Binding Affinity Module, Force Field Architect</role>
+                <role>Force Field Architect</role>
+                <role>Binding Affinity Module</role>
             </roles>
             <timezone>-5</timezone>
         </developer>
@@ -86,10 +87,12 @@
             <name>Guohui Li</name>
             <email>ghli@dicp.ac.cn</email>
             <organization>Dalian Institute of Chemical Physics, Chinese Academy of Sciences</organization>
+            <organizationUrl>http://combio.dicp.ac.cn/</organizationUrl>
             <roles>
-                <role>Coarse Grain Model</role>
+                <role>Coarse grained polarizable model</role>
+                <role>Full atom polarizable model</role>
             </roles>
-            <timezone>-5</timezone>
+            <timezone>+8</timezone>
         </developer>
         <developer>
             <id>ZhenXia</id>

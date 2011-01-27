@@ -5,3 +5,4 @@ target/
 tests
 modules/*/target/
 lib/
+modules/*/catalog.xml
