@@ -1034,7 +1034,6 @@ public final class PDBFilter extends SystemFilter {
                     }
                     // Get the heavy atom the hydrogen is bonded to.
                     Atom ia = atomMap.get(bonds[0].toUpperCase());
-
                     Atom hydrogen = new Atom(0, atomName, ia.getAltLoc(), new double[3],
                                              ia.getResidueName(), ia.getResidueNumber(), ia.getChainID(),
                                              ia.getOccupancy(), ia.getTempFactor(), ia.getSegID());
@@ -1043,18 +1042,19 @@ public final class PDBFilter extends SystemFilter {
                     molecule.addMSNode(hydrogen);
                     int valence = ia.getAtomType().valence;
                     List<Bond> aBonds = ia.getBonds();
+                    int numBonds = aBonds.size();
                     /**
                      * Try to find the following configuration:
                      * ib-ia-ic
                      */
                     Atom ib = null;
                     Atom ic = null;
-                    if (aBonds.size() > 0) {
+                    if (numBonds > 0) {
                         Bond bond = aBonds.get(0);
                         ib = bond.get1_2(ia);
                     }
-                    if (aBonds.size() > 1) {
-                        Bond bond = aBonds.get(0);
+                    if (numBonds > 1) {
+                        Bond bond = aBonds.get(1);
                         ic = bond.get1_2(ia);
                     }
                     /**
@@ -1062,7 +1062,7 @@ public final class PDBFilter extends SystemFilter {
                      * locations of other bonded atoms.
                      */
                     logger.fine(" Bonding " + atomName + " to " + ia.getName()
-                            + " (" + aBonds.size() + " of " + valence + ").");
+                            + " (" + numBonds + " of " + valence + ").");
                     switch (valence) {
                         case 4:
                             switch (aBonds.size()) {
