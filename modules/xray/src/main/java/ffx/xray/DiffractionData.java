@@ -219,7 +219,8 @@ public class DiffractionData {
             resolution[i] = reflectionlist[i].resolution;
             refinementdata[i] = new RefinementData(properties, reflectionlist[i]);
             tmp = new File(datafile[i].filename);
-            datafile[i].diffractionfilter.readFile(tmp, reflectionlist[i], refinementdata[i]);
+            datafile[i].diffractionfilter.readFile(tmp, reflectionlist[i],
+                    refinementdata[i], properties);
         }
 
         if (!crystal[0].equals(assembly[0].getCrystal().getUnitCell())) {

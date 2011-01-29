@@ -26,6 +26,7 @@ public class CNSFilter implements DiffractionFileFilter {
     private static final Logger logger = Logger.getLogger(CNSFilter.class.getName());
     private double cell[] = {-1.0, -1.0, -1.0, -1.0, -1.0, -1.0};
     private double reshigh = -1.0;
+    private String fostring, sigfostring, rfreestring;
     private String sgname = null;
     private int sgnum = -1;
 
@@ -113,7 +114,7 @@ public class CNSFilter implements DiffractionFileFilter {
 
     @Override
     public boolean readFile(File cnsFile, ReflectionList reflectionlist,
-            RefinementData refinementdata) {
+            RefinementData refinementdata, CompositeConfiguration properties) {
         int nread, nres, nignore, nfriedel, ncut;
         boolean transpose = false;
 
@@ -168,10 +169,22 @@ public class CNSFilter implements DiffractionFileFilter {
                 transpose = true;
             }
 
+            // column identifiers
+            fostring = sigfostring = rfreestring = null;
+            if (properties != null) {
+                fostring = properties.getString("fostring", null);
+                sigfostring = properties.getString("sigfostring", null);
+                rfreestring = properties.getString("rfreestring", null);
+            }
+
             // reopen to start at beginning
             br = new BufferedReader(new FileReader(cnsFile));
 
             // read in data
+            double anofsigf[][] = new double[refinementdata.n][4];
+            for (int i = 0; i < refinementdata.n; i++) {
+                anofsigf[i][0] = anofsigf[i][1] = anofsigf[i][2] = anofsigf[i][3] = Double.NaN;
+            }
             nread = nres = nignore = nfriedel = ncut = 0;
             while ((str = br.readLine()) != null) {
                 String strarray[] = str.split("\\s+");
@@ -186,10 +199,12 @@ public class CNSFilter implements DiffractionFileFilter {
                                         && (fo / sigfo) < refinementdata.fsigfcutoff) {
                                     ncut++;
                                 } else if (friedel) {
-                                    refinementdata.set_ano_fsigfminus(hkl.index(), fo, sigfo);
+                                    anofsigf[hkl.index()][2] = fo;
+                                    anofsigf[hkl.index()][3] = sigfo;
                                     nfriedel++;
                                 } else if (!friedel) {
-                                    refinementdata.set_ano_fsigfplus(hkl.index(), fo, sigfo);
+                                    anofsigf[hkl.index()][0] = fo;
+                                    anofsigf[hkl.index()][1] = sigfo;
                                 }
                                 refinementdata.set_freer(hkl.index(), free);
                                 nread++;
@@ -214,15 +229,18 @@ public class CNSFilter implements DiffractionFileFilter {
                             hashkl = true;
                         }
                     }
-                    if (strarray[i].toLowerCase().startsWith("fobs=")) {
+                    if (strarray[i].toLowerCase().startsWith("fobs=")
+                            || strarray[i].equalsIgnoreCase(fostring + "=")) {
                         fo = Double.parseDouble(strarray[i + 1]);
                         hasfo = true;
                     }
-                    if (strarray[i].toLowerCase().startsWith("sigma=")) {
+                    if (strarray[i].toLowerCase().startsWith("sigma=")
+                            || strarray[i].equalsIgnoreCase(sigfostring + "=")) {
                         sigfo = Double.parseDouble(strarray[i + 1]);
                         hassigfo = true;
                     }
-                    if (strarray[i].toLowerCase().startsWith("test=")) {
+                    if (strarray[i].toLowerCase().startsWith("test=")
+                            || strarray[i].equalsIgnoreCase(rfreestring + "=")) {
                         free = Integer.parseInt(strarray[i + 1]);
                         hasfree = true;
                     }
@@ -230,13 +248,13 @@ public class CNSFilter implements DiffractionFileFilter {
             }
 
             br.close();
+
+            // set up fsigf from F+ and F-
+            refinementdata.generate_fsigf_from_anofsigf(anofsigf);
         } catch (IOException ioe) {
             System.out.println("IO Exception: " + ioe.getMessage());
             return false;
         }
-
-        // set up fsigf from F+ and F-
-        refinementdata.generate_fsigf_from_anofsigf();
 
         sb.append(String.format("# HKL read in:                             %d\n",
                 nread));

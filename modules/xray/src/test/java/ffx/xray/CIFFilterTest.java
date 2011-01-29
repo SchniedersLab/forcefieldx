@@ -58,7 +58,8 @@ public class CIFFilterTest {
                 reflectionlist);
 
         assertTrue("CIF data shoud be read in correctly",
-                ciffilter.readFile(ciffile, reflectionlist, refinementdata));
+                ciffilter.readFile(ciffile, reflectionlist, refinementdata,
+                properties));
 
         HKL hkl = reflectionlist.getHKL(58, 0, 13);
         assertEquals("58 0 13 F should be correct",
@@ -97,7 +98,8 @@ public class CIFFilterTest {
                 reflectionlist);
 
         assertTrue("CIF data shoud be read in correctly",
-                ciffilter.readFile(ciffile, reflectionlist, refinementdata));
+                ciffilter.readFile(ciffile, reflectionlist, refinementdata,
+                properties));
 
         HKL hkl = reflectionlist.getHKL(-21, -6, 7);
         assertEquals("-21 -6 7 F should be correct",

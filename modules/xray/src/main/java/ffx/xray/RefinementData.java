@@ -49,10 +49,6 @@ public class RefinementData {
      */
     public final double fsigf[][];
     /**
-     * 2D array of anomalous F/sigF data
-     */
-    public final double anofsigf[][];
-    /**
      * array of Rfree
      */
     public final int freer[];
@@ -220,7 +216,6 @@ public class RefinementData {
         this.rfreeflag = rflag;
         this.nbins = reflectionlist.nbins;
         fsigf = new double[n][2];
-        anofsigf = new double[n][4];
         freer = new int[n];
         fc = new double[n][2];
         fs = new double[n][2];
@@ -233,7 +228,6 @@ public class RefinementData {
 
         for (int i = 0; i < n; i++) {
             fsigf[i][0] = fsigf[i][1] = Double.NaN;
-            anofsigf[i][0] = anofsigf[i][1] = anofsigf[i][2] = anofsigf[i][3] = Double.NaN;
             fctot[i][0] = fctot[i][1] = Double.NaN;
         }
 
@@ -307,7 +301,7 @@ public class RefinementData {
     /**
      * generate average F/sigF from anomalous F/sigF
      */
-    public void generate_fsigf_from_anofsigf() {
+    public void generate_fsigf_from_anofsigf(double anofsigf[][]) {
         for (int i = 0; i < n; i++) {
             if (Double.isNaN(anofsigf[i][0])
                     && Double.isNaN(anofsigf[i][2])) {
@@ -367,86 +361,6 @@ public class RefinementData {
 
     public double[] get_fsigf(int i) {
         return fsigf[i];
-    }
-
-    /**
-     * set anomalous F+ amplitude
-     *
-     * @param i reflection to set
-     * @param f value of F desired
-     */
-    public void set_ano_fplus(int i, double f) {
-        anofsigf[i][0] = f;
-    }
-
-    /**
-     * set anomalous F- amplitude
-     *
-     * @param i reflection to set
-     * @param f value of F desired
-     */
-    public void set_ano_fminus(int i, double f) {
-        anofsigf[i][2] = f;
-    }
-
-    public double get_ano_fplus(int i) {
-        return anofsigf[i][0];
-    }
-
-    public double get_ano_fminus(int i) {
-        return anofsigf[i][2];
-    }
-
-    /**
-     * set anomalous sigF+ amplitude
-     *
-     * @param i reflection to set
-     * @param f value of sigF+ desired
-     */
-    public void set_ano_sigfplus(int i, double f) {
-        anofsigf[i][1] = f;
-    }
-
-    /**
-     * set anomalous sigF- amplitude
-     *
-     * @param i reflection to set
-     * @param f value of sigF- desired
-     */
-    public void set_ano_sigfminus(int i, double f) {
-        anofsigf[i][3] = f;
-    }
-
-    public double get_ano_sigfplus(int i) {
-        return anofsigf[i][1];
-    }
-
-    public double get_ano_sigfminus(int i) {
-        return anofsigf[i][3];
-    }
-
-    /**
-     * set anomalous F/sigF+ amplitude
-     *
-     * @param i reflection to set
-     * @param f value of F+ desired
-     * @param sigf value of sigF+
-     */
-    public void set_ano_fsigfplus(int i, double f, double sigf) {
-        anofsigf[i][0] = f;
-        anofsigf[i][1] = sigf;
-    }
-
-    /**
-     * set anomalous F/sigF- amplitude
-     *
-     * @param i reflection to set
-     * @param f value of F- desired
-     * @param sigf value of sigF-
-     */
-    public void set_ano_fsigfminus(int i, double f, double sigf) {
-        anofsigf[i][2] = f;
-        anofsigf[i][3] = sigf;
     }
 
     /**

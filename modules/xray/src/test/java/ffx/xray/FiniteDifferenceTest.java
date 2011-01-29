@@ -125,7 +125,8 @@ public class FiniteDifferenceTest {
         refinementdata = new RefinementData(properties,
                 reflectionlist);
         assertTrue(info + " mtz file should be read in without errors",
-                mtzfilter.readFile(mtzfile, reflectionlist, refinementdata));
+                mtzfilter.readFile(mtzfile, reflectionlist, refinementdata,
+                properties));
 
         ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties);
         ForceField forceField = forceFieldFilter.parse();

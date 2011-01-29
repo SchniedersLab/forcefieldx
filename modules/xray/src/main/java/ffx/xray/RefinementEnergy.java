@@ -23,6 +23,7 @@ package ffx.xray;
 import static ffx.numerics.VectorMath.b2u;
 
 import ffx.algorithms.AlgorithmListener;
+import ffx.algorithms.MolecularDynamics;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Atom;
@@ -270,6 +271,7 @@ public class RefinementEnergy implements Potential, AlgorithmListener {
                 }
                 e += weight * xrayEnergy.energyAndGradient(x, gXray);
 
+                /*
                 double normchem = 0.0;
                 for (int i = 0; i < nxyz; i++) {
                     normchem += g[i] * g[i];
@@ -281,6 +283,7 @@ public class RefinementEnergy implements Potential, AlgorithmListener {
                 }
                 normxray = Math.sqrt(normxray) / nxyz;
                 System.out.println("chem: " + normchem + " xray: " + normxray + " weight wa: " + normchem / normxray);
+                 */
 
                 // Add the chemical and X-ray gradients.
                 for (int i = 0; i < nxyz; i++) {
@@ -429,10 +432,13 @@ public class RefinementEnergy implements Potential, AlgorithmListener {
     public boolean algorithmUpdate(MolecularAssembly active) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < diffractiondata.n; i++) {
-            sb.append(String.format("     dataset %d: R: %6.2f Rfree: %6.2f\n",
+            sb.append(String.format("     dataset %d (weight: %5.1f): R: %6.2f Rfree: %6.2f chemical energy: %8.2f likelihood: %8.2f\n",
                     i+1,
+                    diffractiondata.dataname[i].weight,
                     diffractiondata.crystalstats[i].get_r(),
-                    diffractiondata.crystalstats[i].get_rfree()));
+                    diffractiondata.crystalstats[i].get_rfree(),
+                    active.getPotentialEnergy().getTotal(),
+                    diffractiondata.dataname[i].weight * diffractiondata.sigmaaminimize[i].calculateLikelihood()));
         }
         logger.info(sb.toString());
 

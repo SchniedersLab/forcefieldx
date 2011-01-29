@@ -148,10 +148,12 @@ public class ScaleBulkMinimizeTest {
                 reflectionlist);
         if (mtzname != null) {
             assertTrue(info + " mtz file should be read in without errors",
-                    mtzfilter.readFile(mtzfile, reflectionlist, refinementdata));
+                    mtzfilter.readFile(mtzfile, reflectionlist, refinementdata,
+                    properties));
         } else {
             assertTrue(info + " cif file should be read in without errors",
-                    ciffilter.readFile(ciffile, reflectionlist, refinementdata));
+                    ciffilter.readFile(ciffile, reflectionlist, refinementdata,
+                    properties));
         }
 
         ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties);
