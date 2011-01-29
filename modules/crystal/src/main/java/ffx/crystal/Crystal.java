@@ -34,6 +34,7 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.math.linear.Array2DRowRealMatrix;
 import org.apache.commons.math.linear.LUDecompositionImpl;
 import org.apache.commons.math.linear.RealMatrix;
+import org.apache.commons.math.util.MathUtils;
 
 /**
  * The Crystal class encapsulates the lattice parameters and space group that
@@ -75,7 +76,7 @@ public class Crystal {
      */
     public final SpaceGroup spaceGroup;
     /**
-     * A refence the space group crystal system.
+     * reference to the space group crystal system.
      */
     private final SpaceGroup.CrystalSystem crystalSystem;
     /**
@@ -142,7 +143,7 @@ public class Crystal {
      * @param sg The space group symbol.
      */
     public Crystal(double a, double b, double c, double alpha, double beta,
-                   double gamma, String sg) {
+            double gamma, String sg) {
         this.a = a;
         this.b = b;
         this.c = c;
@@ -161,7 +162,7 @@ public class Crystal {
 
         if (!SpaceGroup.checkRestrictions(crystalSystem, a, b, c, alpha, beta, gamma)) {
             String message = "The lattice parameters do not satisfy the " + crystalSystem
-                             + " crystal system restrictions:/n" + toString();
+                    + " crystal system restrictions:/n" + toString();
             logger.severe(message);
         }
 
@@ -214,25 +215,25 @@ public class Crystal {
 
                     index = 0;
                     if ((rot[1][1] * rot[1][2] == -1)
-                        || (rot[2][1] * rot[2][2] == -1)
-                        || (rot[1][1] * rot[1][2] == 1)
-                        || (rot[2][1] * rot[2][2] == 1)) {
+                            || (rot[2][1] * rot[2][2] == -1)
+                            || (rot[1][1] * rot[1][2] == 1)
+                            || (rot[2][1] * rot[2][2] == 1)) {
                         scale_b[0] = index++;
                         scale_b[1] = index++;
                         scale_b[2] = scale_b[1];
                         hexagonal = true;
                     } else if ((rot[0][0] * rot[0][2] == -1)
-                                   || (rot[2][0] * rot[2][2] == -1)
-                                   || (rot[0][0] * rot[0][2] == 1)
-                                   || (rot[2][0] * rot[2][2] == 1)) {
+                            || (rot[2][0] * rot[2][2] == -1)
+                            || (rot[0][0] * rot[0][2] == 1)
+                            || (rot[2][0] * rot[2][2] == 1)) {
                         scale_b[0] = index++;
                         scale_b[1] = index++;
                         scale_b[2] = scale_b[0];
                         hexagonal = true;
                     } else if ((rot[0][0] * rot[0][1] == -1)
-                                   || (rot[1][0] * rot[1][1] == -1)
-                                   || (rot[0][0] * rot[0][1] == 1)
-                                   || (rot[1][0] * rot[1][1] == 1)) {
+                            || (rot[1][0] * rot[1][1] == -1)
+                            || (rot[0][0] * rot[0][1] == 1)
+                            || (rot[1][0] * rot[1][1] == 1)) {
                         scale_b[0] = index++;
                         scale_b[1] = scale_b[0];
                         scale_b[2] = index++;
@@ -388,8 +389,8 @@ public class Crystal {
         sg = SpaceGroup.pdb2ShortName(sg);
 
         if (a < 0.0 || b < 0.0 || c < 0.0
-            || alpha < 0.0 || beta < 0.0 || gamma < 0.0
-            || sg == null) {
+                || alpha < 0.0 || beta < 0.0 || gamma < 0.0
+                || sg == null) {
             return null;
         }
 
@@ -417,12 +418,12 @@ public class Crystal {
         if (this == obj) {
             return true;
         }
-        return (this.a == ((Crystal) obj).a
-                && this.b == ((Crystal) obj).b
-                && this.c == ((Crystal) obj).c
-                && this.alpha == ((Crystal) obj).alpha
-                && this.beta == ((Crystal) obj).beta
-                && this.gamma == ((Crystal) obj).gamma
+        return (MathUtils.equals(this.a, ((Crystal) obj).a, 0.001)
+                && MathUtils.equals(this.b, ((Crystal) obj).b, 0.001)
+                && MathUtils.equals(this.c, ((Crystal) obj).c, 0.001)
+                && MathUtils.equals(this.alpha, ((Crystal) obj).alpha, 0.01)
+                && MathUtils.equals(this.beta, ((Crystal) obj).beta, 0.01)
+                && MathUtils.equals(this.gamma, ((Crystal) obj).gamma, 0.01)
                 && this.spaceGroup.number == ((Crystal) obj).spaceGroup.number);
     }
 
@@ -735,7 +736,7 @@ public class Crystal {
      *            The symmetry operator.
      */
     public void applySymOp(int n, double x[], double y[], double z[],
-                           double mateX[], double mateY[], double mateZ[], SymOp symOp) {
+            double mateX[], double mateY[], double mateZ[], SymOp symOp) {
         if (x == null || y == null || z == null) {
             return;
         }
@@ -983,7 +984,7 @@ public class Crystal {
      *            The symmetry operator.
      */
     public void applySymRot(int n, double x[], double y[], double z[],
-                            double mateX[], double mateY[], double mateZ[], SymOp symOp) {
+            double mateX[], double mateY[], double mateZ[], SymOp symOp) {
         double rot[][] = symOp.rot;
         final double rot00 = rot[0][0];
         final double rot10 = rot[1][0];
@@ -1015,7 +1016,7 @@ public class Crystal {
     }
 
     public void toFractionalCoordinates(int n, double x[], double y[],
-                                        double z[], double xf[], double yf[], double zf[]) {
+            double z[], double xf[], double yf[], double zf[]) {
         for (int i = 0; i < n; i++) {
             double xc = x[i];
             double yc = y[i];
@@ -1064,7 +1065,7 @@ public class Crystal {
     }
 
     public void toCartesianCoordinates(int n, double xf[], double yf[],
-                                       double zf[], double x[], double y[], double z[]) {
+            double zf[], double x[], double y[], double z[]) {
         for (int i = 0; i < n; i++) {
             double xi = xf[i];
             double yi = yf[i];
@@ -1132,14 +1133,14 @@ public class Crystal {
         double trans[] = symOp.tr;
         // Apply translation
         return -2.0 * PI
-               * (hkl[0] * trans[0] + hkl[1] * trans[1] + hkl[2] * trans[2]);
+                * (hkl[0] * trans[0] + hkl[1] * trans[1] + hkl[2] * trans[2]);
     }
 
     public static double sym_phase_shift(HKL hkl, SymOp symOp) {
         double trans[] = symOp.tr;
         // Apply translation
         return -2.0 * PI
-               * (hkl.h() * trans[0] + hkl.k() * trans[1] + hkl.l() * trans[2]);
+                * (hkl.h() * trans[0] + hkl.k() * trans[1] + hkl.l() * trans[2]);
     }
 
     // this is here as its an atypical mod function used by xtal methods

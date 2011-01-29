@@ -57,6 +57,9 @@ public interface DiffractionFileFilter {
      * @param file file to read in
      * @param reflectionlist the {@link ReflectionList} to find data indices
      * @param refinementdata the {@link RefinementData} object to fill in
+     * @param properties system properties
+     * @return true if read in properly
      */
-    boolean readFile(File file, ReflectionList reflectionlist, RefinementData refinementdata);
+    boolean readFile(File file, ReflectionList reflectionlist,
+            RefinementData refinementdata, CompositeConfiguration properties);
 }

@@ -21,6 +21,7 @@
 package ffx.xray;
 
 import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.lang.StringUtils;
 
 import java.io.File;
 import java.io.DataInputStream;
@@ -87,6 +88,7 @@ public class MTZFilter implements DiffractionFileFilter {
     final private ArrayList<dataset> datasets = new ArrayList();
     private boolean headerparsed = false;
     private String title;
+    private String fostring, sigfostring, rfreestring;
     private int h, k, l, fo, sigfo, rfree, fplus, sigfplus, fminus, sigfminus, rfreeplus, rfreeminus;
     private int dsetoffset = 1;
     public int ncol;
@@ -167,6 +169,13 @@ public class MTZFilter implements DiffractionFileFilter {
             return null;
         }
 
+        // column identifiers
+        fostring = sigfostring = rfreestring = null;
+        if (properties != null) {
+            fostring = properties.getString("fostring", null);
+            sigfostring = properties.getString("sigfostring", null);
+            rfreestring = properties.getString("rfreestring", null);
+        }
         h = k = l = fo = sigfo = rfree = -1;
         fplus = sigfplus = fminus = sigfminus = rfreeplus = rfreeminus = -1;
         parse_columns();
@@ -210,7 +219,7 @@ public class MTZFilter implements DiffractionFileFilter {
 
     @Override
     public boolean readFile(File mtzFile, ReflectionList reflectionlist,
-            RefinementData refinementdata) {
+            RefinementData refinementdata, CompositeConfiguration properties) {
         int nread, nignore, nres, nfriedel, ncut;
         ByteOrder b = ByteOrder.nativeOrder();
         FileInputStream fis;
@@ -265,6 +274,12 @@ public class MTZFilter implements DiffractionFileFilter {
             }
 
             // column identifiers
+            fostring = sigfostring = rfreestring = null;
+            if (properties != null) {
+                fostring = properties.getString("fostring", null);
+                sigfostring = properties.getString("sigfostring", null);
+                rfreestring = properties.getString("rfreestring", null);
+            }
             h = k = l = fo = sigfo = rfree = -1;
             fplus = sigfplus = fminus = sigfminus = rfreeplus = rfreeminus = -1;
             parse_columns();
@@ -356,6 +371,10 @@ public class MTZFilter implements DiffractionFileFilter {
             dis.skipBytes(80);
 
             // read in data
+            double anofsigf[][] = new double[refinementdata.n][4];
+            for (int i = 0; i < refinementdata.n; i++) {
+                anofsigf[i][0] = anofsigf[i][1] = anofsigf[i][2] = anofsigf[i][3] = Double.NaN;
+            }
             nread = nignore = nres = nfriedel = ncut = 0;
             for (int i = 0; i < nrfl; i++) {
                 for (int j = 0; j < ncol; j++) {
@@ -378,10 +397,12 @@ public class MTZFilter implements DiffractionFileFilter {
                             }
                         }
                         if (friedel) {
-                            refinementdata.set_ano_fsigfminus(hkl.index(), data[fo], data[sigfo]);
+                            anofsigf[hkl.index()][2] = data[fo];
+                            anofsigf[hkl.index()][3] = data[sigfo];
                             nfriedel++;
                         } else {
-                            refinementdata.set_ano_fsigfplus(hkl.index(), data[fo], data[sigfo]);
+                            anofsigf[hkl.index()][0] = data[fo];
+                            anofsigf[hkl.index()][1] = data[sigfo];
                         }
                     } else {
                         if (fplus > 0 && sigfplus > 0) {
@@ -391,7 +412,8 @@ public class MTZFilter implements DiffractionFileFilter {
                                     continue;
                                 }
                             }
-                            refinementdata.set_ano_fsigfplus(hkl.index(), data[fplus], data[sigfplus]);
+                            anofsigf[hkl.index()][0] = data[fplus];
+                            anofsigf[hkl.index()][1] = data[sigfplus];
                         }
                         if (fminus > 0 && sigfminus > 0) {
                             if (refinementdata.fsigfcutoff > 0.0) {
@@ -400,7 +422,8 @@ public class MTZFilter implements DiffractionFileFilter {
                                     continue;
                                 }
                             }
-                            refinementdata.set_ano_fsigfminus(hkl.index(), data[fminus], data[sigfminus]);
+                            anofsigf[hkl.index()][2] = data[fminus];
+                            anofsigf[hkl.index()][3] = data[sigfminus];
                         }
                     }
                     if (rfree > 0) {
@@ -428,7 +451,7 @@ public class MTZFilter implements DiffractionFileFilter {
             }
 
             // set up fsigf from F+ and F-
-            refinementdata.generate_fsigf_from_anofsigf();
+            refinementdata.generate_fsigf_from_anofsigf(anofsigf);
 
             sb.append(String.format("MTZ file type (machine stamp): %s\n",
                     stampstr));
@@ -598,7 +621,6 @@ public class MTZFilter implements DiffractionFileFilter {
 
     private void parse_columns() {
 
-        // TODO: allow user to set mtz strings to look for in properties
         int nc = 0;
         StringBuilder sb = new StringBuilder();
         for (Iterator i = columns.iterator(); i.hasNext(); nc++) {
@@ -617,7 +639,8 @@ public class MTZFilter implements DiffractionFileFilter {
                     || label.equalsIgnoreCase("rfree")
                     || label.equalsIgnoreCase("rfreeflag")
                     || label.equalsIgnoreCase("r-free-flags")
-                    || label.equalsIgnoreCase("test"))
+                    || label.equalsIgnoreCase("test")
+                    || StringUtils.startsWithIgnoreCase(label, rfreestring))
                     && c.type == 'I') {
                 sb.append(String.format("Reading R Free column: \"%s\"\n", c.label));
                 rfree = nc;
@@ -644,7 +667,8 @@ public class MTZFilter implements DiffractionFileFilter {
             } else if ((label.equalsIgnoreCase("f")
                     || label.equalsIgnoreCase("fp")
                     || label.equalsIgnoreCase("fo")
-                    || label.equalsIgnoreCase("fobs"))
+                    || label.equalsIgnoreCase("fobs")
+                    || StringUtils.startsWithIgnoreCase(label, fostring))
                     && c.type == 'F') {
                 sb.append(String.format("Reading Fo column: \"%s\"\n", c.label));
                 fo = nc;
@@ -663,7 +687,8 @@ public class MTZFilter implements DiffractionFileFilter {
             } else if ((label.equalsIgnoreCase("sigf")
                     || label.equalsIgnoreCase("sigfp")
                     || label.equalsIgnoreCase("sigfo")
-                    || label.equalsIgnoreCase("sigfobs"))
+                    || label.equalsIgnoreCase("sigfobs")
+                    || StringUtils.startsWithIgnoreCase(label, sigfostring))
                     && c.type == 'Q') {
                 sb.append(String.format("Reading sigFo column: \"%s\"\n", c.label));
                 sigfo = nc;

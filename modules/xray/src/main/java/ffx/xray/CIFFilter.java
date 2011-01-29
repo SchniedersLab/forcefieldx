@@ -180,7 +180,7 @@ public class CIFFilter implements DiffractionFileFilter {
 
     @Override
     public boolean readFile(File cifFile, ReflectionList reflectionlist,
-            RefinementData refinementdata) {
+            RefinementData refinementdata, CompositeConfiguration properties) {
         int nread, nnan, nres, nignore, ncifignore, nfriedel, ncut;
         boolean transpose = false;
 
@@ -300,6 +300,10 @@ public class CIFFilter implements DiffractionFileFilter {
             br.reset();
 
             // read in data
+            double anofsigf[][] = new double[refinementdata.n][4];
+            for (int i = 0; i < refinementdata.n; i++) {
+                anofsigf[i][0] = anofsigf[i][1] = anofsigf[i][2] = anofsigf[i][3] = Double.NaN;
+            }
             nread = nnan = nres = nignore = ncifignore = nfriedel = ncut = 0;
             while ((str = br.readLine()) != null) {
                 // reached end, break
@@ -351,14 +355,12 @@ public class CIFFilter implements DiffractionFileFilter {
                         }
 
                         if (friedel) {
-                            refinementdata.set_ano_fsigfminus(hkl.index(),
-                                    Double.parseDouble(strarray[fo]),
-                                    Double.parseDouble(strarray[sigfo]));
+                            anofsigf[hkl.index()][2] = Double.parseDouble(strarray[fo]);
+                            anofsigf[hkl.index()][3] = Double.parseDouble(strarray[sigfo]);
                             nfriedel++;
                         } else {
-                            refinementdata.set_ano_fsigfplus(hkl.index(),
-                                    Double.parseDouble(strarray[fo]),
-                                    Double.parseDouble(strarray[sigfo]));
+                            anofsigf[hkl.index()][0] = Double.parseDouble(strarray[fo]);
+                            anofsigf[hkl.index()][1] = Double.parseDouble(strarray[sigfo]);
                         }
                     }
 
@@ -375,13 +377,13 @@ public class CIFFilter implements DiffractionFileFilter {
             }
 
             br.close();
+
+            // set up fsigf from F+ and F-
+            refinementdata.generate_fsigf_from_anofsigf(anofsigf);
         } catch (IOException ioe) {
             System.out.println("IO Exception: " + ioe.getMessage());
             return false;
         }
-
-        // set up fsigf from F+ and F-
-        refinementdata.generate_fsigf_from_anofsigf();
 
         sb.append(String.format("HKL data is %s\n",
                 transpose ? "transposed" : "not transposed"));

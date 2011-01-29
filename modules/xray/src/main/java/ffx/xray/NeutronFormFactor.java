@@ -51,8 +51,11 @@ import java.util.logging.Logger;
  *
  * @author Tim Fenn<br>
  *
- * @see <a href="http://dx.doi.org/10.1107/9780955360206000059410.1107/97809553602060000594" target="_blank">
+ * @see <a href="http://dx.doi.org/10.1107/97809553602060000594" target="_blank">
  * V. F. Sears, Int. Tables Vol. C (2006). Table 4.4.4.1</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1107/97809553602060000600" target="_blank">
+ * B. T. M. Willis, Int. Tables Vol. C (2006). Chapter 6.1.3</a>
  *
  * @see <a href="http://dx.doi.org/10.1107/S0907444909022707" target="_blank">
  * M. J. Schnieders, T. D. Fenn, V. S. Pande and A. T. Brunger,

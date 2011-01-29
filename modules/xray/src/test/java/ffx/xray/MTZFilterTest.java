@@ -77,14 +77,14 @@ public class MTZFilterTest {
     public void testMTZReadFile() {
         MTZFilter mtzfilter = new MTZFilter();
         assertTrue("mtz file should be read in without errors",
-                mtzfilter.readFile(mtzfile, reflectionlist, refinementdata));
+                mtzfilter.readFile(mtzfile, reflectionlist, refinementdata, null));
     }
 
     @Test
     public void testMTZParams() {
         MTZFilter mtzfilter = new MTZFilter();
         assertTrue("mtz file should be read in without errors",
-                mtzfilter.readFile(mtzfile, reflectionlist, refinementdata));
+                mtzfilter.readFile(mtzfile, reflectionlist, refinementdata, null));
 
         assertEquals("mtz file should have correct number of columns",
                 6, mtzfilter.ncol);
@@ -100,7 +100,7 @@ public class MTZFilterTest {
     public void testMTZHKL() {
         MTZFilter mtzfilter = new MTZFilter();
         assertTrue("mtz file should be read in without errors",
-                mtzfilter.readFile(mtzfile, reflectionlist, refinementdata));
+                mtzfilter.readFile(mtzfile, reflectionlist, refinementdata, null));
 
         HKL hkl = reflectionlist.getHKL(-10, 1, 1);
         assertEquals("-10 1 1 FP value should be correct",
