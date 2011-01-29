@@ -1086,7 +1086,7 @@ public final class PDBFilter extends SystemFilter {
                         case 3:
                             switch (aBonds.size()) {
                                 case 2:
-                                    intxyz(hydrogen, ia, 1.0, ib, 120.0, ic, 120.0, 0);
+                                    intxyz(hydrogen, ia, 1.0, ib, 120.0, ic, 180.0, 0);
                                     break;
                                 case 1:
                                     intxyz(hydrogen, ia, 1.0, ib, 120.0, null, 0.0, 0);
