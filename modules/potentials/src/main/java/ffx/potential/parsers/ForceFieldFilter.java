@@ -103,7 +103,7 @@ public class ForceFieldFilter {
             // Append the suffix if necessary
             /*
             if (!parameterLocation.endsWith(".prm")) {
-                parameterLocation = parameterLocation + ".prm";
+            parameterLocation = parameterLocation + ".prm";
             } */
             parameterFile = new File(parameterLocation);
             // If the location is not absolute, check if it is relative
@@ -120,13 +120,19 @@ public class ForceFieldFilter {
             /**
              * Parse an external (ie. not in the FFX jar) parameter file.
              */
-            if (forceFieldFile != null && forceFieldFile.exists()
-                    && forceFieldFile.canRead()) {
+            if (forceFieldFile != null) {
+                if (!forceFieldFile.exists()) {
+                    logger.info(" " + forceFieldFile + " does not exist.");
+                    return null;
+                } else if (!forceFieldFile.canRead()) {
+                    logger.info(" " + forceFieldFile + " can not be read.");
+                    return null;
+                }
                 parse(new FileInputStream(forceFieldFile));
-            /**
-             * Parse an internal parameter file and add it to the
-             * composite configuration.
-             */
+                /**
+                 * Parse an internal parameter file and add it to the
+                 * composite configuration.
+                 */
             } else {
                 String forceFieldString = properties.getString("forcefield", "AMOEBA-BIO-2009");
                 Force_Field ff = null;
@@ -249,7 +255,7 @@ public class ForceFieldFilter {
                 String tokens[] = input.trim().split(" +");
                 if (tokens != null) {
                     String keyword = tokens[0].toUpperCase().replaceAll("-",
-                            "_");
+                                                                        "_");
                     boolean parsed = true;
                     try {
                         // Parse Keywords with a String value.
@@ -391,7 +397,7 @@ public class ForceFieldFilter {
             newBondAngle[j] = bondAngle[j];
         }
         AngleType angleType = new AngleType(atomClasses, forceConstant,
-                newBondAngle);
+                                            newBondAngle);
         forceField.addForceFieldType(angleType);
     }
 
@@ -447,7 +453,7 @@ public class ForceFieldFilter {
             // Hybridization
             int hybridization = Integer.parseInt(tokens[index++]);
             AtomType atomType = new AtomType(type, atomClass, name,
-                    environment, atomicNumber, mass, hybridization);
+                                             environment, atomicNumber, mass, hybridization);
             forceField.addForceFieldType(atomType);
         } catch (Exception e) {
             String message = "Exception parsing CHARGE type:\n" + input + "\n";
@@ -482,7 +488,7 @@ public class ForceFieldFilter {
             String bonds[] = null;
             if (bondCount > 0) {
                 bonds = new String[bondCount];
-                for (int i=0; i<bondCount; i++) {
+                for (int i = 0; i < bondCount; i++) {
                     bonds[i] = tokens[i + 1];
                 }
             }
@@ -506,7 +512,7 @@ public class ForceFieldFilter {
             double forceConstant = Double.parseDouble(tokens[3]);
             double distance = Double.parseDouble(tokens[4]);
             BondType bondType = new BondType(atomClasses, forceConstant,
-                    distance);
+                                             distance);
             forceField.addForceFieldType(bondType);
         } catch (Exception e) {
             String message = "Exception parsing BOND type:\n" + input + "\n";
@@ -542,7 +548,7 @@ public class ForceFieldFilter {
                 atomTypes[i] = Integer.parseInt(tokens[i + 1]);
             }
             MultipoleType.MultipoleFrameDefinition frameDefinition =
-                    MultipoleType.MultipoleFrameDefinition.ZTHENX;
+                                                   MultipoleType.MultipoleFrameDefinition.ZTHENX;
             if (atomTypes.length == 3 && (atomTypes[1] < 0 || atomTypes[2] < 0)) {
                 frameDefinition = MultipoleType.MultipoleFrameDefinition.BISECTOR;
             } else if (atomTypes.length == 4 && atomTypes[2] < 0 && atomTypes[3] < 0) {
@@ -596,7 +602,7 @@ public class ForceFieldFilter {
             quadrupole[0][2] = quadrupole[2][0];
             quadrupole[1][2] = quadrupole[2][1];
             MultipoleType multipoleType = new MultipoleType(c, dipole,
-                    quadrupole, atomTypes, frameDefinition);
+                                                            quadrupole, atomTypes, frameDefinition);
             forceField.addForceFieldType(multipoleType);
         } catch (Exception e) {
             String message = "Exception parsing MULTIPOLE type:\n" + input + "\n";
@@ -623,8 +629,7 @@ public class ForceFieldFilter {
             for (int i = 0; i < numTypes; i++) {
                 atomTypes[i] = Integer.parseInt(tokens[i + 1]);
             }
-            MultipoleType.MultipoleFrameDefinition frameDefinition
-                    = MultipoleType.MultipoleFrameDefinition.ZTHENX;
+            MultipoleType.MultipoleFrameDefinition frameDefinition = MultipoleType.MultipoleFrameDefinition.ZTHENX;
             if (atomTypes.length == 3 && (atomTypes[1] < 0 || atomTypes[2] < 0)) {
                 frameDefinition = MultipoleType.MultipoleFrameDefinition.BISECTOR;
             } else if (atomTypes.length == 4 && atomTypes[2] < 0 && atomTypes[3] < 0) {
@@ -654,7 +659,7 @@ public class ForceFieldFilter {
             quadrupole[0][2] = quadrupole[2][0];
             quadrupole[1][2] = quadrupole[2][1];
             MultipoleType multipoleType = new MultipoleType(c, dipole,
-                    quadrupole, atomTypes, frameDefinition);
+                                                            quadrupole, atomTypes, frameDefinition);
             forceField.addForceFieldType(multipoleType);
         } catch (Exception e) {
             String message = "Exception parsing MULTIPOLE type:\n" + input + "\n";
@@ -675,7 +680,7 @@ public class ForceFieldFilter {
             atomClasses[3] = Integer.parseInt(tokens[4]);
             double forceConstant = Double.parseDouble(tokens[5]);
             OutOfPlaneBendType opbendType = new OutOfPlaneBendType(atomClasses,
-                    forceConstant);
+                                                                   forceConstant);
             forceField.addForceFieldType(opbendType);
         } catch (Exception e) {
             String message = "Exception parsing OPBEND type:\n" + input + "\n";
@@ -694,7 +699,7 @@ public class ForceFieldFilter {
             atomClasses[1] = Integer.parseInt(tokens[2]);
             double forceConstant = Double.parseDouble(tokens[3]);
             PiTorsionType piTorsionType = new PiTorsionType(atomClasses,
-                    forceConstant);
+                                                            forceConstant);
             forceField.addForceFieldType(piTorsionType);
         } catch (Exception e) {
             String message = "Exception parsing PITORS type:\n" + input + "\n";
@@ -719,7 +724,7 @@ public class ForceFieldFilter {
                 }
             }
             PolarizeType polarizeType = new PolarizeType(atomType,
-                    polarizability, thole, polarizationGroup);
+                                                         polarizability, thole, polarizationGroup);
             forceField.addForceFieldType(polarizeType);
             //polarizeType.log();
         } catch (Exception e) {
@@ -742,7 +747,7 @@ public class ForceFieldFilter {
             forceConstants[0] = Double.parseDouble(tokens[4]);
             forceConstants[1] = Double.parseDouble(tokens[5]);
             StretchBendType strbndType = new StretchBendType(atomClasses,
-                    forceConstants);
+                                                             forceConstants);
             forceField.addForceFieldType(strbndType);
         } catch (Exception e) {
             String message = "Exception parsing STRBND type:\n" + input + "\n";
@@ -772,7 +777,7 @@ public class ForceFieldFilter {
                 periodicity[i] = Integer.parseInt(tokens[index++]);
             }
             TorsionType torsionType = new TorsionType(atomClasses, amplitude,
-                    phase, periodicity);
+                                                      phase, periodicity);
             forceField.addForceFieldType(torsionType);
         } catch (Exception e) {
             String message = "Exception parsing TORSION type:\n" + input + "\n";
@@ -781,7 +786,7 @@ public class ForceFieldFilter {
     }
 
     private void parseTorsionTorsion(String input, String[] tokens,
-            BufferedReader br) {
+                                     BufferedReader br) {
         if (tokens.length < 8) {
             logger.warning("Invalid TORTORS type:\n" + input);
             return;
@@ -870,7 +875,7 @@ public class ForceFieldFilter {
             double forceConstant = Double.parseDouble(tokens[4]);
             double distance = Double.parseDouble(tokens[5]);
             UreyBradleyType ureyType = new UreyBradleyType(atomClasses,
-                    forceConstant, distance);
+                                                           forceConstant, distance);
             forceField.addForceFieldType(ureyType);
         } catch (Exception e) {
             String message = "Exception parsing UREYBRAD type:\n" + input + "\n";
@@ -892,7 +897,7 @@ public class ForceFieldFilter {
                 reductionFactor = Double.parseDouble(tokens[4]);
             }
             VDWType vdwType = new VDWType(atomType, radius, wellDepth,
-                    reductionFactor);
+                                          reductionFactor);
             forceField.addForceFieldType(vdwType);
         } catch (Exception e) {
             String message = "Exception parsing VDW type:\n" + input + "\n";

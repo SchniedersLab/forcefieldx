@@ -24,8 +24,10 @@ import static java.lang.String.format;
 
 import java.io.File;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -512,6 +514,18 @@ public class ForceField {
             }
         }
         return null;
+    }
+
+    public HashMap<String, AtomType> getAtomTypes(String moleculeName) {
+        HashMap<String, AtomType> types = new HashMap<String, AtomType>();
+        for (BioType bioType : bioTypes.values()) {
+            if (bioType.moleculeName.equalsIgnoreCase(moleculeName)) {
+                String key = Integer.toString(bioType.atomType);
+                AtomType type = atomTypes.get(key);
+                types.put(bioType.atomName.toUpperCase(), type);
+            }
+        }
+        return types;
     }
 
     public String[] getBonds(String moleculeName, String atomName) {

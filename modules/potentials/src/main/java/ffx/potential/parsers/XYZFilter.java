@@ -190,7 +190,10 @@ public class XYZFilter extends SystemFilter {
                 int type = Integer.parseInt(tokens[5]);
                 AtomType atomType = forceField.getAtomType(Integer.toString(type));
                 if (atomType == null) {
-                    logger.warning("Check Atom Type for Atom " + (i + 1) + " in " + activeMolecularAssembly.getFile().getName());
+                    StringBuilder message = new StringBuilder("Check atom type ");
+                    message.append(type).append(" for Atom ").append(i + 1);
+                    message.append(" in ").append(activeMolecularAssembly.getFile().getName());
+                    logger.warning(message.toString());
                     return false;
                 }
                 Atom a = new Atom(i + 1, atomName, atomType, d[i]);

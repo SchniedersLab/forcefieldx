@@ -973,18 +973,36 @@ public final class PDBFilter extends SystemFilter {
             logger.info(" Attempting to patch " + moleculeName);
             ArrayList<Atom> moleculeAtoms = molecule.getAtomList();
             boolean patched = true;
+            HashMap<String, AtomType> types = forceField.getAtomTypes(moleculeName);
+            /**
+             * Assign atom types for all known atoms.
+             */
             for (Atom atom : moleculeAtoms) {
-                String atomName = atom.getName();
-                AtomType atomType = forceField.getAtomType(moleculeName, atomName);
+                String atomName = atom.getName().toUpperCase();
+                AtomType atomType = types.get(atomName);
                 if (atomType == null) {
                     logger.info(" No atom type was found for " + atomName + " of " + moleculeName + ".");
                     patched = false;
                     break;
                 } else {
                     atom.setAtomType(atomType);
+                    types.remove(atomName);
                 }
             }
-            // Create bonds
+            /**
+             * Create missing hydrogen atoms.
+             * Check for missing heavy atoms.
+             */
+            if (patched && !types.isEmpty()) {
+                for (AtomType type : types.values()) {
+                    if (type.atomicNumber != 1) {
+                        logger.info(" Missing heavy atom " + type.name);
+                        patched = false;
+                        break;
+                    }
+                }
+            }
+            // Create bonds between known atoms.
             if (patched) {
                 for (Atom atom : moleculeAtoms) {
                     String atomName = atom.getName();
@@ -999,6 +1017,123 @@ public final class PDBFilter extends SystemFilter {
                     }
                 }
             }
+            // Create missing hydrogen atoms.
+            if (patched && !types.isEmpty()) {
+                // Create a hashmap of the molecule's atoms
+                HashMap<String, Atom> atomMap = new HashMap<String, Atom>();
+                for (Atom atom : moleculeAtoms) {
+                    atomMap.put(atom.getName().toUpperCase(), atom);
+                }
+                for (String atomName : types.keySet()) {
+                    AtomType type = types.get(atomName);
+                    String bonds[] = forceField.getBonds(moleculeName, atomName.toUpperCase());
+                    if (bonds == null || bonds.length != 1) {
+                        patched = false;
+                        logger.info(" Check biotype for hydrogen " + type.name + ".");
+                        break;
+                    }
+                    // Get the heavy atom the hydrogen is bonded to.
+                    Atom ia = atomMap.get(bonds[0].toUpperCase());
+
+                    Atom hydrogen = new Atom(0, atomName, ia.getAltLoc(), new double[3],
+                                             ia.getResidueName(), ia.getResidueNumber(), ia.getChainID(),
+                                             ia.getOccupancy(), ia.getTempFactor(), ia.getSegID());
+                    logger.fine(" Created hydrogen " + atomName +  ".");
+                    hydrogen.setAtomType(type);
+                    molecule.addMSNode(hydrogen);
+                    int valence = ia.getAtomType().valence;
+                    List<Bond> aBonds = ia.getBonds();
+                    /**
+                     * Try to find the following configuration:
+                     * ib-ia-ic
+                     */
+                    Atom ib = null;
+                    Atom ic = null;
+                    if (aBonds.size() > 0) {
+                        Bond bond = aBonds.get(0);
+                        ib = bond.get1_2(ia);
+                    }
+                    if (aBonds.size() > 1) {
+                        Bond bond = aBonds.get(0);
+                        ic = bond.get1_2(ia);
+                    }
+                    /**
+                     * Building the hydrogens depends on hybridization and the
+                     * locations of other bonded atoms.
+                     */
+                    logger.fine(" Bonding " + atomName + " to " + ia.getName()
+                            + " (" + aBonds.size() + " of " + valence + ").");
+                    switch (valence) {
+                        case 4:
+                            switch (aBonds.size()) {
+                                case 3:
+                                    intxyz(hydrogen, ia, 1.0, ib, 109.5, ic, 109.5, 1);
+                                    break;
+                                case 2:
+                                    intxyz(hydrogen, ia, 1.0, ib, 109.5, ic, 109.5, 0);
+                                    break;
+                                case 1:
+                                    intxyz(hydrogen, ia, 1.0, ib, 109.5, null, 0.0, 0);
+                                    break;
+                                case 0:
+                                    intxyz(hydrogen, ia, 1.0, null, 0.0, null, 0.0, 0);
+                                    break;
+                                default:
+                                    logger.info(" Check biotype for hydrogen " + atomName + ".");
+                                    patched = false;
+                            }
+                            break;
+                        case 3:
+                            switch (aBonds.size()) {
+                                case 2:
+                                    intxyz(hydrogen, ia, 1.0, ib, 120.0, ic, 120.0, 0);
+                                    break;
+                                case 1:
+                                    intxyz(hydrogen, ia, 1.0, ib, 120.0, null, 0.0, 0);
+                                    break;
+                                case 0:
+                                    intxyz(hydrogen, ia, 1.0, null, 0.0, null, 0.0, 0);
+                                    break;
+                                default:
+                                    logger.info(" Check biotype for hydrogen " + atomName + ".");
+                                    patched = false;
+                            }
+                            break;
+                        case 2:
+                            switch (aBonds.size()) {
+                                case 1:
+                                    intxyz(hydrogen, ia, 1.0, ib, 180.0, null, 0.0, 0);
+                                    break;
+                                case 0:
+                                    intxyz(hydrogen, ia, 1.0, null, 0.0, null, 0.0, 0);
+                                    break;
+                                default:
+                                    logger.info(" Check biotype for hydrogen " + atomName + ".");
+                                    patched = false;
+                            }
+                            break;
+                        case 1:
+                            switch (aBonds.size()) {
+                                case 0:
+                                    intxyz(hydrogen, ia, 1.0, null, 0.0, null, 0.0, 0);
+                                    break;
+                                default:
+                                    logger.info(" Check biotype for hydrogen " + atomName + ".");
+                                    patched = false;
+                            }
+                            break;
+                        default:
+                            logger.info(" Check biotype for hydrogen " + atomName + ".");
+                            patched = false;
+                    }
+                    if (!patched) {
+                        break;
+                    } else {
+                        bond(ia, hydrogen);
+                    }
+                }
+            }
+
             if (!patched) {
                 logger.log(Level.WARNING, format(" Deleting unrecognized molecule %s.", m.toString()));
                 activeMolecularAssembly.deleteMolecule((Molecule) m);
@@ -1320,8 +1455,8 @@ public final class PDBFilter extends SystemFilter {
                 }
                 int numberOfBonds = atom.getNumBonds();
                 if (numberOfBonds != atomType.valence) {
-                    if (atom == O3s && numberOfBonds == atomType.valence - 1 
-                            && position != LAST_RESIDUE && numberOfResidues != 1) {
+                    if (atom == O3s && numberOfBonds == atomType.valence - 1
+                        && position != LAST_RESIDUE && numberOfResidues != 1) {
                         continue;
                     }
                     logger.log(Level.WARNING, format(" An atom for residue %s has the wrong number of bonds:\n %s", residueName, atom.toString()));
