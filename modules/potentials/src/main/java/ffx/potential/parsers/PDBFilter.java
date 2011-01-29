@@ -1065,7 +1065,7 @@ public final class PDBFilter extends SystemFilter {
                             + " (" + numBonds + " of " + valence + ").");
                     switch (valence) {
                         case 4:
-                            switch (aBonds.size()) {
+                            switch (numBonds) {
                                 case 3:
                                     intxyz(hydrogen, ia, 1.0, ib, 109.5, ic, 109.5, 1);
                                     break;
@@ -1084,7 +1084,7 @@ public final class PDBFilter extends SystemFilter {
                             }
                             break;
                         case 3:
-                            switch (aBonds.size()) {
+                            switch (numBonds) {
                                 case 2:
                                     intxyz(hydrogen, ia, 1.0, ib, 120.0, ic, 180.0, 0);
                                     break;
@@ -1100,9 +1100,9 @@ public final class PDBFilter extends SystemFilter {
                             }
                             break;
                         case 2:
-                            switch (aBonds.size()) {
+                            switch (numBonds) {
                                 case 1:
-                                    intxyz(hydrogen, ia, 1.0, ib, 180.0, null, 0.0, 0);
+                                    intxyz(hydrogen, ia, 1.0, ib, 120.0, null, 0.0, 0);
                                     break;
                                 case 0:
                                     intxyz(hydrogen, ia, 1.0, null, 0.0, null, 0.0, 0);
@@ -1113,7 +1113,7 @@ public final class PDBFilter extends SystemFilter {
                             }
                             break;
                         case 1:
-                            switch (aBonds.size()) {
+                            switch (numBonds) {
                                 case 0:
                                     intxyz(hydrogen, ia, 1.0, null, 0.0, null, 0.0, 0);
                                     break;
