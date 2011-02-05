@@ -282,7 +282,7 @@ public class MolecularAssembly extends MSGroup {
         // la.setNormal(i++, a1);
         // }
         ColoringAttributes cola = new ColoringAttributes(new Color3f(),
-                                                         ColoringAttributes.SHADE_GOURAUD);
+                ColoringAttributes.SHADE_GOURAUD);
         Appearance app = new Appearance();
         lineAttributes = new LineAttributes();
         lineAttributes.setLineWidth(RendererCache.bondwidth);
@@ -425,8 +425,8 @@ public class MolecularAssembly extends MSGroup {
                     long occupiedMemory = runtime.totalMemory() - runtime.freeMemory();
                     long MB = 1024 * 1024;
                     logger.fine("\nIn-Use Memory   (Mb): " + occupiedMemory / MB
-                                + "\nFree Memory     (Mb): " + runtime.freeMemory() / MB
-                                + "\nTotal Memory    (Mb): " + runtime.totalMemory() / MB);
+                            + "\nFree Memory     (Mb): " + runtime.freeMemory() / MB
+                            + "\nTotal Memory    (Mb): " + runtime.totalMemory() / MB);
                 }
             }
             for (MSNode m : molecules.getChildList()) {
@@ -460,6 +460,53 @@ public class MolecularAssembly extends MSGroup {
         }
         removeLeaves();
         setFinalized(true);
+    }
+
+    public Atom findAtom(Atom atom) {
+        if (!atom.isHetero()) {
+            Polymer polymer = getPolymer(atom.getChainID(), atom.getSegID(), false);
+            if (polymer != null) {
+                Residue res = polymer.getResidue(atom.getResidueName(), atom.getResidueNumber(), false);
+                if (res != null) {
+                    MSNode node = res.getAtomNode();
+                    Atom root = (Atom) node.contains(atom);
+                    return root;
+                }
+            }
+            return null;
+        } else {
+            ArrayList<MSNode> list = getMolecules();
+            for (MSNode node : list) {
+                Molecule m = (Molecule) node;
+                if (m.getSegID().equalsIgnoreCase(atom.getSegID())
+                        && m.getResidueName().equalsIgnoreCase(atom.getResidueName())
+                        && m.getResidueNumber() == atom.getResidueNumber()) {
+                    Atom root = (Atom) node.contains(atom);
+                    return root;
+                }
+            }
+            list = getIons();
+            for (MSNode node : list) {
+                Molecule m = (Molecule) node;
+                if (m.getSegID().equalsIgnoreCase(atom.getSegID())
+                        && m.getResidueName().equalsIgnoreCase(atom.getResidueName())
+                        && m.getResidueNumber() == atom.getResidueNumber()) {
+                    Atom root = (Atom) node.contains(atom);
+                    return root;
+                }
+            }
+            list = getWaters();
+            for (MSNode node : list) {
+                Molecule m = (Molecule) node;
+                if (m.getSegID().equalsIgnoreCase(atom.getSegID())
+                        && m.getResidueName().equalsIgnoreCase(atom.getResidueName())
+                        && m.getResidueNumber() == atom.getResidueNumber()) {
+                    Atom root = (Atom) node.contains(atom);
+                    return root;
+                }
+            }
+            return null;
+        }
     }
 
     public String[] getAltLocations() {
@@ -589,7 +636,7 @@ public class MolecularAssembly extends MSGroup {
         }
 
         for (int i = 0; i
-                        < 3; i++) {
+                < 3; i++) {
             Rc[i] /= num;
         }
 
@@ -599,7 +646,7 @@ public class MolecularAssembly extends MSGroup {
             ((Atom) li.next()).getXYZ(xyz);
             VectorMath.diff(xyz, Rc, xyz);
             r =
-            VectorMath.r(xyz);
+                    VectorMath.r(xyz);
             if (d < r) {
                 d = r;
             }
@@ -630,7 +677,7 @@ public class MolecularAssembly extends MSGroup {
             if (node instanceof Polymer) {
                 Polymer polymer = (Polymer) node;
                 if (polymer.getName().equals(segID)
-                    && polymer.getChainID().equals(chainID)) {
+                        && polymer.getChainID().equals(chainID)) {
                     return (Polymer) node;
                 }
             }
@@ -709,7 +756,7 @@ public class MolecularAssembly extends MSGroup {
         for (MSNode node : list) {
             Molecule m = (Molecule) node;
             if (m.getSegID().equalsIgnoreCase(segID) && m.getResidueName().equalsIgnoreCase(resName)
-                && m.getResidueNumber() == resNum) {
+                    && m.getResidueNumber() == resNum) {
                 return (Atom) m.addMSNode(atom);
             }
         }
@@ -717,8 +764,8 @@ public class MolecularAssembly extends MSGroup {
         for (MSNode node : list) {
             Molecule m = (Molecule) node;
             if (m.getSegID().equalsIgnoreCase(segID)
-                && m.getResidueName().equalsIgnoreCase(resName)
-                && m.getResidueNumber() == resNum) {
+                    && m.getResidueName().equalsIgnoreCase(resName)
+                    && m.getResidueNumber() == resNum) {
                 return (Atom) m.addMSNode(atom);
             }
         }
@@ -726,8 +773,8 @@ public class MolecularAssembly extends MSGroup {
         for (MSNode node : list) {
             Molecule m = (Molecule) node;
             if (m.getSegID().equalsIgnoreCase(segID)
-                && m.getResidueName().equalsIgnoreCase(resName)
-                && m.getResidueNumber() == resNum) {
+                    && m.getResidueName().equalsIgnoreCase(resName)
+                    && m.getResidueNumber() == resNum) {
                 return (Atom) m.addMSNode(atom);
             }
         }
@@ -735,15 +782,15 @@ public class MolecularAssembly extends MSGroup {
             Molecule m = new Molecule(resName, resNum, chainID, segID);
             m.addMSNode(atom);
             if (resName.equalsIgnoreCase("DOD")
-                || resName.equalsIgnoreCase("HOH")
-                || resName.equalsIgnoreCase("WAT")) {
+                    || resName.equalsIgnoreCase("HOH")
+                    || resName.equalsIgnoreCase("WAT")) {
                 water.add(m);
-            // NA, K, MG, MG2, CA, CA2, CL
+                // NA, K, MG, MG2, CA, CA2, CL
             } else if (resName.equalsIgnoreCase("NA") || resName.equalsIgnoreCase("K")
-                           || resName.equalsIgnoreCase("MG") || resName.equalsIgnoreCase("MG2")
-                           || resName.equalsIgnoreCase("CA") || resName.equalsIgnoreCase("CA2")
-                           || resName.equalsIgnoreCase("CL") || resName.equalsIgnoreCase("ZN")
-                           || resName.equalsIgnoreCase("ZN2")) {
+                    || resName.equalsIgnoreCase("MG") || resName.equalsIgnoreCase("MG2")
+                    || resName.equalsIgnoreCase("CA") || resName.equalsIgnoreCase("CA2")
+                    || resName.equalsIgnoreCase("CL") || resName.equalsIgnoreCase("ZN")
+                    || resName.equalsIgnoreCase("ZN2")) {
                 ions.add(m);
             } else {
                 molecules.add(m);
@@ -961,16 +1008,16 @@ public class MolecularAssembly extends MSGroup {
         la.setCapability(LineArray.ALLOW_INTERSECT);
         la.setCapability(LineArray.ALLOW_FORMAT_READ);
         atomLookUp =
-        new Atom[4 * numbonds];
+                new Atom[4 * numbonds];
         int i = 0;
         col[3] = 0.9f;
         for (ListIterator li = bondList.listIterator(); li.hasNext();) {
             bond = (Bond) li.next();
             bond.setWire(la, i);
             atom1 =
-            bond.getAtom(0);
+                    bond.getAtom(0);
             atom2 =
-            bond.getAtom(1);
+                    bond.getAtom(1);
             atom1.getV3D(v1);
             atom2.getV3D(v2);
             a1[0] = (float) v1.x;
@@ -1015,10 +1062,10 @@ public class MolecularAssembly extends MSGroup {
 
 
         ColoringAttributes cola = new ColoringAttributes(new Color3f(),
-                                                         ColoringAttributes.SHADE_GOURAUD);
+                ColoringAttributes.SHADE_GOURAUD);
         Appearance app = new Appearance();
         lineAttributes =
-        new LineAttributes();
+                new LineAttributes();
         lineAttributes.setLineWidth(RendererCache.bondwidth);
         lineAttributes.setCapability(LineAttributes.ALLOW_WIDTH_WRITE);
         lineAttributes.setLineAntialiasingEnable(true);
@@ -1127,7 +1174,7 @@ public class MolecularAssembly extends MSGroup {
 
     @Override
     public void setColor(RendererCache.ColorModel newColorModel, Color3f color,
-                         Material mat) {
+            Material mat) {
         for (ListIterator li = getAtomNodeList().listIterator(); li.hasNext();) {
             MSGroup group = (MSGroup) li.next();
             group.setColor(newColorModel, color, mat);
@@ -1175,12 +1222,12 @@ public class MolecularAssembly extends MSGroup {
 
     @Override
     public void setView(RendererCache.ViewModel newViewModel,
-                        List<BranchGroup> newShapes) {
+            List<BranchGroup> newShapes) {
         // Just Detach the whole system branch group
         if (newViewModel == RendererCache.ViewModel.DESTROY) {
             switchGroup.setWhichChild(Switch.CHILD_NONE);
             visible =
-            false;
+                    false;
         } else if (newViewModel == RendererCache.ViewModel.SHOWVRML) {
             switchGroup.setWhichChild(Switch.CHILD_ALL);
         } else if (newViewModel == RendererCache.ViewModel.HIDEVRML) {
@@ -1197,7 +1244,7 @@ public class MolecularAssembly extends MSGroup {
 
             super.setView(newViewModel, myNewShapes);
             ArrayList<ROLS> moleculeList = getList(Molecule.class,
-                                                   new ArrayList<ROLS>());
+                    new ArrayList<ROLS>());
 
 
 
@@ -1253,21 +1300,21 @@ public class MolecularAssembly extends MSGroup {
     public void setVRML(BranchGroup v) {
         vrmlURL = null;
         vrmlFile =
-        null;
+                null;
         vrml =
-        v;
+                v;
     }
 
     public void setVRML(File file) {
         vrmlFile = file;
         vrmlURL =
-        null;
+                null;
     }
 
     public void setVRML(URL url) {
         vrmlURL = url;
         vrmlFile =
-        null;
+                null;
     }
 
     public void setWireWidth(float f) {

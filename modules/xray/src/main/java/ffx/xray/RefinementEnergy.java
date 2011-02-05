@@ -274,12 +274,12 @@ public class RefinementEnergy implements Potential, AlgorithmListener {
                 /*
                 double normchem = 0.0;
                 for (int i = 0; i < nxyz; i++) {
-                    normchem += g[i] * g[i];
+                normchem += g[i] * g[i];
                 }
                 normchem = Math.sqrt(normchem) / nxyz;
                 double normxray = 0.0;
                 for (int i = 0; i < nxyz; i++) {
-                    normxray += gXray[i] * gXray[i];
+                normxray += gXray[i] * gXray[i];
                 }
                 normxray = Math.sqrt(normxray) / nxyz;
                 System.out.println("chem: " + normchem + " xray: " + normxray + " weight wa: " + normchem / normxray);
@@ -358,7 +358,7 @@ public class RefinementEnergy implements Potential, AlgorithmListener {
     public void getAssemblyi(int i, double x[], double xchem[]) {
         assert (x != null && xchem != null);
         for (int j = 0; j < xchem.length; j += 3) {
-            int index = (j + 1) / 3;
+            int index = j / 3;
             int aindex = xindex[i].get(index) * 3;
             xchem[j] = x[aindex];
             xchem[j + 1] = x[aindex + 1];
@@ -377,7 +377,7 @@ public class RefinementEnergy implements Potential, AlgorithmListener {
     public void setAssemblyi(int i, double x[], double xchem[]) {
         assert (x != null && xchem != null);
         for (int j = 0; j < xchem.length; j += 3) {
-            int index = (j + 1) / 3;
+            int index = j / 3;
             int aindex = xindex[i].get(index) * 3;
             x[aindex] += xchem[j];
             x[aindex + 1] += xchem[j + 1];
@@ -433,7 +433,7 @@ public class RefinementEnergy implements Potential, AlgorithmListener {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < diffractiondata.n; i++) {
             sb.append(String.format("     dataset %d (weight: %5.1f): R: %6.2f Rfree: %6.2f chemical energy: %8.2f likelihood: %8.2f\n",
-                    i+1,
+                    i + 1,
                     diffractiondata.dataname[i].weight,
                     diffractiondata.crystalstats[i].get_r(),
                     diffractiondata.crystalstats[i].get_rfree(),

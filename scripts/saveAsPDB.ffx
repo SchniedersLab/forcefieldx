@@ -14,7 +14,7 @@ if (filename == null) {
 
 println("\n Writing out PDB for " + filename);
 
-open(filename);
+systems = open(filename);
 filename = FilenameUtils.removeExtension(filename) + ".pdb";
-saveAsPDB(new File(filename));
+saveAsPDB(systems, new File(filename));
 

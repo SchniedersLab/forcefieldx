@@ -233,37 +233,29 @@ public class DiffractionData {
         ArrayList<MSNode> nlist0 = assembly[0].getNodeList();
         ArrayList<Residue> rtmp = null;
         ArrayList<Molecule> mtmp = null;
-        Residue r0 = null;
-        Molecule m0 = null;
         boolean altconf;
+
+        // by residue/molecule
         for (int i = 0; i < nlist0.size(); i++) {
             altconf = false;
-            MSNode node = nlist0.get(i);
-            if (node instanceof Residue) {
-                r0 = (Residue) node;
-                m0 = null;
-                alist = r0.getAtomList();
-                for (Atom a : alist) {
-                    if (!a.getAltLoc().equals(' ')
-                            || a.getOccupancy() < 1.0) {
+            MSNode node0 = nlist0.get(i);
+
+            // first set up alternate residue restraint list
+            for (Atom a : node0.getAtomList()) {
+                if (!a.getAltLoc().equals(' ')
+                        || a.getOccupancy() < 1.0) {
+                    if (node0 instanceof Residue) {
                         rtmp = new ArrayList<Residue>();
-                        rtmp.add(r0);
+                        rtmp.add((Residue) node0);
                         altresidues.add(rtmp);
                         altconf = true;
                         break;
-                    }
-                }
-            } else if (node instanceof Molecule
-                    && refinementdata[0].refinemolocc) {
-                r0 = null;
-                m0 = (Molecule) node;
-                alist = m0.getAtomList();
-                for (Atom a : alist) {
-                    if (!a.getAltLoc().equals(' ')
-                            || a.getOccupancy() < 1.0) {
-                        rtmp = new ArrayList<Residue>();
-                        rtmp.add(r0);
-                        altresidues.add(rtmp);
+                    } else if (node0 instanceof Molecule) {
+                        if (refinementdata[0].refinemolocc) {
+                            mtmp = new ArrayList<Molecule>();
+                            mtmp.add((Molecule) node0);
+                            altmolecules.add(mtmp);
+                        }
                         altconf = true;
                         break;
                     }
@@ -272,30 +264,19 @@ public class DiffractionData {
             if (altconf) {
                 for (int j = 1; j < assembly.length; j++) {
                     ArrayList<MSNode> nlist = assembly[j].getNodeList();
-                    Residue r;
-                    Molecule m;
-                    if (r0 != null
-                            && nlist.size() > i) {
-                        r = (Residue) nlist.get(i);
-                        alist = r.getAtomList();
-                        for (Atom a : alist) {
-                            if (!a.getAltLoc().equals(' ')
-                                    || a.getOccupancy() < 1.0) {
+                    MSNode node = nlist.get(i);
+
+                    for (Atom a : node.getAtomList()) {
+                        if (!a.getAltLoc().equals(' ')
+                                && !a.getAltLoc().equals('A')) {
+                            if (node instanceof Residue) {
                                 if (rtmp != null) {
-                                    rtmp.add(r);
+                                    rtmp.add((Residue) node);
                                 }
                                 break;
-                            }
-                        }
-                    } else if (m0 != null
-                            && nlist.size() > i) {
-                        m = (Molecule) nlist.get(i);
-                        alist = m.getAtomList();
-                        for (Atom a : alist) {
-                            if (!a.getAltLoc().equals(' ')
-                                    || a.getOccupancy() < 1.0) {
+                            } else if (node instanceof Molecule) {
                                 if (mtmp != null) {
-                                    mtmp.add(m);
+                                    mtmp.add((Molecule) node);
                                 }
                                 break;
                             }
@@ -304,6 +285,41 @@ public class DiffractionData {
                 }
             }
         }
+
+        // for mapping between atoms between different molecular assemblies
+        xindex = new List[assembly.length];
+        for (int i = 0; i < assembly.length; i++) {
+            xindex[i] = new ArrayList<Integer>();
+        }
+        int index = 0;
+        // also set up atomlist that will be used for SF calc
+        atomlist = new ArrayList<Atom>();
+
+        // root list
+        alist = assembly[0].getAtomList();
+        for (Atom a : alist) {
+            a.setFormFactorIndex(index);
+            xindex[0].add(index);
+            atomlist.add(a);
+            index++;
+        }
+        // now add cross references to root and any alternate atoms not in root
+        for (int i = 1; i < assembly.length; i++) {
+            alist = assembly[i].getAtomList();
+            for (Atom a : alist) {
+                Atom root = assembly[0].findAtom(a);
+                if (root != null
+                        && root.getAltLoc().equals(a.getAltLoc())) {
+                    xindex[i].add(root.getFormFactorIndex());
+                    a.setFormFactorIndex(root.getFormFactorIndex());
+                } else {
+                    xindex[i].add(index);
+                    atomlist.add(a);
+                    index++;
+                }
+            }
+        }
+        atomarray = atomlist.toArray(new Atom[atomlist.size()]);
 
         for (ArrayList<Residue> list : altresidues) {
             if (list.size() == 1) {
@@ -319,42 +335,10 @@ public class DiffractionData {
             }
         }
 
-        // now build array of atoms that is independent of multiple molecular assemblies
-        xindex = new List[assembly.length];
-        for (int i = 0; i < assembly.length; i++) {
-            xindex[i] = new ArrayList<Integer>();
-        }
-        atomlist = new ArrayList<Atom>();
-        int index = 0;
-        alist = assembly[0].getAtomList();
-        for (Atom a : alist) {
-            for (int i = 0; i < assembly.length; i++) {
-                xindex[i].add(index);
-            }
-            index++;
-            atomlist.add(a);
-        }
-
-        for (int i = 1; i < assembly.length; i++) {
-            alist = assembly[i].getAtomList();
-            int subindex = 0;
-            for (Atom a : alist) {
-                Character c = a.getAltLoc();
-                if (c == null) {
-                    continue;
-                }
-                if (!c.equals(' ')
-                        && !c.equals('A')) {
-                    xindex[i].set(subindex, index++);
-                    atomlist.add(a);
-                }
-                subindex++;
-            }
-        }
-        atomarray = atomlist.toArray(new Atom[atomlist.size()]);
 
         // initialize atomic form factors
         for (Atom a : atomarray) {
+            a.setFormFactorIndex(-1);
             XRayFormFactor atomff =
                     new XRayFormFactor(a, refinementdata[0].use_3g, 2.0);
             a.setFormFactorIndex(atomff.ffindex);
