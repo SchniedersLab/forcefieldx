@@ -216,8 +216,7 @@ public class NeighborList extends ParallelRegion {
      */
     private final NeighborListLoop verletListLoop[];
     private long time;
-    private long cellTime, verletTime, totalTime;
-    private double toSeconds = 1.0e-9;
+    private long cellTime, verletTime;
     private int len = 1000;
 
     /**
@@ -337,7 +336,6 @@ public class NeighborList extends ParallelRegion {
             verletTime = -System.nanoTime();
             createNeighborList();
             verletTime += System.nanoTime();
-            totalTime = cellTime + verletTime;
 
             if (log) {
                 log();

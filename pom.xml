@@ -66,7 +66,9 @@
             </organization>
             <organizationUrl>http://ffx.kenai.com</organizationUrl>
             <roles>
-                <role>Crystal and X-Ray Refinement Modules</role>
+                <role>Chief Crystallograper</role>
+                <role>Crystal Module</role>
+                <role>X-ray/Neutron Refinement Module</role>
             </roles>
             <timezone>-7</timezone>
         </developer>
@@ -74,11 +76,13 @@
             <id>prffx</id>
             <name>Pengyu Ren</name>
             <email>pren@mail.utexas.edu</email>
-            <organization>Associate Professor, U. of Texas, Austin</organization>
+            <organization>Assistant Professor, U. of Texas, Austin</organization>
             <organizationUrl>http://biomol.bme.utexas.edu/lab/</organizationUrl>
             <roles>
-                <role>Force Field Architect</role>
+                <role>AMOEBA Force Field</role>
+                <role>Automatic Parameterization</role>
                 <role>Binding Affinity Module</role>
+                <role>Coarse Grain Module</role>
             </roles>
             <timezone>-5</timezone>
         </developer>
@@ -112,7 +116,8 @@
             <organization>Graduate Student, Ren Lab, U. of Texas, Austin</organization>
             <organizationUrl>http://biomol.bme.utexas.edu/lab/</organizationUrl>
             <roles>
-                <role>Automatic AMOEBA Parameterization, Coarse Grain Module</role>
+                <role>Architect of Automatic AMOEBA Parameterization</role>
+                <role>Coarse Grain Module</role>
             </roles>
             <timezone>-5</timezone>
         </developer>
@@ -122,7 +127,8 @@
             <email>surahata@gmail.com</email>
             <organization>Sao Paulo, Brazil</organization>
             <roles>
-                <role>Algorithms Module, Replica Exchange</role>
+                <role>Algorithms Module</role>
+                <role>Replica Exchange</role>
             </roles>
             <timezone>-3</timezone>
         </developer>
@@ -132,6 +138,7 @@
             <email>chuanjiewu@gmail.com</email>
             <organization>Washington University in St. Louis</organization>
             <roles>
+                <role>AMOEBA force field</role>
                 <role>Nucleic Acids Module</role>
             </roles>
             <timezone>-5</timezone>
@@ -275,7 +282,7 @@
                     <argLine>-ms1G -mx1G -Dj3d.rend=jogl -Dffx.ci=${ffx.ci} -Djava.library.path=${basedir}/../../bin/${platform}/jogl-${bit}:${basedir}/../../bin/${platform}/jocl-${bit}</argLine>
                 </configuration>
             </plugin>
-            <plugin>
+            <!-- plugin>
                 <artifactId>maven-pdf-plugin</artifactId>
                 <version>1.1</version>
                 <executions>
@@ -290,7 +297,7 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
+            </plugin -->
         </plugins>
     </build>
     <profiles>
