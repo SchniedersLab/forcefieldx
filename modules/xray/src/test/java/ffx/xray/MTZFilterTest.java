@@ -52,7 +52,7 @@ public class MTZFilterTest {
             new Crystal(29.97, 37.86, 44.51, 90.28, 90.11, 90.64, "P1");
     Resolution resolution = new Resolution(1.30);
     ReflectionList reflectionlist = new ReflectionList(crystal, resolution);
-    RefinementData refinementdata = new RefinementData(properties, reflectionlist);
+    DiffractionRefinementData refinementdata = new DiffractionRefinementData(properties, reflectionlist);
 
     public MTZFilterTest() {
     }

@@ -60,10 +60,10 @@ public class ScaleBulkMinimizeTest {
                         "ffx/xray/structures/1NSF.pdb",
                         "ffx/xray/structures/1NSF.mtz",
                         null,
-                        25.14,
-                        25.39,
-                        0.8946,
-                        0.1506},
+                        25.18,
+                        25.45,
+                        0.8922,
+                        0.1524},
                     {true,
                         "SNARE complex",
                         "ffx/xray/structures/1N7S.pdb",
@@ -144,7 +144,7 @@ public class ScaleBulkMinimizeTest {
             reflectionlist = new ReflectionList(crystal, resolution);
         }
 
-        RefinementData refinementdata = new RefinementData(properties,
+        DiffractionRefinementData refinementdata = new DiffractionRefinementData(properties,
                 reflectionlist);
         if (mtzname != null) {
             assertTrue(info + " mtz file should be read in without errors",

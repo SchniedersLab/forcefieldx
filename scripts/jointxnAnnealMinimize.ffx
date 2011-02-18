@@ -85,7 +85,7 @@ diffractiondata.scalebulkfit();
 diffractiondata.printstats();
 
 // Do an initial loose optimization without an SCF.
-RefinementMinimize refinementMinimize = new RefinementMinimize(active, diffractiondata, RefinementMode.COORDINATES);
+RefinementMinimize refinementMinimize = new RefinementMinimize(diffractiondata, RefinementMode.COORDINATES);
 refinementMinimize.minimize(5.0, maxiter);
 
 // Create a new ForceFieldEnergy instance with an SCF.
@@ -98,18 +98,18 @@ diffractiondata.scalebulkfit();
 diffractiondata.printstats();
 energy();
 
-RefinementEnergy refinementEnergy = new RefinementEnergy(active, diffractiondata, refinementmode);
+RefinementEnergy refinementEnergy = new RefinementEnergy(diffractiondata, refinementmode);
 SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(active, refinementEnergy, active.getProperties(), refinementEnergy);
 simulatedAnnealing.anneal(highTemperature, lowTemperature, annealingSteps, mdSteps);
 
 diffractiondata.scalebulkfit();
 diffractiondata.printstats();
-refinementMinimize = new RefinementMinimize(active, diffractiondata, RefinementMode.COORDINATES);
+refinementMinimize = new RefinementMinimize(diffractiondata, RefinementMode.COORDINATES);
 refinementMinimize.minimize(coordeps, maxiter);
 
 diffractiondata.scalebulkfit();
 diffractiondata.printstats();
-refinementMinimize = new RefinementMinimize(active, diffractiondata, RefinementMode.BFACTORS);
+refinementMinimize = new RefinementMinimize(diffractiondata, RefinementMode.BFACTORS);
 refinementMinimize.minimize(beps, maxiter);
 
 diffractiondata.scalebulkfit();

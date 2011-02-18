@@ -46,7 +46,7 @@ public class XRayEnergy implements Potential {
 
     private static final Logger logger = Logger.getLogger(XRayEnergy.class.getName());
     private final DiffractionData diffractiondata;
-    private final RefinementData refinementdata;
+    private final RefinementModel refinementmodel;
     private final Atom atomarray[];
     private final int nAtoms;
     private int nxyz;
@@ -77,24 +77,24 @@ public class XRayEnergy implements Potential {
     public XRayEnergy(DiffractionData diffractiondata, int nxyz, int nb, int nocc,
             RefinementMode refinementmode) {
         this.diffractiondata = diffractiondata;
-        this.refinementdata = diffractiondata.refinementdata[0];
+        this.refinementmodel = diffractiondata.getRefinementModel();
         this.refinementMode = refinementmode;
-        this.atomarray = diffractiondata.atomarray;
+        this.atomarray = refinementmodel.atomarray;
         this.nAtoms = atomarray.length;
         this.nxyz = nxyz;
         this.nb = nb;
         this.nocc = nocc;
 
-        bmass = refinementdata.bmass;
-        kTbnonzero = 1.5 * kB * temp * refinementdata.bnonzeroweight;
-        kTbsim = 0.01 * kB * temp * refinementdata.bsimweight;
-        occmass = refinementdata.occmass;
+        bmass = diffractiondata.bmass;
+        kTbnonzero = 1.5 * kB * temp * diffractiondata.bnonzeroweight;
+        kTbsim = 0.01 * kB * temp * diffractiondata.bsimweight;
+        occmass = diffractiondata.occmass;
 
         setRefinementBooleans();
 
         if (refineb) {
-            logger.info("total B non-zero restraint weight: " + temp * refinementdata.bnonzeroweight);
-            logger.info("total B similarity restraint weight: " + temp * refinementdata.bsimweight);
+            logger.info("total B non-zero restraint weight: " + temp * diffractiondata.bnonzeroweight);
+            logger.info("total B similarity restraint weight: " + temp * diffractiondata.bsimweight);
         }
     }
 
@@ -287,7 +287,7 @@ public class XRayEnergy implements Potential {
         double grad[];
         int index = nxyz;
         int resnum = -1;
-        int nres = refinementdata.nresiduebfactor + 1;
+        int nres = diffractiondata.nresiduebfactor + 1;
         for (Atom a : atomarray) {
             // ignore hydrogens!!!
             if (a.getAtomicNumber() == 1) {
@@ -301,9 +301,9 @@ public class XRayEnergy implements Potential {
                 g[index++] = grad[3];
                 g[index++] = grad[4];
                 g[index++] = grad[5];
-            } else if (refinementdata.residuebfactor) {
+            } else if (diffractiondata.residuebfactor) {
                 if (resnum != a.getResidueNumber()) {
-                    if (nres >= refinementdata.nresiduebfactor) {
+                    if (nres >= diffractiondata.nresiduebfactor) {
                         if (resnum > -1
                                 && index < nxyz + nb - 1) {
                             index++;
@@ -333,7 +333,7 @@ public class XRayEnergy implements Potential {
         int index = nxyz + nb;
 
         // first: alternate residues
-        for (ArrayList<Residue> list : diffractiondata.altresidues) {
+        for (ArrayList<Residue> list : refinementmodel.altresidues) {
             ave = 0.0;
             for (Residue r : list) {
                 for (Atom a : r.getAtomList()) {
@@ -357,7 +357,7 @@ public class XRayEnergy implements Potential {
         }
 
         // now the molecules (HETATMs)
-        for (ArrayList<Molecule> list : diffractiondata.altmolecules) {
+        for (ArrayList<Molecule> list : refinementmodel.altmolecules) {
             ave = 0.0;
             for (Molecule m : list) {
                 for (Atom a : m.getAtomList()) {
@@ -418,7 +418,7 @@ public class XRayEnergy implements Potential {
             double anisou[];
             int resnum = -1;
             int nat = 0;
-            int nres = refinementdata.nresiduebfactor + 1;
+            int nres = diffractiondata.nresiduebfactor + 1;
             for (Atom a : atomarray) {
                 // ignore hydrogens!!!
                 if (a.getAtomicNumber() == 1) {
@@ -432,9 +432,9 @@ public class XRayEnergy implements Potential {
                     x[index++] = anisou[3];
                     x[index++] = anisou[4];
                     x[index++] = anisou[5];
-                } else if (refinementdata.residuebfactor) {
+                } else if (diffractiondata.residuebfactor) {
                     if (resnum != a.getResidueNumber()) {
-                        if (nres >= refinementdata.nresiduebfactor) {
+                        if (nres >= diffractiondata.nresiduebfactor) {
                             if (resnum > -1
                                     && index < nxyz + nb - 1) {
                                 x[index] /= nat;
@@ -457,7 +457,7 @@ public class XRayEnergy implements Potential {
                 }
             }
 
-            if (refinementdata.residuebfactor) {
+            if (diffractiondata.residuebfactor) {
                 if (nat > 1) {
                     x[index] /= nat;
                 }
@@ -465,7 +465,7 @@ public class XRayEnergy implements Potential {
         }
 
         if (refineocc) {
-            for (ArrayList<Residue> list : diffractiondata.altresidues) {
+            for (ArrayList<Residue> list : refinementmodel.altresidues) {
                 for (Residue r : list) {
                     for (Atom a : r.getAtomList()) {
                         if (a.getOccupancy() < 1.0) {
@@ -475,7 +475,7 @@ public class XRayEnergy implements Potential {
                     }
                 }
             }
-            for (ArrayList<Molecule> list : diffractiondata.altmolecules) {
+            for (ArrayList<Molecule> list : refinementmodel.altmolecules) {
                 for (Molecule m : list) {
                     for (Atom a : m.getAtomList()) {
                         if (a.getOccupancy() < 1.0) {
@@ -500,7 +500,7 @@ public class XRayEnergy implements Potential {
         int index = nxyz;
         int nneg = 0;
         int resnum = -1;
-        int nres = refinementdata.nresiduebfactor + 1;
+        int nres = diffractiondata.nresiduebfactor + 1;
         for (Atom a : atomarray) {
             // ignore hydrogens!!!
             if (a.getAtomicNumber() == 1) {
@@ -508,9 +508,9 @@ public class XRayEnergy implements Potential {
             }
             if (a.getAnisou() == null) {
                 double biso = x[index];
-                if (refinementdata.residuebfactor) {
+                if (diffractiondata.residuebfactor) {
                     if (resnum != a.getResidueNumber()) {
-                        if (nres >= refinementdata.nresiduebfactor) {
+                        if (nres >= diffractiondata.nresiduebfactor) {
                             if (resnum > -1
                                     && index < nxyz + nb - 1) {
                                 index++;
@@ -600,7 +600,7 @@ public class XRayEnergy implements Potential {
     public void setOccupancies(double x[]) {
         double occ = 0.0;
         int index = nxyz + nb;
-        for (ArrayList<Residue> list : diffractiondata.altresidues) {
+        for (ArrayList<Residue> list : refinementmodel.altresidues) {
             for (Residue r : list) {
                 occ = x[index++];
                 for (Atom a : r.getAtomList()) {
@@ -610,7 +610,7 @@ public class XRayEnergy implements Potential {
                 }
             }
         }
-        for (ArrayList<Molecule> list : diffractiondata.altmolecules) {
+        for (ArrayList<Molecule> list : refinementmodel.altmolecules) {
             for (Molecule m : list) {
                 occ = x[index++];
                 for (Atom a : m.getAtomList()) {

@@ -21,45 +21,26 @@
 
 package ffx.xray;
 
-import java.io.File;
+import ffx.crystal.Crystal;
+import ffx.xray.RealSpaceRefinementData;
 import org.apache.commons.configuration.CompositeConfiguration;
-
-import ffx.crystal.ReflectionList;
 
 /**
  *
  * @author Tim Fenn
  */
-public interface DiffractionFileFilter {
+public interface RealSpaceFileFilter {
+
+    Crystal getCrystal(String filename, CompositeConfiguration properties);
 
     /*
-     * get reflection information from a reflection file
-     * 
-     * @param file file to read in
-     * @return the {@link ReflectionList}, or null if not enough
-     *         information present in the reflection file
-     */
-    ReflectionList getReflectionList(File file);
-
-    /*
-     * get reflection information from a reflection file
+     * read in Real Space file
      *
-     * @param file file to read in
-     * @param properties system properties
-     * @return the {@link ReflectionList}, or null if not enough
-     *         information present in the reflection file
-     */
-    ReflectionList getReflectionList(File file, CompositeConfiguration properties);
-
-    /*
-     * read in reflection file
-     *
-     * @param file file to read in
-     * @param reflectionlist the {@link ReflectionList} to find data indices
+     * @param filename file to read in
      * @param refinementdata the {@link RefinementData} object to fill in
      * @param properties system properties
      * @return true if read in properly
      */
-    boolean readFile(File file, ReflectionList reflectionlist,
-            DiffractionRefinementData refinementdata, CompositeConfiguration properties);
+    boolean readFile(String filename, RealSpaceRefinementData refinementdata,
+            CompositeConfiguration properties);
 }

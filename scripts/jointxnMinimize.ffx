@@ -63,7 +63,7 @@ diffractiondata.scalebulkfit();
 diffractiondata.printstats();
 energy();
 
-RefinementMinimize refinementMinimize = new RefinementMinimize(systems, diffractiondata, refinementmode);
+RefinementMinimize refinementMinimize = new RefinementMinimize(diffractiondata, refinementmode);
 
 println("\n RMS gradient convergence criteria: " + eps + " max number of iterations: " + maxiter);
 refinementMinimize.minimize(deps, maxiter);

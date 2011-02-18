@@ -65,7 +65,7 @@ public class SplineEnergy implements Potential {
     private final int nparams;
     private final int type;
     private final Crystal crystal;
-    private final RefinementData refinementdata;
+    private final DiffractionRefinementData refinementdata;
     private final double fc[][];
     private final double fs[][];
     private final double fctot[][];
@@ -75,7 +75,7 @@ public class SplineEnergy implements Potential {
     private ComplexNumber fct = new ComplexNumber();
 
     public SplineEnergy(ReflectionList reflectionlist,
-            RefinementData refinementdata, int nparams, int type) {
+            DiffractionRefinementData refinementdata, int nparams, int type) {
         this.reflectionlist = reflectionlist;
         this.crystal = reflectionlist.crystal;
         this.refinementdata = refinementdata;

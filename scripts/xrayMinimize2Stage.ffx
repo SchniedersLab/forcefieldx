@@ -66,12 +66,12 @@ diffractiondata.scalebulkfit();
 diffractiondata.printstats();
 energy();
 
-RefinementMinimize refinementMinimize = new RefinementMinimize(systems, diffractiondata, RefinementMode.COORDINATES);
+RefinementMinimize refinementMinimize = new RefinementMinimize(diffractiondata, RefinementMode.COORDINATES);
 refinementMinimize.minimize(coordeps, maxiter);
 diffractiondata.scalebulkfit();
 diffractiondata.printstats();
 
-refinementMinimize = new RefinementMinimize(systems, diffractiondata, RefinementMode.BFACTORS);
+refinementMinimize = new RefinementMinimize(diffractiondata, RefinementMode.BFACTORS);
 refinementMinimize.minimize(beps, maxiter);
 diffractiondata.scalebulkfit();
 diffractiondata.printstats();

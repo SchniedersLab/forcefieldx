@@ -73,7 +73,7 @@ public class FiniteDifferenceTest {
     private final boolean ci;
     private final boolean ciOnly;
     private final Atom atomarray[];
-    private final RefinementData refinementdata;
+    private final DiffractionRefinementData refinementdata;
     private final SigmaAMinimize sigmaaminimize;
 
     public FiniteDifferenceTest(boolean ciOnly,
@@ -122,7 +122,7 @@ public class FiniteDifferenceTest {
             reflectionlist = new ReflectionList(crystal, resolution);
         }
 
-        refinementdata = new RefinementData(properties,
+        refinementdata = new DiffractionRefinementData(properties,
                 reflectionlist);
         assertTrue(info + " mtz file should be read in without errors",
                 mtzfilter.readFile(mtzfile, reflectionlist, refinementdata,
@@ -142,11 +142,12 @@ public class FiniteDifferenceTest {
 
         List<Atom> atomlist = molecularAssembly.getAtomList();
         atomarray = atomlist.toArray(new Atom[atomlist.size()]);
+        boolean use_3g = properties.getBoolean("use_3g", true);
 
         // initialize atomic form factors
         for (int i = 0; i < atomarray.length; i++) {
             XRayFormFactor atomff =
-                    new XRayFormFactor(atomarray[i], refinementdata.use_3g, 2.0);
+                    new XRayFormFactor(atomarray[i], use_3g, 2.0);
             atomarray[i].setFormFactorIndex(atomff.ffindex);
 
             if (atomarray[i].getOccupancy() == 0.0) {

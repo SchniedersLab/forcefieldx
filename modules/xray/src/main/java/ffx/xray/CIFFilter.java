@@ -180,7 +180,7 @@ public class CIFFilter implements DiffractionFileFilter {
 
     @Override
     public boolean readFile(File cifFile, ReflectionList reflectionlist,
-            RefinementData refinementdata, CompositeConfiguration properties) {
+            DiffractionRefinementData refinementdata, CompositeConfiguration properties) {
         int nread, nnan, nres, nignore, ncifignore, nfriedel, ncut;
         boolean transpose = false;
 
@@ -252,6 +252,11 @@ public class CIFFilter implements DiffractionFileFilter {
                 }
 
                 String strarray[] = str.trim().split("\\s+");
+                // some files split data on to multiple lines
+                while (strarray.length < ncol) {
+                    str = str + " " + br.readLine();
+                    strarray = str.trim().split("\\s+");
+                }
 
                 if (rfree > 0) {
                     // ignored cases
@@ -314,6 +319,11 @@ public class CIFFilter implements DiffractionFileFilter {
                 }
 
                 String strarray[] = str.trim().split("\\s+");
+                // some files split data on to multiple lines
+                while (strarray.length < ncol) {
+                    str = str + " " + br.readLine();
+                    strarray = str.trim().split("\\s+");
+                }
 
                 int ih = Integer.parseInt(strarray[h]);
                 int ik = Integer.parseInt(strarray[k]);

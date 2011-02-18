@@ -39,7 +39,7 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
 
     private static final Logger logger = Logger.getLogger(SplineEnergy.class.getName());
     private final ReflectionList reflectionlist;
-    private final RefinementData refinementdata;
+    private final DiffractionRefinementData refinementdata;
     private final Crystal crystal;
     private final SplineEnergy splineenergy;
     private final int n;
@@ -53,7 +53,7 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
     private int nSteps;
 
     public SplineMinimize(ReflectionList reflectionlist,
-            RefinementData refinementdata, double x[], int type) {
+            DiffractionRefinementData refinementdata, double x[], int type) {
         this.reflectionlist = reflectionlist;
         this.refinementdata = refinementdata;
         this.crystal = reflectionlist.crystal;
