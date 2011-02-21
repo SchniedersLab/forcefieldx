@@ -8,7 +8,7 @@
     <artifactId>ffx</artifactId>
     <packaging>pom</packaging>
     <name>Force Field X</name>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.0-alpha</version>
     <description>Software for Molecular Biophysics</description>
     <url>http://ffx.kenai.com</url>
     <prerequisites>
