@@ -54,7 +54,7 @@ public class CIFFilterTest {
         CIFFilter ciffilter = new CIFFilter();
         ReflectionList reflectionlist = ciffilter.getReflectionList(ciffile);
         assertNotNull("reflection list should be nonnull", reflectionlist);
-        RefinementData refinementdata = new RefinementData(properties,
+        DiffractionRefinementData refinementdata = new DiffractionRefinementData(properties,
                 reflectionlist);
 
         assertTrue("CIF data shoud be read in correctly",
@@ -94,7 +94,7 @@ public class CIFFilterTest {
                 90.28, 90.11, 90.64, "P1");
         Resolution resolution = new Resolution(1.30);
         reflectionlist = new ReflectionList(crystal, resolution);
-        RefinementData refinementdata = new RefinementData(properties,
+        DiffractionRefinementData refinementdata = new DiffractionRefinementData(properties,
                 reflectionlist);
 
         assertTrue("CIF data shoud be read in correctly",

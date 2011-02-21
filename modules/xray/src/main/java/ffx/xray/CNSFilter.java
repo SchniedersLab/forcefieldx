@@ -114,7 +114,7 @@ public class CNSFilter implements DiffractionFileFilter {
 
     @Override
     public boolean readFile(File cnsFile, ReflectionList reflectionlist,
-            RefinementData refinementdata, CompositeConfiguration properties) {
+            DiffractionRefinementData refinementdata, CompositeConfiguration properties) {
         int nread, nres, nignore, nfriedel, ncut;
         boolean transpose = false;
 

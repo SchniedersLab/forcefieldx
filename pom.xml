@@ -12,15 +12,24 @@
     <description>Software for Molecular Biophysics</description>
     <url>http://ffx.kenai.com</url>
     <prerequisites>
-        <maven>2.2.1</maven>
+        <maven>3.0.2</maven>
     </prerequisites>
     <issueManagement>
-        <system>jira</system>
+        <system>Jira</system>
         <url>http://kenai.com/jira/browse/ffx</url>
     </issueManagement>
     <ciManagement>
         <system>Jenkins</system>
         <url>http://water.bme.utexas.edu:8080/</url>
+        <notifiers>
+            <notifier>
+                <type>mail</type>
+                <sendOnFailure>true</sendOnFailure>
+                <sendOnError>true</sendOnError>
+                <sendOnSuccess>false</sendOnSuccess>
+                <sendOnWarning>false</sendOnWarning>
+            </notifier>
+        </notifiers>
     </ciManagement>
     <inceptionYear>2001</inceptionYear>
     <mailingLists>
@@ -166,8 +175,8 @@
         <plugins>
             <plugin>
                 <artifactId>maven-site-plugin</artifactId>
-                <version>2.2</version>
-                <inherited>false</inherited>
+                <version>3.0-beta-3</version>
+                <inherited>true</inherited>
                 <configuration>
                     <generateSitemap>true</generateSitemap>
                 </configuration>
@@ -403,7 +412,7 @@
             <plugin>
                 <artifactId>maven-project-info-reports-plugin</artifactId>
                 <version>2.3.1</version>
-                <inherited>false</inherited>
+                <inherited>true</inherited>
                 <configuration>
                     <dependencyDetailsEnabled>false</dependencyDetailsEnabled>
                     <dependencyLocationsEnabled>false</dependencyLocationsEnabled>
@@ -428,6 +437,7 @@
             <plugin>
                 <artifactId>maven-jxr-plugin</artifactId>
                 <version>2.2</version>
+                <inherited>false</inherited>
                 <configuration>
                     <aggregate>true</aggregate>
                 </configuration>

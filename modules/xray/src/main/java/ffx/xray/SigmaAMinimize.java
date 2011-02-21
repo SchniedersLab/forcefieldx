@@ -45,7 +45,7 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
     private static final Logger logger = Logger.getLogger(SplineEnergy.class.getName());
     private static double toSeconds = 0.000000001;
     private final ReflectionList reflectionlist;
-    protected final RefinementData refinementdata;
+    protected final DiffractionRefinementData refinementdata;
     private final Crystal crystal;
     private final SigmaAEnergy sigmaaenergy;
     private final int n;
@@ -59,7 +59,7 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
     private int nSteps;
 
     public SigmaAMinimize(ReflectionList reflectionlist,
-            RefinementData refinementdata) {
+            DiffractionRefinementData refinementdata) {
         this.reflectionlist = reflectionlist;
         this.refinementdata = refinementdata;
         this.crystal = reflectionlist.crystal;

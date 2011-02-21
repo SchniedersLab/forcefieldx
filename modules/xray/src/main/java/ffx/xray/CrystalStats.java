@@ -41,7 +41,7 @@ public class CrystalStats {
 
     private static final Logger logger = Logger.getLogger(CrystalStats.class.getName());
     private final ReflectionList reflectionlist;
-    private final RefinementData refinementdata;
+    private final DiffractionRefinementData refinementdata;
     private final Crystal crystal;
     private final ReflectionSpline spline;
     private final int n;
@@ -57,7 +57,7 @@ public class CrystalStats {
      * @param refinementdata {@link RefinementData} to use for logging
      */
     public CrystalStats(ReflectionList reflectionlist,
-            RefinementData refinementdata) {
+            DiffractionRefinementData refinementdata) {
         this.reflectionlist = reflectionlist;
         this.refinementdata = refinementdata;
         this.crystal = reflectionlist.crystal;

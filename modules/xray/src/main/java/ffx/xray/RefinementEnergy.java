@@ -23,7 +23,6 @@ package ffx.xray;
 import static ffx.numerics.VectorMath.b2u;
 
 import ffx.algorithms.AlgorithmListener;
-import ffx.algorithms.MolecularDynamics;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Atom;
@@ -49,8 +48,8 @@ public class RefinementEnergy implements Potential, AlgorithmListener {
 
     private static final Logger logger = Logger.getLogger(RefinementEnergy.class.getName());
     private final MolecularAssembly molecularAssembly[];
-    private final DiffractionData diffractiondata;
-    private final RefinementData refinementdata;
+    private final DataContainer data;
+    private final RefinementModel refinementmodel;
     private final Atom[] atomarray;
     private final int nAtoms;
     private final List<Integer> xindex[];
@@ -69,53 +68,29 @@ public class RefinementEnergy implements Potential, AlgorithmListener {
     /**
      * constructor for energy
      *
-     * @param molecularAssembly input {@link ffx.potential.bonded.MolecularAssembly}
-     * that will be used as the model
-     * @param diffractiondata input {@link DiffractionData data} for refinement
+     * @param data input {@link DiffractionData data} for refinement
      * @param refinementmode {@link RefinementMinimize.RefinementMode} for refinement
      */
-    public RefinementEnergy(MolecularAssembly molecularAssembly,
-            DiffractionData diffractiondata, RefinementMode refinementmode) {
-        this(new MolecularAssembly[]{molecularAssembly}, diffractiondata,
-                refinementmode, null);
+    public RefinementEnergy(DataContainer data, RefinementMode refinementmode) {
+        this(data, refinementmode, null);
     }
 
     /**
      * constructor for energy
      *
-     * @param molecularAssembly input {@link ffx.potential.bonded.MolecularAssembly}
-     * that will be used as the model
-     * @param diffractiondata input {@link DiffractionData data} for refinement
+     * @param data input {@link DiffractionData data} for refinement
      * @param refinementmode {@link RefinementMinimize.RefinementMode} for refinement
      * @param scaling scaling of refinement parameters
      */
-    public RefinementEnergy(MolecularAssembly molecularAssembly,
-            DiffractionData diffractiondata, RefinementMode refinementmode,
-            double scaling[]) {
-        this(new MolecularAssembly[]{molecularAssembly}, diffractiondata,
-                refinementmode, scaling);
-    }
-
-    /**
-     * constructor for energy
-     *
-     * @param molecularAssembly input array of
-     * {@link ffx.potential.bonded.MolecularAssembly} objects (typically for
-     * alternate conformers) that will be used as the model
-     * @param diffractiondata input {@link DiffractionData data} for refinement
-     * @param refinementmode {@link RefinementMinimize.RefinementMode} for refinement
-     * @param scaling scaling of refinement parameters
-     */
-    public RefinementEnergy(MolecularAssembly molecularAssembly[],
-            DiffractionData diffractiondata, RefinementMode refinementmode,
-            double scaling[]) {
-        this.molecularAssembly = molecularAssembly;
-        this.diffractiondata = diffractiondata;
-        this.refinementdata = diffractiondata.refinementdata[0];
-        this.atomarray = diffractiondata.atomarray;
+    public RefinementEnergy(DataContainer data,
+            RefinementMode refinementmode, double scaling[]) {
+        this.molecularAssembly = data.getMolecularAssembly();
+        this.data = data;
+        this.refinementmodel = data.getRefinementModel();
+        this.atomarray = data.getAtomArray();
         this.nAtoms = atomarray.length;
-        this.xindex = diffractiondata.xindex;
-        this.weight = refinementdata.xweight;
+        this.xindex = refinementmodel.xindex;
+        this.weight = data.getWeight();
         this.refinementMode = refinementmode;
         this.optimizationScaling = scaling;
 
@@ -133,61 +108,66 @@ public class RefinementEnergy implements Potential, AlgorithmListener {
             case BFACTORS:
             case OCCUPANCIES:
             case BFACTORS_AND_OCCUPANCIES:
-                // bfactor params
-                if (refinementmode == RefinementMode.BFACTORS
-                        || refinementmode == RefinementMode.BFACTORS_AND_OCCUPANCIES
-                        || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS
-                        || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
-                    int resnum = -1;
-                    int nres = refinementdata.nresiduebfactor + 1;
-                    for (Atom a : atomarray) {
-                        // ignore hydrogens!!!
-                        if (a.getAtomicNumber() == 1) {
-                            continue;
-                        }
-                        if (a.getAnisou() == null) {
-                            if (refinementdata.addanisou) {
-                                double anisou[] = new double[6];
-                                double u = b2u(a.getTempFactor());
-                                anisou[0] = anisou[1] = anisou[2] = u;
-                                anisou[3] = anisou[4] = anisou[5] = 0.0;
-                                a.setAnisou(anisou);
-                                nb += 6;
-                            } else if (refinementdata.residuebfactor) {
-                                if (resnum != a.getResidueNumber()) {
-                                    if (nres >= refinementdata.nresiduebfactor) {
-                                        nb++;
-                                        nres = 1;
-                                    } else {
-                                        nres++;
+                if (data instanceof DiffractionData) {
+                    DiffractionData diffractiondata = (DiffractionData) data;
+                    // bfactor params
+                    if (refinementmode == RefinementMode.BFACTORS
+                            || refinementmode == RefinementMode.BFACTORS_AND_OCCUPANCIES
+                            || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS
+                            || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
+                        int resnum = -1;
+                        int nres = diffractiondata.nresiduebfactor + 1;
+                        for (Atom a : atomarray) {
+                            // ignore hydrogens!!!
+                            if (a.getAtomicNumber() == 1) {
+                                continue;
+                            }
+                            if (a.getAnisou() == null) {
+                                if (diffractiondata.addanisou) {
+                                    double anisou[] = new double[6];
+                                    double u = b2u(a.getTempFactor());
+                                    anisou[0] = anisou[1] = anisou[2] = u;
+                                    anisou[3] = anisou[4] = anisou[5] = 0.0;
+                                    a.setAnisou(anisou);
+                                    nb += 6;
+                                } else if (diffractiondata.residuebfactor) {
+                                    if (resnum != a.getResidueNumber()) {
+                                        if (nres >= diffractiondata.nresiduebfactor) {
+                                            nb++;
+                                            nres = 1;
+                                        } else {
+                                            nres++;
+                                        }
+                                        resnum = a.getResidueNumber();
                                     }
-                                    resnum = a.getResidueNumber();
+                                } else {
+                                    nb++;
                                 }
                             } else {
-                                nb++;
+                                nb += 6;
                             }
-                        } else {
-                            nb += 6;
+                        }
+                        if (diffractiondata.residuebfactor) {
+                            if (nres < diffractiondata.nresiduebfactor) {
+                                nb--;
+                            }
                         }
                     }
-                    if (refinementdata.residuebfactor) {
-                        if (nres < refinementdata.nresiduebfactor) {
-                            nb--;
-                        }
-                    }
-                }
 
-                // occupancy params
-                if (refinementmode == RefinementMode.OCCUPANCIES
-                        || refinementmode == RefinementMode.BFACTORS_AND_OCCUPANCIES
-                        || refinementmode == RefinementMode.COORDINATES_AND_OCCUPANCIES
-                        || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
-                    for (ArrayList<Residue> list : diffractiondata.altresidues) {
-                        nocc += list.size();
+                    // occupancy params
+                    if (refinementmode == RefinementMode.OCCUPANCIES
+                            || refinementmode == RefinementMode.BFACTORS_AND_OCCUPANCIES
+                            || refinementmode == RefinementMode.COORDINATES_AND_OCCUPANCIES
+                            || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
+                        for (ArrayList<Residue> list : refinementmodel.altresidues) {
+                            nocc += list.size();
+                        }
+                        for (ArrayList<Molecule> list : refinementmodel.altmolecules) {
+                            nocc += list.size();
+                        }
                     }
-                    for (ArrayList<Molecule> list : diffractiondata.altmolecules) {
-                        nocc += list.size();
-                    }
+                } else {
+                    logger.severe("Refinement method not supported for this data type!");
                 }
                 break;
         }
@@ -202,20 +182,16 @@ public class RefinementEnergy implements Potential, AlgorithmListener {
             }
             fe.setScaling(null);
         }
-        if (!diffractiondata.scaled[0]) {
-            diffractiondata.printstats();
+
+        if (data instanceof DiffractionData) {
+            DiffractionData diffractiondata = (DiffractionData) data;
+            if (!diffractiondata.scaled[0]) {
+                diffractiondata.printstats();
+            }
         }
-        xrayEnergy = diffractiondata.getXRayEnergy();
-        if (xrayEnergy == null) {
-            xrayEnergy = new XRayEnergy(diffractiondata, nxyz, nb, nocc,
-                    refinementMode);
-            diffractiondata.setXRayEnergy(xrayEnergy);
-        } else {
-            xrayEnergy.setNXYZ(nxyz);
-            xrayEnergy.setNB(nb);
-            xrayEnergy.setNOcc(nocc);
-            xrayEnergy.setRefinementMode(refinementmode);
-        }
+
+        xrayEnergy = new XRayEnergy((DiffractionData) data, nxyz, nb, nocc,
+                refinementMode);
         xrayEnergy.setScaling(null);
 
         int assemblysize = molecularAssembly.length;
@@ -430,17 +406,7 @@ public class RefinementEnergy implements Potential, AlgorithmListener {
 
     @Override
     public boolean algorithmUpdate(MolecularAssembly active) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < diffractiondata.n; i++) {
-            sb.append(String.format("     dataset %d (weight: %5.1f): R: %6.2f Rfree: %6.2f chemical energy: %8.2f likelihood: %8.2f\n",
-                    i + 1,
-                    diffractiondata.dataname[i].weight,
-                    diffractiondata.crystalstats[i].get_r(),
-                    diffractiondata.crystalstats[i].get_rfree(),
-                    active.getPotentialEnergy().getTotal(),
-                    diffractiondata.dataname[i].weight * diffractiondata.sigmaaminimize[i].calculateLikelihood()));
-        }
-        logger.info(sb.toString());
+        logger.info(data.printEnergyUpdate());
 
         return true;
     }

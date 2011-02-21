@@ -73,7 +73,7 @@ public class ScaleBulkEnergy implements Potential {
     private static final double u23[][] = {{0.0, 0.0, 0.0}, {0.0, 0.0, 1.0}, {0.0, 1.0, 0.0}};
     private final ReflectionList reflectionlist;
     private final Crystal crystal;
-    private final RefinementData refinementdata;
+    private final DiffractionRefinementData refinementdata;
     private final double fc[][];
     private final double fs[][];
     private final double fctot[][];
@@ -100,7 +100,7 @@ public class ScaleBulkEnergy implements Potential {
     private ComplexNumber fct = new ComplexNumber();
     private ComplexNumber kfct = new ComplexNumber();
 
-    public ScaleBulkEnergy(ReflectionList reflectionlist, RefinementData refinementdata, int n) {
+    public ScaleBulkEnergy(ReflectionList reflectionlist, DiffractionRefinementData refinementdata, int n) {
         this.reflectionlist = reflectionlist;
         this.crystal = reflectionlist.crystal;
         this.refinementdata = refinementdata;

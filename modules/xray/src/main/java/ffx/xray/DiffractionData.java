@@ -20,13 +20,13 @@
  */
 package ffx.xray;
 
+import ffx.crystal.CCP4MapWriter;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.logging.Level;
-import java.util.List;
 import java.util.logging.Logger;
 
 import edu.rit.pj.ParallelTeam;
@@ -38,7 +38,6 @@ import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
 import ffx.crystal.Resolution;
 import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Residue;
@@ -49,30 +48,49 @@ import ffx.xray.RefinementMinimize.RefinementMode;
  *
  * @author Tim Fenn
  */
-public class DiffractionData {
+public class DiffractionData implements DataContainer {
 
     private static final Logger logger = Logger.getLogger(DiffractionData.class.getName());
+    protected final MolecularAssembly assembly[];
     protected final String modelname;
     protected final DiffractionFile dataname[];
     protected final int n;
     protected final Crystal crystal[];
     protected final Resolution resolution[];
     protected final ReflectionList reflectionlist[];
-    protected final RefinementData refinementdata[];
+    protected final DiffractionRefinementData refinementdata[];
     protected final CrystalReciprocalSpace crs_fc[];
     protected final CrystalReciprocalSpace crs_fs[];
     public final int solventmodel;
-    protected List<Atom> atomlist;
-    protected final Atom atomarray[];
-    protected List<Integer> xindex[];
-    protected ArrayList<ArrayList<Residue>> altresidues;
-    protected ArrayList<ArrayList<Molecule>> altmolecules;
+    protected final RefinementModel refinementmodel;
     protected ScaleBulkMinimize scalebulkminimize[];
     protected SigmaAMinimize sigmaaminimize[];
     protected SplineMinimize splineminimize[];
     protected CrystalStats crystalstats[];
     protected boolean scaled[];
-    protected XRayEnergy xrayenergy = null;
+    // settings
+    public int rfreeflag;
+    public final double fsigfcutoff;
+    public final boolean use_3g;
+    public final double xrayscaletol;
+    public final double sigmaatol;
+    public final double xweight;
+    public final double bsimweight;
+    public final double bnonzeroweight;
+    public final double bmass;
+    public final boolean residuebfactor;
+    public final int nresiduebfactor;
+    public final boolean addanisou;
+    public final boolean refinemolocc;
+    public final double occmass;
+    /**
+     * if true, grid search bulk solvent params
+     */
+    public boolean gridsearch;
+    /**
+     * fit a scaling spline between Fo and Fc?
+     */
+    public boolean splinefit;
 
     /**
      * construct a diffraction data assembly, assumes an X-ray data set with a
@@ -178,17 +196,34 @@ public class DiffractionData {
     public DiffractionData(MolecularAssembly assembly[],
             CompositeConfiguration properties, int solventmodel,
             DiffractionFile... datafile) {
-        List<Atom> alist;
 
+        this.assembly = assembly;
         this.solventmodel = solventmodel;
         this.modelname = assembly[0].getFile().getName();
         this.dataname = datafile;
         this.n = datafile.length;
 
+        int rflag = properties.getInt("rfreeflag", -1);
+        fsigfcutoff = properties.getDouble("fsigfcutoff", -1.0);
+        gridsearch = properties.getBoolean("gridsearch", false);
+        splinefit = properties.getBoolean("splinefit", true);
+        use_3g = properties.getBoolean("use_3g", true);
+        xrayscaletol = properties.getDouble("xrayscaletol", 1e-4);
+        sigmaatol = properties.getDouble("sigmaatol", 1.0);
+        xweight = properties.getDouble("xweight", 1.0);
+        bsimweight = properties.getDouble("bsimweight", 1.0);
+        bnonzeroweight = properties.getDouble("bnonzeroweight", 1.0);
+        bmass = properties.getDouble("bmass", 5.0);
+        residuebfactor = properties.getBoolean("residuebfactor", false);
+        nresiduebfactor = properties.getInt("nresiduebfactor", 1);
+        addanisou = properties.getBoolean("addanisou", false);
+        refinemolocc = properties.getBoolean("refinemolocc", false);
+        occmass = properties.getDouble("occmass", 10.0);
+
         crystal = new Crystal[n];
         resolution = new Resolution[n];
         reflectionlist = new ReflectionList[n];
-        refinementdata = new RefinementData[n];
+        refinementdata = new DiffractionRefinementData[n];
         scalebulkminimize = new ScaleBulkMinimize[n];
         sigmaaminimize = new SigmaAMinimize[n];
         splineminimize = new SplineMinimize[n];
@@ -217,7 +252,7 @@ public class DiffractionData {
         for (int i = 0; i < n; i++) {
             crystal[i] = reflectionlist[i].crystal;
             resolution[i] = reflectionlist[i].resolution;
-            refinementdata[i] = new RefinementData(properties, reflectionlist[i]);
+            refinementdata[i] = new DiffractionRefinementData(properties, reflectionlist[i]);
             tmp = new File(datafile[i].filename);
             datafile[i].diffractionfilter.readFile(tmp, reflectionlist[i],
                     refinementdata[i], properties);
@@ -227,120 +262,37 @@ public class DiffractionData {
             logger.severe("PDB and reflection file crystal information do not match! (check CRYST1 record?)");
         }
 
-        // build alternate conformer list for occupancy refinement (if necessary)
-        altresidues = new ArrayList<ArrayList<Residue>>();
-        altmolecules = new ArrayList<ArrayList<Molecule>>();
-        ArrayList<MSNode> nlist0 = assembly[0].getNodeList();
-        ArrayList<Residue> rtmp = null;
-        ArrayList<Molecule> mtmp = null;
-        boolean altconf;
-
-        // by residue/molecule
-        for (int i = 0; i < nlist0.size(); i++) {
-            altconf = false;
-            MSNode node0 = nlist0.get(i);
-
-            // first set up alternate residue restraint list
-            for (Atom a : node0.getAtomList()) {
-                if (!a.getAltLoc().equals(' ')
-                        || a.getOccupancy() < 1.0) {
-                    if (node0 instanceof Residue) {
-                        rtmp = new ArrayList<Residue>();
-                        rtmp.add((Residue) node0);
-                        altresidues.add(rtmp);
-                        altconf = true;
-                        break;
-                    } else if (node0 instanceof Molecule) {
-                        if (refinementdata[0].refinemolocc) {
-                            mtmp = new ArrayList<Molecule>();
-                            mtmp.add((Molecule) node0);
-                            altmolecules.add(mtmp);
-                        }
-                        altconf = true;
-                        break;
-                    }
-                }
-            }
-            if (altconf) {
-                for (int j = 1; j < assembly.length; j++) {
-                    ArrayList<MSNode> nlist = assembly[j].getNodeList();
-                    MSNode node = nlist.get(i);
-
-                    for (Atom a : node.getAtomList()) {
-                        if (!a.getAltLoc().equals(' ')
-                                && !a.getAltLoc().equals('A')) {
-                            if (node instanceof Residue) {
-                                if (rtmp != null) {
-                                    rtmp.add((Residue) node);
-                                }
-                                break;
-                            } else if (node instanceof Molecule) {
-                                if (mtmp != null) {
-                                    mtmp.add((Molecule) node);
-                                }
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
+        if (logger.isLoggable(Level.INFO)) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("\nRefinement data settings:\n");
+            sb.append("  using cctbx 3 Gaussians (use_3g): " + use_3g + "\n");
+            sb.append("  resolution dependent spline scale (splinefit): " + splinefit + "\n");
+            sb.append("  F/sigF cutoff (fsigfcutoff): " + fsigfcutoff + "\n");
+            sb.append("  R Free flag (rfreeflag) (if -1, value will be updated when data is read in): " + rflag + "\n");
+            sb.append("  n bins (nbins): " + reflectionlist[0].nbins + "\n");
+            sb.append("  solvent grid search (gridsearch): " + gridsearch + "\n");
+            sb.append("  X-ray scale fit tolerance (xrayscaletol): " + xrayscaletol + "\n");
+            sb.append("  sigma A fit tolerance (sigmaatol): " + sigmaatol + "\n");
+            sb.append("  X-ray refinement weight (xweight): " + xweight + "\n");
+            sb.append("  B similarity weight (bsimweight): " + bsimweight + "\n");
+            sb.append("  B non-zero weight (bnonzeroweight): " + bnonzeroweight + "\n");
+            sb.append("  B Lagrangian mass (bmass): " + bmass + "\n");
+            sb.append("  B factors refined by residue (residuebfactor): " + residuebfactor + "\n");
+            sb.append("    (if true, num. residues per B (nresiduebfactor): " + nresiduebfactor + ")\n");
+            sb.append("  add ANISOU for refinement (addanisou): " + addanisou + "\n");
+            sb.append("  refine occupancies on molecules (HETATMs - refinemolocc): " + refinemolocc + "\n");
+            sb.append("  Occupancy Lagrangian mass (occmass): " + occmass + "\n");
+            logger.info(sb.toString());
         }
 
-        // for mapping between atoms between different molecular assemblies
-        xindex = new List[assembly.length];
-        for (int i = 0; i < assembly.length; i++) {
-            xindex[i] = new ArrayList<Integer>();
-        }
-        int index = 0;
-        // also set up atomlist that will be used for SF calc
-        atomlist = new ArrayList<Atom>();
-
-        // root list
-        alist = assembly[0].getAtomList();
-        for (Atom a : alist) {
-            a.setFormFactorIndex(index);
-            xindex[0].add(index);
-            atomlist.add(a);
-            index++;
-        }
-        // now add cross references to root and any alternate atoms not in root
-        for (int i = 1; i < assembly.length; i++) {
-            alist = assembly[i].getAtomList();
-            for (Atom a : alist) {
-                Atom root = assembly[0].findAtom(a);
-                if (root != null
-                        && root.getAltLoc().equals(a.getAltLoc())) {
-                    xindex[i].add(root.getFormFactorIndex());
-                    a.setFormFactorIndex(root.getFormFactorIndex());
-                } else {
-                    xindex[i].add(index);
-                    atomlist.add(a);
-                    index++;
-                }
-            }
-        }
-        atomarray = atomlist.toArray(new Atom[atomlist.size()]);
-
-        for (ArrayList<Residue> list : altresidues) {
-            if (list.size() == 1) {
-                Residue r = list.get(0);
-                logger.info("residue: " + r.toString() + ": single conformer, non-unity occupancy: occupancy will be refined independently!");
-            }
-        }
-
-        for (ArrayList<Molecule> list : altmolecules) {
-            if (list.size() == 1) {
-                Molecule m = list.get(0);
-                logger.info("molecule: " + m.toString() + ": single conformer, non-unity occupancy: occupancy will be refined independently!");
-            }
-        }
-
+        // now set up the refinement model
+        refinementmodel = new RefinementModel(assembly, refinemolocc);
 
         // initialize atomic form factors
-        for (Atom a : atomarray) {
+        for (Atom a : refinementmodel.atomarray) {
             a.setFormFactorIndex(-1);
             XRayFormFactor atomff =
-                    new XRayFormFactor(a, refinementdata[0].use_3g, 2.0);
+                    new XRayFormFactor(a, use_3g, 2.0);
             a.setFormFactorIndex(atomff.ffindex);
 
             if (a.getOccupancy() == 0.0) {
@@ -374,16 +326,17 @@ public class DiffractionData {
         crs_fs = new CrystalReciprocalSpace[n];
         ParallelTeam parallelTeam = new ParallelTeam();
         for (int i = 0; i < n; i++) {
-            crs_fc[i] = new CrystalReciprocalSpace(reflectionlist[i], atomarray,
-                    parallelTeam, parallelTeam, false, dataname[i].neutron);
+            crs_fc[i] = new CrystalReciprocalSpace(reflectionlist[i],
+                    refinementmodel.atomarray, parallelTeam, parallelTeam,
+                    false, dataname[i].neutron);
             refinementdata[i].setCrystalReciprocalSpace_fc(crs_fc[i]);
-            crs_fc[i].setUse3G(refinementdata[i].use_3g);
+            crs_fc[i].setUse3G(use_3g);
             crs_fc[i].setWeight(dataname[i].weight);
-            crs_fs[i] = new CrystalReciprocalSpace(reflectionlist[i], atomarray,
-                    parallelTeam, parallelTeam, true, dataname[i].neutron,
-                    solventmodel);
+            crs_fs[i] = new CrystalReciprocalSpace(reflectionlist[i],
+                    refinementmodel.atomarray, parallelTeam, parallelTeam,
+                    true, dataname[i].neutron, solventmodel);
             refinementdata[i].setCrystalReciprocalSpace_fs(crs_fs[i]);
-            crs_fs[i].setUse3G(refinementdata[i].use_3g);
+            crs_fs[i].setUse3G(use_3g);
             crs_fs[i].setWeight(dataname[i].weight);
 
             crystalstats[i] = new CrystalStats(reflectionlist[i],
@@ -460,30 +413,71 @@ public class DiffractionData {
     }
 
     /**
-     * return the associated {@link XRayEnergy} for this data
-     *
-     * @return the {@link XRayEnergy}
-     */
-    public XRayEnergy getXRayEnergy() {
-        return xrayenergy;
-    }
-
-    /**
-     * set the current {@link XRayEnergy} for this data
-     *
-     * @param xrayenergy the {@link XRayEnergy} to associate with the data
-     */
-    public void setXRayEnergy(XRayEnergy xrayenergy) {
-        this.xrayenergy = xrayenergy;
-    }
-
-    /**
      * return the atomarray for the model associated with this data
      *
      * @return an {@link ffx.potential.bonded.Atom} array
      */
+    @Override
     public Atom[] getAtomArray() {
-        return atomarray;
+        return refinementmodel.atomarray;
+    }
+
+    @Override
+    public ArrayList<ArrayList<Residue>> getAltResidues() {
+        return refinementmodel.altresidues;
+    }
+
+    @Override
+    public ArrayList<ArrayList<Molecule>> getAltMolecules() {
+        return refinementmodel.altmolecules;
+    }
+
+    @Override
+    public MolecularAssembly[] getMolecularAssembly() {
+        return assembly;
+    }
+
+    @Override
+    public RefinementModel getRefinementModel() {
+        return refinementmodel;
+    }
+
+    @Override
+    public double getWeight() {
+        return xweight;
+    }
+
+    @Override
+    public String printOptimizationHeader() {
+        return "R  Rfree";
+    }
+
+    @Override
+    public String printOptimizationUpdate() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < n; i++) {
+            sb.append(String.format("%6.2f %6.2f ",
+                    crystalstats[i].get_r(),
+                    crystalstats[i].get_rfree()));
+        }
+
+        return sb.toString();
+    }
+
+    @Override
+    public String printEnergyUpdate() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < n; i++) {
+            sb.append(String.format("     dataset %d (weight: %5.1f): R: %6.2f Rfree: %6.2f chemical energy: %8.2f likelihood: %8.2f\n",
+                    i + 1,
+                    dataname[i].weight,
+                    crystalstats[i].get_r(),
+                    crystalstats[i].get_rfree(),
+                    assembly[0].getPotentialEnergy().getTotal(),
+                    dataname[i].weight * sigmaaminimize[i].calculateLikelihood()));
+        }
+
+        return sb.toString();
     }
 
     /**
@@ -505,7 +499,7 @@ public class DiffractionData {
     public void printstats() {
         int nat = 0;
         int nnonh = 0;
-        for (Atom a : atomlist) {
+        for (Atom a : refinementmodel.atomlist) {
             if (a.getOccupancy() == 0.0) {
                 continue;
             }
@@ -576,18 +570,17 @@ public class DiffractionData {
                 SplineEnergy.Type.FOFC);
 
         // minimize
-        if (solventmodel != SolventModel.NONE
-                && refinementdata[i].gridsearch) {
+        if (solventmodel != SolventModel.NONE && gridsearch) {
             scalebulkminimize[i].minimize(7, 1e-2);
             scalebulkminimize[i].GridOptimize();
         }
-        scalebulkminimize[i].minimize(7, refinementdata[i].xrayscaletol);
+        scalebulkminimize[i].minimize(7, xrayscaletol);
 
         // sigmaA / LLK calculation
         sigmaaminimize[i] = new SigmaAMinimize(reflectionlist[i], refinementdata[i]);
-        sigmaaminimize[i].minimize(7, refinementdata[i].sigmaatol);
+        sigmaaminimize[i].minimize(7, sigmaatol);
 
-        if (refinementdata[i].splinefit) {
+        if (splinefit) {
             splineminimize[i].minimize(7, 1e-5);
         }
 

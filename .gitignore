@@ -6,3 +6,4 @@ tests
 modules/*/target/
 lib/
 modules/*/catalog.xml
+website/
