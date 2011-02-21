@@ -19,8 +19,8 @@
         <url>http://kenai.com/jira/browse/ffx</url>
     </issueManagement>
     <ciManagement>
-        <system>Hudson</system>
-        <url>http://atbsrv3.stanford.edu:8080/</url>
+        <system>Jenkins</system>
+        <url>http://water.bme.utexas.edu:8080/</url>
     </ciManagement>
     <inceptionYear>2001</inceptionYear>
     <mailingLists>
