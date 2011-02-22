@@ -42,7 +42,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
     private static double toSeconds = 0.000000001;
     private static final double eightpi2 = 8.0 * Math.PI * Math.PI;
     private final ReflectionList reflectionlist;
-    private final RefinementData refinementdata;
+    private final DiffractionRefinementData refinementdata;
     private final Crystal crystal;
     private final CrystalReciprocalSpace crs;
     private final ScaleBulkEnergy bulksolventenergy;
@@ -58,7 +58,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
     private int nSteps;
 
     public ScaleBulkMinimize(ReflectionList reflectionlist,
-            RefinementData refinementdata, CrystalReciprocalSpace crs) {
+            DiffractionRefinementData refinementdata, CrystalReciprocalSpace crs) {
         this.reflectionlist = reflectionlist;
         this.refinementdata = refinementdata;
         this.crystal = reflectionlist.crystal;

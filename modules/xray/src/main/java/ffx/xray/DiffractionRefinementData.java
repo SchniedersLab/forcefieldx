@@ -33,9 +33,9 @@ import java.util.Random;
  *
  * @author fennt
  */
-public class RefinementData {
+public class DiffractionRefinementData {
 
-    private static final Logger logger = Logger.getLogger(RefinementData.class.getName());
+    private static final Logger logger = Logger.getLogger(DiffractionRefinementData.class.getName());
     /**
      * number of reflections in the data set
      */
@@ -123,17 +123,9 @@ public class RefinementData {
      */
     public double foesq[];
     /**
-     * if true, grid search bulk solvent params
-     */
-    public boolean gridsearch;
-    /**
      * bulk solvent parameters
      */
     public double solvent_a, solvent_b;
-    /**
-     * fit a scaling spline between Fo and Fc?
-     */
-    public boolean splinefit;
     /**
      * bulk solvent scale and Ueq
      */
@@ -146,21 +138,13 @@ public class RefinementData {
      * model anisotropic B
      */
     public double model_b[] = new double[6];
-    // settings
-    public final double fsigfcutoff;
+
+    /**
+     * duplicated settings - these are also in DiffractionData,
+     * but duplicated here until settings are put in their own class
+     */
     public int rfreeflag;
-    public final boolean use_3g;
-    public final double xrayscaletol;
-    public final double sigmaatol;
-    public final double xweight;
-    public final double bsimweight;
-    public final double bnonzeroweight;
-    public final double bmass;
-    public final boolean residuebfactor;
-    public final int nresiduebfactor;
-    public final boolean addanisou;
-    public final boolean refinemolocc;
-    public final double occmass;
+    public final double fsigfcutoff;
 
     /**
      * allocate data given a {@link ReflectionList}
@@ -168,48 +152,11 @@ public class RefinementData {
      * @param properties configuration properties
      * @param reflectionlist {@link ReflectionList} to use to allocate data
      */
-    public RefinementData(CompositeConfiguration properties,
+    public DiffractionRefinementData(CompositeConfiguration properties,
             ReflectionList reflectionlist) {
 
         int rflag = properties.getInt("rfreeflag", -1);
         fsigfcutoff = properties.getDouble("fsigfcutoff", -1.0);
-        gridsearch = properties.getBoolean("gridsearch", false);
-        splinefit = properties.getBoolean("splinefit", true);
-        use_3g = properties.getBoolean("use_3g", true);
-        xrayscaletol = properties.getDouble("xrayscaletol", 1e-4);
-        sigmaatol = properties.getDouble("sigmaatol", 1.0);
-        xweight = properties.getDouble("xweight", 1.0);
-        bsimweight = properties.getDouble("bsimweight", 1.0);
-        bnonzeroweight = properties.getDouble("bnonzeroweight", 1.0);
-        bmass = properties.getDouble("bmass", 5.0);
-        residuebfactor = properties.getBoolean("residuebfactor", false);
-        nresiduebfactor = properties.getInt("nresiduebfactor", 1);
-        addanisou = properties.getBoolean("addanisou", false);
-        refinemolocc = properties.getBoolean("refinemolocc", false);
-        occmass = properties.getDouble("occmass", 10.0);
-
-        if (logger.isLoggable(Level.INFO)) {
-            StringBuilder sb = new StringBuilder();
-            sb.append("\nRefinement data settings:\n");
-            sb.append("  using cctbx 3 Gaussians (use_3g): " + use_3g + "\n");
-            sb.append("  resolution dependent spline scale (splinefit): " + splinefit + "\n");
-            sb.append("  F/sigF cutoff (fsigfcutoff): " + fsigfcutoff + "\n");
-            sb.append("  R Free flag (rfreeflag) (if -1, value will be updated when data is read in): " + rflag + "\n");
-            sb.append("  n bins (nbins): " + reflectionlist.nbins + "\n");
-            sb.append("  solvent grid search (gridsearch): " + gridsearch + "\n");
-            sb.append("  X-ray scale fit tolerance (xrayscaletol): " + xrayscaletol + "\n");
-            sb.append("  sigma A fit tolerance (sigmaatol): " + sigmaatol + "\n");
-            sb.append("  X-ray refinement weight (xweight): " + xweight + "\n");
-            sb.append("  B similarity weight (bsimweight): " + bsimweight + "\n");
-            sb.append("  B non-zero weight (bnonzeroweight): " + bnonzeroweight + "\n");
-            sb.append("  B Lagrangian mass (bmass): " + bmass + "\n");
-            sb.append("  B factors refined by residue (residuebfactor): " + residuebfactor + "\n");
-            sb.append("    (if true, num. residues per B (nresiduebfactor): " + nresiduebfactor + ")\n");
-            sb.append("  add ANISOU for refinement (addanisou): " + addanisou + "\n");
-            sb.append("  refine occupancies on molecules (HETATMs - refinemolocc): " + refinemolocc + "\n");
-            sb.append("  Occupancy Lagrangian mass (occmass): " + occmass + "\n");
-            logger.info(sb.toString());
-        }
 
         this.n = reflectionlist.hkllist.size();
         this.scale_n = reflectionlist.crystal.scale_n;

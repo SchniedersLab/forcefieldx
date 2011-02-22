@@ -63,8 +63,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
     private final CompositeConfiguration properties;
     private AlgorithmListener algorithmListener;
     private Thermostat thermostat;
-    private File archive = null;
-    private File dyn = null;
+    private File archiveFile = null;
+    private File dynFile = null;
     private XYZFilter xyzFilter = null;
     private DYNFilter dynFilter = null;
     private boolean done;
@@ -124,11 +124,11 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     public void setArchiveFile(File archive) {
-        this.archive = archive;
+        this.archiveFile = archive;
     }
 
     public File getArchiveFile() {
-        return archive;
+        return archiveFile;
     }
 
     public void init(final int nSteps, final double timeStep, final double printInterval,
@@ -165,21 +165,21 @@ public class MolecularDynamics implements Runnable, Terminatable {
             saveFrequency = (int) (saveInterval / dt);
             File file = molecularAssembly.getFile();
             String filename = FilenameUtils.removeExtension(file.getAbsolutePath());
-            if (archive == null) {
-                archive = new File(filename + ".arc");
-                archive = XYZFilter.version(archive);
+            if (archiveFile == null) {
+                archiveFile = new File(filename + ".arc");
+                archiveFile = XYZFilter.version(archiveFile);
             }
-            logger.info(" Snap shots will be written to " + archive.getAbsolutePath());
+            logger.info(" Snap shots will be written to " + archiveFile.getAbsolutePath());
 
             if (dyn == null) {
-                this.dyn = new File(filename + ".dyn");
+                this.dynFile = new File(filename + ".dyn");
                 loadRestart = false;
             } else {
-                this.dyn = dyn;
+                this.dynFile = dyn;
                 loadRestart = true;
             }
 
-            logger.info(" Restart file will be written to " + this.dyn.getAbsolutePath());
+            logger.info(" Restart file will be written to " + this.dynFile.getAbsolutePath());
 
 
             if (xyzFilter == null) {
@@ -281,7 +281,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 }
             }
         } else {
-            if (!dynFilter.readFile(dyn, x, v, a, aPrevious)) {
+            if (!dynFilter.readFile(dynFile, x, v, a, aPrevious)) {
                 String message = " Could not load the restart file - dynamics terminated.";
                 logger.log(Level.WARNING, message);
                 done = true;
@@ -344,16 +344,16 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 time = System.nanoTime();
             }
 
-            if (saveFrequency > 0 && step % saveFrequency == 0 && archive != null) {
-                if (xyzFilter.writeFile(archive, true)) {
-                    logger.info(String.format(" Appended snap shot to " + archive.getName()));
+            if (saveFrequency > 0 && step % saveFrequency == 0 && archiveFile != null) {
+                if (xyzFilter.writeFile(archiveFile, true)) {
+                    logger.info(String.format(" Appended snap shot to " + archiveFile.getName()));
                 } else {
-                    logger.warning(String.format(" Appending snap shot to " + archive.getName() + " failed"));
+                    logger.warning(String.format(" Appending snap shot to " + archiveFile.getName() + " failed"));
                 }
-                if (dynFilter.writeFile(dyn, molecularAssembly.getCrystal(), x, v, a, aPrevious)) {
-                    logger.info(String.format(" Wrote restart file to " + dyn.getName()));
+                if (dynFilter.writeFile(dynFile, molecularAssembly.getCrystal(), x, v, a, aPrevious)) {
+                    logger.info(String.format(" Wrote restart file to " + dynFile.getName()));
                 } else {
-                    logger.info(String.format(" Writing restart file to " + dyn.getName() + " failed"));
+                    logger.info(String.format(" Writing restart file to " + dynFile.getName() + " failed"));
                 }
             }
 

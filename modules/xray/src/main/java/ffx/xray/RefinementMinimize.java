@@ -77,9 +77,8 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
     }
     private static final Logger logger = Logger.getLogger(RefinementMinimize.class.getName());
     private static double toSeconds = 0.000000001;
-    private final MolecularAssembly molecularAssembly[];
-    private final DiffractionData diffractiondata;
-    private final RefinementData refinementdata;
+    private final DataContainer data;
+    private final RefinementModel refinementmodel;
     private final Atom atomarray[];
     private final int nAtoms;
     private final RefinementEnergy refinementenergy;
@@ -100,42 +99,10 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
     /**
      * constructor for refinement, assumes coordinates and B factor optimization
      *
-     * @param molecularAssembly input {@link ffx.potential.bonded.MolecularAssembly}
-     * that will be used as the model
      * @param diffractiondata input {@link DiffractionData data} for refinement
      */
-    public RefinementMinimize(MolecularAssembly molecularAssembly,
-            DiffractionData diffractiondata) {
-        this(new MolecularAssembly[]{molecularAssembly}, diffractiondata,
-                RefinementMode.COORDINATES_AND_BFACTORS);
-    }
-
-    /**
-     * constructor for refinement
-     *
-     * @param molecularAssembly input {@link ffx.potential.bonded.MolecularAssembly}
-     * that will be used as the model
-     * @param diffractiondata input {@link DiffractionData data} for refinement
-     * @param refinementmode {@link RefinementMinimize.RefinementMode} for refinement
-     */
-    public RefinementMinimize(MolecularAssembly molecularAssembly,
-            DiffractionData diffractiondata, RefinementMode refinementmode) {
-        this(new MolecularAssembly[]{molecularAssembly}, diffractiondata,
-                refinementmode);
-    }
-
-    /**
-     * constructor for refinement, assumes coordinates and B factor optimization
-     *
-     * @param molecularAssembly input {@link ffx.potential.bonded.MolecularAssembly}
-     * array (usually containing alternate conformer assemblies) that will be
-     * used as the model
-     * @param diffractiondata input {@link DiffractionData data} for refinement
-     */
-    public RefinementMinimize(MolecularAssembly molecularAssembly[],
-            DiffractionData diffractiondata) {
-        this(molecularAssembly, diffractiondata,
-                RefinementMode.COORDINATES_AND_BFACTORS);
+    public RefinementMinimize(DataContainer data) {
+        this(data, RefinementMode.COORDINATES_AND_BFACTORS);
     }
 
     /**
@@ -147,19 +114,14 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
      * @param diffractiondata input {@link DiffractionData data} for refinement
      * @param refinementmode {@link RefinementMinimize.RefinementMode} for refinement
      */
-    public RefinementMinimize(MolecularAssembly molecularAssembly[],
-            DiffractionData diffractiondata, RefinementMode refinementmode) {
-        this.molecularAssembly = molecularAssembly;
-        this.diffractiondata = diffractiondata;
-        this.refinementdata = diffractiondata.refinementdata[0];
+    public RefinementMinimize(DataContainer data, RefinementMode refinementmode) {
+        this.data = data;
+        this.refinementmodel = data.getRefinementModel();
         this.refinementMode = refinementmode;
-        this.atomarray = diffractiondata.atomarray;
+        this.atomarray = data.getAtomArray();
         this.nAtoms = atomarray.length;
-        if (!diffractiondata.scaled[0]) {
-            diffractiondata.printstats();
-        }
-        refinementenergy = new RefinementEnergy(molecularAssembly,
-                diffractiondata, refinementmode, null);
+
+        refinementenergy = new RefinementEnergy(data, refinementmode, null);
 
         this.nxyz = refinementenergy.nxyz;
         this.nb = refinementenergy.nb;
@@ -203,40 +165,45 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
                 || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
             int i = nxyz;
             int resnum = -1;
-            int nres = refinementdata.nresiduebfactor + 1;
-            for (Atom a : atomarray) {
-                // ignore hydrogens!!!
-                if (a.getAtomicNumber() == 1) {
-                    continue;
-                }
-                if (a.getAnisou() != null) {
-                    for (int j = 0; j < 6; j++) {
-                        scaling[i + j] = anisouscale;
-                        x[i + j] *= anisouscale;
+            if (data instanceof DiffractionData) {
+                DiffractionData diffractiondata = (DiffractionData) data;
+                int nres = diffractiondata.nresiduebfactor + 1;
+                for (Atom a : atomarray) {
+                    // ignore hydrogens!!!
+                    if (a.getAtomicNumber() == 1) {
+                        continue;
                     }
-                    i += 6;
-                } else if (refinementdata.residuebfactor) {
-                    if (resnum != a.getResidueNumber()) {
-                        if (nres >= refinementdata.nresiduebfactor) {
-                            if (resnum > -1
-                                    && i < nxyz + nb - 1) {
-                                i++;
-                            }
-                            if (i < nxyz + nb) {
-                                scaling[i] = bisoscale;
-                                x[i] *= bisoscale;
-                            }
-                            nres = 1;
-                        } else {
-                            nres++;
+                    if (a.getAnisou() != null) {
+                        for (int j = 0; j < 6; j++) {
+                            scaling[i + j] = anisouscale;
+                            x[i + j] *= anisouscale;
                         }
-                        resnum = a.getResidueNumber();
+                        i += 6;
+                    } else if (diffractiondata.residuebfactor) {
+                        if (resnum != a.getResidueNumber()) {
+                            if (nres >= diffractiondata.nresiduebfactor) {
+                                if (resnum > -1
+                                        && i < nxyz + nb - 1) {
+                                    i++;
+                                }
+                                if (i < nxyz + nb) {
+                                    scaling[i] = bisoscale;
+                                    x[i] *= bisoscale;
+                                }
+                                nres = 1;
+                            } else {
+                                nres++;
+                            }
+                            resnum = a.getResidueNumber();
+                        }
+                    } else {
+                        scaling[i] = bisoscale;
+                        x[i] *= bisoscale;
+                        i++;
                     }
-                } else {
-                    scaling[i] = bisoscale;
-                    x[i] *= bisoscale;
-                    i++;
                 }
+            } else {
+                logger.severe("B refinement not supported for this data type!");
             }
         }
 
@@ -244,24 +211,28 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
                 || refinementmode == RefinementMode.BFACTORS_AND_OCCUPANCIES
                 || refinementmode == RefinementMode.COORDINATES_AND_OCCUPANCIES
                 || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
-            int i = nxyz + nb;
-            for (ArrayList<Residue> list : diffractiondata.altresidues) {
-                for (int j = 0; j < list.size(); j++) {
-                    scaling[i] = occscale;
-                    x[i] *= occscale;
-                    i++;
+            if (data instanceof DiffractionData) {
+                int i = nxyz + nb;
+                for (ArrayList<Residue> list : refinementmodel.altresidues) {
+                    for (int j = 0; j < list.size(); j++) {
+                        scaling[i] = occscale;
+                        x[i] *= occscale;
+                        i++;
+                    }
                 }
-            }
-            for (ArrayList<Molecule> list : diffractiondata.altmolecules) {
-                for (int j = 0; j < list.size(); j++) {
-                    scaling[i] = occscale;
-                    x[i] *= occscale;
-                    i++;
+                for (ArrayList<Molecule> list : refinementmodel.altmolecules) {
+                    for (int j = 0; j < list.size(); j++) {
+                        scaling[i] = occscale;
+                        x[i] *= occscale;
+                        i++;
+                    }
                 }
+            } else {
+                logger.severe("occupancy refinement not supported for this data type!");
             }
-        }
 
-        refinementenergy.setScaling(scaling);
+            refinementenergy.setScaling(scaling);
+        }
     }
 
     /**
@@ -313,9 +284,6 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
      * @return {@link RefinementEnergy} result
      */
     public RefinementEnergy minimize(int m, double eps, int maxiter) {
-        refinementenergy.xrayEnergy.setRefinementMode(refinementMode);
-        diffractiondata.setXRayEnergy(refinementenergy.xrayEnergy);
-
         switch (refinementMode) {
             case COORDINATES:
                 logger.info("Beginning X-ray refinement - mode: coordinates nparams: " + n);
@@ -379,7 +347,8 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
 
         if (iter == 0) {
             logger.info("\n Limited Memory BFGS Quasi-Newton Optimization: \n\n");
-            logger.info(" Cycle       Energy      G RMS    Delta E   Delta X    Angle  Evals     Time      R  Rfree\n");
+            logger.info(" Cycle       Energy      G RMS    Delta E   Delta X    Angle  Evals     Time      "
+                    + data.printOptimizationHeader() + "\n");
         }
         if (info == null) {
             logger.info(String.format("%6d %13.4g %11.4g\n",
@@ -389,11 +358,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
                 StringBuilder sb = new StringBuilder();
                 sb.append(String.format("%6d %13.4g %11.4g %11.4g %10.4g %9.2g %7d %8.3g ",
                         iter, f, grms, df, xrms, angle, nfun, seconds));
-                for (int i = 0; i < diffractiondata.n; i++) {
-                    sb.append(String.format("%6.2f %6.2f ",
-                            diffractiondata.crystalstats[i].get_r(),
-                            diffractiondata.crystalstats[i].get_rfree()));
-                }
+                sb.append(data.printOptimizationUpdate());
                 sb.append(String.format("\n"));
                 logger.info(sb.toString());
             } else {

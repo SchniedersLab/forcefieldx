@@ -18,7 +18,7 @@
  * along with Force Field X; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
  */
-package ffx.xray;
+package ffx.crystal;
 
 import static java.lang.Math.pow;
 import static java.lang.Math.sqrt;
@@ -29,8 +29,6 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import ffx.crystal.Crystal;
 
 /**
  *
@@ -46,6 +44,7 @@ public class CCP4MapWriter {
     private final String filename;
     private final Crystal crystal;
     private final int nx, ny, nz;
+    private int stride;
 
     /**
      * construct mapwriter object
@@ -63,6 +62,15 @@ public class CCP4MapWriter {
         this.nz = nz;
         this.crystal = crystal;
         this.filename = filename;
+        this.stride = 2;
+    }
+
+    /**
+     * set the stepping across the array (e.g. 2 if data is separated by 1 space)
+     * @param step the step size desired
+     */
+    public void setStride(int stride) {
+        this.stride = stride;
     }
 
     /**
@@ -96,7 +104,7 @@ public class CCP4MapWriter {
         for (int k = 0; k < nz; k++) {
             for (int j = 0; j < ny; j++) {
                 for (int i = 0; i < nx; i++) {
-                    int index = 2 * (i + nx * (j + ny * k));
+                    int index = stride * (i + nx * (j + ny * k));
                     // int index = k * (ny * (nx + 2)) + j * (nx + 2) + i;
                     n++;
                     if (data[index] < min) {
@@ -114,7 +122,7 @@ public class CCP4MapWriter {
         for (int k = 0; k < nz; k++) {
             for (int j = 0; j < ny; j++) {
                 for (int i = 0; i < nx; i++) {
-                    int index = 2 * (i + nx * (j + ny * k));
+                    int index = stride * (i + nx * (j + ny * k));
                     // int index = k * (ny * (nx + 2)) + j * (nx + 2) + i;
                     sd += pow(data[index] - mean, 2.0);
                     n++;
@@ -127,7 +135,7 @@ public class CCP4MapWriter {
             for (int k = 0; k < nz; k++) {
                 for (int j = 0; j < ny; j++) {
                     for (int i = 0; i < nx; i++) {
-                        int index = 2 * (i + nx * (j + ny * k));
+                        int index = stride * (i + nx * (j + ny * k));
                         data[index] = (data[index]) - mean / sd;
                     }
                 }
@@ -248,7 +256,7 @@ public class CCP4MapWriter {
             for (int k = 0; k < nz; k++) {
                 for (int j = 0; j < ny; j++) {
                     for (int i = 0; i < nx; i++) {
-                        int index = 2 * (i + nx * (j + ny * k));
+                        int index = stride * (i + nx * (j + ny * k));
                         // int index = k * (ny * (nx + 2)) + j * (nx + 2) + i;
                         fmapdata = (float) data[index];
                         bb.order(b).putFloat(fmapdata);

@@ -8,7 +8,7 @@
         <format>tar.bz2</format>
         <format>zip</format>
     </formats>
-    <baseDirectory>ffx-1.0-SNAPSHOT</baseDirectory>
+    <baseDirectory>ffx-1.0-alpha</baseDirectory>
     <fileSets>
         <fileSet>
             <includes>

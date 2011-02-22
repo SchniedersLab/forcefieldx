@@ -219,7 +219,7 @@ public class MTZFilter implements DiffractionFileFilter {
 
     @Override
     public boolean readFile(File mtzFile, ReflectionList reflectionlist,
-            RefinementData refinementdata, CompositeConfiguration properties) {
+            DiffractionRefinementData refinementdata, CompositeConfiguration properties) {
         int nread, nignore, nres, nfriedel, ncut;
         ByteOrder b = ByteOrder.nativeOrder();
         FileInputStream fis;

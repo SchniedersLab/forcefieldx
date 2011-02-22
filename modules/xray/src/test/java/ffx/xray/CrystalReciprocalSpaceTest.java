@@ -91,7 +91,7 @@ public class CrystalReciprocalSpaceTest {
         Resolution resolution = new Resolution(1.45);
 
         ReflectionList reflectionlist = new ReflectionList(crystal, resolution);
-        RefinementData refinementdata = new RefinementData(properties,
+        DiffractionRefinementData refinementdata = new DiffractionRefinementData(properties,
                 reflectionlist);
 
         ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties);
@@ -159,7 +159,7 @@ public class CrystalReciprocalSpaceTest {
         Resolution resolution = new Resolution(1.89631);
 
         ReflectionList reflectionlist = new ReflectionList(crystal, resolution);
-        RefinementData refinementdata = new RefinementData(properties,
+        DiffractionRefinementData refinementdata = new DiffractionRefinementData(properties,
                 reflectionlist);
 
         ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties);

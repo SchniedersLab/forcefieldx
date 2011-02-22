@@ -96,7 +96,7 @@ public class SigmaAEnergy implements Potential {
     private final ReflectionSpline spline;
     private final int n;
     private final Crystal crystal;
-    private final RefinementData refinementdata;
+    private final DiffractionRefinementData refinementdata;
     private final double dfscale;
     private final double fo[][];
     private final int freer[];
@@ -131,7 +131,7 @@ public class SigmaAEnergy implements Potential {
     private ComplexNumber dfcc = new ComplexNumber();
 
     public SigmaAEnergy(ReflectionList reflectionlist,
-            RefinementData refinementdata) {
+            DiffractionRefinementData refinementdata) {
         this.reflectionlist = reflectionlist;
         this.crystal = reflectionlist.crystal;
         this.refinementdata = refinementdata;

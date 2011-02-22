@@ -443,7 +443,7 @@ public class Crystal {
     /**
      * The ReplicatesCrystal over-rides this method to return the unit cell
      * rather than the ReplicateCell.
-     * 
+     *
      * @return The unit cell Crystal instance.
      */
     public Crystal getUnitCell() {
@@ -474,112 +474,19 @@ public class Crystal {
         if (aperiodic) {
             return x * x + y * y + z * z;
         }
-
         double xf = x * A00 + y * A10 + z * A20;
         double yf = x * A01 + y * A11 + z * A21;
         double zf = x * A02 + y * A12 + z * A22;
-
-        /**
-        XTEMP=INT(ABS(XTEMP)+HALF)*SIGN(ONE,-XTEMP) +XTEMP
-        YTEMP=INT(ABS(YTEMP)+HALF)*SIGN(ONE,-YTEMP) +YTEMP
-        ZTEMP=INT(ABS(ZTEMP)+HALF)*SIGN(ONE,-ZTEMP) +ZTEMP
-         */
         xf = floor(abs(xf) + 0.5) * signum(-xf) + xf;
         yf = floor(abs(yf) + 0.5) * signum(-yf) + yf;
         zf = floor(abs(zf) + 0.5) * signum(-zf) + zf;
-
         x = xf * Ai00 + yf * Ai10 + zf * Ai20;
         y = xf * Ai01 + yf * Ai11 + zf * Ai21;
         z = xf * Ai02 + yf * Ai12 + zf * Ai22;
-
         xyz[0] = x;
         xyz[1] = y;
         xyz[2] = z;
         return x * x + y * y + z * z;
-
-        /*
-        switch (crystalSystem) {
-        case CUBIC:
-        case ORTHORHOMBIC:
-        case TETRAGONAL:
-        while (x > half_a) {
-        x -= a;
-        }
-        while (x < mhalf_a) {
-        x += a;
-        }
-        while (y > half_b) {
-        y -= b;
-        }
-        while (y < mhalf_b) {
-        y += b;
-        }
-        while (z > half_c) {
-        z -= c;
-        }
-        while (z < mhalf_c) {
-        z += c;
-        }
-        break;
-        case MONOCLINIC:
-        double zm = z / sin_beta;
-        double xm = x - zm * cos_beta;
-        while (xm > half_a) {
-        xm -= a;
-        }
-        while (xm < mhalf_a) {
-        xm += a;
-        }
-        while (y > half_b) {
-        y -= b;
-        }
-        while (y < mhalf_b) {
-        y += b;
-        }
-        while (zm > half_c) {
-        zm -= c;
-        }
-        while (zm < mhalf_c) {
-        zm += c;
-        }
-        x = xm + zm * cos_beta;
-        z = zm * sin_beta;
-        break;
-        case HEXAGONAL:
-        case TRICLINIC:
-        case TRIGONAL:
-        double zt = z / gamma_term;
-        double yt = (y - zt * beta_term) / sin_gamma;
-        double xt = x - yt * cos_gamma - zt * cos_beta;
-        while (xt > half_a) {
-        xt -= a;
-        }
-        while (xt < mhalf_a) {
-        xt += a;
-        }
-        while (yt > half_b) {
-        yt -= b;
-        }
-        while (yt < mhalf_b) {
-        yt += b;
-        }
-        while (zt > half_c) {
-        zt -= c;
-        }
-        while (zt < mhalf_c) {
-        zt += c;
-        }
-        x = xt + yt * cos_gamma + zt * cos_beta;
-        y = yt * sin_gamma + zt * beta_term;
-        z = zt * gamma_term;
-        }
-        xyz[0] = x;
-        xyz[1] = y;
-        xyz[2] = z;
-        return x * x + y * y + z * z; */
-    }
-
-    public void rotateForce() {
     }
 
     /**
@@ -594,81 +501,15 @@ public class Crystal {
         if (aperiodic) {
             return dx * dx + dy * dy + dz * dz;
         }
-        switch (crystalSystem) {
-            case CUBIC:
-            case ORTHORHOMBIC:
-            case TETRAGONAL:
-                while (dx > half_a) {
-                    dx -= a;
-                }
-                while (dx < mhalf_a) {
-                    dx += a;
-                }
-                while (dy > half_b) {
-                    dy -= b;
-                }
-                while (dy < mhalf_b) {
-                    dy += b;
-                }
-                while (dz > half_c) {
-                    dz -= c;
-                }
-                while (dz < mhalf_c) {
-                    dz += c;
-                }
-                break;
-            case MONOCLINIC:
-                double zm = dz / sin_beta;
-                double xm = dx - zm * cos_beta;
-                while (xm > half_a) {
-                    xm -= a;
-                }
-                while (xm < mhalf_a) {
-                    xm += a;
-                }
-                while (dy > half_b) {
-                    dy -= b;
-                }
-                while (dy < mhalf_b) {
-                    dy += b;
-                }
-                while (zm > half_c) {
-                    zm -= c;
-                }
-                while (zm < mhalf_c) {
-                    zm += c;
-                }
-                dx = xm + zm * cos_beta;
-                dz = zm * sin_beta;
-                break;
-            case HEXAGONAL:
-            case TRICLINIC:
-            case TRIGONAL:
-                double zt = dz / gamma_term;
-                double yt = (dy - zt * beta_term) / sin_gamma;
-                double xt = dx - yt * cos_gamma - zt * cos_beta;
-                while (xt > half_a) {
-                    xt -= a;
-                }
-                while (xt < mhalf_a) {
-                    xt += a;
-                }
-                while (yt > half_b) {
-                    yt -= b;
-                }
-                while (yt < mhalf_b) {
-                    yt += b;
-                }
-                while (zt > half_c) {
-                    zt -= c;
-                }
-                while (zt < mhalf_c) {
-                    zt += c;
-                }
-                dx = xt + yt * cos_gamma + zt * cos_beta;
-                dy = yt * sin_gamma + zt * beta_term;
-                dz = zt * gamma_term;
-        }
+        double xf = dx * A00 + dy * A10 + dz * A20;
+        double yf = dx * A01 + dy * A11 + dz * A21;
+        double zf = dx * A02 + dy * A12 + dz * A22;
+        xf = floor(abs(xf) + 0.5) * signum(-xf) + xf;
+        yf = floor(abs(yf) + 0.5) * signum(-yf) + yf;
+        zf = floor(abs(zf) + 0.5) * signum(-zf) + zf;
+        dx = xf * Ai00 + yf * Ai10 + zf * Ai20;
+        dy = xf * Ai01 + yf * Ai11 + zf * Ai21;
+        dz = xf * Ai02 + yf * Ai12 + zf * Ai22;
         return dx * dx + dy * dy + dz * dz;
     }
 
@@ -904,6 +745,38 @@ public class Crystal {
         double fx = rot[0][0] * xi + rot[0][1] * yi + rot[0][2] * zi;
         double fy = rot[1][0] * xi + rot[1][1] * yi + rot[1][2] * zi;
         double fz = rot[2][0] * xi + rot[2][1] * yi + rot[2][2] * zi;
+
+        // Convert back to Cartesian coordinates.
+        mate[0] = fx * Ai00 + fy * Ai10 + fz * Ai20;
+        mate[1] = fx * Ai01 + fy * Ai11 + fz * Ai21;
+        mate[2] = fx * Ai02 + fy * Ai12 + fz * Ai22;
+    }
+
+    /**
+     * Apply a symmetry operator to one set of coordinates.
+     *
+     * @param xyz
+     *            Input coordinates.
+     * @param mate
+     *            Symmetry mate coordinates.
+     * @param symOp
+     *            The symmetry operator.
+     */
+    public void applyTransSymRot(double xyz[], double mate[], SymOp symOp) {
+        double rot[][] = symOp.rot;
+        // Convert to fractional coordinates.
+        double xc = xyz[0];
+        double yc = xyz[1];
+        double zc = xyz[2];
+        // Convert to fractional coordinates.
+        double xi = xc * A00 + yc * A10 + zc * A20;
+        double yi = xc * A01 + yc * A11 + zc * A21;
+        double zi = xc * A02 + yc * A12 + zc * A22;
+
+        // Apply Symmetry Operator.
+        double fx = rot[0][0] * xi + rot[1][0] * yi + rot[2][0] * zi;
+        double fy = rot[0][1] * xi + rot[1][1] * yi + rot[2][1] * zi;
+        double fz = rot[0][2] * xi + rot[1][2] * yi + rot[2][2] * zi;
 
         // Convert back to Cartesian coordinates.
         mate[0] = fx * Ai00 + fy * Ai10 + fz * Ai20;

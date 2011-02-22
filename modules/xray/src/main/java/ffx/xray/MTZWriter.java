@@ -50,7 +50,7 @@ public class MTZWriter {
     private static final Logger logger = Logger.getLogger(MTZWriter.class.getName());
     private final String filename;
     private final ReflectionList reflectionlist;
-    private final RefinementData refinementdata;
+    private final DiffractionRefinementData refinementdata;
     private final Crystal crystal;
     private final SpaceGroup sg;
     private final ReflectionSpline spline;
@@ -59,12 +59,12 @@ public class MTZWriter {
     private final boolean dataonly;
 
     public MTZWriter(ReflectionList reflectionlist,
-            RefinementData refinementdata, String filename) {
+            DiffractionRefinementData refinementdata, String filename) {
         this(reflectionlist, refinementdata, filename, false);
     }
 
     public MTZWriter(ReflectionList reflectionlist,
-            RefinementData refinementdata, String filename, boolean dataonly) {
+            DiffractionRefinementData refinementdata, String filename, boolean dataonly) {
         this.reflectionlist = reflectionlist;
         this.refinementdata = refinementdata;
         this.crystal = reflectionlist.crystal;
