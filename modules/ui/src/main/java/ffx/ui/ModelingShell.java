@@ -26,6 +26,7 @@ import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.Rectangle;
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.util.List;
 import java.util.prefs.Preferences;
@@ -54,6 +55,7 @@ import ffx.algorithms.Thermostat.Thermostats;
 import ffx.numerics.Potential;
 
 import ffx.potential.ForceFieldEnergy;
+import ffx.autoparm.Potential2;
 import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.RendererCache.ColorModel;
@@ -139,6 +141,7 @@ public class ModelingShell extends Console implements AlgorithmListener {
         setVariable("energy", new MethodClosure(this, "energy"));
         setVariable("minimize", new MethodClosure(this, "minimize"));
         setVariable("md", new MethodClosure(this, "md"));
+        setVariable("potential", new MethodClosure(this,"potential"));
 
         /**
          * Configure the Swing GUI for the shell.
@@ -277,6 +280,26 @@ public class ModelingShell extends Console implements AlgorithmListener {
                                       saveInterval, temperature, initVelocities, dyn);
             terminatableAlgorithm = null;
         }
+    }
+    
+    public void potential(Integer choice, String fname, Double eps){
+    	if (interrupted) {
+    		logger.info("Algorithm interrupted - skipping minimization.");
+    	}
+    	if ( terminatableAlgorithm != null ) {
+    		logger.info("Algorithm already running - skipping minimization.");
+    	}
+    	try {
+    		if(choice == 1){
+        		Potential2 p = new Potential2(choice.intValue(), null, fname, null);
+    		}
+    		else if(choice > 1 && choice < 5){
+    			Potential2 p = new Potential2(choice.intValue(), fname, null, eps);
+    		}
+    		
+    	} catch (IOException e) {
+    		e.printStackTrace();
+    	}
     }
 
     /*

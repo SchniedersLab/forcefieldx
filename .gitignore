@@ -7,3 +7,10 @@ modules/*/target/
 lib/
 modules/*/catalog.xml
 website/
+modules/*/.classpath
+modules/*/.settings
+modules/*/.project
+.classpath
+.project
+.settings/
+release/
