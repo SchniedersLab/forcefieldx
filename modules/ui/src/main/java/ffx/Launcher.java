@@ -51,6 +51,7 @@ public class Launcher {
                     "com.kenai.ffx/ui.jar",
                     "com.kenai.ffx/utilities.jar",
                     "com.kenai.ffx/xray.jar",
+                    "com.kenai.ffx/autoparm.jar",
                     "org.codehaus.groovy/groovy-all.jar",
                     "edu.rit.pj/pj.jar",
                     "jcuda/jcuda-all.jar",
