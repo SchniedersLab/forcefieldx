@@ -14,19 +14,18 @@
     <artifactId>autoparm</artifactId>
     <packaging>jar</packaging>
     <name>Automatic Parameterization</name>
-   <dependencies>
+    <dependencies>
         <dependency>
             <groupId>com.kenai.ffx</groupId>
             <artifactId>potentials</artifactId>
-            <type>jar</type>
             <version>${project.version}</version>
+            <type>jar</type>
         </dependency>
         <dependency>
         	<groupId>com.kenai.ffx</groupId>
         	<artifactId>utilities</artifactId>
-        	<version>1.0.0-SNAPSHOT</version>
+        	<version>${project.version}</version>
         	<type>jar</type>
-        	<scope>compile</scope>
         </dependency>
-   </dependencies>
+    </dependencies>
 </project>
