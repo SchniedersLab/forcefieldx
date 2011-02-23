@@ -86,10 +86,6 @@ public class NeighborList extends ParallelRegion {
      */
     private final int nSymm;
     /**
-     * The array of atoms in the asymmetric unit.
-     */
-    private final Atom atoms[];
-    /**
      * The number of atoms in the asymmetric unit.
      */
     private final int nAtoms;
@@ -236,7 +232,6 @@ public class NeighborList extends ParallelRegion {
                         ParallelTeam parallelTeam) {
         this.maskingRules = maskingRules;
         this.crystal = crystal;
-        this.atoms = atoms;
         this.cutoff = cutoff;
         this.buffer = buffer;
         this.parallelTeam = parallelTeam;
@@ -650,8 +645,7 @@ public class NeighborList extends ParallelRegion {
                         }
                     } else {
                         /**
-                         * Interactions with all adjacent symmetry mate
-                         * cells.
+                         * Interactions with all adjacent symmetry mate cells.
                          */
                         for (int ai = aStart; ai <= aStop; ai++) {
                             for (int bi = bStart; bi <= bStop; bi++) {
@@ -724,7 +718,7 @@ public class NeighborList extends ParallelRegion {
             // Loop over atoms in the "pair" cell.
             for (int j = start; j < pairStop; j++) {
                 final int aj = pairList[j];
-                if (mask[aj] > 0.0) {
+                if (mask[aj] > 0.0 && (iSymm == 0 || aj >= atomIndex)) {
                     int aj3 = aj * 3;
                     final double xj = pair[aj3 + XX];
                     final double yj = pair[aj3 + YY];

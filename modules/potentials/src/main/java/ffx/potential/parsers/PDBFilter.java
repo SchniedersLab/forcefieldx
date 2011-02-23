@@ -439,10 +439,10 @@ public final class PDBFilter extends SystemFilter {
                             break;
                         case CRYST1:
 // =============================================================================
-// The CRYST1 record presents the unit cell parameters, space group, and Z 
-// value. If the structure was not determined by crystallographic means, CRYST1 
+// The CRYST1 record presents the unit cell parameters, space group, and Z
+// value. If the structure was not determined by crystallographic means, CRYST1
 // simply provides the unitary values, with an appropriate REMARK.
-// 
+//
 //  7 - 15       Real(9.3)     a              a (Angstroms).
 // 16 - 24       Real(9.3)     b              b (Angstroms).
 // 25 - 33       Real(9.3)     c              c (Angstroms).
@@ -481,7 +481,7 @@ public final class PDBFilter extends SystemFilter {
 //
 // CONECT records involving atoms for which the coordinates are not present
 // in the entry (e.g., symmetry-generated) are not given.
-// CONECT records involving atoms for which the coordinates are missing due 
+// CONECT records involving atoms for which the coordinates are missing due
 // to disorder, are also not provided.
 // =============================================================================
                             conects.add(line);
@@ -578,8 +578,8 @@ public final class PDBFilter extends SystemFilter {
 // =============================================================================
                         case SHEET:
 // =============================================================================
-// SHEET records are used to identify the position of sheets in the molecule. 
-// Sheets are both named and numbered. The residues where the sheet begins and 
+// SHEET records are used to identify the position of sheets in the molecule.
+// Sheets are both named and numbered. The residues where the sheet begins and
 // ends are noted.
 //
 //  8 - 10        Integer       strand         Strand  number which starts at 1 for each
@@ -1073,6 +1073,9 @@ public final class PDBFilter extends SystemFilter {
                         case 4:
                             switch (numBonds) {
                                 case 3:
+
+                                    // TODO: Check for chirality
+
                                     intxyz(hydrogen, ia, 1.0, ib, 109.5, ic, 109.5, 1);
                                     break;
                                 case 2:

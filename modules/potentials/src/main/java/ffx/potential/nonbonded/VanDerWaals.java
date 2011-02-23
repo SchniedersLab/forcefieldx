@@ -55,7 +55,7 @@ import ffx.potential.parameters.VDWType;
  * The van der Waals class computes the buffered 14-7 van der Waals interaction
  * used by the AMOEBA force field in parallel using a {@link NeighborList} for any
  * {@link Crystal}.
- * 
+ *
  * @author Michael J. Schnieders
  * @since 1.0
  */
@@ -83,12 +83,12 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
     private static final double lambdaAlpha = 0.7;
     /**
      * There are 2 lambdaPow arrays of length nAtoms.
-     * 
+     *
      * The first is used for atoms in the outer loop that are hard.
      * This mask equals:
      * 1.0      for inner loop hard atoms
      * lambda^5 for inner loop soft atoms
-     * 
+     *
      * The second is used for atoms in the outer loop that are soft.
      * This mask equals:
      * lambda^5 for inner loop hard atoms
@@ -795,13 +795,13 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                     }
                     /*
                     if (i == 0) {
-                        in[0] = reducedXYZ[iX];
-                        in[1] = reducedXYZ[iY];
-                        in[2] = reducedXYZ[iZ];
-                        crystal.toFractionalCoordinates(in, out);
-                        atoms[i].print();
-                        logger.info(format("%5d %d CART %10.8f %10.8f %10.8f", i, 0, in[0], in[1], in[2]));
-                        logger.info(format("%5d %d FRAC %10.8f %10.8f %10.8f", i, 0, out[0], out[1], out[2]));
+                    in[0] = reducedXYZ[iX];
+                    in[1] = reducedXYZ[iY];
+                    in[2] = reducedXYZ[iZ];
+                    crystal.toFractionalCoordinates(in, out);
+                    atoms[i].print();
+                    logger.info(format("%5d %d CART %10.8f %10.8f %10.8f", i, 0, in[0], in[1], in[2]));
+                    logger.info(format("%5d %d FRAC %10.8f %10.8f %10.8f", i, 0, out[0], out[1], out[2]));
                     } */
                 }
 
@@ -823,9 +823,9 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                         xyz[iZ] = out[2];
                         /*
                         if (i == 0) {
-                            crystal.toFractionalCoordinates(out, in);
-                            logger.info(format("%5d %d FRAC %10.8f %10.8f %10.8f",
-                                    i, iSymOp, in[0], in[1], in[2]));
+                        crystal.toFractionalCoordinates(out, in);
+                        logger.info(format("%5d %d FRAC %10.8f %10.8f %10.8f",
+                        i, iSymOp, in[0], in[1], in[2]));
                         } */
                     }
                 }
@@ -850,7 +850,6 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         private final double gyi_local[];
         private final double gzi_local[];
         private final double dx_local[];
-        private final double dx2_local[];
         private final double mask[];
         // Extra padding to avert cache interference.
         private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
@@ -863,7 +862,6 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
             gzi_local = new double[nAtoms];
             mask = new double[nAtoms];
             dx_local = new double[3];
-            dx2_local = new double[3];
             for (int i = 0; i < nAtoms; i++) {
                 mask[i] = 1.0;
             }
@@ -901,6 +899,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
              */
             List<SymOp> symOps = crystal.spaceGroup.symOps;
             for (int iSymOp = 0; iSymOp < nSymm; iSymOp++) {
+            //for (int iSymOp = 0; iSymOp < 1; iSymOp++) {
                 double e = 0.0;
                 SymOp symOp = symOps.get(iSymOp);
                 double xyzS[] = reduced[iSymOp];
@@ -946,11 +945,13 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                         dx_local[0] = xi - xk;
                         dx_local[1] = yi - yk;
                         dx_local[2] = zi - zk;
-                        dx2_local[0] = dx_local[0];
-                        dx2_local[1] = dx_local[1];
-                        dx2_local[2] = dx_local[2];
                         final double r2 = crystal.image(dx_local);
                         if (r2 <= off2 && mask[k] > 0.0) {
+                            // This will only happen for iSymm > 0.
+                            double selfScale = 1.0;
+                            if (i == k) {
+                                selfScale = 0.5;
+                            }
                             final double r = sqrt(r2);
                             final double r3 = r2 * r;
                             final double r4 = r2 * r2;
@@ -968,7 +969,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                             final double arho7g = alpha + rho7 + ghal;
                             final double t1 = dhal_plus_one_7 / arhod7;
                             final double t2 = ghal_plus_one / arho7g;
-                            final double eij = ev * t1 * (t2 - 2.0);
+                            double eij = ev * t1 * (t2 - 2.0);
                             /**
                              * Apply a multiplicative switch if the interaction
                              * distance is greater than the beginning of the
@@ -979,15 +980,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                                 final double r5 = r2 * r3;
                                 taper = c5 * r5 + c4 * r4 + c3 * r3 + c2 * r2 + c1 * r + c0;
                             }
-                            /*
-                            if (iSymOp > 0 && ((i == 0 && k == 5305) || (i == 5305 && k == 0))) {
-                                logger.info(format("%d %d %d (%12.6f, %12.6f, %12.6f)",
-                                                   iSymOp, i, k, dx2_local[0], dx2_local[1], dx2_local[2]));
-                                logger.info(format("%d %d %d (%12.6f, %12.6f, %12.6f) %12.6f %12.6f",
-                                                   iSymOp, i, k, dx_local[0], dx_local[1], dx_local[2], r, eij * taper));
-                            }*/
-
-                            e += eij * taper;
+                            e += selfScale * eij * taper;
                             count++;
                             if (gradient) {
                                 final double rho6 = rho3 * rho3;
@@ -1000,7 +993,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                                     final double dtaper = fiveC5 * r4 + fourC4 * r3 + threeC3 * r2 + twoC2 * r + c1;
                                     de = eij * dtaper + de * taper;
                                 }
-                                de /= r;
+                                de *= selfScale / r;
                                 dx_local[0] *= de;
                                 dx_local[1] *= de;
                                 dx_local[2] *= de;
@@ -1016,55 +1009,29 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                                 final int redk = reductionIndex[k];
                                 final double red = reductionValue[k];
                                 final double redkv = 1.0 - red;
-                                if (iSymOp > 0) {
-                                    /*
-                                    crystal.applySymRot(dx_local, dx_local, symOp);
-                                    final double dedxk = dx_local[0];
-                                    final double dedyk = dx_local[1];
-                                    final double dedzk = dx_local[2];
-                                    gxi_local[k] -= 0.5 * dedxk * red;
-                                    gyi_local[k] -= 0.5 * dedyk * red;
-                                    gzi_local[k] -= 0.5 * dedzk * red;
-                                    gxi_local[redk] -= 0.5 * dedxk * redkv;
-                                    gyi_local[redk] -= 0.5 * dedyk * redkv;
-                                    gzi_local[redk] -= 0.5 * dedzk * redkv; */
-                                } else {
-                                    gxi_local[k] -= dedx * red;
-                                    gyi_local[k] -= dedy * red;
-                                    gzi_local[k] -= dedz * red;
-                                    gxi_local[redk] -= dedx * redkv;
-                                    gyi_local[redk] -= dedy * redkv;
-                                    gzi_local[redk] -= dedz * redkv;
-                                }
+                                crystal.applyTransSymRot(dx_local, dx_local, symOp);
+                                gxi_local[k] -= red * dx_local[0];
+                                gyi_local[k] -= red * dx_local[1];
+                                gzi_local[k] -= red * dx_local[2];
+                                gxi_local[redk] -= redkv * dx_local[0];
+                                gyi_local[redk] -= redkv * dx_local[1];
+                                gzi_local[redk] -= redkv * dx_local[2];
                             }
                         }
                     }
                     if (gradient) {
-                        /* if (iSymOp > 0) {
-                            gxi_local[i] += 0.5 * gxi;
-                            gyi_local[i] += 0.5 * gyi;
-                            gzi_local[i] += 0.5 * gzi;
-                            gxi_local[redi] += 0.5 * gxredi;
-                            gyi_local[redi] += 0.5 * gyredi;
-                            gzi_local[redi] += 0.5 * gzredi;
-                        } else { */
-                            gxi_local[i] += gxi;
-                            gyi_local[i] += gyi;
-                            gzi_local[i] += gzi;
-                            gxi_local[redi] += gxredi;
-                            gyi_local[redi] += gyredi;
-                            gzi_local[redi] += gzredi;
-                        //}
+                        gxi_local[i] += gxi;
+                        gyi_local[i] += gyi;
+                        gzi_local[i] += gzi;
+                        gxi_local[redi] += gxredi;
+                        gyi_local[redi] += gyredi;
+                        gzi_local[redi] += gzredi;
                     }
                     if (iSymOp == 0) {
                         removeMask(mask, i);
                     }
                 }
-                if (iSymOp > 0) {
-                    energy += e * 0.5;
-                } else {
-                    energy += e;
-                }
+                energy += e;
             }
             computeTime += System.nanoTime() - startTime;
         }
