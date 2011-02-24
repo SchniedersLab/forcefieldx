@@ -132,7 +132,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
         grad = new double[n];
         scaling = new double[n];
 
-        refinementenergy.xrayEnergy.getCoordinates(x);
+        refinementenergy.dataEnergy.getCoordinates(x);
 
         double xyzscale = 1.0;
         double anisouscale = 80.0;
@@ -284,27 +284,36 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
      * @return {@link RefinementEnergy} result
      */
     public RefinementEnergy minimize(int m, double eps, int maxiter) {
+        String typestring;
+        if (data instanceof DiffractionData) {
+            typestring = "X-ray";
+        } else if (data instanceof RealSpaceData) {
+            typestring = "Real Space";
+        } else {
+            typestring = "null";
+        }
+
         switch (refinementMode) {
             case COORDINATES:
-                logger.info("Beginning X-ray refinement - mode: coordinates nparams: " + n);
+                logger.info("Beginning " + typestring + " refinement - mode: coordinates nparams: " + n);
                 break;
             case BFACTORS:
-                logger.info("Beginning X-ray refinement - mode: bfactors nparams: " + n);
+                logger.info("Beginning " + typestring + " refinement - mode: bfactors nparams: " + n);
                 break;
             case COORDINATES_AND_BFACTORS:
-                logger.info("Beginning X-ray refinement - mode: coordinates and bfactors nparams: " + n);
+                logger.info("Beginning " + typestring + " refinement - mode: coordinates and bfactors nparams: " + n);
                 break;
             case OCCUPANCIES:
-                logger.info("Beginning X-ray refinement - mode: occupancies nparams: " + n);
+                logger.info("Beginning " + typestring + " refinement - mode: occupancies nparams: " + n);
                 break;
             case COORDINATES_AND_OCCUPANCIES:
-                logger.info("Beginning X-ray refinement - mode: coordinates and occupancies nparams: " + n);
+                logger.info("Beginning " + typestring + " refinement - mode: coordinates and occupancies nparams: " + n);
                 break;
             case BFACTORS_AND_OCCUPANCIES:
-                logger.info("Beginning X-ray refinement - mode: bfactors and occupancies nparams: " + n);
+                logger.info("Beginning " + typestring + " refinement - mode: bfactors and occupancies nparams: " + n);
                 break;
             case COORDINATES_AND_BFACTORS_AND_OCCUPANCIES:
-                logger.info("Beginning X-ray refinement - mode: coordinates and bfactors and occupancies nparams: " + n);
+                logger.info("Beginning " + typestring + " refinement - mode: coordinates and bfactors and occupancies nparams: " + n);
                 break;
         }
 

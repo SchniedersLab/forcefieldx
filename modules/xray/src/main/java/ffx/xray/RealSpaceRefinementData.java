@@ -34,10 +34,16 @@ public class RealSpaceRefinementData {
     protected final int ext[];
     protected final int ni[];
     protected double data[];
+    protected double densityscore;
 
     public RealSpaceRefinementData(CompositeConfiguration properties) {
         ori = new int[3];
         ext = new int[3];
         ni = new int[3];
+    }
+
+    public double getDataIndex(int x, int y, int z){
+        int index = x + ext[0] * (y + ext[1] * z);
+        return data[index];
     }
 }

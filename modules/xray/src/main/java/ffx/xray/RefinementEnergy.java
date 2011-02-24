@@ -53,7 +53,7 @@ public class RefinementEnergy implements Potential, AlgorithmListener {
     private final Atom[] atomarray;
     private final int nAtoms;
     private final List<Integer> xindex[];
-    protected XRayEnergy xrayEnergy;
+    protected Potential dataEnergy;
     private RefinementMode refinementMode;
     protected int nxyz;
     protected int nb;
@@ -188,11 +188,16 @@ public class RefinementEnergy implements Potential, AlgorithmListener {
             if (!diffractiondata.scaled[0]) {
                 diffractiondata.printstats();
             }
-        }
 
-        xrayEnergy = new XRayEnergy((DiffractionData) data, nxyz, nb, nocc,
-                refinementMode);
-        xrayEnergy.setScaling(null);
+            dataEnergy = new XRayEnergy(diffractiondata, nxyz, nb, nocc,
+                    refinementMode);
+            dataEnergy.setScaling(null);
+        } else if (data instanceof RealSpaceData){
+            RealSpaceData realspacedata = (RealSpaceData) data;
+            dataEnergy = new RealSpaceEnergy(realspacedata, nxyz, 0, 0,
+                    refinementMode);
+            dataEnergy.setScaling(null);
+        }
 
         int assemblysize = molecularAssembly.length;
         xChemical = new double[assemblysize][];
@@ -245,7 +250,7 @@ public class RefinementEnergy implements Potential, AlgorithmListener {
                 if (gXray == null || gXray.length != nxyz) {
                     gXray = new double[nxyz];
                 }
-                e += weight * xrayEnergy.energyAndGradient(x, gXray);
+                e += weight * dataEnergy.energyAndGradient(x, gXray);
 
                 /*
                 double normchem = 0.0;
@@ -270,7 +275,7 @@ public class RefinementEnergy implements Potential, AlgorithmListener {
             case OCCUPANCIES:
             case BFACTORS_AND_OCCUPANCIES:
                 // Compute the X-ray target energy and gradient.
-                e = xrayEnergy.energyAndGradient(x, g);
+                e = dataEnergy.energyAndGradient(x, g);
                 break;
             case COORDINATES_AND_BFACTORS:
             case COORDINATES_AND_OCCUPANCIES:
@@ -294,7 +299,7 @@ public class RefinementEnergy implements Potential, AlgorithmListener {
                 if (gXray == null || gXray.length != n) {
                     gXray = new double[n];
                 }
-                e += weight * xrayEnergy.energyAndGradient(x, gXray);
+                e += weight * dataEnergy.energyAndGradient(x, gXray);
 
                 // Add the chemical and X-ray gradients.
                 for (int i = 0; i < nxyz; i++) {
@@ -391,17 +396,17 @@ public class RefinementEnergy implements Potential, AlgorithmListener {
 
     @Override
     public double[] getMass() {
-        return xrayEnergy.getMass();
+        return dataEnergy.getMass();
     }
 
     @Override
     public int getNumberOfVariables() {
-        return xrayEnergy.getNumberOfVariables();
+        return dataEnergy.getNumberOfVariables();
     }
 
     @Override
     public double[] getCoordinates(double[] parameters) {
-        return xrayEnergy.getCoordinates(parameters);
+        return dataEnergy.getCoordinates(parameters);
     }
 
     @Override

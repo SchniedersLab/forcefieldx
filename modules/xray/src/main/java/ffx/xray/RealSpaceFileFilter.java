@@ -22,7 +22,6 @@
 package ffx.xray;
 
 import ffx.crystal.Crystal;
-import ffx.xray.RealSpaceRefinementData;
 import org.apache.commons.configuration.CompositeConfiguration;
 
 /**

@@ -56,7 +56,7 @@ public class CCP4MapFilter implements RealSpaceFileFilter {
 
             imapdata = bb.order(ByteOrder.BIG_ENDIAN).getInt();
             String stampstr = Integer.toHexString(imapdata);
-            System.out.println("stamp: " + stampstr);
+            // System.out.println("stamp: " + stampstr);
             switch (stampstr.charAt(0)) {
                 case '1':
                 case '3':
@@ -70,6 +70,7 @@ public class CCP4MapFilter implements RealSpaceFileFilter {
                     }
                     break;
             }
+            fis.close();
         } catch (Exception e) {
             String message = "Fatal exception reading CCP4 map.\n";
             logger.log(Level.SEVERE, message, e);
@@ -100,6 +101,7 @@ public class CCP4MapFilter implements RealSpaceFileFilter {
             }
 
             sg = bb.order(b).getInt();
+            fis.close();
         } catch (Exception e) {
             String message = "Fatal exception reading CCP4 map.\n";
             logger.log(Level.SEVERE, message, e);
@@ -117,6 +119,7 @@ public class CCP4MapFilter implements RealSpaceFileFilter {
 
         int imapdata;
         double cella, cellb, cellc, cellalpha, cellbeta, cellgamma;
+        String stampstr;
 
         ByteOrder b = ByteOrder.nativeOrder();
 
@@ -140,8 +143,8 @@ public class CCP4MapFilter implements RealSpaceFileFilter {
             ByteBuffer bb = ByteBuffer.wrap(bytes);
 
             imapdata = bb.order(ByteOrder.BIG_ENDIAN).getInt();
-            String stampstr = Integer.toHexString(imapdata);
-            System.out.println("stamp: " + stampstr);
+            stampstr = Integer.toHexString(imapdata);
+            // System.out.println("stamp: " + stampstr);
             switch (stampstr.charAt(0)) {
                 case '1':
                 case '3':
@@ -155,6 +158,16 @@ public class CCP4MapFilter implements RealSpaceFileFilter {
                     }
                     break;
             }
+
+            if (logger.isLoggable(Level.INFO)) {
+                StringBuilder sb = new StringBuilder();
+                sb.append(String.format("\nOpening CCP4 map: %s\n", filename));
+                sb.append(String.format("file type (machine stamp): %s\n",
+                        stampstr));
+                logger.info(sb.toString());
+            }
+
+            fis.close();
         } catch (Exception e) {
             String message = "Fatal exception reading CCP4 map.\n";
             logger.log(Level.SEVERE, message, e);
@@ -232,11 +245,12 @@ public class CCP4MapFilter implements RealSpaceFileFilter {
             byte word[] = new byte[2048];
             bb.order(b).get(word, 0, 4);
             String mapstr = new String(word);
-            System.out.println("MAP?: " + mapstr);
+            // System.out.println("MAP?: " + mapstr);
 
             sd = bb.order(b).getFloat();
             rmsd = bb.order(b).getFloat();
 
+            /*
             System.out.println("col: " + ori[0] + " " + ext[0] + " " + ni[0]);
             System.out.println("row: " + ori[1] + " " + ext[1] + " " + ni[1]);
             System.out.println("sec: " + ori[2] + " " + ext[2] + " " + ni[2]);
@@ -245,15 +259,35 @@ public class CCP4MapFilter implements RealSpaceFileFilter {
             System.out.println("sd: " + sd + " rmsd: " + rmsd);
             System.out.println("sg: " + sg);
             System.out.println("a: " + cella + " b: " + cellb + " c: " + cellc
-                    + " alpha: " + cellalpha + " beta: " + cellbeta + " gamma: " + cellgamma);
+            + " alpha: " + cellalpha + " beta: " + cellbeta + " gamma: " + cellgamma);
+             */
+
+            if (logger.isLoggable(Level.INFO)) {
+                StringBuilder sb = new StringBuilder();
+                sb.append(String.format("  column origin: %d extent: %d\n",
+                        ori[0], ext[0]));
+                sb.append(String.format("  row origin: %d extent: %d\n",
+                        ori[1], ext[1]));
+                sb.append(String.format("  section origin: %d extent: %d\n",
+                        ori[2], ext[2]));
+                sb.append(String.format("  axis order: %d %d %d\n",
+                        axisi[0], axisi[1], axisi[2]));
+                sb.append(String.format("  number of X, Y, Z columns: %d %d %d\n",
+                        ni[0], ni[1], ni[2]));
+                sb.append(String.format("  spacegroup #: %d (name: %s)\n",
+                        sg, SpaceGroup.spaceGroupNames[sg - 1]));
+                sb.append(String.format("  cell: %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f\n",
+                        cella, cellb, cellc, cellalpha, cellbeta, cellgamma));
+                logger.info(sb.toString());
+            }
 
             int nlabel = bb.order(b).getInt();
 
-            System.out.println("nsymb: " + nsymb + " nlabel: " + nlabel);
+            // System.out.println("nsymb: " + nsymb + " nlabel: " + nlabel);
             for (int i = 0; i < 10; i++) {
                 bb.order(b).get(word, 0, 80);
                 mapstr = new String(word);
-                System.out.println("label " + i + " : " + mapstr);
+                // System.out.println("label " + i + " : " + mapstr);
             }
 
             if (nsymb > 0) {
@@ -262,7 +296,7 @@ public class CCP4MapFilter implements RealSpaceFileFilter {
                 for (int i = 0; i < nsymb / 80; i += 80) {
                     bb.order(b).get(word, 0, 80);
                     mapstr = new String(word);
-                    System.out.println("symm: " + mapstr);
+                    // System.out.println("symm: " + mapstr);
                 }
             }
 
@@ -298,28 +332,7 @@ public class CCP4MapFilter implements RealSpaceFileFilter {
                     }
                 }
             }
-
-            /*
-            for (int k = 0; k < nz; k++) {
-            for (int j = 0; j < ny; j++) {
-            for (int i = 0; i < nx; i++) {
-            int index = 2 * (i + nx * (j + ny * k));
-            // int index = k * (ny * (nx + 2)) + j * (nx + 2) + i;
-            fmapdata = (float) data[index];
-            bb.order(b).putFloat(fmapdata);
-            if (!bb.hasRemaining()) {
-            dos.write(bytes);
-            bb.rewind();
-            }
-            }
-            }
-            }
-            if (bb.position() > 0) {
-            dos.write(bytes);
-            bb.rewind();
-            }
-             */
-
+            fis.close();
         } catch (Exception e) {
             String message = "Fatal exception reading CCP4 map.\n";
             logger.log(Level.SEVERE, message, e);

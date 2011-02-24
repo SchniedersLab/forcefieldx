@@ -10,7 +10,7 @@
  * by the Free Software Foundation.
  *
  * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * but WITHOUT Aexty WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
@@ -43,20 +43,43 @@ public class CCP4MapWriter {
     private static final Logger logger = Logger.getLogger(CCP4MapWriter.class.getName());
     private final String filename;
     private final Crystal crystal;
-    private final int nx, ny, nz;
+    private final int extx, exty, extz;
+    private final int orix, oriy, oriz, nx, ny, nz;
     private int stride;
 
     /**
      * construct mapwriter object
      *
-     * @param nx slices in x
-     * @param ny slices in y
-     * @param nz slices in z
+     * @param extx slices in x
+     * @param exty slices in y
+     * @param extz slices in z
      * @param crystal {@link Crystal} object
      * @param filename output filename
      */
-    public CCP4MapWriter(int nx, int ny, int nz, Crystal crystal,
+    public CCP4MapWriter(int extx, int exty, int extz, Crystal crystal,
             String filename) {
+        this.orix = 0;
+        this.oriy = 0;
+        this.oriz = 0;
+        this.extx = extx;
+        this.exty = exty;
+        this.extz = extz;
+        this.nx = extx;
+        this.ny = exty;
+        this.nz = extz;
+        this.crystal = crystal;
+        this.filename = filename;
+        this.stride = 2;
+    }
+
+    public CCP4MapWriter(int orix, int oriy, int oriz, int extx, int exty, int extz,
+            int nx, int ny, int nz, Crystal crystal, String filename){
+        this.orix = orix;
+        this.oriy = oriy;
+        this.oriz = oriz;
+        this.extx = extx;
+        this.exty = exty;
+        this.extz = extz;
         this.nx = nx;
         this.ny = ny;
         this.nz = nz;
@@ -101,11 +124,11 @@ public class CCP4MapWriter {
         double sd = 0.0;
 
         int n = 0;
-        for (int k = 0; k < nz; k++) {
-            for (int j = 0; j < ny; j++) {
-                for (int i = 0; i < nx; i++) {
-                    int index = stride * (i + nx * (j + ny * k));
-                    // int index = k * (ny * (nx + 2)) + j * (nx + 2) + i;
+        for (int k = 0; k < extz; k++) {
+            for (int j = 0; j < exty; j++) {
+                for (int i = 0; i < extx; i++) {
+                    int index = stride * (i + extx * (j + exty * k));
+                    // int index = k * (exty * (extx + 2)) + j * (extx + 2) + i;
                     n++;
                     if (data[index] < min) {
                         min = data[index];
@@ -119,11 +142,11 @@ public class CCP4MapWriter {
         }
 
         n = 0;
-        for (int k = 0; k < nz; k++) {
-            for (int j = 0; j < ny; j++) {
-                for (int i = 0; i < nx; i++) {
-                    int index = stride * (i + nx * (j + ny * k));
-                    // int index = k * (ny * (nx + 2)) + j * (nx + 2) + i;
+        for (int k = 0; k < extz; k++) {
+            for (int j = 0; j < exty; j++) {
+                for (int i = 0; i < extx; i++) {
+                    int index = stride * (i + extx * (j + exty * k));
+                    // int index = k * (exty * (extx + 2)) + j * (extx + 2) + i;
                     sd += pow(data[index] - mean, 2.0);
                     n++;
                 }
@@ -132,10 +155,10 @@ public class CCP4MapWriter {
         sd = sqrt(sd / n);
 
         if (norm) {
-            for (int k = 0; k < nz; k++) {
-                for (int j = 0; j < ny; j++) {
-                    for (int i = 0; i < nx; i++) {
-                        int index = stride * (i + nx * (j + ny * k));
+            for (int k = 0; k < extz; k++) {
+                for (int j = 0; j < exty; j++) {
+                    for (int i = 0; i < extx; i++) {
+                        int index = stride * (i + extx * (j + exty * k));
                         data[index] = (data[index]) - mean / sd;
                     }
                 }
@@ -165,16 +188,16 @@ public class CCP4MapWriter {
 
             // header
             ByteBuffer bb = ByteBuffer.wrap(bytes);
-            bb.order(b).putInt(nx);
-            bb.order(b).putInt(ny);
-            bb.order(b).putInt(nz);
+            bb.order(b).putInt(extx);
+            bb.order(b).putInt(exty);
+            bb.order(b).putInt(extz);
 
             // mode (2 = reals, only one we accept)
             bb.order(b).putInt(2);
 
-            for (int i = 0; i < 3; i++) {
-                bb.order(b).putInt(0);
-            }
+            bb.order(b).putInt(orix);
+            bb.order(b).putInt(oriy);
+            bb.order(b).putInt(oriz);
             bb.order(b).putInt(nx);
             bb.order(b).putInt(ny);
             bb.order(b).putInt(nz);
@@ -213,7 +236,7 @@ public class CCP4MapWriter {
             dos.write(bytes, offset, 208);
             bb.rewind();
 
-            mapstr = new String("MAP ");
+            mapstr = "MAP ";
             dos.writeBytes(mapstr);
 
             // machine code: double, float, int, uchar
@@ -253,11 +276,11 @@ public class CCP4MapWriter {
             dos.writeBytes(sb.toString());
 
             bb.rewind();
-            for (int k = 0; k < nz; k++) {
-                for (int j = 0; j < ny; j++) {
-                    for (int i = 0; i < nx; i++) {
-                        int index = stride * (i + nx * (j + ny * k));
-                        // int index = k * (ny * (nx + 2)) + j * (nx + 2) + i;
+            for (int k = 0; k < extz; k++) {
+                for (int j = 0; j < exty; j++) {
+                    for (int i = 0; i < extx; i++) {
+                        int index = stride * (i + extx * (j + exty * k));
+                        // int index = k * (exty * (extx + 2)) + j * (extx + 2) + i;
                         fmapdata = (float) data[index];
                         bb.order(b).putFloat(fmapdata);
                         if (!bb.hasRemaining()) {
