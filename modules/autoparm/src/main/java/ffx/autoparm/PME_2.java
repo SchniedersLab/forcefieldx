@@ -663,6 +663,7 @@ public class PME_2 implements LambdaInterface, Potential {
         				localMultipole[i][t011] = x[n] + ((n == ivar) ? eps*3 : 0);
         				n++;
         			}
+                                localMultipole[i][t002] = -localMultipole[i][t200] - localMultipole[i][t020];
         		}
         		for(int k = 0; k < nAtoms; k++){
         			if(k != i){
@@ -685,9 +686,9 @@ public class PME_2 implements LambdaInterface, Potential {
     	Double xyz[] = new Double[3];
     	//Change parameters
     	varprm(x, -1, 0);
-    	for(int i = 0; i < 5; i++){
-    		System.out.println(x[i]);
-    	}
+//    	for(int i = 0; i < 5; i++){
+//    		System.out.println(x[i]);
+//    	}
     	//rotate multipoles and induce
     	init_prms();
     	//calc new energy grid
@@ -1723,9 +1724,6 @@ public class PME_2 implements LambdaInterface, Potential {
                 	dx_local[1] = xyzk[1] - xyzi[1];
                 	dx_local[2] = xyzk[2] - xyzi[2];
                 	final double r2 = crystal.image(dx_local);
-//                	if(iter == 1){
-//                    	System.out.println(r2);
-//                	}
                     if (r2 <= off2) {
                     	double xr = dx_local[0];
                     	double yr = dx_local[1];
