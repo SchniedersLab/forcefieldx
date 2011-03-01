@@ -639,11 +639,11 @@ public class PME_2 implements LambdaInterface, Potential {
         		}
         		if(fitqdpl){
         			if(localMultipole[i][t200] != 0){
-        				localMultipole[i][t200] = x[n] + ((n == ivar) ? eps*3 : 0);
+        				localMultipole[i][t200] = x[n] + ((n == ivar) ? eps : 0);
         				n++;
         			}
         			if(localMultipole[i][t020] != 0){
-        				localMultipole[i][t020] = x[n] + ((n == ivar) ? eps*3 : 0);
+        				localMultipole[i][t020] = x[n] + ((n == ivar) ? eps : 0);
         				n++;
         			}
         			//Keep ZZ-Quad Fixed. Improves Optimization
@@ -652,15 +652,15 @@ public class PME_2 implements LambdaInterface, Potential {
 //        				n++;
 //        			}
         			if(localMultipole[i][t110] != 0){
-        				localMultipole[i][t110] = x[n] + ((n == ivar) ? eps*3 : 0);
+        				localMultipole[i][t110] = x[n] + ((n == ivar) ? eps : 0);
         				n++;
         			}
         			if(localMultipole[i][t101] != 0){
-        				localMultipole[i][t101] = x[n] + ((n == ivar) ? eps*3 : 0);
+        				localMultipole[i][t101] = x[n] + ((n == ivar) ? eps : 0);
         				n++;
         			}
         			if(localMultipole[i][t011] != 0){
-        				localMultipole[i][t011] = x[n] + ((n == ivar) ? eps*3 : 0);
+        				localMultipole[i][t011] = x[n] + ((n == ivar) ? eps : 0);
         				n++;
         			}
                                 localMultipole[i][t002] = -localMultipole[i][t200] - localMultipole[i][t020];
@@ -686,7 +686,7 @@ public class PME_2 implements LambdaInterface, Potential {
     	Double xyz[] = new Double[3];
     	//Change parameters
     	varprm(x, -1, 0);
-//    	for(int i = 0; i < 5; i++){
+//    	for(int i = 0; i < x.length; i++){
 //    		System.out.println(x[i]);
 //    	}
     	//rotate multipoles and induce

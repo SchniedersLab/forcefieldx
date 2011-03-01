@@ -522,7 +522,6 @@ public class Potential2 implements OptimizationListener {
     			else if(big == Math.abs(mpoles[(i*polelen) + b])) k = b;
     			else if(big == Math.abs(mpoles[(i*polelen) + c])) k = c;
     			if(k != 0){
-    				System.out.println(k);
     				mpoles[(i*polelen) + k] = mpoles[(i*polelen) + k] - sum;
     			}
     		}
@@ -860,7 +859,7 @@ public class Potential2 implements OptimizationListener {
 					double xj = xi + rad[i] * dot[j][0];
 					double yj = yi + rad[i] * dot[j][1];
 					double zj = zi + rad[i] * dot[j][2] ;
-					for(int k = 0; k < i-1; k++){
+					for(int k = 0; k <= i-1; k++){
 						double xr = xj - atoms[k].getX();
 						double yr = yj - atoms[k].getY();
 						double zr = zj - atoms[k].getZ();
@@ -892,6 +891,7 @@ public class Potential2 implements OptimizationListener {
 				}
 			}
 		}
+                System.out.println(grid.size());
 	}
 
 	public double[][] sphere(int ndot){
@@ -1073,8 +1073,8 @@ public class Potential2 implements OptimizationListener {
 	public static void main(String args[]) throws IOException{
 		//Potential2 p1 = new Potential2(4, "/users/gchattree/Research/Compounds/test_compounds/phenobarbital-test/phenobarbital.xyz", null, .8);
 		//Potential2 p2 = new Potential2(3, "/users/gchattree/Research/Compounds/test_compounds/phenobarbital-test/phenobarbital.xyz", null, null);
-		Potential2 p1 = new Potential2(4, "/users/gchattree/Research/Compounds/test_compounds/12-ethanediol-test/12-ethanediol.xyz", null, .1);
-		Potential2 p2 = new Potential2(3, "/users/gchattree/Research/Compounds/test_compounds/12-ethanediol-test/12-ethanediol.xyz", null, null);
+		Potential2 p1 = new Potential2(4, "/users/gchattree/Research/Compounds/test_compounds/12-ethanediol-poltypeffx/12-ethanediol.xyz", null, .1);
+		//Potential2 p2 = new Potential2(2, "/users/gchattree/Research/Compounds/test_compounds/12-ethanediol-test/12-ethanediol.xyz", null, null);
 	}
 }
 
