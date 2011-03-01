@@ -319,7 +319,6 @@ public class ParticleMeshEwald implements LambdaInterface {
         coordinates = new double[nSymm][3][nAtoms];
         inducedDipole = new double[nSymm][nAtoms][3];
         inducedDipolep = new double[nSymm][nAtoms][3];
-        neighborLists = new int[nSymm][][];
         double x[] = coordinates[0][0];
         double y[] = coordinates[0][1];
         double z[] = coordinates[0][2];
