@@ -1071,9 +1071,9 @@ public class Potential2 implements OptimizationListener {
 	}
 	
 	public static void main(String args[]) throws IOException{
-		//Potential2 p1 = new Potential2(4, "/users/gchattree/Research/Compounds/test_compounds/phenobarbital-test/phenobarbital.xyz", null, .8);
+		Potential2 p1 = new Potential2(4, "/users/gchattree/Research/Compounds/test_compounds/phenobarbital-test/phenobarbital.xyz", null, .1);
 		//Potential2 p2 = new Potential2(3, "/users/gchattree/Research/Compounds/test_compounds/phenobarbital-test/phenobarbital.xyz", null, null);
-		Potential2 p1 = new Potential2(4, "/users/gchattree/Research/Compounds/test_compounds/12-ethanediol-poltypeffx/12-ethanediol.xyz", null, .1);
+		//Potential2 p1 = new Potential2(4, "/users/gchattree/Research/Compounds/test_compounds/12-ethanediol-poltypeffx/12-ethanediol.xyz", null, .1);
 		//Potential2 p2 = new Potential2(2, "/users/gchattree/Research/Compounds/test_compounds/12-ethanediol-test/12-ethanediol.xyz", null, null);
 	}
 }
