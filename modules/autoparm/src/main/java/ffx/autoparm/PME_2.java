@@ -724,7 +724,7 @@ public class PME_2 implements LambdaInterface, Potential {
     	}
     	er = Math.sqrt(er / npoints);
     	total_error = er + ec + et;
-        System.out.println(total_error+" "+er+" "+ec+" "+et+" "+npoints);
+        //System.out.println(total_error+" "+er+" "+ec+" "+et+" "+npoints);
     	//set up gradient array
     	double e0 = 0;
     	double e = 0;
