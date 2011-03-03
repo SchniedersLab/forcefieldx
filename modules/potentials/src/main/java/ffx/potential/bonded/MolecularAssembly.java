@@ -455,8 +455,8 @@ public class MolecularAssembly extends MSGroup {
             }
         }
         if (!java.awt.GraphicsEnvironment.isHeadless()) {
-            //createScene(!finalizeGroups);
-            //center();
+            createScene(!finalizeGroups);
+            center();
         }
         removeLeaves();
         setFinalized(true);
