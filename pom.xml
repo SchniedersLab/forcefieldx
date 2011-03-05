@@ -514,9 +514,9 @@
         <module>modules/autoparm</module>
         <module>modules/binding</module>
         <module>modules/cg</module>
-        <module>modules/continuum</module>
+        <!-- module>modules/continuum</module -->
         <module>modules/crystal</module>
-        <module>modules/nucleic</module>
+        <!-- module>modules/nucleic</module -->
         <module>modules/numerics</module>
         <module>modules/potentials</module>
         <module>modules/ui</module>

@@ -830,7 +830,7 @@ public class ParticleMeshEwald implements LambdaInterface {
             gkTime = -System.nanoTime();
             generalizedKirkwood.computePermanentGKField();
             gkTime += System.nanoTime();
-            logger.info(String.format(" Computed GK permanent field %8.3f (sec)", gkTime*1.0e-9));
+            logger.fine(String.format(" Computed GK permanent field %8.3f (sec)", gkTime*1.0e-9));
             SharedDoubleArray gkField[] = generalizedKirkwood.sharedGKField;
             for (int i = 0; i < nAtoms; i++) {
                 double fieldi[] = field[i];
@@ -951,7 +951,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                     long gkTime = -System.nanoTime();
                     generalizedKirkwood.computeInducedGKField();
                     gkTime += System.nanoTime();
-                    logger.info(String.format(" Computed GK induced field %8.3f (sec)", gkTime*1.0e-9));
+                    logger.fine(String.format(" Computed GK induced field %8.3f (sec)", gkTime*1.0e-9));
 
                     SharedDoubleArray gkField[] = generalizedKirkwood.sharedGKField;
                     SharedDoubleArray gkFieldCR[] = generalizedKirkwood.sharedGKFieldCR;

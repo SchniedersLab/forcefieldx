@@ -67,18 +67,18 @@ set BASEDIR=%~dp0\..
 
 if "%JAVACMD%"=="" set JAVACMD=java
 
-if "%REPO%"=="" set REPO=%BASEDIR%\..\lib
+if "%REPO%"=="" set REPO=%BASEDIR%
 
-set CLASSPATH="%BASEDIR%"\etc;"%BASEDIR%"\ffx-all.jar
+set CLASSPATH="%BASEDIR%"\etc;"%BASEDIR%"\bin\ffx-all.jar
 
-set EXTRA_JVM_ARGUMENTS=-Xms128M -Xmx256M
+set EXTRA_JVM_ARGUMENTS=-Xms1G -Xmx2G -Xss4M -XX:MaxPermSize=1500M
 
 goto endInit
 
 @REM Reaching here means variables are defined and arguments have been captured
 :endInit
 
-%JAVACMD% %JAVA_OPTS% %EXTRA_JVM_ARGUMENTS% -classpath %CLASSPATH_PREFIX%;%CLASSPATH% -Djava.library.path="%BASEDIR%/windows/jogl-32" -Dapp.name="ffx" -Dj3d.rend="jogl" -Dapp.repo="%REPO%" -Dbasedir="%BASEDIR%" ffx.Launcher %CMD_LINE_ARGS%
+%JAVACMD% %JAVA_OPTS% %EXTRA_JVM_ARGUMENTS% -classpath %CLASSPATH_PREFIX%;%CLASSPATH% -Dapp.name="ffx" -Dj3d.rend="jogl" -Djava.awt.headless=true -Dapp.repo="%REPO%" -Dbasedir="%BASEDIR%" ffx.Launcher %CMD_LINE_ARGS%
 if ERRORLEVEL 1 goto error
 goto end
 

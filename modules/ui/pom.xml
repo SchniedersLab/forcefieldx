@@ -16,20 +16,6 @@
     <name>User Interfaces</name>
     <build>
         <plugins>
-            <!-- The AppAssembler Plugin is needed infrequently. -->
-            <!-- plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>appassembler-maven-plugin</artifactId>
-                <configuration>
-                    <extraJvmArguments>-Xms128M -Xmx1G</extraJvmArguments>
-                    <programs>
-                        <program>
-                            <mainClass>ffx.Main</mainClass>
-                            <name>ffx</name>
-                        </program>
-                    </programs>
-                </configuration>
-            </plugin -->
             <!-- Make an assembly for Webstart -->
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
@@ -45,7 +31,7 @@
                 <executions>
                     <execution>
                         <id>make-webstart-jar</id>
-                        <phase>package</phase>
+                        <phase>deploy</phase>
                         <goals>
                             <goal>single</goal>
                         </goals>
@@ -58,7 +44,7 @@
                 <executions>
                     <execution>
                         <id>copy-jar</id>
-                        <phase>install</phase>
+                        <phase>deploy</phase>
                         <goals>
                             <goal>copy-resources</goal>
                         </goals>
@@ -149,10 +135,10 @@
             <type>jar</type>
         </dependency>
         <dependency>
-                <groupId>com.kenai.ffx</groupId>
-                <artifactId>autoparm</artifactId>
-                <version>${project.version}</version>
-                <type>jar</type>
+            <groupId>com.kenai.ffx</groupId>
+            <artifactId>autoparm</artifactId>
+            <version>${project.version}</version>
+            <type>jar</type>
         </dependency>
         <dependency>
             <groupId>com.kenai.ffx</groupId>
