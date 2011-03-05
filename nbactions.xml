@@ -18,7 +18,7 @@
         <action>
             <actionName>build</actionName>
             <goals>
-                <goal>install</goal>
+                <goal>deploy</goal>
                 
                 
             </goals>
@@ -30,12 +30,19 @@
             <actionName>rebuild</actionName>
             <goals>
                 <goal>clean</goal>
-                <goal>install</goal>
+                <goal>deploy</goal>
                 
             </goals>
             <properties>
                 <skipTests>true</skipTests>
             </properties>
+        </action>
+        <action>
+            <actionName>build-with-dependencies</actionName>
+            <reactor>also-make</reactor>
+            <goals>
+                <goal>deploy</goal>
+            </goals>
         </action>
         
     </actions>

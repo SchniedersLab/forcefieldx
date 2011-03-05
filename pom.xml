@@ -274,11 +274,11 @@
                         <argument>-Djava.awt.headless=true</argument>
                         <argument>-Dpj.nt=2</argument>
                         <argument>-Dj3d.rend=jogl</argument>
-                        <argument>-Djava.library.path=bin/${platform}/jogl-${bit}</argument>
                         <argument>-classpath</argument>
                         <argument>bin/ffx-all.jar</argument>
                         <argument>ffx.Launcher</argument>
-                        <argument>scripts/saveAsPDB.ffx</argument>
+                        <argument>energy</argument>
+                        <argument>examples/alamet.pdb</argument>
                     </arguments>
                 </configuration>
             </plugin>
