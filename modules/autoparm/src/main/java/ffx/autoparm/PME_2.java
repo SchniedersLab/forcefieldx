@@ -639,11 +639,11 @@ public class PME_2 implements LambdaInterface, Potential {
         		}
         		if(fitqdpl){
         			if(localMultipole[i][t200] != 0){
-        				localMultipole[i][t200] = x[n] + ((n == ivar) ? eps*3 : 0);
+        				localMultipole[i][t200] = (x[n] + ((n == ivar) ? eps : 0))*3;
         				n++;
         			}
         			if(localMultipole[i][t020] != 0){
-        				localMultipole[i][t020] = x[n] + ((n == ivar) ? eps*3 : 0);
+        				localMultipole[i][t020] = (x[n] + ((n == ivar) ? eps : 0))*3;
         				n++;
         			}
         			//Keep ZZ-Quad Fixed. Improves Optimization
@@ -652,17 +652,18 @@ public class PME_2 implements LambdaInterface, Potential {
 //        				n++;
 //        			}
         			if(localMultipole[i][t110] != 0){
-        				localMultipole[i][t110] = x[n] + ((n == ivar) ? eps*3 : 0);
+        				localMultipole[i][t110] = (x[n] + ((n == ivar) ? eps : 0))*3;
         				n++;
         			}
         			if(localMultipole[i][t101] != 0){
-        				localMultipole[i][t101] = x[n] + ((n == ivar) ? eps*3 : 0);
+        				localMultipole[i][t101] = (x[n] + ((n == ivar) ? eps : 0))*3;
         				n++;
         			}
         			if(localMultipole[i][t011] != 0){
-        				localMultipole[i][t011] = x[n] + ((n == ivar) ? eps*3 : 0);
+        				localMultipole[i][t011] = (x[n] + ((n == ivar) ? eps : 0))*3;
         				n++;
         			}
+                                localMultipole[i][t002] = -localMultipole[i][t200] - localMultipole[i][t020];
         		}
         		for(int k = 0; k < nAtoms; k++){
         			if(k != i){
@@ -685,9 +686,9 @@ public class PME_2 implements LambdaInterface, Potential {
     	Double xyz[] = new Double[3];
     	//Change parameters
     	varprm(x, -1, 0);
-    	for(int i = 0; i < 5; i++){
-    		System.out.println(x[i]);
-    	}
+//    	for(int i = 0; i < x.length; i++){
+//    		System.out.println(x[i]);
+//    	}
     	//rotate multipoles and induce
     	init_prms();
     	//calc new energy grid
@@ -723,6 +724,7 @@ public class PME_2 implements LambdaInterface, Potential {
     	}
     	er = Math.sqrt(er / npoints);
     	total_error = er + ec + et;
+        //System.out.println(total_error+" "+er+" "+ec+" "+et+" "+npoints);
     	//set up gradient array
     	double e0 = 0;
     	double e = 0;
@@ -816,14 +818,14 @@ public class PME_2 implements LambdaInterface, Potential {
     				if(localMultipole[i][t001] != 0) p.add(localMultipole[i][t001]);
     			}
     			if(fitqdpl){
-    				if(localMultipole[i][t200] != 0) p.add(localMultipole[i][t200]);
-    				if(localMultipole[i][t020] != 0) p.add(localMultipole[i][t020]);
+    				if(localMultipole[i][t200] != 0) p.add(localMultipole[i][t200]/3);
+    				if(localMultipole[i][t020] != 0) p.add(localMultipole[i][t020]/3);
     				//Keep ZZ-Quad Fixed. Improves Optimization
-    				//if(localMultipole[i][t002] != 0) p.add(localMultipole[i][t002]);
+    				//if(localMultipole[i][t002] != 0) p.add(localMultipole[i][t002]*3);
     				//System.out.println(localMultipole[i][t002]);
-    				if(localMultipole[i][t110] != 0) p.add(localMultipole[i][t110]);
-    				if(localMultipole[i][t101] != 0) p.add(localMultipole[i][t101]);
-    				if(localMultipole[i][t011] != 0) p.add(localMultipole[i][t011]);
+    				if(localMultipole[i][t110] != 0) p.add(localMultipole[i][t110]/3);
+    				if(localMultipole[i][t101] != 0) p.add(localMultipole[i][t101]/3);
+    				if(localMultipole[i][t011] != 0) p.add(localMultipole[i][t011]/3);
     			}
     		}
     	}
@@ -891,14 +893,14 @@ public class PME_2 implements LambdaInterface, Potential {
             			p.add(localMultipole[i][t200]);
         			}
         			else{
-        				p.add(x[r]);
+        				p.add(x[r]*3);
         				r = r + 1;
         			}
         			if(localMultipole[i][t020] == 0){
             			p.add(localMultipole[i][t020]);
         			}
         			else{
-        				p.add(x[r]);
+        				p.add(x[r]*3);
         				r = r + 1;
         			}
         			//Keep ZZ-Quad Fixed. Improves Optimization
@@ -915,21 +917,21 @@ public class PME_2 implements LambdaInterface, Potential {
             			p.add(localMultipole[i][t110]);
         			}
         			else{
-        				p.add(x[r]);
+        				p.add(x[r]*3);
         				r = r + 1;
         			}
         			if(localMultipole[i][t101] == 0){
             			p.add(localMultipole[i][t101]);
         			}
         			else{
-        				p.add(x[r]);
+        				p.add(x[r]*3);
         				r = r + 1;
         			}
         			if(localMultipole[i][t011] == 0){
             			p.add(localMultipole[i][t011]);
         			}
         			else{
-        				p.add(x[r]);
+        				p.add(x[r]*3);
         				r = r + 1;
         			}
         		}
@@ -1723,9 +1725,6 @@ public class PME_2 implements LambdaInterface, Potential {
                 	dx_local[1] = xyzk[1] - xyzi[1];
                 	dx_local[2] = xyzk[2] - xyzi[2];
                 	final double r2 = crystal.image(dx_local);
-//                	if(iter == 1){
-//                    	System.out.println(r2);
-//                	}
                     if (r2 <= off2) {
                     	double xr = dx_local[0];
                     	double yr = dx_local[1];
