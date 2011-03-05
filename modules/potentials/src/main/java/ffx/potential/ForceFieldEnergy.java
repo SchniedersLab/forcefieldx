@@ -76,6 +76,7 @@ public class ForceFieldEnergy implements Potential {
     private final VanDerWaals vanderWaals;
     //private final CellCellVanDerWaals vanderWaals;
     private final ParticleMeshEwald particleMeshEwald;
+
     protected final int nAtoms;
     protected final int nBonds;
     protected final int nAngles;
@@ -85,7 +86,7 @@ public class ForceFieldEnergy implements Potential {
     protected final int nTorsions;
     protected final int nPiOrbitalTorsions;
     protected final int nTorsionTorsions;
-    protected int nVanDerWaals, nPME;
+    protected int nVanDerWaals, nPME, nGK;
     protected final boolean bondTerm;
     protected final boolean angleTerm;
     protected final boolean stretchBendTerm;
@@ -97,6 +98,8 @@ public class ForceFieldEnergy implements Potential {
     protected final boolean vanDerWaalsTerm;
     protected final boolean multipoleTerm;
     protected final boolean polarizationTerm;
+    protected final boolean generalizedKirkwoodTerm;
+
     protected double bondEnergy, bondRMSD;
     protected double angleEnergy, angleRMSD;
     protected double stretchBendEnergy;
@@ -111,6 +114,7 @@ public class ForceFieldEnergy implements Potential {
     protected double polarizationEnergy;
     protected double totalElectrostaticEnergy;
     protected double totalNonBondedEnergy;
+    protected double solvationEnergy;
     protected double totalEnergy;
     protected long bondTime, angleTime, stretchBendTime, ureyBradleyTime;
     protected long outOfPlaneBendTime, torsionTime, piOrbitalTorsionTime;
@@ -140,6 +144,7 @@ public class ForceFieldEnergy implements Potential {
         vanDerWaalsTerm = forceField.getBoolean(ForceFieldBoolean.VDWTERM, true);
         multipoleTerm = forceField.getBoolean(ForceFieldBoolean.MPOLETERM, true);
         polarizationTerm = forceField.getBoolean(ForceFieldBoolean.POLARIZETERM, true);
+        generalizedKirkwoodTerm = forceField.getBoolean(ForceFieldBoolean.GKTERM, false);
 
         // Define the cutoff lengths.
         double vdwOff = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, 9.0);
@@ -409,6 +414,9 @@ public class ForceFieldEnergy implements Potential {
         totalElectrostaticEnergy = 0.0;
         totalNonBondedEnergy = 0.0;
 
+        // Zero out the solvation energy.
+        solvationEnergy = 0.0;
+
         // Zero out the total potential energy.
         totalEnergy = 0.0;
 
@@ -506,13 +514,17 @@ public class ForceFieldEnergy implements Potential {
             permanentMultipoleEnergy = particleMeshEwald.getPermanentEnergy();
             polarizationEnergy = particleMeshEwald.getPolarizationEnergy();
             nPME = particleMeshEwald.getInteractions();
+
+            solvationEnergy = particleMeshEwald.getGKEnergy();
+            nGK = particleMeshEwald.getGKInteractions();
+
             electrostaticTime = System.nanoTime() - electrostaticTime;
         }
         totalTime = System.nanoTime() - totalTime;
 
         totalBondedEnergy = bondEnergy + angleEnergy + stretchBendEnergy + ureyBradleyEnergy + outOfPlaneBendEnergy + torsionEnergy + piOrbitalTorsionEnergy + torsionTorsionEnergy;
         totalNonBondedEnergy = vanDerWaalsEnergy + totalElectrostaticEnergy;
-        totalEnergy = totalBondedEnergy + totalNonBondedEnergy;
+        totalEnergy = totalBondedEnergy + totalNonBondedEnergy + solvationEnergy;
         if (print) {
             StringBuilder sb = new StringBuilder("\n");
             if (gradient) {
@@ -587,6 +599,13 @@ public class ForceFieldEnergy implements Potential {
                                     "Polarization      ", polarizationEnergy,
                                     nPME, electrostaticTime * toSeconds));
         }
+
+        if (generalizedKirkwoodTerm) {
+            sb.append(String.format(" %s %16.8f %12d\n",
+                                    "Solvation         ", solvationEnergy,
+                                    nGK));
+        }
+
         sb.append(String.format("\n %s %16.8f  %s %12.3f (sec)\n",
                                 "Total Potential   ", totalEnergy, "(Kcal/mole)", totalTime * toSeconds));
         int nsymm = crystal.getUnitCell().spaceGroup.getNumberOfSymOps();

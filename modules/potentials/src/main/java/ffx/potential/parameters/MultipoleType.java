@@ -62,6 +62,10 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
      */
     public static final double BOHR2 = BOHR * BOHR;
     /**
+     * Conversion from electron**2/Ang to kcal/mole.
+     */
+    public static final double ELECTRIC = 332.063709;
+    /**
      * Partial atomic charge (e).
      */
     public final double charge;
@@ -97,7 +101,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
      *            int[]
      */
     public MultipoleType(double charge, double dipole[], double quadrupole[][],
-            int[] multipoleFrameTypes, MultipoleFrameDefinition frameDefinition) {
+                         int[] multipoleFrameTypes, MultipoleFrameDefinition frameDefinition) {
         super(ForceField.ForceFieldType.MULTIPOLE, multipoleFrameTypes);
         this.charge = charge;
         this.dipole = dipole;
@@ -108,7 +112,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
     }
 
     public void incrementType(int increment) {
-        for (int i=0; i<frameAtomTypes.length; i++) {
+        for (int i = 0; i < frameAtomTypes.length; i++) {
             frameAtomTypes[i] += increment;
         }
         setKey(frameAtomTypes);
@@ -144,7 +148,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
         double sum = quadrupole[0][0] + quadrupole[1][1] + quadrupole[2][2];
         if (Math.abs(sum) > 1.0e-5) {
             String message = String.format("Multipole is not traceless: %7.5f",
-                    sum);
+                                           sum);
             logger.warning(message + "\n" + toBohrString());
         }
     }
@@ -166,7 +170,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
             multipoleBuffer.append(String.format("  %5d", frameAtomTypes[1]));
             multipoleBuffer.append(String.format("  %5d", -frameAtomTypes[2]));
             multipoleBuffer.append(String.format("  %5d", -frameAtomTypes[3]));
-        } else if (frameDefinition == MultipoleFrameDefinition.TRISECTOR){
+        } else if (frameDefinition == MultipoleFrameDefinition.TRISECTOR) {
             multipoleBuffer.append(String.format("  %5d", frameAtomTypes[0]));
             multipoleBuffer.append(String.format("  %5d", -frameAtomTypes[1]));
             multipoleBuffer.append(String.format("  %5d", -frameAtomTypes[2]));
@@ -180,13 +184,13 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
             multipoleBuffer.append("       ");
         }
         multipoleBuffer.append(String.format("  % 7.5f \\\n"
-                + "%11$s % 7.5f % 7.5f % 7.5f \\\n" + "%11$s % 7.5f \\\n"
-                + "%11$s % 7.5f % 7.5f \\\n" + "%11$s % 7.5f % 7.5f % 7.5f",
-                charge, dipole[0] / BOHR, dipole[1] / BOHR, dipole[2] / BOHR,
-                quadrupole[0][0] / BOHR2, quadrupole[1][0] / BOHR2,
-                quadrupole[1][1] / BOHR2, quadrupole[2][0] / BOHR2,
-                quadrupole[2][1] / BOHR2, quadrupole[2][2] / BOHR2,
-                "                                      "));
+                                             + "%11$s % 7.5f % 7.5f % 7.5f \\\n" + "%11$s % 7.5f \\\n"
+                                             + "%11$s % 7.5f % 7.5f \\\n" + "%11$s % 7.5f % 7.5f % 7.5f",
+                                             charge, dipole[0] / BOHR, dipole[1] / BOHR, dipole[2] / BOHR,
+                                             quadrupole[0][0] / BOHR2, quadrupole[1][0] / BOHR2,
+                                             quadrupole[1][1] / BOHR2, quadrupole[2][0] / BOHR2,
+                                             quadrupole[2][1] / BOHR2, quadrupole[2][2] / BOHR2,
+                                             "                                      "));
         return multipoleBuffer.toString();
     }
 
@@ -207,7 +211,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
             multipoleBuffer.append(String.format("  %5d", frameAtomTypes[1]));
             multipoleBuffer.append(String.format("  %5d", -frameAtomTypes[2]));
             multipoleBuffer.append(String.format("  %5d", -frameAtomTypes[3]));
-        } else if (frameDefinition == MultipoleFrameDefinition.TRISECTOR){
+        } else if (frameDefinition == MultipoleFrameDefinition.TRISECTOR) {
             multipoleBuffer.append(String.format("  %5d", frameAtomTypes[0]));
             multipoleBuffer.append(String.format("  %5d", -frameAtomTypes[1]));
             multipoleBuffer.append(String.format("  %5d", -frameAtomTypes[2]));
@@ -221,14 +225,14 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
             multipoleBuffer.append("       ");
         }
         multipoleBuffer.append(String.format("  % 7.5f\\\n"
-                + "%11$s % 7.5f % 7.5f % 7.5f\\\n" + "%11$s % 7.5f\\\n"
-                + "%11$s % 7.5f % 7.5f\\\n" + "%11$s % 7.5f % 7.5f % 7.5f",
-                charge, dipole[0] * DEBYE, dipole[1] * DEBYE,
-                dipole[2] * DEBYE, quadrupole[0][0] * BUCKINGHAM,
-                quadrupole[1][0] * BUCKINGHAM, quadrupole[1][1] * BUCKINGHAM,
-                quadrupole[2][0] * BUCKINGHAM, quadrupole[2][1] * BUCKINGHAM,
-                quadrupole[2][2] * BUCKINGHAM,
-                "                                      "));
+                                             + "%11$s % 7.5f % 7.5f % 7.5f\\\n" + "%11$s % 7.5f\\\n"
+                                             + "%11$s % 7.5f % 7.5f\\\n" + "%11$s % 7.5f % 7.5f % 7.5f",
+                                             charge, dipole[0] * DEBYE, dipole[1] * DEBYE,
+                                             dipole[2] * DEBYE, quadrupole[0][0] * BUCKINGHAM,
+                                             quadrupole[1][0] * BUCKINGHAM, quadrupole[1][1] * BUCKINGHAM,
+                                             quadrupole[2][0] * BUCKINGHAM, quadrupole[2][1] * BUCKINGHAM,
+                                             quadrupole[2][2] * BUCKINGHAM,
+                                             "                                      "));
         return multipoleBuffer.toString();
     }
 
@@ -294,7 +298,6 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
         hash = 29 * hash + Arrays.hashCode(frameAtomTypes);
         return hash;
     }
-
     /**
      * Indices into a 1D tensor array based on compressed tensor notation. This
      * makes multipole code much easier to read.
