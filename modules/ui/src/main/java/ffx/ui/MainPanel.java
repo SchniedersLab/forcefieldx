@@ -705,7 +705,7 @@ public final class MainPanel extends JPanel implements ActionListener,
                                + "             Copyright (c)  Force Field X Module Authors  2009-2011 \n"
                                + "\n"
                                + "             Module                           Copyright (c) \n"
-                               + "             Binding Affinity                 Penggu Ren \n"
+                               + "             Binding Affinity                 Pengyu Ren \n"
                                + "             X-Ray/Neutron/CryoEM Refinement  Timothy D. Fenn \n"
                                + "             Automatic Parameterization       Johnny Wu and Gaurav Chattree \n"
                                + "\n"

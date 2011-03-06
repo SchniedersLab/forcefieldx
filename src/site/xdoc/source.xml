@@ -13,31 +13,37 @@
                 <p>The Force Field X project is hosted at <a target="_blank" href="http://www.kenai.com/projects/ffx/">Kenai</a> with the source code in a GIT repository.
                     "<a target="_blank" href="http://git-scm.com/">Git</a> is a free and open source, distributed version control system designed to handle everything from
                     small to very large projects with speed and efficiency."
-                    To clone the Force Field X source using GIT first join the Kenai site, set up an ssh key and then join the FFX project. The GIT command is:
-                    <source>git clone ssh://KENAI.USER.NAME@git.kenai.com/ffx~source ffx</source>
+                    To clone the Force Field X source using GIT:
+                    <source>git clone git://kenai.com/ffx~source ffx</source>
                 </p>
             </subsection>
             <subsection name="Building Force Field X">
                 <p>A Maven project file (pom.xml) is provided to build Force Field X on any platform. After cloing the Force Field X git repository, change
                     directoies into the base project directory. Then execute:
                     <source>mvn deploy</source>
-                    This requires Maven v. 2.2.1 or later to be installed with its bin directory included in your $PATH environment variable. The first time this command
+                    This requires Maven v. 3.0.2 or later to be installed with its bin directory included in your $PATH environment variable. The first time this command
                     is executed, Maven will download build dependencies and Force Field X runtime dependecies. Future executions are quicker. Force Field X will self-test
                     its modules and report failures. Only code that passes all testing should be uploaded to the Kenai repository, so if any test fails it may be
-                    due to a local configuration issue.
+                    due to a local configuration issue. To skip the tests:
+                    <source>mvn -DskipTests deploy</source>
                 </p>
                 <p>
-                    Once the build succeeds, Force Field X can be executed using platform dependent start-up scripts located in the bin/PLATFORM directories, where PLATFORM
-                    is either macosx, linux or windows.
-                    <source>bin/linux/ffxc scripts/energy.ffx</source>
-                    The appropriate directory for your operating system may be appended to your $PATH environment variable.
+                    Once the build succeeds, Force Field X can be executed using platform dependent start-up scripts located in the bin.
+                    On Mac OS X or Linux:
+                    <source>bin/ffxc energy examples/alamet.xyz</source>
+                    On Windows:
+                    <source>bin/ffxc.bat energy examples/alamet.xyz</source>
+                    The ffx/bin directory should be appended to your $PATH environment variable. The "energy" command
+                    refers to an internal version of the energy.ffx script that can be found in the ffx/scripts
+                    directory. To embed your own script within FFX, place it into the scripts directory and
+                    rebuild FFX.
                 </p>
             </subsection>
         </section>
         <section name="Developing Force Field X">
             <subsection name="Maven Software Project Management">
-                <p>Maven is like "make", but exceptionally more powerful due to the platform independence of the Jave Virtual Machine. Maven is used to
-                manage the dependencies of Force Field X, compile it, test it, document it and then put everything together into the website.</p>
+                <p>Maven is like "make", but exceptionally more powerful due to the platform independence of the Jave Runtime Environment.
+                Maven is used to manage the dependencies of Force Field X, compile it, test it, document it and then put everything together into the website.</p>
                 <p>The Force Field X web site facilitates technology transfer and further development of features. Available documentation includes:</p>
                 <ul><li>Application Programming Interface (API) documentation for Force Field X packages is available as <a href="apidocs/index.html">Javadocs.</a></li>
                     <li>Force Field X source code is available <a href="xref/index.html">cross-referenced</a> with line numbers.</li>
@@ -45,13 +51,10 @@
                 </ul>
                 <p>For more information on the layout of the Force Field X project visit the "Project Documentation" area of this website.</p>
             </subsection>
-            <subsection name="Kenai.com / Java.net">
-
+            <!-- subsection name="Kenai.com / Java.net">
             </subsection>
             <subsection name="NetBeans Integrated Development Environment (IDE)">
-
-            </subsection>
-
+            </subsection -->
         </section>
     </body>
 </document>

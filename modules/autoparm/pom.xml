@@ -22,10 +22,10 @@
             <type>jar</type>
         </dependency>
         <dependency>
-        	<groupId>com.kenai.ffx</groupId>
-        	<artifactId>utilities</artifactId>
-        	<version>${project.version}</version>
-        	<type>jar</type>
+            <groupId>com.kenai.ffx</groupId>
+            <artifactId>utilities</artifactId>
+            <version>${project.version}</version>
+            <type>jar</type>
         </dependency>
     </dependencies>
 </project>

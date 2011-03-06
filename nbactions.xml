@@ -10,8 +10,8 @@
         <action>
             <actionName>CUSTOM-Build Local Website</actionName>
             <goals>
-                <goal>-o</goal>
-                <goal>site</goal>
+                <goal>site:site</goal>
+                
             </goals>
             <displayName>Build Local Website</displayName>
         </action>
