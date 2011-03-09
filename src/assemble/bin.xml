@@ -8,7 +8,7 @@
         <format>tar.bz2</format>
         <format>zip</format>
     </formats>
-    <baseDirectory>ffx-1.0-alpha</baseDirectory>
+    <baseDirectory>ffx-${project.version}</baseDirectory>
     <fileSets>
         <fileSet>
             <includes>
@@ -18,10 +18,13 @@
         </fileSet>
         <fileSet>
             <directory>bin</directory>
-            <excludes>
-                <exclude>**/jogl*/**</exclude>
-                <exclude>**/jcuda*/**</exclude>
-            </excludes>
+            <includes>
+                <include>ffx</include>
+                <include>ffxc</include>
+                <include>ffx.bat</include>
+                <include>ffxc.bat</include>
+                <include>ffx-all.jar</include>
+            </includes>
         </fileSet>
         <fileSet>
             <directory>conf</directory>

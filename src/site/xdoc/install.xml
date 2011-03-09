@@ -60,20 +60,21 @@
                                     <ul>
                                         <li>
                                             <p>BASH</p>
-                                            <p>export PATH="/Users/shared/ffx-VERSION/bin/linux:$PATH"</p>
+                                            <p>export PATH="/Users/shared/ffx-VERSION/bin:$PATH"</p>
                                         </li>
                                         <li>
                                             <p>CSH</p>
-                                            <p>setenv PATH "/Users/shared/ffx-VERSION/bin/linux:$PATH"</p>
+                                            <p>setenv PATH "/Users/shared/ffx-VERSION/bin:$PATH"</p>
                                         </li>
                                     </ul>
                                     <p>To check use "
                                         <code>echo $PATH</code>" and "
-                                        <code>which ffx</code>".
+                                        <code>which ffxc</code>".
+                                        <!--
                                         Both the graphical
                                         <code>ffx</code> and command line
                                         compiler
-                                        <code>ffxc</code> versions should now be available.
+                                        <code>ffxc</code> versions should now be available. -->
                                     </p>
                                 </li>
                             </ol>
@@ -114,26 +115,26 @@
                                     </p>
                                 </li>
                                 <li>
-                                    <p>Add the ffx-VERSION/bin/macosx directory to your path.
+                                    <p>Add the ffx-VERSION/bin directory to your path.
                                         For example, if ffx is unpacked into /Users/shared/ffx-VERSION, then
                                     </p>
                                     <ul>
                                         <li>
                                             <p>BASH</p>
-                                            <p>export PATH="/Users/shared/ffx-VERSION/bin/macosx:$PATH"</p>
+                                            <p>export PATH="/Users/shared/ffx-VERSION/bin:$PATH"</p>
                                         </li>
                                         <li>
                                             <p>CSH</p>
-                                            <p>setenv PATH "/Users/shared/ffx-VERSION/bin/macosx:$PATH"</p>
+                                            <p>setenv PATH "/Users/shared/ffx-VERSION/bin:$PATH"</p>
                                         </li>
                                     </ul>
                                     <p>To check use "
                                         <code>echo $PATH</code>" and "
-                                        <code>which ffx</code>".
-                                        Both the graphical
+                                        <code>which ffxc</code>".
+                                        <!-- Both the graphical
                                         <code>ffx</code> and command line
                                         compiler
-                                        <code>ffxc</code> versions should now be available.
+                                        <code>ffxc</code> versions should now be available. -->
                                     </p>
                                 </li>
                             </ol>

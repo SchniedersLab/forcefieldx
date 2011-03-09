@@ -387,23 +387,23 @@ public class NeighborList extends ParallelRegion {
                 double yu = frac[i3 + YY];
                 double zu = frac[i3 + ZZ];
                 // Move the atom into the range 0.0 <= x < 1.0
-                while (xu >= 1.0) {
-                    xu -= 1.0;
-                }
                 while (xu < 0.0) {
                     xu += 1.0;
                 }
-                while (yu >= 1.0) {
-                    yu -= 1.0;
+                while (xu >= 1.0) {
+                    xu -= 1.0;
                 }
                 while (yu < 0.0) {
                     yu += 1.0;
                 }
-                while (zu >= 1.0) {
-                    zu -= 1.0;
+                while (yu >= 1.0) {
+                    yu -= 1.0;
                 }
                 while (zu < 0.0) {
                     zu += 1.0;
+                }
+                while (zu >= 1.0) {
+                    zu -= 1.0;
                 }
                 // The cell indices of this atom.
                 final int a = (int) floor(xu * nA);

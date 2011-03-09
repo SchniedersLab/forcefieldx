@@ -11,7 +11,7 @@
     <!-- poweredBy>
         <logo
             name="Force Field X Development"
-            href="http://kenai.com/projects/ffx" 
+            href="http://kenai.com/projects/ffx"
             img="/images/icon90.png"
             />
     </poweredBy -->
@@ -70,9 +70,9 @@
             <item name="Automatic Parameterization"  href="modules/autoparm/index.html"/>
             <item name="Binding Affinity"  href="modules/binding/index.html"/>
             <item name="Coarse Grain" href="modules/cg/index.html"/>
-            <item name="Continuum Electrostatics" href="modules/continuum/index.html"/>
+            <!-- item name="Continuum Electrostatics" href="modules/continuum/index.html"/ -->
             <item name="Crystal" href="modules/crystal/index.html"/>
-            <item name="Nucleic Acids" href="modules/nucleic/index.html"/>
+            <!-- item name="Nucleic Acids" href="modules/nucleic/index.html"/ -->
             <item name="Numerics" href="modules/numerics/index.html"/>
             <item name="Potentials" href="modules/potentials/index.html"/>
             <item name="User Interfaces" href="modules/ui/index.html"/>

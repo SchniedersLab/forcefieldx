@@ -274,11 +274,11 @@
                         <argument>-Djava.awt.headless=true</argument>
                         <argument>-Dpj.nt=2</argument>
                         <argument>-Dj3d.rend=jogl</argument>
-                        <argument>-Djava.library.path=bin/${platform}/jogl-${bit}</argument>
                         <argument>-classpath</argument>
                         <argument>bin/ffx-all.jar</argument>
                         <argument>ffx.Launcher</argument>
-                        <argument>scripts/saveAsPDB.ffx</argument>
+                        <argument>energy</argument>
+                        <argument>examples/alamet.pdb</argument>
                     </arguments>
                 </configuration>
             </plugin>
@@ -408,11 +408,32 @@
         </dependency>
     </dependencies>
     <reporting>
+        <excludeDefaults>true</excludeDefaults>
         <plugins>
             <plugin>
                 <artifactId>maven-project-info-reports-plugin</artifactId>
                 <version>2.3.1</version>
-                <inherited>true</inherited>
+                <inherited>false</inherited>
+                <reportSets>
+                    <reportSet>
+                        <reports>
+                            <report>cim</report>
+                            <report>dependencies</report>
+                            <report>dependency-convergence</report>
+                            <report>dependency-management</report>
+                            <report>distribution-management</report>
+                            <report>issue-tracking</report>
+                            <report>license</report>
+                            <report>mailing-list</report>
+                            <report>modules</report>
+                            <report>plugin-management</report>
+                            <report>plugins</report>
+                            <report>project-team</report>
+                            <report>scm</report>
+                            <report>summary</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
                 <configuration>
                     <dependencyDetailsEnabled>false</dependencyDetailsEnabled>
                     <dependencyLocationsEnabled>false</dependencyLocationsEnabled>
@@ -450,11 +471,6 @@
                     <aggregate>true</aggregate>
                 </configuration>
             </plugin>
-            <!-- plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-linkcheck-plugin</artifactId>
-                <version>1.1</version>
-            </plugin -->
             <plugin>
                 <artifactId>maven-changes-plugin</artifactId>
                 <version>2.3</version>
@@ -474,6 +490,17 @@
                     </reportSet>
                 </reportSets>
             </plugin>
+            <!-- plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-changelog-plugin</artifactId>
+                <version>2.2</version>
+                <inherited>false</inherited>
+            </plugin -->
+            <!-- plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-linkcheck-plugin</artifactId>
+                <version>1.1</version>
+            </plugin -->
         </plugins>
     </reporting>
     <distributionManagement>
@@ -514,9 +541,9 @@
         <module>modules/autoparm</module>
         <module>modules/binding</module>
         <module>modules/cg</module>
-        <module>modules/continuum</module>
+        <!-- module>modules/continuum</module -->
         <module>modules/crystal</module>
-        <module>modules/nucleic</module>
+        <!-- module>modules/nucleic</module -->
         <module>modules/numerics</module>
         <module>modules/potentials</module>
         <module>modules/ui</module>

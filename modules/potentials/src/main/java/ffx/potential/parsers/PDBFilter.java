@@ -22,6 +22,9 @@ package ffx.potential.parsers;
 
 import static java.lang.String.format;
 
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+
 import static ffx.potential.parsers.INTFilter.intxyz;
 import static ffx.potential.parsers.PDBFilter.ResiduePosition.FIRST_RESIDUE;
 import static ffx.potential.parsers.PDBFilter.ResiduePosition.MIDDLE_RESIDUE;
@@ -1055,6 +1058,7 @@ public final class PDBFilter extends SystemFilter {
                      */
                     Atom ib = null;
                     Atom ic = null;
+                    Atom id = null;
                     if (numBonds > 0) {
                         Bond bond = aBonds.get(0);
                         ib = bond.get1_2(ia);
@@ -1063,6 +1067,11 @@ public final class PDBFilter extends SystemFilter {
                         Bond bond = aBonds.get(1);
                         ic = bond.get1_2(ia);
                     }
+                    if (numBonds > 2) {
+                        Bond bond = aBonds.get(2);
+                        id = bond.get1_2(ia);
+                    }
+
                     /**
                      * Building the hydrogens depends on hybridization and the
                      * locations of other bonded atoms.
@@ -1073,10 +1082,32 @@ public final class PDBFilter extends SystemFilter {
                         case 4:
                             switch (numBonds) {
                                 case 3:
+                                    // Find the average coordinates of atoms ib, ic and id.
+                                    double b[] = ib.getXYZ();
+                                    double c[] = ib.getXYZ();
+                                    double d[] = ib.getXYZ();
+                                    double a[] = new double[3];
+                                    a[0] = (b[0] + c[0] + d[0]) / 3.0;
+                                    a[1] = (b[1] + c[1] + d[1]) / 3.0;
+                                    a[2] = (b[2] + c[2] + d[2]) / 3.0;
 
-                                    // TODO: Check for chirality
+                                    // Place the hydrogen at chiral position #1.
+                                    intxyz(hydrogen, ia, 1.0, ib, 109.5, ic, 109.5, 0);
+                                    double e1[] = hydrogen.getXYZ();
+                                    double ret[] = new double[3];
+                                    diff(a, e1, ret);
+                                    double l1 = r(ret);
 
+                                    // Place the hydrogen at chiral position #2.
                                     intxyz(hydrogen, ia, 1.0, ib, 109.5, ic, 109.5, 1);
+                                    double e2[] = hydrogen.getXYZ();
+                                    diff(a, e2, ret);
+                                    double l2 = r(ret);
+
+                                    // Revert to #1 if it is farther from the average.
+                                    if (l1 > l2) {
+                                        hydrogen.setXYZ(e1);
+                                    }
                                     break;
                                 case 2:
                                     intxyz(hydrogen, ia, 1.0, ib, 109.5, ic, 109.5, 0);

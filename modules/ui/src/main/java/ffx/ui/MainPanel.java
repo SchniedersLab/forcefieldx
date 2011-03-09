@@ -693,22 +693,29 @@ public final class MainPanel extends JPanel implements ActionListener,
             }
         }
     }
-    public static final String version = "Version 1.0 SNAPSHOT";
-    public static final String date = "January 2011";
+    public static final String version = "Version 1.0.0-ALPHA";
+    public static final String date = "March 2011";
     public static final String border =
                                " ______________________________________________________________________________\n";
     public static final String title =
-                               "               FORCE FIELD X - Software for Molecular Biophysics\n";
+                                 "             FORCE FIELD X - Software for Molecular Biophysics \n";
     public static final String aboutString =
-                               "                         " + version + "  " + date
-                               + "\n                Copyright (c)  Michael J. Schnieders  2001-2011"
-                               + "\n             Copyright (c)  Force Field X Module Authors  2009-2011"
+                                 "             " + version + "  " + date + " \n"
+                               + "             Copyright (c)  Michael J. Schnieders  2001-2011 \n"
+                               + "             Copyright (c)  Force Field X Module Authors  2009-2011 \n"
                                + "\n"
-                               + "\n                         Module             Copyright (c)"
-                               + "\n                         Binding Affinity   Pengyu Ren"
-                               + "\n                         X-Ray Refinement   Timothy D. Fenn"
+                               + "             Module                           Copyright (c) \n"
+                               + "             Binding Affinity                 Pengyu Ren \n"
+                               + "             X-Ray/Neutron/CryoEM Refinement  Timothy D. Fenn \n"
+                               + "             Automatic Parameterization       Johnny Wu and Gaurav Chattree \n"
                                + "\n"
-                               + "\n                              All Rights Reserved";
+                               + "             All Rights Reserved \n"
+                               + "\n"
+                               + "             Force Field X is distributed under the GPL v.3 license and \n"
+                               + "             hosted by the Ren lab. \n"
+                               + "\n"
+                               + "             For publications please see http://ffx.kenai.com/publications.html \n"
+                               + "             For the GPL v.3 license see http://ffx.kenai.com/license.html \n";
 
     private void initAbout() {
         aboutTextArea = new JTextArea();
@@ -1047,7 +1054,7 @@ public final class MainPanel extends JPanel implements ActionListener,
             CompositeConfiguration patchConfiguration = new CompositeConfiguration();
             patchConfiguration.addProperty("parameters", patch);
             forceFieldFilter = new ForceFieldFilter(patchConfiguration);
-            ForceField patchForceField = forceFieldFilter.parse();            
+            ForceField patchForceField = forceFieldFilter.parse();
             forceField.append(patchForceField);
         }
         newSystem.setForceField(forceField);

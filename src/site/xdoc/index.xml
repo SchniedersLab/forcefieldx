@@ -14,18 +14,22 @@
         <section name="Introduction">
             <p>Force Field X is a group of open source (GPL v. 3), platform independent
                (Java Runtime Environment) modules for molecular biophysics.
-               Key features include:
+               Key methods include:
             </p>
             <ul>
                 <li>Polarizable AMOEBA force fields</li>
                 <li>Particle-mesh Ewald electrostatics</li>
+                <li>Generalized Kirkwood continuum electrostatics</li>
                 <li>X-ray and neutron crystallography refinement</li>
+                <li>Real space refinement for CryoEM</li>
                 <li>Methods for structure based drug design</li>
             </ul>
             <subsection name="Ewald X-Ray Crystallography Refinement">
-                <p>In collaboration with scientists at Vertex Pharmcueticals, we are using the polarizable AMOEBA
-                force field evaluated using Ewald summation to re-refine protein-drug data sets in order to provide
-                the most precise atomic resolution models possible.
+                <p>In collaboration with scientists at Vertex Pharmcueticals, we are using the
+                polarizable AMOEBA force field evaluated using Ewald summation to re-refine
+                protein-drug structures in the context of the original diffraction data (ie. using
+                an X-ray likelihood target) in order to provide the most precise atomic
+                resolution models possible.
                 </p>
                 <p>The Ewald refinements exhibit:</p>
                 <ol>
@@ -38,8 +42,12 @@
                 <table>
                     <tbody>
                         <tr>
-                             <td><font color="blue">Original (1YI4, No Electrostatics)</font></td>
-                             <td><font color="blue">Ewald Refinement of the Binding Pocket</font></td>
+                            <td>
+                                <font color="blue">Original (1YI4, No Electrostatics)</font>
+                            </td>
+                            <td>
+                                <font color="blue">Ewald Refinement of the Binding Pocket</font>
+                            </td>
                         </tr>
                         <tr>
                             <td bgcolor="white">
@@ -71,7 +79,9 @@
                     </thead>
                     <tbody>
                         <tr>
-                            <td><font color="blue">Original Refinements</font></td>
+                            <td>
+                                <font color="blue">Original Refinements</font>
+                            </td>
                         </tr>
                         <tr>
                             <td>PIM-1 Bound to Adenosine</td>
@@ -126,7 +136,9 @@
                             </td>
                         </tr>
                         <tr>
-                            <td><font color="blue">Ewald Refinements</font></td>
+                            <td>
+                                <font color="blue">Ewald Refinements</font>
+                            </td>
                         </tr>
                         <tr>
                             <td>PIM-1 Bound to Adenosine</td>
@@ -139,7 +151,7 @@
                             <td>2.4</td>
                             <td>
                                 <a href="structures/3YI4_Ewald.pdb">1YI4_Ewald.pdb</a>
-                            </td> 
+                            </td>
                         </tr>
                         <tr>
                             <td>Staphylococcus Aureus Gyrase B with Inhibitor</td>

@@ -78,7 +78,9 @@
         <profile>
             <id>Mac OS X</id>
             <activation>
-                <os><family>mac</family></os>
+                <os>
+                    <family>mac</family>
+                </os>
             </activation>
             <properties>
                 <platform>macosx</platform>
@@ -98,7 +100,10 @@
         <profile>
             <id>Linux-64</id>
             <activation>
-                <os><family>Linux</family><arch>amd64</arch></os>
+                <os>
+                    <family>Linux</family>
+                    <arch>amd64</arch>
+                </os>
             </activation>
             <properties>
                 <platform>linux</platform>
@@ -108,7 +113,10 @@
         <profile>
             <id>Windows-32</id>
             <activation>
-                <os><family>windows</family><arch>x86</arch></os>
+                <os>
+                    <family>windows</family>
+                    <arch>x86</arch>
+                </os>
             </activation>
             <properties>
                 <platform>windows</platform>
@@ -118,7 +126,10 @@
         <profile>
             <id>Windows-64</id>
             <activation>
-                <os><family>windows</family><arch>x86_64</arch></os>
+                <os>
+                    <family>windows</family>
+                    <arch>x86_64</arch>
+                </os>
             </activation>
             <properties>
                 <platform>windows</platform>

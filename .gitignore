@@ -10,7 +10,9 @@ website/
 modules/*/.classpath
 modules/*/.settings
 modules/*/.project
+catalog.xml
 .classpath
 .project
 .settings/
 release/
+
