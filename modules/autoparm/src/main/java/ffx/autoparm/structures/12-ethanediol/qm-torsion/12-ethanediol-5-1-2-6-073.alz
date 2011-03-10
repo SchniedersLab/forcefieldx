@@ -1,0 +1,297 @@
+
+ ##############################################################################
+ ##############################################################################
+ ##                                                                          ##
+ ##             TINKER  ---  Software Tools for Molecular Design             ##
+ ##                                                                          ##
+ ##                          Version 5.0  June 2009                          ##
+ ##                                                                          ##
+ ##               Copyright (c)  Jay William Ponder  1990-2009               ##
+ ##                            All Rights Reserved                           ##
+ ##                                                                          ##
+ ##############################################################################
+ ##############################################################################
+
+
+ Additional Atom Type Parameters :
+
+     Type  Class  Symbol  Description               Atomic    Mass   Valence
+
+     401    401     C     12-ethanediol                6     12.011     4
+     404    404     H     12-ethanediol                1      1.008     1
+     402    402     O     12-ethanediol                8     15.999     2
+     403    403     H     12-ethanediol                1      1.008     1
+
+ Additional Bond Stretching Parameters :
+
+     Atom Classes         K(S)      Length
+
+       401 401         323.000      1.5247
+       401 402         465.100      1.4130
+       402 404         615.900      0.9670
+       401 403         341.000      1.1120
+
+ Additional Angle Bending Parameters :
+
+     Atom Classes         K(B)       Angle
+
+     401 402 404        64.960     106.800
+     401 401 403        42.440     109.800   0-H's
+     401 401 403        42.440     109.310   1-H's
+     401 401 403        42.440     110.700   2-H's
+     401 401 402        65.710     107.500   0-H's
+     401 401 402        65.710     107.000   1-H's
+     401 401 402        65.710     107.900   2-H's
+     403 401 403        40.570     107.600   0-H's
+     403 401 403        40.570     107.800   1-H's
+     403 401 403        40.570     109.470   2-H's
+     402 401 403        60.990     110.000   0-H's
+     402 401 403        60.990     108.900   1-H's
+     402 401 403        60.990     108.700   2-H's
+
+ Additional Stretch-Bend Parameters :
+
+     Atom Classes        K(SB)-1     K(SB)-2
+
+     401 402 404       -4.5000     38.0000
+     401 401 403       -4.5000     38.0000
+     401 401 402       38.0000     38.0000
+     401 403 403       11.5000     18.7000
+     401 402 403       11.5000     11.5000
+
+ Additional Torsional Parameters :
+
+     Atom Classes    1-Fold    2-Fold    3-Fold    4-Fold    5-Fold    6-Fold
+
+  402 401 401 402   2.76   0 -2.03 180  3.45   0  0.00   0  0.00   0  0.00   0
+  401 401 402 404  -1.45   0  0.53 180  0.32   0  0.00   0  0.00   0  0.00   0
+  403 401 402 404   0.00   0  0.00 180  0.27   0  0.00   0  0.00   0  0.00   0
+  402 401 401 403   0.00   0  0.00 180  0.00   0  0.00   0  0.00   0  0.00   0
+  403 401 401 403   0.00   0  0.00 180  0.00   0  0.00   0  0.00   0  0.00   0
+
+ Additional van der Waals Parameters :
+
+     Atom Class         Radius     Epsilon     Reduction
+
+       401              3.8200      0.1010       0.000
+       402              3.4050      0.1100       0.000
+       403              2.9800      0.0240       0.940
+       404              2.6550      0.0130       0.910
+
+ Additional Atomic Multipole Parameters :
+
+     Atom Type     Coordinate Frame Definition        Multipole Moments
+
+       401        401    402      0   Z-then-X    0.13771
+                                                  0.30130  0.00000  0.11406
+                                                  0.29011
+                                                  0.00000 -0.32940
+                                                 -0.50678  0.00000  0.03929
+
+       402        401    404      0   Z-then-X   -0.37958
+                                                  0.15925  0.00000  0.39886
+                                                  0.10944
+                                                  0.00000 -0.89190
+                                                 -0.38064  0.00000  0.78246
+
+       403        401    401      0   Bisector    0.01081
+                                                  0.00000  0.00000 -0.02138
+                                                 -0.04948
+                                                  0.00000 -0.01973
+                                                  0.00000  0.00000  0.06921
+
+       404        402    401      0   Z-then-X    0.22026
+                                                 -0.01613  0.00000 -0.04842
+                                                 -0.04642
+                                                  0.00000 -0.08114
+                                                  0.02856  0.00000  0.12755
+
+ Additional Atomic Dipole Polarizability Parameters :
+
+     Atom Type           Alpha        Damp     Group Atom Types
+
+       401               1.334       0.390         402  403
+       404               0.496       0.390         402
+       402               0.837       0.390         401  404
+       403               0.496       0.390         401
+
+ Individual Bond Stretching Interactions :
+
+ Type             Atom Names                    Ideal    Actual      Energy
+
+ Bond           1-C       2-C                  1.5247    1.5105      0.0674
+ Bond           1-C       5-O                  1.4130    1.4007      0.0724
+ Bond           1-C       7-H                  1.1120    1.0892      0.1884
+ Bond           1-C       8-H                  1.1120    1.0868      0.2319
+ Bond           2-C       6-O                  1.4130    1.4007      0.0724
+ Bond           2-C       9-H                  1.1120    1.0892      0.1884
+ Bond           2-C      10-H                  1.1120    1.0868      0.2319
+ Bond           3-H       5-O                  0.9670    0.9462      0.2811
+ Bond           4-H       6-O                  0.9670    0.9462      0.2811
+
+ Individual Angle Bending Interactions :
+
+ Type                 Atom Names                Ideal    Actual      Energy
+
+ Angle          2-C       1-C       5-O      107.9000  108.8523      0.0179
+ Angle          2-C       1-C       7-H      109.3100  108.9125      0.0021
+ Angle          2-C       1-C       8-H      109.3100  108.7130      0.0046
+ Angle          5-O       1-C       7-H      108.9000  110.7297      0.0606
+ Angle          5-O       1-C       8-H      108.9000  111.3842      0.1107
+ Angle          7-H       1-C       8-H      107.6000  108.1960      0.0044
+ Angle          1-C       2-C       6-O      107.9000  108.8523      0.0179
+ Angle          1-C       2-C       9-H      109.3100  108.9125      0.0021
+ Angle          1-C       2-C      10-H      109.3100  108.7130      0.0046
+ Angle          6-O       2-C       9-H      108.9000  110.7297      0.0606
+ Angle          6-O       2-C      10-H      108.9000  111.3842      0.1107
+ Angle          9-H       2-C      10-H      107.6000  108.1960      0.0044
+ Angle          1-C       5-O       3-H      106.8000  109.7414      0.1642
+ Angle          2-C       6-O       4-H      106.8000  109.7414      0.1642
+
+ Individual Stretch-Bend Interactions :
+
+ Type                 Atom Names                dSB 1     dSB 2      Energy
+
+ StrBend        2-C       1-C       5-O       -0.0135   -0.0117     -0.0167
+ StrBend        2-C       1-C       7-H        0.0056    0.0091      0.0056
+ StrBend        2-C       1-C       8-H        0.0085    0.0151      0.0093
+ StrBend        1-C       2-C       6-O       -0.0135   -0.0117     -0.0167
+ StrBend        1-C       2-C       9-H        0.0056    0.0091      0.0056
+ StrBend        1-C       2-C      10-H        0.0085    0.0151      0.0093
+ StrBend        1-C       5-O       3-H       -0.0361   -0.0612     -0.0377
+ StrBend        2-C       6-O       4-H       -0.0361   -0.0612     -0.0377
+
+ Individual Torsional Angle Interactions :
+
+ Type                       Atom Names                    Angle      Energy
+
+ Torsion        5-O       1-C       2-C       6-O       72.6400      0.3070
+ Torsion        5-O       1-C       2-C       9-H     -166.5392      0.0000
+ Torsion        5-O       1-C       2-C      10-H      -48.8569      0.0000
+ Torsion        7-H       1-C       2-C       6-O     -166.5392      0.0000
+ Torsion        7-H       1-C       2-C       9-H      -45.7184      0.0000
+ Torsion        7-H       1-C       2-C      10-H       71.9639      0.0000
+ Torsion        8-H       1-C       2-C       6-O      -48.8569      0.0000
+ Torsion        8-H       1-C       2-C       9-H       71.9639      0.0000
+ Torsion        8-H       1-C       2-C      10-H     -170.3537      0.0000
+ Torsion        2-C       1-C       5-O       3-H     -166.0362      0.0501
+ Torsion        7-H       1-C       5-O       3-H       74.2657      0.0365
+ Torsion        8-H       1-C       5-O       3-H      -46.1829      0.0343
+ Torsion        1-C       2-C       6-O       4-H     -166.0362      0.0501
+ Torsion        9-H       2-C       6-O       4-H       74.2657      0.0365
+ Torsion       10-H       2-C       6-O       4-H      -46.1829      0.0343
+
+ Individual van der Waals Interactions :
+
+ Type             Atom Names                  Minimum    Actual      Energy
+
+ VDW-Hal        1-C       4-H                  3.4405    3.1144     -0.0101
+ VDW-Hal        2-C       3-H                  3.4405    3.1144     -0.0101
+ VDW-Hal        3-H       4-H                  2.6550    4.2878     -0.0011
+ VDW-Hal        3-H       6-O                  3.1214    3.5549     -0.0192
+ VDW-Hal        3-H       7-H                  2.8362    2.3176      0.0693
+ VDW-Hal        3-H       8-H                  2.8362    2.1804      0.1914
+ VDW-Hal        3-H       9-H                  2.8362    3.9028     -0.0039
+ VDW-Hal        3-H      10-H                  2.8362    3.3391     -0.0098
+ VDW-Hal        4-H       5-O                  3.1214    3.5549     -0.0192
+ VDW-Hal        4-H       7-H                  2.8362    3.9028     -0.0039
+ VDW-Hal        4-H       8-H                  2.8362    3.3391     -0.0098
+ VDW-Hal        4-H       9-H                  2.8362    2.3176      0.0693
+ VDW-Hal        4-H      10-H                  2.8362    2.1804      0.1914
+ VDW-Hal        5-O       6-O                  3.4050    2.8812      0.1959
+ VDW-Hal        5-O       9-H                  3.2207    3.2341     -0.0445
+ VDW-Hal        5-O      10-H                  3.2207    2.5007      0.4278
+ VDW-Hal        6-O       7-H                  3.2207    3.2341     -0.0445
+ VDW-Hal        6-O       8-H                  3.2207    2.5007      0.4278
+ VDW-Hal        7-H       9-H                  2.9800    2.3007      0.2504
+ VDW-Hal        7-H      10-H                  2.9800    2.4502      0.0852
+ VDW-Hal        8-H       9-H                  2.9800    2.4502      0.0852
+ VDW-Hal        8-H      10-H                  2.9800    2.8999     -0.0234
+
+ Determination of Induced Dipole Moments :
+
+    Iter        RMS Change (Debyes)
+
+       1           0.0663211961
+       2           0.0224736656
+       3           0.0084892366
+       4           0.0051753959
+       5           0.0031554320
+       6           0.0019319618
+       7           0.0011849419
+       8           0.0007283073
+       9           0.0004483255
+      10           0.0002763553
+      11           0.0001705416
+      12           0.0001053441
+      13           0.0000651241
+      14           0.0000402877
+      15           0.0000249378
+      16           0.0000154440
+      17           0.0000095686
+      18           0.0000059305
+      19           0.0000036769
+      20           0.0000022802
+      21           0.0000014144
+      22           0.0000008775
+
+ Induced Dipole Moments (Debyes) :
+
+    Atom              X           Y           Z         Total
+
+       1           0.1269      0.2618     -0.0235      0.2919
+       2          -0.1269     -0.2618     -0.0235      0.2919
+       3           0.0022      0.0117     -0.0194      0.0228
+       4          -0.0022     -0.0117     -0.0194      0.0228
+       5          -0.0030     -0.0186     -0.0760      0.0783
+       6           0.0030      0.0186     -0.0760      0.0783
+       7           0.0068      0.0134      0.0229      0.0274
+       8           0.0574     -0.0416     -0.0308      0.0774
+       9          -0.0068     -0.0134      0.0229      0.0274
+      10          -0.0574      0.0416     -0.0308      0.0774
+
+ Individual Multipole and Polarization Interactions :
+
+ Type             Atom Names         Distance      Energies (MPole, Polar)
+
+ M-Pole         1-C       4-H         3.1913          1.4235     -0.1900
+ M-Pole         2-C       3-H         3.1913          1.4235     -0.1900
+ M-Pole         3-H       4-H         4.4382          3.4954     -0.0088
+ M-Pole         3-H       6-O         3.6258         -5.7226      0.0191
+ M-Pole         3-H       7-H         2.4028          0.0935     -0.0093
+ M-Pole         3-H       8-H         2.2470          0.1010     -0.0302
+ M-Pole         3-H       9-H         4.0266          0.1305     -0.0112
+ M-Pole         3-H      10-H         3.4472          0.1462      0.0113
+ M-Pole         4-H       5-O         3.6258         -5.7226      0.0191
+ M-Pole         4-H       7-H         4.0266          0.1305     -0.0112
+ M-Pole         4-H       8-H         3.4472          0.1462      0.0113
+ M-Pole         4-H       9-H         2.4028          0.0935     -0.0093
+ M-Pole         4-H      10-H         2.2470          0.1010     -0.0302
+ M-Pole         5-O       6-O         2.8812          6.2099     -0.1155
+ M-Pole         5-O       9-H         3.2924         -0.1125      0.0156
+ M-Pole         5-O      10-H         2.5230         -0.1398     -0.0789
+ M-Pole         6-O       7-H         3.2924         -0.1125      0.0156
+ M-Pole         6-O       8-H         2.5230         -0.1398     -0.0789
+ M-Pole         7-H       9-H         2.3567          0.0048     -0.0017
+ M-Pole         7-H      10-H         2.5215          0.0044     -0.0016
+ M-Pole         8-H       9-H         2.5215          0.0044     -0.0016
+ M-Pole         8-H      10-H         3.0137          0.0039     -0.0023
+
+ Individual Torsional Angle Restraint Terms :
+
+ Type            Atom Numbers             Ideal Range    Actual      Energy
+
+ Torsion        5    1    2    6        72.64   72.64   72.6400      0.0000
+
+ Total Potential Energy :                  5.4920 Kcal/mole
+
+ Energy Component Breakdown :           Kcal/mole      Interactions
+
+ Bond Stretching                           1.6152              9
+ Angle Bending                             0.7290             14
+ Stretch-Bend                             -0.0791              8
+ Torsional Angle                           0.5487             15
+ Van der Waals                             1.7942             22
+ Atomic Multipoles                         1.5626             22
+ Polarization                             -0.6786             22
+ Geometric Restraints                      0.0000              1

@@ -1,0 +1,16 @@
+Title 12-ethanediol gdmain
+
+File dma.fchk density MP2
+Angstrom
+AU
+Multipoles
+Switch 0
+Limit 2
+Punch dma.punch
+Radius H 0.65
+Radius S 0.80
+Radius P 0.75
+
+Start
+
+Finish
