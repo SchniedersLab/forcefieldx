@@ -28,14 +28,28 @@
                     </tr>
                     <tr>
                         <td>
-                            <a href="">
+                            <!-- a href="">
+                                <img src="images/pdf.png" alt="PDF"/>
+                            </a -->
+                        </td>
+                        <td>Fenn, T. D.; Schnieders, M. J.; Mustyakimov, M.; Wu, C.; Pande, V. S.; Langan, P.; Brunger, A. T., Reintroducing electrostatics into macromolecular crystallographic refinement: application to neutron crystallography and DNA hydration.
+                            <i>Structure</i>
+                            <b>2011</b> (to appear).
+                        </td>
+                        <td>
+                            <a href="modules/xray/index.html">X-Ray Refinement</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="http://dx.doi.org/10.1021/ct100506d">
                                 <img src="images/pdf.png" alt="PDF"/>
                             </a>
                         </td>
                         <td>
                             Schnieders, M. J.; Fenn, T. D.; Pande, V. S., Polarizable atomic multipole X-ray refinement: particle-mesh Ewald electrostatics for macromolecular crystals.
                             <i>Journal of Chemical Theory and Computation</i>
-                            <b>2011</b> (accepted).
+                            <b>2011</b>.
                         </td>
                         <td>
                             <a href="modules/potentials/index.html">Potentials</a>
@@ -43,20 +57,7 @@
                             <a href="modules/xray/index.html">X-Ray Refinement</a>
                         </td>
                     </tr>
-                    <tr>
-                        <td>
-                            <a href="">
-                                <img src="images/pdf.png" alt="PDF"/>
-                            </a>
-                        </td>
-                        <td>Fenn, T. D.; Schnieders, M. J.; Mustyakimov, M.; Wu, C.; Pande, V. S.; Langan, P.; Brunger, A. T., Reintroducing electrostatics into macromolecular crystallographic refinement: application to neutron crystallography and DNA hydration.
-                            <i>Structure</i>
-                            <b>2011</b> (accepted).
-                        </td>
-                        <td>
-                            <a href="modules/xray/index.html">X-Ray Refinement</a>
-                        </td>
-                    </tr>
+
                     <tr>
                         <td bgcolor="white">
                             <font color="blue">
