@@ -14,10 +14,28 @@
     <artifactId>autoparm</artifactId>
     <packaging>jar</packaging>
     <name>Automatic Parameterization</name>
+    <build>
+        <resources>
+            <resource>
+                <directory>${basedir}/src/main/java/ffx/autoparm/structures/12-ethanediol
+                </directory>
+                <targetPath>ffx/autoparm/structures/12-ethanediol</targetPath>
+                <includes>
+                    <include>*</include>
+                </includes>
+            </resource>
+        </resources>
+    </build>
     <dependencies>
         <dependency>
             <groupId>com.kenai.ffx</groupId>
             <artifactId>potentials</artifactId>
+            <version>1.0.0-alpha</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>com.kenai.ffx</groupId>
+            <artifactId>algorithms</artifactId>
             <version>${project.version}</version>
             <type>jar</type>
         </dependency>

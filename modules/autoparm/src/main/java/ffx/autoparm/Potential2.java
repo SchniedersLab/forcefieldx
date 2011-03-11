@@ -45,31 +45,34 @@ import ffx.numerics.LineSearch.LineSearchResult;
 public class Potential2 implements OptimizationListener {
 	private String info;
 	private ArrayList<Integer> ipgrid = new ArrayList<Integer>();
-	private double target_grid[][][];//nSymm, nAtoms, 4
-	private double pot_grid[][][];//nSymm, nAtoms, 4
-	private Atom atoms[];
+	public double target_grid[][][];//nSymm, nPoints, 4
+	private double pot_grid[][][];//nSymm, nPoints, 4
+	public Atom atoms[];
 	private int nAtoms;
 	private File structure_key;
 	private File structure_xyz;
-	private File structure_cube;
+	public File structure_cube;
 	private File structure_prm;
 	private MolecularAssembly molecularAssembly;
 	private ArrayList<String> key = new ArrayList<String>();
 	private ForceField forceField;
 	private Crystal crystal;
 	private int nSymm;
-	private double x[];
-	private double grad[];
-	private double scaling[];
+	public double x[];
+	public double grad[];
+	public double scaling[];
 	private boolean done = false;
 	private boolean terminate = false;
 	private long time;
-	private double grms;
-	private int nSteps;
-	private int nvars;
+	public double grms;
+	public int nSteps;
+	public int nvars;
 	private static final Logger logger = Logger.getLogger(Potential2.class.getName());
 	public static final double BOHR = 0.52917720859;
-	private PME_2 pme = null;
+	public PME_2 pme = null;
+        
+        
+        public double stats[] = new double[5];
 
 	InputStreamReader stdinput = new InputStreamReader(System.in);
 	BufferedReader stdreader = new BufferedReader(stdinput);
@@ -484,94 +487,97 @@ public class Potential2 implements OptimizationListener {
 		}
 	}
 	
-	public void output_keyfile(double[] mpoles, String outfname) throws IOException{
-		File outf = new File(outfname);
-		BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outf)));
-		int r = 0;
-		DecimalFormat myFormatter = new DecimalFormat(" ##########0.00000;-##########0.00000");
-    	ArrayList<Integer> types = new ArrayList<Integer>();
-    	int pos;
-    	int polelen = 10;
-    	//for traceless manipulations
-    	int a = 4, b = 5, c = 6;
-    	if(!pme.fitmpl){
-    		polelen = polelen - 1;
-    		a -= 1;
-    		b -= 1;
-    		c -= 1;
-    	}
-    	if(!pme.fitdpl){
-    		polelen = polelen - 3;
-    		a -= 3;
-    		b -= 3;
-    		c -= 3;
-    	}
-    	if(!pme.fitqdpl){
-    		polelen = polelen - 5;
-    	}
+    public void output_keyfile(double[] mpoles, String outfname) throws IOException {
+        File outf = new File(outfname);
+        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outf)));
+        int r = 0;
+        DecimalFormat myFormatter = new DecimalFormat(" ##########0.00000;-##########0.00000");
+        ArrayList<Integer> types = new ArrayList<Integer>();
+        for(int i = 0; i < mpoles.length; i++){
+            System.out.println(mpoles[i]);
+        }
+        int pos;
+        int polelen = 10;
+        //for traceless manipulations
+        int a = 4, b = 5, c = 6;
+        if (!pme.fitmpl) {
+            polelen = polelen - 1;
+            a -= 1;
+            b -= 1;
+            c -= 1;
+        }
+        if (!pme.fitdpl) {
+            polelen = polelen - 3;
+            a -= 3;
+            b -= 3;
+            c -= 3;
+        }
+        if (!pme.fitqdpl) {
+            polelen = polelen - 5;
+        }
 
-		//maintain traceless quadrupole at each multipole site
-    	if(pme.fitqdpl){
-    		double sum = 0;
-    		double big = 0;
-    		for(int i = 0; i < (mpoles.length)/polelen;i++){
-    			sum = mpoles[(i*polelen) + a] + mpoles[(i*polelen) + b] + mpoles[(i*polelen) + c];
-    			big = Math.max(Math.abs(mpoles[(i*polelen) + a]), Math.max(Math.abs(mpoles[(i*polelen) + b]), Math.abs(mpoles[(i*polelen) + c])));
-    			int k = 0;
-    			if(big == Math.abs(mpoles[(i*polelen) + a])) k = a;
-    			else if(big == Math.abs(mpoles[(i*polelen) + b])) k = b;
-    			else if(big == Math.abs(mpoles[(i*polelen) + c])) k = c;
-    			if(k != 0){
-    				mpoles[(i*polelen) + k] = mpoles[(i*polelen) + k] - sum;
-    			}
-    		}
-    	}
+        //maintain traceless quadrupole at each multipole site
+        if (pme.fitqdpl) {
+            double sum = 0;
+            double big = 0;
+            for (int i = 0; i < (mpoles.length) / polelen; i++) {
+                sum = mpoles[(i * polelen) + a] + mpoles[(i * polelen) + b] + mpoles[(i * polelen) + c];
+                big = Math.max(Math.abs(mpoles[(i * polelen) + a]), Math.max(Math.abs(mpoles[(i * polelen) + b]), Math.abs(mpoles[(i * polelen) + c])));
+                int k = 0;
+                if (big == Math.abs(mpoles[(i * polelen) + a])) {
+                    k = a;
+                } else if (big == Math.abs(mpoles[(i * polelen) + b])) {
+                    k = b;
+                } else if (big == Math.abs(mpoles[(i * polelen) + c])) {
+                    k = c;
+                }
+                if (k != 0) {
+                    mpoles[(i * polelen) + k] = mpoles[(i * polelen) + k] - sum;
+                }
+            }
+        }
 
-    	for(int i = 0; i < nAtoms; i++){
-    		Atom ai = atoms[i];
-			if(!types.contains(ai.getType())){
-				types.add(ai.getType());
-			}
-    	}
-    	
+        for (int i = 0; i < nAtoms; i++) {
+            Atom ai = atoms[i];
+            if (!types.contains(ai.getType())) {
+                types.add(ai.getType());
+            }
+        }
 
-		for(int i = 0; i < key.size(); i++){
-			if(!key.get(i).toUpperCase().contains("MULTIPOLE")){
-				bw.write(key.get(i)+"\n");
-			}
-			else if(key.get(i).toUpperCase().contains("MULTIPOLE")){
-				pos = types.indexOf(Integer.parseInt(key.get(i).trim().split(" +")[1]));
-				if(pme.fitmpl){
-					bw.write(key.get(i).trim().split(" +")[0]+"   "+key.get(i).trim().split(" +")[1]+"   "+key.get(i).trim().split(" +")[2]+"   "+key.get(i).trim().split(" +")[3]+"\t"+myFormatter.format(mpoles[pos*polelen + r])+"\n");
-					r = r + 1;
-				}
-				else{
-					bw.write(key.get(i)+"\n");
-				}
-				if(pme.fitdpl){
-					bw.write("                             \t\t\t\t"+myFormatter.format(mpoles[pos*polelen + r]/BOHR)+"   "+myFormatter.format(mpoles[pos*polelen + r+1]/BOHR)+"   "+myFormatter.format(mpoles[pos*polelen + r+2]/BOHR)+"\n");
-					r = r + 3;
-				}
-				else{
-					bw.write(key.get(i+1)+"\n");
-				}
-				if(pme.fitqdpl){
-					bw.write("                             \t\t\t\t"+myFormatter.format(mpoles[pos*polelen + r]/(BOHR*BOHR))+"\n");
-					bw.write("                             \t\t\t\t"+myFormatter.format(mpoles[pos*polelen + r+3]/(BOHR*BOHR))+"   "+myFormatter.format(mpoles[pos*polelen + r+1]/(BOHR*BOHR))+"\n");
-					bw.write("                            \t\t\t\t"+myFormatter.format(mpoles[pos*polelen + r+4]/(BOHR*BOHR))+"   "+myFormatter.format(mpoles[pos*polelen + r+5]/(BOHR*BOHR))+"   "+myFormatter.format(mpoles[pos*polelen + r+2]/(BOHR*BOHR))+"\n");
-					r = r + 6;
-				}
-				else{
-					bw.write(key.get(i+2)+"\n");
-					bw.write(key.get(i+3)+"\n");
-					bw.write(key.get(i+4)+"\n");
-				}
-				i = i + 4;
-				r = 0;
-			}
-		}
-		bw.close();
-		System.out.println("Keyfile written to "+outfname);
+
+        for (int i = 0; i < key.size(); i++) {
+            if (!key.get(i).toUpperCase().contains("MULTIPOLE")) {
+                bw.write(key.get(i) + "\n");
+            } else if (key.get(i).toUpperCase().contains("MULTIPOLE")) {
+                pos = types.indexOf(Integer.parseInt(key.get(i).trim().split(" +")[1]));
+                if (pme.fitmpl) {
+                    bw.write(key.get(i).trim().split(" +")[0] + "   " + key.get(i).trim().split(" +")[1] + "   " + key.get(i).trim().split(" +")[2] + "   " + key.get(i).trim().split(" +")[3] + "\t" + myFormatter.format(mpoles[pos * polelen + r]) + "\n");
+                    r = r + 1;
+                } else {
+                    bw.write(key.get(i) + "\n");
+                }
+                if (pme.fitdpl) {
+                    bw.write("                             \t\t\t\t" + myFormatter.format(mpoles[pos * polelen + r] / BOHR) + "   " + myFormatter.format(mpoles[pos * polelen + r + 1] / BOHR) + "   " + myFormatter.format(mpoles[pos * polelen + r + 2] / BOHR) + "\n");
+                    r = r + 3;
+                } else {
+                    bw.write(key.get(i + 1) + "\n");
+                }
+                if (pme.fitqdpl) {
+                    bw.write("                             \t\t\t\t" + myFormatter.format(mpoles[pos * polelen + r] / (BOHR * BOHR)) + "\n");
+                    bw.write("                             \t\t\t\t" + myFormatter.format(mpoles[pos * polelen + r + 3] / (BOHR * BOHR)) + "   " + myFormatter.format(mpoles[pos * polelen + r + 1] / (BOHR * BOHR)) + "\n");
+                    bw.write("                            \t\t\t\t" + myFormatter.format(mpoles[pos * polelen + r + 4] / (BOHR * BOHR)) + "   " + myFormatter.format(mpoles[pos * polelen + r + 5] / (BOHR * BOHR)) + "   " + myFormatter.format(mpoles[pos * polelen + r + 2] / (BOHR * BOHR)) + "\n");
+                    r = r + 6;
+                } else {
+                    bw.write(key.get(i + 2) + "\n");
+                    bw.write(key.get(i + 3) + "\n");
+                    bw.write(key.get(i + 4) + "\n");
+                }
+                i = i + 4;
+                r = 0;
+            }
+        }
+        bw.close();
+        System.out.println("Keyfile written to " + outfname);
 	}
 	
 	public void do_cube(String cfname) throws IOException{
@@ -891,7 +897,6 @@ public class Potential2 implements OptimizationListener {
 				}
 			}
 		}
-                System.out.println(grid.size());
 	}
 
 	public double[][] sphere(int ndot){
@@ -1008,6 +1013,11 @@ public class Potential2 implements OptimizationListener {
 		System.out.printf("Average Signed Potential Difference : \t\t %12.6g\n", tave);
 		System.out.printf("Average Unsigned Potential Difference : \t %12.6g\n", uave);
 		System.out.printf("Root Mean Square Potential Difference : \t %12.6g\n", avgrms);
+                stats[0] = a_pot;
+                stats[1] = a_target;
+                stats[2] = tave;
+                stats[3] = uave;
+                stats[4] = avgrms;
 	}
 	
     public double avgrms(){
@@ -1071,10 +1081,11 @@ public class Potential2 implements OptimizationListener {
 	}
 	
 	public static void main(String args[]) throws IOException{
-		Potential2 p1 = new Potential2(4, "/users/gchattree/Research/Compounds/test_compounds/phenobarbital-test/phenobarbital.xyz", null, .1);
+		//Potential2 p1 = new Potential2(4, "/users/gchattree/Research/Compounds/test_compounds/phenobarbital-test/phenobarbital.xyz", null, .1);
 		//Potential2 p2 = new Potential2(3, "/users/gchattree/Research/Compounds/test_compounds/phenobarbital-test/phenobarbital.xyz", null, null);
 		//Potential2 p1 = new Potential2(4, "/users/gchattree/Research/Compounds/test_compounds/12-ethanediol-poltypeffx/12-ethanediol.xyz", null, .1);
-		//Potential2 p2 = new Potential2(2, "/users/gchattree/Research/Compounds/test_compounds/12-ethanediol-test/12-ethanediol.xyz", null, null);
+		Potential2 p2 = new Potential2(3, "/users/gchattree/Research/Compounds/test_compounds/12-ethanediol-test/12-ethanediol.xyz", null, null);
+                //Potential2 p1 = new Potential2(4, "/users/gchattree/Research/Compounds/test_compounds/C6H5NH3+/C6H5NH3+.xyz", null, .1);
 	}
 }
 
