@@ -207,7 +207,7 @@ public class CrystalReciprocalSpaceTest {
 
         // -123.92850839573994 - 73.12241222985045i
         assertEquals("5 26 8 reflection should be correct",
-                -123.925850, a.re(), 0.001);
+                -123.928508, a.re(), 0.001);
         assertEquals("5 26 8 reflection should be correct",
                 -73.122412, a.im(), 0.001);
     }
