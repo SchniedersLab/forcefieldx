@@ -56,6 +56,7 @@ import ffx.numerics.Potential;
 
 import ffx.potential.ForceFieldEnergy;
 import ffx.autoparm.Potential2;
+import ffx.autoparm.Energy;
 import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.RendererCache.ColorModel;
@@ -139,7 +140,9 @@ public class ModelingShell extends Console implements AlgorithmListener {
 
         // Algorithms
         setVariable("energy", new MethodClosure(this, "energy"));
+        setVariable("analyze", new MethodClosure(this,"analyze"));
         setVariable("minimize", new MethodClosure(this, "minimize"));
+        setVariable("minimize_2", new MethodClosure(this, "minimize_2"));
         setVariable("md", new MethodClosure(this, "md"));
         setVariable("potential", new MethodClosure(this,"potential"));
 
@@ -240,6 +243,21 @@ public class ModelingShell extends Console implements AlgorithmListener {
         }
         return null;
     }
+    
+    public void analyze(String xyzfname){
+            	if (interrupted) {
+    		logger.info("Algorithm interrupted - skipping minimization.");
+    	}
+    	if ( terminatableAlgorithm != null ) {
+    		logger.info("Algorithm already running - skipping minimization.");
+    	}
+    	try {
+            Energy e = new Energy(xyzfname);
+            e.energy(false, true);
+    	} catch (IOException e) {
+    		e.printStackTrace();
+    	}
+    }
 
     public Potential minimize(double eps) {
         if (interrupted) {
@@ -262,6 +280,22 @@ public class ModelingShell extends Console implements AlgorithmListener {
         }
         return null;
     }
+    
+//    public Potential minimize_2(double eps){
+//        if (interrupted) {
+//            logger.info("Algorithm interrupted - skipping minimization.");
+//            return null;
+//        }
+//        if (terminatableAlgorithm != null) {
+//            logger.info("Algorithm already running - skipping minimization.");
+//            return null;
+//        }
+//        Minimize_2 minimize = new Minimize_2(this);
+//        terminatableAlgorithm = minimize;
+//        Potential potential = minimize.minimize(eps);
+//        terminatableAlgorithm = null;
+//        return potential;
+//    }
 
     public void md(int nStep, double timeStep, double printInterval,
                    double saveInterval, double temperature, boolean initVelocities,
