@@ -29,7 +29,6 @@ package ffx.numerics;
  */
 public class TriCubicSpline {
 
-    private final double nx, ny, nz;
     private double p[] = new double[4];
     private double q[] = new double[4];
     private double r[] = new double[4];
@@ -56,15 +55,8 @@ public class TriCubicSpline {
 
     /**
      * initialize Spline function
-     *
-     * @param nx number of slices in X
-     * @param ny number of slices in Y
-     * @param nz number of slices in Z
      */
-    public TriCubicSpline(double nx, double ny, double nz) {
-        this.nx = nx;
-        this.ny = ny;
-        this.nz = nz;
+    public TriCubicSpline() {
     }
 
     /**
@@ -129,9 +121,6 @@ public class TriCubicSpline {
                 }
             }
         }
-        gx *= nx;
-        gy *= ny;
-        gz *= nz;
 
         if (g != null) {
             g[0] = gx;

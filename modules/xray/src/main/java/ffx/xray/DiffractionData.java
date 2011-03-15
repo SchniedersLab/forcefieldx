@@ -72,6 +72,7 @@ public class DiffractionData implements DataContainer {
     public int rfreeflag;
     public final double fsigfcutoff;
     public final boolean use_3g;
+    public final double aradbuff;
     public final double xrayscaletol;
     public final double sigmaatol;
     public final double xweight;
@@ -208,6 +209,7 @@ public class DiffractionData implements DataContainer {
         gridsearch = properties.getBoolean("gridsearch", false);
         splinefit = properties.getBoolean("splinefit", true);
         use_3g = properties.getBoolean("use_3g", true);
+        aradbuff = properties.getDouble("aradbuff", 0.5);
         xrayscaletol = properties.getDouble("xrayscaletol", 1e-4);
         sigmaatol = properties.getDouble("sigmaatol", 1.0);
         xweight = properties.getDouble("xweight", 1.0);
@@ -266,6 +268,7 @@ public class DiffractionData implements DataContainer {
             StringBuilder sb = new StringBuilder();
             sb.append("\nRefinement data settings:\n");
             sb.append("  using cctbx 3 Gaussians (use_3g): " + use_3g + "\n");
+            sb.append("  atomic form factor radius buffer (aradbuff): " + aradbuff + "\n");
             sb.append("  resolution dependent spline scale (splinefit): " + splinefit + "\n");
             sb.append("  F/sigF cutoff (fsigfcutoff): " + fsigfcutoff + "\n");
             sb.append("  R Free flag (rfreeflag) (if -1, value will be updated when data is read in): " + rflag + "\n");
@@ -313,7 +316,7 @@ public class DiffractionData implements DataContainer {
                 } else if (rho > 0.001) {
                     arad += 0.1;
                 } else {
-                    arad += 0.2;
+                    arad += aradbuff;
                     a.setFormFactorWidth(arad);
                     break;
                 }

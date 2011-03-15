@@ -178,6 +178,80 @@ public class CIFFilter implements DiffractionFileFilter {
         return reflectionlist;
     }
 
+    public double getResolution(File cifFile, Crystal crystal) {
+        double res = Double.POSITIVE_INFINITY;
+
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(cifFile));
+
+            String str;
+            int ncol = 0;
+            boolean inhkl = false;
+            while ((str = br.readLine()) != null) {
+                String strarray[] = str.split("\\s+");
+
+                if (strarray[0].startsWith("_refln.")) {
+                    inhkl = true;
+                    br.mark(0);
+                    String cifarray[] = strarray[0].split("\\.+");
+                    switch (Header.toHeader(cifarray[1])) {
+                        case index_h:
+                            h = ncol;
+                            break;
+                        case index_k:
+                            k = ncol;
+                            break;
+                        case index_l:
+                            l = ncol;
+                            break;
+                    }
+
+                    ncol++;
+                } else if (inhkl) {
+                    if (h < 0 || k < 0 || l < 0) {
+                        String message = "Fatal error in CIF file - no H K L indexes?\n";
+                        logger.log(Level.SEVERE, message);
+                        return -1.0;
+                    }
+                    break;
+                }
+            }
+
+            // go back to where the reflections start
+            br.reset();
+            HKL hkl = new HKL();
+            while ((str = br.readLine()) != null) {
+                // reached end, break
+                if (str.trim().startsWith("#END")) {
+                    break;
+                } else if (str.trim().startsWith("#")) {
+                    continue;
+                }
+
+                String strarray[] = str.trim().split("\\s+");
+                // some files split data on to multiple lines
+                while (strarray.length < ncol) {
+                    str = str + " " + br.readLine();
+                    strarray = str.trim().split("\\s+");
+                }
+
+                int ih = Integer.parseInt(strarray[h]);
+                int ik = Integer.parseInt(strarray[k]);
+                int il = Integer.parseInt(strarray[l]);
+
+                hkl.h(ih);
+                hkl.k(ik);
+                hkl.l(il);
+                res = Math.min(res, Crystal.res(crystal, hkl));
+            }
+        } catch (IOException ioe) {
+            System.out.println("IO Exception: " + ioe.getMessage());
+            return -1.0;
+        }
+
+        return res;
+    }
+
     @Override
     public boolean readFile(File cifFile, ReflectionList reflectionlist,
             DiffractionRefinementData refinementdata, CompositeConfiguration properties) {

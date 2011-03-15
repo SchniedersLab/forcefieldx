@@ -33,6 +33,7 @@ import ffx.algorithms.Thermostat.Thermostats;
 import ffx.numerics.Potential;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.parsers.DYNFilter;
+import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.XYZFilter;
 
 /**
@@ -65,8 +66,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
     private Thermostat thermostat;
     private File archiveFile = null;
     private File dynFile = null;
+    private File pdbFile = null;
     private XYZFilter xyzFilter = null;
     private DYNFilter dynFilter = null;
+    private PDBFilter pdbFilter = null;
     private boolean done;
     private boolean terminate;
     private int nSteps = 1000;
@@ -189,6 +192,11 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
             if (dynFilter == null) {
                 dynFilter = new DYNFilter(molecularAssembly);
+            }
+
+            if (pdbFilter == null) {
+                pdbFile = new File(filename + "_dyn.pdb");
+                pdbFilter = new PDBFilter(new File(filename + "_dyn.pdb"), molecularAssembly, null, null);
             }
         }
 
@@ -354,6 +362,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
                     logger.info(String.format(" Wrote restart file to " + dynFile.getName()));
                 } else {
                     logger.info(String.format(" Writing restart file to " + dynFile.getName() + " failed"));
+                }
+                if (pdbFilter.writeFile(pdbFile, false)) {
+                    logger.info(String.format(" Wrote PDB file to " + pdbFile.getName()));
                 }
             }
 
