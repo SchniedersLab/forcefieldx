@@ -25,6 +25,7 @@ import static java.lang.Math.exp;
 import static java.lang.Math.pow;
 import static java.lang.Math.sqrt;
 
+import ffx.numerics.VectorMath;
 import static ffx.numerics.VectorMath.determinant3;
 import static ffx.numerics.VectorMath.diff;
 import static ffx.numerics.VectorMath.dot;
@@ -32,7 +33,6 @@ import static ffx.numerics.VectorMath.mat3inverse;
 import static ffx.numerics.VectorMath.mat3mat3;
 import static ffx.numerics.VectorMath.scalarmat3mat3;
 import static ffx.numerics.VectorMath.vec3mat3;
-import static ffx.numerics.VectorMath.rsq;
 import static ffx.numerics.VectorMath.b2u;
 import static ffx.numerics.VectorMath.u2b;
 
@@ -784,7 +784,12 @@ public final class XRayFormFactor implements FormFactor {
     public double rho_n(double f, double xyz[], int ng) {
         assert (ng > 0 && ng <= n);
         diff(this.xyz, xyz, dxyz);
+        double r = VectorMath.r(dxyz);
         double sum = 0.0;
+
+        if (r > atom.getFormFactorWidth()){
+            return f;
+        }
 
         for (int i = 0; i < ng; i++) {
             sum += ainv[i] * exp(-0.5 * Crystal.quad_form(dxyz, uinv[i]));
@@ -800,11 +805,16 @@ public final class XRayFormFactor implements FormFactor {
     public void rho_grad_n(double xyz[], int ng, double dfc, RefinementMode refinementmode) {
         assert (ng > 0 && ng <= n);
         diff(this.xyz, xyz, dxyz);
-        double r2 = rsq(dxyz);
+        double r = VectorMath.r(dxyz);
+        double r2 = r * r;
         double aex;
         double rho;
         Arrays.fill(gradp, 0.0);
         Arrays.fill(gradu, 0.0);
+
+        if (r > atom.getFormFactorWidth()){
+            return;
+        }
 
         boolean refinexyz = false;
         boolean refineb = false;

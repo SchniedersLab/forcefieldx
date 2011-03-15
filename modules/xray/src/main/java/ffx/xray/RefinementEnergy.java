@@ -23,6 +23,7 @@ package ffx.xray;
 import static ffx.numerics.VectorMath.b2u;
 
 import ffx.algorithms.AlgorithmListener;
+import ffx.algorithms.Thermostat;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Atom;
@@ -54,6 +55,7 @@ public class RefinementEnergy implements Potential, AlgorithmListener {
     private final int nAtoms;
     private final List<Integer> xindex[];
     protected Potential dataEnergy;
+    protected Thermostat thermostat;
     private RefinementMode refinementMode;
     protected int nxyz;
     protected int nb;
@@ -93,6 +95,7 @@ public class RefinementEnergy implements Potential, AlgorithmListener {
         this.weight = data.getWeight();
         this.refinementMode = refinementmode;
         this.optimizationScaling = scaling;
+        this.thermostat = null;
 
         // determine size of fit
         n = nxyz = nb = nocc = 0;
@@ -192,7 +195,7 @@ public class RefinementEnergy implements Potential, AlgorithmListener {
             dataEnergy = new XRayEnergy(diffractiondata, nxyz, nb, nocc,
                     refinementMode);
             dataEnergy.setScaling(null);
-        } else if (data instanceof RealSpaceData){
+        } else if (data instanceof RealSpaceData) {
             RealSpaceData realspacedata = (RealSpaceData) data;
             dataEnergy = new RealSpaceEnergy(realspacedata, nxyz, 0, 0,
                     refinementMode);
@@ -221,6 +224,11 @@ public class RefinementEnergy implements Potential, AlgorithmListener {
         double e = 0.0;
         Arrays.fill(g, 0.0);
 
+        double ktscale = 1.0;
+        if (thermostat != null) {
+            ktscale = 1.0 / (thermostat.getCurrentTemperture() * Thermostat.kB);
+        }
+
         if (optimizationScaling != null) {
             int len = x.length;
             for (int i = 0; i < len; i++) {
@@ -239,11 +247,15 @@ public class RefinementEnergy implements Potential, AlgorithmListener {
                     e += (curE - e) / (i + 1);
                     setAssemblyi(i, g, gChemical[i]);
                 }
+                e *= ktscale;
                 // normalize gradients for multiple-counted atoms
                 if (assemblysize > 1) {
                     for (int i = 0; i < nxyz; i++) {
                         g[i] /= assemblysize;
                     }
+                }
+                for (int i = 0; i < nxyz; i++) {
+                    g[i] *= ktscale;
                 }
 
                 // Compute the X-ray target energy and gradient.
@@ -411,8 +423,23 @@ public class RefinementEnergy implements Potential, AlgorithmListener {
 
     @Override
     public boolean algorithmUpdate(MolecularAssembly active) {
+        double ktscale = 1.0;
+        if (thermostat != null) {
+            ktscale = 1.0 / (thermostat.getCurrentTemperture() * Thermostat.kB);
+        }
+        logger.info("kTscale: " + ktscale);
         logger.info(data.printEnergyUpdate());
 
         return true;
+    }
+
+    // this should probably be part of the potential class
+    public void setThermostat(Thermostat thermostat) {
+        this.thermostat = thermostat;
+    }
+
+    // this should probably be part of the potential class
+    public Thermostat getThermostat() {
+        return thermostat;
     }
 }

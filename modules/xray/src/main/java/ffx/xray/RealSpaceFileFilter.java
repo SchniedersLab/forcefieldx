@@ -32,7 +32,7 @@ public interface RealSpaceFileFilter {
 
     Crystal getCrystal(String filename, CompositeConfiguration properties);
 
-    /*
+    /**
      * read in Real Space file
      *
      * @param filename file to read in

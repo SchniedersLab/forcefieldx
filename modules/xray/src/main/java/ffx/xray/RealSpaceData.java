@@ -49,17 +49,42 @@ public class RealSpaceData implements DataContainer {
     // settings
     public final double xweight;
 
+    /**
+     * construct a real space data assembly, assumes a real space map with a
+     * weight of 1.0 using the same name as the molecular assembly
+     *
+     * @param assembly {@link ffx.potential.bonded.MolecularAssembly molecular assembly}
+     * object, used as the atomic model for comparison against the data
+     * @param properties system properties file
+     */
     public RealSpaceData(MolecularAssembly assembly,
             CompositeConfiguration properties) {
         this(new MolecularAssembly[]{assembly}, properties,
                 new RealSpaceFile(assembly));
     }
 
+    /**
+     * construct a real space data assembly
+     *
+     * @param assembly {@link ffx.potential.bonded.MolecularAssembly molecular assembly}
+     * object, used as the atomic model for comparison against the data
+     * @param properties system properties file
+     * @param datafile one or more {@link RealSpaceFile} to be refined against
+     */
     public RealSpaceData(MolecularAssembly assembly,
             CompositeConfiguration properties, RealSpaceFile... datafile) {
         this(new MolecularAssembly[]{assembly}, properties, datafile);
     }
 
+    /**
+     * construct a real space data assembly
+     *
+     * @param assembly {@link ffx.potential.bonded.MolecularAssembly molecular assembly}
+     * object array (typically containing alternate conformer assemblies), used
+     * as the atomic model for comparison against the data
+     * @param properties system properties file
+     * @param datafile one or more {@link RealSpaceFile} to be refined against
+     */
     public RealSpaceData(MolecularAssembly assembly[],
             CompositeConfiguration properties, RealSpaceFile... datafile) {
 
@@ -119,8 +144,7 @@ public class RealSpaceData implements DataContainer {
         double sum;
         for (int i = 0; i < n; i++) {
             sum = 0.0;
-            TriCubicSpline spline = new TriCubicSpline(refinementdata[i].ni[0],
-                    refinementdata[i].ni[1], refinementdata[i].ni[2]);
+            TriCubicSpline spline = new TriCubicSpline();
             for (Atom a : refinementmodel.atomarray) {
                 a.getXYZ(xyz);
                 a.setXYZGradient(0.0, 0.0, 0.0);
@@ -166,9 +190,9 @@ public class RealSpaceData implements DataContainer {
                 double scale = -1.0 * dataname[i].weight * a.getAtomType().atomicWeight;
                 double val = spline.spline(dfrx, dfry, dfrz, scalar, grad);
                 sum += scale * val;
-                grad[0] /= crystal[i].a;
-                grad[1] /= crystal[i].b;
-                grad[2] /= crystal[i].c;
+                grad[0] = grad[0] * refinementdata[i].ni[0] / crystal[i].a;
+                grad[1] = grad[1] * refinementdata[i].ni[1] / crystal[i].b;
+                grad[2] = grad[2] * refinementdata[i].ni[2] / crystal[i].c;
                 a.addToXYZGradient(scale * grad[0], scale * grad[1], scale * grad[2]);
             }
             refinementdata[i].densityscore = sum;
