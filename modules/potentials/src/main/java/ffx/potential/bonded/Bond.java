@@ -151,10 +151,10 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
             atoms[0] = a2;
             atoms[1] = a1;
         }
-        a1.setBond(this);
-        a2.setBond(this);
         setID_Key(false);
         viewModel = RendererCache.ViewModel.WIREFRAME;
+        a1.setBond(this);
+        a2.setBond(this);
     }
 
     /**

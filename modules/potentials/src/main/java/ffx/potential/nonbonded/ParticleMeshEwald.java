@@ -472,13 +472,16 @@ public class ParticleMeshEwald implements LambdaInterface {
          * instance even if the real space calculations require
          * a ReplicatesCrystal.
          */
-        reciprocalSpace = new ReciprocalSpace(crystal.getUnitCell(), forceField,
-                                              coordinates, atoms, aewald, fftTeam, parallelTeam);
+        if (aewald >= 0.0) {
+            reciprocalSpace = new ReciprocalSpace(crystal.getUnitCell(), forceField,
+                                                  coordinates, atoms, aewald, fftTeam, parallelTeam);
+        } else {
+            reciprocalSpace = null;
+        }
         permanentFieldRegion = new PermanentFieldRegion(realSpaceTeam);
         inducedDipoleFieldRegion = new InducedDipoleFieldRegion(realSpaceTeam);
         realSpaceEnergyRegion = new RealSpaceEnergyRegion(maxThreads);
         torqueRegion = new TorqueRegion(maxThreads);
-
         /**
          * Generalized Kirkwood currently requires aperiodic Ewald. The GK
          * reaction field is added to the intra-molecular to give a
@@ -613,13 +616,15 @@ public class ParticleMeshEwald implements LambdaInterface {
             parallelTeam.execute(expandCoordinatesRegion);
             parallelTeam.execute(rotateMultipolesRegion);
 
-            bsplineTime = -System.nanoTime();
-            reciprocalSpace.computeBSplines();
-            bsplineTime += System.nanoTime();
+            if (aewald > 0.0) {
+                bsplineTime = -System.nanoTime();
+                reciprocalSpace.computeBSplines();
+                bsplineTime += System.nanoTime();
 
-            densityTime = -System.nanoTime();
-            reciprocalSpace.computePermanentDensity(globalMultipole);
-            densityTime += System.nanoTime();
+                densityTime = -System.nanoTime();
+                reciprocalSpace.computePermanentDensity(globalMultipole);
+                densityTime += System.nanoTime();
+            }
             /**
              * Here the real space contribution to the field is calculated at
              * the same time the reciprocal space convolution is being done.
@@ -628,9 +633,11 @@ public class ParticleMeshEwald implements LambdaInterface {
             sectionTeam.execute(permanentFieldRegion);
             realAndFFTTime += System.nanoTime();
 
-            phiTime = -System.nanoTime();
-            reciprocalSpace.computePermanentPhi(cartesianMultipolePhi);
-            phiTime += System.nanoTime();
+            if (aewald > 0.0) {
+                phiTime = -System.nanoTime();
+                reciprocalSpace.computePermanentPhi(cartesianMultipolePhi);
+                phiTime += System.nanoTime();
+            }
         } catch (Exception e) {
             String message = "Fatal exception computing the permanent multipole field.\n";
             logger.log(Level.SEVERE, message, e);
@@ -716,7 +723,7 @@ public class ParticleMeshEwald implements LambdaInterface {
             gkEnergy = generalizedKirkwood.solvationEnergy(gradient, print);
             gkInteractions = generalizedKirkwood.getInteractions();
             gkTime += System.nanoTime();
-            logger.info(String.format(" Computed GK energy %8.3f (sec)", gkTime*1.0e-9));
+            logger.info(String.format(" Computed GK energy %8.3f (sec)", gkTime * 1.0e-9));
         }
 
         // Add electrostatic gradient to total atomic gradient.
@@ -812,15 +819,17 @@ public class ParticleMeshEwald implements LambdaInterface {
                 double fieldCRi[] = fieldCR[i];
                 double mpolei[] = globalMultipole[0][i];
                 double phii[] = cartesianMultipolePhi[i];
-                double fx = aewald3 * mpolei[t100] - phii[t100];
-                double fy = aewald3 * mpolei[t010] - phii[t010];
-                double fz = aewald3 * mpolei[t001] - phii[t001];
-                fieldi[0] += fx;
-                fieldi[1] += fy;
-                fieldi[2] += fz;
-                fieldCRi[0] += fx;
-                fieldCRi[1] += fy;
-                fieldCRi[2] += fz;
+                if (aewald > 0.0) {
+                    double fx = aewald3 * mpolei[t100] - phii[t100];
+                    double fy = aewald3 * mpolei[t010] - phii[t010];
+                    double fz = aewald3 * mpolei[t001] - phii[t001];
+                    fieldi[0] += fx;
+                    fieldi[1] += fy;
+                    fieldi[2] += fz;
+                    fieldCRi[0] += fx;
+                    fieldCRi[1] += fy;
+                    fieldCRi[2] += fz;
+                }
             }
         } else {
             /**
@@ -830,16 +839,21 @@ public class ParticleMeshEwald implements LambdaInterface {
             gkTime = -System.nanoTime();
             generalizedKirkwood.computePermanentGKField();
             gkTime += System.nanoTime();
-            logger.fine(String.format(" Computed GK permanent field %8.3f (sec)", gkTime*1.0e-9));
+            logger.fine(String.format(" Computed GK permanent field %8.3f (sec)", gkTime * 1.0e-9));
             SharedDoubleArray gkField[] = generalizedKirkwood.sharedGKField;
             for (int i = 0; i < nAtoms; i++) {
                 double fieldi[] = field[i];
                 double fieldCRi[] = fieldCR[i];
                 double mpolei[] = globalMultipole[0][i];
                 double phii[] = cartesianMultipolePhi[i];
-                double fx = aewald3 * mpolei[t100] - phii[t100] + gkField[0].get(i);
-                double fy = aewald3 * mpolei[t010] - phii[t010] + gkField[1].get(i);
-                double fz = aewald3 * mpolei[t001] - phii[t001] + gkField[2].get(i);
+                double fx = gkField[0].get(i);
+                double fy = gkField[1].get(i);
+                double fz = gkField[2].get(i);
+                if (aewald > 0.0) {
+                    fx += aewald3 * mpolei[t100] - phii[t100];
+                    fy += aewald3 * mpolei[t010] - phii[t010];
+                    fz += aewald3 * mpolei[t001] - phii[t001];
+                }
                 fieldi[0] += fx;
                 fieldi[1] += fy;
                 fieldi[2] += fz;
@@ -902,17 +916,21 @@ public class ParticleMeshEwald implements LambdaInterface {
                  * Find the induced dipole field.
                  */
                 try {
-                    densityTime -= System.nanoTime();
-                    reciprocalSpace.computeInducedDensity(inducedDipole, inducedDipoleCR);
-                    densityTime += System.nanoTime();
+                    if (aewald > 0.0) {
+                        densityTime -= System.nanoTime();
+                        reciprocalSpace.computeInducedDensity(inducedDipole, inducedDipoleCR);
+                        densityTime += System.nanoTime();
+                    }
 
                     realAndFFTTime -= System.nanoTime();
                     sectionTeam.execute(inducedDipoleFieldRegion);
                     realAndFFTTime += System.nanoTime();
 
-                    phiTime -= System.nanoTime();
-                    reciprocalSpace.computeInducedPhi(cartesianDipolePhi, cartesianDipolePhiCR);
-                    phiTime += System.nanoTime();
+                    if (aewald > 0.0) {
+                        phiTime -= System.nanoTime();
+                        reciprocalSpace.computeInducedPhi(cartesianDipolePhi, cartesianDipolePhiCR);
+                        phiTime += System.nanoTime();
+                    }
                 } catch (Exception e) {
                     String message = "Fatal exception computing the induced dipole field.\n";
                     logger.log(Level.SEVERE, message, e);
@@ -930,18 +948,20 @@ public class ParticleMeshEwald implements LambdaInterface {
                         double dipolepi[] = inducedCR0[i];
                         final double phii[] = cartesianDipolePhi[i];
                         final double phipi[] = cartesianDipolePhiCR[i];
-                        fieldi[0] += aewald3 * dipolei[0];
-                        fieldi[1] += aewald3 * dipolei[1];
-                        fieldi[2] += aewald3 * dipolei[2];
-                        fieldi[0] -= phii[t100];
-                        fieldi[1] -= phii[t010];
-                        fieldi[2] -= phii[t001];
-                        fieldpi[0] += aewald3 * dipolepi[0];
-                        fieldpi[1] += aewald3 * dipolepi[1];
-                        fieldpi[2] += aewald3 * dipolepi[2];
-                        fieldpi[0] -= phipi[t100];
-                        fieldpi[1] -= phipi[t010];
-                        fieldpi[2] -= phipi[t001];
+                        if (aewald > 0.0) {
+                            fieldi[0] += aewald3 * dipolei[0];
+                            fieldi[1] += aewald3 * dipolei[1];
+                            fieldi[2] += aewald3 * dipolei[2];
+                            fieldi[0] -= phii[t100];
+                            fieldi[1] -= phii[t010];
+                            fieldi[2] -= phii[t001];
+                            fieldpi[0] += aewald3 * dipolepi[0];
+                            fieldpi[1] += aewald3 * dipolepi[1];
+                            fieldpi[2] += aewald3 * dipolepi[2];
+                            fieldpi[0] -= phipi[t100];
+                            fieldpi[1] -= phipi[t010];
+                            fieldpi[2] -= phipi[t001];
+                        }
                     }
                 } else {
                     /**
@@ -951,7 +971,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                     long gkTime = -System.nanoTime();
                     generalizedKirkwood.computeInducedGKField();
                     gkTime += System.nanoTime();
-                    logger.fine(String.format(" Computed GK induced field %8.3f (sec)", gkTime*1.0e-9));
+                    logger.fine(String.format(" Computed GK induced field %8.3f (sec)", gkTime * 1.0e-9));
 
                     SharedDoubleArray gkField[] = generalizedKirkwood.sharedGKField;
                     SharedDoubleArray gkFieldCR[] = generalizedKirkwood.sharedGKFieldCR;
@@ -966,18 +986,26 @@ public class ParticleMeshEwald implements LambdaInterface {
                         double dipoleCRi[] = inducedCR0[i];
                         final double phii[] = cartesianDipolePhi[i];
                         final double phiCRi[] = cartesianDipolePhiCR[i];
-                        fieldi[0] += aewald3 * dipolei[0] + gkField[0].get(i);
-                        fieldi[1] += aewald3 * dipolei[1] + gkField[1].get(i);
-                        fieldi[2] += aewald3 * dipolei[2] + gkField[2].get(i);
-                        fieldi[0] -= phii[t100];
-                        fieldi[1] -= phii[t010];
-                        fieldi[2] -= phii[t001];
-                        fieldCRi[0] += aewald3 * dipoleCRi[0] + gkFieldCR[0].get(i);
-                        fieldCRi[1] += aewald3 * dipoleCRi[1] + gkFieldCR[1].get(i);
-                        fieldCRi[2] += aewald3 * dipoleCRi[2] + gkFieldCR[2].get(i);
-                        fieldCRi[0] -= phiCRi[t100];
-                        fieldCRi[1] -= phiCRi[t010];
-                        fieldCRi[2] -= phiCRi[t001];
+                        fieldi[0] += gkField[0].get(i);
+                        fieldi[1] += gkField[1].get(i);
+                        fieldi[2] += gkField[2].get(i);
+                        fieldCRi[0] += gkFieldCR[0].get(i);
+                        fieldCRi[1] += gkFieldCR[1].get(i);
+                        fieldCRi[2] += gkFieldCR[2].get(i);
+                        if (aewald > 0.0) {
+                            fieldi[0] += aewald3 * dipolei[0];
+                            fieldi[1] += aewald3 * dipolei[1];
+                            fieldi[2] += aewald3 * dipolei[2];
+                            fieldi[0] -= phii[t100];
+                            fieldi[1] -= phii[t010];
+                            fieldi[2] -= phii[t001];
+                            fieldCRi[0] += aewald3 * dipoleCRi[0];
+                            fieldCRi[1] += aewald3 * dipoleCRi[1];
+                            fieldCRi[2] += aewald3 * dipoleCRi[2];
+                            fieldCRi[0] -= phiCRi[t100];
+                            fieldCRi[1] -= phiCRi[t010];
+                            fieldCRi[2] -= phiCRi[t001];
+                        }
                     }
                 }
 
@@ -1056,19 +1084,23 @@ public class ParticleMeshEwald implements LambdaInterface {
 
         /*
         if (false) {
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < nAtoms; i++) {
-                sb.append(format(
-                        " Induced Dipole  %d %15.8f %15.8f %15.8f\n", i + 1,
-                        MultipoleType.DEBYE * inducedDipole[0][i][0],
-                        MultipoleType.DEBYE * inducedDipole[0][i][1],
-                        MultipoleType.DEBYE * inducedDipole[0][i][2]));
-            }
-            logger.info(sb.toString());
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < nAtoms; i++) {
+        sb.append(format(
+        " Induced Dipole  %d %15.8f %15.8f %15.8f\n", i + 1,
+        MultipoleType.DEBYE * inducedDipole[0][i][0],
+        MultipoleType.DEBYE * inducedDipole[0][i][1],
+        MultipoleType.DEBYE * inducedDipole[0][i][2]));
+        }
+        logger.info(sb.toString());
         } */
     }
 
     private double permanentSelfEnergy() {
+        if (aewald <= 0.0) {
+            return 0.0;
+        }
+
         double e = 0.0;
         double term = 2.0 * aewald * aewald;
         double fterm = -ELECTRIC * aewald / sqrtPi;
@@ -1147,7 +1179,9 @@ public class ParticleMeshEwald implements LambdaInterface {
 
         @Override
         public void run() {
-            reciprocalSpace.computePermanentConvolution();
+            if (aewald > 0.0) {
+                reciprocalSpace.computePermanentConvolution();
+            }
         }
     }
 
@@ -1208,11 +1242,18 @@ public class ParticleMeshEwald implements LambdaInterface {
 
         @Override
         public void run() {
-            reciprocalSpace.computeInducedConvolution();
+            if (aewald > 0.0) {
+                reciprocalSpace.computeInducedConvolution();
+            }
         }
     }
 
     private double permanentReciprocalSpaceEnergy(boolean gradient) {
+
+        if (aewald <= 0.0) {
+            return 0.0;
+        }
+
         double erecip = 0.0;
         final double pole[][] = globalMultipole[0];
         final double fpole[][] = reciprocalSpace.getFractionalMultipoles();
@@ -1298,6 +1339,10 @@ public class ParticleMeshEwald implements LambdaInterface {
     }
 
     private double inducedDipoleReciprocalSpaceEnergy(boolean gradient) {
+        if (aewald <= 0.0) {
+            return 0.0;
+        }
+
         double e = 0.0;
         if (gradient && polarization == Polarization.DIRECT) {
             try {
