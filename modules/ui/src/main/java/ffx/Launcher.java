@@ -40,7 +40,7 @@ import java.util.List;
 public class Launcher {
 
     public static void main(String[] args) throws MalformedURLException, IllegalAccessException,
-                                                  InvocationTargetException, NoSuchMethodException, ClassNotFoundException {
+            InvocationTargetException, NoSuchMethodException, ClassNotFoundException {
         Class ffxBootstrapClass = Launcher.class;
 
         List<String> ffxFiles = new ArrayList<String>(Arrays.asList(new String[]{
@@ -62,10 +62,6 @@ public class Launcher {
                     "net.java.dev.jogl/jogl.jar",
                     "net.java.dev.jogl/gluegen-rt.jar",
                     "net.java.dev.jogl/jocl.jar",
-                    "jogl/libgluegen-rt.jnilib",
-                    "jogl/libjogl.jnilib",
-                    "jogl/libjogl_awt.jnilib",
-                    "jogl/libjogl_cg.jnilib",
                     "commons-beanutils/commons-beanutils.jar",
                     "commons-collections/commons-collections.jar",
                     "commons-configuration/commons-configuration.jar",
@@ -81,46 +77,75 @@ public class Launcher {
                     "junit/junit.jar",
                     "jline/jline.jar"
                 }));
-        if ("64".equals(System.getProperty("sun.arch.data.model"))) {
-            // Linux 64-bit
-            ffxFiles.add("jogl-64/libgluegen-rt.so");
-            ffxFiles.add("jogl-64/libjogl.so");
-            ffxFiles.add("jogl-64/libjogl_awt.so");
-            ffxFiles.add("jogl-64/libjogl_cg.so");
-            // Windows 64-bit
-            ffxFiles.add("jogl-64/gluegen-rt.dll");
-            ffxFiles.add("jogl-64/jogl.dll");
-            ffxFiles.add("jogl-64/jogl_awt.dll");
-            ffxFiles.add("jogl-64/jogl_cg.dll");
-        } else {
-            // Linux 32-bit
-            ffxFiles.add("jogl-32/libgluegen-rt.so");
-            ffxFiles.add("jogl-32/libjogl.so");
-            ffxFiles.add("jogl-32/libjogl_awt.so");
-            ffxFiles.add("jogl-32/libjogl_cg.so");
-            // Windows 32-bit
-            ffxFiles.add("jogl-32/gluegen-rt.dll");
-            ffxFiles.add("jogl-32/jogl.dll");
-            ffxFiles.add("jogl-32/jogl_awt.dll");
-            ffxFiles.add("jogl-32/jogl_cg.dll");
+        String osName = System.getProperty("os.name").toUpperCase();
+        String osArch = System.getProperty("os.arch").toUpperCase();
+        boolean x86_64 = "64".equals(System.getProperty("sun.arch.data.model"));
+        if ("MAC OS X".equals(osName)) {
+            // Mac OS X JOGL Universal Binaries
+            ffxFiles.add("jogl/libgluegen-rt.jnilib");
+            ffxFiles.add("jogl/libjogl.jnilib");
+            ffxFiles.add("jogl/libjogl_awt.jnilib");
+            ffxFiles.add("jogl/libjogl_cg.jnilib");
+            if (x86_64) {
+                // Mac OS X Jcuda 64-bit Binaries
+                ffxFiles.add("jcuda-64/libJCudaDriver-apple-x86_64.jnilib");
+                ffxFiles.add("jcuda-64/libJCudaRuntime-apple-x86_64.jnilib");
+                ffxFiles.add("jcuda-64/libJCufft-apple-x86_64.jnilib");
+            }
+        } else if ("LINUX".equals(osName)) {
+            if (x86_64) {
+                ffxFiles.add("jogl-64/libgluegen-rt.so");
+                ffxFiles.add("jogl-64/libjogl.so");
+                ffxFiles.add("jogl-64/libjogl_awt.so");
+                ffxFiles.add("jogl-64/libjogl_cg.so");
+                if ("X86_64".equals(osArch)) {
+                    ffxFiles.add("jcuda-64/libJCudaDriver-apple-x86_64.so");
+                    ffxFiles.add("jcuda-64/libJCudaRuntime-apple-x86_64.so");
+                    ffxFiles.add("jcuda-64/libJCufft-apple-x86_64.so");
+                } else if ("AMD64".equals(osArch)) {
+                    ffxFiles.add("jcuda-64/libJCudaDriver-apple-amd64.so");
+                    ffxFiles.add("jcuda-64/libJCudaRuntime-apple-amd64.so");
+                    ffxFiles.add("jcuda-64/libJCufft-apple-amd64.so");
+                }
+            } else {
+                ffxFiles.add("jogl-32/libgluegen-rt.so");
+                ffxFiles.add("jogl-32/libjogl.so");
+                ffxFiles.add("jogl-32/libjogl_awt.so");
+                ffxFiles.add("jogl-32/libjogl_cg.so");
+            }
+        } else if (osName.startsWith("WINDOWS")) {
+            if (x86_64) {
+                ffxFiles.add("jogl-64/gluegen-rt.dll");
+                ffxFiles.add("jogl-64/jogl.dll");
+                ffxFiles.add("jogl-64/jogl_awt.dll");
+                ffxFiles.add("jogl-64/jogl_cg.dll");
+                ffxFiles.add("jcuda-64/JCudaDriver-apple-x86_64.dll");
+                ffxFiles.add("jcuda-64/JCudaRuntime-apple-x86_64.dll");
+                ffxFiles.add("jcuda-64/JCufft-apple-x86_64.dll");
+            } else {
+                ffxFiles.add("jogl-32/gluegen-rt.dll");
+                ffxFiles.add("jogl-32/jogl.dll");
+                ffxFiles.add("jogl-32/jogl_awt.dll");
+                ffxFiles.add("jogl-32/jogl_cg.dll");
+            }
         }
 
         String[] applicationPackages = {"ffx",
-                                        // Java 3D packages
-                                        "javax.media.j3d",
-                                        "javax.vecmath",
-                                        "com.sun.j3d",
-                                        "com.sun.opengl",
-                                        "com.sun.gluegen.runtime",
-                                        "javax.media.opengl",
-                                        "groovy",
-                                        "org.codehaus.groovy",
-                                        "org.apache.commons.configuration",
-                                        "org.apache.commons.io",
-                                        "org.apache.commons.lang",
-                                        "org.apache.commons.math",
-                                        "edu.rit.pj",
-                                        "jcuda"};
+            // Java 3D packages
+            "javax.media.j3d",
+            "javax.vecmath",
+            "com.sun.j3d",
+            "com.sun.opengl",
+            "com.sun.gluegen.runtime",
+            "javax.media.opengl",
+            "groovy",
+            "org.codehaus.groovy",
+            "org.apache.commons.configuration",
+            "org.apache.commons.io",
+            "org.apache.commons.lang",
+            "org.apache.commons.math",
+            "edu.rit.pj",
+            "jcuda"};
         ClassLoader classLoader = new FFXClassLoader(
                 ffxBootstrapClass.getClassLoader(),
                 ffxBootstrapClass.getProtectionDomain(),
@@ -129,7 +154,7 @@ public class Launcher {
         String applicationClassName = "ffx.Main";
         Class applicationClass = classLoader.loadClass(applicationClassName);
         Method applicationClassMain =
-               applicationClass.getMethod("main", Array.newInstance(String.class, 0).getClass());
+                applicationClass.getMethod("main", Array.newInstance(String.class, 0).getClass());
         // Call application class main method with reflection
         applicationClassMain.invoke(null, new Object[]{args});
     }

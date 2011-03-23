@@ -833,8 +833,9 @@ public final class PDBFilter extends SystemFilter {
                 if (isProtein) {
                     try {
                         logger.info(format(" Amino acid chain %s", polymer.getName()));
+                        double dist = properties.getDouble("chainbreak",3.0);
                         // Detect main chain breaks!
-                        List<List<Residue>> residueLists = findChainBreaks(residues, 3.0);
+                        List<List<Residue>> residueLists = findChainBreaks(residues, dist);
                         for (List<Residue> subChain : residueLists) {
                             assignAminoAcidAtomTypes(subChain);
                         }

@@ -29,39 +29,32 @@
             <outputDirectory>ffx</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>${basedir}/../../bin/macosx/jogl</directory>
+            <directory>${basedir}/../../bin/jogl</directory>
             <includes>
                 <include>*</include>
             </includes>
             <outputDirectory>jogl</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>${basedir}/../../bin/linux/jogl-32</directory>
+            <directory>${basedir}/../../bin/jogl-32</directory>
             <includes>
                 <include>*</include>
             </includes>
             <outputDirectory>jogl-32</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>${basedir}/../../bin/linux/jogl-64</directory>
+            <directory>${basedir}/../../bin/jogl-64</directory>
             <includes>
                 <include>*</include>
             </includes>
             <outputDirectory>jogl-64</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>${basedir}/../../bin/windows/jogl-32</directory>
+            <directory>${basedir}/../../bin/jcuda-64</directory>
             <includes>
                 <include>*</include>
             </includes>
-            <outputDirectory>jogl-32</outputDirectory>
-        </fileSet>
-        <fileSet>
-            <directory>${basedir}/../../bin/windows/jogl-64</directory>
-            <includes>
-                <include>*</include>
-            </includes>
-            <outputDirectory>jogl-64</outputDirectory>
+            <outputDirectory>jcuda-64</outputDirectory>
         </fileSet>
         <fileSet>
             <directory>${basedir}/../../scripts</directory>
@@ -69,6 +62,13 @@
                 <include>*.ffx</include>
             </includes>
             <outputDirectory>ffx/scripts</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>${basedir}/../../patches</directory>
+            <includes>
+                <include>*.patch</include>
+            </includes>
+            <outputDirectory>ffx/patches</outputDirectory>
         </fileSet>
     </fileSets>
 </assembly>
