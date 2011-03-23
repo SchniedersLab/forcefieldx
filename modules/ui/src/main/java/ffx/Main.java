@@ -57,39 +57,39 @@ import ffx.ui.macosx.OSXAdapter;
 public class Main extends JFrame {
 
     private static final Logger logger = Logger.getLogger(Main.class.getName());
-    private static Level level;
-    private static LogHandler logHandler = null;
+    private static final Level level;
+    private static final LogHandler logHandler;
 
     static {
+        /*
+         * Remove the default console handler from the root logger.
+         */
         try {
-            /*
-             * Remove the default console handler from the root logger.
-             */
             Logger defaultLogger = LogManager.getLogManager().getLogger("");
             Handler defaultHandlers[] = defaultLogger.getHandlers();
             for (Handler h : defaultHandlers) {
                 defaultLogger.removeHandler(h);
             }
-
-            Logger ffxLogger = Logger.getLogger(Main.class.getPackage().getName());
-            /**
-             * Create a Handler for FFX logging.
-             */
-            String logLevel = System.getProperty("ffx.log", "info");
-            try {
-                level = Level.parse(logLevel.toUpperCase());
-            } catch (Exception e) {
-                level = Level.INFO;
-            }
-
-            logHandler = new LogHandler();
-            logHandler.setLevel(level);
-            ffxLogger.addHandler(logHandler);
-            ffxLogger.setLevel(level);
-
         } catch (Exception e) {
             System.err.println(e.toString());
         }
+
+        /**
+         * Create a Handler for FFX logging.
+         */
+        String logLevel = System.getProperty("ffx.log", "info");
+        Level tempLevel;
+        try {
+            tempLevel = Level.parse(logLevel.toUpperCase());
+        } catch (Exception e) {
+            tempLevel = Level.INFO;
+        }
+        level = tempLevel;
+        logHandler = new LogHandler();
+        logHandler.setLevel(level);
+        Logger ffxLogger = Logger.getLogger(Main.class.getPackage().getName());
+        ffxLogger.addHandler(logHandler);
+        ffxLogger.setLevel(level);
     }
 
     /**
@@ -181,7 +181,7 @@ public class Main extends JFrame {
             OSXAdapter.macOSXRegistration(mainPanel);
         }
         // Finally, open the supplied file if necessary.
-        if (!commandLineFile.exists()) {
+        if (commandLineFile != null && !commandLineFile.exists()) {
             /**
              * See if the commandLineFile is an embedded script.
              */
@@ -195,7 +195,7 @@ public class Main extends JFrame {
                             embeddedScript.openStream(), ".ffx"));
                 } catch (Exception e) {
                     logger.warning("Exception extracting embedded script "
-                                   + embeddedScript.toString() + "\n" + e.toString());
+                            + embeddedScript.toString() + "\n" + e.toString());
                 }
             }
         }
