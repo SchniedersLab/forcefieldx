@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document
+    xmlns="http://maven.apache.org/XDOC/2.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
+    http://maven.apache.org/xsd/xdoc-2.0.xsd">
+    <properties>
+        <title>Scripts</title>
+        <author email="michael.schnieders@gmail.com">Michael J. Schnieders</author>
+    </properties>
+    <body>
+        <section name="Scripts">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Script</th>
+                        <th>Purpose</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><a href="scripts/energy.ffx" >energy</a></td>
+                        <td>Calculate the potential energy.</td>
+                    </tr>
+                    <tr>
+                        <td><a href="scripts/md.ffx" >md</a></td>
+                        <td>Run molecular dynamics.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+    </body>
+</document>
