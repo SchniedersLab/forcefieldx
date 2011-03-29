@@ -550,8 +550,8 @@ public class XRayEnergy implements Potential {
                     a.setTempFactor(u2b(det));
                 } else {
                     nneg++;
-                    a.setTempFactor(0.1);
-                    anisou[0] = anisou[1] = anisou[2] = b2u(0.1);
+                    a.setTempFactor(0.01);
+                    anisou[0] = anisou[1] = anisou[2] = b2u(0.01);
                     anisou[3] = anisou[4] = anisou[5] = 0.0;
                     if (nneg < 5) {
                         logger.info("anisotropic atom: " + a.toString() + " negative ANISOU");
@@ -738,8 +738,8 @@ public class XRayEnergy implements Potential {
                     }
                     det2 = determinant3(banisou2);
                     bdiff = det1 - det2;
-                    e += kTbsim * Math.pow(bdiff, 2.0);
-                    gradb = 2.0 * kTbsim * bdiff;
+                    e += 2.0 * kTbsim * Math.pow(bdiff, 2.0);
+                    gradb = 4.0 * kTbsim * bdiff;
                     gradu[0] = gradb * (banisou1[1] * banisou1[2] - banisou1[5] * banisou1[5]);
                     gradu[1] = gradb * (banisou1[0] * banisou1[2] - banisou1[4] * banisou1[4]);
                     gradu[2] = gradb * (banisou1[0] * banisou1[1] - banisou1[3] * banisou1[3]);
