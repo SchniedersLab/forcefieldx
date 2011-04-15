@@ -132,21 +132,21 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
         grad = new double[n];
         scaling = new double[n];
 
-        refinementenergy.dataEnergy.getCoordinates(x);
+        refinementenergy.getCoordinates(x);
 
         double xyzscale = 1.0;
         double bisoscale = 1.0;
-        double anisouscale = 80.0;
-        double occscale = 15.0;
+        double anisouscale = 1.0;
+        double occscale = 1.0;
         if (refinementmode == RefinementMode.COORDINATES_AND_BFACTORS
                 || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
-            bisoscale = 0.2;
-            anisouscale = 80.0;
+            bisoscale = 0.04;
+            anisouscale = 0.8;
         }
 
         if (refinementmode == RefinementMode.COORDINATES_AND_OCCUPANCIES
                 || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
-            occscale = 15.0;
+            occscale = 0.2;
         }
 
         // set up scaling
@@ -156,7 +156,6 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
                 || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
             for (int i = 0; i < nxyz; i++) {
                 scaling[i] = xyzscale;
-                // x[i] *= xyzscale;
             }
         }
 
@@ -226,9 +225,9 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
             } else {
                 logger.severe("occupancy refinement not supported for this data type!");
             }
-
-            refinementenergy.setScaling(scaling);
         }
+
+        refinementenergy.setScaling(scaling);
     }
 
     /**
@@ -313,12 +312,19 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
                 break;
         }
 
-        double e = refinementenergy.energyAndGradient(x, grad);
+        refinementenergy.getCoordinates(x);
+        /**
+         * Scale coordinates.
+         */
+        for (int i = 0; i < n; i++) {
+            x[i] *= scaling[i];
+        }
 
         long mtime = -System.nanoTime();
         time = -System.nanoTime();
         done = false;
         int status = 0;
+        double e = refinementenergy.energyAndGradient(x, grad);
         status = LBFGS.minimize(n, m, x, e, grad, eps, maxiter, refinementenergy, this);
         done = true;
         switch (status) {
