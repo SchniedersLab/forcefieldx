@@ -33,7 +33,15 @@
             <directory>examples</directory>
         </fileSet>
         <fileSet>
-            <directory>scripts</directory>
+            <directory>${basedir}</directory>
+            <includes>
+                <include>modules/algorithms/src/main/groovy/ffx/agorithms</include>
+                <include>modules/autoparm/src/main/groovy/ffx/autoparm</include>
+                <include>modules/binding/src/main/groovy/ffx/binding</include>
+                <include>modules/potentials/src/main/groovy/ffx/potential</include>
+                <include>modules/xray/src/main/groovy/ffx</include>
+            </includes>
+            <outputDirectory>scripts</outputDirectory>
         </fileSet>
     </fileSets>
 </assembly>

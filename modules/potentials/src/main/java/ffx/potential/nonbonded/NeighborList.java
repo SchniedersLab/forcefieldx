@@ -351,11 +351,9 @@ public class NeighborList extends ParallelRegion {
         sb.append(format(" Total:                                   %5.2f (A)\n", total));
         sb.append(format(" Neighbors in the asymmetric unit: %12d\n", asymmetricUnitCount));
         if (nSymm > 1) {
-            int num = (int) (asymmetricUnitCount * nSymm + symmetryMateCount * (nSymm * 0.5));
-            double speedup = ((double) num) / (asymmetricUnitCount + symmetryMateCount);
+            int num = (asymmetricUnitCount + symmetryMateCount) * nSymm;
             sb.append(format(" Neighbors in symmetry mates:      %12d\n", symmetryMateCount));
             sb.append(format(" Neighbors in the unit cell:       %12d\n", num));
-            sb.append(format(" Space group speed up factor:          %8.3f\n", speedup));
         }
         logger.info(sb.toString());
     }

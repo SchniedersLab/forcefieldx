@@ -9,7 +9,6 @@
 //if choice == 4, then supply the xyz filename and the eps
 
 
-
 //Get XYZ File
 double eps = null;
 Integer choice = Integer.parseInt(args[0]);

@@ -185,9 +185,13 @@ public class Main extends JFrame {
             /**
              * See if the commandLineFile is an embedded script.
              */
-            String name = commandLineFile.getName() + ".ffx";
+            String name = commandLineFile.getName();
+            name = name.replace('.', File.separatorChar);
             ClassLoader loader = getClass().getClassLoader();
-            URL embeddedScript = loader.getResource("ffx/scripts/" + name);
+            URL embeddedScript = loader.getResource("ffx/scripts/" + name + ".ffx");
+            if (embeddedScript == null) {
+                embeddedScript = loader.getResource("ffx/scripts/" + name + ".groovy");
+            }
             if (embeddedScript != null) {
                 try {
                     commandLineFile = new File(
@@ -195,7 +199,7 @@ public class Main extends JFrame {
                             embeddedScript.openStream(), ".ffx"));
                 } catch (Exception e) {
                     logger.warning("Exception extracting embedded script "
-                            + embeddedScript.toString() + "\n" + e.toString());
+                                   + embeddedScript.toString() + "\n" + e.toString());
                 }
             }
         }

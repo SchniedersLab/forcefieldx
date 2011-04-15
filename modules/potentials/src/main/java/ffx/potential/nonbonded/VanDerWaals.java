@@ -77,38 +77,29 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
     private final Crystal crystal;
     private final int nSymm;
     private boolean gradient;
-    private double lambda = 1.0;
+    private double λ = 1.0;
+    private double lambda2 = 1.0;
+    private double lambda1 = 0.0;
+    private double dlambda1 = 1.0;
+    private double dlambda2 = 1.0;
     private final boolean isSoft[];
-    private static final double lambdaExponent = 5.0;
-    private static final double lambdaAlpha = 0.7;
+    private static final double softCoreExponent = 5.0;
+    private static final double softCoreAlpha = 0.7;
     /**
-     * There are 2 lambdaPow arrays of length nAtoms.
+     * There are 2 softCore arrays of length nAtoms.
      *
      * The first is used for atoms in the outer loop that are hard.
      * This mask equals:
-     * 1.0      for inner loop hard atoms
-     * lambda^5 for inner loop soft atoms
+     * false    for inner loop hard atoms
+     * true     for inner loop soft atoms
      *
      * The second is used for atoms in the outer loop that are soft.
      * This mask equals:
-     * lambda^5 for inner loop hard atoms
-     * 1.0      for inner loop soft atoms
+     * true     for inner loop hard atoms
+     * false    for inner loop soft atoms
      */
-    private final double lambdaPow[][];
-    /**
-     * There are 2 alphaFactor arrays of length nAtoms.
-     *
-     * The first is used for atoms in the outer loop that are hard.
-     * This mask equals:
-     * 1.0                  for inner loop hard atoms
-     * alpha*(1.0-lambda)^2 for inner loop soft atoms
-     *
-     * The second is used for atoms in the outer loop that are soft.
-     * This mask equals:
-     * alpha*(1.0-lambda)^2 for inner loop hard atoms
-     * 1.0                  for inner loop soft atoms
-     */
-    private final double alphaFactor[][];
+    private final boolean softCore[][];
+    private boolean lambdaGradient;
     /***************************************************************************
      * Coordinate arrays.
      */
@@ -158,7 +149,9 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
     private final ParallelTeam parallelTeam;
     private final SharedInteger interactions;
     private final SharedDouble vdwEnergy;
-    private final SharedDoubleArray grad[];
+    private final SharedDoubleArray dEdX[];
+    private SharedDouble dEdLambda;
+    private SharedDoubleArray dEdLambdadX[];
     private final int threadCount;
     private long overheadTime;
     /**
@@ -308,17 +301,12 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         /**
          * Initialize the soft core lambda masks.
          */
-        lambdaPow = new double[2][nAtoms];
-        alphaFactor = new double[2][nAtoms];
         isSoft = new boolean[nAtoms];
+        softCore = new boolean[2][nAtoms];
         for (int i = 0; i < nAtoms; i++) {
             isSoft[i] = false;
-            // lambda^exponent = 1.0 for lambda = 1.0
-            lambdaPow[0][i] = 1.0;
-            lambdaPow[1][i] = 1.0;
-            // alpha * (1.0 - lambda)^2 = 0.0 for lambda = 1.0
-            alphaFactor[0][i] = 0.0;
-            alphaFactor[1][i] = 0.0;
+            softCore[0][i] = false;
+            softCore[1][i] = false;
         }
         doLongRangeCorrection = forceField.getBoolean(ForceField.ForceFieldBoolean.VDWLRTERM, false);
 
@@ -348,10 +336,10 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         for (int i = 0; i < threadCount; i++) {
             vanDerWaalsLoop[i] = new VanDerWaalsLoop();
         }
-        grad = new SharedDoubleArray[3];
-        grad[0] = new SharedDoubleArray(nAtoms);
-        grad[1] = new SharedDoubleArray(nAtoms);
-        grad[2] = new SharedDoubleArray(nAtoms);
+        dEdX = new SharedDoubleArray[3];
+        dEdX[0] = new SharedDoubleArray(nAtoms);
+        dEdX[1] = new SharedDoubleArray(nAtoms);
+        dEdX[2] = new SharedDoubleArray(nAtoms);
         interactions = new SharedInteger();
         vdwEnergy = new SharedDouble();
         // Parallel neighbor list builder.
@@ -373,9 +361,9 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         neighborList.buildList(reduced, neighborLists, true, true);
 
         logger.info(" Van der Waals");
-        logger.info(format(" Switch Start:                            %5.3f (A)", cut));
-        logger.info(format(" Cut-Off:                                 %5.3f (A)", off));
-        logger.info(format(" Long-Range Correction:                   %B", doLongRangeCorrection));
+        logger.info(format(" Switch Start:                            %5.2f (A)", cut));
+        logger.info(format(" Cut-Off:                                 %5.2f (A)", off));
+        //logger.info(format(" Long-Range Correction:                   %B", doLongRangeCorrection));
     }
 
     private double getLongRangeCorrection() {
@@ -423,11 +411,11 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                     final double rho = r / rv;
                     final double rho3 = rho * rho * rho;
                     final double rho7 = rho3 * rho3 * rho;
-                    final double rhod = rho + dhal;
+                    final double rhod = rho + ZERO_07;
                     final double rhod3 = rhod * rhod * rhod;
                     final double rhod7 = rhod3 * rhod3 * rhod;
-                    final double t1 = dhal_plus_one_7 / rhod7;
-                    final double t2 = ghal_plus_one / rho7 + ghal;
+                    final double t1 = t1n / rhod7;
+                    final double t2 = t2n / rho7 + ZERO_12;
                     final double eij = ev * t1 * (t2 - 2.0);
                     /**
                      * Apply one minus the multiplicative switch if the interaction
@@ -453,10 +441,10 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                 // Normal correction
                 total += radCount[i] * radCount[j] * trapezoid;
                 // Correct for softCore vdW that are being turned off.
-                if (lambda < 1.0) {
+                if (λ < 1.0) {
                     total -= (softRadCount[i] * radCount[j]
                               + (radCount[i] - softRadCount[i]) * softRadCount[j])
-                             * (1.0 - lambda) * trapezoid;
+                             * (1.0 - λ) * trapezoid;
                 }
             }
         }
@@ -602,9 +590,17 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         interactions.set(0);
         if (gradient) {
             for (int i = 0; i < nAtoms; i++) {
-                grad[0].set(i, 0.0);
-                grad[1].set(i, 0.0);
-                grad[2].set(i, 0.0);
+                dEdX[0].set(i, 0.0);
+                dEdX[1].set(i, 0.0);
+                dEdX[2].set(i, 0.0);
+            }
+        }
+        if (lambdaGradient) {
+            dEdLambda.set(0.0);
+            for (int i = 0; i < nAtoms; i++) {
+                dEdLambdadX[0].set(i, 0.0);
+                dEdLambdadX[1].set(i, 0.0);
+                dEdLambdadX[2].set(i, 0.0);
             }
         }
     }
@@ -637,7 +633,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         if (gradient) {
             for (int i = 0; i < nAtoms; i++) {
                 Atom ai = atoms[i];
-                ai.addToXYZGradient(grad[0].get(i), grad[1].get(i), grad[2].get(i));
+                ai.addToXYZGradient(dEdX[0].get(i), dEdX[1].get(i), dEdX[2].get(i));
             }
         }
         long computeTime = 0;
@@ -666,43 +662,38 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         logger.info(String.format("%s %6d-%s %6d-%s %10.4f  %10.4f  %10.4f",
                                   "VDW", atoms[i].xyzIndex, atoms[i].getAtomType().name,
                                   atoms[k].xyzIndex, atoms[k].getAtomType().name,
-                                  radEps[classi][classk * 3 + RADMIN] / dhal, r, eij));
+                                  radEps[classi][classk * 3 + RADMIN] / ZERO_07, r, eij));
     }
 
     @Override
     public void setLambda(double lambda) {
         assert (lambda >= 0.0 && lambda <= 1.0);
-        this.lambda = lambda;
-        double lambda5 = pow(lambda, lambdaExponent);
-        double alpha = lambdaAlpha * (1.0 - lambda) * (1.0 - lambda);
+        this.λ = lambda;
+        lambda1 = softCoreAlpha * (1.0 - lambda) * (1.0 - lambda);
+        dlambda1 = -2.0 * softCoreAlpha * (1.0 - lambda);
+        lambda2 = pow(lambda, softCoreExponent);
+        dlambda2 = softCoreExponent * pow(lambda, softCoreExponent - 1);
         /**
          * Set up the lambda
          */
-        StringBuilder sb = new StringBuilder(" van der Waals soft core will be applied to:\n");
         boolean softAtoms = false;
         for (int i = 0; i < nAtoms; i++) {
             isSoft[i] = atoms[i].applyLambda();
             if (isSoft[i]) {
                 softAtoms = true;
-                sb.append(" " + atoms[i].toShortString() + "\n");
                 // Outer loop atom hard, inner loop atom soft.
-                lambdaPow[0][i] = lambda5;
-                alphaFactor[0][i] = alpha;
+                softCore[0][i] = true;
                 // Both soft - full interaction.
-                lambdaPow[1][i] = 1.0;
-                alphaFactor[1][i] = 0.0;
+                softCore[1][i] = false;
             } else {
                 // Both hard - full interaction.
-                lambdaPow[0][i] = 1.0;
-                alphaFactor[0][i] = 0.0;
+                softCore[0][i] = false;
                 // Outer loop atom soft, inner loop atom hard.
-                lambdaPow[1][i] = lambda5;
-                alphaFactor[1][i] = alpha;
+                softCore[1][i] = true;
             }
         }
         if (softAtoms) {
-            logger.info(String.format(" Soft core van der Waals lambda value set to %8.3f", lambda));
-            logger.info(sb.toString());
+            logger.info(String.format(" Soft core van der Waals lambda value set to %8.6f", lambda));
         } else {
             logger.warning(" No atoms are selected for soft core van der Waals.\n");
         }
@@ -720,7 +711,34 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
 
     @Override
     public double getLambda() {
-        return lambda;
+        return λ;
+    }
+
+    @Override
+    public void lambdaGradients(boolean lambdaGradients) {
+        this.lambdaGradient = lambdaGradients;
+        if (dEdLambda == null) {
+            dEdLambda = new SharedDouble();
+            dEdLambdadX = new SharedDoubleArray[3];
+            dEdLambdadX[0] = new SharedDoubleArray(nAtoms);
+            dEdLambdadX[1] = new SharedDoubleArray(nAtoms);
+            dEdLambdadX[2] = new SharedDoubleArray(nAtoms);
+        }
+    }
+
+    @Override
+    public double getdEdLambda() {
+        return dEdLambda.get();
+    }
+
+    @Override
+    public void getdEdLambdadX(double[] gradients) {
+        int index = 0;
+        for (int i=0; i<nAtoms; i++) {
+            gradients[index++] = dEdLambdadX[0].get(i);
+            gradients[index++] = dEdLambdadX[1].get(i);
+            gradients[index++] = dEdLambdadX[2].get(i);
+        }
     }
 
     /**
@@ -821,12 +839,17 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                         xyz[iX] = out[0];
                         xyz[iY] = out[1];
                         xyz[iZ] = out[2];
-                        /*
-                        if (i == 0) {
-                        crystal.toFractionalCoordinates(out, in);
-                        logger.info(format("%5d %d FRAC %10.8f %10.8f %10.8f",
-                        i, iSymOp, in[0], in[1], in[2]));
-                        } */
+
+                        /**
+                         * Check if the atom is at a special position.
+                         */
+                        double dx = in[0] - out[0];
+                        double dy = in[1] - out[1];
+                        double dz = in[2] - out[2];
+                        double r2 = dx * dx + dy * dy + dz * dz;
+                        if (r2 < Crystal.specialPositionCutoff2) {
+                            logger.severe(" Atom %d is at a special position: " + atoms[i].toString());
+                        }
                     }
                 }
             }
@@ -849,6 +872,10 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         private final double gxi_local[];
         private final double gyi_local[];
         private final double gzi_local[];
+        private double dUdL;
+        private final double lxi_local[];
+        private final double lyi_local[];
+        private final double lzi_local[];
         private final double dx_local[];
         private final double mask[];
         // Extra padding to avert cache interference.
@@ -860,6 +887,9 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
             gxi_local = new double[nAtoms];
             gyi_local = new double[nAtoms];
             gzi_local = new double[nAtoms];
+            lxi_local = new double[nAtoms];
+            lyi_local = new double[nAtoms];
+            lzi_local = new double[nAtoms];
             mask = new double[nAtoms];
             dx_local = new double[3];
             for (int i = 0; i < nAtoms; i++) {
@@ -887,6 +917,14 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                     gzi_local[i] = 0.0;
                 }
             }
+            if (lambdaGradient) {
+                dUdL = 0.0;
+                for (int i = 0; i < nAtoms; i++) {
+                    lxi_local[i] = 0.0;
+                    lyi_local[i] = 0.0;
+                    lzi_local[i] = 0.0;
+                }
+            }
             computeTime = 0;
         }
 
@@ -894,12 +932,10 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         public void run(int lb, int ub) {
             long startTime = System.nanoTime();
             /**
-             * Loop over symmetry operators. Interactions between atoms in the
-             * asymmetric unit and those in symmetry mates count 1/2 strength.
+             * Loop over symmetry operators.
              */
             List<SymOp> symOps = crystal.spaceGroup.symOps;
             for (int iSymOp = 0; iSymOp < nSymm; iSymOp++) {
-            //for (int iSymOp = 0; iSymOp < 1; iSymOp++) {
                 double e = 0.0;
                 SymOp symOp = symOps.get(iSymOp);
                 double xyzS[] = reduced[iSymOp];
@@ -920,17 +956,20 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                     double gxredi = 0.0;
                     double gyredi = 0.0;
                     double gzredi = 0.0;
+                    double lxi = 0.0;
+                    double lyi = 0.0;
+                    double lzi = 0.0;
+                    double lxredi = 0.0;
+                    double lyredi = 0.0;
+                    double lzredi = 0.0;
                     if (iSymOp == 0) {
                         applyMask(mask, i);
                     }
                     // Default is that the outer loop atom is hard.
-                    double lambdaPowi[] = lambdaPow[0];
-                    double alphaFactori[] = alphaFactor[0];
+                    boolean softCorei[] = softCore[0];
                     if (isSoft[i]) {
-                        lambdaPowi = lambdaPow[1];
-                        alphaFactori = alphaFactor[1];
+                        softCorei = softCore[1];
                     }
-
                     /**
                      * Loop over the neighbor list.
                      */
@@ -956,66 +995,126 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                             final double r3 = r2 * r;
                             final double r4 = r2 * r2;
                             int a2 = atomClass[k] * 2;
+                            double alpha = 0.0;
+                            double lambda5 = 1.0;
+                            boolean soft = softCorei[k];
+                            if (soft) {
+                                alpha = lambda1;
+                                lambda5 = lambda2;
+                            }
                             final double rv = radEpsi[a2 + RADMIN];
-                            final double ev = radEpsi[a2 + EPS] * lambdaPowi[k];
-                            final double alpha = alphaFactori[k];
+                            final double ev = radEpsi[a2 + EPS];
+                            final double eps_lambda = ev * lambda5;
                             final double rho = r / rv;
                             final double rho3 = rho * rho * rho;
-                            final double rho7 = rho3 * rho3 * rho;
-                            final double rhod = rho + dhal;
-                            final double rhod3 = rhod * rhod * rhod;
-                            final double rhod7 = rhod3 * rhod3 * rhod;
-                            final double arhod7 = alpha + rhod7;
-                            final double arho7g = alpha + rho7 + ghal;
-                            final double t1 = dhal_plus_one_7 / arhod7;
-                            final double t2 = ghal_plus_one / arho7g;
-                            double eij = ev * t1 * (t2 - 2.0);
+                            final double rho6 = rho3 * rho3;
+                            final double rho7 = rho6 * rho;
+                            final double rho_07 = rho + ZERO_07;
+                            final double rho_07_pow3 = rho_07 * rho_07 * rho_07;
+                            final double rho_07_pow7 = rho_07_pow3 * rho_07_pow3 * rho_07;
+                            final double a_rho_07_pow7 = alpha + rho_07_pow7;
+                            final double a_rho7_ZERO_12 = alpha + rho7 + ZERO_12;
+                            final double t1d = 1.0 / a_rho_07_pow7;
+                            final double t2d = 1.0 / a_rho7_ZERO_12;
+                            final double t1 = t1n * t1d;
+                            final double t2a = t2n * t2d;
+                            final double t2 = t2a - 2.0;
+                            double eij = eps_lambda * t1 * t2;
                             /**
                              * Apply a multiplicative switch if the interaction
                              * distance is greater than the beginning of the
                              * taper.
                              */
                             double taper = 1.0;
+                            double dtaper = 0.0;
                             if (r2 > cut2) {
                                 final double r5 = r2 * r3;
                                 taper = c5 * r5 + c4 * r4 + c3 * r3 + c2 * r2 + c1 * r + c0;
+                                dtaper = fiveC5 * r4 + fourC4 * r3 + threeC3 * r2 + twoC2 * r + c1;
                             }
                             e += selfScale * eij * taper;
                             count++;
+                            if (!(gradient || (lambdaGradient && soft))) {
+                                continue;
+                            }
+                            final int redk = reductionIndex[k];
+                            final double red = reductionValue[k];
+                            final double redkv = 1.0 - red;
+                            final double rho_07_pow6 = rho_07_pow3 * rho_07_pow3;
+                            final double drho_dr = 1.0 / rv;
+                            final double dt1d_dr = 7.0 * rho_07_pow6 * drho_dr;
+                            final double dt2d_dr = 7.0 * rho6 * drho_dr;
+                            final double dt1_dr = t1 * dt1d_dr * t1d;
+                            final double dt2_dr = t2a * dt2d_dr * t2d;
+                            double dedr = -eps_lambda * (dt1_dr * t2 + t1 * dt2_dr);
+                            double ir = 1.0 / r;
+                            double drdx = dx_local[0] * ir;
+                            double drdy = dx_local[1] * ir;
+                            double drdz = dx_local[2] * ir;
+                            dedr = (eij * dtaper + dedr * taper);
                             if (gradient) {
-                                final double rho6 = rho3 * rho3;
-                                final double rhod6 = rhod3 * rhod3;
-                                final double dt1drho = (-7.0 * rhod6 * t1) / arhod7;
-                                final double dt2drho = (-7.0 * rho6 * t2) / arho7g;
-                                final double drhodr = 1.0 / rv;
-                                double de = ev * (dt1drho * (t2 - 2.0) + t1 * dt2drho) * drhodr;
-                                if (r2 > cut2) {
-                                    final double dtaper = fiveC5 * r4 + fourC4 * r3 + threeC3 * r2 + twoC2 * r + c1;
-                                    de = eij * dtaper + de * taper;
-                                }
-                                de *= selfScale / r;
-                                dx_local[0] *= de;
-                                dx_local[1] *= de;
-                                dx_local[2] *= de;
-                                final double dedx = dx_local[0];
-                                final double dedy = dx_local[1];
-                                final double dedz = dx_local[2];
+                                double dedx = selfScale * dedr * drdx;
+                                double dedy = selfScale * dedr * drdy;
+                                double dedz = selfScale * dedr * drdz;
                                 gxi += dedx * redv;
                                 gyi += dedy * redv;
                                 gzi += dedz * redv;
                                 gxredi += dedx * rediv;
                                 gyredi += dedy * rediv;
                                 gzredi += dedz * rediv;
-                                final int redk = reductionIndex[k];
-                                final double red = reductionValue[k];
-                                final double redkv = 1.0 - red;
+                                dx_local[0] = dedx;
+                                dx_local[1] = dedy;
+                                dx_local[2] = dedz;
                                 crystal.applyTransSymRot(dx_local, dx_local, symOp);
-                                gxi_local[k] -= red * dx_local[0];
-                                gyi_local[k] -= red * dx_local[1];
-                                gzi_local[k] -= red * dx_local[2];
-                                gxi_local[redk] -= redkv * dx_local[0];
-                                gyi_local[redk] -= redkv * dx_local[1];
-                                gzi_local[redk] -= redkv * dx_local[2];
+                                dedx = dx_local[0];
+                                dedy = dx_local[1];
+                                dedz = dx_local[2];
+                                gxi_local[k] -= red * dedx;
+                                gyi_local[k] -= red * dedy;
+                                gzi_local[k] -= red * dedz;
+                                gxi_local[redk] -= redkv * dedx;
+                                gyi_local[redk] -= redkv * dedy;
+                                gzi_local[redk] -= redkv * dedz;
+                            }
+                            if (lambdaGradient && soft) {
+                                double dt1 = -t1 * t1d * dlambda1;
+                                double dt2 = -t2a * t2d * dlambda1;
+                                double f1 = dlambda2 * t1 * t2;
+                                double f2 = lambda2 * dt1 * t2;
+                                double f3 = lambda2 * t1 * dt2;
+                                double dedl = ev * (f1 + f2 + f3);
+                                dUdL += selfScale * dedl * taper;
+                                
+                                double t11 = -dlambda2 * t2 * dt1_dr;
+                                double t12 = -lambda2 * dt2 * dt1_dr;
+                                double t13 = 2.0 * lambda2 * t2 * dt1_dr * dlambda1 * t1d;
+                                double t21 = -dlambda2 * t1 * dt2_dr;
+                                double t22 = -lambda2 * dt1 * dt2_dr;
+                                double t23 = 2.0 * lambda2 * t1 * dt2_dr * dlambda1 * t2d;
+                                double dedldr = ev * (t11 + t12 + t13 + t21 + t22 + t23);
+                                dedldr = dedl * dtaper + dedldr * taper;
+                                double dedldx = selfScale * dedldr * drdx;
+                                double dedldy = selfScale * dedldr * drdy;
+                                double dedldz = selfScale * dedldr * drdz;
+                                lxi += dedldx * redv;
+                                lyi += dedldy * redv;
+                                lzi += dedldz * redv;
+                                lxredi += dedldx * rediv;
+                                lyredi += dedldy * rediv;
+                                lzredi += dedldz * rediv;
+                                dx_local[0] = dedldx;
+                                dx_local[1] = dedldy;
+                                dx_local[2] = dedldz;
+                                crystal.applyTransSymRot(dx_local, dx_local, symOp);
+                                dedldx = dx_local[0];
+                                dedldy = dx_local[1];
+                                dedldz = dx_local[2];
+                                lxi_local[k] -= red * dedldx;
+                                lyi_local[k] -= red * dedldy;
+                                lzi_local[k] -= red * dedldz;
+                                lxi_local[redk] -= redkv * dedldx;
+                                lyi_local[redk] -= redkv * dedldy;
+                                lzi_local[redk] -= redkv * dedldz;
                             }
                         }
                     }
@@ -1026,6 +1125,14 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                         gxi_local[redi] += gxredi;
                         gyi_local[redi] += gyredi;
                         gzi_local[redi] += gzredi;
+                    }
+                    if (lambdaGradient) {
+                        lxi_local[i] += lxi;
+                        lyi_local[i] += lyi;
+                        lzi_local[i] += lzi;
+                        lxi_local[redi] += lxredi;
+                        lyi_local[redi] += lyredi;
+                        lzi_local[redi] += lzredi;
                     }
                     if (iSymOp == 0) {
                         removeMask(mask, i);
@@ -1045,9 +1152,15 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
             vdwEnergy.addAndGet(energy);
             interactions.addAndGet(count);
             if (gradient) {
-                grad[0].reduce(gxi_local, DoubleOp.SUM);
-                grad[1].reduce(gyi_local, DoubleOp.SUM);
-                grad[2].reduce(gzi_local, DoubleOp.SUM);
+                dEdX[0].reduce(gxi_local, DoubleOp.SUM);
+                dEdX[1].reduce(gyi_local, DoubleOp.SUM);
+                dEdX[2].reduce(gzi_local, DoubleOp.SUM);
+            }
+            if (lambdaGradient) {
+                dEdLambda.addAndGet(dUdL);
+                dEdLambdadX[0].reduce(lxi_local, DoubleOp.SUM);
+                dEdLambdadX[1].reduce(lyi_local, DoubleOp.SUM);
+                dEdLambdadX[2].reduce(lzi_local, DoubleOp.SUM);
             }
         }
     }
@@ -1092,22 +1205,16 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
      * Buffered-14-7 constants.
      */
     /**
-     * The constant ghal was suggested by Halgren for the Buffered-14-7
+     * First constant suggested by Halgren for the Buffered-14-7
      * potential.
      */
-    private static final double ghal = 0.12;
+    private static final double ZERO_12 = 0.12;
+    private static final double t2n = 1.12;
     /**
-     * The constant ghal plus 1.0.
-     */
-    private static final double ghal_plus_one = 1.12;
-    /**
-     * The constant dhal was suggested by Halgren for the Buffered-14-7
+     * Second constant suggested by Halgren for the Buffered-14-7
      * potential.
      */
-    private static final double dhal = 0.07;
-    /**
-     * The constant dhal plus 1.0.
-     */
-    private static final double dhal_plus_one = 1.07;
-    private static final double dhal_plus_one_7 = pow(dhal_plus_one, 7.0);
+    private static final double ZERO_07 = 0.07;
+    private static final double ONE_07 = 1.07;
+    private static final double t1n = pow(ONE_07, 7.0);
 }

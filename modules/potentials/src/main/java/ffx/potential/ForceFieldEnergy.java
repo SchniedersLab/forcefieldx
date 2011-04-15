@@ -120,7 +120,10 @@ public class ForceFieldEnergy implements Potential {
     protected long outOfPlaneBendTime, torsionTime, piOrbitalTorsionTime;
     protected long torsionTorsionTime, vanDerWaalsTime, electrostaticTime;
     protected long totalTime;
+    
     protected double[] optimizationScaling = null;
+    protected boolean lambdaGradients;
+    
     private static final double toSeconds = 0.000000001;
 
     public ForceFieldEnergy(MolecularAssembly molecularAssembly) {
@@ -753,4 +756,17 @@ public class ForceFieldEnergy implements Potential {
     public int getNumberOfVariables() {
         return nAtoms * 3;
     }
+
+    public double getdEdLambda() {
+        return vanderWaals.getdEdLambda();
+    }
+    
+    public void lambdaGradients(boolean lambdaGradients){
+        vanderWaals.lambdaGradients(lambdaGradients);
+    }
+    
+    public void getdEdLambdadX(double gradients[]) {
+        vanderWaals.getdEdLambdadX(gradients);
+    }
+       
 }

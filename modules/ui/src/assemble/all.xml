@@ -29,46 +29,25 @@
             <outputDirectory>ffx</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>${basedir}/../../bin/jogl</directory>
+            <directory>${basedir}/../../bin/universal</directory>
             <includes>
                 <include>*</include>
             </includes>
-            <outputDirectory>jogl</outputDirectory>
+            <outputDirectory>universal</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>${basedir}/../../bin/jogl-32</directory>
+            <directory>${basedir}/../../bin/32-bit</directory>
             <includes>
                 <include>*</include>
             </includes>
-            <outputDirectory>jogl-32</outputDirectory>
+            <outputDirectory>32-bit</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>${basedir}/../../bin/jogl-64</directory>
+            <directory>${basedir}/../../bin/64-bit</directory>
             <includes>
                 <include>*</include>
             </includes>
-            <outputDirectory>jogl-64</outputDirectory>
-        </fileSet>
-        <fileSet>
-            <directory>${basedir}/../../bin/jcuda-64</directory>
-            <includes>
-                <include>*</include>
-            </includes>
-            <outputDirectory>jcuda-64</outputDirectory>
-        </fileSet>
-        <fileSet>
-            <directory>${basedir}/../../scripts</directory>
-            <includes>
-                <include>*.ffx</include>
-            </includes>
-            <outputDirectory>ffx/scripts</outputDirectory>
-        </fileSet>
-        <fileSet>
-            <directory>${basedir}/../../patches</directory>
-            <includes>
-                <include>*.patch</include>
-            </includes>
-            <outputDirectory>ffx/patches</outputDirectory>
+            <outputDirectory>64-bit</outputDirectory>
         </fileSet>
     </fileSets>
 </assembly>

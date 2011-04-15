@@ -63,7 +63,7 @@
             <item name="Download" href="/download.html"/>
             <item name="Install" href="/install.html"/>
             <item name="Examples" href="/examples.html"/>
-            <!-- item name="Scripts" href="/scripts.html"/ -->
+            <item name="Scripts" href="/scripts.html"/>
             <item name="Space Groups" href="/symmetry.html"/>
         </menu>
         <menu name="Modules" inherit="top">

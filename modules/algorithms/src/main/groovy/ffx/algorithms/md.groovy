@@ -49,4 +49,3 @@ println("\n Running molecular dynmaics on " + filename);
 open(filename);
 MolecularDynamics molDyn = new MolecularDynamics(active, active.getPotentialEnergy(), active.getProperties(), null, thermostat);
 molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);
-

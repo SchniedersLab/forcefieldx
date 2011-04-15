@@ -45,23 +45,33 @@ public class Launcher {
 
         List<String> ffxFiles = new ArrayList<String>(Arrays.asList(new String[]{
                     "com.kenai.ffx/algorithms.jar",
-                    "com.kenai.ffx/potentials.jar",
+                    "com.kenai.ffx/autoparm.jar",
+                    "com.kenai.ffx/binding.jar",
                     "com.kenai.ffx/crystal.jar",
                     "com.kenai.ffx/numerics.jar",
+                    "com.kenai.ffx/potentials.jar",
                     "com.kenai.ffx/ui.jar",
                     "com.kenai.ffx/utilities.jar",
                     "com.kenai.ffx/xray.jar",
-                    "com.kenai.ffx/autoparm.jar",
                     "org.codehaus.groovy/groovy-all.jar",
                     "edu.rit.pj/pj.jar",
                     "jcuda/jcuda-all.jar",
+
+                    // Java3D 1.5.2 and (so far) 1.6.0 depend on JOGL v. 1.1.1
                     "java3d/j3dcore.jar",
                     "java3d/j3dutils.jar",
                     "java3d/j3dvrml.jar",
                     "java3d/vecmath.jar",
+
+                    // GLUEGEN and JOGL v. 1.1.1
                     "net.java.dev.jogl/jogl.jar",
                     "net.java.dev.jogl/gluegen-rt.jar",
-                    "net.java.dev.jogl/jocl.jar",
+
+                    // JOGAMP GLUEGEN, JOGL and JOCL v. 2.0
+                    // "org.jogamp/gluegen-rt.jar",
+                    // "org.jogamp/jogl.jar",
+                    // "org.jogamp/nativewindow.jar",
+
                     "commons-beanutils/commons-beanutils.jar",
                     "commons-collections/commons-collections.jar",
                     "commons-configuration/commons-configuration.jar",
@@ -70,63 +80,63 @@ public class Launcher {
                     "commons-lang/commons-lang.jar",
                     "commons-logging/commons-logging.jar",
                     "commons-math/commons-math.jar",
-                    "org.apache.ant/ant.jar",
-                    "org.apache.ant/ant-launcher.jar",
                     "macosx/AppleJavaExtensions.jar",
-                    "javax.help/javahelp.jar",
-                    "junit/junit.jar",
-                    "jline/jline.jar"
+                    "javax.help/javahelp.jar"
                 }));
         String osName = System.getProperty("os.name").toUpperCase();
         String osArch = System.getProperty("os.arch").toUpperCase();
         boolean x86_64 = "64".equals(System.getProperty("sun.arch.data.model"));
         if ("MAC OS X".equals(osName)) {
             // Mac OS X JOGL Universal Binaries
-            ffxFiles.add("jogl/libgluegen-rt.jnilib");
-            ffxFiles.add("jogl/libjogl.jnilib");
-            ffxFiles.add("jogl/libjogl_awt.jnilib");
-            ffxFiles.add("jogl/libjogl_cg.jnilib");
+            ffxFiles.add("universal/libgluegen-rt.jnilib");
+            ffxFiles.add("universal/libjogl.jnilib");
+            ffxFiles.add("universal/libjogl_awt.jnilib");
+            ffxFiles.add("universal/libjogl_cg.jnilib");
             if (x86_64) {
-                // Mac OS X Jcuda 64-bit Binaries
-                ffxFiles.add("jcuda-64/libJCudaDriver-apple-x86_64.jnilib");
-                ffxFiles.add("jcuda-64/libJCudaRuntime-apple-x86_64.jnilib");
-                ffxFiles.add("jcuda-64/libJCufft-apple-x86_64.jnilib");
+                // JCUDA
+                ffxFiles.add("64-bit/libJCudaDriver-apple-x86_64.jnilib");
+                ffxFiles.add("64-bit/libJCudaRuntime-apple-x86_64.jnilib");
+                ffxFiles.add("64-bit/libJCufft-apple-x86_64.jnilib");
             }
         } else if ("LINUX".equals(osName)) {
             if (x86_64) {
-                ffxFiles.add("jogl-64/libgluegen-rt.so");
-                ffxFiles.add("jogl-64/libjogl.so");
-                ffxFiles.add("jogl-64/libjogl_awt.so");
-                ffxFiles.add("jogl-64/libjogl_cg.so");
-                if ("X86_64".equals(osArch)) {
-                    ffxFiles.add("jcuda-64/libJCudaDriver-apple-x86_64.so");
-                    ffxFiles.add("jcuda-64/libJCudaRuntime-apple-x86_64.so");
-                    ffxFiles.add("jcuda-64/libJCufft-apple-x86_64.so");
-                } else if ("AMD64".equals(osArch)) {
-                    ffxFiles.add("jcuda-64/libJCudaDriver-apple-amd64.so");
-                    ffxFiles.add("jcuda-64/libJCudaRuntime-apple-amd64.so");
-                    ffxFiles.add("jcuda-64/libJCufft-apple-amd64.so");
+                // JOGL
+                ffxFiles.add("64-bit/libgluegen-rt.so");
+                ffxFiles.add("64-bit/libjogl.so");
+                ffxFiles.add("64-bit/libjogl_awt.so");
+                ffxFiles.add("64-bit/libjogl_cg.so");
+                // JCUDA
+                if (osArch.equalsIgnoreCase("x86_64")) {
+                    ffxFiles.add("64-bit/libJCudaDriver-linux-x86_64.so");
+                    ffxFiles.add("64-bit/libJCudaRuntime-linux-x86_64.so");
+                    ffxFiles.add("64-bit/libJCufft-linux-x86_64.so");
+                } else if (osArch.equalsIgnoreCase("amd64")) {
+                    ffxFiles.add("64-bit/libJCudaDriver-linux-amd64.so");
+                    ffxFiles.add("64-bit/libJCudaRuntime-linux-amd64.so");
+                    ffxFiles.add("64-bit/libJCufft-linux-amd64.so");
                 }
             } else {
-                ffxFiles.add("jogl-32/libgluegen-rt.so");
-                ffxFiles.add("jogl-32/libjogl.so");
-                ffxFiles.add("jogl-32/libjogl_awt.so");
-                ffxFiles.add("jogl-32/libjogl_cg.so");
+                ffxFiles.add("32-bit/libgluegen-rt.so");
+                ffxFiles.add("32-bit/libjogl.so");
+                ffxFiles.add("32-bit/libjogl_awt.so");
+                ffxFiles.add("32-bit/libjogl_cg.so");
             }
         } else if (osName.startsWith("WINDOWS")) {
             if (x86_64) {
-                ffxFiles.add("jogl-64/gluegen-rt.dll");
-                ffxFiles.add("jogl-64/jogl.dll");
-                ffxFiles.add("jogl-64/jogl_awt.dll");
-                ffxFiles.add("jogl-64/jogl_cg.dll");
-                ffxFiles.add("jcuda-64/JCudaDriver-apple-x86_64.dll");
-                ffxFiles.add("jcuda-64/JCudaRuntime-apple-x86_64.dll");
-                ffxFiles.add("jcuda-64/JCufft-apple-x86_64.dll");
+                // JOGL
+                ffxFiles.add("64-bit/gluegen-rt.dll");
+                ffxFiles.add("64-bit/jogl.dll");
+                ffxFiles.add("64-bit/jogl_cg.dll");
+                ffxFiles.add("64-bit/jogl_awt.dll");
+                // JCUDA
+                ffxFiles.add("64-bit/JCudaDriver-linux-x86_64.dll");
+                ffxFiles.add("64-bit/JCudaRuntime-linux-x86_64.dll");
+                ffxFiles.add("64-bit/JCufft-linux-x86_64.dll");
             } else {
-                ffxFiles.add("jogl-32/gluegen-rt.dll");
-                ffxFiles.add("jogl-32/jogl.dll");
-                ffxFiles.add("jogl-32/jogl_awt.dll");
-                ffxFiles.add("jogl-32/jogl_cg.dll");
+                ffxFiles.add("32-bit/gluegen-rt.dll");
+                ffxFiles.add("32-bit/jogl.dll");
+                ffxFiles.add("32-bit/jogl_awt.dll");
+                ffxFiles.add("32-bit/jogl_cg.dll");
             }
         }
 
@@ -158,25 +168,4 @@ public class Launcher {
         // Call application class main method with reflection
         applicationClassMain.invoke(null, new Object[]{args});
     }
-    private String packages[] = {
-        "ffx.algorithms",
-        "ffx.crystal",
-        "ffx.numerics",
-        "ffx.numerics.fft",
-        "ffx.potential",
-        "ffx.potential.bonded",
-        "ffx.potential.nonbonded",
-        "ffx.potential.parameters",
-        "ffx.potential.parameters.amoeba",
-        "ffx.potential.parsers",
-        "ffx.potential.structures",
-        "ffx.ui",
-        "ffx.ui.behaviors",
-        "ffx.ui.commands",
-        "ffx.ui.icons",
-        "ffx.ui.macosx",
-        "ffx.ui.properties",
-        "ffx.utilities",
-        "ffx.xray",
-        "ffx.xray.structures"};
 }

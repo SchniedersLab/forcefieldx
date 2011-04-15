@@ -19,11 +19,11 @@
                 </thead>
                 <tbody>
                     <tr>
-                        <td><a href="scripts/energy.ffx/*view*/" >energy</a></td>
+                        <td><a href="modules/potentials/scripts/energy.groovy" >energy</a></td>
                         <td>Calculate the potential energy.</td>
                     </tr>
                     <tr>
-                        <td><a href="scripts/md.ffx/*view*/" >md</a></td>
+                        <td><a href="modules/algorithms/scripts/md.groovy" >md</a></td>
                         <td>Run molecular dynamics.</td>
                     </tr>
                 </tbody>

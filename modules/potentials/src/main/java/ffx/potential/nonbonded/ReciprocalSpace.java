@@ -258,11 +258,12 @@ public class ReciprocalSpace {
         }
     }
 
-    public void computePermanentDensity(double globalMultipoles[][][]) {
+    public void computePermanentDensity(double globalMultipoles[][][], double lambda) {
         spatialDensityRegion.assignAtomsToCells();
         spatialDensityRegion.setDensityLoop(permanentDensityLoops);
         for (int i = 0; i < threadCount; i++) {
             permanentDensityLoops[i].setPermanent(globalMultipoles);
+            permanentDensityLoops[i].setLambda(lambda);
         }
         try {
             long startTime = System.nanoTime();
@@ -314,7 +315,7 @@ public class ReciprocalSpace {
         }
         fractionalToCartesianPhi(fractionalMultipolePhi, cartesianMultipolePhi);
     }
-
+    
     public void computeInducedDensity(double inducedDipole[][][],
                                       double inducedDipolep[][][]) {
         for (int i = 0; i < 3; i++) {
@@ -558,6 +559,8 @@ public class ReciprocalSpace {
     private class PermanentDensityLoop extends SpatialDensityLoop {
 
         private double globalMultipoles[][][] = null;
+        private double lambda = 1.0;
+        private boolean appendField = false;
         private final BSplineRegion bSplines;
 
         public PermanentDensityLoop(SpatialDensityRegion region, BSplineRegion splines) {
@@ -567,6 +570,10 @@ public class ReciprocalSpace {
 
         public void setPermanent(double globalMultipoles[][][]) {
             this.globalMultipoles = globalMultipoles;
+        }
+
+        private void setLambda(double lambda) {
+            this.lambda = lambda;
         }
 
         @Override
@@ -603,16 +610,20 @@ public class ReciprocalSpace {
             final int igrd0 = bSplines.initGrid[iSymm][n][0];
             final int jgrd0 = bSplines.initGrid[iSymm][n][1];
             int k0 = bSplines.initGrid[iSymm][n][2];
-            final double c = fm[t000];
-            final double dx = fm[t100];
-            final double dy = fm[t010];
-            final double dz = fm[t001];
-            final double qxx = fm[t200];
-            final double qyy = fm[t020];
-            final double qzz = fm[t002];
-            final double qxy = fm[t110];
-            final double qxz = fm[t101];
-            final double qyz = fm[t011];
+            double scale = 1.0;
+            if (atoms[n].applyLambda()) {
+                scale = lambda;
+            }
+            final double c = scale * fm[t000];
+            final double dx = scale * fm[t100];
+            final double dy = scale * fm[t010];
+            final double dz = scale * fm[t001];
+            final double qxx = scale * fm[t200];
+            final double qyy = scale * fm[t020];
+            final double qzz = scale * fm[t002];
+            final double qxy = scale * fm[t110];
+            final double qxz = scale * fm[t101];
+            final double qyz = scale * fm[t011];
             for (int ith3 = 0; ith3 < bSplineOrder; ith3++) {
                 final double splzi[] = splz[ith3];
                 final double v0 = splzi[0];

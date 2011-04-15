@@ -98,6 +98,8 @@ public class FFXClassLoader extends ClassLoader {
                         this.extensionDlls.put(extensionJarOrDll.substring(lastSlashIndex + 1 + dllPrefix.length(),
                                                                            extensionJarOrDll.indexOf(dllSuffix)), extensionDll);
                     }
+                } else {
+                    System.out.println(" File not extracted: " + extensionJarOrDll);
                 }
             } catch (IOException ex) {
                 throw new RuntimeException("Couldn't extract extension jars", ex);
@@ -114,7 +116,7 @@ public class FFXClassLoader extends ClassLoader {
      */
     public static String copyInputStreamToTmpFile(InputStream input,
                                             String suffix) throws IOException {
-        File tmpFile = null;        
+        File tmpFile = null;
         try {
             tmpFile = File.createTempFile("tmp.", suffix);
         } catch (Exception e) {

@@ -20,14 +20,13 @@
  */
 package ffx.crystal;
 
-import java.util.Vector;
 import static java.lang.Math.*;
 
-import ffx.utilities.HashCodeUtil;
 import static ffx.numerics.VectorMath.mat3mat3;
 import static ffx.numerics.VectorMath.mat3symvec6;
 import static ffx.numerics.VectorMath.transpose3;
 
+import java.util.Vector;
 import java.util.logging.Logger;
 
 import org.apache.commons.configuration.CompositeConfiguration;
@@ -35,6 +34,8 @@ import org.apache.commons.math.linear.Array2DRowRealMatrix;
 import org.apache.commons.math.linear.LUDecompositionImpl;
 import org.apache.commons.math.linear.RealMatrix;
 import org.apache.commons.math.util.MathUtils;
+
+import ffx.utilities.HashCodeUtil;
 
 /**
  * The Crystal class encapsulates the lattice parameters and space group that
@@ -111,12 +112,6 @@ public class Crystal {
      * the reciprocal space metric matrix.
      */
     public final double Gstar[][];
-    private final double half_a;
-    private final double half_b;
-    private final double half_c;
-    private final double mhalf_a;
-    private final double mhalf_b;
-    private final double mhalf_c;
     private final double cos_alpha;
     private final double sin_beta;
     private final double cos_beta;
@@ -128,6 +123,13 @@ public class Crystal {
     public int scale_flag;
     public int scale_b[] = new int[6];
     public int scale_n;
+    /**
+     * An atom and one of its symmetry copies within the specialPositionCutoff
+     * should be flagged to be at a special position.
+     */
+    public static final double specialPositionCutoff = 0.3;
+    public static final double specialPositionCutoff2 = specialPositionCutoff
+                                                        * specialPositionCutoff;
 
     /**
      * The Crystal class encapsulates the lattice parameters and space group.
@@ -151,12 +153,6 @@ public class Crystal {
         this.beta = beta;
         this.gamma = gamma;
         aperiodic = false;
-        half_a = 0.5 * a;
-        half_b = 0.5 * b;
-        half_c = 0.5 * c;
-        mhalf_a = -half_a;
-        mhalf_b = -half_b;
-        mhalf_c = -half_c;
         spaceGroup = SpaceGroup.spaceGroupFactory(sg);
         crystalSystem = spaceGroup.crystalSystem;
 

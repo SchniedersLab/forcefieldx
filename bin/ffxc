@@ -107,6 +107,6 @@ exec "$JAVACMD" $JAVA_OPTS \
   -Dapp.repo="$REPO" \
   -Dbasedir="$BASEDIR" \
   -Djava.awt.headless="true" \
-  -Dj3d.rend="jogl" \
+  -Dj3d.rend="ogl" \
   ffx.Launcher \
   "$@"

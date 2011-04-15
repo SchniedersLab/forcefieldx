@@ -140,6 +140,7 @@ public class ParticleMeshEwald implements LambdaInterface {
      */
     protected final double globalMultipole[][][];
     private final double cartesianMultipolePhi[][];
+    private final double dCartesianMultipolePhi[][];
     /**
      * The interaction energy between 1-2 multipoles is scaled by m12scale.
      */
@@ -206,11 +207,11 @@ public class ParticleMeshEwald implements LambdaInterface {
      */
     private double aewald;
     private double alsq2;
-    private double alsq2n2;
-    private double alsq2n3;
-    private double alsq2n4;
-    private double alsq2n5;
-    private double alsq2n6;
+    private double an0;
+    private double an1;
+    private double an2;
+    private double an3;
+    private double an4;
     private double piEwald;
     private double aewald3;
     private double off;
@@ -374,6 +375,7 @@ public class ParticleMeshEwald implements LambdaInterface {
         assignMultipoles();
         globalMultipole = new double[nSymm][nAtoms][10];
         cartesianMultipolePhi = new double[nAtoms][tensorCount];
+        dCartesianMultipolePhi = new double[nAtoms][tensorCount];
         directDipole = new double[nAtoms][3];
         directDipoleCR = new double[nAtoms][3];
         cartesianDipolePhi = new double[nAtoms][tensorCount];
@@ -520,17 +522,17 @@ public class ParticleMeshEwald implements LambdaInterface {
         permanentSelfEnergy = permanentSelfEnergy();
 
         if (aewald > 0.0) {
-            alsq2n2 = alsq2 * piEwald;
-            alsq2n3 = alsq2 * alsq2n2;
-            alsq2n4 = alsq2 * alsq2n3;
-            alsq2n5 = alsq2 * alsq2n4;
-            alsq2n6 = alsq2 * alsq2n5;
+            an0 = alsq2 * piEwald;
+            an1 = alsq2 * an0;
+            an2 = alsq2 * an1;
+            an3 = alsq2 * an2;
+            an4 = alsq2 * an3;
         } else {
-            alsq2n2 = 0.0;
-            alsq2n3 = 0.0;
-            alsq2n4 = 0.0;
-            alsq2n5 = 0.0;
-            alsq2n6 = 0.0;
+            an0 = 0.0;
+            an1 = 0.0;
+            an2 = 0.0;
+            an3 = 0.0;
+            an4 = 0.0;
         }
     }
 
@@ -582,6 +584,21 @@ public class ParticleMeshEwald implements LambdaInterface {
     @Override
     public double getLambda() {
         return lambda;
+    }
+
+    @Override
+    public void lambdaGradients(boolean computeLambdaGradients) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public double getdEdLambda() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public void getdEdLambdadX(double[] gradients) {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     /**
@@ -650,11 +667,13 @@ public class ParticleMeshEwald implements LambdaInterface {
                 bsplineTime += System.nanoTime();
 
                 densityTime = -System.nanoTime();
-                reciprocalSpace.computePermanentDensity(globalMultipole);
+                reciprocalSpace.computePermanentDensity(globalMultipole, 1.0);
                 densityTime += System.nanoTime();
             }
+
+
             /**
-             * Here the real space contribution to the field is calculated at
+             * The real space contribution to the field is calculated at
              * the same time the reciprocal space convolution is being done.
              */
             realAndFFTTime = -System.nanoTime();
@@ -663,8 +682,42 @@ public class ParticleMeshEwald implements LambdaInterface {
 
             if (aewald > 0.0) {
                 phiTime = -System.nanoTime();
+                boolean appendField = false;
                 reciprocalSpace.computePermanentPhi(cartesianMultipolePhi);
                 phiTime += System.nanoTime();
+            }
+
+            /**
+             * If λ is less than 1, then we need to compute the field for λ = 0.  
+             */
+            if (lambda < 1.0 && aewald > 0.0) {
+                densityTime = -System.nanoTime();
+                reciprocalSpace.computePermanentDensity(globalMultipole, 0.0);
+                densityTime += System.nanoTime();
+
+                realAndFFTTime = -System.nanoTime();
+                reciprocalSpace.computePermanentConvolution();
+                realAndFFTTime += System.nanoTime();
+
+                phiTime = -System.nanoTime();
+                boolean appendField = true;
+                reciprocalSpace.computePermanentPhi(dCartesianMultipolePhi);
+                phiTime += System.nanoTime();
+
+                /**
+                 *  E(λ)    = λ*E(1) + (1.0 - λ)*E(0)
+                 * dE(λ)/dλ =   E(1)           - E(0)
+                 */
+                for (int i = 0; i < nAtoms; i++) {
+                    double phi[] = cartesianMultipolePhi[i];
+                    double dPhi[] = dCartesianMultipolePhi[i];
+                    for (int j = 0; j < tensorCount; j++) {
+                        double phi1 = phi[j];
+                        double phi0 = dPhi[j];
+                        phi[j] = lambda * phi1 + (1.0 - lambda) * phi0;
+                        dPhi[j] = phi1 - phi0;
+                    }
+                }
             }
         } catch (Exception e) {
             String message = "Fatal exception computing the permanent multipole field.\n";
@@ -752,7 +805,6 @@ public class ParticleMeshEwald implements LambdaInterface {
             gkEnergy = generalizedKirkwood.solvationEnergy(gradient, print);
             gkInteractions = generalizedKirkwood.getInteractions();
             gkTime += System.nanoTime();
-            logger.info(String.format(" Computed GK energy %8.3f (sec)", gkTime * 1.0e-9));
         }
 
         // Add electrostatic gradient to total atomic gradient.
@@ -1654,9 +1706,9 @@ public class ParticleMeshEwald implements LambdaInterface {
                             final double rr1 = 1.0 / r;
                             final double rr2 = rr1 * rr1;
                             final double bn0 = erfc(ralpha) * rr1;
-                            final double bn1 = (bn0 + alsq2n2 * exp2a) * rr2;
-                            final double bn2 = (3.0 * bn1 + alsq2n3 * exp2a) * rr2;
-                            final double bn3 = (5.0 * bn2 + alsq2n4 * exp2a) * rr2;
+                            final double bn1 = (bn0 + an0 * exp2a) * rr2;
+                            final double bn2 = (3.0 * bn1 + an1 * exp2a) * rr2;
+                            final double bn3 = (5.0 * bn2 + an2 * exp2a) * rr2;
                             /**
                              * Compute the error function scaled and unscaled
                              * terms.
@@ -1698,12 +1750,12 @@ public class ParticleMeshEwald implements LambdaInterface {
                             final double qix = 2.0 * (qixx * xr + qixy * yr + qixz * zr);
                             final double qiy = 2.0 * (qixy * xr + qiyy * yr + qiyz * zr);
                             final double qiz = 2.0 * (qixz * xr + qiyz * yr + qizz * zr);
-                            final double qir = (qix * xr + qiy * yr + qiz * zr) / 2.0;
+                            final double qir = (qix * xr + qiy * yr + qiz * zr) * 0.5;
                             final double dkr = dkx * xr + dky * yr + dkz * zr;
                             final double qkx = 2.0 * (qkxx * xr + qkxy * yr + qkxz * zr);
                             final double qky = 2.0 * (qkxy * xr + qkyy * yr + qkyz * zr);
                             final double qkz = 2.0 * (qkxz * xr + qkyz * yr + qkzz * zr);
-                            final double qkr = (qkx * xr + qky * yr + qkz * zr) / 2.0;
+                            final double qkr = (qkx * xr + qky * yr + qkz * zr) * 0.5;
                             final double fimx = -xr * (bn1 * ck - bn2 * dkr + bn3 * qkr) - bn1 * dkx + bn2 * qkx;
                             final double fimy = -yr * (bn1 * ck - bn2 * dkr + bn3 * qkr) - bn1 * dky + bn2 * qky;
                             final double fimz = -zr * (bn1 * ck - bn2 * dkr + bn3 * qkr) - bn1 * dkz + bn2 * qkz;
@@ -1837,9 +1889,9 @@ public class ParticleMeshEwald implements LambdaInterface {
                                 final double rr1 = 1.0 / r;
                                 final double rr2 = rr1 * rr1;
                                 final double bn0 = erfc(ralpha) * rr1;
-                                final double bn1 = (bn0 + alsq2n2 * exp2a) * rr2;
-                                final double bn2 = (3.0 * bn1 + alsq2n3 * exp2a) * rr2;
-                                final double bn3 = (5.0 * bn2 + alsq2n4 * exp2a) * rr2;
+                                final double bn1 = (bn0 + an0 * exp2a) * rr2;
+                                final double bn2 = (3.0 * bn1 + an1 * exp2a) * rr2;
+                                final double bn3 = (5.0 * bn2 + an2 * exp2a) * rr2;
                                 /**
                                  * Compute the error function scaled and
                                  * unscaled terms.
@@ -1873,12 +1925,12 @@ public class ParticleMeshEwald implements LambdaInterface {
                                 final double qkx = 2.0 * (qkxx * xr + qkxy * yr + qkxz * zr);
                                 final double qky = 2.0 * (qkxy * xr + qkyy * yr + qkyz * zr);
                                 final double qkz = 2.0 * (qkxz * xr + qkyz * yr + qkzz * zr);
-                                final double qkr = (qkx * xr + qky * yr + qkz * zr) / 2.0;
+                                final double qkr = (qkx * xr + qky * yr + qkz * zr) * 0.5;
                                 final double dir = dix * xr + diy * yr + diz * zr;
                                 final double qix = 2.0 * (qixx * xr + qixy * yr + qixz * zr);
                                 final double qiy = 2.0 * (qixy * xr + qiyy * yr + qiyz * zr);
                                 final double qiz = 2.0 * (qixz * xr + qiyz * yr + qizz * zr);
-                                final double qir = (qix * xr + qiy * yr + qiz * zr) / 2.0;
+                                final double qir = (qix * xr + qiy * yr + qiz * zr) * 0.5;
                                 final double fimx = -xr * (bn1 * ck - bn2 * dkr + bn3 * qkr) - bn1 * dkx + bn2 * qkx;
                                 final double fimy = -yr * (bn1 * ck - bn2 * dkr + bn3 * qkr) - bn1 * dky + bn2 * qky;
                                 final double fimz = -zr * (bn1 * ck - bn2 * dkr + bn3 * qkr) - bn1 * dkz + bn2 * qkz;
@@ -2123,8 +2175,8 @@ public class ParticleMeshEwald implements LambdaInterface {
                         ralpha = aewald * r;
                         exp2a = exp(-ralpha * ralpha);
                         bn0 = erfc(ralpha) * rr1;
-                        bn1 = (bn0 + alsq2n2 * exp2a) * rr2;
-                        bn2 = (3.0 * bn1 + alsq2n3 * exp2a) * rr2;
+                        bn1 = (bn0 + an0 * exp2a) * rr2;
+                        bn2 = (3.0 * bn1 + an1 * exp2a) * rr2;
                         scale3 = 1.0;
                         scale5 = 1.0;
                         damp = pdi * pdk;
@@ -2271,8 +2323,8 @@ public class ParticleMeshEwald implements LambdaInterface {
                             ralpha = aewald * r;
                             exp2a = exp(-ralpha * ralpha);
                             bn0 = erfc(ralpha) * rr1;
-                            bn1 = (bn0 + alsq2n2 * exp2a) * rr2;
-                            bn2 = (3.0 * bn1 + alsq2n3 * exp2a) * rr2;
+                            bn1 = (bn0 + an0 * exp2a) * rr2;
+                            bn2 = (3.0 * bn1 + an1 * exp2a) * rr2;
                             scale3 = 1.0;
                             scale5 = 1.0;
                             damp = pdi * pdk;
@@ -2748,13 +2800,13 @@ public class ParticleMeshEwald implements LambdaInterface {
                         final double ralpha = aewald * r;
                         final double exp2a = exp(-ralpha * ralpha);
                         rr1 = 1.0 / r;
-                        rr2 = rr1*rr1;
+                        rr2 = rr1 * rr1;
                         bn0 = erfc(ralpha) * rr1;
-                        bn1 = (bn0 + alsq2n2 * exp2a) * rr2;
-                        bn2 = (3.0 * bn1 + alsq2n3 * exp2a) * rr2;
-                        bn3 = (5.0 * bn2 + alsq2n4 * exp2a) * rr2;
-                        bn4 = (7.0 * bn3 + alsq2n5 * exp2a) * rr2;
-                        bn5 = (9.0 * bn4 + alsq2n6 * exp2a) * rr2;
+                        bn1 = (bn0 + an0 * exp2a) * rr2;
+                        bn2 = (3.0 * bn1 + an1 * exp2a) * rr2;
+                        bn3 = (5.0 * bn2 + an2 * exp2a) * rr2;
+                        bn4 = (7.0 * bn3 + an3 * exp2a) * rr2;
+                        bn5 = (9.0 * bn4 + an4 * exp2a) * rr2;
                         rr3 = rr1 * rr2;
                         rr5 = 3.0 * rr3 * rr2;
                         rr7 = 5.0 * rr5 * rr2;

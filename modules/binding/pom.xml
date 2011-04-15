@@ -23,6 +23,42 @@
         <name>Pengyu Ren</name>
         <url>http://biomol.bme.utexas.edu/lab</url>
     </organization>
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>2.4.3</version>
+                <inherited>false</inherited>
+                <executions>
+                    <execution>
+                        <id>copy-scripts</id>
+                        <phase>pre-site</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <resources>
+                                <resource>
+                                    <directory>${basedir}/src/main/groovy/ffx/binding</directory>
+                                </resource>
+                            </resources>
+                            <outputDirectory>${basedir}/src/site/resources/scripts</outputDirectory>
+                            <overwrite>true</overwrite>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+        <resources>
+            <resource>
+                <directory>${basedir}/src/main/groovy/ffx/binding</directory>
+                <targetPath>ffx/scripts</targetPath>
+                <includes>
+                    <include>*</include>
+                </includes>
+            </resource>
+        </resources>
+    </build>
 
     <developers>
         <developer>

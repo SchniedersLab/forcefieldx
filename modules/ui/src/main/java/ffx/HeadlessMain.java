@@ -32,7 +32,6 @@ import org.apache.commons.lang.time.StopWatch;
 import ffx.ui.LogHandler;
 import ffx.ui.MainPanel;
 import java.net.URL;
-import org.apache.commons.io.FilenameUtils;
 
 /**
  * The HeadlessMain class is the entry point to the command line version of
@@ -60,9 +59,13 @@ public class HeadlessMain {
                 /**
                  * See if the commandLineFile is an embedded script.
                  */
-                String name = commandLineFile.getName() + ".ffx";
+                String name = commandLineFile.getName();
+                name = name.replace('.', File.separatorChar);
                 ClassLoader loader = getClass().getClassLoader();
-                URL embeddedScript = loader.getResource("ffx/scripts/" + name);
+                URL embeddedScript = loader.getResource("ffx/scripts/" + name + ".ffx");
+                if (embeddedScript == null) {
+                    embeddedScript = loader.getResource("ffx/scripts/" + name + ".groovy");
+                }
                 if (embeddedScript != null) {
                     try {
                         commandLineFile = new File(

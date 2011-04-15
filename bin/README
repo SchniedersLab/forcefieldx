@@ -1,11 +1,9 @@
 
-Java OpenGL Wrappers (JOGL) v. 1.1.1.
-Mac OS X: Universal binaries (PPC, 32-bit and 64-bit).
-Linux:    32-bit and 64-bit binaries.
-Windows:  32-bit and 64-bit binaries.
+Native OpenCL (JOCL) and OpenGL (JOGL) using Gluegen
+Native CUDA (JCUDA)
 
-Java CUDA Wrappers (JCuda) v. 0.32 (CUDA v. 3.2).
-Mac OS X: 64-bit only.
-Linux:    64-bit only.
-Windows:  64-bit only.
+universal: Mac OS X: Universal binaries (PPC, 32-bit and 64-bit).
+32-bit:    Linux and Windows 32-bit binaries.
+64-bit:    Linux and Windows 64-bit binaries.
+
 

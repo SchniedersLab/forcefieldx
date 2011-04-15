@@ -36,4 +36,10 @@ public interface LambdaInterface {
 
     public double getLambda();
 
+    public void lambdaGradients(boolean lambdaGradients);
+    
+    public double getdEdLambda();
+    
+    public void getdEdLambdadX(double gradients[]);
+    
 }

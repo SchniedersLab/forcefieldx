@@ -1,5 +1,4 @@
 // SIMULATED ANNEALING 
-
 import ffx.algorithms.SimulatedAnnealing;
 
 // Name of the file (PDB or XYZ).

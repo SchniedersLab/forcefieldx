@@ -120,14 +120,17 @@ public class Complex3DCuda implements Runnable {
     public void run() {
         JCudaDriver.setExceptionsEnabled(true);
         JCufft.setExceptionsEnabled(true);
-        JCudaDriver.setLogLevel(LogLevel.LOG_ERROR);
-
+        JCudaDriver.setLogLevel(LogLevel.LOG_INFO);
+        JCufft.setLogLevel(LogLevel.LOG_INFO);
+        JCufft.initialize();
+        
         // Initialize the driver and create a context for the first device.
         cuInit(0);
         CUcontext pctx = new CUcontext();
         CUdevice dev = new CUdevice();
         CUdevprop prop = new CUdevprop();
         cuDeviceGetProperties(prop, dev);
+   
         logger.info(" CUDA " + prop.toFormattedString());
 
         cuDeviceGet(dev, 0);

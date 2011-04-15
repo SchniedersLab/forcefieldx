@@ -25,7 +25,8 @@
             <email>michael.schnieders@gmail.com</email>
             <url>http://www.stanford.edu/~schnied</url>
             <organization>Joint Postdoc of the Pande and Brunger Labs,
-            Stanford University</organization>
+            Stanford University
+            </organization>
             <organizationUrl>http://ffx.kenai.com</organizationUrl>
             <roles>
                 <role>Director of Force Field X</role>
@@ -45,6 +46,31 @@
         </developer>
     </developers>
     <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>2.4.3</version>
+                <inherited>false</inherited>
+                <executions>
+                    <execution>
+                        <id>copy-scripts</id>
+                        <phase>pre-site</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <resources>
+                                <resource>
+                                    <directory>${basedir}/src/main/groovy/ffx/potentials</directory>
+                                </resource>
+                            </resources>
+                            <outputDirectory>${basedir}/src/site/resources/scripts</outputDirectory>
+                            <overwrite>true</overwrite>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
         <resources>
             <resource>
                 <directory>${basedir}/src/main/java/ffx/potential/parameters/amoeba
@@ -58,6 +84,13 @@
                 <directory>${basedir}/src/main/java/ffx/potential/structures
                 </directory>
                 <targetPath>ffx/potential/structures</targetPath>
+                <includes>
+                    <include>*</include>
+                </includes>
+            </resource>
+            <resource>
+                <directory>${basedir}/src/main/groovy/ffx/potentials</directory>
+                <targetPath>ffx/scripts</targetPath>
                 <includes>
                     <include>*</include>
                 </includes>
@@ -105,7 +138,7 @@
             <groupId>edu.rit.pj</groupId>
             <artifactId>pj</artifactId>
             <type>jar</type>
-            <version>1.3</version>
+            <version>1.4</version>
         </dependency>
         <dependency>
             <groupId>java3d</groupId>
@@ -137,17 +170,11 @@
             <type>jar</type>
             <version>1.1.1</version>
         </dependency>
-        <dependency>
-            <groupId>net.java.dev.jogl</groupId>
-            <artifactId>jocl</artifactId>
+        <!-- dependency>
+            <groupId>org.jogamp</groupId>
+            <artifactId>jogl</artifactId>
             <type>jar</type>
-            <version>1.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>net.java.dev.jogl</groupId>
-            <artifactId>gluegen-rt</artifactId>
-            <type>jar</type>
-            <version>1.1.1</version>
-        </dependency>
+            <version>2.0.0</version>
+        </dependency -->
     </dependencies>
 </project>
