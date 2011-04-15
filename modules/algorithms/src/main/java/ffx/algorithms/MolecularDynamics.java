@@ -339,9 +339,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
              */
             thermostat.kineticEnergy();
 
-            if (step % 100 == 0) {
+            // if (step % 10 == 0) {
                 thermostat.centerOfMassMotion(true, false);
-            }
+            // }
 
             kinetic = thermostat.getKineticEnergy();
             currentTemp = thermostat.getCurrentTemperture();

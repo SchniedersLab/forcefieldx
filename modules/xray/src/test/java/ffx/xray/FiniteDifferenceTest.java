@@ -59,9 +59,10 @@ public class FiniteDifferenceTest {
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
-                    {true,
+                    {false,
                         "ala met anisou",
                         SolventModel.NONE,
+                        new int[]{91, 105, 119},
                         "ffx/xray/structures/alamet.pdb",
                         "ffx/xray/structures/alamet.mtz"}
                 });
@@ -73,14 +74,17 @@ public class FiniteDifferenceTest {
     private final boolean ci;
     private final boolean ciOnly;
     private final Atom atomarray[];
+    private final int atoms[];
     private final DiffractionRefinementData refinementdata;
     private final SigmaAMinimize sigmaaminimize;
 
     public FiniteDifferenceTest(boolean ciOnly,
-            String info, int solventmodel, String pdbname, String mtzname) {
+            String info, int solventmodel, int[] atoms,
+            String pdbname, String mtzname) {
         this.ciOnly = ciOnly;
         this.info = info;
         this.solventmodel = solventmodel;
+        this.atoms = atoms;
         this.pdbname = pdbname;
         this.mtzname = mtzname;
 
@@ -225,82 +229,80 @@ public class FiniteDifferenceTest {
         double llk1, llk2, fd;
         double mean = 0.0, nmean = 0.0;
         double gxyz[] = new double[3];
-        for (int i = 0; i < natoms; i++) {
-            if (atomarray[i].getOccupancy() == 0.0) {
-                continue;
-            }
-            // just look at sulfur for testing
-            if (atomarray[i].getAtomType().atomicNumber != 16) {
+        for (int i = 0; i < atoms.length; i++) {
+            Atom atom = atomarray[atoms[i]];
+            int index = atom.getXYZIndex() - 1;
+            if (atom.getOccupancy() == 0.0) {
                 continue;
             }
 
-            System.out.println("atom: " + atomarray[i].toString());
-            atomarray[i].getXYZGradient(gxyz);
-            double bg = atomarray[i].getTempFactorGradient();
+            System.out.println("atom " + i + ": (" + atom.getXYZIndex() + ") " + atom.toString());
+            atom.getXYZGradient(gxyz);
+            double bg = atom.getTempFactorGradient();
             double anisoug[] = null;
-            if (atomarray[i].getAnisou() != null) {
-                anisoug = atomarray[i].getAnisouGradient();
+            if (atom.getAnisou() != null) {
+                anisoug = atom.getAnisouGradient();
             }
 
-            refinementdata.crs_fc.deltaX(i, delta);
+            refinementdata.crs_fc.deltaX(index, delta);
             refinementdata.crs_fc.computeDensity(refinementdata.fc);
             llk1 = sigmaaminimize.calculateLikelihood();
-            refinementdata.crs_fc.deltaX(i, -delta);
+            refinementdata.crs_fc.deltaX(index, -delta);
             refinementdata.crs_fc.computeDensity(refinementdata.fc);
             llk2 = sigmaaminimize.calculateLikelihood();
             fd = (llk1 - llk2) / (2.0 * delta);
             System.out.print(String.format("+x: %g -x: %g dfx: %g fdx: %g ratio: %g\n",
                     llk1 - llk0, llk2 - llk0, gxyz[0], fd, gxyz[0] / fd));
-            refinementdata.crs_fc.deltaX(i, 0.0);
+            refinementdata.crs_fc.deltaX(index, 0.0);
 
             nmean++;
             mean += (gxyz[0] / fd - mean) / nmean;
 
-            refinementdata.crs_fc.deltaY(i, delta);
+            refinementdata.crs_fc.deltaY(index, delta);
             refinementdata.crs_fc.computeDensity(refinementdata.fc);
             llk1 = sigmaaminimize.calculateLikelihood();
-            refinementdata.crs_fc.deltaY(i, -delta);
+            refinementdata.crs_fc.deltaY(index, -delta);
             refinementdata.crs_fc.computeDensity(refinementdata.fc);
             llk2 = sigmaaminimize.calculateLikelihood();
             fd = (llk1 - llk2) / (2.0 * delta);
             System.out.print(String.format("+y: %g -y: %g dfy: %g fdy: %g ratio: %g\n",
                     llk1 - llk0, llk2 - llk0, gxyz[1], fd, gxyz[1] / fd));
-            refinementdata.crs_fc.deltaY(i, 0.0);
+            refinementdata.crs_fc.deltaY(index, 0.0);
 
             nmean++;
             mean += (gxyz[1] / fd - mean) / nmean;
 
-            refinementdata.crs_fc.deltaZ(i, delta);
+            refinementdata.crs_fc.deltaZ(index, delta);
             refinementdata.crs_fc.computeDensity(refinementdata.fc);
             llk1 = sigmaaminimize.calculateLikelihood();
-            refinementdata.crs_fc.deltaZ(i, -delta);
+            refinementdata.crs_fc.deltaZ(index, -delta);
             refinementdata.crs_fc.computeDensity(refinementdata.fc);
             llk2 = sigmaaminimize.calculateLikelihood();
             fd = (llk1 - llk2) / (2.0 * delta);
             System.out.print(String.format("+z: %g -z: %g dfz: %g fdz: %g ratio: %g\n",
                     llk1 - llk0, llk2 - llk0, gxyz[2], fd, gxyz[2] / fd));
-            refinementdata.crs_fc.deltaZ(i, 0.0);
+            refinementdata.crs_fc.deltaZ(index, 0.0);
 
             nmean++;
             mean += (gxyz[2] / fd - mean) / nmean;
 
-            if (atomarray[i].getAnisou() == null) {
-                double b = atomarray[i].getTempFactor();
-                atomarray[i].setTempFactor(b + delta);
+            if (atom.getAnisou() == null) {
+                double b = atom.getTempFactor();
+                atom.setTempFactor(b + delta);
                 refinementdata.crs_fc.computeDensity(refinementdata.fc);
                 llk1 = sigmaaminimize.calculateLikelihood();
-                atomarray[i].setTempFactor(b - delta);
+                atom.setTempFactor(b - delta);
                 refinementdata.crs_fc.computeDensity(refinementdata.fc);
                 llk2 = sigmaaminimize.calculateLikelihood();
                 fd = (llk1 - llk2) / (2.0 * delta);
                 System.out.print(String.format("+B: %g -B: %g dfB: %g fdB: %g ratio: %g\n",
                         llk1 - llk0, llk2 - llk0, bg, fd, bg / fd));
-                atomarray[i].setTempFactor(b);
+                atom.setTempFactor(b);
 
                 nmean++;
                 mean += (bg / fd - mean) / nmean;
             } else {
-                double anisou[] = atomarray[i].getAnisou();
+                double anisou[] = atom.getAnisou();
                 for (int j = 0; j < 6; j++) {
                     double tmpu = anisou[j];
                     anisou[j] = tmpu + b2u(delta);
