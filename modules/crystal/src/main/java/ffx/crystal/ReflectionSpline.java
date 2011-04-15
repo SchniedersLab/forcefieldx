@@ -26,7 +26,12 @@ import static java.lang.Math.max;
 
 /**
  *
- * @author fennt
+ * Spline basis function
+ *
+ * @author Tim Fenn<br>
+ *
+ * @see <a href="http://dx.doi.org/10.1107/S0021889802013420" target="_blank">
+ * K. Cowtan, J. Appl. Cryst. (2002). 35, 655-663</a>
  */
 public class ReflectionSpline {
 
@@ -71,6 +76,14 @@ public class ReflectionSpline {
         return dfi2;
     }
 
+    /**
+     * evaluate basis function and derivative at a given resolution
+     * (Eqns 24 and 25 in Cowtan paper)
+     *
+     * @param invressq resolution of desired spline interpolation
+     * @param params current spline parameters
+     * @return value at invressq
+     */
     public double f(double invressq, double params[]) {
         double s = nparams * reflectionlist.ordinal(invressq);
         int i = (int) floor(s);

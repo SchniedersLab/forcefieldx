@@ -444,7 +444,7 @@ public final class NeutronFormFactor implements FormFactor {
             uaniso = atom.getAnisou();
             double det = determinant3(uaniso);
 
-            if (det <= 1e-10) {
+            if (det <= 1e-14) {
                 StringBuilder sb = new StringBuilder();
                 sb.append("non-positive definite ANISOU for atom: " + atom.toString() + "\n");
                 sb.append("resetting ANISOU based on isotropic B: (" + biso + ")\n");

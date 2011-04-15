@@ -20,6 +20,7 @@
  */
 package ffx.xray;
 
+import static ffx.algorithms.Thermostat.convert;
 import static ffx.algorithms.Thermostat.kB;
 import static ffx.numerics.VectorMath.determinant3;
 import static ffx.numerics.VectorMath.b2u;
@@ -58,10 +59,13 @@ public class XRayEnergy implements Potential {
     private boolean refineb = false;
     protected double[] optimizationScaling = null;
     private double bmass;
-    private double temp = 0.1;
     private double kTbnonzero;
     private double kTbsim;
     private double occmass;
+    private double temp = 50.0;
+    private static final double kBkcal = kB / convert;
+    private static final double eightpi2 = 8.0 * Math.PI * Math.PI;
+    private static final double eightpi23 = eightpi2 * eightpi2 * eightpi2;
 
     /**
      * Diffraction data energy target
@@ -86,15 +90,16 @@ public class XRayEnergy implements Potential {
         this.nocc = nocc;
 
         bmass = diffractiondata.bmass;
-        kTbnonzero = 1.5 * kB * temp * diffractiondata.bnonzeroweight;
-        kTbsim = 0.01 * kB * temp * diffractiondata.bsimweight;
+        kTbnonzero = 0.5 * kBkcal * temp * diffractiondata.bnonzeroweight;
+        kTbsim = kBkcal * temp * diffractiondata.bsimweight;
         occmass = diffractiondata.occmass;
 
         setRefinementBooleans();
 
         if (refineb) {
-            logger.info("total B non-zero restraint weight: " + temp * diffractiondata.bnonzeroweight);
-            logger.info("total B similarity restraint weight: " + temp * diffractiondata.bsimweight);
+            logger.info("B temperature: " + temp);
+            logger.info("B non-zero restraint weight: " + diffractiondata.bnonzeroweight);
+            logger.info("B similarity restraint weight: " + diffractiondata.bsimweight);
         }
     }
 
@@ -550,8 +555,8 @@ public class XRayEnergy implements Potential {
                     a.setTempFactor(u2b(det));
                 } else {
                     nneg++;
-                    a.setTempFactor(0.1);
-                    anisou[0] = anisou[1] = anisou[2] = b2u(0.1);
+                    a.setTempFactor(0.01);
+                    anisou[0] = anisou[1] = anisou[2] = b2u(0.01);
                     anisou[3] = anisou[4] = anisou[5] = 0.0;
                     if (nneg < 5) {
                         logger.info("anisotropic atom: " + a.toString() + " negative ANISOU");
@@ -562,7 +567,13 @@ public class XRayEnergy implements Potential {
 
         if (nneg > 0) {
             logger.info(nneg + " of " + nAtoms
-                    + " atoms with negative B factors! Attempting to correct....");
+                    + " atoms with negative B factors! Attempting to correct.\n  (If this problem persists, increase bsimweight)");
+            /*
+            if (nneg > 50){
+                kTbsim *= 2.0;
+                logger.info("excessive number of negative Bs, increasing similarity restraint: " + kTbsim);
+            }
+             */
         }
 
         // set hydrogen based on bonded atom
@@ -631,11 +642,8 @@ public class XRayEnergy implements Potential {
     public double getBFactorRestraints() {
         Atom a1, a2;
         double b1, b2, bdiff;
-        double c = kTbnonzero * Math.log(4.0 * Math.PI);
-        double pi6 = 512.0 * Math.pow(Math.PI, 6.0);
-        double anisou[];
-        double banisou1[] = new double[6];
-        double banisou2[] = new double[6];
+        double anisou1[];
+        double anisou2[];
         double gradb;
         double det1, det2;
         double gradu[] = new double[6];
@@ -651,12 +659,12 @@ public class XRayEnergy implements Potential {
             if (a.getAnisou() == null) {
                 // isotropic B restraint
 
-                // non-zero restraint
-                e += -kTbnonzero * Math.log(Math.pow(biso, 3.0)) + c;
+                // non-zero restraint: -kTln[Z], Z is ADP partition function
+                e += -3.0 * kTbnonzero * Math.log(biso / (4.0 * Math.PI));
                 gradb = -3.0 * kTbnonzero / biso;
                 a.addToTempFactorGradient(gradb);
 
-                // similarity / harmonic restraint
+                // similarity harmonic restraint
                 ArrayList<Bond> bonds = a.getBonds();
                 for (Bond b : bonds) {
                     if (a.compareTo(b.getAtom(0)) == 0) {
@@ -680,7 +688,8 @@ public class XRayEnergy implements Potential {
 
                     b1 = a1.getTempFactor();
                     b2 = a2.getTempFactor();
-                    bdiff = b1 - b2;
+                    // transform B similarity restraints to U scale
+                    bdiff = b2u(b1 - b2);
                     e += kTbsim * Math.pow(bdiff, 2.0);
                     gradb = 2.0 * kTbsim * bdiff;
                     a1.addToTempFactorGradient(gradb);
@@ -688,26 +697,20 @@ public class XRayEnergy implements Potential {
                 }
             } else {
                 // anisotropic B restraint
-                anisou = a.getAnisou();
-                for (int i = 0; i < 6; i++) {
-                    banisou1[i] = u2b(anisou[i]);
-                }
-                det1 = determinant3(banisou1);
+                anisou1 = a.getAnisou();
+                det1 = determinant3(anisou1);
 
-                // non-zero restraint
-                e += -kTbnonzero * Math.log(det1) + c;
-                gradu[0] = -kTbnonzero * ((pi6 * (-banisou1[0] * banisou1[0] + banisou1[1] * banisou1[2])) / det1);
-                gradu[1] = -kTbnonzero * ((pi6 * (-banisou1[4] * banisou1[4] + banisou1[0] * banisou1[2])) / det1);
-                gradu[2] = -kTbnonzero * ((pi6 * (-banisou1[3] * banisou1[3] + banisou1[0] * banisou1[1])) / det1);
-                gradu[3] = -kTbnonzero * ((2.0 * pi6 * (banisou1[4] * banisou1[5] - banisou1[3] * banisou1[2])) / det1);
-                gradu[4] = -kTbnonzero * ((2.0 * pi6 * (banisou1[3] * banisou1[5] - banisou1[4] * banisou1[1])) / det1);
-                gradu[5] = -kTbnonzero * ((2.0 * pi6 * (banisou1[3] * banisou1[4] - banisou1[5] * banisou1[0])) / det1);
-                for (int i = 0; i < 6; i++) {
-                    gradu[i] = b2u(gradu[i]);
-                }
+                // non-zero restraint: -kTln[Z], Z is ADP partition function
+                e += u2b(-kTbnonzero * Math.log(det1 * eightpi2 * Math.PI));
+                gradu[0] = u2b(-kTbnonzero * ((anisou1[1] * anisou1[2] - anisou1[5] * anisou1[5]) / det1));
+                gradu[1] = u2b(-kTbnonzero * ((anisou1[0] * anisou1[2] - anisou1[4] * anisou1[4]) / det1));
+                gradu[2] = u2b(-kTbnonzero * ((anisou1[0] * anisou1[1] - anisou1[3] * anisou1[3]) / det1));
+                gradu[3] = u2b(-kTbnonzero * ((2.0 * (anisou1[4] * anisou1[5] - anisou1[3] * anisou1[2])) / det1));
+                gradu[4] = u2b(-kTbnonzero * ((2.0 * (anisou1[3] * anisou1[5] - anisou1[4] * anisou1[1])) / det1));
+                gradu[5] = u2b(-kTbnonzero * ((2.0 * (anisou1[3] * anisou1[4] - anisou1[5] * anisou1[0])) / det1));
                 a.addToAnisouGradient(gradu);
 
-                // similarity / harmonic restraint
+                // similarity harmonic restraint based on determinants
                 ArrayList<Bond> bonds = a.getBonds();
                 for (Bond b : bonds) {
                     if (a.compareTo(b.getAtom(0)) == 0) {
@@ -732,33 +735,28 @@ public class XRayEnergy implements Potential {
                         continue;
                     }
 
-                    anisou = a2.getAnisou();
-                    for (int i = 0; i < 6; i++) {
-                        banisou2[i] = u2b(anisou[i]);
-                    }
-                    det2 = determinant3(banisou2);
+                    anisou2 = a2.getAnisou();
+                    det2 = determinant3(anisou2);
                     bdiff = det1 - det2;
-                    e += kTbsim * Math.pow(bdiff, 2.0);
-                    gradb = 2.0 * kTbsim * bdiff;
-                    gradu[0] = gradb * (banisou1[1] * banisou1[2] - banisou1[5] * banisou1[5]);
-                    gradu[1] = gradb * (banisou1[0] * banisou1[2] - banisou1[4] * banisou1[4]);
-                    gradu[2] = gradb * (banisou1[0] * banisou1[1] - banisou1[3] * banisou1[3]);
-                    gradu[3] = gradb * (2.0 * banisou1[4] * banisou1[5] - banisou1[2] * banisou1[3]);
-                    gradu[4] = gradb * (2.0 * banisou1[3] * banisou1[5] - banisou1[1] * banisou1[4]);
-                    gradu[5] = gradb * (2.0 * banisou1[3] * banisou1[4] - banisou1[0] * banisou1[5]);
-                    for (int i = 0; i < 6; i++) {
-                        gradu[i] = b2u(gradu[i]);
-                    }
+                    e += eightpi23 * kTbsim * Math.pow(bdiff, 2.0);
+                    gradb = eightpi23 * 2.0 * kTbsim * bdiff;
+
+                    // parent atom
+                    gradu[0] = gradb * (anisou1[1] * anisou1[2] - anisou1[5] * anisou1[5]);
+                    gradu[1] = gradb * (anisou1[0] * anisou1[2] - anisou1[4] * anisou1[4]);
+                    gradu[2] = gradb * (anisou1[0] * anisou1[1] - anisou1[3] * anisou1[3]);
+                    gradu[3] = gradb * (2.0 * (anisou1[4] * anisou1[5] - anisou1[3] * anisou1[2]));
+                    gradu[4] = gradb * (2.0 * (anisou1[3] * anisou1[5] - anisou1[4] * anisou1[1]));
+                    gradu[5] = gradb * (2.0 * (anisou1[3] * anisou1[4] - anisou1[5] * anisou1[0]));
                     a1.addToAnisouGradient(gradu);
-                    gradu[0] = gradb * (banisou2[5] * banisou2[5] - banisou2[1] * banisou2[2]);
-                    gradu[1] = gradb * (banisou2[4] * banisou2[4] - banisou2[0] * banisou2[2]);
-                    gradu[2] = gradb * (banisou2[3] * banisou2[3] - banisou2[0] * banisou2[1]);
-                    gradu[3] = gradb * (2.0 * banisou2[2] * banisou2[3] - banisou2[4] * banisou2[5]);
-                    gradu[4] = gradb * (2.0 * banisou2[1] * banisou2[4] - banisou2[3] * banisou2[5]);
-                    gradu[5] = gradb * (2.0 * banisou2[0] * banisou2[5] - banisou2[3] * banisou2[4]);
-                    for (int i = 0; i < 6; i++) {
-                        gradu[i] = b2u(gradu[i]);
-                    }
+
+                    // bonded atom
+                    gradu[0] = gradb * (anisou2[5] * anisou2[5] - anisou2[1] * anisou2[2]);
+                    gradu[1] = gradb * (anisou2[4] * anisou2[4] - anisou2[0] * anisou2[2]);
+                    gradu[2] = gradb * (anisou2[3] * anisou2[3] - anisou2[0] * anisou2[1]);
+                    gradu[3] = gradb * (2.0 * (anisou2[3] * anisou2[2] - anisou2[4] * anisou2[5]));
+                    gradu[4] = gradb * (2.0 * (anisou2[4] * anisou2[1] - anisou2[3] * anisou2[5]));
+                    gradu[5] = gradb * (2.0 * (anisou2[5] * anisou2[0] - anisou2[3] * anisou2[4]));
                     a2.addToAnisouGradient(gradu);
                 }
             }

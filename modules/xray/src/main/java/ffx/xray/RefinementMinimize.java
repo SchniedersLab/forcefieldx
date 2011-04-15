@@ -135,12 +135,13 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
         refinementenergy.dataEnergy.getCoordinates(x);
 
         double xyzscale = 1.0;
-        double anisouscale = 80.0;
         double bisoscale = 1.0;
+        double anisouscale = 80.0;
         double occscale = 15.0;
         if (refinementmode == RefinementMode.COORDINATES_AND_BFACTORS
                 || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
             bisoscale = 0.2;
+            anisouscale = 80.0;
         }
 
         if (refinementmode == RefinementMode.COORDINATES_AND_OCCUPANCIES
@@ -155,7 +156,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
                 || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
             for (int i = 0; i < nxyz; i++) {
                 scaling[i] = xyzscale;
-                x[i] *= xyzscale;
+                // x[i] *= xyzscale;
             }
         }
 
@@ -176,7 +177,6 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
                     if (a.getAnisou() != null) {
                         for (int j = 0; j < 6; j++) {
                             scaling[i + j] = anisouscale;
-                            x[i + j] *= anisouscale;
                         }
                         i += 6;
                     } else if (diffractiondata.residuebfactor) {
@@ -188,7 +188,6 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
                                 }
                                 if (i < nxyz + nb) {
                                     scaling[i] = bisoscale;
-                                    x[i] *= bisoscale;
                                 }
                                 nres = 1;
                             } else {
@@ -198,7 +197,6 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
                         }
                     } else {
                         scaling[i] = bisoscale;
-                        x[i] *= bisoscale;
                         i++;
                     }
                 }
@@ -216,14 +214,12 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
                 for (ArrayList<Residue> list : refinementmodel.altresidues) {
                     for (int j = 0; j < list.size(); j++) {
                         scaling[i] = occscale;
-                        x[i] *= occscale;
                         i++;
                     }
                 }
                 for (ArrayList<Molecule> list : refinementmodel.altmolecules) {
                     for (int j = 0; j < list.size(); j++) {
                         scaling[i] = occscale;
-                        x[i] *= occscale;
                         i++;
                     }
                 }

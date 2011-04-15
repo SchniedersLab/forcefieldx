@@ -249,7 +249,7 @@ public class CIFFilter implements DiffractionFileFilter {
             return -1.0;
         }
 
-        return res;
+        return res * 0.999;
     }
 
     @Override

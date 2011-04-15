@@ -226,7 +226,7 @@ public class RefinementEnergy implements Potential, AlgorithmListener {
 
         double ktscale = 1.0;
         if (thermostat != null) {
-            ktscale = 1.0 / (thermostat.getCurrentTemperture() * Thermostat.kB);
+            ktscale = Thermostat.convert / (thermostat.getCurrentTemperture() * Thermostat.kB);
         }
 
         if (optimizationScaling != null) {
@@ -425,7 +425,7 @@ public class RefinementEnergy implements Potential, AlgorithmListener {
     public boolean algorithmUpdate(MolecularAssembly active) {
         double ktscale = 1.0;
         if (thermostat != null) {
-            ktscale = 1.0 / (thermostat.getCurrentTemperture() * Thermostat.kB);
+            ktscale = Thermostat.convert / (thermostat.getCurrentTemperture() * Thermostat.kB);
         }
         logger.info("kTscale: " + ktscale);
         logger.info(data.printEnergyUpdate());
