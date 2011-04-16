@@ -692,11 +692,12 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                 softCore[1][i] = true;
             }
         }
+        /*
         if (softAtoms) {
             logger.info(String.format(" Soft core van der Waals lambda value set to %8.6f", lambda));
         } else {
             logger.warning(" No atoms are selected for soft core van der Waals.\n");
-        }
+        } */
 
         // Redo the long range correction.
         if (doLongRangeCorrection) {

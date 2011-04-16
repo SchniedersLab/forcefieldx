@@ -49,7 +49,12 @@ public abstract class Thermostat {
      * Conversion from kcal/mole to g*Ang**2/ps**2.
      */
     public static final double convert = 4.1840e2;
-
+    
+    /**
+     * Gas constant (in Kcal/mole/Kelvin).
+     */
+    public static final double R = 1.9872066e-3;
+    
     public enum Thermostats {
 
         ADIABATIC, BERENDSEN, BUSSI;

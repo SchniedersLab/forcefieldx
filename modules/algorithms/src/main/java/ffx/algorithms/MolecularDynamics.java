@@ -20,6 +20,11 @@
  */
 package ffx.algorithms;
 
+
+import static java.lang.Math.sin;
+import static java.lang.Math.sqrt;
+import static java.lang.Math.PI;
+
 import static java.lang.String.format;
 
 import java.io.File;
@@ -31,10 +36,13 @@ import org.apache.commons.io.FilenameUtils;
 
 import ffx.algorithms.Thermostat.Thermostats;
 import ffx.numerics.Potential;
+import ffx.potential.ForceFieldEnergy;
+import ffx.potential.LambdaInterface;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.parsers.DYNFilter;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.XYZFilter;
+import java.util.Random;
 
 /**
  * Run NVE or NVT molecular dynamics.
@@ -61,6 +69,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     private double dt;
     private final MolecularAssembly molecularAssembly;
     private final Potential potentialEnergy;
+    private final LambdaInterface lambdaInterface;
     private final CompositeConfiguration properties;
     private AlgorithmListener algorithmListener;
     private Thermostat thermostat;
@@ -79,6 +88,30 @@ public class MolecularDynamics implements Runnable, Terminatable {
     private boolean initVelocities = true;
     private boolean loadRestart = false;
 
+    
+    private double halflThetaVelocity = 0.0;
+    /**
+     * Reasonable values are from 20 to 200.
+     */
+    private double thetaFriction = 60.0;
+    private double thetaMass = 20.0;
+    private Random lambdaRandom;
+    private double theta;
+    private boolean doLambdaDynamics = false;
+    /**
+     * Random force conversion to kcal/mol/A;
+     */
+    private static final double randomConvert = 10.0 * sqrt(4.184);
+       
+    public void setLambda(double lambda) {
+        lambdaInterface.setLambda(lambda);        
+        theta = Math.asin(Math.sqrt(lambda));
+    }
+    
+    public void setFriction(double friction) {
+        thetaFriction = friction;
+    }
+    
     public MolecularDynamics(MolecularAssembly assembly,
             Potential potentialEnergy,
             CompositeConfiguration properties,
@@ -87,6 +120,14 @@ public class MolecularDynamics implements Runnable, Terminatable {
         this.molecularAssembly = assembly;
         this.algorithmListener = listener;
         this.potentialEnergy = potentialEnergy;
+
+        if (potentialEnergy instanceof ForceFieldEnergy) {
+            lambdaInterface = (LambdaInterface) potentialEnergy;
+            lambdaRandom = new Random();
+        } else {
+            lambdaInterface = null;
+        }
+
         this.properties = properties;
         mass = potentialEnergy.getMass();
         dof = potentialEnergy.getNumberOfVariables();
@@ -126,6 +167,13 @@ public class MolecularDynamics implements Runnable, Terminatable {
         return thermostat;
     }
 
+    public void doLambdaDynamics(boolean lambdaDynamics) {
+        doLambdaDynamics = lambdaDynamics;
+        if (lambdaInterface != null) {
+            lambdaInterface.lambdaGradients(lambdaDynamics);
+        }
+    }
+    
     public void setArchiveFile(File archive) {
         this.archiveFile = archive;
     }
@@ -184,7 +232,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
             logger.info(" Restart file will be written to " + this.dynFile.getAbsolutePath());
 
-
             if (xyzFilter == null) {
                 xyzFilter = new XYZFilter(file, molecularAssembly,
                         molecularAssembly.getForceField(), properties);
@@ -202,6 +249,11 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
         this.temperature = temperature;
         this.initVelocities = initVelocities;
+
+        if (lambdaInterface != null) {
+            double lambda = lambdaInterface.getLambda();
+            theta = Math.asin(Math.sqrt(lambda));
+        }
     }
 
     /**
@@ -340,7 +392,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
             thermostat.kineticEnergy();
 
             // if (step % 10 == 0) {
-                thermostat.centerOfMassMotion(true, false);
+            thermostat.centerOfMassMotion(true, false);
             // }
 
             kinetic = thermostat.getKineticEnergy();
@@ -423,10 +475,12 @@ public class MolecularDynamics implements Runnable, Terminatable {
             x[i] += v[i] * dt + temp * dt2_8;
             v[i] += temp * dt_8;
         }
+
         /**
          * Compute the potential energy and gradients.
          */
         potential = potentialEnergy.energyAndGradient(x, grad);
+
         /**
          * Use Newton's second law to get the next acceleration and find
          * the full-step velocities using the Beeman recusion.
@@ -436,6 +490,34 @@ public class MolecularDynamics implements Runnable, Terminatable {
             a[i] = -Thermostat.convert * grad[i] / mass[i];
             v[i] += (3.0 * a[i] + aPrevious[i]) * dt_8;
         }
+
+        /**
+         * Lambda at full-step. 
+         */
+        if (doLambdaDynamics) {
+            double rt2 = 2.0 * Thermostat.R * temperature * thetaFriction / dt;
+            double randomForce = randomConvert * sqrt(rt2) * lambdaRandom.nextGaussian();
+            double dEdL = -lambdaInterface.getdEdLambda() * sin(2.0 * theta);
+            halflThetaVelocity = (halflThetaVelocity * (2.0 * thetaMass - thetaFriction * dt)
+                   + 2.0 * dt * (dEdL + randomForce)) / 
+                    (2.0*thetaMass + thetaFriction * dt);
+
+            theta = theta + dt * halflThetaVelocity;
+
+            if (theta > PI) {
+                theta = -2.0 * PI;
+            }
+            if (theta <= -PI) {
+                theta = 2.0 * PI;
+            }
+            
+            double sinTheta = sin(theta);
+            double lambda = sinTheta * sinTheta;
+            lambdaInterface.setLambda(lambda);
+            logger.info(String.format("Lambda lambda %20.8f, dE/dL %20.8f, Random %20.8f",
+                    lambda, dEdL, randomForce));
+        }
+
         /**
          * Compute the full-step kinetic energy.
          */
