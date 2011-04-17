@@ -625,7 +625,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             /**
              * λ gradient due recursion kernel G(λ, dEdλ).
              */
-            //dEdλ += dgdL + dgdEdL * d2Edλ2;
+            dEdλ += dgdL + dgdEdL * d2Edλ2;
 
             /**
              * Atomic gradient due to recursion kernel G(λ, dEdλ).
@@ -676,7 +676,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                         double part = 0.0;
                         for (int j = ll; j <= ul; j++) {
                             double dUdLc = mindEdλ + (j + 0.5) * dEdλWidth;
-                            double e = Math.exp(gKernel(lc, dUdLc) / (R * 300));
+                            double e = Math.exp(gKernel(lc, dUdLc) / (R * 300.0));
                             wdUdL += dUdLc * e;
                             part += e;
                         }
@@ -705,15 +705,15 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 double dAdLp = dAdλ[ub];
                 double m1c = lb * λBinWidth + λBinHalfWidth;
                 double p1c = ub * λBinWidth + λBinHalfWidth;
-                //dEdλ -= ((lambda - m1c) * dAdLp + (p1c - lambda) * dAdLm) / λBinWidth;
+                dEdλ -= ((lambda - m1c) * dAdLp + (p1c - lambda) * dAdLm) / λBinWidth;
             } else if (lambda <= λBinHalfWidth) {
                 double mlc = λBinHalfWidth;
                 double plc = λBinWidth + λBinHalfWidth;
-                //dEdλ -= ((lambda - mlc) * dAdλ[1] + (plc - lambda) * dAdλ[0]) / λBinWidth;
+                dEdλ -= ((lambda - mlc) * dAdλ[1] + (plc - lambda) * dAdλ[0]) / λBinWidth;
             } else {
                 double mlc = 1.0 - 1.5 * λBinWidth;
                 double plc = 1.0 - λBinHalfWidth;
-                //dEdλ -= ((lambda - mlc) * dAdλ[lambdaBins - 1] + (plc - lambda) * dAdλ[lambdaBins - 2]) / λBinWidth;
+                dEdλ -= ((lambda - mlc) * dAdλ[lambdaBins - 1] + (plc - lambda) * dAdλ[lambdaBins - 2]) / λBinWidth;
             }
 
             /**
