@@ -12,29 +12,35 @@ import ffx.potential.bonded.Atom;
 // Name of the file (PDB or XYZ).
 String filename = args[0];
 if (filename == null) {
-   println("\n Usage: ffxc lambda filename lambda fiction ligandStart ligandStop");
+   println("\n Usage: ffxc lambda filename ligandStart ligandStop lambda fiction mass ");
    return;
 }
 
-double initialLambda = 1.0;
-if (args.size() > 1) {
-    initialLambda = Double.parseDouble(args[1]);
-}
-
-double initialFriction = 60.0;
-if (args.size() > 2) {
-    initialFriction = Double.parseDouble(args[2]);
-}
-
 int ligandStart = 1;
-if (args.size() > 3) {
-    ligandStart = Integer.parseInt(args[3]);
+if (args.size() > 1) {
+    ligandStart = Integer.parseInt(args[1]);
 }
 
 int ligandStop = ligandStart;
-if (args.size() > 4) {
-    ligandStop = Integer.parseInt(args[4]);
+if (args.size() > 2) {
+    ligandStop = Integer.parseInt(args[2]);
 }
+
+double initialLambda = 1.0;
+if (args.size() > 3) {
+    initialLambda = Double.parseDouble(args[3]);
+}
+
+double friction = 60.0e-12;
+if (args.size() > 4) {
+    initialFriction = Double.parseDouble(args[4]);
+}
+
+double mass = 20.0;
+if (args.size() > 5) {
+    mass = Double.parseDouble(args[5]);
+}
+
 
 // Restart File
 File dyn = new File(FilenameUtils.removeExtension(filename) + ".dyn"); 
@@ -88,6 +94,7 @@ MolecularDynamics molDyn = new MolecularDynamics(active, active.getPotentialEner
 
 molDyn.doLambdaDynamics(true);
 molDyn.setLambda(initialLambda);
-molDyn.setFriction(initialFriction);
+molDyn.setThetaFrication(initialFriction);
+molDyn.setThetaMass(mass);
 
 molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);

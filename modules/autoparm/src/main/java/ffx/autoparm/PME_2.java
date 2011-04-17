@@ -93,7 +93,7 @@ public class PME_2 implements LambdaInterface, Potential {
     private static final Logger logger = Logger.getLogger(PME_2.class.getName());
 
     @Override
-    public void lambdaGradients(boolean computeLambdaGradients) {
+    public void lambdaGradient(boolean computeLambdaGradients) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
@@ -103,7 +103,12 @@ public class PME_2 implements LambdaInterface, Potential {
     }
 
     @Override
-    public void getdEdLambdadX(double[] gradients) {
+    public void getdEdLambdaGradient(double[] gradients) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public double getd2EdLambda2() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 

@@ -22,9 +22,9 @@
 package ffx.potential;
 
 /**
- * The LambdaInterface should be implemented by potential energy terms that
- * can accept a Lambda value from [0 .. 1] that defines a smooth path between
- * the term being fully off to fully on.
+ * The λInterface should be implemented by potential energy terms that
+ * can accept a λ value from [0 .. 1] that defines a smooth path between
+ * state 0 to state 1.
  *
  * @author Michael J. Schnieders
  *
@@ -35,11 +35,13 @@ public interface LambdaInterface {
     public void setLambda(double lambda);
 
     public double getLambda();
-
-    public void lambdaGradients(boolean lambdaGradients);
+    
+    public void lambdaGradient(boolean lambdaGradient);
     
     public double getdEdLambda();
     
-    public void getdEdLambdadX(double gradients[]);
+    public double getd2EdLambda2();
+    
+    public void getdEdLambdaGradient(double gradient[]);
     
 }

@@ -74,7 +74,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     private final PiOrbitalTorsion piOrbitalTorsions[];
     private final TorsionTorsion torsionTorsions[];
     private final VanDerWaals vanderWaals;
-    //private final CellCellVanDerWaals vanderWaals;
     private final ParticleMeshEwald particleMeshEwald;
     protected final int nAtoms;
     protected final int nBonds;
@@ -98,6 +97,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     protected final boolean multipoleTerm;
     protected final boolean polarizationTerm;
     protected final boolean generalizedKirkwoodTerm;
+    protected boolean lambdaTerm;
     protected double bondEnergy, bondRMSD;
     protected double angleEnergy, angleRMSD;
     protected double stretchBendEnergy;
@@ -113,29 +113,28 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     protected double totalElectrostaticEnergy;
     protected double totalNonBondedEnergy;
     protected double solvationEnergy;
+    protected double recursionKernelEnergy;
     protected double totalEnergy;
     protected long bondTime, angleTime, stretchBendTime, ureyBradleyTime;
     protected long outOfPlaneBendTime, torsionTime, piOrbitalTorsionTime;
     protected long torsionTorsionTime, vanDerWaalsTime, electrostaticTime;
+    protected long recursionTime;
     protected long totalTime;
     protected double[] optimizationScaling = null;
-    protected boolean lambdaGradients;
     protected double lambda;
     protected int energyCount;
     protected int lambdaBins = 100;
-    protected double lambdaWidth = 1.0 / lambdaBins;
-    protected double halfWidth = lambdaWidth / 2.0;
-    protected double mindUdL = -500.0, maxdUdL = 500.0;
-    protected double dUdLspan = maxdUdL - mindUdL;
-    protected double dUdLWidth = 2.0;
-    protected int dUdLBins = (int) Math.floor(dUdLspan / dUdLWidth);
+    protected double λBinWidth = 1.0 / lambdaBins;
+    protected double λBinHalfWidth = λBinWidth / 2.0;
+    protected double mindEdλ = -500.0, maxdEdλ = 500.0;
+    protected double dEdλSpan = maxdEdλ - mindEdλ;
+    protected double dEdλWidth = 2.0;
+    protected int dEdλBins = (int) Math.floor(dEdλSpan / dEdλWidth);
     protected int recursionKernel[][];
-    protected double dUdL = 0.0;
-    protected double dU2dL2 = 0.0;
-    protected double gHeight = 0.002;
-    protected double dAdL[];
-    
-    
+    protected double dEdλ = 0.0;
+    protected double d2Edλ2 = 0.0;
+    protected double gaussianMag = 0.002;
+    protected double dAdλ[];
     private static final double toSeconds = 0.000000001;
 
     public ForceFieldEnergy(MolecularAssembly molecularAssembly) {
@@ -385,7 +384,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
         if (multipoleTerm) {
             particleMeshEwald = new ParticleMeshEwald(forceField, atoms, crystal, parallelTeam,
-                    vanderWaals.getNeighborLists());
+                                                      vanderWaals.getNeighborLists());
         } else {
             particleMeshEwald = null;
         }
@@ -405,6 +404,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         torsionTorsionTime = 0;
         vanDerWaalsTime = 0;
         electrostaticTime = 0;
+        recursionTime = 0;
         totalTime = System.nanoTime();
 
         // Zero out the potential energy of each bonded term.
@@ -431,6 +431,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
         // Zero out the solvation energy.
         solvationEnergy = 0.0;
+
+        // Zero out the recusion kernel energy.
+        recursionKernelEnergy = 0.0;
 
         // Zero out the total potential energy.
         totalEnergy = 0.0;
@@ -538,34 +541,67 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
         energyCount++;
 
-        if (lambdaGradients) {
+        if (lambdaTerm) {
 
-            dUdL = vanderWaals.getdEdLambda();
-            // TODO electrostatics
+            dEdλ = vanderWaals.getdEdLambda();
+            d2Edλ2 = vanderWaals.getd2EdLambda2();
+            
+            logger.info(String.format("Lambda %20.8f, dE/dLambda %20.8f",lambda, dEdλ));
 
-            // TODO dU2dL2
-            dU2dL2 = 1.0;
-
-            int lambdaBin = (int) Math.ceil(lambda * lambdaBins) - 1;
-            int dUdLBin = (int) Math.ceil((dUdL - mindUdL) / dUdLspan * dUdLBins) - 1;
-
-            if (energyCount % 10 == 0) {
-                recursionKernel[lambdaBin][dUdLBin]++;
+            int lambdaBin = (int) Math.floor(lambda * lambdaBins);
+            if (lambda == 1.0) {
+                lambdaBin = lambdaBins - 1;
             }
 
+            int dUdLBin = (int) Math.floor((dEdλ - mindEdλ) / dEdλWidth);
+            if (dEdλ == maxdEdλ) {
+                dUdLBin = dUdLBin - 1;
+            }
+            
+            /**
+             * Allocate more space for dEdλ.
+             */
+            if (dUdLBin >= dEdλBins) {
+                double newMaxdEdλ = maxdEdλ + 100.0;
+                int newdEdλBins = (int) Math.floor((newMaxdEdλ - mindEdλ) / dEdλWidth);                
+                int newRecursionKernel[][] = new int[lambdaBins][newdEdλBins];
+                for (int i=0; i<lambdaBins; i++) {
+                    for (int j=0; j<dEdλBins; j++) {
+                        newRecursionKernel[i][j] = recursionKernel[i][j];
+                    }
+                }
+                recursionKernel = newRecursionKernel;
+                maxdEdλ = newMaxdEdλ;
+                dEdλBins = newdEdλBins;
+            }
 
-            double g = 0.0;
+            if (dUdLBin < 0) {
+                double newMindEdλ = mindEdλ - 100.0;
+                int newdEdλBins = (int) Math.floor((maxdEdλ - newMindEdλ) / dEdλWidth);                
+                int newRecursionKernel[][] = new int[lambdaBins][newdEdλBins];
+                for (int i=0; i<lambdaBins; i++) {
+                    for (int j=0; j<dEdλBins; j++) {
+                        newRecursionKernel[i][j] = recursionKernel[i][j];
+                    }
+                }
+                recursionKernel = newRecursionKernel;
+                mindEdλ = newMindEdλ;
+                dEdλBins = newdEdλBins;
+            }
+            
+            /**
+             * Calculate recursion kernel G(λ, dEdλ) and gradient.
+             */
             double dgdL = 0.0;
-            double dgdUdL = 0.0;
+            double dgdEdL = 0.0;
             double ls2 = 2.0 / lambdaBins * 2.0 / lambdaBins;
-            double dUdLs2 = dUdLWidth * 2.0 * dUdLWidth * 2.0;
-
+            double dEdLs2 = dEdλWidth * 2.0 * dEdλWidth * 2.0;
             for (int l = -5; l <= 5; l++) {
                 int lcenter = lambdaBin + 1;
                 double lv = lcenter / lambdaBins + 0.5 / lambdaBins;
                 double lv2 = (lambda - lv) * (lambda - lv);
 
-                // Mirror condition for Lambda counts.
+                // Mirror conditions for recursion kernel counts.
                 int lcount = lcenter;
                 if (lcount < 0) {
                     lcount = -lcount;
@@ -576,78 +612,87 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
                 for (int dl = -5; dl <= 5; dl++) {
                     int dlcenter = dUdLBin + dl;
-                    double dlv = dlcenter * dUdLWidth + dUdLWidth / 2.0;
-                    double dlv2 = (dUdL - dlv) * (dUdL - dlv);
+                    double dlv = dlcenter * dEdλWidth + dEdλWidth / 2.0;
+                    double dlv2 = (dEdλ - dlv) * (dEdλ - dlv);
                     int weight = recursionKernel[lcount][dlcenter];
-                    double e = weight * gHeight * Math.exp(-lv2 / (2.0 * ls2)) * Math.exp(-dlv2 / (2.0 * dUdLs2));
-                    g += e;
+                    double e = weight * gaussianMag * Math.exp(-lv2 / (2.0 * ls2)) * Math.exp(-dlv2 / (2.0 * dEdLs2));
+                    recursionKernelEnergy += e;
                     dgdL += -lv / ls2 * e;
-                    dgdUdL += -dlv / dUdLs2 * e;
+                    dgdEdL += -dlv / dEdLs2 * e;
                 }
             }
 
-            dUdL += dgdL + dgdUdL * dU2dL2;
+            /**
+             * λ gradient due recursion kernel G(λ, dEdλ).
+             */
+            //dEdλ += dgdL + dgdEdL * d2Edλ2;
 
+            /**
+             * Atomic gradient due to recursion kernel G(λ, dEdλ).
+             */
             double dUdXdL[] = new double[nAtoms * 3];
-            vanderWaals.getdEdLambdadX(dUdXdL);
+            vanderWaals.getdEdLambdaGradient(dUdXdL);
             double grad[] = new double[3];
-
             for (int i = 0; i < nAtoms; i++) {
                 Atom atom = atoms[i];
                 atom.getXYZGradient(grad);
-                grad[0] += dgdUdL * dUdXdL[i * 3];
-                grad[1] += dgdUdL * dUdXdL[i * 3 + 1];
-                grad[2] += dgdUdL * dUdXdL[i * 3 + 2];
+                grad[0] += dgdEdL * dUdXdL[i * 3];
+                grad[1] += dgdEdL * dUdXdL[i * 3 + 1];
+                grad[2] += dgdEdL * dUdXdL[i * 3 + 2];
                 atom.setXYZGradient(grad[0], grad[1], grad[2]);
             }
 
-
-            // Update free energy F(lambda) every ~100 steps.
+            // Update free energy F(λ) every ~100 steps.
             if (energyCount % 100 == 0) {
-                double binHalf = 0.5 / lambdaBins; 
-                for (int i=0; i<lambdaBins; i++) {
-                    double lc = binHalf + i * lambdaWidth;
-                    
+                double freeEnergy = 0.0;
+                double binHalf = 0.5 / lambdaBins;
+                logger.info("λ              dAdλ           Cumulative");
+                for (int i = 0; i < lambdaBins; i++) {
+                    double lc = binHalf + i * λBinWidth;
+
                     int ul = -1;
                     int ll = -1;
                     // Find the smallest dUdL bin.
-                    for (int j=0; j<dUdLBins; j++) {
+                    for (int j = 0; j < dEdλBins; j++) {
                         int count = recursionKernel[i][j];
                         if (count != 0 && ll == -1) {
                             ll = j;
                             break;
-                        }                        
+                        }
                     }
                     // Find the largest dUdL bin.
-                    for (int j=dUdLBins - 1; j>=0; j--) {
+                    for (int j = dEdλBins - 1; j >= 0; j--) {
                         int count = recursionKernel[i][j];
                         if (count != 0 && ul == -1) {
                             ul = j;
                             break;
-                        }                        
+                        }
                     }
-                    
+
                     if (ul == -1) {
-                        dAdL[i] = 0.0;
-                        continue;
+                        dAdλ[i] = 0.0;
+                    } else {
+                        double wdUdL = 0.0;
+                        double part = 0.0;
+                        for (int j = ll; j <= ul; j++) {
+                            double dUdLc = mindEdλ + (j + 0.5) * dEdλWidth;
+                            double e = Math.exp(gKernel(lc, dUdLc) / (R * 300));
+                            wdUdL += dUdLc * e;
+                            part += e;
+                        }
+                        dAdλ[i] = wdUdL / part;
                     }
-                    
-                    double wdUdL = 0.0;
-                    double part = 0.0;
-                    for (int j=ll; j<=ul; j++) {
-                        double dUdLc = mindUdL + (j + 0.5) * dUdLWidth;
-                        double e = Math.exp( g(lc, dUdLc) / (R * 300));
-                        
-                        wdUdL += dUdLc * e;
-                        part += e;
-                    }
-                    
-                    dAdL[i] = wdUdL / part;
+                    freeEnergy += dAdλ[i] * λBinWidth;
+                    logger.info(String.format("%15.8f %15.8f %15.8f",
+                                              i * λBinWidth + λBinHalfWidth, dAdλ[i], freeEnergy));
                 }
             }
-            
-            if (lambda > halfWidth && lambda < 1.0 - halfWidth) {
-                double binCenter = lambdaBin * lambdaWidth +  halfWidth;
+
+            /**
+             * Force interpolation due to recursion slave F(λ).
+             */
+            if (lambda > λBinHalfWidth && lambda < 1.0 - λBinHalfWidth) {
+                double binCenter = lambdaBin * λBinWidth + λBinHalfWidth;
                 int lb;
                 int ub;
                 if (lambda > binCenter) {
@@ -655,30 +700,36 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 } else {
                     lb = lambdaBin - 1;
                 }
-                ub = lb + 1;                
-                double dAdLm = dAdL[lb];
-                double dAdLp = dAdL[ub];
-                double m1c = lb * lambdaWidth + halfWidth;
-                double p1c = ub * lambdaWidth + halfWidth;
-                dUdL += ((lambda - m1c) * dAdLp + (p1c - lambda) * dAdLm) / lambdaWidth;
-            } else if (lambda <= halfWidth) {
-                double mlc = halfWidth;
-                double plc = lambdaWidth + halfWidth;
-                dUdL += ((lambda - mlc) * dAdL[1] + (plc - lambda) * dAdL[0]) / lambdaWidth;
+                ub = lb + 1;
+                double dAdLm = dAdλ[lb];
+                double dAdLp = dAdλ[ub];
+                double m1c = lb * λBinWidth + λBinHalfWidth;
+                double p1c = ub * λBinWidth + λBinHalfWidth;
+                //dEdλ -= ((lambda - m1c) * dAdLp + (p1c - lambda) * dAdLm) / λBinWidth;
+            } else if (lambda <= λBinHalfWidth) {
+                double mlc = λBinHalfWidth;
+                double plc = λBinWidth + λBinHalfWidth;
+                //dEdλ -= ((lambda - mlc) * dAdλ[1] + (plc - lambda) * dAdλ[0]) / λBinWidth;
             } else {
-                double mlc = 1.0 - 1.5 * lambdaWidth;
-                double plc = 1.0 - halfWidth;
-                dUdL += ((lambda - mlc) * dAdL[lambdaBins - 1] + (plc - lambda) * dAdL[lambdaBins - 2]) / lambdaWidth;                
+                double mlc = 1.0 - 1.5 * λBinWidth;
+                double plc = 1.0 - λBinHalfWidth;
+                //dEdλ -= ((lambda - mlc) * dAdλ[lambdaBins - 1] + (plc - lambda) * dAdλ[lambdaBins - 2]) / λBinWidth;
+            }
+
+            /**
+             * Meta-dynamic grid counts (every ~10 steps).
+             */
+            if (energyCount % 10 == 0) {
+                recursionKernel[lambdaBin][dUdLBin]++;
             }
         }
-
-
 
         totalTime = System.nanoTime() - totalTime;
 
         totalBondedEnergy = bondEnergy + angleEnergy + stretchBendEnergy + ureyBradleyEnergy + outOfPlaneBendEnergy + torsionEnergy + piOrbitalTorsionEnergy + torsionTorsionEnergy;
         totalNonBondedEnergy = vanDerWaalsEnergy + totalElectrostaticEnergy;
-        totalEnergy = totalBondedEnergy + totalNonBondedEnergy + solvationEnergy;
+        totalEnergy = totalBondedEnergy + totalNonBondedEnergy + solvationEnergy + recursionKernelEnergy;
+        
         if (print) {
             StringBuilder sb = new StringBuilder("\n");
             if (gradient) {
@@ -691,20 +742,19 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
         return totalEnergy;
     }
-    
     /**
      * Gas constant (in Kcal/mole/Kelvin).
      */
     public static final double R = 1.9872066e-3;
-    
-    public double g(double lambda, double dUdL) {
+
+    public double gKernel(double lambda, double dUdL) {
 
         int lambdaBin = (int) Math.ceil(lambda * lambdaBins) - 1;
-        int dUdLBin = (int) Math.ceil((dUdL - mindUdL) / dUdLspan * dUdLBins) - 1;
+        int dUdLBin = (int) Math.ceil((dUdL - mindEdλ) / dEdλSpan * dEdλBins) - 1;
 
         double sum = 0.0;
         double ls2 = 2.0 / lambdaBins * 2.0 / lambdaBins;
-        double dUdLs2 = dUdLWidth * 2.0 * dUdLWidth * 2.0;
+        double dUdLs2 = dEdλWidth * 2.0 * dEdλWidth * 2.0;
 
         for (int l = -5; l <= 5; l++) {
             int lcenter = lambdaBin + 1;
@@ -722,10 +772,10 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
             for (int dl = -5; dl <= 5; dl++) {
                 int dlcenter = dUdLBin + dl;
-                double dlv = dlcenter * dUdLWidth + dUdLWidth / 2.0;
+                double dlv = dlcenter * dEdλWidth + dEdλWidth / 2.0;
                 double dlv2 = (dUdL - dlv) * (dUdL - dlv);
                 int weight = recursionKernel[lcount][dlcenter];
-                double e = weight * gHeight * Math.exp(-lv2 / (2.0 * ls2)) * Math.exp(-dlv2 / (2.0 * dUdLs2));
+                double e = weight * gaussianMag * Math.exp(-lv2 / (2.0 * ls2)) * Math.exp(-dlv2 / (2.0 * dUdLs2));
                 sum += e;
             }
         }
@@ -741,76 +791,80 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         StringBuilder sb = new StringBuilder("\n");
         if (bondTerm) {
             sb.append(String.format(" %s %16.8f %12d %12.3f (%8.5f)\n",
-                    "Bond Streching    ", bondEnergy, bonds.length,
-                    bondTime * toSeconds, bondRMSD));
+                                    "Bond Streching    ", bondEnergy, bonds.length,
+                                    bondTime * toSeconds, bondRMSD));
         }
         if (angleTerm) {
             sb.append(String.format(" %s %16.8f %12d %12.3f (%8.5f)\n",
-                    "Angle Bending     ", angleEnergy, angles.length,
-                    angleTime * toSeconds, angleRMSD));
+                                    "Angle Bending     ", angleEnergy, angles.length,
+                                    angleTime * toSeconds, angleRMSD));
         }
         if (stretchBendTerm) {
             sb.append(String.format(" %s %16.8f %12d %12.3f\n",
-                    "Stretch-Bend      ", stretchBendEnergy,
-                    stretchBends.length, stretchBendTime * toSeconds));
+                                    "Stretch-Bend      ", stretchBendEnergy,
+                                    stretchBends.length, stretchBendTime * toSeconds));
         }
         if (ureyBradleyTerm) {
             sb.append(String.format(" %s %16.8f %12d %12.3f\n",
-                    "Urey-Bradley      ", ureyBradleyEnergy,
-                    ureyBradleys.length, ureyBradleyTime * toSeconds));
+                                    "Urey-Bradley      ", ureyBradleyEnergy,
+                                    ureyBradleys.length, ureyBradleyTime * toSeconds));
         }
         if (outOfPlaneBendTerm) {
             sb.append(String.format(" %s %16.8f %12d %12.3f\n",
-                    "Out-of-Plane Bend ", outOfPlaneBendEnergy,
-                    outOfPlaneBends.length, outOfPlaneBendTime * toSeconds));
+                                    "Out-of-Plane Bend ", outOfPlaneBendEnergy,
+                                    outOfPlaneBends.length, outOfPlaneBendTime * toSeconds));
         }
         if (torsionTerm) {
             sb.append(String.format(" %s %16.8f %12d %12.3f\n",
-                    "Torsional Angle   ", torsionEnergy, torsions.length,
-                    torsionTime * toSeconds));
+                                    "Torsional Angle   ", torsionEnergy, torsions.length,
+                                    torsionTime * toSeconds));
         }
         if (piOrbitalTorsionTerm) {
             sb.append(String.format(" %s %16.8f %12d %12.3f\n",
-                    "Pi-Orbital Torsion", piOrbitalTorsionEnergy,
-                    piOrbitalTorsions.length, piOrbitalTorsionTime * toSeconds));
+                                    "Pi-Orbital Torsion", piOrbitalTorsionEnergy,
+                                    piOrbitalTorsions.length, piOrbitalTorsionTime * toSeconds));
         }
         if (torsionTorsionTerm) {
             sb.append(String.format(" %s %16.8f %12d %12.3f\n",
-                    "Torsion-Torsion   ", torsionTorsionEnergy,
-                    torsionTorsions.length, torsionTorsionTime * toSeconds));
+                                    "Torsion-Torsion   ", torsionTorsionEnergy,
+                                    torsionTorsions.length, torsionTorsionTime * toSeconds));
         }
         if (vanderWaalsTerm) {
             sb.append(String.format(" %s %16.8f %12d %12.3f\n",
-                    "Van der Waals     ", vanDerWaalsEnergy,
-                    nVanDerWaals, vanDerWaalsTime * toSeconds));
+                                    "Van der Waals     ", vanDerWaalsEnergy,
+                                    nVanDerWaals, vanDerWaalsTime * toSeconds));
         }
         if (multipoleTerm) {
             sb.append(String.format(" %s %16.8f %12d\n",
-                    "Atomic Multipoles ", permanentMultipoleEnergy, nPME));
+                                    "Atomic Multipoles ", permanentMultipoleEnergy, nPME));
         }
         if (polarizationTerm) {
             sb.append(String.format(" %s %16.8f %12d %12.3f\n",
-                    "Polarization      ", polarizationEnergy,
-                    nPME, electrostaticTime * toSeconds));
+                                    "Polarization      ", polarizationEnergy,
+                                    nPME, electrostaticTime * toSeconds));
         }
 
         if (generalizedKirkwoodTerm) {
             sb.append(String.format(" %s %16.8f %12d\n",
-                    "Solvation         ", solvationEnergy,
-                    nGK));
+                                    "Solvation         ", solvationEnergy, nGK));
+        }
+        
+        if (lambdaTerm) {
+            sb.append(String.format(" %s %16.8f\n",
+                                    "Recursion Kernel  ", solvationEnergy));
         }
 
         sb.append(String.format("\n %s %16.8f  %s %12.3f (sec)\n",
-                "Total Potential   ", totalEnergy, "(Kcal/mole)", totalTime * toSeconds));
+                                "Total Potential   ", totalEnergy, "(Kcal/mole)", totalTime * toSeconds));
         int nsymm = crystal.getUnitCell().spaceGroup.getNumberOfSymOps();
         if (nsymm > 1) {
             sb.append(String.format(" %s %16.8f\n", "Unit Cell         ",
-                    totalEnergy * nsymm));
+                                    totalEnergy * nsymm));
         }
         if (crystal.getUnitCell() != crystal) {
             nsymm = crystal.spaceGroup.getNumberOfSymOps();
             sb.append(String.format(" %s %16.8f\n", "Replicates Cell   ",
-                    totalEnergy * nsymm));
+                                    totalEnergy * nsymm));
         }
 
         return sb.toString();
@@ -889,10 +943,10 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             double gy = grad[1];
             double gz = grad[2];
             if (gx == Double.NaN || gx == Double.NEGATIVE_INFINITY || gx == Double.POSITIVE_INFINITY
-                    || gy == Double.NaN || gy == Double.NEGATIVE_INFINITY || gy == Double.POSITIVE_INFINITY
-                    || gz == Double.NaN || gz == Double.NEGATIVE_INFINITY || gz == Double.POSITIVE_INFINITY) {
+                || gy == Double.NaN || gy == Double.NEGATIVE_INFINITY || gy == Double.POSITIVE_INFINITY
+                || gz == Double.NaN || gz == Double.NEGATIVE_INFINITY || gz == Double.POSITIVE_INFINITY) {
                 String message = format("The gradient of atom %s is (%8.3f,%8.3f,%8.3f).",
-                        a.toString(), gx, gy, gz);
+                                        a.toString(), gx, gy, gz);
                 logger.warning(message);
             }
             g[index++] = gx;
@@ -950,33 +1004,31 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
     @Override
     public double getdEdLambda() {
-        if (vanderWaalsTerm) {
-            return vanderWaals.getdEdLambda();
-        }
-        return 0.0;
+        return dEdλ;
     }
 
     @Override
-    public void lambdaGradients(boolean lambdaGradients) {
+    public void lambdaGradient(boolean lambdaGradient) {
+        this.lambdaTerm = lambdaGradient;
         if (vanderWaalsTerm) {
-            vanderWaals.lambdaGradients(lambdaGradients);
+            vanderWaals.lambdaGradient(lambdaGradient);
         }
         energyCount = 0;
         if (recursionKernel == null) {
             double dUdLestimate1 = 0.0;
             double dUdLestimate0 = 0.0;
-            maxdUdL = dUdLestimate1 + 500.0;
-            mindUdL = dUdLestimate1 - 500.0;
-            int dUdLbin = (int) Math.floor((maxdUdL - mindUdL) / 2.0);
-            recursionKernel = new int[lambdaBins][dUdLbin];
-            dAdL = new double[lambdaBins];
+            maxdEdλ = dUdLestimate1 + 500.0;
+            mindEdλ = dUdLestimate1 - 500.0;
+            dEdλBins = (int) Math.floor((maxdEdλ - mindEdλ) / dEdλWidth);
+            recursionKernel = new int[lambdaBins][dEdλBins];
+            dAdλ = new double[lambdaBins];
         }
     }
 
     @Override
-    public void getdEdLambdadX(double gradients[]) {
+    public void getdEdLambdaGradient(double gradients[]) {
         if (vanderWaalsTerm) {
-            vanderWaals.getdEdLambdadX(gradients);
+            vanderWaals.getdEdLambdaGradient(gradients);
         }
     }
 
@@ -994,5 +1046,10 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     @Override
     public double getLambda() {
         return lambda;
+    }
+
+    @Override
+    public double getd2EdLambda2() {
+        return d2Edλ2;
     }
 }

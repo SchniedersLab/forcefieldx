@@ -78,13 +78,15 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
     private final int nSymm;
     private boolean gradient;
     private double λ = 1.0;
-    private double lambda2 = 1.0;
-    private double lambda1 = 0.0;
-    private double dlambda1 = 1.0;
-    private double dlambda2 = 1.0;
+    private double sc1 = 0.0;
+    private double sc2 = 1.0;
+    private double dsc1dλ = 0.0;
+    private double dsc2dλ = 0.0;
+    private double d2sc1dλ2 = 0.0;
+    private double d2sc2dλ2 = 0.0;
     private final boolean isSoft[];
-    private static final double softCoreExponent = 5.0;
-    private static final double softCoreAlpha = 0.7;
+    private static final double scExponent = 5.0;
+    private static final double scAlpha = 0.1;
     /**
      * There are 2 softCore arrays of length nAtoms.
      *
@@ -147,11 +149,12 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
      * The Parallel Team.
      */
     private final ParallelTeam parallelTeam;
-    private final SharedInteger interactions;
-    private final SharedDouble vdwEnergy;
-    private final SharedDoubleArray dEdX[];
-    private SharedDouble dEdLambda;
-    private SharedDoubleArray dEdLambdadX[];
+    private final SharedInteger sharedInteractions;
+    private final SharedDouble sharedvdWEnergy;
+    private final SharedDoubleArray shareddEdX[];
+    private SharedDouble shareddEdλ;
+    private SharedDouble sharedd2Edλ2;
+    private SharedDoubleArray shareddEdλdX[];
     private final int threadCount;
     private long overheadTime;
     /**
@@ -336,12 +339,12 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         for (int i = 0; i < threadCount; i++) {
             vanDerWaalsLoop[i] = new VanDerWaalsLoop();
         }
-        dEdX = new SharedDoubleArray[3];
-        dEdX[0] = new SharedDoubleArray(nAtoms);
-        dEdX[1] = new SharedDoubleArray(nAtoms);
-        dEdX[2] = new SharedDoubleArray(nAtoms);
-        interactions = new SharedInteger();
-        vdwEnergy = new SharedDouble();
+        shareddEdX = new SharedDoubleArray[3];
+        shareddEdX[0] = new SharedDoubleArray(nAtoms);
+        shareddEdX[1] = new SharedDoubleArray(nAtoms);
+        shareddEdX[2] = new SharedDoubleArray(nAtoms);
+        sharedInteractions = new SharedInteger();
+        sharedvdWEnergy = new SharedDouble();
         // Parallel neighbor list builder.
         neighborList = new NeighborList(null, this.crystal, atoms, off, buff, parallelTeam);
 
@@ -460,7 +463,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
      * @since 1.0
      */
     public double getEnergy() {
-        return vdwEnergy.get();
+        return sharedvdWEnergy.get();
     }
 
     /**
@@ -469,7 +472,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
      * @since 1.0
      */
     public int getInteractions() {
-        return interactions.get();
+        return sharedInteractions.get();
     }
 
     /**
@@ -524,7 +527,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
             String message = " Fatal exception evaluating van der Waals energy.\n";
             logger.log(Level.SEVERE, message, e);
         }
-        return vdwEnergy.get();
+        return sharedvdWEnergy.get();
     }
 
     /**
@@ -583,24 +586,25 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
          * Initialize the shared variables.
          */
         if (doLongRangeCorrection) {
-            vdwEnergy.set(longRangeCorrection);
+            sharedvdWEnergy.set(longRangeCorrection);
         } else {
-            vdwEnergy.set(0.0);
+            sharedvdWEnergy.set(0.0);
         }
-        interactions.set(0);
+        sharedInteractions.set(0);
         if (gradient) {
             for (int i = 0; i < nAtoms; i++) {
-                dEdX[0].set(i, 0.0);
-                dEdX[1].set(i, 0.0);
-                dEdX[2].set(i, 0.0);
+                shareddEdX[0].set(i, 0.0);
+                shareddEdX[1].set(i, 0.0);
+                shareddEdX[2].set(i, 0.0);
             }
         }
         if (lambdaGradient) {
-            dEdLambda.set(0.0);
+            shareddEdλ.set(0.0);
+            sharedd2Edλ2.set(0.0);
             for (int i = 0; i < nAtoms; i++) {
-                dEdLambdadX[0].set(i, 0.0);
-                dEdLambdadX[1].set(i, 0.0);
-                dEdLambdadX[2].set(i, 0.0);
+                shareddEdλdX[0].set(i, 0.0);
+                shareddEdλdX[1].set(i, 0.0);
+                shareddEdλdX[2].set(i, 0.0);
             }
         }
     }
@@ -633,7 +637,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         if (gradient) {
             for (int i = 0; i < nAtoms; i++) {
                 Atom ai = atoms[i];
-                ai.addToXYZGradient(dEdX[0].get(i), dEdX[1].get(i), dEdX[2].get(i));
+                ai.addToXYZGradient(shareddEdX[0].get(i), shareddEdX[1].get(i), shareddEdX[2].get(i));
             }
         }
         long computeTime = 0;
@@ -669,10 +673,12 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
     public void setLambda(double lambda) {
         assert (lambda >= 0.0 && lambda <= 1.0);
         this.λ = lambda;
-        lambda1 = softCoreAlpha * (1.0 - lambda) * (1.0 - lambda);
-        dlambda1 = -2.0 * softCoreAlpha * (1.0 - lambda);
-        lambda2 = pow(lambda, softCoreExponent);
-        dlambda2 = softCoreExponent * pow(lambda, softCoreExponent - 1);
+        sc1 = scAlpha * (1.0 - lambda) * (1.0 - lambda);
+        dsc1dλ = -2.0 * scAlpha * (1.0 - lambda);
+        d2sc1dλ2 = 2.0 * scAlpha;
+        sc2 = pow(lambda, scExponent);
+        dsc2dλ = scExponent * pow(lambda, scExponent - 1);
+        d2sc2dλ2 = scExponent * (scExponent - 1) * pow(lambda, scExponent - 2);
         /**
          * Set up the lambda
          */
@@ -694,9 +700,9 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         }
         /*
         if (softAtoms) {
-            logger.info(String.format(" Soft core van der Waals lambda value set to %8.6f", lambda));
+        logger.info(String.format(" Soft core van der Waals lambda value set to %8.6f", lambda));
         } else {
-            logger.warning(" No atoms are selected for soft core van der Waals.\n");
+        logger.warning(" No atoms are selected for soft core van der Waals.\n");
         } */
 
         // Redo the long range correction.
@@ -716,30 +722,36 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
     }
 
     @Override
-    public void lambdaGradients(boolean lambdaGradients) {
+    public void lambdaGradient(boolean lambdaGradients) {
         this.lambdaGradient = lambdaGradients;
-        if (dEdLambda == null) {
-            dEdLambda = new SharedDouble();
-            dEdLambdadX = new SharedDoubleArray[3];
-            dEdLambdadX[0] = new SharedDoubleArray(nAtoms);
-            dEdLambdadX[1] = new SharedDoubleArray(nAtoms);
-            dEdLambdadX[2] = new SharedDoubleArray(nAtoms);
+        if (shareddEdλ == null) {
+            shareddEdλ = new SharedDouble();
+            sharedd2Edλ2 = new SharedDouble();
+            shareddEdλdX = new SharedDoubleArray[3];
+            shareddEdλdX[0] = new SharedDoubleArray(nAtoms);
+            shareddEdλdX[1] = new SharedDoubleArray(nAtoms);
+            shareddEdλdX[2] = new SharedDoubleArray(nAtoms);
         }
     }
 
     @Override
     public double getdEdLambda() {
-        return dEdLambda.get();
+        return shareddEdλ.get();
     }
 
     @Override
-    public void getdEdLambdadX(double[] gradients) {
+    public void getdEdLambdaGradient(double[] gradients) {
         int index = 0;
-        for (int i=0; i<nAtoms; i++) {
-            gradients[index++] = dEdLambdadX[0].get(i);
-            gradients[index++] = dEdLambdadX[1].get(i);
-            gradients[index++] = dEdLambdadX[2].get(i);
+        for (int i = 0; i < nAtoms; i++) {
+            gradients[index++] = shareddEdλdX[0].get(i);
+            gradients[index++] = shareddEdλdX[1].get(i);
+            gradients[index++] = shareddEdλdX[2].get(i);
         }
+    }
+
+    @Override
+    public double getd2EdLambda2() {
+        return sharedd2Edλ2.get();
     }
 
     /**
@@ -873,7 +885,8 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         private final double gxi_local[];
         private final double gyi_local[];
         private final double gzi_local[];
-        private double dUdL;
+        private double dEdλ;
+        private double d2Edλ2;
         private final double lxi_local[];
         private final double lyi_local[];
         private final double lzi_local[];
@@ -919,7 +932,8 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                 }
             }
             if (lambdaGradient) {
-                dUdL = 0.0;
+                dEdλ = 0.0;
+                d2Edλ2 = 0.0;
                 for (int i = 0; i < nAtoms; i++) {
                     lxi_local[i] = 0.0;
                     lyi_local[i] = 0.0;
@@ -1000,8 +1014,8 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                             double lambda5 = 1.0;
                             boolean soft = softCorei[k];
                             if (soft) {
-                                alpha = lambda1;
-                                lambda5 = lambda2;
+                                alpha = sc1;
+                                lambda5 = sc2;
                             }
                             final double rv = radEpsi[a2 + RADMIN];
                             final double ev = radEpsi[a2 + EPS];
@@ -1077,21 +1091,44 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                                 gyi_local[redk] -= redkv * dedy;
                                 gzi_local[redk] -= redkv * dedz;
                             }
+                            
                             if (lambdaGradient && soft) {
-                                double dt1 = -t1 * t1d * dlambda1;
-                                double dt2 = -t2a * t2d * dlambda1;
-                                double f1 = dlambda2 * t1 * t2;
-                                double f2 = lambda2 * dt1 * t2;
-                                double f3 = lambda2 * t1 * dt2;
+                                double dt1 = -t1 * t1d * dsc1dλ;
+                                double dt2 = -t2a * t2d * dsc1dλ;
+                                double f1 = dsc2dλ * t1 * t2;
+                                double f2 = sc2 * dt1 * t2;
+                                double f3 = sc2 * t1 * dt2;
                                 double dedl = ev * (f1 + f2 + f3);
-                                dUdL += selfScale * dedl * taper;
-                                
-                                double t11 = -dlambda2 * t2 * dt1_dr;
-                                double t12 = -lambda2 * dt2 * dt1_dr;
-                                double t13 = 2.0 * lambda2 * t2 * dt1_dr * dlambda1 * t1d;
-                                double t21 = -dlambda2 * t1 * dt2_dr;
-                                double t22 = -lambda2 * dt1 * dt2_dr;
-                                double t23 = 2.0 * lambda2 * t1 * dt2_dr * dlambda1 * t2d;
+                                dEdλ += selfScale * dedl * taper;
+
+                                double t1d2 = -dsc1dλ * t1d * t1d;
+                                double t2d2 = -dsc1dλ * t2d * t2d;
+                                double d2t1 = -dt1 * t1d * dsc1dλ
+                                            - t1 * t1d * d2sc1dλ2     
+                                            - t1 * t1d2 * dsc1dλ;
+                                             
+                                double d2t2 = -dt2 * t2d * dsc1dλ
+                                        - t2a * t2d * d2sc1dλ2      
+                                        - t2a * t2d2 * dsc1dλ;
+                                              
+                                double df1 = d2sc2dλ2 * t1 * t2
+                                             + dsc2dλ * dt1 * t2
+                                             + dsc2dλ * t1 * dt2;
+                                double df2 = dsc2dλ * dt1 * t2
+                                             + sc2 * d2t1 * t2
+                                             + sc2 * dt1 * dt2;
+                                double df3 = dsc2dλ * t1 * dt2
+                                             + sc2 * dt1 * dt2
+                                             + sc2 * t1 * d2t2;
+                                double de2dl2 = ev * (df1 + df2 + df3);
+                                d2Edλ2 += selfScale * de2dl2 * taper;
+
+                                double t11 = -dsc2dλ * t2 * dt1_dr;
+                                double t12 = -sc2 * dt2 * dt1_dr;
+                                double t13 = 2.0 * sc2 * t2 * dt1_dr * dsc1dλ * t1d;
+                                double t21 = -dsc2dλ * t1 * dt2_dr;
+                                double t22 = -sc2 * dt1 * dt2_dr;
+                                double t23 = 2.0 * sc2 * t1 * dt2_dr * dsc1dλ * t2d;
                                 double dedldr = ev * (t11 + t12 + t13 + t21 + t22 + t23);
                                 dedldr = dedl * dtaper + dedldr * taper;
                                 double dedldx = selfScale * dedldr * drdx;
@@ -1150,18 +1187,19 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
              * Reduce the energy, interaction count and gradients from this
              * thread into the shared variables.
              */
-            vdwEnergy.addAndGet(energy);
-            interactions.addAndGet(count);
+            sharedvdWEnergy.addAndGet(energy);
+            sharedInteractions.addAndGet(count);
             if (gradient) {
-                dEdX[0].reduce(gxi_local, DoubleOp.SUM);
-                dEdX[1].reduce(gyi_local, DoubleOp.SUM);
-                dEdX[2].reduce(gzi_local, DoubleOp.SUM);
+                shareddEdX[0].reduce(gxi_local, DoubleOp.SUM);
+                shareddEdX[1].reduce(gyi_local, DoubleOp.SUM);
+                shareddEdX[2].reduce(gzi_local, DoubleOp.SUM);
             }
             if (lambdaGradient) {
-                dEdLambda.addAndGet(dUdL);
-                dEdLambdadX[0].reduce(lxi_local, DoubleOp.SUM);
-                dEdLambdadX[1].reduce(lyi_local, DoubleOp.SUM);
-                dEdLambdadX[2].reduce(lzi_local, DoubleOp.SUM);
+                shareddEdλ.addAndGet(dEdλ);
+                sharedd2Edλ2.addAndGet(d2Edλ2);
+                shareddEdλdX[0].reduce(lxi_local, DoubleOp.SUM);
+                shareddEdλdX[1].reduce(lyi_local, DoubleOp.SUM);
+                shareddEdλdX[2].reduce(lzi_local, DoubleOp.SUM);
             }
         }
     }

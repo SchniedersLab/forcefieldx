@@ -53,37 +53,39 @@ println(String.format(" E(1)-E(0): %20.8f.", e1-e0));
 // Set λ to be 0.5.
 lambda = 0.5;
 energy.setSoftCoreLambda(lambda);
-// Turn on calculation of dE/dλ and dE/dλ/dX.
-energy.lambdaGradients(true);
+// Turn on calculation of dE/dλ, d2E/dλ2 and dE/dλ/dX.
+energy.lambdaGradient(true);
 
-// Calculate the energy, dE/dX, dE/dλ and dE/dλ/dX
-energy.energy(true, false);
+// Calculate the energy, dE/dX, dE/dλ, d2E/dλ2 and dE/dλ/dX
+double e = energy.energy(true, false);
 
-// Analytic dEdλ
+// Analytic dEdλ and d2E/dλ2
 double dEdLambda = energy.getdEdLambda();
+double dE2dLambda2 = energy.getd2EdLambda2();
 
 // Analytic dEdλdX
 double[] dEdLdX = new double[n * 3];
-energy.getdEdLambdadX(dEdLdX);
+energy.getdEdLambdaGradient(dEdLdX);
 
-// Turn off calculation of dE/dλ and dE/dλ/dX.
-energy.lambdaGradients(false);
-
-// Calculate the finite-difference dEdλ and dEdλdX
+// Calculate the finite-difference dEdλ, d2Edλ2 and dEdλdX
 double step = 1.0e-5;
-double dedl = 0.0;
 double[][] dedx = new double[2][n * 3];
 
 energy.setSoftCoreLambda(lambda + step);
-dedl = energy.energy(true, false);
+double dedlp = energy.energy(true, false);
+double d2edl2p = energy.getdEdLambda();
 energy.getGradients(dedx[0]);
 
 energy.setSoftCoreLambda(lambda - step);
-dedl -= energy.energy(true, false);
+double dedlm = energy.energy(true, false);
+double d2edl2m = energy.getdEdLambda()
 energy.getGradients(dedx[1]);
 
-dedl /= (2.0 * step);
-println(String.format(" Analytic vs. Numeric dE/dλ: %15.8f %15.8f", dEdLambda, dedl));
+double dedl = (dedlp - dedlm) / (2.0 * step);
+double d2edl2 = (d2edl2p - d2edl2m) / (2.0 * step);
+
+println(String.format(" Analytic vs. Numeric dE/dλ:   %15.8f %15.8f", dEdLambda, dedl));
+println(String.format(" Analytic vs. Numeric d2E/dλ2: %15.8f %15.8f", dE2dLambda2, d2edl2));
 
 for (int i = ligandStart - 1; i < ligandStop; i++) {
     println(" dE/dX/dλ for Ligand Atom " + (i + 1));

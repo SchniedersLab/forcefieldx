@@ -587,7 +587,7 @@ public class ParticleMeshEwald implements LambdaInterface {
     }
 
     @Override
-    public void lambdaGradients(boolean computeLambdaGradients) {
+    public void lambdaGradient(boolean λGradient) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
@@ -597,7 +597,12 @@ public class ParticleMeshEwald implements LambdaInterface {
     }
 
     @Override
-    public void getdEdLambdadX(double[] gradients) {
+    public double getd2EdLambda2() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+    
+    @Override
+    public void getdEdLambdaGradient(double[] gradients) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
