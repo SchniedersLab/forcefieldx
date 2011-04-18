@@ -24,12 +24,12 @@ boolean neutron = false;
 
 // Set the RMS gradient per atom convergence criteria (optional)
 String coordepsString = args[2];
-// default if epsString not given on the command line
-double coordeps = 1.0;
 
 // same, but for B factors
 String bepsString = args[3];
-double beps = 0.01;
+
+// and occupancies (if necessary)
+String occepsString = args[4];
 
 // set the maximum number of refinement cycles
 int maxiter = 50000;
@@ -39,15 +39,22 @@ int maxiter = 50000;
 // ===============================================================================================
 
 if (modelfilename == null) {
-   modelfilename = "examples/1n7s.P212121.xyz";
+    modelfilename = "examples/1n7s.P212121.xyz";
 }
 
+double coordeps = -1.0;
 if (coordepsString != null) {
-   coordeps = Double.parseDouble(coordepsString);
+    coordeps = Double.parseDouble(coordepsString);
 }
 
+double beps = -1.0;
 if (bepsString != null) {
-   beps = Double.parseDouble(bepsString);
+    beps = Double.parseDouble(bepsString);
+}
+
+double occeps = -1.0;
+if (occepsString != null) {
+    occeps = Double.parseDouble(occepsString);
 }
 
 println("\n Running x-ray minimize on " + modelfilename);
@@ -55,9 +62,9 @@ systems = open(modelfilename);
 
 DiffractionFile diffractionfile = null;
 if (datafilename != null) {
-  diffractionfile = new DiffractionFile(datafilename, wA, neutron);
+    diffractionfile = new DiffractionFile(datafilename, wA, neutron);
 } else {
-  diffractionfile = new DiffractionFile(systems, wA, neutron);
+    diffractionfile = new DiffractionFile(systems, wA, neutron);
 }
 
 DiffractionData diffractiondata = new DiffractionData(systems, systems[0].getProperties(), SolventModel.POLYNOMIAL, diffractionfile);
@@ -67,14 +74,37 @@ diffractiondata.printstats();
 energy();
 
 RefinementMinimize refinementMinimize = new RefinementMinimize(diffractiondata, RefinementMode.COORDINATES);
+if (coordeps < 0.0) {
+    coordeps = refinementMinimize.getEps();
+}
+println("\n RMS gradient convergence criteria: " + coordeps + " max number of iterations: " + maxiter);
 refinementMinimize.minimize(coordeps, maxiter);
 diffractiondata.scalebulkfit();
 diffractiondata.printstats();
+energy();
 
 refinementMinimize = new RefinementMinimize(diffractiondata, RefinementMode.BFACTORS);
+if (beps < 0.0) {
+    beps = refinementMinimize.getEps();
+}
+println("\n RMS gradient convergence criteria: " + beps + " max number of iterations: " + maxiter);
 refinementMinimize.minimize(beps, maxiter);
 diffractiondata.scalebulkfit();
 diffractiondata.printstats();
+
+if (diffractiondata.getAltResidues().size() > 0
+    || diffractiondata.getAltMolecules().size() > 0){
+    refinementMinimize = new RefinementMinimize(diffractiondata, RefinementMode.OCCUPANCIES);
+    if (occeps < 0.0){
+        occeps = refinementMinimize.getEps();
+    }
+    println("\n RMS gradient convergence criteria: " + occeps + " max number of iterations: " + maxiter);
+    refinementMinimize.minimize(occeps, maxiter);
+    diffractiondata.scalebulkfit();
+    diffractiondata.printstats();
+} else {
+    println("Occupancy refinement not necessary, skipping");
+}
 
 energy();
 

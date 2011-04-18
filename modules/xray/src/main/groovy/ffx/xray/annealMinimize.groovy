@@ -28,12 +28,9 @@ boolean neutron = false;
 
 // Set the RMS gradient per atom convergence criteria (optional)
 String coordepsString = args[2];
-// default if epsString not given on the command line
-double coordeps = 1.0;
 
 // same, but for B factors
 String bepsString = args[3];
-double beps = 0.01;
 
 // set the maximum number of refinement cycles
 int maxiter = 50000;
@@ -57,10 +54,12 @@ if (modelfilename == null) {
    modelfilename = "examples/1n7s.P212121.xyz";
 }
 
+double coordeps = -1.0;
 if (coordepsString != null) {
    coordeps = Double.parseDouble(coordepsString);
 }
 
+double beps = -1.0;
 if (bepsString != null) {
    beps = Double.parseDouble(bepsString);
 }
@@ -99,17 +98,25 @@ energy();
 RefinementEnergy refinementEnergy = new RefinementEnergy(diffractiondata, refinementmode);
 SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(active, refinementEnergy, active.getProperties(), refinementEnergy);
 simulatedAnnealing.anneal(highTemperature, lowTemperature, annealingSteps, mdSteps);
-
 diffractiondata.scalebulkfit();
 diffractiondata.printstats();
+
 refinementMinimize = new RefinementMinimize(diffractiondata, RefinementMode.COORDINATES);
+if (coordeps < 0.0) {
+    coordeps = refinementMinimize.getEps();
+}
+println("\n RMS gradient convergence criteria: " + coordeps + " max number of iterations: " + maxiter);
 refinementMinimize.minimize(coordeps, maxiter);
-
 diffractiondata.scalebulkfit();
 diffractiondata.printstats();
-refinementMinimize = new RefinementMinimize(diffractiondata, RefinementMode.BFACTORS);
-refinementMinimize.minimize(beps, maxiter);
+energy();
 
+refinementMinimize = new RefinementMinimize(diffractiondata, RefinementMode.BFACTORS);
+if (beps < 0.0) {
+    beps = refinementMinimize.getEps();
+}
+println("\n RMS gradient convergence criteria: " + beps + " max number of iterations: " + maxiter);
+refinementMinimize.minimize(beps, maxiter);
 diffractiondata.scalebulkfit();
 diffractiondata.printstats();
 energy();

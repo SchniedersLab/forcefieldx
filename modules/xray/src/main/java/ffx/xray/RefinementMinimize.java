@@ -95,6 +95,8 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
     private long time;
     private double grms;
     private int nSteps;
+    // recommended eps - accessible to groovy
+    private double eps = 0.1;
 
     /**
      * constructor for refinement, assumes coordinates and B factor optimization
@@ -135,19 +137,22 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
         refinementenergy.getCoordinates(x);
 
         double xyzscale = 1.0;
-        double bisoscale = 1.0;
-        double anisouscale = 1.0;
-        double occscale = 1.0;
+        double bisoscale = 0.2;
+        double anisouscale = 50.0;
+        double occscale = 15.0;
+
+        /*
         if (refinementmode == RefinementMode.COORDINATES_AND_BFACTORS
-                || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
-            bisoscale = 0.04;
-            anisouscale = 0.8;
+        || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
+        bisoscale = 0.04;
+        anisouscale = 0.8;
         }
 
         if (refinementmode == RefinementMode.COORDINATES_AND_OCCUPANCIES
-                || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
-            occscale = 0.2;
+        || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
+        occscale = 0.2;
         }
+         */
 
         // set up scaling
         if (refinementmode == RefinementMode.COORDINATES
@@ -228,6 +233,87 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
         }
 
         refinementenergy.setScaling(scaling);
+    }
+
+    public Double getEps() {
+        boolean hasaniso = false;
+
+        for (Atom a : atomarray) {
+            // ignore hydrogens!!!
+            if (a.getAtomicNumber() == 1) {
+                continue;
+            }
+            if (a.getAnisou() != null) {
+                hasaniso = true;
+                break;
+            }
+        }
+
+        switch (refinementMode) {
+            case COORDINATES:
+                eps = 0.1;
+                break;
+            case BFACTORS:
+                if (hasaniso) {
+                    eps = 20.0;
+                } else {
+                    eps = 0.01;
+                }
+                break;
+            case COORDINATES_AND_BFACTORS:
+                if (hasaniso) {
+                    eps = 20.0;
+                } else {
+                    eps = 0.1;
+                }
+                break;
+            case OCCUPANCIES:
+                eps = 0.1;
+                break;
+            case COORDINATES_AND_OCCUPANCIES:
+                eps = 0.1;
+                break;
+            case BFACTORS_AND_OCCUPANCIES:
+                if (hasaniso) {
+                    eps = 20.0;
+                } else {
+                    eps = 0.01;
+                }
+                break;
+            case COORDINATES_AND_BFACTORS_AND_OCCUPANCIES:
+                if (hasaniso) {
+                    eps = 20.0;
+                } else {
+                    eps = 0.1;
+                }
+                break;
+        }
+
+        return eps;
+    }
+
+        /**
+     * get the number of xyz parameters being fit
+     * @return the number of xyz parameters
+     */
+    public int getNXYZ() {
+        return nxyz;
+    }
+
+    /**
+     * get the number of B factor parameters being fit
+     * @return the number of B factor parameters
+     */
+    public int getNB() {
+        return nb;
+    }
+
+    /**
+     * get the number of occupancy parameters being fit
+     * @return the number of occupancy parameters
+     */
+    public int getNOcc() {
+        return nocc;
     }
 
     /**

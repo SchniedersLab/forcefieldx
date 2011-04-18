@@ -24,19 +24,18 @@ boolean neutron = false;
 
 // Set the RMS gradient per atom convergence criteria (optional)
 String epsString = args[2];
-//default if epsString is not given on the command line
-double eps = 1.0;
 
 // set the maximum number of refinement cycles
 int maxiter = 50000;
 
 // type of refinement
-RefinementMode refinementmode = RefinementMode.COORDINATES_AND_BFACTORS;
+RefinementMode refinementmode = RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES;
 
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 
+double eps = -1.0;
 if (epsString != null) {
    eps = Double.parseDouble(epsString);
 }
@@ -58,7 +57,9 @@ diffractiondata.printstats();
 energy();
 
 RefinementMinimize refinementMinimize = new RefinementMinimize(diffractiondata, refinementmode);
-
+if (eps < 0.0) {
+    eps = refinementMinimize.getEps();
+}
 println("\n RMS gradient convergence criteria: " + eps + " max number of iterations: " + maxiter);
 refinementMinimize.minimize(eps, maxiter);
 
