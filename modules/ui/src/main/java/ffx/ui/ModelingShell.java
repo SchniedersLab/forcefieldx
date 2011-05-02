@@ -55,6 +55,7 @@ import ffx.algorithms.Thermostat.Thermostats;
 import ffx.numerics.Potential;
 
 import ffx.potential.ForceFieldEnergy;
+import ffx.autoparm.Poledit;
 import ffx.autoparm.Potential2;
 import ffx.autoparm.Energy;
 import ffx.potential.bonded.MSNode;
@@ -145,6 +146,8 @@ public class ModelingShell extends Console implements AlgorithmListener {
         setVariable("minimize_2", new MethodClosure(this, "minimize_2"));
         setVariable("md", new MethodClosure(this, "md"));
         setVariable("potential", new MethodClosure(this,"potential"));
+        setVariable("poledit", new MethodClosure(this,"poledit"));
+
 
         /**
          * Configure the Swing GUI for the shell.
@@ -297,6 +300,16 @@ public class ModelingShell extends Console implements AlgorithmListener {
 //        return potential;
 //    }
 
+    public void poledit(String gdmaoutfname, String peditinfname){
+    	if (interrupted) {
+    		logger.info("Algorithm interrupted - skipping minimization.");
+    	}
+    	if ( terminatableAlgorithm != null ) {
+    		logger.info("Algorithm already running - skipping minimization.");
+    	}
+    	Poledit p = new Poledit(gdmaoutfname,peditinfname);
+    }
+    
     public void md(int nStep, double timeStep, double printInterval,
                    double saveInterval, double temperature, boolean initVelocities,
                    File dyn) {
