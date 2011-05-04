@@ -101,7 +101,8 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
     /**
      * constructor for refinement, assumes coordinates and B factor optimization
      *
-     * @param diffractiondata input {@link DiffractionData data} for refinement
+     * @param data input {@link DataContainer} that will be used as the model,
+     * must contain a {@link RefinementModel}
      */
     public RefinementMinimize(DataContainer data) {
         this(data, RefinementMode.COORDINATES_AND_BFACTORS);
@@ -110,10 +111,9 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
     /**
      * constructor for refinement
      *
-     * @param molecularAssembly input {@link ffx.potential.bonded.MolecularAssembly}
-     * array (usually containing alternate conformer assemblies) that will be
-     * used as the model
-     * @param diffractiondata input {@link DiffractionData data} for refinement
+     * @param data input {@link DataContainer} that will be used as the model,
+     * must contain a {@link RefinementModel} and either {@link DiffractionData}
+     * or {@link RealSpaceData}
      * @param refinementmode {@link RefinementMinimize.RefinementMode} for refinement
      */
     public RefinementMinimize(DataContainer data, RefinementMode refinementmode) {

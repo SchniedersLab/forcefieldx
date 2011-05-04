@@ -261,12 +261,16 @@ public class MTZWriter {
 
                 // Fctot (2)
                 fmapdata = (float) refinementdata.fctot_f(i);
-                colminmax[8][0] = Math.min(fmapdata, colminmax[8][0]);
-                colminmax[8][1] = Math.max(fmapdata, colminmax[8][1]);
+                if (!Double.isNaN(fmapdata)) {
+                    colminmax[8][0] = Math.min(fmapdata, colminmax[8][0]);
+                    colminmax[8][1] = Math.max(fmapdata, colminmax[8][1]);
+                }
                 bb.order(b).putFloat(fmapdata);
                 fmapdata = (float) Math.toDegrees(refinementdata.fctot_phi(i));
-                colminmax[9][0] = Math.min(fmapdata, colminmax[9][0]);
-                colminmax[9][1] = Math.max(fmapdata, colminmax[9][1]);
+                if (!Double.isNaN(fmapdata)) {
+                    colminmax[9][0] = Math.min(fmapdata, colminmax[9][0]);
+                    colminmax[9][1] = Math.max(fmapdata, colminmax[9][1]);
+                }
                 bb.order(b).putFloat(fmapdata);
 
                 // FOM/phase (2)

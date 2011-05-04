@@ -90,7 +90,7 @@ public class CCP4MapWriter {
 
     /**
      * set the stepping across the array (e.g. 2 if data is separated by 1 space)
-     * @param step the step size desired
+     * @param stride the step size desired
      */
     public void setStride(int stride) {
         this.stride = stride;
@@ -100,7 +100,7 @@ public class CCP4MapWriter {
      * write data to file, does not normalize
      *
      * @param data map data to write out - data typically derived from
-     * {@link CrystalReciprocalSpace#computeSolventDensity(double[][], boolean) }
+     * {@link ffx.xray.CrystalReciprocalSpace#computeSolventDensity(double[][], boolean) }
      */
     public void write(double data[]) {
         write(data, false);
@@ -110,7 +110,7 @@ public class CCP4MapWriter {
      * write data to file, does not normalize
      *
      * @param data map data to write out - data typically derived from
-     * {@link CrystalReciprocalSpace#computeSolventDensity(double[][], boolean) }
+     * {@link ffx.xray.CrystalReciprocalSpace#computeSolventDensity(double[][], boolean) }
      * @param norm should the data be normalized by mean/sd?
      */
     public void write(double data[], boolean norm) {

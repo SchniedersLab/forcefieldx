@@ -48,7 +48,7 @@ public class RealSpaceEnergy implements Potential {
     /**
      * Diffraction data energy target
      *
-     * @param diffractiondata {@link DiffractionData} object to associate with
+     * @param realspacedata {@link RealSpaceData} object to associate with
      * the target
      * @param nxyz number of xyz parameters
      * @param nb number of b factor parameters

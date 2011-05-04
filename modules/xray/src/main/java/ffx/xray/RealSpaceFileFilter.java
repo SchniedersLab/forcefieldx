@@ -36,7 +36,7 @@ public interface RealSpaceFileFilter {
      * read in Real Space file
      *
      * @param filename file to read in
-     * @param refinementdata the {@link RefinementData} object to fill in
+     * @param refinementdata the {@link RealSpaceRefinementData} object to fill in
      * @param properties system properties
      * @return true if read in properly
      */

@@ -54,7 +54,7 @@ public class CrystalStats {
      * constructor
      *
      * @param reflectionlist {@link ReflectionList} to use for logging
-     * @param refinementdata {@link RefinementData} to use for logging
+     * @param refinementdata {@link DiffractionRefinementData} to use for logging
      */
     public CrystalStats(ReflectionList reflectionlist,
             DiffractionRefinementData refinementdata) {

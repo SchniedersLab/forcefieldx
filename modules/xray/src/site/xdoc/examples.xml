@@ -70,12 +70,14 @@ rfreeflag 1
                 and finally filename.cns/hkl.
                 </p>
             </subsection>
-            <subsection name="Task: Scaling data/fitting sigmaA parameters">
-                <p>The <b>xrayscalebulk</b> script will perform anisotropic scaling,
+            <subsection name="Scaling data/fitting sigmaA parameters/MTZ output">
+                <p>The
+                    <a href="http://kenai.com/projects/ffx/sources/source/content/modules/xray/src/main/groovy/ffx/xray/scaleBulk.groovy">xray.scaleBulk</a>
+                script will perform anisotropic scaling,
                 fit a bulk solvent and compute crystallographic statistics (such
-                as R/Rfree) and optionally write out a MTZ file, without
-                modifying the input coordinates, other than adding hydrogens (if
-                necessary). Here is the output from 2R4R:
+                as R/Rfree) and write out a MTZ file, without modifying the input
+                coordinates, other than adding hydrogens (if necessary). Here is
+                the output from 2R4R:
                 </p>
                 <source>
   Fc to Fo scale: 0.56
@@ -137,28 +139,35 @@ s and w are analagous to D and sum_wc - J. Appl. Cryst. (2005) 38, 193-198
                 </source>
                 <p>This output provides all the scaling values, data statistics
                 and model-versus-data statistics required to carry out a quick
-                analysis of a structure. The script can also be easily modified
-                to output a MTZ file containing fourier coefficients (Fo-Fc and
-                2Fo-Fc) for inspection in coot.</p>
+                analysis of a structure. The output MTZ file contains Fourier
+                coefficients (Fo-Fc and 2Fo-Fc) that can be auto-opened for
+                inspection in coot, along with other useful coefficients (bulk
+                solvent and Fc coefficients, sigmaA, FOM, etc).
+                </p>
             </subsection>
             <subsection name="X-Ray refinement">
                 <p>The refinement engine in FFX is set up to be dynamic.
                 Refinement can include simulated annealing, refine coordinates
-                only, B factors only, or both. Example scripts to refine an
-                X-ray structure are provided, although we encourage users to
-                edit and modify the scripts as required for their task.</p>
+                only, B factors only, occupancies, all three, etc. Example
+                scripts to refine an X-ray structure are provided, although we
+                encourage users to edit and modify the scripts as required for
+                their task.
+                </p>
                 <p>For example, to carry out simulated annealing followed by
                 coordinate and then B-factor refinement, the provided
-                xray_anneal_minimize script should suffice. The job can be run 
-                by providing the atomic coordinates and structure factors:</p>
-                <source>ffxc xrayAnnealMinimize 1N7S.pdb 1N7S.mtz</source>
-                <p>The xrayAnnealMinimize script is provided in the scripts
-                directory, which partly contains:</p>
+                <a href="http://kenai.com/projects/ffx/sources/source/content/modules/xray/src/main/groovy/ffx/xray/annealMinimize.groovy">xray.annealMinimize</a>
+                script should suffice. The job can be run
+                by providing the atomic coordinates and structure factors:
+                </p>
+                <source>ffxc xray.annealMinimize 1N7S.pdb 1N7S.mtz</source>
+                <p>The xray.annealMinimize script is provided in the scripts
+                directory, which partly contains:
+                </p>
                 <source>
 // Name of the file (PDB or XYZ).
 String modelfilename = args[0];
 
-// input MTZ/CIF/CNS data (optional - if not given, data must be present as pdbfilename.[mtz/cif/ent/cns]
+// input MTZ/CIF/CNS data (optional - if not given, data must be present as pdbfilename.[mtz/cif/ent/cns])
 String datafilename = args[1];
 
 // data weight
@@ -169,12 +178,9 @@ boolean neutron = false;
 
 // Set the RMS gradient per atom convergence criteria (optional)
 String coordepsString = args[2];
-// default if epsString not given on the command line
-double coordeps = 1.0;
 
 // same, but for B factors
 String bepsString = args[3];
-double beps = 0.01;
 
 // set the maximum number of refinement cycles
 int maxiter = 50000;
@@ -201,7 +207,116 @@ int mdSteps = 200;
                 itself, a number of additional options can be set, such as the
                 type of refinement, weight of the data and simulated annealing
                 parameters.  As mentioned above, these values can be modified
-                as needed by the user, and we encourage you to do so!</p>
+                as needed by the user, and we encourage you to do so!
+                </p>
+            </subsection>
+            <subsection name="Properties associated with Diffraction data">
+                <p>As mentioned above, the property file can contain several options
+                that are specific to the diffraction data.  The available options
+                are (with defaults given in parentheses):
+                </p>
+                <ol>
+                    <li>fostring (null): title of Fo column in input MTZ file
+                    (FFX has several default strings it will search for, such as
+                    F, FO, FP or FOBS)
+                    </li>
+                    <li>sigfostring (null): title of sigFo column in input MTZ
+                    file
+                    </li>
+                    <li>rfreestring (null): title of input RFree column in input
+                    MTZ file
+                    </li>
+                    <li>use_3g (true): uses 3 Gaussians in form factor equation
+                    rather than 6 (set to false for atomic resolution data
+                    sets)
+                    </li>
+                    <li>aradbuff (0.5): atom radius buffer for sampling grid
+                    density, added to dynamically determined radius
+                    </li>
+                    <li>splinefit (true): resolution dependent spline fit
+                    between Fo and Fc
+                    </li>
+                    <li>fsigfcutoff (-1.0): F/sigF cutoff</li>
+                    <li>resolution (-1.0): resolution cutoff of the data (by
+                    default, FFX will read in all data)
+                    </li>
+                    <li>rfreeflag (-1): integer flag for Rfree reflections (if
+                    -1, it will be automatically determined from the data
+                    </li>
+                    <li>nbins (10): number of bins to divide data for purposes
+                    of statistics
+                    </li>
+                    <li>gridsearch (false): grid bulk solvent parameters to
+                    determine optimal starting values
+                    </li>
+                    <li>xrayscaletol (1.0E-4): gradient rms tolerance during
+                    scaling
+                    </li>
+                    <li>sigmaatol (1.0): gradient rms tolerance during sigmaA
+                    fit
+                    </li>
+                    <li>xweight (1.0): weight for summed diffraction data
+                    (weights for individual data sets are provided at the
+                    script level)
+                    </li>
+                    <li>bsimweight (1.0): harmonic restraint B-factor weight
+                    between bonded atoms (increase to 5 or 10 for low resolution
+                    structures if need be)
+                    </li>
+                    <li>bnonzeroweight (1.0): statistical mechanics based weight
+                    to prevent nonzero B factors
+                    </li>
+                    <li>bmass (5.0): fictitious mass to assign to B factors
+                    for extended Lagrangian methods
+                    </li>
+                    <li>residuebfactor (false): refine a B factor for each
+                    residue
+                    </li>
+                    <li>nresiduebfactor (1): number of residues per B factor
+                    (requires residuebfactor to be true)
+                    </li>
+                    <li>addanisou (false): add ANISOU records to the PDB
+                    file
+                    </li>
+                    <li>refinemolocc (false): refine occupancies of HETATMs,
+                    only performed if hetatms are in alternate conformers or
+                    occ &lt; 1.0
+                    </li>
+                    <li>occmass (10.0): fictitious mass to assign to occupancies
+                    for extended Lagrangian methods
+                    </li>
+                </ol>
+                <p>Other options are available, such as spacegroup and cell
+                settings, but these apply to the chemistry and diffraction terms
+                and are described elsewhere.
+                </p>
+            </subsection>
+            <subsection name="Scripts relevant to diffraction data">
+                <p>As mentioned, several scripts are provided for use.  They
+                can be found here:
+                <a href="http://kenai.com/projects/ffx/sources/source/show/modules/xray/src/main/groovy/ffx">included diffraction data scripts</a>
+                And consists of:</p>
+                <ol>
+                    <li>cif2mtz: converts a cif to an mtz file with symmetry
+                    information gathered from a PDB file</li>
+                    <li>deuterate: replaces hydrogen atoms with deuterium (only
+                    if bonded to N, O or S) and water with deuterium water
+                    for the purposes of neutron refinement</li>
+                    <li>mtzInfo: print info regarding a MTZ file</li>
+                    <li>xray.annealMinimize: simulated annealing followed by
+                    coordinate and B factor optimization</li>
+                    <li>xray.minimize: simulatenous optimization of coordinates,
+                    Bs and occupancies (the latter is done only if necessary)</li>
+                    <li>xray.minimize3Stage: same as above, but split into
+                    stages (recommended)</li>
+                    <li>xray.minimizeNoSCF: optimization of coordinates without
+                    a polarization term (fast, useful if the starting model is
+                    poor)</li>
+                    <li>xray.scaleBulk: simply scale the model and data, then
+                    print statistics and write out a MTZ file</li>
+                </ol>
+                <p>Similar scripts are included for neutron and real space
+                refinement.</p>
             </subsection>
         </section>
     </body>
