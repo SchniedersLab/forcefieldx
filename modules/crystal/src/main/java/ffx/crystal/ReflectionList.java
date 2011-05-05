@@ -86,7 +86,7 @@ public class ReflectionList {
                     double res = Crystal.invressq(this.crystal, hkl);
                     getepsilon(hkl);
                     if (SpaceGroup.checkLaueRestrictions(laueSystem, h, k, l)
-                            && res < resolution.invressq_limit()
+                            && resolution.inInvresolutionRange(res)
                             && !HKL.sys_abs(hkl)) {
                         minres = min(res, minres);
                         maxres = max(res, maxres);

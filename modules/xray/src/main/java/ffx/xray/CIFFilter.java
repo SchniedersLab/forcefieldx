@@ -56,7 +56,8 @@ public class CIFFilter implements DiffractionFileFilter {
         d_resolution_high, number_all, number_obs, length_a, length_b, length_c,
         angle_alpha, angle_beta, angle_gamma, Int_Tables_number,
         space_group_name_H_M, crystal_id, wavelength_id, scale_group_code,
-        status, index_h, index_k, index_l, F_meas_au, F_meas_sigma_au, NOVALUE;
+        status, index_h, index_k, index_l, F_meas, F_meas_au, F_meas_sigma,
+        F_meas_sigma_au, NOVALUE;
 
         public static Header toHeader(String str) {
             try {
@@ -157,7 +158,7 @@ public class CIFFilter implements DiffractionFileFilter {
             sb.append(String.format("setting up Reflection List based on CIF:\n"));
             sb.append(String.format("  spacegroup #: %d (name: %s)\n",
                     sgnum, SpaceGroup.spaceGroupNames[sgnum - 1]));
-            sb.append(String.format("  resolution: %8.3f\n", 0.9999 * reshigh));
+            sb.append(String.format("  resolution: %8.3f\n", 0.999999 * reshigh));
             sb.append(String.format("  cell: %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f\n",
                     cell[0], cell[1], cell[2], cell[3], cell[4], cell[5]));
             sb.append(String.format("\n  CIF # HKL (observed): %d\n", nobs));
@@ -171,7 +172,7 @@ public class CIFFilter implements DiffractionFileFilter {
         if (properties != null) {
             sampling = properties.getDouble("sampling", 1.0 / 1.5);
         }
-        Resolution resolution = new Resolution(0.9999 * reshigh, sampling);
+        Resolution resolution = new Resolution(0.999999 * reshigh, sampling);
 
         ReflectionList reflectionlist = new ReflectionList(crystal, resolution,
                 properties);
@@ -248,8 +249,8 @@ public class CIFFilter implements DiffractionFileFilter {
             System.out.println("IO Exception: " + ioe.getMessage());
             return -1.0;
         }
-
-        return res * 0.999;
+        
+        return res;
     }
 
     @Override
@@ -288,9 +289,11 @@ public class CIFFilter implements DiffractionFileFilter {
                         case index_l:
                             l = ncol;
                             break;
+                        case F_meas:
                         case F_meas_au:
                             fo = ncol;
                             break;
+                        case F_meas_sigma:
                         case F_meas_sigma_au:
                             sigfo = ncol;
                             break;
@@ -437,7 +440,7 @@ public class CIFFilter implements DiffractionFileFilter {
                                 continue;
                             }
                         }
-
+                        
                         if (friedel) {
                             anofsigf[hkl.index()][2] = Double.parseDouble(strarray[fo]);
                             anofsigf[hkl.index()][3] = Double.parseDouble(strarray[sigfo]);
@@ -451,8 +454,7 @@ public class CIFFilter implements DiffractionFileFilter {
                     nread++;
                 } else {
                     HKL tmp = new HKL(ih, ik, il);
-                    if (Crystal.invressq(reflectionlist.crystal, tmp)
-                            > reflectionlist.resolution.invressq_limit()) {
+                    if (!reflectionlist.resolution.inInvresolutionRange(Crystal.invressq(reflectionlist.crystal, tmp))){
                         nres++;
                     } else {
                         nignore++;
