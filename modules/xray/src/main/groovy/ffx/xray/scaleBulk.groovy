@@ -29,10 +29,10 @@ if (datafilename != null) {
 
 DiffractionData diffractiondata = new DiffractionData(systems, systems[0].getProperties(), SolventModel.POLYNOMIAL, diffractionfile);
 
-diffractiondata.scalebulkfit();
-diffractiondata.printstats();
+diffractiondata.scaleBulkFit();
+diffractiondata.printStats();
 energy();
 
-diffractiondata.writedata(FilenameUtils.removeExtension(modelfilename) + "_ffx.mtz");
+diffractiondata.writeData(FilenameUtils.removeExtension(modelfilename) + "_ffx.mtz");
 
 // diffractiondata.timings();

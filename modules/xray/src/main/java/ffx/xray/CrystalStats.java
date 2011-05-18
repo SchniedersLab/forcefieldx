@@ -49,6 +49,12 @@ public class CrystalStats {
     private final int freer[];
     private final double fc[][];
     private final double fomphi[][];
+    protected int nobshkl, highnobshkl, nobsrfree, highnobsrfree;
+    protected double reshigh, reslow, highreshigh, highreslow;
+    protected double completeness, highcompleteness;
+    protected double r, rfree, highr, highrfree;
+    protected double blowdpi, blowdpih, cruickdpi, cruickdpih;
+    private boolean print;
 
     /**
      * constructor
@@ -69,6 +75,119 @@ public class CrystalStats {
 
         this.spline = new ReflectionSpline(reflectionlist,
                 refinementdata.spline.length);
+
+        blowdpi = -1.0;
+        this.print = true;
+    }
+
+    public String getPDBHeaderString() {
+        print = false;
+        printHKLStats();
+        printRStats();
+        print = true;
+
+        StringBuilder sb = new StringBuilder();
+        
+        sb.append("REMARK   3  DATA USED IN REFINEMENT\n");
+        sb.append(String.format("REMARK   3   RESOLUTION RANGE HIGH (ANGSTROMS) : %6.2f\n", reshigh));
+        sb.append(String.format("REMARK   3   RESOLUTION RANGE LOW  (ANGSTROMS) : %6.2f\n", reslow));
+        if (refinementdata.fsigfcutoff > 0.0) {
+            sb.append(String.format("REMARK   3   DATA CUTOFF            (SIGMA(F)) : %6.2f\n", refinementdata.fsigfcutoff));
+        } else {
+            sb.append("REMARK   3   DATA CUTOFF            (SIGMA(F)) : NONE\n");
+        }
+        sb.append(String.format("REMARK   3   COMPLETENESS FOR RANGE        (%%) : %6.2f\n", completeness));
+        sb.append("REMARK   3   NUMBER OF REFLECTIONS             : " + nobshkl + "\n");
+        sb.append("REMARK   3\n");
+        sb.append("REMARK   3  FIT TO DATA USED IN REFINEMENT\n");
+        sb.append("REMARK   3   CROSS-VALIDATION METHOD          : THROUGHOUT\n");
+        sb.append("REMARK   3   FREE R VALUE TEST SET SELECTION  : RANDOM\n");
+        sb.append(String.format("REMARK   3   R VALUE            (WORKING SET) : %8.6f\n", r / 100.0));
+        sb.append(String.format("REMARK   3   FREE R VALUE                     : %8.6f\n", rfree / 100.0));
+        sb.append(String.format("REMARK   3   FREE R VALUE TEST SET SIZE   (%%) : %6.1f\n", (((double) nobsrfree) / nobshkl) * 100.0));
+        sb.append("REMARK   3   FREE R VALUE TEST SET COUNT      : " + nobsrfree + "\n");
+        sb.append("REMARK   3\n");
+        sb.append("REMARK   3  FIT IN THE HIGHEST RESOLUTION BIN\n");
+        sb.append("REMARK   3   TOTAL NUMBER OF BINS USED           : " + n + "\n");
+        sb.append(String.format("REMARK   3   BIN RESOLUTION RANGE HIGH           : %6.2f\n", highreshigh));
+        sb.append(String.format("REMARK   3   BIN RESOLUTION RANGE LOW            : %6.2f\n", highreslow));
+        sb.append("REMARK   3   REFLECTION IN BIN     (WORKING SET) : " + highnobshkl + "\n");
+        sb.append(String.format("REMARK   3   BIN COMPLETENESS (WORKING+TEST) (%%) : %6.2f\n", highcompleteness));
+        sb.append(String.format("REMARK   3   BIN R VALUE           (WORKING SET) : %8.6f\n", highr / 100.0));
+        sb.append("REMARK   3   BIN FREE R VALUE SET COUNT          : " + highnobsrfree + "\n");
+        sb.append(String.format("REMARK   3   BIN FREE R VALUE                    : %8.6f\n", highrfree / 100.0));
+        sb.append("REMARK   3\n");
+
+        sb.append("REMARK   3  OVERALL SCALE FACTORS\n");
+        sb.append(String.format("REMARK   3   SCALE: %4.2f\n",
+                exp(0.25 * refinementdata.model_k)));
+        sb.append(String.format("REMARK   3   ANISOTROPIC SCALE TENSOR:\n"));
+        sb.append(String.format("REMARK   3    %g %g %g\n",
+                refinementdata.model_b[0],
+                refinementdata.model_b[3],
+                refinementdata.model_b[4]));
+        sb.append(String.format("REMARK   3    %g %g %g\n",
+                refinementdata.model_b[3],
+                refinementdata.model_b[1],
+                refinementdata.model_b[5]));
+        sb.append(String.format("REMARK   3    %g %g %g\n",
+                refinementdata.model_b[4],
+                refinementdata.model_b[5],
+                refinementdata.model_b[2]));
+        sb.append("REMARK   3\n");
+        
+        if (refinementdata.crs_fs.solventmodel != SolventModel.NONE) {
+            sb.append("REMARK   3  BULK SOLVENT MODELLING\n");
+            switch (refinementdata.crs_fs.solventmodel) {
+                case (SolventModel.BINARY):
+                    sb.append("REMARK   3   METHOD USED: BINARY MASK\n");
+                    sb.append(String.format("REMARK   3    PROBE RADIUS  : %g\n",
+                            refinementdata.solvent_a));
+                    sb.append(String.format("REMARK   3    SHRINK RADIUS : %g\n",
+                            refinementdata.solvent_b));
+                    break;
+                case (SolventModel.POLYNOMIAL):
+                    sb.append("REMARK   3   METHOD USED: POLYNOMIAL SWITCH\n");
+                    sb.append(String.format("REMARK   3    ATOMIC RADIUS BUFFER : %g\n",
+                            refinementdata.solvent_a));
+                    sb.append(String.format("REMARK   3    SWITCH RADIUS        : %g\n",
+                            refinementdata.solvent_b));
+                    break;
+                case (SolventModel.GAUSSIAN):
+                    sb.append("REMARK   3   METHOD USED: GAUSSIAN\n");
+                    sb.append(String.format("REMARK   3    ATOMIC RADIUS BUFFER : %g\n",
+                            refinementdata.solvent_a));
+                    sb.append(String.format("REMARK   3    STD DEV SCALE        : %g\n",
+                            refinementdata.solvent_b));
+                    break;
+            }
+            sb.append(String.format("REMARK   3    K_SOL: %g\n",
+                    refinementdata.solvent_k));
+            sb.append(String.format("REMARK   3    B_SOL: %g\n",
+                    refinementdata.solvent_ueq * 8.0 * Math.PI * Math.PI));
+            sb.append("REMARK   3\n");
+        }
+
+        if (blowdpi > 0.0) {
+            sb.append("REMARK   3  ERROR ESTIMATES\n");
+            sb.append("REMARK   3   ACTA CRYST (1999) D55, 583-601\n");
+            sb.append("REMARK   3   ACTA CRYST (2002) D58, 792-797\n");
+            sb.append(String.format("REMARK   3   BLOW DPI ALL ATOMS (EQN 7)          : %7.4f\n", blowdpih));
+            sb.append(String.format("REMARK   3   BLOW DPI NONH ATOMS (EQN 7)         : %7.4f\n", blowdpi));
+            sb.append(String.format("REMARK   3   CRUICKSHANK DPI ALL ATOMS (EQN 27)  : %7.4f\n", cruickdpih));
+            sb.append(String.format("REMARK   3   CRUICKSHANK DPI NONH ATOMS (EQN 27) : %7.4f\n", cruickdpi));
+            sb.append("REMARK   3\n");
+        }
+
+        sb.append("REMARK   3  DATA TARGET\n");
+        sb.append("REMARK   3   METHOD USED: MAXIMUM LIKELIHOOD\n");
+        sb.append(String.format("REMARK   3    -LOG LIKELIHOOD            : %g\n",
+                refinementdata.llkr));
+        sb.append(String.format("REMARK   3    -LOG LIKELIHOOD (FREE SET) : %g\n",
+                refinementdata.llkf));
+        sb.append("REMARK   3\n");
+        
+        return sb.toString();
     }
 
     /**
@@ -76,7 +195,7 @@ public class CrystalStats {
      *
      * @return r value as a percent
      */
-    public double get_r() {
+    public double getR() {
         double sum = 0.0;
         double sumfo = 0.0;
         for (HKL ih : reflectionlist.hkllist) {
@@ -101,7 +220,8 @@ public class CrystalStats {
             }
         }
 
-        return (sum / sumfo) * 100.0;
+        r = (sum / sumfo) * 100.0;
+        return r;
     }
 
     /**
@@ -109,7 +229,7 @@ public class CrystalStats {
      *
      * @return rfree value as a percent
      */
-    public double get_rfree() {
+    public double getRFree() {
         double sum = 0.0;
         double sumfo = 0.0;
         for (HKL ih : reflectionlist.hkllist) {
@@ -134,7 +254,8 @@ public class CrystalStats {
             }
         }
 
-        return (sum / sumfo) * 100.0;
+        rfree = (sum / sumfo) * 100.0;
+        return rfree;
     }
 
     /**
@@ -142,7 +263,7 @@ public class CrystalStats {
      *
      * @return sigmaA
      */
-    public double get_sigmaa() {
+    public double getSigmaA() {
         double sum = 0.0;
         int nhkl = 0;
         ReflectionSpline sigmaaspline = new ReflectionSpline(reflectionlist,
@@ -176,7 +297,7 @@ public class CrystalStats {
      *
      * @return sigmaW
      */
-    public double get_sigmaw() {
+    public double getSigmaW() {
         double sum = 0.0;
         int nhkl = 0;
         ReflectionSpline sigmaaspline = new ReflectionSpline(reflectionlist,
@@ -216,10 +337,10 @@ public class CrystalStats {
      * @see <a href="http://dx.doi.org/10.1107/S0907444902003931" target="_blank">
      * D. M. Blow, Acta Cryst. (2002). D58, 792-797</a>
      */
-    public void print_dpistats(int natoms, int nnonhatoms) {
+    public void printDPIStats(int natoms, int nnonhatoms) {
         int nhkli = 0;
         int nhklo = refinementdata.n;
-        double rfree = get_rfree() * 0.01;
+        double rfreefrac = getRFree() * 0.01;
         double res = reflectionlist.resolution.res_limit();
         for (HKL ih : reflectionlist.hkllist) {
             int i = ih.index();
@@ -233,30 +354,32 @@ public class CrystalStats {
         }
 
         double va = Math.pow(crystal.volume / crystal.spaceGroup.getNumberOfSymOps(), 0.3333);
-        double blowdpih = 1.28 * Math.sqrt(natoms) * va
-                * Math.pow(nhkli, -0.8333) * rfree;
+        blowdpih = 1.28 * Math.sqrt(natoms) * va
+                * Math.pow(nhkli, -0.8333) * rfreefrac;
 
-        double blowdpi = 1.28 * Math.sqrt(nnonhatoms) * va
-                * Math.pow(nhkli, -0.8333) * rfree;
+        blowdpi = 1.28 * Math.sqrt(nnonhatoms) * va
+                * Math.pow(nhkli, -0.8333) * rfreefrac;
 
         double natni = Math.sqrt((double) natoms / nhkli);
         double noni = Math.pow((double) nhkli / nhklo, -0.3333);
-        double cruickdpih = natni * noni * rfree * res;
+        cruickdpih = natni * noni * rfreefrac * res;
 
         natni = Math.sqrt((double) nnonhatoms / nhkli);
-        double cruickdpi = natni * noni * rfree * res;
+        cruickdpi = natni * noni * rfreefrac * res;
 
         StringBuilder sb = new StringBuilder("\n");
         sb.append(String.format("Blow DPI (eqn 7): %7.4f nonH atoms: %7.4f\n", blowdpih, blowdpi));
         sb.append(String.format("Cruickshank DPI (eqn 27): %7.4f nonH atoms: %7.4f\n", cruickdpih, cruickdpi));
         sb.append(String.format("Acta Cryst (1999) D55, 583-601 and Acta Cryst (2002) D58, 792-797\n\n"));
-        logger.info(sb.toString());
+        if (print) {
+            logger.info(sb.toString());
+        }
     }
 
     /**
      * print HKL statistics/completeness info
      */
-    public void print_hklstats() {
+    public void printHKLStats() {
         double res[][] = new double[n][2];
         int nhkl[][] = new int[n][3];
 
@@ -277,12 +400,12 @@ public class CrystalStats {
             }
 
             // determine res limits of each bin
-            double r = Crystal.res(crystal, ih);
-            if (r > res[b][0]) {
-                res[b][0] = r;
+            double rh = Crystal.res(crystal, ih);
+            if (rh > res[b][0]) {
+                res[b][0] = rh;
             }
-            if (r < res[b][1]) {
-                res[b][1] = r;
+            if (rh < res[b][1]) {
+                res[b][1] = rh;
             }
 
             // count the reflection
@@ -321,16 +444,26 @@ public class CrystalStats {
         sb.append(String.format("%5.2f\n\n",
                 (((double) sum1 + sum2) / (sum1 + sum2 + sum3)) * 100.0));
 
-        logger.info(sb.toString());
+        nobshkl = sum1 + sum2;
+        highnobshkl = nhkl[n - 1][0] + nhkl[n - 1][1];
+        nobsrfree = sum2;
+        highnobsrfree = nhkl[n - 1][1];
+        completeness = (((double) sum1 + sum2) / (sum1 + sum2 + sum3)) * 100.0;
+        highcompleteness = (((double) nhkl[n - 1][0] + nhkl[n - 1][1])
+                / (nhkl[n - 1][0] + nhkl[n - 1][1] + nhkl[n - 1][2])) * 100.0;
+
+        if (print) {
+            logger.info(sb.toString());
+        }
     }
 
     /**
      * print R factors and associated statistics in a binned fashion
      */
-    public void print_rstats() {
+    public void printRStats() {
         double res[][] = new double[n][2];
         double nhkl[] = new double[n + 1];
-        double r[][] = new double[n + 1][2];
+        double rb[][] = new double[n + 1][2];
         double sumfo[][] = new double[n + 1][2];
         double s[][] = new double[n + 1][4];
         ReflectionSpline sigmaaspline = new ReflectionSpline(reflectionlist,
@@ -370,14 +503,14 @@ public class CrystalStats {
 
             ComplexNumber c = new ComplexNumber(fc[i][0], fc[i][1]);
             if (refinementdata.isfreer(i)) {
-                r[b][1] += abs(abs(fo[i][0]) - fh * abs(c.abs()));
+                rb[b][1] += abs(abs(fo[i][0]) - fh * abs(c.abs()));
                 sumfo[b][1] += abs(fo[i][0]);
-                r[n][1] += abs(abs(fo[i][0]) - fh * abs(c.abs()));
+                rb[n][1] += abs(abs(fo[i][0]) - fh * abs(c.abs()));
                 sumfo[n][1] += abs(fo[i][0]);
             } else {
-                r[b][0] += abs(abs(fo[i][0]) - fh * abs(c.abs()));
+                rb[b][0] += abs(abs(fo[i][0]) - fh * abs(c.abs()));
                 sumfo[b][0] += abs(fo[i][0]);
-                r[n][0] += abs(abs(fo[i][0]) - fh * abs(c.abs()));
+                rb[n][0] += abs(abs(fo[i][0]) - fh * abs(c.abs()));
                 sumfo[n][0] += abs(fo[i][0]);
             }
 
@@ -400,24 +533,35 @@ public class CrystalStats {
         for (int i = 0; i < n; i++) {
             sb.append(String.format("%7.3f %7.3f | ", res[i][0], res[i][1]));
             sb.append(String.format("%7.2f | %7.2f | %7.4f | %7.4f | %7.2f | %7.4f\n",
-                    (r[i][0] / sumfo[i][0]) * 100.0,
-                    (r[i][1] / sumfo[i][1]) * 100.0,
+                    (rb[i][0] / sumfo[i][0]) * 100.0,
+                    (rb[i][1] / sumfo[i][1]) * 100.0,
                     s[i][0], s[i][1], s[i][2], s[i][3]));
         }
 
         sb.append(String.format("%7.3f %7.3f | ", res[0][0], res[n - 1][1]));
         sb.append(String.format("%7.2f | %7.2f | %7.4f | %7.4f | %7.2f | %7.4f\n\n",
-                (r[n][0] / sumfo[n][0]) * 100.0,
-                (r[n][1] / sumfo[n][1]) * 100.0,
+                (rb[n][0] / sumfo[n][0]) * 100.0,
+                (rb[n][1] / sumfo[n][1]) * 100.0,
                 s[n][0], s[n][1], s[n][2], s[n][3]));
 
-        logger.info(sb.toString());
+        reslow = res[0][0];
+        reshigh = res[n - 1][1];
+        highreslow = res[n - 1][0];
+        highreshigh = res[n - 1][1];
+        r = (rb[n][0] / sumfo[n][0]) * 100.0;
+        rfree = (rb[n][1] / sumfo[n][1]) * 100.0;
+        highr = (rb[n - 1][0] / sumfo[n - 1][0]) * 100.0;
+        highrfree = (rb[n - 1][1] / sumfo[n - 1][1]) * 100.0;
+
+        if (print) {
+            logger.info(sb.toString());
+        }
     }
 
     /**
      * print scaling and bulk solvent statistics
      */
-    public void print_scalestats() {
+    public void printScaleStats() {
         int nhkl[] = new int[n];
         double scale[] = new double[n];
 
@@ -487,13 +631,16 @@ public class CrystalStats {
         }
         sb.append(String.format("  -log likelihood: %g (free set: %g)\n\n",
                 refinementdata.llkr, refinementdata.llkf));
-        logger.info(sb.toString());
+
+        if (print) {
+            logger.info(sb.toString());
+        }
     }
 
     /**
      * print signal to noise ratio statistics
      */
-    public void print_snstats() {
+    public void printSNStats() {
         double res[][] = new double[n][2];
         double nhkl[] = new double[n + 1];
         double sn[][] = new double[n + 1][3];
@@ -514,12 +661,12 @@ public class CrystalStats {
             }
 
             // determine res limits of each bin
-            double r = Crystal.res(crystal, ih);
-            if (r > res[b][0]) {
-                res[b][0] = r;
+            double rs = Crystal.res(crystal, ih);
+            if (rs > res[b][0]) {
+                res[b][0] = rs;
             }
-            if (r < res[b][1]) {
-                res[b][1] = r;
+            if (rs < res[b][1]) {
+                res[b][1] = rs;
             }
 
             // running mean
@@ -547,6 +694,8 @@ public class CrystalStats {
         sb.append(String.format("%8.2f | %8.2f | %8.2f\n\n",
                 sn[n][0], sn[n][1], sn[n][2]));
 
-        logger.info(sb.toString());
+        if (print) {
+            logger.info(sb.toString());
+        }
     }
 }

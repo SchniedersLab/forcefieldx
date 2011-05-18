@@ -25,6 +25,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.PrintWriter;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -41,6 +42,7 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Residue;
+import ffx.potential.parsers.PDBFilter;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
 import ffx.xray.RefinementMinimize.RefinementMode;
 
@@ -460,8 +462,8 @@ public class DiffractionData implements DataContainer {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < n; i++) {
             sb.append(String.format("%6.2f %6.2f ",
-                    crystalstats[i].get_r(),
-                    crystalstats[i].get_rfree()));
+                    crystalstats[i].getR(),
+                    crystalstats[i].getRFree()));
         }
 
         return sb.toString();
@@ -474,8 +476,8 @@ public class DiffractionData implements DataContainer {
             sb.append(String.format("     dataset %d (weight: %5.1f): R: %6.2f Rfree: %6.2f chemical energy: %8.2f likelihood: %8.2f\n",
                     i + 1,
                     dataname[i].weight,
-                    crystalstats[i].get_r(),
-                    crystalstats[i].get_rfree(),
+                    crystalstats[i].getR(),
+                    crystalstats[i].getRFree(),
                     assembly[0].getPotentialEnergy().getTotal(),
                     dataname[i].weight * sigmaaminimize[i].calculateLikelihood()));
         }
@@ -486,20 +488,20 @@ public class DiffractionData implements DataContainer {
     /**
      * print scale and R statistics for all datasets associated with the model
      */
-    public void printscaleandr() {
+    public void printScaleAndR() {
         for (int i = 0; i < n; i++) {
             if (!scaled[i]) {
-                scalebulkfit(i);
+                scaleBulkFit(i);
             }
-            crystalstats[i].print_scalestats();
-            crystalstats[i].print_rstats();
+            crystalstats[i].printScaleStats();
+            crystalstats[i].printRStats();
         }
     }
 
     /**
      * print all statistics for all datasets associated with the model
      */
-    public void printstats() {
+    public void printStats() {
         int nat = 0;
         int nnonh = 0;
         for (Atom a : refinementmodel.atomlist) {
@@ -515,7 +517,7 @@ public class DiffractionData implements DataContainer {
 
         for (int i = 0; i < n; i++) {
             if (!scaled[i]) {
-                scalebulkfit(i);
+                scaleBulkFit(i);
             }
 
             StringBuilder sb = new StringBuilder();
@@ -524,27 +526,27 @@ public class DiffractionData implements DataContainer {
                     modelname, dataname[i].filename));
             logger.info(sb.toString());
 
-            crystalstats[i].print_scalestats();
-            crystalstats[i].print_dpistats(nnonh, nat);
-            crystalstats[i].print_hklstats();
-            crystalstats[i].print_snstats();
-            crystalstats[i].print_rstats();
+            crystalstats[i].printScaleStats();
+            crystalstats[i].printDPIStats(nnonh, nat);
+            crystalstats[i].printHKLStats();
+            crystalstats[i].printSNStats();
+            crystalstats[i].printRStats();
         }
     }
 
     /**
      * scale model and fit bulk solvent to all data
      */
-    public void scalebulkfit() {
+    public void scaleBulkFit() {
         for (int i = 0; i < n; i++) {
-            scalebulkfit(i);
+            scaleBulkFit(i);
         }
     }
 
     /**
      * scale model and fit bulk solvent to dataset i of n
      */
-    public void scalebulkfit(int i) {
+    public void scaleBulkFit(int i) {
         StringBuilder sb = new StringBuilder();
         sb.append(String.format("scaling data set %d of %d\nweight: %6.2f is neutron: %s\nmodel: %s data file: %s\n",
                 i + 1, n, dataname[i].weight, dataname[i].neutron,
@@ -628,18 +630,52 @@ public class DiffractionData implements DataContainer {
     }
 
     /**
+     * write current model to PDB file
+     * 
+     * @param filename output PDB filename
+     * 
+     * @see PDBFilter#writeFile()
+     */
+    public void writeModel(String filename) {
+        StringBuilder remark = new StringBuilder();
+        File file = new File(filename);
+        PDBFilter pdbFilter = new PDBFilter(file, Arrays.asList(assembly), null, null);
+
+        remark.append("REMARK   3\n");
+        remark.append("REMARK   3 REFINEMENT\n");
+        remark.append("REMARK   3   PROGRAM     : FORCE FIELD X\n");
+        remark.append("REMARK   3\n");
+        for (int i = 0; i < n; i++) {
+            remark.append("REMARK   3  DATA SET " + (i + 1) + "\n");
+            if (dataname[i].isNeutron()) {
+                remark.append("REMARK   3   DATA SET TYPE   : NEUTRON\n");
+            } else {
+                remark.append("REMARK   3   DATA SET TYPE   : X-RAY\n");
+            }
+            remark.append("REMARK   3   DATA SET WEIGHT : " + dataname[i].getWeight() + "\n");
+            remark.append("REMARK   3\n");
+            remark.append(crystalstats[i].getPDBHeaderString());
+        }
+        for (int i = 0; i < assembly.length; i++) {
+            remark.append("REMARK   3  CHEMICAL SYSTEM " + (i + 1) + "\n");
+            remark.append(assembly[i].getPotentialEnergy().getPDBHeaderString());
+        }
+        pdbFilter.writeFileWithHeader(file, remark);
+    }
+
+    /**
      * write current datasets to MTZ files
      *
      * @param filename output filename, or filename root for multiple datasets
      *
      * @see MTZWriter#write()
      */
-    public void writedata(String filename) {
+    public void writeData(String filename) {
         if (n == 1) {
-            writedata(filename, 0);
+            writeData(filename, 0);
         } else {
             for (int i = 0; i < n; i++) {
-                writedata("" + FilenameUtils.removeExtension(filename) + "_" + i + ".mtz", i);
+                writeData("" + FilenameUtils.removeExtension(filename) + "_" + i + ".mtz", i);
             }
         }
     }
@@ -652,7 +688,7 @@ public class DiffractionData implements DataContainer {
      *
      * @see MTZWriter#write()
      */
-    public void writedata(String filename, int i) {
+    public void writeData(String filename, int i) {
         MTZWriter mtzwriter;
         if (scaled[i]) {
             mtzwriter = new MTZWriter(reflectionlist[i], refinementdata[i], filename);

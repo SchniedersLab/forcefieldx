@@ -137,22 +137,20 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
         refinementenergy.getCoordinates(x);
 
         double xyzscale = 1.0;
-        double bisoscale = 0.2;
+        double bisoscale = 1.0;
         double anisouscale = 50.0;
         double occscale = 15.0;
 
-        /*
         if (refinementmode == RefinementMode.COORDINATES_AND_BFACTORS
-        || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
-        bisoscale = 0.04;
-        anisouscale = 0.8;
+                || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
+            bisoscale = 0.4;
+            anisouscale = 40.0;
         }
 
         if (refinementmode == RefinementMode.COORDINATES_AND_OCCUPANCIES
-        || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
-        occscale = 0.2;
+                || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
+            occscale = 10.0;
         }
-         */
 
         // set up scaling
         if (refinementmode == RefinementMode.COORDINATES
@@ -292,7 +290,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
         return eps;
     }
 
-        /**
+    /**
      * get the number of xyz parameters being fit
      * @return the number of xyz parameters
      */

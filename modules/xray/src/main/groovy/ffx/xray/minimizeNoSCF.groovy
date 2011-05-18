@@ -59,8 +59,8 @@ if (datafilename != null) {
 
 DiffractionData diffractiondata = new DiffractionData(systems, systems[0].getProperties(), diffractionfile);
 
-diffractiondata.scalebulkfit();
-diffractiondata.printstats();
+diffractiondata.scaleBulkFit();
+diffractiondata.printStats();
 energy();
 
 // Do an initial loose optimization without an SCF.
@@ -69,9 +69,9 @@ RefinementMinimize refinementMinimize = new RefinementMinimize(diffractiondata, 
 println("\n RMS gradient convergence criteria: " + eps + " max number of iterations: " + maxiter);
 refinementMinimize.minimize(eps, maxiter);
 
-diffractiondata.scalebulkfit();
-diffractiondata.printstats();
+diffractiondata.scaleBulkFit();
+diffractiondata.printStats();
 energy();
 
-diffractiondata.writedata(FilenameUtils.removeExtension(modelfilename) + "_refine_noscf.mtz");
-saveAsPDB(systems, new File(FilenameUtils.removeExtension(modelfilename) + "_refine_noscf.pdb"));
+diffractiondata.writeModel(FilenameUtils.removeExtension(modelfilename) + "_refine_noscf.pdb");
+diffractiondata.writeData(FilenameUtils.removeExtension(modelfilename) + "_refine_noscf.mtz");

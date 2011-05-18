@@ -4,24 +4,20 @@ import ffx.xray.DiffractionFile;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
 
 // input PDB file
-String pdbfilename = args[0];
-if (pdbfilename == null){
-  pdbfilename = "examples/1N7S.pdb";
-}
+String modelfilename = args[0];
 
 // input data filename string (optional - if not given, data must be present as pdbfilename.[mtz/cif/ent/cns]
 String xrayfilename = args[1];
 
 String neutronfilename = args[2];
 
-// output following scaling, sigmaA and likelihood calculation
-// String outputfile = "examples/1N7S_ffx.mtz";
-String outputfile = null;
-
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 
-systems = open(pdbfilename);
+if (modelfilename == null){
+   modelfilename = "examples/1N7S.pdb";
+}
+systems = open(modelfilename);
 
 DiffractionFile xrayfile = null;
 if (xrayfilename != null) {
@@ -39,12 +35,10 @@ if (neutronfilename != null) {
 
 DiffractionData diffractiondata = new DiffractionData(systems, systems[0].getProperties(), SolventModel.POLYNOMIAL, xrayfile, neutronfile);
 
-diffractiondata.scalebulkfit();
-diffractiondata.printstats();
+diffractiondata.scaleBulkFit();
+diffractiondata.printStats();
 energy();
 
-if (outputfile != null){
-  diffractiondata.writedata(outputfile);
-}
+diffractiondata.writeData(FilenameUtils.removeExtension(modelfilename) + "_ffx.mtz");
 
 // diffractiondata.timings();

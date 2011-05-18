@@ -52,8 +52,8 @@ if (datafilename != null) {
 
 DiffractionData diffractiondata = new DiffractionData(systems, systems[0].getProperties(), SolventModel.POLYNOMIAL, diffractionfile);
 
-diffractiondata.scalebulkfit();
-diffractiondata.printstats();
+diffractiondata.scaleBulkFit();
+diffractiondata.printStats();
 energy();
 
 RefinementMinimize refinementMinimize = new RefinementMinimize(diffractiondata, refinementmode);
@@ -63,9 +63,9 @@ if (eps < 0.0) {
 println("\n RMS gradient convergence criteria: " + eps + " max number of iterations: " + maxiter);
 refinementMinimize.minimize(eps, maxiter);
 
-diffractiondata.scalebulkfit();
-diffractiondata.printstats();
+diffractiondata.scaleBulkFit();
+diffractiondata.printStats();
 energy();
 
-diffractiondata.writedata(FilenameUtils.removeExtension(modelfilename) + "_refine.mtz");
-saveAsPDB(systems, new File(FilenameUtils.removeExtension(modelfilename) + "_refine.pdb"));
+diffractiondata.writeModel(FilenameUtils.removeExtension(modelfilename) + "_refine.pdb");
+diffractiondata.writeData(FilenameUtils.removeExtension(modelfilename) + "_refine.mtz");

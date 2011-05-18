@@ -189,7 +189,7 @@ public class RefinementEnergy implements Potential, AlgorithmListener {
         if (data instanceof DiffractionData) {
             DiffractionData diffractiondata = (DiffractionData) data;
             if (!diffractiondata.scaled[0]) {
-                diffractiondata.printstats();
+                diffractiondata.printStats();
             }
 
             dataEnergy = new XRayEnergy(diffractiondata, nxyz, nb, nocc,
