@@ -248,12 +248,6 @@ public class ModelingShell extends Console implements AlgorithmListener {
     }
     
     public void analyze(String xyzfname){
-            	if (interrupted) {
-    		logger.info("Algorithm interrupted - skipping minimization.");
-    	}
-    	if ( terminatableAlgorithm != null ) {
-    		logger.info("Algorithm already running - skipping minimization.");
-    	}
     	try {
             Energy e = new Energy(xyzfname);
             e.energy(false, true);

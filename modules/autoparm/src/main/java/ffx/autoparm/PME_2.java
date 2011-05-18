@@ -84,7 +84,7 @@ import ffx.potential.parameters.ForceField.ForceFieldType;
  */
 public class PME_2 implements LambdaInterface, Potential {
 	public static boolean pedit = false;
-
+        public static boolean propyze = false;
 	private Boolean use_pme = false;
 	private double target_grid[][][];//nSymm, nAtoms, 4
 	private double scaling[];
@@ -2226,6 +2226,9 @@ public class PME_2 implements LambdaInterface, Potential {
     }      
     
     public void init_prms(){
+        if(propyze){
+            dividempoles3();
+        }
     	//rotate multipoles into new frame and induce
     	try{
             //Don't need to expand CoordinatesRegion. Decide later.
@@ -2235,7 +2238,17 @@ public class PME_2 implements LambdaInterface, Potential {
     	catch (Exception e) {
     		e.printStackTrace();
     	}
-    	induce0a();
+        if(!propyze){
+            induce0a();
+        }
+    }
+    
+    public void dividempoles3(){
+        for(int i = 0; i < nAtoms; i++){
+            for(int j = 4; j < 10; j++){
+                localMultipole[i][j] = localMultipole[i][j]/3;
+            }
+        }
     }
     
     //added by gchattree
