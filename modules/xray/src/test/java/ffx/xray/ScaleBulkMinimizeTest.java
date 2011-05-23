@@ -233,18 +233,18 @@ public class ScaleBulkMinimizeTest {
             return;
         }
 
-        crystalstats.print_scalestats();
-        crystalstats.print_hklstats();
-        crystalstats.print_snstats();
-        crystalstats.print_rstats();
+        crystalstats.printScaleStats();
+        crystalstats.printHKLStats();
+        crystalstats.printSNStats();
+        crystalstats.printRStats();
 
         assertEquals(info + " R value should be correct",
-                r, crystalstats.get_r(), 0.01);
+                r, crystalstats.getR(), 0.01);
         assertEquals(info + " Rfree value should be correct",
-                rfree, crystalstats.get_rfree(), 0.01);
+                rfree, crystalstats.getRFree(), 0.01);
         assertEquals(info + " sigmaA s value should be correct",
-                sigmaa, crystalstats.get_sigmaa(), 0.01);
+                sigmaa, crystalstats.getSigmaA(), 0.01);
         assertEquals(info + " sigmaA w value should be correct",
-                sigmaw, crystalstats.get_sigmaw(), 0.01);
+                sigmaw, crystalstats.getSigmaW(), 0.01);
     }
 }

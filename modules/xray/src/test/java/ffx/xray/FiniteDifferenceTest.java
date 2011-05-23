@@ -204,10 +204,10 @@ public class FiniteDifferenceTest {
         splineminimize.minimize(7, 1e-5);
 
         CrystalStats crystalstats = new CrystalStats(reflectionlist, refinementdata);
-        crystalstats.print_scalestats();
-        crystalstats.print_hklstats();
-        crystalstats.print_snstats();
-        crystalstats.print_rstats();
+        crystalstats.printScaleStats();
+        crystalstats.printHKLStats();
+        crystalstats.printSNStats();
+        crystalstats.printRStats();
     }
 
     @Test

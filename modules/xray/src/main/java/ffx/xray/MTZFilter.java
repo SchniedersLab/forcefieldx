@@ -199,7 +199,7 @@ public class MTZFilter implements DiffractionFileFilter {
             sb.append(String.format("setting up Reflection List based on MTZ:\n"));
             sb.append(String.format("  spacegroup #: %d (name: %s)\n",
                     sgnum, SpaceGroup.spaceGroupNames[sgnum - 1]));
-            sb.append(String.format("  resolution: %8.3f\n", 0.9999 * reshigh));
+            sb.append(String.format("  resolution: %8.3f\n", 0.999999 * reshigh));
             sb.append(String.format("  cell: %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f\n",
                     d.cell[0], d.cell[1], d.cell[2], d.cell[3], d.cell[4], d.cell[5]));
             logger.info(sb.toString());
@@ -212,7 +212,7 @@ public class MTZFilter implements DiffractionFileFilter {
         if (properties != null) {
             sampling = properties.getDouble("sampling", 1.0 / 1.5);
         }
-        Resolution resolution = new Resolution(0.9999 * reshigh, sampling);
+        Resolution resolution = new Resolution(0.999999 * reshigh, sampling);
 
         return new ReflectionList(crystal, resolution, properties);
     }
@@ -441,8 +441,7 @@ public class MTZFilter implements DiffractionFileFilter {
                     nread++;
                 } else {
                     HKL tmp = new HKL(ih, ik, il);
-                    if (Crystal.invressq(reflectionlist.crystal, tmp)
-                            > reflectionlist.resolution.invressq_limit()) {
+                    if (!reflectionlist.resolution.inInvresolutionRange(Crystal.invressq(reflectionlist.crystal, tmp))){
                         nres++;
                     } else {
                         nignore++;

@@ -2735,6 +2735,25 @@ public final class PDBFilter extends SystemFilter {
         return String.format("%1$#" + n + "s", s);
     }
 
+    public boolean writeFileWithHeader(File saveFile, StringBuilder header) {
+        FileWriter fw = null;
+        BufferedWriter bw = null;
+        try {
+            File newFile = saveFile;
+            activeMolecularAssembly.setFile(newFile);
+            activeMolecularAssembly.setName(newFile.getName());
+            fw = new FileWriter(newFile, false);
+            bw = new BufferedWriter(fw);
+            bw.write(header.toString());
+            bw.close();
+        } catch (Exception e) {
+            String message = "Exception writing to file: " + saveFile.toString();
+            logger.log(Level.WARNING, message, e);
+            return false;
+        }        
+        return writeFile(saveFile, true);
+    }
+    
     /**
      * Write out the Atomic information in PDB format.
      *

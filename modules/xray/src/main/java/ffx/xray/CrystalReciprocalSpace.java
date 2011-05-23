@@ -590,7 +590,7 @@ public class CrystalReciprocalSpace {
      *
      * @param hkldata structure factor list to fill in
      *
-     * @see RefinementData
+     * @see DiffractionRefinementData
      */
     public void computeDensity(double hkldata[][]) {
         computeDensity(hkldata, false);
@@ -602,7 +602,7 @@ public class CrystalReciprocalSpace {
      * @param hkldata structure factor list to fill in
      * @param print if true, print information on timings during the calculation
      *
-     * @see RefinementData
+     * @see DiffractionRefinementData
      */
     public void computeDensity(double hkldata[][], boolean print) {
         if (solvent) {
@@ -623,7 +623,7 @@ public class CrystalReciprocalSpace {
      * @param refinementmode {@link RefinementMinimize.RefinementMode refinement mode}
      *
      * @see RefinementMinimize.RefinementMode
-     * @see RefinementData
+     * @see DiffractionRefinementData
      */
     public void computeAtomicGradients(double hkldata[][],
             int freer[], int flag, RefinementMode refinementmode) {
@@ -640,7 +640,7 @@ public class CrystalReciprocalSpace {
      * @param print if true, print information on timings during the calculation
      *
      * @see RefinementMinimize.RefinementMode
-     * @see RefinementData
+     * @see DiffractionRefinementData
      */
     public void computeAtomicGradients(double hkldata[][],
             int freer[], int flag, RefinementMode refinementmode,
@@ -753,7 +753,7 @@ public class CrystalReciprocalSpace {
      *
      * @param hkldata structure factor list to fill in
      *
-     * @see RefinementData
+     * @see DiffractionRefinementData
      */
     public void computeAtomicDensity(double hkldata[][]) {
         computeAtomicDensity(hkldata, false);
@@ -765,7 +765,7 @@ public class CrystalReciprocalSpace {
      * @param hkldata structure factor list to fill in
      * @param print if true, print information on timings during the calculation
      *
-     * @see RefinementData
+     * @see DiffractionRefinementData
      */
     public void computeAtomicDensity(double hkldata[][], boolean print) {
         StringBuilder sb = new StringBuilder();
@@ -859,7 +859,7 @@ public class CrystalReciprocalSpace {
      *
      * @param hkldata structure factor list to fill in
      *
-     * @see RefinementData
+     * @see DiffractionRefinementData
      */
     public void computeSolventDensity(double hkldata[][]) {
         computeSolventDensity(hkldata, false);
@@ -871,7 +871,7 @@ public class CrystalReciprocalSpace {
      * @param hkldata structure factor list to fill in
      * @param print if true, print information on timings during the calculation
      *
-     * @see RefinementData
+     * @see DiffractionRefinementData
      */
     public void computeSolventDensity(double hkldata[][], boolean print) {
         StringBuilder sb = new StringBuilder();

@@ -54,18 +54,22 @@ import ffx.potential.bonded.TorsionTorsion;
 import ffx.potential.bonded.UreyBradley;
 import ffx.potential.bonded.Utilities;
 import ffx.potential.nonbonded.ParticleMeshEwald;
+import ffx.autoparm.PME_2;
 import ffx.potential.nonbonded.VanDerWaals;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldBoolean;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.ForceField.ForceFieldString;
+import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parsers.XYZFilter;
 import ffx.utilities.Keyword;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.text.DecimalFormat;
 import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.math.linear.*;
 
 /**
  * Compute the potential energy and derivatives of an AMOEBA system.
@@ -90,6 +94,7 @@ public class Energy implements Potential {
     private final VanDerWaals vanderWaals;
     //private final CellCellVanDerWaals vanderWaals;
     private final ParticleMeshEwald particleMeshEwald;
+    private PME_2 pme2;
     protected final int nAtoms;
     protected final int nBonds;
     protected final int nAngles;
@@ -442,12 +447,15 @@ public class Energy implements Potential {
         if (multipoleTerm) {
             particleMeshEwald = new ParticleMeshEwald(forceField, atoms, crystal, parallelTeam,
                                                       vanderWaals.getNeighborLists());
+            pme2 = new PME_2(forceField, atoms, crystal, parallelTeam,
+                                                      vanderWaals.getNeighborLists(),key);
+            pme2.propyze = true;
+            pme2.init_prms();
         } else {
             particleMeshEwald = null;
         }
 
         //molecularAssembly.setPotential(this);
-
     }
 
     public double energy(boolean gradient, boolean print) {
@@ -599,6 +607,7 @@ public class Energy implements Potential {
             sb.append(this);
             logger.info(sb.toString());
         }
+        system_mpoles();
         return totalEnergy;
     }
 
@@ -811,9 +820,132 @@ public class Energy implements Potential {
         return nAtoms * 3;
     }
     
-    public static void main(String args[]) throws IOException{
-        Energy e = new Energy("/users/gchattree/Research/Compounds/test_compounds/phenobarbital-test2/phenobarbital.xyz");
-        e.energy(false,true);
+    public void system_mpoles(){
+        //Find center of mass.
+        double weigh = 0;
+        double xyzmid[] = {0,0,0};
+        double xyzcm[][] = new double[nAtoms][3];
+        for(int i = 0; i < nAtoms; i++){
+            weigh = weigh + atoms[i].getMass();
+            for (int j = 0; j < 3; j++){
+                xyzmid[j] = xyzmid[j] + atoms[i].getXYZ()[j] * atoms[i].getMass();
+            }
+        }
+        if(weigh != 0){
+            for(int j = 0; j<3; j++){
+                xyzmid[j] = xyzmid[j]/weigh;
+            }
+        }
+        
+        for(int i = 0; i < nAtoms; i++){
+            for(int j = 0; j < 3; j++){
+                xyzcm[i][j] = atoms[i].getXYZ()[j] - xyzmid[j];
+            }
+        }
+        addInducedToGlobal();
+        double netchg = 0, xdpl = 0, ydpl = 0, zdpl = 0, xxqdp = 0, xyqdp = 0, xzqdp = 0, yxqdp = 0, yyqdp = 0, yzqdp = 0, zxqdp = 0, zyqdp = 0, zzqdp = 0;
+        for(int i = 0; i < nAtoms; i++){
+            double charge = atoms[i].getMultipoleType().charge;
+            double[] dipole = {pme2.globalMultipole[0][i][1], pme2.globalMultipole[0][i][2], pme2.globalMultipole[0][i][3]};
+            //double[] dipole = atoms[i].getMultipoleType().dipole;
+            netchg = netchg + charge;
+            xdpl = xdpl + xyzcm[i][0] * charge + dipole[0];
+            ydpl = ydpl + xyzcm[i][1] * charge + dipole[1];
+            zdpl = zdpl + xyzcm[i][2] * charge + dipole[2];
+            xxqdp = xxqdp + xyzcm[i][0] * xyzcm[i][0] * charge + 2 * xyzcm[i][0] * dipole[0];
+            xyqdp = xyqdp + xyzcm[i][0] * xyzcm[i][1] * charge + xyzcm[i][0] * dipole[1] + xyzcm[i][1] * dipole[0];
+            xzqdp = xzqdp + xyzcm[i][0] * xyzcm[i][2] * charge + xyzcm[i][0] * dipole[2] + xyzcm[i][2] * dipole[0];
+            
+            yxqdp = yxqdp + xyzcm[i][0] * xyzcm[i][1] * charge + xyzcm[i][0] * dipole[1] + xyzcm[i][1] * dipole[0];
+            yyqdp = yyqdp + xyzcm[i][1] * xyzcm[i][1] * charge + 2 * xyzcm[i][1] * dipole[1];
+            yzqdp = yzqdp + xyzcm[i][1] * xyzcm[i][2] * charge + xyzcm[i][1]*dipole[2] + xyzcm[i][2] * dipole[1];
+            
+            //zxqdp = zxqdp + xyzcm[i][2] * xyzcm[i][0] * charge + xyzcm[i][2] * dipole[0] + xyzcm[i][0] * dipole[2];
+            zxqdp = zxqdp + xyzcm[i][0] * xyzcm[i][2] * charge + xyzcm[i][0] * dipole[2] + xyzcm[i][2] * dipole[0];
+            //zyqdp = zyqdp + xyzcm[i][2] * xyzcm[i][1] * charge + xyzcm[i][2] * dipole[1] + xyzcm[i][1] * dipole[2];
+            zyqdp = zyqdp + xyzcm[i][1] * xyzcm[i][2] * charge + xyzcm[i][1]*dipole[2] + xyzcm[i][2] * dipole[1];
+            zzqdp = zzqdp + xyzcm[i][2] * xyzcm[i][2] * charge + 2 * xyzcm[i][2] * dipole[2];
+        }
+        
+
+        
+        double qave = (xxqdp + yyqdp + zzqdp)/3;
+        xxqdp = 1.5 * (xxqdp - qave);
+        xyqdp = 1.5 * xyqdp;
+        xzqdp = 1.5 * xzqdp;
+        yxqdp = 1.5 * yxqdp;
+        yyqdp = 1.5 * (yyqdp - qave);
+        yzqdp = 1.5 * yzqdp;
+        zxqdp = 1.5 * zxqdp;
+        zyqdp = 1.5 * zyqdp;
+        zzqdp = 1.5 * (zzqdp - qave);
+        
+        for(int i = 0; i < nAtoms; i++){
+            double[][] quadrupole = {{pme2.globalMultipole[0][i][4], pme2.globalMultipole[0][i][7], pme2.globalMultipole[0][i][8]},{pme2.globalMultipole[0][i][7], pme2.globalMultipole[0][i][5], pme2.globalMultipole[0][i][9]},{pme2.globalMultipole[0][i][8], pme2.globalMultipole[0][i][9], pme2.globalMultipole[0][i][6]}};
+            //double[][] quadrupole = atoms[i].getMultipoleType().quadrupole;
+            xxqdp = xxqdp + 3 * quadrupole[0][0];
+            xyqdp = xyqdp + 3 * quadrupole[0][1];
+            xzqdp = xzqdp + 3 * quadrupole[0][2];
+            yxqdp = yxqdp + 3 * quadrupole[1][0];
+            yyqdp = yyqdp + 3 * quadrupole[1][1];
+            yzqdp = yzqdp + 3 * quadrupole[1][2];
+            zxqdp = zxqdp + 3 * quadrupole[2][0];
+            zyqdp = zyqdp + 3 * quadrupole[2][1];
+            zzqdp = zzqdp + 3 * quadrupole[2][2];
+        }
+        
+        xdpl = MultipoleType.DEBYE * xdpl;
+        ydpl = MultipoleType.DEBYE * ydpl;
+        zdpl = MultipoleType.DEBYE * zdpl;
+
+        xxqdp = MultipoleType.DEBYE * xxqdp;
+        xyqdp = MultipoleType.DEBYE * xyqdp;
+        xzqdp = MultipoleType.DEBYE * xzqdp;
+        yxqdp = MultipoleType.DEBYE * yxqdp;
+        yyqdp = MultipoleType.DEBYE * yyqdp;
+        yzqdp = MultipoleType.DEBYE * yzqdp;
+        zxqdp = MultipoleType.DEBYE * zxqdp;
+        zyqdp = MultipoleType.DEBYE * zyqdp;
+        zzqdp = MultipoleType.DEBYE * zzqdp;
+        
+        double netdpl = Math.sqrt(xdpl*xdpl + ydpl*ydpl + zdpl*zdpl);
+        
+        RealMatrix a = new Array2DRowRealMatrix(new double[][] {{xxqdp,xyqdp,xzqdp},{yxqdp,yyqdp,yzqdp},{zxqdp,zyqdp,zzqdp}});
+
+        EigenDecompositionImpl e = new EigenDecompositionImpl(a,1);
+        a = e.getD();
+        double[] netqdp = {a.getColumn(0)[0],a.getColumn(1)[1],a.getColumn(2)[2]};
+        
+        DecimalFormat myFormatter = new DecimalFormat(" ##########0.00000;-##########0.00000");
+        String output;
+        output = String.format(" Total Electric Charge:   %13s %s Electrons\n"," ",myFormatter.format(netchg));
+        System.out.println(output);
+        output = String.format(" Dipole Moment Magnitude: %13s %s Debyes\n"," ",myFormatter.format(netdpl));
+        System.out.println(output);
+        output = String.format(" Dipole X,Y,Z-Components: %13s %s %s %s\n"," ",myFormatter.format(xdpl),myFormatter.format(ydpl),myFormatter.format(zdpl));
+        System.out.println(output);
+        output = String.format(" Quadrupole Moment Tensor:%13s %s %s %s"," ",myFormatter.format(xxqdp),myFormatter.format(xyqdp),myFormatter.format(xzqdp));
+        System.out.println(output);
+        output = String.format("      (Buckinghams)       %13s %s %s %s"," ",myFormatter.format(yxqdp),myFormatter.format(yyqdp),myFormatter.format(yzqdp));
+        System.out.println(output);
+        output = String.format("                          %13s %s %s %s\n"," ",myFormatter.format(zxqdp),myFormatter.format(zyqdp),myFormatter.format(zzqdp));
+        System.out.println(output);
+        output = String.format("Principle Axes Quadrupole:%13s %s %s %s"," ",myFormatter.format(netqdp[2]),myFormatter.format(netqdp[1]),myFormatter.format(netqdp[0]));
+        System.out.println(output);
+
     }
+    
+    public void addInducedToGlobal(){
+        for(int i = 0; i < nAtoms; i++){
+            for(int j = 0; j < 3;j++){
+                pme2.globalMultipole[0][i][j+1] = pme2.globalMultipole[0][i][j+1] + pme2.inducedDipole[0][i][j];
+            }
+        }
+    }
+    
+//    public static void main(String args[]) throws IOException{
+//        Energy e = new Energy("/users/gchattree/Research/Compounds/s_test4_compounds/triclosan/triclosan.xyz");
+//        e.energy(false,true);
+//    }
 }
 

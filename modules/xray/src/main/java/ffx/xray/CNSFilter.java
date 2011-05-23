@@ -98,7 +98,7 @@ public class CNSFilter implements DiffractionFileFilter {
             sb.append(String.format("setting up Reflection List based on CNS:\n"));
             sb.append(String.format("  spacegroup #: %d (name: %s)\n",
                     sgnum, SpaceGroup.spaceGroupNames[sgnum - 1]));
-            sb.append(String.format("  resolution: %8.3f\n", 0.9999 * reshigh));
+            sb.append(String.format("  resolution: %8.3f\n", reshigh));
             sb.append(String.format("  cell: %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f\n",
                     cell[0], cell[1], cell[2], cell[3], cell[4], cell[5]));
             logger.info(sb.toString());
@@ -210,8 +210,7 @@ public class CNSFilter implements DiffractionFileFilter {
                                 nread++;
                             } else {
                                 HKL tmp = new HKL(ih, ik, il);
-                                if (Crystal.invressq(reflectionlist.crystal, tmp)
-                                        > reflectionlist.resolution.invressq_limit()) {
+                                if (!reflectionlist.resolution.inInvresolutionRange(Crystal.invressq(reflectionlist.crystal, tmp))) {
                                     nres++;
                                 } else {
                                     nignore++;

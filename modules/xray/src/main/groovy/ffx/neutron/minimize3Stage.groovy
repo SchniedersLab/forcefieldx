@@ -71,8 +71,8 @@ if (neutronfilename != null) {
 
 DiffractionData diffractiondata = new DiffractionData(systems, systems[0].getProperties(), SolventModel.POLYNOMIAL, xrayfile, neutronfile);
 
-diffractiondata.scalebulkfit();
-diffractiondata.printstats();
+diffractiondata.scaleBulkFit();
+diffractiondata.printStats();
 energy();
 
 RefinementMinimize refinementMinimize = new RefinementMinimize(diffractiondata, RefinementMode.COORDINATES);
@@ -81,8 +81,8 @@ if (coordeps < 0.0) {
 }
 println("\n RMS gradient convergence criteria: " + coordeps + " max number of iterations: " + maxiter);
 refinementMinimize.minimize(coordeps, maxiter);
-diffractiondata.scalebulkfit();
-diffractiondata.printstats();
+diffractiondata.scaleBulkFit();
+diffractiondata.printStats();
 energy();
 
 refinementMinimize = new RefinementMinimize(diffractiondata, RefinementMode.BFACTORS);
@@ -91,8 +91,8 @@ if (beps < 0.0) {
 }
 println("\n RMS gradient convergence criteria: " + beps + " max number of iterations: " + maxiter);
 refinementMinimize.minimize(beps, maxiter);
-diffractiondata.scalebulkfit();
-diffractiondata.printstats();
+diffractiondata.scaleBulkFit();
+diffractiondata.printStats();
 
 if (diffractiondata.getAltResidues().size() > 0
     || diffractiondata.getAltMolecules().size() > 0){
@@ -102,14 +102,14 @@ if (diffractiondata.getAltResidues().size() > 0
     }
     println("\n RMS gradient convergence criteria: " + occeps + " max number of iterations: " + maxiter);
     refinementMinimize.minimize(occeps, maxiter);
-    diffractiondata.scalebulkfit();
-    diffractiondata.printstats();
+    diffractiondata.scaleBulkFit();
+    diffractiondata.printStats();
 } else {
     println("Occupancy refinement not necessary, skipping");
 }
 
 energy();
 
-diffractiondata.writedata(FilenameUtils.removeExtension(modelfilename) + "_xray_refine.mtz", 0);
-diffractiondata.writedata(FilenameUtils.removeExtension(modelfilename) + "_neutron_refine.mtz", 1);
-saveAsPDB(systems, new File(FilenameUtils.removeExtension(modelfilename) + "_refine.pdb"));
+diffractiondata.writeModel(FilenameUtils.removeExtension(modelfilename) + "_refine.pdb");
+diffractiondata.writeData(FilenameUtils.removeExtension(modelfilename) + "_xray_refine.mtz", 0);
+diffractiondata.writeData(FilenameUtils.removeExtension(modelfilename) + "_neutron_refine.mtz", 1);

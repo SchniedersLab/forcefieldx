@@ -78,8 +78,8 @@ if (datafilename != null) {
 
 DiffractionData diffractiondata = new DiffractionData(active, active.getProperties(), SolventModel.POLYNOMIAL, diffractionfile);
 
-diffractiondata.scalebulkfit();
-diffractiondata.printstats();
+diffractiondata.scaleBulkFit();
+diffractiondata.printStats();
 
 // Do an initial loose optimization without an SCF.
 RefinementMinimize refinementMinimize = new RefinementMinimize(diffractiondata, RefinementMode.COORDINATES);
@@ -91,15 +91,15 @@ forceField.addForceFieldString(ForceFieldString.POLARIZATION, "mutual");
 forceField.addForceFieldDouble(ForceFieldDouble.POLAR_EPS, 0.01);
 ForceFieldEnergy forceFieldEnergy = new ForceFieldEnergy(active);
 
-diffractiondata.scalebulkfit();
-diffractiondata.printstats();
+diffractiondata.scaleBulkFit();
+diffractiondata.printStats();
 energy();
 
 RefinementEnergy refinementEnergy = new RefinementEnergy(diffractiondata, refinementmode);
 SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(active, refinementEnergy, active.getProperties(), refinementEnergy);
 simulatedAnnealing.anneal(highTemperature, lowTemperature, annealingSteps, mdSteps);
-diffractiondata.scalebulkfit();
-diffractiondata.printstats();
+diffractiondata.scaleBulkFit();
+diffractiondata.printStats();
 
 refinementMinimize = new RefinementMinimize(diffractiondata, RefinementMode.COORDINATES);
 if (coordeps < 0.0) {
@@ -107,8 +107,8 @@ if (coordeps < 0.0) {
 }
 println("\n RMS gradient convergence criteria: " + coordeps + " max number of iterations: " + maxiter);
 refinementMinimize.minimize(coordeps, maxiter);
-diffractiondata.scalebulkfit();
-diffractiondata.printstats();
+diffractiondata.scaleBulkFit();
+diffractiondata.printStats();
 energy();
 
 refinementMinimize = new RefinementMinimize(diffractiondata, RefinementMode.BFACTORS);
@@ -117,9 +117,9 @@ if (beps < 0.0) {
 }
 println("\n RMS gradient convergence criteria: " + beps + " max number of iterations: " + maxiter);
 refinementMinimize.minimize(beps, maxiter);
-diffractiondata.scalebulkfit();
-diffractiondata.printstats();
+diffractiondata.scaleBulkFit();
+diffractiondata.printStats();
 energy();
 
-diffractiondata.writedata(FilenameUtils.removeExtension(modelfilename) + "_refine.mtz");
-saveAsPDB(new File(FilenameUtils.removeExtension(modelfilename) + "_refine.pdb"));
+diffractiondata.writeModel(FilenameUtils.removeExtension(modelfilename) + "_refine.pdb");
+diffractiondata.writeData(FilenameUtils.removeExtension(modelfilename) + "_refine.mtz");
