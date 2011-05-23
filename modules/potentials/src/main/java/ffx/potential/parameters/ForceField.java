@@ -24,7 +24,6 @@ import static java.lang.String.format;
 
 import java.io.File;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -83,7 +82,7 @@ public class ForceField {
         BONDTERM, ANGLETERM, STRBNDTERM, UREYTERM, OPBENDTERM,
         TORSIONTERM, PITORSTERM, TORTORTERM, VDWLRTERM, VDWTERM,
         MPOLETERM, POLARIZETERM, GKTERM, SCFCACHE, APERIODIC, CUDAFFT,
-        RIGID_HYDROGENS;
+        RIGID_HYDROGENS, LAMBDATERM;
     }
 
     public enum ForceFieldType {

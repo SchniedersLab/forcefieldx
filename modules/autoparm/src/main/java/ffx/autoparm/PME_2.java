@@ -26,6 +26,7 @@ import static java.lang.String.format;
 import static ffx.numerics.Erf.erfc;
 import static ffx.numerics.VectorMath.*;
 import static ffx.potential.parameters.MultipoleType.*;
+
 import ffx.numerics.Potential;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -566,7 +567,7 @@ public class PME_2 implements LambdaInterface, Potential {
                 bsplineTime += System.nanoTime();
 
                 densityTime = -System.nanoTime();
-                reciprocalSpace.computePermanentDensity(globalMultipole, 1.0);
+                reciprocalSpace.computePermanentDensity(globalMultipole, false);
                 densityTime += System.nanoTime();
                 /**
                  * Here the real space contribution to the field is calculated at
@@ -2231,7 +2232,7 @@ public class PME_2 implements LambdaInterface, Potential {
             bsplineTime += System.nanoTime();
 
             densityTime = -System.nanoTime();
-            reciprocalSpace.computePermanentDensity(globalMultipole, 1.0);
+            reciprocalSpace.computePermanentDensity(globalMultipole, false);
             densityTime += System.nanoTime();
             /**
              * Here the real space contribution to the field is calculated at

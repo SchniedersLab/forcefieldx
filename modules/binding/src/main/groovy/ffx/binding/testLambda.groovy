@@ -19,12 +19,6 @@ int ligandStop = Integer.parseInt(args[2]);
 // ===============================================================================================
 
 println("\n Testing the λ gradients of " + filename);
-
-// For now - only use the van der Waals potential.
-
-System.setProperty("mpoleterm","false");
-System.setProperty("polarizeterm","false");
-
 open(filename);
 
 ForceFieldEnergy energy = active.getPotentialEnergy();
@@ -39,20 +33,20 @@ for (int i = ligandStart; i <= ligandStop; i++) {
 
 // Compute the λ = 1.0 energy.
 double lambda = 1.0;
-energy.setSoftCoreLambda(lambda);
+energy.setLambda(lambda);
 double e1 = energy.energy(false, false);
 println(String.format(" E(λ=1.0) : %20.8f.", e1));
 
 // Compute the λ = 0.0 energy.
 lambda = 0.0;
-energy.setSoftCoreLambda(lambda);
+energy.setLambda(lambda);
 double e0 = energy.energy(false, false);
 println(String.format(" E(λ=0.0) : %20.8f.", e0));
 println(String.format(" E(1)-E(0): %20.8f.", e1-e0));
 
 // Set λ to be 0.5.
 lambda = 0.5;
-energy.setSoftCoreLambda(lambda);
+energy.setLambda(lambda);
 // Turn on calculation of dE/dλ, d2E/dλ2 and dE/dλ/dX.
 energy.lambdaGradient(true);
 
@@ -71,12 +65,12 @@ energy.getdEdLambdaGradient(dEdLdX);
 double step = 1.0e-5;
 double[][] dedx = new double[2][n * 3];
 
-energy.setSoftCoreLambda(lambda + step);
+energy.setLambda(lambda + step);
 double dedlp = energy.energy(true, false);
 double d2edl2p = energy.getdEdLambda();
 energy.getGradients(dedx[0]);
 
-energy.setSoftCoreLambda(lambda - step);
+energy.setLambda(lambda - step);
 double dedlm = energy.energy(true, false);
 double d2edl2m = energy.getdEdLambda()
 energy.getGradients(dedx[1]);

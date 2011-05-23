@@ -62,6 +62,7 @@ import ffx.potential.parameters.ForceField.ForceFieldString;
 public class ForceFieldEnergy implements Potential, LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(ForceFieldEnergy.class.getName());
+
     private final Atom[] atoms;
     private final Crystal crystal;
     private final ParallelTeam parallelTeam;
@@ -121,7 +122,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     protected long recursionTime;
     protected long totalTime;
     protected double[] optimizationScaling = null;
+               
     protected double lambda;
+    protected boolean lambdaGradient = false;
     protected int energyCount;
     protected int lambdaBins = 100;
     protected double λBinWidth = 1.0 / lambdaBins;
@@ -133,8 +136,10 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     protected int recursionKernel[][];
     protected double dEdλ = 0.0;
     protected double d2Edλ2 = 0.0;
+    protected double dUdXdL[] = null;
     protected double gaussianMag = 0.002;
     protected double dAdλ[];
+    
     private static final double toSeconds = 0.000000001;
 
     public ForceFieldEnergy(MolecularAssembly molecularAssembly) {
@@ -159,6 +164,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         multipoleTerm = forceField.getBoolean(ForceFieldBoolean.MPOLETERM, true);
         polarizationTerm = forceField.getBoolean(ForceFieldBoolean.POLARIZETERM, true);
         generalizedKirkwoodTerm = forceField.getBoolean(ForceFieldBoolean.GKTERM, false);
+        lambdaTerm = forceField.getBoolean(ForceFieldBoolean.LAMBDATERM, false);
 
         // Define the cutoff lengths.
         double vdwOff = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, 9.0);
@@ -376,7 +382,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         logger.info("\n Non-Bonded Terms");
 
         if (vanderWaalsTerm) {
-            //vanderWaals = new CellCellVanDerWaals(forceField, atoms, crystal, parallelTeam);
             vanderWaals = new VanDerWaals(forceField, atoms, crystal, parallelTeam);
         } else {
             vanderWaals = null;
@@ -538,15 +543,21 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
             electrostaticTime = System.nanoTime() - electrostaticTime;
         }
-
+        
         energyCount++;
 
-        if (lambdaTerm) {
-
-            dEdλ = vanderWaals.getdEdLambda();
-            d2Edλ2 = vanderWaals.getd2EdLambda2();
-            
-            logger.info(String.format("Lambda %20.8f, dE/dLambda %20.8f",lambda, dEdλ));
+        if (lambdaGradient) {
+            dEdλ = 0.0;
+            d2Edλ2 = 0.0;
+            if (vanderWaalsTerm) {
+                dEdλ = vanderWaals.getdEdLambda();
+                d2Edλ2 = vanderWaals.getd2EdLambda2();
+            }
+            if (multipoleTerm) {
+                dEdλ += particleMeshEwald.getdEdLambda();
+                d2Edλ2 += particleMeshEwald.getd2EdLambda2();
+            }
+            logger.info(String.format(" Lambda %6.4f dE/dLambda %10.4f",lambda, dEdλ));
 
             int lambdaBin = (int) Math.floor(lambda * lambdaBins);
             if (lambda == 1.0) {
@@ -559,10 +570,13 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             }
             
             /**
-             * Allocate more space for dEdλ.
+             * If necessary, allocate more space for dEdλ.
              */
             if (dUdLBin >= dEdλBins) {
-                double newMaxdEdλ = maxdEdλ + 100.0;
+                double newMaxdEdλ = maxdEdλ;
+                while (newMaxdEdλ < dEdλ) {
+                     newMaxdEdλ += 100.0;
+                }
                 int newdEdλBins = (int) Math.floor((newMaxdEdλ - mindEdλ) / dEdλWidth);                
                 int newRecursionKernel[][] = new int[lambdaBins][newdEdλBins];
                 for (int i=0; i<lambdaBins; i++) {
@@ -574,9 +588,11 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 maxdEdλ = newMaxdEdλ;
                 dEdλBins = newdEdλBins;
             }
-
             if (dUdLBin < 0) {
-                double newMindEdλ = mindEdλ - 100.0;
+                double newMindEdλ = mindEdλ;
+                while (newMindEdλ > dEdλ) {
+                     newMindEdλ -= 100.0;
+                }
                 int newdEdλBins = (int) Math.floor((maxdEdλ - newMindEdλ) / dEdλWidth);                
                 int newRecursionKernel[][] = new int[lambdaBins][newdEdλBins];
                 for (int i=0; i<lambdaBins; i++) {
@@ -591,7 +607,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             
             /**
              * Calculate recursion kernel G(λ, dEdλ) and gradient.
-             */
+             */ 
             double dgdL = 0.0;
             double dgdEdL = 0.0;
             double ls2 = 2.0 / lambdaBins * 2.0 / lambdaBins;
@@ -600,7 +616,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 int lcenter = lambdaBin + 1;
                 double lv = lcenter / lambdaBins + 0.5 / lambdaBins;
                 double lv2 = (lambda - lv) * (lambda - lv);
-
                 // Mirror conditions for recursion kernel counts.
                 int lcount = lcenter;
                 if (lcount < 0) {
@@ -609,7 +624,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 if (lcount >= lambdaBins) {
                     lcount = lambdaBins - (lcount - lambdaBins) - 1;
                 }
-
                 for (int dl = -5; dl <= 5; dl++) {
                     int dlcenter = dUdLBin + dl;
                     double dlv = dlcenter * dEdλWidth + dEdλWidth / 2.0;
@@ -623,15 +637,23 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             }
 
             /**
-             * λ gradient due recursion kernel G(λ, dEdλ).
+             * λ gradient due to recursion kernel G(λ, dEdλ).
              */
             dEdλ += dgdL + dgdEdL * d2Edλ2;
 
             /**
              * Atomic gradient due to recursion kernel G(λ, dEdλ).
              */
-            double dUdXdL[] = new double[nAtoms * 3];
-            vanderWaals.getdEdLambdaGradient(dUdXdL);
+            for (int i=0; i<3*nAtoms; i++) {
+                dUdXdL[i] = 0.0;
+            }
+            if (vanderWaalsTerm) {
+                vanderWaals.getdEdLambdaGradient(dUdXdL);
+            }
+            if (multipoleTerm) {
+                particleMeshEwald.getdEdLambdaGradient(dUdXdL);
+            }
+             
             double grad[] = new double[3];
             for (int i = 0; i < nAtoms; i++) {
                 Atom atom = atoms[i];
@@ -691,6 +713,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             /**
              * Force interpolation due to recursion slave F(λ).
              */
+            
             if (lambda > λBinHalfWidth && lambda < 1.0 - λBinHalfWidth) {
                 double binCenter = lambdaBin * λBinWidth + λBinHalfWidth;
                 int lb;
@@ -721,7 +744,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
              */
             if (energyCount % 10 == 0) {
                 recursionKernel[lambdaBin][dUdLBin]++;
-            }
+            } 
         }
 
         totalTime = System.nanoTime() - totalTime;
@@ -874,20 +897,18 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         return crystal;
     }
 
-    public void setSoftCoreLambda(double lambda) {
+    @Override
+    public void setLambda(double lambda) {
         if (lambda <= 1.0 && lambda >= 0.0) {
-            vanderWaals.setLambda(lambda);
+            this.lambda = lambda;
+            if (vanderWaalsTerm) {
+                vanderWaals.setLambda(lambda);
+            }
+            if (multipoleTerm) {
+                particleMeshEwald.setLambda(lambda);
+            }
         } else {
-            String message = String.format("Softcore lambda value %8.3f is not in the range [0..1].", lambda);
-            logger.warning(message);
-        }
-    }
-
-    public void setElectrostaticsLambda(double lambda) {
-        if (lambda <= 1.0 && lambda >= 0.0) {
-            particleMeshEwald.setLambda(lambda);
-        } else {
-            String message = String.format("Electrostatics lambda value %8.3f is not in the range [0..1].", lambda);
+            String message = String.format("Lambda value %8.3f is not in the range [0..1].", lambda);
             logger.warning(message);
         }
     }
@@ -1009,9 +1030,12 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
     @Override
     public void lambdaGradient(boolean lambdaGradient) {
-        this.lambdaTerm = lambdaGradient;
+        this.lambdaGradient = lambdaGradient;
         if (vanderWaalsTerm) {
             vanderWaals.lambdaGradient(lambdaGradient);
+        }
+        if (multipoleTerm) {
+            particleMeshEwald.lambdaGradient(lambdaGradient);
         }
         energyCount = 0;
         if (recursionKernel == null) {
@@ -1023,6 +1047,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             recursionKernel = new int[lambdaBins][dEdλBins];
             dAdλ = new double[lambdaBins];
         }
+        if (dUdXdL == null) {
+            dUdXdL = new double[nAtoms * 3];
+        }
     }
 
     @Override
@@ -1030,16 +1057,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         if (vanderWaalsTerm) {
             vanderWaals.getdEdLambdaGradient(gradients);
         }
-    }
-
-    @Override
-    public void setLambda(double lambda) {
-        this.lambda = lambda;
-        if (vanderWaalsTerm) {
-            vanderWaals.setLambda(lambda);
-        }
         if (multipoleTerm) {
-            particleMeshEwald.setLambda(lambda);
+            particleMeshEwald.getdEdLambdaGradient(gradients);
         }
     }
 
@@ -1052,4 +1071,5 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     public double getd2EdLambda2() {
         return d2Edλ2;
     }
+    
 }

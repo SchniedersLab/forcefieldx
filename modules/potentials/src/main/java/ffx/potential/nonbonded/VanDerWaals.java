@@ -154,7 +154,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
     private final SharedDoubleArray shareddEdX[];
     private SharedDouble shareddEdλ;
     private SharedDouble sharedd2Edλ2;
-    private SharedDoubleArray shareddEdλdX[];
+    private SharedDoubleArray shareddEdLdX[];
     private final int threadCount;
     private long overheadTime;
     /**
@@ -602,9 +602,9 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
             shareddEdλ.set(0.0);
             sharedd2Edλ2.set(0.0);
             for (int i = 0; i < nAtoms; i++) {
-                shareddEdλdX[0].set(i, 0.0);
-                shareddEdλdX[1].set(i, 0.0);
-                shareddEdλdX[2].set(i, 0.0);
+                shareddEdLdX[0].set(i, 0.0);
+                shareddEdLdX[1].set(i, 0.0);
+                shareddEdLdX[2].set(i, 0.0);
             }
         }
     }
@@ -727,10 +727,10 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         if (shareddEdλ == null) {
             shareddEdλ = new SharedDouble();
             sharedd2Edλ2 = new SharedDouble();
-            shareddEdλdX = new SharedDoubleArray[3];
-            shareddEdλdX[0] = new SharedDoubleArray(nAtoms);
-            shareddEdλdX[1] = new SharedDoubleArray(nAtoms);
-            shareddEdλdX[2] = new SharedDoubleArray(nAtoms);
+            shareddEdLdX = new SharedDoubleArray[3];
+            shareddEdLdX[0] = new SharedDoubleArray(nAtoms);
+            shareddEdLdX[1] = new SharedDoubleArray(nAtoms);
+            shareddEdLdX[2] = new SharedDoubleArray(nAtoms);
         }
     }
 
@@ -743,9 +743,9 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
     public void getdEdLambdaGradient(double[] gradients) {
         int index = 0;
         for (int i = 0; i < nAtoms; i++) {
-            gradients[index++] = shareddEdλdX[0].get(i);
-            gradients[index++] = shareddEdλdX[1].get(i);
-            gradients[index++] = shareddEdλdX[2].get(i);
+            gradients[index++] += shareddEdLdX[0].get(i);
+            gradients[index++] += shareddEdLdX[1].get(i);
+            gradients[index++] += shareddEdLdX[2].get(i);
         }
     }
 
@@ -760,6 +760,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
      * @author Michael J. Schnieders
      * @since 1.0
      */
+     
     private class ExpandRegion extends ParallelRegion {
 
         private final ExpandLoop expandLoop[];
@@ -868,6 +869,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
             }
         }
     }
+    
 
     /**
      * The van der Waals loop class contains methods and thread local variables
@@ -1197,9 +1199,9 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
             if (lambdaGradient) {
                 shareddEdλ.addAndGet(dEdλ);
                 sharedd2Edλ2.addAndGet(d2Edλ2);
-                shareddEdλdX[0].reduce(lxi_local, DoubleOp.SUM);
-                shareddEdλdX[1].reduce(lyi_local, DoubleOp.SUM);
-                shareddEdλdX[2].reduce(lzi_local, DoubleOp.SUM);
+                shareddEdLdX[0].reduce(lxi_local, DoubleOp.SUM);
+                shareddEdLdX[1].reduce(lyi_local, DoubleOp.SUM);
+                shareddEdLdX[2].reduce(lzi_local, DoubleOp.SUM);
             }
         }
     }

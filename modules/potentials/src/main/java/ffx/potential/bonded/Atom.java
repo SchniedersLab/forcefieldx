@@ -283,7 +283,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     // "stale" is True if this Atom's J3D transforms need to be updated before
     // making it visible
     private boolean stale = false;
-
+    
     /**
      * Default constructor.
      *
@@ -383,7 +383,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
                 name.charAt(0) == 'D' ||
                 name.charAt(0) == 'd'));
     }
-
+    
     @Override
     public void drawLabel(Canvas3D canvas, J3DGraphics2D g2d, Node node) {
         if (RendererCache.labelAtoms) {

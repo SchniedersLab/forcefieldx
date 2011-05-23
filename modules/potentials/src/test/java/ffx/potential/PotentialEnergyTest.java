@@ -385,8 +385,7 @@ public class PotentialEnergyTest {
         }
         // Compute the energy with Lambda = 1.0;
         double lambda = 1.0;
-        energy.setSoftCoreLambda(lambda);
-        energy.setElectrostaticsLambda(lambda);
+        energy.setLambda(lambda);
         double e2 = energy.energy(gradient, print);
         assertEquals(e, e2, tolerance);
     }
