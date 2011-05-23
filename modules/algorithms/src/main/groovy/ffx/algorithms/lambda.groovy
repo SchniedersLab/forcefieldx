@@ -31,12 +31,12 @@ if (args.size() > 3) {
     initialLambda = Double.parseDouble(args[3]);
 }
 
-double friction = 60.0e-12;
+double initialFriction = 1.0e-18;
 if (args.size() > 4) {
     initialFriction = Double.parseDouble(args[4]);
 }
 
-double mass = 20.0;
+double mass = 1.0e-20;
 if (args.size() > 5) {
     mass = Double.parseDouble(args[5]);
 }
