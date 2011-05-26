@@ -116,11 +116,11 @@ public class ParticleMeshEwald implements LambdaInterface {
      * Constant α in:
      * r' = sqrt(r^2 + α*(1 - λ)^2) 
      */
-    private static final double softCoreAlpha = 0.5;
+    private double softCoreAlpha = 0.5;
     /**
      * Power on λ in front of the pairwise multipole potential.
      */
-    private static final double softCoreExponent = 2.0;
+    private double softCoreExponent = 2.0;
     /**
      * fL1 = α*(1 - λ)^2
      */
@@ -434,6 +434,9 @@ public class ParticleMeshEwald implements LambdaInterface {
         p12scale = forceField.getDouble(ForceFieldDouble.POLAR_12_SCALE, 0.0);
         p13scale = forceField.getDouble(ForceFieldDouble.POLAR_13_SCALE, 0.0);
         lambdaTerm = forceField.getBoolean(ForceFieldBoolean.LAMBDATERM, false);
+        softCoreAlpha = forceField.getDouble(ForceFieldDouble.ELEC_LAMBDA_ALPHA, 0.7);
+        softCoreExponent = forceField.getDouble(ForceFieldDouble.ELEC_LAMBDA_EXPONENT, 2.0);
+        
         String polar = forceField.getString(ForceFieldString.POLARIZATION, "MUTUAL");
         boolean polarizationTerm = forceField.getBoolean(ForceFieldBoolean.POLARIZETERM, true);
 

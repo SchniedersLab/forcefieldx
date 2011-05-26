@@ -85,8 +85,8 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
     private double d2sc1dλ2 = 0.0;
     private double d2sc2dλ2 = 0.0;
     private final boolean isSoft[];
-    private static final double scExponent = 5.0;
-    private static final double scAlpha = 0.7;
+    private double scExponent = 5.0;
+    private double scAlpha = 0.7;
     /**
      * There are 2 softCore arrays of length nAtoms.
      *
@@ -278,6 +278,8 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                 }
             }
         }
+         
+        
 
         /**
          * Set up the cutoff and polynomial switch.
@@ -311,6 +313,9 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
             softCore[0][i] = false;
             softCore[1][i] = false;
         }
+        scAlpha = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_ALPHA, 0.7);
+        scExponent = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_EXPONENT, 5.0);
+        
         doLongRangeCorrection = forceField.getBoolean(ForceField.ForceFieldBoolean.VDWLRTERM, false);
 
         // Create the neighbor list.
