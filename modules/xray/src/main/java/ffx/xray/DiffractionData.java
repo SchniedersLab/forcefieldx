@@ -25,8 +25,10 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.PrintWriter;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -641,6 +643,10 @@ public class DiffractionData implements DataContainer {
         File file = new File(filename);
         PDBFilter pdbFilter = new PDBFilter(file, Arrays.asList(assembly), null, null);
 
+        Date now = new Date();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss ");
+        remark.append("REMARK FFX output ISO-8601 date: " + sdf.format(now) + "\n");
+        remark.append("REMARK\n");
         remark.append("REMARK   3\n");
         remark.append("REMARK   3 REFINEMENT\n");
         remark.append("REMARK   3   PROGRAM     : FORCE FIELD X\n");
