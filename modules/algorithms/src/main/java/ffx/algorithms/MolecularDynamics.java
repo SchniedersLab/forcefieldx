@@ -112,7 +112,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
         if (potentialEnergy instanceof ForceFieldEnergy) {
             lambdaInterface = (LambdaInterface) potentialEnergy;
-            stochasticRandom = new Random();
+            stochasticRandom = new Random(0);
         } else {
             lambdaInterface = null;
         }

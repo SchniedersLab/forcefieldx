@@ -58,7 +58,7 @@ double timeStep = 1.0;
 double printInterval = 0.01;
 
 // Frequency to save out coordinates in picoseconds.
-double saveInterval = 0.1;
+double saveInterval = 100.0;
 
 // Temperature in degrees Kelvin.
 double temperature = 300.0;
@@ -73,9 +73,6 @@ boolean initVelocities = true;
 // ===============================================================================================
 
 println("\n Running molecular dynmaics on " + filename);
-
-System.setProperty("mpoleterm","false");
-System.setProperty("polarizeterm","false");
 
 open(filename);
 

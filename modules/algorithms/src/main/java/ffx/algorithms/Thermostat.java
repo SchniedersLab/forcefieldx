@@ -67,6 +67,7 @@ public abstract class Thermostat {
     protected double x[];
     protected double v[];
     protected double mass[];
+    protected Random random;
     protected Thermostats name;
 
     public Thermostat(int dof, double x[], double v[], double mass[], double t) {
@@ -77,6 +78,7 @@ public abstract class Thermostat {
         assert (x.length == dof);
         assert (v.length == dof);
         assert (mass.length == dof);
+        random = new Random(0);
         setTargetTemperature(t);
     }
 
@@ -116,11 +118,11 @@ public abstract class Thermostat {
     }
 
     /**
-     * Rest velocities from a Maxwell-Boltzmann distribution of momenta.
+     * Reset velocities from a Maxwell-Boltzmann distribution of momenta.
      * The varience of each independent momentum component is kT * mass.
      */
     public void maxwell() {
-        Random random = new Random();
+
         for (int i = 0; i < dof; i++) {
             double m = mass[i];
             v[i++] = random.nextGaussian() * Math.sqrt(m * kT) / m;

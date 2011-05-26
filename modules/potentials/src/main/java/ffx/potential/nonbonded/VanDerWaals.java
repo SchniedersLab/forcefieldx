@@ -86,7 +86,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
     private double d2sc2dλ2 = 0.0;
     private final boolean isSoft[];
     private static final double scExponent = 5.0;
-    private static final double scAlpha = 0.1;
+    private static final double scAlpha = 0.7;
     /**
      * There are 2 softCore arrays of length nAtoms.
      *

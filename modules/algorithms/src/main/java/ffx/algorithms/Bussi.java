@@ -52,7 +52,7 @@ public class Bussi extends Thermostat {
         super(dof, x, v, mass, targetTemperature);
         this.name = Thermostats.BUSSI;
         this.tau = tau;
-        this.random = new Random();
+        this.random = new Random(0);
     }
 
     public Bussi(int dof, double x[], double v[], double mass[], double targetTemperature) {
