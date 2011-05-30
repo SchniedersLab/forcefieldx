@@ -276,7 +276,7 @@ int mdSteps = 200;
                     (requires residuebfactor to be true)
                     </li>
                     <li>addanisou (false): add ANISOU records to the PDB
-                    file
+                    file based on B factors
                     </li>
                     <li>refinemolocc (false): refine occupancies of HETATMs,
                     only performed if hetatms are in alternate conformers or
@@ -312,6 +312,13 @@ int mdSteps = 200;
                     <li>xray.minimizeNoSCF: optimization of coordinates without
                     a polarization term (fast, useful if the starting model is
                     poor)</li>
+                    <li>xray.minimizeXYZ: same as xray.minimize, but only
+                    optimizes coordinates</li>
+                    <li>xray.minimizeB: same as xray.minimize, but only
+                    optimizes B factors (atoms with ANISOU records are refined
+                    anisotropically)</li>
+                    <li>xray.minimizeOcc: same as xray.minimize, but only
+                    optimizes occupancies</li>
                     <li>xray.scaleBulk: simply scale the model and data, then
                     print statistics and write out a MTZ file</li>
                 </ol>

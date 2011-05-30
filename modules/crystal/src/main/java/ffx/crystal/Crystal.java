@@ -414,9 +414,9 @@ public class Crystal {
         if (this == obj) {
             return true;
         }
-        return (MathUtils.equals(this.a, ((Crystal) obj).a, 0.001)
-                && MathUtils.equals(this.b, ((Crystal) obj).b, 0.001)
-                && MathUtils.equals(this.c, ((Crystal) obj).c, 0.001)
+        return (MathUtils.equals(this.a, ((Crystal) obj).a, 0.01)
+                && MathUtils.equals(this.b, ((Crystal) obj).b, 0.01)
+                && MathUtils.equals(this.c, ((Crystal) obj).c, 0.01)
                 && MathUtils.equals(this.alpha, ((Crystal) obj).alpha, 0.01)
                 && MathUtils.equals(this.beta, ((Crystal) obj).beta, 0.01)
                 && MathUtils.equals(this.gamma, ((Crystal) obj).gamma, 0.01)

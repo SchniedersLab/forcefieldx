@@ -25,7 +25,7 @@
                 <li>Methods for structure based drug design</li>
             </ul>
             <subsection name="Ewald X-Ray Crystallography Refinement">
-                <p>In collaboration with scientists at Vertex Pharmcueticals, we are using the
+                <p>In collaboration with scientists at Vertex Pharmacueticals, we are using the
                 polarizable AMOEBA force field evaluated using Ewald summation to re-refine
                 protein-drug structures in the context of the original diffraction data (ie. using
                 an X-ray likelihood target) in order to provide the most precise atomic
