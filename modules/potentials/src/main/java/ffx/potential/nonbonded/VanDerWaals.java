@@ -85,8 +85,8 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
     private double d2sc1dλ2 = 0.0;
     private double d2sc2dλ2 = 0.0;
     private final boolean isSoft[];
-    private double scExponent = 5.0;
-    private double scAlpha = 0.7;
+    private double vdwLambdaExponent = 5.0;
+    private double vdwLambdaAlpha = 0.7;
     /**
      * There are 2 softCore arrays of length nAtoms.
      *
@@ -278,8 +278,8 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                 }
             }
         }
-         
-        
+
+
 
         /**
          * Set up the cutoff and polynomial switch.
@@ -313,9 +313,17 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
             softCore[0][i] = false;
             softCore[1][i] = false;
         }
-        scAlpha = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_ALPHA, 0.7);
-        scExponent = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_EXPONENT, 5.0);
+        vdwLambdaAlpha = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_ALPHA, 0.2);
+        vdwLambdaExponent = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_EXPONENT, 1.0);
         
+        if (vdwLambdaAlpha < 0.0) {
+            vdwLambdaAlpha = 0.2;
+        }
+        
+        if (vdwLambdaExponent < 1.0) {
+            vdwLambdaExponent = 1.0;
+        }
+
         doLongRangeCorrection = forceField.getBoolean(ForceField.ForceFieldBoolean.VDWLRTERM, false);
 
         // Create the neighbor list.
@@ -678,12 +686,17 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
     public void setLambda(double lambda) {
         assert (lambda >= 0.0 && lambda <= 1.0);
         this.λ = lambda;
-        sc1 = scAlpha * (1.0 - lambda) * (1.0 - lambda);
-        dsc1dλ = -2.0 * scAlpha * (1.0 - lambda);
-        d2sc1dλ2 = 2.0 * scAlpha;
-        sc2 = pow(lambda, scExponent);
-        dsc2dλ = scExponent * pow(lambda, scExponent - 1);
-        d2sc2dλ2 = scExponent * (scExponent - 1) * pow(lambda, scExponent - 2);
+        sc1 = vdwLambdaAlpha * (1.0 - lambda) * (1.0 - lambda);
+        dsc1dλ = -2.0 * vdwLambdaAlpha * (1.0 - lambda);
+        d2sc1dλ2 = 2.0 * vdwLambdaAlpha;
+        sc2 = pow(lambda, vdwLambdaExponent);
+        dsc2dλ = vdwLambdaExponent * pow(lambda, vdwLambdaExponent - 1.0);
+        if (vdwLambdaExponent >= 2.0) {
+            d2sc2dλ2 = vdwLambdaExponent * (vdwLambdaExponent - 1.0) * pow(lambda, vdwLambdaExponent - 2.0);
+        } else {
+            d2sc2dλ2 = 0.0;
+        }
+        
         /**
          * Set up the lambda
          */
@@ -765,7 +778,6 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
      * @author Michael J. Schnieders
      * @since 1.0
      */
-     
     private class ExpandRegion extends ParallelRegion {
 
         private final ExpandLoop expandLoop[];
@@ -874,7 +886,6 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
             }
         }
     }
-    
 
     /**
      * The van der Waals loop class contains methods and thread local variables
@@ -1098,7 +1109,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                                 gyi_local[redk] -= redkv * dedy;
                                 gzi_local[redk] -= redkv * dedz;
                             }
-                            
+
                             if (lambdaGradient && soft) {
                                 double dt1 = -t1 * t1d * dsc1dλ;
                                 double dt2 = -t2a * t2d * dsc1dλ;
@@ -1111,13 +1122,13 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                                 double t1d2 = -dsc1dλ * t1d * t1d;
                                 double t2d2 = -dsc1dλ * t2d * t2d;
                                 double d2t1 = -dt1 * t1d * dsc1dλ
-                                            - t1 * t1d * d2sc1dλ2     
-                                            - t1 * t1d2 * dsc1dλ;
-                                             
+                                              - t1 * t1d * d2sc1dλ2
+                                              - t1 * t1d2 * dsc1dλ;
+
                                 double d2t2 = -dt2 * t2d * dsc1dλ
-                                        - t2a * t2d * d2sc1dλ2      
-                                        - t2a * t2d2 * dsc1dλ;
-                                              
+                                              - t2a * t2d * d2sc1dλ2
+                                              - t2a * t2d2 * dsc1dλ;
+
                                 double df1 = d2sc2dλ2 * t1 * t2
                                              + dsc2dλ * dt1 * t2
                                              + dsc2dλ * t1 * dt2;

@@ -835,8 +835,8 @@ public final class PDBFilter extends SystemFilter {
                         logger.info(format(" Amino acid chain %s", polymer.getName()));
                         double dist = properties.getDouble("chainbreak",3.0);
                         // Detect main chain breaks!
-                        List<List<Residue>> residueLists = findChainBreaks(residues, dist);
-                        for (List<Residue> subChain : residueLists) {
+                        List<List<Residue>> subChains = findChainBreaks(residues, dist);
+                        for (List<Residue> subChain : subChains) {
                             assignAminoAcidAtomTypes(subChain);
                         }
                     } catch (MissingHeavyAtomException missingHeavyAtomException) {
@@ -1963,6 +1963,14 @@ public final class PDBFilter extends SystemFilter {
                     residue.setName(residueName);
                 }
             }
+            
+            if (position != LAST_RESIDUE) {
+                Atom OXT = (Atom) residue.getAtomNode("OXT");
+                if (OXT != null) {
+                    residue.removeAtom(OXT);
+                }
+            }
+            
             AminoAcid3 aminoAcid = AminoAcid3.UNK;
             int aminoAcidNumber = -1;
             for (AminoAcid3 amino : aminoAcidList) {
@@ -1972,6 +1980,9 @@ public final class PDBFilter extends SystemFilter {
                     break;
                 }
             }
+            
+            
+            
             /**
              * Check for missing heavy atoms.
              *
