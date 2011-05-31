@@ -167,8 +167,8 @@
         <dependency>
             <groupId>org.codehaus.groovy</groupId>
             <artifactId>groovy-all</artifactId>
-            <version>1.8.0</version>
-            <classifier>beta-1-SNAPSHOT</classifier>
+            <version>1.8.1</version>
+            <type>jar</type>
         </dependency>
         <dependency>
             <groupId>macosx</groupId>

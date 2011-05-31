@@ -155,7 +155,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     private double dEdLambda = 0.0;
     private double d2EdLambda2 = 0.0;
     private double dUdXdL[] = null;
-    private double gaussianMag = 0.005;
+    private double lambdaGaussianMag = 0.005;
     private double FLambda[];
     private static final double toSeconds = 0.000000001;
 
@@ -182,6 +182,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         polarizationTerm = forceField.getBoolean(ForceFieldBoolean.POLARIZETERM, true);
         generalizedKirkwoodTerm = forceField.getBoolean(ForceFieldBoolean.GKTERM, false);
         lambdaTerm = forceField.getBoolean(ForceFieldBoolean.LAMBDATERM, false);
+        lambdaGaussianMag = forceField.getDouble(ForceFieldDouble.LAMBDA_GAUSSIAN_MAG, 0.005); 
 
         // Define the cutoff lengths.
         double vdwOff = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, 9.0);
@@ -633,7 +634,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     double deltaFL = dEdLambda - (minFLambda + FLcenter * dFL + dFL_2);
                     double deltaFL2 = deltaFL * deltaFL;
                     double weight = mirrorFactor * recursionKernel[lcount][FLcenter];
-                    double e = weight * gaussianMag
+                    double e = weight * lambdaGaussianMag
                                * exp(-deltaL2 / (2.0 * lambdas2))
                                * exp(-deltaFL2 / (2.0 * FLambdas2));
                     biasEnergy += e;
@@ -939,7 +940,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 double deltaFL2 = deltaFL * deltaFL;
                 double weight = mirrorFactor * recursionKernel[lcount][FLcenter];
                 if (weight > 0) {
-                    double e = weight * gaussianMag * exp(-deltaL2 / (2.0 * Ls2))
+                    double e = weight * lambdaGaussianMag * exp(-deltaL2 / (2.0 * Ls2))
                                * exp(-deltaFL2 / (2.0 * FLs2));
                     sum += e;
                 }
