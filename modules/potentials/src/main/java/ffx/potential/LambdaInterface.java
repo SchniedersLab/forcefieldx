@@ -22,8 +22,8 @@
 package ffx.potential;
 
 /**
- * The λInterface should be implemented by potential energy terms that
- * can accept a λ value from [0 .. 1] that defines a smooth path between
+ * The LambdaInterface should be implemented by potential energy terms that
+ * can accept a lambda value from [0 .. 1] that defines a smooth path between
  * state 0 to state 1.
  *
  * @author Michael J. Schnieders

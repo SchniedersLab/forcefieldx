@@ -104,50 +104,51 @@ public class ParticleMeshEwald implements LambdaInterface {
      */
     private boolean lambdaTerm = false;
     /**
-     * If lambdaGradient is true, then compute dU/dλ, d2U/dλ2 and dU/dX/dλ.
+     * If lambdaGradient is true, then compute dU/dL, d2U/dL2 and dU/dX/dL.
      */
     private boolean lambdaGradient = false;
     /**
-     * Current value of λ.
+     * Current value of L.
      */
     private double lambda = 1.0;
+    /**
+     * Constant α in:
+     * r' = sqrt(r^2 + α*(1 - L)^2) 
+     */
+    private double permanentLambdaAlpha = 0.5;
+    /**
+     * Power on L in front of the pairwise multipole potential.
+     */
+    private double permanentLambdaExponent = 2.0;
+    /**
+     * lAlpha = α*(1 - L)^2
+     */
+    private double lAlpha = 0.0;
+    private double dlAlpha = 0.0;
+    private double d2lAlpha = 0.0;
+    /**
+     * lPowPerm = L^permanentLambdaExponent
+     */
+    private double lPowPerm = 1.0;
+    private double dlPowPerm = 0.0;
+    private double d2lPowPerm = 0.0;
     /**
      * Start turning on polarization later in the Lambda path to prevent
      * SCF convergence problems when atoms nearly overlap.
      */
-    private double polarizationLambdaStart = 0.0;
+    private double polarizationLambdaStart = 0.5;
     /**
      * The polarization Lambda value goes from 0.0 .. 1.0 as the global
      * lambda value varies between polarizationLambdaStart .. 1.0. 
      */
     private double polarizationLambda = 1.0;
     /**
-     * Constant α in:
-     * r' = sqrt(r^2 + α*(1 - λ)^2) 
-     */
-    private double permanentLambdaAlpha = 0.5;
-    /**
-     * Power on λ in front of the pairwise multipole potential.
-     */
-    private double permanentLambdaExponent = 2.0;
-    /**
-     * Power on λ in front of the polarization energy.
+     * Power on L in front of the polarization energy.
      */
     private double polarizationLambdaExponent = 2.0;
+    
     /**
-     * lAlpha = α*(1 - λ)^2
-     */
-    private double lAlpha = 0.0;
-    private double dlAlpha = 0.0;
-    private double d2lAlpha = 0.0;
-    /**
-     * lPowPerm = λ^permanentLambdaExponent
-     */
-    private double lPowPerm = 1.0;
-    private double dlPowPerm = 0.0;
-    private double d2lPowPerm = 0.0;
-    /**
-     * lPowPol = λ^polarizationLambdaExponent
+     * lPowPol = L^polarizationLambdaExponent
      */
     private double lPowPol = 1.0;
     private double dlPowPol = 0.0;
@@ -157,12 +158,12 @@ public class ParticleMeshEwald implements LambdaInterface {
      */
     private final boolean isSoft[];
     /**
-     * When computing the polarization energy at λ there are 3 pieces.
+     * When computing the polarization energy at L there are 3 pieces.
      * 1.) Upol(1) = The polarization energy computed normally (ie. system with ligand).
      * 2.) Uenv    = The polarization energy of the system without the ligand.
      * 3.) Uligand = The polarization energy of the ligand by itself.
      * 
-     * Upol(λ) = λ*Upol(1) + (1-λ)*(Uenv + Uligand)
+     * Upol(L) = L*Upol(1) + (1-L)*(Uenv + Uligand)
      * 
      * Set the "use" array to true for all atoms for part 1.
      * Set the "use" array to true for all atoms except the ligand for part 2.
@@ -170,15 +171,15 @@ public class ParticleMeshEwald implements LambdaInterface {
      */
     private final boolean use[];
     /**
-     * When computing the polarization energy at λ there are 3 pieces.
+     * When computing the polarization energy at L there are 3 pieces.
      * 1.) Upol(1) = The polarization energy computed normally (ie. system with ligand).
      * 2.) Uenv    = The polarization energy of the system without the ligand.
      * 3.) Uligand = The polarization energy of the ligand by itself.
      * 
-     * Upol(λ) = λ*Upol(1) + (1-λ)*(Uenv + Uligand)
+     * Upol(L) = L*Upol(1) + (1-L)*(Uenv + Uligand)
      * 
-     * Set polarizationScale to λ for part 1.
-     * Set polarizationScale to (1-λ) for parts 2 & 3.
+     * Set polarizationScale to L for part 1.
+     * Set polarizationScale to (1-L) for parts 2 & 3.
      * 
      */
     private double polarizationScale = 1.0;
@@ -941,21 +942,21 @@ public class ParticleMeshEwald implements LambdaInterface {
         }
 
         /**
-         * When computing the polarization energy at λ there are 3 pieces.
+         * When computing the polarization energy at L there are 3 pieces.
          * 1.) Upol(1) = The polarization energy computed normally (ie. system with ligand).
          * 2.) Uenv    = The polarization energy of the system without the ligand.
          * 3.) Uligand = The polarization energy of the ligand by itself.
          * 
-         * Upol(λ) = λ^B*Upol(1) + (1-λ^B)*(Uenv + Uligand)
+         * Upol(L) = L^B*Upol(1) + (1-L^B)*(Uenv + Uligand)
          * 
-         * 1.) Set the "use" array to true for all atoms and polarizationScale to λ.
-         * 2.) Set the "use" array to true for all atoms except the ligand and polarizationScale to (1-λ^B).
-         * 3.) Set the "use" array to true only for the ligand atoms and polarizationScale to (1-λ^B).
+         * 1.) Set the "use" array to true for all atoms and polarizationScale to L.
+         * 2.) Set the "use" array to true for all atoms except the ligand and polarizationScale to (1-L^B).
+         * 3.) Set the "use" array to true only for the ligand atoms and polarizationScale to (1-L^B).
          *
          * First we compute Part 1, which is the default code path even in the
-         * absence using λ to define a state. The only modification to normal
+         * absence using L to define a state. The only modification to normal
          * execution of the polarization energy and forces is to set 
-         * polarizationScale to λ^B (B == 1PowPol).
+         * polarizationScale to L^B (lPowPol).
          */
         if (lambdaTerm) {
             polarizationScale = lPowPol;
@@ -985,8 +986,8 @@ public class ParticleMeshEwald implements LambdaInterface {
 
         if (aewald > 0.0) {
             /**
-             * The self energy of the permanent multipoles is constant 
-             * (this is independent of λ).
+             * The self energy of the permanent multipoles is constant and 
+             * independent of L.
              */
             eself = permanentSelfEnergy;
             interactions = nAtoms;
@@ -994,24 +995,24 @@ public class ParticleMeshEwald implements LambdaInterface {
              * If a lambdaTerm is active, compute the reciprocal potential 
              * for ligand atoms by themselves, then combine with the 
              * previously computed total permanent reciprocal potential 
-             * to get E_T(λ).
+             * to get E_T(L).
              * 
              * Definitions:
              *  E_P(0) is the potential for the protein/environment in
              *         the absence of the ligand.
              *  E_L(0) is the potential for the ligand by itself.
-             *  E_T(λ) is the potential for all atoms at any λ.
+             *  E_T(L) is the potential for all atoms at any L.
              * 
-             *  We can get E_T(λ) and E_P(0) from E_T(1) and E_L(0). 
+             *  We can get E_T(L) and E_P(0) from E_T(1) and E_L(0). 
              *  E_P(0) = E_T(1) - E_L(0)
              * 
              * Then:
-             *  E_L(λ) = E_T(1) + (λ^3 - 1)*E_P(0)
-             *  E_P(λ) = E_T(1) - (1 - λ^3)*E_L(0)
-             *  dE_L(λ)/dλ = 3λ^2 * E_P(0)
-             *  dE_P(λ)/dλ = 3λ^2 * E_L(0)
-             *  d2E_L(λ)/dλ2 = 6λ * E_P(0)
-             *  d2E_P(λ)/dλ2 = 6λ * E_L(0)
+             *  E_L(L) = E_T(1) + (L^3 - 1)*E_P(0)
+             *  E_P(L) = E_T(1) - (1 - L^3)*E_L(0)
+             *  dE_L(L)/dL = 3L^2 * E_P(0)
+             *  dE_P(L)/dL = 3L^2 * E_L(0)
+             *  d2E_L(L)/dL2 = 6L * E_P(0)
+             *  d2E_P(L)/dL2 = 6L * E_L(0)
              */
             if (lambdaTerm) {
                 try {
@@ -1039,9 +1040,9 @@ public class ParticleMeshEwald implements LambdaInterface {
                             double ftotal = totalfPhi[j];
                             double fligand = ligandfPhi[j];
                             double fprotein = ftotal - fligand;
-                            if (atoms[i].applyLambda()) {
+                            if (isSoft[i]) {
                                 /**
-                                 * This is E_L(λ).
+                                 * This is E_L(L).
                                  */
                                 totalPhi[j] = total + (lPowPerm - 1.0) * protein;
                                 ligandPhi[j] = dlPowPerm * protein;
@@ -1050,7 +1051,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                                 ligandfPhi[j] = dlPowPerm * fprotein;
                             } else {
                                 /**
-                                 * This is E_P(λ).
+                                 * This is E_P(L).
                                  */
                                 totalPhi[j] = total - (1.0 - lPowPerm) * ligand;
                                 ligandPhi[j] = dlPowPerm * ligand;
@@ -1098,16 +1099,16 @@ public class ParticleMeshEwald implements LambdaInterface {
         }
 
         /**
-         * When computing the polarization energy at λ there are 3 pieces.
+         * When computing the polarization energy at L there are 3 pieces.
          * 1.) Upol(1) = The polarization energy computed normally (ie. system with ligand).
          * 2.) Uenv    = The polarization energy of the system without the ligand.
          * 3.) Uligand = The polarization energy of the ligand by itself.
          * 
-         * Upol(λ) = λ^B*Upol(1) + (1-λ^B)*(Uenv + Uligand)
+         * Upol(L) = L^B*Upol(1) + (1-L^B)*(Uenv + Uligand)
          * 
-         * 1.) Set the "use" array to true for all atoms and polarizationScale to λ.
-         * 2.) Set the "use" array to true for all atoms except the ligand and polarizationScale to (1-λ^B).
-         * 3.) Set the "use" array to true only for the ligand atoms and polarizationScale to (1-λ^B).
+         * 1.) Set the "use" array to true for all atoms and polarizationScale to L.
+         * 2.) Set the "use" array to true for all atoms except the ligand and polarizationScale to (1-L^B).
+         * 3.) Set the "use" array to true only for the ligand atoms and polarizationScale to (1-L^B).
          *
          * We computed Part 1 above. Now compute parts 2 & 3.
          */

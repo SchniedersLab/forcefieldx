@@ -613,7 +613,7 @@ public class PME_2 implements LambdaInterface, Potential {
     }
 
     @Override
-    public void lambdaGradient(boolean λGradient) {
+    public void lambdaGradient(boolean lambdaGradient) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 

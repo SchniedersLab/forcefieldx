@@ -123,41 +123,40 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     /**
      * Orthogonal Space Random Walk
      */
-    protected double lambda;
-    protected boolean lambdaGradient = false;
-    protected boolean doCounting = true;
-    protected int energyCount;
+    private double lambda;
+    private boolean lambdaGradient = false;
+    private boolean doCounting = true;
+    private int energyCount;
     /**
-     * The first λ bin is centered on 0.0 (-0.005 .. 0.005).
-     * The final λ bin is centered on 1.0 ( 0.995 .. 1.005).
+     * The first Lambda bin is centered on 0.0 (-0.005 .. 0.005).
+     * The final Lambda bin is centered on 1.0 ( 0.995 .. 1.005).
      * 
      * With this scheme, the maximum of biasing Gaussians
      * is at the edges. 
      */
-    protected int λBins = 101;
+    private int lambdaBins = 101;
     /**
      * It is useful to have an odd number of bins, so that there is
-     * a bin from Fλ=-dFλ/2 to dFλ/2 so that as Fλ approaches zero its
+     * a bin from FL=-dFL/2 to dFL/2 so that as FL approaches zero its
      * contribution to thermodynamic integration goes to zero. Otherwise 
-     * a contribution of zero from a λ bin can only result from equal
-     * sampling of the ranges -dFλ to 0 and 0 to dFλ.
+     * a contribution of zero from a L bin can only result from equal
+     * sampling of the ranges -dFL to 0 and 0 to dFL.
      */
-    protected int FλBins = 401;
-    protected int recursionKernel[][];
-    protected int biasCutoff = 5;
-    protected double dλ = 0.01;
-    protected double dλ_2 = dλ / 2.0;
-    protected double dFλ = 2.0;
-    protected double dFλ_2 = dFλ / 2.0;
-    protected double minλ = -0.005;
-    protected double maxλ = minλ + dλ * λBins;
-    protected double minFλ = -(dFλ * FλBins) / 2.0;
-    protected double maxFλ = minFλ + FλBins * dFλ;
-    protected double dEdλ = 0.0;
-    protected double d2Edλ2 = 0.0;
-    protected double dUdXdL[] = null;
-    protected double gaussianMag = 0.005;
-    protected double Fλ[];
+    private int FLambdaBins = 401;
+    private int recursionKernel[][];
+    private int biasCutoff = 5;
+    private double dL = 0.01;
+    private double dL_2 = dL / 2.0;
+    private double dFL = 2.0;
+    private double dFL_2 = dFL / 2.0;
+    private double minLambda = -0.005;
+    private double minFLambda = -(dFL * FLambdaBins) / 2.0;
+    private double maxFLambda = minFLambda + FLambdaBins * dFL;
+    private double dEdLambda = 0.0;
+    private double d2EdLambda2 = 0.0;
+    private double dUdXdL[] = null;
+    private double gaussianMag = 0.005;
+    private double FLambda[];
     private static final double toSeconds = 0.000000001;
 
     public ForceFieldEnergy(MolecularAssembly molecularAssembly) {
@@ -571,85 +570,85 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
 
         if (lambdaGradient) {
-            dEdλ = 0.0;
-            d2Edλ2 = 0.0;
+            dEdLambda = 0.0;
+            d2EdLambda2 = 0.0;
             if (vanderWaalsTerm) {
-                dEdλ = vanderWaals.getdEdLambda();
-                d2Edλ2 = vanderWaals.getd2EdLambda2();
+                dEdLambda = vanderWaals.getdEdLambda();
+                d2EdLambda2 = vanderWaals.getd2EdLambda2();
             }
             if (multipoleTerm) {
-                dEdλ += particleMeshEwald.getdEdLambda();
-                d2Edλ2 += particleMeshEwald.getd2EdLambda2();
+                dEdLambda += particleMeshEwald.getdEdLambda();
+                d2EdLambda2 += particleMeshEwald.getd2EdLambda2();
             }
 
             checkRecursionKernelSize();
 
-            int λBin = (int) Math.floor((lambda - minλ) / dλ);
-            if (λBin < 0) {
-                λBin = 0;
+            int lambdaBin = (int) Math.floor((lambda - minLambda) / dL);
+            if (lambdaBin < 0) {
+                lambdaBin = 0;
             }
-            if (λBin >= λBins) {
-                λBin = λBins - 1;
+            if (lambdaBin >= lambdaBins) {
+                lambdaBin = lambdaBins - 1;
             }
-            int FλBin = (int) Math.floor((dEdλ - minFλ) / dFλ);
-            if (FλBin == FλBins) {
-                FλBin = FλBins - 1;
+            int FLambdaBin = (int) Math.floor((dEdLambda - minFLambda) / dFL);
+            if (FLambdaBin == FLambdaBins) {
+                FLambdaBin = FLambdaBins - 1;
             }
-            assert (FλBin < FλBins);
-            assert (FλBin >= 0);
+            assert (FLambdaBin < FLambdaBins);
+            assert (FLambdaBin >= 0);
 
             /**
-             * Calculate recursion kernel G(λ, dEdλ) and gradient.
+             * Calculate recursion kernel G(L, dEdL) and gradient.
              */
-            double dGdλ = 0.0;
-            double dGdFλ = 0.0;
-            double λs2 = 2.0 / λBins * 2.0 / λBins;
-            double Fλs2 = dFλ * 2.0 * dFλ * 2.0;
-            for (int iλ = -biasCutoff; iλ <= biasCutoff; iλ++) {
-                int lcenter = λBin + iλ;
-                double deltaλ = lambda - (lcenter * dλ);
-                double deltaλ2 = deltaλ * deltaλ;
+            double dGdLambda = 0.0;
+            double dGdFLambda = 0.0;
+            double lambdas2 = 2.0 / lambdaBins * 2.0 / lambdaBins;
+            double FLambdas2 = dFL * 2.0 * dFL * 2.0;
+            for (int iL = -biasCutoff; iL <= biasCutoff; iL++) {
+                int lcenter = lambdaBin + iL;
+                double deltaL = lambda - (lcenter * dL);
+                double deltaL2 = deltaL * deltaL;
                 // Mirror conditions for recursion kernel counts.
                 int lcount = lcenter;
                 double mirrorFactor = 1.0;
-                if (lcount == 0 || lcount ==  λBins -1  ){
+                if (lcount == 0 || lcount ==  lambdaBins -1  ){
                     mirrorFactor = 2.0;
                 } else if (lcount < 0) {
                     lcount = -lcount;
-                } else if (lcount > λBins - 1) {
+                } else if (lcount > lambdaBins - 1) {
                     // Number of bins past the last bin
-                    lcount -= (λBins - 1);
+                    lcount -= (lambdaBins - 1);
                     // Mirror bin
-                    lcount = λBins - 1 - lcount;
+                    lcount = lambdaBins - 1 - lcount;
                 }
-                for (int iFλ = -biasCutoff; iFλ <= biasCutoff; iFλ++) {
-                    int Fλcenter = FλBin + iFλ;
+                for (int iFL = -biasCutoff; iFL <= biasCutoff; iFL++) {
+                    int FLcenter = FLambdaBin + iFL;
                     /**
-                     * If either of the following Fλ edge conditions are true, 
+                     * If either of the following FL edge conditions are true, 
                      * then there are no counts and we continue. 
                      */
-                    if (Fλcenter < 0 || Fλcenter >= FλBins) {
+                    if (FLcenter < 0 || FLcenter >= FLambdaBins) {
                         continue;
                     }
-                    double deltaFλ = dEdλ - (minFλ + Fλcenter * dFλ + dFλ_2);
-                    double deltaFλ2 = deltaFλ * deltaFλ;
-                    double weight = mirrorFactor * recursionKernel[lcount][Fλcenter];
+                    double deltaFL = dEdLambda - (minFLambda + FLcenter * dFL + dFL_2);
+                    double deltaFL2 = deltaFL * deltaFL;
+                    double weight = mirrorFactor * recursionKernel[lcount][FLcenter];
                     double e = weight * gaussianMag
-                               * exp(-deltaλ2 / (2.0 * λs2))
-                               * exp(-deltaFλ2 / (2.0 * Fλs2));
+                               * exp(-deltaL2 / (2.0 * lambdas2))
+                               * exp(-deltaFL2 / (2.0 * FLambdas2));
                     biasEnergy += e;
-                    dGdλ -= deltaλ / λs2 * e;
-                    dGdFλ -= deltaFλ / Fλs2 * e;
+                    dGdLambda -= deltaL / lambdas2 * e;
+                    dGdFLambda -= deltaFL / FLambdas2 * e;
                 }
             }
 
             /**
-             * λ gradient due to recursion kernel G(λ, dEdλ).
+             * L gradient due to recursion kernel G(L, dEdL).
              */
-            dEdλ += dGdλ + dGdFλ * d2Edλ2;
+            dEdLambda += dGdLambda + dGdFLambda * d2EdLambda2;
 
             /**
-             * Atomic gradient due to recursion kernel G(λ, dEdλ).
+             * Atomic gradient due to recursion kernel G(L, dEdL).
              */
             for (int i = 0; i < 3 * nAtoms; i++) {
                 dUdXdL[i] = 0.0;
@@ -659,19 +658,19 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             for (int i = 0; i < nAtoms; i++) {
                 Atom atom = atoms[i];
                 atom.getXYZGradient(grad);
-                grad[0] += dGdFλ * dUdXdL[i * 3];
-                grad[1] += dGdFλ * dUdXdL[i * 3 + 1];
-                grad[2] += dGdFλ * dUdXdL[i * 3 + 2];
+                grad[0] += dGdFLambda * dUdXdL[i * 3];
+                grad[1] += dGdFLambda * dUdXdL[i * 3 + 1];
+                grad[2] += dGdFLambda * dUdXdL[i * 3 + 2];
                 atom.setXYZGradient(grad[0], grad[1], grad[2]);
             }
 
-            // Update free energy F(λ) every ~100 steps.
+            // Update free energy F(L) every ~100 steps.
             if (energyCount % 100 == 0 && doCounting) {
-                updateFλ(true);
+                updateF_Lambda(true);
             }
 
             /**
-             * Compute the energy and gradient for the recursion slave at F(λ)
+             * Compute the energy and gradient for the recursion slave at F(L)
              * using interpolation.
              */
             computeRecursionSlave();
@@ -680,12 +679,12 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
              * Log our current state.
              */
             logger.info(String.format(" Lambda %8.6f, Bin %d, G %10.4f, dE/dLambda %10.4f",
-                                      lambda, λBin, biasEnergy, dEdλ));
+                                      lambda, lambdaBin, biasEnergy, dEdLambda));
             /**
              * Meta-dynamics grid counts (every ~10 steps).
              */
             if (energyCount % 10 == 0 && doCounting) {
-                recursionKernel[λBin][FλBin]++;
+                recursionKernel[lambdaBin][FLambdaBin]++;
             }
         }
 
@@ -720,133 +719,133 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
      * If necessary, allocate more space.
      */
     private void checkRecursionKernelSize() {
-        if (dEdλ > maxFλ) {
+        if (dEdLambda > maxFLambda) {
             logger.info(String.format("Current F_lambda %8.2f > maximum historgram size %8.2f.",
-                                      dEdλ, maxFλ));
+                                      dEdLambda, maxFLambda));
 
-            double origDeltaG = updateFλ(false);
+            double origDeltaG = updateF_Lambda(false);
 
-            int newFλBins = FλBins;
-            while (minFλ + newFλBins * dFλ < dEdλ) {
-                newFλBins += 100;
+            int newFLambdaBins = FLambdaBins;
+            while (minFLambda + newFLambdaBins * dFL < dEdLambda) {
+                newFLambdaBins += 100;
             }
-            int newRecursionKernel[][] = new int[λBins][newFλBins];
+            int newRecursionKernel[][] = new int[lambdaBins][newFLambdaBins];
             /**
              * We have added bins above the indeces of the current counts
              * just copy them into the new array.
              */
-            for (int i = 0; i < λBins; i++) {
-                for (int j = 0; j < FλBins; j++) {
+            for (int i = 0; i < lambdaBins; i++) {
+                for (int j = 0; j < FLambdaBins; j++) {
                     newRecursionKernel[i][j] = recursionKernel[i][j];
                 }
             }
             recursionKernel = newRecursionKernel;
-            FλBins = newFλBins;
-            maxFλ = minFλ + dFλ * FλBins;
+            FLambdaBins = newFLambdaBins;
+            maxFLambda = minFLambda + dFL * FLambdaBins;
             logger.info(String.format("New historgram %8.2f to %8.2f with %d bins.\n",
-                                      minFλ, maxFλ, FλBins));
+                                      minFLambda, maxFLambda, FLambdaBins));
 
-            assert (origDeltaG == updateFλ(false));
+            assert (origDeltaG == updateF_Lambda(false));
 
         }
-        if (dEdλ < minFλ) {
+        if (dEdLambda < minFLambda) {
             logger.info(String.format("Current F_lambda %8.2f < minimum historgram size %8.2f.",
-                                      dEdλ, minFλ));
+                                      dEdLambda, minFLambda));
             int offset = 100;
-            while (dEdλ < minFλ - offset * dFλ) {
+            while (dEdLambda < minFLambda - offset * dFL) {
                 offset += 100;
             }
-            int newFλBins = FλBins + offset;
-            int newRecursionKernel[][] = new int[λBins][newFλBins];
+            int newFLambdaBins = FLambdaBins + offset;
+            int newRecursionKernel[][] = new int[lambdaBins][newFLambdaBins];
             /**
              * We have added bins below the current counts,
              * so their indeces must be increased by: 
-             * offset = newFλBins - FλBins 
+             * offset = newFLBins - FLBins 
              */
-            for (int i = 0; i < λBins; i++) {
-                for (int j = 0; j < FλBins; j++) {
+            for (int i = 0; i < lambdaBins; i++) {
+                for (int j = 0; j < FLambdaBins; j++) {
                     newRecursionKernel[i][j + offset] = recursionKernel[i][j];
                 }
             }
             recursionKernel = newRecursionKernel;
-            minFλ = minFλ - offset * dFλ;
-            FλBins = newFλBins;
+            minFLambda = minFLambda - offset * dFL;
+            FLambdaBins = newFLambdaBins;
             logger.info(String.format("New historgram %8.2f to %8.2f with %d bins.\n",
-                                      minFλ, maxFλ, FλBins));
+                                      minFLambda, maxFLambda, FLambdaBins));
         }
     }
 
-    private double updateFλ(boolean print) {
+    private double updateF_Lambda(boolean print) {
         double freeEnergy = 0.0;
         if (print) {
             logger.info(" Count  Lambda Bin      F_Lambda Bin   <  F_L  >     dG");
         }
-        for (int iλ = 0; iλ < λBins; iλ++) {
-            int ulFλ = -1;
-            int llFλ = -1;
-            // Find the smallest Fλ bin.
-            for (int jFλ = 0; jFλ < FλBins; jFλ++) {
-                int count = recursionKernel[iλ][jFλ];
+        for (int iL = 0; iL < lambdaBins; iL++) {
+            int ulFL = -1;
+            int llFL = -1;
+            // Find the smallest FL bin.
+            for (int jFL = 0; jFL < FLambdaBins; jFL++) {
+                int count = recursionKernel[iL][jFL];
                 if (count > 0) {
-                    llFλ = jFλ;
+                    llFL = jFL;
                     break;
                 }
             }
-            // Find the largest Fλ bin.
-            for (int jFλ = FλBins - 1; jFλ >= 0; jFλ--) {
-                int count = recursionKernel[iλ][jFλ];
+            // Find the largest FL bin.
+            for (int jFL = FLambdaBins - 1; jFL >= 0; jFL--) {
+                int count = recursionKernel[iL][jFL];
                 if (count > 0) {
-                    ulFλ = jFλ;
+                    ulFL = jFL;
                     break;
                 }
             }
             
-            int λcount = 0;
-            // The Fλ range that has been sampled for iλ*dλ to (iλ+1)*dλ
-            double lla = minFλ + llFλ * dFλ;
-            double ula = minFλ + ulFλ * dFλ + dFλ;
-            if (ulFλ == -1) {
-                Fλ[iλ] = 0.0;
+            int lambdaCount = 0;
+            // The FL range that has been sampled for iL*dL to (iL+1)*dL
+            double lla = minFLambda + llFL * dFL;
+            double ula = minFLambda + ulFL * dFL + dFL;
+            if (ulFL == -1) {
+                FLambda[iL] = 0.0;
                 lla = 0.0;
                 ula = 0.0;
             } else {
-                double sumFλ = 0.0;
+                double sumFLambda = 0.0;
                 double partitionFunction = 0.0;
-                for (int jFλ = llFλ; jFλ <= ulFλ; jFλ++) {
-                    double a = minFλ + jFλ * dFλ + dFλ_2;
-                    double e = exp(evaluateKernel(iλ, jFλ) / (R * 300.0));
-                    sumFλ += a * e;
+                for (int jFL = llFL; jFL <= ulFL; jFL++) {
+                    double a = minFLambda + jFL * dFL + dFL_2;
+                    double e = exp(evaluateKernel(iL, jFL) / (R * 300.0));
+                    sumFLambda += a * e;
                     partitionFunction += e;
-                    λcount += recursionKernel[iλ][jFλ];
+                    lambdaCount += recursionKernel[iL][jFL];
                 }
-                Fλ[iλ] = sumFλ / partitionFunction;
+                FLambda[iL] = sumFLambda / partitionFunction;
             }
             
             // The first and last bins are half size.
-            double delta = dλ;
-            if (iλ == 0 || iλ == λBins-1) {
+            double delta = dL;
+            if (iL == 0 || iL == lambdaBins-1) {
                 delta *= 0.5;
             }
-            freeEnergy += Fλ[iλ] * delta;
+            freeEnergy += FLambda[iL] * delta;
             
             if (print) {
-                double llλ = iλ * dλ - dλ_2;
-                double ulλ = llλ + dλ;
-                if (llλ < 0.0) {
-                    llλ = 0.0;
+                double llL = iL * dL - dL_2;
+                double ulL = llL + dL;
+                if (llL < 0.0) {
+                    llL = 0.0;
                 }
-                if (ulλ > 1.0) {
-                    ulλ = 1.0;
+                if (ulL > 1.0) {
+                    ulL = 1.0;
                 }
                 
-                if (λBins <= 100) {
+                if (lambdaBins <= 100) {
                     logger.info(String.format(" %5d [%4.2f %4.2f] [%7.1f %7.1f] <%8.3f> %8.3f",
-                                              λcount, llλ, ulλ, lla, ula,
-                                              Fλ[iλ], freeEnergy));
+                                              lambdaCount, llL, ulL, lla, ula,
+                                              FLambda[iL], freeEnergy));
                 } else {
                     logger.info(String.format(" %5d [%5.3f %5.3f] [%7.1f %7.1f] <%8.3f> %8.3f",
-                                              λcount, llλ, ulλ, lla, ula,
-                                              Fλ[iλ], freeEnergy));
+                                              lambdaCount, llL, ulL, lla, ula,
+                                              FLambda[iL], freeEnergy));
                 }
             }
         }
@@ -854,94 +853,94 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
 
     private void computeRecursionSlave() {
-        for (int iλ0 = 0; iλ0 < λBins - 1; iλ0++) {
-            int iλ1 = iλ0 + 1;
+        for (int iL0 = 0; iL0 < lambdaBins - 1; iL0++) {
+            int iL1 = iL0 + 1;
             /**
              * Find bin centers and values for 
              * interpolation / extrapolation points. 
              */
-            double λ0 = iλ0 * dλ;
-            double λ1 = λ0 + dλ;
-            double Fλ0 = Fλ[iλ0];
-            double Fλ1 = Fλ[iλ1];
-            double deltaFλ = Fλ1 - Fλ0;
+            double L0 = iL0 * dL;
+            double L1 = L0 + dL;
+            double FL0 = FLambda[iL0];
+            double FL1 = FLambda[iL1];
+            double deltaFL = FL1 - FL0;
             /**
              * If the lambda is less than or equal to the upper limit,
-             * this is the final interval. Set the upper limit to λ,
+             * this is the final interval. Set the upper limit to L,
              * compute the partial derivative and break.
              */
             boolean done = false;
-            if (lambda <= λ1) {
+            if (lambda <= L1) {
                 done = true;
-                λ1 = lambda;
+                L1 = lambda;
             }
             /**
              * Upper limit - lower limit of the integral of the 
              * extrapolation / interpolation.
              */
-            biasEnergy += (Fλ0 * λ1 + deltaFλ * λ1 * (0.5 * λ1 - λ0) / dλ);
-            biasEnergy -= (Fλ0 * λ0 + deltaFλ * λ0 * (-0.5 * λ0) / dλ);
+            biasEnergy += (FL0 * L1 + deltaFL * L1 * (0.5 * L1 - L0) / dL);
+            biasEnergy -= (FL0 * L0 + deltaFL * L0 * (-0.5 * L0) / dL);
             if (done) {
                 /**
-                 * Compute the gradient d F(λ) / dλ at λ.  
+                 * Compute the gradient d F(L) / dL at L.  
                  */
-                dEdλ += Fλ0 + (λ1 - λ0) * deltaFλ / dλ;
+                dEdLambda += FL0 + (L1 - L0) * deltaFL / dL;
                 return;
             }
         }
     }
 
-    public double evaluateKernel(int cλ, int cFλ) {
+    public double evaluateKernel(int cLambda, int cF_Lambda) {
         /**
-         * Compute the value of λ and Fλ for the
+         * Compute the value of L and FL for the
          * center of the current bin.
          */
-        double vλ = cλ * dλ;
-        double vFλ = minFλ + cFλ * dFλ + dFλ_2;
+        double vL = cLambda * dL;
+        double vFL = minFLambda + cF_Lambda * dFL + dFL_2;
         /**
          * Set the variances for the Gaussian bias.
          */
-        double λs2 = 2.0 * dλ * 2.0 * dλ;
-        double Fλs2 = 2.0 * dFλ * 2.0 * dFλ;
+        double Ls2 = 2.0 * dL * 2.0 * dL;
+        double FLs2 = 2.0 * dFL * 2.0 * dFL;
         double sum = 0.0;
-        for (int iλ = -biasCutoff; iλ <= biasCutoff; iλ++) {
-            int λcenter = cλ + iλ;
-            double deltaλ = vλ - λcenter * dλ;
-            double deltaλ2 = deltaλ * deltaλ;
+        for (int iL = -biasCutoff; iL <= biasCutoff; iL++) {
+            int Lcenter = cLambda + iL;
+            double deltaL = vL - Lcenter * dL;
+            double deltaL2 = deltaL * deltaL;
 
             // Mirror condition for Lambda counts.
-            int lcount = λcenter;
+            int lcount = Lcenter;
             double mirrorFactor = 1.0;
-            if (lcount == 0 || lcount == λBins - 1) {
+            if (lcount == 0 || lcount == lambdaBins - 1) {
                 /**
-                 * The width of the first and last bins is dλ_2, 
+                 * The width of the first and last bins is dLambda_2, 
                  * so the mirror condition is to double their counts.
                  */
                 mirrorFactor = 2.0;
             } else if (lcount < 0) {
                 lcount = -lcount;
-            } else if (lcount > λBins - 1) {
+            } else if (lcount > lambdaBins - 1) {
                 // number of bins past the last bin.
-                lcount -= (λBins - 1);
+                lcount -= (lambdaBins - 1);
                 // mirror bin
-                lcount = λBins - 1 - lcount;
+                lcount = lambdaBins - 1 - lcount;
             }
 
-            for (int jFλ = -biasCutoff; jFλ <= biasCutoff; jFλ++) {
-                int Fλcenter = cFλ + jFλ;
+            for (int jFL = -biasCutoff; jFL <= biasCutoff; jFL++) {
+                int FLcenter = cF_Lambda + jFL;
                 /**
-                 * For Fλ outside the count matrix the weight is
+                 * For FLambda outside the count matrix the weight is
                  * 0 so we continue.
                  */
-                if (Fλcenter < 0 || Fλcenter >= FλBins) {
+                if (FLcenter < 0 || FLcenter >= FLambdaBins) {
                     continue;
                 }
-                double deltaFλ = vFλ - (minFλ + Fλcenter * dFλ + dFλ_2);
-                double deltaFλ2 = deltaFλ * deltaFλ;
-                double weight = mirrorFactor * recursionKernel[lcount][Fλcenter];
+                double deltaFL = vFL - (minFLambda + FLcenter * dFL + dFL_2);
+                double deltaFL2 = deltaFL * deltaFL;
+                double weight = mirrorFactor * recursionKernel[lcount][FLcenter];
                 if (weight > 0) {
-                    double e = weight * gaussianMag * exp(-deltaλ2 / (2.0 * λs2))
-                               * exp(-deltaFλ2 / (2.0 * Fλs2));
+                    double e = weight * gaussianMag * exp(-deltaL2 / (2.0 * Ls2))
+                               * exp(-deltaFL2 / (2.0 * FLs2));
                     sum += e;
                 }
             }
@@ -1238,7 +1237,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
     @Override
     public double getdEdLambda() {
-        return dEdλ;
+        return dEdLambda;
     }
 
     @Override
@@ -1255,11 +1254,11 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             /**
              * Start with a 401 bins
              */
-            FλBins = 401;
-            minFλ = -dFλ * FλBins / 2.0;
-            maxFλ = minFλ + FλBins * dFλ;
-            recursionKernel = new int[λBins][FλBins];
-            Fλ = new double[λBins];
+            FLambdaBins = 401;
+            minFLambda = -dFL * FLambdaBins / 2.0;
+            maxFLambda = minFLambda + FLambdaBins * dFL;
+            recursionKernel = new int[lambdaBins][FLambdaBins];
+            FLambda = new double[lambdaBins];
         }
         if (dUdXdL == null) {
             dUdXdL = new double[nAtoms * 3];
@@ -1284,6 +1283,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
     @Override
     public double getd2EdLambda2() {
-        return d2Edλ2;
+        return d2EdLambda2;
     }
 }
