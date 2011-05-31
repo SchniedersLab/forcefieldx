@@ -9,15 +9,10 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.ForceFieldEnergy;
 
-if (args.size() < 3) {
-   println("Usage: ffx testLambda filename ligandStart ligandStop");
-   return;
-}
-
 // Name of the file (PDB or XYZ).
 String filename = args[0];
 if (filename == null) {
-   println("\n Usage: ffxc testLambda filename ligandStart ligandStop lambda fiction mass ");
+   println("\n Usage: ffxc testLambdaBias filename ligandStart ligandStop lambda fiction mass ");
    return; 
 }
 
@@ -36,14 +31,14 @@ if (args.size() > 3) {
     initialLambda = Double.parseDouble(args[3]);
 }
 
-double initialFriction = 1.0e-18;
+double initialFriction = 1.0e-19;
 if (args.size() > 4) {
     initialFriction = Double.parseDouble(args[4]);
 }
 
-double mass = 1.0e-20;
+double initialMass = 1.0e-19;
 if (args.size() > 5) {
-    mass = Double.parseDouble(args[5]);
+    initialMass = Double.parseDouble(args[5]);
 }
 
 // Restart File
@@ -52,12 +47,12 @@ if (!dyn.exists()) {
    dyn = null;
 } 
 
-// Run 500 molecular dynamics steps to build up a biasing potential.
-int nSteps = 10000;
+// Run 1000 molecular dynamics steps to build up a biasing potential.
+int nSteps = 1000;
 // Time step in femtoseconds.
 double timeStep = 1.0;
 // Frequency to print out thermodynamics information in picoseconds.
-double printInterval = 0.001;
+double printInterval = 0.01;
 // Choose to save coordinates only beyond the simulation length (avoid file cleanup).
 double saveInterval = 10.0;
 // Temperature in degrees Kelvin.
@@ -70,7 +65,7 @@ boolean initVelocities = true;
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 
-println("\n Running molecular dynmaics on " + filename);
+println("\n Testing OSRW biasing potential for " + filename);
 
 open(filename);
 
@@ -90,7 +85,7 @@ MolecularDynamics molDyn = new MolecularDynamics(active, active.getPotentialEner
 molDyn.doLambdaDynamics(true);
 molDyn.setLambda(initialLambda);
 molDyn.setThetaFrication(initialFriction);
-molDyn.setThetaMass(mass);
+molDyn.setThetaMass(initialMass);
 molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);
 
 // Stop counting energy evaluations to prevent adding new Gaussians to the biasing potential

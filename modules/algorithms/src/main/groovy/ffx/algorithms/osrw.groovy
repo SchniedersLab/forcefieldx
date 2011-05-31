@@ -1,4 +1,4 @@
-// Lambda DYNAMICS
+// ORTHOGONAL SPACE RANDOM WALK
 
 // Apache Imports
 import org.apache.commons.io.FilenameUtils;
@@ -12,7 +12,7 @@ import ffx.potential.bonded.Atom;
 // Name of the file (PDB or XYZ).
 String filename = args[0];
 if (filename == null) {
-   println("\n Usage: ffxc lambda filename ligandStart ligandStop lambda fiction mass ");
+   println("\n Usage: ffxc osrw filename ligandStart ligandStop lambda fiction mass ");
    return;
 }
 
@@ -72,7 +72,7 @@ boolean initVelocities = true;
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 
-println("\n Running molecular dynmaics on " + filename);
+println("\n Running Orthogonal Space Random Walk on " + filename);
 
 open(filename);
 

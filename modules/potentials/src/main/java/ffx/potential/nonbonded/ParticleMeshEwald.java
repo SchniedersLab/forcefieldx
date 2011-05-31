@@ -112,6 +112,16 @@ public class ParticleMeshEwald implements LambdaInterface {
      */
     private double lambda = 1.0;
     /**
+     * Start turning on polarization later in the Lambda path to prevent
+     * SCF convergence problems when atoms nearly overlap.
+     */
+    private double polarizationLambdaStart = 0.0;
+    /**
+     * The polarization Lambda value goes from 0.0 .. 1.0 as the global
+     * lambda value varies between polarizationLambdaStart .. 1.0. 
+     */
+    private double polarizationLambda = 1.0;
+    /**
      * Constant α in:
      * r' = sqrt(r^2 + α*(1 - λ)^2) 
      */
@@ -445,8 +455,9 @@ public class ParticleMeshEwald implements LambdaInterface {
         permanentLambdaAlpha = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_ALPHA, 0.7);
         permanentLambdaExponent = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_EXPONENT, 2.0);
         polarizationLambdaExponent = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_EXPONENT, 2.0);
+        polarizationLambdaStart = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_START, 0.5);
 
-        if (permanentLambdaAlpha < 0.0) {
+        if (permanentLambdaAlpha < 0.0 || permanentLambdaAlpha > 2.0) {
             permanentLambdaAlpha = 0.7;
         }
         if (permanentLambdaExponent < 1.0) {
@@ -455,7 +466,10 @@ public class ParticleMeshEwald implements LambdaInterface {
         if (polarizationLambdaExponent < 1.0) {
             polarizationLambdaExponent = 2.0;
         }
-        
+        if (polarizationLambdaStart < 0.0 || polarizationLambdaStart > 0.9) {
+            polarizationLambdaStart = 0.5;
+        }
+
         String polar = forceField.getString(ForceFieldString.POLARIZATION, "MUTUAL");
         boolean polarizationTerm = forceField.getBoolean(ForceFieldBoolean.POLARIZETERM, true);
 
@@ -702,7 +716,7 @@ public class ParticleMeshEwald implements LambdaInterface {
          */
         dlAlpha = permanentLambdaAlpha * (1.0 - lambda);
         d2lAlpha = -permanentLambdaAlpha;
-        
+
         lPowPerm = pow(lambda, permanentLambdaExponent);
         dlPowPerm = permanentLambdaExponent * pow(lambda, permanentLambdaExponent - 1.0);
         if (permanentLambdaExponent >= 2.0) {
@@ -711,11 +725,29 @@ public class ParticleMeshEwald implements LambdaInterface {
             d2lPowPerm = 0.0;
         }
 
-        lPowPol = pow(lambda, polarizationLambdaExponent);
-        dlPowPol = polarizationLambdaExponent * pow(lambda, polarizationLambdaExponent - 1.0);
-        if (polarizationLambdaExponent >= 2.0) {
-            d2lPowPol = polarizationLambdaExponent * (polarizationLambdaExponent - 1.0) * pow(lambda, polarizationLambdaExponent - 2.0);
+        /**
+         * Polarization is turned on from polarizationLambdaStart .. 1.0.
+         */
+        if (lambda >= polarizationLambdaStart) {
+            double polarizationLambdaScale = 1.0 / (1.0 - polarizationLambdaStart);
+            polarizationLambda = polarizationLambdaScale * (lambda - polarizationLambdaStart);
+            lPowPol = pow(polarizationLambda, polarizationLambdaExponent);
+            dlPowPol = polarizationLambdaExponent * pow(polarizationLambda, polarizationLambdaExponent - 1.0);
+            if (polarizationLambdaExponent >= 2.0) {
+                d2lPowPol = polarizationLambdaExponent * (polarizationLambdaExponent - 1.0) * pow(polarizationLambda, polarizationLambdaExponent - 2.0);
+            } else {
+                d2lPowPol = 0.0;
+            }
+
+            /**
+             * Add the chain rule term due to shrinking the lambda range 
+             * for the polarization energy. 
+             */
+            dlPowPol *= polarizationLambdaScale;
+            d2lPowPol *= (polarizationLambdaScale * polarizationLambdaScale);
         } else {
+            lPowPol = 0.0;
+            dlPowPol = 0.0;
             d2lPowPol = 0.0;
         }
 
@@ -932,7 +964,6 @@ public class ParticleMeshEwald implements LambdaInterface {
             polarizationScale = 1.0;
         }
         doPermanent = true;
-
 
         if (polarization != Polarization.NONE && aewald > 0.0) {
             /**
