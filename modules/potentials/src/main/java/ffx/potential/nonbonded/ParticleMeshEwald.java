@@ -136,7 +136,8 @@ public class ParticleMeshEwald implements LambdaInterface {
      * Start turning on polarization later in the Lambda path to prevent
      * SCF convergence problems when atoms nearly overlap.
      */
-    private double polarizationLambdaStart = 0.8;
+    private double polarizationLambdaStart = 0.5;
+    private double polarizationLambdaEnd = 0.7;
     /**
      * The polarization Lambda value goes from 0.0 .. 1.0 as the global
      * lambda value varies between polarizationLambdaStart .. 1.0. 
@@ -456,9 +457,10 @@ public class ParticleMeshEwald implements LambdaInterface {
         lambdaTerm = forceField.getBoolean(ForceFieldBoolean.LAMBDATERM, false);
         permanentLambdaAlpha = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_ALPHA, 0.7);
         permanentLambdaExponent = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_EXPONENT, 2.0);
-        polarizationLambdaExponent = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_EXPONENT, 2.0);
+        polarizationLambdaExponent = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_EXPONENT, 3.0);
         polarizationLambdaStart = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_START, 0.5);
-
+        polarizationLambdaEnd = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_END, 0.7);
+        
         if (permanentLambdaAlpha < 0.0 || permanentLambdaAlpha > 2.0) {
             permanentLambdaAlpha = 0.7;
         }
@@ -469,9 +471,12 @@ public class ParticleMeshEwald implements LambdaInterface {
             polarizationLambdaExponent = 2.0;
         }
         if (polarizationLambdaStart < 0.0 || polarizationLambdaStart > 0.9) {
-            polarizationLambdaStart = 0.8;
+            polarizationLambdaStart = 0.5;
         }
-
+        if (polarizationLambdaEnd < polarizationLambdaStart || polarizationLambdaEnd > 1.0) {
+            polarizationLambdaEnd = 1.0;
+        }
+        
         String polar = forceField.getString(ForceFieldString.POLARIZATION, "MUTUAL");
         boolean polarizationTerm = forceField.getBoolean(ForceFieldBoolean.POLARIZETERM, true);
 
@@ -1394,6 +1399,17 @@ public class ParticleMeshEwald implements LambdaInterface {
      * @since 1.0
      */
     private void lambdaPolarizationEndState(double lambdaPolarEnergy[]) {
+        /**
+         * If lambda is beyond the End of the window there is no contribution
+         * from the lambda=0 state.
+         */
+        if (lambda > polarizationLambdaEnd) {
+            lambdaPolarEnergy[0] = 0.0;
+            lambdaPolarEnergy[1] = 0.0;
+            lambdaPolarEnergy[2] = 0.0;
+            return;
+        }
+        
         polarizationScale = 1.0 - lPowPol;
         dEdLSign = -1.0;
         /**
@@ -5437,8 +5453,9 @@ public class ParticleMeshEwald implements LambdaInterface {
         /**
          * Polarization is turned on from polarizationLambdaStart .. 1.0.
          */
-        if (lambda >= polarizationLambdaStart) {
-            double polarizationLambdaScale = 1.0 / (1.0 - polarizationLambdaStart);
+        if (lambda >= polarizationLambdaStart && lambda <= polarizationLambdaEnd) {
+            double polarizationWindow = polarizationLambdaStart - polarizationLambdaEnd;
+            double polarizationLambdaScale = 1.0 / polarizationWindow;
             polarizationLambda = polarizationLambdaScale * (lambda - polarizationLambdaStart);
             lPowPol = pow(polarizationLambda, polarizationLambdaExponent);
             dlPowPol = polarizationLambdaExponent * pow(polarizationLambda, polarizationLambdaExponent - 1.0);
@@ -5447,7 +5464,6 @@ public class ParticleMeshEwald implements LambdaInterface {
             } else {
                 d2lPowPol = 0.0;
             }
-
             /**
              * Add the chain rule term due to shrinking the lambda range 
              * for the polarization energy. 
