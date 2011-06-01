@@ -1963,11 +1963,34 @@ public final class PDBFilter extends SystemFilter {
                     residue.setName(residueName);
                 }
             }
-            
-            if (position != LAST_RESIDUE) {
+            /**
+             * Only the last residue in a chain should have an OXT/OT2 atom.
+             */
+            if (position != LAST_RESIDUE && numberOfResidues > 1) {
                 Atom OXT = (Atom) residue.getAtomNode("OXT");
                 if (OXT != null) {
-                    residue.removeAtom(OXT);
+                    residue.deleteAtom(OXT);
+                }
+                Atom OT2 = (Atom) residue.getAtomNode("OT2");
+                if (OT2 != null) {
+                    residue.deleteAtom(OT2);
+                }
+            }
+            /**
+             * Only the first nitrogen should have an H1, H2 or H3 atom.
+             */
+            if (position != FIRST_RESIDUE && numberOfResidues > 1) {
+                Atom H1 = (Atom) residue.getAtomNode("H1");
+                if (H1 != null) {
+                    residue.deleteAtom(H1);
+                }
+                Atom H2 = (Atom) residue.getAtomNode("H2");
+                if (H2 != null) {
+                    residue.deleteAtom(H2);
+                }
+                Atom H3 = (Atom) residue.getAtomNode("H3");
+                if (H3 != null) {
+                    residue.deleteAtom(H3);
                 }
             }
             

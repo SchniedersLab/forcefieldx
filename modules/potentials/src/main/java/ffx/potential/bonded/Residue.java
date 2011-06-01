@@ -304,7 +304,7 @@ public class Residue extends MSGroup {
         return currentAtom;
     }
     
-    public void removeAtom(Atom atomToDelete) {
+    public void deleteAtom(Atom atomToDelete) {
         MSNode atoms = getAtomNode();
         if (atoms.contains(atomToDelete) != null) {
             logger.info(" The following atom is being deleted from the model:\n" 
