@@ -172,7 +172,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     public void doLambdaDynamics(boolean lambdaDynamics) {
         doLambdaDynamics = lambdaDynamics;
         if (lambdaInterface != null) {
-            lambdaInterface.lambdaGradient(lambdaDynamics);
+            lambdaInterface.computeLambdaGradient(lambdaDynamics);
         }
     }
 
@@ -502,7 +502,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
              */
             double rt2 = 2.0 * Thermostat.R * temperature * thetaFriction / dt;            
             double randomForce = sqrt(rt2) * stochasticRandom.nextGaussian() / randomConvert;
-            double dEdL = -lambdaInterface.getdEdLambda() * sin(2.0 * theta);            
+            double dEdL = -lambdaInterface.getdEdL() * sin(2.0 * theta);            
             halfThetaVelocity = (halfThetaVelocity * (2.0 * thetaMass - thetaFriction * dt)
                                  + randomConvert2 * 2.0 * dt * (dEdL + randomForce))
                                 / (2.0 * thetaMass + thetaFriction * dt);

@@ -740,7 +740,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
     }
 
     @Override
-    public void lambdaGradient(boolean lambdaGradients) {
+    public void computeLambdaGradient(boolean lambdaGradients) {
         this.lambdaGradient = lambdaGradients;
         if (shareddEdL == null) {
             shareddEdL = new SharedDouble();
@@ -753,12 +753,12 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
     }
 
     @Override
-    public double getdEdLambda() {
+    public double getdEdL() {
         return shareddEdL.get();
     }
 
     @Override
-    public void getdEdLambdaGradient(double[] gradients) {
+    public void getdEdXdL(double[] gradients) {
         int index = 0;
         for (int i = 0; i < nAtoms; i++) {
             gradients[index++] += shareddEdLdX[0].get(i);
@@ -768,7 +768,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
     }
 
     @Override
-    public double getd2EdLambda2() {
+    public double getd2EdL2() {
         return sharedd2EdL2.get();
     }
 

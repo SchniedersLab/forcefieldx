@@ -23,8 +23,8 @@ package ffx.potential;
 
 /**
  * The LambdaInterface should be implemented by potential energy terms that
- * can accept a lambda value from [0 .. 1] that defines a smooth path between
- * state 0 to state 1.
+ * can accept a lambda value from [0 .. 1] that defines a twice differentiable
+ * path between states 0 and 1.
  *
  * @author Michael J. Schnieders
  *
@@ -32,16 +32,57 @@ package ffx.potential;
  */
 public interface LambdaInterface {
 
+    /**
+     * Set the current value of the lambda variable.
+     * 
+     * @param lambda (0.0 >= lambda <= 1.0)
+     * 
+     * @since 1.0
+     */
     public void setLambda(double lambda);
 
+    /**
+     * Get the current value of the lambda variable.
+     * 
+     * @return lambda
+     * 
+     * @since 1.0
+     */
     public double getLambda();
     
-    public void lambdaGradient(boolean lambdaGradient);
+    /**
+     * Turn on/off computation of partial derivatives with respect to lambda.
+     * 
+     * @param compute - if true compute the partial derivatives.
+     */
+    public void computeLambdaGradient(boolean compute);
     
-    public double getdEdLambda();
+    /**
+     * Get the partial derivative of the energy with respect to lambda.
+     * 
+     * @return dEdL
+     * 
+     * @since  1.0
+     */
+    public double getdEdL();
     
-    public double getd2EdLambda2();
+    /**
+     * Get the 2nd partial derivative of the energy with respect to lambda.
+     * 
+     * @return d2EdL2
+     * 
+     * @since  1.0
+     */
+    public double getd2EdL2();
     
-    public void getdEdLambdaGradient(double gradient[]);
+    /**
+     * Get the gradient of dEdL with respect to each parameter.
+     * 
+     * @param gradient - A double array of length the number of parameters 
+     *        in the model (commonly 3 * number of atoms).
+     * 
+     * @since 1.0
+     */
+    public void getdEdXdL(double gradient[]);
     
 }

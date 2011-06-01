@@ -106,7 +106,7 @@ public class ParticleMeshEwald implements LambdaInterface {
     /**
      * If lambdaGradient is true, then compute dU/dL, d2U/dL2 and dU/dX/dL.
      */
-    private boolean lambdaGradient = false;
+    private boolean computeLambdaGradient = false;
     /**
      * Current value of L.
      */
@@ -136,7 +136,7 @@ public class ParticleMeshEwald implements LambdaInterface {
      * Start turning on polarization later in the Lambda path to prevent
      * SCF convergence problems when atoms nearly overlap.
      */
-    private double polarizationLambdaStart = 0.5;
+    private double polarizationLambdaStart = 0.8;
     /**
      * The polarization Lambda value goes from 0.0 .. 1.0 as the global
      * lambda value varies between polarizationLambdaStart .. 1.0. 
@@ -146,13 +146,13 @@ public class ParticleMeshEwald implements LambdaInterface {
      * Power on L in front of the polarization energy.
      */
     private double polarizationLambdaExponent = 2.0;
-    
     /**
      * lPowPol = L^polarizationLambdaExponent
      */
     private double lPowPol = 1.0;
     private double dlPowPol = 0.0;
     private double d2lPowPol = 0.0;
+    private final double lambdaPolarEnergy[] = new double[3];
     /**
      * Flag for ligand atoms.
      */
@@ -185,6 +185,7 @@ public class ParticleMeshEwald implements LambdaInterface {
     private double polarizationScale = 1.0;
     private double dEdLSign = 1.0;
     private boolean doPermanent;
+    private boolean doPolarization;
     /**
      * Apply softCore interactions between the ligand and environment.
      */
@@ -468,7 +469,7 @@ public class ParticleMeshEwald implements LambdaInterface {
             polarizationLambdaExponent = 2.0;
         }
         if (polarizationLambdaStart < 0.0 || polarizationLambdaStart > 0.9) {
-            polarizationLambdaStart = 0.5;
+            polarizationLambdaStart = 0.8;
         }
 
         String polar = forceField.getString(ForceFieldString.POLARIZATION, "MUTUAL");
@@ -699,120 +700,6 @@ public class ParticleMeshEwald implements LambdaInterface {
     }
 
     /**
-     * Set the electrostatic lambda scaling factor.
-     *
-     * @param lambda Must satisfy greater than or equal to 0.0 and less than or
-     *      equal to 1.0.
-     */
-    @Override
-    public void setLambda(double lambda) {
-        assert (lambda >= 0.0 && lambda <= 1.0);
-        this.lambda = lambda;
-
-        lAlpha = permanentLambdaAlpha * (1.0 - lambda) * (1.0 - lambda);
-        /**
-         * f = sqrt(r^2 + lAlpha)
-         * df/dL = alpha * (lambda - 1.0) / f
-         * df/dL = -dlAlpha / f
-         */
-        dlAlpha = permanentLambdaAlpha * (1.0 - lambda);
-        d2lAlpha = -permanentLambdaAlpha;
-
-        lPowPerm = pow(lambda, permanentLambdaExponent);
-        dlPowPerm = permanentLambdaExponent * pow(lambda, permanentLambdaExponent - 1.0);
-        if (permanentLambdaExponent >= 2.0) {
-            d2lPowPerm = permanentLambdaExponent * (permanentLambdaExponent - 1.0) * pow(lambda, permanentLambdaExponent - 2.0);
-        } else {
-            d2lPowPerm = 0.0;
-        }
-
-        /**
-         * Polarization is turned on from polarizationLambdaStart .. 1.0.
-         */
-        if (lambda >= polarizationLambdaStart) {
-            double polarizationLambdaScale = 1.0 / (1.0 - polarizationLambdaStart);
-            polarizationLambda = polarizationLambdaScale * (lambda - polarizationLambdaStart);
-            lPowPol = pow(polarizationLambda, polarizationLambdaExponent);
-            dlPowPol = polarizationLambdaExponent * pow(polarizationLambda, polarizationLambdaExponent - 1.0);
-            if (polarizationLambdaExponent >= 2.0) {
-                d2lPowPol = polarizationLambdaExponent * (polarizationLambdaExponent - 1.0) * pow(polarizationLambda, polarizationLambdaExponent - 2.0);
-            } else {
-                d2lPowPol = 0.0;
-            }
-
-            /**
-             * Add the chain rule term due to shrinking the lambda range 
-             * for the polarization energy. 
-             */
-            dlPowPol *= polarizationLambdaScale;
-            d2lPowPol *= (polarizationLambdaScale * polarizationLambdaScale);
-        } else {
-            lPowPol = 0.0;
-            dlPowPol = 0.0;
-            d2lPowPol = 0.0;
-        }
-
-        /**
-         * Set up the lambda.
-         */
-        boolean softAtoms = false;
-        for (int i = 0; i < nAtoms; i++) {
-            isSoft[i] = atoms[i].applyLambda();
-            if (isSoft[i]) {
-                softAtoms = true;
-                // Outer loop atom hard, inner loop atom soft.
-                softCore[0][i] = true;
-                // Both soft - full interaction.
-                softCore[1][i] = false;
-            } else {
-                // Both hard - full interaction.
-                softCore[0][i] = false;
-                // Outer loop atom soft, inner loop atom hard.
-                softCore[1][i] = true;
-            }
-        }
-        if (!softAtoms) {
-            logger.warning(" No atoms are selected for soft core electrostatics.\n");
-        }
-    }
-
-    /**
-     * Get the current lambda scale value.
-     * @return lambda
-     */
-    @Override
-    public double getLambda() {
-        return lambda;
-    }
-
-    @Override
-    public void lambdaGradient(boolean lambdaGradient) {
-        if (lambdaTerm) {
-            this.lambdaGradient = lambdaGradient;
-        }
-    }
-
-    @Override
-    public double getdEdLambda() {
-        return shareddEdLambda.get();
-    }
-
-    @Override
-    public double getd2EdLambda2() {
-        return sharedd2EdLambda2.get();
-    }
-
-    @Override
-    public void getdEdLambdaGradient(double[] gradients) {
-        int index = 0;
-        for (int i = 0; i < nAtoms; i++) {
-            gradients[index++] += shareddEdLdX[0].get(i);
-            gradients[index++] += shareddEdLdX[1].get(i);
-            gradients[index++] += shareddEdLdX[2].get(i);
-        }
-    }
-
-    /**
      * Calculate the PME electrostatic energy.
      *
      * @param gradient If <code>true</code>, the gradient will be calculated.
@@ -823,7 +710,7 @@ public class ParticleMeshEwald implements LambdaInterface {
         this.gradient = gradient;
 
         /**
-         * Initialize the energy components.
+         * Initialize the energy components to zero.
          */
         double eself = 0.0;
         double erecip = 0.0;
@@ -870,7 +757,7 @@ public class ParticleMeshEwald implements LambdaInterface {
         /**
          * Initialize the lambda gradient arrays.
          */
-        if (lambdaGradient) {
+        if (computeLambdaGradient) {
             shareddEdLambda.set(0.0);
             sharedd2EdLambda2.set(0.0);
             for (int j = 0; j < nAtoms; j++) {
@@ -884,7 +771,8 @@ public class ParticleMeshEwald implements LambdaInterface {
         }
 
         /**
-         * Find the permanent multipole potential, field, etc.
+         * Expand the coordinates, rotate multipoles into the global frame and
+         * then find the permanent multipole potential, field, etc.
          */
         try {
             parallelTeam.execute(expandCoordinatesRegion);
@@ -929,9 +817,47 @@ public class ParticleMeshEwald implements LambdaInterface {
         }
 
         /**
-         * Do the self-consistent field calculation.
+         * When computing the polarization energy at lambda there are 3 pieces:
+         * 
+         * 1.) Upol(1) = The polarization energy computed normally (ie. system 
+         *     with ligand / solute).
+         * 2.) Uenv    = The polarization energy of the system without the ligand.
+         * 3.) Uligand = The polarization energy of the ligand / solute by itself.
+         * 
+         * Upol(L) = L^B*Upol(1) + (1-L^B)*(Uenv + Uligand)
+         * 
+         * 1.) Set the "use" array to true for all atoms and polarizationScale to lambda^B.
+         * 2.) Set the "use" array to true for all atoms except the ligand and 
+         *     polarizationScale to (1-lambda^B).
+         * 3.) Set the "use" array to true only for the ligand / solute atoms and 
+         *     polarizationScale to (1-lambda^B).
+         */
+        doPermanent = true;
+        doPolarization = true;
+        polarizationScale = 1.0;
+        if (lambdaTerm) {
+            if (lambda < polarizationLambdaStart) {
+                /**
+                 * The system is completely decoupled and the contribution of 
+                 * the complete system is zero (ie. step 1 above).
+                 */
+                doPolarization = false;
+            } else {
+                polarizationScale = lPowPol;
+                dEdLSign = 1.0;
+            }
+        }
+
+        /**
+         * Do the self-consistent field calculation. If polarization is turned
+         * off then the induced dipoles are initialized to zero and the method
+         * returns.
          */
         selfConsistentField(logger.isLoggable(Level.FINE));
+
+        /**
+         * Log some timings.
+         */
         if (logger.isLoggable(Level.FINE)) {
             StringBuilder sb = new StringBuilder();
             sb.append(format("\n b-Spline:   %8.3f (sec)\n", bsplineTime * toSeconds));
@@ -941,32 +867,7 @@ public class ParticleMeshEwald implements LambdaInterface {
             logger.fine(sb.toString());
         }
 
-        /**
-         * When computing the polarization energy at L there are 3 pieces.
-         * 1.) Upol(1) = The polarization energy computed normally (ie. system with ligand).
-         * 2.) Uenv    = The polarization energy of the system without the ligand.
-         * 3.) Uligand = The polarization energy of the ligand by itself.
-         * 
-         * Upol(L) = L^B*Upol(1) + (1-L^B)*(Uenv + Uligand)
-         * 
-         * 1.) Set the "use" array to true for all atoms and polarizationScale to L.
-         * 2.) Set the "use" array to true for all atoms except the ligand and polarizationScale to (1-L^B).
-         * 3.) Set the "use" array to true only for the ligand atoms and polarizationScale to (1-L^B).
-         *
-         * First we compute Part 1, which is the default code path even in the
-         * absence using L to define a state. The only modification to normal
-         * execution of the polarization energy and forces is to set 
-         * polarizationScale to L^B (lPowPol).
-         */
-        if (lambdaTerm) {
-            polarizationScale = lPowPol;
-            dEdLSign = 1.0;
-        } else {
-            polarizationScale = 1.0;
-        }
-        doPermanent = true;
-
-        if (polarization != Polarization.NONE && aewald > 0.0) {
+        if (polarization != Polarization.NONE && doPolarization && aewald > 0.0) {
             /**
              * The induced dipole self energy due to interaction with the
              * permanent dipole. The energy and gradient are scaled
@@ -978,10 +879,9 @@ public class ParticleMeshEwald implements LambdaInterface {
              * reciprocal potential. The energy and gradient are scaled
              * by "polarizationScale".
              */
-            long time = System.nanoTime();
+            reciprocalSpaceTime -= System.nanoTime();
             erecipi = inducedDipoleReciprocalSpaceEnergy(gradient);
-            time = System.nanoTime() - time;
-            reciprocalSpaceTime += time;
+            reciprocalSpaceTime += System.nanoTime();
         }
 
         if (aewald > 0.0) {
@@ -991,80 +891,8 @@ public class ParticleMeshEwald implements LambdaInterface {
              */
             eself = permanentSelfEnergy;
             interactions = nAtoms;
-            /**
-             * If a lambdaTerm is active, compute the reciprocal potential 
-             * for ligand atoms by themselves, then combine with the 
-             * previously computed total permanent reciprocal potential 
-             * to get E_T(L).
-             * 
-             * Definitions:
-             *  E_P(0) is the potential for the protein/environment in
-             *         the absence of the ligand.
-             *  E_L(0) is the potential for the ligand by itself.
-             *  E_T(L) is the potential for all atoms at any L.
-             * 
-             *  We can get E_T(L) and E_P(0) from E_T(1) and E_L(0). 
-             *  E_P(0) = E_T(1) - E_L(0)
-             * 
-             * Then:
-             *  E_L(L) = E_T(1) + (L^3 - 1)*E_P(0)
-             *  E_P(L) = E_T(1) - (1 - L^3)*E_L(0)
-             *  dE_L(L)/dL = 3L^2 * E_P(0)
-             *  dE_P(L)/dL = 3L^2 * E_L(0)
-             *  d2E_L(L)/dL2 = 6L * E_P(0)
-             *  d2E_P(L)/dL2 = 6L * E_L(0)
-             */
             if (lambdaTerm) {
-                try {
-                    densityTime = -System.nanoTime();
-                    reciprocalSpace.computePermanentDensity(globalMultipole, isSoft);
-                    densityTime += System.nanoTime();
-                    realAndFFTTime = -System.nanoTime();
-                    reciprocalSpace.computePermanentConvolution();
-                    realAndFFTTime += System.nanoTime();
-                    phiTime = -System.nanoTime();
-                    reciprocalSpace.computePermanentPhi(lambdaMultipolePhi, true);
-                    phiTime += System.nanoTime();
-                    double fracMultipolePhi[][] = reciprocalSpace.getFractionalMultipolePhi();
-                    double fracLambdaPhi[][] = reciprocalSpace.getFractionalLambdaPhi();
-                    for (int i = 0; i < nAtoms; i++) {
-                        double totalPhi[] = cartesianMultipolePhi[i];
-                        double ligandPhi[] = lambdaMultipolePhi[i];
-                        double lambda2Phi[] = lambda2MultipolePhi[i];
-                        double totalfPhi[] = fracMultipolePhi[i];
-                        double ligandfPhi[] = fracLambdaPhi[i];
-                        for (int j = 0; j < tensorCount; j++) {
-                            double total = totalPhi[j];
-                            double ligand = ligandPhi[j];
-                            double protein = total - ligand;
-                            double ftotal = totalfPhi[j];
-                            double fligand = ligandfPhi[j];
-                            double fprotein = ftotal - fligand;
-                            if (isSoft[i]) {
-                                /**
-                                 * This is E_L(L).
-                                 */
-                                totalPhi[j] = total + (lPowPerm - 1.0) * protein;
-                                ligandPhi[j] = dlPowPerm * protein;
-                                lambda2Phi[j] = d2lPowPerm * protein;
-                                totalfPhi[j] = ftotal + (lPowPerm - 1.0) * fprotein;
-                                ligandfPhi[j] = dlPowPerm * fprotein;
-                            } else {
-                                /**
-                                 * This is E_P(L).
-                                 */
-                                totalPhi[j] = total - (1.0 - lPowPerm) * ligand;
-                                ligandPhi[j] = dlPowPerm * ligand;
-                                lambda2Phi[j] = d2lPowPerm * ligand;
-                                totalfPhi[j] = ftotal - (1.0 - lPowPerm) * fligand;
-                                ligandfPhi[j] = dlPowPerm * fligand;
-                            }
-                        }
-                    }
-                } catch (Exception e) {
-                    String message = "Fatal exception computing the permanent multipole field.\n";
-                    logger.log(Level.SEVERE, message, e);
-                }
+                lambdaPermanentEndState();
             }
             erecip = permanentReciprocalSpaceEnergy(gradient);
         }
@@ -1074,7 +902,7 @@ public class ParticleMeshEwald implements LambdaInterface {
          * multipoles in their own real space potential and the interaction of
          * permanent multipoles with induced dipoles.
          */
-        long time = System.nanoTime();
+        realSpaceTime -= System.nanoTime();
         try {
             parallelTeam.execute(realSpaceEnergyRegion);
             ereal = realSpaceEnergyRegion.getPermanentEnergy();
@@ -1084,10 +912,11 @@ public class ParticleMeshEwald implements LambdaInterface {
             String message = "Exception computing the real space energy.\n";
             logger.log(Level.SEVERE, message, e);
         }
-        time = System.nanoTime() - time;
-        realSpaceTime += time;
+        realSpaceTime += System.nanoTime();
 
-        // Compute the generalized Kirkwood solvation free energy.
+        /**
+         * Compute the generalized Kirkwood solvation free energy.
+         */
         if (generalizedKirkwoodTerm) {
             if (lambdaTerm) {
                 logger.severe("Use of generalized Kirkwood with Lambda dynamics is not yet supported.");
@@ -1099,179 +928,47 @@ public class ParticleMeshEwald implements LambdaInterface {
         }
 
         /**
-         * When computing the polarization energy at L there are 3 pieces.
-         * 1.) Upol(1) = The polarization energy computed normally (ie. system with ligand).
-         * 2.) Uenv    = The polarization energy of the system without the ligand.
-         * 3.) Uligand = The polarization energy of the ligand by itself.
-         * 
-         * Upol(L) = L^B*Upol(1) + (1-L^B)*(Uenv + Uligand)
-         * 
-         * 1.) Set the "use" array to true for all atoms and polarizationScale to L.
-         * 2.) Set the "use" array to true for all atoms except the ligand and polarizationScale to (1-L^B).
-         * 3.) Set the "use" array to true only for the ligand atoms and polarizationScale to (1-L^B).
-         *
-         * We computed Part 1 above. Now compute parts 2 & 3.
+         * Compute parts 2 & 3 of the polarization energy (lambda=0 end state).
          */
         if (lambdaTerm && polarization != Polarization.NONE) {
-            polarizationScale = 1.0 - lPowPol;
-            dEdLSign = -1.0;
-            // Permanent is finished.
-            doPermanent = false;
-            /**
-             * Use all atoms except for the ligand.
-             */
-            for (int i = 0; i < nAtoms; i++) {
-                if (atoms[i].applyLambda()) {
-                    use[i] = false;
-                } else {
-                    use[i] = true;
-                }
-            }
-
-            try {
-                /**
-                 * Find the permanent multipole potential, field, etc.
-                 */
-                if (aewald > 0.0) {
-                    densityTime = -System.nanoTime();
-                    reciprocalSpace.computePermanentDensity(globalMultipole, use);
-                    densityTime += System.nanoTime();
-                }
-                /**
-                 * The real space contribution to the field can be calculated at
-                 * the same time the reciprocal space convolution is being done.
-                 */
-                realAndFFTTime = -System.nanoTime();
-                sectionTeam.execute(permanentFieldRegion);
-                realAndFFTTime += System.nanoTime();
-                /**
-                 * Collect the reciprocal space field.
-                 */
-                if (aewald > 0.0) {
-                    phiTime = -System.nanoTime();
-                    reciprocalSpace.computePermanentPhi(cartesianMultipolePhi, false);
-                    phiTime += System.nanoTime();
-                }
-                /**
-                 * Do the self-consistent field calculation.
-                 */
-                selfConsistentField(logger.isLoggable(Level.FINE));
-                /**
-                 * The induced dipole self energy due to interaction with the
-                 * permanent dipole. The energy and gradient are scaled
-                 * by "polarizationScale".
-                 */
-                eselfi += inducedDipoleSelfEnergy(gradient);
-                /**
-                 * The energy of the permanent multipoles in the induced dipole
-                 * reciprocal potential. The energy and gradient are scaled
-                 * by "polarizationScale".
-                 */
-                time = System.nanoTime();
-                erecipi += inducedDipoleReciprocalSpaceEnergy(gradient);
-                time = System.nanoTime() - time;
-                reciprocalSpaceTime += time;
-                /**
-                 * Find the total real space energy. This includes the permanent
-                 * multipoles in their own real space potential and the interaction of
-                 * permanent multipoles with induced dipoles.
-                 */
-                time = System.nanoTime();
-                parallelTeam.execute(realSpaceEnergyRegion);
-                ereali += realSpaceEnergyRegion.getPolarizationEnergy();
-                time = System.nanoTime() - time;
-                realSpaceTime += time;
-            } catch (Exception e) {
-                String message = "Fatal exception computing the polarization energy.\n";
-                logger.log(Level.SEVERE, message, e);
-            }
-            /**
-             * Use only ligand atoms.
-             */
-            for (int i = 0; i < nAtoms; i++) {
-                if (atoms[i].applyLambda()) {
-                    use[i] = true;
-                } else {
-                    use[i] = false;
-                }
-            }
-            try {
-                /**
-                 * Find the permanent multipole potential, field, etc.
-                 */
-                if (aewald > 0.0) {
-                    densityTime = -System.nanoTime();
-                    reciprocalSpace.computePermanentDensity(globalMultipole, use);
-                    densityTime += System.nanoTime();
-                }
-                /**
-                 * The real space contribution to the field can be calculated at
-                 * the same time the reciprocal space convolution is being done.
-                 */
-                realAndFFTTime = -System.nanoTime();
-                sectionTeam.execute(permanentFieldRegion);
-                realAndFFTTime += System.nanoTime();
-                /**
-                 * Collect the reciprocal space field.
-                 */
-                if (aewald > 0.0) {
-                    phiTime = -System.nanoTime();
-                    reciprocalSpace.computePermanentPhi(cartesianMultipolePhi, false);
-                    phiTime += System.nanoTime();
-                }
-                /**
-                 * Do the self-consistent field calculation.
-                 */
-                selfConsistentField(logger.isLoggable(Level.FINE));
-                /**
-                 * The induced dipole self energy due to interaction with the
-                 * permanent dipole. The energy and gradient are scaled
-                 * by "polarizationScale".
-                 */
-                eselfi += inducedDipoleSelfEnergy(gradient);
-                /**
-                 * The energy of the permanent multipoles in the induced dipole
-                 * reciprocal potential. The energy and gradient are scaled
-                 * by "polarizationScale".
-                 */
-                time = System.nanoTime();
-                erecipi += inducedDipoleReciprocalSpaceEnergy(gradient);
-                time = System.nanoTime() - time;
-                reciprocalSpaceTime += time;
-                /**
-                 * Find the total real space energy. This includes the permanent
-                 * multipoles in their own real space potential and the interaction of
-                 * permanent multipoles with induced dipoles.
-                 */
-                time = System.nanoTime();
-                parallelTeam.execute(realSpaceEnergyRegion);
-                ereali += realSpaceEnergyRegion.getPolarizationEnergy();
-                time = System.nanoTime() - time;
-                realSpaceTime += time;
-            } catch (Exception e) {
-                String message = "Fatal exception computing the polarization energy.\n";
-                logger.log(Level.SEVERE, message, e);
-            }
+            lambdaPolarizationEndState(lambdaPolarEnergy);
+            eselfi += lambdaPolarEnergy[0];
+            erecipi += lambdaPolarEnergy[1];
+            ereali += lambdaPolarEnergy[2];
         }
 
-        // Add electrostatic gradient to the total atomic gradient.
-        if (gradient || lambdaGradient) {
-            // Convert torques to forces.
+        /**
+         * Convert torques to forces.
+         */
+        if (gradient || computeLambdaGradient) {
             try {
                 parallelTeam.execute(torqueRegion);
             } catch (Exception e) {
                 String message = "Exception calculating torques.";
                 logger.log(Level.SEVERE, message, e);
             }
+        }
+
+        /**
+         * Add electrostatic gradient to the total atomic gradient.
+         */
+        if (gradient) {
             for (int i = 0; i < nAtoms; i++) {
-                atoms[i].addToXYZGradient(sharedGrad[0].get(i), sharedGrad[1].get(i), sharedGrad[2].get(i));
+                atoms[i].addToXYZGradient(sharedGrad[0].get(i),
+                                          sharedGrad[1].get(i),
+                                          sharedGrad[2].get(i));
             }
         }
 
-        // Collect energy terms.
+        /**
+         * Collect energy terms.
+         */
         multipoleEnergy = eself + erecip + ereal;
         polarizationEnergy = eselfi + erecipi + ereali;
-
+        
+        /**
+         * Log some info.
+         */
         if (logger.isLoggable(Level.FINE)) {
             StringBuilder sb = new StringBuilder();
             sb.append(format("\n Total Time =    Real +   Recip (sec)\n"));
@@ -1321,7 +1018,7 @@ public class ParticleMeshEwald implements LambdaInterface {
     }
 
     private void selfConsistentField(boolean print) {
-        if (polarization == Polarization.NONE) {
+        if (polarization == Polarization.NONE || !doPolarization) {
             for (int i = 0; i < nAtoms; i++) {
                 inducedDipole[0][i][0] = 0.0;
                 inducedDipole[0][i][1] = 0.0;
@@ -1593,6 +1290,253 @@ public class ParticleMeshEwald implements LambdaInterface {
         } */
     }
 
+    /**
+     * If a lambdaTerm is active, compute the reciprocal potential 
+     * for ligand atoms by themselves, then combine with the 
+     * previously computed total permanent reciprocal potential 
+     * to get E_T(L).
+     * 
+     * Definitions:
+     *  E_P(0) is the potential for the protein/environment in
+     *         the absence of the ligand.
+     *  E_L(0) is the potential for the ligand by itself.
+     *  E_T(L) is the potential for all atoms at any L.
+     * 
+     *  We can get E_T(L) and E_P(0) from E_T(1) and E_L(0). 
+     *  E_P(0) = E_T(1) - E_L(0)
+     * 
+     * Then:
+     *  E_L(L) = E_T(1) + (L^3 - 1)*E_P(0)
+     *  E_P(L) = E_T(1) - (1 - L^3)*E_L(0)
+     *  dE_L(L)/dL = 3L^2 * E_P(0)
+     *  dE_P(L)/dL = 3L^2 * E_L(0)
+     *  d2E_L(L)/dL2 = 6L * E_P(0)
+     *  d2E_P(L)/dL2 = 6L * E_L(0)
+     * 
+     * @since 1.0
+     */
+    private void lambdaPermanentEndState() {
+        try {
+            densityTime = -System.nanoTime();
+            reciprocalSpace.computePermanentDensity(globalMultipole, isSoft);
+            densityTime += System.nanoTime();
+            realAndFFTTime = -System.nanoTime();
+            reciprocalSpace.computePermanentConvolution();
+            realAndFFTTime += System.nanoTime();
+            phiTime = -System.nanoTime();
+            reciprocalSpace.computePermanentPhi(lambdaMultipolePhi, true);
+            phiTime += System.nanoTime();
+            double fracMultipolePhi[][] = reciprocalSpace.getFractionalMultipolePhi();
+            double fracLambdaPhi[][] = reciprocalSpace.getFractionalLambdaPhi();
+            for (int i = 0; i < nAtoms; i++) {
+                double totalPhi[] = cartesianMultipolePhi[i];
+                double ligandPhi[] = lambdaMultipolePhi[i];
+                double lambda2Phi[] = lambda2MultipolePhi[i];
+                double totalfPhi[] = fracMultipolePhi[i];
+                double ligandfPhi[] = fracLambdaPhi[i];
+                for (int j = 0; j < tensorCount; j++) {
+                    double total = totalPhi[j];
+                    double ligand = ligandPhi[j];
+                    double protein = total - ligand;
+                    double ftotal = totalfPhi[j];
+                    double fligand = ligandfPhi[j];
+                    double fprotein = ftotal - fligand;
+                    if (isSoft[i]) {
+                        /**
+                         * This is E_L(L).
+                         */
+                        totalPhi[j] = total + (lPowPerm - 1.0) * protein;
+                        ligandPhi[j] = dlPowPerm * protein;
+                        lambda2Phi[j] = d2lPowPerm * protein;
+                        totalfPhi[j] = ftotal + (lPowPerm - 1.0) * fprotein;
+                        ligandfPhi[j] = dlPowPerm * fprotein;
+                    } else {
+                        /**
+                         * This is E_P(L).
+                         */
+                        totalPhi[j] = total - (1.0 - lPowPerm) * ligand;
+                        ligandPhi[j] = dlPowPerm * ligand;
+                        lambda2Phi[j] = d2lPowPerm * ligand;
+                        totalfPhi[j] = ftotal - (1.0 - lPowPerm) * fligand;
+                        ligandfPhi[j] = dlPowPerm * fligand;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            String message = "Fatal exception computing the permanent multipole field.\n";
+            logger.log(Level.SEVERE, message, e);
+        }
+    }
+
+    /**
+     * When computing the polarization energy at lambda there are 3 pieces:
+     * 
+     * 1.) Upol(1) = The polarization energy computed normally (ie. system 
+     *     with ligand / solute).
+     * 2.) Uenv    = The polarization energy of the system without the ligand.
+     * 3.) Uligand = The polarization energy of the ligand / solute by itself.
+     * 
+     * Upol(L) = L^B*Upol(1) + (1-L^B)*(Uenv + Uligand)
+     * 
+     * 1.) Set the "use" array to true for all atoms and polarizationScale to lambda^B.
+     * 2.) Set the "use" array to true for all atoms except the ligand and 
+     *     polarizationScale to (1-lambda^B).
+     * 3.) Set the "use" array to true only for the ligand / solute atoms and 
+     *     polarizationScale to (1-lambda^B).
+     *
+     * We compute Part 1 using the normal code path. This routine computes 
+     * pieces 2 & 3.
+     * 
+     * @param lambdaPolarEnergy double array of length 3 to store the self, 
+     *        reciprocal and real pieces of the polarization energy for pieces
+     *        2 & 3.
+     * 
+     * @since 1.0
+     */
+    private void lambdaPolarizationEndState(double lambdaPolarEnergy[]) {
+        polarizationScale = 1.0 - lPowPol;
+        dEdLSign = -1.0;
+        /**
+         * The totally decoupled end state is currently always computed.
+         */
+        doPolarization = true;
+        /**
+         * Permanent electrostatics are finished for this energy evaluation.
+         */
+        doPermanent = false;
+        /**
+         * Use all atoms except for the ligand.
+         */
+        for (int i = 0; i < nAtoms; i++) {
+            if (atoms[i].applyLambda()) {
+                use[i] = false;
+            } else {
+                use[i] = true;
+            }
+        }
+
+        try {
+            /**
+             * Find the permanent multipole potential, field, etc.
+             */
+            if (aewald > 0.0) {
+                densityTime = -System.nanoTime();
+                reciprocalSpace.computePermanentDensity(globalMultipole, use);
+                densityTime += System.nanoTime();
+            }
+            /**
+             * The real space contribution to the field can be calculated at
+             * the same time the reciprocal space convolution is being done.
+             */
+            realAndFFTTime = -System.nanoTime();
+            sectionTeam.execute(permanentFieldRegion);
+            realAndFFTTime += System.nanoTime();
+            /**
+             * Collect the reciprocal space field.
+             */
+            if (aewald > 0.0) {
+                phiTime = -System.nanoTime();
+                reciprocalSpace.computePermanentPhi(cartesianMultipolePhi, false);
+                phiTime += System.nanoTime();
+            }
+            /**
+             * Do the self-consistent field calculation.
+             */
+            selfConsistentField(logger.isLoggable(Level.FINE));
+            /**
+             * The induced dipole self energy due to interaction with the
+             * permanent dipole. The energy and gradient are scaled
+             * by "polarizationScale".
+             */
+            lambdaPolarEnergy[0] = inducedDipoleSelfEnergy(gradient);
+            /**
+             * The energy of the permanent multipoles in the induced dipole
+             * reciprocal potential. The energy and gradient are scaled
+             * by "polarizationScale".
+             */
+            reciprocalSpaceTime -= System.nanoTime();
+            lambdaPolarEnergy[1] = inducedDipoleReciprocalSpaceEnergy(gradient);
+            reciprocalSpaceTime += System.nanoTime();
+            /**
+             * Find the total real space energy. This includes the permanent
+             * multipoles in their own real space potential and the interaction of
+             * permanent multipoles with induced dipoles.
+             */
+            realSpaceTime -= System.nanoTime();
+            parallelTeam.execute(realSpaceEnergyRegion);
+            lambdaPolarEnergy[2] = realSpaceEnergyRegion.getPolarizationEnergy();
+            realSpaceTime += System.nanoTime();
+        } catch (Exception e) {
+            String message = "Fatal exception computing the polarization energy.\n";
+            logger.log(Level.SEVERE, message, e);
+        }
+        /**
+         * Use only ligand atoms.
+         */
+        for (int i = 0; i < nAtoms; i++) {
+            if (atoms[i].applyLambda()) {
+                use[i] = true;
+            } else {
+                use[i] = false;
+            }
+        }
+        try {
+            /**
+             * Find the permanent multipole potential, field, etc.
+             */
+            if (aewald > 0.0) {
+                densityTime -= System.nanoTime();
+                reciprocalSpace.computePermanentDensity(globalMultipole, use);
+                densityTime += System.nanoTime();
+            }
+            /**
+             * The real space contribution to the field can be calculated at
+             * the same time the reciprocal space convolution is being done.
+             */
+            realAndFFTTime -= System.nanoTime();
+            sectionTeam.execute(permanentFieldRegion);
+            realAndFFTTime += System.nanoTime();
+            /**
+             * Collect the reciprocal space field.
+             */
+            if (aewald > 0.0) {
+                phiTime = -System.nanoTime();
+                reciprocalSpace.computePermanentPhi(cartesianMultipolePhi, false);
+                phiTime += System.nanoTime();
+            }
+            /**
+             * Do the self-consistent field calculation.
+             */
+            selfConsistentField(logger.isLoggable(Level.FINE));
+            /**
+             * The induced dipole self energy due to interaction with the
+             * permanent dipole. The energy and gradient are scaled
+             * by "polarizationScale".
+             */
+            lambdaPolarEnergy[0] += inducedDipoleSelfEnergy(gradient);
+            /**
+             * The energy of the permanent multipoles in the induced dipole
+             * reciprocal potential. The energy and gradient are scaled
+             * by "polarizationScale".
+             */
+            reciprocalSpaceTime -= System.nanoTime();
+            lambdaPolarEnergy[1] += inducedDipoleReciprocalSpaceEnergy(gradient);
+            reciprocalSpaceTime += System.nanoTime();
+            /**
+             * Find the total real space energy. This includes the permanent
+             * multipoles in their own real space potential and the interaction of
+             * permanent multipoles with induced dipoles.
+             */
+            realSpaceTime -= System.nanoTime();
+            parallelTeam.execute(realSpaceEnergyRegion);
+            lambdaPolarEnergy[2] += realSpaceEnergyRegion.getPolarizationEnergy();
+            realSpaceTime += System.nanoTime();
+        } catch (Exception e) {
+            String message = "Fatal exception computing the polarization energy.\n";
+            logger.log(Level.SEVERE, message, e);
+        }
+    }
+
     private double permanentSelfEnergy() {
         if (aewald <= 0.0) {
             return 0.0;
@@ -1809,7 +1753,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                 sharedTorque[1].addAndGet(i, ELECTRIC * tqy);
                 sharedTorque[2].addAndGet(i, ELECTRIC * tqz);
             }
-            if (lambdaGradient) {
+            if (computeLambdaGradient) {
                 final double dPhi[] = lambdaMultipolePhi[i];
                 dUdL += mpole[t000] * dPhi[t000] + mpole[t100] * dPhi[t100]
                         + mpole[t010] * dPhi[t010] + mpole[t001] * dPhi[t001]
@@ -1869,7 +1813,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                 shareddEdLTorque[2].addAndGet(i, ELECTRIC * tqz);
             }
         }
-        if (lambdaGradient) {
+        if (computeLambdaGradient) {
             shareddEdLambda.addAndGet(0.5 * dUdL * ELECTRIC);
             sharedd2EdLambda2.addAndGet(0.5 * d2UdL2 * ELECTRIC);
         }
@@ -1894,7 +1838,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                 e += term * dii;
             }
         }
-        if (lambdaGradient) {
+        if (computeLambdaGradient) {
             shareddEdLambda.addAndGet(dEdLSign * dlPowPol * e);
             sharedd2EdLambda2.addAndGet(dEdLSign * d2lPowPol * e);
         }
@@ -1917,7 +1861,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                     sharedTorque[0].addAndGet(i, polarizationScale * tix);
                     sharedTorque[1].addAndGet(i, polarizationScale * tiy);
                     sharedTorque[2].addAndGet(i, polarizationScale * tiz);
-                    if (lambdaGradient) {
+                    if (computeLambdaGradient) {
                         shareddEdLTorque[0].addAndGet(i, dEdLSign * dlPowPol * tix);
                         shareddEdLTorque[1].addAndGet(i, dEdLSign * dlPowPol * tiy);
                         shareddEdLTorque[2].addAndGet(i, dEdLSign * dlPowPol * tiz);
@@ -2031,7 +1975,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                     sharedTorque[0].addAndGet(i, polarizationScale * tqx);
                     sharedTorque[1].addAndGet(i, polarizationScale * tqy);
                     sharedTorque[2].addAndGet(i, polarizationScale * tqz);
-                    if (lambdaGradient) {
+                    if (computeLambdaGradient) {
                         shareddEdLdX[0].addAndGet(i, dEdLSign * dlPowPol * dfx);
                         shareddEdLdX[1].addAndGet(i, dEdLSign * dlPowPol * dfy);
                         shareddEdLdX[2].addAndGet(i, dEdLSign * dlPowPol * dfz);
@@ -2043,7 +1987,7 @@ public class ParticleMeshEwald implements LambdaInterface {
             }
         }
         e *= 0.5 * ELECTRIC;
-        if (lambdaGradient) {
+        if (computeLambdaGradient) {
             shareddEdLambda.addAndGet(dEdLSign * dlPowPol * e);
             sharedd2EdLambda2.addAndGet(dEdLSign * d2lPowPol * e);
         }
@@ -3206,7 +3150,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                         tz_local[j] = 0.0;
                     }
                 }
-                if (lambdaGradient) {
+                if (computeLambdaGradient) {
                     dUdL = 0.0;
                     d2UdL2 = 0.0;
                     for (int j = 0; j < nAtoms; j++) {
@@ -3237,7 +3181,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                             tzk_local[j] = 0.0;
                         }
                     }
-                    if (lambdaGradient) {
+                    if (computeLambdaGradient) {
                         for (int j = 0; j < nAtoms; j++) {
                             lxk_local[j] = 0.0;
                             lyk_local[j] = 0.0;
@@ -3265,7 +3209,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                             gz_local[j] += gzk_local[j];
                         }
                     }
-                    if (lambdaGradient) {
+                    if (computeLambdaGradient) {
                         // Turn symmetry mate torques into gradients
                         torque(iSymm, ltxk_local, ltyk_local, ltzk_local,
                                lxk_local, lyk_local, lzk_local,
@@ -3312,7 +3256,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                     sharedTorque[1].reduce(ty_local, DoubleOp.SUM);
                     sharedTorque[2].reduce(tz_local, DoubleOp.SUM);
                 }
-                if (lambdaGradient) {
+                if (computeLambdaGradient) {
                     shareddEdLambda.addAndGet(dUdL * ELECTRIC);
                     sharedd2EdLambda2.addAndGet(d2UdL2 * ELECTRIC);
                     for (int j = 0; j < nAtoms; j++) {
@@ -3535,7 +3479,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                             permanentEnergy += permanentPair();
                             count++;
                         }
-                        if (polarization != Polarization.NONE) {
+                        if (polarization != Polarization.NONE && doPolarization) {
                             /**
                              * Polarization does not use the softcore tensors.
                              */
@@ -3729,7 +3673,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                 final double efix = gl0 * rr1 + (gl1 + gl6) * rr3 + (gl2 + gl7 + gl8) * rr5 + (gl3 + gl5) * rr7 + gl4 * rr9;
                 final double scale1 = 1.0 - scale;
                 final double e = selfScale * l2 * (ereal - efix * scale1);
-                if (!(gradient || (soft && lambdaGradient))) {
+                if (!(gradient || (soft && computeLambdaGradient))) {
                     return e;
                 }
                 if (gradient) {
@@ -3807,7 +3751,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                      * This is dU/dL/dX for the first term of dU/dL:
                      * d[dfL2dL * ereal]/dx
                      */
-                    if (lambdaGradient && soft) {
+                    if (computeLambdaGradient && soft) {
                         lx_local[i] += selfScale * dlPowPerm * ftm2x;
                         ly_local[i] += selfScale * dlPowPerm * ftm2y;
                         lz_local[i] += selfScale * dlPowPerm * ftm2z;
@@ -3822,7 +3766,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                         ltzk_local[k] += selfScale * dlPowPerm * ttm3z;
                     }
                 }
-                if (lambdaGradient && soft) {
+                if (computeLambdaGradient && soft) {
                     double dRealdL = gl0 * bn1 + (gl1 + gl6) * bn2 + (gl2 + gl7 + gl8) * bn3 + (gl3 + gl5) * bn4 + gl4 * bn5;
                     double d2RealdL2 = gl0 * bn2 + (gl1 + gl6) * bn3 + (gl2 + gl7 + gl8) * bn4 + (gl3 + gl5) * bn5 + gl4 * bn6;
                     dUdL += selfScale * (dlPowPerm * ereal + lPowPerm * dlAlpha * dRealdL);
@@ -4018,7 +3962,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                 final double ereal = (gli1 + gli6) * bn1 + (gli2 + gli7) * bn2 + gli3 * bn3;
                 final double efix = (gli1 + gli6) * rr3 * psc3 + (gli2 + gli7) * rr5 * psc5 + gli3 * rr7 * psc7;
                 final double e = selfScale * 0.5 * (ereal - efix);
-                if (!(gradient || lambdaGradient)) {
+                if (!(gradient || computeLambdaGradient)) {
                     return polarizationScale * e;
                 }
                 boolean dorli = false;
@@ -4149,7 +4093,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                 txk_local[k] += polarizationScale * selfScale * ttm3ix;
                 tyk_local[k] += polarizationScale * selfScale * ttm3iy;
                 tzk_local[k] += polarizationScale * selfScale * ttm3iz;
-                if (lambdaGradient) {
+                if (computeLambdaGradient) {
                     dUdL += dEdLSign * dlPowPol * e;
                     d2UdL2 += dEdLSign * d2lPowPol * e;
                     lx_local[i] += dEdLSign * dlPowPol * selfScale * ftm2ix;
@@ -4579,7 +4523,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                     if (gradient) {
                         torque(i, sharedTorque, sharedGrad);
                     }
-                    if (lambdaGradient) {
+                    if (computeLambdaGradient) {
                         torque(i, shareddEdLTorque, shareddEdLdX);
                     }
                 }
@@ -5459,6 +5403,120 @@ public class ParticleMeshEwald implements LambdaInterface {
                     String message = "Fatal exception: Unknown frame definition: " + frame[i] + "\n";
                     logger.log(Level.SEVERE, message);
             }
+        }
+    }
+
+    /**
+     * Set the electrostatic lambda scaling factor.
+     *
+     * @param lambda Must satisfy greater than or equal to 0.0 and less than or
+     *      equal to 1.0.
+     */
+    @Override
+    public void setLambda(double lambda) {
+        assert (lambda >= 0.0 && lambda <= 1.0);
+        this.lambda = lambda;
+
+        lAlpha = permanentLambdaAlpha * (1.0 - lambda) * (1.0 - lambda);
+        /**
+         * f = sqrt(r^2 + lAlpha)
+         * df/dL = alpha * (lambda - 1.0) / f
+         * df/dL = -dlAlpha / f
+         */
+        dlAlpha = permanentLambdaAlpha * (1.0 - lambda);
+        d2lAlpha = -permanentLambdaAlpha;
+
+        lPowPerm = pow(lambda, permanentLambdaExponent);
+        dlPowPerm = permanentLambdaExponent * pow(lambda, permanentLambdaExponent - 1.0);
+        if (permanentLambdaExponent >= 2.0) {
+            d2lPowPerm = permanentLambdaExponent * (permanentLambdaExponent - 1.0) * pow(lambda, permanentLambdaExponent - 2.0);
+        } else {
+            d2lPowPerm = 0.0;
+        }
+
+        /**
+         * Polarization is turned on from polarizationLambdaStart .. 1.0.
+         */
+        if (lambda >= polarizationLambdaStart) {
+            double polarizationLambdaScale = 1.0 / (1.0 - polarizationLambdaStart);
+            polarizationLambda = polarizationLambdaScale * (lambda - polarizationLambdaStart);
+            lPowPol = pow(polarizationLambda, polarizationLambdaExponent);
+            dlPowPol = polarizationLambdaExponent * pow(polarizationLambda, polarizationLambdaExponent - 1.0);
+            if (polarizationLambdaExponent >= 2.0) {
+                d2lPowPol = polarizationLambdaExponent * (polarizationLambdaExponent - 1.0) * pow(polarizationLambda, polarizationLambdaExponent - 2.0);
+            } else {
+                d2lPowPol = 0.0;
+            }
+
+            /**
+             * Add the chain rule term due to shrinking the lambda range 
+             * for the polarization energy. 
+             */
+            dlPowPol *= polarizationLambdaScale;
+            d2lPowPol *= (polarizationLambdaScale * polarizationLambdaScale);
+        } else {
+            lPowPol = 0.0;
+            dlPowPol = 0.0;
+            d2lPowPol = 0.0;
+        }
+
+        /**
+         * Set up the lambda.
+         */
+        boolean softAtoms = false;
+        for (int i = 0; i < nAtoms; i++) {
+            isSoft[i] = atoms[i].applyLambda();
+            if (isSoft[i]) {
+                softAtoms = true;
+                // Outer loop atom hard, inner loop atom soft.
+                softCore[0][i] = true;
+                // Both soft - full interaction.
+                softCore[1][i] = false;
+            } else {
+                // Both hard - full interaction.
+                softCore[0][i] = false;
+                // Outer loop atom soft, inner loop atom hard.
+                softCore[1][i] = true;
+            }
+        }
+        if (!softAtoms) {
+            logger.warning(" No atoms are selected for soft core electrostatics.\n");
+        }
+    }
+
+    /**
+     * Get the current lambda scale value.
+     * @return lambda
+     */
+    @Override
+    public double getLambda() {
+        return lambda;
+    }
+
+    @Override
+    public void computeLambdaGradient(boolean computeLambdaGradient) {
+        if (lambdaTerm) {
+            this.computeLambdaGradient = computeLambdaGradient;
+        }
+    }
+
+    @Override
+    public double getdEdL() {
+        return shareddEdLambda.get();
+    }
+
+    @Override
+    public double getd2EdL2() {
+        return sharedd2EdLambda2.get();
+    }
+
+    @Override
+    public void getdEdXdL(double[] gradient) {
+        int index = 0;
+        for (int i = 0; i < nAtoms; i++) {
+            gradient[index++] += shareddEdLdX[0].get(i);
+            gradient[index++] += shareddEdLdX[1].get(i);
+            gradient[index++] += shareddEdLdX[2].get(i);
         }
     }
     /**

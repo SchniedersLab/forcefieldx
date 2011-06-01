@@ -574,12 +574,12 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             dEdLambda = 0.0;
             d2EdLambda2 = 0.0;
             if (vanderWaalsTerm) {
-                dEdLambda = vanderWaals.getdEdLambda();
-                d2EdLambda2 = vanderWaals.getd2EdLambda2();
+                dEdLambda = vanderWaals.getdEdL();
+                d2EdLambda2 = vanderWaals.getd2EdL2();
             }
             if (multipoleTerm) {
-                dEdLambda += particleMeshEwald.getdEdLambda();
-                d2EdLambda2 += particleMeshEwald.getd2EdLambda2();
+                dEdLambda += particleMeshEwald.getdEdL();
+                d2EdLambda2 += particleMeshEwald.getd2EdL2();
             }
 
             checkRecursionKernelSize();
@@ -654,7 +654,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             for (int i = 0; i < 3 * nAtoms; i++) {
                 dUdXdL[i] = 0.0;
             }
-            getdEdLambdaGradient(dUdXdL);
+            getdEdXdL(dUdXdL);
             double grad[] = new double[3];
             for (int i = 0; i < nAtoms; i++) {
                 Atom atom = atoms[i];
@@ -1237,18 +1237,18 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
 
     @Override
-    public double getdEdLambda() {
+    public double getdEdL() {
         return dEdLambda;
     }
 
     @Override
-    public void lambdaGradient(boolean lambdaGradient) {
+    public void computeLambdaGradient(boolean lambdaGradient) {
         this.lambdaGradient = lambdaGradient;
         if (vanderWaalsTerm) {
-            vanderWaals.lambdaGradient(lambdaGradient);
+            vanderWaals.computeLambdaGradient(lambdaGradient);
         }
         if (multipoleTerm) {
-            particleMeshEwald.lambdaGradient(lambdaGradient);
+            particleMeshEwald.computeLambdaGradient(lambdaGradient);
         }
         energyCount = 0;
         if (recursionKernel == null) {
@@ -1267,13 +1267,13 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
 
     @Override
-    public void getdEdLambdaGradient(double gradients[]) {
+    public void getdEdXdL(double gradients[]) {
         if (multipoleTerm) {
-            particleMeshEwald.getdEdLambdaGradient(gradients);
+            particleMeshEwald.getdEdXdL(gradients);
 
         }
         if (vanderWaalsTerm) {
-            vanderWaals.getdEdLambdaGradient(gradients);
+            vanderWaals.getdEdXdL(gradients);
         }
     }
 
@@ -1283,7 +1283,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
 
     @Override
-    public double getd2EdLambda2() {
+    public double getd2EdL2() {
         return d2EdLambda2;
     }
 }

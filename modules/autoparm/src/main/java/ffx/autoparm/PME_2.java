@@ -613,22 +613,22 @@ public class PME_2 implements LambdaInterface, Potential {
     }
 
     @Override
-    public void lambdaGradient(boolean lambdaGradient) {
+    public void computeLambdaGradient(boolean lambdaGradient) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
-    public double getdEdLambda() {
+    public double getdEdL() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
-    public double getd2EdLambda2() {
+    public double getd2EdL2() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
-    public void getdEdLambdaGradient(double[] gradients) {
+    public void getdEdXdL(double[] gradients) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
