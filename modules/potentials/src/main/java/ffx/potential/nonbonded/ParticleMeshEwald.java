@@ -847,7 +847,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                  * the complete system is zero (ie. step 1 above).
                  */
                 doPolarization = false;
-            } else {
+            } else if (lambda <= polarizationLambdaEnd) {
                 polarizationScale = lPowPol;
                 dEdLSign = 1.0;
             }
