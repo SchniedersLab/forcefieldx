@@ -459,7 +459,7 @@ public class ParticleMeshEwald implements LambdaInterface {
         permanentLambdaExponent = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_EXPONENT, 2.0);
         polarizationLambdaExponent = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_EXPONENT, 3.0);
         polarizationLambdaStart = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_START, 0.5);
-        polarizationLambdaEnd = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_END, 0.7);
+        polarizationLambdaEnd = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_END, 1.0);
         
         if (permanentLambdaAlpha < 0.0 || permanentLambdaAlpha > 2.0) {
             permanentLambdaAlpha = 0.7;
@@ -473,7 +473,9 @@ public class ParticleMeshEwald implements LambdaInterface {
         if (polarizationLambdaStart < 0.0 || polarizationLambdaStart > 0.9) {
             polarizationLambdaStart = 0.5;
         }
-        if (polarizationLambdaEnd < polarizationLambdaStart || polarizationLambdaEnd > 1.0) {
+        if (polarizationLambdaEnd < polarizationLambdaStart 
+                || polarizationLambdaEnd > 1.0
+                || polarizationLambdaEnd - polarizationLambdaStart < 0.3) {
             polarizationLambdaEnd = 1.0;
         }
         
