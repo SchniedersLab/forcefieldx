@@ -244,8 +244,8 @@ public class PotentialEnergyTest {
 
         /*
         if (ci) {
-            testGradient();
-            testSoftCore();
+        testGradient();
+        testSoftCore();
         } */
     }
 

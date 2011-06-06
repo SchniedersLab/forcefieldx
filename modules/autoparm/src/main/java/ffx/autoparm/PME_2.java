@@ -555,7 +555,7 @@ public class PME_2 implements LambdaInterface, Potential {
                 bsplineTime += System.nanoTime();
 
                 densityTime = -System.nanoTime();
-                reciprocalSpace.computePermanentDensity(globalMultipole, null);
+                reciprocalSpace.splinePermanentMultipoles(globalMultipole, null);
                 densityTime += System.nanoTime();
 
                 /**
@@ -569,7 +569,7 @@ public class PME_2 implements LambdaInterface, Potential {
                 realAndFFTTime += System.nanoTime();
 
                 phiTime = -System.nanoTime();
-                reciprocalSpace.computePermanentPhi(cartesianMultipolePhi, false);
+                reciprocalSpace.computePermanentPhi(cartesianMultipolePhi);
                 phiTime += System.nanoTime();
             } catch (Exception e) {
                 String message = "Fatal exception computing the permanent multipole field.\n";
@@ -610,11 +610,6 @@ public class PME_2 implements LambdaInterface, Potential {
         for(int i = 0; i < scaling.length; i++){
         	scaling[i] = 1;
         }
-    }
-
-    @Override
-    public void computeLambdaGradient(boolean lambdaGradient) {
-        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
@@ -2470,7 +2465,7 @@ public class PME_2 implements LambdaInterface, Potential {
             bsplineTime += System.nanoTime();
 
             densityTime = -System.nanoTime();
-            reciprocalSpace.computePermanentDensity(globalMultipole, null);
+            reciprocalSpace.splinePermanentMultipoles(globalMultipole, null);
             densityTime += System.nanoTime();
             /**
              * Here the real space contribution to the field is calculated at
@@ -2483,7 +2478,7 @@ public class PME_2 implements LambdaInterface, Potential {
             realAndFFTTime += System.nanoTime();
 
             phiTime = -System.nanoTime();
-            reciprocalSpace.computePermanentPhi(cartesianMultipolePhi, false);
+            reciprocalSpace.computePermanentPhi(cartesianMultipolePhi);
             phiTime += System.nanoTime();
         } catch (Exception e) {
             String message = "Fatal exception computing the permanent multipole field.\n";
@@ -2694,7 +2689,7 @@ public class PME_2 implements LambdaInterface, Potential {
                  */
                 try {
                     densityTime -= System.nanoTime();
-                    reciprocalSpace.computeInducedDensity(inducedDipole, inducedDipolep, null);
+                    reciprocalSpace.splineInducedDipoles(inducedDipole, inducedDipolep, null);
                     densityTime += System.nanoTime();
 
                     realAndFFTTime -= System.nanoTime();
@@ -2898,7 +2893,7 @@ public class PME_2 implements LambdaInterface, Potential {
 
         @Override
         public void run() {
-            reciprocalSpace.computePermanentConvolution();
+            reciprocalSpace.permanentMultipoleConvolution();
         }
     }
 
@@ -2959,15 +2954,15 @@ public class PME_2 implements LambdaInterface, Potential {
 
         @Override
         public void run() {
-            reciprocalSpace.computeInducedConvolution();
+            reciprocalSpace.inducedDipoleConvolution();
         }
     }
 
     private double permanentReciprocalSpaceEnergy(boolean gradient) {
         double erecip = 0.0;
         final double pole[][] = globalMultipole[0];
-        final double fpole[][] = reciprocalSpace.getFractionalMultipoles();
-        final double fractionalMultipolePhi[][] = reciprocalSpace.getFractionalMultipolePhi();
+        final double fpole[][] = reciprocalSpace.getFracMultipoles();
+        final double fractionalMultipolePhi[][] = reciprocalSpace.getFracMultipolePhi();
         final double nfftX = reciprocalSpace.getXDim();
         final double nfftY = reciprocalSpace.getYDim();
         final double nfftZ = reciprocalSpace.getZDim();
@@ -3052,7 +3047,7 @@ public class PME_2 implements LambdaInterface, Potential {
         double e = 0.0;
         if (gradient && polarization == Polarization.DIRECT) {
             try {
-                reciprocalSpace.computeInducedDensity(inducedDipole, inducedDipolep, null);
+                reciprocalSpace.splineInducedDipoles(inducedDipole, inducedDipolep, null);
                 sectionTeam.execute(inducedDipoleFieldRegion);
                 reciprocalSpace.computeInducedPhi(cartesianDipolePhi, cartesianDipolepPhi);
             } catch (Exception ex) {
@@ -3072,18 +3067,18 @@ public class PME_2 implements LambdaInterface, Potential {
                 fieldpi[2] -= phipi[t001];
             }
         } else {
-            reciprocalSpace.cartesianToFractionalDipoles(inducedDipole, inducedDipolep);
+            reciprocalSpace.cartToFracInducedDipoles(inducedDipole, inducedDipolep);
         }
         final double nfftX = reciprocalSpace.getXDim();
         final double nfftY = reciprocalSpace.getYDim();
         final double nfftZ = reciprocalSpace.getZDim();
         final double mpole[][] = globalMultipole[0];
-        final double fractionalMultipolePhi[][] = reciprocalSpace.getFractionalMultipolePhi();
-        final double fractionalInducedDipolePhi[][] = reciprocalSpace.getFractionalInducedDipolePhi();
-        final double fractionalInducedDipolepPhi[][] = reciprocalSpace.getFractionalInducedDipolepPhi();
-        final double fmpole[][] = reciprocalSpace.getFractionalMultipoles();
-        final double find[][] = reciprocalSpace.getFractionalInducedDipoles();
-        final double finp[][] = reciprocalSpace.getFractionalInducedDipolesp();
+        final double fractionalMultipolePhi[][] = reciprocalSpace.getFracMultipolePhi();
+        final double fractionalInducedDipolePhi[][] = reciprocalSpace.getFracInducedDipolePhi();
+        final double fractionalInducedDipolepPhi[][] = reciprocalSpace.getFracInducedDipoleCRPhi();
+        final double fmpole[][] = reciprocalSpace.getFracMultipoles();
+        final double find[][] = reciprocalSpace.getFracInducedDipoles();
+        final double finp[][] = reciprocalSpace.getFracInducedDipolesCR();
         for (int i = 0; i < nAtoms; i++) {
             final double fPhi[] = fractionalMultipolePhi[i];
             final double findi[] = find[i];

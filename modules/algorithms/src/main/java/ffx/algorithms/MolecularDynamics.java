@@ -171,9 +171,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
     public void doLambdaDynamics(boolean lambdaDynamics) {
         doLambdaDynamics = lambdaDynamics;
-        if (lambdaInterface != null) {
-            lambdaInterface.computeLambdaGradient(lambdaDynamics);
-        }
     }
 
     public void setArchiveFile(File archive) {

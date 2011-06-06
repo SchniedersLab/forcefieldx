@@ -21,6 +21,7 @@
 package ffx.potential;
 
 import static java.lang.Math.exp;
+import static java.lang.Math.floor;
 import static java.lang.Math.max;
 import static java.lang.Math.sqrt;
 import static java.lang.String.format;
@@ -96,7 +97,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     protected final boolean multipoleTerm;
     protected final boolean polarizationTerm;
     protected final boolean generalizedKirkwoodTerm;
-    protected boolean lambdaTerm;
+    protected final boolean stateTerm;
     protected double bondEnergy, bondRMSD;
     protected double angleEnergy, angleRMSD;
     protected double stretchBendEnergy;
@@ -124,21 +125,24 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
      * Orthogonal Space Random Walk
      */
     private double lambda;
-    private boolean lambdaGradient = false;
     private boolean doCounting = true;
     private int energyCount;
     /**
+     * Gas constant (in Kcal/mole/Kelvin).
+     */
+    public static final double R = 1.9872066e-3;
+    /**
      * The first Lambda bin is centered on 0.0 (-0.005 .. 0.005).
      * The final Lambda bin is centered on 1.0 ( 0.995 .. 1.005).
-     * 
+     *
      * With this scheme, the maximum of biasing Gaussians
-     * is at the edges. 
+     * is at the edges.
      */
     private int lambdaBins = 101;
     /**
      * It is useful to have an odd number of bins, so that there is
      * a bin from FL=-dFL/2 to dFL/2 so that as FL approaches zero its
-     * contribution to thermodynamic integration goes to zero. Otherwise 
+     * contribution to thermodynamic integration goes to zero. Otherwise
      * a contribution of zero from a L bin can only result from equal
      * sampling of the ranges -dFL to 0 and 0 to dFL.
      */
@@ -155,7 +159,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     private double dEdLambda = 0.0;
     private double d2EdLambda2 = 0.0;
     private double dUdXdL[] = null;
-    private double lambdaGaussianMag = 0.005;
+    private double biasGaussianMag = 0.005;
     private double FLambda[];
     private static final double toSeconds = 0.000000001;
 
@@ -181,8 +185,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         multipoleTerm = forceField.getBoolean(ForceFieldBoolean.MPOLETERM, true);
         polarizationTerm = forceField.getBoolean(ForceFieldBoolean.POLARIZETERM, true);
         generalizedKirkwoodTerm = forceField.getBoolean(ForceFieldBoolean.GKTERM, false);
-        lambdaTerm = forceField.getBoolean(ForceFieldBoolean.LAMBDATERM, false);
-        lambdaGaussianMag = forceField.getDouble(ForceFieldDouble.LAMBDA_GAUSSIAN_MAG, 0.005); 
+        stateTerm = forceField.getBoolean(ForceFieldBoolean.LAMBDATERM, false);
+        biasGaussianMag = forceField.getDouble(ForceFieldDouble.BIAS_GAUSSIAN_MAG, 0.005);
 
         // Define the cutoff lengths.
         double vdwOff = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, 9.0);
@@ -412,12 +416,24 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             particleMeshEwald = null;
         }
 
-        if (lambdaTerm) {
-            biasCutoff = forceField.getInteger(ForceFieldInteger.LAMBDA_BIAS_CUTOFF, 5);
+        if (stateTerm) {
+            biasCutoff = forceField.getInteger(ForceFieldInteger.STATE_BIAS_CUTOFF, 5);
+            energyCount = 0;
+            lambdaBins = 101;
+            FLambdaBins = 401;
+            dL = 0.01;
+            dL_2 = dL / 2.0;
+            dFL = 2.0;
+            dFL_2 = dFL / 2.0;
+            minLambda = -0.005;
+            minFLambda = -(dFL * FLambdaBins) / 2.0;
+            maxFLambda = minFLambda + FLambdaBins * dFL;
+            biasGaussianMag = 0.005;
+            recursionKernel = new int[lambdaBins][FLambdaBins];
+            FLambda = new double[lambdaBins];
+            dUdXdL = new double[nAtoms * 3];
         }
-
         molecularAssembly.setPotential(this);
-
     }
 
     public double energy(boolean gradient, boolean print) {
@@ -566,11 +582,11 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             electrostaticTime = System.nanoTime() - electrostaticTime;
         }
 
-        if (doCounting) {
-            energyCount++;
-        }
+        if (stateTerm) {
+            if (doCounting) {
+                energyCount++;
+            }
 
-        if (lambdaGradient) {
             dEdLambda = 0.0;
             d2EdLambda2 = 0.0;
             if (vanderWaalsTerm) {
@@ -584,35 +600,35 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
             checkRecursionKernelSize();
 
-            int lambdaBin = (int) Math.floor((lambda - minLambda) / dL);
-            if (lambdaBin < 0) {
-                lambdaBin = 0;
+            int stateBin = (int) floor((lambda - minLambda) / dL);
+            if (stateBin < 0) {
+                stateBin = 0;
             }
-            if (lambdaBin >= lambdaBins) {
-                lambdaBin = lambdaBins - 1;
+            if (stateBin >= lambdaBins) {
+                stateBin = lambdaBins - 1;
             }
-            int FLambdaBin = (int) Math.floor((dEdLambda - minFLambda) / dFL);
-            if (FLambdaBin == FLambdaBins) {
-                FLambdaBin = FLambdaBins - 1;
+            int FStateBin = (int) floor((dEdLambda - minFLambda) / dFL);
+            if (FStateBin == FLambdaBins) {
+                FStateBin = FLambdaBins - 1;
             }
-            assert (FLambdaBin < FLambdaBins);
-            assert (FLambdaBin >= 0);
+            assert (FStateBin < FLambdaBins);
+            assert (FStateBin >= 0);
 
             /**
              * Calculate recursion kernel G(L, dEdL) and gradient.
              */
-            double dGdLambda = 0.0;
-            double dGdFLambda = 0.0;
-            double lambdas2 = 2.0 / lambdaBins * 2.0 / lambdaBins;
-            double FLambdas2 = dFL * 2.0 * dFL * 2.0;
+            double dGdState = 0.0;
+            double dGdFState = 0.0;
+            double ls2 = 2.0 / lambdaBins * 2.0 / lambdaBins;
+            double FLs2 = dFL * 2.0 * dFL * 2.0;
             for (int iL = -biasCutoff; iL <= biasCutoff; iL++) {
-                int lcenter = lambdaBin + iL;
+                int lcenter = stateBin + iL;
                 double deltaL = lambda - (lcenter * dL);
                 double deltaL2 = deltaL * deltaL;
                 // Mirror conditions for recursion kernel counts.
                 int lcount = lcenter;
                 double mirrorFactor = 1.0;
-                if (lcount == 0 || lcount ==  lambdaBins -1  ){
+                if (lcount == 0 || lcount == lambdaBins - 1) {
                     mirrorFactor = 2.0;
                 } else if (lcount < 0) {
                     lcount = -lcount;
@@ -623,10 +639,10 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     lcount = lambdaBins - 1 - lcount;
                 }
                 for (int iFL = -biasCutoff; iFL <= biasCutoff; iFL++) {
-                    int FLcenter = FLambdaBin + iFL;
+                    int FLcenter = FStateBin + iFL;
                     /**
-                     * If either of the following FL edge conditions are true, 
-                     * then there are no counts and we continue. 
+                     * If either of the following FL edge conditions are true,
+                     * then there are no counts and we continue.
                      */
                     if (FLcenter < 0 || FLcenter >= FLambdaBins) {
                         continue;
@@ -634,19 +650,19 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     double deltaFL = dEdLambda - (minFLambda + FLcenter * dFL + dFL_2);
                     double deltaFL2 = deltaFL * deltaFL;
                     double weight = mirrorFactor * recursionKernel[lcount][FLcenter];
-                    double e = weight * lambdaGaussianMag
-                               * exp(-deltaL2 / (2.0 * lambdas2))
-                               * exp(-deltaFL2 / (2.0 * FLambdas2));
+                    double e = weight * biasGaussianMag
+                               * exp(-deltaL2 / (2.0 * ls2))
+                               * exp(-deltaFL2 / (2.0 * FLs2));
                     biasEnergy += e;
-                    dGdLambda -= deltaL / lambdas2 * e;
-                    dGdFLambda -= deltaFL / FLambdas2 * e;
+                    dGdState -= deltaL / ls2 * e;
+                    dGdFState -= deltaFL / FLs2 * e;
                 }
             }
 
             /**
-             * L gradient due to recursion kernel G(L, dEdL).
+             * Lambda gradient due to recursion kernel G(L, dEdL).
              */
-            dEdLambda += dGdLambda + dGdFLambda * d2EdLambda2;
+            dEdLambda += dGdState + dGdFState * d2EdLambda2;
 
             /**
              * Atomic gradient due to recursion kernel G(L, dEdL).
@@ -659,15 +675,16 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             for (int i = 0; i < nAtoms; i++) {
                 Atom atom = atoms[i];
                 atom.getXYZGradient(grad);
-                grad[0] += dGdFLambda * dUdXdL[i * 3];
-                grad[1] += dGdFLambda * dUdXdL[i * 3 + 1];
-                grad[2] += dGdFLambda * dUdXdL[i * 3 + 2];
+                grad[0] += dGdFState * dUdXdL[i * 3];
+                grad[1] += dGdFState * dUdXdL[i * 3 + 1];
+                grad[2] += dGdFState * dUdXdL[i * 3 + 2];
                 atom.setXYZGradient(grad[0], grad[1], grad[2]);
             }
 
+
             // Update free energy F(L) every ~100 steps.
             if (energyCount % 100 == 0 && doCounting) {
-                updateF_Lambda(true);
+                updateF_State(true);
             }
 
             /**
@@ -680,12 +697,12 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
              * Log our current state.
              */
             logger.info(String.format(" Lambda %8.6f, Bin %d, G %10.4f, dE/dLambda %10.4f",
-                                      lambda, lambdaBin, biasEnergy, dEdLambda));
+                                      lambda, stateBin, biasEnergy, dEdLambda));
             /**
              * Meta-dynamics grid counts (every ~10 steps).
              */
             if (energyCount % 10 == 0 && doCounting) {
-                recursionKernel[lambdaBin][FLambdaBin]++;
+                recursionKernel[stateBin][FStateBin]++;
             }
         }
 
@@ -707,12 +724,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
         return totalEnergy;
     }
-    /**
-     * Gas constant (in Kcal/mole/Kelvin).
-     */
-    public static final double R = 1.9872066e-3;
 
-    public void doLambdaCounting(boolean doCounting) {
+    public void doEnergyCounting(boolean doCounting) {
         this.doCounting = doCounting;
     }
 
@@ -724,13 +737,13 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             logger.info(String.format("Current F_lambda %8.2f > maximum historgram size %8.2f.",
                                       dEdLambda, maxFLambda));
 
-            double origDeltaG = updateF_Lambda(false);
+            double origDeltaG = updateF_State(false);
 
-            int newFLambdaBins = FLambdaBins;
-            while (minFLambda + newFLambdaBins * dFL < dEdLambda) {
-                newFLambdaBins += 100;
+            int newFStateBins = FLambdaBins;
+            while (minFLambda + newFStateBins * dFL < dEdLambda) {
+                newFStateBins += 100;
             }
-            int newRecursionKernel[][] = new int[lambdaBins][newFLambdaBins];
+            int newRecursionKernel[][] = new int[lambdaBins][newFStateBins];
             /**
              * We have added bins above the indeces of the current counts
              * just copy them into the new array.
@@ -741,12 +754,12 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 }
             }
             recursionKernel = newRecursionKernel;
-            FLambdaBins = newFLambdaBins;
+            FLambdaBins = newFStateBins;
             maxFLambda = minFLambda + dFL * FLambdaBins;
             logger.info(String.format("New historgram %8.2f to %8.2f with %d bins.\n",
                                       minFLambda, maxFLambda, FLambdaBins));
 
-            assert (origDeltaG == updateF_Lambda(false));
+            assert (origDeltaG == updateF_State(false));
 
         }
         if (dEdLambda < minFLambda) {
@@ -756,12 +769,12 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             while (dEdLambda < minFLambda - offset * dFL) {
                 offset += 100;
             }
-            int newFLambdaBins = FLambdaBins + offset;
-            int newRecursionKernel[][] = new int[lambdaBins][newFLambdaBins];
+            int newFStateBins = FLambdaBins + offset;
+            int newRecursionKernel[][] = new int[lambdaBins][newFStateBins];
             /**
              * We have added bins below the current counts,
-             * so their indeces must be increased by: 
-             * offset = newFLBins - FLBins 
+             * so their indeces must be increased by:
+             * offset = newFLBins - FLBins
              */
             for (int i = 0; i < lambdaBins; i++) {
                 for (int j = 0; j < FLambdaBins; j++) {
@@ -770,13 +783,13 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             }
             recursionKernel = newRecursionKernel;
             minFLambda = minFLambda - offset * dFL;
-            FLambdaBins = newFLambdaBins;
+            FLambdaBins = newFStateBins;
             logger.info(String.format("New historgram %8.2f to %8.2f with %d bins.\n",
                                       minFLambda, maxFLambda, FLambdaBins));
         }
     }
 
-    private double updateF_Lambda(boolean print) {
+    private double updateF_State(boolean print) {
         double freeEnergy = 0.0;
         if (print) {
             logger.info(" Count  Lambda Bin      F_Lambda Bin   <  F_L  >     dG");
@@ -800,7 +813,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     break;
                 }
             }
-            
+
             int lambdaCount = 0;
             // The FL range that has been sampled for iL*dL to (iL+1)*dL
             double lla = minFLambda + llFL * dFL;
@@ -821,14 +834,14 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 }
                 FLambda[iL] = sumFLambda / partitionFunction;
             }
-            
+
             // The first and last bins are half size.
             double delta = dL;
-            if (iL == 0 || iL == lambdaBins-1) {
+            if (iL == 0 || iL == lambdaBins - 1) {
                 delta *= 0.5;
             }
             freeEnergy += FLambda[iL] * delta;
-            
+
             if (print) {
                 double llL = iL * dL - dL_2;
                 double ulL = llL + dL;
@@ -838,7 +851,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 if (ulL > 1.0) {
                     ulL = 1.0;
                 }
-                
+
                 if (lambdaBins <= 100) {
                     logger.info(String.format(" %5d [%4.2f %4.2f] [%7.1f %7.1f] <%8.3f> %8.3f",
                                               lambdaCount, llL, ulL, lla, ula,
@@ -857,8 +870,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         for (int iL0 = 0; iL0 < lambdaBins - 1; iL0++) {
             int iL1 = iL0 + 1;
             /**
-             * Find bin centers and values for 
-             * interpolation / extrapolation points. 
+             * Find bin centers and values for
+             * interpolation / extrapolation points.
              */
             double L0 = iL0 * dL;
             double L1 = L0 + dL;
@@ -876,14 +889,14 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 L1 = lambda;
             }
             /**
-             * Upper limit - lower limit of the integral of the 
+             * Upper limit - lower limit of the integral of the
              * extrapolation / interpolation.
              */
             biasEnergy += (FL0 * L1 + deltaFL * L1 * (0.5 * L1 - L0) / dL);
             biasEnergy -= (FL0 * L0 + deltaFL * L0 * (-0.5 * L0) / dL);
             if (done) {
                 /**
-                 * Compute the gradient d F(L) / dL at L.  
+                 * Compute the gradient d F(L) / dL at L.
                  */
                 dEdLambda += FL0 + (L1 - L0) * deltaFL / dL;
                 return;
@@ -914,7 +927,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             double mirrorFactor = 1.0;
             if (lcount == 0 || lcount == lambdaBins - 1) {
                 /**
-                 * The width of the first and last bins is dLambda_2, 
+                 * The width of the first and last bins is dLambda_2,
                  * so the mirror condition is to double their counts.
                  */
                 mirrorFactor = 2.0;
@@ -940,7 +953,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 double deltaFL2 = deltaFL * deltaFL;
                 double weight = mirrorFactor * recursionKernel[lcount][FLcenter];
                 if (weight > 0) {
-                    double e = weight * lambdaGaussianMag * exp(-deltaL2 / (2.0 * Ls2))
+                    double e = weight * biasGaussianMag * exp(-deltaL2 / (2.0 * Ls2))
                                * exp(-deltaFL2 / (2.0 * FLs2));
                     sum += e;
                 }
@@ -1085,13 +1098,14 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                                     "Solvation         ", solvationEnergy, nGK));
         }
 
-        if (lambdaTerm) {
+        if (stateTerm) {
             sb.append(String.format(" %s %16.8f\n",
-                                    "Recursion Kernel  ", biasEnergy));
+                                    "Bias Energy       ", biasEnergy));
         }
 
         sb.append(String.format("\n %s %16.8f  %s %12.3f (sec)\n",
                                 "Total Potential   ", totalEnergy, "(Kcal/mole)", totalTime * toSeconds));
+
         int nsymm = crystal.getUnitCell().spaceGroup.getNumberOfSymOps();
         if (nsymm > 1) {
             sb.append(String.format(" %s %16.8f\n", "Unit Cell         ",
@@ -1242,35 +1256,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
 
     @Override
-    public void computeLambdaGradient(boolean lambdaGradient) {
-        this.lambdaGradient = lambdaGradient;
-        if (vanderWaalsTerm) {
-            vanderWaals.computeLambdaGradient(lambdaGradient);
-        }
-        if (multipoleTerm) {
-            particleMeshEwald.computeLambdaGradient(lambdaGradient);
-        }
-        energyCount = 0;
-        if (recursionKernel == null) {
-            /**
-             * Start with a 401 bins
-             */
-            FLambdaBins = 401;
-            minFLambda = -dFL * FLambdaBins / 2.0;
-            maxFLambda = minFLambda + FLambdaBins * dFL;
-            recursionKernel = new int[lambdaBins][FLambdaBins];
-            FLambda = new double[lambdaBins];
-        }
-        if (dUdXdL == null) {
-            dUdXdL = new double[nAtoms * 3];
-        }
-    }
-
-    @Override
     public void getdEdXdL(double gradients[]) {
         if (multipoleTerm) {
             particleMeshEwald.getdEdXdL(gradients);
-
         }
         if (vanderWaalsTerm) {
             vanderWaals.getdEdXdL(gradients);

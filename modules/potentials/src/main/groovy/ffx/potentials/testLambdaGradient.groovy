@@ -34,9 +34,15 @@ if (args.size() > 3) {
 
 println("\n Testing lambda gradient for " + filename);
 
+System.setProperty("lambdaterm","true");
+
 open(filename);
 
 ForceFieldEnergy energy = active.getPotentialEnergy();
+
+// Do not count energy evaluations.
+energy.doEnergyCounting(false);
+
 Atom[] atoms = active.getAtomArray();
 int n = atoms.length;
 
@@ -50,58 +56,66 @@ for (int i = ligandStart; i <= ligandStop; i++) {
 double lambda = 1.0;
 energy.setLambda(lambda);
 double e1 = energy.energy(false, true);
-println(String.format(" E(Lambda=1.0) : %20.8f.", e1));
+println(String.format(" E(1):      %20.8f.", e1));
 
 // Compute the Lambda = 0.0 energy.
 lambda = 0.0;
 energy.setLambda(lambda);
 double e0 = energy.energy(false, true);
-println(String.format(" E(Lambda=0.0) : %20.8f.", e0));
+println(String.format(" E(0):      %20.8f.", e0));
 println(String.format(" E(1)-E(0): %20.8f.", e1-e0));
 
+// Finite-difference step size.
+double step = 1.0e-5;
+   
 // Test Lambda gradient in the neighborhood of the lambda variable.
 for (int j=0; j<3; j++) {
    lambda = initialLambda - 0.01 + 0.01 * j;
+
+   if (lambda - step < 0.0) {
+       continue;
+   }
+   if (lambda + step > 1.0) {
+       continue;
+   }
+   
    energy.setLambda(lambda);
-   // Turn on calculation of dE/dLambda, d2E/dLambda2 and dE/dLambda/dX.
-   energy.lambdaGradient(true);
 
    // Calculate the energy, dE/dX, dE/dLambda, d2E/dLambda2 and dE/dLambda/dX
    double e = energy.energy(true, false);
 
    // Analytic dEdLambda and d2E/dLambda2
-   double dEdLambda = energy.getdEdLambda();
-   double dE2dLambda2 = energy.getd2EdLambda2();
+   double dEdLambda = energy.getdEdL();
+   double dE2dLambda2 = energy.getd2EdL2();
 
    // Analytic dEdLambdadX
    double[] dEdLdX = new double[n * 3];
-   energy.getdEdLambdaGradient(dEdLdX);
+   energy.getdEdXdL(dEdLdX);
 
    // Calculate the finite-difference dEdLambda, d2EdLambda2 and dEdLambdadX
-   double step = 1.0e-5;
    double[][] dedx = new double[2][n * 3];
 
    energy.setLambda(lambda + step);
    double lp = energy.energy(true, false);
-   double dedlp = energy.getdEdLambda();
+   double dedlp = energy.getdEdL();
    energy.getGradients(dedx[0]);
 
    energy.setLambda(lambda - step);
    double lm = energy.energy(true, false);
-   double dedlm = energy.getdEdLambda()
+   double dedlm = energy.getdEdL();
    energy.getGradients(dedx[1]);
 
    double dedl = (lp - lm) / (2.0 * step);
    double d2edl2 = (dedlp - dedlm) / (2.0 * step);
 
-   println(String.format(" Analytic dE/dLambda:   %15.8f", dEdLambda));
-   println(String.format(" Numeric  dE/dLambda:   %15.8f\n", dedl));
+   println(String.format(" Analytic dE/dL:   %15.8f", dEdLambda));
+   println(String.format(" Numeric  dE/dL:   %15.8f\n", dedl));
 
-   println(String.format(" Analytic d2E/dLambda2: %15.8f", dE2dLambda2));
-   println(String.format(" Numeric  d2E/dLambda2: %15.8f\n", d2edl2));
+   println(String.format(" Analytic d2E/dL2: %15.8f", dE2dLambda2));
+   println(String.format(" Numeric  d2E/dL2: %15.8f\n", d2edl2));
 
    for (int i = ligandStart - 1; i < ligandStop; i++) {
-       println(" dE/dX/dLambda for Ligand Atom " + (i + 1));
+       println(" dE/dX/dL for Ligand Atom " + (i + 1));
        int index = i * 3;
        double dX = (dedx[0][index] - dedx[1][index]) / (2.0 * step);
        index++;

@@ -252,7 +252,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     private Atom[] multipoleReferenceSites = null;
     private double globalDipole[] = null;
     private double globalQuadrupole[][] = null;
-    private boolean applyLambda = false;
+    private boolean applyState = false;
     // solvation
     private double bornRadius;
     // Connectivity information.
@@ -534,11 +534,11 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     public boolean applyLambda() {
-        return applyLambda;
+        return applyState;
     }
 
-    public void setApplyLambda(boolean applyLambda) {
-        this.applyLambda = applyLambda;
+    public void setApplyLambda(boolean applyState) {
+        this.applyState = applyState;
     }
 
     public void getForce(double[] t) {
@@ -550,16 +550,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
         t[2] = xyzGradient[2];
     }
 
-    public double getGPol() {
-        return 2.0;
-    }
-
-    /**
-     * Gets the energy gradient
-     *
-     * @return energy gradient
-     */
-    // public Vector3d getGradient(){ return new Vector3d(gradient); }
     /**
      * Gets the Atomic Hybridization
      *

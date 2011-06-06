@@ -22,12 +22,6 @@ package ffx.potential.nonbonded;
 
 import static java.lang.Math.*;
 import static java.lang.String.format;
-
-import static ffx.crystal.Crystal.mod;
-import static ffx.numerics.UniformBSpline.*;
-import static ffx.numerics.fft.Complex3D.iComplex3D;
-import static ffx.potential.parameters.MultipoleType.*;
-
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -37,8 +31,11 @@ import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
 
 import ffx.crystal.Crystal;
+import static ffx.crystal.Crystal.mod;
 import ffx.numerics.TensorRecursion;
+import static ffx.numerics.UniformBSpline.*;
 import ffx.numerics.fft.Complex;
+import static ffx.numerics.fft.Complex3D.iComplex3D;
 import ffx.numerics.fft.Complex3DCuda;
 import ffx.numerics.fft.Complex3DParallel;
 import ffx.numerics.fft.Real3DParallel;
@@ -46,6 +43,7 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.ForceField.ForceFieldInteger;
+import static ffx.potential.parameters.MultipoleType.*;
 
 /**
  * The Reciprocal Space class computes the reciprocal space contribution to
@@ -74,39 +72,51 @@ import ffx.potential.parameters.ForceField.ForceFieldInteger;
 public class ReciprocalSpace {
 
     private static final Logger logger = Logger.getLogger(ReciprocalSpace.class.getName());
-    private final Atom atoms[];
-    private final int nAtoms;
-    private final double coordinates[][][];
     private final Crystal crystal;
+    private final int nAtoms;
     private final int nSymm;
-    private final double fractionalMultipole[][][];
-    private final double fractionalDipole[][][];
-    private final double fractionalDipolep[][][];
-    private final double fractionalMultipolePhi[][];
-    private final double fractionalLambdaPhi[][];
-    private final double fractionalInducedDipolePhi[][];
-    private final double fractionalInducedDipolepPhi[][];
-    private final int fftX, fftY, fftZ;
-    private final int complexFFT3DSpace;
-    private final double aewald;
+    private final int threadCount;
     private final int bSplineOrder;
     private final int derivOrder = 3;
-    private final double densityGrid[];
-    private final float floatGrid[];
-    private final float floatRecip[];
+    private int fftX, fftY, fftZ;
+    private int complexFFT3DSpace;
+    private final double aEwald;
+    /**
+     * Reference to atomic coordinate array.
+     */
+    private final double coordinates[][][];
+    /**
+     * Reciprocal space grid.
+     */
+    private final double splineGrid[];
+    /**
+     * Fractional multipole array.
+     */
+    private final double fracMultipole[][][];
+    private final double fracMultipolePhi[][];
+    private final double fracInducedDipole[][][];
+    private final double fracInducedDipolePhi[][];
+    private final double fracInducedDipoleCR[][][];
+    private final double fracInducedDipolePhiCR[][];
+    /**
+     * Parallel objects.
+     */
     private final ParallelTeam parallelTeam;
-    private final int threadCount;
     private final BSplineRegion bSplineRegion;
     private final SpatialDensityRegion spatialDensityRegion;
-    private final PermanentDensityLoop permanentDensityLoops[];
-    private final PolarizationDensityLoop polarizationDensityLoops[];
+    private final SplinePermanentLoop permanentDensityLoops[];
     private final PermanentPhiRegion permanentPhi;
-    private final PolarizationPhiRegion polarizationPhi;
-    private final ParallelTeam fftTeam;
+    private final SplineInducedLoop polarizationDensityLoops[];
+    private final InducedPhiRegion polarizationPhi;
     private final Complex3DParallel complexFFT3D;
+    /**
+     * CUDA convolution variables.
+     */
     private final boolean cudaFFT;
     private final Thread cudaThread;
     private final Complex3DCuda cudaFFT3D;
+    private final float floatGrid[];
+    private final float floatRecip[];
 
     /**
      * Reciprocal Space PME contribution.
@@ -117,18 +127,119 @@ public class ReciprocalSpace {
 
         this.crystal = crystal;
         this.coordinates = coordinates;
-        this.atoms = atoms;
         this.nAtoms = atoms.length;
-        this.aewald = aewald;
-        this.fftTeam = fftTeam;
+        this.aEwald = aewald;
         this.parallelTeam = parallelTeam;
-
         threadCount = parallelTeam.getThreadCount();
-        bSplineOrder = forceField.getInteger(ForceFieldInteger.PME_ORDER, 5);
-        double density = forceField.getDouble(ForceFieldDouble.PME_MESH_DENSITY, 1.2);
-        cudaFFT = forceField.getBoolean(ForceField.ForceFieldBoolean.CUDAFFT, false);
+        nSymm = crystal.spaceGroup.getNumberOfSymOps();
 
-        // Set default FFT grid size from unit cell dimensions.
+        /**
+         * Initialize the reciprocal space grid size and allocate memory for it.
+         */
+        double density = forceField.getDouble(ForceFieldDouble.PME_MESH_DENSITY, 1.2);
+        init3DFFTSize(density, forceField);
+        cudaFFT = forceField.getBoolean(ForceField.ForceFieldBoolean.CUDAFFT, false);
+        if (cudaFFT) {
+            splineGrid = null;
+            floatGrid = new float[complexFFT3DSpace];
+            floatRecip = new float[complexFFT3DSpace / 2];
+        } else {
+            splineGrid = new double[complexFFT3DSpace];
+            floatGrid = null;
+            floatRecip = null;
+        }
+
+        /**
+         * Log PME reciprocal space parameters.
+         */
+        bSplineOrder = forceField.getInteger(ForceFieldInteger.PME_ORDER, 5);
+        if (logger.isLoggable(Level.INFO)) {
+            StringBuilder sb = new StringBuilder();
+            sb.append(format(" PME B-Spline order:                   %8d\n", bSplineOrder));
+            sb.append(format(" PME Grid density:                     %8.3f\n", density));
+            sb.append(format(" PME Grid dimensions:             (%3d,%3d,%3d)", fftX, fftY, fftZ));
+            logger.info(sb.toString());
+        }
+
+        /**
+         * Allocate memory for fractional multipoles and induced dipoles.
+         */
+        fracMultipole = new double[nSymm][nAtoms][10];
+        fracInducedDipole = new double[nSymm][nAtoms][3];
+        fracInducedDipoleCR = new double[nSymm][nAtoms][3];
+        /**
+         * Allocate memory for fractional permanent Phi and induced Phi.
+         */
+        fracMultipolePhi = new double[nAtoms][tensorCount];
+        fracInducedDipolePhi = new double[nAtoms][tensorCount];
+        fracInducedDipolePhiCR = new double[nAtoms][tensorCount];
+        /**
+         * Populate the matrix that fractionalizes multipoles.
+         */
+        transformMultipoleMatrix();
+        /**
+         * Populate the matrix that convert fractional potential components into
+         * orthogonal Cartesian coordinates. 
+         */
+        transformFieldMatrix();
+        /**
+         * Construct the parallel b-Spline, density and field objects.
+         */
+        bSplineRegion = new BSplineRegion();
+        if (cudaFFT) {
+            spatialDensityRegion = new SpatialDensityRegion(fftX, fftY, fftZ, floatGrid, bSplineOrder, nSymm,
+                                                            1, threadCount, crystal, atoms, coordinates);
+        } else {
+            spatialDensityRegion = new SpatialDensityRegion(fftX, fftY, fftZ, splineGrid, bSplineOrder, nSymm,
+                                                            1, threadCount, crystal, atoms, coordinates);
+        }
+        permanentDensityLoops = new SplinePermanentLoop[threadCount];
+        polarizationDensityLoops = new SplineInducedLoop[threadCount];
+        for (int i = 0; i < threadCount; i++) {
+            permanentDensityLoops[i] = new SplinePermanentLoop(spatialDensityRegion, bSplineRegion);
+            polarizationDensityLoops[i] = new SplineInducedLoop(spatialDensityRegion, bSplineRegion);
+        }
+        permanentPhi = new PermanentPhiRegion(bSplineRegion);
+        polarizationPhi = new InducedPhiRegion(bSplineRegion);
+
+        /**
+         * Construct the parallel convolution object.
+         */
+        boolean available = false;
+        String recipStrategy = null;
+        try {
+            recipStrategy = forceField.getString(ForceField.ForceFieldString.RECIP_SCHEDULE);
+            IntegerSchedule.parse(recipStrategy);
+            available = true;
+        } catch (Exception e) {
+            available = false;
+        }
+        IntegerSchedule recipSchedule;
+        if (available) {
+            recipSchedule = IntegerSchedule.parse(recipStrategy);
+            logger.info(" Convolution schedule " + recipStrategy);
+        } else {
+            recipSchedule = IntegerSchedule.fixed();
+        }
+        if (!cudaFFT) {
+            complexFFT3D = new Complex3DParallel(fftX, fftY, fftZ, fftTeam, recipSchedule);
+            complexFFT3D.setRecip(generalizedInfluenceFunction());
+            cudaFFT3D = null;
+            cudaThread = null;
+        } else {
+            complexFFT3D = null;
+            double temp[] = generalizedInfluenceFunction();
+            for (int i = 0; i < complexFFT3DSpace / 2; i++) {
+                floatRecip[i] = (float) temp[i];
+            }
+            cudaFFT3D = new Complex3DCuda(fftX, fftY, fftZ, floatGrid, floatRecip);
+            cudaThread = new Thread(cudaFFT3D);
+            cudaThread.setPriority(Thread.MAX_PRIORITY);
+            cudaThread.start();
+        }
+    }
+
+    private void init3DFFTSize(double density, ForceField forceField) {
         int nX = forceField.getInteger(ForceFieldInteger.PME_GRIDX, -1);
         if (nX < 2) {
             nX = (int) Math.floor(crystal.a * density) + 1;
@@ -164,85 +275,6 @@ public class ReciprocalSpace {
         fftY = nY;
         fftZ = nZ;
         complexFFT3DSpace = fftX * fftY * fftZ * 2;
-        a = new double[3][3];
-        nSymm = crystal.spaceGroup.getNumberOfSymOps();
-
-        if (cudaFFT) {
-            densityGrid = null;
-            floatGrid = new float[complexFFT3DSpace];
-            floatRecip = new float[complexFFT3DSpace / 2];
-        } else {
-            densityGrid = new double[complexFFT3DSpace];
-            floatGrid = null;
-            floatRecip = null;
-        }
-
-        if (logger.isLoggable(Level.INFO)) {
-            StringBuilder sb = new StringBuilder();
-            sb.append(format(" PME B-Spline order:                   %8d\n", bSplineOrder));
-            sb.append(format(" PME Grid density:                     %8.3f\n", density));
-            sb.append(format(" PME Grid dimensions:             (%3d,%3d,%3d)", fftX, fftY, fftZ));
-            logger.info(sb.toString());
-        }
-
-        fractionalMultipole = new double[nSymm][nAtoms][10];
-        fractionalDipole = new double[nSymm][nAtoms][3];
-        fractionalDipolep = new double[nSymm][nAtoms][3];
-        fractionalMultipolePhi = new double[nAtoms][tensorCount];
-        fractionalLambdaPhi = new double[nAtoms][tensorCount];
-        fractionalInducedDipolePhi = new double[nAtoms][tensorCount];
-        fractionalInducedDipolepPhi = new double[nAtoms][tensorCount];
-        transformMultipoleMatrix(tmm);
-        transformFieldMatrix(tfm);
-        bSplineRegion = new BSplineRegion();
-        if (cudaFFT) {
-            spatialDensityRegion = new SpatialDensityRegion(fftX, fftY, fftZ, floatGrid, bSplineOrder, nSymm,
-                                                            1, threadCount, crystal, atoms, coordinates);
-        } else {
-            spatialDensityRegion = new SpatialDensityRegion(fftX, fftY, fftZ, densityGrid, bSplineOrder, nSymm,
-                                                            1, threadCount, crystal, atoms, coordinates);
-        }
-        permanentDensityLoops = new PermanentDensityLoop[threadCount];
-        polarizationDensityLoops = new PolarizationDensityLoop[threadCount];
-        for (int i = 0; i < threadCount; i++) {
-            permanentDensityLoops[i] = new PermanentDensityLoop(spatialDensityRegion, bSplineRegion);
-            polarizationDensityLoops[i] = new PolarizationDensityLoop(spatialDensityRegion, bSplineRegion);
-        }
-        permanentPhi = new PermanentPhiRegion(bSplineRegion);
-        polarizationPhi = new PolarizationPhiRegion(bSplineRegion);
-
-        boolean available = false;
-        String recipStrategy = null;
-        try {
-            recipStrategy = forceField.getString(ForceField.ForceFieldString.RECIP_SCHEDULE);
-            IntegerSchedule.parse(recipStrategy);
-            available = true;
-        } catch (Exception e) {
-            available = false;
-        }
-        IntegerSchedule recipSchedule;
-        if (available) {
-            recipSchedule = IntegerSchedule.parse(recipStrategy);
-            logger.info(" Convolution schedule " + recipStrategy);
-        } else {
-            recipSchedule = IntegerSchedule.fixed();
-        }
-        if (!cudaFFT) {
-            complexFFT3D = new Complex3DParallel(fftX, fftY, fftZ, fftTeam, recipSchedule);
-            complexFFT3D.setRecip(generalizedInfluenceFunction());
-            cudaFFT3D = null;
-            cudaThread = null;
-        } else {
-            complexFFT3D = null;
-            double temp[] = generalizedInfluenceFunction();
-            for (int i = 0; i < complexFFT3DSpace / 2; i++) {
-                floatRecip[i] = (float) temp[i];
-            }
-            cudaFFT3D = new Complex3DCuda(fftX, fftY, fftZ, floatGrid, floatRecip);
-            cudaThread = new Thread(cudaFFT3D);
-            cudaThread.setPriority(Thread.MAX_PRIORITY);
-            cudaThread.start();
-        }
     }
 
     public void computeBSplines() {
@@ -266,7 +298,7 @@ public class ReciprocalSpace {
      * @param globalMultipoles
      * @param use 
      */
-    public void computePermanentDensity(double globalMultipoles[][][], boolean use[]) {
+    public void splinePermanentMultipoles(double globalMultipoles[][][], boolean use[]) {
         spatialDensityRegion.assignAtomsToCells();
         spatialDensityRegion.setDensityLoop(permanentDensityLoops);
         for (int i = 0; i < threadCount; i++) {
@@ -274,9 +306,9 @@ public class ReciprocalSpace {
             permanentDensityLoops[i].setUse(use);
         }
         try {
-            long startTime = System.nanoTime();
+            long permanentDensityTime = -System.nanoTime();
             parallelTeam.execute(spatialDensityRegion);
-            long permanentDensityTime = System.nanoTime() - startTime;
+            permanentDensityTime += System.nanoTime();
             if (logger.isLoggable(Level.FINE)) {
                 logger.fine(format(" Grid Permanent Density: %8.3f", permanentDensityTime * toSeconds));
             }
@@ -286,7 +318,7 @@ public class ReciprocalSpace {
         }
     }
 
-    public void computePermanentConvolution() {
+    public void permanentMultipoleConvolution() {
         try {
             if (cudaFFT) {
                 long fftTime = -System.nanoTime();
@@ -297,7 +329,7 @@ public class ReciprocalSpace {
                 }
             } else {
                 long convolutionTime = -System.nanoTime();
-                complexFFT3D.convolution(densityGrid);
+                complexFFT3D.convolution(splineGrid);
                 convolutionTime += System.nanoTime();
                 if (logger.isLoggable(Level.FINE)) {
                     logger.fine(format(" Java Convolution:       %8.3f", convolutionTime * toSeconds));
@@ -310,16 +342,13 @@ public class ReciprocalSpace {
     }
 
     /**
-     * Compute the potential Phi and its derivatives for all atoms. The lambda flag
-     * indicates what accumulation array will be used to store the result.
+     * Compute the potential Phi and its derivatives for all atoms.
      * 
-     * @param cartesianMultipolePhi
-     * @param lambda 
+     * @param cartMultipolePhi
      */
-    public void computePermanentPhi(double cartesianMultipolePhi[][], boolean lambda) {
+    public void computePermanentPhi(double cartMultipolePhi[][]) {
         try {
             long time = -System.nanoTime();
-            permanentPhi.setLambda(lambda);
             parallelTeam.execute(permanentPhi);
             time += System.nanoTime();
             if (logger.isLoggable(Level.FINE)) {
@@ -329,23 +358,19 @@ public class ReciprocalSpace {
             String message = "Fatal exception evaluating permanent reciprocal space potential.";
             logger.log(Level.SEVERE, message, e);
         }
-        if (!lambda) {
-            fractionalToCartesianPhi(fractionalMultipolePhi, cartesianMultipolePhi);
-        } else {
-            fractionalToCartesianPhi(fractionalLambdaPhi, cartesianMultipolePhi);
-        }
+        fracToCartPhi(fracMultipolePhi, cartMultipolePhi);
     }
 
     /**
-     * Use b-Splines to place the induced dipoles onto the FFT grid for the
-     * atoms in use.
+     * Place the induced dipoles onto the FFT grid for the atoms in use.
      * 
-     * @param inducedDipole
-     * @param inducedDipolep 
+     * @param inducedDipole Induced dipoles.
+     * @param inducedDipoleCR Chain rule term for induced dipole gradient.
+     * @param use The atoms in use.
      */
-    public void computeInducedDensity(double inducedDipole[][][],
-                                      double inducedDipolep[][][],
-                                      boolean use[]) {
+    public void splineInducedDipoles(double inducedDipole[][][],
+                                     double inducedDipoleCR[][][],
+                                     boolean use[]) {
         for (int i = 0; i < 3; i++) {
             a[0][i] = fftX * crystal.A[i][0];
             a[1][i] = fftY * crystal.A[i][1];
@@ -353,7 +378,7 @@ public class ReciprocalSpace {
         }
         spatialDensityRegion.setDensityLoop(polarizationDensityLoops);
         for (int i = 0; i < threadCount; i++) {
-            polarizationDensityLoops[i].setPolarization(inducedDipole, inducedDipolep);
+            polarizationDensityLoops[i].setPolarization(inducedDipole, inducedDipoleCR);
             polarizationDensityLoops[i].setUse(use);
         }
         try {
@@ -377,7 +402,7 @@ public class ReciprocalSpace {
      * <p>
      * FORTRAN: signum(0.0) .eq. 1.0
      */
-    public void computeInducedConvolution() {
+    public void inducedDipoleConvolution() {
         try {
             if (cudaFFT) {
                 long time = -System.nanoTime();
@@ -388,7 +413,7 @@ public class ReciprocalSpace {
                 }
             } else {
                 long time = -System.nanoTime();
-                complexFFT3D.convolution(densityGrid);
+                complexFFT3D.convolution(splineGrid);
                 time += System.nanoTime();
                 if (logger.isLoggable(Level.FINE)) {
                     logger.fine(format(" Java Convolution:       %8.3f", time * toSeconds));
@@ -400,8 +425,8 @@ public class ReciprocalSpace {
         }
     }
 
-    public void computeInducedPhi(double cartesianPolarizationPhi[][],
-                                  double cartesianChainRulePhi[][]) {
+    public void computeInducedPhi(double cartInducedDipolePhi[][],
+                                  double cartInducedDipoleCRPhi[][]) {
         try {
             long time = -System.nanoTime();
             parallelTeam.execute(polarizationPhi);
@@ -413,12 +438,12 @@ public class ReciprocalSpace {
             String message = "Fatal exception evaluating induced reciprocal space potential.";
             logger.log(Level.SEVERE, message, e);
         }
-        fractionalToCartesianPhi(fractionalInducedDipolePhi, cartesianPolarizationPhi);
-        fractionalToCartesianPhi(fractionalInducedDipolepPhi, cartesianChainRulePhi);
+        fracToCartPhi(fracInducedDipolePhi, cartInducedDipolePhi);
+        fracToCartPhi(fracInducedDipolePhiCR, cartInducedDipoleCRPhi);
     }
 
-    public void cartesianToFractionalDipoles(double inducedDipole[][][],
-                                             double inducedDipolep[][][]) {
+    public void cartToFracInducedDipoles(double inducedDipole[][][],
+                                         double inducedDipoleCR[][][]) {
         for (int i = 0; i < 3; i++) {
             a[0][i] = fftX * crystal.A[i][0];
             a[1][i] = fftY * crystal.A[i][1];
@@ -427,12 +452,12 @@ public class ReciprocalSpace {
         for (int iSymm = 0; iSymm < nSymm; iSymm++) {
             for (int i = 0; i < nAtoms; i++) {
                 double in[] = inducedDipole[iSymm][i];
-                double out[] = fractionalDipole[iSymm][i];
+                double out[] = fracInducedDipole[iSymm][i];
                 out[0] = a[0][0] * in[0] + a[0][1] * in[1] + a[0][2] * in[2];
                 out[1] = a[1][0] * in[0] + a[1][1] * in[1] + a[1][2] * in[2];
                 out[2] = a[2][0] * in[0] + a[2][1] * in[1] + a[2][2] * in[2];
-                in = inducedDipolep[iSymm][i];
-                out = fractionalDipolep[iSymm][i];
+                in = inducedDipoleCR[iSymm][i];
+                out = fracInducedDipoleCR[iSymm][i];
                 out[0] = a[0][0] * in[0] + a[0][1] * in[1] + a[0][2] * in[2];
                 out[1] = a[1][0] * in[0] + a[1][1] * in[1] + a[1][2] * in[2];
                 out[2] = a[2][0] * in[0] + a[2][1] * in[1] + a[2][2] * in[2];
@@ -440,32 +465,28 @@ public class ReciprocalSpace {
         }
     }
 
-    public double[][] getFractionalMultipolePhi() {
-        return fractionalMultipolePhi;
+    public double[][] getFracMultipolePhi() {
+        return fracMultipolePhi;
     }
 
-    public double[][] getFractionalLambdaPhi() {
-        return fractionalLambdaPhi;
+    public double[][] getFracMultipoles() {
+        return fracMultipole[0];
     }
 
-    public double[][] getFractionalMultipoles() {
-        return fractionalMultipole[0];
+    public double[][] getFracInducedDipolePhi() {
+        return fracInducedDipolePhi;
     }
 
-    public double[][] getFractionalInducedDipolePhi() {
-        return fractionalInducedDipolePhi;
+    public double[][] getFracInducedDipoles() {
+        return fracInducedDipole[0];
     }
 
-    public double[][] getFractionalInducedDipoles() {
-        return this.fractionalDipole[0];
+    public double[][] getFracInducedDipoleCRPhi() {
+        return fracInducedDipolePhiCR;
     }
 
-    public double[][] getFractionalInducedDipolepPhi() {
-        return fractionalInducedDipolepPhi;
-    }
-
-    public double[][] getFractionalInducedDipolesp() {
-        return this.fractionalDipolep[0];
+    public double[][] getFracInducedDipolesCR() {
+        return fracInducedDipoleCR[0];
     }
 
     public double getXDim() {
@@ -589,13 +610,13 @@ public class ReciprocalSpace {
         }
     }
 
-    private class PermanentDensityLoop extends SpatialDensityLoop {
+    private class SplinePermanentLoop extends SpatialDensityLoop {
 
         private double globalMultipoles[][][] = null;
         private boolean use[] = null;
         private final BSplineRegion bSplines;
 
-        public PermanentDensityLoop(SpatialDensityRegion region, BSplineRegion splines) {
+        public SplinePermanentLoop(SpatialDensityRegion region, BSplineRegion splines) {
             super(region, region.nSymm, region.actualCount);
             this.bSplines = splines;
         }
@@ -611,24 +632,24 @@ public class ReciprocalSpace {
         @Override
         public void gridDensity(int iSymm, int n) {
             final double gm[] = globalMultipoles[iSymm][n];
-            final double fm[] = fractionalMultipole[iSymm][n];
+            final double fm[] = fracMultipole[iSymm][n];
             // charge
             fm[0] = gm[0];
             // dipole
             for (int j = 1; j < 4; j++) {
                 fm[j] = 0.0;
                 for (int k = 1; k < 4; k++) {
-                    fm[j] = fm[j] + tmm[j][k] * gm[k];
+                    fm[j] = fm[j] + transformMultipoleMatrix[j][k] * gm[k];
                 }
             }
             // quadrupole
             for (int j = 4; j < 10; j++) {
                 fm[j] = 0.0;
                 for (int k = 4; k < 7; k++) {
-                    fm[j] = fm[j] + tmm[j][k] * gm[k];
+                    fm[j] = fm[j] + transformMultipoleMatrix[j][k] * gm[k];
                 }
                 for (int k = 7; k < 10; k++) {
-                    fm[j] = fm[j] + tmm[j][k] * 2.0 * gm[k];
+                    fm[j] = fm[j] + transformMultipoleMatrix[j][k] * 2.0 * gm[k];
                 }
                 /**
                  * Fractional quadrupole components are pre-multiplied by a
@@ -695,7 +716,7 @@ public class ReciprocalSpace {
                         if (cudaFFT) {
                             floatGrid[ii] += dq;
                         } else {
-                            densityGrid[ii] += dq;
+                            splineGrid[ii] += dq;
                         }
                     }
                 }
@@ -703,14 +724,14 @@ public class ReciprocalSpace {
         }
     }
 
-    private class PolarizationDensityLoop extends SpatialDensityLoop {
+    private class SplineInducedLoop extends SpatialDensityLoop {
 
         private double inducedDipole[][][] = null;
         private double inducedDipolep[][][] = null;
         private boolean use[] = null;
         private final BSplineRegion bSplines;
 
-        public PolarizationDensityLoop(SpatialDensityRegion region, BSplineRegion splines) {
+        public SplineInducedLoop(SpatialDensityRegion region, BSplineRegion splines) {
             super(region, region.nSymm, region.actualCount);
             this.bSplines = splines;
         }
@@ -724,16 +745,16 @@ public class ReciprocalSpace {
         public void setUse(boolean use[]) {
             this.use = use;
         }
-        
+
         @Override
         public void gridDensity(int iSymm, int n) {
             double ind[] = inducedDipole[iSymm][n];
-            final double find[] = fractionalDipole[iSymm][n];
+            final double find[] = fracInducedDipole[iSymm][n];
             find[0] = a[0][0] * ind[0] + a[0][1] * ind[1] + a[0][2] * ind[2];
             find[1] = a[1][0] * ind[0] + a[1][1] * ind[1] + a[1][2] * ind[2];
             find[2] = a[2][0] * ind[0] + a[2][1] * ind[1] + a[2][2] * ind[2];
             double inp[] = inducedDipolep[iSymm][n];
-            final double finp[] = fractionalDipolep[iSymm][n];
+            final double finp[] = fracInducedDipoleCR[iSymm][n];
             finp[0] = a[0][0] * inp[0] + a[0][1] * inp[1] + a[0][2] * inp[2];
             finp[1] = a[1][0] * inp[0] + a[1][1] * inp[1] + a[1][2] * inp[2];
             finp[2] = a[2][0] * inp[0] + a[2][1] * inp[1] + a[2][2] * inp[2];
@@ -784,8 +805,8 @@ public class ReciprocalSpace {
                             floatGrid[ii] += dq;
                             floatGrid[ii + 1] += pq;
                         } else {
-                            densityGrid[ii] += dq;
-                            densityGrid[ii + 1] += pq;
+                            splineGrid[ii] += dq;
+                            splineGrid[ii + 1] += pq;
                         }
                     }
                 }
@@ -800,7 +821,6 @@ public class ReciprocalSpace {
         private final double splineY[][][][];
         private final double splineZ[][][][];
         private final int initgrid[][][];
-        private boolean lambda = false;
 
         public PermanentPhiRegion(BSplineRegion bSplineRegion) {
             this.initgrid = bSplineRegion.initGrid;
@@ -813,15 +833,10 @@ public class ReciprocalSpace {
             }
         }
 
-        private void setLambda(boolean lambda) {
-            this.lambda = lambda;
-        }
-
         @Override
         public void run() {
             try {
                 int ti = getThreadIndex();
-                fractionalPhiLoop[ti].setLambda(lambda);
                 execute(0, nAtoms - 1, fractionalPhiLoop[getThreadIndex()]);
             } catch (Exception e) {
                 logger.severe(e.toString());
@@ -831,7 +846,6 @@ public class ReciprocalSpace {
         private class FractionalPhiLoop extends IntegerForLoop {
 
             private final IntegerSchedule schedule = IntegerSchedule.dynamic(1);
-            private boolean lambda = false;
             // Extra padding to avert cache interference.
             long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
             long pad8, pad9, pada, padb, padc, padd, pade, padf;
@@ -839,10 +853,6 @@ public class ReciprocalSpace {
             @Override
             public IntegerSchedule schedule() {
                 return schedule;
-            }
-
-            public void setLambda(boolean lambda) {
-                this.lambda = lambda;
             }
 
             @Override
@@ -902,7 +912,7 @@ public class ReciprocalSpace {
                                 if (cudaFFT) {
                                     tq = floatGrid[ii];
                                 } else {
-                                    tq = densityGrid[ii];
+                                    tq = splineGrid[ii];
                                 }
                                 final double splxi[] = splx[ith1];
                                 t0 += tq * splxi[0];
@@ -952,12 +962,7 @@ public class ReciprocalSpace {
                         tuv012 += tu01 * v2;
                         tuv111 += tu11 * v1;
                     }
-                    double out[] = null;
-                    if (lambda) {
-                        out = fractionalLambdaPhi[n];
-                    } else {
-                        out = fractionalMultipolePhi[n];
-                    }
+                    double out[] = fracMultipolePhi[n];
                     out[t000] = tuv000;
                     out[t100] = tuv100;
                     out[t010] = tuv010;
@@ -983,7 +988,7 @@ public class ReciprocalSpace {
         }
     }
 
-    private class PolarizationPhiRegion extends ParallelRegion {
+    private class InducedPhiRegion extends ParallelRegion {
 
         private final PolarizationPhiInducedLoop polarizationPhiInducedLoop;
         private final double splineX[][][][];
@@ -991,7 +996,7 @@ public class ReciprocalSpace {
         private final double splineZ[][][][];
         private final int initgrid[][][];
 
-        public PolarizationPhiRegion(BSplineRegion bSplineRegion) {
+        public InducedPhiRegion(BSplineRegion bSplineRegion) {
             this.initgrid = bSplineRegion.initGrid;
             this.splineX = bSplineRegion.splineX;
             this.splineY = bSplineRegion.splineY;
@@ -1112,8 +1117,8 @@ public class ReciprocalSpace {
                                     tq = floatGrid[ii];
                                     tp = floatGrid[ii + 1];
                                 } else {
-                                    tq = densityGrid[ii];
-                                    tp = densityGrid[ii + 1];
+                                    tq = splineGrid[ii];
+                                    tp = splineGrid[ii + 1];
                                 }
                                 final double splxi[] = splx[ith1];
                                 t0 += tq * splxi[0];
@@ -1197,7 +1202,7 @@ public class ReciprocalSpace {
                         tuv012p += tu01p * v2;
                         tuv111p += tu11p * v1;
                     }
-                    double out[] = fractionalInducedDipolePhi[n];
+                    double out[] = fracInducedDipolePhi[n];
                     out[t000] = tuv000;
                     out[t100] = tuv100;
                     out[t010] = tuv010;
@@ -1218,7 +1223,7 @@ public class ReciprocalSpace {
                     out[t102] = tuv102;
                     out[t012] = tuv012;
                     out[t111] = tuv111;
-                    out = fractionalInducedDipolepPhi[n];
+                    out = fracInducedDipolePhiCR[n];
                     out[t000] = tuv000p;
                     out[t100] = tuv100p;
                     out[t010] = tuv010p;
@@ -1274,7 +1279,7 @@ public class ReciprocalSpace {
         double r21 = crystal.A[2][1];
         double r22 = crystal.A[2][2];
         int ntot = fftX * fftY * fftZ;
-        double piTerm = (PI / aewald) * (PI / aewald);
+        double piTerm = (PI / aEwald) * (PI / aEwald);
         double volTerm = PI * crystal.volume;
         int nfXY = fftX * fftY;
         int nX_2 = (fftX + 1) / 2;
@@ -1325,52 +1330,54 @@ public class ReciprocalSpace {
         return influenceFunction;
     }
 
-    private void fractionalToCartesianPhi(double frac[][], double cart[][]) {
+    private void fracToCartPhi(double frac[][], double cart[][]) {
         for (int i = 0; i < nAtoms; i++) {
             double in[] = frac[i];
             double out[] = cart[i];
-            out[0] = tfm[0][0] * in[0];
+            out[0] = transformFieldMatrix[0][0] * in[0];
             for (int j = 1; j < 4; j++) {
                 out[j] = 0.0;
                 for (int k = 1; k < 4; k++) {
-                    out[j] += tfm[j][k] * in[k];
+                    out[j] += transformFieldMatrix[j][k] * in[k];
                 }
             }
             for (int j = 4; j < 10; j++) {
                 out[j] = 0.0;
                 for (int k = 4; k < 10; k++) {
-                    out[j] += tfm[j][k] * in[k];
+                    out[j] += transformFieldMatrix[j][k] * in[k];
                 }
             }
         }
     }
 
-    private void transformMultipoleMatrix(double mpole_xy[][]) {
+    private void transformMultipoleMatrix() {
         for (int i = 0; i < 3; i++) {
             a[0][i] = fftX * crystal.A[i][0];
             a[1][i] = fftY * crystal.A[i][1];
             a[2][i] = fftZ * crystal.A[i][2];
         }
+
         for (int i = 0; i < 10; i++) {
             for (int j = 0; j < 10; j++) {
-                mpole_xy[i][j] = 0.0;
+                transformMultipoleMatrix[i][j] = 0.0;
             }
         }
-        // charge
-        mpole_xy[0][0] = 1.0;
-        // dipole
+
+        // Charge
+        transformMultipoleMatrix[0][0] = 1.0;
+        // Dipole
         for (int i = 1; i < 4; i++) {
             for (int j = 1; j < 4; j++) {
-                mpole_xy[i][j] = a[i - 1][j - 1];
+                transformMultipoleMatrix[i][j] = a[i - 1][j - 1];
             }
         }
-        // quadrupole
+        // Quadrupole
         for (int i1 = 0; i1 < 3; i1++) {
             int k = qi1[i1];
             for (int i2 = 0; i2 < 6; i2++) {
                 int i = qi1[i2];
                 int j = qi2[i2];
-                mpole_xy[i1 + 4][i2 + 4] = a[k][i] * a[k][j];
+                transformMultipoleMatrix[i1 + 4][i2 + 4] = a[k][i] * a[k][j];
             }
         }
         for (int i1 = 3; i1 < 6; i1++) {
@@ -1379,12 +1386,12 @@ public class ReciprocalSpace {
             for (int i2 = 0; i2 < 6; i2++) {
                 int i = qi1[i2];
                 int j = qi2[i2];
-                mpole_xy[i1 + 4][i2 + 4] = a[k][i] * a[l][j] + a[k][j] * a[l][i];
+                transformMultipoleMatrix[i1 + 4][i2 + 4] = a[k][i] * a[l][j] + a[k][j] * a[l][i];
             }
         }
     }
 
-    private void transformFieldMatrix(double field_xy[][]) {
+    private void transformFieldMatrix() {
         for (int i = 0; i < 3; i++) {
             a[i][0] = fftX * crystal.A[i][0];
             a[i][1] = fftY * crystal.A[i][1];
@@ -1392,25 +1399,25 @@ public class ReciprocalSpace {
         }
         for (int i = 0; i < 10; i++) {
             for (int j = 0; j < 10; j++) {
-                field_xy[i][j] = 0.0;
+                transformFieldMatrix[i][j] = 0.0;
             }
         }
-        field_xy[0][0] = 1.0;
+        transformFieldMatrix[0][0] = 1.0;
         for (int i = 1; i < 4; i++) {
             for (int j = 1; j < 4; j++) {
-                field_xy[i][j] = a[i - 1][j - 1];
+                transformFieldMatrix[i][j] = a[i - 1][j - 1];
             }
         }
         for (int i1 = 0; i1 < 3; i1++) {
             int k = qi1[i1];
             for (int i2 = 0; i2 < 3; i2++) {
                 int i = qi1[i2];
-                field_xy[i1 + 4][i2 + 4] = a[k][i] * a[k][i];
+                transformFieldMatrix[i1 + 4][i2 + 4] = a[k][i] * a[k][i];
             }
             for (int i2 = 3; i2 < 6; i2++) {
                 int i = qi1[i2];
                 int j = qi2[i2];
-                field_xy[i1 + 4][i2 + 4] = 2.0 * a[k][i] * a[k][j];
+                transformFieldMatrix[i1 + 4][i2 + 4] = 2.0 * a[k][i] * a[k][j];
             }
         }
         for (int i1 = 3; i1 < 6; i1++) {
@@ -1418,12 +1425,12 @@ public class ReciprocalSpace {
             int n = qi2[i1];
             for (int i2 = 0; i2 < 3; i2++) {
                 int i = qi1[i2];
-                field_xy[i1 + 4][i2 + 4] = a[k][i] * a[n][i];
+                transformFieldMatrix[i1 + 4][i2 + 4] = a[k][i] * a[n][i];
             }
             for (int i2 = 3; i2 < 6; i2++) {
                 int i = qi1[i2];
                 int j = qi2[i2];
-                field_xy[i1 + 4][i2 + 4] = a[k][i] * a[n][j] + a[n][i] * a[k][j];
+                transformFieldMatrix[i1 + 4][i2 + 4] = a[k][i] * a[n][j] + a[n][i] * a[k][j];
             }
         }
     }
@@ -1500,10 +1507,9 @@ public class ReciprocalSpace {
             bsmod[i] = bsmod[i] * zeta * zeta;
         }
     }
-    private static double toSeconds = 0.000000001;
-    private final double a[][];
-    private final double tfm[][] = new double[10][10];
-    private final double tmm[][] = new double[10][10];
+    private final double a[][] = new double[3][3];
+    private final double transformFieldMatrix[][] = new double[10][10];
+    private final double transformMultipoleMatrix[][] = new double[10][10];
     /**
      * First lookup index to pack a 2D tensor into a 1D array.
      */
@@ -1513,4 +1519,5 @@ public class ReciprocalSpace {
      */
     private static final int qi2[] = {0, 1, 2, 1, 2, 2};
     private static final int tensorCount = TensorRecursion.tensorCount(3);
+    private static double toSeconds = 1.0e-9;
 }

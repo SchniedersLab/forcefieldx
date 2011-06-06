@@ -36,7 +36,7 @@ import edu.rit.util.Range;
  */
 public class SpatialDensitySchedule extends IntegerSchedule {
 
-    private static Logger logger = Logger.getLogger(SpatialDensitySchedule.class.getName());
+    private static final Logger logger = Logger.getLogger(SpatialDensitySchedule.class.getName());
     private final int nAtoms;
     private final int atomsPerChunk[];
     private final double loadBalancePercentage;
@@ -85,6 +85,7 @@ public class SpatialDensitySchedule extends IntegerSchedule {
         if (nThreads != ranges.length) {
             ranges = new Range[nThreads];
         }
+        
         defineRanges();
     }
 

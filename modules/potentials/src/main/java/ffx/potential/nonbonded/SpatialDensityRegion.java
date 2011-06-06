@@ -20,6 +20,8 @@
  */
 package ffx.potential.nonbonded;
 
+import static java.lang.Math.floor;
+
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -316,11 +318,11 @@ public class SpatialDensityRegion extends ParallelRegion {
         int ti = getThreadIndex();
         int actualWork1 = actualWork - 1;
         SpatialDensityLoop loop = spatialDensityLoop[ti];
+        
         /**
          * This lets the same SpatialDensityLoops be used with different
          * SpatialDensityRegions.
          */
-
         loop.setNsymm(nSymm);
 
         try {
@@ -414,9 +416,9 @@ public class SpatialDensityRegion extends ParallelRegion {
                 }
 
                 // The cell indices of this atom.
-                final int a = (int) Math.floor(xu * nA);
-                final int b = (int) Math.floor(yu * nB);
-                final int c = (int) Math.floor(zu * nC);
+                final int a = (int) floor(xu * nA);
+                final int b = (int) floor(yu * nB);
+                final int c = (int) floor(zu * nC);
 
                 // The cell index of this atom.
                 final int index = a + b * nA + c * nAB;

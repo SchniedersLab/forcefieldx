@@ -74,6 +74,8 @@ boolean initVelocities = true;
 
 println("\n Running Orthogonal Space Random Walk on " + filename);
 
+System.setProperty("lambdaterm", "true");
+
 open(filename);
 
 ForceFieldEnergy energy = active.getPotentialEnergy();

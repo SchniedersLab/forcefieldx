@@ -33,29 +33,22 @@ package ffx.potential;
 public interface LambdaInterface {
 
     /**
-     * Set the current value of the lambda variable.
+     * Set the current value of the state variable.
      * 
-     * @param lambda (0.0 >= lambda <= 1.0)
+     * @param lambda
      * 
      * @since 1.0
      */
     public void setLambda(double lambda);
 
     /**
-     * Get the current value of the lambda variable.
+     * Get the current value of the state variable.
      * 
-     * @return lambda
+     * @return state
      * 
      * @since 1.0
      */
     public double getLambda();
-    
-    /**
-     * Turn on/off computation of partial derivatives with respect to lambda.
-     * 
-     * @param compute - if true compute the partial derivatives.
-     */
-    public void computeLambdaGradient(boolean compute);
     
     /**
      * Get the partial derivative of the energy with respect to lambda.
