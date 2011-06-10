@@ -493,9 +493,9 @@ public class Potential2 implements OptimizationListener {
         int r = 0;
         DecimalFormat myFormatter = new DecimalFormat(" ##########0.00000;-##########0.00000");
         ArrayList<Integer> types = new ArrayList<Integer>();
-        for(int i = 0; i < mpoles.length; i++){
-            System.out.println(mpoles[i]);
-        }
+//        for(int i = 0; i < mpoles.length; i++){
+//            System.out.println(mpoles[i]);
+//        }
         int pos;
         int polelen = 10;
         //for traceless manipulations
@@ -551,21 +551,21 @@ public class Potential2 implements OptimizationListener {
             } else if (key.get(i).toUpperCase().contains("MULTIPOLE")) {
                 pos = types.indexOf(Integer.parseInt(key.get(i).trim().split(" +")[1]));
                 if (pme.fitmpl) {
-                    bw.write(key.get(i).trim().split(" +")[0] + "   " + key.get(i).trim().split(" +")[1] + "   " + key.get(i).trim().split(" +")[2] + "   " + key.get(i).trim().split(" +")[3] + "\t" + myFormatter.format(mpoles[pos * polelen + r]) + "\n");
+                    bw.write(key.get(i).trim().split(" +")[0] + "   " + key.get(i).trim().split(" +")[1] + "   " + key.get(i).trim().split(" +")[2] + "   " + key.get(i).trim().split(" +")[3] + "              " + myFormatter.format(mpoles[pos * polelen + r]) + "\n");
                     r = r + 1;
                 } else {
                     bw.write(key.get(i) + "\n");
                 }
                 if (pme.fitdpl) {
-                    bw.write("                             \t\t\t\t" + myFormatter.format(mpoles[pos * polelen + r] / BOHR) + "   " + myFormatter.format(mpoles[pos * polelen + r + 1] / BOHR) + "   " + myFormatter.format(mpoles[pos * polelen + r + 2] / BOHR) + "\n");
+                    bw.write("                                         " + myFormatter.format(mpoles[pos * polelen + r] / BOHR) + "   " + myFormatter.format(mpoles[pos * polelen + r + 1] / BOHR) + "   " + myFormatter.format(mpoles[pos * polelen + r + 2] / BOHR) + "\n");
                     r = r + 3;
                 } else {
                     bw.write(key.get(i + 1) + "\n");
                 }
                 if (pme.fitqdpl) {
-                    bw.write("                             \t\t\t\t" + myFormatter.format(mpoles[pos * polelen + r] / (BOHR * BOHR)) + "\n");
-                    bw.write("                             \t\t\t\t" + myFormatter.format(mpoles[pos * polelen + r + 3] / (BOHR * BOHR)) + "   " + myFormatter.format(mpoles[pos * polelen + r + 1] / (BOHR * BOHR)) + "\n");
-                    bw.write("                            \t\t\t\t" + myFormatter.format(mpoles[pos * polelen + r + 4] / (BOHR * BOHR)) + "   " + myFormatter.format(mpoles[pos * polelen + r + 5] / (BOHR * BOHR)) + "   " + myFormatter.format(mpoles[pos * polelen + r + 2] / (BOHR * BOHR)) + "\n");
+                    bw.write("                                         " + myFormatter.format(mpoles[pos * polelen + r] / (BOHR * BOHR)) + "\n");
+                    bw.write("                                         " + myFormatter.format(mpoles[pos * polelen + r + 3] / (BOHR * BOHR)) + "   " + myFormatter.format(mpoles[pos * polelen + r + 1] / (BOHR * BOHR)) + "\n");
+                    bw.write("                                         " + myFormatter.format(mpoles[pos * polelen + r + 4] / (BOHR * BOHR)) + "   " + myFormatter.format(mpoles[pos * polelen + r + 5] / (BOHR * BOHR)) + "   " + myFormatter.format(mpoles[pos * polelen + r + 2] / (BOHR * BOHR)) + "\n");
                     r = r + 6;
                 } else {
                     bw.write(key.get(i + 2) + "\n");
@@ -1084,8 +1084,8 @@ public class Potential2 implements OptimizationListener {
 		//Potential2 p1 = new Potential2(4, "/users/gchattree/Research/Compounds/test_compounds/phenobarbital-test/phenobarbital.xyz", null, .1);
 		//Potential2 p2 = new Potential2(3, "/users/gchattree/Research/Compounds/test_compounds/phenobarbital-test/phenobarbital.xyz", null, null);
 		//Potential2 p1 = new Potential2(4, "/users/gchattree/Research/Compounds/test_compounds/12-ethanediol-poltypeffx/12-ethanediol.xyz", null, .1);
-		Potential2 p2 = new Potential2(3, "/users/gchattree/Research/Compounds/test_compounds/12-ethanediol-test/12-ethanediol.xyz", null, null);
-                //Potential2 p1 = new Potential2(4, "/users/gchattree/Research/Compounds/test_compounds/C6H5NH3+/C6H5NH3+.xyz", null, .1);
+		//Potential2 p2 = new Potential2(3, "/users/gchattree/Research/Compounds/test_compounds/12-ethanediol-test/12-ethanediol.xyz", null, null);
+        Potential2 p1 = new Potential2(4, "/users/gchattree/Research/Compounds/test_compounds/C6H5NH3+/C6H5NH3+.xyz", null, .1);
 	}
 }
 
