@@ -97,7 +97,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     protected final boolean multipoleTerm;
     protected final boolean polarizationTerm;
     protected final boolean generalizedKirkwoodTerm;
-    protected final boolean stateTerm;
+    protected final boolean lambdaTerm;
     protected double bondEnergy, bondRMSD;
     protected double angleEnergy, angleRMSD;
     protected double stretchBendEnergy;
@@ -185,8 +185,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         multipoleTerm = forceField.getBoolean(ForceFieldBoolean.MPOLETERM, true);
         polarizationTerm = forceField.getBoolean(ForceFieldBoolean.POLARIZETERM, true);
         generalizedKirkwoodTerm = forceField.getBoolean(ForceFieldBoolean.GKTERM, false);
-        stateTerm = forceField.getBoolean(ForceFieldBoolean.LAMBDATERM, false);
-        biasGaussianMag = forceField.getDouble(ForceFieldDouble.BIAS_GAUSSIAN_MAG, 0.005);
+        lambdaTerm = forceField.getBoolean(ForceFieldBoolean.LAMBDATERM, false);
 
         // Define the cutoff lengths.
         double vdwOff = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, 9.0);
@@ -416,22 +415,50 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             particleMeshEwald = null;
         }
 
-        if (stateTerm) {
-            biasCutoff = forceField.getInteger(ForceFieldInteger.STATE_BIAS_CUTOFF, 5);
-            energyCount = 0;
-            lambdaBins = 101;
-            FLambdaBins = 401;
-            dL = 0.01;
+        if (lambdaTerm) {
+            biasCutoff = forceField.getInteger(ForceFieldInteger.LAMBDA_BIAS_CUTOFF, 5);
+            biasGaussianMag = forceField.getDouble(ForceFieldDouble.BIAS_GAUSSIAN_MAG, 0.005);
+            dL = forceField.getDouble(ForceFieldDouble.LAMBDA_BIN_WIDTH, 0.01);
+            
+            /**
+             * Require modest sampling of the lambda path. 
+             */
+            if (dL > 0.1) {
+                dL = 0.01;
+            }
+            
+            /**
+             * Many lambda bin widths do not evenly divide into 1.0; here we
+             * correct for this by computing an integer number of bins, then
+             * re-setting the lambda variable appropriately. Note that we also
+             * choose to have an odd number of lambda bins, so that the centers
+             * of the first and last bin are at 0 and 1.
+             */
+            lambdaBins = (int) (1.0 / dL);
+            if (lambdaBins % 2 == 0) lambdaBins++;
+            dL = 1.0 / (lambdaBins - 1);
             dL_2 = dL / 2.0;
-            dFL = 2.0;
+            minLambda = -dL_2;
+            
+            /**
+             * The initial number of FLambda bins does not really matter, since
+             * a larger number are automatically allocated as needed. The center
+             * of the central bin is at 0.
+             */
+            dFL = forceField.getDouble(ForceFieldDouble.FLAMBDA_BIN_WIDTH, 2.0);
             dFL_2 = dFL / 2.0;
-            minLambda = -0.005;
+            FLambdaBins = 401;
             minFLambda = -(dFL * FLambdaBins) / 2.0;
             maxFLambda = minFLambda + FLambdaBins * dFL;
-            biasGaussianMag = 0.005;
+            
+            /**
+             * Allocate space for the recursion kernel that stores counts.
+             */
             recursionKernel = new int[lambdaBins][FLambdaBins];
             FLambda = new double[lambdaBins];
             dUdXdL = new double[nAtoms * 3];
+            energyCount = 0;
+            
         }
         molecularAssembly.setPotential(this);
     }
@@ -582,7 +609,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             electrostaticTime = System.nanoTime() - electrostaticTime;
         }
 
-        if (stateTerm) {
+        if (lambdaTerm) {
             if (doCounting) {
                 energyCount++;
             }
@@ -684,7 +711,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
             // Update free energy F(L) every ~100 steps.
             if (energyCount % 100 == 0 && doCounting) {
-                updateF_State(true);
+                updateFLambda(true);
             }
 
             /**
@@ -737,7 +764,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             logger.info(String.format("Current F_lambda %8.2f > maximum historgram size %8.2f.",
                                       dEdLambda, maxFLambda));
 
-            double origDeltaG = updateF_State(false);
+            double origDeltaG = updateFLambda(false);
 
             int newFStateBins = FLambdaBins;
             while (minFLambda + newFStateBins * dFL < dEdLambda) {
@@ -759,7 +786,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             logger.info(String.format("New historgram %8.2f to %8.2f with %d bins.\n",
                                       minFLambda, maxFLambda, FLambdaBins));
 
-            assert (origDeltaG == updateF_State(false));
+            assert (origDeltaG == updateFLambda(false));
 
         }
         if (dEdLambda < minFLambda) {
@@ -789,7 +816,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
     }
 
-    private double updateF_State(boolean print) {
+    private double updateFLambda(boolean print) {
         double freeEnergy = 0.0;
         if (print) {
             logger.info(" Count  Lambda Bin      F_Lambda Bin   <  F_L  >     dG");
@@ -1098,7 +1125,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                                     "Solvation         ", solvationEnergy, nGK));
         }
 
-        if (stateTerm) {
+        if (lambdaTerm) {
             sb.append(String.format(" %s %16.8f\n",
                                     "Bias Energy       ", biasEnergy));
         }

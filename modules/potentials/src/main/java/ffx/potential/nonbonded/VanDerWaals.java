@@ -97,8 +97,8 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
      */
     private final boolean softCore[][];
     private double lambda = 1.0;
-    private double vdwLambdaExponent = 5.0;
-    private double vdwLambdaAlpha = 0.7;
+    private double vdwLambdaExponent = 1.0;
+    private double vdwLambdaAlpha = 0.2;
     private double sc1 = 0.0;
     private double sc2 = 1.0;
     private double dsc1dL = 0.0;
@@ -319,7 +319,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
             softCore[1][i] = false;
         }
         lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
-        vdwLambdaAlpha = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_ALPHA, 0.2);
+        vdwLambdaAlpha = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_ALPHA, 0.1);
         vdwLambdaExponent = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_EXPONENT, 1.0);
         if (vdwLambdaAlpha < 0.0) {
             vdwLambdaAlpha = 0.2;
@@ -327,6 +327,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         if (vdwLambdaExponent < 1.0) {
             vdwLambdaExponent = 1.0;
         }
+
         if (lambdaTerm) {
             shareddEdL = new SharedDouble();
             sharedd2EdL2 = new SharedDouble();
@@ -698,7 +699,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         logger.info(String.format("%s %6d-%s %6d-%s %10.4f  %10.4f  %10.4f",
                                   "VDW", atoms[i].xyzIndex, atoms[i].getAtomType().name,
                                   atoms[k].xyzIndex, atoms[k].getAtomType().name,
-                                  radEps[classi][classk * 3 + RADMIN] / ZERO_07, r, eij));
+                                  radEps[classi][classk * 2 + RADMIN] / ZERO_07, r, eij));
     }
 
     @Override
@@ -764,12 +765,12 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
     }
 
     @Override
-    public void getdEdXdL(double[] gradients) {
+    public void getdEdXdL(double[] gradient) {
         int index = 0;
         for (int i = 0; i < nAtoms; i++) {
-            gradients[index++] += shareddEdLdX[0].get(i);
-            gradients[index++] += shareddEdLdX[1].get(i);
-            gradients[index++] += shareddEdLdX[2].get(i);
+            gradient[index++] += shareddEdLdX[0].get(i);
+            gradient[index++] += shareddEdLdX[1].get(i);
+            gradient[index++] += shareddEdLdX[2].get(i);
         }
     }
 
@@ -915,6 +916,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         private final double lyi_local[];
         private final double lzi_local[];
         private final double dx_local[];
+        private final double rotmat[][];
         private final double mask[];
         // Extra padding to avert cache interference.
         private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
@@ -930,6 +932,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
             lzi_local = new double[nAtoms];
             mask = new double[nAtoms];
             dx_local = new double[3];
+            rotmat = new double[3][3];
             for (int i = 0; i < nAtoms; i++) {
                 mask[i] = 1.0;
             }
@@ -1113,7 +1116,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                                 dx_local[0] = dedx;
                                 dx_local[1] = dedy;
                                 dx_local[2] = dedz;
-                                crystal.applyTransSymRot(dx_local, dx_local, symOp);
+                                crystal.applyTransSymRot(dx_local, dx_local, symOp, rotmat);
                                 dedx = dx_local[0];
                                 dedy = dx_local[1];
                                 dedz = dx_local[2];
@@ -1175,7 +1178,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                                 dx_local[0] = dedldx;
                                 dx_local[1] = dedldy;
                                 dx_local[2] = dedldz;
-                                crystal.applyTransSymRot(dx_local, dx_local, symOp);
+                                crystal.applyTransSymRot(dx_local, dx_local, symOp, rotmat);
                                 dedldx = dx_local[0];
                                 dedldy = dx_local[1];
                                 dedldz = dx_local[2];

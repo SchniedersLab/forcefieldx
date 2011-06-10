@@ -149,7 +149,7 @@ public class ParticleMeshEwald implements LambdaInterface {
      * Constant α in:
      * r' = sqrt(r^2 + α*(1 - L)^2) 
      */
-    private double permanentLambdaAlpha = 0.5;
+    private double permanentLambdaAlpha = 1.0;
     /**
      * Power on L in front of the pairwise multipole potential.
      */
@@ -452,12 +452,12 @@ public class ParticleMeshEwald implements LambdaInterface {
         p13scale = forceField.getDouble(ForceFieldDouble.POLAR_13_SCALE, 0.0);
         lambdaTerm = forceField.getBoolean(ForceFieldBoolean.LAMBDATERM, false);
 
-        permanentLambdaAlpha = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_ALPHA, 0.7);
+        permanentLambdaAlpha = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_ALPHA, 1.0);
         if (permanentLambdaAlpha < 0.0 || permanentLambdaAlpha > 2.0) {
-            permanentLambdaAlpha = 0.7;
+            permanentLambdaAlpha = 1.0;
         }
 
-        permanentLambdaExponent = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_EXPONENT, 2.0);
+        permanentLambdaExponent = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_EXPONENT, 1.0);
         if (permanentLambdaExponent < 1.0) {
             permanentLambdaExponent = 2.0;
         }
@@ -1831,6 +1831,7 @@ public class ParticleMeshEwald implements LambdaInterface {
             private final double fyp_local[];
             private final double fzp_local[];
             private final double dx_local[];
+            private final double rot_local[][];
 
             public PermanentRealSpaceFieldLoop() {
                 super();
@@ -1843,6 +1844,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                 fyp_local = new double[nAtoms];
                 fzp_local = new double[nAtoms];
                 dx_local = new double[3];
+                rot_local = new double[3][3];
                 for (int i = 0; i < nAtoms; i++) {
                     mask_local[i] = 1.0;
                     maskp_local[i] = 1.0;
@@ -2232,7 +2234,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                                 dx_local[0] = selfScale * (fkmx - fkdx);
                                 dx_local[1] = selfScale * (fkmy - fkdy);
                                 dx_local[2] = selfScale * (fkmz - fkdz);
-                                crystal.applyTransSymRot(dx_local, dx_local, symOp);
+                                crystal.applyTransSymRot(dx_local, dx_local, symOp, rot_local);
                                 fx_local[k] += dx_local[0];
                                 fy_local[k] += dx_local[1];
                                 fz_local[k] += dx_local[2];
@@ -2354,6 +2356,7 @@ public class ParticleMeshEwald implements LambdaInterface {
             private final double fyp_local[];
             private final double fzp_local[];
             private final double dx_local[];
+            private final double rot_local[][];
             private final double x[] = coordinates[0][0];
             private final double y[] = coordinates[0][1];
             private final double z[] = coordinates[0][2];
@@ -2369,6 +2372,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                 fyp_local = new double[nAtoms];
                 fzp_local = new double[nAtoms];
                 dx_local = new double[3];
+                rot_local = new double[3][3];
             }
 
             @Override
@@ -2677,14 +2681,14 @@ public class ParticleMeshEwald implements LambdaInterface {
                             dx_local[0] = selfScale * (fkmx - fkdx);
                             dx_local[1] = selfScale * (fkmy - fkdy);
                             dx_local[2] = selfScale * (fkmz - fkdz);
-                            crystal.applyTransSymRot(dx_local, dx_local, symOp);
+                            crystal.applyTransSymRot(dx_local, dx_local, symOp, rot_local);
                             fx_local[k] += dx_local[0];
                             fy_local[k] += dx_local[1];
                             fz_local[k] += dx_local[2];
                             dx_local[0] = selfScale * (pkmx - pkdx);
                             dx_local[1] = selfScale * (pkmy - pkdy);
                             dx_local[2] = selfScale * (pkmz - pkdz);
-                            crystal.applyTransSymRot(dx_local, dx_local, symOp);
+                            crystal.applyTransSymRot(dx_local, dx_local, symOp, rot_local);
                             fxp_local[k] += dx_local[0];
                             fyp_local[k] += dx_local[1];
                             fzp_local[k] += dx_local[2];
@@ -2848,6 +2852,7 @@ public class ParticleMeshEwald implements LambdaInterface {
             private final double masking_local[];
             private final double maskingp_local[];
             private final double maskingd_local[];
+            private final double rot_local[][];
             private final double work[][];
 
             public RealSpaceEnergyLoop() {
@@ -2882,6 +2887,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                 maskingd_local = new double[nAtoms];
                 dx_local = new double[3];
                 work = new double[15][3];
+                rot_local = new double[3][3];
             }
 
             public long getComputeTime() {
@@ -2969,7 +2975,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                                work[10], work[11], work[12], work[13], work[14]);
                         // Rotate symmetry mate gradients
                         crystal.applyTransSymRot(nAtoms, gxk_local, gyk_local, gzk_local,
-                                                 gxk_local, gyk_local, gzk_local, symOp);
+                                                 gxk_local, gyk_local, gzk_local, symOp, rot_local);
                         // Sum symmetry mate gradients into asymmetric unit gradients
                         for (int j = 0; j < nAtoms; j++) {
                             gx_local[j] += gxk_local[j];
@@ -2986,7 +2992,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                                work[10], work[11], work[12], work[13], work[14]);
                         // Rotate symmetry mate gradients
                         crystal.applyTransSymRot(nAtoms, lxk_local, lyk_local, lzk_local,
-                                                 lxk_local, lyk_local, lzk_local, symOp);
+                                                 lxk_local, lyk_local, lzk_local, symOp, rot_local);
                         // Sum symmetry mate gradients into asymmetric unit gradients
                         for (int j = 0; j < nAtoms; j++) {
                             lx_local[j] += lxk_local[j];

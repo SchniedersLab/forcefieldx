@@ -31,14 +31,14 @@ if (args.size() > 3) {
     initialLambda = Double.parseDouble(args[3]);
 }
 
-double initialFriction = 1.0e-19;
+double friction = 1.0e-16;
 if (args.size() > 4) {
-    initialFriction = Double.parseDouble(args[4]);
+    friction = Double.parseDouble(args[4]);
 }
 
-double initialMass = 1.0e-19;
+double mass = 1.0e-18;
 if (args.size() > 5) {
-    initialMass = Double.parseDouble(args[5]);
+    mass = Double.parseDouble(args[5]);
 }
 
 // Restart File
@@ -86,8 +86,8 @@ MolecularDynamics molDyn = new MolecularDynamics(active, active.getPotentialEner
 
 molDyn.doLambdaDynamics(true);
 molDyn.setLambda(initialLambda);
-molDyn.setThetaFrication(initialFriction);
-molDyn.setThetaMass(initialMass);
+molDyn.setThetaFrication(friction);
+molDyn.setThetaMass(mass);
 molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);
 
 /**

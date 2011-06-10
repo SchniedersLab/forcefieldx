@@ -303,6 +303,7 @@ public class Crystal {
         Ai[2][0] = c * cos_beta;
         Ai[2][1] = c * beta_term;
         Ai[2][2] = c * gamma_term;
+
         Ai00 = Ai[0][0];
         Ai10 = Ai[1][0];
         Ai20 = Ai[2][0];
@@ -317,6 +318,19 @@ public class Crystal {
         RealMatrix m = new Array2DRowRealMatrix(Ai, true);
         m = new LUDecompositionImpl(m).getSolver().getInverse();
         A = m.getData();
+        
+        /**
+         * Remove "negative zero" entries the matrix inversion routine creates 
+         * that look like "-0.0". This does not affect numerics anywhere.
+         */
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                if (A[i][j] <= -0.0) {
+                    A[i][j] = 0.0;
+                }
+            }
+        }
+        
         // The columns of A are the reciprocal basis vectors
         A00 = A[0][0];
         A01 = A[0][1];
@@ -758,26 +772,30 @@ public class Crystal {
      * @param symOp
      *            The symmetry operator.
      */
-    public void applyTransSymRot(double xyz[], double mate[], SymOp symOp) {
+    public void applyTransSymRot(double xyz[], double mate[], SymOp symOp, double rotmat[][]) {
+
+        /**
+         * The transformation operator R = ToCart * Rot * ToFrac
+         */
         double rot[][] = symOp.rot;
-        // Convert to fractional coordinates.
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                rotmat[i][j] = 0.0;
+                for (int k = 0; k < 3; k++) {
+                    for (int l = 0; l < 3; l++) {
+                        rotmat[i][j] += Ai[k][i] * rot[k][l] * A[j][l];
+                    }
+                }
+            }
+        }
+
+        // Apply R^T (its transpose).
         double xc = xyz[0];
         double yc = xyz[1];
         double zc = xyz[2];
-        // Convert to fractional coordinates.
-        double xi = xc * A00 + yc * A10 + zc * A20;
-        double yi = xc * A01 + yc * A11 + zc * A21;
-        double zi = xc * A02 + yc * A12 + zc * A22;
-
-        // Apply Symmetry Operator.
-        double fx = rot[0][0] * xi + rot[1][0] * yi + rot[2][0] * zi;
-        double fy = rot[0][1] * xi + rot[1][1] * yi + rot[2][1] * zi;
-        double fz = rot[0][2] * xi + rot[1][2] * yi + rot[2][2] * zi;
-
-        // Convert back to Cartesian coordinates.
-        mate[0] = fx * Ai00 + fy * Ai10 + fz * Ai20;
-        mate[1] = fx * Ai01 + fy * Ai11 + fz * Ai21;
-        mate[2] = fx * Ai02 + fy * Ai12 + fz * Ai22;
+        mate[0] = xc * rotmat[0][0] + yc * rotmat[1][0] + zc * rotmat[2][0];
+        mate[1] = xc * rotmat[0][1] + yc * rotmat[1][1] + zc * rotmat[2][1];
+        mate[2] = xc * rotmat[0][2] + yc * rotmat[1][2] + zc * rotmat[2][2];
     }
 
     /**
@@ -908,7 +926,9 @@ public class Crystal {
      *            The symmetry operator.
      */
     public void applyTransSymRot(int n, double x[], double y[], double z[],
-                                 double mateX[], double mateY[], double mateZ[], SymOp symOp) {
+                                 double mateX[], double mateY[], double mateZ[],
+                                 SymOp symOp, double rotmat[][]) {
+
         if (x == null || y == null || z == null) {
             return;
         }
@@ -924,32 +944,29 @@ public class Crystal {
         if (mateZ == null || mateZ.length < n) {
             mateZ = new double[n];
         }
-        final double rot[][] = symOp.rot;
-        final double rot00 = rot[0][0];
-        final double rot10 = rot[1][0];
-        final double rot20 = rot[2][0];
-        final double rot01 = rot[0][1];
-        final double rot11 = rot[1][1];
-        final double rot21 = rot[2][1];
-        final double rot02 = rot[0][2];
-        final double rot12 = rot[1][2];
-        final double rot22 = rot[2][2];
+
+        /**
+         * The transformation operator R = ToCart * Rot * ToFrac
+         */
+        double rot[][] = symOp.rot;
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                rotmat[i][j] = 0.0;
+                for (int k = 0; k < 3; k++) {
+                    for (int l = 0; l < 3; l++) {
+                        rotmat[i][j] += Ai[k][i] * rot[k][l] * A[j][l];
+                    }
+                }
+            }
+        }
         for (int i = 0; i < n; i++) {
+            // Apply R^T (its transpose).
             double xc = x[i];
             double yc = y[i];
             double zc = z[i];
-            // Convert to fractional coordinates.
-            double xi = xc * A00 + yc * A10 + zc * A20;
-            double yi = xc * A01 + yc * A11 + zc * A21;
-            double zi = xc * A02 + yc * A12 + zc * A22;
-            // Apply Symmetry Operator.
-            double fx = rot00 * xi + rot10 * yi + rot20 * zi;
-            double fy = rot01 * xi + rot11 * yi + rot21 * zi;
-            double fz = rot02 * xi + rot12 * yi + rot22 * zi;
-            // Convert back to Cartesian coordinates.
-            mateX[i] = fx * Ai00 + fy * Ai10 + fz * Ai20;
-            mateY[i] = fx * Ai01 + fy * Ai11 + fz * Ai21;
-            mateZ[i] = fx * Ai02 + fy * Ai12 + fz * Ai22;
+            mateX[i] = xc * rotmat[0][0] + yc * rotmat[1][0] + zc * rotmat[2][0];
+            mateY[i] = xc * rotmat[0][1] + yc * rotmat[1][1] + zc * rotmat[2][1];
+            mateZ[i] = xc * rotmat[0][2] + yc * rotmat[1][2] + zc * rotmat[2][2];
         }
     }
 
