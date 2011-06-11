@@ -192,10 +192,9 @@ public class Energy implements Potential {
         }
 
         structure_key = new File(okeyfname);
-        
         molecularAssembly = new MolecularAssembly(name);
         molecularAssembly.setFile(structure_xyz);
-        CompositeConfiguration properties = Keyword.loadProperties(structure_key);
+        CompositeConfiguration properties = Keyword_poltype.loadProperties(structure_key);
         ForceFieldFilter_2 forceFieldFilter = new ForceFieldFilter_2(properties, structure_key);
         forceField = forceFieldFilter.parse();
         molecularAssembly.setForceField(forceField);
@@ -589,6 +588,7 @@ public class Energy implements Potential {
             totalElectrostaticEnergy = particleMeshEwald.energy(gradient, print);
             permanentMultipoleEnergy = particleMeshEwald.getPermanentEnergy();
             polarizationEnergy = particleMeshEwald.getPolarizationEnergy();
+            //System.out.println(pme2.energyAndGradient(x, g));
             nPME = particleMeshEwald.getInteractions();
             electrostaticTime = System.nanoTime() - electrostaticTime;
         }
@@ -943,9 +943,9 @@ public class Energy implements Potential {
         }
     }
     
-//    public static void main(String args[]) throws IOException{
-//        Energy e = new Energy("/users/gchattree/Research/Compounds/s_test4_compounds/triclosan/triclosan.xyz");
-//        e.energy(false,true);
-//    }
+    public static void main(String args[]) throws IOException{
+        Energy e = new Energy("/users/gchattree/Research/Compounds/s_test3_compounds/famotidine/ttt.xyz");
+        e.energy(false,true);
+    }
 }
 

@@ -152,7 +152,7 @@ public class Potential2 implements OptimizationListener {
 
 		molecularAssembly = new MolecularAssembly(name);
 		molecularAssembly.setFile(structure_xyz);
-		CompositeConfiguration properties = Keyword.loadProperties(structure_key);
+		CompositeConfiguration properties = Keyword_poltype.loadProperties(structure_key);
 		
 		
 		//ForceFieldFilter_2 forceFieldFilter = new ForceFieldFilter_2(properties, structure_key);
@@ -378,7 +378,7 @@ public class Potential2 implements OptimizationListener {
 
 		molecularAssembly = new MolecularAssembly(name);
 		molecularAssembly.setFile(structure_xyz);
-		CompositeConfiguration properties = Keyword.loadProperties(structure_key);
+		CompositeConfiguration properties = Keyword_poltype.loadProperties(structure_key);
 		ForceFieldFilter_2 forceFieldFilter = new ForceFieldFilter_2(properties, structure_key);
 		//Decides difference between using prm file (below) or key file (above) for parameters
 		//ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties);

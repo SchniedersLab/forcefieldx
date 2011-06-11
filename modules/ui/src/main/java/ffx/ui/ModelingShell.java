@@ -55,9 +55,11 @@ import ffx.algorithms.Thermostat.Thermostats;
 import ffx.numerics.Potential;
 
 import ffx.potential.ForceFieldEnergy;
+import ffx.autoparm.Minimize_2;
 import ffx.autoparm.Poledit;
 import ffx.autoparm.Potential2;
 import ffx.autoparm.Energy;
+import ffx.autoparm.Superpose;
 import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.RendererCache.ColorModel;
@@ -147,6 +149,7 @@ public class ModelingShell extends Console implements AlgorithmListener {
         setVariable("md", new MethodClosure(this, "md"));
         setVariable("potential", new MethodClosure(this,"potential"));
         setVariable("poledit", new MethodClosure(this,"poledit"));
+        setVariable("superpose", new MethodClosure(this,"superpose"));
 
 
         /**
@@ -278,21 +281,31 @@ public class ModelingShell extends Console implements AlgorithmListener {
         return null;
     }
     
-//    public Potential minimize_2(double eps){
-//        if (interrupted) {
-//            logger.info("Algorithm interrupted - skipping minimization.");
-//            return null;
-//        }
-//        if (terminatableAlgorithm != null) {
-//            logger.info("Algorithm already running - skipping minimization.");
-//            return null;
-//        }
-//        Minimize_2 minimize = new Minimize_2(this);
-//        terminatableAlgorithm = minimize;
-//        Potential potential = minimize.minimize(eps);
-//        terminatableAlgorithm = null;
-//        return potential;
-//    }
+    public Potential minimize_2(String xyzf, double eps){
+    	Potential potential = null;
+        if (interrupted) {
+            logger.info("Algorithm interrupted - skipping minimization.");
+            return null;
+        }
+        if (terminatableAlgorithm != null) {
+            logger.info("Algorithm already running - skipping minimization.");
+            return null;
+        }
+        Minimize_2 minimize;
+		try {
+			minimize = new Minimize_2(xyzf);
+	        terminatableAlgorithm = minimize;
+	        potential = minimize.minimize(eps);
+	        terminatableAlgorithm = null;
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+        return potential;
+    }
+    
+    public void superpose(String file1, String file2){
+    	Superpose s = new Superpose(file1,file2);
+    }
 
     public void poledit(String gdmaoutfname, String peditinfname){
     	if (interrupted) {
