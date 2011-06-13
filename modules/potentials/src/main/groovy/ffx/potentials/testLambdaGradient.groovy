@@ -40,9 +40,6 @@ open(filename);
 
 ForceFieldEnergy energy = active.getPotentialEnergy();
 
-// Do not count energy evaluations.
-energy.doEnergyCounting(false);
-
 Atom[] atoms = active.getAtomArray();
 int n = atoms.length;
 

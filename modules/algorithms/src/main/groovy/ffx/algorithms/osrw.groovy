@@ -5,6 +5,7 @@ import org.apache.commons.io.FilenameUtils;
 
 // Force Field X Imports
 import ffx.algorithms.MolecularDynamics;
+import ffx.algorithms.OSRW;
 import ffx.algorithms.Thermostat.Thermostats;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Atom;
@@ -40,7 +41,6 @@ double mass = 1.0e-18;
 if (args.size() > 5) {
     mass = Double.parseDouble(args[5]);
 }
-
 
 // Restart File
 File dyn = new File(FilenameUtils.removeExtension(filename) + ".dyn"); 
@@ -88,12 +88,14 @@ for (int i = ligandStart; i <= ligandStop; i++) {
     ai.setApplyLambda(true);
 }
 
-MolecularDynamics molDyn = new MolecularDynamics(active, active.getPotentialEnergy(), 
-    active.getProperties(), null, thermostat);
+// Wrap the potential energy inside an OSRW instance.
+OSRW osrw = new OSRW(energy, energy, active.getProperties(), atoms, temperature, timeStep);
+osrw.setLambda(initialLambda);
+osrw.setThetaFrication(initialFriction);
+osrw.setThetaMass(mass);
 
-molDyn.doLambdaDynamics(true);
-molDyn.setLambda(initialLambda);
-molDyn.setThetaFrication(initialFriction);
-molDyn.setThetaMass(mass);
+// Create the MolecularDynamics instance.
+MolecularDynamics molDyn = new MolecularDynamics(active, osrw, active.getProperties(), null, thermostat);
 
+// Start sampling.
 molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);

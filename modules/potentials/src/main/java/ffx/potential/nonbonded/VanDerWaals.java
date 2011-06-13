@@ -289,7 +289,12 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         /**
          * Set up the cutoff and polynomial switch.
          */
-        double vdwcut = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, 9.0);
+        double vdwcut = 0.0;
+        if (!crystal.aperiodic()) {
+            vdwcut = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, 9.0);
+        } else {
+            vdwcut = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, 100.0);
+        }
         double vdwtaper = 0.9 * vdwcut;
         cut = vdwtaper;
         off = vdwcut;

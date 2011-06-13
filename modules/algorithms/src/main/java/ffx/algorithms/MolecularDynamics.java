@@ -20,13 +20,8 @@
  */
 package ffx.algorithms;
 
-import static java.lang.Math.sin;
-import static java.lang.Math.sqrt;
-import static java.lang.Math.PI;
-
-import static java.lang.String.format;
-
 import java.io.File;
+import static java.lang.String.format;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -35,13 +30,10 @@ import org.apache.commons.io.FilenameUtils;
 
 import ffx.algorithms.Thermostat.Thermostats;
 import ffx.numerics.Potential;
-import ffx.potential.ForceFieldEnergy;
-import ffx.potential.LambdaInterface;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.parsers.DYNFilter;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.XYZFilter;
-import java.util.Random;
 
 /**
  * Run NVE or NVT molecular dynamics.
@@ -68,7 +60,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
     private double dt;
     private final MolecularAssembly molecularAssembly;
     private final Potential potentialEnergy;
-    private final LambdaInterface lambdaInterface;
     private final CompositeConfiguration properties;
     private AlgorithmListener algorithmListener;
     private Thermostat thermostat;
@@ -86,36 +77,15 @@ public class MolecularDynamics implements Runnable, Terminatable {
     private double temperature = 300.0;
     private boolean initVelocities = true;
     private boolean loadRestart = false;
-    private boolean doLambdaDynamics = false;
-    private double theta;
-    /**
-     * Reasonable thetaFriction values are from 20 to 200.
-     */
-    private double thetaFriction = 60.0e-12;
-    private double thetaMass = 20.0;
-    private double halfThetaVelocity = 0.0;
-    private Random stochasticRandom;
-    /**
-     * Random force conversion to kcal/mol/A;
-     */
-    private static final double randomConvert = sqrt(4.184) / 10e9;
-    private static final double randomConvert2 = randomConvert * randomConvert; 
-    
+
     public MolecularDynamics(MolecularAssembly assembly,
-                             Potential potentialEnergy,
-                             CompositeConfiguration properties,
-                             AlgorithmListener listener,
-                             Thermostats requestedThermostat) {
+            Potential potentialEnergy,
+            CompositeConfiguration properties,
+            AlgorithmListener listener,
+            Thermostats requestedThermostat) {
         this.molecularAssembly = assembly;
         this.algorithmListener = listener;
         this.potentialEnergy = potentialEnergy;
-
-        if (potentialEnergy instanceof ForceFieldEnergy) {
-            lambdaInterface = (LambdaInterface) potentialEnergy;
-            stochasticRandom = new Random(0);
-        } else {
-            lambdaInterface = null;
-        }
 
         this.properties = properties;
         mass = potentialEnergy.getMass();
@@ -148,29 +118,12 @@ public class MolecularDynamics implements Runnable, Terminatable {
         done = true;
     }
 
-    public void setLambda(double lambda) {
-        lambdaInterface.setLambda(lambda);
-        theta = Math.asin(Math.sqrt(lambda));
-    }
-    
-    public void setThetaMass(double thetaMass) {
-        this.thetaMass = thetaMass;
-    }
-    
-    public void setThetaFrication(double thetaFriction) {
-        this.thetaFriction = thetaFriction;
-    }
-    
     public void setThermostat(Thermostat thermostat) {
         this.thermostat = thermostat;
     }
 
     public Thermostat getThermostat() {
         return thermostat;
-    }
-
-    public void doLambdaDynamics(boolean lambdaDynamics) {
-        doLambdaDynamics = lambdaDynamics;
     }
 
     public void setArchiveFile(File archive) {
@@ -182,8 +135,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     public void init(final int nSteps, final double timeStep, final double printInterval,
-                     final double saveInterval, final double temperature, final boolean initVelocities,
-                     final File dyn) {
+            final double saveInterval, final double temperature, final boolean initVelocities,
+            final File dyn) {
 
         /**
          * Return if already running.
@@ -233,7 +186,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
             if (xyzFilter == null) {
                 xyzFilter = new XYZFilter(file, molecularAssembly,
-                                          molecularAssembly.getForceField(), properties);
+                        molecularAssembly.getForceField(), properties);
             }
 
             if (dynFilter == null) {
@@ -249,10 +202,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
         this.temperature = temperature;
         this.initVelocities = initVelocities;
 
-        if (lambdaInterface != null) {
-            double lambda = lambdaInterface.getLambda();
-            theta = Math.asin(Math.sqrt(lambda));
-        }
+
     }
 
     /**
@@ -266,8 +216,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * @param initVelocities
      */
     public void dynamic(final int nSteps, final double timeStep, final double printInterval,
-                        final double saveInterval, final double temperature, final boolean initVelocities,
-                        final File dyn) {
+            final double saveInterval, final double temperature, final boolean initVelocities,
+            final File dyn) {
 
         init(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);
 
@@ -390,9 +340,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
              */
             thermostat.kineticEnergy();
 
-            // if (step % 10 == 0) {
-            thermostat.centerOfMassMotion(true, false);
-            // }
+            if (step % 10 == 0) {
+                thermostat.centerOfMassMotion(true, false);
+            }
 
             kinetic = thermostat.getKineticEnergy();
             currentTemp = thermostat.getCurrentTemperture();
@@ -488,32 +438,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
             aPrevious[i] = a[i];
             a[i] = -Thermostat.convert * grad[i] / mass[i];
             v[i] += (3.0 * a[i] + aPrevious[i]) * dt_8;
-        }
-
-        /**
-         * Lambda at full-step. 
-         */
-        if (doLambdaDynamics) {
-            /**
-             * The factor of (1/dt) is due
-             */
-            double rt2 = 2.0 * Thermostat.R * temperature * thetaFriction / dt;            
-            double randomForce = sqrt(rt2) * stochasticRandom.nextGaussian() / randomConvert;
-            double dEdL = -lambdaInterface.getdEdL() * sin(2.0 * theta);            
-            halfThetaVelocity = (halfThetaVelocity * (2.0 * thetaMass - thetaFriction * dt)
-                                 + randomConvert2 * 2.0 * dt * (dEdL + randomForce))
-                                / (2.0 * thetaMass + thetaFriction * dt);
-            theta = theta + dt * halfThetaVelocity;
-            
-            if (theta > PI) {
-                theta -= 2.0 * PI;
-            } else if (theta <= -PI) {
-                theta += 2.0 * PI;
-            }
-
-            double sinTheta = sin(theta);
-            double lambda = sinTheta * sinTheta;
-            lambdaInterface.setLambda(lambda);
         }
 
         /**

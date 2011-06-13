@@ -555,7 +555,11 @@ public class ParticleMeshEwald implements LambdaInterface {
             softCore[1][i] = false;
         }
 
-        off = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, 7.0);
+        if (!crystal.aperiodic()) {
+            off = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, 7.0);
+        } else {
+            off = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, 100.0);
+        }
         double ewald_precision = forceField.getDouble(ForceFieldDouble.EWALD_PRECISION, 1.0e-8);
         aewald = forceField.getDouble(ForceFieldDouble.EWALD_ALPHA, ewaldCoefficient(off, ewald_precision));
         setEwaldParameters(off, aewald);
