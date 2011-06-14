@@ -1830,7 +1830,7 @@ public class PME_2 implements Potential {
             }
             try {
                 //CHECK! Do I need this?
-    		//parallelTeam.execute(expandInducedDipolesRegion);
+            	//parallelTeam.execute(expandInducedDipolesRegion);
     		} catch (Exception e) {
     			e.printStackTrace();
     		}

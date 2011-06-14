@@ -178,7 +178,7 @@ public class Minimize_2 implements OptimizationListener, Terminatable {
         int status = 2;
         //print();
         double e = potential.energyAndGradient(x, grad);
-        print();
+        //print();
         status = LBFGS.minimize(n, m, x, e, grad, eps, potential, this);
         print();
         done = true;
@@ -212,9 +212,9 @@ public class Minimize_2 implements OptimizationListener, Terminatable {
             BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outf)));
             DecimalFormat myFormatter = new DecimalFormat(" ##########0.00000;-##########0.00000");
 
-            bw.write(String.format("%5d\n", atoms.length));
+            bw.write(String.format("%6d\n", atoms.length));
             for (Atom a : atoms) {
-                String output = String.format("%6d", a.getAtomType().type) + "  " + a.getAtomType().name + " "+ String.format("%12s %12s %12s",myFormatter.format(a.getX()),myFormatter.format(a.getY()),myFormatter.format(a.getZ())) + " " + String.format("%6d", a.getAtomType().atomClass);
+                String output = String.format("%6d", a.xyzIndex) + "  " + a.getAtomType().name + " "+ String.format("%12s %12s %12s",myFormatter.format(a.getX()),myFormatter.format(a.getY()),myFormatter.format(a.getZ())) + " " + String.format("%6d", a.getAtomType().atomClass);
                 for (int i = 0; i < a.getBonds().size(); i++) {
                     output += String.format("%6d", a.getBonds().get(i).get1_2(a).xyzIndex);
                 }

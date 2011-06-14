@@ -77,223 +77,6 @@ public class Potential2 implements OptimizationListener {
 	InputStreamReader stdinput = new InputStreamReader(System.in);
 	BufferedReader stdreader = new BufferedReader(stdinput);
 	
-	public Potential2() throws IOException{
-		
-		System.out.println("Would you like to:\n" +
-				"1. Get QM Potential from a Gaussian CUBE File\n" +
-				"2. Calculate the Model Potential for a System\n" +
-				"3. Compare a Model Potential to a Target Grid\n" +
-				"4. Fit Electrostatic Parameters to Target Grid");
-
-		int choice = Integer.parseInt(stdreader.readLine());
-
-		if(choice == 1){
-			do_cube(null);
-			System.exit(0);
-		}
-
-		boolean done = false;
-		String xyzfname = null;
-		System.out.println("Enter XYZ Filename: ");
-		while(!done){
-			xyzfname = stdreader.readLine();
-			structure_xyz = new File(xyzfname);
-			if(structure_xyz != null && structure_xyz.exists() && structure_xyz.canRead()){
-				done = true;
-			}
-			else{
-				System.out.println("Couldn't find file. Please reenter filename: ");
-			}
-		}
-
-		int n = 1;
-		String oxyzfname = null;
-		String old = xyzfname;
-		while(structure_xyz != null && structure_xyz.exists() && structure_xyz.canRead()){
-			oxyzfname = xyzfname;
-			n++;
-			xyzfname = old;
-			xyzfname = xyzfname+"_"+Integer.toString(n);
-			structure_xyz = new File(xyzfname);
-		}
-
-		structure_xyz = new File(oxyzfname);
-		int index = oxyzfname.lastIndexOf(".");
-		String name = oxyzfname.substring(0, index);
-		String keyfname = name+".key";
-		structure_key = new File(keyfname);
-		if(!(structure_key != null && structure_key.exists() && structure_key.canRead())){
-			System.out.println("Enter Key Filename: ");
-			done = false;
-			while(!done){
-				keyfname = stdreader.readLine();
-				structure_key = new File(keyfname);
-				if(structure_key != null && structure_key.exists() && structure_key.canRead()){
-					done = true;
-				}
-				else{
-					System.out.println("Couldn't find file. Please reenter filename: ");
-				}
-			}
-			structure_key = new File(keyfname);
-		}
-		n = 1;
-		String okeyfname = null;
-		old = keyfname;
-		while(structure_key != null && structure_key.exists() && structure_key.canRead()){
-			okeyfname = keyfname;
-			n++;
-			keyfname = old;
-			keyfname = keyfname+"_"+Integer.toString(n);
-			structure_key = new File(keyfname);
-		}
-
-		structure_key = new File(okeyfname);
-
-		molecularAssembly = new MolecularAssembly(name);
-		molecularAssembly.setFile(structure_xyz);
-		CompositeConfiguration properties = Keyword_poltype.loadProperties(structure_key);
-		
-		
-		//ForceFieldFilter_2 forceFieldFilter = new ForceFieldFilter_2(properties, structure_key);
-		//Decides difference between using prm file (below) or key file (above) for parameters
-		ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties);
-		
-		
-		forceField = forceFieldFilter.parse();
-		//System.out.println(forceField.getMultipoleType("401 401 403"));
-		molecularAssembly.setForceField(forceField);
-		XYZFilter xyzFilter = new XYZFilter(structure_xyz,molecularAssembly,forceField,properties);
-		boolean expectedReturn = true;
-		boolean actualReturn = xyzFilter.readFile();
-		//assertEquals(info, expectedReturn, actualReturn);
-		Utilities.biochemistry(molecularAssembly, xyzFilter.getAtomList());
-		//Had to comment out something in finalize method
-		molecularAssembly.finalize(true);
-		atoms = molecularAssembly.getAtomArray();
-		nAtoms = atoms.length;
-		ParallelTeam parallelTeam = new ParallelTeam();
-		crystal = create_crystal(forceField, atoms);
-		nSymm = crystal.spaceGroup.getNumberOfSymOps();
-		VanDerWaals vanderWaals = new VanDerWaals(forceField, atoms, crystal, parallelTeam);
-		store_key_file(structure_key);
-		pme = new PME_2(forceField, atoms, crystal, parallelTeam, vanderWaals.getNeighborLists(), key);
-
-
-		if(choice == 2){
-			double pgrid[][][] = gen_pot_grid(null, atoms, 1);
-			String potfilename = name+".pot";
-			String ofname = potfilename;
-			File outf = new File(potfilename);
-			n = 1;
-			while(outf != null && outf.exists() && outf.canRead()){
-				potfilename = ofname;
-				n++;
-				potfilename = potfilename+"_"+Integer.toString(n);
-				outf = new File(potfilename);
-			}
-			String gridfilename = name+".grid";
-			String ofgname = gridfilename;
-			File outfg = new File(gridfilename);
-			n = 1;
-			while(outfg != null && outfg.exists() && outfg.canRead()){
-				gridfilename = ofgname;
-				n++;
-				gridfilename = gridfilename+"_"+Integer.toString(n);
-				outfg = new File(gridfilename);
-			}
-			output_pgrid(outf, outfg, pgrid);
-			System.exit(0);
-		}
-		
-		String cubefname = name+".cube";
-		if(!(structure_cube != null && structure_cube.exists() && structure_cube.canRead())){
-			System.out.println("Enter Cube Filename: ");
-			done = false;
-			while(!done){
-				cubefname = stdreader.readLine();
-				structure_cube = new File(cubefname);
-				if(structure_cube != null && structure_cube.exists() && structure_cube.canRead()){
-					done = true;
-				}
-				else{
-					System.out.println("Couldn't find file. Please reenter filename: ");
-				}
-			}
-		}
-		structure_cube = new File(cubefname);
-		n = 1;
-		String ocubefname = null;
-		old = cubefname;
-		while(structure_cube != null && structure_cube.exists() && structure_cube.canRead()){
-			ocubefname = cubefname;
-			n++;
-			cubefname = old;
-			cubefname = cubefname+"_"+Integer.toString(n);
-			structure_cube = new File(cubefname);
-		}
-
-		structure_cube = new File(ocubefname);
-		
-		
-		if(choice == 3){
-			target_grid = gen_pot_grid(structure_cube, atoms, 0);
-			pme.init_prms();
-//			System.out.println("Output potential at every point? Y/N");
-//			int ans = stdreader.read();
-//			if(ans == 'Y'){
-//				double pgrid[][][] = gen_pot_grid(structure_cube,atoms, 1);
-//				String potfilename = name+".pot";
-//				String ofname = potfilename;
-//				File outf = new File(potfilename);
-//				n = 1;
-//				while(outf != null && outf.exists() && outf.canRead()){
-//					potfilename = ofname;
-//					n++;
-//					potfilename = potfilename+"_"+Integer.toString(n);
-//					outf = new File(potfilename);
-//				}
-//				output_pgrid(outf, pgrid);
-//			}
-			output_stats();
-			System.exit(0);
-		}
-		else if(choice == 4){
-			target_grid = gen_pot_grid(structure_cube, atoms, 0);
-			pme.set_target_grid(target_grid);
-			double a = avgrms();
-			output_stats();
-			int m = 7;
-			double eps = .1;
-			nvars = pme.getNumberOfVariables();
-			x = new double[nvars];
-			grad = new double[nvars];
-			scaling = new double[nvars];
-			pme.getCoordinates(x);
-			double e = pme.energyAndGradient(x, grad);
-			time = -System.nanoTime();
-			int status = 0;
-			long at = System.nanoTime();
-			status = LBFGS.minimize(nvars, m, x, e, grad, eps, pme, this);
-			long bt = System.nanoTime();
-			System.out.println("TOTAL TIME "+(bt - at)*1e-9+"\n");
-			switch (status) {
-			case 0:
-				logger.info(String.format("\n Optimization achieved convergence criteria: %8.5f\n", grms));
-				break;
-			case 1:
-				logger.info(String.format("\n Optimization terminated at step %d.\n", nSteps));
-				break;
-			default:
-				logger.warning("\n Optimization failed.\n");
-			}
-			pme.init_prms();
-			output_stats();
-			double b = avgrms();
-			System.out.println("a = "+a+" b = "+b+" diff = "+(a - b));
-		}
-	}
-	
 	/**
 	 * key_filename and cube_filename can be null if they are in the same directory as xyz_filename
 	 * eps is only needed if choice == 4, otherwise leave as null
@@ -804,7 +587,7 @@ public class Potential2 implements OptimizationListener {
 				double dist = Math.sqrt(r2) - rad[k];
 				if(dist < small){
 					small = dist;
-					ipgrid.add(k);
+					ipgrid.add(i,k);
 				}
 			}
 		}
@@ -1005,7 +788,7 @@ public class Potential2 implements OptimizationListener {
 		System.out.println("\nAverage Electrostatic Potential over Atoms :\n (Kcal/mole per unit charge)\n");
 		System.out.println("Atom \t Points \t Potential \t Target \t RMS Diff\n");
 		for(int i = 0; i < nAtoms; i++){
-			System.out.printf("%d \t %d \t %12.6g \t %12.6g \t %12.6g\n", i, natm.get(i), patm1.get(i), patm2.get(i), rmsa.get(i));
+			System.out.printf("%d \t %d \t %12.6g \t %12.6g \t %12.6g\n", i+1, natm.get(i), patm1.get(i), patm2.get(i), rmsa.get(i));
 		}
 		System.out.println("\nElectrostatic Potential over all Grid Points :\n");
 		System.out.printf("Average Magnitude for Potential : \t\t %12.6g\n", a_pot);
@@ -1082,10 +865,10 @@ public class Potential2 implements OptimizationListener {
 	
 	public static void main(String args[]) throws IOException{
 		//Potential2 p1 = new Potential2(4, "/users/gchattree/Research/Compounds/test_compounds/phenobarbital-test/phenobarbital.xyz", null, .1);
-		//Potential2 p2 = new Potential2(3, "/users/gchattree/Research/Compounds/test_compounds/phenobarbital-test/phenobarbital.xyz", null, null);
-		//Potential2 p1 = new Potential2(4, "/users/gchattree/Research/Compounds/test_compounds/12-ethanediol-poltypeffx/12-ethanediol.xyz", null, .1);
-		//Potential2 p2 = new Potential2(3, "/users/gchattree/Research/Compounds/test_compounds/12-ethanediol-test/12-ethanediol.xyz", null, null);
-        Potential2 p1 = new Potential2(4, "/users/gchattree/Research/Compounds/test_compounds/C6H5NH3+/C6H5NH3+.xyz", null, .1);
+		//Potential2 p2 = new Potential2(3, "/users/gchattree/Research/Compounds/s_test3_compounds/famotidine/famotidine.xyz", null, null);
+		Potential2 p1 = new Potential2(3, "/users/gchattree/Research/dev/ffx/modules/autoparm/src/main/java/ffx/autoparm/structures/12-ethanediol/12-ethanediol.xyz", null, null);
+		//Potential2 p2 = new Potential2(3, "/users/gchattree/Research/Compounds/test_compounds/12-ethanediol/12-ethanediol.xyz", null, null);
+        //Potential2 p1 = new Potential2(3, "/users/gchattree/Research/Compounds/test_compounds/C6H5NH3+/C6H5NH3+.xyz", null, null);
 	}
 }
 
