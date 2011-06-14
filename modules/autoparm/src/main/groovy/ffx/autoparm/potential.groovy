@@ -10,7 +10,7 @@
 
 
 //Get XYZ File
-double eps = null;
+Double eps = null;
 Integer choice = Integer.parseInt(args[0]);
 String filename = args[1];
 if(choice == 4){
