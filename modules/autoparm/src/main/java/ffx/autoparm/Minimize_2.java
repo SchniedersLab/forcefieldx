@@ -68,11 +68,11 @@ public class Minimize_2 implements OptimizationListener, Terminatable {
     InputStreamReader stdinput = new InputStreamReader(System.in);
     private Atom atoms[];
     private String name;
-    
+    private int add;
     BufferedReader stdreader = new BufferedReader(stdinput);
     private ForceField forceField;
 
-    public Minimize_2(String xyz_filename) throws IOException {
+    public Minimize_2(String xyz_filename, String keyfname) throws IOException {
         
         structure_xyz = new File(xyz_filename);
         if (!(structure_xyz != null && structure_xyz.exists() && structure_xyz.canRead())) {
@@ -89,32 +89,37 @@ public class Minimize_2 implements OptimizationListener, Terminatable {
             xyz_filename = xyz_filename + "_" + Integer.toString(r);
             structure_xyz = new File(xyz_filename);
         }
+        add = r;
         structure_xyz = new File(oxyzfname);
         int index = oxyzfname.lastIndexOf(".");
         name = oxyzfname.substring(0, index);
-        String keyfname = name + ".key";
-        structure_key = new File(keyfname);
-        while (!(structure_key != null && structure_key.exists() && structure_key.canRead())) {
-            System.out.println("Enter the Key Filename: ");
-            keyfname = stdreader.readLine();
+        
+        if(keyfname != null){
             structure_key = new File(keyfname);
             if (!(structure_key != null && structure_key.exists() && structure_key.canRead())) {
                 System.out.println("Couldn't find key file");
+                System.exit(1);
             }
         }
-
-        r = 1;
-        String okeyfname = null;
-        old = keyfname;
-        while (structure_key != null && structure_key.exists() && structure_key.canRead() && structure_key.length() != 0) {
-            okeyfname = keyfname;
-            r++;
-            keyfname = old;
-            keyfname = keyfname + "_" + Integer.toString(r);
+        else{
+            keyfname = name + ".key";
             structure_key = new File(keyfname);
+            if (!(structure_key != null && structure_key.exists() && structure_key.canRead())) {
+                System.out.println("Couldn't find key file");
+                System.exit(1);
+            }
+            n = 1;
+            String okeyfname = null;
+            old = keyfname;
+            while (structure_key != null && structure_key.exists() && structure_key.canRead() && structure_key.length() != 0) {
+                okeyfname = keyfname;
+                n++;
+                keyfname = old;
+                keyfname = keyfname + "_" + Integer.toString(n);
+                structure_key = new File(keyfname);
+            }
+            structure_key = new File(okeyfname);
         }
-
-        structure_key = new File(okeyfname);
         
         molecularAssembly = new MolecularAssembly(name);
         molecularAssembly.setFile(structure_xyz);
@@ -197,17 +202,17 @@ public class Minimize_2 implements OptimizationListener, Terminatable {
     }
 
     public void print(){
-    	for(int i = 0; i < x.length; i+=3){
-    		System.out.println(x[i]/12+" "+x[i+1]/12+" "+x[i+2]/12);
-    	}
-    	double norm = 0;
-    	for(int i = 0; i < grad.length; i++){
-    		norm += Math.pow(grad[i],2);
-    	}
-    	norm = Math.sqrt(norm);
-    	System.out.println("gradnorm: "+norm);
-    	System.out.println(potential.energyAndGradient(x, grad));
-        File outf = new File(name + ".xyz_2");
+//    	for(int i = 0; i < x.length; i+=3){
+//    		System.out.println(x[i]/12+" "+x[i+1]/12+" "+x[i+2]/12);
+//    	}
+//    	double norm = 0;
+//    	for(int i = 0; i < grad.length; i++){
+//    		norm += Math.pow(grad[i],2);
+//    	}
+//    	norm = Math.sqrt(norm);
+//    	System.out.println("gradnorm: "+norm);
+//    	System.out.println(potential.energyAndGradient(x, grad));
+        File outf = new File(name+".xyz_"+add);
         try {
             BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outf)));
             DecimalFormat myFormatter = new DecimalFormat(" ##########0.00000;-##########0.00000");
@@ -315,7 +320,7 @@ public class Minimize_2 implements OptimizationListener, Terminatable {
     
     public static void main(String args[]){
     	try {
-			Minimize_2 m = new Minimize_2("/home/gchattree/Research/Compounds/s_test3_compounds/famotidine/ttt.xyz");
+			Minimize_2 m = new Minimize_2("/home/gchattree/Research/Compounds/s_test3_compounds/famotidine/ttt.xyz",null);
 			m.minimize(0.1);
 		} catch (IOException e) {
 			e.printStackTrace();

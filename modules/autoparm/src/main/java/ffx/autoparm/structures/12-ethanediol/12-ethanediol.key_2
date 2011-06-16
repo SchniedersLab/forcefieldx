@@ -1,4 +1,4 @@
-parameters /users/gchattree/Research/dev/amoeba_v2_new_head.prm
+parameters amoeba_v2_new_head.prm
 bondterm none
 angleterm none
 torsionterm none

@@ -244,7 +244,7 @@ public class NeighborList extends ParallelRegion {
         previous = new double[nAtoms * 3];
         final double side = min(min(crystal.a, crystal.b), crystal.c);
 
-        assert (side > 2.0 * total);
+        //assert (side > 2.0 * total);
 
         /**
          * nEdgeA, nEdgeB and nEdgeC must be >= 1.

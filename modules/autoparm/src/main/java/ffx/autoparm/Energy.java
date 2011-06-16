@@ -81,12 +81,12 @@ import org.apache.commons.math.linear.*;
 public class Energy {
 
     private static final Logger logger = Logger.getLogger(Energy.class.getName());
-    private final Atom[] atoms;
-    private final Crystal crystal;
-    private final ParallelTeam parallelTeam;
-    private final VanDerWaals vanderWaals;
+    private Atom[] atoms;
+    private Crystal crystal;
+    private ParallelTeam parallelTeam;
+    private VanDerWaals vanderWaals;
     private PME_2 pme2;
-    protected final int nAtoms;
+    protected int nAtoms;
     protected int nVanDerWaals, nPME;
     private File structure_key;
     private File structure_xyz;
@@ -95,8 +95,10 @@ public class Energy {
     private MolecularAssembly molecularAssembly;
     private ArrayList<String> key = new ArrayList<String>();
     private ForceField forceField;
+    private boolean do_propyze = false;
+    private boolean do_detail = false;
 
-    public Energy(String xyz_filename) throws IOException{
+    public Energy(String xyz_filename, String keyfname, String options) throws IOException{
         
         parallelTeam = new ParallelTeam();
         logger.info(format(" Constructing Force Field"));
@@ -120,29 +122,34 @@ public class Energy {
         structure_xyz = new File(oxyzfname);
         int index = oxyzfname.lastIndexOf(".");
         String name = oxyzfname.substring(0, index);
-        String keyfname = name + ".key";
-        structure_key = new File(keyfname);
-        while (!(structure_key != null && structure_key.exists() && structure_key.canRead())) {
-            System.out.println("Enter the Key Filename: ");
-            keyfname = stdreader.readLine();
+        
+        if(keyfname != null){
             structure_key = new File(keyfname);
             if (!(structure_key != null && structure_key.exists() && structure_key.canRead())) {
                 System.out.println("Couldn't find key file");
+                System.exit(1);
             }
         }
-
-        n = 1;
-        String okeyfname = null;
-        old = keyfname;
-        while (structure_key != null && structure_key.exists() && structure_key.canRead() && structure_key.length() != 0) {
-            okeyfname = keyfname;
-            n++;
-            keyfname = old;
-            keyfname = keyfname + "_" + Integer.toString(n);
+        else{
+            keyfname = name + ".key";
             structure_key = new File(keyfname);
+            if (!(structure_key != null && structure_key.exists() && structure_key.canRead())) {
+                System.out.println("Couldn't find key file");
+                System.exit(1);
+            }
+            n = 1;
+            String okeyfname = null;
+            old = keyfname;
+            while (structure_key != null && structure_key.exists() && structure_key.canRead() && structure_key.length() != 0) {
+                okeyfname = keyfname;
+                n++;
+                keyfname = old;
+                keyfname = keyfname + "_" + Integer.toString(n);
+                structure_key = new File(keyfname);
+            }
+            structure_key = new File(okeyfname);
         }
 
-        structure_key = new File(okeyfname);
         molecularAssembly = new MolecularAssembly(name);
         molecularAssembly.setFile(structure_xyz);
         CompositeConfiguration properties = Keyword_poltype.loadProperties(structure_key);
@@ -155,101 +162,115 @@ public class Energy {
         molecularAssembly.finalize(true);
 
         
+        //Read options
+        if(options != null){
+            if(options.toLowerCase().contains("p")){
+            	do_propyze = true;
+            }
+//            if(options.toLowerCase().contains("d")){
+//            	do_detail = true;
+//            }
+        }
+        if(do_propyze){
+            // Get a reference to the sorted atom array.
+            atoms = molecularAssembly.getAtomArray();
+            nAtoms = atoms.length;
 
-        
-        
-        
-        
-        // Get a reference to the sorted atom array.
-        atoms = molecularAssembly.getAtomArray();
-        nAtoms = atoms.length;
 
+            // Define the cutoff lengths.
+            double vdwOff = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, 9.0);
+            double ewaldOff = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, 7.0);
+            double buff = 2.0;
+            double cutOff2 = 2.0 * (max(vdwOff, ewaldOff) + buff);
 
-        // Define the cutoff lengths.
-        double vdwOff = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, 9.0);
-        double ewaldOff = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, 7.0);
-        double buff = 2.0;
-        double cutOff2 = 2.0 * (max(vdwOff, ewaldOff) + buff);
-
-        // Determine the unit cell dimensions and Spacegroup
-        String spacegroup;
-        double a, b, c, alpha, beta, gamma;
-        boolean aperiodic;
-        try {
-            a = forceField.getDouble(ForceFieldDouble.A_AXIS);
-            aperiodic = false;
-            b = forceField.getDouble(ForceFieldDouble.B_AXIS, a);
-            c = forceField.getDouble(ForceFieldDouble.C_AXIS, a);
-            alpha = forceField.getDouble(ForceFieldDouble.ALPHA, 90.0);
-            beta = forceField.getDouble(ForceFieldDouble.BETA, 90.0);
-            gamma = forceField.getDouble(ForceFieldDouble.GAMMA, 90.0);
-            spacegroup = forceField.getString(ForceFieldString.SPACEGROUP, "P1");
-        } catch (Exception e) {
-            logger.info(" The system will be treated as aperiodic.");
-            aperiodic = true;
-            spacegroup = "P1";
-            /**
-             * Search all atom pairs to find the largest pair-wise distance.
-             */
-            double xr[] = new double[3];
-            double maxr = 0.0;
-            for (int i = 0; i < nAtoms - 1; i++) {
-                double[] xi = atoms[i].getXYZ();
-                for (int j = i + 1; j < nAtoms; j++) {
-                    double[] xj = atoms[j].getXYZ();
-                    diff(xi, xj, xr);
-                    double r = r(xr);
-                    if (r > maxr) {
-                        maxr = r;
+            // Determine the unit cell dimensions and Spacegroup
+            String spacegroup;
+            double a, b, c, alpha, beta, gamma;
+            boolean aperiodic;
+            try {
+                a = forceField.getDouble(ForceFieldDouble.A_AXIS);
+                aperiodic = false;
+                b = forceField.getDouble(ForceFieldDouble.B_AXIS, a);
+                c = forceField.getDouble(ForceFieldDouble.C_AXIS, a);
+                alpha = forceField.getDouble(ForceFieldDouble.ALPHA, 90.0);
+                beta = forceField.getDouble(ForceFieldDouble.BETA, 90.0);
+                gamma = forceField.getDouble(ForceFieldDouble.GAMMA, 90.0);
+                spacegroup = forceField.getString(ForceFieldString.SPACEGROUP, "P1");
+            } catch (Exception e) {
+                logger.info(" The system will be treated as aperiodic.");
+                aperiodic = true;
+                spacegroup = "P1";
+                /**
+                 * Search all atom pairs to find the largest pair-wise distance.
+                 */
+                double xr[] = new double[3];
+                double maxr = 0.0;
+                for (int i = 0; i < nAtoms - 1; i++) {
+                    double[] xi = atoms[i].getXYZ();
+                    for (int j = i + 1; j < nAtoms; j++) {
+                        double[] xj = atoms[j].getXYZ();
+                        diff(xi, xj, xr);
+                        double r = r(xr);
+                        if (r > maxr) {
+                            maxr = r;
+                        }
                     }
                 }
+                a = 2.0 * (maxr + ewaldOff);
+                b = a;
+                c = a;
+                alpha = 90.0;
+                beta = 90.0;
+                gamma = 90.0;
             }
-            a = 2.0 * (maxr + ewaldOff);
-            b = a;
-            c = a;
-            alpha = 90.0;
-            beta = 90.0;
-            gamma = 90.0;
-        }
-        Crystal unitCell = new Crystal(a, b, c, alpha, beta, gamma, spacegroup);
-        unitCell.setAperiodic(aperiodic);
+            Crystal unitCell = new Crystal(a, b, c, alpha, beta, gamma, spacegroup);
+            unitCell.setAperiodic(aperiodic);
 
-        /**
-         * Do we need a ReplicatesCrystal?
-         */
-        int l = 1;
-        int m = 1;
-        n = 1;
-        while (unitCell.a * l < cutOff2) {
-            l++;
-        }
-        while (unitCell.b * m < cutOff2) {
-            m++;
-        }
-        while (unitCell.c * n < cutOff2) {
-            n++;
-        }
+            /**
+             * Do we need a ReplicatesCrystal?
+             */
+            int l = 1;
+            int m = 1;
+            n = 1;
+            while (unitCell.a * l < cutOff2) {
+                l++;
+            }
+            while (unitCell.b * m < cutOff2) {
+                m++;
+            }
+            while (unitCell.c * n < cutOff2) {
+                n++;
+            }
 
-        if (l * m * n > 1 && !aperiodic) {
-            this.crystal = new ReplicatesCrystal(unitCell, l, m, n);
-        } else {
-            this.crystal = unitCell;
+            if (l * m * n > 1 && !aperiodic) {
+                this.crystal = new ReplicatesCrystal(unitCell, l, m, n);
+            } else {
+                this.crystal = unitCell;
+            }
+
+    		//logger.info(crystal.toString());
+    		vanderWaals = new VanDerWaals(forceField, atoms, crystal, parallelTeam);
+
+    		pme2 = new PME_2(forceField, atoms, crystal, parallelTeam, vanderWaals.getNeighborLists(), key);
+    		pme2.propyze = true;
+    		pme2.init_prms();
         }
-
-		//logger.info(crystal.toString());
-		vanderWaals = new VanDerWaals(forceField, atoms, crystal, parallelTeam);
-
-		pme2 = new PME_2(forceField, atoms, crystal, parallelTeam, vanderWaals.getNeighborLists(), key);
-		pme2.propyze = true;
-		pme2.init_prms();
-        //molecularAssembly.setPotential(this);
     }
     
     public void energy(boolean gradient, boolean print){
         ForceFieldEnergy energy = new ForceFieldEnergy(molecularAssembly);
         molecularAssembly.setPotential(energy);
+//        if(do_detail){
+//        	energy.tor_verbose = true;
+//        }
         energy.energy(gradient, print);
-        system_mpoles();
+        if(do_propyze){
+            system_mpoles();	
+        }
+    }
+    
+    public void torsional_angles(){
+    	
     }
     
     public void system_mpoles(){
@@ -376,7 +397,7 @@ public class Energy {
     }
     
     public static void main(String args[]) throws IOException{
-        Energy e = new Energy("/users/gchattree/Research/Compounds/s_test3_compounds/famotidine/ttt.xyz");
+        Energy e = new Energy("/users/gchattree/Research/Compounds/s_test3_compounds/famotidine/ttt.xyz",null,"d");
         e.energy(false,true);
     }
 }
