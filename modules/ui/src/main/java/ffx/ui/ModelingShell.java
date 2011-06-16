@@ -29,9 +29,9 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.List;
-import java.util.prefs.Preferences;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.prefs.Preferences;
 
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
@@ -44,22 +44,20 @@ import javax.swing.text.StyleContext;
 import javax.swing.text.StyledDocument;
 
 import groovy.ui.Console;
-
 import org.codehaus.groovy.runtime.MethodClosure;
 
-import ffx.algorithms.Minimize;
 import ffx.algorithms.AlgorithmListener;
+import ffx.algorithms.Minimize;
 import ffx.algorithms.MolecularDynamics;
 import ffx.algorithms.Terminatable;
 import ffx.algorithms.Thermostat.Thermostats;
-import ffx.numerics.Potential;
-
-import ffx.potential.ForceFieldEnergy;
+import ffx.autoparm.Energy;
 import ffx.autoparm.Minimize_2;
 import ffx.autoparm.Poledit;
 import ffx.autoparm.Potential2;
-import ffx.autoparm.Energy;
 import ffx.autoparm.Superpose;
+import ffx.numerics.Potential;
+import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.RendererCache.ColorModel;
@@ -143,13 +141,13 @@ public class ModelingShell extends Console implements AlgorithmListener {
 
         // Algorithms
         setVariable("energy", new MethodClosure(this, "energy"));
-        setVariable("analyze", new MethodClosure(this,"analyze"));
+        setVariable("analyze", new MethodClosure(this, "analyze"));
         setVariable("minimize", new MethodClosure(this, "minimize"));
         setVariable("minimize_2", new MethodClosure(this, "minimize_2"));
         setVariable("md", new MethodClosure(this, "md"));
-        setVariable("potential", new MethodClosure(this,"potential"));
-        setVariable("poledit", new MethodClosure(this,"poledit"));
-        setVariable("superpose", new MethodClosure(this,"superpose"));
+        setVariable("potential", new MethodClosure(this, "potential"));
+        setVariable("poledit", new MethodClosure(this, "poledit"));
+        setVariable("superpose", new MethodClosure(this, "superpose"));
 
 
         /**
@@ -232,7 +230,7 @@ public class ModelingShell extends Console implements AlgorithmListener {
             logger.info("Algorithm interrupted - skipping energy.");
             return null;
         }
-        if ( terminatableAlgorithm != null ) {
+        if (terminatableAlgorithm != null) {
             logger.info("Algorithm already running - skipping energy.");
             return null;
         }
@@ -249,14 +247,16 @@ public class ModelingShell extends Console implements AlgorithmListener {
         }
         return null;
     }
-    
-    public void analyze(String xyzfname){
-    	try {
-            Energy e = new Energy(xyzfname);
+
+    public void analyze(String xyzfname) {
+        String keyfile = null;
+        String options = null;
+        try {
+            Energy e = new Energy(xyzfname, keyfile, options);
             e.energy(false, true);
-    	} catch (IOException e) {
-    		e.printStackTrace();
-    	}
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public Potential minimize(double eps) {
@@ -264,7 +264,7 @@ public class ModelingShell extends Console implements AlgorithmListener {
             logger.info("Algorithm interrupted - skipping minimization.");
             return null;
         }
-        if ( terminatableAlgorithm != null ) {
+        if (terminatableAlgorithm != null) {
             logger.info("Algorithm already running - skipping minimization.");
             return null;
         }
@@ -280,9 +280,9 @@ public class ModelingShell extends Console implements AlgorithmListener {
         }
         return null;
     }
-    
-    public Potential minimize_2(String xyzf, double eps){
-    	Potential potential = null;
+
+    public Potential minimize_2(String xyzf, double eps) {
+        Potential potential = null;
         if (interrupted) {
             logger.info("Algorithm interrupted - skipping minimization.");
             return null;
@@ -292,68 +292,68 @@ public class ModelingShell extends Console implements AlgorithmListener {
             return null;
         }
         Minimize_2 minimize;
-		try {
-			minimize = new Minimize_2(xyzf);
-	        terminatableAlgorithm = minimize;
-	        potential = minimize.minimize(eps);
-	        terminatableAlgorithm = null;
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+        try {
+            String keyfile = null;
+            minimize = new Minimize_2(xyzf, keyfile);
+            terminatableAlgorithm = minimize;
+            potential = minimize.minimize(eps);
+            terminatableAlgorithm = null;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         return potential;
     }
-    
-    public void superpose(String file1, String file2){
-    	Superpose s = new Superpose(file1,file2);
+
+    public void superpose(String file1, String file2) {
+        Superpose s = new Superpose(file1, file2);
     }
 
-    public void poledit(String gdmaoutfname, String peditinfname){
-    	if (interrupted) {
-    		logger.info("Algorithm interrupted - skipping minimization.");
-    	}
-    	if ( terminatableAlgorithm != null ) {
-    		logger.info("Algorithm already running - skipping minimization.");
-    	}
-    	Poledit p = new Poledit(gdmaoutfname,peditinfname);
+    public void poledit(String gdmaoutfname, String peditinfname) {
+        if (interrupted) {
+            logger.info("Algorithm interrupted - skipping minimization.");
+        }
+        if (terminatableAlgorithm != null) {
+            logger.info("Algorithm already running - skipping minimization.");
+        }
+        Poledit p = new Poledit(gdmaoutfname, peditinfname);
     }
-    
+
     public void md(int nStep, double timeStep, double printInterval,
-                   double saveInterval, double temperature, boolean initVelocities,
-                   File dyn) {
+            double saveInterval, double temperature, boolean initVelocities,
+            File dyn) {
         if (interrupted || terminatableAlgorithm != null) {
             return;
         }
         FFXSystem active = mainPanel.getHierarchy().getActive();
         if (active != null) {
             MolecularDynamics molecularDynamics = new MolecularDynamics(active,
-                                                                        active.getPotentialEnergy(),
-                                                                        active.getProperties(),
-                                                                        this, Thermostats.BUSSI);
+                    active.getPotentialEnergy(),
+                    active.getProperties(),
+                    this, Thermostats.BUSSI);
             terminatableAlgorithm = molecularDynamics;
             molecularDynamics.dynamic(nStep, timeStep, printInterval,
-                                      saveInterval, temperature, initVelocities, dyn);
+                    saveInterval, temperature, initVelocities, dyn);
             terminatableAlgorithm = null;
         }
     }
-    
-    public void potential(Integer choice, String fname, Double eps){
-    	if (interrupted) {
-    		logger.info("Algorithm interrupted - skipping minimization.");
-    	}
-    	if ( terminatableAlgorithm != null ) {
-    		logger.info("Algorithm already running - skipping minimization.");
-    	}
-    	try {
-    		if(choice == 1){
-        		Potential2 p = new Potential2(choice.intValue(), null, fname, null);
-    		}
-    		else if(choice > 1 && choice < 5){
-    			Potential2 p = new Potential2(choice.intValue(), fname, null, eps);
-    		}
-    		
-    	} catch (IOException e) {
-    		e.printStackTrace();
-    	}
+
+    public void potential(Integer choice, String fname, Double eps) {
+        if (interrupted) {
+            logger.info("Algorithm interrupted - skipping minimization.");
+        }
+        if (terminatableAlgorithm != null) {
+            logger.info("Algorithm already running - skipping minimization.");
+        }
+        try {
+            if (choice == 1) {
+                Potential2 p = new Potential2(choice.intValue(), null, fname, null);
+            } else if (choice > 1 && choice < 5) {
+                Potential2 p = new Potential2(choice.intValue(), fname, null, eps);
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     /*
@@ -361,18 +361,18 @@ public class ModelingShell extends Console implements AlgorithmListener {
     public void runScript() {
     runScript(null);
     }
-
+    
     @Override
     public void runScript(EventObject evt) {
     scriptStartup();
     super.runScript(evt);
     }
-
+    
     @Override
     public void runSelectedScript() {
     runSelectedScript(null);
     }
-
+    
     @Override
     public void runSelectedScript(EventObject evt) {
     scriptStartup();
@@ -390,8 +390,8 @@ public class ModelingShell extends Console implements AlgorithmListener {
             return true;
         }
         switch (JOptionPane.showConfirmDialog((Component) getFrame(),
-                                              "Save changes to " + file.getName() + "?",
-                                              "Force Field X Shell", JOptionPane.YES_NO_CANCEL_OPTION)) {
+                "Save changes to " + file.getName() + "?",
+                "Force Field X Shell", JOptionPane.YES_NO_CANCEL_OPTION)) {
             case JOptionPane.YES_OPTION:
                 return fileSave();
             case JOptionPane.NO_OPTION:
@@ -410,7 +410,7 @@ public class ModelingShell extends Console implements AlgorithmListener {
             JTextPane output = getOutputArea();
             output.setText("");
             appendOutput(MainPanel.border + MainPanel.title
-                         + MainPanel.aboutString + "\n" + MainPanel.border, getCommandStyle());
+                    + MainPanel.aboutString + "\n" + MainPanel.border, getCommandStyle());
         }
     }
 
@@ -419,27 +419,27 @@ public class ModelingShell extends Console implements AlgorithmListener {
     public void clearOutput(EventObject evt) {
     clearOutput();
     }
-
+    
     @Override
     public void fileNewWindow() {
     mainPanel.resetShell();
     }
-
+    
     @Override
     public void fileNewWindow(EventObject evt) {
     fileNewWindow();
     }
-
+    
     @Override
     public void showAbout() {
     mainPanel.about();
     }
-
+    
     @Override
     public void showAbout(EventObject evt) {
     showAbout();
     }
-
+    
     @Override
     public void updateTitle() {
     JFrame frame = (JFrame) getFrame();

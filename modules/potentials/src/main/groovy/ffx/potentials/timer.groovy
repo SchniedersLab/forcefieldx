@@ -8,9 +8,16 @@ if (filename == null) {
    return;
 }
 
+// Set the number of iteractions.
 nEvals = 5;
 if (args.size() > 1) {
     nEvals = Integer.parseInt(args[1]);
+}
+
+// Set the number of threads.
+if (args.size() > 2) {
+    int nt = Integer.parseInt(args[2]);
+    System.setProperty("pj.nt", Integer.toString(nt));
 }
 
 // Things below this line normally do not need to be changed.

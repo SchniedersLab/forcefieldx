@@ -24,6 +24,7 @@ import static java.lang.Math.PI;
 import static java.lang.Math.pow;
 import static java.lang.Math.sqrt;
 import static java.lang.String.format;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -35,7 +36,6 @@ import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
-import edu.rit.pj.reduction.DoubleOp;
 import edu.rit.pj.reduction.SharedDouble;
 import edu.rit.pj.reduction.SharedDoubleArray;
 import edu.rit.pj.reduction.SharedInteger;
@@ -562,6 +562,9 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
          */
         try {
             parallelTeam.execute(this);
+            /**
+             * Reduce the gradient array.
+             */
             if (gradient) {
                 parallelTeam.execute(reductionRegion);
             }
