@@ -24,13 +24,12 @@ import static java.lang.Math.PI;
 import static java.lang.Math.pow;
 import static java.lang.Math.sqrt;
 import static java.lang.String.format;
-
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Logger;
-import java.util.logging.Level;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
@@ -60,7 +59,7 @@ import ffx.potential.parameters.VDWType;
  * @since 1.0
  */
 public class VanDerWaals extends ParallelRegion implements MaskingInterface,
-                                                           LambdaInterface {
+        LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(VanDerWaals.class.getName());
     /**
@@ -152,22 +151,27 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
      * The Parallel Team.
      */
     private final ParallelTeam parallelTeam;
+    private final IntegerSchedule pairWiseSchedule;
     private final int threadCount;
     private final SharedInteger sharedInteractions;
     private final SharedDouble sharedEnergy;
-    private final SharedDoubleArray sharedGradient[];
     private final SharedDouble shareddEdL;
     private final SharedDouble sharedd2EdL2;
     private final SharedDoubleArray shareddEdLdX[];
+    private final double gradX[][];
+    private final double gradY[][];
+    private final double gradZ[][];
+    private final double lambdaGradX[][];
+    private final double lambdaGradY[][];
+    private final double lambdaGradZ[][];
     /**
      * The neighbor-list includes 1-2 or 1-3 interactions, but the interactions
      * are masked out. The AMOEBA force field includes 1-4 interactions fully.
      */
+    private final InitializationRegion initializationRegion;
     private final NeighborList neighborListBuilder;
-    private final ExpandRegion expandRegion;
-    private final IntegerSchedule pairWiseSchedule;
     private final VanDerWaalsLoop vanDerWaalsLoop[];
-    private long overheadTime;
+    private final ReductionRegion reductionRegion;
 
     /**
      * The VanDerWaals class constructor.
@@ -179,7 +183,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
      * @since 1.0
      */
     public VanDerWaals(ForceField forceField, Atom[] atoms,
-                       Crystal crystal, ParallelTeam parallelTeam) {
+            Crystal crystal, ParallelTeam parallelTeam) {
         this.atoms = atoms;
         this.parallelTeam = parallelTeam;
         this.crystal = crystal;
@@ -333,6 +337,8 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
             vdwLambdaExponent = 1.0;
         }
 
+        // Parallel constructs.
+        threadCount = parallelTeam.getThreadCount();
         if (lambdaTerm) {
             shareddEdL = new SharedDouble();
             sharedd2EdL2 = new SharedDouble();
@@ -340,16 +346,18 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
             shareddEdLdX[0] = new SharedDoubleArray(nAtoms);
             shareddEdLdX[1] = new SharedDoubleArray(nAtoms);
             shareddEdLdX[2] = new SharedDoubleArray(nAtoms);
+            lambdaGradX = new double[threadCount][nAtoms];
+            lambdaGradY = new double[threadCount][nAtoms];
+            lambdaGradZ = new double[threadCount][nAtoms];
         } else {
             shareddEdL = null;
             sharedd2EdL2 = null;
             shareddEdLdX = null;
+            lambdaGradX = null;
+            lambdaGradY = null;
+            lambdaGradZ = null;
         }
-
         doLongRangeCorrection = forceField.getBoolean(ForceField.ForceFieldBoolean.VDWLRTERM, false);
-
-        // Parallel constructs.
-        threadCount = parallelTeam.getThreadCount();
 
         boolean available = false;
         String pairWiseStrategy = null;
@@ -361,17 +369,17 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
             available = false;
         }
 
-        sharedGradient = new SharedDoubleArray[3];
-        sharedGradient[0] = new SharedDoubleArray(nAtoms);
-        sharedGradient[1] = new SharedDoubleArray(nAtoms);
-        sharedGradient[2] = new SharedDoubleArray(nAtoms);
         sharedInteractions = new SharedInteger();
         sharedEnergy = new SharedDouble();
+        gradX = new double[threadCount][nAtoms];
+        gradY = new double[threadCount][nAtoms];
+        gradZ = new double[threadCount][nAtoms];
 
-        expandRegion = new ExpandRegion();
+        initializationRegion = new InitializationRegion();
+        reductionRegion = new ReductionRegion();
         vanDerWaalsLoop = new VanDerWaalsLoop[threadCount];
         for (int i = 0; i < threadCount; i++) {
-            vanDerWaalsLoop[i] = new VanDerWaalsLoop();
+            vanDerWaalsLoop[i] = new VanDerWaalsLoop(i);
         }
         if (available) {
             pairWiseSchedule = IntegerSchedule.parse(pairWiseStrategy);
@@ -390,7 +398,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
          * Reduced and expand the coordinates of the asymmetric unit.
          */
         try {
-            parallelTeam.execute(expandRegion);
+            parallelTeam.execute(initializationRegion);
         } catch (Exception e) {
             String message = "Fatal exception expanding coordinates.\n";
             logger.log(Level.SEVERE, message, e);
@@ -484,8 +492,8 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                 // Correct for softCore vdW that are being turned off.
                 if (lambda < 1.0) {
                     total -= (softRadCount[i] * radCount[j]
-                              + (radCount[i] - softRadCount[i]) * softRadCount[j])
-                             * (1.0 - lambda) * trapezoid;
+                            + (radCount[i] - softRadCount[i]) * softRadCount[j])
+                            * (1.0 - lambda) * trapezoid;
                 }
             }
         }
@@ -535,21 +543,10 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         this.gradient = gradient;
 
         /**
-         * Update the local coordinate array.
-         */
-        for (int i = 0; i < nAtoms; i++) {
-            final double xyz[] = atoms[i].getXYZ();
-            int i3 = i * 3;
-            coordinates[i3++] = xyz[XX];
-            coordinates[i3++] = xyz[YY];
-            coordinates[i3] = xyz[ZZ];
-        }
-
-        /**
          * Reduced and expand the coordinates of the asymmetric unit.
          */
         try {
-            parallelTeam.execute(expandRegion);
+            parallelTeam.execute(initializationRegion);
         } catch (Exception e) {
             String message = " Fatal exception expanding coordinates.\n";
             logger.log(Level.SEVERE, message, e);
@@ -559,8 +556,16 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
          * Build the neighbor-list (if necessary) using reduced coordinates.
          */
         neighborListBuilder.buildList(reduced, neighborLists, false, false);
+
+        /**
+         * Calculate the van der Waals energy.
+         */
         try {
             parallelTeam.execute(this);
+            if (gradient) {
+                parallelTeam.execute(reductionRegion);
+            }
+
         } catch (Exception e) {
             String message = " Fatal exception evaluating van der Waals energy.\n";
             logger.log(Level.SEVERE, message, e);
@@ -619,7 +624,6 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
      */
     @Override
     public void start() {
-        overheadTime = System.nanoTime();
         /**
          * Initialize the shared variables.
          */
@@ -629,21 +633,9 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
             sharedEnergy.set(0.0);
         }
         sharedInteractions.set(0);
-        if (gradient) {
-            for (int i = 0; i < nAtoms; i++) {
-                sharedGradient[0].set(i, 0.0);
-                sharedGradient[1].set(i, 0.0);
-                sharedGradient[2].set(i, 0.0);
-            }
-        }
         if (lambdaTerm) {
             shareddEdL.set(0.0);
             sharedd2EdL2.set(0.0);
-            for (int i = 0; i < nAtoms; i++) {
-                shareddEdLdX[0].set(i, 0.0);
-                shareddEdLdX[1].set(i, 0.0);
-                shareddEdLdX[2].set(i, 0.0);
-            }
         }
     }
 
@@ -663,33 +655,6 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
     }
 
     /**
-     * This is method should not be called; it is invoked by Parallel Java.
-     *
-     * @since 0.l
-     */
-    @Override
-    public void finish() {
-        /**
-         * Accumulate the gradients.
-         */
-        if (gradient) {
-            for (int i = 0; i < nAtoms; i++) {
-                Atom ai = atoms[i];
-                ai.addToXYZGradient(sharedGradient[0].get(i), sharedGradient[1].get(i), sharedGradient[2].get(i));
-            }
-        }
-        long computeTime = 0;
-        for (int i = 0; i < threadCount; i++) {
-            computeTime += vanDerWaalsLoop[i].getComputeTime();
-        }
-        overheadTime = System.nanoTime() - overheadTime;
-        overheadTime = overheadTime - computeTime / threadCount;
-        double compute = (double) computeTime / threadCount * toSeconds;
-        double overhead = (double) overheadTime * toSeconds;
-        double efficiency = compute / (compute + overhead) * 100;
-    }
-
-    /**
      * Log the van der Waals interaction.
      *
      * @param i Atom i.
@@ -702,9 +667,9 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         int classi = atoms[i].getAtomType().atomClass;
         int classk = atoms[k].getAtomType().atomClass;
         logger.info(String.format("%s %6d-%s %6d-%s %10.4f  %10.4f  %10.4f",
-                                  "VDW", atoms[i].xyzIndex, atoms[i].getAtomType().name,
-                                  atoms[k].xyzIndex, atoms[k].getAtomType().name,
-                                  radEps[classi][classk * 2 + RADMIN] / ZERO_07, r, eij));
+                "VDW", atoms[i].xyzIndex, atoms[i].getAtomType().name,
+                atoms[k].xyzIndex, atoms[k].getAtomType().name,
+                radEps[classi][classk * 2 + RADMIN] / ZERO_07, r, eij));
     }
 
     @Override
@@ -752,7 +717,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         if (doLongRangeCorrection) {
             longRangeCorrection = getLongRangeCorrection();
             logger.info(String.format(" Long-range vdW correction %12.8f (kcal/mole).",
-                                      longRangeCorrection));
+                    longRangeCorrection));
         } else {
             longRangeCorrection = 0.0;
         }
@@ -785,19 +750,93 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
     }
 
     /**
-     * Apply hydrogen reductions and then expand the coordinates to P1.
+     * Reduce the van der Waals gradient.
+     */
+    private class ReductionRegion extends ParallelRegion {
+
+        private final ReductionLoop reductionLoop[];
+
+        public ReductionRegion() {
+            reductionLoop = new ReductionLoop[threadCount];
+            for (int i = 0; i < threadCount; i++) {
+                reductionLoop[i] = new ReductionLoop();
+            }
+        }
+
+        @Override
+        public void run() {
+            try {
+                int ti = getThreadIndex();
+                execute(0, nAtoms - 1, reductionLoop[ti]);
+            } catch (Exception e) {
+                String message = "Fatal exception reducing van der Waals gradient in thread: " + getThreadIndex() + "\n";
+                logger.log(Level.SEVERE, message, e);
+            }
+        }
+
+        /**
+         * Reduction van der Waals gradient.
+         */
+        private class ReductionLoop extends IntegerForLoop {
+
+            @Override
+            public void run(int lb, int ub) {
+                double gx[] = gradX[0];
+                double gy[] = gradY[0];
+                double gz[] = gradZ[0];
+                for (int t = 1; t < threadCount; t++) {
+                    double gxt[] = gradX[t];
+                    double gyt[] = gradY[t];
+                    double gzt[] = gradZ[t];
+                    for (int i = lb; i <= ub; i++) {
+                        gx[i] += gxt[i];
+                        gy[i] += gyt[i];
+                        gz[i] += gzt[i];
+                    }
+                }
+
+                for (int i = lb; i <= ub; i++) {
+                    Atom ai = atoms[i];
+                    ai.addToXYZGradient(gradX[0][i], gradY[0][i], gradZ[0][i]);
+                }
+
+                if (lambdaTerm) {
+                    for (int i = lb; i <= ub; i++) {
+                        double lx = 0.0;
+                        double ly = 0.0;
+                        double lz = 0.0;
+                        for (int t = 0; t < threadCount; t++) {
+                            lx += lambdaGradX[t][i];
+                            ly += lambdaGradY[t][i];
+                            lz += lambdaGradZ[t][i];
+                        }
+                        shareddEdLdX[0].set(i, lx);
+                        shareddEdLdX[1].set(i, ly);
+                        shareddEdLdX[2].set(i, lz);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * 1.) Initialize the local coordinate array.
+     * 2.) Initialize reduction variables.
+     * 3.) Apply hydrogen reductions and then expand the coordinates to P1.
      *
      * @author Michael J. Schnieders
      * @since 1.0
      */
-    private class ExpandRegion extends ParallelRegion {
+    private class InitializationRegion extends ParallelRegion {
 
+        private final InitializationLoop initializationLoop[];
         private final ExpandLoop expandLoop[];
 
-        public ExpandRegion() {
-            super();
+        public InitializationRegion() {
+            initializationLoop = new InitializationLoop[threadCount];
             expandLoop = new ExpandLoop[threadCount];
             for (int i = 0; i < threadCount; i++) {
+                initializationLoop[i] = new InitializationLoop();
                 expandLoop[i] = new ExpandLoop();
             }
         }
@@ -805,10 +844,35 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         @Override
         public void run() {
             try {
-                execute(0, nAtoms - 1, expandLoop[getThreadIndex()]);
+                int ti = getThreadIndex();
+                execute(0, nAtoms - 1, initializationLoop[ti]);
+                execute(0, nAtoms - 1, expandLoop[ti]);
             } catch (Exception e) {
                 String message = "Fatal exception expanding coordinates in thread: " + getThreadIndex() + "\n";
                 logger.log(Level.SEVERE, message, e);
+            }
+        }
+
+        /**
+         * Update the local coordinate array and initialize reduction variables.
+         */
+        private class InitializationLoop extends IntegerForLoop {
+            @Override
+            public void run(int lb, int ub) {
+                for (int i = lb; i <= ub; i++) {
+                    final double xyz[] = atoms[i].getXYZ();
+                    int i3 = i * 3;
+                    coordinates[i3++] = xyz[XX];
+                    coordinates[i3++] = xyz[YY];
+                    coordinates[i3] = xyz[ZZ];
+                }
+                if (lambdaTerm) {
+                    for (int i = lb; i <= ub; i++) {
+                        shareddEdLdX[0].set(i, 0.0);
+                        shareddEdLdX[1].set(i, 0.0);
+                        shareddEdLdX[2].set(i, 0.0);
+                    }
+                }
             }
         }
 
@@ -927,14 +991,20 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
         private long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
-        public VanDerWaalsLoop() {
+        public VanDerWaalsLoop(int threadId) {
             super();
-            gxi_local = new double[nAtoms];
-            gyi_local = new double[nAtoms];
-            gzi_local = new double[nAtoms];
-            lxi_local = new double[nAtoms];
-            lyi_local = new double[nAtoms];
-            lzi_local = new double[nAtoms];
+            gxi_local = gradX[threadId];
+            gyi_local = gradY[threadId];
+            gzi_local = gradZ[threadId];
+            if (lambdaTerm) {
+                lxi_local = lambdaGradX[threadId];
+                lyi_local = lambdaGradY[threadId];
+                lzi_local = lambdaGradZ[threadId];
+            } else {
+                lxi_local = null;
+                lyi_local = null;
+                lzi_local = null;
+            }
             mask = new double[nAtoms];
             dx_local = new double[3];
             rotmat = new double[3][3];
@@ -956,6 +1026,11 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         public void start() {
             energy = 0.0;
             count = 0;
+            if (lambdaTerm) {
+                dEdL = 0.0;
+                d2EdL2 = 0.0;
+            }
+            computeTime = 0;
             if (gradient) {
                 for (int i = 0; i < nAtoms; i++) {
                     gxi_local[i] = 0.0;
@@ -964,15 +1039,13 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                 }
             }
             if (lambdaTerm) {
-                dEdL = 0.0;
-                d2EdL2 = 0.0;
                 for (int i = 0; i < nAtoms; i++) {
                     lxi_local[i] = 0.0;
                     lyi_local[i] = 0.0;
                     lzi_local[i] = 0.0;
                 }
             }
-            computeTime = 0;
+
         }
 
         @Override
@@ -1144,22 +1217,22 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                                 double t1d2 = -dsc1dL * t1d * t1d;
                                 double t2d2 = -dsc1dL * t2d * t2d;
                                 double d2t1 = -dt1 * t1d * dsc1dL
-                                              - t1 * t1d * d2sc1dL2
-                                              - t1 * t1d2 * dsc1dL;
+                                        - t1 * t1d * d2sc1dL2
+                                        - t1 * t1d2 * dsc1dL;
 
                                 double d2t2 = -dt2 * t2d * dsc1dL
-                                              - t2a * t2d * d2sc1dL2
-                                              - t2a * t2d2 * dsc1dL;
+                                        - t2a * t2d * d2sc1dL2
+                                        - t2a * t2d2 * dsc1dL;
 
                                 double df1 = d2sc2dL2 * t1 * t2
-                                             + dsc2dL * dt1 * t2
-                                             + dsc2dL * t1 * dt2;
+                                        + dsc2dL * dt1 * t2
+                                        + dsc2dL * t1 * dt2;
                                 double df2 = dsc2dL * dt1 * t2
-                                             + sc2 * d2t1 * t2
-                                             + sc2 * dt1 * dt2;
+                                        + sc2 * d2t1 * t2
+                                        + sc2 * dt1 * dt2;
                                 double df3 = dsc2dL * t1 * dt2
-                                             + sc2 * dt1 * dt2
-                                             + sc2 * t1 * d2t2;
+                                        + sc2 * dt1 * dt2
+                                        + sc2 * t1 * d2t2;
                                 double de2dl2 = ev * (df1 + df2 + df3);
                                 d2EdL2 += selfScale * de2dl2 * taper;
 
@@ -1229,21 +1302,13 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
              */
             sharedEnergy.addAndGet(energy);
             sharedInteractions.addAndGet(count);
-            if (gradient) {
-                sharedGradient[0].reduce(gxi_local, DoubleOp.SUM);
-                sharedGradient[1].reduce(gyi_local, DoubleOp.SUM);
-                sharedGradient[2].reduce(gzi_local, DoubleOp.SUM);
-            }
             if (lambdaTerm) {
                 shareddEdL.addAndGet(dEdL);
                 sharedd2EdL2.addAndGet(d2EdL2);
-                shareddEdLdX[0].reduce(lxi_local, DoubleOp.SUM);
-                shareddEdLdX[1].reduce(lyi_local, DoubleOp.SUM);
-                shareddEdLdX[2].reduce(lzi_local, DoubleOp.SUM);
             }
         }
     }
-    private final double toSeconds = 0.000000001;
+    private final double toSeconds = 1.0e-9;
     /***************************************************************************
      * Cutoff and switching constants.
      */
