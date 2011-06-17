@@ -753,76 +753,6 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
     }
 
     /**
-     * Reduce the van der Waals gradient.
-     */
-    private class ReductionRegion extends ParallelRegion {
-
-        private final ReductionLoop reductionLoop[];
-
-        public ReductionRegion() {
-            reductionLoop = new ReductionLoop[threadCount];
-            for (int i = 0; i < threadCount; i++) {
-                reductionLoop[i] = new ReductionLoop();
-            }
-        }
-
-        @Override
-        public void run() {
-            try {
-                int ti = getThreadIndex();
-                execute(0, nAtoms - 1, reductionLoop[ti]);
-            } catch (Exception e) {
-                String message = "Fatal exception reducing van der Waals gradient in thread: " + getThreadIndex() + "\n";
-                logger.log(Level.SEVERE, message, e);
-            }
-        }
-
-        /**
-         * Reduction van der Waals gradient.
-         */
-        private class ReductionLoop extends IntegerForLoop {
-
-            @Override
-            public void run(int lb, int ub) {
-                double gx[] = gradX[0];
-                double gy[] = gradY[0];
-                double gz[] = gradZ[0];
-                for (int t = 1; t < threadCount; t++) {
-                    double gxt[] = gradX[t];
-                    double gyt[] = gradY[t];
-                    double gzt[] = gradZ[t];
-                    for (int i = lb; i <= ub; i++) {
-                        gx[i] += gxt[i];
-                        gy[i] += gyt[i];
-                        gz[i] += gzt[i];
-                    }
-                }
-
-                for (int i = lb; i <= ub; i++) {
-                    Atom ai = atoms[i];
-                    ai.addToXYZGradient(gradX[0][i], gradY[0][i], gradZ[0][i]);
-                }
-
-                if (lambdaTerm) {
-                    for (int i = lb; i <= ub; i++) {
-                        double lx = 0.0;
-                        double ly = 0.0;
-                        double lz = 0.0;
-                        for (int t = 0; t < threadCount; t++) {
-                            lx += lambdaGradX[t][i];
-                            ly += lambdaGradY[t][i];
-                            lz += lambdaGradZ[t][i];
-                        }
-                        shareddEdLdX[0].set(i, lx);
-                        shareddEdLdX[1].set(i, ly);
-                        shareddEdLdX[2].set(i, lz);
-                    }
-                }
-            }
-        }
-    }
-
-    /**
      * 1.) Initialize the local coordinate array.
      * 2.) Initialize reduction variables.
      * 3.) Apply hydrogen reductions and then expand the coordinates to P1.
@@ -860,6 +790,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
          * Update the local coordinate array and initialize reduction variables.
          */
         private class InitializationLoop extends IntegerForLoop {
+
             @Override
             public void run(int lb, int ub) {
                 for (int i = lb; i <= ub; i++) {
@@ -1311,7 +1242,77 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
             }
         }
     }
-    private final double toSeconds = 1.0e-9;
+
+    /**
+     * Reduce the van der Waals gradient.
+     */
+    private class ReductionRegion extends ParallelRegion {
+
+        private final ReductionLoop reductionLoop[];
+
+        public ReductionRegion() {
+            reductionLoop = new ReductionLoop[threadCount];
+            for (int i = 0; i < threadCount; i++) {
+                reductionLoop[i] = new ReductionLoop();
+            }
+        }
+
+        @Override
+        public void run() {
+            try {
+                int ti = getThreadIndex();
+                execute(0, nAtoms - 1, reductionLoop[ti]);
+            } catch (Exception e) {
+                String message = "Fatal exception reducing van der Waals gradient in thread: " + getThreadIndex() + "\n";
+                logger.log(Level.SEVERE, message, e);
+            }
+        }
+
+        /**
+         * Reduce van der Waals gradient.
+         */
+        private class ReductionLoop extends IntegerForLoop {
+
+            @Override
+            public void run(int lb, int ub) {
+                double gx[] = gradX[0];
+                double gy[] = gradY[0];
+                double gz[] = gradZ[0];
+                for (int t = 1; t < threadCount; t++) {
+                    double gxt[] = gradX[t];
+                    double gyt[] = gradY[t];
+                    double gzt[] = gradZ[t];
+                    for (int i = lb; i <= ub; i++) {
+                        gx[i] += gxt[i];
+                        gy[i] += gyt[i];
+                        gz[i] += gzt[i];
+                    }
+                }
+
+                for (int i = lb; i <= ub; i++) {
+                    Atom ai = atoms[i];
+                    ai.addToXYZGradient(gradX[0][i], gradY[0][i], gradZ[0][i]);
+                }
+
+                if (lambdaTerm) {
+                    for (int i = lb; i <= ub; i++) {
+                        double lx = 0.0;
+                        double ly = 0.0;
+                        double lz = 0.0;
+                        for (int t = 0; t < threadCount; t++) {
+                            lx += lambdaGradX[t][i];
+                            ly += lambdaGradY[t][i];
+                            lz += lambdaGradZ[t][i];
+                        }
+                        shareddEdLdX[0].set(i, lx);
+                        shareddEdLdX[1].set(i, ly);
+                        shareddEdLdX[2].set(i, lz);
+                    }
+                }
+            }
+        }
+    }
+    
     /***************************************************************************
      * Cutoff and switching constants.
      */
@@ -1364,4 +1365,5 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
     private static final double ZERO_07 = 0.07;
     private static final double ONE_07 = 1.07;
     private static final double t1n = pow(ONE_07, 7.0);
+    private static final double toSeconds = 1.0e-9;
 }

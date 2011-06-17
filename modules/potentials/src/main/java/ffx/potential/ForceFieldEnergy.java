@@ -31,7 +31,6 @@ import edu.rit.pj.ParallelTeam;
 import ffx.crystal.Crystal;
 import ffx.crystal.ReplicatesCrystal;
 import ffx.numerics.Potential;
-import static ffx.numerics.VectorMath.*;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
@@ -648,15 +647,19 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     nVanDerWaals, vanDerWaalsTime * toSeconds));
         }
         if (multipoleTerm) {
-            sb.append(String.format(" %s %16.8f %12d\n",
-                    "Atomic Multipoles ", permanentMultipoleEnergy, nPME));
+            if (polarizationTerm) {
+                sb.append(String.format(" %s %16.8f %12d\n",
+                        "Atomic Multipoles ", permanentMultipoleEnergy, nPME));
+            } else {
+                sb.append(String.format(" %s %16.8f %12d %12.3f\n",
+                        "Atomic Multipoles ", permanentMultipoleEnergy, nPME, electrostaticTime * toSeconds));
+            }
         }
         if (polarizationTerm) {
             sb.append(String.format(" %s %16.8f %12d %12.3f\n",
                     "Polarization      ", polarizationEnergy,
                     nPME, electrostaticTime * toSeconds));
         }
-
         if (generalizedKirkwoodTerm) {
             sb.append(String.format(" %s %16.8f %12d\n",
                     "Solvation         ", solvationEnergy, nGK));

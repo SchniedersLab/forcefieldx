@@ -291,8 +291,6 @@ public class ParticleMeshEwald implements LambdaInterface {
     /**
      * Dimensions of [nsymm][nAtoms][3]
      */
-    private final double field[][];
-    private final double fieldCR[][];
     private final int ip11[][];
     private final int ip12[][];
     private final int ip13[][];
@@ -368,7 +366,7 @@ public class ParticleMeshEwald implements LambdaInterface {
     private final ParallelTeam fftTeam;
     private final boolean cudaFFT;
     private final IntegerSchedule pairWiseSchedule;
-    private final ExpandCoordinatesRegion expandCoordinatesRegion;
+    private final InitializationRegion initializationRegion;
     private final RotateMultipolesRegion rotateMultipolesRegion;
     private final PermanentFieldRegion permanentFieldRegion;
     private final ExpandInducedDipolesRegion expandInducedDipolesRegion;
@@ -376,13 +374,17 @@ public class ParticleMeshEwald implements LambdaInterface {
     private final ReciprocalSpace reciprocalSpace;
     private final RealSpaceEnergyRegion realSpaceEnergyRegion;
     private final GeneralizedKirkwood generalizedKirkwood;
-    private final TorqueRegion torqueRegion;
-    protected final SharedDoubleArray sharedGrad[];
-    protected final SharedDoubleArray sharedTorque[];
-    protected final SharedDouble shareddEdLambda;
-    protected final SharedDouble sharedd2EdLambda2;
-    protected final SharedDoubleArray shareddEdLdX[];
-    protected final SharedDoubleArray shareddEdLTorque[];
+    private final ReduceRegion torqueRegion;
+    private final SharedDoubleArray sharedGrad[];
+    private final SharedDoubleArray sharedTorque[];
+    private final SharedDoubleArray sharedPermanentField[];
+    private final SharedDoubleArray sharedPermanentFieldCR[];
+    private final SharedDoubleArray sharedMutualField[];
+    private final SharedDoubleArray sharedMutualFieldCR[];
+    private final SharedDouble shareddEdLambda;
+    private final SharedDouble sharedd2EdLambda2;
+    private final SharedDoubleArray shareddEdLdX[];
+    private final SharedDoubleArray shareddEdLTorque[];
     /**
      * Timing variables.
      */
@@ -410,7 +412,7 @@ public class ParticleMeshEwald implements LambdaInterface {
      * @param neighborLists The NeighborLists for both van der Waals and PME.
      */
     public ParticleMeshEwald(ForceField forceField, Atom[] atoms,
-                             Crystal crystal, ParallelTeam parallelTeam, int neighborLists[][][]) {
+            Crystal crystal, ParallelTeam parallelTeam, int neighborLists[][][]) {
         this.forceField = forceField;
         this.atoms = atoms;
         this.crystal = crystal;
@@ -474,8 +476,8 @@ public class ParticleMeshEwald implements LambdaInterface {
 
         polarizationLambdaEnd = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_END, 1.0);
         if (polarizationLambdaEnd < polarizationLambdaStart
-            || polarizationLambdaEnd > 1.0
-            || polarizationLambdaEnd - polarizationLambdaStart < 0.3) {
+                || polarizationLambdaEnd > 1.0
+                || polarizationLambdaEnd - polarizationLambdaStart < 0.3) {
             polarizationLambdaEnd = 1.0;
         }
 
@@ -502,8 +504,6 @@ public class ParticleMeshEwald implements LambdaInterface {
         directDipoleCR = new double[nAtoms][3];
         cartesianDipolePhi = new double[nAtoms][tensorCount];
         cartesianDipolePhiCR = new double[nAtoms][tensorCount];
-        field = new double[nAtoms][3];
-        fieldCR = new double[nAtoms][3];
         ip11 = new int[nAtoms][];
         ip12 = new int[nAtoms][];
         ip13 = new int[nAtoms][];
@@ -521,9 +521,17 @@ public class ParticleMeshEwald implements LambdaInterface {
 
         sharedGrad = new SharedDoubleArray[3];
         sharedTorque = new SharedDoubleArray[3];
+        sharedPermanentField = new SharedDoubleArray[3];
+        sharedPermanentFieldCR = new SharedDoubleArray[3];
+        sharedMutualField = new SharedDoubleArray[3];
+        sharedMutualFieldCR = new SharedDoubleArray[3];
         for (int i = 0; i < 3; i++) {
             sharedGrad[i] = new SharedDoubleArray(nAtoms);
             sharedTorque[i] = new SharedDoubleArray(nAtoms);
+            sharedPermanentField[i] = new SharedDoubleArray(nAtoms);
+            sharedPermanentFieldCR[i] = new SharedDoubleArray(nAtoms);
+            sharedMutualField[i] = new SharedDoubleArray(nAtoms);
+            sharedMutualFieldCR[i] = new SharedDoubleArray(nAtoms);
         }
 
         if (lambdaTerm) {
@@ -637,7 +645,7 @@ public class ParticleMeshEwald implements LambdaInterface {
         }
 
         rotateMultipolesRegion = new RotateMultipolesRegion(maxThreads);
-        expandCoordinatesRegion = new ExpandCoordinatesRegion(maxThreads);
+        initializationRegion = new InitializationRegion(maxThreads);
         expandInducedDipolesRegion = new ExpandInducedDipolesRegion(maxThreads);
         /**
          * Note that we always pass on the unit cell crystal to ReciprocalSpace
@@ -646,14 +654,14 @@ public class ParticleMeshEwald implements LambdaInterface {
          */
         if (aewald > 0.0) {
             reciprocalSpace = new ReciprocalSpace(crystal.getUnitCell(), forceField,
-                                                  coordinates, atoms, aewald, fftTeam, parallelTeam);
+                    coordinates, atoms, aewald, fftTeam, parallelTeam);
         } else {
             reciprocalSpace = null;
         }
         permanentFieldRegion = new PermanentFieldRegion(realSpaceTeam);
         inducedDipoleFieldRegion = new InducedDipoleFieldRegion(realSpaceTeam);
         realSpaceEnergyRegion = new RealSpaceEnergyRegion(maxThreads);
-        torqueRegion = new TorqueRegion(maxThreads);
+        torqueRegion = new ReduceRegion(maxThreads);
 
         /**
          * Generalized Kirkwood currently requires aperiodic Ewald. The GK
@@ -690,54 +698,21 @@ public class ParticleMeshEwald implements LambdaInterface {
         gkTime = 0;
 
         /**
-         * Initialize the coordinates.
-         */
-        double x[] = coordinates[0][0];
-        double y[] = coordinates[0][1];
-        double z[] = coordinates[0][2];
-        for (int i = 0; i < nAtoms; i++) {
-            double xyz[] = atoms[i].getXYZ();
-            x[i] = xyz[0];
-            y[i] = xyz[1];
-            z[i] = xyz[2];
-            use[i] = true;
-        }
-        allocateRealSpaceNeighborLists();
-
-        /**
-         * Initialize the coordinate gradient arrays.
-         */
-        if (gradient) {
-            for (int j = 0; j < nAtoms; j++) {
-                sharedGrad[0].set(j, 0.0);
-                sharedGrad[1].set(j, 0.0);
-                sharedGrad[2].set(j, 0.0);
-                sharedTorque[0].set(j, 0.0);
-                sharedTorque[1].set(j, 0.0);
-                sharedTorque[2].set(j, 0.0);
-            }
-        }
-
-        /**
-         * Initialize the lambda gradient arrays.
+         * Initialize Lambda variables.
          */
         if (lambdaTerm) {
             shareddEdLambda.set(0.0);
             sharedd2EdLambda2.set(0.0);
-            for (int j = 0; j < nAtoms; j++) {
-                shareddEdLdX[0].set(j, 0.0);
-                shareddEdLdX[1].set(j, 0.0);
-                shareddEdLdX[2].set(j, 0.0);
-                shareddEdLTorque[0].set(j, 0.0);
-                shareddEdLTorque[1].set(j, 0.0);
-                shareddEdLTorque[2].set(j, 0.0);
-            }
         }
-
         doPermanentRealSpace = true;
         permanentScale = 1.0;
         doPolarization = true;
         polarizationScale = 1.0;
+
+        /**
+         * Make sure we have enough space for the real space neighbor lists.
+         */
+        allocateRealSpaceNeighborLists();
 
         /**
          * Total permanent + polarization energy.
@@ -748,7 +723,7 @@ public class ParticleMeshEwald implements LambdaInterface {
          * Expand the coordinates and rotate multipoles into the global frame.
          */
         try {
-            parallelTeam.execute(expandCoordinatesRegion);
+            parallelTeam.execute(initializationRegion);
             parallelTeam.execute(rotateMultipolesRegion);
         } catch (Exception e) {
             String message = "Fatal exception expanding coordinates and rotating multipoles.\n";
@@ -761,7 +736,7 @@ public class ParticleMeshEwald implements LambdaInterface {
 
             /**
              * 1.) Total system under PBC.
-             *   A.) Softcore real space for L-P and L-L.
+             *   A.) Softcore real space for Ligand-Protein and Ligand-Ligand.
              *   B.) Reciprocal space scaled by lambda.
              *   C.) Polarization scaled by lambda.
              */
@@ -851,7 +826,8 @@ public class ParticleMeshEwald implements LambdaInterface {
         }
 
         /**
-         * Convert torques to forces.
+         * Convert torques to gradients on multipole frame defining atoms.
+         * Add to electrostatic gradient to the total XYZ gradient.
          */
         if (gradient || lambdaTerm) {
             try {
@@ -859,17 +835,6 @@ public class ParticleMeshEwald implements LambdaInterface {
             } catch (Exception e) {
                 String message = "Exception calculating torques.";
                 logger.log(Level.SEVERE, message, e);
-            }
-        }
-
-        /**
-         * Add electrostatic gradient to the total atomic gradient.
-         */
-        if (gradient) {
-            for (int i = 0; i < nAtoms; i++) {
-                atoms[i].addToXYZGradient(sharedGrad[0].get(i),
-                                          sharedGrad[1].get(i),
-                                          sharedGrad[2].get(i));
             }
         }
 
@@ -945,35 +910,24 @@ public class ParticleMeshEwald implements LambdaInterface {
          * off then the induced dipoles are initialized to zero and the method
          * returns.
          */
-        selfConsistentField(logger.isLoggable(Level.FINE));
-
-        /**
-         * Log some timings.
-         */
-        if (logger.isLoggable(Level.FINE)) {
-            StringBuilder sb = new StringBuilder();
-            sb.append(format("\n b-Spline:   %8.3f (sec)\n", bsplineTime * toSeconds));
-            sb.append(format(" Density:    %8.3f (sec)\n", densityTime * toSeconds));
-            sb.append(format(" Real + FFT: %8.3f (sec)\n", realAndFFTTime * toSeconds));
-            sb.append(format(" Phi:        %8.3f (sec)\n", phiTime * toSeconds));
-            logger.fine(sb.toString());
-        }
-
-        if (polarization != Polarization.NONE && doPolarization && aewald > 0.0) {
-            /**
-             * The induced dipole self energy due to interaction with the
-             * permanent dipole. The energy and gradient are scaled
-             * by "polarizationScale".
-             */
-            eselfi = inducedDipoleSelfEnergy(gradient);
-            /**
-             * The energy of the permanent multipoles in the induced dipole
-             * reciprocal potential. The energy and gradient are scaled
-             * by "polarizationScale".
-             */
-            reciprocalSpaceTime -= System.nanoTime();
-            erecipi = inducedDipoleReciprocalSpaceEnergy(gradient);
-            reciprocalSpaceTime += System.nanoTime();
+        if (polarization != Polarization.NONE && doPolarization) {
+            selfConsistentField(logger.isLoggable(Level.FINE));
+            if (aewald > 0.0) {
+                /**
+                 * The induced dipole self energy due to interaction with the
+                 * permanent dipole. The energy and gradient are scaled
+                 * by "polarizationScale".
+                 */
+                eselfi = inducedDipoleSelfEnergy(gradient);
+                /**
+                 * The energy of the permanent multipoles in the induced dipole
+                 * reciprocal potential. The energy and gradient are scaled
+                 * by "polarizationScale".
+                 */
+                reciprocalSpaceTime -= System.nanoTime();
+                erecipi = inducedDipoleReciprocalSpaceEnergy(gradient);
+                reciprocalSpaceTime += System.nanoTime();
+            }
         }
 
         if (aewald > 0.0) {
@@ -1023,13 +977,25 @@ public class ParticleMeshEwald implements LambdaInterface {
         polarizationEnergy += eselfi + erecipi + ereali;
 
         /**
+         * Log some timings.
+         */
+        if (logger.isLoggable(Level.FINE)) {
+            StringBuilder sb = new StringBuilder();
+            sb.append(format("\n b-Spline:   %8.3f (sec)\n", bsplineTime * toSeconds));
+            sb.append(format(" Density:    %8.3f (sec)\n", densityTime * toSeconds));
+            sb.append(format(" Real + FFT: %8.3f (sec)\n", realAndFFTTime * toSeconds));
+            sb.append(format(" Phi:        %8.3f (sec)\n", phiTime * toSeconds));
+            logger.fine(sb.toString());
+        }
+
+        /**
          * Log some info.
          */
         if (logger.isLoggable(Level.FINE)) {
             StringBuilder sb = new StringBuilder();
             sb.append(format("\n Total Time =    Real +   Recip (sec)\n"));
             sb.append(format("   %8.3f =%8.3f +%8.3f\n", toSeconds * (realSpaceTime + reciprocalSpaceTime), toSeconds * realSpaceTime,
-                             toSeconds * reciprocalSpaceTime));
+                    toSeconds * reciprocalSpaceTime));
             sb.append(format(" Multipole Self-Energy:   %16.8f\n", eself));
             sb.append(format(" Multipole Reciprocal:    %16.8f\n", erecip));
             sb.append(format(" Multipole Real Space:    %16.8f\n", ereal));
@@ -1073,24 +1039,34 @@ public class ParticleMeshEwald implements LambdaInterface {
         }
     }
 
+    protected SharedDoubleArray[] getSharedGradient() {
+        return sharedGrad;
+    }
+    
+    protected SharedDoubleArray[] getSharedTorque() {
+        return sharedTorque;
+    }
+    
     private void selfConsistentField(boolean print) {
+
+        /*
         if (polarization == Polarization.NONE || !doPolarization) {
-            for (int i = 0; i < nAtoms; i++) {
-                inducedDipole[0][i][0] = 0.0;
-                inducedDipole[0][i][1] = 0.0;
-                inducedDipole[0][i][2] = 0.0;
-                inducedDipoleCR[0][i][0] = 0.0;
-                inducedDipoleCR[0][i][1] = 0.0;
-                inducedDipoleCR[0][i][2] = 0.0;
-            }
-            try {
-                parallelTeam.execute(expandInducedDipolesRegion);
-            } catch (Exception e) {
-                String message = "Exception expanding induced dipoles.";
-                logger.log(Level.SEVERE, message, e);
-            }
-            return;
+        for (int i = 0; i < nAtoms; i++) {
+        inducedDipole[0][i][0] = 0.0;
+        inducedDipole[0][i][1] = 0.0;
+        inducedDipole[0][i][2] = 0.0;
+        inducedDipoleCR[0][i][0] = 0.0;
+        inducedDipoleCR[0][i][1] = 0.0;
+        inducedDipoleCR[0][i][2] = 0.0;
         }
+        try {
+        parallelTeam.execute(expandInducedDipolesRegion);
+        } catch (Exception e) {
+        String message = "Exception expanding induced dipoles.";
+        logger.log(Level.SEVERE, message, e);
+        }
+        return;
+        } */
 
         long startTime = System.nanoTime();
         if (aewald > 0.0) {
@@ -1098,19 +1074,17 @@ public class ParticleMeshEwald implements LambdaInterface {
              * Add the self and reciprocal contributions to the direct field.
              */
             for (int i = 0; i < nAtoms; i++) {
-                double fieldi[] = field[i];
-                double fieldCRi[] = fieldCR[i];
                 double mpolei[] = globalMultipole[0][i];
                 double phii[] = cartMultipolePhi[i];
                 double fx = aewald3 * mpolei[t100] - phii[t100];
                 double fy = aewald3 * mpolei[t010] - phii[t010];
                 double fz = aewald3 * mpolei[t001] - phii[t001];
-                fieldi[0] += fx;
-                fieldi[1] += fy;
-                fieldi[2] += fz;
-                fieldCRi[0] += fx;
-                fieldCRi[1] += fy;
-                fieldCRi[2] += fz;
+                sharedPermanentField[0].addAndGet(i, fx);
+                sharedPermanentField[1].addAndGet(i, fy);
+                sharedPermanentField[2].addAndGet(i, fz);
+                sharedPermanentFieldCR[0].addAndGet(i, fx);
+                sharedPermanentFieldCR[1].addAndGet(i, fy);
+                sharedPermanentFieldCR[2].addAndGet(i, fz);
             }
         }
         if (generalizedKirkwoodTerm) {
@@ -1124,17 +1098,15 @@ public class ParticleMeshEwald implements LambdaInterface {
             logger.fine(String.format(" Computed GK permanent field %8.3f (sec)", gkTime * 1.0e-9));
             SharedDoubleArray gkField[] = generalizedKirkwood.sharedGKField;
             for (int i = 0; i < nAtoms; i++) {
-                double fieldi[] = field[i];
-                double fieldCRi[] = fieldCR[i];
                 double fx = gkField[0].get(i);
                 double fy = gkField[1].get(i);
                 double fz = gkField[2].get(i);
-                fieldi[0] += fx;
-                fieldi[1] += fy;
-                fieldi[2] += fz;
-                fieldCRi[0] += fx;
-                fieldCRi[1] += fy;
-                fieldCRi[2] += fz;
+                sharedPermanentField[0].addAndGet(i, fx);
+                sharedPermanentField[1].addAndGet(i, fy);
+                sharedPermanentField[2].addAndGet(i, fz);
+                sharedPermanentFieldCR[0].addAndGet(i, fx);
+                sharedPermanentFieldCR[1].addAndGet(i, fy);
+                sharedPermanentFieldCR[2].addAndGet(i, fz);
             }
         }
 
@@ -1145,21 +1117,19 @@ public class ParticleMeshEwald implements LambdaInterface {
         final double inducedCR0[][] = inducedDipoleCR[0];
         for (int i = 0; i < nAtoms; i++) {
             final double polar = polarizability[i];
-            final double fieldi[] = field[i];
             final double ind[] = induced0[i];
             final double directi[] = directDipole[i];
-            ind[0] = polar * fieldi[0];
-            ind[1] = polar * fieldi[1];
-            ind[2] = polar * fieldi[2];
+            ind[0] = polar * sharedPermanentField[0].get(i);
+            ind[1] = polar * sharedPermanentField[1].get(i);
+            ind[2] = polar * sharedPermanentField[2].get(i);
             directi[0] = ind[0];
             directi[1] = ind[1];
             directi[2] = ind[2];
-            final double fieldCRi[] = fieldCR[i];
             final double inp[] = inducedCR0[i];
             final double directCRi[] = directDipoleCR[i];
-            inp[0] = polar * fieldCRi[0];
-            inp[1] = polar * fieldCRi[1];
-            inp[2] = polar * fieldCRi[2];
+            inp[0] = polar * sharedPermanentFieldCR[0].get(i);
+            inp[1] = polar * sharedPermanentFieldCR[1].get(i);
+            inp[2] = polar * sharedPermanentFieldCR[2].get(i);
             directCRi[0] = inp[0];
             directCRi[1] = inp[1];
             directCRi[2] = inp[2];
@@ -1213,24 +1183,16 @@ public class ParticleMeshEwald implements LambdaInterface {
                      * to the real space field.
                      */
                     for (int i = 0; i < nAtoms; i++) {
-                        double fieldi[] = field[i];
-                        double fieldpi[] = fieldCR[i];
                         double dipolei[] = induced0[i];
-                        double dipolepi[] = inducedCR0[i];
+                        double dipoleCRi[] = inducedCR0[i];
                         final double phii[] = cartesianDipolePhi[i];
-                        final double phipi[] = cartesianDipolePhiCR[i];
-                        fieldi[0] += aewald3 * dipolei[0];
-                        fieldi[1] += aewald3 * dipolei[1];
-                        fieldi[2] += aewald3 * dipolei[2];
-                        fieldi[0] -= phii[t100];
-                        fieldi[1] -= phii[t010];
-                        fieldi[2] -= phii[t001];
-                        fieldpi[0] += aewald3 * dipolepi[0];
-                        fieldpi[1] += aewald3 * dipolepi[1];
-                        fieldpi[2] += aewald3 * dipolepi[2];
-                        fieldpi[0] -= phipi[t100];
-                        fieldpi[1] -= phipi[t010];
-                        fieldpi[2] -= phipi[t001];
+                        final double phiCRi[] = cartesianDipolePhiCR[i];
+                        sharedMutualField[0].addAndGet(i, aewald3 * dipolei[0] - phii[t100]);
+                        sharedMutualField[1].addAndGet(i, aewald3 * dipolei[1] - phii[t010]);
+                        sharedMutualField[2].addAndGet(i, aewald3 * dipolei[2] - phii[t001]);
+                        sharedMutualFieldCR[0].addAndGet(i, aewald3 * dipoleCRi[0] - phiCRi[t100]);
+                        sharedMutualFieldCR[1].addAndGet(i, aewald3 * dipoleCRi[1] - phiCRi[t010]);
+                        sharedMutualFieldCR[2].addAndGet(i, aewald3 * dipoleCRi[2] - phiCRi[t001]);
                     }
                 }
                 if (generalizedKirkwoodTerm) {
@@ -1244,18 +1206,15 @@ public class ParticleMeshEwald implements LambdaInterface {
                     SharedDoubleArray gkField[] = generalizedKirkwood.sharedGKField;
                     SharedDoubleArray gkFieldCR[] = generalizedKirkwood.sharedGKFieldCR;
                     /**
-                     * Add the self and reciprocal space fields to the
-                     * real space field.
+                     * Add the GK reaction field to the intramolecular field.
                      */
                     for (int i = 0; i < nAtoms; i++) {
-                        double fieldi[] = field[i];
-                        double fieldCRi[] = fieldCR[i];
-                        fieldi[0] += gkField[0].get(i);
-                        fieldi[1] += gkField[1].get(i);
-                        fieldi[2] += gkField[2].get(i);
-                        fieldCRi[0] += gkFieldCR[0].get(i);
-                        fieldCRi[1] += gkFieldCR[1].get(i);
-                        fieldCRi[2] += gkFieldCR[2].get(i);
+                        sharedMutualField[0].addAndGet(i, gkField[0].get(i));
+                        sharedMutualField[1].addAndGet(i, gkField[1].get(i));
+                        sharedMutualField[2].addAndGet(i, gkField[2].get(i));
+                        sharedMutualFieldCR[0].addAndGet(i, gkFieldCR[0].get(i));
+                        sharedMutualFieldCR[1].addAndGet(i, gkFieldCR[1].get(i));
+                        sharedMutualFieldCR[2].addAndGet(i, gkFieldCR[2].get(i));
                     }
                 }
 
@@ -1272,18 +1231,18 @@ public class ParticleMeshEwald implements LambdaInterface {
                     final double indCR[] = inducedCR0[i];
                     final double direct[] = directDipole[i];
                     final double directCR[] = directDipoleCR[i];
-                    final double fieldi[] = field[i];
-                    final double fieldCRi[] = fieldCR[i];
                     final double polar = polarizability[i];
                     for (int j = 0; j < 3; j++) {
                         double previous = ind[j];
-                        double mutual = polar * fieldi[j];
+                        double mutual = polar * sharedMutualField[j].get(i);
+                        sharedMutualField[j].set(i, 0.0);
                         ind[j] = direct[j] + mutual;
                         double delta = polsor * (ind[j] - previous);
                         ind[j] = previous + delta;
                         eps += delta * delta;
                         previous = indCR[j];
-                        mutual = polar * fieldCRi[j];
+                        mutual = polar * sharedMutualFieldCR[j].get(i);
+                        sharedMutualFieldCR[j].set(i, 0.0);
                         indCR[j] = directCR[j] + mutual;
                         delta = polsor * (indCR[j] - previous);
                         indCR[j] = previous + delta;
@@ -1324,10 +1283,10 @@ public class ParticleMeshEwald implements LambdaInterface {
             }
             if (print) {
                 sb.append(format("\n Direct:                    %8.3f\n",
-                                 toSeconds * directTime));
+                        toSeconds * directTime));
                 startTime = System.nanoTime() - startTime;
                 sb.append(format(" SCF Total:                 %8.3f\n",
-                                 startTime * toSeconds));
+                        startTime * toSeconds));
                 logger.info(sb.toString());
             }
         }
@@ -1415,7 +1374,6 @@ public class ParticleMeshEwald implements LambdaInterface {
             try {
                 realSpaceTime -= System.nanoTime();
                 pt.execute(permanentRealSpaceFieldRegion);
-                permanentRealSpaceFieldRegion.getField(field, fieldCR);
                 realSpaceTime += System.nanoTime();
             } catch (Exception e) {
                 String message = "Fatal exception computing the real space field.\n";
@@ -1482,7 +1440,7 @@ public class ParticleMeshEwald implements LambdaInterface {
             try {
                 long time = System.nanoTime();
                 pt.execute(polarizationRealSpaceFieldRegion);
-                polarizationRealSpaceFieldRegion.setField(field, fieldCR);
+                //polarizationRealSpaceFieldRegion.setField(field, fieldCR);
                 time = System.nanoTime() - time;
                 realSpaceTime += time;
             } catch (Exception e) {
@@ -1521,29 +1479,29 @@ public class ParticleMeshEwald implements LambdaInterface {
                 final double mpole[] = pole[i];
                 final double fmpole[] = fracMultipoles[i];
                 double e = mpole[t000] * phi[t000] + mpole[t100] * phi[t100]
-                           + mpole[t010] * phi[t010] + mpole[t001] * phi[t001]
-                           + oneThird * (mpole[t200] * phi[t200]
-                                         + mpole[t020] * phi[t020]
-                                         + mpole[t002] * phi[t002]
-                                         + 2.0 * (mpole[t110] * phi[t110]
-                                                  + mpole[t101] * phi[t101]
-                                                  + mpole[t011] * phi[t011]));
+                        + mpole[t010] * phi[t010] + mpole[t001] * phi[t001]
+                        + oneThird * (mpole[t200] * phi[t200]
+                        + mpole[t020] * phi[t020]
+                        + mpole[t002] * phi[t002]
+                        + 2.0 * (mpole[t110] * phi[t110]
+                        + mpole[t101] * phi[t101]
+                        + mpole[t011] * phi[t011]));
                 erecip += e;
                 if (gradient || lambdaTerm) {
                     final double fPhi[] = fracMultipolePhi[i];
                     double gx = fmpole[t000] * fPhi[t100] + fmpole[t100] * fPhi[t200] + fmpole[t010] * fPhi[t110]
-                                + fmpole[t001] * fPhi[t101]
-                                + fmpole[t200] * fPhi[t300] + fmpole[t020] * fPhi[t120]
-                                + fmpole[t002] * fPhi[t102] + fmpole[t110] * fPhi[t210]
-                                + fmpole[t101] * fPhi[t201] + fmpole[t011] * fPhi[t111];
+                            + fmpole[t001] * fPhi[t101]
+                            + fmpole[t200] * fPhi[t300] + fmpole[t020] * fPhi[t120]
+                            + fmpole[t002] * fPhi[t102] + fmpole[t110] * fPhi[t210]
+                            + fmpole[t101] * fPhi[t201] + fmpole[t011] * fPhi[t111];
                     double gy = fmpole[t000] * fPhi[t010] + fmpole[t100] * fPhi[t110] + fmpole[t010] * fPhi[t020]
-                                + fmpole[t001] * fPhi[t011] + fmpole[t200] * fPhi[t210] + fmpole[t020] * fPhi[t030]
-                                + fmpole[t002] * fPhi[t012] + fmpole[t110] * fPhi[t120] + fmpole[t101] * fPhi[t111]
-                                + fmpole[t011] * fPhi[t021];
+                            + fmpole[t001] * fPhi[t011] + fmpole[t200] * fPhi[t210] + fmpole[t020] * fPhi[t030]
+                            + fmpole[t002] * fPhi[t012] + fmpole[t110] * fPhi[t120] + fmpole[t101] * fPhi[t111]
+                            + fmpole[t011] * fPhi[t021];
                     double gz = fmpole[t000] * fPhi[t001] + fmpole[t100] * fPhi[t101] + fmpole[t010] * fPhi[t011]
-                                + fmpole[t001] * fPhi[t002] + fmpole[t200] * fPhi[t201] + fmpole[t020] * fPhi[t021]
-                                + fmpole[t002] * fPhi[t003] + fmpole[t110] * fPhi[t111] + fmpole[t101] * fPhi[t102]
-                                + fmpole[t011] * fPhi[t012];
+                            + fmpole[t001] * fPhi[t002] + fmpole[t200] * fPhi[t201] + fmpole[t020] * fPhi[t021]
+                            + fmpole[t002] * fPhi[t003] + fmpole[t110] * fPhi[t111] + fmpole[t101] * fPhi[t102]
+                            + fmpole[t011] * fPhi[t012];
                     gx *= nfftX;
                     gy *= nfftY;
                     gz *= nfftZ;
@@ -1653,18 +1611,6 @@ public class ParticleMeshEwald implements LambdaInterface {
                 String message = "Fatal exception computing the induced reciprocal space field.\n";
                 logger.log(Level.SEVERE, message, ex);
             }
-            for (int i = 0; i < nAtoms; i++) {
-                final double fieldi[] = field[i];
-                final double phii[] = cartesianDipolePhi[i];
-                fieldi[0] -= phii[t100];
-                fieldi[1] -= phii[t010];
-                fieldi[2] -= phii[t001];
-                final double fieldpi[] = fieldCR[i];
-                final double phipi[] = cartesianDipolePhiCR[i];
-                fieldpi[0] -= phipi[t100];
-                fieldpi[1] -= phipi[t010];
-                fieldpi[2] -= phipi[t001];
-            }
         } else {
             reciprocalSpace.cartToFracInducedDipoles(inducedDipole, inducedDipoleCR);
         }
@@ -1764,53 +1710,18 @@ public class ParticleMeshEwald implements LambdaInterface {
     private class PermanentRealSpaceFieldRegion extends ParallelRegion {
 
         private final PermanentRealSpaceFieldLoop permanentRealSpaceFieldLoop[];
-        private final SharedDoubleArray sharedField[];
-        private final SharedDoubleArray sharedFieldCR[];
 
         public PermanentRealSpaceFieldRegion(int nt) {
-            super();
-            sharedField = new SharedDoubleArray[3];
-            sharedField[0] = new SharedDoubleArray(nAtoms);
-            sharedField[1] = new SharedDoubleArray(nAtoms);
-            sharedField[2] = new SharedDoubleArray(nAtoms);
-            sharedFieldCR = new SharedDoubleArray[3];
-            sharedFieldCR[0] = new SharedDoubleArray(nAtoms);
-            sharedFieldCR[1] = new SharedDoubleArray(nAtoms);
-            sharedFieldCR[2] = new SharedDoubleArray(nAtoms);
             permanentRealSpaceFieldLoop = new PermanentRealSpaceFieldLoop[nt];
             for (int i = 0; i < nt; i++) {
                 permanentRealSpaceFieldLoop[i] = new PermanentRealSpaceFieldLoop();
             }
         }
 
-        public void getField(double fld[][], double fldp[][]) {
-            for (int i = 0; i < nAtoms; i++) {
-                fld[i][0] = sharedField[0].get(i);
-                fld[i][1] = sharedField[1].get(i);
-                fld[i][2] = sharedField[2].get(i);
-                fldp[i][0] = sharedFieldCR[0].get(i);
-                fldp[i][1] = sharedFieldCR[1].get(i);
-                fldp[i][2] = sharedFieldCR[2].get(i);
-            }
-        }
-
-        @Override
-        public void start() {
-            for (int i = 0; i < nAtoms; i++) {
-                sharedField[0].set(i, 0.0);
-                sharedField[1].set(i, 0.0);
-                sharedField[2].set(i, 0.0);
-                sharedFieldCR[0].set(i, 0.0);
-                sharedFieldCR[1].set(i, 0.0);
-                sharedFieldCR[2].set(i, 0.0);
-            }
-        }
-
         @Override
         public void run() {
             try {
-                execute(0, nAtoms - 1,
-                        permanentRealSpaceFieldLoop[getThreadIndex()]);
+                execute(0, nAtoms - 1, permanentRealSpaceFieldLoop[getThreadIndex()]);
             } catch (Exception e) {
                 String message = "Fatal exception computing the real space field in thread " + getThreadIndex() + "\n";
                 logger.log(Level.SEVERE, message, e);
@@ -1818,22 +1729,10 @@ public class ParticleMeshEwald implements LambdaInterface {
             }
         }
 
-        @Override
-        public void finish() {
-            // logger.info(format("\nPermanent Real Space Field: %10.3f seconds\n",
-            // (System.nanoTime() - time) * 0.000000001));
-        }
-
         private class PermanentRealSpaceFieldLoop extends IntegerForLoop {
 
             private final double mask_local[];
             private final double maskp_local[];
-            private final double fx_local[];
-            private final double fy_local[];
-            private final double fz_local[];
-            private final double fxp_local[];
-            private final double fyp_local[];
-            private final double fzp_local[];
             private final double dx_local[];
             private final double rot_local[][];
 
@@ -1841,12 +1740,6 @@ public class ParticleMeshEwald implements LambdaInterface {
                 super();
                 mask_local = new double[nAtoms];
                 maskp_local = new double[nAtoms];
-                fx_local = new double[nAtoms];
-                fy_local = new double[nAtoms];
-                fz_local = new double[nAtoms];
-                fxp_local = new double[nAtoms];
-                fyp_local = new double[nAtoms];
-                fzp_local = new double[nAtoms];
                 dx_local = new double[3];
                 rot_local = new double[3][3];
                 for (int i = 0; i < nAtoms; i++) {
@@ -1858,18 +1751,6 @@ public class ParticleMeshEwald implements LambdaInterface {
             @Override
             public IntegerSchedule schedule() {
                 return pairWiseSchedule;
-            }
-
-            @Override
-            public void start() {
-                for (int i = 0; i < nAtoms; i++) {
-                    fx_local[i] = 0.0;
-                    fy_local[i] = 0.0;
-                    fz_local[i] = 0.0;
-                    fxp_local[i] = 0.0;
-                    fyp_local[i] = 0.0;
-                    fzp_local[i] = 0.0;
-                }
             }
 
             @Override
@@ -2051,18 +1932,18 @@ public class ParticleMeshEwald implements LambdaInterface {
                             final double fkpx = xr * (prr3 * ci + prr5 * dir + prr7 * qir) - prr3 * dix - prr5 * qix;
                             final double fkpy = yr * (prr3 * ci + prr5 * dir + prr7 * qir) - prr3 * diy - prr5 * qiy;
                             final double fkpz = zr * (prr3 * ci + prr5 * dir + prr7 * qir) - prr3 * diz - prr5 * qiz;
-                            fx_local[i] += (fimx - fidx);
-                            fy_local[i] += (fimy - fidy);
-                            fz_local[i] += (fimz - fidz);
-                            fx_local[k] += (fkmx - fkdx);
-                            fy_local[k] += (fkmy - fkdy);
-                            fz_local[k] += (fkmz - fkdz);
-                            fxp_local[i] += (fimx - fipx);
-                            fyp_local[i] += (fimy - fipy);
-                            fzp_local[i] += (fimz - fipz);
-                            fxp_local[k] += (fkmx - fkpx);
-                            fyp_local[k] += (fkmy - fkpy);
-                            fzp_local[k] += (fkmz - fkpz);
+                            sharedPermanentField[0].addAndGet(i, fimx - fidx);
+                            sharedPermanentField[1].addAndGet(i, fimy - fidy);
+                            sharedPermanentField[2].addAndGet(i, fimz - fidz);
+                            sharedPermanentField[0].addAndGet(k, fkmx - fkdx);
+                            sharedPermanentField[1].addAndGet(k, fkmy - fkdy);
+                            sharedPermanentField[2].addAndGet(k, fkmz - fkdz);
+                            sharedPermanentFieldCR[0].addAndGet(i, fimx - fipx);
+                            sharedPermanentFieldCR[1].addAndGet(i, fimy - fipy);
+                            sharedPermanentFieldCR[2].addAndGet(i, fimz - fipz);
+                            sharedPermanentFieldCR[0].addAndGet(k, fkmx - fkpx);
+                            sharedPermanentFieldCR[1].addAndGet(k, fkmy - fkpy);
+                            sharedPermanentFieldCR[2].addAndGet(k, fkmz - fkpz);
                         }
                     }
                     for (Torsion torsion : ai.getTorsions()) {
@@ -2229,36 +2110,26 @@ public class ParticleMeshEwald implements LambdaInterface {
                                 final double fix = selfScale * (fimx - fidx);
                                 final double fiy = selfScale * (fimy - fidy);
                                 final double fiz = selfScale * (fimz - fidz);
-                                fx_local[i] += fix;
-                                fy_local[i] += fiy;
-                                fz_local[i] += fiz;
-                                fxp_local[i] += fix;
-                                fyp_local[i] += fiy;
-                                fzp_local[i] += fiz;
+                                sharedPermanentField[0].addAndGet(i, fix);
+                                sharedPermanentField[1].addAndGet(i, fiy);
+                                sharedPermanentField[2].addAndGet(i, fiz);
+                                sharedPermanentFieldCR[0].addAndGet(i, fix);
+                                sharedPermanentFieldCR[1].addAndGet(i, fiy);
+                                sharedPermanentFieldCR[2].addAndGet(i, fiz);
                                 dx_local[0] = selfScale * (fkmx - fkdx);
                                 dx_local[1] = selfScale * (fkmy - fkdy);
                                 dx_local[2] = selfScale * (fkmz - fkdz);
                                 crystal.applyTransSymRot(dx_local, dx_local, symOp, rot_local);
-                                fx_local[k] += dx_local[0];
-                                fy_local[k] += dx_local[1];
-                                fz_local[k] += dx_local[2];
-                                fxp_local[k] += dx_local[0];
-                                fyp_local[k] += dx_local[1];
-                                fzp_local[k] += dx_local[2];
+                                sharedPermanentField[0].addAndGet(k, dx_local[0]);
+                                sharedPermanentField[1].addAndGet(k, dx_local[1]);
+                                sharedPermanentField[2].addAndGet(k, dx_local[2]);
+                                sharedPermanentFieldCR[0].addAndGet(k, dx_local[0]);
+                                sharedPermanentFieldCR[1].addAndGet(k, dx_local[1]);
+                                sharedPermanentFieldCR[2].addAndGet(k, dx_local[2]);
                             }
                         }
                     }
                 }
-            }
-
-            @Override
-            public void finish() {
-                sharedField[0].reduce(fx_local, DoubleOp.SUM);
-                sharedField[1].reduce(fy_local, DoubleOp.SUM);
-                sharedField[2].reduce(fz_local, DoubleOp.SUM);
-                sharedFieldCR[0].reduce(fxp_local, DoubleOp.SUM);
-                sharedFieldCR[1].reduce(fyp_local, DoubleOp.SUM);
-                sharedFieldCR[2].reduce(fzp_local, DoubleOp.SUM);
             }
         }
     }
@@ -2266,56 +2137,19 @@ public class ParticleMeshEwald implements LambdaInterface {
     private class InducedDipoleRealSpaceFieldRegion extends ParallelRegion {
 
         private final PolarizationRealSpaceFieldLoop polarizationRealSpaceFieldLoop[];
-        private final SharedDoubleArray sharedField[];
-        private final SharedDoubleArray sharedFieldp[];
 
         public InducedDipoleRealSpaceFieldRegion(int nt) {
-            super();
-            sharedField = new SharedDoubleArray[3];
-            sharedField[0] = new SharedDoubleArray(nAtoms);
-            sharedField[1] = new SharedDoubleArray(nAtoms);
-            sharedField[2] = new SharedDoubleArray(nAtoms);
-            sharedFieldp = new SharedDoubleArray[3];
-            sharedFieldp[0] = new SharedDoubleArray(nAtoms);
-            sharedFieldp[1] = new SharedDoubleArray(nAtoms);
-            sharedFieldp[2] = new SharedDoubleArray(nAtoms);
             polarizationRealSpaceFieldLoop = new PolarizationRealSpaceFieldLoop[nt];
             for (int i = 0; i < nt; i++) {
                 polarizationRealSpaceFieldLoop[i] = new PolarizationRealSpaceFieldLoop();
             }
         }
 
-        public void setField(double fld[][], double fldp[][]) {
-            for (int i = 0; i < nAtoms; i++) {
-                fld[i][0] = sharedField[0].get(i);
-                fld[i][1] = sharedField[1].get(i);
-                fld[i][2] = sharedField[2].get(i);
-                fldp[i][0] = sharedFieldp[0].get(i);
-                fldp[i][1] = sharedFieldp[1].get(i);
-                fldp[i][2] = sharedFieldp[2].get(i);
-            }
-        }
-
-        /**
-         * Initialize the shared field arrays to 0.
-         */
-        @Override
-        public void start() {
-            for (int i = 0; i < nAtoms; i++) {
-                sharedField[0].set(i, 0.0);
-                sharedField[1].set(i, 0.0);
-                sharedField[2].set(i, 0.0);
-                sharedFieldp[0].set(i, 0.0);
-                sharedFieldp[1].set(i, 0.0);
-                sharedFieldp[2].set(i, 0.0);
-            }
-        }
-
         @Override
         public void run() {
             try {
-                execute(0, nAtoms - 1,
-                        polarizationRealSpaceFieldLoop[getThreadIndex()]);
+                int ti = getThreadIndex();
+                execute(0, nAtoms - 1, polarizationRealSpaceFieldLoop[ti]);
             } catch (Exception e) {
                 String message = "Fatal exception computing the induced real space field in thread " + getThreadIndex() + "\n";
                 logger.log(Level.SEVERE, message, e);
@@ -2353,12 +2187,6 @@ public class ParticleMeshEwald implements LambdaInterface {
             private double pkdx, pkdy, pkdz;
             private double xs[], ys[], zs[];
             private double inds[][], indps[][];
-            private final double fx_local[];
-            private final double fy_local[];
-            private final double fz_local[];
-            private final double fxp_local[];
-            private final double fyp_local[];
-            private final double fzp_local[];
             private final double dx_local[];
             private final double rot_local[][];
             private final double x[] = coordinates[0][0];
@@ -2368,13 +2196,6 @@ public class ParticleMeshEwald implements LambdaInterface {
             private final double inp[][] = inducedDipoleCR[0];
 
             public PolarizationRealSpaceFieldLoop() {
-                super();
-                fx_local = new double[nAtoms];
-                fy_local = new double[nAtoms];
-                fz_local = new double[nAtoms];
-                fxp_local = new double[nAtoms];
-                fyp_local = new double[nAtoms];
-                fzp_local = new double[nAtoms];
                 dx_local = new double[3];
                 rot_local = new double[3][3];
             }
@@ -2382,18 +2203,6 @@ public class ParticleMeshEwald implements LambdaInterface {
             @Override
             public IntegerSchedule schedule() {
                 return pairWiseSchedule;
-            }
-
-            @Override
-            public void start() {
-                for (i = 0; i < nAtoms; i++) {
-                    fx_local[i] = 0.0;
-                    fy_local[i] = 0.0;
-                    fz_local[i] = 0.0;
-                    fxp_local[i] = 0.0;
-                    fyp_local[i] = 0.0;
-                    fzp_local[i] = 0.0;
-                }
             }
 
             @Override
@@ -2528,19 +2337,19 @@ public class ParticleMeshEwald implements LambdaInterface {
                         px += (pimx - pidx);
                         py += (pimy - pidy);
                         pz += (pimz - pidz);
-                        fx_local[k] += (fkmx - fkdx);
-                        fy_local[k] += (fkmy - fkdy);
-                        fz_local[k] += (fkmz - fkdz);
-                        fxp_local[k] += (pkmx - pkdx);
-                        fyp_local[k] += (pkmy - pkdy);
-                        fzp_local[k] += (pkmz - pkdz);
+                        sharedMutualField[0].addAndGet(k, fkmx - fkdx);
+                        sharedMutualField[1].addAndGet(k, fkmy - fkdy);
+                        sharedMutualField[2].addAndGet(k, fkmz - fkdz);
+                        sharedMutualFieldCR[0].addAndGet(k, pkmx - pkdx);
+                        sharedMutualFieldCR[1].addAndGet(k, pkmy - pkdy);
+                        sharedMutualFieldCR[2].addAndGet(k, pkmz - pkdz);
                     }
-                    fx_local[i] += fx;
-                    fy_local[i] += fy;
-                    fz_local[i] += fz;
-                    fxp_local[i] += px;
-                    fyp_local[i] += py;
-                    fzp_local[i] += pz;
+                    sharedMutualField[0].addAndGet(i, fx);
+                    sharedMutualField[1].addAndGet(i, fy);
+                    sharedMutualField[2].addAndGet(i, fz);
+                    sharedMutualFieldCR[0].addAndGet(i, px);
+                    sharedMutualFieldCR[1].addAndGet(i, py);
+                    sharedMutualFieldCR[2].addAndGet(i, pz);
                 }
                 /**
                  * Loop over symmetry mates.
@@ -2686,38 +2495,25 @@ public class ParticleMeshEwald implements LambdaInterface {
                             dx_local[1] = selfScale * (fkmy - fkdy);
                             dx_local[2] = selfScale * (fkmz - fkdz);
                             crystal.applyTransSymRot(dx_local, dx_local, symOp, rot_local);
-                            fx_local[k] += dx_local[0];
-                            fy_local[k] += dx_local[1];
-                            fz_local[k] += dx_local[2];
+                            sharedMutualField[0].addAndGet(k, dx_local[0]);
+                            sharedMutualField[1].addAndGet(k, dx_local[1]);
+                            sharedMutualField[2].addAndGet(k, dx_local[2]);
                             dx_local[0] = selfScale * (pkmx - pkdx);
                             dx_local[1] = selfScale * (pkmy - pkdy);
                             dx_local[2] = selfScale * (pkmz - pkdz);
                             crystal.applyTransSymRot(dx_local, dx_local, symOp, rot_local);
-                            fxp_local[k] += dx_local[0];
-                            fyp_local[k] += dx_local[1];
-                            fzp_local[k] += dx_local[2];
+                            sharedMutualFieldCR[0].addAndGet(k, dx_local[0]);
+                            sharedMutualFieldCR[1].addAndGet(k, dx_local[1]);
+                            sharedMutualFieldCR[2].addAndGet(k, dx_local[2]);
                         }
-                        fx_local[i] += fx;
-                        fy_local[i] += fy;
-                        fz_local[i] += fz;
-                        fxp_local[i] += px;
-                        fyp_local[i] += py;
-                        fzp_local[i] += pz;
+                        sharedMutualField[0].addAndGet(i, fx);
+                        sharedMutualField[1].addAndGet(i, fy);
+                        sharedMutualField[2].addAndGet(i, fz);
+                        sharedMutualFieldCR[0].addAndGet(i, px);
+                        sharedMutualFieldCR[1].addAndGet(i, py);
+                        sharedMutualFieldCR[2].addAndGet(i, pz);
                     }
                 }
-            }
-
-            /**
-             * Reduce this thread's field contribution into the shared arrays.
-             */
-            @Override
-            public void finish() {
-                sharedField[0].reduce(fx_local, DoubleOp.SUM);
-                sharedField[1].reduce(fy_local, DoubleOp.SUM);
-                sharedField[2].reduce(fz_local, DoubleOp.SUM);
-                sharedFieldp[0].reduce(fxp_local, DoubleOp.SUM);
-                sharedFieldp[1].reduce(fyp_local, DoubleOp.SUM);
-                sharedFieldp[2].reduce(fzp_local, DoubleOp.SUM);
             }
         }
     }
@@ -2973,13 +2769,13 @@ public class ParticleMeshEwald implements LambdaInterface {
                     if (gradient) {
                         // Turn symmetry mate torques into gradients
                         torque(iSymm, txk_local, tyk_local, tzk_local,
-                               gxk_local, gyk_local, gzk_local,
-                               work[0], work[1], work[2], work[3], work[4],
-                               work[5], work[6], work[7], work[8], work[9],
-                               work[10], work[11], work[12], work[13], work[14]);
+                                gxk_local, gyk_local, gzk_local,
+                                work[0], work[1], work[2], work[3], work[4],
+                                work[5], work[6], work[7], work[8], work[9],
+                                work[10], work[11], work[12], work[13], work[14]);
                         // Rotate symmetry mate gradients
                         crystal.applyTransSymRot(nAtoms, gxk_local, gyk_local, gzk_local,
-                                                 gxk_local, gyk_local, gzk_local, symOp, rot_local);
+                                gxk_local, gyk_local, gzk_local, symOp, rot_local);
                         // Sum symmetry mate gradients into asymmetric unit gradients
                         for (int j = 0; j < nAtoms; j++) {
                             gx_local[j] += gxk_local[j];
@@ -2990,13 +2786,13 @@ public class ParticleMeshEwald implements LambdaInterface {
                     if (lambdaTerm) {
                         // Turn symmetry mate torques into gradients
                         torque(iSymm, ltxk_local, ltyk_local, ltzk_local,
-                               lxk_local, lyk_local, lzk_local,
-                               work[0], work[1], work[2], work[3], work[4],
-                               work[5], work[6], work[7], work[8], work[9],
-                               work[10], work[11], work[12], work[13], work[14]);
+                                lxk_local, lyk_local, lzk_local,
+                                work[0], work[1], work[2], work[3], work[4],
+                                work[5], work[6], work[7], work[8], work[9],
+                                work[10], work[11], work[12], work[13], work[14]);
                         // Rotate symmetry mate gradients
                         crystal.applyTransSymRot(nAtoms, lxk_local, lyk_local, lzk_local,
-                                                 lxk_local, lyk_local, lzk_local, symOp, rot_local);
+                                lxk_local, lyk_local, lzk_local, symOp, rot_local);
                         // Sum symmetry mate gradients into asymmetric unit gradients
                         for (int j = 0; j < nAtoms; j++) {
                             lx_local[j] += lxk_local[j];
@@ -3451,7 +3247,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                 final double scale1 = 1.0 - scale;
                 final double ereal = gl0 * bn0 + (gl1 + gl6) * bn1 + (gl2 + gl7 + gl8) * bn2 + (gl3 + gl5) * bn3 + gl4 * bn4;
                 final double efix = scale1 * (gl0 * rr1 + (gl1 + gl6) * rr3 + (gl2 + gl7 + gl8) * rr5
-                                              + (gl3 + gl5) * rr7 + gl4 * rr9);
+                        + (gl3 + gl5) * rr7 + gl4 * rr9);
 
                 final double e = selfScale * l2 * (ereal - efix);
 
@@ -3556,10 +3352,10 @@ public class ParticleMeshEwald implements LambdaInterface {
 
                     dUdL += selfScale * dEdLSign * (dlPowPerm * ereal + lPowPerm * dlAlpha * dRealdL);
                     d2UdL2 += selfScale * dEdLSign * (d2lPowPerm * ereal
-                                                      + dlPowPerm * dlAlpha * dRealdL
-                                                      + dlPowPerm * dlAlpha * dRealdL
-                                                      + lPowPerm * d2lAlpha * dRealdL
-                                                      + lPowPerm * dlAlpha * dlAlpha * d2RealdL2);
+                            + dlPowPerm * dlAlpha * dRealdL
+                            + dlPowPerm * dlAlpha * dRealdL
+                            + lPowPerm * d2lAlpha * dRealdL
+                            + lPowPerm * dlAlpha * dlAlpha * d2RealdL2);
 
                     /*
                     double dFixdL = gl0 * rr3 + (gl1 + gl6) * rr5 + (gl2 + gl7 + gl8) * rr7 + (gl3 + gl5) * rr9 + gl4 * rr11;
@@ -3577,8 +3373,8 @@ public class ParticleMeshEwald implements LambdaInterface {
                      * d[fL2*dfL1dL*dRealdL]/dX
                      */
                     final double gf1 = bn2 * gl0 + bn3 * (gl1 + gl6)
-                                       + bn4 * (gl2 + gl7 + gl8)
-                                       + bn5 * (gl3 + gl5) + bn6 * gl4;
+                            + bn4 * (gl2 + gl7 + gl8)
+                            + bn5 * (gl3 + gl5) + bn6 * gl4;
                     final double gf2 = -ck * bn2 + sc4 * bn3 - sc6 * bn4;
                     final double gf3 = ci * bn2 + sc3 * bn3 + sc5 * bn4;
                     final double gf4 = 2.0 * bn3;
@@ -3589,35 +3385,35 @@ public class ParticleMeshEwald implements LambdaInterface {
                      * Get the permanent force with screening.
                      */
                     double ftm2x = gf1 * xr + gf2 * dix + gf3 * dkx
-                                   + gf4 * (qkdix - qidkx) + gf5 * qirx
-                                   + gf6 * qkrx + gf7 * (qiqkrx + qkqirx);
+                            + gf4 * (qkdix - qidkx) + gf5 * qirx
+                            + gf6 * qkrx + gf7 * (qiqkrx + qkqirx);
                     double ftm2y = gf1 * yr + gf2 * diy + gf3 * dky
-                                   + gf4 * (qkdiy - qidky) + gf5 * qiry
-                                   + gf6 * qkry + gf7 * (qiqkry + qkqiry);
+                            + gf4 * (qkdiy - qidky) + gf5 * qiry
+                            + gf6 * qkry + gf7 * (qiqkry + qkqiry);
                     double ftm2z = gf1 * zr + gf2 * diz + gf3 * dkz
-                                   + gf4 * (qkdiz - qidkz) + gf5 * qirz
-                                   + gf6 * qkrz + gf7 * (qiqkrz + qkqirz);
+                            + gf4 * (qkdiz - qidkz) + gf5 * qirz
+                            + gf6 * qkrz + gf7 * (qiqkrz + qkqirz);
                     /*
                      * Get the permanent torque with screening.
                      */
                     double ttm2x = -bn2 * dixdkx + gf2 * dixrx
-                                   + gf4 * (dixqkrx + dkxqirx + rxqidkx - 2.0 * qixqkx)
-                                   - gf5 * rxqirx - gf7 * (rxqikrx + qkrxqirx);
+                            + gf4 * (dixqkrx + dkxqirx + rxqidkx - 2.0 * qixqkx)
+                            - gf5 * rxqirx - gf7 * (rxqikrx + qkrxqirx);
                     double ttm2y = -bn2 * dixdky + gf2 * dixry
-                                   + gf4 * (dixqkry + dkxqiry + rxqidky - 2.0 * qixqky)
-                                   - gf5 * rxqiry - gf7 * (rxqikry + qkrxqiry);
+                            + gf4 * (dixqkry + dkxqiry + rxqidky - 2.0 * qixqky)
+                            - gf5 * rxqiry - gf7 * (rxqikry + qkrxqiry);
                     double ttm2z = -bn2 * dixdkz + gf2 * dixrz
-                                   + gf4 * (dixqkrz + dkxqirz + rxqidkz - 2.0 * qixqkz)
-                                   - gf5 * rxqirz - gf7 * (rxqikrz + qkrxqirz);
+                            + gf4 * (dixqkrz + dkxqirz + rxqidkz - 2.0 * qixqkz)
+                            - gf5 * rxqirz - gf7 * (rxqikrz + qkrxqirz);
                     double ttm3x = bn2 * dixdkx + gf3 * dkxrx
-                                   - gf4 * (dixqkrx + dkxqirx + rxqkdix - 2.0 * qixqkx)
-                                   - gf6 * rxqkrx - gf7 * (rxqkirx - qkrxqirx);
+                            - gf4 * (dixqkrx + dkxqirx + rxqkdix - 2.0 * qixqkx)
+                            - gf6 * rxqkrx - gf7 * (rxqkirx - qkrxqirx);
                     double ttm3y = bn2 * dixdky + gf3 * dkxry
-                                   - gf4 * (dixqkry + dkxqiry + rxqkdiy - 2.0 * qixqky)
-                                   - gf6 * rxqkry - gf7 * (rxqkiry - qkrxqiry);
+                            - gf4 * (dixqkry + dkxqiry + rxqkdiy - 2.0 * qixqky)
+                            - gf6 * rxqkry - gf7 * (rxqkiry - qkrxqiry);
                     double ttm3z = bn2 * dixdkz + gf3 * dkxrz
-                                   - gf4 * (dixqkrz + dkxqirz + rxqkdiz - 2.0 * qixqkz)
-                                   - gf6 * rxqkrz - gf7 * (rxqkirz - qkrxqirz);
+                            - gf4 * (dixqkrz + dkxqirz + rxqkdiz - 2.0 * qixqkz)
+                            - gf6 * rxqkrz - gf7 * (rxqkirz - qkrxqirz);
 
                     /**
                      * Handle the case where scaling is used.
@@ -3947,28 +3743,28 @@ public class ParticleMeshEwald implements LambdaInterface {
         }
     }
 
-    private class ExpandCoordinatesRegion extends ParallelRegion {
+    private class InitializationRegion extends ParallelRegion {
 
-        private final ExpandCoordinatesLoop expandCoordinatesLoop[];
+        private final InitializationLoop initializationLoop[];
 
-        public ExpandCoordinatesRegion(int maxThreads) {
-            expandCoordinatesLoop = new ExpandCoordinatesLoop[maxThreads];
+        public InitializationRegion(int maxThreads) {
+            initializationLoop = new InitializationLoop[maxThreads];
             for (int i = 0; i < maxThreads; i++) {
-                expandCoordinatesLoop[i] = new ExpandCoordinatesLoop();
+                initializationLoop[i] = new InitializationLoop();
             }
         }
 
         @Override
         public void run() {
             try {
-                execute(0, nAtoms - 1, expandCoordinatesLoop[getThreadIndex()]);
+                execute(0, nAtoms - 1, initializationLoop[getThreadIndex()]);
             } catch (Exception e) {
                 String message = "Fatal exception expanding coordinates in thread: " + getThreadIndex() + "\n";
                 logger.log(Level.SEVERE, message, e);
             }
         }
 
-        private class ExpandCoordinatesLoop extends IntegerForLoop {
+        private class InitializationLoop extends IntegerForLoop {
 
             private final double in[] = new double[3];
             private final double out[] = new double[3];
@@ -3980,12 +3776,33 @@ public class ParticleMeshEwald implements LambdaInterface {
             private long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
             @Override
-            public IntegerSchedule schedule() {
-                return pairWiseSchedule;
-            }
-
-            @Override
             public void run(int lb, int ub) {
+                /**
+                 * Initialize the local coordinate arrays.
+                 */
+                for (int i = lb; i <= ub; i++) {
+                    double xyz[] = atoms[i].getXYZ();
+                    x[i] = xyz[0];
+                    y[i] = xyz[1];
+                    z[i] = xyz[2];
+                    use[i] = true;
+                    sharedPermanentField[0].set(i, 0.0);
+                    sharedPermanentField[1].set(i, 0.0);
+                    sharedPermanentField[2].set(i, 0.0);
+                    sharedPermanentFieldCR[0].set(i, 0.0);
+                    sharedPermanentFieldCR[1].set(i, 0.0);
+                    sharedPermanentFieldCR[2].set(i, 0.0);
+                    sharedMutualField[0].set(i, 0.0);
+                    sharedMutualField[1].set(i, 0.0);
+                    sharedMutualField[2].set(i, 0.0);
+                    sharedMutualFieldCR[0].set(i, 0.0);
+                    sharedMutualFieldCR[1].set(i, 0.0);
+                    sharedMutualFieldCR[2].set(i, 0.0);
+                }
+
+                /**
+                 * Expand coordinates.
+                 */
                 List<SymOp> symOps = crystal.spaceGroup.symOps;
                 for (int iSymm = 1; iSymm < nSymm; iSymm++) {
                     SymOp symOp = symOps.get(iSymm);
@@ -4000,6 +3817,34 @@ public class ParticleMeshEwald implements LambdaInterface {
                         xs[i] = out[0];
                         ys[i] = out[1];
                         zs[i] = out[2];
+                    }
+                }
+
+                /**
+                 * Initialize the coordinate gradient arrays.
+                 */
+                if (gradient) {
+                    for (int i = lb; i <= ub; i++) {
+                        sharedGrad[0].set(i, 0.0);
+                        sharedGrad[1].set(i, 0.0);
+                        sharedGrad[2].set(i, 0.0);
+                        sharedTorque[0].set(i, 0.0);
+                        sharedTorque[1].set(i, 0.0);
+                        sharedTorque[2].set(i, 0.0);
+                    }
+                }
+
+                /**
+                 * Initialize the lambda gradient arrays.
+                 */
+                if (lambdaTerm) {
+                    for (int i = lb; i <= ub; i++) {
+                        shareddEdLdX[0].set(i, 0.0);
+                        shareddEdLdX[1].set(i, 0.0);
+                        shareddEdLdX[2].set(i, 0.0);
+                        shareddEdLTorque[0].set(i, 0.0);
+                        shareddEdLTorque[1].set(i, 0.0);
+                        shareddEdLTorque[2].set(i, 0.0);
                     }
                 }
             }
@@ -4180,7 +4025,7 @@ public class ParticleMeshEwald implements LambdaInterface {
 
                         // Check for chiral flipping.
                         if (frame[ii] == MultipoleType.MultipoleFrameDefinition.ZTHENX
-                            && referenceSites.length == 3) {
+                                && referenceSites.length == 3) {
                             localOrigin[0] = x[ii];
                             localOrigin[1] = y[ii];
                             localOrigin[2] = z[ii];
@@ -4223,9 +4068,9 @@ public class ParticleMeshEwald implements LambdaInterface {
                                     for (int k = 0; k < 3; k++) {
                                         double[] localQuadrupolek = tempQuadrupole[k];
                                         quadrupolei[j] += rotmati[k]
-                                                          * (rotmatj[0] * localQuadrupolek[0]
-                                                             + rotmatj[1] * localQuadrupolek[1]
-                                                             + rotmatj[2] * localQuadrupolek[2]);
+                                                * (rotmatj[0] * localQuadrupolek[0]
+                                                + rotmatj[1] * localQuadrupolek[1]
+                                                + rotmatj[2] * localQuadrupolek[2]);
                                     }
                                 }
                             }
@@ -4306,21 +4151,26 @@ public class ParticleMeshEwald implements LambdaInterface {
         }
     }
 
-    private class TorqueRegion extends ParallelRegion {
+    private class ReduceRegion extends ParallelRegion {
 
         private final TorqueLoop torqueLoop[];
+        private final ReduceLoop reduceLoop[];
 
-        public TorqueRegion(int maxThreads) {
+        public ReduceRegion(int maxThreads) {
             torqueLoop = new TorqueLoop[maxThreads];
+            reduceLoop = new ReduceLoop[maxThreads];
             for (int i = 0; i < maxThreads; i++) {
                 torqueLoop[i] = new TorqueLoop();
+                reduceLoop[i] = new ReduceLoop();
             }
         }
 
         @Override
         public void run() {
             try {
-                execute(0, nAtoms - 1, torqueLoop[getThreadIndex()]);
+                int ti = getThreadIndex();
+                execute(0, nAtoms - 1, torqueLoop[ti]);
+                execute(0, nAtoms - 1, reduceLoop[ti]);
             } catch (Exception e) {
                 String message = "Fatal exception computing torque in thread " + getThreadIndex() + "\n";
                 logger.log(Level.SEVERE, message, e);
@@ -4351,18 +4201,20 @@ public class ParticleMeshEwald implements LambdaInterface {
 
             @Override
             public void run(int lb, int ub) {
-                for (int i = lb; i <= ub; i++) {
-                    if (gradient) {
+                if (gradient) {
+                    for (int i = lb; i <= ub; i++) {
                         torque(i, sharedTorque, sharedGrad);
                     }
-                    if (lambdaTerm) {
+                }
+                if (lambdaTerm) {
+                    for (int i = lb; i <= ub; i++) {
                         torque(i, shareddEdLTorque, shareddEdLdX);
                     }
                 }
             }
 
             public void torque(int i, SharedDoubleArray[] torq,
-                               SharedDoubleArray[] grad) {
+                    SharedDoubleArray[] grad) {
                 final int ax[] = axisAtom[i];
                 // Ions, for example, have no torque.
                 if (ax == null || ax.length < 2) {
@@ -4514,6 +4366,19 @@ public class ParticleMeshEwald implements LambdaInterface {
                         logger.log(Level.SEVERE, message);
                 }
 
+            }
+        }
+
+        private class ReduceLoop extends IntegerForLoop {
+
+            @Override
+            public void run(int lb, int ub) throws Exception {
+                for (int i = lb; i <= ub; i++) {
+                    atoms[i].addToXYZGradient(
+                            sharedGrad[0].get(i),
+                            sharedGrad[1].get(i),
+                            sharedGrad[2].get(i));
+                }
             }
         }
     }
@@ -4671,7 +4536,7 @@ public class ParticleMeshEwald implements LambdaInterface {
             if (!assignMultipole(i)) {
                 Atom atom = atoms[i];
                 String message = "No multipole could be assigned to atom:\n"
-                                 + atom + "\nof type:\n" + atom.getAtomType();
+                        + atom + "\nof type:\n" + atom.getAtomType();
                 logger.log(Level.SEVERE, message);
             }
         }
@@ -4975,7 +4840,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                 //System.out.println(format("%d %d", index + 1, g11));
             } else {
                 String message = "The polarize keyword was not found for atom "
-                                 + (index + 1) + " with type " + ai.getType();
+                        + (index + 1) + " with type " + ai.getType();
                 logger.severe(message);
             }
         }
@@ -5065,7 +4930,7 @@ public class ParticleMeshEwald implements LambdaInterface {
      *            group.
      */
     private void growGroup(List<Integer> polarizationGroup,
-                           List<Integer> group, Atom seed) {
+            List<Integer> group, Atom seed) {
         List<Bond> bonds = seed.getBonds();
         for (Bond bi : bonds) {
             Atom aj = bi.get1_2(seed);
@@ -5094,13 +4959,13 @@ public class ParticleMeshEwald implements LambdaInterface {
     }
 
     private void torque(int iSymm,
-                        double tx[], double ty[], double tz[],
-                        double gx[], double gy[], double gz[],
-                        double origin[], double[] u,
-                        double v[], double w[], double uv[], double uw[],
-                        double vw[], double ur[], double us[], double vs[],
-                        double ws[], double t1[], double t2[], double r[],
-                        double s[]) {
+            double tx[], double ty[], double tz[],
+            double gx[], double gy[], double gz[],
+            double origin[], double[] u,
+            double v[], double w[], double uv[], double uw[],
+            double vw[], double ur[], double us[], double vs[],
+            double ws[], double t1[], double t2[], double r[],
+            double s[]) {
         for (int i = 0; i < nAtoms; i++) {
             final int ax[] = axisAtom[i];
             // Ions, for example, have no torque.

@@ -101,8 +101,8 @@ public class GeneralizedKirkwood {
         y = particleMeshEwald.coordinates[0][1];
         z = particleMeshEwald.coordinates[0][2];
         globalMultipole = particleMeshEwald.globalMultipole[0];
-        sharedGrad = particleMeshEwald.sharedGrad;
-        sharedTorque = particleMeshEwald.sharedTorque;
+        sharedGrad = particleMeshEwald.getSharedGradient();
+        sharedTorque = particleMeshEwald.getSharedTorque();
 
         sharedGKField = new SharedDoubleArray[3];
         sharedGKField[0] = new SharedDoubleArray(nAtoms);
