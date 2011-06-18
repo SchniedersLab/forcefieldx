@@ -36,14 +36,14 @@ public class PairwiseSchedule extends IntegerSchedule {
 
     private static final Logger logger = Logger.getLogger(PairwiseSchedule.class.getName());
     private final int nAtoms;
-    private int nThreads;
-    private Range ranges[];
-    private boolean threadDone[];
+    private final int nThreads;
+    private final Range ranges[];
+    private final boolean threadDone[];
 
-    public PairwiseSchedule(int nThreads, int nAtoms) {
+    public PairwiseSchedule(int nThreads, int nAtoms, Range ranges[]) {
         this.nAtoms = nAtoms;
         this.nThreads = nThreads;
-        ranges = new Range[nThreads];
+        this.ranges = ranges;
         threadDone = new boolean[nThreads];
     }
 
@@ -76,7 +76,4 @@ public class PairwiseSchedule extends IntegerSchedule {
         return null;
     }
 
-    public void setRanges(Range ranges[]) {
-        this.ranges = ranges;
-    }
 }

@@ -273,12 +273,12 @@
                         <argument>-mx2G</argument>
                         <argument>-Djava.awt.headless=true</argument>
                         <argument>-Dj3d.rend=jogl</argument>
-                        <argument>-Dpj.nt=8</argument>
+                        <argument>-Dpj.nt=2</argument>
                         <argument>-classpath</argument>
                         <argument>bin/ffx-all.jar</argument>
                         <argument>ffx.Launcher</argument>
-                        <argument>testGradient</argument>
-                        <argument>examples/dhfr.xyz</argument>
+                        <argument>timer</argument>
+                        <argument>examples/watersmall.xyz</argument>
                         <!-- argument>20</argument -->
                     </arguments>
                 </configuration>

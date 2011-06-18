@@ -314,8 +314,7 @@ public class NeighborList extends ParallelRegion {
         listCount = new int[nAtoms];
         sharedCount = new SharedInteger();
         ranges = new Range[threadCount];
-        pairwiseSchedule = new PairwiseSchedule(threadCount, nAtoms);
-        pairwiseSchedule.setRanges(ranges);
+        pairwiseSchedule = new PairwiseSchedule(threadCount, nAtoms, ranges);
         
         logger.info(sb.toString());
     }
