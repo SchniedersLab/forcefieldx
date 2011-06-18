@@ -31,6 +31,8 @@ import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
+import edu.rit.pj.reduction.SharedInteger;
+import edu.rit.util.Range;
 
 import ffx.crystal.Crystal;
 import ffx.potential.bonded.Atom;
@@ -106,6 +108,22 @@ public class NeighborList extends ParallelRegion {
      * The Verlet lists. [nsymm][natom][ neighbors... ]
      */
     private int lists[][][];
+    /**
+     * Number of interactions per atom.
+     */
+    private int listCount[];
+    /**
+     * Total number of interactions.
+     */
+    private SharedInteger sharedCount;
+    /**
+     * Optimal pairwise ranges.
+     */
+    private Range ranges[];
+    /**
+     * Pairwise ranges for load balancing.
+     */
+    private PairwiseSchedule pairwiseSchedule;
     /**
      * Number of interactions between atoms in the asymmetric unit.
      */
@@ -285,12 +303,20 @@ public class NeighborList extends ParallelRegion {
         cellB = new int[nAtoms];
         cellC = new int[nAtoms];
         frac = new double[3 * nAtoms];
+                
         // Parallel constructs.
         threadCount = parallelTeam.getThreadCount();
         verletListLoop = new NeighborListLoop[threadCount];
         for (int i = 0; i < threadCount; i++) {
             verletListLoop[i] = new NeighborListLoop();
         }
+        
+        listCount = new int[nAtoms];
+        sharedCount = new SharedInteger();
+        ranges = new Range[threadCount];
+        pairwiseSchedule = new PairwiseSchedule(threadCount, nAtoms);
+        pairwiseSchedule.setRanges(ranges);
+        
         logger.info(sb.toString());
     }
 
@@ -336,13 +362,47 @@ public class NeighborList extends ParallelRegion {
                 log();
             }
 
-            int atomCount[] = new int[nAtoms];
-            for (int iSymm = 0; iSymm < nSymm; iSymm++) {
-                for (int i = 0; i < nAtoms; i++) {
-                    atomCount[i] += lists[iSymm][i].length;
+            int id = 0;
+            int goal = sharedCount.get() / threadCount;
+            int num = 0;
+            int start = 0;
+            for (int i = 0; i < nAtoms; i++) {
+                num += listCount[i];
+                if (num >= goal) {
+                    ranges[id] = new Range(start, i);
+                    
+                    // Next thread.
+                    id++;
+
+                    // Next range starts at i+1.
+                    start = i + 1;
+                    
+                    /**
+                     * Out of atoms. Threads remaining get a null range.
+                     */
+                    if (start == nAtoms) {
+                        for (int j = id; j<threadCount; j++) {
+                            ranges[j] = null;
+                        }
+                        break;
+                    }
+                    
+                    /**
+                     * Last thread gets the remaining atoms in its range.
+                     */
+                    if (id == threadCount - 1) {
+                        ranges[id] = new Range(start, nAtoms - 1);
+                        break;
+                    }
+                    
+                    num = 0;
                 }
             }
         }
+    }
+    
+    public PairwiseSchedule getPairwiseSchedule() {
+        return pairwiseSchedule;
     }
 
     private void log() {
@@ -477,6 +537,7 @@ public class NeighborList extends ParallelRegion {
     @Override
     public void start() {
         time = System.nanoTime();
+        sharedCount.set(0);
     }
 
     /**
@@ -545,17 +606,18 @@ public class NeighborList extends ParallelRegion {
         private int n;
         private int iSymm;
         private int atomIndex;
+        private int count;
         private double xyz[];
         private int pairs[];
         private final double mask[];
         private final int asymmetricIndex[];
+        
         private final IntegerSchedule schedule;
         // Extra padding to avert cache interference.
         private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
         private long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
         public NeighborListLoop() {
-            super();
             pairs = new int[len];
             asymmetricIndex = cellIndex[0];
             mask = new double[nAtoms];
@@ -573,6 +635,12 @@ public class NeighborList extends ParallelRegion {
         @Override
         public void start() {
             xyz = coordinates[0];
+            count = 0;
+        }
+        
+        @Override
+        public void finish() {
+            sharedCount.addAndGet(count);
         }
 
         @Override
@@ -582,6 +650,9 @@ public class NeighborList extends ParallelRegion {
                 // Loop over all atoms.
                 for (atomIndex = lb; atomIndex <= ub; atomIndex++) {
                     n = 0;
+                    if (iSymm == 0) {
+                        listCount[atomIndex] = 0;
+                    }
                     final int a = cellA[atomIndex];
                     final int b = cellB[atomIndex];
                     final int c = cellC[atomIndex];
@@ -655,6 +726,8 @@ public class NeighborList extends ParallelRegion {
                     }
 
                     list[atomIndex] = new int[n];
+                    listCount[atomIndex] += n;
+                    count += n;
                     System.arraycopy(pairs, 0, list[atomIndex], 0, n);
                 }
             }

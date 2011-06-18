@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.logging.Logger;
 
 import edu.rit.pj.ParallelTeam;
+
 import ffx.crystal.Crystal;
 import ffx.crystal.ReplicatesCrystal;
 import ffx.numerics.Potential;
@@ -356,7 +357,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
         if (multipoleTerm) {
             particleMeshEwald = new ParticleMeshEwald(forceField, atoms, crystal, parallelTeam,
-                    vanderWaals.getNeighborLists());
+                    vanderWaals.getNeighborLists(), vanderWaals.getPairwiseSchedule());
         } else {
             particleMeshEwald = null;
         }
