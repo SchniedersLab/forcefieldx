@@ -248,9 +248,7 @@ public class ModelingShell extends Console implements AlgorithmListener {
         return null;
     }
 
-    public void analyze(String xyzfname) {
-        String keyfile = null;
-        String options = null;
+    public void analyze(String xyzfname, String keyfile, String options) {
         try {
             Energy e = new Energy(xyzfname, keyfile, options);
             e.energy(false, true);
@@ -281,7 +279,7 @@ public class ModelingShell extends Console implements AlgorithmListener {
         return null;
     }
 
-    public Potential minimize_2(String xyzf, double eps) {
+    public Potential minimize_2(String xyzf, double eps, String keyfile) {
         Potential potential = null;
         if (interrupted) {
             logger.info("Algorithm interrupted - skipping minimization.");
@@ -293,7 +291,6 @@ public class ModelingShell extends Console implements AlgorithmListener {
         }
         Minimize_2 minimize;
         try {
-            String keyfile = null;
             minimize = new Minimize_2(xyzf, keyfile);
             terminatableAlgorithm = minimize;
             potential = minimize.minimize(eps);
