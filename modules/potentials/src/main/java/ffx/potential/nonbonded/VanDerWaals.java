@@ -1151,7 +1151,6 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                                 double f3 = sc2 * t1 * dt2;
                                 double dedl = ev * (f1 + f2 + f3);
                                 dEdL += selfScale * dedl * taper;
-
                                 double t1d2 = -dsc1dL * t1d * t1d;
                                 double t2d2 = -dsc1dL * t2d * t2d;
                                 double d2t1 = -dt1 * t1d * dsc1dL
@@ -1173,7 +1172,6 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                                         + sc2 * t1 * d2t2;
                                 double de2dl2 = ev * (df1 + df2 + df3);
                                 d2EdL2 += selfScale * de2dl2 * taper;
-
                                 double t11 = -dsc2dL * t2 * dt1_dr;
                                 double t12 = -sc2 * dt2 * dt1_dr;
                                 double t13 = 2.0 * sc2 * t2 * dt1_dr * dsc1dL * t1d;

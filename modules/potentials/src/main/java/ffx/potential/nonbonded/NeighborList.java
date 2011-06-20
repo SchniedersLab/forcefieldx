@@ -360,43 +360,9 @@ public class NeighborList extends ParallelRegion {
             if (log) {
                 log();
             }
+            
+            pairwiseSchedule.updateRanges(sharedCount.get(), listCount);
 
-            int id = 0;
-            int goal = sharedCount.get() / threadCount;
-            int num = 0;
-            int start = 0;
-            for (int i = 0; i < nAtoms; i++) {
-                num += listCount[i];
-                if (num >= goal) {
-                    ranges[id] = new Range(start, i);
-                    
-                    // Next thread.
-                    id++;
-
-                    // Next range starts at i+1.
-                    start = i + 1;
-                    
-                    /**
-                     * Out of atoms. Threads remaining get a null range.
-                     */
-                    if (start == nAtoms) {
-                        for (int j = id; j<threadCount; j++) {
-                            ranges[j] = null;
-                        }
-                        break;
-                    }
-                    
-                    /**
-                     * Last thread gets the remaining atoms in its range.
-                     */
-                    if (id == threadCount - 1) {
-                        ranges[id] = new Range(start, nAtoms - 1);
-                        break;
-                    }
-                    
-                    num = 0;
-                }
-            }
         }
     }
     

@@ -784,17 +784,17 @@ public class ReciprocalSpace {
              * Convert Cartesian induced dipole CR term to 
              * fractional induced dipole CR term.
              */
-            double inp[] = inducedDipoleCR[iSymm][n];
-            dx = inp[0];
-            dy = inp[1];
-            dz = inp[2];
+            double indCR[] = inducedDipoleCR[iSymm][n];
+            dx = indCR[0];
+            dy = indCR[1];
+            dz = indCR[2];
             final double px = a00 * dx + a01 * dy + a02 * dz;
             final double py = a10 * dx + a11 * dy + a12 * dz;
             final double pz = a20 * dx + a21 * dy + a22 * dz;
-            final double finp[] = fracInducedDipoleCR[iSymm][n];
-            finp[0] = px;
-            finp[1] = py;
-            finp[2] = pz;
+            final double findCR[] = fracInducedDipoleCR[iSymm][n];
+            findCR[0] = px;
+            findCR[1] = py;
+            findCR[2] = pz;
             if (use != null && !use[n]) {
                 return;
             }
@@ -881,14 +881,9 @@ public class ReciprocalSpace {
 
         private class FractionalPhiLoop extends IntegerForLoop {
 
-            private final IntegerSchedule schedule = IntegerSchedule.dynamic(1);
-            // Extra padding to avert cache interference.
-            long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
-            long pad8, pad9, pada, padb, padc, padd, pade, padf;
-
             @Override
             public IntegerSchedule schedule() {
-                return schedule;
+                return IntegerSchedule.fixed();
             }
 
             @Override
@@ -1073,15 +1068,10 @@ public class ReciprocalSpace {
         }
 
         private class PolarizationPhiInducedLoop extends IntegerForLoop {
-
-            private final IntegerSchedule schedule = IntegerSchedule.dynamic(1);
-            // Extra padding to avert cache interference.
-            long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
-            long pad8, pad9, pada, padb, padc, padd, pade, padf;
-
+            
             @Override
             public IntegerSchedule schedule() {
-                return schedule;
+                return IntegerSchedule.fixed();
             }
 
             @Override
