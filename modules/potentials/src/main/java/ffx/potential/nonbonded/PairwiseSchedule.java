@@ -24,7 +24,6 @@ import java.util.logging.Logger;
 
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.util.Range;
-import ffx.numerics.LBFGS;
 
 /**
  * A fixed schedule that balances pairwise work across threads.
@@ -85,15 +84,25 @@ public class PairwiseSchedule extends IntegerSchedule {
         for (int i = 0; i < nAtoms; i++) {
             num += listCount[i];
             if (num >= goal) {
+                /**
+                 * Last thread gets the remaining atoms.
+                 */
+                if (id == nThreads - 1) {
+                    ranges[id] = new Range(start, nAtoms - 1);
+                    break;
+                }
+
                 ranges[id] = new Range(start, i);
+
                 // Zero out the interaction counter.
                 num = 0;
                 // Next thread.
                 id++;
                 // Next range starts at i+1.
                 start = i + 1;
+
                 /**
-                 * Out of atoms. Threads remaining get a null range.
+                 * Out of atoms. Threads remaining get a null range. 
                  */
                 if (start == nAtoms) {
                     for (int j = id; j < nThreads; j++) {
@@ -101,12 +110,13 @@ public class PairwiseSchedule extends IntegerSchedule {
                     }
                     break;
                 }
+            } else if (i == nAtoms - 1) {
                 /**
-                 * Last thread gets the remaining atoms.
+                 * Last atom without reaching goal for current thread.
                  */
-                if (id == nThreads - 1) {
-                    ranges[id] = new Range(start, nAtoms - 1);
-                    break;
+                ranges[id] = new Range(start, nAtoms - 1);
+                for (int j = id + 1; j < nThreads; j++) {
+                    ranges[j] = null;
                 }
             }
         }

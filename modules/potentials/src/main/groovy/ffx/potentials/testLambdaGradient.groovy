@@ -35,6 +35,8 @@ if (args.size() > 3) {
 println("\n Testing lambda gradient for " + filename);
 
 System.setProperty("lambdaterm","true");
+System.setProperty("ligand-start", Integer.toString(ligandStart));
+System.setProperty("ligand-stop", Integer.toString(ligandStop));
 
 open(filename);
 

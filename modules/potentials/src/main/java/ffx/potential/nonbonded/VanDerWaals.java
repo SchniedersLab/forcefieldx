@@ -20,17 +20,16 @@
  */
 package ffx.potential.nonbonded;
 
-import static java.lang.Math.PI;
-import static java.lang.Math.pow;
-import static java.lang.Math.sqrt;
-import static java.lang.String.format;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import static java.lang.Math.PI;
+import static java.lang.Math.pow;
+import static java.lang.Math.sqrt;
+import static java.lang.String.format;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
@@ -297,7 +296,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         if (!crystal.aperiodic()) {
             vdwcut = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, 9.0);
         } else {
-            vdwcut = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, 100.0);
+            vdwcut = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, crystal.a / 2.0 - 3.0);
         }
         double vdwtaper = 0.9 * vdwcut;
         cut = vdwtaper;
@@ -401,7 +400,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         /**
          * Build the neighbor-list using the reduced coordinates.
          */
-        neighborListBuilder.buildList(reduced, neighborLists, true, true);
+        neighborListBuilder.buildList(reduced, neighborLists, null, true, true);
         pairwiseSchedule = neighborListBuilder.getPairwiseSchedule();
 
         logger.info(" Van der Waals");
@@ -554,7 +553,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         /**
          * Build the neighbor-list (if necessary) using reduced coordinates.
          */
-        neighborListBuilder.buildList(reduced, neighborLists, false, false);
+        neighborListBuilder.buildList(reduced, neighborLists, null, false, false);
 
         /**
          * Calculate the van der Waals energy.

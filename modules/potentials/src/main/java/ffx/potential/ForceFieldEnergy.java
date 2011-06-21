@@ -163,15 +163,28 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         } catch (Exception e) {
             logger.info(" The system will be treated as aperiodic.");
             aperiodic = true;
+
+            double maxr = 0.0;
+            for (int i = 0; i < nAtoms - 1; i++) {
+                Atom ai = atoms[i];
+                for (int j = 1; j < nAtoms; j++) {
+                    Atom aj = atoms[j];
+                    double dx = ai.getX() - aj.getX();
+                    double dy = ai.getY() - aj.getY();
+                    double dz = ai.getZ() - aj.getZ();
+                    double r = sqrt(dx * dx + dy * dy + dz * dz);
+                    maxr = max(r, maxr);
+                }
+            }
             /**
              * Turn off reciprocal space calculations.
              */
             forceField.addForceFieldDouble(ForceFieldDouble.EWALD_ALPHA, 0.0);
             // Specify some dummy values for the crystal.
             spacegroup = "P1";
-            a = 10.0;
-            b = 10.0;
-            c = 10.0;
+            a = 4.0 * maxr;
+            b = 4.0 * maxr;
+            c = 4.0 * maxr;
             alpha = 90.0;
             beta = 90.0;
             gamma = 90.0;
