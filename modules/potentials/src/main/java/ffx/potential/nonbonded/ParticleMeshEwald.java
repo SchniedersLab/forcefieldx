@@ -833,8 +833,7 @@ public class ParticleMeshEwald implements LambdaInterface {
             permanentScale = lPowPerm;
             dEdLSign = 1.0;
             energy = computeEnergy(print);
-            logger.info(String.format("Computed the energy of part 1: %20.8f", energy));
-
+            
             /** 
              * 2.) Condensed phase system without the ligand. 
              *   A.) No permanent real space electrostatics because this was
@@ -874,13 +873,12 @@ public class ParticleMeshEwald implements LambdaInterface {
              */
             if (!skip) {
                 energy = computeEnergy(print);
-                logger.info(String.format("Computed the energy of part 2: %20.8f", energy));
             }
 
             /**
              * 3.) Ligand in vacuum
              * 
-             *   A.) Softcore real space with an Ewald coefficient of 0.0 
+             *   A.) Real space with an Ewald coefficient of 0.0 
              *       (no reciprocal space).
              * 
              *   B.) Polarization scaled as in Step 2 by (1 - lambda).
@@ -892,7 +890,13 @@ public class ParticleMeshEwald implements LambdaInterface {
                     use[i] = false;
                 }
             }
-
+                
+            double lAlphaBack = lAlpha;
+            double dlAlphaBack = dlAlpha;
+            double d2lAlphaBack = d2lAlpha;
+            lAlpha = 0.0;
+            dlAlpha = 0.0;
+            d2lAlpha = 0.0;
             doPermanentRealSpace = true;
 
             /**
@@ -924,8 +928,7 @@ public class ParticleMeshEwald implements LambdaInterface {
             nSymm = 1;
 
             energy = computeEnergy(print);
-            logger.info(String.format("Computed the energy of part 3: %20.8f", energy));
-
+            
             /**
              * Revert to the saved parameters.
              */
@@ -938,6 +941,9 @@ public class ParticleMeshEwald implements LambdaInterface {
             permanentSchedule = permanentScheduleBack;
             ewaldSchedule = ewaldScheduleBack;
             ranges = rangesBack;
+            lAlpha = lAlphaBack;
+            dlAlpha = dlAlphaBack;
+            d2lAlpha = d2lAlphaBack;
         }
 
         /**
@@ -3260,7 +3266,6 @@ public class ParticleMeshEwald implements LambdaInterface {
                 final double ereal = gl0 * bn0 + (gl1 + gl6) * bn1 + (gl2 + gl7 + gl8) * bn2 + (gl3 + gl5) * bn3 + gl4 * bn4;
                 final double efix = scale1 * (gl0 * rr1 + (gl1 + gl6) * rr3 + (gl2 + gl7 + gl8) * rr5 + (gl3 + gl5) * rr7 + gl4 * rr9);
                 final double e = selfScale * l2 * (ereal - efix);
-                //logger.info(String.format("%3d %3d %20.8f %20.8f",i,k,rr1,e));                
                 if (gradient) {
                     final double gf1 = bn1 * gl0 + bn2 * (gl1 + gl6) + bn3 * (gl2 + gl7 + gl8) + bn4 * (gl3 + gl5) + bn5 * gl4;
                     final double gf2 = -ck * bn1 + sc4 * bn2 - sc6 * bn3;
