@@ -223,10 +223,7 @@ public class ParticleMeshEwald implements LambdaInterface {
      * Flag for ligand atoms.
      */
     private final boolean isSoft[];
-    /**
-     * Apply softCore interactions between the ligand and environment.
-     */
-    private final boolean softCore[][];
+
     /**
      * When computing the polarization energy at L there are 3 pieces.
      * 1.) Upol(1) = The polarization energy computed normally (ie. system with ligand).
@@ -568,13 +565,10 @@ public class ParticleMeshEwald implements LambdaInterface {
          * Initialize the soft core lambda masks.
          */
         isSoft = new boolean[nAtoms];
-        softCore = new boolean[2][nAtoms];
         use = new boolean[nAtoms];
         for (int i = 0; i < nAtoms; i++) {
             use[i] = true;
             isSoft[i] = false;
-            softCore[0][i] = false;
-            softCore[1][i] = false;
         }
 
         if (lambdaTerm) {
@@ -589,22 +583,10 @@ public class ParticleMeshEwald implements LambdaInterface {
             ligandStart = forceField.getInteger(ForceFieldInteger.LIGAND_START, 0) - 1;
             ligandStop = forceField.getInteger(ForceFieldInteger.LIGAND_STOP, nAtoms - 1) - 1;
             logger.info(String.format(" The ligand starts at atom %d and ends at %d.", ligandStart + 1, ligandStop + 1));
-            double maxr = 0.0;
+            double maxr = 10.0;
             for (int i = ligandStart; i <= ligandStop; i++) {
                 Atom ai = atoms[i];
                 isSoft[i] = true;
-                if (isSoft[i]) {
-                    // Outer loop atom hard, inner loop atom soft.
-                    softCore[0][i] = true;
-                    // Both soft.
-                    softCore[1][i] = true;
-                } else {
-                    // Both hard - full interaction.
-                    softCore[0][i] = false;
-                    // Outer loop atom soft, inner loop atom hard.
-                    softCore[1][i] = true;
-                }
-
                 /**
                  * Determine ligand size.
                  */
@@ -809,141 +791,20 @@ public class ParticleMeshEwald implements LambdaInterface {
         if (!lambdaTerm) {
             energy = computeEnergy(print);
         } else {
-
-            /**
-             * 1.) Total system under PBC.
-             *   A.) Softcore real space for Ligand-Protein and Ligand-Ligand.
-             *   B.) Reciprocal space scaled by lambda.
-             *   C.) Polarization scaled by lambda.
-             */
-            if (lambda < polarizationLambdaStart) {
-                /**
-                 * If the polarization has been completely decoupled,
-                 * the contribution of the complete system is zero.
-                 * 
-                 * We can skip the SCF for part 1 for efficiency.
-                 */
-                doPolarization = false;
-            } else if (lambda <= polarizationLambdaEnd) {
-                polarizationScale = lPowPol;
-            } else {
-                polarizationScale = 1.0;
+            energy = lambdaAllAtomSCF();
+            if (logger.isLoggable(Level.FINE)) {
+                logger.fine(String.format(" Solvated energy: %20.8f", energy));
             }
-
-            permanentScale = lPowPerm;
-            dEdLSign = 1.0;
-            energy = computeEnergy(print);
-            
-            /** 
-             * 2.) Condensed phase system without the ligand. 
-             *   A.) No permanent real space electrostatics because this was
-             *       handled analytically in step 1.
-             * 
-             *   B.) Permanent reciprocal space scaled by (1 - lambda).
-             * 
-             *   C.) Polarization scaled by (1 - lambda).
-             */
-            boolean skip = true;
-            for (int i = 0; i < nAtoms; i++) {
-                if (atoms[i].applyLambda()) {
-                    use[i] = false;
-                } else {
-                    use[i] = true;
-                    skip = false;
-                }
+            double temp = energy;
+            energy = lambdaNoLigandSCF();
+            if (logger.isLoggable(Level.FINE)) {
+                logger.fine(String.format(" Step 2 energy:   %20.8f", energy - temp));
             }
-
-            doPermanentRealSpace = false;
-            permanentScale = 1.0 - lPowPerm;
-            dEdLSign = -1.0;
-
-            /**
-             * If we are past the end of the polarization lambda window, then
-             * only the condensed phase is necessary.
-             */
-            if (lambda <= polarizationLambdaEnd) {
-                doPolarization = true;
-                polarizationScale = 1.0 - lPowPol;
-            } else {
-                doPolarization = false;
+            temp = energy;
+            energy = lambdaVacuumLigandSCF();
+            if (logger.isLoggable(Level.FINE)) {
+                logger.fine(String.format(" Vacuum energy:   %20.8f", energy - temp));
             }
-
-            /* If we are disappearing the entire system (ie. a small crystal)
-             * then the energy of this step is 0 and we can skip it.
-             */
-            if (!skip) {
-                energy = computeEnergy(print);
-            }
-
-            /**
-             * 3.) Ligand in vacuum
-             * 
-             *   A.) Real space with an Ewald coefficient of 0.0 
-             *       (no reciprocal space).
-             * 
-             *   B.) Polarization scaled as in Step 2 by (1 - lambda).
-             */
-            for (int i = 0; i < nAtoms; i++) {
-                if (atoms[i].applyLambda()) {
-                    use[i] = true;
-                } else {
-                    use[i] = false;
-                }
-            }
-                
-            double lAlphaBack = lAlpha;
-            double dlAlphaBack = dlAlpha;
-            double d2lAlphaBack = d2lAlpha;
-            lAlpha = 0.0;
-            dlAlpha = 0.0;
-            d2lAlpha = 0.0;
-            doPermanentRealSpace = true;
-
-            /**
-             * Save the current real space parameters.
-             */
-            double offBack = off;
-            double aewaldBack = aewald;
-            off = Double.MAX_VALUE;
-            aewald = 0.0;
-            setEwaldParameters(off, aewald);
-            /**
-             * Save the current parallelization schedule.
-             */
-            IntegerSchedule permanentScheduleBack = permanentSchedule;
-            IntegerSchedule ewaldScheduleBack = ewaldSchedule;
-            Range rangesBack[] = ranges;
-            permanentSchedule = vacuumPermanentSchedule;
-            ewaldSchedule = vacuumEwaldSchedule;
-            ranges = vacuumRanges;
-
-            /**
-             * Use vacuum crystal / neighborLists.
-             */
-            Crystal crystalBack = crystal;
-            int nSymmBack = nSymm;
-            int listsBack[][][] = neighborLists;
-            neighborLists = vacuumLists;
-            crystal = vacuumCrystal;
-            nSymm = 1;
-
-            energy = computeEnergy(print);
-            
-            /**
-             * Revert to the saved parameters.
-             */
-            off = offBack;
-            aewald = aewaldBack;
-            setEwaldParameters(off, aewald);
-            neighborLists = listsBack;
-            crystal = crystalBack;
-            nSymm = nSymmBack;
-            permanentSchedule = permanentScheduleBack;
-            ewaldSchedule = ewaldScheduleBack;
-            ranges = rangesBack;
-            lAlpha = lAlphaBack;
-            dlAlpha = dlAlphaBack;
-            d2lAlpha = d2lAlphaBack;
         }
 
         /**
@@ -958,6 +819,177 @@ public class ParticleMeshEwald implements LambdaInterface {
                 logger.log(Level.SEVERE, message, e);
             }
         }
+
+        return energy;
+    }
+
+    /**
+     * 1.) Total system under PBC.
+     *   A.) Softcore real space for Ligand-Protein and Ligand-Ligand.
+     *   B.) Reciprocal space scaled by lambda.
+     *   C.) Polarization scaled by lambda.
+     */
+    private double lambdaAllAtomSCF() {
+        if (lambda < polarizationLambdaStart) {
+            /**
+             * If the polarization has been completely decoupled,
+             * the contribution of the complete system is zero.
+             * 
+             * We can skip the SCF for part 1 for efficiency.
+             */
+            doPolarization = false;
+        } else if (lambda <= polarizationLambdaEnd) {
+            polarizationScale = lPowPol;
+        } else {
+            polarizationScale = 1.0;
+        }
+
+        permanentScale = lPowPerm;
+        dEdLSign = 1.0;
+        return computeEnergy(false);
+    }
+
+    /** 
+     * 2.) Condensed phase system without the ligand. 
+     *   A.) No permanent real space electrostatics because this was
+     *       handled analytically in step 1.
+     * 
+     *   B.) Permanent reciprocal space scaled by (1 - lambda).
+     * 
+     *   C.) Polarization scaled by (1 - lambda).
+     */
+    private double lambdaNoLigandSCF() {
+
+        /**
+         * Turn off the ligand.
+         */
+        boolean skip = true;
+        for (int i = 0; i < nAtoms; i++) {
+            if (atoms[i].applyLambda()) {
+                use[i] = false;
+            } else {
+                use[i] = true;
+                skip = false;
+            }
+        }
+
+        /**
+         * Permanent real space is done for the condensed phase. 
+         * Scale the reciprocal space part.
+         */
+        doPermanentRealSpace = false;
+        permanentScale = 1.0 - lPowPerm;
+        dEdLSign = -1.0;
+
+        /**
+         * If we are past the end of the polarization lambda window, then
+         * only the condensed phase is necessary.
+         */
+        if (lambda <= polarizationLambdaEnd) {
+            doPolarization = true;
+            polarizationScale = 1.0 - lPowPol;
+        } else {
+            doPolarization = false;
+        }
+
+        /* If we are disappearing the entire system (ie. a small crystal)
+         * then the energy of this step is 0 and we can skip it.
+         */
+        if (skip) {
+            return 0.0;
+        } else {
+            return computeEnergy(false);
+        }
+    }
+
+    /**
+     * 3.) Ligand in vacuum
+     * 
+     *   A.) Real space with an Ewald coefficient of 0.0 
+     *       (no reciprocal space).
+     * 
+     *   B.) Polarization scaled as in Step 2 by (1 - lambda).
+     */
+    private double lambdaVacuumLigandSCF() {
+        for (int i = 0; i < nAtoms; i++) {
+            if (atoms[i].applyLambda()) {
+                use[i] = true;
+            } else {
+                use[i] = false;
+            }
+        }
+
+        /**
+         * Scale the permanent vacuum electrostatics. The softcore alpha is
+         * not necessary (nothing in vacuum to collide with).
+         */
+        doPermanentRealSpace = true;
+        permanentScale = 1.0 - lPowPerm;
+        dEdLSign = -1.0;
+        double lAlphaBack = lAlpha;
+        double dlAlphaBack = dlAlpha;
+        double d2lAlphaBack = d2lAlpha;
+        lAlpha = 0.0;
+        dlAlpha = 0.0;
+        d2lAlpha = 0.0;
+
+        /**
+         * If we are past the end of the polarization lambda window, then
+         * only the condensed phase is necessary.
+         */
+        if (lambda <= polarizationLambdaEnd) {
+            doPolarization = true;
+            polarizationScale = 1.0 - lPowPol;
+        } else {
+            doPolarization = false;
+        }
+
+        /**
+         * Save the current real space parameters.
+         */
+        double offBack = off;
+        double aewaldBack = aewald;
+        off = Double.MAX_VALUE;
+        aewald = 0.0;
+        setEwaldParameters(off, aewald);
+
+        /**
+         * Save the current parallelization schedule.
+         */
+        IntegerSchedule permanentScheduleBack = permanentSchedule;
+        IntegerSchedule ewaldScheduleBack = ewaldSchedule;
+        Range rangesBack[] = ranges;
+        permanentSchedule = vacuumPermanentSchedule;
+        ewaldSchedule = vacuumEwaldSchedule;
+        ranges = vacuumRanges;
+
+        /**
+         * Use vacuum crystal / neighborLists.
+         */
+        Crystal crystalBack = crystal;
+        int nSymmBack = nSymm;
+        int listsBack[][][] = neighborLists;
+        neighborLists = vacuumLists;
+        crystal = vacuumCrystal;
+        nSymm = 1;
+
+        double energy = computeEnergy(false);
+
+        /**
+         * Revert to the saved parameters.
+         */
+        off = offBack;
+        aewald = aewaldBack;
+        setEwaldParameters(off, aewald);
+        neighborLists = listsBack;
+        crystal = crystalBack;
+        nSymm = nSymmBack;
+        permanentSchedule = permanentScheduleBack;
+        ewaldSchedule = ewaldScheduleBack;
+        ranges = rangesBack;
+        lAlpha = lAlphaBack;
+        dlAlpha = dlAlphaBack;
+        d2lAlpha = d2lAlphaBack;
 
         return energy;
     }
@@ -1174,6 +1206,7 @@ public class ParticleMeshEwald implements LambdaInterface {
             return;
         }
         long startTime = System.nanoTime();
+
         /**
          * Compute the direct induced dipoles.
          */
@@ -1425,13 +1458,16 @@ public class ParticleMeshEwald implements LambdaInterface {
 
     private class PermanentRealSpaceFieldRegion extends ParallelRegion {
 
+        private final InitializationLoop initializationLoop[];
         private final PermanentRealSpaceFieldLoop permanentRealSpaceFieldLoop[];
         private final SharedInteger sharedCount;
         private final int threadCount;
 
         public PermanentRealSpaceFieldRegion(int nt) {
             permanentRealSpaceFieldLoop = new PermanentRealSpaceFieldLoop[nt];
+            initializationLoop = new InitializationLoop[nt];
             for (int i = 0; i < nt; i++) {
+                initializationLoop[i] = new InitializationLoop();
                 permanentRealSpaceFieldLoop[i] = new PermanentRealSpaceFieldLoop();
             }
             sharedCount = new SharedInteger();
@@ -1446,7 +1482,9 @@ public class ParticleMeshEwald implements LambdaInterface {
         @Override
         public void run() {
             try {
-                execute(0, nAtoms - 1, permanentRealSpaceFieldLoop[getThreadIndex()]);
+                int ti = getThreadIndex();
+                execute(0, nAtoms - 1, initializationLoop[ti]);
+                execute(0, nAtoms - 1, permanentRealSpaceFieldLoop[ti]);
             } catch (Exception e) {
                 String message = "Fatal exception computing the real space field in thread " + getThreadIndex() + "\n";
                 logger.log(Level.SEVERE, message, e);
@@ -1455,7 +1493,6 @@ public class ParticleMeshEwald implements LambdaInterface {
 
         @Override
         public void finish() {
-
             /**
              * Load balancing.
              */
@@ -1503,6 +1540,56 @@ public class ParticleMeshEwald implements LambdaInterface {
                     ranges[id] = new Range(start, nAtoms - 1);
                     for (int j = id + 1; j < threadCount; j++) {
                         ranges[j] = null;
+                    }
+                }
+            }
+        }
+
+        private class InitializationLoop extends IntegerForLoop {
+            @Override
+            public IntegerSchedule schedule() {
+                return IntegerSchedule.fixed();
+            }
+
+            @Override
+            public void run(int lb, int ub) {
+                /**
+                 * Initialize the field and induced dipole coordinate arrays.
+                 */
+                for (int i = lb; i <= ub; i++) {
+                    sharedPermanentField[0].set(i, 0.0);
+                    sharedPermanentField[1].set(i, 0.0);
+                    sharedPermanentField[2].set(i, 0.0);
+                    sharedPermanentFieldCR[0].set(i, 0.0);
+                    sharedPermanentFieldCR[1].set(i, 0.0);
+                    sharedPermanentFieldCR[2].set(i, 0.0);
+                    sharedMutualField[0].set(i, 0.0);
+                    sharedMutualField[1].set(i, 0.0);
+                    sharedMutualField[2].set(i, 0.0);
+                    sharedMutualFieldCR[0].set(i, 0.0);
+                    sharedMutualFieldCR[1].set(i, 0.0);
+                    sharedMutualFieldCR[2].set(i, 0.0);
+                    inducedDipole[0][i][0] = 0.0;
+                    inducedDipole[0][i][1] = 0.0;
+                    inducedDipole[0][i][2] = 0.0;
+                    inducedDipoleCR[0][i][0] = 0.0;
+                    inducedDipoleCR[0][i][1] = 0.0;
+                    inducedDipoleCR[0][i][2] = 0.0;
+                }
+
+                /**
+                 * Initialize symmetry mate induced dipoles.
+                 */
+                List<SymOp> symOps = crystal.spaceGroup.symOps;
+                for (int iSymm = 1; iSymm < nSymm; iSymm++) {
+                    SymOp symOp = symOps.get(iSymm);
+                    for (int i = lb; i <= ub; i++) {
+                        inducedDipole[iSymm][i][0] = 0.0;
+                        inducedDipole[iSymm][i][1] = 0.0;
+                        inducedDipole[iSymm][i][2] = 0.0;
+                        inducedDipoleCR[iSymm][i][0] = 0.0;
+                        inducedDipoleCR[iSymm][i][1] = 0.0;
+                        inducedDipoleCR[iSymm][i][2] = 0.0;
                     }
                 }
             }
@@ -2955,11 +3042,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                     pix = inducedDipolepi[0];
                     piy = inducedDipolepi[1];
                     piz = inducedDipolepi[2];
-                    // Default is that the outer loop atom is hard.
-                    boolean softCorei[] = softCore[0];
-                    if (isSoft[i]) {
-                        softCorei = softCore[1];
-                    }
+                    final boolean softi = isSoft[i];
                     final double pdi = pdamp[i];
                     final double pti = thole[i];
                     final int list[] = lists[i];
@@ -2975,7 +3058,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                         }
                         beta = 0.0;
                         l2 = 1.0;
-                        soft = softCorei[k];
+                        soft = (softi || isSoft[k]);
                         if (soft && doPermanentRealSpace) {
                             beta = lAlpha;
                             l2 = permanentScale;
@@ -3069,7 +3152,14 @@ public class ParticleMeshEwald implements LambdaInterface {
                             }
                         }
                         if (doPermanentRealSpace) {
-                            permanentEnergy += permanentPair();
+                            double temp = permanentPair();
+                            /* 
+                            if ((i < 3 || k < 3) && temp > 0.0) {
+                            logger.info(String.format(" Soft:%b L2:%8.3f Alpha:%8.3f", soft, l2, beta));
+                            log(i,k,r,temp);
+                            } */
+                            permanentEnergy += temp;
+
                             count++;
                         }
                         if (polarization != Polarization.NONE && doPolarization) {
@@ -3752,6 +3842,21 @@ public class ParticleMeshEwald implements LambdaInterface {
         }
     }
 
+    /**
+     * Log the real space electrostatics interaction.
+     *
+     * @param i Atom i.
+     * @param k Atom j.
+     * @param r The distance rij.
+     * @param eij The interaction energy.
+     * @since 1.0
+     */
+    private void log(int i, int k, double r, double eij) {
+        logger.info(String.format("%s %6d-%s %6d-%s %10.4f  %10.4f",
+                "ELEC", atoms[i].xyzIndex, atoms[i].getAtomType().name,
+                atoms[k].xyzIndex, atoms[k].getAtomType().name, r, eij));
+    }
+
     private class PermanentReciprocalEnergyRegion extends ParallelRegion {
 
         private final double term = 2.0 * aewald * aewald;
@@ -3933,9 +4038,6 @@ public class ParticleMeshEwald implements LambdaInterface {
         private final double ind[][] = inducedDipole[0];
         private final double indp[][] = inducedDipoleCR[0];
         private final double mpole[][] = globalMultipole[0];
-        private final SharedDouble selfEnergy;
-        private final SharedDouble recipEnergy;
-        private final InducedReciprocalEnergyLoop inducedReciprocalEnergyLoop[];
         private final double nfftX = reciprocalSpace.getXDim();
         private final double nfftY = reciprocalSpace.getYDim();
         private final double nfftZ = reciprocalSpace.getZDim();
@@ -3944,8 +4046,11 @@ public class ParticleMeshEwald implements LambdaInterface {
         private final double fractionalInducedDipoleCRPhi[][] = reciprocalSpace.getFracInducedDipoleCRPhi();
         private final double fmpole[][] = reciprocalSpace.getFracMultipoles();
         private final double find[][] = reciprocalSpace.getFracInducedDipoles();
-        private final double findCR[][] = reciprocalSpace.getFracInducedDipolesCR();
-
+        private final double findCR[][] = reciprocalSpace.getFracInducedDipoles();        
+        private final SharedDouble selfEnergy;
+        private final SharedDouble recipEnergy;
+        private final InducedReciprocalEnergyLoop inducedReciprocalEnergyLoop[];
+        
         public PolarizationReciprocalEnergyRegion(int nt) {
             inducedReciprocalEnergyLoop = new InducedReciprocalEnergyLoop[nt];
             for (int i = 0; i < nt; i++) {
@@ -3984,7 +4089,9 @@ public class ParticleMeshEwald implements LambdaInterface {
 
             private double eSelf;
             private double eRecip;
-
+            private final double sfPhi[] = new double[tensorCount];
+            private final double sPhi[] = new double[tensorCount];
+            
             @Override
             public IntegerSchedule schedule() {
                 return IntegerSchedule.fixed();
@@ -4183,18 +4290,6 @@ public class ParticleMeshEwald implements LambdaInterface {
                     y[i] = xyz[1];
                     z[i] = xyz[2];
                     use[i] = true;
-                    sharedPermanentField[0].set(i, 0.0);
-                    sharedPermanentField[1].set(i, 0.0);
-                    sharedPermanentField[2].set(i, 0.0);
-                    sharedPermanentFieldCR[0].set(i, 0.0);
-                    sharedPermanentFieldCR[1].set(i, 0.0);
-                    sharedPermanentFieldCR[2].set(i, 0.0);
-                    sharedMutualField[0].set(i, 0.0);
-                    sharedMutualField[1].set(i, 0.0);
-                    sharedMutualField[2].set(i, 0.0);
-                    sharedMutualFieldCR[0].set(i, 0.0);
-                    sharedMutualFieldCR[1].set(i, 0.0);
-                    sharedMutualFieldCR[2].set(i, 0.0);
                     sharedGrad[0].set(i, 0.0);
                     sharedGrad[1].set(i, 0.0);
                     sharedGrad[2].set(i, 0.0);
@@ -4224,12 +4319,6 @@ public class ParticleMeshEwald implements LambdaInterface {
                     if (realSpaceLists[0][i] == null || realSpaceLists[0][i].length < size) {
                         realSpaceLists[0][i] = new int[size];
                     }
-                    inducedDipole[0][i][0] = 0.0;
-                    inducedDipole[0][i][1] = 0.0;
-                    inducedDipole[0][i][2] = 0.0;
-                    inducedDipoleCR[0][i][0] = 0.0;
-                    inducedDipoleCR[0][i][1] = 0.0;
-                    inducedDipoleCR[0][i][2] = 0.0;
                 }
 
                 /**
@@ -4253,12 +4342,6 @@ public class ParticleMeshEwald implements LambdaInterface {
                         if (realSpaceLists[iSymm][i] == null || realSpaceLists[iSymm][i].length < size) {
                             realSpaceLists[iSymm][i] = new int[size];
                         }
-                        inducedDipole[iSymm][i][0] = 0.0;
-                        inducedDipole[iSymm][i][1] = 0.0;
-                        inducedDipole[iSymm][i][2] = 0.0;
-                        inducedDipoleCR[iSymm][i][0] = 0.0;
-                        inducedDipoleCR[iSymm][i][1] = 0.0;
-                        inducedDipoleCR[iSymm][i][2] = 0.0;
                     }
                 }
             }
@@ -5663,7 +5746,5 @@ public class ParticleMeshEwald implements LambdaInterface {
      * Number of unique tensors for given order.
      */
     private static final int tensorCount = TensorRecursion.tensorCount(3);
-    private final double sfPhi[] = new double[tensorCount];
-    private final double sPhi[] = new double[tensorCount];
     private static final double oneThird = 1.0 / 3.0;
 }

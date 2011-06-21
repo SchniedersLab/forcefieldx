@@ -90,6 +90,9 @@ for (int i = ligandStart; i <= ligandStop; i++) {
     ai.setApplyLambda(true);
 }
 
+// Turn off checks for overlapping atoms, which is expected for lambda=0.
+energy.getCrystal().setSpecialPositionCutoff(0.0);
+
 // Wrap the potential energy inside an OSRW instance.
 OSRW osrw = new OSRW(energy, energy, active.getProperties(), atoms, temperature, timeStep);
 osrw.setLambda(initialLambda);

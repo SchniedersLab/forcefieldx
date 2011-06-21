@@ -868,6 +868,8 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                 }
 
                 List<SymOp> symOps = crystal.spaceGroup.symOps;
+                double sp2 = crystal.getSpecialPositionCutoff();
+                sp2 *= sp2;
                 for (int iSymOp = 1; iSymOp < nSymm; iSymOp++) {
                     SymOp symOp = symOps.get(iSymOp);
                     double xyz[] = reduced[iSymOp];
@@ -891,7 +893,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                         double dy = in[1] - out[1];
                         double dz = in[2] - out[2];
                         double r2 = dx * dx + dy * dy + dz * dz;
-                        if (r2 < Crystal.specialPositionCutoff2) {
+                        if (r2 < sp2) {
                             logger.severe(" Atom %d is at a special position: " + atoms[i].toString());
                         }
                     }

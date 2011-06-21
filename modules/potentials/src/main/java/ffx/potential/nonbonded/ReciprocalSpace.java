@@ -20,10 +20,10 @@
  */
 package ffx.potential.nonbonded;
 
-import static java.lang.Math.*;
-import static java.lang.String.format;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import static java.lang.Math.*;
+import static java.lang.String.format;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
@@ -31,11 +31,8 @@ import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
 
 import ffx.crystal.Crystal;
-import static ffx.crystal.Crystal.mod;
 import ffx.numerics.TensorRecursion;
-import static ffx.numerics.UniformBSpline.*;
 import ffx.numerics.fft.Complex;
-import static ffx.numerics.fft.Complex3D.iComplex3D;
 import ffx.numerics.fft.Complex3DCuda;
 import ffx.numerics.fft.Complex3DParallel;
 import ffx.numerics.fft.Real3DParallel;
@@ -43,6 +40,9 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.ForceField.ForceFieldInteger;
+import static ffx.crystal.Crystal.mod;
+import static ffx.numerics.UniformBSpline.*;
+import static ffx.numerics.fft.Complex3D.iComplex3D;
 import static ffx.potential.parameters.MultipoleType.*;
 
 /**

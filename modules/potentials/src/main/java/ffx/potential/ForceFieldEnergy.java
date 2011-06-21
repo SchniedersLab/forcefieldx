@@ -20,12 +20,12 @@
  */
 package ffx.potential;
 
-import static java.lang.Math.max;
-import static java.lang.Math.sqrt;
-import static java.lang.String.format;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.logging.Logger;
+import static java.lang.Math.max;
+import static java.lang.Math.sqrt;
+import static java.lang.String.format;
 
 import edu.rit.pj.ParallelTeam;
 
@@ -164,7 +164,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             logger.info(" The system will be treated as aperiodic.");
             aperiodic = true;
 
-            double maxr = 0.0;
+            double maxr = 10.0;
             for (int i = 0; i < nAtoms - 1; i++) {
                 Atom ai = atoms[i];
                 for (int j = 1; j < nAtoms; j++) {
@@ -176,6 +176,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     maxr = max(r, maxr);
                 }
             }
+            
             /**
              * Turn off reciprocal space calculations.
              */

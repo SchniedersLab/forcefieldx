@@ -622,7 +622,7 @@ public class NeighborList extends ParallelRegion {
                         listCount[atomIndex] = 0;
                     }
 
-                    //if (use == null || use[atomIndex]) {
+                    if (use == null || use[atomIndex]) {
 
                         final int a = cellA[atomIndex];
                         final int b = cellB[atomIndex];
@@ -695,7 +695,7 @@ public class NeighborList extends ParallelRegion {
                                 }
                             }
                         }
-                    //}
+                    }
 
                     list[atomIndex] = new int[n];
                     listCount[atomIndex] += n;
@@ -761,9 +761,9 @@ public class NeighborList extends ParallelRegion {
             // Loop over atoms in the "pair" cell.
             for (int j = start; j < pairStop; j++) {
                 final int aj = pairList[j];
-                //if (use != null && !use[aj]) {
-                //    continue;
-                //}
+                if (use != null && !use[aj]) {
+                    continue;
+                }
                 if (mask[aj] > 0.0 && (iSymm == 0 || aj >= atomIndex)) {
                     int aj3 = aj * 3;
                     final double xj = pair[aj3 + XX];

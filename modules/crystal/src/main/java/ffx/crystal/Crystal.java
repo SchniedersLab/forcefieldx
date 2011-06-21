@@ -127,9 +127,8 @@ public class Crystal {
      * An atom and one of its symmetry copies within the specialPositionCutoff
      * should be flagged to be at a special position.
      */
-    public static final double specialPositionCutoff = 0.3;
-    public static final double specialPositionCutoff2 = specialPositionCutoff
-            * specialPositionCutoff;
+    public double specialPositionCutoff = 0.3;
+    public double specialPositionCutoff2 = specialPositionCutoff * specialPositionCutoff;
 
     /**
      * The Crystal class encapsulates the lattice parameters and space group.
@@ -385,6 +384,15 @@ public class Crystal {
         logger.info(String.format("Applied a Cartesian symmetry operator:  %8.3f, %8.3f, %8.3f",
         ret[0], ret[1], ret[2]));
         } */
+    }
+    
+    public void setSpecialPositionCutoff(double cutoff) {
+        specialPositionCutoff = cutoff;
+        specialPositionCutoff2 = cutoff * cutoff;
+    }
+    
+    public double getSpecialPositionCutoff() {
+        return specialPositionCutoff;
     }
 
     public static Crystal checkProperties(CompositeConfiguration properties) {
