@@ -20,32 +20,33 @@
  */
 package ffx.autoparm;
 
+import java.io.*;
 import java.text.DecimalFormat;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
+import org.apache.commons.configuration.CompositeConfiguration;
+
+import ffx.algorithms.*;
 import ffx.numerics.LBFGS;
 import ffx.numerics.LineSearch.LineSearchResult;
-import ffx.numerics.Potential;
 import ffx.numerics.OptimizationListener;
+import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.Utilities;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.XYZFilter;
-import ffx.utilities.*;
-import java.io.*;
-
-import ffx.algorithms.*;
-import org.apache.commons.configuration.CompositeConfiguration;
 
 /**
  * Minimize the potential energy of a system to an RMS gradient per atom
  * convergence criteria.
  *
- * @author Michael J. Schnieders
+ * @author Gaurav Chattree and Michael J. Schnieders
+ * 
  * @since 1.0
+ * 
  */
 public class Minimize_2 implements OptimizationListener, Terminatable {
 
@@ -57,7 +58,6 @@ public class Minimize_2 implements OptimizationListener, Terminatable {
     private MolecularAssembly molecularAssembly;
     private final Potential potential;
     private AlgorithmListener algorithmListener;
-
     private boolean done = false;
     private boolean terminate = false;
     private long time;
@@ -73,7 +73,7 @@ public class Minimize_2 implements OptimizationListener, Terminatable {
     private ForceField forceField;
 
     public Minimize_2(String xyz_filename, String keyfname) throws IOException {
-        
+
         structure_xyz = new File(xyz_filename);
         if (!(structure_xyz != null && structure_xyz.exists() && structure_xyz.canRead())) {
             System.out.println("Couldn't find xyz file");
@@ -93,15 +93,14 @@ public class Minimize_2 implements OptimizationListener, Terminatable {
         structure_xyz = new File(oxyzfname);
         int index = oxyzfname.lastIndexOf(".");
         name = oxyzfname.substring(0, index);
-        
-        if(keyfname != null){
+
+        if (keyfname != null) {
             structure_key = new File(keyfname);
             if (!(structure_key != null && structure_key.exists() && structure_key.canRead())) {
                 System.out.println("Couldn't find key file");
                 System.exit(1);
             }
-        }
-        else{
+        } else {
             keyfname = name + ".key";
             structure_key = new File(keyfname);
             if (!(structure_key != null && structure_key.exists() && structure_key.canRead())) {
@@ -120,7 +119,7 @@ public class Minimize_2 implements OptimizationListener, Terminatable {
             }
             structure_key = new File(okeyfname);
         }
-        
+
         molecularAssembly = new MolecularAssembly(name);
         molecularAssembly.setFile(structure_xyz);
         CompositeConfiguration properties = Keyword_poltype.loadProperties(structure_key);
@@ -201,7 +200,7 @@ public class Minimize_2 implements OptimizationListener, Terminatable {
         return potential;
     }
 
-    public void print(){
+    public void print() {
 //    	for(int i = 0; i < x.length; i+=3){
 //    		System.out.println(x[i]/12+" "+x[i+1]/12+" "+x[i+2]/12);
 //    	}
@@ -212,14 +211,14 @@ public class Minimize_2 implements OptimizationListener, Terminatable {
 //    	norm = Math.sqrt(norm);
 //    	System.out.println("gradnorm: "+norm);
 //    	System.out.println(potential.energyAndGradient(x, grad));
-        File outf = new File(name+".xyz_"+add);
+        File outf = new File(name + ".xyz_" + add);
         try {
             BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outf)));
             DecimalFormat myFormatter = new DecimalFormat(" ##########0.00000;-##########0.00000");
 
             bw.write(String.format("%6d\n", atoms.length));
             for (Atom a : atoms) {
-                String output = String.format("%6d", a.xyzIndex) + "  " + a.getAtomType().name + " "+ String.format("%12s %12s %12s",myFormatter.format(a.getX()),myFormatter.format(a.getY()),myFormatter.format(a.getZ())) + " " + String.format("%6d", a.getAtomType().atomClass);
+                String output = String.format("%6d", a.xyzIndex) + "  " + a.getAtomType().name + " " + String.format("%12s %12s %12s", myFormatter.format(a.getX()), myFormatter.format(a.getY()), myFormatter.format(a.getZ())) + " " + String.format("%6d", a.getAtomType().atomClass);
                 for (int i = 0; i < a.getBonds().size(); i++) {
                     output += String.format("%6d", a.getBonds().get(i).get1_2(a).xyzIndex);
                 }
@@ -232,7 +231,7 @@ public class Minimize_2 implements OptimizationListener, Terminatable {
             e.printStackTrace();
         }
     }
-    
+
     /**
      * Implement the OptimizationListener interface.
      *
@@ -263,10 +262,10 @@ public class Minimize_2 implements OptimizationListener, Terminatable {
         } else {
             if (info == LineSearchResult.Success) {
                 logger.info(String.format("%6d%13.4f%11.4f%11.4f%10.4f%9.2f%7d %8.3f",
-                                          iter, f, grms, df, xrms, angle, nfun, seconds));
+                        iter, f, grms, df, xrms, angle, nfun, seconds));
             } else {
                 logger.info(String.format("%6d%13.4f%11.4f%11.4f%10.4f%9.2f%7d %8s",
-                                          iter, f, grms, df, xrms, angle, nfun, info.toString()));
+                        iter, f, grms, df, xrms, angle, nfun, info.toString()));
             }
         }
         // Update the listener and check for an termination request.
@@ -305,7 +304,7 @@ public class Minimize_2 implements OptimizationListener, Terminatable {
             logger.info(" Cycle       Energy      G RMS    Delta E   Delta X    Evals     Time\n");
         }
         logger.info(String.format("%6d%13.4f%11.4f%11.4f%10.4f%7d %8.3f",
-                                  iter, f, grms, df, xrms, nfun, seconds));
+                iter, f, grms, df, xrms, nfun, seconds));
         // Update the listener and check for an termination request.
         if (algorithmListener != null) {
             algorithmListener.algorithmUpdate(molecularAssembly);
@@ -317,14 +316,13 @@ public class Minimize_2 implements OptimizationListener, Terminatable {
         }
         return true;
     }
-    
-    public static void main(String args[]){
-    	try {
-			Minimize_2 m = new Minimize_2("/home/gchattree/Research/Compounds/s_test3_compounds/famotidine/ttt.xyz",null);
-			m.minimize(0.1);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+
+    public static void main(String args[]) {
+        try {
+            Minimize_2 m = new Minimize_2("/home/gchattree/Research/Compounds/s_test3_compounds/famotidine/ttt.xyz", null);
+            m.minimize(0.1);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
-    
 }

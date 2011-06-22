@@ -1,6 +1,25 @@
-package ffx.autoparm;
+/**
+ * Title: Force Field X
+ * Description: Force Field X - Software for Molecular Biophysics.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ *
+ * This file is part of Force Field X.
+ *
+ * Force Field X is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 3 as published
+ * by the Free Software Foundation.
+ *
+ * Force Field X is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Force Field X; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ */
 
-import static java.lang.Math.abs;
+package ffx.autoparm;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -13,6 +32,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import static java.lang.Math.abs;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
@@ -24,6 +44,12 @@ import ffx.potential.parameters.BioType;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ChargeType;
 import ffx.potential.parameters.ForceField;
+import ffx.potential.parameters.ForceField.ForceFieldBoolean;
+import ffx.potential.parameters.ForceField.ForceFieldDouble;
+import ffx.potential.parameters.ForceField.ForceFieldInteger;
+import ffx.potential.parameters.ForceField.ForceFieldString;
+import ffx.potential.parameters.ForceField.ForceFieldType;
+import ffx.potential.parameters.ForceField.Force_Field;
 import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.OutOfPlaneBendType;
 import ffx.potential.parameters.PiTorsionType;
@@ -33,26 +59,26 @@ import ffx.potential.parameters.TorsionTorsionType;
 import ffx.potential.parameters.TorsionType;
 import ffx.potential.parameters.UreyBradleyType;
 import ffx.potential.parameters.VDWType;
-import ffx.potential.parameters.ForceField.ForceFieldBoolean;
-import ffx.potential.parameters.ForceField.ForceFieldDouble;
-import ffx.potential.parameters.ForceField.ForceFieldInteger;
-import ffx.potential.parameters.ForceField.ForceFieldString;
-import ffx.potential.parameters.ForceField.ForceFieldType;
-import ffx.potential.parameters.ForceField.Force_Field;
 
-public class ForceFieldFilter_2{
-	
+/* 
+ * @author Gaurav Chattree and Michael J. Schnieders
+ * 
+ * @since 1.0
+ * 
+ */
+public class ForceFieldFilter_2 {
+
     private static final Logger logger = Logger.getLogger(ForceFieldFilter_2.class.getName());
     private ForceField forceField = null;
     private CompositeConfiguration properties;
     private File forceFieldFile;
-    
+
     public ForceFieldFilter_2(CompositeConfiguration properties, File forceFieldFile) {
         forceField = new ForceField(properties, forceFieldFile);
         this.properties = properties;
         this.forceFieldFile = forceFieldFile;
     }
-    
+
     public static File parseParameterLocation(String parameterLocation, File keyFile) {
         File parameterFile = null;
         if (parameterLocation != null && !parameterLocation.equalsIgnoreCase("NONE")) {
@@ -61,7 +87,7 @@ public class ForceFieldFilter_2{
             // Append the suffix if necessary
             /*
             if (!parameterLocation.endsWith(".prm")) {
-                parameterLocation = parameterLocation + ".prm";
+            parameterLocation = parameterLocation + ".prm";
             } */
             parameterFile = new File(parameterLocation);
             // If the location is not absolute, check if it is relative
@@ -81,10 +107,10 @@ public class ForceFieldFilter_2{
             if (forceFieldFile != null && forceFieldFile.exists()
                     && forceFieldFile.canRead()) {
                 parse(new FileInputStream(forceFieldFile));
-            /**
-             * Parse an internal parameter file and add it to the
-             * composite configuration.
-             */
+                /**
+                 * Parse an internal parameter file and add it to the
+                 * composite configuration.
+                 */
             } else {
                 String forceFieldString = properties.getString("forcefield", "AMOEBA-BIO-2009");
                 Force_Field ff = null;
@@ -452,7 +478,6 @@ public class ForceFieldFilter_2{
         }
     }
 
-
     private void parseBond(String input, String[] tokens) {
         if (tokens.length < 5) {
             logger.warning("Invalid BOND type:\n" + input);
@@ -582,8 +607,7 @@ public class ForceFieldFilter_2{
             for (int i = 0; i < numTypes; i++) {
                 atomTypes[i] = Integer.parseInt(tokens[i + 1]);
             }
-            MultipoleType.MultipoleFrameDefinition frameDefinition
-                    = MultipoleType.MultipoleFrameDefinition.ZTHENX;
+            MultipoleType.MultipoleFrameDefinition frameDefinition = MultipoleType.MultipoleFrameDefinition.ZTHENX;
             if (atomTypes.length == 3 && (atomTypes[1] < 0 || atomTypes[2] < 0)) {
                 frameDefinition = MultipoleType.MultipoleFrameDefinition.BISECTOR;
             } else if (atomTypes.length == 4 && atomTypes[2] < 0 && atomTypes[3] < 0) {

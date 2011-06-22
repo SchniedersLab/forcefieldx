@@ -1,10 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
-package ffx.autoparm;
-
 /**
  * Title: Force Field X
  * Description: Force Field X - Software for Molecular Biophysics.
@@ -25,57 +18,42 @@ package ffx.autoparm;
  * along with Force Field X; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
  */
+package ffx.autoparm;
 
-import static java.lang.Math.max;
-import static java.lang.Math.sqrt;
-import static java.lang.String.format;
-
-import static ffx.numerics.VectorMath.*;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.logging.Logger;
-
-import edu.rit.pj.ParallelTeam;
-
-import ffx.crystal.Crystal;
-import ffx.crystal.ReplicatesCrystal;
-import ffx.numerics.Potential;
-import ffx.potential.ForceFieldEnergy;
-import ffx.potential.bonded.ROLS;
-import ffx.potential.bonded.Angle;
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.Bond;
-import ffx.potential.bonded.MolecularAssembly;
-import ffx.potential.bonded.OutOfPlaneBend;
-import ffx.potential.bonded.PiOrbitalTorsion;
-import ffx.potential.bonded.StretchBend;
-import ffx.potential.bonded.Torsion;
-import ffx.potential.bonded.TorsionTorsion;
-import ffx.potential.bonded.UreyBradley;
-import ffx.potential.bonded.Utilities;
-import ffx.potential.nonbonded.ParticleMeshEwald;
-import ffx.autoparm.PME_2;
-import ffx.potential.nonbonded.VanDerWaals;
-import ffx.potential.parameters.ForceField;
-import ffx.potential.parameters.ForceField.ForceFieldBoolean;
-import ffx.potential.parameters.ForceField.ForceFieldDouble;
-import ffx.potential.parameters.ForceField.ForceFieldString;
-import ffx.potential.parameters.MultipoleType;
-import ffx.potential.parsers.XYZFilter;
-import ffx.utilities.Keyword;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.logging.Logger;
+import static java.lang.Math.max;
+import static java.lang.String.format;
+
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.math.linear.*;
+
+import edu.rit.pj.ParallelTeam;
+
+import ffx.crystal.Crystal;
+import ffx.crystal.ReplicatesCrystal;
+import ffx.potential.ForceFieldEnergy;
+import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.bonded.Utilities;
+import ffx.potential.nonbonded.VanDerWaals;
+import ffx.potential.parameters.ForceField;
+import ffx.potential.parameters.ForceField.ForceFieldDouble;
+import ffx.potential.parameters.ForceField.ForceFieldString;
+import ffx.potential.parameters.MultipoleType;
+import ffx.potential.parsers.XYZFilter;
+import static ffx.numerics.VectorMath.*;
 
 /**
  * Compute the potential energy and derivatives of an AMOEBA system.
  *
- * @author Michael J. Schnieders
+ * @author Gaurav Chattree and Michael J. Schnieders
+ * 
  * @since 1.0
  */
 public class Energy {

@@ -4930,7 +4930,7 @@ public class ParticleMeshEwald implements LambdaInterface {
         }
     }
 
-    /*
+    /**
      * A precision of 1.0e-8 results in an Ewald coefficient that 
      * ensure continuity in the real space gradient, 
      * but at the cost of increased amplitudes for high frequency 

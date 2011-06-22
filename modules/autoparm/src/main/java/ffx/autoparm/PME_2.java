@@ -20,20 +20,13 @@
  */
 package ffx.autoparm;
 
-import static java.lang.Math.*;
-import static java.lang.String.format;
-
-import static ffx.numerics.Erf.erfc;
-import static ffx.numerics.VectorMath.*;
-import static ffx.potential.parameters.MultipoleType.*;
-
-import ffx.numerics.Potential;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import static java.lang.Math.*;
+import static java.lang.String.format;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
@@ -47,21 +40,25 @@ import edu.rit.pj.reduction.SharedInteger;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
+import ffx.numerics.Potential;
 import ffx.numerics.TensorRecursion;
-import ffx.potential.LambdaInterface;
-import ffx.potential.nonbonded.ReciprocalSpace;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.Torsion;
+import ffx.potential.nonbonded.NeighborList;
+import ffx.potential.nonbonded.ReciprocalSpace;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
-import ffx.potential.parameters.MultipoleType;
-import ffx.potential.parameters.PolarizeType;
 import ffx.potential.parameters.ForceField.ForceFieldBoolean;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.ForceField.ForceFieldString;
 import ffx.potential.parameters.ForceField.ForceFieldType;
+import ffx.potential.parameters.MultipoleType;
+import ffx.potential.parameters.PolarizeType;
+import static ffx.numerics.Erf.erfc;
+import static ffx.numerics.VectorMath.*;
+import static ffx.potential.parameters.MultipoleType.*;
 
 /**
  * This Particle Mesh Ewald class implements PME for the AMOEBA polarizable
@@ -84,16 +81,15 @@ import ffx.potential.parameters.ForceField.ForceFieldType;
  *      46, 18-30, 1998</a><br>
  */
 public class PME_2 implements Potential {
-	public static boolean pedit = false;
-        public static boolean propyze = false;
-	private Boolean use_pme = false;
-	private double target_grid[][][];//nSymm, nAtoms, 4
-	private double scaling[];
-	private ArrayList<String> key;
-	public boolean fitmpl = true, fitdpl = true, fitqdpl= true;
+
+    public static boolean pedit = false;
+    public static boolean propyze = false;
+    private Boolean use_pme = false;
+    private double target_grid[][][];//nSymm, nAtoms, 4
+    private double scaling[];
+    private ArrayList<String> key;
+    public boolean fitmpl = true, fitdpl = true, fitqdpl = true;
     private int nvars;
-    
-	
     public static final Logger logger = Logger.getLogger(PME_2.class.getName());
 
     /**
@@ -109,7 +105,6 @@ public class PME_2 implements Potential {
     private double multipoleEnergy;
     private double polarizationEnergy;
     public static double lambda = 1.0;
-    
     /**
      * Reference to the force field being used.
      */
@@ -146,7 +141,6 @@ public class PME_2 implements Potential {
     public static double localMultipole[][];
     public static MultipoleType.MultipoleFrameDefinition frame[];
     public static int axisAtom[][];
-    
     public static int lol[];
     /**
      * Dimensions of [nsymm][nAtoms][10]
@@ -306,7 +300,7 @@ public class PME_2 implements Potential {
      * The sqrt of PI.
      */
     public static final double sqrtPi = sqrt(Math.PI);
-	//private ArrayList<Double> put;
+    //private ArrayList<Double> put;
 
     /**
      *
@@ -317,7 +311,7 @@ public class PME_2 implements Potential {
      * @param neighborLists
      */
     public PME_2(ForceField forceField, Atom[] atoms,
-                             Crystal crystal, ParallelTeam parallelTeam, int neighborLists[][][], ArrayList<String> key) {
+            Crystal crystal, ParallelTeam parallelTeam, int neighborLists[][][], ArrayList<String> key) {
         this.forceField = forceField;
         this.atoms = atoms;
         this.crystal = crystal;
@@ -388,10 +382,9 @@ public class PME_2 implements Potential {
         ip12 = new int[nAtoms][];
         ip13 = new int[nAtoms][];
         ip14 = new int[nAtoms][];//added by chattree
-        if(!use_pme){
-        	polargrp();
-        }
-        else{
+        if (!use_pme) {
+            polargrp();
+        } else {
             assignPolarizationGroups();
         }
         thole = new double[nAtoms];
@@ -462,7 +455,7 @@ public class PME_2 implements Potential {
                 fftTeam = parallelTeam;
             }
         }
-        
+
         boolean available = false;
         String pairWiseStrategy = null;
         try {
@@ -479,7 +472,7 @@ public class PME_2 implements Potential {
             pairWiseSchedule = IntegerSchedule.fixed();
         }
 
-        rotateMultipolesRegion = new RotateMultipolesRegion(maxThreads,false);
+        rotateMultipolesRegion = new RotateMultipolesRegion(maxThreads, false);
         expandCoordinatesRegion = new ExpandCoordinatesRegion(maxThreads);
         expandInducedDipolesRegion = new ExpandInducedDipolesRegion(maxThreads);
 //        if(use_pme){
@@ -496,7 +489,7 @@ public class PME_2 implements Potential {
 //        	torqueRegion = new TorqueRegion(maxThreads);
 //        }
 
-        
+
         Boolean gradient = true;
 //        if(use_pme){
 //        	multipoleEnergy = 0.0;
@@ -539,8 +532,8 @@ public class PME_2 implements Potential {
          */
 //        expandCoordinates();
 //        rotateMulitpoles();
-        if(!use_pme){
-        	init_prms();
+        if (!use_pme) {
+            init_prms();
         }
 //        else{
 //            /**
@@ -590,25 +583,23 @@ public class PME_2 implements Potential {
 //                logger.fine(sb.toString());
 //            }
 //        }
-        
+
         //added by gchattree, sets scaling for LGBFS and read in keywords
         String ln;
-        for(int i = 0; i < key.size(); i++){
-        	ln = key.get(i);
-        	if(ln.toUpperCase().contains("FIX-MONOPOLE")){
-        		fitmpl = false;
-        	}
-        	else if(ln.toUpperCase().contains("FIX-DIPOLE")){
-        		fitdpl = false;
-        	}
-        	else if(ln.toUpperCase().contains("FIX-QUADRUPOLE")){
-        		fitqdpl = false;
-        	}
+        for (int i = 0; i < key.size(); i++) {
+            ln = key.get(i);
+            if (ln.toUpperCase().contains("FIX-MONOPOLE")) {
+                fitmpl = false;
+            } else if (ln.toUpperCase().contains("FIX-DIPOLE")) {
+                fitdpl = false;
+            } else if (ln.toUpperCase().contains("FIX-QUADRUPOLE")) {
+                fitqdpl = false;
+            }
         }
         nvars = getCoordinates(null).length;
         scaling = new double[nvars];
-        for(int i = 0; i < scaling.length; i++){
-        	scaling[i] = 1;
+        for (int i = 0; i < scaling.length; i++) {
+            scaling[i] = 1;
         }
     }
 
@@ -626,246 +617,263 @@ public class PME_2 implements Potential {
 //    public void getdEdXdL(double[] gradients) {
 //        throw new UnsupportedOperationException("Not supported yet.");
 //    }
-
-    public void set_target_grid(double target_grid[][][]){
-    	this.target_grid = target_grid;
+    public void set_target_grid(double target_grid[][][]) {
+        this.target_grid = target_grid;
     }
-    
-    public void varprm(double x[], int ivar, double eps){
-    	int n = 0;
-    	ArrayList<Integer> types = new ArrayList<Integer>();
-    	for(int i = 0; i < nAtoms; i++){
-    		Atom ai = atoms[i];
-    		int itype = ai.getType();
-    		if(!types.contains(itype)){
-    			types.add(itype);
-        		if(fitmpl){
-        			if(localMultipole[i][t000] != 0){
-        				localMultipole[i][t000] = x[n] + ((n == ivar) ? eps : 0);
-        				n++;
-        			}
-        		}
-        		if(fitdpl){
-        			if(localMultipole[i][t100] != 0){
-        				localMultipole[i][t100] = x[n] + ((n == ivar) ? eps : 0);
-        				n++;
-        			}
-        			if(localMultipole[i][t010] != 0){
-        				localMultipole[i][t010] = x[n] + ((n == ivar) ? eps : 0);
-        				n++;
-        			}
-        			if(localMultipole[i][t001] != 0){
-        				localMultipole[i][t001] = x[n] + ((n == ivar) ? eps : 0);
-        				n++;
-        			}
-        		}
-        		if(fitqdpl){
-        			if(localMultipole[i][t200] != 0){
-        				localMultipole[i][t200] = (x[n] + ((n == ivar) ? eps : 0))*3;
-        				n++;
-        			}
-        			if(localMultipole[i][t020] != 0){
-        				localMultipole[i][t020] = (x[n] + ((n == ivar) ? eps : 0))*3;
-        				n++;
-        			}
-        			//Keep ZZ-Quad Fixed. Improves Optimization
+
+    public void varprm(double x[], int ivar, double eps) {
+        int n = 0;
+        ArrayList<Integer> types = new ArrayList<Integer>();
+        for (int i = 0; i < nAtoms; i++) {
+            Atom ai = atoms[i];
+            int itype = ai.getType();
+            if (!types.contains(itype)) {
+                types.add(itype);
+                if (fitmpl) {
+                    if (localMultipole[i][t000] != 0) {
+                        localMultipole[i][t000] = x[n] + ((n == ivar) ? eps : 0);
+                        n++;
+                    }
+                }
+                if (fitdpl) {
+                    if (localMultipole[i][t100] != 0) {
+                        localMultipole[i][t100] = x[n] + ((n == ivar) ? eps : 0);
+                        n++;
+                    }
+                    if (localMultipole[i][t010] != 0) {
+                        localMultipole[i][t010] = x[n] + ((n == ivar) ? eps : 0);
+                        n++;
+                    }
+                    if (localMultipole[i][t001] != 0) {
+                        localMultipole[i][t001] = x[n] + ((n == ivar) ? eps : 0);
+                        n++;
+                    }
+                }
+                if (fitqdpl) {
+                    if (localMultipole[i][t200] != 0) {
+                        localMultipole[i][t200] = (x[n] + ((n == ivar) ? eps : 0)) * 3;
+                        n++;
+                    }
+                    if (localMultipole[i][t020] != 0) {
+                        localMultipole[i][t020] = (x[n] + ((n == ivar) ? eps : 0)) * 3;
+                        n++;
+                    }
+                    //Keep ZZ-Quad Fixed. Improves Optimization
 //        			if(localMultipole[i][t002] != 0){
 //        				localMultipole[i][t002] = x[n] + ((n == ivar) ? 0 : 0);
 //        				n++;
 //        			}
-        			if(localMultipole[i][t110] != 0){
-        				localMultipole[i][t110] = (x[n] + ((n == ivar) ? eps : 0))*3;
-        				n++;
-        			}
-        			if(localMultipole[i][t101] != 0){
-        				localMultipole[i][t101] = (x[n] + ((n == ivar) ? eps : 0))*3;
-        				n++;
-        			}
-        			if(localMultipole[i][t011] != 0){
-        				localMultipole[i][t011] = (x[n] + ((n == ivar) ? eps : 0))*3;
-        				n++;
-        			}
-                                localMultipole[i][t002] = -localMultipole[i][t200] - localMultipole[i][t020];
-        		}
-        		for(int k = 0; k < nAtoms; k++){
-        			if(k != i){
-            			Atom ak = atoms[k];
-            			if(ak.getType() == itype){
-            				for(int j = 0; j < 10; j++){
-            					localMultipole[k][j] = localMultipole[i][j];
-            				}
-            			}
-        			}
-        		}
-    		}
-    	}
+                    if (localMultipole[i][t110] != 0) {
+                        localMultipole[i][t110] = (x[n] + ((n == ivar) ? eps : 0)) * 3;
+                        n++;
+                    }
+                    if (localMultipole[i][t101] != 0) {
+                        localMultipole[i][t101] = (x[n] + ((n == ivar) ? eps : 0)) * 3;
+                        n++;
+                    }
+                    if (localMultipole[i][t011] != 0) {
+                        localMultipole[i][t011] = (x[n] + ((n == ivar) ? eps : 0)) * 3;
+                        n++;
+                    }
+                    localMultipole[i][t002] = -localMultipole[i][t200] - localMultipole[i][t020];
+                }
+                for (int k = 0; k < nAtoms; k++) {
+                    if (k != i) {
+                        Atom ak = atoms[k];
+                        if (ak.getType() == itype) {
+                            for (int j = 0; j < 10; j++) {
+                                localMultipole[k][j] = localMultipole[i][j];
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
-    
+
     /*Methods needed to implement Potential interface*/
-    public double energyAndGradient(double x[], double g[]){
-    	//long currenttime = System.nanoTime(); 
-    	double pot_grid[][][] = new double[nSymm][][];
-    	Double xyz[] = new Double[3];
-    	//Change parameters
-    	varprm(x, -1, 0);
+    public double energyAndGradient(double x[], double g[]) {
+        //long currenttime = System.nanoTime(); 
+        double pot_grid[][][] = new double[nSymm][][];
+        Double xyz[] = new Double[3];
+        //Change parameters
+        varprm(x, -1, 0);
 //    	for(int i = 0; i < x.length; i++){
 //    		System.out.println(x[i]);
 //    	}
-    	//rotate multipoles and induce
-    	init_prms();
-    	//calc new energy grid
-    	for(int i = 0; i < nSymm; i++){
-    		pot_grid[i] = new double[target_grid[i].length][1];
-    		for(int j = 0; j < target_grid[i].length; j++){
-    			xyz[0] = target_grid[i][j][0];
-    			xyz[1] = target_grid[i][j][1];
-    			xyz[2] = target_grid[i][j][2];
-    			pot_grid[i][j][0] = potpoint(xyz);
-    		}
-    	}
-    	//calc error
-    	double total_error = 0;
-        double cscale = 100000000.0 / nSymm;                                                        
-        double tscale = 10000.0 / nSymm;                                                            
+        //rotate multipoles and induce
+        init_prms();
+        //calc new energy grid
+        for (int i = 0; i < nSymm; i++) {
+            pot_grid[i] = new double[target_grid[i].length][1];
+            for (int j = 0; j < target_grid[i].length; j++) {
+                xyz[0] = target_grid[i][j][0];
+                xyz[1] = target_grid[i][j][1];
+                xyz[2] = target_grid[i][j][2];
+                pot_grid[i][j][0] = potpoint(xyz);
+            }
+        }
+        //calc error
+        double total_error = 0;
+        double cscale = 100000000.0 / nSymm;
+        double tscale = 10000.0 / nSymm;
         double eps = 0.000001;
         //double eps = 1;
-    	double netchg;
-    	int npoints = target_grid[0].length;
-    	double er = 0;
-    	double ec = 0;
-    	double et = 0;
-    	for(int i = 0; i < nSymm; i++){
-    		netchg = 0;
-    		for(int j = 0; j < npoints; j++){
-    			er += Math.pow(pot_grid[i][j][0] - target_grid[i][j][3],2);
-    		}
-    		for(int j = 0; j < nAtoms; j++){
-        		netchg += globalMultipole[i][j][0];
-    		}
-        	ec += cscale * Math.pow(netchg - Math.round(netchg), 2);
-    	}
-    	er = Math.sqrt(er / npoints);
-    	total_error = er + ec + et;
+        double netchg;
+        int npoints = target_grid[0].length;
+        double er = 0;
+        double ec = 0;
+        double et = 0;
+        for (int i = 0; i < nSymm; i++) {
+            netchg = 0;
+            for (int j = 0; j < npoints; j++) {
+                er += Math.pow(pot_grid[i][j][0] - target_grid[i][j][3], 2);
+            }
+            for (int j = 0; j < nAtoms; j++) {
+                netchg += globalMultipole[i][j][0];
+            }
+            ec += cscale * Math.pow(netchg - Math.round(netchg), 2);
+        }
+        er = Math.sqrt(er / npoints);
+        total_error = er + ec + et;
         //System.out.println(total_error+" "+er+" "+ec+" "+et+" "+npoints);
-    	//set up gradient array
-    	double e0 = 0;
-    	double e = 0;
-    	//int nvars = getNumberOfVariables();
-    	for(int k = 0; k < nvars; k++){
-    		varprm(x, k, -.5*eps);
-    		init_prms();
-        	//calc new energy grid
-        	for(int i = 0; i < nSymm; i++){
-        		pot_grid[i] = new double[target_grid[i].length][1];
-        		for(int j = 0; j < target_grid[i].length; j++){
-        			xyz[0] = target_grid[i][j][0];
-        			xyz[1] = target_grid[i][j][1];
-        			xyz[2] = target_grid[i][j][2];
-        			pot_grid[i][j][0] = potpoint(xyz);
-        		}
-        	}
-        	er = 0;
-        	ec = 0;
-        	et = 0;
-        	for(int i = 0; i < nSymm; i++){
-        		netchg = 0;
-        		for(int j = 0; j < npoints; j++){
-        			er += Math.pow(pot_grid[i][j][0] - target_grid[i][j][3],2);
-        		}
-        		//System.out.println("er2 = "+er);
-        		for(int j = 0; j < nAtoms; j++){
-            		netchg += globalMultipole[i][j][0];
-        		}
-            	ec += cscale * Math.pow(netchg - Math.round(netchg), 2);
-            	//System.out.println("ec2 = "+ec);
-        	}
-        	er = Math.sqrt(er / npoints);
-        	e0 = er + ec + et;
-        	varprm(x, k, .5*eps);
-    		init_prms();
-        	for(int i = 0; i < nSymm; i++){
-        		pot_grid[i] = new double[target_grid[i].length][1];
-        		for(int j = 0; j < target_grid[i].length; j++){
-        			xyz[0] = target_grid[i][j][0];
-        			xyz[1] = target_grid[i][j][1];
-        			xyz[2] = target_grid[i][j][2];
-        			pot_grid[i][j][0] = potpoint(xyz);
-        		}
-        	}
-        	er = 0;
-        	ec = 0;
-        	et = 0;
-        	for(int i = 0; i < nSymm; i++){
-        		netchg = 0;
-        		for(int j = 0; j < npoints; j++){
-        			er += Math.pow(pot_grid[i][j][0] - target_grid[i][j][3],2);
-        		}
-        		for(int j = 0; j < nAtoms; j++){
-            		netchg += globalMultipole[i][j][0];
-        		}
-            	ec += cscale * Math.pow(netchg - Math.round(netchg), 2);
-        	}
-        	er = Math.sqrt(er / npoints);
-        	e = er + ec + et;
-        	g[k] = (e - e0) / eps;
+        //set up gradient array
+        double e0 = 0;
+        double e = 0;
+        //int nvars = getNumberOfVariables();
+        for (int k = 0; k < nvars; k++) {
+            varprm(x, k, -.5 * eps);
+            init_prms();
+            //calc new energy grid
+            for (int i = 0; i < nSymm; i++) {
+                pot_grid[i] = new double[target_grid[i].length][1];
+                for (int j = 0; j < target_grid[i].length; j++) {
+                    xyz[0] = target_grid[i][j][0];
+                    xyz[1] = target_grid[i][j][1];
+                    xyz[2] = target_grid[i][j][2];
+                    pot_grid[i][j][0] = potpoint(xyz);
+                }
+            }
+            er = 0;
+            ec = 0;
+            et = 0;
+            for (int i = 0; i < nSymm; i++) {
+                netchg = 0;
+                for (int j = 0; j < npoints; j++) {
+                    er += Math.pow(pot_grid[i][j][0] - target_grid[i][j][3], 2);
+                }
+                //System.out.println("er2 = "+er);
+                for (int j = 0; j < nAtoms; j++) {
+                    netchg += globalMultipole[i][j][0];
+                }
+                ec += cscale * Math.pow(netchg - Math.round(netchg), 2);
+                //System.out.println("ec2 = "+ec);
+            }
+            er = Math.sqrt(er / npoints);
+            e0 = er + ec + et;
+            varprm(x, k, .5 * eps);
+            init_prms();
+            for (int i = 0; i < nSymm; i++) {
+                pot_grid[i] = new double[target_grid[i].length][1];
+                for (int j = 0; j < target_grid[i].length; j++) {
+                    xyz[0] = target_grid[i][j][0];
+                    xyz[1] = target_grid[i][j][1];
+                    xyz[2] = target_grid[i][j][2];
+                    pot_grid[i][j][0] = potpoint(xyz);
+                }
+            }
+            er = 0;
+            ec = 0;
+            et = 0;
+            for (int i = 0; i < nSymm; i++) {
+                netchg = 0;
+                for (int j = 0; j < npoints; j++) {
+                    er += Math.pow(pot_grid[i][j][0] - target_grid[i][j][3], 2);
+                }
+                for (int j = 0; j < nAtoms; j++) {
+                    netchg += globalMultipole[i][j][0];
+                }
+                ec += cscale * Math.pow(netchg - Math.round(netchg), 2);
+            }
+            er = Math.sqrt(er / npoints);
+            e = er + ec + et;
+            g[k] = (e - e0) / eps;
 //        	System.out.println(k+" g[k] = "+g[k]+" "+e0+" "+e);
-    	}
-    	//long endtime = System.nanoTime();
-    	//System.out.println("TIME "+(endtime - currenttime)*1e-9);
-    	return total_error;
+        }
+        //long endtime = System.nanoTime();
+        //System.out.println("TIME "+(endtime - currenttime)*1e-9);
+        return total_error;
     }
-    
-    public void setScaling(double scaling[]){
-    	this.scaling = scaling;
-    }
-    
-    public double[] getScaling(){
-    	return scaling;
-    }
-    
-    public double[] getCoordinates(double parameters[]){
-    	ArrayList<Double> p = new ArrayList<Double>();
-    	ArrayList<Integer> types = new ArrayList<Integer>();
 
-    	for(int i = 0; i < nAtoms; i++){
-    		Atom ai = atoms[i];
-    		if(!types.contains(ai.getType())){
-    			types.add(ai.getType());
-    			if(fitmpl){
-    				if(localMultipole[i][t000] != 0) p.add(localMultipole[i][t000]);
-    			}
-    			if(fitdpl){
-    				if(localMultipole[i][t100] != 0) p.add(localMultipole[i][t100]);
-    				if(localMultipole[i][t010] != 0) p.add(localMultipole[i][t010]);
-    				if(localMultipole[i][t001] != 0) p.add(localMultipole[i][t001]);
-    			}
-    			if(fitqdpl){
-    				if(localMultipole[i][t200] != 0) p.add(localMultipole[i][t200]/3);
-    				if(localMultipole[i][t020] != 0) p.add(localMultipole[i][t020]/3);
-    				//Keep ZZ-Quad Fixed. Improves Optimization
-    				//if(localMultipole[i][t002] != 0) p.add(localMultipole[i][t002]*3);
-    				//System.out.println(localMultipole[i][t002]);
-    				if(localMultipole[i][t110] != 0) p.add(localMultipole[i][t110]/3);
-    				if(localMultipole[i][t101] != 0) p.add(localMultipole[i][t101]/3);
-    				if(localMultipole[i][t011] != 0) p.add(localMultipole[i][t011]/3);
-    			}
-    		}
-    	}
-    	if(parameters == null){
-    		parameters = new double[p.size()];
-    	}
-    	//System.out.println(p.size());
-    	for(int i = 0; i < p.size(); i++){
-    		parameters[i] = p.get(i).doubleValue();
-    		//System.out.println("parameters[i] "+i+" "+parameters[i]);
-    	}
-    	return parameters;
+    public void setScaling(double scaling[]) {
+        this.scaling = scaling;
     }
-    
-    public double[] getallmpoles(double x[]){
-    	ArrayList<Double> p = new ArrayList<Double>();
-    	ArrayList<Integer> types = new ArrayList<Integer>();
-    	int r = 0;
+
+    public double[] getScaling() {
+        return scaling;
+    }
+
+    public double[] getCoordinates(double parameters[]) {
+        ArrayList<Double> p = new ArrayList<Double>();
+        ArrayList<Integer> types = new ArrayList<Integer>();
+
+        for (int i = 0; i < nAtoms; i++) {
+            Atom ai = atoms[i];
+            if (!types.contains(ai.getType())) {
+                types.add(ai.getType());
+                if (fitmpl) {
+                    if (localMultipole[i][t000] != 0) {
+                        p.add(localMultipole[i][t000]);
+                    }
+                }
+                if (fitdpl) {
+                    if (localMultipole[i][t100] != 0) {
+                        p.add(localMultipole[i][t100]);
+                    }
+                    if (localMultipole[i][t010] != 0) {
+                        p.add(localMultipole[i][t010]);
+                    }
+                    if (localMultipole[i][t001] != 0) {
+                        p.add(localMultipole[i][t001]);
+                    }
+                }
+                if (fitqdpl) {
+                    if (localMultipole[i][t200] != 0) {
+                        p.add(localMultipole[i][t200] / 3);
+                    }
+                    if (localMultipole[i][t020] != 0) {
+                        p.add(localMultipole[i][t020] / 3);
+                    }
+                    //Keep ZZ-Quad Fixed. Improves Optimization
+                    //if(localMultipole[i][t002] != 0) p.add(localMultipole[i][t002]*3);
+                    //System.out.println(localMultipole[i][t002]);
+                    if (localMultipole[i][t110] != 0) {
+                        p.add(localMultipole[i][t110] / 3);
+                    }
+                    if (localMultipole[i][t101] != 0) {
+                        p.add(localMultipole[i][t101] / 3);
+                    }
+                    if (localMultipole[i][t011] != 0) {
+                        p.add(localMultipole[i][t011] / 3);
+                    }
+                }
+            }
+        }
+        if (parameters == null) {
+            parameters = new double[p.size()];
+        }
+        //System.out.println(p.size());
+        for (int i = 0; i < p.size(); i++) {
+            parameters[i] = p.get(i).doubleValue();
+            //System.out.println("parameters[i] "+i+" "+parameters[i]);
+        }
+        return parameters;
+    }
+
+    public double[] getallmpoles(double x[]) {
+        ArrayList<Double> p = new ArrayList<Double>();
+        ArrayList<Integer> types = new ArrayList<Integer>();
+        int r = 0;
 //    	for(int i = 0; i < nAtoms; i++){
 //    		System.out.println(frame[i]);
 //    		Atom ai = atoms[i];
@@ -874,141 +882,132 @@ public class PME_2 implements Potential {
 //    		}
 //    	}
 //    	Collections.sort(types);
-    	for(int i = 0; i < nAtoms; i++){
-    		Atom ai = atoms[i];
-    		if(!types.contains(ai.getType())){
-    			types.add(ai.getType());
-        		if(fitmpl){
-        			if(localMultipole[i][t000] == 0){
-            			p.add(localMultipole[i][t000]);
-        			}
-        			else{
-        				p.add(x[r]);
-        				r = r + 1;
-        			}
-        		}
-        		if(fitdpl){
-        			if(localMultipole[i][t100] == 0){
-            			p.add(localMultipole[i][t100]);
-        			}
-        			else{
-        				p.add(x[r]);
-        				r = r + 1;
-        			}
-        			if(localMultipole[i][t010] == 0){
-            			p.add(localMultipole[i][t010]);
-        			}
-        			else{
-        				p.add(x[r]);
-        				r = r + 1;
-        			}
-        			if(localMultipole[i][t001] == 0){
-            			p.add(localMultipole[i][t001]);
-        			}
-        			else{
-        				p.add(x[r]);
-        				r = r + 1;
-        			}
-        		}
-        		if(fitqdpl){
-        			if(localMultipole[i][t200] == 0){
-            			p.add(localMultipole[i][t200]);
-        			}
-        			else{
-        				p.add(x[r]*3);
-        				r = r + 1;
-        			}
-        			if(localMultipole[i][t020] == 0){
-            			p.add(localMultipole[i][t020]);
-        			}
-        			else{
-        				p.add(x[r]*3);
-        				r = r + 1;
-        			}
-        			//Keep ZZ-Quad Fixed. Improves Optimization
-        			p.add(localMultipole[i][t002]);
-        			//System.out.println(localMultipole[i][t002]);
-        			//if(localMultipole[i][t002] == 0){
-            		//	p.add(localMultipole[i][t002]);
-        			//}
-        			//else{
-        			//	p.add(x[r]);
-        			//	r = r + 1;
-        			//}
-        			if(localMultipole[i][t110] == 0){
-            			p.add(localMultipole[i][t110]);
-        			}
-        			else{
-        				p.add(x[r]*3);
-        				r = r + 1;
-        			}
-        			if(localMultipole[i][t101] == 0){
-            			p.add(localMultipole[i][t101]);
-        			}
-        			else{
-        				p.add(x[r]*3);
-        				r = r + 1;
-        			}
-        			if(localMultipole[i][t011] == 0){
-            			p.add(localMultipole[i][t011]);
-        			}
-        			else{
-        				p.add(x[r]*3);
-        				r = r + 1;
-        			}
-        		}
-    		}
-    	}
-    	double parameters[] = new double[p.size()];
-    	for(int i = 0; i < p.size(); i++){
-    		parameters[i] = p.get(i).doubleValue();
-    	}
-    	return parameters;
+        for (int i = 0; i < nAtoms; i++) {
+            Atom ai = atoms[i];
+            if (!types.contains(ai.getType())) {
+                types.add(ai.getType());
+                if (fitmpl) {
+                    if (localMultipole[i][t000] == 0) {
+                        p.add(localMultipole[i][t000]);
+                    } else {
+                        p.add(x[r]);
+                        r = r + 1;
+                    }
+                }
+                if (fitdpl) {
+                    if (localMultipole[i][t100] == 0) {
+                        p.add(localMultipole[i][t100]);
+                    } else {
+                        p.add(x[r]);
+                        r = r + 1;
+                    }
+                    if (localMultipole[i][t010] == 0) {
+                        p.add(localMultipole[i][t010]);
+                    } else {
+                        p.add(x[r]);
+                        r = r + 1;
+                    }
+                    if (localMultipole[i][t001] == 0) {
+                        p.add(localMultipole[i][t001]);
+                    } else {
+                        p.add(x[r]);
+                        r = r + 1;
+                    }
+                }
+                if (fitqdpl) {
+                    if (localMultipole[i][t200] == 0) {
+                        p.add(localMultipole[i][t200]);
+                    } else {
+                        p.add(x[r] * 3);
+                        r = r + 1;
+                    }
+                    if (localMultipole[i][t020] == 0) {
+                        p.add(localMultipole[i][t020]);
+                    } else {
+                        p.add(x[r] * 3);
+                        r = r + 1;
+                    }
+                    //Keep ZZ-Quad Fixed. Improves Optimization
+                    p.add(localMultipole[i][t002]);
+                    //System.out.println(localMultipole[i][t002]);
+                    //if(localMultipole[i][t002] == 0){
+                    //	p.add(localMultipole[i][t002]);
+                    //}
+                    //else{
+                    //	p.add(x[r]);
+                    //	r = r + 1;
+                    //}
+                    if (localMultipole[i][t110] == 0) {
+                        p.add(localMultipole[i][t110]);
+                    } else {
+                        p.add(x[r] * 3);
+                        r = r + 1;
+                    }
+                    if (localMultipole[i][t101] == 0) {
+                        p.add(localMultipole[i][t101]);
+                    } else {
+                        p.add(x[r] * 3);
+                        r = r + 1;
+                    }
+                    if (localMultipole[i][t011] == 0) {
+                        p.add(localMultipole[i][t011]);
+                    } else {
+                        p.add(x[r] * 3);
+                        r = r + 1;
+                    }
+                }
+            }
+        }
+        double parameters[] = new double[p.size()];
+        for (int i = 0; i < p.size(); i++) {
+            parameters[i] = p.get(i).doubleValue();
+        }
+        return parameters;
     }
-    
-    public double[] getMass(){
-    	return null;
-    }
-    
-    public int getNumberOfVariables(){
-    	return nvars;
-    }
-    
-    public void setkey(ArrayList<String> key){
-    	this.key = key;
-    }
-    
-    //added by gchattree
-    public static void polargrp(){
-    	int index;
-    	
-    	ArrayList<ArrayList<Integer>> temp_groups1 = new ArrayList<ArrayList<Integer>>();
-    	ArrayList<ArrayList<Integer>> temp_groups2 = new ArrayList<ArrayList<Integer>>();
-    	ArrayList<ArrayList<Integer>> temp_groups3 = new ArrayList<ArrayList<Integer>>();
-    	ArrayList<ArrayList<Integer>> temp_groups4 = new ArrayList<ArrayList<Integer>>();
-    	
-        ArrayList<Integer> polarizationGroup = new ArrayList<Integer>();
-        
-    	ArrayList<Integer> list = new ArrayList<Integer>();
-    	int nlist = 0;
-    	ArrayList<Integer> keep = new ArrayList<Integer>();
-    	//int nkeep = 0;
-    	ArrayList<Integer> mask = new ArrayList<Integer>();
 
-    	
-    	ArrayList<Integer> jg;
-    	ArrayList<Integer> ig;
-    	int kk;
-    	int jj;
-    	int start;
-    	int stop;
-    	boolean done;
-    	
-    	for(Atom ai : atoms){
+    public double[] getMass() {
+        return null;
+    }
+
+    public int getNumberOfVariables() {
+        return nvars;
+    }
+
+    public void setkey(ArrayList<String> key) {
+        this.key = key;
+    }
+
+    //added by gchattree
+    public static void polargrp() {
+        int index;
+
+        ArrayList<ArrayList<Integer>> temp_groups1 = new ArrayList<ArrayList<Integer>>();
+        ArrayList<ArrayList<Integer>> temp_groups2 = new ArrayList<ArrayList<Integer>>();
+        ArrayList<ArrayList<Integer>> temp_groups3 = new ArrayList<ArrayList<Integer>>();
+        ArrayList<ArrayList<Integer>> temp_groups4 = new ArrayList<ArrayList<Integer>>();
+
+        ArrayList<Integer> polarizationGroup = new ArrayList<Integer>();
+
+        ArrayList<Integer> list = new ArrayList<Integer>();
+        int nlist = 0;
+        ArrayList<Integer> keep = new ArrayList<Integer>();
+        //int nkeep = 0;
+        ArrayList<Integer> mask = new ArrayList<Integer>();
+
+
+        ArrayList<Integer> jg;
+        ArrayList<Integer> ig;
+        int kk;
+        int jj;
+        int start;
+        int stop;
+        boolean done;
+
+        for (Atom ai : atoms) {
             ArrayList<Integer> group = new ArrayList<Integer>();
-    		polarizationGroup.clear();
-    		index = ai.getXYZIndex() - 1;
-    		group.add(index);
+            polarizationGroup.clear();
+            index = ai.getXYZIndex() - 1;
+            group.add(index);
             //polarizationGroup.add(ai.getType());
             PolarizeType polarizeType = ai.getPolarizeType();
             if (polarizeType != null) {
@@ -1025,71 +1024,69 @@ public class PME_2 implements Potential {
                 int tj = aj.getType();
                 for (int g : polarizationGroup) {
                     if (g == tj) {
-                    	Integer index2 = aj.getXYZIndex() - 1;
+                        Integer index2 = aj.getXYZIndex() - 1;
                         group.add(index2);
                     }
                 }
             }
             Collections.sort(group);
             temp_groups1.add(group);
-    	}
-    	
-    	//Next part of ip11 creation
-    	for(int n = 0; n < nAtoms; n++){
-    		list.add(n, -1);
-    	}
-    	
-    	for(int i = 0; i < nAtoms; i++){
-    		ig = temp_groups1.get(i);
-    		done = false;
-    		start = 1;
-    		stop = ig.size();
-    		for(int j = start - 1; j < stop ; j++){
-    			jj = ig.get(j);
-    			if(jj < i){
-    				done = true;
-    				jg = temp_groups1.get(jj);
-    				for(int k = 0; k < jg.size(); k++){
-    					if(k > ig.size() - 1){
-    						for(int s = ig.size(); s < k+1; s++){
-    							ig.add(0);
-    						}
-        					ig.set(k,jg.get(k));
-    					}
-    					else{
-        					ig.set(k,jg.get(k));
-    					}
-    				}
-    			}
-    			else{
-    				list.set(jj,i);
-    			}
-    		}
-    		while(!done){
-    			done = true;
-    			for(int j = start - 1; j < stop; j++){
-    				jj = ig.get(j);
-    				jg = temp_groups1.get(jj);
-    				for(int k = 0; k < jg.size(); k++){
-    					kk = jg.get(k);
-    					if(list.get(kk) != i){
-    						ig.add(kk);
-    						list.set(kk,i);
-    					}
-    				}
-    			}
-    			if(ig.size() != stop){
-    				done = false;
-    				start = stop + 1;
-    				stop = ig.size();
-    			}
-    		}
-    		Collections.sort(ig);
-    	}
-    	
-    	//final part of ip11 array creation
-    	for(int n  = 0; n < nAtoms; n++){
-    		ArrayList<Integer> group = temp_groups1.get(n);
+        }
+
+        //Next part of ip11 creation
+        for (int n = 0; n < nAtoms; n++) {
+            list.add(n, -1);
+        }
+
+        for (int i = 0; i < nAtoms; i++) {
+            ig = temp_groups1.get(i);
+            done = false;
+            start = 1;
+            stop = ig.size();
+            for (int j = start - 1; j < stop; j++) {
+                jj = ig.get(j);
+                if (jj < i) {
+                    done = true;
+                    jg = temp_groups1.get(jj);
+                    for (int k = 0; k < jg.size(); k++) {
+                        if (k > ig.size() - 1) {
+                            for (int s = ig.size(); s < k + 1; s++) {
+                                ig.add(0);
+                            }
+                            ig.set(k, jg.get(k));
+                        } else {
+                            ig.set(k, jg.get(k));
+                        }
+                    }
+                } else {
+                    list.set(jj, i);
+                }
+            }
+            while (!done) {
+                done = true;
+                for (int j = start - 1; j < stop; j++) {
+                    jj = ig.get(j);
+                    jg = temp_groups1.get(jj);
+                    for (int k = 0; k < jg.size(); k++) {
+                        kk = jg.get(k);
+                        if (list.get(kk) != i) {
+                            ig.add(kk);
+                            list.set(kk, i);
+                        }
+                    }
+                }
+                if (ig.size() != stop) {
+                    done = false;
+                    start = stop + 1;
+                    stop = ig.size();
+                }
+            }
+            Collections.sort(ig);
+        }
+
+        //final part of ip11 array creation
+        for (int n = 0; n < nAtoms; n++) {
+            ArrayList<Integer> group = temp_groups1.get(n);
             Collections.sort(group);
             //System.out.println(group);
             ip11[n] = new int[group.size()];
@@ -1097,60 +1094,59 @@ public class PME_2 implements Potential {
             for (int k : group) {
                 ip11[n][j++] = k;
             }
-    	}
-    	
-    	//start ip12 creation
-    	for(int n = 0; n < nAtoms; n++){
-    		mask.add(n, -1);
-    	}
-    	for(int i = 0; i < nAtoms; i++){
-        	list.clear();
-        	keep.clear();
-    		ArrayList<Integer> group = new ArrayList<Integer>();
-    		ig = temp_groups1.get(i);
-    		for(int j = 0; j < ig.size(); j++){
-    			jj = ig.get(j);
-    			list.add(jj);
-    			mask.set(jj, i);
-    		}
-    		for(int j = 0; j < list.size(); j++){
-    			jj = list.get(j);
-    			Atom ajj = atoms[jj];
-    			for(int k = 0; k < ajj.getBonds().size(); k++){
-    				kk = ajj.getBonds().get(k).get1_2(ajj).getXYZIndex() - 1;
-    				//System.out.println(mask.get(kk)+" "+i);
-    				if(mask.get(kk) != i){
-    					keep.add(kk);
-    				}
-    			}
-    		}
-    		nlist = 0;
-    		list.clear();
-    		for(int j = 0; j < keep.size(); j++){
-    			jj = keep.get(j);
-    			jg = temp_groups1.get(jj);
-    			for(int k = 0; k < jg.size(); k++){
-    				kk = jg.get(k);
-    				//System.out.println((j+1)+" "+(jj+1)+" "+(k+1)+" "+(kk+1));
-    				nlist++;
-    				//list.set(nlist, kk);
-    				if(nlist - 1 < list.size()){
-        				list.set(nlist - 1,kk);
-    				}
-    				else{
-    					list.add(kk);
-    				}
-    			}
-    		}
-    		Collections.sort(list);
-    		for(int j = 0; j < list.size(); j++){
-    			group.add(j, list.get(j));
-    		}
-    		temp_groups2.add(group);
-    	}
-    	//final part of ip12 array creation
-    	for(int n  = 0; n < nAtoms; n++){
-    		ArrayList<Integer> group = temp_groups2.get(n);
+        }
+
+        //start ip12 creation
+        for (int n = 0; n < nAtoms; n++) {
+            mask.add(n, -1);
+        }
+        for (int i = 0; i < nAtoms; i++) {
+            list.clear();
+            keep.clear();
+            ArrayList<Integer> group = new ArrayList<Integer>();
+            ig = temp_groups1.get(i);
+            for (int j = 0; j < ig.size(); j++) {
+                jj = ig.get(j);
+                list.add(jj);
+                mask.set(jj, i);
+            }
+            for (int j = 0; j < list.size(); j++) {
+                jj = list.get(j);
+                Atom ajj = atoms[jj];
+                for (int k = 0; k < ajj.getBonds().size(); k++) {
+                    kk = ajj.getBonds().get(k).get1_2(ajj).getXYZIndex() - 1;
+                    //System.out.println(mask.get(kk)+" "+i);
+                    if (mask.get(kk) != i) {
+                        keep.add(kk);
+                    }
+                }
+            }
+            nlist = 0;
+            list.clear();
+            for (int j = 0; j < keep.size(); j++) {
+                jj = keep.get(j);
+                jg = temp_groups1.get(jj);
+                for (int k = 0; k < jg.size(); k++) {
+                    kk = jg.get(k);
+                    //System.out.println((j+1)+" "+(jj+1)+" "+(k+1)+" "+(kk+1));
+                    nlist++;
+                    //list.set(nlist, kk);
+                    if (nlist - 1 < list.size()) {
+                        list.set(nlist - 1, kk);
+                    } else {
+                        list.add(kk);
+                    }
+                }
+            }
+            Collections.sort(list);
+            for (int j = 0; j < list.size(); j++) {
+                group.add(j, list.get(j));
+            }
+            temp_groups2.add(group);
+        }
+        //final part of ip12 array creation
+        for (int n = 0; n < nAtoms; n++) {
+            ArrayList<Integer> group = temp_groups2.get(n);
             Collections.sort(group);
             //System.out.println(group);
             ip12[n] = new int[group.size()];
@@ -1158,45 +1154,45 @@ public class PME_2 implements Potential {
             for (int k : group) {
                 ip12[n][j++] = k;
             }
-    	}
-    	
-    	//start ip13 creation
-    	mask.clear();
-    	for(int n = 0; n < nAtoms; n++){
-    		mask.add(n, -1);
-    	}
-    	for(int i = 0; i < nAtoms; i++){
-        	list.clear();
-    		ArrayList<Integer> group = new ArrayList<Integer>();
-    		ig = temp_groups1.get(i);
-    		for(int j = 0; j < ig.size(); j++){
-    			jj = ig.get(j);
-    			mask.set(jj, i);
-    		}
-    		ig = temp_groups2.get(i);
-    		for(int j = 0; j < ig.size(); j++){
-    			jj = ig.get(j);
-    			mask.set(jj, i);
-    		}
-    		for(int j = 0; j < ig.size(); j++){
-    			jj = ig.get(j);
-    			jg = temp_groups2.get(jj);
-    			for(int k = 0; k < jg.size(); k++){
-    				kk = jg.get(k);
-    				if(mask.get(kk) != i){
-    					list.add(kk);
-    				}
-    			}
-    		}
-    		Collections.sort(list);
-    		for(int j = 0; j < list.size(); j++){
-    			group.add(j, list.get(j));
-    		}
-    		temp_groups3.add(group);
-    	}
-    	//final part of ip13 array creation
-    	for(int n  = 0; n < nAtoms; n++){
-    		ArrayList<Integer> group = temp_groups3.get(n);
+        }
+
+        //start ip13 creation
+        mask.clear();
+        for (int n = 0; n < nAtoms; n++) {
+            mask.add(n, -1);
+        }
+        for (int i = 0; i < nAtoms; i++) {
+            list.clear();
+            ArrayList<Integer> group = new ArrayList<Integer>();
+            ig = temp_groups1.get(i);
+            for (int j = 0; j < ig.size(); j++) {
+                jj = ig.get(j);
+                mask.set(jj, i);
+            }
+            ig = temp_groups2.get(i);
+            for (int j = 0; j < ig.size(); j++) {
+                jj = ig.get(j);
+                mask.set(jj, i);
+            }
+            for (int j = 0; j < ig.size(); j++) {
+                jj = ig.get(j);
+                jg = temp_groups2.get(jj);
+                for (int k = 0; k < jg.size(); k++) {
+                    kk = jg.get(k);
+                    if (mask.get(kk) != i) {
+                        list.add(kk);
+                    }
+                }
+            }
+            Collections.sort(list);
+            for (int j = 0; j < list.size(); j++) {
+                group.add(j, list.get(j));
+            }
+            temp_groups3.add(group);
+        }
+        //final part of ip13 array creation
+        for (int n = 0; n < nAtoms; n++) {
+            ArrayList<Integer> group = temp_groups3.get(n);
             Collections.sort(group);
             //System.out.println(group);
             ip13[n] = new int[group.size()];
@@ -1204,50 +1200,50 @@ public class PME_2 implements Potential {
             for (int k : group) {
                 ip13[n][j++] = k;
             }
-    	}
-    	
-    	//start ip14 creation
-    	mask.clear();
-    	for(int n = 0; n < nAtoms; n++){
-    		mask.add(n, -1);
-    	}
-    	for(int i = 0; i < nAtoms; i++){
-        	list.clear();
-    		ArrayList<Integer> group = new ArrayList<Integer>();
-    		ig = temp_groups1.get(i);
-    		for(int j = 0; j < ig.size(); j++){
-    			jj = ig.get(j);
-    			mask.set(jj, i);
-    		}
-    		ig = temp_groups2.get(i);
-    		for(int j = 0; j < ig.size(); j++){
-    			jj = ig.get(j);
-    			mask.set(jj, i);
-    		}
-    		ig = temp_groups3.get(i);
-    		for(int j = 0; j < ig.size(); j++){
-    			jj = ig.get(j);
-    			mask.set(jj, i);
-    		}
-    		for(int j = 0; j < ig.size(); j++){
-    			jj = ig.get(j);
-    			jg = temp_groups2.get(jj);
-    			for(int k = 0; k < jg.size(); k++){
-    				kk = jg.get(k);
-    				if(mask.get(kk) != i){
-    					list.add(kk);
-    				}
-    			}
-    		}
-    		Collections.sort(list);
-    		for(int j = 0; j < list.size(); j++){
-    			group.add(j, list.get(j));
-    		}
-    		temp_groups4.add(group);
-    	}
-    	//final part of ip14 array creation
-    	for(int n  = 0; n < nAtoms; n++){
-    		ArrayList<Integer> group = temp_groups3.get(n);
+        }
+
+        //start ip14 creation
+        mask.clear();
+        for (int n = 0; n < nAtoms; n++) {
+            mask.add(n, -1);
+        }
+        for (int i = 0; i < nAtoms; i++) {
+            list.clear();
+            ArrayList<Integer> group = new ArrayList<Integer>();
+            ig = temp_groups1.get(i);
+            for (int j = 0; j < ig.size(); j++) {
+                jj = ig.get(j);
+                mask.set(jj, i);
+            }
+            ig = temp_groups2.get(i);
+            for (int j = 0; j < ig.size(); j++) {
+                jj = ig.get(j);
+                mask.set(jj, i);
+            }
+            ig = temp_groups3.get(i);
+            for (int j = 0; j < ig.size(); j++) {
+                jj = ig.get(j);
+                mask.set(jj, i);
+            }
+            for (int j = 0; j < ig.size(); j++) {
+                jj = ig.get(j);
+                jg = temp_groups2.get(jj);
+                for (int k = 0; k < jg.size(); k++) {
+                    kk = jg.get(k);
+                    if (mask.get(kk) != i) {
+                        list.add(kk);
+                    }
+                }
+            }
+            Collections.sort(list);
+            for (int j = 0; j < list.size(); j++) {
+                group.add(j, list.get(j));
+            }
+            temp_groups4.add(group);
+        }
+        //final part of ip14 array creation
+        for (int n = 0; n < nAtoms; n++) {
+            ArrayList<Integer> group = temp_groups3.get(n);
             Collections.sort(group);
             //System.out.println(group);
             ip14[n] = new int[group.size()];
@@ -1255,14 +1251,13 @@ public class PME_2 implements Potential {
             for (int k : group) {
                 ip14[n][j++] = k;
             }
-    	}
+        }
     }
-    
-    
-    public static void induce_pedit(){
-    	double d12scale = 1;
-    	double d13scale = 1;
-    	double d14scale = 1;
+
+    public static void induce_pedit() {
+        double d12scale = 1;
+        double d13scale = 1;
+        double d14scale = 1;
         double mask_local[];
         double maskp_local[];
         double fx_local[];
@@ -1281,7 +1276,7 @@ public class PME_2 implements Potential {
         fyp_local = new double[nAtoms];
         fzp_local = new double[nAtoms];
         dx_local = new double[3];
-        
+
         for (int i = 0; i < nAtoms; i++) {
             mask_local[i] = 1.0;
             maskp_local[i] = 1.0;
@@ -1301,7 +1296,7 @@ public class PME_2 implements Potential {
         final double z[] = coordinates[0][2];
         final double mpole[][] = globalMultipole[0];
         /**
-            System.out.println((i+1)+" "+ind[0]+" "+polar+" "+fieldi[0]);
+        System.out.println((i+1)+" "+ind[0]+" "+polar+" "+fieldi[0]);
          * Loop over atoms
          * 
          */
@@ -1354,11 +1349,11 @@ public class PME_2 implements Potential {
              */
             for (int index : ip11[i]) {
                 mask_local[index] = d11scale;
-                
+
             }
             for (int index : ip12[i]) {
                 mask_local[index] = d12scale;
-                
+
             }
             for (int index : ip13[i]) {
                 mask_local[index] = d13scale;
@@ -1366,8 +1361,8 @@ public class PME_2 implements Potential {
             for (int index : ip14[i]) {
                 mask_local[index] = d14scale;
             }
-            for (int k = i; k < nAtoms; k++){
-            	if(i != k){
+            for (int k = i; k < nAtoms; k++) {
+                if (i != k) {
                     final double xk = x[k];
                     final double yk = y[k];
                     final double zk = z[k];
@@ -1398,7 +1393,6 @@ public class PME_2 implements Potential {
                          * Compute the error function scaled and unscaled
                          * terms.
                          */
-
                         double scale3 = mask_local[k];
                         double scale5 = mask_local[k];
                         double scale7 = mask_local[k];
@@ -1416,8 +1410,8 @@ public class PME_2 implements Potential {
                             }
                         }
                         final double rr3 = scale3 * 1.0 / (r * r2);
-                        final double rr5 = (scale3 != 0) ? scale5/scale3 * 3.0 * rr3 / r2 : 0;
-                        final double rr7 = (scale5 != 0) ? scale7/scale5 * 5.0 * rr5 / r2 : 0;
+                        final double rr5 = (scale3 != 0) ? scale5 / scale3 * 3.0 * rr3 / r2 : 0;
+                        final double rr7 = (scale5 != 0) ? scale7 / scale5 * 5.0 * rr5 / r2 : 0;
                         final double dir = dix * xr + diy * yr + diz * zr;
                         final double qix = 2.0 * (qixx * xr + qixy * yr + qixz * zr);
                         final double qiy = 2.0 * (qixy * xr + qiyy * yr + qiyz * zr);
@@ -1443,10 +1437,10 @@ public class PME_2 implements Potential {
                         fz_local[k] += fkdz;
                     }
                 }
-            }   
+            }
         }
         //set up fields
-        for(int i = 0; i < nAtoms; i++){
+        for (int i = 0; i < nAtoms; i++) {
             double fieldi[] = field1[i];
             double field2i[] = field2[i];
             fieldi[0] = fx_local[i];
@@ -1459,12 +1453,12 @@ public class PME_2 implements Potential {
         }
         setDipoleMoments(false);
     }
-    
+
     //added by gchattree
-    public static void induce0a(){
-    	double d12scale = 1;
-    	double d13scale = 1;
-    	double d14scale = 1;
+    public static void induce0a() {
+        double d12scale = 1;
+        double d13scale = 1;
+        double d14scale = 1;
         double mask_local[];
         double maskp_local[];
         double fx_local[];
@@ -1483,7 +1477,7 @@ public class PME_2 implements Potential {
         fyp_local = new double[nAtoms];
         fzp_local = new double[nAtoms];
         dx_local = new double[3];
-        
+
         for (int i = 0; i < nAtoms; i++) {
             mask_local[i] = 1.0;
             maskp_local[i] = 1.0;
@@ -1555,11 +1549,11 @@ public class PME_2 implements Potential {
              */
             for (int index : ip11[i]) {
                 mask_local[index] = d11scale;
-                
+
             }
             for (int index : ip12[i]) {
                 mask_local[index] = d12scale;
-                
+
             }
             for (int index : ip13[i]) {
                 mask_local[index] = d13scale;
@@ -1573,8 +1567,8 @@ public class PME_2 implements Potential {
 //            	for (int index : ip13[i]) System.out.println("3 "+index);
 //            	for (int index : ip14[i]) System.out.println("4 "+index);
 //            }
-            for (int k = i; k < nAtoms; k++){
-            	if(i != k){
+            for (int k = i; k < nAtoms; k++) {
+                if (i != k) {
                     final double xk = x[k];
                     final double yk = y[k];
                     final double zk = z[k];
@@ -1622,8 +1616,8 @@ public class PME_2 implements Potential {
                             }
                         }
                         final double rr3 = scale3 * 1.0 / (r * r2);
-                        final double rr5 = (scale3 != 0) ? scale5/scale3 * 3.0 * rr3 / r2 : 0;
-                        final double rr7 = (scale5 != 0) ? scale7/scale5 * 5.0 * rr5 / r2 : 0;
+                        final double rr5 = (scale3 != 0) ? scale5 / scale3 * 3.0 * rr3 / r2 : 0;
+                        final double rr7 = (scale5 != 0) ? scale7 / scale5 * 5.0 * rr5 / r2 : 0;
                         final double dir = dix * xr + diy * yr + diz * zr;
                         final double qix = 2.0 * (qixx * xr + qixy * yr + qixz * zr);
                         final double qiy = 2.0 * (qixy * xr + qiyy * yr + qiyz * zr);
@@ -1664,7 +1658,7 @@ public class PME_2 implements Potential {
                         fzp_local[k] += fkpz * maskp_local[k];
                     }
                 }
-            }   
+            }
         }
         /**
          * Loop over symmetry mates.
@@ -1803,7 +1797,7 @@ public class PME_2 implements Potential {
 //            }
 //        }
         //set up fields
-        for(int i = 0; i < nAtoms; i++){
+        for (int i = 0; i < nAtoms; i++) {
             double fieldi[] = field1[i];
             double field2i[] = field2[i];
             fieldi[0] = fx_local[i];
@@ -1815,8 +1809,8 @@ public class PME_2 implements Potential {
         }
         setDipoleMoments(false);
     }
-    
-    public static void setDipoleMoments(boolean print){
+
+    public static void setDipoleMoments(boolean print) {
         long startTime = System.nanoTime();
         //set the induced dipoles
         if (polarization == Polarization.NONE) {
@@ -1830,10 +1824,10 @@ public class PME_2 implements Potential {
             }
             try {
                 //CHECK! Do I need this?
-            	//parallelTeam.execute(expandInducedDipolesRegion);
-    		} catch (Exception e) {
-    			e.printStackTrace();
-    		}
+                //parallelTeam.execute(expandInducedDipolesRegion);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             return;
         }
         /**
@@ -1870,20 +1864,20 @@ public class PME_2 implements Potential {
 //        } catch (Exception e) {
 //            e.printStackTrace();
 //        }
-        
+
         if (polarization == Polarization.MUTUAL) {
-        	calcMutualDipoleMoments(print, startTime);
-        }    
+            calcMutualDipoleMoments(print, startTime);
+        }
     }
-        
-    public static void calcMutualDipoleMoments(boolean print, long startTime){
+
+    public static void calcMutualDipoleMoments(boolean print, long startTime) {
         double mask_local[] = new double[nAtoms];
         double dx_local[] = new double[3];
         final double induced0[][] = inducedDipole[0];
         final double inducedp0[][] = inducedDipolep[0];
-    	double d12scale = 1;
-    	double d13scale = 1;
-    	double d14scale = 1;
+        double d12scale = 1;
+        double d13scale = 1;
+        double d14scale = 1;
         StringBuffer sb = null;
         long directTime = System.nanoTime() - startTime;
         if (print) {
@@ -1891,16 +1885,16 @@ public class PME_2 implements Potential {
                     "\n SELF-CONSISTENT FIELD\n"
                     + " Iter     RMS Change (Debyes)   Time\n");
         }
-        
+
         boolean done = false;
         int maxiter = 1000;
         int iter = 0;
         double eps = 100.0;
         double epsold;
-        
+
         while (!done) {
-        	//reset fields
-            for(int i = 0; i < nAtoms; i++){
+            //reset fields
+            for (int i = 0; i < nAtoms; i++) {
                 double fieldi[] = field1[i];
                 double field2i[] = field2[i];
                 fieldi[0] = 0;
@@ -1910,14 +1904,14 @@ public class PME_2 implements Potential {
                 field2i[1] = 0;
                 field2i[2] = 0;
             }
-            
+
             double fx_local[] = new double[nAtoms];
             double fy_local[] = new double[nAtoms];
             double fz_local[] = new double[nAtoms];
             double fxp_local[] = new double[nAtoms];
             double fyp_local[] = new double[nAtoms];
             double fzp_local[] = new double[nAtoms];
-            
+
             long cycleTime = -System.nanoTime();
             for (int i = 0; i < (nAtoms - 1); i++) {
                 double ind[] = induced0[i];
@@ -1931,45 +1925,53 @@ public class PME_2 implements Potential {
                 double puix = indp[0];
                 double puiy = indp[1];
                 double puiz = indp[2];
-                for(int j = i+1; j < nAtoms; j++){
-                	//If it is not pedit, mask_local is set to 1 or the 'dXscale'
-                	mask_local[j] = !pedit ? 1 : 0;
+                for (int j = i + 1; j < nAtoms; j++) {
+                    //If it is not pedit, mask_local is set to 1 or the 'dXscale'
+                    mask_local[j] = !pedit ? 1 : 0;
                 }
                 for (int index : ip11[i]) {
-                	double u1scale = 1;
-                	if(pedit) u1scale = u1scale - d11scale;
+                    double u1scale = 1;
+                    if (pedit) {
+                        u1scale = u1scale - d11scale;
+                    }
                     mask_local[index] = u1scale;
                 }
                 for (int index : ip12[i]) {
-                	double u2scale = 1;
-                	if(pedit) u2scale = u2scale - d12scale;
+                    double u2scale = 1;
+                    if (pedit) {
+                        u2scale = u2scale - d12scale;
+                    }
                     mask_local[index] = u2scale;
                 }
                 for (int index : ip13[i]) {
-                	double u3scale = 1;
-                	if(pedit) u3scale = u3scale - d13scale;
+                    double u3scale = 1;
+                    if (pedit) {
+                        u3scale = u3scale - d13scale;
+                    }
                     mask_local[index] = u3scale;
                 }
                 for (int index : ip14[i]) {
-                	double u4scale = 1;
-                	if(pedit) u4scale = u4scale - d14scale;
+                    double u4scale = 1;
+                    if (pedit) {
+                        u4scale = u4scale - d14scale;
+                    }
                     mask_local[index] = u4scale;
                 }
-                
-                for(int k = i+1; k <  nAtoms; k++){
+
+                for (int k = i + 1; k < nAtoms; k++) {
                     double indk[] = induced0[k];
                     double indkp[] = inducedp0[k];
-                	double xyzk[] = atoms[k].getXYZ();
-                	dx_local[0] = xyzk[0] - xyzi[0];
-                	dx_local[1] = xyzk[1] - xyzi[1];
-                	dx_local[2] = xyzk[2] - xyzi[2];
+                    double xyzk[] = atoms[k].getXYZ();
+                    dx_local[0] = xyzk[0] - xyzi[0];
+                    dx_local[1] = xyzk[1] - xyzi[1];
+                    dx_local[2] = xyzk[2] - xyzi[2];
                     //final double r2 = crystal.image(dx_local);
                     final double r2 = dx_local[0] * dx_local[0] + dx_local[1] * dx_local[1] + dx_local[2] * dx_local[2];
                     if (r2 <= off2) {
-                    	double xr = dx_local[0];
-                    	double yr = dx_local[1];
-                    	double zr = dx_local[2];
-                    	double r = sqrt(r2);
+                        double xr = dx_local[0];
+                        double yr = dx_local[1];
+                        double zr = dx_local[2];
+                        double r = sqrt(r2);
                         double dukx = indk[0];
                         double duky = indk[1];
                         double dukz = indk[2];
@@ -1979,33 +1981,33 @@ public class PME_2 implements Potential {
                         double scale3 = mask_local[k];
                         double scale5 = mask_local[k];
                         double damp = pdi * pdamp[k];
-                        if(damp != 0){
-                        	final double pgamma = min(pti, thole[k]);
-                            damp = -pgamma * pow((r/damp),3); 
-                            if (damp > -50){
+                        if (damp != 0) {
+                            final double pgamma = min(pti, thole[k]);
+                            damp = -pgamma * pow((r / damp), 3);
+                            if (damp > -50) {
                                 double expdamp = exp(damp);
                                 scale3 = scale3 * (1 - expdamp);
-                                scale5 = scale5 * (1 - expdamp*(1 - damp));
+                                scale5 = scale5 * (1 - expdamp * (1 - damp));
                             }
                         }
                         double rr3 = scale3 / (r * r2);
                         double rr5 = 3 * scale5 / (r * r2 * r2);
-                        double duir = xr*duix + yr*duiy + zr*duiz;
-                        double dukr = xr*dukx + yr*duky + zr*dukz;
-                        double puir = xr*puix + yr*puiy + zr*puiz;
-                        double pukr = xr*pukx + yr*puky + zr*pukz;
-                        double fidx = -rr3 * dukx + rr5*dukr*xr;
-                        double fidy = -rr3 * duky + rr5*dukr*yr;
-                        double fidz = -rr3 * dukz + rr5*dukr*zr;
-                        double fkdx = -rr3 * duix + rr5*duir*xr;
-                        double fkdy = -rr3 * duiy + rr5*duir*yr;
-                        double fkdz = -rr3 * duiz + rr5*duir*zr;
-                        double fipx = -rr3 * pukx + rr5*pukr*xr;
-                        double fipy = -rr3 * puky + rr5*pukr*yr;
-                        double fipz = -rr3 * pukz + rr5*pukr*zr;
-                        double fkpx = -rr3 * puix + rr5*puir*xr;
-                        double fkpy = -rr3 * puiy + rr5*puir*yr;
-                        double fkpz = -rr3 * puiz + rr5*puir*zr;
+                        double duir = xr * duix + yr * duiy + zr * duiz;
+                        double dukr = xr * dukx + yr * duky + zr * dukz;
+                        double puir = xr * puix + yr * puiy + zr * puiz;
+                        double pukr = xr * pukx + yr * puky + zr * pukz;
+                        double fidx = -rr3 * dukx + rr5 * dukr * xr;
+                        double fidy = -rr3 * duky + rr5 * dukr * yr;
+                        double fidz = -rr3 * dukz + rr5 * dukr * zr;
+                        double fkdx = -rr3 * duix + rr5 * duir * xr;
+                        double fkdy = -rr3 * duiy + rr5 * duir * yr;
+                        double fkdz = -rr3 * duiz + rr5 * duir * zr;
+                        double fipx = -rr3 * pukx + rr5 * pukr * xr;
+                        double fipy = -rr3 * puky + rr5 * pukr * yr;
+                        double fipz = -rr3 * pukz + rr5 * pukr * zr;
+                        double fkpx = -rr3 * puix + rr5 * puir * xr;
+                        double fkpy = -rr3 * puiy + rr5 * puir * yr;
+                        double fkpz = -rr3 * puiz + rr5 * puir * zr;
                         fx_local[i] += fidx;
                         fy_local[i] += fidy;
                         fz_local[i] += fidz;
@@ -2022,9 +2024,9 @@ public class PME_2 implements Potential {
                     }
                 }
             }
-            
+
             //add to the fields
-            for(int i = 0; i < nAtoms; i++){
+            for (int i = 0; i < nAtoms; i++) {
                 double fieldi[] = field1[i];
                 double field2i[] = field2[i];
                 fieldi[0] += fx_local[i];
@@ -2049,34 +2051,34 @@ public class PME_2 implements Potential {
                     double puiy = indp[1];
                     double puiz = indp[2];
                     for (int index : ip11[i]) {
-                    	final double u1scale = 1;
+                        final double u1scale = 1;
                         mask_local[index] = u1scale;
                     }
                     for (int index : ip12[i]) {
-                    	final double u2scale = 1;
+                        final double u2scale = 1;
                         mask_local[index] = u2scale;
                     }
                     for (int index : ip13[i]) {
-                    	final double u3scale = 1;
+                        final double u3scale = 1;
                         mask_local[index] = u3scale;
                     }
                     for (int index : ip14[i]) {
-                    	final double u4scale = 1;
+                        final double u4scale = 1;
                         mask_local[index] = u4scale;
                     }
-                    for(int k = i+1; k <  nAtoms; k++){
+                    for (int k = i + 1; k < nAtoms; k++) {
                         double indk[] = induced0[k];
                         double indkp[] = inducedp0[k];
-                    	double xyzk[] = atoms[k].getXYZ();
-                    	dx_local[0] = xyzk[0] - xyzi[0];
-                    	dx_local[1] = xyzk[1] - xyzi[1];
-                    	dx_local[2] = xyzk[2] - xyzi[2];
-                    	final double r2 = crystal.image(dx_local);
+                        double xyzk[] = atoms[k].getXYZ();
+                        dx_local[0] = xyzk[0] - xyzi[0];
+                        dx_local[1] = xyzk[1] - xyzi[1];
+                        dx_local[2] = xyzk[2] - xyzi[2];
+                        final double r2 = crystal.image(dx_local);
                         if (r2 <= off2) {
-                        	double xr = dx_local[0];
-                        	double yr = dx_local[1];
-                        	double zr = dx_local[2];
-                        	double r = sqrt(r2);
+                            double xr = dx_local[0];
+                            double yr = dx_local[1];
+                            double zr = dx_local[2];
+                            double r = sqrt(r2);
                             double dukx = indk[0];
                             double duky = indk[1];
                             double dukz = indk[2];
@@ -2086,33 +2088,33 @@ public class PME_2 implements Potential {
                             double scale3 = mask_local[k];
                             double scale5 = mask_local[k];
                             double damp = pdi * pdamp[k];
-                            if(damp != 0){
-                            	final double pgamma = min(pti, thole[k]);
-                                damp = -pgamma * pow((r/damp),3); 
-                                if (damp > -50){
+                            if (damp != 0) {
+                                final double pgamma = min(pti, thole[k]);
+                                damp = -pgamma * pow((r / damp), 3);
+                                if (damp > -50) {
                                     double expdamp = exp(damp);
                                     scale3 = scale3 * (1 - expdamp);
-                                    scale5 = scale5 * (1 - expdamp*(1 - damp));
+                                    scale5 = scale5 * (1 - expdamp * (1 - damp));
                                 }
                             }
                             double rr3 = scale3 / (r * r2);
                             double rr5 = 3 * scale5 / (r * r2 * r2);
-                            double duir = xr*duix + yr*duiy + zr*duiz;
-                            double dukr = xr*dukx + yr*duky + zr*dukz;
-                            double puir = xr*puix + yr*puiy + zr*puiz;
-                            double pukr = xr*pukx + yr*puky + zr*pukz;
-                            double fidx = -rr3 * dukx + rr5*dukr*xr;
-                            double fidy = -rr3 * duky + rr5*dukr*yr;
-                            double fidz = -rr3 * dukz + rr5*dukr*zr;
-                            double fkdx = -rr3 * duix + rr5*duir*xr;
-                            double fkdy = -rr3 * duiy + rr5*duir*yr;
-                            double fkdz = -rr3 * duiz + rr5*duir*zr;
-                            double fipx = -rr3 * pukx + rr5*pukr*xr;
-                            double fipy = -rr3 * puky + rr5*pukr*yr;
-                            double fipz = -rr3 * pukz + rr5*pukr*zr;
-                            double fkpx = -rr3 * puix + rr5*puir*xr;
-                            double fkpy = -rr3 * puiy + rr5*puir*yr;
-                            double fkpz = -rr3 * puiz + rr5*puir*zr;
+                            double duir = xr * duix + yr * duiy + zr * duiz;
+                            double dukr = xr * dukx + yr * duky + zr * dukz;
+                            double puir = xr * puix + yr * puiy + zr * puiz;
+                            double pukr = xr * pukx + yr * puky + zr * pukz;
+                            double fidx = -rr3 * dukx + rr5 * dukr * xr;
+                            double fidy = -rr3 * duky + rr5 * dukr * yr;
+                            double fidz = -rr3 * dukz + rr5 * dukr * zr;
+                            double fkdx = -rr3 * duix + rr5 * duir * xr;
+                            double fkdy = -rr3 * duiy + rr5 * duir * yr;
+                            double fkdz = -rr3 * duiz + rr5 * duir * zr;
+                            double fipx = -rr3 * pukx + rr5 * pukr * xr;
+                            double fipy = -rr3 * puky + rr5 * pukr * yr;
+                            double fipz = -rr3 * pukz + rr5 * pukr * zr;
+                            double fkpx = -rr3 * puix + rr5 * puir * xr;
+                            double fkpy = -rr3 * puiy + rr5 * puir * yr;
+                            double fkpz = -rr3 * puiz + rr5 * puir * zr;
                             fx_local[i] += fidx;
                             fy_local[i] += fidy;
                             fz_local[i] += fidz;
@@ -2129,7 +2131,7 @@ public class PME_2 implements Potential {
                     }
                 }
                 //add to the fields
-                for(int i = 0; i < nAtoms; i++){
+                for (int i = 0; i < nAtoms; i++) {
                     double fieldi[] = field1[i];
                     double field2i[] = field2[i];
                     fieldi[0] += fx_local[i];
@@ -2185,7 +2187,7 @@ public class PME_2 implements Potential {
                 done = true;
             }
             if (eps > epsold) {
-            	done = true;
+                done = true;
                 if (sb != null) {
                     logger.warning(sb.toString());
                 }
@@ -2193,7 +2195,7 @@ public class PME_2 implements Potential {
                 logger.severe(message);
             }
             if (iter >= maxiter) {
-            	done = true;
+                done = true;
                 if (sb != null) {
                     logger.warning(sb.toString());
                 }
@@ -2201,7 +2203,7 @@ public class PME_2 implements Potential {
                 logger.severe(message);
             }
         }
-        
+
         if (print) {
             sb.append(String.format("\n Direct:                    %8.3f\n",
                     toSeconds * directTime));
@@ -2221,50 +2223,49 @@ public class PME_2 implements Potential {
             }
             logger.info(sb.toString());
         }
-    }      
-    
-    public void init_prms(){
-        if(propyze){
+    }
+
+    public void init_prms() {
+        if (propyze) {
             dividempoles3();
         }
-    	//rotate multipoles into new frame and induce
-    	try{
+        //rotate multipoles into new frame and induce
+        try {
             //Don't need to expand CoordinatesRegion. Decide later.
-    		parallelTeam.execute(expandCoordinatesRegion);
-    		parallelTeam.execute(rotateMultipolesRegion);
-    	} 
-    	catch (Exception e) {
-    		e.printStackTrace();
-    	}
-        if(!propyze){
+            parallelTeam.execute(expandCoordinatesRegion);
+            parallelTeam.execute(rotateMultipolesRegion);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        if (!propyze) {
             induce0a();
         }
     }
-    
-    public void dividempoles3(){
-        for(int i = 0; i < nAtoms; i++){
-            for(int j = 4; j < 10; j++){
-                localMultipole[i][j] = localMultipole[i][j]/3;
+
+    public void dividempoles3() {
+        for (int i = 0; i < nAtoms; i++) {
+            for (int j = 4; j < 10; j++) {
+                localMultipole[i][j] = localMultipole[i][j] / 3;
             }
         }
     }
-    
+
     //added by gchattree
-    public double potpoint(Double xyz[]){
-    	double epot = 0;
-    	double xi = xyz[0];
-    	double yi = xyz[1];
-    	double zi = xyz[2];
+    public double potpoint(Double xyz[]) {
+        double epot = 0;
+        double xi = xyz[0];
+        double yi = xyz[1];
+        double zi = xyz[2];
         double mpole[][] = globalMultipole[0];
         double ind[][] = inducedDipole[0];
         double indp[][] = inducedDipolep[0];
-    	double ci;
-    	double dix;
-    	double diy;
-    	double diz;
-    	double qixx;
-    	double qiyy;
-    	double qizz;
+        double ci;
+        double dix;
+        double diy;
+        double diz;
+        double qixx;
+        double qiyy;
+        double qizz;
         double qixy;
         double qixz;
         double qiyz;
@@ -2294,51 +2295,51 @@ public class PME_2 implements Potential {
         double ep = 0;
         double[] xyza;
 
-        for(int i = 0; i < mpole.length; i++){
-        	xyza = atoms[i].getXYZ();
-        	xr = xyza[0] - xi;
-        	yr = xyza[1] - yi;
-        	zr = xyza[2] - zi;
-        	r2 = xr*xr + yr*yr + zr*zr;
-        	r = sqrt(r2);
-        	globalMultipolei = mpole[i];
-        	inducedDipolei = ind[i];
-        	inducedDipolepi = indp[i];
-        	ci = globalMultipolei[t000];
-		    dix = globalMultipolei[t100];
-		    diy = globalMultipolei[t010];
-		    diz = globalMultipolei[t001];
-		    qixx = globalMultipolei[t200] / 3.0;
-		    qiyy = globalMultipolei[t020] / 3.0;
-		    qizz = globalMultipolei[t002] / 3.0;
-		    qixy = globalMultipolei[t110] / 3.0;
-		    qixz = globalMultipolei[t101] / 3.0;
-		    qiyz = globalMultipolei[t011] / 3.0;
-		    uix = inducedDipolei[0];
-		    uiy = inducedDipolei[1];
-		    uiz = inducedDipolei[2];
-		    
-            qkx = qixx*xr + qixy*yr + qixz*zr;
-            qky = qixy*xr + qiyy*yr + qiyz*zr;
-            qkz = qixz*xr + qiyz*yr + qizz*zr;
-            
-            scd = dix*xr + diy*yr + diz*zr;
-            scq = qkx*xr + qky*yr + qkz*zr;
-            scu = uix*xr + uiy*yr + uiz*zr;
-            
+        for (int i = 0; i < mpole.length; i++) {
+            xyza = atoms[i].getXYZ();
+            xr = xyza[0] - xi;
+            yr = xyza[1] - yi;
+            zr = xyza[2] - zi;
+            r2 = xr * xr + yr * yr + zr * zr;
+            r = sqrt(r2);
+            globalMultipolei = mpole[i];
+            inducedDipolei = ind[i];
+            inducedDipolepi = indp[i];
+            ci = globalMultipolei[t000];
+            dix = globalMultipolei[t100];
+            diy = globalMultipolei[t010];
+            diz = globalMultipolei[t001];
+            qixx = globalMultipolei[t200] / 3.0;
+            qiyy = globalMultipolei[t020] / 3.0;
+            qizz = globalMultipolei[t002] / 3.0;
+            qixy = globalMultipolei[t110] / 3.0;
+            qixz = globalMultipolei[t101] / 3.0;
+            qiyz = globalMultipolei[t011] / 3.0;
+            uix = inducedDipolei[0];
+            uiy = inducedDipolei[1];
+            uiz = inducedDipolei[2];
+
+            qkx = qixx * xr + qixy * yr + qixz * zr;
+            qky = qixy * xr + qiyy * yr + qiyz * zr;
+            qkz = qixz * xr + qiyz * yr + qizz * zr;
+
+            scd = dix * xr + diy * yr + diz * zr;
+            scq = qkx * xr + qky * yr + qkz * zr;
+            scu = uix * xr + uiy * yr + uiz * zr;
+
             rr1 = 1 / r;
             rr3 = rr1 / r2;
             rr5 = 3 * rr3 / r2;
-            e = ci*rr1 - scd*rr3 + scq*rr5;
+            e = ci * rr1 - scd * rr3 + scq * rr5;
             ei = -scu * rr3;
             e = electric * e;
             ei = electric * ei;
             em = em + e;
             ep = ep + ei;
-            
+
         }
-    	epot = ep + em;
-    	return epot;
+        epot = ep + em;
+        return epot;
     }
 
     private void setEwaldParameters() {
@@ -2391,7 +2392,6 @@ public class PME_2 implements Potential {
 //            logger.warning(" No atoms are selected for multipole and polarizability scaling.\n");
 //        }
 //    }
-
     /**
      * Get the current lambda scale value.
      * @return lambda
@@ -2400,7 +2400,6 @@ public class PME_2 implements Potential {
 //    public double getLambda() {
 //        return lambda;
 //    }
-
     /**
      * Calculate the PME electrostatic energy.
      *
@@ -2576,7 +2575,6 @@ public class PME_2 implements Potential {
 //        }
 //        return multipoleEnergy + polarizationEnergy;
 //    }
-
     public int getInteractions() {
         return interactions;
     }
@@ -2813,7 +2811,6 @@ public class PME_2 implements Potential {
 //            }
 //        }
 //    }
-
     private double permanentSelfEnergy() {
         double e = 0.0;
         double term = 2.0 * aewald * aewald;
@@ -2854,7 +2851,6 @@ public class PME_2 implements Potential {
 //            }
 //        }
 //    }
-
     /**
      * Computes the Permanent Multipole Real Space Field.
      */
@@ -2896,7 +2892,6 @@ public class PME_2 implements Potential {
 //            reciprocalSpace.permanentMultipoleConvolution();
 //        }
 //    }
-
     /**
      * The Induced Dipole Field Region should be executed by a ParallelTeam with
      * exactly 2 threads. The Real Space and Reciprocal Space Sections will be
@@ -2949,7 +2944,6 @@ public class PME_2 implements Potential {
 //            }
 //        }
 //    }
-
 //    private class InducedDipoleReciprocalFieldSection extends ParallelSection {
 //
 //        @Override
@@ -2957,7 +2951,6 @@ public class PME_2 implements Potential {
 //            reciprocalSpace.inducedDipoleConvolution();
 //        }
 //    }
-
 //    private double permanentReciprocalSpaceEnergy(boolean gradient) {
 //        double erecip = 0.0;
 //        final double pole[][] = globalMultipole[0];
@@ -3007,7 +3000,6 @@ public class PME_2 implements Potential {
 //        erecip = 0.5 * electric * erecip;
 //        return erecip;
 //    }
-
     private double inducedDipoleSelfEnergy(boolean gradient) {
         double e = 0.0;
         final double term = -2.0 / 3.0 * electric * aewald * aewald * aewald / sqrtPi;
@@ -3141,7 +3133,6 @@ public class PME_2 implements Potential {
 //        e *= 0.5 * electric;
 //        return e;
 //    }
-
     private class PermanentRealSpaceFieldRegion extends ParallelRegion {
 
         private final PermanentRealSpaceFieldLoop permanentRealSpaceFieldLoop[];
@@ -4196,11 +4187,11 @@ public class PME_2 implements Potential {
                          */
                         SymOp symOp = symOps.get(iSymm);
                         crystal.applySymRot(nAtoms, gxk_local, gyk_local,
-                                            gzk_local, gxk_local, gyk_local, gzk_local,
-                                            symOp);
+                                gzk_local, gxk_local, gyk_local, gzk_local,
+                                symOp);
                         crystal.applySymRot(nAtoms, txk_local, tyk_local,
-                                            tzk_local, txk_local, tyk_local, tzk_local,
-                                            symOp);
+                                tzk_local, txk_local, tyk_local, tzk_local,
+                                symOp);
                         /**
                          * The two force and torque arrays can now be condensed
                          * into single arrays.
@@ -5049,13 +5040,12 @@ public class PME_2 implements Potential {
             // Extra padding to avert cache interference.
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
             private long pad8, pad9, pada, padb, padc, padd, pade, padf;
-
             private boolean inverse = false;
-            
-            public RotateMultipolesLoop(boolean inverse){
+
+            public RotateMultipolesLoop(boolean inverse) {
                 this.inverse = inverse;
             }
-            
+
             @Override
             public void run(int lb, int ub) {
                 for (int iSymm = 0; iSymm < nSymm; iSymm++) {
@@ -5063,8 +5053,8 @@ public class PME_2 implements Potential {
                     final double y[] = coordinates[iSymm][1];
                     final double z[] = coordinates[iSymm][2];
                     for (int ii = lb; ii <= ub; ii++) {
-                    	final double in[] = inverse ? globalMultipole[iSymm][ii] : localMultipole[ii];
-                    	final double out[] = inverse ? localMultipole[ii] : globalMultipole[iSymm][ii];
+                        final double in[] = inverse ? globalMultipole[iSymm][ii] : localMultipole[ii];
+                        final double out[] = inverse ? localMultipole[ii] : globalMultipole[iSymm][ii];
                         localOrigin[0] = x[ii];
                         localOrigin[1] = y[ii];
                         localOrigin[2] = z[ii];
@@ -5181,7 +5171,7 @@ public class PME_2 implements Potential {
                         tempDipole[0] = in[t100];
                         tempDipole[1] = in[t010];
                         tempDipole[2] = in[t001];
-                        if(pedit){
+                        if (pedit) {
                             tempQuadrupole[0][0] = in[4];
                             tempQuadrupole[1][1] = in[8];
                             tempQuadrupole[2][2] = in[12];
@@ -5191,8 +5181,7 @@ public class PME_2 implements Potential {
                             tempQuadrupole[1][0] = in[7];
                             tempQuadrupole[2][0] = in[10];
                             tempQuadrupole[2][1] = in[11];
-                        }
-                        else{
+                        } else {
                             tempQuadrupole[0][0] = in[t200];
                             tempQuadrupole[1][1] = in[t020];
                             tempQuadrupole[2][2] = in[t002];
@@ -5206,7 +5195,7 @@ public class PME_2 implements Potential {
 
                         // Check for chiral flipping.
                         if (frame[ii] == MultipoleType.MultipoleFrameDefinition.ZTHENX
-                            && referenceSites.length == 3 && !pedit) {
+                                && referenceSites.length == 3 && !pedit) {
                             localOrigin[0] = x[ii];
                             localOrigin[1] = y[ii];
                             localOrigin[2] = z[ii];
@@ -5238,7 +5227,7 @@ public class PME_2 implements Potential {
                                 //logger.info("Chiral flip of atom " + atoms[ii]);
                             }
                         }
-                        if(inverse){
+                        if (inverse) {
                             rotmat = transpose3(rotmat);
                         }
                         for (int i = 0; i < 3; i++) {
@@ -5253,47 +5242,47 @@ public class PME_2 implements Potential {
                                     for (int k = 0; k < 3; k++) {
                                         double[] localQuadrupolek = tempQuadrupole[k];
                                         quadrupolei[j] += rotmati[k]
-                                                          * (rotmatj[0] * localQuadrupolek[0]
-                                                             + rotmatj[1] * localQuadrupolek[1]
-                                                             + rotmatj[2] * localQuadrupolek[2]);
+                                                * (rotmatj[0] * localQuadrupolek[0]
+                                                + rotmatj[1] * localQuadrupolek[1]
+                                                + rotmatj[2] * localQuadrupolek[2]);
                                     }
                                 }
                             }
                         }
                         if (frame[ii] != MultipoleType.MultipoleFrameDefinition.ZTHENX
                                 && referenceSites.length == 3 && pedit && axisAtom[ii][2] != 0) {
-                                localOrigin[0] = x[ii];
-                                localOrigin[1] = y[ii];
-                                localOrigin[2] = z[ii];
-                                int index = referenceSites[0];
-                                zAxis[0] = x[index];
-                                zAxis[1] = y[index];
-                                zAxis[2] = z[index];
-                                index = referenceSites[1];
-                                xAxis[0] = x[index];
-                                xAxis[1] = y[index];
-                                xAxis[2] = z[index];
-                                index = referenceSites[2];
-                                yAxis[0] = x[index];
-                                yAxis[1] = y[index];
-                                yAxis[2] = z[index];
-                                diff(localOrigin, yAxis, localOrigin);
-                                diff(zAxis, yAxis, zAxis);
-                                diff(xAxis, yAxis, xAxis);
-                                double c1 = zAxis[1] * xAxis[2] - zAxis[2] * xAxis[1];
-                                double c2 = xAxis[1] * localOrigin[2] - xAxis[2] * localOrigin[1];
-                                double c3 = localOrigin[1] * zAxis[2] - localOrigin[2] * zAxis[1];
-                                double vol = localOrigin[0] * c1 + zAxis[0] * c2 + xAxis[0] * c3;
-                                if ((axisAtom[ii][2] < 0 && vol > 0) || (axisAtom[ii][2] > 0 && vol < 0.0)) {
-                                	axisAtom[ii][2] = -axisAtom[ii][2];
-                                    dipole[1] = -dipole[1];
-                                    quadrupole[0][1] = -quadrupole[0][1];
-                                    quadrupole[1][0] = -quadrupole[1][0];
-                                    quadrupole[1][2] = -quadrupole[1][2];
-                                    quadrupole[2][1] = -quadrupole[2][1];
-                                    //logger.info("Chiral flip of atom " + atoms[ii]);
-                                }
+                            localOrigin[0] = x[ii];
+                            localOrigin[1] = y[ii];
+                            localOrigin[2] = z[ii];
+                            int index = referenceSites[0];
+                            zAxis[0] = x[index];
+                            zAxis[1] = y[index];
+                            zAxis[2] = z[index];
+                            index = referenceSites[1];
+                            xAxis[0] = x[index];
+                            xAxis[1] = y[index];
+                            xAxis[2] = z[index];
+                            index = referenceSites[2];
+                            yAxis[0] = x[index];
+                            yAxis[1] = y[index];
+                            yAxis[2] = z[index];
+                            diff(localOrigin, yAxis, localOrigin);
+                            diff(zAxis, yAxis, zAxis);
+                            diff(xAxis, yAxis, xAxis);
+                            double c1 = zAxis[1] * xAxis[2] - zAxis[2] * xAxis[1];
+                            double c2 = xAxis[1] * localOrigin[2] - xAxis[2] * localOrigin[1];
+                            double c3 = localOrigin[1] * zAxis[2] - localOrigin[2] * zAxis[1];
+                            double vol = localOrigin[0] * c1 + zAxis[0] * c2 + xAxis[0] * c3;
+                            if ((axisAtom[ii][2] < 0 && vol > 0) || (axisAtom[ii][2] > 0 && vol < 0.0)) {
+                                axisAtom[ii][2] = -axisAtom[ii][2];
+                                dipole[1] = -dipole[1];
+                                quadrupole[0][1] = -quadrupole[0][1];
+                                quadrupole[1][0] = -quadrupole[1][0];
+                                quadrupole[1][2] = -quadrupole[1][2];
+                                quadrupole[2][1] = -quadrupole[2][1];
+                                //logger.info("Chiral flip of atom " + atoms[ii]);
                             }
+                        }
                         /** R.Q.R^t is correct.
                         RealMatrix quad = new Array2DRowRealMatrix(tempQuadrupole);
                         RealMatrix rot = new Array2DRowRealMatrix(rotmat);
@@ -5312,15 +5301,14 @@ public class PME_2 implements Potential {
                         out[t100] = scale * dipole[0] * dipoleScale;
                         out[t010] = scale * dipole[1] * dipoleScale;
                         out[t001] = scale * dipole[2] * dipoleScale;
-                        if(pedit){
+                        if (pedit) {
                             out[4] = scale * quadrupole[0][0] * quadrupoleScale;
                             out[8] = scale * quadrupole[1][1] * quadrupoleScale;
                             out[12] = scale * quadrupole[2][2] * quadrupoleScale;
                             out[7] = scale * quadrupole[0][1] * quadrupoleScale;
                             out[10] = scale * quadrupole[0][2] * quadrupoleScale;
                             out[11] = scale * quadrupole[1][2] * quadrupoleScale;
-                        }
-                        else{
+                        } else {
                             out[t200] = scale * quadrupole[0][0] * quadrupoleScale;
                             out[t020] = scale * quadrupole[1][1] * quadrupoleScale;
                             out[t002] = scale * quadrupole[2][2] * quadrupoleScale;
@@ -5342,7 +5330,7 @@ public class PME_2 implements Potential {
                         out[t101] = scale * in[t101] * quadrupoleScale;
                         out[t011] = scale * in[t011] * quadrupoleScale;
                          */
-                        if(!pedit){
+                        if (!pedit) {
                             PolarizeType polarizeType = a.getPolarizeType();
                             polarizability[ii] = scale * polarizeType.polarizability;
                         }
@@ -5687,7 +5675,7 @@ public class PME_2 implements Potential {
             if (!assignMultipole(i)) {
                 Atom atom = atoms[i];
                 String message = "No multipole could be assigned to atom:\n"
-                                 + atom + "\nof type:\n" + atom.getAtomType();
+                        + atom + "\nof type:\n" + atom.getAtomType();
                 logger.log(Level.SEVERE, message);
             }
         }
@@ -5991,7 +5979,7 @@ public class PME_2 implements Potential {
                 //System.out.println(format("%d %d", index + 1, g11));
             } else {
                 String message = "The polarize keyword was not found for atom "
-                                 + (index + 1) + " with type " + ai.getType();
+                        + (index + 1) + " with type " + ai.getType();
                 logger.severe(message);
             }
         }
@@ -6081,7 +6069,7 @@ public class PME_2 implements Potential {
      *            group.
      */
     private void growGroup(List<Integer> polarizationGroup,
-                           List<Integer> group, Atom seed) {
+            List<Integer> group, Atom seed) {
         List<Bond> bonds = seed.getBonds();
         for (Bond bi : bonds) {
             Atom aj = bi.get1_2(seed);

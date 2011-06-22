@@ -62,6 +62,10 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
 
     private static final Logger logger = Logger.getLogger(VanDerWaals.class.getName());
     /**
+     * Crystal parameters.
+     */
+    private final Crystal crystal;
+    /**
      * An array of all atoms in the system.
      */
     private final Atom[] atoms;
@@ -69,16 +73,12 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
      * A local convenience variable equal to atoms.length.
      */
     private final int nAtoms;
-    /**
-     * Crystal parameters.
-     */
-    private final Crystal crystal;
     private final int nSymm;
-    private boolean gradient;
     /***************************************************************************
      * Lambda variables.
      */
     private boolean lambdaTerm;
+    private boolean gradient;
     private final boolean isSoft[];
     /**
      * There are 2 softCore arrays of length nAtoms.
@@ -94,6 +94,8 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
      * false    for inner loop soft atoms
      */
     private final boolean softCore[][];
+    private static final int HARD = 0;
+    private static final int SOFT = 1;
     private double lambda = 1.0;
     private double vdwLambdaExponent = 1.0;
     private double vdwLambdaAlpha = 0.2;
@@ -114,9 +116,9 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
     private final double reduced[][];
     private final double reducedXYZ[];
     private final int[][][] neighborLists;
-    private final int XX = 0;
-    private final int YY = 1;
-    private final int ZZ = 2;
+    private static final int XX = 0;
+    private static final int YY = 1;
+    private static final int ZZ = 2;
     /***************************************************************************
      * Force field parameters and constants for the Buffered-14-7 potential.
      */
@@ -130,19 +132,19 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
      * hydrogen.
      */
     private final int reductionIndex[];
+    private final int bondMask[][];
+    private final int angleMask[][];
     /**
      * Each hydrogen vdW site is located a fraction of the way from the heavy
      * atom nucleus to the hydrogen nucleus (~0.9).
      */
     private final double reductionValue[];
-    private final boolean doLongRangeCorrection;
-    private double longRangeCorrection;
     private final double radEps[][];
+    private double longRangeCorrection;
+    private final boolean doLongRangeCorrection;
     private int maxClass;
     private static final int RADMIN = 0;
     private static final int EPS = 1;
-    private final int bondMask[][];
-    private final int angleMask[][];
     /***************************************************************************
      * Parallel variables.
      */
@@ -323,8 +325,8 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         softCore = new boolean[2][nAtoms];
         for (int i = 0; i < nAtoms; i++) {
             isSoft[i] = false;
-            softCore[0][i] = false;
-            softCore[1][i] = false;
+            softCore[HARD][i] = false;
+            softCore[SOFT][i] = false;
         }
         lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
         vdwLambdaAlpha = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_ALPHA, 0.1);
@@ -336,7 +338,9 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
             vdwLambdaExponent = 1.0;
         }
 
-        // Parallel constructs.
+        /**
+         * Parallel constructs.
+         */
         threadCount = parallelTeam.getThreadCount();
         if (lambdaTerm) {
             shareddEdL = new SharedDouble();
@@ -358,16 +362,6 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         }
         doLongRangeCorrection = forceField.getBoolean(ForceField.ForceFieldBoolean.VDWLRTERM, false);
 
-        boolean available = false;
-        String pairWiseStrategy = null;
-        try {
-            pairWiseStrategy = forceField.getString(ForceField.ForceFieldString.VDW_SCHEDULE);
-            IntegerSchedule.parse(pairWiseStrategy);
-            available = true;
-        } catch (Exception e) {
-            available = false;
-        }
-
         sharedInteractions = new SharedInteger();
         sharedEnergy = new SharedDouble();
         gradX = new double[threadCount][nAtoms];
@@ -388,7 +382,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         neighborLists = new int[nSymm][][];
 
         /**
-         * Reduced and expand the coordinates of the asymmetric unit.
+         * Reduce and expand the coordinates of the asymmetric unit.
          */
         try {
             parallelTeam.execute(initializationRegion);
@@ -408,7 +402,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         logger.info(format(" Cut-Off:                                 %5.2f (A)", off));
         //logger.info(format(" Long-Range Correction:                   %B", doLongRangeCorrection));        
     }
-    
+
     public IntegerSchedule getPairwiseSchedule() {
         return pairwiseSchedule;
     }
@@ -689,30 +683,22 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         }
 
         /**
-         * Set up the lambda
+         * Initialize the softcore atom masks.
          */
-        boolean softAtoms = false;
         for (int i = 0; i < nAtoms; i++) {
             isSoft[i] = atoms[i].applyLambda();
             if (isSoft[i]) {
-                softAtoms = true;
                 // Outer loop atom hard, inner loop atom soft.
-                softCore[0][i] = true;
+                softCore[HARD][i] = true;
                 // Both soft - full interaction.
-                softCore[1][i] = false;
+                softCore[SOFT][i] = false;
             } else {
                 // Both hard - full interaction.
-                softCore[0][i] = false;
+                softCore[HARD][i] = false;
                 // Outer loop atom soft, inner loop atom hard.
-                softCore[1][i] = true;
+                softCore[SOFT][i] = true;
             }
         }
-        /*
-        if (softAtoms) {
-        logger.info(String.format(" Soft core van der Waals lambda value set to %8.6f", lambda));
-        } else {
-        logger.warning(" No atoms are selected for soft core van der Waals.\n");
-        } */
 
         // Redo the long range correction.
         if (doLongRangeCorrection) {
@@ -803,7 +789,24 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                     coordinates[i3++] = xyz[YY];
                     coordinates[i3] = xyz[ZZ];
                 }
+
+                if (gradient) {
+                    for (int j = 0; j < threadCount; j++) {
+                        for (int i = lb; i <= ub; i++) {
+                            gradX[j][i] = 0.0;
+                            gradY[j][i] = 0.0;
+                            gradZ[j][i] = 0.0;
+                        }
+                    }
+                }
                 if (lambdaTerm) {
+                    for (int j = 0; j < threadCount; j++) {
+                        for (int i = lb; i <= ub; i++) {
+                            lambdaGradX[j][i] = 0.0;
+                            lambdaGradY[j][i] = 0.0;
+                            lambdaGradZ[j][i] = 0.0;
+                        }
+                    }
                     for (int i = lb; i <= ub; i++) {
                         shareddEdLdX[0].set(i, 0.0);
                         shareddEdLdX[1].set(i, 0.0);
@@ -970,21 +973,6 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                 d2EdL2 = 0.0;
             }
             computeTime = 0;
-            if (gradient) {
-                for (int i = 0; i < nAtoms; i++) {
-                    gxi_local[i] = 0.0;
-                    gyi_local[i] = 0.0;
-                    gzi_local[i] = 0.0;
-                }
-            }
-            if (lambdaTerm) {
-                for (int i = 0; i < nAtoms; i++) {
-                    lxi_local[i] = 0.0;
-                    lyi_local[i] = 0.0;
-                    lzi_local[i] = 0.0;
-                }
-            }
-
         }
 
         @Override
@@ -1025,10 +1013,10 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                         applyMask(mask, i);
                     }
                     // Default is that the outer loop atom is hard.
-                    boolean softCorei[] = softCore[0];
+                    boolean softCorei[] = softCore[HARD];
                     boolean softSymmetry = false;
                     if (isSoft[i]) {
-                        softCorei = softCore[1];
+                        softCorei = softCore[SOFT];
                         /**
                          * All interactions between a soft atom and a symmetry
                          * mate atom are turned off.
@@ -1243,11 +1231,11 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                 shareddEdL.addAndGet(dEdL);
                 sharedd2EdL2.addAndGet(d2EdL2);
             }
-            
+
             /* 
             logger.info(String.format(" Thread %d computed %10d interactions in %8.3f sec.", 
-                    getThreadIndex(), count, computeTime * toSeconds)); */
-            
+            getThreadIndex(), count, computeTime * toSeconds)); */
+
         }
     }
 
@@ -1372,5 +1360,4 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
     private static final double ZERO_07 = 0.07;
     private static final double ONE_07 = 1.07;
     private static final double t1n = pow(ONE_07, 7.0);
-    private static final double toSeconds = 1.0e-9;
 }
