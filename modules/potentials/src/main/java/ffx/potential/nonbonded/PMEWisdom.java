@@ -170,9 +170,9 @@ public class PMEWisdom {
 
         NeighborList neighborList = new NeighborList(null, crystal, atoms, cutoff, buffer,
                 parallelTeam);
-        neighborList.buildList(coordinates, neighborLists, true, true);
+        neighborList.buildList(coordinates, neighborLists, null, true, true);
         ParticleMeshEwald particleMeshEwald = new ParticleMeshEwald(forceField,
-                atoms, crystal, parallelTeam, neighborLists);
+                atoms, crystal, parallelTeam, neighborLists, neighborList.getPairwiseSchedule());
 
         /**
          * Time the high accuracy energy gradients.
@@ -223,7 +223,7 @@ public class PMEWisdom {
         double rms = 0.0;
         NeighborList neighborList = new NeighborList(null, crystal, atoms, cutoff, buffer,
                     parallelTeam);
-        neighborList.buildList(coordinates, neighborLists, true, false);
+        neighborList.buildList(coordinates, neighborLists, null, true, false);
 
         logger.setLevel(Level.INFO);
         logger.info(String.format("RMS Gradient Tolerance: %5.3f\n",
@@ -240,7 +240,7 @@ public class PMEWisdom {
             forceField.addForceFieldDouble(ForceFieldDouble.PME_MESH_DENSITY, spacing);
             forceField.addForceFieldInteger(ForceFieldInteger.PME_ORDER, order);
             ParticleMeshEwald particleMeshEwald = new ParticleMeshEwald(forceField, atoms, crystal,
-                    parallelTeam, neighborLists);
+                    parallelTeam, neighborLists, neighborList.getPairwiseSchedule());
             System.gc();
             particleMeshEwald.energy(true, false);
             particleMeshEwald.getGradients(gradients);
@@ -272,7 +272,7 @@ public class PMEWisdom {
         forceField.addForceFieldInteger(ForceField.ForceFieldInteger.PME_ORDER,
                 order);
         ParticleMeshEwald particleMeshEwald = new ParticleMeshEwald(forceField,
-                atoms, crystal, parallelTeam, neighborLists);
+                atoms, crystal, parallelTeam, neighborLists, neighborList.getPairwiseSchedule());
         System.gc();
         long bestTime = System.nanoTime();
         particleMeshEwald.energy(true, false);

@@ -20,17 +20,16 @@
  */
 package ffx.potential.nonbonded;
 
-import static java.lang.Math.PI;
-import static java.lang.Math.pow;
-import static java.lang.Math.sqrt;
-import static java.lang.String.format;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import static java.lang.Math.PI;
+import static java.lang.Math.pow;
+import static java.lang.Math.sqrt;
+import static java.lang.String.format;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
@@ -151,7 +150,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
      * The Parallel Team.
      */
     private final ParallelTeam parallelTeam;
-    private final IntegerSchedule pairWiseSchedule;
+    private final IntegerSchedule pairwiseSchedule;
     private final int threadCount;
     private final SharedInteger sharedInteractions;
     private final SharedDouble sharedEnergy;
@@ -297,7 +296,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         if (!crystal.aperiodic()) {
             vdwcut = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, 9.0);
         } else {
-            vdwcut = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, 100.0);
+            vdwcut = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, crystal.a / 2.0 - 3.0);
         }
         double vdwtaper = 0.9 * vdwcut;
         cut = vdwtaper;
@@ -381,12 +380,6 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         for (int i = 0; i < threadCount; i++) {
             vanDerWaalsLoop[i] = new VanDerWaalsLoop(i);
         }
-        if (available) {
-            pairWiseSchedule = IntegerSchedule.parse(pairWiseStrategy);
-            logger.info(" van der Waals pairwise schedule " + pairWiseStrategy);
-        } else {
-            pairWiseSchedule = IntegerSchedule.fixed();
-        }
 
         /**
          * Parallel neighbor list builder.
@@ -407,12 +400,17 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         /**
          * Build the neighbor-list using the reduced coordinates.
          */
-        neighborListBuilder.buildList(reduced, neighborLists, true, true);
+        neighborListBuilder.buildList(reduced, neighborLists, null, true, true);
+        pairwiseSchedule = neighborListBuilder.getPairwiseSchedule();
 
         logger.info(" Van der Waals");
         logger.info(format(" Switch Start:                            %5.2f (A)", cut));
         logger.info(format(" Cut-Off:                                 %5.2f (A)", off));
-        //logger.info(format(" Long-Range Correction:                   %B", doLongRangeCorrection));
+        //logger.info(format(" Long-Range Correction:                   %B", doLongRangeCorrection));        
+    }
+    
+    public IntegerSchedule getPairwiseSchedule() {
+        return pairwiseSchedule;
     }
 
     private double getLongRangeCorrection() {
@@ -555,7 +553,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         /**
          * Build the neighbor-list (if necessary) using reduced coordinates.
          */
-        neighborListBuilder.buildList(reduced, neighborLists, false, false);
+        neighborListBuilder.buildList(reduced, neighborLists, null, false, false);
 
         /**
          * Calculate the van der Waals energy.
@@ -792,6 +790,11 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         private class InitializationLoop extends IntegerForLoop {
 
             @Override
+            public IntegerSchedule schedule() {
+                return IntegerSchedule.fixed();
+            }
+
+            @Override
             public void run(int lb, int ub) {
                 for (int i = lb; i <= ub; i++) {
                     final double xyz[] = atoms[i].getXYZ();
@@ -820,7 +823,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
 
             @Override
             public IntegerSchedule schedule() {
-                return pairWiseSchedule;
+                return IntegerSchedule.fixed();
             }
 
             @Override
@@ -865,6 +868,8 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                 }
 
                 List<SymOp> symOps = crystal.spaceGroup.symOps;
+                double sp2 = crystal.getSpecialPositionCutoff();
+                sp2 *= sp2;
                 for (int iSymOp = 1; iSymOp < nSymm; iSymOp++) {
                     SymOp symOp = symOps.get(iSymOp);
                     double xyz[] = reduced[iSymOp];
@@ -888,7 +893,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                         double dy = in[1] - out[1];
                         double dz = in[2] - out[2];
                         double r2 = dx * dx + dy * dy + dz * dz;
-                        if (r2 < Crystal.specialPositionCutoff2) {
+                        if (r2 < sp2) {
                             logger.severe(" Atom %d is at a special position: " + atoms[i].toString());
                         }
                     }
@@ -953,7 +958,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
 
         @Override
         public IntegerSchedule schedule() {
-            return pairWiseSchedule;
+            return pairwiseSchedule;
         }
 
         @Override
@@ -1147,7 +1152,6 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                                 double f3 = sc2 * t1 * dt2;
                                 double dedl = ev * (f1 + f2 + f3);
                                 dEdL += selfScale * dedl * taper;
-
                                 double t1d2 = -dsc1dL * t1d * t1d;
                                 double t2d2 = -dsc1dL * t2d * t2d;
                                 double d2t1 = -dt1 * t1d * dsc1dL
@@ -1169,7 +1173,6 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                                         + sc2 * t1 * d2t2;
                                 double de2dl2 = ev * (df1 + df2 + df3);
                                 d2EdL2 += selfScale * de2dl2 * taper;
-
                                 double t11 = -dsc2dL * t2 * dt1_dr;
                                 double t12 = -sc2 * dt2 * dt1_dr;
                                 double t13 = 2.0 * sc2 * t2 * dt1_dr * dsc1dL * t1d;
@@ -1240,6 +1243,11 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                 shareddEdL.addAndGet(dEdL);
                 sharedd2EdL2.addAndGet(d2EdL2);
             }
+            
+            /* 
+            logger.info(String.format(" Thread %d computed %10d interactions in %8.3f sec.", 
+                    getThreadIndex(), count, computeTime * toSeconds)); */
+            
         }
     }
 
@@ -1312,7 +1320,6 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
             }
         }
     }
-    
     /***************************************************************************
      * Cutoff and switching constants.
      */

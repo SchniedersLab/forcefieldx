@@ -75,6 +75,8 @@ boolean initVelocities = true;
 println("\n Running Orthogonal Space Random Walk on " + filename);
 
 System.setProperty("lambdaterm", "true");
+System.setProperty("ligand-start", Integer.toString(ligandStart));
+System.setProperty("ligand-stop", Integer.toString(ligandStop));
 
 open(filename);
 
@@ -87,6 +89,9 @@ for (int i = ligandStart; i <= ligandStop; i++) {
     Atom ai = atoms[i - 1];
     ai.setApplyLambda(true);
 }
+
+// Turn off checks for overlapping atoms, which is expected for lambda=0.
+energy.getCrystal().setSpecialPositionCutoff(0.0);
 
 // Wrap the potential energy inside an OSRW instance.
 OSRW osrw = new OSRW(energy, energy, active.getProperties(), atoms, temperature, timeStep);
