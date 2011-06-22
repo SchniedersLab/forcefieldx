@@ -109,6 +109,7 @@ public class Poledit {
         } catch (Exception ex) {
             Logger.getLogger(Poledit.class.getName()).log(Level.SEVERE, null, ex);
         }
+        printlocalmpoles();
         /*create polarization groups*/
         polargrp();
         polarization = Polarization.MUTUAL;
@@ -732,34 +733,35 @@ public class Poledit {
                 int ia, ib, ic;
                 while (!(line = br.readLine()).equals("")) {
                     int index = Integer.parseInt(line.split(" +")[0]) - 1;
-                    axisAtom[index][2] = 0;
+                    axisAtom[index][2] = -1;
                     ia = Integer.parseInt(line.split(" +")[1]);
                     axisAtom[index][0] = Math.abs(ia) - 1;
                     ib = Integer.parseInt(line.split(" +")[2]);
                     axisAtom[index][1] = Math.abs(ib) - 1;
                     xaxis[index] = axisAtom[index][1];
-                    ic = 0;
-                    if (line.split(" +").length > 3) {
+                    ic = -1;
+                    if(line.split(" +").length > 3){
                         ic = Integer.parseInt(line.split(" +")[3]);
                         axisAtom[index][2] = Math.abs(ic) - 1;
                     }
-                    if (ia > 0 && ib == 0) {
-                        for (int r = 0; r < atoms[index].getNumBonds(); r++) {
-                            Atom b = atoms[index].getBonds().get(r).get1_2(atoms[index]);
-                            if (b.xyzIndex != Math.abs(ia)) {
-                                ib = b.xyzIndex;
-                                axisAtom[index][1] = ib - 1;
-                                break;
-                            }
-                        }
-                    }
-                    if (ia > 0 && ib > 0) {
+//                    if(ia > 0 && ib == 0){
+//                    	for(int r = 0; r < atoms[index].getNumBonds(); r++){
+//                        	Atom b = atoms[index].getBonds().get(r).get1_2(atoms[index]);
+//                        	if(b.xyzIndex != Math.abs(ia)){
+//                        		ib = b.xyzIndex;
+//                        		axisAtom[index][1] = ib - 1;
+//                        		break;
+//                        	}
+//                    	}
+//                    	axisAtom[index][1] = ib;
+//                    }
+                    if(ia > 0 && ib >= 0){
                         frame[index] = MultipoleFrameDefinition.ZTHENX;
                     }
                     if (ia < 0 || ib < 0) {
                         frame[index] = MultipoleFrameDefinition.BISECTOR;
-                        if (ib < 0) {
-                            xaxis[index] = 0;
+                        if(ib < 0){
+                        	xaxis[index] = -1;
                         }
                     }
                     if (line.split(" +").length > 3 && ib < 0 && ic < 0) {
@@ -869,74 +871,68 @@ public class Poledit {
         }
     }
 
-    public void printlocalmpoles() {
-        for (int i = 0; i < nAtoms; i++) {
-            System.out.println("\n\nSite: " + (i + 1) + " Name: " + atoms[i].getAtomType().name + " Atomic Number: " + atoms[i].getAtomicNumber());
-            System.out.println("\n\nLocal Frame: " + frame[i] + " " + (axisAtom[i][0] + 1) + " " + (xaxis[i] > 0 ? axisAtom[i][1] + 1 : 0) + " " + (axisAtom[i][2] > 0 ? (axisAtom[i][2] + 1) : 0));
-            System.out.println("\nCharge: " + localMultipole[i][0]);
-            System.out.println("\nDipole: " + localMultipole[i][1] / BOHR + " " + localMultipole[i][2] / BOHR + " " + localMultipole[i][3] / BOHR);
-            System.out.println("\nQuadrupole: " + 3 * localMultipole[i][4] / (BOHR * BOHR));
-            System.out.println("\n            " + 3 * localMultipole[i][7] / (BOHR * BOHR) + " " + 3 * localMultipole[i][8] / (BOHR * BOHR));
-            System.out.println("\n            " + 3 * localMultipole[i][10] / (BOHR * BOHR) + " " + 3 * localMultipole[i][11] / (BOHR * BOHR) + " " + 3 * localMultipole[i][12] / (BOHR * BOHR));
-        }
+    public void printlocalmpoles(){
+    	for(int i = 0; i < nAtoms; i++){
+    		System.out.println("\n\nSite: "+(i+1)+" Name: "+atoms[i].getAtomType().name+" Atomic Number: "+atoms[i].getAtomicNumber());
+    		System.out.println("\n\nLocal Frame: "+frame[i]+" "+(axisAtom[i][0]+1)+" "+(xaxis[i] >= 0 ? axisAtom[i][1]+1 : 0)+" "+(axisAtom[i][2] >= 0 ? (axisAtom[i][2]+1) : 0));
+    		System.out.println("\nCharge: "+localMultipole[i][0]);
+    		System.out.println("\nDipole: "+localMultipole[i][1]/BOHR+" "+localMultipole[i][2]/BOHR+" "+localMultipole[i][3]/BOHR);
+    		System.out.println("\nQuadrupole: "+3*localMultipole[i][4]/(BOHR*BOHR));
+    		System.out.println("\n            "+3*localMultipole[i][7]/(BOHR*BOHR)+" "+3*localMultipole[i][8]/(BOHR*BOHR));
+    		System.out.println("\n            "+3*localMultipole[i][10]/(BOHR*BOHR)+" "+3*localMultipole[i][11]/(BOHR*BOHR)+" "+3*localMultipole[i][12]/(BOHR*BOHR));
+    	}
     }
-
-    public void printglobalmpoles() {
-        for (int i = 0; i < nAtoms; i++) {
-            System.out.println("\n\nSite: " + (i + 1) + " Name: " + atoms[i].getAtomType().name + " Atomic Number: " + atoms[i].getAtomicNumber());
-            System.out.println("\n\nLocal Frame: " + frame[i] + " " + (axisAtom[i][0] + 1) + " " + (xaxis[i] > 0 ? axisAtom[i][1] + 1 : 0) + " " + (axisAtom[i][2] > 0 ? (axisAtom[i][2] + 1) : 0));
-            System.out.println("\nCharge: " + globalMultipole[0][i][0]);
-            System.out.println("\nDipole: " + globalMultipole[0][i][1] / BOHR + " " + globalMultipole[0][i][2] / BOHR + " " + globalMultipole[0][i][3] / BOHR);
-            System.out.println("\nQuadrupole: " + 3 * globalMultipole[0][i][4] / (BOHR * BOHR));
-            System.out.println("\n            " + 3 * globalMultipole[0][i][7] / (BOHR * BOHR) + " " + 3 * globalMultipole[0][i][8] / (BOHR * BOHR));
-            System.out.println("\n            " + 3 * globalMultipole[0][i][10] / (BOHR * BOHR) + " " + 3 * globalMultipole[0][i][11] / (BOHR * BOHR) + " " + 3 * globalMultipole[0][i][12] / (BOHR * BOHR));
-        }
+    
+    public void printglobalmpoles(){
+    	for(int i = 0; i < nAtoms; i++){
+    		System.out.println("\n\nSite: "+(i+1)+" Name: "+atoms[i].getAtomType().name+" Atomic Number: "+atoms[i].getAtomicNumber());
+    		System.out.println("\n\nLocal Frame: "+frame[i]+" "+(axisAtom[i][0]+1)+" "+(xaxis[i] >= 0 ? axisAtom[i][1]+1 : 0)+" "+(axisAtom[i][2] >= 0 ? (axisAtom[i][2]+1) : 0));
+    		System.out.println("\nCharge: "+globalMultipole[0][i][0]);
+    		System.out.println("\nDipole: "+globalMultipole[0][i][1]/BOHR+" "+globalMultipole[0][i][2]/BOHR+" "+globalMultipole[0][i][3]/BOHR);
+    		System.out.println("\nQuadrupole: "+3*globalMultipole[0][i][4]/(BOHR*BOHR));
+    		System.out.println("\n            "+3*globalMultipole[0][i][7]/(BOHR*BOHR)+" "+3*globalMultipole[0][i][8]/(BOHR*BOHR));
+    		System.out.println("\n            "+3*globalMultipole[0][i][10]/(BOHR*BOHR)+" "+3*globalMultipole[0][i][11]/(BOHR*BOHR)+" "+3*globalMultipole[0][i][12]/(BOHR*BOHR));
+    	}
     }
+    
+    public void fixpolar(){
+    	if(remove_symmetry){
+    		for(int i = 0; i < nAtoms; i++){
+    			boolean yzero = false;
+    			if(axisAtom[i][2] == -1) yzero = true;
+    			if(frame[i] == MultipoleType.MultipoleFrameDefinition.BISECTOR) yzero = true;
+    			if(frame[i] == MultipoleType.MultipoleFrameDefinition.ZTHENBISECTOR) yzero = true;
+    			//check, what represents the zaxis atom? axisAtom[i][1] or axisAtom[i][0]
+    			if(axisAtom[i][0] == -1){
+    				localMultipole[i][12] = 0;
+    			}
+    			if(xaxis[i] == -1){
+    				localMultipole[i][1] = 0;
+    				localMultipole[i][4] = -0.5 * localMultipole[i][12];
+    				localMultipole[i][6] = 0;
+    				localMultipole[i][8] = localMultipole[i][5];
+    				localMultipole[i][10] = 0;
+    			}
+    			if(yzero){
+    				localMultipole[i][2] = 0;
+    				localMultipole[i][5] = 0;
+    				localMultipole[i][7] = 0;
+    				localMultipole[i][9] = 0;
+    				localMultipole[i][11] = 0;
+    			}
 
-    public void fixpolar() {
-        if (remove_symmetry) {
-            for (int i = 0; i < nAtoms; i++) {
-                boolean yzero = false;
-                if (axisAtom[i][2] == 0) {
-                    yzero = true;
-                }
-                if (frame[i] == MultipoleType.MultipoleFrameDefinition.BISECTOR) {
-                    yzero = true;
-                }
-                if (frame[i] == MultipoleType.MultipoleFrameDefinition.ZTHENBISECTOR) {
-                    yzero = true;
-                }
-                //check, what represents the zaxis atom? axisAtom[i][1] or axisAtom[i][0]
-                if (axisAtom[i][0] == 0) {
-                    localMultipole[i][12] = 0;
-                }
-                if (xaxis[i] == 0) {
-                    localMultipole[i][1] = 0;
-                    localMultipole[i][4] = -0.5 * localMultipole[i][12];
-                    localMultipole[i][6] = 0;
-                    localMultipole[i][8] = localMultipole[i][5];
-                    localMultipole[i][10] = 0;
-                }
-                if (yzero) {
-                    localMultipole[i][2] = 0;
-                    localMultipole[i][5] = 0;
-                    localMultipole[i][7] = 0;
-                    localMultipole[i][9] = 0;
-                    localMultipole[i][11] = 0;
-                }
-
-            }
-        }
-        //maintain integer net charge for whole system
-        int k = 0;
-        double big = 0.0;
-        double sum = 0.0;
-        for (int i = 0; i < nAtoms; i++) {
-            sum = sum + localMultipole[i][0];
-            double ci = Math.abs(localMultipole[i][0]);
-            if (ci > big) {
-                k = i;
-                big = ci;
+    		}
+    	}
+    	//maintain integer net charge for whole system
+        int k = 0;                                                                                       
+        double big = 0.0;                                                                                
+        double sum = 0.0;                                                                                 
+        for(int i = 0; i < nAtoms; i++){                                                                                 
+            sum = sum + localMultipole[i][0];                                                              
+            double ci = Math.abs(localMultipole[i][0]);                                                                      
+            if (ci > big){
+               k = i;
+               big = ci;
             }
         }
         sum = sum - Math.round(sum);
@@ -963,12 +959,10 @@ public class Poledit {
         }
 
     }
-
-    public void removeInducedFromGlobal() {
-        for (int i = 0; i < nAtoms; i++) {
-            for (int j = 0; j < 3; j++) {
-                //System.out.println((i+1)+" "+(j+1)+" "+inducedDipole[0][i][j]);
-                globalMultipole[0][i][j + 1] = globalMultipole[0][i][j + 1] - inducedDipole[0][i][j];
+    public void removeInducedFromGlobal(){
+        for(int i = 0; i < nAtoms; i++){
+            for(int j = 0; j < 3;j++){
+                globalMultipole[0][i][j+1] = globalMultipole[0][i][j+1] - inducedDipole[0][i][j];
             }
         }
     }
@@ -987,37 +981,42 @@ public class Poledit {
                 bw.write(output + "\n");
             }
             bw.write("\n");
-            for (int i = 0; i < atoms.length; i++) {
-                if (frame[i] == MultipoleType.MultipoleFrameDefinition.ZTHENX) {
-                    if (axisAtom[i][2] == 0) {
-                        //output = String.format("multipole %5d %5d %5d%9s%s",atoms[i].getType(),axisAtom[i][0]+1,(xaxis[i] > 0 ? axisAtom[i][1]+1 : 0)," ",myFormatter.format(localMultipole[i][0]));
-                        output = String.format("multipole %5d %5d %5d%9s%s", atoms[i].getType(), axisAtom[i][0] + 1, axisAtom[i][1] + 1, " ", myFormatter.format(localMultipole[i][0]));
+            for(int i = 0; i < atoms.length; i++){
+            	if(frame[i] == MultipoleType.MultipoleFrameDefinition.ZTHENX){
+            		if(axisAtom[i][2] == -1){
+            			//output = String.format("multipole %5d %5d %5d%9s%s",atoms[i].getType(),axisAtom[i][0]+1,(xaxis[i] > 0 ? axisAtom[i][1]+1 : 0)," ",myFormatter.format(localMultipole[i][0]));
+            			output = String.format("multipole %5d %5d %5d%9s%s",atoms[i].getType(),axisAtom[i][0]+1,axisAtom[i][1]+1," ",myFormatter.format(localMultipole[i][0]));
 
-                    } else {
-                        //output = String.format("multipole %5d %5d %5d %5d%9s%s",atoms[i].getType(),axisAtom[i][0]+1,(xaxis[i] > 0 ? axisAtom[i][1]+1 : 0),axisAtom[i][2]+1,myFormatter.format(localMultipole[i][0]));
-                        output = String.format("multipole %5d %5d %5d %5d%9s%s", atoms[i].getType(), axisAtom[i][0] + 1, axisAtom[i][1] + 1, axisAtom[i][2] + 1, myFormatter.format(localMultipole[i][0]));
+            		}
+            		else{
+            			//output = String.format("multipole %5d %5d %5d %5d%9s%s",atoms[i].getType(),axisAtom[i][0]+1,(xaxis[i] > 0 ? axisAtom[i][1]+1 : 0),axisAtom[i][2]+1,myFormatter.format(localMultipole[i][0]));
+            			output = String.format("multipole %5d %5d %5d %5d%9s%s",atoms[i].getType(),axisAtom[i][0]+1,axisAtom[i][1]+1,axisAtom[i][2]+1,myFormatter.format(localMultipole[i][0]));
 
-                    }
-                } else if (frame[i] == MultipoleType.MultipoleFrameDefinition.BISECTOR) {
-                    if (axisAtom[i][2] == 0) {
+            		}
+            	}
+            	else if(frame[i] == MultipoleType.MultipoleFrameDefinition.BISECTOR){
+            		if(axisAtom[i][2] == -1){
+            			
+            			//output = String.format("multipole %5d %5d %5d%9s%s",atoms[i].getType(),axisAtom[i][0]+1,(xaxis[i] > 0 ? -(axisAtom[i][1]+1) : 0)," ",myFormatter.format(localMultipole[i][0]));
+            			output = String.format("multipole %5d %5d %5d%9s%s",atoms[i].getType(),axisAtom[i][0]+1,-(axisAtom[i][1]+1)," ",myFormatter.format(localMultipole[i][0]));
 
-                        //output = String.format("multipole %5d %5d %5d%9s%s",atoms[i].getType(),axisAtom[i][0]+1,(xaxis[i] > 0 ? -(axisAtom[i][1]+1) : 0)," ",myFormatter.format(localMultipole[i][0]));
-                        output = String.format("multipole %5d %5d %5d%9s%s", atoms[i].getType(), axisAtom[i][0] + 1, -(axisAtom[i][1] + 1), " ", myFormatter.format(localMultipole[i][0]));
+            		}
+            		else{
+            			//output = String.format("multipole %5d %5d %5d %5d%9s%s",atoms[i].getType(),axisAtom[i][0]+1,(xaxis[i] > 0 ? -(axisAtom[i][1]+1) : 0),axisAtom[i][2]+1,myFormatter.format(localMultipole[i][0]));
+            			output = String.format("multipole %5d %5d %5d %5d%9s%s",atoms[i].getType(),axisAtom[i][0]+1,-(axisAtom[i][1]+1),axisAtom[i][2]+1,myFormatter.format(localMultipole[i][0]));
+            		}
+            	}
+            	else if(frame[i] == MultipoleType.MultipoleFrameDefinition.ZTHENBISECTOR){
+        			//output = String.format("multipole %5d %5d %5d %5d%9s%s",atoms[i].getType(),axisAtom[i][0]+1,(xaxis[i] > 0 ? -(axisAtom[i][1]+1) : 0),-(axisAtom[i][2]+1),myFormatter.format(localMultipole[i][0]));
+        			output = String.format("multipole %5d %5d %5d %5d%9s%s",atoms[i].getType(),axisAtom[i][0]+1,-(axisAtom[i][1]+1),-(axisAtom[i][2]+1),myFormatter.format(localMultipole[i][0]));
+            	}
+            	else if(frame[i] == MultipoleType.MultipoleFrameDefinition.TRISECTOR){
+        			//output = String.format("multipole %5d %5d %5d %5d%9s%11.5f",atoms[i].getType(),-axisAtom[i][0]+1,(xaxis[i] > 0 ? -(axisAtom[i][1]+1) : 0),-(axisAtom[i][2]+1),localMultipole[i][0]);
+        			output = String.format("multipole %5d %5d %5d %5d%9s%11.5f",atoms[i].getType(),-axisAtom[i][0]+1,-(axisAtom[i][1]+1),-(axisAtom[i][2]+1),localMultipole[i][0]);
 
-                    } else {
-                        //output = String.format("multipole %5d %5d %5d %5d%9s%s",atoms[i].getType(),axisAtom[i][0]+1,(xaxis[i] > 0 ? -(axisAtom[i][1]+1) : 0),axisAtom[i][2]+1,myFormatter.format(localMultipole[i][0]));
-                        output = String.format("multipole %5d %5d %5d %5d%9s%s", atoms[i].getType(), axisAtom[i][0] + 1, -(axisAtom[i][1] + 1), axisAtom[i][2] + 1, myFormatter.format(localMultipole[i][0]));
-                    }
-                } else if (frame[i] == MultipoleType.MultipoleFrameDefinition.ZTHENBISECTOR) {
-                    //output = String.format("multipole %5d %5d %5d %5d%9s%s",atoms[i].getType(),axisAtom[i][0]+1,(xaxis[i] > 0 ? -(axisAtom[i][1]+1) : 0),-(axisAtom[i][2]+1),myFormatter.format(localMultipole[i][0]));
-                    output = String.format("multipole %5d %5d %5d %5d%9s%s", atoms[i].getType(), axisAtom[i][0] + 1, -(axisAtom[i][1] + 1), -(axisAtom[i][2] + 1), myFormatter.format(localMultipole[i][0]));
-                } else if (frame[i] == MultipoleType.MultipoleFrameDefinition.TRISECTOR) {
-                    //output = String.format("multipole %5d %5d %5d %5d%9s%11.5f",atoms[i].getType(),-axisAtom[i][0]+1,(xaxis[i] > 0 ? -(axisAtom[i][1]+1) : 0),-(axisAtom[i][2]+1),localMultipole[i][0]);
-                    output = String.format("multipole %5d %5d %5d %5d%9s%11.5f", atoms[i].getType(), -axisAtom[i][0] + 1, -(axisAtom[i][1] + 1), -(axisAtom[i][2] + 1), localMultipole[i][0]);
-
-                }
-                bw.write(output + "\n");
-                output = String.format("%35s", "") + " " + String.format("%s %s %s", myFormatter.format(localMultipole[i][1] / BOHR), myFormatter.format(localMultipole[i][2] / BOHR), myFormatter.format(localMultipole[i][3] / BOHR));
+            	}
+            	bw.write(output + "\n");
+            	output = String.format("%35s", "") + " " + String.format("%s %s %s", myFormatter.format(localMultipole[i][1]/BOHR),myFormatter.format(localMultipole[i][2]/BOHR),myFormatter.format(localMultipole[i][3]/BOHR));
                 bw.write(output + "\n");
                 output = String.format("%35s", "") + " " + String.format("%s", myFormatter.format(3 * localMultipole[i][4] / (BOHR * BOHR)));
                 bw.write(output + "\n");
@@ -1048,7 +1047,7 @@ public class Poledit {
     public static void main(String args[]) {
         //Poledit p = new Poledit("/users/gchattree/Research/Compounds/test_compounds/12-ethanediol-test/12-ethanediol.gdmaout", "/users/gchattree/Research/Compounds/test_compounds/12-ethanediol-test/12-ethanediol-peditin.txt");
         //Poledit p2 = new Poledit("/users/gchattree/Research/Compounds/test_compounds/phenobarbital-tinker-goal/phenobarbital.gdmaout","/users/gchattree/Research/Compounds/test_compounds/phenobarbital-test/phenobarbital-peditin.txt");
-        Poledit p3 = new Poledit("/users/gchattree/Research/Compounds/s_test4_compounds/2-ethylpyridine-test/2-ethylpyridine.gdmaout", "/users/gchattree/Research/Compounds/s_test4_compounds/2-ethylpyridine-test/2-ethylpyridine-peditin.txt");
+       Poledit p3 = new Poledit("/users/gchattree/Research/Compounds/poltypeffx-2/di-n-propyl_sulfide-test/di-n-propyl_sulfide.gdmaout","/users/gchattree/Research/Compounds/poltypeffx-2/di-n-propyl_sulfide-test/di-n-propyl_sulfide-peditin.txt");
         //Poledit p4 = new Poledit("/users/gchattree/Research/Compounds/easycompounds/2-ethoxyethanol/2-ethoxyethanol.gdmaout","/users/gchattree/Research/Compounds/easycompounds/2-ethoxyethanol/2-ethoxyethanol-peditin.txt");
 
     }

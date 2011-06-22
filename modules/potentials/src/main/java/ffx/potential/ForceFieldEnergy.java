@@ -39,12 +39,14 @@ import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.OutOfPlaneBend;
 import ffx.potential.bonded.PiOrbitalTorsion;
 import ffx.potential.bonded.ROLS;
+import ffx.potential.bonded.RestraintBond;
 import ffx.potential.bonded.StretchBend;
 import ffx.potential.bonded.Torsion;
 import ffx.potential.bonded.TorsionTorsion;
 import ffx.potential.bonded.UreyBradley;
 import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.VanDerWaals;
+import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldBoolean;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
@@ -70,6 +72,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     private final Torsion torsions[];
     private final PiOrbitalTorsion piOrbitalTorsions[];
     private final TorsionTorsion torsionTorsions[];
+    private ArrayList<RestraintBond> restraintBonds = new ArrayList<RestraintBond>();
     private final VanDerWaals vanderWaals;
     private final ParticleMeshEwald particleMeshEwald;
     protected final int nAtoms;
@@ -83,6 +86,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     protected final int nTorsionTorsions;
     protected int nVanDerWaals, nPME, nGK;
     protected final boolean bondTerm;
+    protected boolean restraintBondTerm;
     protected final boolean angleTerm;
     protected final boolean stretchBendTerm;
     protected final boolean ureyBradleyTerm;
@@ -95,6 +99,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     protected final boolean polarizationTerm;
     protected final boolean generalizedKirkwoodTerm;
     protected double bondEnergy, bondRMSD;
+    protected double restraintBondEnergy, restraintBondRMSD;
     protected double angleEnergy, angleRMSD;
     protected double stretchBendEnergy;
     protected double ureyBradleyEnergy;
@@ -113,6 +118,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     protected long bondTime, angleTime, stretchBendTime, ureyBradleyTime;
     protected long outOfPlaneBendTime, torsionTime, piOrbitalTorsionTime;
     protected long torsionTorsionTime, vanDerWaalsTime, electrostaticTime;
+    protected long restraintBondTime;
     protected long totalTime;
     protected double lambda = 1.0;
     protected double[] optimizationScaling = null;
@@ -140,6 +146,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         multipoleTerm = forceField.getBoolean(ForceFieldBoolean.MPOLETERM, true);
         polarizationTerm = forceField.getBoolean(ForceFieldBoolean.POLARIZETERM, true);
         generalizedKirkwoodTerm = forceField.getBoolean(ForceFieldBoolean.GKTERM, false);
+        restraintBondTerm = false;
+
 
         // Define the cutoff lengths.
         double vdwOff = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, 9.0);
@@ -440,6 +448,15 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             bondTime = System.nanoTime() - bondTime;
         }
 
+        if(restraintBondTerm){
+        	restraintBondTime = System.nanoTime();
+            for (int i = 0; i < restraintBonds.size(); i++) {
+                RestraintBond rb = restraintBonds.get(i);
+                restraintBondEnergy += rb.energy(gradient);
+                double value = rb.getValue();
+                restraintBondRMSD += value * value;
+            }
+        }
 
         if (angleTerm) {
             angleTime = System.nanoTime();
@@ -523,7 +540,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
         totalTime = System.nanoTime() - totalTime;
 
-        totalBondedEnergy = bondEnergy + angleEnergy + stretchBendEnergy + ureyBradleyEnergy + outOfPlaneBendEnergy + torsionEnergy + piOrbitalTorsionEnergy + torsionTorsionEnergy;
+        totalBondedEnergy = bondEnergy + restraintBondEnergy + angleEnergy + stretchBendEnergy + ureyBradleyEnergy + outOfPlaneBendEnergy + torsionEnergy + piOrbitalTorsionEnergy + torsionTorsionEnergy;
         totalNonBondedEnergy = vanDerWaalsEnergy + totalElectrostaticEnergy;
         totalEnergy = totalBondedEnergy + totalNonBondedEnergy + solvationEnergy;
 
@@ -553,6 +570,12 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     "BOND STRETCHING            : ", bondEnergy, bonds.length));
             sb.append(String.format("REMARK   3   %s %g\n",
                     "BOND RMSD                  : ", bondRMSD));
+        }
+        if (restraintBondTerm) {
+            sb.append(String.format("REMARK   3   %s %g (%d)\n",
+                    "RESTRAINT BOND STRETCHING            : ", restraintBondEnergy, restraintBonds.size()));
+            sb.append(String.format("REMARK   3   %s %g\n",
+                    "RESTRAINT BOND RMSD                  : ", restraintBondRMSD));
         }
         if (angleTerm) {
             sb.append(String.format("REMARK   3   %s %g (%d)\n",
@@ -620,6 +643,11 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             sb.append(String.format(" %s %16.8f %12d %12.3f (%8.5f)\n",
                     "Bond Streching    ", bondEnergy, bonds.length,
                     bondTime * toSeconds, bondRMSD));
+        }
+        if (restraintBondTerm) {
+            sb.append(String.format(" %s %16.8f %12d %12.3f (%8.5f)\n",
+                    "Restraint Bond Streching    ", restraintBondEnergy, restraintBonds.size(),
+                    restraintBondTime * toSeconds, restraintBondRMSD));
         }
         if (angleTerm) {
             sb.append(String.format(" %s %16.8f %12d %12.3f (%8.5f)\n",
@@ -864,5 +892,14 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             d2EdLambda2 += particleMeshEwald.getd2EdL2();
         }
         return d2EdLambda2;
+    }
+    
+    public void setRestraintBond(Atom a1, Atom a2, double distance){
+    	double forceConstant = 1.0;
+    	restraintBondTerm = true;
+    	RestraintBond rb = new RestraintBond(a1,a2);
+    	int classes[] = {a1.getAtomType().atomClass,a2.getAtomType().atomClass};
+    	rb.setBondType((new BondType(classes,forceConstant,distance)));
+    	restraintBonds.add(rb);
     }
 }
