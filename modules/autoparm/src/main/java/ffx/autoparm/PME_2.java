@@ -387,7 +387,8 @@ public class PME_2 implements Potential {
         ip11 = new int[nAtoms][];
         ip12 = new int[nAtoms][];
         ip13 = new int[nAtoms][];
-        ip14 = new int[nAtoms][];//added by chattree
+        ip14 = new int[nAtoms][];
+        //Step_1, assign polarization groups
         if(!use_pme){
         	polargrp();
         }
@@ -5156,9 +5157,16 @@ public class PME_2 implements Potential {
                                 zAxis[1] = y[index];
                                 zAxis[2] = z[index];
                                 index = referenceSites[1];
-                                xAxis[0] = x[index];
-                                xAxis[1] = y[index];
-                                xAxis[2] = z[index];
+                                if(index != -1){
+                                    xAxis[0] = x[index];
+                                    xAxis[1] = y[index];
+                                    xAxis[2] = z[index];
+                                }
+                                else if(index == -1){
+                                    xAxis[0] = 0;
+                                    xAxis[1] = 0;
+                                    xAxis[2] = 0;
+                                }
                                 diff(zAxis, localOrigin, zAxis);
                                 norm(zAxis, zAxis);
                                 rotmat[0][2] = zAxis[0];
@@ -5261,7 +5269,7 @@ public class PME_2 implements Potential {
                             }
                         }
                         if (frame[ii] != MultipoleType.MultipoleFrameDefinition.ZTHENX
-                                && referenceSites.length == 3 && pedit && axisAtom[ii][2] != 0) {
+                                && referenceSites.length == 3 && pedit && axisAtom[ii][2] != -1) {
                                 localOrigin[0] = x[ii];
                                 localOrigin[1] = y[ii];
                                 localOrigin[2] = z[ii];
@@ -5270,9 +5278,16 @@ public class PME_2 implements Potential {
                                 zAxis[1] = y[index];
                                 zAxis[2] = z[index];
                                 index = referenceSites[1];
-                                xAxis[0] = x[index];
-                                xAxis[1] = y[index];
-                                xAxis[2] = z[index];
+                                if(index != -1){
+                                    xAxis[0] = x[index];
+                                    xAxis[1] = y[index];
+                                    xAxis[2] = z[index];
+                                }
+                                else if(index == -1){
+                                    xAxis[0] = 0;
+                                    xAxis[1] = 0;
+                                    xAxis[2] = 0;
+                                }
                                 index = referenceSites[2];
                                 yAxis[0] = x[index];
                                 yAxis[1] = y[index];
@@ -5284,7 +5299,8 @@ public class PME_2 implements Potential {
                                 double c2 = xAxis[1] * localOrigin[2] - xAxis[2] * localOrigin[1];
                                 double c3 = localOrigin[1] * zAxis[2] - localOrigin[2] * zAxis[1];
                                 double vol = localOrigin[0] * c1 + zAxis[0] * c2 + xAxis[0] * c3;
-                                if ((axisAtom[ii][2] < 0 && vol > 0) || (axisAtom[ii][2] > 0 && vol < 0.0)) {
+                                //if ((axisAtom[ii][2] < 0 && vol > 0) || (axisAtom[ii][2] > 0 && vol < 0.0)) {
+                                if ((axisAtom[ii][2] > 0 && vol < 0.0)) {
                                 	axisAtom[ii][2] = -axisAtom[ii][2];
                                     dipole[1] = -dipole[1];
                                     quadrupole[0][1] = -quadrupole[0][1];
