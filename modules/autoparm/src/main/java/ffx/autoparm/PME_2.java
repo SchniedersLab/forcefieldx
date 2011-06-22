@@ -5146,12 +5146,11 @@ public class PME_2 implements Potential {
                                 zAxis[1] = y[index];
                                 zAxis[2] = z[index];
                                 index = referenceSites[1];
-                                if(index != -1){
+                                if (index != -1) {
                                     xAxis[0] = x[index];
                                     xAxis[1] = y[index];
                                     xAxis[2] = z[index];
-                                }
-                                else if(index == -1){
+                                } else if (index == -1) {
                                     xAxis[0] = 0;
                                     xAxis[1] = 0;
                                     xAxis[2] = 0;
