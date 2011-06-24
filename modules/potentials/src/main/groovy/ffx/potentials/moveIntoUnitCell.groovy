@@ -155,13 +155,12 @@ for (int i=0; i<systems.length; i++) {
             atom.move(translate);
         }
     }
-    
 }
 
 String ext = FilenameUtils.getExtension(filename);
 filename = FilenameUtils.removeExtension(filename);
 
-if (ext.equalsIgnoreCase("xyz")) {
+if (ext.toUpperCase().contains("XYZ")) {
     saveAsXYZ(new File(filename + ".xyz"));
 } else {
     saveAsPDB(systems, new File(filename + ".pdb"));

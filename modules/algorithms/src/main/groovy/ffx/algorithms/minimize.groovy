@@ -26,5 +26,12 @@ open(filename);
 println("\n RMS gradient convergence criteria: " + eps);
 e = minimize(eps);
 
-saveAsPDB(new File(FilenameUtils.removeExtension(filename) + ".min.pdb"));
+String ext = FilenameUtils.getExtension(filename);
+filename = FilenameUtils.removeExtension(filename);
+
+if (ext.toUpperCase().contains("XYZ")) {
+    saveAsXYZ(new File(filename + ".xyz"));
+} else {
+    saveAsPDB(systems, new File(filename + ".pdb"));
+}
 

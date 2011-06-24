@@ -20,15 +20,14 @@
  */
 package ffx.algorithms;
 
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import ffx.numerics.LBFGS;
 import ffx.numerics.LineSearch.LineSearchResult;
-import ffx.numerics.Potential;
 import ffx.numerics.OptimizationListener;
+import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
-import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
 
 /**
@@ -48,7 +47,6 @@ public class Minimize implements OptimizationListener, Terminatable {
     private final MolecularAssembly molecularAssembly;
     private final Potential potential;
     private AlgorithmListener algorithmListener;
-
     private boolean done = false;
     private boolean terminate = false;
     private long time;
@@ -154,10 +152,10 @@ public class Minimize implements OptimizationListener, Terminatable {
         } else {
             if (info == LineSearchResult.Success) {
                 logger.info(String.format("%6d%13.4f%11.4f%11.4f%10.4f%9.2f%7d %8.3f",
-                                          iter, f, grms, df, xrms, angle, nfun, seconds));
+                        iter, f, grms, df, xrms, angle, nfun, seconds));
             } else {
                 logger.info(String.format("%6d%13.4f%11.4f%11.4f%10.4f%9.2f%7d %8s",
-                                          iter, f, grms, df, xrms, angle, nfun, info.toString()));
+                        iter, f, grms, df, xrms, angle, nfun, info.toString()));
             }
         }
         // Update the listener and check for an termination request.
@@ -196,7 +194,7 @@ public class Minimize implements OptimizationListener, Terminatable {
             logger.info(" Cycle       Energy      G RMS    Delta E   Delta X    Evals     Time\n");
         }
         logger.info(String.format("%6d%13.4f%11.4f%11.4f%10.4f%7d %8.3f",
-                                  iter, f, grms, df, xrms, nfun, seconds));
+                iter, f, grms, df, xrms, nfun, seconds));
         // Update the listener and check for an termination request.
         if (algorithmListener != null) {
             algorithmListener.algorithmUpdate(molecularAssembly);
