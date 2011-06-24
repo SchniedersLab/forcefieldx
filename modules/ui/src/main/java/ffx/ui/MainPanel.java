@@ -33,17 +33,22 @@ import java.awt.GridLayout;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
+import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
+import java.util.zip.GZIPInputStream;
 
 import javax.help.HelpSet;
 import javax.help.JHelp;
@@ -86,8 +91,12 @@ import ffx.potential.bonded.MSRoot;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.ROLS;
 import ffx.potential.bonded.RendererCache;
+import ffx.potential.parameters.ForceField;
+import ffx.potential.parameters.ForceField.ForceFieldDouble;
+import ffx.potential.parameters.ForceField.ForceFieldString;
 import ffx.potential.parsers.ARCFileFilter;
 import ffx.potential.parsers.DYNFileFilter;
+import ffx.potential.parsers.FFXFileFilter;
 import ffx.potential.parsers.ForceFieldFileFilter;
 import ffx.potential.parsers.ForceFieldFilter;
 import ffx.potential.parsers.INTFileFilter;
@@ -102,17 +111,8 @@ import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.SystemFilter;
 import ffx.potential.parsers.XYZFileFilter;
 import ffx.potential.parsers.XYZFilter;
-import ffx.potential.parameters.ForceField;
-import ffx.potential.parameters.ForceField.ForceFieldDouble;
-import ffx.potential.parameters.ForceField.ForceFieldString;
-import ffx.potential.parsers.FFXFileFilter;
 import ffx.ui.properties.FFXLocale;
 import ffx.utilities.Keyword;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.util.Arrays;
-import java.util.List;
-import java.util.zip.GZIPInputStream;
 
 /**
  * The MainPanel class is the main container for Force Field X, handles
@@ -120,7 +120,7 @@ import java.util.zip.GZIPInputStream;
  * sub-Panels.
  */
 public final class MainPanel extends JPanel implements ActionListener,
-                                                       ChangeListener {
+        ChangeListener {
 
     // Static Variables
     private static final Logger logger = Logger.getLogger(MainPanel.class.getName());
@@ -269,7 +269,7 @@ public final class MainPanel extends JPanel implements ActionListener,
             Dimension dim = getToolkit().getScreenSize();
             Dimension ddim = aboutDialog.getSize();
             aboutDialog.setLocation((dim.width - ddim.width) / 2,
-                                    (dim.height - ddim.height) / 2);
+                    (dim.height - ddim.height) / 2);
             aboutDialog.setResizable(false);
         }
         aboutDialog.setVisible(true);
@@ -496,7 +496,7 @@ public final class MainPanel extends JPanel implements ActionListener,
             InetSocketAddress tempAddress = null;
             try {
                 tempAddress = new InetSocketAddress(InetAddress.getLocalHost(),
-                                                    port);
+                        port);
             } catch (Exception e) {
                 try {
                     tempAddress = new InetSocketAddress(InetAddress.getByName(null), port);
@@ -506,7 +506,7 @@ public final class MainPanel extends JPanel implements ActionListener,
                 }
             }
             simulation = new TinkerSimulation(system, modelingThread, this,
-                                              tempAddress);
+                    tempAddress);
             if (modelingThread != null) {
                 modelingThread.start();
             }
@@ -519,8 +519,8 @@ public final class MainPanel extends JPanel implements ActionListener,
     public boolean createKeyFile(FFXSystem system) {
         String message = new String("Please select a parameter file " + "and a TINKER Key file will be created.");
         String params = (String) JOptionPane.showInputDialog(this, message,
-                                                             "Parameter File", JOptionPane.QUESTION_MESSAGE, null,
-                                                             keywordPanel.getParamFiles(), null);
+                "Parameter File", JOptionPane.QUESTION_MESSAGE, null,
+                keywordPanel.getParamFiles(), null);
         if (params != null) {
             if (params.equalsIgnoreCase("Use an existing TINKER Key file")) {
                 JFileChooser fc = resetFileChooser();
@@ -596,7 +596,7 @@ public final class MainPanel extends JPanel implements ActionListener,
         }
         String frameNumber = new String("" + trajectory.getFrame());
         frameNumber = JOptionPane.showInputDialog("Enter the Frame Number",
-                                                  frameNumber);
+                frameNumber);
         try {
             int f = Integer.parseInt(frameNumber);
             trajectory.setFrame(f);
@@ -695,26 +695,26 @@ public final class MainPanel extends JPanel implements ActionListener,
     public static final String version = "Version 1.0.0-ALPHA";
     public static final String date = "March 2011";
     public static final String border =
-                               " ______________________________________________________________________________\n";
+            " ______________________________________________________________________________\n";
     public static final String title =
-                                 "        FORCE FIELD X - Software for Molecular Biophysics \n";
+            "        FORCE FIELD X - Software for Molecular Biophysics \n";
     public static final String aboutString =
-                                 "        " + version + "  " + date + " \n"
-                               + "        Copyright (c)  Michael J. Schnieders  2001-2011 \n"
-                               + "        Copyright (c)  Force Field X Module Authors  2009-2011 \n"
-                               + "\n"
-                               + "        Module                           Copyright (c) \n"
-                               + "        Binding Affinity                 Pengyu Ren \n"
-                               + "        X-Ray/Neutron/CryoEM Refinement  Timothy D. Fenn \n"
-                               + "        Automatic Parameterization       Johnny Wu and Gaurav Chattree \n"
-                               + "\n"
-                               + "        All Rights Reserved \n"
-                               + "\n"
-                               + "        Force Field X is distributed under the GPL v.3 license and \n"
-                               + "        hosted by the Ren lab. \n"
-                               + "\n"
-                               + "        For publications please see http://ffx.kenai.com/publications.html \n"
-                               + "        For the GPL v.3 license see http://ffx.kenai.com/license.html \n";
+            "        " + version + "  " + date + " \n"
+            + "        Copyright (c)  Michael J. Schnieders  2001-2011 \n"
+            + "        Copyright (c)  Force Field X Module Authors  2009-2011 \n"
+            + "\n"
+            + "        Module                           Copyright (c) \n"
+            + "        Binding Affinity                 Pengyu Ren \n"
+            + "        X-Ray/Neutron/CryoEM Refinement  Timothy D. Fenn \n"
+            + "        Automatic Parameterization       Johnny Wu and Gaurav Chattree \n"
+            + "\n"
+            + "        All Rights Reserved \n"
+            + "\n"
+            + "        Force Field X is distributed under the GPL v.3 license and \n"
+            + "        hosted by the Ren lab. \n"
+            + "\n"
+            + "        For publications please see http://ffx.kenai.com/publications.html \n"
+            + "        For the GPL v.3 license see http://ffx.kenai.com/license.html \n";
 
     private void initAbout() {
         aboutTextArea = new JTextArea();
@@ -785,8 +785,8 @@ public final class MainPanel extends JPanel implements ActionListener,
         // modelingPanel = new ModelingPanel(this);
         JPanel treePane = new JPanel(new BorderLayout());
         JScrollPane scrollPane = new JScrollPane(hierarchy,
-                                                 JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
-                                                 JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
+                JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
+                JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
         treePane.add(scrollPane, BorderLayout.CENTER);
         ImageIcon graphicsIcon = new ImageIcon(loader.getResource("ffx/ui/icons/monitor.png"));
         ImageIcon keywordIcon = new ImageIcon(loader.getResource("ffx/ui/icons/key.png"));
@@ -794,15 +794,15 @@ public final class MainPanel extends JPanel implements ActionListener,
         // Put everything together
         tabbedPane = new JTabbedPane();
         tabbedPane.addTab(locale.getValue("Graphics"), graphicsIcon,
-                          graphicsPanel);
+                graphicsPanel);
         tabbedPane.addTab(locale.getValue("KeywordEditor"), keywordIcon,
-                          keywordPanel);
+                keywordPanel);
         /*
         tabbedPane.addTab(locale.getValue("ModelingCommands"), modelingIcon,
         modelingPanel); */
         tabbedPane.addChangeListener(this);
         splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, false,
-                                   treePane, tabbedPane);
+                treePane, tabbedPane);
         splitPane.setResizeWeight(0.25);
         splitPane.setOneTouchExpandable(true);
         setLayout(new BorderLayout());
@@ -924,7 +924,7 @@ public final class MainPanel extends JPanel implements ActionListener,
             }
             if (!systems.contains(parentSystem)) {
                 graphicsCanvas.updateSceneWait(parentSystem, false, true,
-                                               RendererCache.ViewModel.WIREFRAME, false, null);
+                        RendererCache.ViewModel.WIREFRAME, false, null);
                 systems.add(parentSystem);
             }
             // Move each atom into the global frame by applying the System
@@ -956,7 +956,7 @@ public final class MainPanel extends JPanel implements ActionListener,
             close(sys);
         }
         MergeFilter mergeFilter = new MergeFilter(system, mergedAtoms,
-                                                  mergedBonds);
+                mergedBonds);
         FileOpener fileOpener = new FileOpener(mergeFilter, this);
         Thread thread = new Thread(fileOpener);
         thread.start();
@@ -1595,7 +1595,7 @@ public final class MainPanel extends JPanel implements ActionListener,
         }
         if (saveFile != null) {
             PDBFilter pdbFilter = new PDBFilter(saveFile,
-                                                Arrays.asList(activeSystems), null, null);
+                    Arrays.asList(activeSystems), null, null);
             pdbFilter.writeFile(saveFile, false);
         }
     }
@@ -1760,7 +1760,7 @@ public final class MainPanel extends JPanel implements ActionListener,
         }
         String rate = new String("" + trajectory.getRate());
         rate = JOptionPane.showInputDialog("Enter the Frame Rate (1-100)",
-                                           rate);
+                rate);
         try {
             int f = Integer.parseInt(rate);
             trajectory.setRate(f);

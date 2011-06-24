@@ -63,13 +63,12 @@ public class OSRW implements Potential {
      */
     private double lambda;
     /**
-     * Flag to indicate that the number of energy evaluations is currently 
-     * being counted.
+     * Flag to indicate that the Lambda particle should be propogated.
      */
     private boolean propagateLambda = true;
     /**
      * Number of times the OSRW biasing potential has been evaluated with the
-     * "doCounting" flag true.
+     * "propagateLambda" flag true.
      */
     private int energyCount;
     /**
@@ -79,7 +78,7 @@ public class OSRW implements Potential {
      * With this scheme, the maximum of biasing Gaussians
      * is at the edges. 
      */
-    private int lambdaBins = 101;
+    private int lambdaBins = 201;
     /**
      * It is useful to have an odd number of bins, so that there is
      * a bin from FL=-dFL/2 to dFL/2 so that as FL approaches zero its
@@ -101,7 +100,7 @@ public class OSRW implements Potential {
     /**
      * Width of the lambda bin.
      */
-    private double dL = 0.01;
+    private double dL = 1.0 / (lambdaBins - 1);
     /**
      * Half the width of a lambda bin.
      */
@@ -162,13 +161,26 @@ public class OSRW implements Potential {
      * Temperature in Kelvin.
      */
     private double temperature;
+    /**
+     * Lambda print frequency (in steps).
+     */
+    private int lambdaPrintFrequency = 100;
+    /**
+     * Free energy print frequency relative to how often the free energy is
+     * updated from the count matrix.
+     */
+    private int fLambdaPrintFrequency = 10;
+    private int fLambdaUpdates = 0;
+    /**
+     * Print detailed energy information.
+     */
     private boolean print = false;
 
     public OSRW(LambdaInterface lambdaInterface,
             Potential potential,
             CompositeConfiguration properties,
             Atom atoms[],
-            double temperature, double timeStep){
+            double temperature, double dt) {
         this.lambdaInterface = lambdaInterface;
         this.potential = potential;
         this.atoms = atoms;
@@ -178,17 +190,17 @@ public class OSRW implements Potential {
         /**
          * Convert the time step to picoseconds.
          */
-        this.dt = timeStep * 0.001;
+        this.dt = dt * 0.001;
 
         biasCutoff = properties.getInt("lambda-bias-cutoff", 5);
         biasGaussianMag = properties.getDouble("bias-gaussian-mag", 0.005);
-        dL = properties.getDouble("lambda-bin-width", 0.01);
-        
+        dL = properties.getDouble("lambda-bin-width", 0.005);
+
         /**
          * Require modest sampling of the lambda path. 
          */
         if (dL > 0.1) {
-            dL = 0.01;
+            dL = 0.1;
         }
 
         /**
@@ -223,7 +235,7 @@ public class OSRW implements Potential {
         recursionKernel = new int[lambdaBins][FLambdaBins];
         FLambda = new double[lambdaBins];
         dUdXdL = new double[nAtoms * 3];
-        energyCount = 0;
+        energyCount = -1;
 
         stochasticRandom = new Random(0);
 
@@ -247,29 +259,29 @@ public class OSRW implements Potential {
 
         checkRecursionKernelSize();
 
-        int stateBin = (int) floor((lambda - minLambda) / dL);
-        if (stateBin < 0) {
-            stateBin = 0;
+        int lambdaBin = (int) floor((lambda - minLambda) / dL);
+        if (lambdaBin < 0) {
+            lambdaBin = 0;
         }
-        if (stateBin >= lambdaBins) {
-            stateBin = lambdaBins - 1;
+        if (lambdaBin >= lambdaBins) {
+            lambdaBin = lambdaBins - 1;
         }
-        int FStateBin = (int) floor((dEdLambda - minFLambda) / dFL);
-        if (FStateBin == FLambdaBins) {
-            FStateBin = FLambdaBins - 1;
+        int FLambdaBin = (int) floor((dEdLambda - minFLambda) / dFL);
+        if (FLambdaBin == FLambdaBins) {
+            FLambdaBin = FLambdaBins - 1;
         }
-        assert (FStateBin < FLambdaBins);
-        assert (FStateBin >= 0);
+        assert (FLambdaBin < FLambdaBins);
+        assert (FLambdaBin >= 0);
 
         /**
-         * Calculate recursion kernel G(L, dEdL) and gradient.
+         * Calculate recursion kernel G(L, FL) and its gradient.
          */
         double dGdLambda = 0.0;
         double dGdFLambda = 0.0;
         double ls2 = 2.0 / lambdaBins * 2.0 / lambdaBins;
         double FLs2 = dFL * 2.0 * dFL * 2.0;
         for (int iL = -biasCutoff; iL <= biasCutoff; iL++) {
-            int lcenter = stateBin + iL;
+            int lcenter = lambdaBin + iL;
             double deltaL = lambda - (lcenter * dL);
             double deltaL2 = deltaL * deltaL;
             // Mirror conditions for recursion kernel counts.
@@ -286,7 +298,7 @@ public class OSRW implements Potential {
                 lcount = lambdaBins - 1 - lcount;
             }
             for (int iFL = -biasCutoff; iFL <= biasCutoff; iFL++) {
-                int FLcenter = FStateBin + iFL;
+                int FLcenter = FLambdaBin + iFL;
                 /**
                  * If either of the following FL edge conditions are true,
                  * then there are no counts and we continue.
@@ -307,12 +319,13 @@ public class OSRW implements Potential {
         }
 
         /**
-         * Lambda gradient due to recursion kernel G(L, dEdL).
+         * Lambda gradient due to recursion kernel G(L, F(L)).
          */
+        double dEdU = dEdLambda;
         dEdLambda += dGdLambda + dGdFLambda * d2EdLambda2;
-        
+
         /**
-         * Atomic gradient due to recursion kernel G(L, dEdL).
+         * Atomic gradient due to recursion kernel G(L, F(L)).
          */
         for (int i = 0; i < 3 * nAtoms; i++) {
             dUdXdL[i] = 0.0;
@@ -338,7 +351,8 @@ public class OSRW implements Potential {
          * Update free energy F(L) every ~100 steps.
          */
         if (energyCount % 100 == 0 && propagateLambda) {
-            updateFLambda(true);
+            fLambdaUpdates++;
+            updateFLambda(fLambdaUpdates % fLambdaPrintFrequency == 0);
         }
 
         /**
@@ -346,7 +360,7 @@ public class OSRW implements Potential {
          * using interpolation.
          */
         biasEnergy += computeRecursionSlave();
-        
+
         if (print) {
             logger.info(String.format(" %s %16.8f", "Bias Energy       ", biasEnergy));
             logger.info(String.format(" %s %16.8f  %s",
@@ -355,14 +369,21 @@ public class OSRW implements Potential {
         /**
          * Log our current state.
          */
-        logger.info(String.format(" Lambda %8.6f, Bin %d, G %10.4f, dE/dLambda %10.4f",
-                lambda, stateBin, biasEnergy, dEdLambda));
+        if (energyCount % lambdaPrintFrequency == 0) {
+            if (lambdaBins < 1000) {
+                logger.info(String.format(" L=%6.4f (%3d) F_LU=%10.4f F_LB=%10.4f F_L=%10.4f",
+                         lambda, lambdaBin, dEdU, dEdLambda - dEdU, dEdLambda));
+            } else {
+                logger.info(String.format(" L=%6.4f (%4d) F_LU=%10.4f F_LB=%10.4f F_L=%10.4f",
+                         lambda, lambdaBin, dEdU, dEdLambda - dEdU, dEdLambda));
+            }
+        }
 
         /**
          * Meta-dynamics grid counts (every ~10 steps).
          */
         if (energyCount % 10 == 0 && propagateLambda) {
-            recursionKernel[stateBin][FStateBin]++;
+            recursionKernel[lambdaBin][FLambdaBin]++;
         }
 
         /**
@@ -384,7 +405,7 @@ public class OSRW implements Potential {
      */
     private void checkRecursionKernelSize() {
         if (dEdLambda > maxFLambda) {
-            logger.info(String.format("Current F_lambda %8.2f > maximum historgram size %8.2f.",
+            logger.info(String.format(" Current F_lambda %8.2f > maximum historgram size %8.2f.",
                     dEdLambda, maxFLambda));
 
             double origDeltaG = updateFLambda(false);
@@ -406,14 +427,14 @@ public class OSRW implements Potential {
             recursionKernel = newRecursionKernel;
             FLambdaBins = newFStateBins;
             maxFLambda = minFLambda + dFL * FLambdaBins;
-            logger.info(String.format("New historgram %8.2f to %8.2f with %d bins.\n",
+            logger.info(String.format(" New historgram %8.2f to %8.2f with %d bins.\n",
                     minFLambda, maxFLambda, FLambdaBins));
 
             assert (origDeltaG == updateFLambda(false));
 
         }
         if (dEdLambda < minFLambda) {
-            logger.info(String.format("Current F_lambda %8.2f < minimum historgram size %8.2f.",
+            logger.info(String.format(" Current F_lambda %8.2f < minimum historgram size %8.2f.",
                     dEdLambda, minFLambda));
             int offset = 100;
             while (dEdLambda < minFLambda - offset * dFL) {
@@ -434,7 +455,7 @@ public class OSRW implements Potential {
             recursionKernel = newRecursionKernel;
             minFLambda = minFLambda - offset * dFL;
             FLambdaBins = newFStateBins;
-            logger.info(String.format("New historgram %8.2f to %8.2f with %d bins.\n",
+            logger.info(String.format(" New historgram %8.2f to %8.2f with %d bins.\n",
                     minFLambda, maxFLambda, FLambdaBins));
         }
     }
@@ -442,7 +463,7 @@ public class OSRW implements Potential {
     private double updateFLambda(boolean print) {
         double freeEnergy = 0.0;
         if (print) {
-            logger.info(" Count  Lambda Bin      F_Lambda Bin   <  F_L  >     dG");
+            logger.info(" Count  Lambda Bins    F_Lambda Bins   <  F_L   >       dG");
         }
         for (int iL = 0; iL < lambdaBins; iL++) {
             int ulFL = -1;

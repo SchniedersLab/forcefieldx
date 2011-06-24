@@ -55,10 +55,10 @@ int nSteps = 1000000;
 double timeStep = 1.0;
 
 // Frequency to print out thermodynamics information in picoseconds.
-double printInterval = 0.01;
+double printInterval = 0.1;
 
 // Frequency to save out coordinates in picoseconds.
-double saveInterval = 100.0;
+double saveInterval = 10.0;
 
 // Temperature in degrees Kelvin.
 double temperature = 300.0;

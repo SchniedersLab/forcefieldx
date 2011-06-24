@@ -21,9 +21,9 @@
 package ffx.algorithms;
 
 import java.io.File;
-import static java.lang.String.format;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import static java.lang.String.format;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;

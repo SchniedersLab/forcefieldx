@@ -20,6 +20,7 @@
  */
 package ffx.ui;
 
+import groovy.ui.Console;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -43,7 +44,6 @@ import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
 import javax.swing.text.StyledDocument;
 
-import groovy.ui.Console;
 import org.codehaus.groovy.runtime.MethodClosure;
 
 import ffx.algorithms.AlgorithmListener;
@@ -62,7 +62,6 @@ import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.RendererCache.ColorModel;
 import ffx.potential.bonded.RendererCache.ViewModel;
-
 
 /**
  * The ModelingShell is used to script Multiscale Modeling Routines via the
@@ -104,6 +103,7 @@ public class ModelingShell extends Console implements AlgorithmListener {
         // File
         setVariable("open", new MethodClosure(mainPanel, "openWait"));
         setVariable("save", new MethodClosure(mainPanel, "saveAsXYZ"));
+        setVariable("saveAsXYZ", new MethodClosure(mainPanel, "saveAsXYZ"));
         setVariable("saveAsP1", new MethodClosure(mainPanel, "saveAsP1"));
         setVariable("saveAsPDB", new MethodClosure(mainPanel, "saveAsPDB"));
         setVariable("close", new MethodClosure(mainPanel, "closeWait"));
@@ -148,7 +148,6 @@ public class ModelingShell extends Console implements AlgorithmListener {
         setVariable("potential", new MethodClosure(this, "potential"));
         setVariable("poledit", new MethodClosure(this, "poledit"));
         setVariable("superpose", new MethodClosure(this, "superpose"));
-
 
         /**
          * Configure the Swing GUI for the shell.
@@ -253,7 +252,8 @@ public class ModelingShell extends Console implements AlgorithmListener {
             Energy e = new Energy(xyzfname, keyfile, options);
             e.energy(false, true);
         } catch (IOException e) {
-            e.printStackTrace();
+            String message = " Exception running analyze.";
+            logger.log(Level.INFO, message, e);
         }
     }
 
@@ -296,7 +296,8 @@ public class ModelingShell extends Console implements AlgorithmListener {
             potential = minimize.minimize(eps);
             terminatableAlgorithm = null;
         } catch (IOException e) {
-            e.printStackTrace();
+            String message = " Exception running minimize_2.";
+            logger.log(Level.INFO, message, e);
         }
         return potential;
     }

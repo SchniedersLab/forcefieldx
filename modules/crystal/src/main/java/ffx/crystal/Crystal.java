@@ -20,14 +20,9 @@
  */
 package ffx.crystal;
 
-import static java.lang.Math.*;
-
-import static ffx.numerics.VectorMath.mat3mat3;
-import static ffx.numerics.VectorMath.mat3symvec6;
-import static ffx.numerics.VectorMath.transpose3;
-
 import java.util.Vector;
 import java.util.logging.Logger;
+import static java.lang.Math.*;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.math.linear.Array2DRowRealMatrix;
@@ -36,6 +31,9 @@ import org.apache.commons.math.linear.RealMatrix;
 import org.apache.commons.math.util.MathUtils;
 
 import ffx.utilities.HashCodeUtil;
+import static ffx.numerics.VectorMath.mat3mat3;
+import static ffx.numerics.VectorMath.mat3symvec6;
+import static ffx.numerics.VectorMath.transpose3;
 
 /**
  * The Crystal class encapsulates the lattice parameters and space group that
@@ -385,12 +383,12 @@ public class Crystal {
         ret[0], ret[1], ret[2]));
         } */
     }
-    
+
     public void setSpecialPositionCutoff(double cutoff) {
         specialPositionCutoff = cutoff;
         specialPositionCutoff2 = cutoff * cutoff;
     }
-    
+
     public double getSpecialPositionCutoff() {
         return specialPositionCutoff;
     }
@@ -1012,10 +1010,7 @@ public class Crystal {
         out[0] = mod(out[0], 1.0) - 0.5;
         out[1] = mod(out[1], 1.0) - 0.5;
         out[2] = mod(out[2], 1.0) - 0.5;
-        toCartesianCoordinates(out, in);
-        out[0] = in[0];
-        out[1] = in[1];
-        out[2] = in[2];
+        toCartesianCoordinates(out, out);
     }
 
     public void toFractionalCoordinates(double x[], double xf[]) {
