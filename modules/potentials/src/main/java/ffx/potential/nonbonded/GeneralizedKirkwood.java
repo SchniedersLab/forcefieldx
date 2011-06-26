@@ -80,8 +80,8 @@ public class GeneralizedKirkwood {
     private final GKEnergyRegion gkEnergyRegion;
     private final BornCRRegion bornGradRegion;
     private final HydrophobicPMFRegion hydrophobicPMFRegion;
-    private final SharedDoubleArray sharedGrad[];
-    private final SharedDoubleArray sharedTorque[];
+    private final double grad[][][];
+    private final double torque[][][];
     private final SharedDoubleArray sharedBornGrad;
     protected final SharedDoubleArray sharedGKField[];
     protected final SharedDoubleArray sharedGKFieldCR[];
@@ -101,8 +101,8 @@ public class GeneralizedKirkwood {
         y = particleMeshEwald.coordinates[0][1];
         z = particleMeshEwald.coordinates[0][2];
         globalMultipole = particleMeshEwald.globalMultipole[0];
-        sharedGrad = particleMeshEwald.getSharedGradient();
-        sharedTorque = particleMeshEwald.getSharedTorque();
+        grad = particleMeshEwald.getGradient();
+        torque = particleMeshEwald.getTorque();
 
         sharedGKField = new SharedDoubleArray[3];
         sharedGKField[0] = new SharedDoubleArray(nAtoms);
@@ -706,15 +706,15 @@ public class GeneralizedKirkwood {
             private double energy;
             // Omit
             private final int omit[];
-            private final double dx_local[];
-            private final double dy_local[];
-            private final double dz_local[];
+            private double gX[];
+            private double gY[];
+            private double gZ[];
 
             public HydrophobicPMFLoop() {
                 omit = new int[nAtoms];
-                dx_local = new double[nAtoms];
-                dy_local = new double[nAtoms];
-                dz_local = new double[nAtoms];
+                gX = new double[nAtoms];
+                gY = new double[nAtoms];
+                gZ = new double[nAtoms];
             }
 
             @Override
@@ -723,14 +723,13 @@ public class GeneralizedKirkwood {
                 for (int i = 0; i < nAtoms; i++) {
                     omit[i] = -1;
                 }
+                int threadID = getThreadIndex();
+                gX = grad[threadID][0];
+                gY = grad[threadID][1];
+                gZ = grad[threadID][2];
                 if (gradient) {
                     for (int i = 0; i < nCarbon; i++) {
                         carbonSASACR[i] = 0.0;
-                    }
-                    for (int i = 0; i < nAtoms; i++) {
-                        dx_local[i] = 0.0;
-                        dy_local[i] = 0.0;
-                        dz_local[i] = 0.0;
                     }
                 }
             }
@@ -817,12 +816,12 @@ public class GeneralizedKirkwood {
                                     double dedx = dsum * xr;
                                     double dedy = dsum * yr;
                                     double dedz = dsum * zr;
-                                    dx_local[i] += dedx;
-                                    dy_local[i] += dedy;
-                                    dz_local[i] += dedz;
-                                    dx_local[k] -= dedx;
-                                    dy_local[k] -= dedy;
-                                    dz_local[k] -= dedz;
+                                    gX[i] += dedx;
+                                    gY[i] += dedy;
+                                    gZ[i] += dedz;
+                                    gX[k] -= dedx;
+                                    gY[k] -= dedy;
+                                    gZ[k] -= dedz;
                                     /**
                                      * Chain Rule Term.
                                      */
@@ -839,11 +838,6 @@ public class GeneralizedKirkwood {
             @Override
             public void finish() {
                 sharedEnergy.addAndGet(energy);
-                if (gradient) {
-                    sharedGrad[0].reduce(dx_local, DoubleOp.SUM);
-                    sharedGrad[1].reduce(dy_local, DoubleOp.SUM);
-                    sharedGrad[2].reduce(dz_local, DoubleOp.SUM);
-                }
             }
         }
 
@@ -854,23 +848,22 @@ public class GeneralizedKirkwood {
          */
         private class CarbonSASACRLoop extends IntegerForLoop {
 
-            private final double dx_local[];
-            private final double dy_local[];
-            private final double dz_local[];
+            private double gX[];
+            private double gY[];
+            private double gZ[];
 
             public CarbonSASACRLoop() {
-                dx_local = new double[nAtoms];
-                dy_local = new double[nAtoms];
-                dz_local = new double[nAtoms];
+                gX = new double[nAtoms];
+                gY = new double[nAtoms];
+                gZ = new double[nAtoms];
             }
 
             @Override
             public void start() {
-                for (int i = 0; i < nAtoms; i++) {
-                    dx_local[i] = 0.0;
-                    dy_local[i] = 0.0;
-                    dz_local[i] = 0.0;
-                }
+                int threadID = getThreadIndex();
+                gX = grad[threadID][0];
+                gY = grad[threadID][1];
+                gZ = grad[threadID][2];
             }
 
             @Override
@@ -901,24 +894,18 @@ public class GeneralizedKirkwood {
                                 double dedx = de * xr;
                                 double dedy = de * yr;
                                 double dedz = de * zr;
-                                dx_local[i] += dedx;
-                                dy_local[i] += dedy;
-                                dz_local[i] += dedz;
-                                dx_local[k] -= dedx;
-                                dy_local[k] -= dedy;
-                                dz_local[k] -= dedz;
+                                gX[i] += dedx;
+                                gY[i] += dedy;
+                                gZ[i] += dedz;
+                                gX[k] -= dedx;
+                                gY[k] -= dedy;
+                                gZ[k] -= dedz;
                             }
                         }
                     }
                 }
             }
 
-            @Override
-            public void finish() {
-                sharedGrad[0].reduce(dx_local, DoubleOp.SUM);
-                sharedGrad[1].reduce(dy_local, DoubleOp.SUM);
-                sharedGrad[2].reduce(dz_local, DoubleOp.SUM);
-            }
         }
     }
 
@@ -1515,12 +1502,12 @@ public class GeneralizedKirkwood {
             private final double gux[], guy[], guz[];
             private final double gqxx[], gqyy[], gqzz[];
             private final double gqxy[], gqxz[], gqyz[];
-            private final double gx_local[];
-            private final double gy_local[];
-            private final double gz_local[];
-            private final double tx_local[];
-            private final double ty_local[];
-            private final double tz_local[];
+            private double gX[];
+            private double gY[];
+            private double gZ[];
+            private double tX[];
+            private double tY[];
+            private double tZ[];
             private final double gb_local[];
             private final double gbi_local[];
             private double ci, uxi, uyi, uzi, qxxi, qxyi, qxzi, qyyi, qyzi, qzzi;
@@ -1546,12 +1533,12 @@ public class GeneralizedKirkwood {
                 gqxy = new double[31];
                 gqxz = new double[31];
                 gqyz = new double[31];
-                gx_local = new double[nAtoms];
-                gy_local = new double[nAtoms];
-                gz_local = new double[nAtoms];
-                tx_local = new double[nAtoms];
-                ty_local = new double[nAtoms];
-                tz_local = new double[nAtoms];
+                gX = new double[nAtoms];
+                gY = new double[nAtoms];
+                gZ = new double[nAtoms];
+                tX = new double[nAtoms];
+                tY = new double[nAtoms];
+                tZ = new double[nAtoms];
                 gb_local = new double[nAtoms];
                 gbi_local = new double[nAtoms];
             }
@@ -1564,14 +1551,15 @@ public class GeneralizedKirkwood {
             public void start() {
                 gkEnergy = 0.0;
                 count = 0;
+                int threadID = getThreadIndex();
+                gX = grad[threadID][0];
+                gY = grad[threadID][1];
+                gZ = grad[threadID][2];
+                tX = torque[threadID][0];
+                tY = torque[threadID][1];
+                tZ = torque[threadID][2];
                 if (gradient) {
                     for (int j = 0; j < nAtoms; j++) {
-                        gx_local[j] = 0.0;
-                        gy_local[j] = 0.0;
-                        gz_local[j] = 0.0;
-                        tx_local[j] = 0.0;
-                        ty_local[j] = 0.0;
-                        tz_local[j] = 0.0;
                         gb_local[j] = 0.0;
                         gbi_local[j] = 0.0;
                     }
@@ -1720,32 +1708,32 @@ public class GeneralizedKirkwood {
                             /**
                              * Multiply the Born radii auxiliary terms by their dielectric functions.
                              */
-                            b[0][0] = fc * b[0][0];
-                            b[0][1] = fc * b[0][1];
-                            b[0][2] = fc * b[0][2];
-                            b[1][0] = fd * b[1][0];
-                            b[1][1] = fd * b[1][1];
-                            b[1][2] = fd * b[1][2];
-                            b[2][0] = fq * b[2][0];
-                            b[2][1] = fq * b[2][1];
-                            b[2][2] = fq * b[2][2];
+                            b[0][0] = ELECTRIC * fc * b[0][0];
+                            b[0][1] = ELECTRIC * fc * b[0][1];
+                            b[0][2] = ELECTRIC * fc * b[0][2];
+                            b[1][0] = ELECTRIC * fd * b[1][0];
+                            b[1][1] = ELECTRIC * fd * b[1][1];
+                            b[1][2] = ELECTRIC * fd * b[1][2];
+                            b[2][0] = ELECTRIC * fq * b[2][0];
+                            b[2][1] = ELECTRIC * fq * b[2][1];
+                            b[2][2] = ELECTRIC * fq * b[2][2];
                         }
 
                         /**
                          * Multiply the potential auxiliary terms by their dielectric functions.
                          */
-                        a[0][0] = fc * a[0][0];
-                        a[0][1] = fc * a[0][1];
-                        a[0][2] = fc * a[0][2];
-                        a[0][3] = fc * a[0][3];
-                        a[1][0] = fd * a[1][0];
-                        a[1][1] = fd * a[1][1];
-                        a[1][2] = fd * a[1][2];
-                        a[1][3] = fd * a[1][3];
-                        a[2][0] = fq * a[2][0];
-                        a[2][1] = fq * a[2][1];
-                        a[2][2] = fq * a[2][2];
-                        a[2][3] = fq * a[2][3];
+                        a[0][0] = ELECTRIC * fc * a[0][0];
+                        a[0][1] = ELECTRIC * fc * a[0][1];
+                        a[0][2] = ELECTRIC * fc * a[0][2];
+                        a[0][3] = ELECTRIC * fc * a[0][3];
+                        a[1][0] = ELECTRIC * fd * a[1][0];
+                        a[1][1] = ELECTRIC * fd * a[1][1];
+                        a[1][2] = ELECTRIC * fd * a[1][2];
+                        a[1][3] = ELECTRIC * fd * a[1][3];
+                        a[2][0] = ELECTRIC * fq * a[2][0];
+                        a[2][1] = ELECTRIC * fq * a[2][1];
+                        a[2][2] = ELECTRIC * fq * a[2][2];
+                        a[2][3] = ELECTRIC * fq * a[2][3];
                         /**
                          * Compute the GK tensors required to compute the energy.
                          */
@@ -1772,25 +1760,10 @@ public class GeneralizedKirkwood {
                 sharedInteractions.addAndGet(count);
                 sharedGKEnergy.addAndGet(gkEnergy);
                 if (gradient) {
-                    for (int i = 0; i < nAtoms; i++) {
-                        gx_local[i] *= ELECTRIC;
-                        gy_local[i] *= ELECTRIC;
-                        gz_local[i] *= ELECTRIC;
-                        tx_local[i] *= ELECTRIC;
-                        ty_local[i] *= ELECTRIC;
-                        tz_local[i] *= ELECTRIC;
-                        gb_local[i] *= ELECTRIC;
-                    }
                     /**
                      * Reduce the force and torque contributions computed by the
                      * current thread into the shared arrays.
                      */
-                    sharedGrad[0].reduce(gx_local, DoubleOp.SUM);
-                    sharedGrad[1].reduce(gy_local, DoubleOp.SUM);
-                    sharedGrad[2].reduce(gz_local, DoubleOp.SUM);
-                    sharedTorque[0].reduce(tx_local, DoubleOp.SUM);
-                    sharedTorque[1].reduce(ty_local, DoubleOp.SUM);
-                    sharedTorque[2].reduce(tz_local, DoubleOp.SUM);
                     sharedBornGrad.reduce(gb_local, DoubleOp.SUM);
                 }
             }
@@ -2333,14 +2306,14 @@ public class GeneralizedKirkwood {
                 final double dedy = dEdY();
                 final double dedz = dEdZ();
 
-                gx_local[i] -= dedx;
-                gy_local[i] -= dedy;
-                gz_local[i] -= dedz;
+                gX[i] -= dedx;
+                gY[i] -= dedy;
+                gZ[i] -= dedz;
                 gb_local[i] += drbi;
 
-                gx_local[k] += dedx;
-                gy_local[k] += dedy;
-                gz_local[k] += dedz;
+                gX[k] += dedx;
+                gY[k] += dedy;
+                gZ[k] += dedz;
                 gb_local[k] += drbk;
                 permanentEnergyTorque();
 
@@ -2693,12 +2666,12 @@ public class GeneralizedKirkwood {
                 tkx += 2.0 * (qxyk * kxz + qyyk * kyz + qyzk * kzz - qxzk * kxy - qyzk * kyy - qzzk * kzy);
                 tky += 2.0 * (qxzk * kxx + qyzk * kyx + qzzk * kzx - qxxk * kxz - qxyk * kyz - qxzk * kzz);
                 tkz += 2.0 * (qxxk * kxy + qxyk * kyy + qxzk * kzy - qxyk * kxx - qyyk * kyx - qyzk * kzx);
-                tx_local[i] += tix;
-                ty_local[i] += tiy;
-                tz_local[i] += tiz;
-                tx_local[k] += tkx;
-                ty_local[k] += tky;
-                tz_local[k] += tkz;
+                tX[i] += tix;
+                tY[i] += tiy;
+                tZ[i] += tiz;
+                tX[k] += tkx;
+                tY[k] += tky;
+                tZ[k] += tkz;
             }
 
             private void polarizationEnergyGradient() {
@@ -2887,14 +2860,14 @@ public class GeneralizedKirkwood {
                 if (i == k) {
                     gb_local[i] += dbi;
                 } else {
-                    gx_local[i] -= dpdx;
-                    gy_local[i] -= dpdy;
-                    gz_local[i] -= dpdz;
+                    gX[i] -= dpdx;
+                    gY[i] -= dpdy;
+                    gZ[i] -= dpdz;
                     gb_local[i] += dbi;
 
-                    gx_local[k] += dpdx;
-                    gy_local[k] += dpdy;
-                    gz_local[k] += dpdz;
+                    gX[k] += dpdx;
+                    gY[k] += dpdy;
+                    gZ[k] += dpdz;
                     gb_local[k] += dbk;
                 }
                 polarizationEnergyTorque();
@@ -2995,12 +2968,12 @@ public class GeneralizedKirkwood {
                 tkx += 2.0 * (qxyk * fkxz + qyyk * fkyz + qyzk * fkzz - qxzk * fkxy - qyzk * fkyy - qzzk * fkzy);
                 tky += 2.0 * (qxzk * fkxx + qyzk * fkyx + qzzk * fkzx - qxxk * fkxz - qxyk * fkyz - qxzk * fkzz);
                 tkz += 2.0 * (qxxk * fkxy + qxyk * fkyy + qxzk * fkzy - qxyk * fkxx - qyyk * fkyx - qyzk * fkzx);
-                tx_local[i] += tix;
-                ty_local[i] += tiy;
-                tz_local[i] += tiz;
-                tx_local[k] += tkx;
-                ty_local[k] += tky;
-                tz_local[k] += tkz;
+                tX[i] += tix;
+                tY[i] += tiy;
+                tZ[i] += tiz;
+                tX[k] += tkx;
+                tY[k] += tky;
+                tZ[k] += tkz;
             }
         }
     }
@@ -3042,25 +3015,29 @@ public class GeneralizedKirkwood {
         private class BornCRLoop extends IntegerForLoop {
 
             private final double factor = -pow(PI, third) * pow(6.0, (2.0 * third)) / 9.0;
-            private final double gx_local[];
-            private final double gy_local[];
-            private final double gz_local[];
+            private double gX[];
+            private double gY[];
+            private double gZ[];
             // Extra padding to avert cache interference.
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
             private long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
             public BornCRLoop() {
-                gx_local = new double[nAtoms];
-                gy_local = new double[nAtoms];
-                gz_local = new double[nAtoms];
+                gX = new double[nAtoms];
+                gY = new double[nAtoms];
+                gZ = new double[nAtoms];
             }
 
             @Override
             public void start() {
+                int threadID = getThreadIndex();
+                gX = grad[threadID][0];
+                gY = grad[threadID][1];
+                gZ = grad[threadID][2];
                 for (int i = 0; i < nAtoms; i++) {
-                    gx_local[i] = 0.0;
-                    gy_local[i] = 0.0;
-                    gz_local[i] = 0.0;
+                    gX[i] = 0.0;
+                    gY[i] = 0.0;
+                    gZ[i] = 0.0;
                 }
             }
 
@@ -3117,24 +3094,18 @@ public class GeneralizedKirkwood {
                                 final double dedx = de * xr;
                                 final double dedy = de * yr;
                                 final double dedz = de * zr;
-                                gx_local[i] += dedx;
-                                gy_local[i] += dedy;
-                                gz_local[i] += dedz;
-                                gx_local[k] -= dedx;
-                                gy_local[k] -= dedy;
-                                gz_local[k] -= dedz;
+                                gX[i] += dedx;
+                                gY[i] += dedy;
+                                gZ[i] += dedz;
+                                gX[k] -= dedx;
+                                gY[k] -= dedy;
+                                gZ[k] -= dedz;
                             }
                         }
                     }
                 }
             }
 
-            @Override
-            public void finish() {
-                sharedGrad[0].reduce(gx_local, DoubleOp.SUM);
-                sharedGrad[1].reduce(gy_local, DoubleOp.SUM);
-                sharedGrad[2].reduce(gz_local, DoubleOp.SUM);
-            }
         }
     }
     /**

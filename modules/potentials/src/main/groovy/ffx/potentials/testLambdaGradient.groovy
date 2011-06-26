@@ -78,6 +78,8 @@ for (int j=0; j<3; j++) {
        continue;
    }
    
+   println " Current lambda value " + lambda;
+    
    energy.setLambda(lambda);
 
    // Calculate the energy, dE/dX, dE/dLambda, d2E/dLambda2 and dE/dLambda/dX

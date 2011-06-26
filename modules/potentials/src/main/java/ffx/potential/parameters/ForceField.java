@@ -20,8 +20,6 @@
  */
 package ffx.potential.parameters;
 
-import static java.lang.String.format;
-
 import java.io.File;
 import java.net.URL;
 import java.util.Arrays;
@@ -33,6 +31,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.logging.Logger;
+import static java.lang.String.format;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 
@@ -86,7 +85,7 @@ public class ForceField {
         BONDTERM, ANGLETERM, STRBNDTERM, UREYTERM, OPBENDTERM,
         TORSIONTERM, PITORSTERM, TORTORTERM, VDWLRTERM, VDWTERM,
         MPOLETERM, POLARIZETERM, GKTERM, SCFCACHE, APERIODIC, CUDAFFT,
-        RIGID_HYDROGENS, LAMBDATERM;
+        RIGID_HYDROGENS, LAMBDATERM, USE_CHARGES, USE_DIPOLES, USE_QUADRUPOLES;
     }
 
     public enum ForceFieldType {

@@ -108,7 +108,7 @@ public class OSRW implements Potential {
     /**
      * The width of the F_lambda bin.
      */
-    private double dFL = 2.0;
+    private double dFL = 5.0;
     /**
      * Half the width of the F_lambda bin.
      */
@@ -116,7 +116,7 @@ public class OSRW implements Potential {
     /**
      * The minimum value of the first lambda bin.  
      */
-    private double minLambda = -0.005;
+    private double minLambda = -dL_2;
     /**
      * The minimum value of the first F_lambda bin.
      */
