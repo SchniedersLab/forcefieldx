@@ -1588,12 +1588,20 @@ public class ParticleMeshEwald implements LambdaInterface {
             @Override
             public void start() {
                 int threadID = getThreadIndex();
-                Arrays.fill(field[threadID][0], 0.0);
-                Arrays.fill(field[threadID][1], 0.0);
-                Arrays.fill(field[threadID][2], 0.0);
-                Arrays.fill(fieldCR[threadID][0], 0.0);
-                Arrays.fill(fieldCR[threadID][1], 0.0);
-                Arrays.fill(fieldCR[threadID][2], 0.0);
+                double fX[] = field[threadID][0];
+                double fY[] = field[threadID][1];
+                double fZ[] = field[threadID][2];
+                double fXCR[] = field[threadID][0];
+                double fYCR[] = field[threadID][1];
+                double fZCR[] = field[threadID][2];
+                for (int i = 0; i < nAtoms; i++) {
+                    fX[i] = 0.0;
+                    fY[i] = 0.0;
+                    fZ[i] = 0.0;
+                    fXCR[i] = 0.0;
+                    fYCR[i] = 0.0;
+                    fZCR[i] = 0.0;
+                }
             }
 
             @Override
@@ -2138,12 +2146,14 @@ public class ParticleMeshEwald implements LambdaInterface {
                 fXCR = fieldCR[threadID][0];
                 fYCR = fieldCR[threadID][1];
                 fZCR = fieldCR[threadID][2];
-                Arrays.fill(fX, 0.0);
-                Arrays.fill(fY, 0.0);
-                Arrays.fill(fZ, 0.0);
-                Arrays.fill(fXCR, 0.0);
-                Arrays.fill(fYCR, 0.0);
-                Arrays.fill(fZCR, 0.0);
+                for (int i = 0; i < nAtoms; i++) {
+                    fX[i] = 0.0;
+                    fY[i] = 0.0;
+                    fZ[i] = 0.0;
+                    fXCR[i] = 0.0;
+                    fYCR[i] = 0.0;
+                    fZCR[i] = 0.0;
+                }
             }
 
             @Override
@@ -2843,6 +2853,8 @@ public class ParticleMeshEwald implements LambdaInterface {
             private double dUdL, d2UdL2;
             private int i, k, iSymm, count;
             private SymOp symOp;
+            private double gX[], gY[], gZ[], tX[], tY[], tZ[];
+            private double lgX[], lgY[], lgZ[], ltX[], ltY[], ltZ[];
             private final double dx_local[];
             private final double gxk_local[];
             private final double gyk_local[];
@@ -2861,8 +2873,9 @@ public class ParticleMeshEwald implements LambdaInterface {
             private final double maskingd_local[];
             private final double rot_local[][];
             private final double work[][];
-            private double gX[], gY[], gZ[], tX[], tY[], tZ[];
-            private double lgX[], lgY[], lgZ[], ltX[], ltY[], ltZ[];
+            // Extra padding to avert cache interference.
+            private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
+            private long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
             public RealSpaceEnergyLoop() {
                 super();
@@ -3870,18 +3883,18 @@ public class ParticleMeshEwald implements LambdaInterface {
                 if (lambdaTerm) {
                     dUdL += dEdLSign * dlPowPol * e;
                     d2UdL2 += dEdLSign * d2lPowPol * e;
-                    lgX[i] += dEdLSign * dlPowPol * selfScale * ftm2ix;
-                    lgY[i] += dEdLSign * dlPowPol * selfScale * ftm2iy;
-                    lgZ[i] += dEdLSign * dlPowPol * selfScale * ftm2iz;
-                    ltX[i] += dEdLSign * dlPowPol * selfScale * ttm2ix;
-                    ltY[i] += dEdLSign * dlPowPol * selfScale * ttm2iy;
-                    ltZ[i] += dEdLSign * dlPowPol * selfScale * ttm2iz;
-                    lxk_local[k] -= dEdLSign * dlPowPol * selfScale * ftm2ix;
-                    lyk_local[k] -= dEdLSign * dlPowPol * selfScale * ftm2iy;
-                    lzk_local[k] -= dEdLSign * dlPowPol * selfScale * ftm2iz;
-                    ltxk_local[k] += dEdLSign * dlPowPol * selfScale * ttm3ix;
-                    ltyk_local[k] += dEdLSign * dlPowPol * selfScale * ttm3iy;
-                    ltzk_local[k] += dEdLSign * dlPowPol * selfScale * ttm3iz;
+                    lgX[i] += ELECTRIC * dEdLSign * dlPowPol * selfScale * ftm2ix;
+                    lgY[i] += ELECTRIC * dEdLSign * dlPowPol * selfScale * ftm2iy;
+                    lgZ[i] += ELECTRIC * dEdLSign * dlPowPol * selfScale * ftm2iz;
+                    ltX[i] += ELECTRIC * dEdLSign * dlPowPol * selfScale * ttm2ix;
+                    ltY[i] += ELECTRIC * dEdLSign * dlPowPol * selfScale * ttm2iy;
+                    ltZ[i] += ELECTRIC * dEdLSign * dlPowPol * selfScale * ttm2iz;
+                    lxk_local[k] -= ELECTRIC * dEdLSign * dlPowPol * selfScale * ftm2ix;
+                    lyk_local[k] -= ELECTRIC * dEdLSign * dlPowPol * selfScale * ftm2iy;
+                    lzk_local[k] -= ELECTRIC * dEdLSign * dlPowPol * selfScale * ftm2iz;
+                    ltxk_local[k] += ELECTRIC * dEdLSign * dlPowPol * selfScale * ttm3ix;
+                    ltyk_local[k] += ELECTRIC * dEdLSign * dlPowPol * selfScale * ttm3iy;
+                    ltzk_local[k] += ELECTRIC * dEdLSign * dlPowPol * selfScale * ttm3iz;
                 }
                 return polarizationScale * e;
             }
@@ -3978,7 +3991,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                  */
                 for (int i = lb; i <= ub; i++) {
                     if (use[i]) {
-                        double in[] = localMultipole[i];
+                        double in[] = globalMultipole[0][i];
                         double cii = in[t000] * in[t000];
                         double dii = in[t100] * in[t100] + in[t010] * in[t010] + in[t001] * in[t001];
                         double qii = in[t200] * in[t200] + in[t020] * in[t020] + in[t002] * in[t002] + 2.0 * (in[t110] * in[t110] + in[t101] * in[t101] + in[t011] * in[t011]);
@@ -4348,19 +4361,35 @@ public class ParticleMeshEwald implements LambdaInterface {
             @Override
             public void start() {
                 int threadID = getThreadIndex();
-                Arrays.fill(grad[threadID][0], 0.0);
-                Arrays.fill(grad[threadID][1], 0.0);
-                Arrays.fill(grad[threadID][2], 0.0);
-                Arrays.fill(torque[threadID][0], 0.0);
-                Arrays.fill(torque[threadID][1], 0.0);
-                Arrays.fill(torque[threadID][2], 0.0);
+                double gX[] = grad[threadID][0];
+                double gY[] = grad[threadID][1];
+                double gZ[] = grad[threadID][2];
+                double tX[] = torque[threadID][0];
+                double tY[] = torque[threadID][1];
+                double tZ[] = torque[threadID][2];
+                for (int i = 0; i < nAtoms; i++) {
+                    gX[i] = 0.0;
+                    gY[i] = 0.0;
+                    gZ[i] = 0.0;
+                    tX[i] = 0.0;
+                    tY[i] = 0.0;
+                    tZ[i] = 0.0;
+                }
                 if (lambdaTerm) {
-                    Arrays.fill(lambdaGrad[threadID][0], 0.0);
-                    Arrays.fill(lambdaGrad[threadID][1], 0.0);
-                    Arrays.fill(lambdaGrad[threadID][2], 0.0);
-                    Arrays.fill(lambdaTorque[threadID][0], 0.0);
-                    Arrays.fill(lambdaTorque[threadID][1], 0.0);
-                    Arrays.fill(lambdaTorque[threadID][2], 0.0);
+                    double lgX[] = lambdaGrad[threadID][0];
+                    double lgY[] = lambdaGrad[threadID][1];
+                    double lgZ[] = lambdaGrad[threadID][2];
+                    double ltX[] = lambdaTorque[threadID][0];
+                    double ltY[] = lambdaTorque[threadID][1];
+                    double ltZ[] = lambdaTorque[threadID][2];
+                    for (int i = 0; i < nAtoms; i++) {
+                        lgX[i] = 0.0;
+                        lgY[i] = 0.0;
+                        lgZ[i] = 0.0;
+                        ltX[i] = 0.0;
+                        ltY[i] = 0.0;
+                        ltZ[i] = 0.0;
+                    }
                 }
             }
 
@@ -4660,7 +4689,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                         if (!useQuadrupoles) {
                             quadrupoleScale = 0.0;
                         }
-                        
+
                         out[t000] = in[0] * chargeScale;
                         out[t100] = dipole[0] * dipoleScale;
                         out[t010] = dipole[1] * dipoleScale;
@@ -4685,7 +4714,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                         out[t101] = scale * in[t101] * quadrupoleScale;
                         out[t011] = scale * in[t011] * quadrupoleScale;
                          */
-                        
+
                         PolarizeType polarizeType = atoms[ii].getPolarizeType();
                         polarizability[ii] = polarizeType.polarizability;
                     }
