@@ -183,6 +183,15 @@ public class ReciprocalSpace {
          */
         transformFieldMatrix();
         /**
+         * Compute the cart to frac matrix.
+         */
+        for (int i = 0; i < 3; i++) {
+            a[0][i] = fftX * crystal.A[i][0];
+            a[1][i] = fftY * crystal.A[i][1];
+            a[2][i] = fftZ * crystal.A[i][2];
+        }
+        
+        /**
          * Construct the parallel b-Spline, density and field objects.
          */
         bSplineRegion = new BSplineRegion();
@@ -445,11 +454,6 @@ public class ReciprocalSpace {
 
     public void cartToFracInducedDipoles(double inducedDipole[][][],
             double inducedDipoleCR[][][]) {
-        for (int i = 0; i < 3; i++) {
-            a[0][i] = fftX * crystal.A[i][0];
-            a[1][i] = fftY * crystal.A[i][1];
-            a[2][i] = fftZ * crystal.A[i][2];
-        }
         for (int iSymm = 0; iSymm < nSymm; iSymm++) {
             for (int i = 0; i < nAtoms; i++) {
                 double in[] = inducedDipole[iSymm][i];
@@ -738,20 +742,23 @@ public class ReciprocalSpace {
         public SplineInducedLoop(SpatialDensityRegion region, BSplineRegion splines) {
             super(region, region.nSymm, region.actualCount);
             this.bSplines = splines;
+            
+            double m[][] = new double[3][3];
+            
             for (int i = 0; i < 3; i++) {
-                a[0][i] = fftX * crystal.A[i][0];
-                a[1][i] = fftY * crystal.A[i][1];
-                a[2][i] = fftZ * crystal.A[i][2];
+                m[0][i] = fftX * crystal.A[i][0];
+                m[1][i] = fftY * crystal.A[i][1];
+                m[2][i] = fftZ * crystal.A[i][2];
             }
-            a00 = a[0][0];
-            a01 = a[0][1];
-            a02 = a[0][2];
-            a10 = a[1][0];
-            a11 = a[1][1];
-            a12 = a[1][2];
-            a20 = a[2][0];
-            a21 = a[2][1];
-            a22 = a[2][2];
+            a00 = m[0][0];
+            a01 = m[0][1];
+            a02 = m[0][2];
+            a10 = m[1][0];
+            a11 = m[1][1];
+            a12 = m[1][2];
+            a20 = m[2][0];
+            a21 = m[2][1];
+            a22 = m[2][2];
         }
 
         public void setInducedDipoles(double inducedDipole[][][],
@@ -1411,6 +1418,7 @@ public class ReciprocalSpace {
     }
 
     private void transformMultipoleMatrix() {
+        double a[][] = new double[3][3];
         for (int i = 0; i < 3; i++) {
             a[0][i] = fftX * crystal.A[i][0];
             a[1][i] = fftY * crystal.A[i][1];
@@ -1452,6 +1460,8 @@ public class ReciprocalSpace {
     }
 
     private void transformFieldMatrix() {
+        double a[][] = new double[3][3];
+        
         for (int i = 0; i < 3; i++) {
             a[i][0] = fftX * crystal.A[i][0];
             a[i][1] = fftY * crystal.A[i][1];
@@ -1575,9 +1585,11 @@ public class ReciprocalSpace {
      * Second lookup index to pack a 2D tensor into a 1D array.
      */
     private static final int qi2[] = {0, 1, 2, 1, 2, 2};
-    private final double a[][] = new double[3][3];
+    
     private final double transformFieldMatrix[][] = new double[10][10];
     private final double transformMultipoleMatrix[][] = new double[10][10];
+    private final double a[][] = new double[3][3];
+    
     private static final int tensorCount = TensorRecursion.tensorCount(3);
     private static double toSeconds = 1.0e-9;
 }
