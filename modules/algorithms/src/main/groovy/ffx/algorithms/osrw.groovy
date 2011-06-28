@@ -13,7 +13,7 @@ import ffx.potential.bonded.Atom;
 // Name of the file (PDB or XYZ).
 String filename = args[0];
 if (filename == null) {
-   println("\n Usage: ffxc osrw filename ligandStart ligandStop lambda fiction mass ");
+   println("\n Usage: ffxc osrw filename ligandStart ligandStop lambda temperature fiction mass ");
    return;
 }
 
@@ -32,14 +32,19 @@ if (args.size() > 3) {
     initialLambda = Double.parseDouble(args[3]);
 }
 
-double initialFriction = 1.0e-16;
+double temperature = 300.0;
 if (args.size() > 4) {
-    initialFriction = Double.parseDouble(args[4]);
+    temperature = Double.parseDouble(args[4]);
+}
+
+double initialFriction = 1.0e-16;
+if (args.size() > 5) {
+    initialFriction = Double.parseDouble(args[5]);
 }
 
 double mass = 1.0e-18;
-if (args.size() > 5) {
-    mass = Double.parseDouble(args[5]);
+if (args.size() > 6) {
+    mass = Double.parseDouble(args[6]);
 }
 
 // Restart File
@@ -48,8 +53,8 @@ if (!dyn.exists()) {
    dyn = null;
 } 
 
-// Number of molecular dynamics steps
-int nSteps = 1000000;
+// Number of molecular dynamics steps: default is 10 nanoseconds.
+int nSteps = 10000000;
 
 // Time step in femtoseconds.
 double timeStep = 1.0;
@@ -59,9 +64,6 @@ double printInterval = 0.1;
 
 // Frequency to save out coordinates in picoseconds.
 double saveInterval = 10.0;
-
-// Temperature in degrees Kelvin.
-double temperature = 300.0;
 
 // Thermostats [ ADIABATIC, BERENDSEN, BUSSI ]
 Thermostats thermostat = Thermostats.BERENDSEN;

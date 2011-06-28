@@ -20,8 +20,6 @@
  */
 package ffx.potential.nonbonded;
 
-import static java.lang.String.format;
-
 import java.util.logging.Logger;
 
 import edu.rit.pj.IntegerSchedule;

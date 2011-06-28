@@ -189,14 +189,14 @@ public class SpatialDensityRegion extends ParallelRegion {
             currentWork = nC / div / threadCount;
             // If we have enough work per thread, stop dividing the domain.
             if (currentWork > minWork || nY < 2) {
-                // Reduce the number of divisions along the X-axis if possible
-                while (currentWork >= minWork) {
+                nA = 1;
+                nB = 1;
+                // Reduce the number of divisions along the Z-axis if possible
+                while (currentWork > 2*minWork) {
                     nC -= 2;
                     currentWork = nC / div / threadCount;
                 }
-                nC += 2;
-                nA = 1;
-                nB = 1;
+
             } else {
                 if (nY % 2 != 0) {
                     nY--;
@@ -206,12 +206,11 @@ public class SpatialDensityRegion extends ParallelRegion {
                 currentWork = nB * nC / div / threadCount;
                 // If we have 4 * threadCount * minWork chunks, stop dividing the domain.
                 if (currentWork > minWork || nX < 2) {
-                    while (currentWork >= minWork) {
+                    nA = 1;
+                    while (currentWork > 2*minWork) {
                         nB -= 2;
                         currentWork = nB * nC / div / threadCount;
                     }
-                    nB += 2;
-                    nA = 1;
                 } else {
                     if (nX % 2 != 0) {
                         nX--;
@@ -219,11 +218,10 @@ public class SpatialDensityRegion extends ParallelRegion {
                     nA = nX;
                     div = 8;
                     currentWork = nA * nB * nC / div / threadCount;
-                    while (currentWork >= minWork) {
+                    while (currentWork > 2*minWork) {
                         nA -= 2;
                         currentWork = nA * nB * nC / div / threadCount;
                     }
-                    nA += 2;
                 }
             }
             nAB = nA * nB;
@@ -238,6 +236,8 @@ public class SpatialDensityRegion extends ParallelRegion {
             nWork = 1;
         }
 
+        //logger.info(String.format(" nA %d nB %d nC %d nWork %d", nA, nB, nC, nWork));
+        
         workA = new int[nWork];
         workB = new int[nWork];
         workC = new int[nWork];

@@ -5,7 +5,7 @@ import org.apache.commons.io.FilenameUtils;
 // Name of the file (PDB or XYZ).
 String filename = args[0];
 if (filename == null) {
-   println("Usage: ffx saveAsPDB filname");
+   println("Usage: ffxc saveAsPDB filename");
    return;
 }
 

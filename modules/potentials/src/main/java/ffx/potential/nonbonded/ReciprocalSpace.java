@@ -295,7 +295,7 @@ public class ReciprocalSpace {
                 logger.fine(format(" Compute B-Splines:      %8.3f", time * toSeconds));
             }
         } catch (Exception e) {
-            String message = "Fatal exception evaluating b-Splines.";
+            String message = " Fatal exception evaluating b-Splines.";
             logger.log(Level.SEVERE, message, e);
         }
     }
@@ -322,7 +322,7 @@ public class ReciprocalSpace {
                 logger.fine(format(" Grid Permanent Density: %8.3f", permanentDensityTime * toSeconds));
             }
         } catch (Exception e) {
-            String message = "Fatal exception evaluating permanent multipole density.";
+            String message = " Fatal exception evaluating permanent multipole density.";
             logger.log(Level.SEVERE, message, e);
         }
     }
@@ -345,7 +345,7 @@ public class ReciprocalSpace {
                 }
             }
         } catch (Exception e) {
-            String message = "Fatal exception evaluating permanent convolution.";
+            String message = " Fatal exception evaluating permanent convolution.";
             logger.log(Level.SEVERE, message, e);
         }
     }
@@ -365,7 +365,7 @@ public class ReciprocalSpace {
                 logger.fine(format(" Compute Phi:            %8.3f (sec)", time * toSeconds));
             }
         } catch (Exception e) {
-            String message = "Fatal exception evaluating permanent reciprocal space potential.";
+            String message = " Fatal exception evaluating permanent reciprocal space potential.";
             logger.log(Level.SEVERE, message, e);
         }
     }
@@ -380,12 +380,6 @@ public class ReciprocalSpace {
     public void splineInducedDipoles(double inducedDipole[][][],
             double inducedDipoleCR[][][],
             boolean use[]) {
-        /*
-        for (int i = 0; i < 3; i++) {
-            a[0][i] = fftX * crystal.A[i][0];
-            a[1][i] = fftY * crystal.A[i][1];
-            a[2][i] = fftZ * crystal.A[i][2];
-        } */
         spatialDensityRegion.setDensityLoop(polarizationDensityLoops);
         for (int i = 0; i < threadCount; i++) {
             polarizationDensityLoops[i].setInducedDipoles(inducedDipole, inducedDipoleCR);
@@ -399,7 +393,7 @@ public class ReciprocalSpace {
                 logger.fine(format(" Induced Density:        %8.3f", time * toSeconds));
             }
         } catch (Exception e) {
-            String message = "Fatal exception evaluating induced density.\n";
+            String message = " Fatal exception evaluating induced density.\n";
             logger.log(Level.SEVERE, message, e);
         }
     }

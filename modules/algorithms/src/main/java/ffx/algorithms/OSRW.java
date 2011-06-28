@@ -134,7 +134,7 @@ public class OSRW implements Potential {
      */
     private double d2EdLambda2 = 0.0;
     private double dUdXdL[] = null;
-    private double biasGaussianMag = 0.005;
+    private double osrwGaussianMag = 0.005;
     private double FLambda[];
     /**
      * Gas constant (in Kcal/mole/Kelvin).
@@ -193,7 +193,7 @@ public class OSRW implements Potential {
         this.dt = dt * 0.001;
 
         biasCutoff = properties.getInt("lambda-bias-cutoff", 5);
-        biasGaussianMag = properties.getDouble("bias-gaussian-mag", 0.005);
+        osrwGaussianMag = properties.getDouble("bias-gaussian-mag", 0.005);
         dL = properties.getDouble("lambda-bin-width", 0.005);
 
         /**
@@ -278,8 +278,8 @@ public class OSRW implements Potential {
          */
         double dGdLambda = 0.0;
         double dGdFLambda = 0.0;
-        double ls2 = 2.0 / lambdaBins * 2.0 / lambdaBins;
-        double FLs2 = dFL * 2.0 * dFL * 2.0;
+        double ls2 = (2.0 * dL) * (2.0  * dL);
+        double FLs2 = (2.0 * dFL) * (2.0 * dFL);
         for (int iL = -biasCutoff; iL <= biasCutoff; iL++) {
             int lcenter = lambdaBin + iL;
             double deltaL = lambda - (lcenter * dL);
@@ -309,7 +309,7 @@ public class OSRW implements Potential {
                 double deltaFL = dEdLambda - (minFLambda + FLcenter * dFL + dFL_2);
                 double deltaFL2 = deltaFL * deltaFL;
                 double weight = mirrorFactor * recursionKernel[lcount][FLcenter];
-                double bias = weight * biasGaussianMag
+                double bias = weight * osrwGaussianMag
                         * exp(-deltaL2 / (2.0 * ls2))
                         * exp(-deltaFL2 / (2.0 * FLs2));
                 biasEnergy += bias;
@@ -369,7 +369,7 @@ public class OSRW implements Potential {
         /**
          * Log our current state.
          */
-        if (energyCount % lambdaPrintFrequency == 0) {
+        if (energyCount % lambdaPrintFrequency == 0 && propagateLambda) {
             if (lambdaBins < 1000) {
                 logger.info(String.format(" L=%6.4f (%3d) F_LU=%10.4f F_LB=%10.4f F_L=%10.4f",
                          lambda, lambdaBin, dEdU, dEdLambda - dEdU, dEdLambda));
@@ -463,7 +463,7 @@ public class OSRW implements Potential {
     private double updateFLambda(boolean print) {
         double freeEnergy = 0.0;
         if (print) {
-            logger.info(" Count  Lambda Bins    F_Lambda Bins   <  F_L   >       dG");
+            logger.info(" Count  Lambda Bins    F_Lambda Bins   <   F_L  >       dG        G");
         }
         for (int iL = 0; iL < lambdaBins; iL++) {
             int ulFL = -1;
@@ -486,24 +486,24 @@ public class OSRW implements Potential {
             }
 
             int lambdaCount = 0;
-            // The FL range that has been sampled for iL*dL to (iL+1)*dL
+            // The FL range sampled for lambda bin [iL*dL .. (iL+1)*dL]
             double lla = minFLambda + llFL * dFL;
-            double ula = minFLambda + ulFL * dFL + dFL;
+            double ula = minFLambda + ulFL * (dFL + 1);
             if (ulFL == -1) {
                 FLambda[iL] = 0.0;
                 lla = 0.0;
                 ula = 0.0;
             } else {
-                double sumFLambda = 0.0;
+                double ensembleAverageFLambda = 0.0;
                 double partitionFunction = 0.0;
                 for (int jFL = llFL; jFL <= ulFL; jFL++) {
-                    double a = minFLambda + jFL * dFL + dFL_2;
-                    double e = exp(evaluateKernel(iL, jFL) / (R * 300.0));
-                    sumFLambda += a * e;
-                    partitionFunction += e;
+                    double currentFLambda = minFLambda + jFL * dFL + dFL_2;
+                    double weight = exp(evaluateKernel(iL, jFL) / (R * temperature));
+                    ensembleAverageFLambda += currentFLambda * weight;
+                    partitionFunction += weight;
                     lambdaCount += recursionKernel[iL][jFL];
                 }
-                FLambda[iL] = sumFLambda / partitionFunction;
+                FLambda[iL] = ensembleAverageFLambda / partitionFunction;
             }
 
             // The first and last bins are half size.
@@ -511,7 +511,8 @@ public class OSRW implements Potential {
             if (iL == 0 || iL == lambdaBins - 1) {
                 delta *= 0.5;
             }
-            freeEnergy += FLambda[iL] * delta;
+            double deltaFreeEnergy = FLambda[iL] * delta;
+            freeEnergy += deltaFreeEnergy;
 
             if (print) {
                 double llL = iL * dL - dL_2;
@@ -524,13 +525,13 @@ public class OSRW implements Potential {
                 }
 
                 if (lambdaBins <= 100) {
-                    logger.info(String.format(" %5d [%4.2f %4.2f] [%7.1f %7.1f] <%8.3f> %8.3f",
+                    logger.info(String.format(" %5d [%4.2f %4.2f] [%7.1f %7.1f] <%8.3f> %8.3f %8.3f",
                             lambdaCount, llL, ulL, lla, ula,
-                            FLambda[iL], freeEnergy));
+                            FLambda[iL], deltaFreeEnergy, freeEnergy));
                 } else {
-                    logger.info(String.format(" %5d [%5.3f %5.3f] [%7.1f %7.1f] <%8.3f> %8.3f",
+                    logger.info(String.format(" %5d [%5.3f %5.3f] [%7.1f %7.1f] <%8.3f> %8.3f %8.3f",
                             lambdaCount, llL, ulL, lla, ula,
-                            FLambda[iL], freeEnergy));
+                            FLambda[iL], deltaFreeEnergy, freeEnergy));
                 }
             }
         }
@@ -626,7 +627,7 @@ public class OSRW implements Potential {
                 double deltaFL2 = deltaFL * deltaFL;
                 double weight = mirrorFactor * recursionKernel[lcount][FLcenter];
                 if (weight > 0) {
-                    double e = weight * biasGaussianMag * exp(-deltaL2 / (2.0 * Ls2))
+                    double e = weight * osrwGaussianMag * exp(-deltaL2 / (2.0 * Ls2))
                             * exp(-deltaFL2 / (2.0 * FLs2));
                     sum += e;
                 }
