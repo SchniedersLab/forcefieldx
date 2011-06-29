@@ -1464,7 +1464,6 @@ public class ParticleMeshEwald implements LambdaInterface {
             try {
                 long time = System.nanoTime();
                 pt.execute(polarizationRealSpaceFieldRegion);
-                //polarizationRealSpaceFieldRegion.setField(field, fieldCR);
                 time = System.nanoTime() - time;
                 realSpaceTime += time;
             } catch (Exception e) {
@@ -4111,15 +4110,15 @@ public class ParticleMeshEwald implements LambdaInterface {
         private final double fractionalInducedDipoleCRPhi[][] = reciprocalSpace.getFracInducedDipoleCRPhi();
         private final double fmpole[][] = reciprocalSpace.getFracMultipoles();
         private final double find[][] = reciprocalSpace.getFracInducedDipoles();
-        private final double findCR[][] = reciprocalSpace.getFracInducedDipoles();
+        private final double findCR[][] = reciprocalSpace.getFracInducedDipolesCR();
         private final SharedDouble selfEnergy;
         private final SharedDouble recipEnergy;
-        private final InducedReciprocalEnergyLoop inducedReciprocalEnergyLoop[];
+        private final PolarizationReciprocalEnergyLoop polarizationReciprocalEnergyLoop[];
 
         public PolarizationReciprocalEnergyRegion(int nt) {
-            inducedReciprocalEnergyLoop = new InducedReciprocalEnergyLoop[nt];
+            polarizationReciprocalEnergyLoop = new PolarizationReciprocalEnergyLoop[nt];
             for (int i = 0; i < nt; i++) {
-                inducedReciprocalEnergyLoop[i] = new InducedReciprocalEnergyLoop();
+                polarizationReciprocalEnergyLoop[i] = new PolarizationReciprocalEnergyLoop();
             }
             selfEnergy = new SharedDouble();
             recipEnergy = new SharedDouble();
@@ -4143,14 +4142,14 @@ public class ParticleMeshEwald implements LambdaInterface {
         public void run() throws Exception {
             try {
                 int ti = getThreadIndex();
-                execute(0, nAtoms - 1, inducedReciprocalEnergyLoop[ti]);
+                execute(0, nAtoms - 1, polarizationReciprocalEnergyLoop[ti]);
             } catch (Exception e) {
                 String message = "Fatal exception computing the real space field in thread " + getThreadIndex() + "\n";
                 logger.log(Level.SEVERE, message, e);
             }
         }
 
-        private class InducedReciprocalEnergyLoop extends IntegerForLoop {
+        private class PolarizationReciprocalEnergyLoop extends IntegerForLoop {
 
             private double eSelf;
             private double eRecip;
