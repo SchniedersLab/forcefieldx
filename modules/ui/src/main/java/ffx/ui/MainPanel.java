@@ -1029,7 +1029,7 @@ public final class MainPanel extends JPanel implements ActionListener,
         /**
          * Run the Force Field X script.
          */
-        if (extension.equalsIgnoreCase("ffx")) {
+        if (extension.equalsIgnoreCase("ffx") || extension.equalsIgnoreCase("groovy")) {
             ModelingShell shell = getModelingShell();
             if (java.awt.GraphicsEnvironment.isHeadless()) {
                 shell.headlessRun(file);

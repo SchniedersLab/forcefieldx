@@ -40,7 +40,7 @@
                 <inherited>false</inherited>
                 <executions>
                     <execution>
-                        <id>copy-scripts</id>
+                        <id>website-scripts</id>
                         <phase>pre-site</phase>
                         <goals>
                             <goal>copy-resources</goal>
@@ -52,6 +52,22 @@
                                 </resource>
                             </resources>
                             <outputDirectory>${basedir}/src/site/resources/scripts</outputDirectory>
+                            <overwrite>true</overwrite>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>distro-scripts</id>
+                        <phase>pre-site</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <resources>
+                                <resource>
+                                    <directory>${basedir}/src/main/groovy/ffx</directory>
+                                </resource>
+                            </resources>
+                            <outputDirectory>${basedir}/../../scripts</outputDirectory>
                             <overwrite>true</overwrite>
                         </configuration>
                     </execution>
