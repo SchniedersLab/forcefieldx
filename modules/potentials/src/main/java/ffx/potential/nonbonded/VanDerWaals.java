@@ -332,7 +332,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         vdwLambdaAlpha = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_ALPHA, 0.1);
         vdwLambdaExponent = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_EXPONENT, 1.0);
         if (vdwLambdaAlpha < 0.0) {
-            vdwLambdaAlpha = 0.2;
+            vdwLambdaAlpha = 0.1;
         }
         if (vdwLambdaExponent < 1.0) {
             vdwLambdaExponent = 1.0;
