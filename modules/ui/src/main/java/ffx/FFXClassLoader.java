@@ -25,6 +25,7 @@ import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -32,10 +33,13 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.ProtectionDomain;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+
+import org.apache.commons.io.FileUtils;
 
 /**
  * Class loader able to load classes and DLLs with a higher priority from a given set of JARs.
@@ -55,9 +59,9 @@ public class FFXClassLoader extends ClassLoader {
      * and will load itself all the classes belonging to packages of <code>applicationPackages</code>.
      */
     public FFXClassLoader(ClassLoader parent,
-                                 ProtectionDomain protectionDomain,
-                                 String[] extensionJarsAndDlls,
-                                 String[] applicationPackages) {
+                          ProtectionDomain protectionDomain,
+                          String[] extensionJarsAndDlls,
+                          String[] applicationPackages) {
         super(parent);
         this.protectionDomain = protectionDomain;
         this.applicationPackages = applicationPackages;
@@ -79,7 +83,7 @@ public class FFXClassLoader extends ClassLoader {
         }
 
         // Find extension Jars and DLLs
-        ArrayList extensionJars = new ArrayList();
+        ArrayList extensionJarList = new ArrayList();
         for (int i = 0; i < extensionJarsAndDlls.length; i++) {
             String extensionJarOrDll = extensionJarsAndDlls[i];
             try {
@@ -89,7 +93,7 @@ public class FFXClassLoader extends ClassLoader {
                         // Copy jar to a tmp file
                         String extensionJar = copyInputStreamToTmpFile(extensionJarOrDllUrl.openStream(), ".jar");
                         // Add tmp file to extension jars list
-                        extensionJars.add(new JarFile(extensionJar, false));
+                        extensionJarList.add(new JarFile(extensionJar, false));
                     } else if (extensionJarOrDll.endsWith(dllSuffix)) {
                         int lastSlashIndex = extensionJarOrDll.lastIndexOf('/');
                         // Copy DLL to a tmp file
@@ -102,12 +106,29 @@ public class FFXClassLoader extends ClassLoader {
                     System.out.println(" File not extracted: " + extensionJarOrDll);
                 }
             } catch (IOException ex) {
-                throw new RuntimeException("Couldn't extract extension jars", ex);
+                throw new RuntimeException("Couldn't extract extension jar.\n", ex);
             }
         }
+
+        // Add extension jars from the ffx/conf directory
+        String confDir = System.getProperty("basedir") + File.separator + "conf";
+        File confFile = new File(confDir);
+        File files[] = confFile.listFiles();        
+        for (File jar : files) {
+            try {
+                String ext = jar.getCanonicalPath().toUpperCase();
+                if (ext.endsWith("JAR")) {
+                    System.out.println(" Loading extension jar... " + jar);
+                    extensionJarList.add(new JarFile(jar, false));
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(" Couldn't load extension jar.\n", e);
+            }
+        }
+
         // Create extensionJars array
-        if (extensionJars.size() > 0) {
-            this.extensionJars = (JarFile[]) extensionJars.toArray(new JarFile[extensionJars.size()]);
+        if (extensionJarList.size() > 0) {
+            this.extensionJars = (JarFile[]) extensionJarList.toArray(new JarFile[extensionJarList.size()]);
         }
     }
 
@@ -115,7 +136,7 @@ public class FFXClassLoader extends ClassLoader {
      * Returns the file name of a temporary copy of <code>input</code> content.
      */
     public static String copyInputStreamToTmpFile(InputStream input,
-                                            String suffix) throws IOException {
+                                                  String suffix) throws IOException {
         File tmpFile = null;
         try {
             tmpFile = File.createTempFile("tmp.", suffix);
@@ -271,4 +292,3 @@ public class FFXClassLoader extends ClassLoader {
         return loadedClass;
     }
 }
-

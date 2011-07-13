@@ -16,5 +16,4 @@ catalog.xml
 .settings/
 release/
 /.netbeans/
-lambdatest
-lambda.*
+conf/*.jar
