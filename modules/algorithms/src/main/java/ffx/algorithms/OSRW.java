@@ -20,7 +20,18 @@
  */
 package ffx.algorithms;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.Reader;
+import java.io.Writer;
 import java.util.Random;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.Math.PI;
 import static java.lang.Math.exp;
@@ -50,6 +61,10 @@ public class OSRW implements Potential {
      * The potential energy of the system.
      */
     private Potential potential;
+    /**
+     * Restart file.
+     */
+    private File restartFile;
     /**
      * Array of atoms.
      */
@@ -134,7 +149,7 @@ public class OSRW implements Potential {
      */
     private double d2EdLambda2 = 0.0;
     private double dUdXdL[] = null;
-    private double osrwGaussianMag = 0.005;
+    private double biasMag = 0.005;
     private double FLambda[];
     /**
      * Gas constant (in Kcal/mole/Kelvin).
@@ -172,29 +187,35 @@ public class OSRW implements Potential {
     private int fLambdaPrintFrequency = 10;
     private int fLambdaUpdates = 0;
     /**
+     * Steps between writing an OSRW restart file.
+     */
+    private int osrwRestartFrequency = 10000;
+    
+    /**
      * Print detailed energy information.
      */
     private boolean print = false;
 
-    public OSRW(LambdaInterface lambdaInterface,
-            Potential potential,
-            CompositeConfiguration properties,
-            Atom atoms[],
-            double temperature, double dt) {
+    public OSRW(LambdaInterface lambdaInterface, Potential potential,
+            File restartFile, CompositeConfiguration properties,
+            Atom atoms[], double temperature, double dt, double restartFrequency) {
         this.lambdaInterface = lambdaInterface;
         this.potential = potential;
+        this.restartFile = restartFile;
         this.atoms = atoms;
-        nAtoms = atoms.length;
         this.temperature = temperature;
+        nAtoms = atoms.length;
 
         /**
          * Convert the time step to picoseconds.
          */
         this.dt = dt * 0.001;
+        osrwRestartFrequency = (int) (restartFrequency / this.dt);
 
         biasCutoff = properties.getInt("lambda-bias-cutoff", 5);
-        osrwGaussianMag = properties.getDouble("bias-gaussian-mag", 0.005);
+        biasMag = properties.getDouble("bias-gaussian-mag", 0.005);
         dL = properties.getDouble("lambda-bin-width", 0.005);
+        dFL = properties.getDouble("flambda-bin-width", 2.0);
 
         /**
          * Require modest sampling of the lambda path. 
@@ -214,30 +235,50 @@ public class OSRW implements Potential {
         if (lambdaBins % 2 == 0) {
             lambdaBins++;
         }
-        dL = 1.0 / (lambdaBins - 1);
-        dL_2 = dL / 2.0;
-        minLambda = -dL_2;
 
         /**
          * The initial number of FLambda bins does not really matter, since
-         * a larger number are automatically allocated as needed. The center
+         * a larger number is automatically allocated as needed. The center
          * of the central bin is at 0.
          */
-        dFL = properties.getDouble("flambda-bin-width", 2.0);
-        dFL_2 = dFL / 2.0;
         FLambdaBins = 401;
-        minFLambda = -(dFL * FLambdaBins) / 2.0;
-        maxFLambda = minFLambda + FLambdaBins * dFL;
-
         /**
          * Allocate space for the recursion kernel that stores counts.
          */
         recursionKernel = new int[lambdaBins][FLambdaBins];
+
+        /**
+         * Load the OSRW restart file if it exists. 
+         */
+        boolean restartRead = false;
+        if (restartFile != null && restartFile.exists()) {
+            try {
+                OSRWRestartReader osrwRestartReader = new OSRWRestartReader(new FileReader(restartFile));
+                osrwRestartReader.readRestartFile();
+                logger.info(String.format("\n Continuing OSRW from %s.", restartFile.getName()));
+                restartRead = true;
+            } catch (FileNotFoundException ex) {
+                logger.info(" Restart file could not be found and will be ignored.");
+            }
+        }
+
+        dL = 1.0 / (lambdaBins - 1);
+        dL_2 = dL / 2.0;
+        minLambda = -dL_2;
+        dFL_2 = dFL / 2.0;
+        minFLambda = -(dFL * FLambdaBins) / 2.0;
+        maxFLambda = minFLambda + FLambdaBins * dFL;
         FLambda = new double[lambdaBins];
         dUdXdL = new double[nAtoms * 3];
         energyCount = -1;
-
         stochasticRandom = new Random(0);
+
+        /**
+         * Update and print out the recursion slave.
+         */
+        if (restartRead) {
+            updateFLambda(true);
+        }
 
     }
 
@@ -309,7 +350,7 @@ public class OSRW implements Potential {
                 double deltaFL = dEdLambda - (minFLambda + FLcenter * dFL + dFL_2);
                 double deltaFL2 = deltaFL * deltaFL;
                 double weight = mirrorFactor * recursionKernel[lcount][FLcenter];
-                double bias = weight * osrwGaussianMag
+                double bias = weight * biasMag
                         * exp(-deltaL2 / (2.0 * ls2))
                         * exp(-deltaFL2 / (2.0 * FLs2));
                 biasEnergy += bias;
@@ -350,9 +391,23 @@ public class OSRW implements Potential {
         /**
          * Update free energy F(L) every ~100 steps.
          */
-        if (energyCount % 100 == 0 && propagateLambda) {
+        if (energyCount > 0 && energyCount % 100 == 0 && propagateLambda) {
             fLambdaUpdates++;
-            updateFLambda(fLambdaUpdates % fLambdaPrintFrequency == 0);
+            boolean printFLambda = fLambdaUpdates % fLambdaPrintFrequency == 0;
+            updateFLambda(printFLambda);
+        }
+        
+        if (energyCount > 0 && energyCount % osrwRestartFrequency == 0) {
+                try {
+                    OSRWRestartWriter osrwRestart = new OSRWRestartWriter(new BufferedWriter(new FileWriter(restartFile)));
+                    osrwRestart.writeRestartFile();
+                    osrwRestart.flush();
+                    osrwRestart.close();
+                    logger.info(String.format(" Wrote OSRW restart file to %s.", restartFile.getName()));
+                } catch (IOException ex) {
+                    String message = " Exception writing OSRW restart file.";
+                    logger.log(Level.INFO, message, ex);
+                }            
         }
 
         /**
@@ -366,10 +421,11 @@ public class OSRW implements Potential {
             logger.info(String.format(" %s %16.8f  %s",
                     "OSRW Potential    ", e + biasEnergy, "(Kcal/mole)"));
         }
+        
         /**
          * Log our current state.
          */
-        if (energyCount % lambdaPrintFrequency == 0 && propagateLambda) {
+        if (energyCount > 0 && energyCount % lambdaPrintFrequency == 0 && propagateLambda) {
             if (lambdaBins < 1000) {
                 logger.info(String.format(" L=%6.4f (%3d) F_LU=%10.4f F_LB=%10.4f F_L=%10.4f",
                         lambda, lambdaBin, dEdU, dEdLambda - dEdU, dEdLambda));
@@ -382,7 +438,7 @@ public class OSRW implements Potential {
         /**
          * Meta-dynamics grid counts (every ~10 steps).
          */
-        if (energyCount % 10 == 0 && propagateLambda) {
+        if (energyCount > 0 && energyCount % 10 == 0 && propagateLambda) {
             recursionKernel[lambdaBin][FLambdaBin]++;
         }
 
@@ -528,6 +584,7 @@ public class OSRW implements Potential {
                         FLambda[iL], deltaFreeEnergy, freeEnergy));
             }
         }
+
         return freeEnergy;
     }
 
@@ -620,7 +677,7 @@ public class OSRW implements Potential {
                 double deltaFL2 = deltaFL * deltaFL;
                 double weight = mirrorFactor * recursionKernel[lcount][FLcenter];
                 if (weight > 0) {
-                    double e = weight * osrwGaussianMag * exp(-deltaL2 / (2.0 * Ls2))
+                    double e = weight * biasMag * exp(-deltaL2 / (2.0 * Ls2))
                             * exp(-deltaFL2 / (2.0 * FLs2));
                     sum += e;
                 }
@@ -689,5 +746,70 @@ public class OSRW implements Potential {
     @Override
     public int getNumberOfVariables() {
         return potential.getNumberOfVariables();
+    }
+
+    private class OSRWRestartWriter extends PrintWriter {
+
+        public OSRWRestartWriter(Writer writer) {
+            super(writer);
+        }
+
+        public void writeRestartFile() {
+            printf("Temperature     %15.3f\n", temperature);
+            printf("Lambda          %15.8f\n", lambda);
+            printf("Lambda-Mass     %15.8e\n", thetaMass);
+            printf("Lambda-Friction %15.8e\n", thetaFriction);
+            printf("Lambda-Velocity %15.8e\n", halfThetaVelocity);
+            printf("Bias-Mag        %15.8e\n", biasMag);
+            printf("Bias-Cutoff     %15d\n", biasCutoff);
+            printf("Lambda-Bins     %15d\n", lambdaBins);
+            printf("FLambda-Bins    %15d\n", FLambdaBins);
+            printf("Flambda-Min     %15.8e\n", minFLambda);
+            printf("Flambda-Width   %15.8e\n", dFL);
+            for (int i = 0; i < lambdaBins; i++) {
+                printf("%d", recursionKernel[i][0]);
+                for (int j = 1; j < FLambdaBins; j++) {
+                    printf(" %d", recursionKernel[i][j]);
+                }
+                println();
+            }
+        }
+    }
+
+    private class OSRWRestartReader extends BufferedReader {
+
+        public OSRWRestartReader(Reader reader) {
+            super(reader);
+        }
+
+        public void readRestartFile() {
+            try {
+                temperature = Double.parseDouble(readLine().split(" +")[1]);
+                lambda = Double.parseDouble(readLine().split(" +")[1]);
+                setLambda(lambda);
+                thetaMass = Double.parseDouble(readLine().split(" +")[1]);
+                thetaFriction = Double.parseDouble(readLine().split(" +")[1]);
+                halfThetaVelocity = Double.parseDouble(readLine().split(" +")[1]);
+                biasMag = Double.parseDouble(readLine().split(" +")[1]);
+                biasCutoff = Integer.parseInt(readLine().split(" +")[1]);
+                lambdaBins = Integer.parseInt(readLine().split(" +")[1]);
+                FLambdaBins = Integer.parseInt(readLine().split(" +")[1]);
+                minFLambda = Double.parseDouble(readLine().split(" +")[1]);
+                dFL = Double.parseDouble(readLine().split(" +")[1]);
+                // Allocate memory for the recursion kernel.
+                recursionKernel = new int[lambdaBins][FLambdaBins];
+                for (int i = 0; i < lambdaBins; i++) {
+                    String counts[] = readLine().split(" +");
+                    for (int j = 0; j < FLambdaBins; j++) {
+                        recursionKernel[i][j] = Integer.parseInt(counts[j]);
+                    }
+                }
+            } catch (Exception e) {
+                String message = " Invalid OSRW restart file.";
+                logger.log(Level.SEVERE, message, e);
+            }
+
+
+        }
     }
 }
