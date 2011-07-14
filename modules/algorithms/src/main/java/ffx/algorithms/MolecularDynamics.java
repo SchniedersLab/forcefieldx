@@ -172,7 +172,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 archiveFile = new File(filename + ".arc");
                 archiveFile = XYZFilter.version(archiveFile);
             }
-            logger.info(" Snap shots will be written to " + archiveFile.getAbsolutePath());
+            logger.info(" Snap shots will be written to " + archiveFile.getName());
 
             if (dyn == null) {
                 this.dynFile = new File(filename + ".dyn");
@@ -182,7 +182,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 loadRestart = true;
             }
 
-            logger.info(" Restart file will be written to " + this.dynFile.getAbsolutePath());
+            logger.info(" Restart file will be written to " + this.dynFile.getName());
 
             if (xyzFilter == null) {
                 xyzFilter = new XYZFilter(file, molecularAssembly,
@@ -231,7 +231,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
         }
         done = false;
 
-        logger.info(" Molecular dynamics starting up");
+        logger.info("\n Molecular dynamics starting up");
         if (!(thermostat instanceof Adiabatic)) {
             logger.info(format(" Sampling the NVT ensemble using a %s", thermostat.toString()));
         } else {
@@ -256,7 +256,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
                     wait(100);
                 }
             } catch (Exception e) {
-                String message = "Molecular dynamics interrupted.";
+                String message = " Molecular dynamics interrupted.";
                 logger.log(Level.WARNING, message, e);
             }
         }
@@ -360,9 +360,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
                     logger.warning(String.format(" Appending snap shot to " + archiveFile.getName() + " failed"));
                 }
                 if (dynFilter.writeFile(dynFile, molecularAssembly.getCrystal(), x, v, a, aPrevious)) {
-                    logger.info(String.format(" Wrote restart file to " + dynFile.getName()));
+                    logger.info(String.format(" Wrote dynamics restart file to " + dynFile.getName()));
                 } else {
-                    logger.info(String.format(" Writing restart file to " + dynFile.getName() + " failed"));
+                    logger.info(String.format(" Writing dynamics restart file to " + dynFile.getName() + " failed"));
                 }
                 if (pdbFilter.writeFile(pdbFile, false)) {
                     logger.info(String.format(" Wrote PDB file to " + pdbFile.getName()));
@@ -395,7 +395,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 try {
                     wait(1);
                 } catch (Exception e) {
-                    logger.log(Level.WARNING, "Exception terminating dynamics.\n", e);
+                    logger.log(Level.WARNING, " Exception terminating dynamics.\n", e);
                 }
             }
         }
