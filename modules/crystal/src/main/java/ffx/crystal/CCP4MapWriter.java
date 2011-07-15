@@ -159,7 +159,7 @@ public class CCP4MapWriter {
                 for (int j = 0; j < exty; j++) {
                     for (int i = 0; i < extx; i++) {
                         int index = stride * (i + extx * (j + exty * k));
-                        data[index] = (data[index]) - mean / sd;
+                        data[index] = (data[index] - mean) / sd;
                     }
                 }
             }

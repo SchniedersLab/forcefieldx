@@ -475,13 +475,14 @@ public class DiffractionData implements DataContainer {
     public String printEnergyUpdate() {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < n; i++) {
-            sb.append(String.format("     dataset %d (weight: %5.1f): R: %6.2f Rfree: %6.2f chemical energy: %8.2f likelihood: %8.2f\n",
+            sb.append(String.format("     dataset %d (weight: %5.1f): R: %6.2f Rfree: %6.2f chemical energy: %8.2f likelihood: %8.2f free likelihood: %8.2f\n",
                     i + 1,
                     dataname[i].weight,
                     crystalstats[i].getR(),
                     crystalstats[i].getRFree(),
                     assembly[0].getPotentialEnergy().getTotal(),
-                    dataname[i].weight * sigmaaminimize[i].calculateLikelihood()));
+                    dataname[i].weight * sigmaaminimize[i].calculateLikelihood(),
+                    dataname[i].weight * refinementdata[i].llkf));
         }
 
         return sb.toString();

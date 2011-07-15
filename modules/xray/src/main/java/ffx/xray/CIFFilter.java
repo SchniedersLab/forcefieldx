@@ -249,7 +249,7 @@ public class CIFFilter implements DiffractionFileFilter {
             System.out.println("IO Exception: " + ioe.getMessage());
             return -1.0;
         }
-        
+
         return res;
     }
 
@@ -432,6 +432,13 @@ public class CIFFilter implements DiffractionFileFilter {
                     }
 
                     if (fo > 0 && sigfo > 0 && !isnull) {
+                        if (strarray[fo].charAt(0) == '?'
+                                || strarray[sigfo].charAt(0) == '?') {
+                            isnull = true;
+                            nnan++;
+                            continue;
+                        }
+
                         if (refinementdata.fsigfcutoff > 0.0) {
                             double f1 = Double.parseDouble(strarray[fo]);
                             double sigf1 = Double.parseDouble(strarray[sigfo]);
@@ -440,7 +447,7 @@ public class CIFFilter implements DiffractionFileFilter {
                                 continue;
                             }
                         }
-                        
+
                         if (friedel) {
                             anofsigf[hkl.index()][2] = Double.parseDouble(strarray[fo]);
                             anofsigf[hkl.index()][3] = Double.parseDouble(strarray[sigfo]);
@@ -454,7 +461,7 @@ public class CIFFilter implements DiffractionFileFilter {
                     nread++;
                 } else {
                     HKL tmp = new HKL(ih, ik, il);
-                    if (!reflectionlist.resolution.inInvresolutionRange(Crystal.invressq(reflectionlist.crystal, tmp))){
+                    if (!reflectionlist.resolution.inInvresolutionRange(Crystal.invressq(reflectionlist.crystal, tmp))) {
                         nres++;
                     } else {
                         nignore++;

@@ -121,8 +121,8 @@ public class CrystalReciprocalSpace {
     private final double fftscale;
     private final int complexFFT3DSpace;
     private final int halfFFTX, halfFFTY, halfFFTZ;
-    private final double densityGrid[];
-    protected double solventGrid[];
+    protected final double densityGrid[];
+    protected final double solventGrid[];
     private final ParallelTeam parallelTeam;
     private final int threadCount;
     private final SpatialDensityRegion spatialDensityRegion;
@@ -291,6 +291,7 @@ public class CrystalReciprocalSpace {
                     }
                     break;
                 default:
+                    solventGrid = null;
                     solventffactors = null;
                     break;
             }
@@ -307,6 +308,7 @@ public class CrystalReciprocalSpace {
                     atomffactors[i] = new XRayFormFactor(atoms[i], use_3g, badd);
                 }
             }
+            solventGrid = null;
             solventffactors = null;
         }
 
@@ -714,6 +716,12 @@ public class CrystalReciprocalSpace {
         long startTime = System.nanoTime();
         complexFFT3D.ifft(densityGrid);
         long fftTime = System.nanoTime() - startTime;
+
+
+        /*
+        CCP4MapWriter mapout = new CCP4MapWriter(fftX, fftY, fftZ, crystal, "/tmp/foo.map");
+        mapout.write(densityGrid);
+         */
 
         startTime = System.nanoTime();
         long permanentDensityTime = 0;
@@ -1390,5 +1398,49 @@ public class CrystalReciprocalSpace {
 
     public double getZDim() {
         return fftZ;
+    }
+
+    public void densityNorm(double data[], double meansd[], boolean norm) {
+        double mean, sd;
+
+        mean = sd = 0.0;
+        int n = 0;
+        for (int k = 0; k < fftZ; k++) {
+            for (int j = 0; j < fftY; j++) {
+                for (int i = 0; i < fftX; i++) {
+                    int index = iComplex3D(i, j, k, fftX, fftY);
+                    n++;
+                    mean += (data[index] - mean) / n;
+                }
+            }
+        }
+
+        n = 0;
+        for (int k = 0; k < fftZ; k++) {
+            for (int j = 0; j < fftY; j++) {
+                for (int i = 0; i < fftX; i++) {
+                    int index = iComplex3D(i, j, k, fftX, fftY);
+                    sd += Math.pow(data[index] - mean, 2.0);
+                    n++;
+                }
+            }
+        }
+        sd = Math.sqrt(sd / n);
+
+        if (meansd != null) {
+            meansd[0] = mean;
+            meansd[1] = sd;
+        }
+
+        if (norm) {
+            for (int k = 0; k < fftZ; k++) {
+                for (int j = 0; j < fftY; j++) {
+                    for (int i = 0; i < fftX; i++) {
+                        int index = iComplex3D(i, j, k, fftX, fftY);
+                        data[index] = (data[index] - mean) / sd;
+                    }
+                }
+            }
+        }
     }
 }
