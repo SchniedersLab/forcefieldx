@@ -123,7 +123,7 @@ public class OSRW implements Potential {
     /**
      * The width of the F_lambda bin.
      */
-    private double dFL = 5.0;
+    private double dFL = 2.0;
     /**
      * Half the width of the F_lambda bin.
      */
@@ -143,11 +143,11 @@ public class OSRW implements Potential {
     /**
      * Total partial derivative of the potential being sampled w.r.t. lambda.
      */
-    private double dEdLambda = 0.0;
+    private double dEdLambda;
     /**
      * 2nd partial derivative of the potential being sampled w.r.t lambda.
      */
-    private double d2EdLambda2 = 0.0;
+    private double d2EdLambda2;
     private double dUdXdL[] = null;
     private double biasMag = 0.005;
     private double FLambda[];
@@ -242,6 +242,8 @@ public class OSRW implements Potential {
          * of the central bin is at 0.
          */
         FLambdaBins = 401;
+        minFLambda = -(dFL * FLambdaBins) / 2.0;
+        
         /**
          * Allocate space for the recursion kernel that stores counts.
          */
@@ -250,13 +252,13 @@ public class OSRW implements Potential {
         /**
          * Load the OSRW restart file if it exists. 
          */
-        boolean restartRead = false;
+        boolean readRestart = false;
         if (restartFile != null && restartFile.exists()) {
             try {
                 OSRWRestartReader osrwRestartReader = new OSRWRestartReader(new FileReader(restartFile));
                 osrwRestartReader.readRestartFile();
                 logger.info(String.format("\n Continuing OSRW from %s.", restartFile.getName()));
-                restartRead = true;
+                readRestart = true;
             } catch (FileNotFoundException ex) {
                 logger.info(" Restart file could not be found and will be ignored.");
             }
@@ -266,7 +268,6 @@ public class OSRW implements Potential {
         dL_2 = dL / 2.0;
         minLambda = -dL_2;
         dFL_2 = dFL / 2.0;
-        minFLambda = -(dFL * FLambdaBins) / 2.0;
         maxFLambda = minFLambda + FLambdaBins * dFL;
         FLambda = new double[lambdaBins];
         dUdXdL = new double[nAtoms * 3];
@@ -276,7 +277,7 @@ public class OSRW implements Potential {
         /**
          * Update and print out the recursion slave.
          */
-        if (restartRead) {
+        if (readRestart) {
             updateFLambda(true);
         }
 
@@ -414,7 +415,7 @@ public class OSRW implements Potential {
          * Compute the energy and gradient for the recursion slave at F(L)
          * using interpolation.
          */
-        biasEnergy += computeRecursionSlave();
+        biasEnergy += computeFreeEnergy();
 
         if (print) {
             logger.info(String.format(" %s %16.8f", "Bias Energy       ", biasEnergy));
@@ -466,11 +467,11 @@ public class OSRW implements Potential {
 
             double origDeltaG = updateFLambda(false);
 
-            int newFStateBins = FLambdaBins;
-            while (minFLambda + newFStateBins * dFL < dEdLambda) {
-                newFStateBins += 100;
+            int newFLambdaBins = FLambdaBins;
+            while (minFLambda + newFLambdaBins * dFL < dEdLambda) {
+                newFLambdaBins += 100;
             }
-            int newRecursionKernel[][] = new int[lambdaBins][newFStateBins];
+            int newRecursionKernel[][] = new int[lambdaBins][newFLambdaBins];
             /**
              * We have added bins above the indeces of the current counts
              * just copy them into the new array.
@@ -481,7 +482,7 @@ public class OSRW implements Potential {
                 }
             }
             recursionKernel = newRecursionKernel;
-            FLambdaBins = newFStateBins;
+            FLambdaBins = newFLambdaBins;
             maxFLambda = minFLambda + dFL * FLambdaBins;
             logger.info(String.format(" New historgram %8.2f to %8.2f with %d bins.\n",
                     minFLambda, maxFLambda, FLambdaBins));
@@ -492,12 +493,15 @@ public class OSRW implements Potential {
         if (dEdLambda < minFLambda) {
             logger.info(String.format(" Current F_lambda %8.2f < minimum historgram size %8.2f.",
                     dEdLambda, minFLambda));
+            
+            double origDeltaG = updateFLambda(false);
+            
             int offset = 100;
             while (dEdLambda < minFLambda - offset * dFL) {
                 offset += 100;
             }
-            int newFStateBins = FLambdaBins + offset;
-            int newRecursionKernel[][] = new int[lambdaBins][newFStateBins];
+            int newFLambdaBins = FLambdaBins + offset;
+            int newRecursionKernel[][] = new int[lambdaBins][newFLambdaBins];
             /**
              * We have added bins below the current counts,
              * so their indeces must be increased by:
@@ -510,9 +514,11 @@ public class OSRW implements Potential {
             }
             recursionKernel = newRecursionKernel;
             minFLambda = minFLambda - offset * dFL;
-            FLambdaBins = newFStateBins;
+            FLambdaBins = newFLambdaBins;
             logger.info(String.format(" New historgram %8.2f to %8.2f with %d bins.\n",
                     minFLambda, maxFLambda, FLambdaBins));
+            
+            assert (origDeltaG == updateFLambda(false));
         }
     }
 
@@ -524,6 +530,7 @@ public class OSRW implements Potential {
         for (int iL = 0; iL < lambdaBins; iL++) {
             int ulFL = -1;
             int llFL = -1;
+
             // Find the smallest FL bin.
             for (int jFL = 0; jFL < FLambdaBins; jFL++) {
                 int count = recursionKernel[iL][jFL];
@@ -532,6 +539,7 @@ public class OSRW implements Potential {
                     break;
                 }
             }
+
             // Find the largest FL bin.
             for (int jFL = FLambdaBins - 1; jFL >= 0; jFL--) {
                 int count = recursionKernel[iL][jFL];
@@ -588,7 +596,7 @@ public class OSRW implements Potential {
         return freeEnergy;
     }
 
-    private double computeRecursionSlave() {
+    private double computeFreeEnergy() {
         double biasEnergy = 0.0;
         for (int iL0 = 0; iL0 < lambdaBins - 1; iL0++) {
             int iL1 = iL0 + 1;
@@ -808,8 +816,6 @@ public class OSRW implements Potential {
                 String message = " Invalid OSRW restart file.";
                 logger.log(Level.SEVERE, message, e);
             }
-
-
         }
     }
 }
