@@ -21,6 +21,7 @@
 
 package ffx.xray;
 
+import ffx.potential.LambdaInterface;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.Molecule;

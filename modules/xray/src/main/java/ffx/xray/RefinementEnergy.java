@@ -26,6 +26,7 @@ import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.Thermostat;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
+import ffx.potential.LambdaInterface;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.Molecule;
@@ -45,7 +46,7 @@ import java.util.logging.Logger;
  *
  * @since 1.0
  */
-public class RefinementEnergy implements Potential, AlgorithmListener {
+public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmListener {
 
     private static final Logger logger = Logger.getLogger(RefinementEnergy.class.getName());
     private final MolecularAssembly molecularAssembly[];
@@ -441,5 +442,136 @@ public class RefinementEnergy implements Potential, AlgorithmListener {
     // this should probably be part of the potential class
     public Thermostat getThermostat() {
         return thermostat;
+    }
+
+    @Override
+    public void setLambda(double lambda) {
+        for (MolecularAssembly ma : molecularAssembly) {
+            ForceFieldEnergy fe = ma.getPotentialEnergy();
+            fe.setLambda(lambda);
+        }
+
+        if (data instanceof DiffractionData) {
+            XRayEnergy xrayenergy = (XRayEnergy) dataEnergy;
+            xrayenergy.setLambda(lambda);
+        } else if (data instanceof RealSpaceData) {
+            RealSpaceEnergy realspaceenergy = (RealSpaceEnergy) dataEnergy;
+            realspaceenergy.setLambda(lambda);
+        }
+    }
+
+    @Override
+    public double getLambda() {
+        double l = 1.0;
+        if (data instanceof DiffractionData) {
+            XRayEnergy xrayenergy = (XRayEnergy) dataEnergy;
+            l = xrayenergy.getLambda();
+        } else if (data instanceof RealSpaceData) {
+            RealSpaceEnergy realspaceenergy = (RealSpaceEnergy) dataEnergy;
+            l = realspaceenergy.getLambda();
+        }
+
+        return l;
+    }
+
+    @Override
+    public double getdEdL() {
+        double e = 0.0;
+
+        double ktscale = 1.0;
+        if (thermostat != null) {
+            ktscale = Thermostat.convert / (thermostat.getCurrentTemperture() * Thermostat.kB);
+        }
+
+        int assemblysize = molecularAssembly.length;
+        // Compute the chemical energy and gradient.
+        for (int i = 0; i < assemblysize; i++) {
+            ForceFieldEnergy fe = molecularAssembly[i].getPotentialEnergy();
+            double curE = fe.getdEdL();
+            e += (curE - e) / (i + 1);
+        }
+        e *= ktscale;
+
+        if (data instanceof DiffractionData) {
+            XRayEnergy xrayenergy = (XRayEnergy) dataEnergy;
+            e += xrayenergy.getdEdL();
+        } else if (data instanceof RealSpaceData) {
+            RealSpaceEnergy realspaceenergy = (RealSpaceEnergy) dataEnergy;
+            e += realspaceenergy.getdEdL();
+        }
+
+        return e;
+    }
+
+    @Override
+    public double getd2EdL2() {
+        double e = 0.0;
+
+        double ktscale = 1.0;
+        if (thermostat != null) {
+            ktscale = Thermostat.convert / (thermostat.getCurrentTemperture() * Thermostat.kB);
+        }
+
+        int assemblysize = molecularAssembly.length;
+        // Compute the chemical energy and gradient.
+        for (int i = 0; i < assemblysize; i++) {
+            ForceFieldEnergy fe = molecularAssembly[i].getPotentialEnergy();
+            double curE = fe.getdEdL();
+            e += (curE - e) / (i + 1);
+        }
+        e *= ktscale;
+
+        return e;
+    }
+
+    /*
+     * FIXME: needs to handle multiple conformations
+     */
+    @Override
+    public void getdEdXdL(double[] gradient) {
+        double ktscale = 1.0;
+        if (thermostat != null) {
+            ktscale = Thermostat.convert / (thermostat.getCurrentTemperture() * Thermostat.kB);
+        }
+
+        int assemblysize = molecularAssembly.length;
+        // Compute the chemical energy and gradient.
+        for (int i = 0; i < assemblysize; i++) {
+            ForceFieldEnergy fe = molecularAssembly[i].getPotentialEnergy();
+            fe.getdEdXdL(gChemical[i]);
+        }
+        for (int i = 0; i < assemblysize; i++) {
+            for (int j = 0; j < nxyz; j++) {
+                gradient[j] += gChemical[i][j];
+            }
+        }
+        // normalize gradients for multiple-counted atoms
+        if (assemblysize > 1) {
+            for (int i = 0; i < nxyz; i++) {
+                gradient[i] /= assemblysize;
+            }
+        }
+        for (int i = 0; i < nxyz; i++) {
+            gradient[i] *= ktscale;
+        }
+
+        // Compute the X-ray target energy and gradient.
+        if (gXray == null || gXray.length != nxyz) {
+            gXray = new double[nxyz];
+        }
+
+        if (data instanceof DiffractionData) {
+            XRayEnergy xrayenergy = (XRayEnergy) dataEnergy;
+            xrayenergy.getXYZGradients(gXray);
+        } else if (data instanceof RealSpaceData) {
+            RealSpaceEnergy realspaceenergy = (RealSpaceEnergy) dataEnergy;
+            realspaceenergy.getXYZGradients(gXray);
+        }
+
+        // Add the chemical and X-ray gradients.
+        for (int i = 0; i < nxyz; i++) {
+            gradient[i] += weight * gXray[i];
+        }
+
     }
 }

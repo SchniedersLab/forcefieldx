@@ -31,10 +31,12 @@ public interface FormFactor {
     /**
      * Compute the real space density rho
      *
+     * @param f the current density to modify
+     * @param lambda the state variable
      * @param xyz the requested point for evaluating density
      * @return the real space density value at xyz
      */
-    double rho(double f, double xyz[]);
+    double rho(double f, double lambda, double xyz[]);
 
     /**
      * Compute the real space gradient

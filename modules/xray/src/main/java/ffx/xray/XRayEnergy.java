@@ -27,6 +27,7 @@ import static ffx.numerics.VectorMath.b2u;
 import static ffx.numerics.VectorMath.u2b;
 
 import ffx.numerics.Potential;
+import ffx.potential.LambdaInterface;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.Molecule;
@@ -43,7 +44,7 @@ import java.util.logging.Logger;
  *
  * @since 1.0
  */
-public class XRayEnergy implements Potential {
+public class XRayEnergy implements LambdaInterface, Potential {
 
     private static final Logger logger = Logger.getLogger(XRayEnergy.class.getName());
     private final DiffractionData diffractiondata;
@@ -66,6 +67,7 @@ public class XRayEnergy implements Potential {
     private static final double kBkcal = kB / convert;
     private static final double eightpi2 = 8.0 * Math.PI * Math.PI;
     private static final double eightpi23 = eightpi2 * eightpi2 * eightpi2;
+    protected double lambda = 1.0;
 
     /**
      * Diffraction data energy target
@@ -570,8 +572,8 @@ public class XRayEnergy implements Potential {
                     + " atoms with negative B factors! Attempting to correct.\n  (If this problem persists, increase bsimweight)");
             /*
             if (nneg > 50){
-                kTbsim *= 2.0;
-                logger.info("excessive number of negative Bs, increasing similarity restraint: " + kTbsim);
+            kTbsim *= 2.0;
+            logger.info("excessive number of negative Bs, increasing similarity restraint: " + kTbsim);
             }
              */
         }
@@ -804,5 +806,48 @@ public class XRayEnergy implements Potential {
     @Override
     public int getNumberOfVariables() {
         return nxyz + nb + nocc;
+    }
+
+    @Override
+    public void setLambda(double lambda) {
+        if (lambda <= 1.0 && lambda >= 0.0) {
+            this.lambda = lambda;
+            diffractiondata.setLambda(lambda);
+        } else {
+            String message = String.format("Lambda value %8.3f is not in the range [0..1].", lambda);
+            logger.warning(message);
+        }
+    }
+
+    @Override
+    public double getLambda() {
+        return lambda;
+    }
+
+    @Override
+    public double getdEdL() {
+        diffractiondata.setLambda(1.0);
+        // compute new structure factors
+        diffractiondata.computeAtomicDensity();
+
+        // compute crystal likelihood
+        double e = diffractiondata.computeLikelihood();
+        diffractiondata.setLambda(lambda);
+
+        return e;
+    }
+
+    @Override
+    public double getd2EdL2() {
+        return 0.0;
+    }
+
+    @Override
+    public void getdEdXdL(double[] gradient) {
+        // compute the crystal gradients
+        diffractiondata.computeAtomicGradients(refinementMode);
+
+        // pack gradients into gradient array
+        getXYZGradients(gradient);
     }
 }

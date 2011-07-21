@@ -49,12 +49,12 @@ public final class SolventPolyFormFactor implements FormFactor {
     }
 
     @Override
-    public double rho(double f, double[] xyz) {
+    public double rho(double f, double lambda, double[] xyz) {
         VectorMath.diff(this.xyz, xyz, dxyz);
-        return rho(f, VectorMath.r(dxyz));
+        return rho(f, lambda, VectorMath.r(dxyz));
     }
 
-    public double rho(double f, double ri) {
+    public double rho(double f, double lambda, double ri) {
         double bi = arad - w;
         double ei = arad + w;
         if (ri <= bi) {

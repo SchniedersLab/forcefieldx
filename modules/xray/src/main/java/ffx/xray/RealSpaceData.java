@@ -46,6 +46,7 @@ public class RealSpaceData implements DataContainer {
     protected final Crystal crystal[];
     protected final RealSpaceRefinementData refinementdata[];
     protected final RefinementModel refinementmodel;
+    protected double lambda = 1.0;
     // settings
     public final double xweight;
 
@@ -146,6 +147,7 @@ public class RealSpaceData implements DataContainer {
             sum = 0.0;
             TriCubicSpline spline = new TriCubicSpline();
             for (Atom a : refinementmodel.atomarray) {
+                final double lambdai = a.applyLambda() ? lambda : 1.0;
                 a.getXYZ(xyz);
                 a.setXYZGradient(0.0, 0.0, 0.0);
                 uvw[0] = xyz[0] / crystal[i].a;
@@ -189,11 +191,14 @@ public class RealSpaceData implements DataContainer {
                 // scale and interpolate
                 double scale = -1.0 * dataname[i].weight * a.getAtomType().atomicWeight;
                 double val = spline.spline(dfrx, dfry, dfrz, scalar, grad);
-                sum += scale * val;
-                grad[0] = grad[0] * refinementdata[i].ni[0] / crystal[i].a;
-                grad[1] = grad[1] * refinementdata[i].ni[1] / crystal[i].b;
-                grad[2] = grad[2] * refinementdata[i].ni[2] / crystal[i].c;
-                a.addToXYZGradient(scale * grad[0], scale * grad[1], scale * grad[2]);
+                sum += lambda * scale * val;
+
+                if (a.applyLambda()) {
+                    grad[0] = grad[0] * refinementdata[i].ni[0] / crystal[i].a;
+                    grad[1] = grad[1] * refinementdata[i].ni[1] / crystal[i].b;
+                    grad[2] = grad[2] * refinementdata[i].ni[2] / crystal[i].c;
+                    a.addToXYZGradient(scale * grad[0], scale * grad[1], scale * grad[2]);
+                }
             }
             refinementdata[i].densityscore = sum;
         }
@@ -203,6 +208,15 @@ public class RealSpaceData implements DataContainer {
             sum += refinementdata[i].densityscore;
         }
         return sum;
+    }
+
+    /**
+     * Set the current value of the state variable.
+     * 
+     * @param lambda
+     */
+    protected void setLambda(double lambda) {
+        this.lambda = lambda;
     }
 
     @Override

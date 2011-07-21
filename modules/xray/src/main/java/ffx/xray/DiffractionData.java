@@ -88,6 +88,7 @@ public class DiffractionData implements DataContainer {
     public final boolean addanisou;
     public final boolean refinemolocc;
     public final double occmass;
+    public final boolean lambdaTerm;
     /**
      * if true, grid search bulk solvent params
      */
@@ -225,6 +226,7 @@ public class DiffractionData implements DataContainer {
         addanisou = properties.getBoolean("addanisou", false);
         refinemolocc = properties.getBoolean("refinemolocc", false);
         occmass = properties.getDouble("occmass", 10.0);
+        lambdaTerm = properties.getBoolean("lambdaterm", false);
 
         crystal = new Crystal[n];
         resolution = new Resolution[n];
@@ -314,7 +316,7 @@ public class DiffractionData implements DataContainer {
             xyz[1] = a.getY();
             xyz[2] = a.getZ();
             while (true) {
-                double rho = atomff.rho(0.0, xyz);
+                double rho = atomff.rho(0.0, 1.0, xyz);
                 if (rho > 0.1) {
                     arad += 0.5;
                 } else if (rho > 0.001) {
@@ -339,12 +341,14 @@ public class DiffractionData implements DataContainer {
             refinementdata[i].setCrystalReciprocalSpace_fc(crs_fc[i]);
             crs_fc[i].setUse3G(use_3g);
             crs_fc[i].setWeight(dataname[i].weight);
+            crs_fc[i].lambdaTerm = lambdaTerm;
             crs_fs[i] = new CrystalReciprocalSpace(reflectionlist[i],
                     refinementmodel.atomarray, parallelTeam, parallelTeam,
                     true, dataname[i].neutron, solventmodel);
             refinementdata[i].setCrystalReciprocalSpace_fs(crs_fs[i]);
             crs_fs[i].setUse3G(use_3g);
             crs_fs[i].setWeight(dataname[i].weight);
+            crs_fs[i].lambdaTerm = lambdaTerm;
 
             crystalstats[i] = new CrystalStats(reflectionlist[i],
                     refinementdata[i]);
@@ -593,6 +597,18 @@ public class DiffractionData implements DataContainer {
         }
 
         scaled[i] = true;
+    }
+
+    /**
+     * Set the current value of the state variable.
+     * 
+     * @param lambda
+     */
+    protected void setLambda(double lambda) {
+        for (int i = 0; i < n; i++) {
+            crs_fc[i].setLambda(lambda);
+            crs_fs[i].setLambda(lambda);
+        }
     }
 
     /**

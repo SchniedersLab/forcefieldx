@@ -48,12 +48,12 @@ public final class SolventGaussFormFactor implements FormFactor {
     }
 
     @Override
-    public double rho(double f, double xyz[]) {
+    public double rho(double f, double lambda, double xyz[]) {
         VectorMath.diff(this.xyz, xyz, dxyz);
-        return rho(f, VectorMath.rsq(dxyz));
+        return rho(f, lambda, VectorMath.rsq(dxyz));
     }
 
-    public double rho(double f, double rsq) {
+    public double rho(double f, double lambda, double rsq) {
         double sd2 = sd * sd;
         return f + Math.exp(-rsq / sd2);
     }

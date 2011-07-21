@@ -47,12 +47,12 @@ public final class SolventBinaryFormFactor implements FormFactor {
     }
 
     @Override
-    public double rho(double f, double[] xyz) {
+    public double rho(double f, double lambda, double[] xyz) {
         VectorMath.diff(this.xyz, xyz, dxyz);
-        return rho(f, VectorMath.r(dxyz));
+        return rho(f, lambda, VectorMath.r(dxyz));
     }
 
-    public double rho(double f, double ri) {
+    public double rho(double f, double lambda, double ri) {
         if (ri <= proberad) {
             return 0.0;
         } else {

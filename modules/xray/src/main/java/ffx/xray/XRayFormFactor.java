@@ -777,24 +777,24 @@ public final class XRayFormFactor implements FormFactor {
     }
 
     @Override
-    public double rho(double f, double xyz[]) {
-        return rho_n(f, xyz, n);
+    public double rho(double f, double lambda, double xyz[]) {
+        return rho_n(f, lambda, xyz, n);
     }
 
-    public double rho_n(double f, double xyz[], int ng) {
+    public double rho_n(double f, double lambda, double xyz[], int ng) {
         assert (ng > 0 && ng <= n);
         diff(this.xyz, xyz, dxyz);
         double r = VectorMath.r(dxyz);
         double sum = 0.0;
 
-        if (r > atom.getFormFactorWidth()){
+        if (r > atom.getFormFactorWidth()) {
             return f;
         }
 
         for (int i = 0; i < ng; i++) {
             sum += ainv[i] * exp(-0.5 * Crystal.quad_form(dxyz, uinv[i]));
         }
-        return f + (occ * twopi32 * sum);
+        return f + (lambda * occ * twopi32 * sum);
     }
 
     @Override
@@ -812,7 +812,7 @@ public final class XRayFormFactor implements FormFactor {
         Arrays.fill(gradp, 0.0);
         Arrays.fill(gradu, 0.0);
 
-        if (r > atom.getFormFactorWidth()){
+        if (r > atom.getFormFactorWidth()) {
             return;
         }
 
