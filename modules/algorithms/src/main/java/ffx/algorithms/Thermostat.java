@@ -67,6 +67,10 @@ public abstract class Thermostat {
     protected double x[];
     protected double v[];
     protected double mass[];
+    protected double totalMass;
+    protected final double centerOfMass[] = new double[3];
+    protected final double linearMomentum[] = new double[3];
+    protected final double angularMomentum[] = new double[3];
     protected Random random;
     protected Thermostats name;
 
@@ -82,6 +86,10 @@ public abstract class Thermostat {
         setTargetTemperature(t);
     }
 
+    public void setRandomSeed(long seed) {
+        random.setSeed(seed);
+    }
+    
     protected void log(Level level) {
         if (logger.isLoggable(level)) {
             logger.log(level, String.format("\nThermostat target temperature %6.2.", targetTemperature));
@@ -130,10 +138,6 @@ public abstract class Thermostat {
         centerOfMassMotion(true, true);
         kineticEnergy();
     }
-    protected double totalMass;
-    protected final double centerOfMass[] = new double[3];
-    protected final double linearMomentum[] = new double[3];
-    protected final double angularMomentum[] = new double[3];
 
     protected void centerOfMassMotion(boolean remove, boolean print) {
         totalMass = 0.0;

@@ -100,7 +100,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
         if (requestedThermostat == null) {
             requestedThermostat = Thermostats.ADIABATIC;
         }
-
+        
+        
         switch (requestedThermostat) {
             case ADIABATIC:
             default:
@@ -114,6 +115,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 tau = properties.getDouble("tau-temperature", 0.2);
                 thermostat = new Bussi(dof, x, v, mass, 300.0, tau);
         }
+        
+        int randomSeed = properties.getInt("randomseed", 0);
+        thermostat.setRandomSeed(randomSeed);
 
         done = true;
     }
