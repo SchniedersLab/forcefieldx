@@ -91,7 +91,7 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
 
         // target function for real space refinement
         if (refinexyz) {
-            e = realspacedata.computeRealSpaceTarget();
+            e = realspacedata.computeRealSpaceTarget(false);
 
             // pack gradients into gradient array
             getXYZGradients(g);
@@ -241,6 +241,7 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
         if (lambda <= 1.0 && lambda >= 0.0) {
             this.lambda = lambda;
             realspacedata.setLambda(lambda);
+            System.out.println("set lambda: " + lambda);
         } else {
             String message = String.format("Lambda value %8.3f is not in the range [0..1].", lambda);
             logger.warning(message);
@@ -254,7 +255,7 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
 
     @Override
     public double getdEdL() {
-        return realspacedata.computeRealSpaceTarget();
+        return realspacedata.computeRealSpaceTarget(true);
     }
 
     @Override
@@ -264,7 +265,7 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
 
     @Override
     public void getdEdXdL(double[] gradient) {
-        realspacedata.computeRealSpaceTarget();
+        realspacedata.computeRealSpaceTarget(true);
 
         // pack gradients into gradient array
         getXYZGradients(gradient);

@@ -722,6 +722,58 @@ public class DiffractionData implements DataContainer {
     }
 
     /**
+     * write 2Fo-Fc and Fo-Fc maps for all datasets
+     * 
+     * @param filename output root filename for Fo-Fc and 2Fo-Fc maps
+     */
+    public void writeMaps(String filename) {
+        if (n == 1) {
+            writeMaps(filename, 0);
+        } else {
+            for (int i = 0; i < n; i++) {
+                writeMaps("" + FilenameUtils.removeExtension(filename) + "_" + i + ".map", i);
+            }
+        }
+    }
+
+    /**
+     * write 2Fo-Fc and Fo-Fc maps for a datasets
+     * 
+     * @param filename output root filename for Fo-Fc and 2Fo-Fc maps
+     */
+    public void writeMaps(String filename, int i) {
+        if (!scaled[i]) {
+            scaleBulkFit(i);
+        }
+
+        // Fo-Fc
+        crs_fc[i].computeAtomicGradients(refinementdata[i].fofc1,
+                refinementdata[i].freer, refinementdata[i].rfreeflag,
+                RefinementMode.COORDINATES);
+        double[] densityGrid = crs_fc[i].densityGrid;
+        int extx = (int) crs_fc[i].getXDim();
+        int exty = (int) crs_fc[i].getYDim();
+        int extz = (int) crs_fc[i].getZDim();
+
+        CCP4MapWriter mapwriter = new CCP4MapWriter(extx, exty, extz,
+                crystal[i], FilenameUtils.removeExtension(filename) + "_fofc.map");
+        mapwriter.write(densityGrid);
+
+        // 2Fo-Fc
+        crs_fc[i].computeAtomicGradients(refinementdata[i].fofc2,
+                refinementdata[i].freer, refinementdata[i].rfreeflag,
+                RefinementMode.COORDINATES);
+        densityGrid = crs_fc[i].densityGrid;
+        extx = (int) crs_fc[i].getXDim();
+        exty = (int) crs_fc[i].getYDim();
+        extz = (int) crs_fc[i].getZDim();
+
+        mapwriter = new CCP4MapWriter(extx, exty, extz,
+                crystal[i], FilenameUtils.removeExtension(filename) + "_2fofc.map");
+        mapwriter.write(densityGrid);
+    }
+
+    /**
      * write bulk solvent mask for all datasets to a CNS map file
      *
      * @param filename output filename, or output root filename for multiple

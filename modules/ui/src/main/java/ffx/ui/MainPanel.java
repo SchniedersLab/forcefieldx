@@ -1107,7 +1107,16 @@ public final class MainPanel extends JPanel implements ActionListener,
 
         // Create an FFXSystem for this file.
         FFXSystem newSystem = new FFXSystem(file, commandDescription, properties);
-        newSystem.setForceField(forceField);
+        List<String> patches = properties.getList("patch");
+        for (String patch : patches) {
+            logger.info(" Attempting to read force field patch from " + patch + ".");
+            CompositeConfiguration patchConfiguration = new CompositeConfiguration();
+            patchConfiguration.addProperty("parameters", patch);
+            forceFieldFilter = new ForceFieldFilter(patchConfiguration);
+            ForceField patchForceField = forceFieldFilter.parse();
+            forceField.append(patchForceField);
+        }
+        newSystem.setForceField(forceField);        
         // Decide what parser to use.
         SystemFilter systemFilter = null;
         if (xyzFileFilter.acceptDeep(file)) {
