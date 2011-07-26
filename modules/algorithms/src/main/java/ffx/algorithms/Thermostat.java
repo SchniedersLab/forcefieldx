@@ -82,7 +82,7 @@ public abstract class Thermostat {
         assert (x.length == dof);
         assert (v.length == dof);
         assert (mass.length == dof);
-        random = new Random(0);
+        random = new Random();        
         setTargetTemperature(t);
     }
 
