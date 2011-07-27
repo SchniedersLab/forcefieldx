@@ -98,7 +98,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
     private static final int SOFT = 1;
     private double lambda = 1.0;
     private double vdwLambdaExponent = 1.0;
-    private double vdwLambdaAlpha = 0.2;
+    private double vdwLambdaAlpha = 0.05;
     private double sc1 = 0.0;
     private double sc2 = 1.0;
     private double dsc1dL = 0.0;
@@ -329,10 +329,10 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
             softCore[SOFT][i] = false;
         }
         lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
-        vdwLambdaAlpha = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_ALPHA, 0.1);
+        vdwLambdaAlpha = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_ALPHA, 0.05);
         vdwLambdaExponent = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_EXPONENT, 1.0);
         if (vdwLambdaAlpha < 0.0) {
-            vdwLambdaAlpha = 0.1;
+            vdwLambdaAlpha = 0.05;
         }
         if (vdwLambdaExponent < 1.0) {
             vdwLambdaExponent = 1.0;
