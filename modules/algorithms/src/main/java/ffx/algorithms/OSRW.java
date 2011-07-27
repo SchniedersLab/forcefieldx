@@ -190,7 +190,6 @@ public class OSRW implements Potential {
      * Steps between writing an OSRW restart file.
      */
     private int osrwRestartFrequency = 10000;
-    
     /**
      * Print detailed energy information.
      */
@@ -243,7 +242,7 @@ public class OSRW implements Potential {
          */
         FLambdaBins = 401;
         minFLambda = -(dFL * FLambdaBins) / 2.0;
-        
+
         /**
          * Allocate space for the recursion kernel that stores counts.
          */
@@ -379,10 +378,9 @@ public class OSRW implements Potential {
         int index = 0;
         for (int i = 0; i < nAtoms; i++) {
             Atom atom = atoms[i];
-            atom.getXYZGradient(grad);
-            grad[0] += dGdFLambda * dUdXdL[i * 3];
-            grad[1] += dGdFLambda * dUdXdL[i * 3 + 1];
-            grad[2] += dGdFLambda * dUdXdL[i * 3 + 2];
+            grad[0] = gradient[i * 3] + dGdFLambda * dUdXdL[i * 3];
+            grad[1] = gradient[i * 3 + 1] + dGdFLambda * dUdXdL[i * 3 + 1];
+            grad[2] = gradient[i * 3 + 2] + dGdFLambda * dUdXdL[i * 3 + 2];
             gradient[index++] = grad[0];
             gradient[index++] = grad[1];
             gradient[index++] = grad[2];
@@ -397,18 +395,18 @@ public class OSRW implements Potential {
             boolean printFLambda = fLambdaUpdates % fLambdaPrintFrequency == 0;
             updateFLambda(printFLambda);
         }
-        
+
         if (energyCount > 0 && energyCount % osrwRestartFrequency == 0) {
-                try {
-                    OSRWRestartWriter osrwRestart = new OSRWRestartWriter(new BufferedWriter(new FileWriter(restartFile)));
-                    osrwRestart.writeRestartFile();
-                    osrwRestart.flush();
-                    osrwRestart.close();
-                    logger.info(String.format(" Wrote OSRW restart file to %s.", restartFile.getName()));
-                } catch (IOException ex) {
-                    String message = " Exception writing OSRW restart file.";
-                    logger.log(Level.INFO, message, ex);
-                }            
+            try {
+                OSRWRestartWriter osrwRestart = new OSRWRestartWriter(new BufferedWriter(new FileWriter(restartFile)));
+                osrwRestart.writeRestartFile();
+                osrwRestart.flush();
+                osrwRestart.close();
+                logger.info(String.format(" Wrote OSRW restart file to %s.", restartFile.getName()));
+            } catch (IOException ex) {
+                String message = " Exception writing OSRW restart file.";
+                logger.log(Level.INFO, message, ex);
+            }
         }
 
         /**
@@ -422,7 +420,7 @@ public class OSRW implements Potential {
             logger.info(String.format(" %s %16.8f  %s",
                     "OSRW Potential    ", e + biasEnergy, "(Kcal/mole)"));
         }
-        
+
         /**
          * Log our current state.
          */
@@ -493,9 +491,9 @@ public class OSRW implements Potential {
         if (dEdLambda < minFLambda) {
             logger.info(String.format(" Current F_lambda %8.2f < minimum historgram size %8.2f.",
                     dEdLambda, minFLambda));
-            
+
             double origDeltaG = updateFLambda(false);
-            
+
             int offset = 100;
             while (dEdLambda < minFLambda - offset * dFL) {
                 offset += 100;
@@ -517,7 +515,7 @@ public class OSRW implements Potential {
             FLambdaBins = newFLambdaBins;
             logger.info(String.format(" New historgram %8.2f to %8.2f with %d bins.\n",
                     minFLambda, maxFLambda, FLambdaBins));
-            
+
             assert (origDeltaG == updateFLambda(false));
         }
     }
