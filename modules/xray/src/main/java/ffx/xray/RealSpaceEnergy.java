@@ -241,7 +241,6 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
         if (lambda <= 1.0 && lambda >= 0.0) {
             this.lambda = lambda;
             realspacedata.setLambda(lambda);
-            System.out.println("set lambda: " + lambda);
         } else {
             String message = String.format("Lambda value %8.3f is not in the range [0..1].", lambda);
             logger.warning(message);

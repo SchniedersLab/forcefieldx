@@ -249,7 +249,6 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
                     setAssemblyi(i, g, gChemical[i]);
                 }
                 e *= ktscale;
-                System.out.print("energygrad force field e: " + e);
                 // normalize gradients for multiple-counted atoms
                 if (assemblysize > 1) {
                     for (int i = 0; i < nxyz; i++) {
@@ -264,10 +263,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
                 if (gXray == null || gXray.length != nxyz) {
                     gXray = new double[nxyz];
                 }
-                double tmp = weight * dataEnergy.energyAndGradient(x, gXray);
-                e += tmp;
-                System.out.println(" real space e: " + tmp + " total: " + e);
-                // e += weight * dataEnergy.energyAndGradient(x, gXray);
+                e += weight * dataEnergy.energyAndGradient(x, gXray);
 
                 /*
                 double normchem = 0.0;
@@ -495,16 +491,13 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
             e += (curE - e) / (i + 1);
         }
         e *= ktscale;
-        System.out.print("getdedl force field e: " + e);
 
         if (data instanceof DiffractionData) {
             XRayEnergy xrayenergy = (XRayEnergy) dataEnergy;
             e += xrayenergy.getdEdL();
         } else if (data instanceof RealSpaceData) {
             RealSpaceEnergy realspaceenergy = (RealSpaceEnergy) dataEnergy;
-            double tmp = realspaceenergy.getdEdL();
-            e += tmp;
-            System.out.println(" real space e: " + tmp + " total: " + e);
+            e += realspaceenergy.getdEdL();
         }
 
         return e;
@@ -536,7 +529,6 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
      */
     @Override
     public void getdEdXdL(double[] gradient) {
-        System.out.println("getdEdXdL");
         double ktscale = 1.0;
         if (thermostat != null) {
             ktscale = Thermostat.convert / (thermostat.getCurrentTemperture() * Thermostat.kB);
