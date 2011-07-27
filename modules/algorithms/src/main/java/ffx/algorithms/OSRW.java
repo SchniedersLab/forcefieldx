@@ -62,17 +62,13 @@ public class OSRW implements Potential {
      */
     private Potential potential;
     /**
+     * Number of variables.
+     */
+    private int nVariables;
+    /**
      * Restart file.
      */
     private File restartFile;
-    /**
-     * Array of atoms.
-     */
-    private Atom atoms[];
-    /**
-     * Number of atoms.
-     */
-    private int nAtoms;
     /**
      * State variable lambda ranges from 0.0 .. 1.0.
      */
@@ -197,13 +193,12 @@ public class OSRW implements Potential {
 
     public OSRW(LambdaInterface lambdaInterface, Potential potential,
             File restartFile, CompositeConfiguration properties,
-            Atom atoms[], double temperature, double dt, double restartFrequency) {
+            double temperature, double dt, double restartFrequency) {
         this.lambdaInterface = lambdaInterface;
         this.potential = potential;
         this.restartFile = restartFile;
-        this.atoms = atoms;
         this.temperature = temperature;
-        nAtoms = atoms.length;
+        nVariables = potential.getNumberOfVariables();
 
         /**
          * Convert the time step to picoseconds.
@@ -269,7 +264,7 @@ public class OSRW implements Potential {
         dFL_2 = dFL / 2.0;
         maxFLambda = minFLambda + FLambdaBins * dFL;
         FLambda = new double[lambdaBins];
-        dUdXdL = new double[nAtoms * 3];
+        dUdXdL = new double[nVariables];
         energyCount = -1;
         stochasticRandom = new Random(0);
 
@@ -366,25 +361,14 @@ public class OSRW implements Potential {
         dEdLambda += dGdLambda + dGdFLambda * d2EdLambda2;
 
         /**
-         * Atomic gradient due to recursion kernel G(L, F(L)).
+         * Gradient due to recursion kernel G(L, F(L)).
          */
-        for (int i = 0; i < 3 * nAtoms; i++) {
+        for (int i = 0; i < nVariables; i++) {
             dUdXdL[i] = 0.0;
         }
-
         lambdaInterface.getdEdXdL(dUdXdL);
-
-        double grad[] = new double[3];
-        int index = 0;
-        for (int i = 0; i < nAtoms; i++) {
-            Atom atom = atoms[i];
-            grad[0] = gradient[i * 3] + dGdFLambda * dUdXdL[i * 3];
-            grad[1] = gradient[i * 3 + 1] + dGdFLambda * dUdXdL[i * 3 + 1];
-            grad[2] = gradient[i * 3 + 2] + dGdFLambda * dUdXdL[i * 3 + 2];
-            gradient[index++] = grad[0];
-            gradient[index++] = grad[1];
-            gradient[index++] = grad[2];
-            atom.setXYZGradient(grad[0], grad[1], grad[2]);
+        for (int i = 0; i < nVariables; i++) {
+            gradient[i] += dGdFLambda * dUdXdL[i];
         }
 
         /**
