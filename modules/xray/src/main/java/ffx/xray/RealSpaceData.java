@@ -133,7 +133,7 @@ public class RealSpaceData implements DataContainer {
 
         /*
         CCP4MapWriter mapwriter = new CCP4MapWriter(extx, exty, extz,
-                diffractiondata.crystal[0], "fofc.map");
+        diffractiondata.crystal[0], "fofc.map");
         mapwriter.write(diffractiondata.crs_fc[0].densityGrid);
          */
 
@@ -214,6 +214,14 @@ public class RealSpaceData implements DataContainer {
         // now set up the refinement model
         refinementmodel = new RefinementModel(assembly);
 
+        System.out.println(crystal[0].A00 + " " + crystal[0].A10 + " " + crystal[0].A20);
+        System.out.println(crystal[0].A01 + " " + crystal[0].A11 + " " + crystal[0].A21);
+        System.out.println(crystal[0].A02 + " " + crystal[0].A12 + " " + crystal[0].A22);
+        System.out.println();
+        System.out.println(crystal[0].Ai00 + " " + crystal[0].Ai10 + " " + crystal[0].Ai20);
+        System.out.println(crystal[0].Ai01 + " " + crystal[0].Ai11 + " " + crystal[0].Ai21);
+        System.out.println(crystal[0].Ai02 + " " + crystal[0].Ai12 + " " + crystal[0].Ai22);
+        System.out.println();
         /*
         CCP4MapWriter tst = new CCP4MapWriter(refinementdata[0].ori[0], refinementdata[0].ori[1],
         refinementdata[0].ori[2], refinementdata[0].ext[0], refinementdata[0].ext[1],
@@ -246,9 +254,7 @@ public class RealSpaceData implements DataContainer {
                 final double lambdai = dLambda ? 1.0 : a.applyLambda() ? lambda : 1.0;
                 a.getXYZ(xyz);
                 a.setXYZGradient(0.0, 0.0, 0.0);
-                uvw[0] = xyz[0] / crystal[i].a;
-                uvw[1] = xyz[1] / crystal[i].b;
-                uvw[2] = xyz[2] / crystal[i].c;
+                crystal[i].toFractionalCoordinates(xyz, uvw);
 
                 // Logic to find atom in 3d scalar field box
                 final double frx = refinementdata[i].ni[0] * uvw[0];
@@ -303,10 +309,14 @@ public class RealSpaceData implements DataContainer {
                 double val = spline.spline(dfrx, dfry, dfrz, scalar, grad);
                 sum += scale * val;
 
-                grad[0] = grad[0] * refinementdata[i].ni[0] / crystal[i].a;
-                grad[1] = grad[1] * refinementdata[i].ni[1] / crystal[i].b;
-                grad[2] = grad[2] * refinementdata[i].ni[2] / crystal[i].c;
-                a.addToXYZGradient(scale * grad[0], scale * grad[1], scale * grad[2]);
+                grad[0] = grad[0] * refinementdata[i].ni[0];
+                grad[1] = grad[1] * refinementdata[i].ni[1];
+                grad[2] = grad[2] * refinementdata[i].ni[2];
+                // transpose of toFractional
+                xyz[0] = grad[0] * crystal[i].A00 + grad[1] * crystal[i].A01 + grad[2] * crystal[i].A02;
+                xyz[1] = grad[0] * crystal[i].A10 + grad[1] * crystal[i].A11 + grad[2] * crystal[i].A12;
+                xyz[2] = grad[0] * crystal[i].A20 + grad[1] * crystal[i].A21 + grad[2] * crystal[i].A22;
+                a.addToXYZGradient(scale * xyz[0], scale * xyz[1], scale * xyz[2]);
             }
             refinementdata[i].densityscore = sum;
         }

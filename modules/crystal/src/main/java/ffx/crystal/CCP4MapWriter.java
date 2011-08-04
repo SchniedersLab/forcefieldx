@@ -217,8 +217,8 @@ public class CCP4MapWriter {
             bb.order(b).putFloat((float) max);
             bb.order(b).putFloat((float) mean);
 
-            // bb.order(b).putInt(crystal.spaceGroup.number);
-            bb.order(b).putInt(1);
+            bb.order(b).putInt(crystal.spaceGroup.number);
+            // bb.order(b).putInt(1);
 
             // symmetry bytes - should set this up at some point
             // imapdata = swap ? ByteSwap.swap(320) : 320;
