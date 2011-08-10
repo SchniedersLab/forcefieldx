@@ -218,6 +218,12 @@ public class MTZFilter implements DiffractionFileFilter {
     }
 
     @Override
+    public double getResolution(File mtzFile, Crystal crystal){
+        ReflectionList reflectionlist = getReflectionList(mtzFile, null);
+        return reflectionlist.maxres;
+    }
+    
+    @Override
     public boolean readFile(File mtzFile, ReflectionList reflectionlist,
             DiffractionRefinementData refinementdata, CompositeConfiguration properties) {
         int nread, nignore, nres, nfriedel, ncut;

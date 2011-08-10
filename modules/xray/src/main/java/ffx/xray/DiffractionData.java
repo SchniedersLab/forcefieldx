@@ -247,7 +247,15 @@ public class DiffractionData implements DataContainer {
                 reflectionlist[i] = datafile[i].diffractionfilter.getReflectionList(tmp, properties);
 
                 if (reflectionlist[i] == null) {
-                    logger.severe("MTZ/CIF/CNS file does not contain full crystal information!");
+                    logger.info("Using crystal information from molecular assembly to generate crystal information");
+                    crystalinit = assembly[i].getCrystal().getUnitCell();
+                    double res = datafile[i].diffractionfilter.getResolution(tmp, crystalinit);
+                    if (res < 0.0) {
+                        logger.severe("MTZ/CIF/CNS file does not contain full crystal information!");
+                    } else {
+                        resolutioninit = new Resolution(res);
+                        reflectionlist[i] = new ReflectionList(crystalinit, resolutioninit, properties);
+                    }
                 }
             }
         } else {

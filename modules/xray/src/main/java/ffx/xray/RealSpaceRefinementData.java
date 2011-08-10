@@ -33,6 +33,7 @@ public class RealSpaceRefinementData {
     protected final int ori[];
     protected final int ext[];
     protected final int ni[];
+    protected boolean periodic;
     protected double data[];
     protected double densityscore;
 
@@ -40,6 +41,7 @@ public class RealSpaceRefinementData {
         ori = new int[3];
         ext = new int[3];
         ni = new int[3];
+        periodic = false;
     }
 
     public double getDataIndex(int x, int y, int z){

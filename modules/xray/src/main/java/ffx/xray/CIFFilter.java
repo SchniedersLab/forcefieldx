@@ -179,6 +179,7 @@ public class CIFFilter implements DiffractionFileFilter {
         return reflectionlist;
     }
 
+    @Override
     public double getResolution(File cifFile, Crystal crystal) {
         double res = Double.POSITIVE_INFINITY;
 

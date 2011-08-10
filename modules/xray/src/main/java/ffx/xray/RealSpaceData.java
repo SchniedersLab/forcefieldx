@@ -50,7 +50,6 @@ public class RealSpaceData implements DataContainer {
     protected double lambda = 1.0;
     // settings
     public final double xweight;
-    public final boolean periodic;
 
     /**
      * construct a real space data assembly, assumes a real space map with a
@@ -85,9 +84,9 @@ public class RealSpaceData implements DataContainer {
         crystal[0] = diffractiondata.crystal[0];
         refinementdata = new RealSpaceRefinementData[n];
         refinementdata[0] = new RealSpaceRefinementData(properties);
+        refinementdata[0].periodic = true;
 
         xweight = properties.getDouble("xweight", 1.0);
-        periodic = true;
 
         if (logger.isLoggable(Level.INFO)) {
             StringBuilder sb = new StringBuilder();
@@ -130,12 +129,6 @@ public class RealSpaceData implements DataContainer {
                 }
             }
         }
-
-        /*
-        CCP4MapWriter mapwriter = new CCP4MapWriter(extx, exty, extz,
-        diffractiondata.crystal[0], "fofc.map");
-        mapwriter.write(diffractiondata.crs_fc[0].densityGrid);
-         */
 
         // now set up the refinement model
         refinementmodel = new RefinementModel(assembly);
@@ -188,7 +181,6 @@ public class RealSpaceData implements DataContainer {
         refinementdata = new RealSpaceRefinementData[n];
 
         xweight = properties.getDouble("xweight", 1.0);
-        periodic = properties.getBoolean("periodic", false);
 
         for (int i = 0; i < n; i++) {
             crystal[i] = datafile[i].realspacefilter.getCrystal(datafile[i].filename, properties);
@@ -202,6 +194,15 @@ public class RealSpaceData implements DataContainer {
             refinementdata[i] = new RealSpaceRefinementData(properties);
             datafile[i].realspacefilter.readFile(datafile[i].filename,
                     refinementdata[i], properties);
+
+            if (refinementdata[i].ori[0] == 0
+                    && refinementdata[i].ori[1] == 0
+                    && refinementdata[i].ori[2] == 0
+                    && refinementdata[i].ext[0] == refinementdata[i].ni[0]
+                    && refinementdata[i].ext[1] == refinementdata[i].ni[1]
+                    && refinementdata[i].ext[2] == refinementdata[i].ni[2]) {
+                refinementdata[i].periodic = true;
+            }
         }
 
         if (logger.isLoggable(Level.INFO)) {
@@ -213,23 +214,6 @@ public class RealSpaceData implements DataContainer {
 
         // now set up the refinement model
         refinementmodel = new RefinementModel(assembly);
-
-        System.out.println(crystal[0].A00 + " " + crystal[0].A10 + " " + crystal[0].A20);
-        System.out.println(crystal[0].A01 + " " + crystal[0].A11 + " " + crystal[0].A21);
-        System.out.println(crystal[0].A02 + " " + crystal[0].A12 + " " + crystal[0].A22);
-        System.out.println();
-        System.out.println(crystal[0].Ai00 + " " + crystal[0].Ai10 + " " + crystal[0].Ai20);
-        System.out.println(crystal[0].Ai01 + " " + crystal[0].Ai11 + " " + crystal[0].Ai21);
-        System.out.println(crystal[0].Ai02 + " " + crystal[0].Ai12 + " " + crystal[0].Ai22);
-        System.out.println();
-        /*
-        CCP4MapWriter tst = new CCP4MapWriter(refinementdata[0].ori[0], refinementdata[0].ori[1],
-        refinementdata[0].ori[2], refinementdata[0].ext[0], refinementdata[0].ext[1],
-        refinementdata[0].ext[2], refinementdata[0].ni[0], refinementdata[0].ni[1],
-        refinementdata[0].ni[2], crystal[0], "/tmp/foo.map");
-        tst.setStride(1);
-        tst.write(refinementdata[0].data);
-         */
     }
 
     /**
@@ -269,7 +253,7 @@ public class RealSpaceData implements DataContainer {
                 final int ifrz = ((int) Math.floor(frz)) - refinementdata[i].ori[2];
                 final double dfrz = frz - Math.floor(frz);
 
-                if (!periodic) {
+                if (!refinementdata[i].periodic) {
                     if (ifrx - 1 < 0 || ifrx + 2 > refinementdata[i].ext[0]
                             || ifry - 1 < 0 || ifry + 2 > refinementdata[i].ext[1]
                             || ifrz - 1 < 0 || ifrz + 2 > refinementdata[i].ext[2]) {
@@ -290,7 +274,7 @@ public class RealSpaceData implements DataContainer {
                             wii = wi - (ifrz - 1);
                             int pwi = Crystal.mod(wi, refinementdata[i].ext[2]);
 
-                            if (periodic) {
+                            if (refinementdata[i].periodic) {
                                 scalar[uii][vii][wii] = refinementdata[i].getDataIndex(pui, pvi, pwi);
                             } else {
                                 scalar[uii][vii][wii] = refinementdata[i].getDataIndex(ui, vi, wi);

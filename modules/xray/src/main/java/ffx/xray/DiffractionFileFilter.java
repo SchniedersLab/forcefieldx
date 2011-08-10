@@ -24,6 +24,7 @@ package ffx.xray;
 import java.io.File;
 import org.apache.commons.configuration.CompositeConfiguration;
 
+import ffx.crystal.Crystal;
 import ffx.crystal.ReflectionList;
 
 /**
@@ -62,4 +63,12 @@ public interface DiffractionFileFilter {
      */
     boolean readFile(File file, ReflectionList reflectionlist,
             DiffractionRefinementData refinementdata, CompositeConfiguration properties);
+    
+    /*
+     * attempt to determine resolution of reflection file
+     * 
+     * @param file file to read in
+     * @param crystal crystal system to determine resolution information from
+     */
+    double getResolution(File file, Crystal crystal);
 }
