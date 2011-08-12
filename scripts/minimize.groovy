@@ -21,7 +21,7 @@ if (epsString != null) {
 // ===============================================================================================
 
 println("\n Running minimize on " + filename);
-open(filename);
+systems = open(filename);
 
 println("\n RMS gradient convergence criteria: " + eps);
 e = minimize(eps);

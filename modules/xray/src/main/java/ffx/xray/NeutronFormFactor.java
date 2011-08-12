@@ -289,14 +289,14 @@ public final class NeutronFormFactor implements FormFactor {
     }
 
     @Override
-    public double rho(double f, double xyz[]) {
+    public double rho(double f, double lambda, double xyz[]) {
         diff(this.xyz, xyz, dxyz);
         double r = VectorMath.r(dxyz);
-        if (r > atom.getFormFactorWidth()){
+        if (r > atom.getFormFactorWidth()) {
             return f;
         }
         double sum = ainv[0] * exp(-0.5 * Crystal.quad_form(dxyz, uinv[0]));
-        return f + (occ * twopi32 * sum);
+        return f + (lambda * occ * twopi32 * sum);
     }
 
     @Override
@@ -309,7 +309,7 @@ public final class NeutronFormFactor implements FormFactor {
         Arrays.fill(gradp, 0.0);
         Arrays.fill(gradu, 0.0);
 
-        if (r > atom.getFormFactorWidth()){
+        if (r > atom.getFormFactorWidth()) {
             return;
         }
 

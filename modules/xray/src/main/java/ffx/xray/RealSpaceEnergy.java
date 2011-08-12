@@ -21,6 +21,7 @@
 package ffx.xray;
 
 import ffx.numerics.Potential;
+import ffx.potential.LambdaInterface;
 import ffx.potential.bonded.Atom;
 import ffx.xray.RefinementMinimize.RefinementMode;
 import java.util.Arrays;
@@ -33,7 +34,7 @@ import java.util.logging.Logger;
  *
  * @since 1.0
  */
-public class RealSpaceEnergy implements Potential {
+public class RealSpaceEnergy implements LambdaInterface, Potential {
 
     private static final Logger logger = Logger.getLogger(RealSpaceEnergy.class.getName());
     private final RealSpaceData realspacedata;
@@ -44,6 +45,7 @@ public class RealSpaceEnergy implements Potential {
     private RefinementMode refinementMode;
     private boolean refinexyz = false;
     protected double[] optimizationScaling = null;
+    protected double lambda = 1.0;
 
     /**
      * Diffraction data energy target
@@ -89,7 +91,7 @@ public class RealSpaceEnergy implements Potential {
 
         // target function for real space refinement
         if (refinexyz) {
-            e = realspacedata.computeRealSpaceTarget();
+            e = realspacedata.computeRealSpaceTarget(false);
 
             // pack gradients into gradient array
             getXYZGradients(g);
@@ -232,5 +234,39 @@ public class RealSpaceEnergy implements Potential {
     @Override
     public int getNumberOfVariables() {
         return nxyz;
+    }
+
+    @Override
+    public void setLambda(double lambda) {
+        if (lambda <= 1.0 && lambda >= 0.0) {
+            this.lambda = lambda;
+            realspacedata.setLambda(lambda);
+        } else {
+            String message = String.format("Lambda value %8.3f is not in the range [0..1].", lambda);
+            logger.warning(message);
+        }
+    }
+
+    @Override
+    public double getLambda() {
+        return lambda;
+    }
+
+    @Override
+    public double getdEdL() {
+        return realspacedata.computeRealSpaceTarget(true);
+    }
+
+    @Override
+    public double getd2EdL2() {
+        return 0.0;
+    }
+
+    @Override
+    public void getdEdXdL(double[] gradient) {
+        realspacedata.computeRealSpaceTarget(true);
+
+        // pack gradients into gradient array
+        getXYZGradients(gradient);
     }
 }

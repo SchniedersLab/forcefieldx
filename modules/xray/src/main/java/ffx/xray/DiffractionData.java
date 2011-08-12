@@ -88,6 +88,7 @@ public class DiffractionData implements DataContainer {
     public final boolean addanisou;
     public final boolean refinemolocc;
     public final double occmass;
+    public final boolean lambdaTerm;
     /**
      * if true, grid search bulk solvent params
      */
@@ -225,6 +226,7 @@ public class DiffractionData implements DataContainer {
         addanisou = properties.getBoolean("addanisou", false);
         refinemolocc = properties.getBoolean("refinemolocc", false);
         occmass = properties.getDouble("occmass", 10.0);
+        lambdaTerm = properties.getBoolean("lambdaterm", false);
 
         crystal = new Crystal[n];
         resolution = new Resolution[n];
@@ -245,7 +247,15 @@ public class DiffractionData implements DataContainer {
                 reflectionlist[i] = datafile[i].diffractionfilter.getReflectionList(tmp, properties);
 
                 if (reflectionlist[i] == null) {
-                    logger.severe("MTZ/CIF/CNS file does not contain full crystal information!");
+                    logger.info("Using crystal information from molecular assembly to generate crystal information");
+                    crystalinit = assembly[i].getCrystal().getUnitCell();
+                    double res = datafile[i].diffractionfilter.getResolution(tmp, crystalinit);
+                    if (res < 0.0) {
+                        logger.severe("MTZ/CIF/CNS file does not contain full crystal information!");
+                    } else {
+                        resolutioninit = new Resolution(res);
+                        reflectionlist[i] = new ReflectionList(crystalinit, resolutioninit, properties);
+                    }
                 }
             }
         } else {
@@ -314,7 +324,7 @@ public class DiffractionData implements DataContainer {
             xyz[1] = a.getY();
             xyz[2] = a.getZ();
             while (true) {
-                double rho = atomff.rho(0.0, xyz);
+                double rho = atomff.rho(0.0, 1.0, xyz);
                 if (rho > 0.1) {
                     arad += 0.5;
                 } else if (rho > 0.001) {
@@ -339,12 +349,14 @@ public class DiffractionData implements DataContainer {
             refinementdata[i].setCrystalReciprocalSpace_fc(crs_fc[i]);
             crs_fc[i].setUse3G(use_3g);
             crs_fc[i].setWeight(dataname[i].weight);
+            crs_fc[i].lambdaTerm = lambdaTerm;
             crs_fs[i] = new CrystalReciprocalSpace(reflectionlist[i],
                     refinementmodel.atomarray, parallelTeam, parallelTeam,
                     true, dataname[i].neutron, solventmodel);
             refinementdata[i].setCrystalReciprocalSpace_fs(crs_fs[i]);
             crs_fs[i].setUse3G(use_3g);
             crs_fs[i].setWeight(dataname[i].weight);
+            crs_fs[i].lambdaTerm = lambdaTerm;
 
             crystalstats[i] = new CrystalStats(reflectionlist[i],
                     refinementdata[i]);
@@ -596,6 +608,18 @@ public class DiffractionData implements DataContainer {
     }
 
     /**
+     * Set the current value of the state variable.
+     * 
+     * @param lambda
+     */
+    protected void setLambda(double lambda) {
+        for (int i = 0; i < n; i++) {
+            crs_fc[i].setLambda(lambda);
+            crs_fs[i].setLambda(lambda);
+        }
+    }
+
+    /**
      * set the bulk solvent parameters for a given bulk solvent model
      *
      * @param a typically the width of the atom
@@ -703,6 +727,58 @@ public class DiffractionData implements DataContainer {
             mtzwriter = new MTZWriter(reflectionlist[i], refinementdata[i], filename, true);
         }
         mtzwriter.write();
+    }
+
+    /**
+     * write 2Fo-Fc and Fo-Fc maps for all datasets
+     * 
+     * @param filename output root filename for Fo-Fc and 2Fo-Fc maps
+     */
+    public void writeMaps(String filename) {
+        if (n == 1) {
+            writeMaps(filename, 0);
+        } else {
+            for (int i = 0; i < n; i++) {
+                writeMaps("" + FilenameUtils.removeExtension(filename) + "_" + i + ".map", i);
+            }
+        }
+    }
+
+    /**
+     * write 2Fo-Fc and Fo-Fc maps for a datasets
+     * 
+     * @param filename output root filename for Fo-Fc and 2Fo-Fc maps
+     */
+    public void writeMaps(String filename, int i) {
+        if (!scaled[i]) {
+            scaleBulkFit(i);
+        }
+
+        // Fo-Fc
+        crs_fc[i].computeAtomicGradients(refinementdata[i].fofc1,
+                refinementdata[i].freer, refinementdata[i].rfreeflag,
+                RefinementMode.COORDINATES);
+        double[] densityGrid = crs_fc[i].densityGrid;
+        int extx = (int) crs_fc[i].getXDim();
+        int exty = (int) crs_fc[i].getYDim();
+        int extz = (int) crs_fc[i].getZDim();
+
+        CCP4MapWriter mapwriter = new CCP4MapWriter(extx, exty, extz,
+                crystal[i], FilenameUtils.removeExtension(filename) + "_fofc.map");
+        mapwriter.write(densityGrid);
+
+        // 2Fo-Fc
+        crs_fc[i].computeAtomicGradients(refinementdata[i].fofc2,
+                refinementdata[i].freer, refinementdata[i].rfreeflag,
+                RefinementMode.COORDINATES);
+        densityGrid = crs_fc[i].densityGrid;
+        extx = (int) crs_fc[i].getXDim();
+        exty = (int) crs_fc[i].getYDim();
+        extz = (int) crs_fc[i].getZDim();
+
+        mapwriter = new CCP4MapWriter(extx, exty, extz,
+                crystal[i], FilenameUtils.removeExtension(filename) + "_2fofc.map");
+        mapwriter.write(densityGrid);
     }
 
     /**

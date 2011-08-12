@@ -27,6 +27,7 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Residue;
+import ffx.xray.RefinementMinimize.RefinementMode;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -46,8 +47,92 @@ public class RealSpaceData implements DataContainer {
     protected final Crystal crystal[];
     protected final RealSpaceRefinementData refinementdata[];
     protected final RefinementModel refinementmodel;
+    protected double lambda = 1.0;
     // settings
     public final double xweight;
+
+    /**
+     * construct a real space data assembly, assumes a real space map with a
+     * weight of 1.0 using the same name as the molecular assembly
+     *
+     * @param assembly {@link ffx.potential.bonded.MolecularAssembly molecular assembly}
+     * object, used as the atomic model for comparison against the data
+     * @param properties system properties file
+     * @param diffractiondata {@link ffx.xray.DiffractionData diffraction data}
+     */
+    public RealSpaceData(MolecularAssembly assembly,
+            CompositeConfiguration properties, DiffractionData diffractiondata) {
+        this(new MolecularAssembly[]{assembly}, properties, diffractiondata);
+    }
+
+    /**
+     * construct a real space data assembly, assumes a real space map with a
+     * weight of 1.0 using the same name as the molecular assembly
+     *
+     * @param assembly {@link ffx.potential.bonded.MolecularAssembly molecular assembly}
+     * object, used as the atomic model for comparison against the data
+     * @param properties system properties file
+     * @param diffractiondata {@link ffx.xray.DiffractionData diffraction data}
+     */
+    public RealSpaceData(MolecularAssembly assembly[],
+            CompositeConfiguration properties, DiffractionData diffractiondata) {
+        this.assembly = assembly;
+        this.modelname = assembly[0].getFile().getName();
+        this.dataname = null;
+        this.n = 1;
+        crystal = new Crystal[n];
+        crystal[0] = diffractiondata.crystal[0];
+        refinementdata = new RealSpaceRefinementData[n];
+        refinementdata[0] = new RealSpaceRefinementData(properties);
+        refinementdata[0].periodic = true;
+
+        xweight = properties.getDouble("xweight", 1.0);
+
+        if (logger.isLoggable(Level.INFO)) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("\nRefinement data settings:\n");
+            sb.append("  Real space refinement weight (xweight): " + xweight + "\n");
+            logger.info(sb.toString());
+        }
+
+        if (!diffractiondata.scaled[0]) {
+            diffractiondata.scaleBulkFit();
+            diffractiondata.printStats();
+            // energy();
+        }
+
+        // get Fo-Fc difference density
+        diffractiondata.crs_fc[0].computeAtomicGradients(diffractiondata.refinementdata[0].fofc1,
+                diffractiondata.refinementdata[0].freer,
+                diffractiondata.refinementdata[0].rfreeflag,
+                RefinementMode.COORDINATES);
+
+        refinementdata[0].ori[0] = 0;
+        refinementdata[0].ori[1] = 0;
+        refinementdata[0].ori[2] = 0;
+        int extx = (int) diffractiondata.crs_fc[0].getXDim();
+        int exty = (int) diffractiondata.crs_fc[0].getYDim();
+        int extz = (int) diffractiondata.crs_fc[0].getZDim();
+        refinementdata[0].ext[0] = extx;
+        refinementdata[0].ext[1] = exty;
+        refinementdata[0].ext[2] = extz;
+        refinementdata[0].ni[0] = extx;
+        refinementdata[0].ni[1] = exty;
+        refinementdata[0].ni[2] = extz;
+        refinementdata[0].data = new double[extx * exty * extz];
+        for (int k = 0; k < extz; k++) {
+            for (int j = 0; j < exty; j++) {
+                for (int i = 0; i < extx; i++) {
+                    int index1 = (i + extx * (j + exty * k));
+                    int index2 = 2 * (i + extx * (j + exty * k));
+                    refinementdata[0].data[index1] = diffractiondata.crs_fc[0].densityGrid[index2];
+                }
+            }
+        }
+
+        // now set up the refinement model
+        refinementmodel = new RefinementModel(assembly);
+    }
 
     /**
      * construct a real space data assembly, assumes a real space map with a
@@ -109,6 +194,15 @@ public class RealSpaceData implements DataContainer {
             refinementdata[i] = new RealSpaceRefinementData(properties);
             datafile[i].realspacefilter.readFile(datafile[i].filename,
                     refinementdata[i], properties);
+
+            if (refinementdata[i].ori[0] == 0
+                    && refinementdata[i].ori[1] == 0
+                    && refinementdata[i].ori[2] == 0
+                    && refinementdata[i].ext[0] == refinementdata[i].ni[0]
+                    && refinementdata[i].ext[1] == refinementdata[i].ni[1]
+                    && refinementdata[i].ext[2] == refinementdata[i].ni[2]) {
+                refinementdata[i].periodic = true;
+            }
         }
 
         if (logger.isLoggable(Level.INFO)) {
@@ -120,22 +214,13 @@ public class RealSpaceData implements DataContainer {
 
         // now set up the refinement model
         refinementmodel = new RefinementModel(assembly);
-
-        /*
-        CCP4MapWriter tst = new CCP4MapWriter(refinementdata[0].ori[0], refinementdata[0].ori[1],
-        refinementdata[0].ori[2], refinementdata[0].ext[0], refinementdata[0].ext[1],
-        refinementdata[0].ext[2], refinementdata[0].ni[0], refinementdata[0].ni[1],
-        refinementdata[0].ni[2], crystal[0], "/tmp/foo.map");
-        tst.setStride(1);
-        tst.write(refinementdata[0].data);
-         */
     }
 
     /**
      * compute real space target value, also fills in atomic derivatives
      * @return target value sum over all data sets
      */
-    public double computeRealSpaceTarget() {
+    public double computeRealSpaceTarget(boolean dLambda) {
         double xyz[] = new double[3];
         double uvw[] = new double[3];
         double grad[] = new double[3];
@@ -146,11 +231,14 @@ public class RealSpaceData implements DataContainer {
             sum = 0.0;
             TriCubicSpline spline = new TriCubicSpline();
             for (Atom a : refinementmodel.atomarray) {
+                if (dLambda && !a.applyLambda()) {
+                    continue;
+                }
+
+                final double lambdai = dLambda ? 1.0 : a.applyLambda() ? lambda : 1.0;
                 a.getXYZ(xyz);
                 a.setXYZGradient(0.0, 0.0, 0.0);
-                uvw[0] = xyz[0] / crystal[i].a;
-                uvw[1] = xyz[1] / crystal[i].b;
-                uvw[2] = xyz[2] / crystal[i].c;
+                crystal[i].toFractionalCoordinates(xyz, uvw);
 
                 // Logic to find atom in 3d scalar field box
                 final double frx = refinementdata[i].ni[0] * uvw[0];
@@ -165,35 +253,54 @@ public class RealSpaceData implements DataContainer {
                 final int ifrz = ((int) Math.floor(frz)) - refinementdata[i].ori[2];
                 final double dfrz = frz - Math.floor(frz);
 
-                if (ifrx - 1 < 0 || ifrx + 2 > refinementdata[i].ext[0]
-                        || ifry - 1 < 0 || ifry + 2 > refinementdata[i].ext[1]
-                        || ifrz - 1 < 0 || ifrz + 2 > refinementdata[i].ext[2]) {
-                    logger.warning("atom: " + a.toString() + " is outside the scalar field box! Ignoring...");
-                    continue;
+                if (!refinementdata[i].periodic) {
+                    if (ifrx - 1 < 0 || ifrx + 2 > refinementdata[i].ext[0]
+                            || ifry - 1 < 0 || ifry + 2 > refinementdata[i].ext[1]
+                            || ifrz - 1 < 0 || ifrz + 2 > refinementdata[i].ext[2]) {
+                        logger.warning("atom: " + a.toString() + " is outside the scalar field box! Ignoring...");
+                        continue;
+                    }
                 }
 
                 // fill in scalar 4x4 array for interpolation
                 int uii, vii, wii;
                 for (int ui = ifrx - 1; ui < ifrx + 3; ui++) {
                     uii = ui - (ifrx - 1);
+                    int pui = Crystal.mod(ui, refinementdata[i].ext[0]);
                     for (int vi = ifry - 1; vi < ifry + 3; vi++) {
                         vii = vi - (ifry - 1);
+                        int pvi = Crystal.mod(vi, refinementdata[i].ext[1]);
                         for (int wi = ifrz - 1; wi < ifrz + 3; wi++) {
                             wii = wi - (ifrz - 1);
+                            int pwi = Crystal.mod(wi, refinementdata[i].ext[2]);
 
-                            scalar[uii][vii][wii] = refinementdata[i].getDataIndex(ui, vi, wi);
+                            if (refinementdata[i].periodic) {
+                                scalar[uii][vii][wii] = refinementdata[i].getDataIndex(pui, pvi, pwi);
+                            } else {
+                                scalar[uii][vii][wii] = refinementdata[i].getDataIndex(ui, vi, wi);
+                            }
                         }
                     }
                 }
 
                 // scale and interpolate
-                double scale = -1.0 * dataname[i].weight * a.getAtomType().atomicWeight;
+                double scale;
+                if (dataname == null) {
+                    scale = -1.0 * lambdai * a.getAtomType().atomicWeight;
+                } else {
+                    scale = -1.0 * lambdai * dataname[i].weight * a.getAtomType().atomicWeight;
+                }
                 double val = spline.spline(dfrx, dfry, dfrz, scalar, grad);
                 sum += scale * val;
-                grad[0] = grad[0] * refinementdata[i].ni[0] / crystal[i].a;
-                grad[1] = grad[1] * refinementdata[i].ni[1] / crystal[i].b;
-                grad[2] = grad[2] * refinementdata[i].ni[2] / crystal[i].c;
-                a.addToXYZGradient(scale * grad[0], scale * grad[1], scale * grad[2]);
+
+                grad[0] = grad[0] * refinementdata[i].ni[0];
+                grad[1] = grad[1] * refinementdata[i].ni[1];
+                grad[2] = grad[2] * refinementdata[i].ni[2];
+                // transpose of toFractional
+                xyz[0] = grad[0] * crystal[i].A00 + grad[1] * crystal[i].A01 + grad[2] * crystal[i].A02;
+                xyz[1] = grad[0] * crystal[i].A10 + grad[1] * crystal[i].A11 + grad[2] * crystal[i].A12;
+                xyz[2] = grad[0] * crystal[i].A20 + grad[1] * crystal[i].A21 + grad[2] * crystal[i].A22;
+                a.addToXYZGradient(scale * xyz[0], scale * xyz[1], scale * xyz[2]);
             }
             refinementdata[i].densityscore = sum;
         }
@@ -203,6 +310,15 @@ public class RealSpaceData implements DataContainer {
             sum += refinementdata[i].densityscore;
         }
         return sum;
+    }
+
+    /**
+     * Set the current value of the state variable.
+     * 
+     * @param lambda
+     */
+    protected void setLambda(double lambda) {
+        this.lambda = lambda;
     }
 
     @Override

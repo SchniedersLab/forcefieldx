@@ -113,6 +113,45 @@ public class CNSFilter implements DiffractionFileFilter {
     }
 
     @Override
+    public double getResolution(File cnsFile, Crystal crystal) {
+        double res = Double.POSITIVE_INFINITY;
+
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(cnsFile));
+
+            String str;
+            boolean hashkl, hasfo, hassigfo, hasfree;
+            int ih, ik, il;
+            HKL hkl = new HKL();
+
+            ih = ik = il = -1;
+
+            while ((str = br.readLine()) != null) {
+                String strarray[] = str.split("\\s+");
+
+                for (int i = 0; i < strarray.length; i++) {
+                    if (strarray[i].toLowerCase().startsWith("inde")) {
+                        if (i < strarray.length - 3) {
+                            ih = Integer.parseInt(strarray[i + 1]);
+                            ik = Integer.parseInt(strarray[i + 2]);
+                            il = Integer.parseInt(strarray[i + 3]);
+                            hkl.h(ih);
+                            hkl.k(ik);
+                            hkl.l(il);
+                            res = Math.min(res, Crystal.res(crystal, hkl));
+                        }
+                    }
+                }
+            }
+        } catch (IOException ioe) {
+            System.out.println("IO Exception: " + ioe.getMessage());
+            return -1.0;
+        }
+        
+        return res;
+    }
+
+    @Override
     public boolean readFile(File cnsFile, ReflectionList reflectionlist,
             DiffractionRefinementData refinementdata, CompositeConfiguration properties) {
         int nread, nres, nignore, nfriedel, ncut;

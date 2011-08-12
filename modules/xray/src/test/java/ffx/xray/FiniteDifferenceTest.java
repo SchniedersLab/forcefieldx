@@ -165,7 +165,7 @@ public class FiniteDifferenceTest {
             xyz[1] = atomarray[i].getY();
             xyz[2] = atomarray[i].getZ();
             while (true) {
-                double rho = atomff.rho(0.0, xyz);
+                double rho = atomff.rho(0.0, 1.0, xyz);
                 if (rho > 0.1) {
                     arad += 0.5;
                 } else if (rho > 0.001) {

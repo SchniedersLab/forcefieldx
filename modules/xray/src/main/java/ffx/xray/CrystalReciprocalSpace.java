@@ -134,6 +134,8 @@ public class CrystalReciprocalSpace {
     private final SolventGradientRegion solventGradientRegion;
     private final ParallelTeam fftTeam;
     private final Complex3DParallel complexFFT3D;
+    protected boolean lambdaTerm = false;
+    protected double lambda = 1.0;
 
     /**
      * Crystal Reciprocal Space constructor, assumes this is not a bulk solvent
@@ -439,6 +441,15 @@ public class CrystalReciprocalSpace {
             solventGradientRegion = null;
         }
         complexFFT3D = new Complex3DParallel(fftX, fftY, fftZ, fftTeam);
+    }
+
+    /**
+     * Set the current value of the state variable.
+     * 
+     * @param lambda
+     */
+    protected void setLambda(double lambda) {
+        this.lambda = lambda;
     }
 
     /**
@@ -1089,6 +1100,7 @@ public class CrystalReciprocalSpace {
 
         @Override
         public void gridDensity(int iSymm, int n) {
+            final double lambdai = atoms[n].applyLambda() ? lambda : 1.0;
             xyz[0] = coordinates[iSymm][0][n];
             xyz[1] = coordinates[iSymm][1][n];
             xyz[2] = coordinates[iSymm][2][n];
@@ -1123,7 +1135,7 @@ public class CrystalReciprocalSpace {
                         crystal.toCartesianCoordinates(xf, xc);
 
                         final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
-                        grid[ii] = atomff.rho(grid[ii], xc);
+                        grid[ii] = atomff.rho(grid[ii], lambdai, xc);
                     }
                 }
             }
@@ -1145,6 +1157,7 @@ public class CrystalReciprocalSpace {
 
         @Override
         public void gridDensity(int iSymm, int n) {
+            final double lambdai = atoms[n].applyLambda() ? lambda : 1.0;
             xyz[0] = coordinates[iSymm][0][n];
             xyz[1] = coordinates[iSymm][1][n];
             xyz[2] = coordinates[iSymm][2][n];
@@ -1193,7 +1206,7 @@ public class CrystalReciprocalSpace {
                         crystal.toCartesianCoordinates(xf, xc);
 
                         final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
-                        grid[ii] = solventff.rho(grid[ii], xc);
+                        grid[ii] = solventff.rho(grid[ii], lambdai, xc);
                     }
                 }
             }
@@ -1244,6 +1257,11 @@ public class CrystalReciprocalSpace {
             @Override
             public void run(final int lb, final int ub) {
                 for (int n = lb; n <= ub; n++) {
+                    if (lambdaTerm) {
+                        if (!atoms[n].applyLambda()) {
+                            continue;
+                        }
+                    }
                     xyz[0] = coordinates[0][0][n];
                     xyz[1] = coordinates[0][1][n];
                     xyz[2] = coordinates[0][2][n];
@@ -1327,6 +1345,11 @@ public class CrystalReciprocalSpace {
             @Override
             public void run(final int lb, final int ub) {
                 for (int n = lb; n <= ub; n++) {
+                    if (lambdaTerm) {
+                        if (!atoms[n].applyLambda()) {
+                            continue;
+                        }
+                    }
                     xyz[0] = coordinates[0][0][n];
                     xyz[1] = coordinates[0][1][n];
                     xyz[2] = coordinates[0][2][n];

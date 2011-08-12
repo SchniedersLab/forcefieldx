@@ -180,7 +180,7 @@ public class ParticleMeshEwald implements LambdaInterface {
      * Start turning on polarization later in the Lambda path to prevent
      * SCF convergence problems when atoms nearly overlap.
      */
-    private double polarizationLambdaStart = 0.7;
+    private double polarizationLambdaStart = 0.75;
     private double polarizationLambdaEnd = 1.0;
     /**
      * Power on L in front of the polarization energy.
