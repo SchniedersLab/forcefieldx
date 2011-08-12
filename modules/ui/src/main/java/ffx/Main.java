@@ -20,13 +20,9 @@
  */
 package ffx;
 
-import edu.rit.pj.Comm;
-import edu.rit.pj.cluster.Configuration;
-import static java.lang.String.format;
-
+import java.awt.GraphicsEnvironment;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.GraphicsEnvironment;
 import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
@@ -35,6 +31,7 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
+import static java.lang.String.format;
 
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
@@ -44,6 +41,8 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.SystemUtils;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.time.StopWatch;
+
+import edu.rit.pj.Comm;
 
 import ffx.ui.LogHandler;
 import ffx.ui.MainPanel;
@@ -89,7 +88,7 @@ public class Main extends JFrame {
         level = tempLevel;
         logHandler = new LogHandler();
         logHandler.setLevel(level);
-        Logger ffxLogger = Logger.getLogger(Main.class.getPackage().getName());
+        Logger ffxLogger = Logger.getLogger("ffx");
         ffxLogger.addHandler(logHandler);
         ffxLogger.setLevel(level);
     }
@@ -109,7 +108,7 @@ public class Main extends JFrame {
                 commandLineFile = new File(FilenameUtils.normalize(
                         commandLineFile.getAbsolutePath()));
             }
-            // Convert the of the args to a list
+            // Convert the args to a list
             int nArgs = args.length;
             if (nArgs > 1) {
                 for (int i = 1; i < nArgs; i++) {
@@ -136,6 +135,7 @@ public class Main extends JFrame {
             Main m = new Main(commandLineFile, argList);
         } else {
             logger.info("\n Starting up the command line interface");
+            
             try {
                 Comm.init(args);
                 logger.info(" Initialized cluster communicator.");
@@ -146,6 +146,7 @@ public class Main extends JFrame {
             } catch (Exception e) {
                 logger.info(" Exception initializing cluster." + e.toString());
             }
+            
             HeadlessMain m = new HeadlessMain(commandLineFile, argList, logHandler);
         }
         logger.info(" Log level is set to " + level.toString());

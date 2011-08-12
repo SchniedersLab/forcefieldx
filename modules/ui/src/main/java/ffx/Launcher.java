@@ -41,6 +41,7 @@ public class Launcher {
 
     public static void main(String[] args) throws MalformedURLException, IllegalAccessException,
             InvocationTargetException, NoSuchMethodException, ClassNotFoundException {
+
         Class ffxBootstrapClass = Launcher.class;
 
         List<String> ffxFiles = new ArrayList<String>(Arrays.asList(new String[]{
@@ -56,17 +57,14 @@ public class Launcher {
                     "org.codehaus.groovy/groovy-all.jar",
                     "edu.rit.pj/pj.jar",
                     "jcuda/jcuda-all.jar",
-
                     // Java3D 1.5.2 and (so far) 1.6.0 depend on JOGL v. 1.1.1
                     "java3d/j3dcore.jar",
                     "java3d/j3dutils.jar",
                     "java3d/j3dvrml.jar",
                     "java3d/vecmath.jar",
-
                     // GLUEGEN and JOGL v. 1.1.1
                     "net.java.dev.jogl/jogl.jar",
                     "net.java.dev.jogl/gluegen-rt.jar",
-
                     // JOGAMP GLUEGEN, JOGL and JOCL v. 2.0
                     // "org.jogamp/gluegen-rt.jar",
                     // "org.jogamp/jogl.jar",

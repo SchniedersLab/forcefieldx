@@ -25,7 +25,6 @@ import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -33,13 +32,11 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.ProtectionDomain;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
-import org.apache.commons.io.FileUtils;
 
 /**
  * Class loader able to load classes and DLLs with a higher priority from a given set of JARs.
@@ -106,11 +103,12 @@ public class FFXClassLoader extends ClassLoader {
                     System.out.println(" File not extracted: " + extensionJarOrDll);
                 }
             } catch (IOException ex) {
-                throw new RuntimeException("Couldn't extract extension jar.\n", ex);
+                throw new RuntimeException(" Couldn't extract extension jar.\n", ex);
             }
         }
 
         // Add extension jars from the ffx/conf directory
+        try {
         String confDir = System.getProperty("basedir") + File.separator + "conf";
         File confFile = new File(confDir);
         File files[] = confFile.listFiles();        
@@ -124,6 +122,8 @@ public class FFXClassLoader extends ClassLoader {
             } catch (Exception e) {
                 throw new RuntimeException(" Couldn't load extension jar.\n", e);
             }
+        } } catch (Exception e) {
+            
         }
 
         // Create extensionJars array
