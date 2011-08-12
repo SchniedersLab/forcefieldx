@@ -20,7 +20,6 @@
  */
 package ffx.potential.nonbonded;
 
-import ffx.potential.parameters.ForceField.ForceFieldInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -51,6 +50,7 @@ import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldBoolean;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
+import ffx.potential.parameters.ForceField.ForceFieldInteger;
 import ffx.potential.parameters.ForceField.ForceFieldString;
 import ffx.potential.parameters.ForceField.ForceFieldType;
 import ffx.potential.parameters.MultipoleType;
@@ -517,27 +517,36 @@ public class ParticleMeshEwald implements LambdaInterface {
 
         lambdaTerm = forceField.getBoolean(ForceFieldBoolean.LAMBDATERM, false);
 
-        permanentLambdaAlpha = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_ALPHA, 1.0);
-        if (permanentLambdaAlpha < 0.0 || permanentLambdaAlpha > 2.0) {
-            permanentLambdaAlpha = 1.0;
-        }
-        permanentLambdaExponent = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_EXPONENT, 1.0);
-        if (permanentLambdaExponent < 1.0) {
-            permanentLambdaExponent = 2.0;
-        }
-        polarizationLambdaExponent = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_EXPONENT, 2.0);
-        if (polarizationLambdaExponent < 1.0) {
-            polarizationLambdaExponent = 2.0;
-        }
-        polarizationLambdaStart = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_START, 0.7);
-        if (polarizationLambdaStart < 0.0 || polarizationLambdaStart > 0.9) {
-            polarizationLambdaStart = 0.7;
-        }
-        polarizationLambdaEnd = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_END, 1.0);
-        if (polarizationLambdaEnd < polarizationLambdaStart
-                || polarizationLambdaEnd > 1.0
-                || polarizationLambdaEnd - polarizationLambdaStart < 0.3) {
-            polarizationLambdaEnd = 1.0;
+        if (lambdaTerm) {
+            permanentLambdaAlpha = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_ALPHA, 1.0);
+            if (permanentLambdaAlpha < 0.0 || permanentLambdaAlpha > 2.0) {
+                permanentLambdaAlpha = 1.0;
+            }
+            permanentLambdaExponent = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_EXPONENT, 1.0);
+            if (permanentLambdaExponent < 1.0) {
+                permanentLambdaExponent = 2.0;
+            }
+            polarizationLambdaExponent = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_EXPONENT, 2.0);
+            if (polarizationLambdaExponent < 1.0) {
+                polarizationLambdaExponent = 2.0;
+            }
+            polarizationLambdaStart = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_START, 0.7);
+            if (polarizationLambdaStart < 0.0 || polarizationLambdaStart > 0.9) {
+                polarizationLambdaStart = 0.7;
+            }
+            polarizationLambdaEnd = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_END, 1.0);
+            if (polarizationLambdaEnd < polarizationLambdaStart
+                    || polarizationLambdaEnd > 1.0
+                    || polarizationLambdaEnd - polarizationLambdaStart < 0.3) {
+                polarizationLambdaEnd = 1.0;
+            }
+
+            logger.info("\n Lambda Parameters");
+            logger.info(String.format(" Permanent multipole softcore alpha:  %5.3f", permanentLambdaAlpha));
+            logger.info(String.format(" Permanent multipole lambda exponent: %5.3f", permanentLambdaExponent));
+            logger.info(String.format(" Polarization lambda exponent:        %5.3f", polarizationLambdaExponent));            
+            logger.info(String.format(" Polarization lambda range:  %5.3f .. %5.3f", 
+                    polarizationLambdaStart, polarizationLambdaEnd));
         }
 
         String polar = forceField.getString(ForceFieldString.POLARIZATION, "MUTUAL");
@@ -859,11 +868,14 @@ public class ParticleMeshEwald implements LambdaInterface {
              * 
              * We can skip the SCF for part 1 for efficiency.
              */
+            polarizationScale = 0.0;
             doPolarization = false;
         } else if (lambda <= polarizationLambdaEnd) {
             polarizationScale = lPowPol;
+            doPolarization = true;
         } else {
             polarizationScale = 1.0;
+            doPolarization = true;
         }
 
         permanentScale = lPowPerm;
@@ -873,8 +885,8 @@ public class ParticleMeshEwald implements LambdaInterface {
 
     /** 
      * 2.) Condensed phase system without the ligand. 
-     *   A.) No permanent real space electrostatics because this was
-     *       handled analytically in step 1.
+     *   A.) No permanent real space electrostatics needs to be calculated
+     *       because this was handled analytically in step 1.
      * 
      *   B.) Permanent reciprocal space scaled by (1 - lambda).
      * 
@@ -912,6 +924,7 @@ public class ParticleMeshEwald implements LambdaInterface {
             polarizationScale = 1.0 - lPowPol;
         } else {
             doPolarization = false;
+            polarizationScale = 0.0;
         }
 
         /* If we are disappearing the entire system (ie. a small crystal)
@@ -964,6 +977,7 @@ public class ParticleMeshEwald implements LambdaInterface {
             polarizationScale = 1.0 - lPowPol;
         } else {
             doPolarization = false;
+            polarizationScale = 0.0;
         }
 
         /**
@@ -2796,12 +2810,12 @@ public class ParticleMeshEwald implements LambdaInterface {
             polarizationEnergy = 0.0;
             for (int i = 0; i < maxThreads; i++) {
                 permanentEnergy += realSpaceEnergyLoop[i].permanentEnergy;
-                polarizationEnergy += realSpaceEnergyLoop[i].inducedEnergy;    
+                polarizationEnergy += realSpaceEnergyLoop[i].inducedEnergy;
                 computeTime += realSpaceEnergyLoop[i].getComputeTime();
             }
             permanentEnergy *= ELECTRIC;
             polarizationEnergy *= ELECTRIC;
-            
+
             overheadTime = System.nanoTime() - overheadTime;
             overheadTime = overheadTime - computeTime / maxThreads;
             //double compute = (double) computeTime / threadCount * toSeconds;
@@ -3937,7 +3951,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                 logger.log(Level.SEVERE, message, e);
             }
         }
-        
+
         @Override
         public void finish() {
             /**
@@ -3947,7 +3961,7 @@ public class ParticleMeshEwald implements LambdaInterface {
              */
             selfEnergy = 0.0;
             recipEnergy = 0.0;
-            for (int i=0; i<maxThreads; i++) {
+            for (int i = 0; i < maxThreads; i++) {
                 selfEnergy += permanentReciprocalEnergyLoop[i].eSelf;
                 recipEnergy += permanentReciprocalEnergyLoop[i].eRecip;
             }
@@ -4157,7 +4171,7 @@ public class ParticleMeshEwald implements LambdaInterface {
             private double lgX[], lgY[], lgZ[], ltX[], ltY[], ltZ[];
             private final double sfPhi[] = new double[tensorCount];
             private final double sPhi[] = new double[tensorCount];
-            
+
             @Override
             public IntegerSchedule schedule() {
                 return IntegerSchedule.fixed();
@@ -4785,7 +4799,7 @@ public class ParticleMeshEwald implements LambdaInterface {
         public void start() {
             reductionTime = -System.nanoTime();
         }
-        
+
         @Override
         public void run() {
             try {
@@ -4797,10 +4811,10 @@ public class ParticleMeshEwald implements LambdaInterface {
                 logger.log(Level.SEVERE, message, e);
             }
         }
-        
+
         @Override
         public void finish() {
-            reductionTime += System.nanoTime();            
+            reductionTime += System.nanoTime();
         }
 
         private class TorqueLoop extends IntegerForLoop {
@@ -4871,11 +4885,11 @@ public class ParticleMeshEwald implements LambdaInterface {
                 trq[0] = tq[0][0][i];
                 trq[1] = tq[0][1][i];
                 trq[2] = tq[0][2][i];
-                for (int j = 1; j<maxThreads; j++) {
+                for (int j = 1; j < maxThreads; j++) {
                     trq[0] += tq[j][0][i];
                     trq[1] += tq[j][1][i];
                     trq[2] += tq[j][2][i];
-                }                
+                }
                 double x[] = coordinates[0][0];
                 double y[] = coordinates[0][1];
                 double z[] = coordinates[0][2];
@@ -5822,8 +5836,7 @@ public class ParticleMeshEwald implements LambdaInterface {
     public void setLambda(double lambda) {
         assert (lambda >= 0.0 && lambda <= 1.0);
         this.lambda = lambda;
-
-        lAlpha = permanentLambdaAlpha * (1.0 - lambda) * (1.0 - lambda);
+        
         /**
          * f = sqrt(r^2 + lAlpha)
          * df/dL = -alpha * (1.0 - lambda) / f
@@ -5833,6 +5846,7 @@ public class ParticleMeshEwald implements LambdaInterface {
          * dg/dl = alpha * (1.0 - lambda) / (r^2 + lAlpha)^(3/2)
          * dg/dl = dlAlpha * g^3
          */
+        lAlpha = permanentLambdaAlpha * (1.0 - lambda) * (1.0 - lambda);
         dlAlpha = permanentLambdaAlpha * (1.0 - lambda);
         d2lAlpha = -permanentLambdaAlpha;
 
@@ -5845,14 +5859,15 @@ public class ParticleMeshEwald implements LambdaInterface {
         }
 
         /**
-         * Polarization is turned on from polarizationLambdaStart .. 1.0.
+         * Polarization is turned on from 
+         * polarizationLambdaStart .. polarizationLambdaEnd.
          */
         if (lambda < polarizationLambdaStart) {
             lPowPol = 0.0;
             dlPowPol = 0.0;
             d2lPowPol = 0.0;
         } else if (lambda <= polarizationLambdaEnd) {
-            double polarizationWindow = polarizationLambdaStart - polarizationLambdaEnd;
+            double polarizationWindow = polarizationLambdaEnd - polarizationLambdaStart;
             double polarizationLambdaScale = 1.0 / polarizationWindow;
             polarizationLambda = polarizationLambdaScale * (lambda - polarizationLambdaStart);
             lPowPol = pow(polarizationLambda, polarizationLambdaExponent);

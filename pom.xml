@@ -278,11 +278,11 @@
                         <argument>-classpath</argument>
                         <argument>bin/ffx-all.jar</argument>
                         <argument>ffx.Launcher</argument>
-                        <argument>testOSRWBias</argument>
+                        <argument>testLambdaGradient</argument>
                         <argument>examples/watersmall.xyz</argument>
                         <argument>1</argument>
                         <argument>3</argument>
-                        <argument>0.9</argument> 
+                        <argument>0.99</argument> 
                         <!-- argument>20</argument -->
                     </arguments>
                 </configuration>
