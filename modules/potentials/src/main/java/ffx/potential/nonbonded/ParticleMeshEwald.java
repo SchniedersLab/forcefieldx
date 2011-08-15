@@ -175,7 +175,7 @@ public class ParticleMeshEwald implements LambdaInterface {
     /**
      * Power on L in front of the pairwise multipole potential.
      */
-    private double permanentLambdaExponent = 2.0;
+    private double permanentLambdaExponent = 1.0;
     /**
      * Start turning on polarization later in the Lambda path to prevent
      * SCF convergence problems when atoms nearly overlap.
@@ -185,7 +185,7 @@ public class ParticleMeshEwald implements LambdaInterface {
     /**
      * Power on L in front of the polarization energy.
      */
-    private double polarizationLambdaExponent = 2.0;
+    private double polarizationLambdaExponent = 1.0;
     /**
      * lAlpha = α*(1 - L)^2
      */
@@ -524,15 +524,15 @@ public class ParticleMeshEwald implements LambdaInterface {
             }
             permanentLambdaExponent = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_EXPONENT, 1.0);
             if (permanentLambdaExponent < 1.0) {
-                permanentLambdaExponent = 2.0;
+                permanentLambdaExponent = 1.0;
             }
-            polarizationLambdaExponent = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_EXPONENT, 2.0);
+            polarizationLambdaExponent = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_EXPONENT, 1.0);
             if (polarizationLambdaExponent < 1.0) {
-                polarizationLambdaExponent = 2.0;
+                polarizationLambdaExponent = 1.0;
             }
-            polarizationLambdaStart = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_START, 0.7);
+            polarizationLambdaStart = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_START, 0.75);
             if (polarizationLambdaStart < 0.0 || polarizationLambdaStart > 0.9) {
-                polarizationLambdaStart = 0.7;
+                polarizationLambdaStart = 0.75;
             }
             polarizationLambdaEnd = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_END, 1.0);
             if (polarizationLambdaEnd < polarizationLambdaStart
@@ -541,7 +541,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                 polarizationLambdaEnd = 1.0;
             }
 
-            logger.info("\n Lambda Parameters");
+            logger.info("\n Electrostatic Lambda Parameters");
             logger.info(String.format(" Permanent multipole softcore alpha:  %5.3f", permanentLambdaAlpha));
             logger.info(String.format(" Permanent multipole lambda exponent: %5.3f", permanentLambdaExponent));
             logger.info(String.format(" Polarization lambda exponent:        %5.3f", polarizationLambdaExponent));            

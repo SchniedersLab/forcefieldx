@@ -329,15 +329,16 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
             softCore[SOFT][i] = false;
         }
         lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
-        vdwLambdaAlpha = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_ALPHA, 0.05);
-        vdwLambdaExponent = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_EXPONENT, 1.0);
-        if (vdwLambdaAlpha < 0.0) {
-            vdwLambdaAlpha = 0.05;
+        if (lambdaTerm) {
+            vdwLambdaAlpha = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_ALPHA, 0.05);
+            vdwLambdaExponent = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_EXPONENT, 1.0);
+            if (vdwLambdaAlpha < 0.0) {
+                vdwLambdaAlpha = 0.05;
+            }
+            if (vdwLambdaExponent < 1.0) {
+                vdwLambdaExponent = 1.0;
+            }
         }
-        if (vdwLambdaExponent < 1.0) {
-            vdwLambdaExponent = 1.0;
-        }
-
         /**
          * Parallel constructs.
          */
@@ -401,6 +402,12 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         logger.info(format(" Switch Start:                            %5.2f (A)", cut));
         logger.info(format(" Cut-Off:                                 %5.2f (A)", off));
         //logger.info(format(" Long-Range Correction:                   %B", doLongRangeCorrection));        
+
+        if (lambdaTerm) {
+            logger.info("\n Van der Waals Lambda Parameters");
+            logger.info(String.format(" Softcore alpha:  %5.3f", vdwLambdaAlpha));
+            logger.info(String.format(" Lambda exponent: %5.3f", vdwLambdaExponent));
+        }
     }
 
     public IntegerSchedule getPairwiseSchedule() {
