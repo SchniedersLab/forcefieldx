@@ -175,12 +175,12 @@ public class OSRW implements Potential {
     /**
      * Lambda print frequency (in steps).
      */
-    private int lambdaPrintFrequency = 100;
+    private int lambdaPrintFrequency = 1000;
     /**
      * Free energy print frequency relative to how often the free energy is
      * updated from the count matrix.
      */
-    private int fLambdaPrintFrequency = 10;
+    private int fLambdaPrintFrequency = 100;
     private int fLambdaUpdates = 0;
     /**
      * Steps between writing an OSRW restart file.
