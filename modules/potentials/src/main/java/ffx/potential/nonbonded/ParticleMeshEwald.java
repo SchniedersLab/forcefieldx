@@ -185,7 +185,7 @@ public class ParticleMeshEwald implements LambdaInterface {
     /**
      * Power on L in front of the polarization energy.
      */
-    private double polarizationLambdaExponent = 1.0;
+    private double polarizationLambdaExponent = 2.0;
     /**
      * lAlpha = α*(1 - L)^2
      */
@@ -526,9 +526,9 @@ public class ParticleMeshEwald implements LambdaInterface {
             if (permanentLambdaExponent < 1.0) {
                 permanentLambdaExponent = 1.0;
             }
-            polarizationLambdaExponent = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_EXPONENT, 1.0);
-            if (polarizationLambdaExponent < 1.0) {
-                polarizationLambdaExponent = 1.0;
+            polarizationLambdaExponent = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_EXPONENT, 2.0);
+            if (polarizationLambdaExponent < 2.0) {
+                polarizationLambdaExponent = 2.0;
             }
             polarizationLambdaStart = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_START, 0.75);
             if (polarizationLambdaStart < 0.0 || polarizationLambdaStart > 0.9) {
