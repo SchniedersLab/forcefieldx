@@ -190,6 +190,10 @@ public class OSRW implements Potential {
      * Print detailed energy information.
      */
     private boolean print = false;
+    /**
+     * total system energy
+     */
+    private double totalEnergy;
 
     public OSRW(LambdaInterface lambdaInterface, Potential potential,
             File restartFile, CompositeConfiguration properties,
@@ -432,6 +436,7 @@ public class OSRW implements Potential {
             langevin();
         }
 
+        totalEnergy = e + biasEnergy;
         return e + biasEnergy;
     }
 
@@ -731,6 +736,11 @@ public class OSRW implements Potential {
     @Override
     public double[] getMass() {
         return potential.getMass();
+    }
+    
+    @Override
+    public double getTotal() {
+        return totalEnergy;
     }
 
     @Override
