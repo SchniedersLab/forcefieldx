@@ -557,6 +557,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         return totalEnergy;
     }
 
+    @Override
     public double getTotal() {
         return totalEnergy;
     }

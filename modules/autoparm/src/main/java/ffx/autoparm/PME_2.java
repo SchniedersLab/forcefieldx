@@ -91,6 +91,7 @@ public class PME_2 implements Potential {
     public boolean fitmpl = true, fitdpl = true, fitqdpl = true;
     private int nvars;
     public static final Logger logger = Logger.getLogger(PME_2.class.getName());
+    private double totalEnergy;
 
     /**
      * Polarization modes include "direct", in which induced dipoles do not
@@ -802,6 +803,7 @@ public class PME_2 implements Potential {
         }
         //long endtime = System.nanoTime();
         //System.out.println("TIME "+(endtime - currenttime)*1e-9);
+        totalEnergy = total_error;
         return total_error;
     }
 
@@ -965,12 +967,19 @@ public class PME_2 implements Potential {
         return parameters;
     }
 
+    @Override
     public double[] getMass() {
         return null;
     }
 
+    @Override
     public int getNumberOfVariables() {
         return nvars;
+    }
+    
+    @Override
+    public double getTotal() {
+        return totalEnergy;
     }
 
     public void setkey(ArrayList<String> key) {

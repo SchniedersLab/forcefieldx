@@ -129,6 +129,7 @@ public class SigmaAEnergy implements Potential {
     private ComplexNumber mfo = new ComplexNumber();
     private ComplexNumber mfo2 = new ComplexNumber();
     private ComplexNumber dfcc = new ComplexNumber();
+    private double totalEnergy;
 
     public SigmaAEnergy(ReflectionList reflectionlist,
             DiffractionRefinementData refinementdata) {
@@ -376,6 +377,7 @@ public class SigmaAEnergy implements Potential {
             sb.append("\n");
             logger.info(sb.toString());
         }
+        totalEnergy = sum;
         return sum;
     }
 
@@ -445,6 +447,11 @@ public class SigmaAEnergy implements Potential {
     @Override
     public double[] getMass() {
         throw new UnsupportedOperationException("Not supported yet.");
+    }
+    
+    @Override
+    public double getTotal() {
+        return totalEnergy;
     }
 
     @Override

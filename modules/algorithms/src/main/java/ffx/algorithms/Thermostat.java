@@ -127,7 +127,7 @@ public abstract class Thermostat {
 
     /**
      * Reset velocities from a Maxwell-Boltzmann distribution of momenta.
-     * The varience of each independent momentum component is kT * mass.
+     * The variance of each independent momentum component is kT * mass.
      */
     public void maxwell() {
 
@@ -179,8 +179,8 @@ public abstract class Thermostat {
 
         if (print) {
             logger.info(String.format(" Center of Mass   (%12.3f,%12.3f,%12.3f)", centerOfMass[0], centerOfMass[1], centerOfMass[2]));
-            logger.info(String.format(" Linear Momemtum  (%12.3f,%12.3f,%12.3f)", linearMomentum[0], linearMomentum[1], linearMomentum[2]));
-            logger.info(String.format(" Angular Momemtum (%12.3f,%12.3f,%12.3f)", angularMomentum[0], angularMomentum[1], angularMomentum[2]));
+            logger.info(String.format(" Linear Momentum  (%12.3f,%12.3f,%12.3f)", linearMomentum[0], linearMomentum[1], linearMomentum[2]));
+            logger.info(String.format(" Angular Momentum (%12.3f,%12.3f,%12.3f)", angularMomentum[0], angularMomentum[1], angularMomentum[2]));
         }
 
         if (remove) {
@@ -262,7 +262,7 @@ public abstract class Thermostat {
          */
         if (print) {
             logger.info(String.format(" Center of mass motion removed.\n"
-                                      + " Total degress of freedom %d - 3 = %d", dof, dof-3));
+                                      + " Total degrees of freedom %d - 3 = %d", dof, dof-3));
         }
     }
 

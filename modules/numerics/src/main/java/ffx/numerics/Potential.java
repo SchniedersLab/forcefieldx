@@ -79,6 +79,13 @@ public interface Potential {
      * @return The mass of each degree of freedom.
      */
     public abstract double[] getMass();
+    
+    /**
+     * Get the total energy of the system
+     * 
+     * @return the total energy
+     */
+    public abstract double getTotal();
 
     /**
      * Get the number of variables being operated on.

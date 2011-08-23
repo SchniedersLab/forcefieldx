@@ -99,6 +99,7 @@ public class ScaleBulkEnergy implements Potential {
     private ComplexNumber fsc = new ComplexNumber();
     private ComplexNumber fct = new ComplexNumber();
     private ComplexNumber kfct = new ComplexNumber();
+    private double totalEnergy;
 
     public ScaleBulkEnergy(ReflectionList reflectionlist, DiffractionRefinementData refinementdata, int n) {
         this.reflectionlist = reflectionlist;
@@ -290,6 +291,7 @@ public class ScaleBulkEnergy implements Potential {
             logger.info(sb.toString());
         }
 
+        totalEnergy = sum / sumfo;
         return sum / sumfo;
     }
 
@@ -332,6 +334,11 @@ public class ScaleBulkEnergy implements Potential {
     @Override
     public double[] getMass() {
         throw new UnsupportedOperationException("Not supported yet.");
+    }
+    
+    @Override
+    public double getTotal() {
+        return totalEnergy;
     }
 
     @Override
