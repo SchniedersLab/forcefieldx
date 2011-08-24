@@ -86,7 +86,7 @@ then
   REPO="$BASEDIR"
 fi
 
-CLASSPATH=$CLASSPATH_PREFIX:"$BASEDIR"/bin/ffx-all.jar:"$BASEDIR"/bin/pj-1.4.jar
+CLASSPATH=$CLASSPATH_PREFIX:"$BASEDIR"/bin/pj-1.4.jar
 
 EXTRA_JVM_ARGUMENTS="-Xms1G -Xmx4G -Xss4M -XX:MaxPermSize=1500M"
 
@@ -102,12 +102,10 @@ fi
 exec "$JAVACMD" $JAVA_OPTS \
   $EXTRA_JVM_ARGUMENTS \
   -classpath "$CLASSPATH" \
-  -Dapp.name=ffx \
+  -Dapp.name=JobSceduler \
   -Dapp.pid="$$" \
   -Dapp.repo="$REPO" \
   -Dbasedir="$BASEDIR" \
-  -Djava.awt.headless="true" \
-  -Dj3d.rend="ogl" \
-  -Dffx.log="info" \
-  ffx.Launcher \
+  edu.rit.pj.cluster.JobScheduler \
+  "$BASEDIR"/bin/cluster.txt \
   "$@"

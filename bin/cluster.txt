@@ -1,0 +1,16 @@
+ # Force Field X cluster configuration file
+ cluster Ren lab Linux cluster
+ logfile scheduler.log
+ webhost node140.bme.utexas.edu
+ webport 8080
+ schedulerhost localhost
+ schedulerport 20617
+ frontendhost node140.bme.utexas.edu
+ backend dr00 1 node140.bme.utexas.edu /home/schnied/Software/jdk1.6.0_26/bin/java /home/schnied/ffx/bin/pj-1.4.jar:/home/schnied/ffx/bin/ffx-all.jar
+ backend dr01 1 node140.bme.utexas.edu /home/schnied/Software/jdk1.6.0_26/bin/java /home/schnied/ffx/bin/pj-1.4.jar:/home/schnied/ffx/bin/ffx-all.jar
+ backend dr02 1 node140.bme.utexas.edu /home/schnied/Software/jdk1.6.0_26/bin/java /home/schnied/ffx/bin/pj-1.4.jar:/home/schnied/ffx/bin/ffx-all.jar
+ backend dr03 1 node140.bme.utexas.edu /home/schnied/Software/jdk1.6.0_26/bin/java /home/schnied/ffx/bin/pj-1.4.jar:/home/schnied/ffx/bin/ffx-all.jar
+ backend dr04 1 node140.bme.utexas.edu /home/schnied/Software/jdk1.6.0_26/bin/java /home/schnied/ffx/bin/pj-1.4.jar:/home/schnied/ffx/bin/ffx-all.jar
+ backend dr05 1 node140.bme.utexas.edu /home/schnied/Software/jdk1.6.0_26/bin/java /home/schnied/ffx/bin/pj-1.4.jar:/home/schnied/ffx/bin/ffx-all.jar
+ backend dr06 1 node140.bme.utexas.edu /home/schnied/Software/jdk1.6.0_26/bin/java /home/schnied/ffx/bin/pj-1.4.jar:/home/schnied/ffx/bin/ffx-all.jar
+ backend dr07 1 node140.bme.utexas.edu /home/schnied/Software/jdk1.6.0_26/bin/java /home/schnied/ffx/bin/pj-1.4.jar:/home/schnied/ffx/bin/ffx-all.jar

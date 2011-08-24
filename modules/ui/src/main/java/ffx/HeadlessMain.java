@@ -20,18 +20,17 @@
  */
 package ffx;
 
-import static java.lang.String.format;
-
 import java.io.File;
+import java.net.URL;
 import java.util.List;
 import java.util.logging.Logger;
+import static java.lang.String.format;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.time.StopWatch;
 
 import ffx.ui.LogHandler;
 import ffx.ui.MainPanel;
-import java.net.URL;
 
 /**
  * The HeadlessMain class is the entry point to the command line version of

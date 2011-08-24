@@ -120,7 +120,6 @@ public class Main extends JFrame {
         logger.info(MainPanel.title);
         logger.info(MainPanel.aboutString);
         logger.info(MainPanel.border);
-        
         if (!GraphicsEnvironment.isHeadless()) {
             logger.info("\n Starting up the graphical user interface");
             // Some Mac OS X specific features that help FFX look native.
@@ -135,18 +134,6 @@ public class Main extends JFrame {
             Main m = new Main(commandLineFile, argList);
         } else {
             logger.info("\n Starting up the command line interface");
-            
-            try {
-                Comm.init(args);
-                logger.info(" Initialized cluster communicator.");
-                Comm world = Comm.world();
-                int size = world.size();
-                int rank = world.rank();
-                logger.info(String.format(" World communicator (Rank %d, Size %d)", rank, size));
-            } catch (Exception e) {
-                logger.info(" Exception initializing cluster." + e.toString());
-            }
-            
             HeadlessMain m = new HeadlessMain(commandLineFile, argList, logHandler);
         }
         logger.info(" Log level is set to " + level.toString());

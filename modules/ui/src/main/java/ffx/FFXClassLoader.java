@@ -37,7 +37,6 @@ import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
-
 /**
  * Class loader able to load classes and DLLs with a higher priority from a given set of JARs.
  * Its bytecode is Java 1.1 compatible to be loadable by old JVMs.
@@ -62,7 +61,7 @@ public class FFXClassLoader extends ClassLoader {
         super(parent);
         this.protectionDomain = protectionDomain;
         this.applicationPackages = applicationPackages;
-
+        
         // Compute DLLs prefix and suffix
         String dllSuffix;
         String dllPrefix;
