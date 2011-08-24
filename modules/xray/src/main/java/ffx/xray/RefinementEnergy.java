@@ -66,6 +66,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
     private double xChemical[][];
     private double gChemical[][];
     private double gXray[];
+    private double totalEnergy;
     protected double[] optimizationScaling = null;
 
     /**
@@ -338,6 +339,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
                 g[i] /= optimizationScaling[i];
             }
         }
+        totalEnergy = e;
         return e;
     }
 
@@ -410,6 +412,11 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
     @Override
     public double[] getMass() {
         return dataEnergy.getMass();
+    }
+    
+    @Override
+    public double getTotal() {
+        return totalEnergy;
     }
 
     @Override

@@ -31,6 +31,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.Vector;
 
+import ffx.crystal.CCP4MapWriter;
 import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
@@ -805,6 +806,9 @@ public class CrystalReciprocalSpace {
             logger.log(Level.SEVERE, message, e);
         }
 
+        // CCP4MapWriter mapout = new CCP4MapWriter(fftX, fftY, fftZ, crystal, "/tmp/foo.map");
+        // mapout.write(densityGrid);
+
         long startTime = System.nanoTime();
         complexFFT3D.fft(densityGrid);
         long fftTime = System.nanoTime() - startTime;
@@ -1122,7 +1126,7 @@ public class CrystalReciprocalSpace {
             final double frz = fftZ * uvw[2];
             final int ifrz = (int) frz;
             final int ifrzu = ifrz + frad;
-
+            
             for (int ix = ifrx - frad; ix <= ifrxu; ix++) {
                 int gix = Crystal.mod(ix, fftX);
                 xf[0] = ix / (double) fftX;

@@ -73,6 +73,7 @@ public class SplineEnergy implements Potential {
     private final int freer[];
     protected double[] optimizationScaling = null;
     private ComplexNumber fct = new ComplexNumber();
+    private double totalEnergy;
 
     public SplineEnergy(ReflectionList reflectionlist,
             DiffractionRefinementData refinementdata, int nparams, int type) {
@@ -214,6 +215,7 @@ public class SplineEnergy implements Potential {
             logger.info(sb.toString());
         }
 
+        totalEnergy = sum / sumfo;
         return sum / sumfo;
     }
 
@@ -256,6 +258,11 @@ public class SplineEnergy implements Potential {
     @Override
     public double[] getMass() {
         throw new UnsupportedOperationException("Not supported yet.");
+    }
+    
+    @Override
+    public double getTotal() {
+        return totalEnergy;
     }
 
     @Override

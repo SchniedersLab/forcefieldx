@@ -68,6 +68,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
     private static final double eightpi2 = 8.0 * Math.PI * Math.PI;
     private static final double eightpi23 = eightpi2 * eightpi2 * eightpi2;
     protected double lambda = 1.0;
+    private double totalEnergy;
 
     /**
      * Diffraction data energy target
@@ -192,6 +193,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
                 g[i] /= optimizationScaling[i];
             }
         }
+        totalEnergy = e;
         return e;
     }
 
@@ -801,6 +803,11 @@ public class XRayEnergy implements LambdaInterface, Potential {
             }
         }
         return mass;
+    }
+
+    @Override
+    public double getTotal() {
+        return totalEnergy;
     }
 
     @Override

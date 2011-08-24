@@ -46,6 +46,7 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
     private boolean refinexyz = false;
     protected double[] optimizationScaling = null;
     protected double lambda = 1.0;
+    private double totalEnergy;
 
     /**
      * Diffraction data energy target
@@ -107,6 +108,7 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
                 g[i] /= optimizationScaling[i];
             }
         }
+        totalEnergy = e;
         return e;
     }
 
@@ -229,6 +231,11 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
         }
 
         return mass;
+    }
+
+    @Override
+    public double getTotal() {
+        return totalEnergy;
     }
 
     @Override

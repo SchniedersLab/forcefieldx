@@ -309,6 +309,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
          */
         potentialEnergy.setScaling(null);
         potential = potentialEnergy.energyAndGradient(x, grad);
+        System.out.println("pot E: " + potential);
+        System.out.println(potentialEnergy.toString());
 
         /**
          * Compute the current kinetic energy.
@@ -435,6 +437,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
          * Compute the potential energy and gradients.
          */
         potential = potentialEnergy.energyAndGradient(x, grad);
+        System.out.println("pot E: " + potential);
+        System.out.println(potentialEnergy.toString());
 
         /**
          * Use Newton's second law to get the next acceleration and find
