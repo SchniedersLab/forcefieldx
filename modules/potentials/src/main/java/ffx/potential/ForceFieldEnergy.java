@@ -796,9 +796,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             double gx = grad[0];
             double gy = grad[1];
             double gz = grad[2];
-            if (gx == Double.NaN || gx == Double.NEGATIVE_INFINITY || gx == Double.POSITIVE_INFINITY
-                    || gy == Double.NaN || gy == Double.NEGATIVE_INFINITY || gy == Double.POSITIVE_INFINITY
-                    || gz == Double.NaN || gz == Double.NEGATIVE_INFINITY || gz == Double.POSITIVE_INFINITY) {
+            if (Double.isNaN(gx) || Double.isInfinite(gx) ||
+                    Double.isNaN(gy) || Double.isInfinite(gy) ||
+                    Double.isNaN(gz) || Double.isInfinite(gz)) {
                 String message = format("The gradient of atom %s is (%8.3f,%8.3f,%8.3f).",
                         a.toString(), gx, gy, gz);
                 logger.warning(message);
