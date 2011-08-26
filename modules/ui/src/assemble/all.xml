@@ -23,7 +23,8 @@
         <fileSet>
             <directory>${basedir}/target/classes/ffx</directory>
             <includes>
-                <include>Launcher.class</include>
+                <include>Main.class</include>
+                <!-- include>Launcher.class</include -->
                 <include>FFXClassLoader.class</include>
             </includes>
             <outputDirectory>ffx</outputDirectory>

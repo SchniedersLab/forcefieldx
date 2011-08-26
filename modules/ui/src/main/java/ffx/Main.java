@@ -24,7 +24,9 @@ import java.awt.GraphicsEnvironment;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
+import java.net.InetAddress;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Handler;
@@ -97,7 +99,48 @@ public class Main extends JFrame {
      * Create an instance of Force Field X
      */
     public static void main(String[] args) throws Exception {
-
+        
+        /**
+         * Process any "-D" command line flags.
+         */
+        List newArgs = new ArrayList<String>();
+        for (int i=0; i < args.length; i++) {
+            String arg = args[i].trim();
+            if (arg.startsWith("-D")) {
+                // Remove -D from the front of String.
+                arg = arg.substring(2);
+                // Split at the equals if it exists.
+                if (arg.contains("=")) {
+                    int equalsPosition = arg.indexOf("=");
+                    String key = arg.substring(0, equalsPosition);
+                    String value = arg.substring(equalsPosition + 1);
+                    System.setProperty(key, value);
+                } else {
+                    if (arg.length() > 0) {
+                        System.setProperty(arg, "");
+                    }
+                }
+            } else {
+                newArgs.add(arg);
+            }
+        }
+        args = new String[newArgs.size()];
+        newArgs.toArray(args);
+        
+        /**
+         * Start up the Parallel Java communication layer.
+         */
+        int rank = 0;
+        int processes = 1;
+        try {
+            Comm.init(args);
+            Comm world = Comm.world();
+            rank = world.rank();
+            processes = world.size();
+        } catch (Exception e) {
+            System.out.println(e.toString());
+        }
+        
         // If a file was supplied on the command line, get its absolute path
         File commandLineFile = null;
         List<String> argList = new ArrayList<String>();
@@ -120,8 +163,23 @@ public class Main extends JFrame {
         logger.info(MainPanel.title);
         logger.info(MainPanel.aboutString);
         logger.info(MainPanel.border);
+        
+        /**
+         * Determine the host computers name.
+         */
+        String hostName = "unknown host";
+        try {
+            InetAddress addr = InetAddress.getLocalHost();
+            hostName = addr.getHostName();
+        } catch (UnknownHostException e) {
+            // Do nothing.
+        }
+                
+        /**
+         * Start up the GUI or command line version of Force Field X.
+         */
         if (!GraphicsEnvironment.isHeadless()) {
-            logger.info("\n Starting up the graphical user interface");
+            logger.info(String.format("\n Starting up the graphical user interface on %s.", hostName));
             // Some Mac OS X specific features that help FFX look native.
             // These need to be set before the MainPanel is created.
             if (SystemUtils.IS_OS_MAC_OSX) {
@@ -133,9 +191,17 @@ public class Main extends JFrame {
             // Initialize the main frame and Force Field X MainPanel
             Main m = new Main(commandLineFile, argList);
         } else {
-            logger.info("\n Starting up the command line interface");
+            if (processes == 1) {
+                logger.info(String.format(" Starting up the command line interface on %s.", hostName));
+            } else {
+                logger.info(String.format(" Starting up process %d on %s.", rank, hostName));
+            }
             HeadlessMain m = new HeadlessMain(commandLineFile, argList, logHandler);
         }
+        
+        /**
+         * Report the logging level.
+         */
         logger.info(" Log level is set to " + level.toString());
     }
 

@@ -1,16 +1,16 @@
  # Force Field X cluster configuration file
  cluster Ren lab Linux cluster
  logfile scheduler.log
- webhost node140.bme.utexas.edu
+ webhost 10.0.0.140
  webport 8080
  schedulerhost localhost
  schedulerport 20617
- frontendhost node140.bme.utexas.edu
- backend dr00 1 node140.bme.utexas.edu /home/schnied/Software/jdk1.6.0_26/bin/java /home/schnied/ffx/bin/pj-1.4.jar:/home/schnied/ffx/bin/ffx-all.jar
- backend dr01 1 node140.bme.utexas.edu /home/schnied/Software/jdk1.6.0_26/bin/java /home/schnied/ffx/bin/pj-1.4.jar:/home/schnied/ffx/bin/ffx-all.jar
- backend dr02 1 node140.bme.utexas.edu /home/schnied/Software/jdk1.6.0_26/bin/java /home/schnied/ffx/bin/pj-1.4.jar:/home/schnied/ffx/bin/ffx-all.jar
- backend dr03 1 node140.bme.utexas.edu /home/schnied/Software/jdk1.6.0_26/bin/java /home/schnied/ffx/bin/pj-1.4.jar:/home/schnied/ffx/bin/ffx-all.jar
- backend dr04 1 node140.bme.utexas.edu /home/schnied/Software/jdk1.6.0_26/bin/java /home/schnied/ffx/bin/pj-1.4.jar:/home/schnied/ffx/bin/ffx-all.jar
- backend dr05 1 node140.bme.utexas.edu /home/schnied/Software/jdk1.6.0_26/bin/java /home/schnied/ffx/bin/pj-1.4.jar:/home/schnied/ffx/bin/ffx-all.jar
- backend dr06 1 node140.bme.utexas.edu /home/schnied/Software/jdk1.6.0_26/bin/java /home/schnied/ffx/bin/pj-1.4.jar:/home/schnied/ffx/bin/ffx-all.jar
- backend dr07 1 node140.bme.utexas.edu /home/schnied/Software/jdk1.6.0_26/bin/java /home/schnied/ffx/bin/pj-1.4.jar:/home/schnied/ffx/bin/ffx-all.jar
+ frontendhost 10.0.0.140
+ backend node138 8 10.0.0.138 /home/schnied/Software/jdk1.6.0_26/bin/java /home/schnied/ffx/bin/ffx-all.jar -Djava.system.class.loader='ffx.FFXClassLoader'
+ backend node139 8 10.0.0.139 /home/schnied/Software/jdk1.6.0_26/bin/java /home/schnied/ffx/bin/ffx-all.jar -Djava.system.class.loader='ffx.FFXClassLoader'
+ backend node140 8 10.0.0.140 /home/schnied/Software/jdk1.6.0_26/bin/java /home/schnied/ffx/bin/ffx-all.jar -Djava.system.class.loader='ffx.FFXClassLoader'
+ backend node141 8 10.0.0.141 /home/schnied/Software/jdk1.6.0_26/bin/java /home/schnied/ffx/bin/ffx-all.jar -Djava.system.class.loader='ffx.FFXClassLoader'
+ backend node143 8 10.0.0.143 /home/schnied/Software/jdk1.6.0_26/bin/java /home/schnied/ffx/bin/ffx-all.jar -Djava.system.class.loader='ffx.FFXClassLoader'
+ backend node144 8 10.0.0.144 /home/schnied/Software/jdk1.6.0_26/bin/java /home/schnied/ffx/bin/ffx-all.jar -Djava.system.class.loader='ffx.FFXClassLoader'
+ backend node145 8 10.0.0.145 /home/schnied/Software/jdk1.6.0_26/bin/java /home/schnied/ffx/bin/ffx-all.jar -Djava.system.class.loader='ffx.FFXClassLoader'
+ backend node146 8 10.0.0.146 /home/schnied/Software/jdk1.6.0_26/bin/java /home/schnied/ffx/bin/ffx-all.jar -Djava.system.class.loader='ffx.FFXClassLoader'

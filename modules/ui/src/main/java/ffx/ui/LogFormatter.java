@@ -20,6 +20,8 @@
  */
 package ffx.ui;
 
+import edu.rit.pj.Comm;
+import ffx.Launcher;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.SimpleFormatter;
@@ -49,6 +51,9 @@ public class LogFormatter extends SimpleFormatter {
     /**
      * Unless debugging is turned on or the LogRecord is of level WARNING or
      * greater, just return the message.
+     * 
+     * If more than one process is active, prepend the rank of the process to
+     * each line of the message.
      *
      * @param record The LogRecord to format.
      * @return A formatted string.
@@ -56,9 +61,34 @@ public class LogFormatter extends SimpleFormatter {
      */
     @Override
     public String format(LogRecord record) {
+
+        String message = null;
+
         if (debug || record.getLevel().intValue() >= warningLevel) {
-            return super.format(record);
+            message = super.format(record);
+        } else {
+            message = record.getMessage();
         }
-        return record.getMessage();
+
+        try {
+            Comm comm = Comm.world();
+            int size = comm.size();
+            if (size > 1) {
+                int rank = comm.rank();
+                String lines[] = message.split("\n");
+                message = String.format(" [%d]%s", rank, lines[0]);
+                int numLines = lines.length;
+                for (int i = 1; i < numLines; i++) {
+                    message = message.concat(String.format("\n [%d]%s", rank, lines[i]));
+                }
+            }
+        } catch (Exception e) {
+            if (Launcher.world != null) {
+                System.err.println(Launcher.world.toString() + e.toString());
+            }
+            // Do nothing.
+        }
+
+        return message;
     }
 }

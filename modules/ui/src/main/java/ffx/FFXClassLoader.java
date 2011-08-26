@@ -32,7 +32,9 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.ProtectionDomain;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -45,97 +47,138 @@ import java.util.jar.JarFile;
 public class FFXClassLoader extends ClassLoader {
 
     private final ProtectionDomain protectionDomain;
-    private final String[] applicationPackages;
     private final Map extensionDlls = new HashMap();
     private JarFile[] extensionJars = null;
+    private final String[] applicationPackages = {"ffx",
+        // Java 3D packages
+        "javax.media.j3d",
+        "javax.vecmath",
+        "com.sun.j3d",
+        "com.sun.opengl",
+        "com.sun.gluegen.runtime",
+        "javax.media.opengl",
+        "groovy",
+        "org.codehaus.groovy",
+        "org.apache.commons.configuration",
+        "org.apache.commons.io",
+        "org.apache.commons.lang",
+        "org.apache.commons.math",
+        "edu.rit.pj",
+        "jcuda"};
+    static final List<String> ffxFiles;
+
+    static {
+        ffxFiles = new ArrayList<String>(Arrays.asList(new String[]{
+                    "com.kenai.ffx/algorithms.jar",
+                    "com.kenai.ffx/autoparm.jar",
+                    "com.kenai.ffx/binding.jar",
+                    "com.kenai.ffx/crystal.jar",
+                    "com.kenai.ffx/numerics.jar",
+                    "com.kenai.ffx/potentials.jar",
+                    "com.kenai.ffx/ui.jar",
+                    "com.kenai.ffx/utilities.jar",
+                    "com.kenai.ffx/xray.jar",
+                    "org.codehaus.groovy/groovy-all.jar",
+                    "jcuda/jcuda-all.jar",
+                    "edu.rit.pj/pj.jar",
+                    // Java3D 1.5.2 and (so far) 1.6.0 depend on JOGL v. 1.1.1
+                    "java3d/j3dcore.jar",
+                    "java3d/j3dutils.jar",
+                    "java3d/j3dvrml.jar",
+                    "java3d/vecmath.jar",
+                    // GLUEGEN and JOGL v. 1.1.1
+                    "net.java.dev.jogl/jogl.jar",
+                    "net.java.dev.jogl/gluegen-rt.jar",
+                    // JOGAMP GLUEGEN, JOGL and JOCL v. 2.0
+                    // "org.jogamp/gluegen-rt.jar",
+                    // "org.jogamp/jogl.jar",
+                    // "org.jogamp/nativewindow.jar",
+                    "commons-beanutils/commons-beanutils.jar",
+                    "commons-collections/commons-collections.jar",
+                    "commons-configuration/commons-configuration.jar",
+                    "commons-digester/commons-digester.jar",
+                    "commons-io/commons-io.jar",
+                    "commons-lang/commons-lang.jar",
+                    "commons-logging/commons-logging.jar",
+                    "commons-math/commons-math.jar",
+                    "macosx/AppleJavaExtensions.jar",
+                    "javax.help/javahelp.jar"
+                }));
+
+        String osName = System.getProperty("os.name").toUpperCase();
+        String osArch = System.getProperty("os.arch").toUpperCase();
+        boolean x86_64 = "64".equals(System.getProperty("sun.arch.data.model"));
+        if ("MAC OS X".equals(osName)) {
+            // JOGL Universal Binaries
+            ffxFiles.add("universal/libgluegen-rt.jnilib");
+            ffxFiles.add("universal/libjogl.jnilib");
+            ffxFiles.add("universal/libjogl_awt.jnilib");
+            ffxFiles.add("universal/libjogl_cg.jnilib");
+            if (x86_64) {
+                // JCUDA
+                ffxFiles.add("64-bit/libJCudaDriver-apple-x86_64.jnilib");
+                ffxFiles.add("64-bit/libJCudaRuntime-apple-x86_64.jnilib");
+                ffxFiles.add("64-bit/libJCufft-apple-x86_64.jnilib");
+            }
+        } else if ("LINUX".equals(osName)) {
+            if (x86_64) {
+                // JOGL
+                ffxFiles.add("64-bit/libgluegen-rt.so");
+                ffxFiles.add("64-bit/libjogl.so");
+                ffxFiles.add("64-bit/libjogl_awt.so");
+                ffxFiles.add("64-bit/libjogl_cg.so");
+                // JCUDA
+                if (osArch.equalsIgnoreCase("x86_64")) {
+                    ffxFiles.add("64-bit/libJCudaDriver-linux-x86_64.so");
+                    ffxFiles.add("64-bit/libJCudaRuntime-linux-x86_64.so");
+                    ffxFiles.add("64-bit/libJCufft-linux-x86_64.so");
+                } else if (osArch.equalsIgnoreCase("amd64")) {
+                    ffxFiles.add("64-bit/libJCudaDriver-linux-amd64.so");
+                    ffxFiles.add("64-bit/libJCudaRuntime-linux-amd64.so");
+                    ffxFiles.add("64-bit/libJCufft-linux-amd64.so");
+                }
+            } else {
+                ffxFiles.add("32-bit/libgluegen-rt.so");
+                ffxFiles.add("32-bit/libjogl.so");
+                ffxFiles.add("32-bit/libjogl_awt.so");
+                ffxFiles.add("32-bit/libjogl_cg.so");
+            }
+        } else if (osName.startsWith("WINDOWS")) {
+            if (x86_64) {
+                // JOGL
+                ffxFiles.add("64-bit/gluegen-rt.dll");
+                ffxFiles.add("64-bit/jogl.dll");
+                ffxFiles.add("64-bit/jogl_cg.dll");
+                ffxFiles.add("64-bit/jogl_awt.dll");
+                // JCUDA
+                ffxFiles.add("64-bit/JCudaDriver-linux-x86_64.dll");
+                ffxFiles.add("64-bit/JCudaRuntime-linux-x86_64.dll");
+                ffxFiles.add("64-bit/JCufft-linux-x86_64.dll");
+            } else {
+                ffxFiles.add("32-bit/gluegen-rt.dll");
+                ffxFiles.add("32-bit/jogl.dll");
+                ffxFiles.add("32-bit/jogl_awt.dll");
+                ffxFiles.add("32-bit/jogl_cg.dll");
+            }
+        }
+    }
 
     /**
-     * Creates a class loader. It will consider JARs and DLLs of <code>extensionJarsAndDlls</code>
-     * as classpath and libclasspath elements with a higher priority than the ones of default classpath,
-     * and will load itself all the classes belonging to packages of <code>applicationPackages</code>.
+     * Force Field X custom class loader considers JARs and DLLs of 
+     * <code>extensionJarsAndDlls</code> as classpath and libclasspath elements 
+     * with a higher priority than the ones of default classpath. It will load 
+     * itself all the classes belonging to packages of <code>applicationPackages</code>.
      */
-    public FFXClassLoader(ClassLoader parent,
-                          ProtectionDomain protectionDomain,
-                          String[] extensionJarsAndDlls,
-                          String[] applicationPackages) {
+    public FFXClassLoader(ClassLoader parent) {
         super(parent);
-        this.protectionDomain = protectionDomain;
-        this.applicationPackages = applicationPackages;
-        
-        // Compute DLLs prefix and suffix
-        String dllSuffix;
-        String dllPrefix;
-
-        String osName = System.getProperty("os.name");
-        if (osName.startsWith("Windows")) {
-            dllSuffix = ".dll";
-            dllPrefix = "";
-        } else if (osName.startsWith("Mac OS X")) {
-            dllSuffix = ".jnilib";
-            dllPrefix = "lib";
-        } else {
-            dllSuffix = ".so";
-            dllPrefix = "lib";
-        }
-
-        // Find extension Jars and DLLs
-        ArrayList extensionJarList = new ArrayList();
-        for (int i = 0; i < extensionJarsAndDlls.length; i++) {
-            String extensionJarOrDll = extensionJarsAndDlls[i];
-            try {
-                URL extensionJarOrDllUrl = getResource(extensionJarOrDll);
-                if (extensionJarOrDllUrl != null) {
-                    if (extensionJarOrDll.endsWith(".jar")) {
-                        // Copy jar to a tmp file
-                        String extensionJar = copyInputStreamToTmpFile(extensionJarOrDllUrl.openStream(), ".jar");
-                        // Add tmp file to extension jars list
-                        extensionJarList.add(new JarFile(extensionJar, false));
-                    } else if (extensionJarOrDll.endsWith(dllSuffix)) {
-                        int lastSlashIndex = extensionJarOrDll.lastIndexOf('/');
-                        // Copy DLL to a tmp file
-                        String extensionDll = copyInputStreamToTmpFile(extensionJarOrDllUrl.openStream(), dllSuffix);
-                        // Add tmp file to extension DLLs map
-                        this.extensionDlls.put(extensionJarOrDll.substring(lastSlashIndex + 1 + dllPrefix.length(),
-                                                                           extensionJarOrDll.indexOf(dllSuffix)), extensionDll);
-                    }
-                } else {
-                    System.out.println(" File not extracted: " + extensionJarOrDll);
-                }
-            } catch (IOException ex) {
-                throw new RuntimeException(" Couldn't extract extension jar.\n", ex);
-            }
-        }
-
-        // Add extension jars from the ffx/conf directory
-        try {
-        String confDir = System.getProperty("basedir") + File.separator + "conf";
-        File confFile = new File(confDir);
-        File files[] = confFile.listFiles();        
-        for (File jar : files) {
-            try {
-                String ext = jar.getCanonicalPath().toUpperCase();
-                if (ext.endsWith("JAR")) {
-                    System.out.println(" Loading extension jar... " + jar);
-                    extensionJarList.add(new JarFile(jar, false));
-                }
-            } catch (Exception e) {
-                throw new RuntimeException(" Couldn't load extension jar.\n", e);
-            }
-        } } catch (Exception e) {
-            
-        }
-
-        // Create extensionJars array
-        if (extensionJarList.size() > 0) {
-            this.extensionJars = (JarFile[]) extensionJarList.toArray(new JarFile[extensionJarList.size()]);
-        }
+        protectionDomain = FFXClassLoader.class.getProtectionDomain();
     }
 
     /**
      * Returns the file name of a temporary copy of <code>input</code> content.
      */
     public static String copyInputStreamToTmpFile(InputStream input,
-                                                  String suffix) throws IOException {
+            String suffix) throws IOException {
         File tmpFile = null;
         try {
             tmpFile = File.createTempFile("tmp.", suffix);
@@ -170,6 +213,10 @@ public class FFXClassLoader extends ClassLoader {
      */
     @Override
     protected Class findClass(String name) throws ClassNotFoundException {
+        if (!extensionsLoaded) {
+            loadExtensions();
+        }
+
         // Build class file from its name
         String classFile = name.replace('.', '/') + ".class";
         InputStream classInputStream = null;
@@ -213,7 +260,7 @@ public class FFXClassLoader extends ClassLoader {
             in.close();
             // Define class
             return defineClass(name, out.toByteArray(), 0, out.size(),
-                               this.protectionDomain);
+                    this.protectionDomain);
         } catch (IOException ex) {
             throw new ClassNotFoundException("Class " + name, ex);
         }
@@ -224,6 +271,10 @@ public class FFXClassLoader extends ClassLoader {
      */
     @Override
     protected String findLibrary(String libname) {
+        if (!extensionsLoaded) {
+            loadExtensions();
+        }
+
         return (String) this.extensionDlls.get(libname);
     }
 
@@ -233,6 +284,9 @@ public class FFXClassLoader extends ClassLoader {
      */
     @Override
     protected URL findResource(String name) {
+        if (!extensionsLoaded) {
+            loadExtensions();
+        }
         if (extensionJars != null) {
             // Try to find if resource belongs to one of the extracted jars
             for (int i = 0; i < extensionJars.length; i++) {
@@ -257,6 +311,10 @@ public class FFXClassLoader extends ClassLoader {
      */
     @Override
     protected Class loadClass(String name, boolean resolve) throws ClassNotFoundException {
+        if (!extensionsLoaded) {
+            loadExtensions();
+        }
+
         // If no extension jars couldn't be found
         if (this.extensionJars == null) {
             // Let default class loader do its job
@@ -271,8 +329,8 @@ public class FFXClassLoader extends ClassLoader {
                     String applicationPackage = this.applicationPackages[i];
                     int applicationPackageLength = applicationPackage.length();
                     if ((applicationPackageLength == 0
-                         && name.indexOf('.') == 0)
-                        || (applicationPackageLength > 0
+                            && name.indexOf('.') == 0)
+                            || (applicationPackageLength > 0
                             && name.startsWith(applicationPackage))) {
                         loadedClass = findClass(name);
                         break;
@@ -289,5 +347,83 @@ public class FFXClassLoader extends ClassLoader {
             resolveClass(loadedClass);
         }
         return loadedClass;
+    }
+    private boolean extensionsLoaded = false;
+
+    private void loadExtensions() {
+        if (extensionsLoaded) {
+            return;
+        }
+        extensionsLoaded = true;
+
+        String extensionJarsAndDlls[] = ffxFiles.toArray(new String[ffxFiles.size()]);
+
+        // Compute DLLs prefix and suffix
+        String dllSuffix;
+        String dllPrefix;
+
+        String osName = System.getProperty("os.name");
+        if (osName.startsWith("Windows")) {
+            dllSuffix = ".dll";
+            dllPrefix = "";
+        } else if (osName.startsWith("Mac OS X")) {
+            dllSuffix = ".jnilib";
+            dllPrefix = "lib";
+        } else {
+            dllSuffix = ".so";
+            dllPrefix = "lib";
+        }
+
+        // Find extension Jars and DLLs
+        ArrayList extensionJarList = new ArrayList();
+        for (int i = 0; i < extensionJarsAndDlls.length; i++) {
+            String extensionJarOrDll = extensionJarsAndDlls[i];
+            try {
+                URL extensionJarOrDllUrl = getResource(extensionJarOrDll);
+                if (extensionJarOrDllUrl != null) {
+                    if (extensionJarOrDll.endsWith(".jar")) {
+                        // Copy jar to a tmp file
+                        String extensionJar = copyInputStreamToTmpFile(extensionJarOrDllUrl.openStream(), ".jar");
+                        // Add tmp file to extension jars list
+                        extensionJarList.add(new JarFile(extensionJar, false));
+                    } else if (extensionJarOrDll.endsWith(dllSuffix)) {
+                        int lastSlashIndex = extensionJarOrDll.lastIndexOf('/');
+                        // Copy DLL to a tmp file
+                        String extensionDll = copyInputStreamToTmpFile(extensionJarOrDllUrl.openStream(), dllSuffix);
+                        // Add tmp file to extension DLLs map
+                        this.extensionDlls.put(extensionJarOrDll.substring(lastSlashIndex + 1 + dllPrefix.length(),
+                                extensionJarOrDll.indexOf(dllSuffix)), extensionDll);
+                    }
+                } else {
+                    System.out.println(" File not extracted: " + extensionJarOrDll);
+                }
+            } catch (IOException ex) {
+                throw new RuntimeException(" Couldn't extract extension jar.\n", ex);
+            }
+        }
+
+        // Add extension jars from the ffx/conf directory
+        try {
+            String confDir = System.getProperty("basedir") + File.separator + "conf";
+            File confFile = new File(confDir);
+            File files[] = confFile.listFiles();
+            for (File jar : files) {
+                try {
+                    String ext = jar.getCanonicalPath().toUpperCase();
+                    if (ext.endsWith("JAR")) {
+                        System.out.println(" Loading extension jar... " + jar);
+                        extensionJarList.add(new JarFile(jar, false));
+                    }
+                } catch (Exception e) {
+                    throw new RuntimeException(" Couldn't load extension jar.\n", e);
+                }
+            }
+        } catch (Exception e) {
+        }
+
+        // Create extensionJars array
+        if (extensionJarList.size() > 0) {
+            this.extensionJars = (JarFile[]) extensionJarList.toArray(new JarFile[extensionJarList.size()]);
+        }
     }
 }

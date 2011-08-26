@@ -23,7 +23,6 @@ package ffx;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -40,11 +39,11 @@ import edu.rit.pj.Comm;
  * @since 1.0
  */
 public class Launcher {
+    
+    public static Comm world = null;
 
-    public static void main(String[] args) throws MalformedURLException, IllegalAccessException,
-            InvocationTargetException, NoSuchMethodException, ClassNotFoundException {
+    public static void main(String[] args) throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
 
-        Class ffxBootstrapClass = Launcher.class;
         List<String> ffxFiles = new ArrayList<String>(Arrays.asList(new String[]{
                     "com.kenai.ffx/algorithms.jar",
                     "com.kenai.ffx/autoparm.jar",
@@ -56,7 +55,6 @@ public class Launcher {
                     "com.kenai.ffx/utilities.jar",
                     "com.kenai.ffx/xray.jar",
                     "org.codehaus.groovy/groovy-all.jar",
-                    
                     "jcuda/jcuda-all.jar",
                     // Java3D 1.5.2 and (so far) 1.6.0 depend on JOGL v. 1.1.1
                     "java3d/j3dcore.jar",
@@ -70,7 +68,6 @@ public class Launcher {
                     // "org.jogamp/gluegen-rt.jar",
                     // "org.jogamp/jogl.jar",
                     // "org.jogamp/nativewindow.jar",
-
                     "commons-beanutils/commons-beanutils.jar",
                     "commons-collections/commons-collections.jar",
                     "commons-configuration/commons-configuration.jar",
@@ -82,26 +79,12 @@ public class Launcher {
                     "macosx/AppleJavaExtensions.jar",
                     "javax.help/javahelp.jar"
                 }));
-        
-        try {
-            /**
-             * If Parallel Java is found on the Classpath, then initialize
-             * the world communicator.
-             */
-            ClassLoader.getSystemClassLoader().loadClass("edu.rit.pj.Comm");
-            Comm.init(args);
-        } catch (Exception e) {
-            /**
-             * Otherwise Parallel Java will be extracted.
-             */
-            ffxFiles.add("edu.rit.pj/pj.jar");
-        }
-        
+
         String osName = System.getProperty("os.name").toUpperCase();
         String osArch = System.getProperty("os.arch").toUpperCase();
         boolean x86_64 = "64".equals(System.getProperty("sun.arch.data.model"));
         if ("MAC OS X".equals(osName)) {
-            // Mac OS X JOGL Universal Binaries
+            // JOGL Universal Binaries
             ffxFiles.add("universal/libgluegen-rt.jnilib");
             ffxFiles.add("universal/libjogl.jnilib");
             ffxFiles.add("universal/libjogl_awt.jnilib");
@@ -154,39 +137,12 @@ public class Launcher {
             }
         }
 
-        String[] applicationPackages = {"ffx",
-            // Java 3D packages
-            "javax.media.j3d",
-            "javax.vecmath",
-            "com.sun.j3d",
-            "com.sun.opengl",
-            "com.sun.gluegen.runtime",
-            "javax.media.opengl",
-            "groovy",
-            "org.codehaus.groovy",
-            "org.apache.commons.configuration",
-            "org.apache.commons.io",
-            "org.apache.commons.lang",
-            "org.apache.commons.math",
-            "edu.rit.pj",
-            "jcuda"};
-
-        ClassLoader classLoader = new FFXClassLoader(
-                ffxBootstrapClass.getClassLoader(),
-                ffxBootstrapClass.getProtectionDomain(),
-                ffxFiles.toArray(new String[ffxFiles.size()]), applicationPackages);
-
-        /* 
-        try {
-            Class comm = classLoader.loadClass("edu.rit.pj.Comm");
-            Method init = comm.getMethod("init", Array.newInstance(String.class, 0).getClass());
-            init.invoke(null, new Object[]{args});
-        } catch (Exception e) {
-            System.err.println(e.toString());
-        } */
-
+        Class bootStrap = Launcher.class;
+        ClassLoader classLoader = new FFXClassLoader(bootStrap.getClassLoader());
+        
         Class ffxMain = classLoader.loadClass("ffx.Main");
         Method main = ffxMain.getMethod("main", Array.newInstance(String.class, 0).getClass());
         main.invoke(null, new Object[]{args});
+        
     }
 }

@@ -154,7 +154,7 @@
             <groupId>edu.rit.pj</groupId>
             <artifactId>pj</artifactId>
             <type>jar</type>
-            <version>1.4</version>
+            <version>1.5</version>
         </dependency>
         <dependency>
             <groupId>java3d</groupId>
