@@ -316,21 +316,6 @@ public class Crystal {
         m = new LUDecompositionImpl(m).getSolver().getInverse();
         A = m.getData();
 
-        /**
-         * Remove "negative zero" entries the matrix inversion routine creates 
-         * that look like "-0.0". This does not affect numerics anywhere.
-         * 
-         * TF: this does affect numerics - we need to fix this!
-         * perhaps use MathUtils.equals to see if the A value is close to zero?
-         */
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 3; j++) {
-                if (A[i][j] <= -0.0) {
-                    // A[i][j] = 0.0;
-                }
-            }
-        }
-
         // The columns of A are the reciprocal basis vectors
         A00 = A[0][0];
         A01 = A[0][1];
