@@ -6,11 +6,11 @@
  schedulerhost localhost
  schedulerport 20617
  frontendhost 10.0.0.140
- backend node138 8 10.0.0.138 /home/schnied/Software/jdk1.6.0_26/bin/java /home/schnied/ffx/bin/ffx-all.jar -Djava.system.class.loader='ffx.FFXClassLoader'
- backend node139 8 10.0.0.139 /home/schnied/Software/jdk1.6.0_26/bin/java /home/schnied/ffx/bin/ffx-all.jar -Djava.system.class.loader='ffx.FFXClassLoader'
- backend node140 8 10.0.0.140 /home/schnied/Software/jdk1.6.0_26/bin/java /home/schnied/ffx/bin/ffx-all.jar -Djava.system.class.loader='ffx.FFXClassLoader'
- backend node141 8 10.0.0.141 /home/schnied/Software/jdk1.6.0_26/bin/java /home/schnied/ffx/bin/ffx-all.jar -Djava.system.class.loader='ffx.FFXClassLoader'
- backend node143 8 10.0.0.143 /home/schnied/Software/jdk1.6.0_26/bin/java /home/schnied/ffx/bin/ffx-all.jar -Djava.system.class.loader='ffx.FFXClassLoader'
- backend node144 8 10.0.0.144 /home/schnied/Software/jdk1.6.0_26/bin/java /home/schnied/ffx/bin/ffx-all.jar -Djava.system.class.loader='ffx.FFXClassLoader'
- backend node145 8 10.0.0.145 /home/schnied/Software/jdk1.6.0_26/bin/java /home/schnied/ffx/bin/ffx-all.jar -Djava.system.class.loader='ffx.FFXClassLoader'
- backend node146 8 10.0.0.146 /home/schnied/Software/jdk1.6.0_26/bin/java /home/schnied/ffx/bin/ffx-all.jar -Djava.system.class.loader='ffx.FFXClassLoader'
+ backend node1 1 10.0.0.140 /home/schnied/Software/jdk1.6.0_26/bin/java /home/schnied/ffx/bin/ffx-all.jar -Djava.system.class.loader='ffx.FFXClassLoader'
+ backend node2 1 10.0.0.140 /home/schnied/Software/jdk1.6.0_26/bin/java /home/schnied/ffx/bin/ffx-all.jar -Djava.system.class.loader='ffx.FFXClassLoader'
+ backend node3 1 10.0.0.140 /home/schnied/Software/jdk1.6.0_26/bin/java /home/schnied/ffx/bin/ffx-all.jar -Djava.system.class.loader='ffx.FFXClassLoader'
+ backend node4 1 10.0.0.140 /home/schnied/Software/jdk1.6.0_26/bin/java /home/schnied/ffx/bin/ffx-all.jar -Djava.system.class.loader='ffx.FFXClassLoader'
+ backend node5 1 10.0.0.140 /home/schnied/Software/jdk1.6.0_26/bin/java /home/schnied/ffx/bin/ffx-all.jar -Djava.system.class.loader='ffx.FFXClassLoader'
+ backend node6 1 10.0.0.140 /home/schnied/Software/jdk1.6.0_26/bin/java /home/schnied/ffx/bin/ffx-all.jar -Djava.system.class.loader='ffx.FFXClassLoader'
+ backend node7 1 10.0.0.140 /home/schnied/Software/jdk1.6.0_26/bin/java /home/schnied/ffx/bin/ffx-all.jar -Djava.system.class.loader='ffx.FFXClassLoader'
+ backend node8 1 10.0.0.140 /home/schnied/Software/jdk1.6.0_26/bin/java /home/schnied/ffx/bin/ffx-all.jar -Djava.system.class.loader='ffx.FFXClassLoader'

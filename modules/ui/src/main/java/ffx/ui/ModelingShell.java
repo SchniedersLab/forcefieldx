@@ -96,6 +96,7 @@ public class ModelingShell extends Console implements AlgorithmListener {
         setVariable("vis", mainPanel.getGraphics3D());
         setVariable("sh", this);
         setVariable("active", mainPanel.getHierarchy().getActive());
+        setVariable("logger", logger);
 
         // Timer
         setVariable("time", new MethodClosure(this, "time"));
