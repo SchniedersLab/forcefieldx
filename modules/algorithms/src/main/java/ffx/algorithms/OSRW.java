@@ -512,7 +512,7 @@ public class OSRW implements Potential {
     private double updateFLambda(boolean print) {
         double freeEnergy = 0.0;
         if (print) {
-            logger.info(" Count  Lambda Bins    F_Lambda Bins   <   F_L  >       dG        G");
+            logger.info(" Count   Lambda Bins    F_Lambda Bins   <   F_L  >       dG        G");
         }
         for (int iL = 0; iL < lambdaBins; iL++) {
             int ulFL = -1;
@@ -574,12 +574,11 @@ public class OSRW implements Potential {
                 if (ulL > 1.0) {
                     ulL = 1.0;
                 }
-                logger.info(String.format(" %5d [%5.3f %5.3f] [%7.1f %7.1f] <%8.3f> %8.3f %8.3f",
+                logger.info(String.format(" %6d  %5.3f %5.3f   %7.1f %7.1f   %8.3f  %8.3f %8.3f",
                         lambdaCount, llL, ulL, lla, ula,
                         FLambda[iL], deltaFreeEnergy, freeEnergy));
             }
         }
-
         return freeEnergy;
     }
 
@@ -810,4 +809,5 @@ public class OSRW implements Potential {
             }
         }
     }
+
 }
