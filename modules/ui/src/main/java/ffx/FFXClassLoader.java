@@ -50,7 +50,6 @@ public class FFXClassLoader extends ClassLoader {
     private final Map extensionDlls = new HashMap();
     private JarFile[] extensionJars = null;
     private final String[] applicationPackages = {"ffx",
-        // Java 3D packages
         "javax.media.j3d",
         "javax.vecmath",
         "com.sun.j3d",

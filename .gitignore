@@ -17,3 +17,4 @@ catalog.xml
 release/
 /.netbeans/
 conf/*.jar
+bin/scheduler.log

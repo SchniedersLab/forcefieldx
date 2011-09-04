@@ -1212,7 +1212,6 @@ public class MolecularAssembly extends MSGroup {
         if (f == null) {
             return;
         }
-
         file = f;
     }
 

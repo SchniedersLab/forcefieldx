@@ -518,22 +518,52 @@ public class ParticleMeshEwald implements LambdaInterface {
         lambdaTerm = forceField.getBoolean(ForceFieldBoolean.LAMBDATERM, false);
 
         if (lambdaTerm) {
-            permanentLambdaAlpha = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_ALPHA, 1.0);
-            if (permanentLambdaAlpha < 0.0 || permanentLambdaAlpha > 2.0) {
-                permanentLambdaAlpha = 1.0;
+            /**
+             * Values of PERMANENT_LAMBDA_ALPHA below 2 can lead to unstable
+             * trajectories.
+             */
+            permanentLambdaAlpha = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_ALPHA, 2.0);
+            if (permanentLambdaAlpha < 0.0 || permanentLambdaAlpha > 3.0) {
+                permanentLambdaAlpha = 3.0;
             }
+            /**
+             * A PERMANENT_LAMBDA_EXPONENT of 1 gives linear charging of the 
+             * permanent electrostatics, which is most efficient. A quadratic 
+             * schedule (PERMANENT_LAMBDA_EXPONENT) also works, but the dU/dL 
+             * forces near lambda=1 are may be larger by a factor of 2.
+             */
             permanentLambdaExponent = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_EXPONENT, 1.0);
             if (permanentLambdaExponent < 1.0) {
                 permanentLambdaExponent = 1.0;
             }
+            /**
+             * A POLARIZATION_LAMBDA_EXPONENT of 1 gives a non-zero dU/dL at
+             * the beginning of the polarization schedule. Choosing a power of 
+             * 2 or greater ensures a smooth dU/dL over the schedule.
+             */
             polarizationLambdaExponent = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_EXPONENT, 2.0);
             if (polarizationLambdaExponent < 2.0) {
                 polarizationLambdaExponent = 2.0;
             }
+            /**
+             * The POLARIZATION_LAMBDA_START defines the point in the lambda
+             * schedule when the condensed phase polarization of the 
+             * ligand begins to be turned on. If the condensed phase polarization 
+             * is considered near lambda=0, then SCF convergence is slow, 
+             * even with Thole damping. In addition, 2 (instead of 1) condensed 
+             * phase SCF calculations are necessary from the beginning of the 
+             * window to lambda=1.
+             */
             polarizationLambdaStart = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_START, 0.75);
             if (polarizationLambdaStart < 0.0 || polarizationLambdaStart > 0.9) {
                 polarizationLambdaStart = 0.75;
             }
+            /**
+             * The POLARIZATION_LAMBDA_END defines the point in the lambda
+             * schedule when the condensed phase polarization of ligand has
+             * been completely turned on. Values other than 1.0 have not been
+             * tested.
+             */
             polarizationLambdaEnd = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_END, 1.0);
             if (polarizationLambdaEnd < polarizationLambdaStart
                     || polarizationLambdaEnd > 1.0
