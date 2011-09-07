@@ -110,6 +110,11 @@ public final class OutOfPlaneBendType extends BaseType implements Comparator<Str
     public static final double sextic = 0.000000022;
     /**
      * Convert Out-of-Plane bending energy to kcal/mole.
+     * 
+     * TINKER v.5 and v.6 Units:  1.0 / (180.0/PI)^2 = 0.00030461741979
+     * TINKER v.4 Units: 0.02191418
+     * 
+     * Ratio of v.4 to v.5/6 = 0.02191418 / 1.0 / (180.0/PI)^2 = 71.94
      */
     public static final double units = 1.0 / pow(180.0 / PI, 2);
 

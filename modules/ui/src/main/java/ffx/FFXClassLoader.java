@@ -77,6 +77,7 @@ public class FFXClassLoader extends ClassLoader {
                     "com.kenai.ffx/ui.jar",
                     "com.kenai.ffx/utilities.jar",
                     "com.kenai.ffx/xray.jar",
+                    "algorithms-ext-1.0.0-alpha.jar",
                     "org.codehaus.groovy/groovy-all.jar",
                     "jcuda/jcuda-all.jar",
                     "edu.rit.pj/pj.jar",
