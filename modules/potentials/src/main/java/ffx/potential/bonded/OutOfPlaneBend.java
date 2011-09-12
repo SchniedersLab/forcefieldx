@@ -177,7 +177,7 @@ public class OutOfPlaneBend extends BondedTerm implements
     }
 
     /**
-     * Overidden toString Method returns the Term's id.
+     * Overridden toString Method returns the Term's id.
      */
     @Override
     public String toString() {
