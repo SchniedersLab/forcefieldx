@@ -43,7 +43,6 @@ import org.apache.commons.configuration.CompositeConfiguration;
 
 import ffx.numerics.Potential;
 import ffx.potential.LambdaInterface;
-import ffx.potential.bonded.Atom;
 
 /**
  * An implementation of the Orthogonal Space Random Walk algorithm.
@@ -145,7 +144,7 @@ public class OSRW implements Potential {
      */
     private double d2EdLambda2;
     private double dUdXdL[] = null;
-    private double biasMag = 0.005;
+    private double biasMag = 0.002;
     private double FLambda[];
     /**
      * Gas constant (in Kcal/mole/Kelvin).
