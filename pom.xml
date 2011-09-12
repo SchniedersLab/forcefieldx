@@ -177,6 +177,13 @@
                 <artifactId>maven-site-plugin</artifactId>
                 <version>3.0</version>
                 <inherited>true</inherited>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.apache.maven.wagon</groupId>
+                        <artifactId>wagon-webdav-jackrabbit</artifactId>
+                        <version>1.0</version>
+                    </dependency>
+                </dependencies>
                 <configuration>
                     <generateSitemap>true</generateSitemap>
                 </configuration>
