@@ -72,7 +72,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     private final Torsion torsions[];
     private final PiOrbitalTorsion piOrbitalTorsions[];
     private final TorsionTorsion torsionTorsions[];
-    private ArrayList<RestraintBond> restraintBonds = new ArrayList<RestraintBond>();
+    private RestraintBond restraintBonds[];
     private final VanDerWaals vanderWaals;
     private final ParticleMeshEwald particleMeshEwald;
     protected final int nAtoms;
@@ -84,9 +84,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     protected final int nTorsions;
     protected final int nPiOrbitalTorsions;
     protected final int nTorsionTorsions;
+    protected int nRestraintBonds;
     protected int nVanDerWaals, nPME, nGK;
     protected final boolean bondTerm;
-    protected boolean restraintBondTerm;
     protected final boolean angleTerm;
     protected final boolean stretchBendTerm;
     protected final boolean ureyBradleyTerm;
@@ -94,12 +94,12 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     protected final boolean torsionTerm;
     protected final boolean piOrbitalTorsionTerm;
     protected final boolean torsionTorsionTerm;
+    protected boolean restraintBondTerm;
     protected final boolean vanderWaalsTerm;
     protected final boolean multipoleTerm;
     protected final boolean polarizationTerm;
     protected final boolean generalizedKirkwoodTerm;
     protected double bondEnergy, bondRMSD;
-    protected double restraintBondEnergy, restraintBondRMSD;
     protected double angleEnergy, angleRMSD;
     protected double stretchBendEnergy;
     protected double ureyBradleyEnergy;
@@ -107,6 +107,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     protected double torsionEnergy;
     protected double piOrbitalTorsionEnergy;
     protected double torsionTorsionEnergy;
+    protected double restraintBondEnergy;
     protected double totalBondedEnergy;
     protected double vanDerWaalsEnergy;
     protected double permanentMultipoleEnergy;
@@ -184,7 +185,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     maxr = max(r, maxr);
                 }
             }
-            
+
             /**
              * Turn off reciprocal space calculations.
              */
@@ -379,7 +380,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
         if (multipoleTerm) {
             particleMeshEwald = new ParticleMeshEwald(forceField, atoms, crystal, parallelTeam,
-                    vanderWaals.getNeighborLists(), vanderWaals.getPairwiseSchedule());
+                                                      vanderWaals.getNeighborLists(), vanderWaals.getPairwiseSchedule());
         } else {
             particleMeshEwald = null;
         }
@@ -448,16 +449,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             bondTime = System.nanoTime() - bondTime;
         }
 
-        if(restraintBondTerm){
-        	restraintBondTime = System.nanoTime();
-            for (int i = 0; i < restraintBonds.size(); i++) {
-                RestraintBond rb = restraintBonds.get(i);
-                restraintBondEnergy += rb.energy(gradient);
-                double value = rb.getValue();
-                restraintBondRMSD += value * value;
-            }
-        }
-
         if (angleTerm) {
             angleTime = System.nanoTime();
             for (int i = 0; i < nAngles; i++) {
@@ -518,6 +509,15 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             torsionTorsionTime = System.nanoTime() - torsionTorsionTime;
         }
 
+        if (restraintBondTerm) {
+            restraintBondTime = System.nanoTime();
+            for (int i = 0; i < restraintBonds.length; i++) {
+                RestraintBond rb = restraintBonds[i];
+                restraintBondEnergy += rb.energy(gradient);
+            }
+            restraintBondTime = System.nanoTime() - restraintBondTime;
+        }
+
         if (vanderWaalsTerm) {
             vanDerWaalsTime = System.nanoTime();
             vanDerWaalsEnergy = vanderWaals.energy(gradient, print);
@@ -568,69 +568,67 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         sb.append("REMARK   3  CALCULATED POTENTIAL ENERGY\n");
         if (bondTerm) {
             sb.append(String.format("REMARK   3   %s %g (%d)\n",
-                    "BOND STRETCHING            : ", bondEnergy, bonds.length));
+                                    "BOND STRETCHING            : ", bondEnergy, bonds.length));
             sb.append(String.format("REMARK   3   %s %g\n",
-                    "BOND RMSD                  : ", bondRMSD));
-        }
-        if (restraintBondTerm) {
-            sb.append(String.format("REMARK   3   %s %g (%d)\n",
-                    "RESTRAINT BOND STRETCHING            : ", restraintBondEnergy, restraintBonds.size()));
-            sb.append(String.format("REMARK   3   %s %g\n",
-                    "RESTRAINT BOND RMSD                  : ", restraintBondRMSD));
+                                    "BOND RMSD                  : ", bondRMSD));
         }
         if (angleTerm) {
             sb.append(String.format("REMARK   3   %s %g (%d)\n",
-                    "ANGLE BENDING              : ", angleEnergy, angles.length));
+                                    "ANGLE BENDING              : ", angleEnergy, angles.length));
             sb.append(String.format("REMARK   3   %s %g\n",
-                    "ANGLE RMSD                 : ", angleRMSD));
+                                    "ANGLE RMSD                 : ", angleRMSD));
         }
         if (stretchBendTerm) {
             sb.append(String.format("REMARK   3   %s %g (%d)\n",
-                    "STRETCH-BEND               : ", stretchBendEnergy, stretchBends.length));
+                                    "STRETCH-BEND               : ", stretchBendEnergy, stretchBends.length));
         }
         if (ureyBradleyTerm) {
             sb.append(String.format("REMARK   3   %s %g (%d)\n",
-                    "UREY-BRADLEY               : ", ureyBradleyEnergy, ureyBradleys.length));
+                                    "UREY-BRADLEY               : ", ureyBradleyEnergy, ureyBradleys.length));
         }
         if (outOfPlaneBendTerm) {
             sb.append(String.format("REMARK   3   %s %g (%d)\n",
-                    "OUT-OF-PLANE BEND          : ", outOfPlaneBendEnergy, outOfPlaneBends.length));
+                                    "OUT-OF-PLANE BEND          : ", outOfPlaneBendEnergy, outOfPlaneBends.length));
         }
         if (torsionTerm) {
             sb.append(String.format("REMARK   3   %s %g (%d)\n",
-                    "TORSIONAL ANGLE            : ", torsionEnergy, torsions.length));
+                                    "TORSIONAL ANGLE            : ", torsionEnergy, torsions.length));
         }
         if (piOrbitalTorsionTerm) {
             sb.append(String.format("REMARK   3   %s %g (%d)\n",
-                    "PI-ORBITAL TORSION         : ", piOrbitalTorsionEnergy, piOrbitalTorsions.length));
+                                    "PI-ORBITAL TORSION         : ", piOrbitalTorsionEnergy, piOrbitalTorsions.length));
         }
         if (torsionTorsionTerm) {
             sb.append(String.format("REMARK   3   %s %g (%d)\n",
-                    "TORSION-TORSION            : ", torsionTorsionEnergy, torsionTorsions.length));
+                                    "TORSION-TORSION            : ", torsionTorsionEnergy, torsionTorsions.length));
+        }
+        if (restraintBondTerm) {
+            sb.append(String.format("REMARK   3   %s %g (%d)\n",
+                                    "RESTRAINT BOND STRETCHING            : ", restraintBondEnergy, restraintBonds.length));
         }
         if (vanderWaalsTerm) {
             sb.append(String.format("REMARK   3   %s %g (%d)\n",
-                    "VAN DER WAALS              : ", vanDerWaalsEnergy, nVanDerWaals));
+                                    "VAN DER WAALS              : ", vanDerWaalsEnergy, nVanDerWaals));
         }
         if (multipoleTerm) {
             sb.append(String.format("REMARK   3   %s %g (%d)\n",
-                    "ATOMIC MULTIPOLES          : ", permanentMultipoleEnergy, nPME));
+                                    "ATOMIC MULTIPOLES          : ", permanentMultipoleEnergy, nPME));
         }
         if (polarizationTerm) {
             sb.append(String.format("REMARK   3   %s %g (%d)\n",
-                    "POLARIZATION               : ", polarizationEnergy, nPME));
+                                    "POLARIZATION               : ", polarizationEnergy, nPME));
         }
         sb.append(String.format("REMARK   3   %s %g\n",
-                "TOTAL POTENTIAL (KCAL/MOL) : ", totalEnergy));
+                                "TOTAL POTENTIAL (KCAL/MOL) : ", totalEnergy));
         int nsymm = crystal.getUnitCell().spaceGroup.getNumberOfSymOps();
         if (nsymm > 1) {
             sb.append(String.format("REMARK   3   %s %g\n",
-                    "UNIT CELL POTENTIAL        : ", totalEnergy * nsymm));
+                                    "UNIT CELL POTENTIAL        : ", totalEnergy * nsymm));
         }
         if (crystal.getUnitCell() != crystal) {
             nsymm = crystal.spaceGroup.getNumberOfSymOps();
             sb.append(String.format("REMARK   3   %s %g\n",
-                    "REPLICATES CELL POTENTIAL  : ", totalEnergy * nsymm));
+                                    "REPLICATES CELL POTENTIAL  : ", totalEnergy * nsymm));
         }
         sb.append("REMARK   3\n");
 
@@ -642,85 +640,85 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         StringBuilder sb = new StringBuilder("\n");
         if (bondTerm) {
             sb.append(String.format(" %s %16.8f %12d %12.3f (%8.5f)\n",
-                    "Bond Streching    ", bondEnergy, bonds.length,
-                    bondTime * toSeconds, bondRMSD));
-        }
-        if (restraintBondTerm) {
-            sb.append(String.format(" %s %16.8f %12d %12.3f (%8.5f)\n",
-                    "Restraint Bond Streching    ", restraintBondEnergy, restraintBonds.size(),
-                    restraintBondTime * toSeconds, restraintBondRMSD));
+                                    "Bond Streching    ", bondEnergy, nBonds,
+                                    bondTime * toSeconds, bondRMSD));
         }
         if (angleTerm) {
             sb.append(String.format(" %s %16.8f %12d %12.3f (%8.5f)\n",
-                    "Angle Bending     ", angleEnergy, angles.length,
-                    angleTime * toSeconds, angleRMSD));
+                                    "Angle Bending     ", angleEnergy, nAngles,
+                                    angleTime * toSeconds, angleRMSD));
         }
         if (stretchBendTerm) {
             sb.append(String.format(" %s %16.8f %12d %12.3f\n",
-                    "Stretch-Bend      ", stretchBendEnergy,
-                    stretchBends.length, stretchBendTime * toSeconds));
+                                    "Stretch-Bend      ", stretchBendEnergy,
+                                    nStretchBends, stretchBendTime * toSeconds));
         }
         if (ureyBradleyTerm) {
             sb.append(String.format(" %s %16.8f %12d %12.3f\n",
-                    "Urey-Bradley      ", ureyBradleyEnergy,
-                    ureyBradleys.length, ureyBradleyTime * toSeconds));
+                                    "Urey-Bradley      ", ureyBradleyEnergy,
+                                    nUreyBradleys, ureyBradleyTime * toSeconds));
         }
         if (outOfPlaneBendTerm) {
             sb.append(String.format(" %s %16.8f %12d %12.3f\n",
-                    "Out-of-Plane Bend ", outOfPlaneBendEnergy,
-                    outOfPlaneBends.length, outOfPlaneBendTime * toSeconds));
+                                    "Out-of-Plane Bend ", outOfPlaneBendEnergy,
+                                    nOutOfPlaneBends, outOfPlaneBendTime * toSeconds));
         }
         if (torsionTerm) {
             sb.append(String.format(" %s %16.8f %12d %12.3f\n",
-                    "Torsional Angle   ", torsionEnergy, torsions.length,
-                    torsionTime * toSeconds));
+                                    "Torsional Angle   ", torsionEnergy, nTorsions,
+                                    torsionTime * toSeconds));
         }
         if (piOrbitalTorsionTerm) {
             sb.append(String.format(" %s %16.8f %12d %12.3f\n",
-                    "Pi-Orbital Torsion", piOrbitalTorsionEnergy,
-                    piOrbitalTorsions.length, piOrbitalTorsionTime * toSeconds));
+                                    "Pi-Orbital Torsion", piOrbitalTorsionEnergy,
+                                    nPiOrbitalTorsions, piOrbitalTorsionTime * toSeconds));
         }
         if (torsionTorsionTerm) {
             sb.append(String.format(" %s %16.8f %12d %12.3f\n",
-                    "Torsion-Torsion   ", torsionTorsionEnergy,
-                    torsionTorsions.length, torsionTorsionTime * toSeconds));
+                                    "Torsion-Torsion   ", torsionTorsionEnergy,
+                                    nTorsionTorsions, torsionTorsionTime * toSeconds));
+        }
+        if (restraintBondTerm) {
+            sb.append(String.format(" %s %16.8f %12d %12.3f\n",
+                                    "Bond Restraint    ", restraintBondEnergy, nRestraintBonds,
+                                    restraintBondTime));
         }
         if (vanderWaalsTerm) {
             sb.append(String.format(" %s %16.8f %12d %12.3f\n",
-                    "Van der Waals     ", vanDerWaalsEnergy,
-                    nVanDerWaals, vanDerWaalsTime * toSeconds));
+                                    "Van der Waals     ", vanDerWaalsEnergy,
+                                    nVanDerWaals, vanDerWaalsTime * toSeconds));
         }
         if (multipoleTerm) {
             if (polarizationTerm) {
                 sb.append(String.format(" %s %16.8f %12d\n",
-                        "Atomic Multipoles ", permanentMultipoleEnergy, nPME));
+                                        "Atomic Multipoles ", permanentMultipoleEnergy, nPME));
             } else {
                 sb.append(String.format(" %s %16.8f %12d %12.3f\n",
-                        "Atomic Multipoles ", permanentMultipoleEnergy, nPME, electrostaticTime * toSeconds));
+                                        "Atomic Multipoles ", permanentMultipoleEnergy, nPME, electrostaticTime * toSeconds));
             }
         }
         if (polarizationTerm) {
             sb.append(String.format(" %s %16.8f %12d %12.3f\n",
-                    "Polarization      ", polarizationEnergy,
-                    nPME, electrostaticTime * toSeconds));
+                                    "Polarization      ", polarizationEnergy,
+                                    nPME, electrostaticTime * toSeconds));
         }
         if (generalizedKirkwoodTerm) {
             sb.append(String.format(" %s %16.8f %12d\n",
-                    "Solvation         ", solvationEnergy, nGK));
+                                    "Solvation         ", solvationEnergy, nGK));
         }
 
         sb.append(String.format("\n %s %16.8f  %s %12.3f (sec)\n",
-                "Total Potential   ", totalEnergy, "(Kcal/mole)", totalTime * toSeconds));
+                                "Total Potential   ", totalEnergy, "(Kcal/mole)", totalTime * toSeconds));
 
         int nsymm = crystal.getUnitCell().spaceGroup.getNumberOfSymOps();
         if (nsymm > 1) {
             sb.append(String.format(" %s %16.8f\n", "Unit Cell         ",
-                    totalEnergy * nsymm));
+                                    totalEnergy * nsymm));
         }
         if (crystal.getUnitCell() != crystal) {
             nsymm = crystal.spaceGroup.getNumberOfSymOps();
             sb.append(String.format(" %s %16.8f\n", "Replicates Cell   ",
-                    totalEnergy * nsymm));
+                                    totalEnergy * nsymm));
         }
 
         return sb.toString();
@@ -796,11 +794,11 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             double gx = grad[0];
             double gy = grad[1];
             double gz = grad[2];
-            if (Double.isNaN(gx) || Double.isInfinite(gx) ||
-                    Double.isNaN(gy) || Double.isInfinite(gy) ||
-                    Double.isNaN(gz) || Double.isInfinite(gz)) {
+            if (Double.isNaN(gx) || Double.isInfinite(gx)
+                || Double.isNaN(gy) || Double.isInfinite(gy)
+                || Double.isNaN(gz) || Double.isInfinite(gz)) {
                 String message = format("The gradient of atom %s is (%8.3f,%8.3f,%8.3f).",
-                        a.toString(), gx, gy, gz);
+                                        a.toString(), gx, gy, gz);
                 logger.warning(message);
             }
             g[index++] = gx;
@@ -894,13 +892,14 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
         return d2EdLambda2;
     }
-    
-    public void setRestraintBond(Atom a1, Atom a2, double distance){
-    	double forceConstant = 1.0;
-    	restraintBondTerm = true;
-    	RestraintBond rb = new RestraintBond(a1,a2);
-    	int classes[] = {a1.getAtomType().atomClass,a2.getAtomType().atomClass};
-    	rb.setBondType((new BondType(classes,forceConstant,distance)));
-    	restraintBonds.add(rb);
+
+    public void setRestraintBond(Atom a1, Atom a2, double distance) {
+        double forceConstant = 1.0;
+        restraintBondTerm = true;
+        RestraintBond rb = new RestraintBond(a1, a2);
+        int classes[] = {a1.getAtomType().atomClass, a2.getAtomType().atomClass};
+        rb.setBondType((new BondType(classes, forceConstant, distance)));
+        RestraintBond restraint[] = new RestraintBond[nRestraintBonds + 1];
+        System.arraycopy(restraintBonds, 0, restraint, 0, nRestraintBonds++);
     }
 }
