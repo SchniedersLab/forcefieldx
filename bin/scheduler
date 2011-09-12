@@ -108,5 +108,4 @@ exec "$JAVACMD" $JAVA_OPTS \
   -Dapp.repo="$REPO" \
   -Dbasedir="$BASEDIR" \
   edu.rit.pj.cluster.JobScheduler \
-  "$BASEDIR"/bin/cluster.txt \
   "$@"
