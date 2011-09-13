@@ -144,7 +144,7 @@ public class OSRW implements Potential {
      */
     private double d2EdLambda2;
     private double dUdXdL[] = null;
-    private double biasMag = 0.002;
+    private double biasMag = 0.001;
     private double FLambda[];
     /**
      * Gas constant (in Kcal/mole/Kelvin).
@@ -154,7 +154,7 @@ public class OSRW implements Potential {
     /**
      * Reasonable thetaFriction values are from 20 to 200.
      */
-    private double thetaFriction = 1.0e-16;
+    private double thetaFriction = 1.0e-19;
     private double thetaMass = 1.0e-18;
     private double halfThetaVelocity = 0.0;
     private Random stochasticRandom;
