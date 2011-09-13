@@ -34,7 +34,7 @@ if (epsString != null) {
    eps = Double.parseDouble(epsString);
 }
 
-println("\n Running real space minimization on " + modelfilename);
+logger.info("\n Running real space minimization on " + modelfilename);
 systems = open(modelfilename);
 
 RealSpaceFile mapfile = null;
@@ -50,7 +50,7 @@ energy();
 
 RefinementMinimize refinementMinimize = new RefinementMinimize(realspacedata, RefinementMode.COORDINATES);
 
-println("\n RMS gradient convergence criteria: " + eps + " max number of iterations: " + maxiter);
+logger.info("\n RMS gradient convergence criteria: " + eps + " max number of iterations: " + maxiter);
 refinementMinimize.minimize(eps, maxiter);
 
 energy();

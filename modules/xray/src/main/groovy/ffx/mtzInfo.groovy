@@ -3,7 +3,7 @@ import ffx.xray.MTZFilter;
 
 String mtzfile = args[0];
 if (mtzfile == null) {
-  println(" Usage: ffxc mtzInfo filename");
+  logger.info(" Usage: ffxc mtzInfo MTZfilename");
   return;
 }
 

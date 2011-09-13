@@ -105,7 +105,7 @@ refinementMinimize = new RefinementMinimize(diffractiondata, RefinementMode.COOR
 if (coordeps < 0.0) {
     coordeps = refinementMinimize.getEps();
 }
-println("\n RMS gradient convergence criteria: " + coordeps + " max number of iterations: " + maxiter);
+logger.info("\n RMS gradient convergence criteria: " + coordeps + " max number of iterations: " + maxiter);
 refinementMinimize.minimize(coordeps, maxiter);
 diffractiondata.scaleBulkFit();
 diffractiondata.printStats();
@@ -115,7 +115,7 @@ refinementMinimize = new RefinementMinimize(diffractiondata, RefinementMode.BFAC
 if (beps < 0.0) {
     beps = refinementMinimize.getEps();
 }
-println("\n RMS gradient convergence criteria: " + beps + " max number of iterations: " + maxiter);
+logger.info("\n RMS gradient convergence criteria: " + beps + " max number of iterations: " + maxiter);
 refinementMinimize.minimize(beps, maxiter);
 diffractiondata.scaleBulkFit();
 diffractiondata.printStats();

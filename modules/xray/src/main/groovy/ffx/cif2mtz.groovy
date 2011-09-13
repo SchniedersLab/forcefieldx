@@ -20,7 +20,7 @@ String datafilename = args[1];
 
 if (modelfilename == null
     || datafilename == null){
-  println("\n Usage: ffxc cif2mtz PDBfilename CIFfilename");
+  logger.info("\n Usage: ffxc cif2mtz PDBfilename CIFfilename");
   return;
 }
 
