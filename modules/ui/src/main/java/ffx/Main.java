@@ -53,7 +53,7 @@ import ffx.ui.macosx.OSXAdapter;
 /**
  * The Main class is the entry point to the graphical user interface version of
  * Force Field X.
- *
+ * 
  * @author Michael J. Schnieders
  * @since 1.0
  */
@@ -99,12 +99,12 @@ public class Main extends JFrame {
      * Create an instance of Force Field X
      */
     public static void main(String[] args) throws Exception {
-        
+
         /**
          * Process any "-D" command line flags.
          */
         List newArgs = new ArrayList<String>();
-        for (int i=0; i < args.length; i++) {
+        for (int i = 0; i < args.length; i++) {
             String arg = args[i].trim();
             if (arg.startsWith("-D")) {
                 // Remove -D from the front of String.
@@ -126,7 +126,7 @@ public class Main extends JFrame {
         }
         args = new String[newArgs.size()];
         newArgs.toArray(args);
-        
+
         /**
          * Start up the Parallel Java communication layer.
          */
@@ -140,7 +140,7 @@ public class Main extends JFrame {
         } catch (Exception e) {
             System.out.println(e.toString());
         }
-        
+
         // If a file was supplied on the command line, get its absolute path
         File commandLineFile = null;
         List<String> argList = new ArrayList<String>();
@@ -163,7 +163,7 @@ public class Main extends JFrame {
         logger.info(MainPanel.title);
         logger.info(MainPanel.aboutString);
         logger.info(MainPanel.border);
-        
+
         /**
          * Determine the host computers name.
          */
@@ -174,7 +174,7 @@ public class Main extends JFrame {
         } catch (UnknownHostException e) {
             // Do nothing.
         }
-                
+
         /**
          * Start up the GUI or command line version of Force Field X.
          */
@@ -198,7 +198,7 @@ public class Main extends JFrame {
             }
             HeadlessMain m = new HeadlessMain(commandLineFile, argList, logHandler);
         }
-        
+
         /**
          * Report the logging level.
          */

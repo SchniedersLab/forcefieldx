@@ -40,7 +40,7 @@ if (epsString != null) {
    eps = Double.parseDouble(epsString);
 }
 
-println("\n Running x-ray minimize on " + modelfilename);
+logger.info("\n Running x-ray minimize on " + modelfilename);
 systems = open(modelfilename);
 
 DiffractionFile diffractionfile = null;
@@ -60,7 +60,7 @@ RefinementMinimize refinementMinimize = new RefinementMinimize(diffractiondata, 
 if (eps < 0.0) {
     eps = refinementMinimize.getEps();
 }
-println("\n RMS gradient convergence criteria: " + eps + " max number of iterations: " + maxiter);
+logger.info("\n RMS gradient convergence criteria: " + eps + " max number of iterations: " + maxiter);
 refinementMinimize.minimize(eps, maxiter);
 
 diffractiondata.scaleBulkFit();

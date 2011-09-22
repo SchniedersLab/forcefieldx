@@ -15,6 +15,11 @@ if (filename == null){
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 
+if (filename == null){
+  logger.info("\n Usage: ffxc deuterate PDBfilename");
+  return;
+}
+
 systems = open(filename);
 
 for (int i=0; i<systems.length; i++) {

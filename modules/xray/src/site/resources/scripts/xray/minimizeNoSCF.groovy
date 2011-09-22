@@ -44,7 +44,7 @@ if (epsString != null) {
    eps = Double.parseDouble(epsString);
 }
 
-println("\n Running x-ray minimize without an SCF on " + modelfilename);
+logger.info("\n Running x-ray minimize without an SCF on " + modelfilename);
 System.setProperty("polarization","direct");
 System.setProperty("tau-temperature","0.001");
 systems = open(modelfilename);
@@ -66,7 +66,7 @@ energy();
 // Do an initial loose optimization without an SCF.
 RefinementMinimize refinementMinimize = new RefinementMinimize(diffractiondata, refinementmode);
 
-println("\n RMS gradient convergence criteria: " + eps + " max number of iterations: " + maxiter);
+logger.info("\n RMS gradient convergence criteria: " + eps + " max number of iterations: " + maxiter);
 refinementMinimize.minimize(eps, maxiter);
 
 diffractiondata.scaleBulkFit();

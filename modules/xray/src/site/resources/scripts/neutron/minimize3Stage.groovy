@@ -52,7 +52,7 @@ if (occepsString != null) {
     occeps = Double.parseDouble(occepsString);
 }
 
-println("\n Running joint x-ray/neutron minimization on " + modelfilename);
+logger.info("\n Running joint x-ray/neutron minimization on " + modelfilename);
 systems = open(modelfilename);
 
 DiffractionFile xrayfile = null;
@@ -79,7 +79,7 @@ RefinementMinimize refinementMinimize = new RefinementMinimize(diffractiondata, 
 if (coordeps < 0.0) {
     coordeps = refinementMinimize.getEps();
 }
-println("\n RMS gradient convergence criteria: " + coordeps + " max number of iterations: " + maxiter);
+logger.info("\n RMS gradient convergence criteria: " + coordeps + " max number of iterations: " + maxiter);
 refinementMinimize.minimize(coordeps, maxiter);
 diffractiondata.scaleBulkFit();
 diffractiondata.printStats();
@@ -89,7 +89,7 @@ refinementMinimize = new RefinementMinimize(diffractiondata, RefinementMode.BFAC
 if (beps < 0.0) {
     beps = refinementMinimize.getEps();
 }
-println("\n RMS gradient convergence criteria: " + beps + " max number of iterations: " + maxiter);
+logger.info("\n RMS gradient convergence criteria: " + beps + " max number of iterations: " + maxiter);
 refinementMinimize.minimize(beps, maxiter);
 diffractiondata.scaleBulkFit();
 diffractiondata.printStats();
@@ -100,12 +100,12 @@ if (diffractiondata.getAltResidues().size() > 0
     if (occeps < 0.0){
         occeps = refinementMinimize.getEps();
     }
-    println("\n RMS gradient convergence criteria: " + occeps + " max number of iterations: " + maxiter);
+    logger.info("\n RMS gradient convergence criteria: " + occeps + " max number of iterations: " + maxiter);
     refinementMinimize.minimize(occeps, maxiter);
     diffractiondata.scaleBulkFit();
     diffractiondata.printStats();
 } else {
-    println("Occupancy refinement not necessary, skipping");
+    logger.info("Occupancy refinement not necessary, skipping");
 }
 
 energy();
