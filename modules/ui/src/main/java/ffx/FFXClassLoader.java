@@ -77,9 +77,14 @@ public class FFXClassLoader extends ClassLoader {
                     "com.kenai.ffx/ui.jar",
                     "com.kenai.ffx/utilities.jar",
                     "com.kenai.ffx/xray.jar",
-                    "algorithms-ext-1.0.0-alpha.jar",
+                    // Force Field X Extensions
+                    "com.kenai.ffx/algorithms-ext.jar",
+                    "com.kenai.ffx/xray-ext.jar",
+                    // Groovy
                     "org.codehaus.groovy/groovy-all.jar",
+                    // CUDA
                     "jcuda/jcuda-all.jar",
+                    // Parallel Java
                     "edu.rit.pj/pj.jar",
                     // Java3D 1.5.2 and (so far) 1.6.0 depend on JOGL v. 1.1.1
                     "java3d/j3dcore.jar",
@@ -93,6 +98,7 @@ public class FFXClassLoader extends ClassLoader {
                     // "org.jogamp/gluegen-rt.jar",
                     // "org.jogamp/jogl.jar",
                     // "org.jogamp/nativewindow.jar",
+                    // Apache Commons
                     "commons-beanutils/commons-beanutils.jar",
                     "commons-collections/commons-collections.jar",
                     "commons-configuration/commons-configuration.jar",
@@ -101,7 +107,9 @@ public class FFXClassLoader extends ClassLoader {
                     "commons-lang/commons-lang.jar",
                     "commons-logging/commons-logging.jar",
                     "commons-math/commons-math.jar",
+                    // Mac OS X Extensions
                     "macosx/AppleJavaExtensions.jar",
+                    // Java Help
                     "javax.help/javahelp.jar"
                 }));
 
@@ -394,31 +402,10 @@ public class FFXClassLoader extends ClassLoader {
                         this.extensionDlls.put(extensionJarOrDll.substring(lastSlashIndex + 1 + dllPrefix.length(),
                                 extensionJarOrDll.indexOf(dllSuffix)), extensionDll);
                     }
-                } else {
-                    System.out.println(" File not extracted: " + extensionJarOrDll);
                 }
             } catch (IOException ex) {
                 throw new RuntimeException(" Couldn't extract extension jar.\n", ex);
             }
-        }
-
-        // Add extension jars from the ffx/conf directory
-        try {
-            String confDir = System.getProperty("basedir") + File.separator + "conf";
-            File confFile = new File(confDir);
-            File files[] = confFile.listFiles();
-            for (File jar : files) {
-                try {
-                    String ext = jar.getCanonicalPath().toUpperCase();
-                    if (ext.endsWith("JAR")) {
-                        System.out.println(" Loading extension jar... " + jar);
-                        extensionJarList.add(new JarFile(jar, false));
-                    }
-                } catch (Exception e) {
-                    throw new RuntimeException(" Couldn't load extension jar.\n", e);
-                }
-            }
-        } catch (Exception e) {
         }
 
         // Create extensionJars array

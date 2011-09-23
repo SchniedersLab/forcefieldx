@@ -24,7 +24,6 @@
             <directory>${basedir}/target/classes/ffx</directory>
             <includes>
                 <include>Main.class</include>
-                <!-- include>Launcher.class</include -->
                 <include>FFXClassLoader.class</include>
             </includes>
             <outputDirectory>ffx</outputDirectory>
