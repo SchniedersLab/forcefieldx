@@ -31,6 +31,7 @@ import org.apache.commons.io.FilenameUtils;
  *
  * @author Michael J. Schnieders
  * @since 1.0
+ * @version $Id: $
  */
 public final class DYNFileFilter extends FileFilter {
 
@@ -41,6 +42,8 @@ public final class DYNFileFilter extends FileFilter {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * This method return <code>true</code> if the file is a directory or
      * TINKER Restart file (*.DYN).
      */
@@ -54,6 +57,8 @@ public final class DYNFileFilter extends FileFilter {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Provides a description of this DYNFileFilter.
      */
     @Override

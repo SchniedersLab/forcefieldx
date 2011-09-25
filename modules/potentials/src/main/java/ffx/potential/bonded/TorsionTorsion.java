@@ -35,6 +35,7 @@ import ffx.potential.parameters.TorsionTorsionType;
  *
  * @author Michael J. Schnieders
  * @since 1.0
+ * @version $Id: $
  */
 public class TorsionTorsion extends BondedTerm {
 
@@ -46,6 +47,11 @@ public class TorsionTorsion extends BondedTerm {
 
     /**
      * Torsion-Torsion constructor.
+     *
+     * @param firstBond a {@link ffx.potential.bonded.Bond} object.
+     * @param angle a {@link ffx.potential.bonded.Angle} object.
+     * @param lastBond a {@link ffx.potential.bonded.Bond} object.
+     * @param reversed a boolean.
      */
     public TorsionTorsion(Bond firstBond, Angle angle, Bond lastBond,
             boolean reversed) {
@@ -79,23 +85,38 @@ public class TorsionTorsion extends BondedTerm {
         setID_Key(false);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void update() {
         energy(false);
     }
+    /** Constant <code>v01=new double[3]</code> */
     protected static final double v01[] = new double[3];
+    /** Constant <code>v12=new double[3]</code> */
     protected static final double v12[] = new double[3];
+    /** Constant <code>v23=new double[3]</code> */
     protected static final double v23[] = new double[3];
+    /** Constant <code>v34=new double[3]</code> */
     protected static final double v34[] = new double[3];
+    /** Constant <code>v02=new double[3]</code> */
     protected static final double[] v02 = new double[3];
+    /** Constant <code>v13=new double[3]</code> */
     protected static final double[] v13 = new double[3];
+    /** Constant <code>v24=new double[3]</code> */
     protected static final double[] v24 = new double[3];
+    /** Constant <code>t=new double[3]</code> */
     protected static final double t[] = new double[3];
+    /** Constant <code>u=new double[3]</code> */
     protected static final double u[] = new double[3];
+    /** Constant <code>v=new double[3]</code> */
     protected static final double v[] = new double[3];
+    /** Constant <code>x1=new double[3]</code> */
     protected static final double[] x1 = new double[3];
+    /** Constant <code>x2=new double[3]</code> */
     protected static final double[] x2 = new double[3];
+    /** Constant <code>tu=new double[3]</code> */
     protected static final double tu[] = new double[3];
+    /** Constant <code>uv=new double[3]</code> */
     protected static final double uv[] = new double[3];
     /**
      * Array of 4 spline energies surrounding the actual Torsion-Torsion
@@ -133,6 +154,7 @@ public class TorsionTorsion extends BondedTerm {
      * Gradient on Atom 3.
      */
     protected static final double g3[] = new double[3];
+    /** Constant <code>g4=new double[3]</code> */
     protected static final double g4[] = new double[3];
 
     /**
@@ -286,6 +308,9 @@ public class TorsionTorsion extends BondedTerm {
     /*
      * Log details for this Torsion-Torsion energy term.
      */
+    /**
+     * <p>log</p>
+     */
     public void log() {
         logger.info(String.format(" %s %6d-%s %6d-%s %6d-%s %6d-%s %10.4f",
                 "Torsional-Torsion", atoms[0].getXYZIndex(), atoms[0].getAtomType().name, atoms[1].getXYZIndex(),
@@ -294,6 +319,8 @@ public class TorsionTorsion extends BondedTerm {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Overidden toString Method returns the Term's id.
      */
     @Override
@@ -375,6 +402,17 @@ public class TorsionTorsion extends BondedTerm {
     }
     private static double c[][] = new double[4][4];
 
+    /**
+     * <p>bcuint</p>
+     *
+     * @param x1l a double.
+     * @param x1u a double.
+     * @param y1l a double.
+     * @param y1u a double.
+     * @param t1 a double.
+     * @param t2 a double.
+     * @return a double.
+     */
     protected double bcuint(double x1l, double x1u, double y1l, double y1u,
             double t1, double t2) {
         double deltax = x1u - x1l;
@@ -389,6 +427,18 @@ public class TorsionTorsion extends BondedTerm {
         return ret;
     }
 
+    /**
+     * <p>bcuint1</p>
+     *
+     * @param x1l a double.
+     * @param x1u a double.
+     * @param y1l a double.
+     * @param y1u a double.
+     * @param t1 a double.
+     * @param t2 a double.
+     * @param ansy an array of double.
+     * @return a double.
+     */
     protected double bcuint1(double x1l, double x1u, double y1l, double y1u,
             double t1, double t2, double ansy[]) {
         double deltax = x1u - x1l;

@@ -33,8 +33,8 @@ import ffx.potential.bonded.MolecularAssembly;
  * The InducedFilter class parses TINKER Induced Dipole (*.*U) files.
  *
  * @author Michael J. Schnieders
- * 
  * @since 1.0
+ * @version $Id: $
  */
 public class InducedFilter {
 
@@ -42,11 +42,22 @@ public class InducedFilter {
     MolecularAssembly fsystem;
     File file;
 
+    /**
+     * <p>Constructor for InducedFilter.</p>
+     *
+     * @param s a {@link ffx.potential.bonded.MolecularAssembly} object.
+     * @param f a {@link java.io.File} object.
+     */
     public InducedFilter(MolecularAssembly s, File f) {
         fsystem = s;
         file = f;
     }
 
+    /**
+     * <p>read</p>
+     *
+     * @return a boolean.
+     */
     public boolean read() {
         if (!file.exists() || !file.canRead()) {
             return false;

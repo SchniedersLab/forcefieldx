@@ -34,8 +34,8 @@ import java.util.logging.Level;
  * words, each replicated cell edge is more than twice the cutoff.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
+ * @version $Id: $
  */
 public class ReplicatesCrystal extends Crystal {
 
@@ -52,7 +52,6 @@ public class ReplicatesCrystal extends Crystal {
      * @param l Number of replicates along the a-axis.
      * @param m Number of replicates along the b-axis.
      * @param n Number of replicates along the c-axis.
-     *
      * @since 1.0
      */
     public ReplicatesCrystal(Crystal unitCell, int l, int m, int n) {
@@ -110,11 +109,11 @@ public class ReplicatesCrystal extends Crystal {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Returns the unit cell for this ReplicatesCrystal. This is useful for
      * the reciprocal space portion of PME that operates on the unit cell
      * even though the real space cutoff requires a ReplicatesCrystal.
-     *
-     * @return the unit cell Crystal of the ReplicatesCrystal.
      */
     @Override
     public Crystal getUnitCell() {
@@ -122,9 +121,9 @@ public class ReplicatesCrystal extends Crystal {
     }
 
     /**
-     * Include information about the base unit cell and replicates cell.
+     * {@inheritDoc}
      *
-     * @return a description of the ReplicatesCrystal
+     * Include information about the base unit cell and replicates cell.
      */
     @Override
     public String toString() {

@@ -44,9 +44,8 @@ import ffx.potential.parsers.XYZFilter;
  * convergence criteria.
  *
  * @author Gaurav Chattree and Michael J. Schnieders
- * 
  * @since 1.0
- * 
+ * @version $Id: $
  */
 public class Minimize_2 implements OptimizationListener, Terminatable {
 
@@ -72,6 +71,13 @@ public class Minimize_2 implements OptimizationListener, Terminatable {
     BufferedReader stdreader = new BufferedReader(stdinput);
     private ForceField forceField;
 
+    /**
+     * <p>Constructor for Minimize_2.</p>
+     *
+     * @param xyz_filename a {@link java.lang.String} object.
+     * @param keyfname a {@link java.lang.String} object.
+     * @throws java.io.IOException if any.
+     */
     public Minimize_2(String xyz_filename, String keyfname) throws IOException {
 
         structure_xyz = new File(xyz_filename);
@@ -146,6 +152,7 @@ public class Minimize_2 implements OptimizationListener, Terminatable {
         potential.setScaling(scaling);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void terminate() {
         terminate = true;
@@ -160,14 +167,32 @@ public class Minimize_2 implements OptimizationListener, Terminatable {
         }
     }
 
+    /**
+     * <p>minimize</p>
+     *
+     * @return a {@link ffx.numerics.Potential} object.
+     */
     public Potential minimize() {
         return minimize(1.0);
     }
 
+    /**
+     * <p>minimize</p>
+     *
+     * @param eps a double.
+     * @return a {@link ffx.numerics.Potential} object.
+     */
     public Potential minimize(double eps) {
         return minimize(7, eps);
     }
 
+    /**
+     * <p>minimize</p>
+     *
+     * @param m a int.
+     * @param eps a double.
+     * @return a {@link ffx.numerics.Potential} object.
+     */
     public Potential minimize(int m, double eps) {
         time = System.nanoTime();
         potential.getCoordinates(x);
@@ -200,6 +225,9 @@ public class Minimize_2 implements OptimizationListener, Terminatable {
         return potential;
     }
 
+    /**
+     * <p>print</p>
+     */
     public void print() {
 //    	for(int i = 0; i < x.length; i+=3){
 //    		System.out.println(x[i]/12+" "+x[i+1]/12+" "+x[i+2]/12);
@@ -233,16 +261,9 @@ public class Minimize_2 implements OptimizationListener, Terminatable {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Implement the OptimizationListener interface.
-     *
-     * @param iter Number of iterations so far.
-     * @param nfun Number of function evaluations so far.
-     * @param grms Gradient RMS at current solution.
-     * @param xrms Coordinate change RMS at current solution.
-     * @param f Function value at current solution.
-     * @param df Change in the function value compared to the previous solution.
-     * @param angle Current angle between gradient and search direction.
-     *
      * @since 1.0
      */
     @Override
@@ -289,8 +310,8 @@ public class Minimize_2 implements OptimizationListener, Terminatable {
      * @param xrms Coordinate change RMS at current solution.
      * @param f Function value at current solution.
      * @param df Change in the function value compared to the previous solution.
-     *
      * @since 1.0
+     * @return a boolean.
      */
     public boolean optimizationUpdate(int iter, int nfun, double grms, double xrms, double f, double df) {
         long currentTime = System.nanoTime();
@@ -317,6 +338,11 @@ public class Minimize_2 implements OptimizationListener, Terminatable {
         return true;
     }
 
+    /**
+     * <p>main</p>
+     *
+     * @param args an array of {@link java.lang.String} objects.
+     */
     public static void main(String args[]) {
         try {
             Minimize_2 m = new Minimize_2("/home/gchattree/Research/Compounds/s_test3_compounds/famotidine/ttt.xyz", null);

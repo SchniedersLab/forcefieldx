@@ -36,6 +36,9 @@ import javax.vecmath.Vector3d;
 
 /**
  * The MouseTranslate class implements a mouse translate behavior.
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public class MouseTranslate extends MouseBehavior {
 	private static Vector3d zero3d = new Vector3d(0.0, 0.0, 0.0);
@@ -46,10 +49,25 @@ public class MouseTranslate extends MouseBehavior {
 	int mouseButton = MouseEvent.BUTTON3_DOWN_MASK;
 	int doneID = 0;
 
+	/**
+	 * <p>Constructor for MouseTranslate.</p>
+	 *
+	 * @param flags a int.
+	 * @param VPTG a {@link javax.media.j3d.TransformGroup} object.
+	 */
 	public MouseTranslate(int flags, TransformGroup VPTG) {
 		super(flags, VPTG);
 	}
 
+	/**
+	 * <p>Constructor for MouseTranslate.</p>
+	 *
+	 * @param flags a int.
+	 * @param VPTG a {@link javax.media.j3d.TransformGroup} object.
+	 * @param behavior a {@link javax.media.j3d.Behavior} object.
+	 * @param postID a int.
+	 * @param dID a int.
+	 */
 	public MouseTranslate(int flags, TransformGroup VPTG, Behavior behavior,
 			int postID, int dID) {
 		super(flags, VPTG, behavior, postID);
@@ -59,6 +77,11 @@ public class MouseTranslate extends MouseBehavior {
 	/*
 	 * Return the x-axis movement multipler.
 	 */
+	/**
+	 * <p>getXFactor</p>
+	 *
+	 * @return a double.
+	 */
 	public double getXFactor() {
 		return x_factor;
 	}
@@ -66,10 +89,18 @@ public class MouseTranslate extends MouseBehavior {
 	/*
 	 * Return the y-axis movement multipler.
 	 */
+	/**
+	 * <p>getYFactor</p>
+	 *
+	 * @return a double.
+	 */
 	public double getYFactor() {
 		return y_factor;
 	}
 
+	/**
+	 * <p>initialize</p>
+	 */
 	public void initialize() {
 		super.initialize();
 		if ((flags & INVERT_INPUT) == INVERT_INPUT) {
@@ -79,10 +110,16 @@ public class MouseTranslate extends MouseBehavior {
 		}
 	}
 
+	/**
+	 * <p>Setter for the field <code>mouseButton</code>.</p>
+	 *
+	 * @param button a int.
+	 */
 	public void setMouseButton(int button) {
 		mouseButton = button;
 	}
 
+	/** {@inheritDoc} */
 	public void processStimulus(Enumeration criteria) {
 		while (criteria.hasMoreElements()) {
 			WakeupCriterion wakeup = (WakeupCriterion) criteria.nextElement();
@@ -155,6 +192,11 @@ public class MouseTranslate extends MouseBehavior {
 	/*
 	 * Set the x-axis amd y-axis movement multipler with factor.
 	 */
+	/**
+	 * <p>setFactor</p>
+	 *
+	 * @param factor a double.
+	 */
 	public void setFactor(double factor) {
 		x_factor = y_factor = factor;
 	}
@@ -162,6 +204,12 @@ public class MouseTranslate extends MouseBehavior {
 	/*
 	 * Set the x-axis amd y-axis movement multipler with xFactor and yFactor
 	 * respectively.
+	 */
+	/**
+	 * <p>setFactor</p>
+	 *
+	 * @param xFactor a double.
+	 * @param yFactor a double.
 	 */
 	public void setFactor(double xFactor, double yFactor) {
 		x_factor = xFactor;
@@ -172,10 +220,20 @@ public class MouseTranslate extends MouseBehavior {
 	 * The transformChanged method in the callback class will be called every
 	 * time the transform is updated
 	 */
+	/**
+	 * <p>setupCallback</p>
+	 *
+	 * @param c a {@link ffx.ui.behaviors.MouseBehaviorCallback} object.
+	 */
 	public void setupCallback(MouseBehaviorCallback c) {
 		callback = c;
 	}
 
+	/**
+	 * <p>transformChanged</p>
+	 *
+	 * @param transform a {@link javax.media.j3d.Transform3D} object.
+	 */
 	public void transformChanged(Transform3D transform) {
 	}
 }

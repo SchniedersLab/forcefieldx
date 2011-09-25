@@ -48,6 +48,7 @@ import ffx.potential.parameters.UreyBradleyType;
  *
  * @author Michael J. Schnieders
  * @since 1.0
+ * @version $Id: $
  */
 public abstract class MSGroup extends MSNode {
 
@@ -76,13 +77,21 @@ public abstract class MSGroup extends MSNode {
     private double[] center;
     // List of underconstrained Atoms
     private ArrayList<Atom> dangelingatoms;
+    /** Constant <code>bondTime=0</code> */
     protected static long bondTime = 0;
+    /** Constant <code>angleTime=0</code> */
     protected static long angleTime = 0;
+    /** Constant <code>stretchBendTime=0</code> */
     protected static long stretchBendTime = 0;
+    /** Constant <code>ureyBradleyTime=0</code> */
     protected static long ureyBradleyTime = 0;
+    /** Constant <code>outOfPlaneBendTime=0</code> */
     protected static long outOfPlaneBendTime = 0;
+    /** Constant <code>torsionTime=0</code> */
     protected static long torsionTime = 0;
+    /** Constant <code>piOrbitalTorsionTime=0</code> */
     protected static long piOrbitalTorsionTime = 0;
+    /** Constant <code>torsionTorsionTime=0</code> */
     protected static long torsionTorsionTime = 0;
 
     /**
@@ -106,6 +115,8 @@ public abstract class MSGroup extends MSNode {
 
     /**
      * Constructs a MultiScaleGroup object with name n.
+     *
+     * @param n a {@link java.lang.String} object.
      */
     public MSGroup(String n) {
         this();
@@ -115,6 +126,9 @@ public abstract class MSGroup extends MSNode {
     /**
      * Constructs a MultiScaleGroup object with name n and sets its AtomGroup
      * node equals to node.
+     *
+     * @param n a {@link java.lang.String} object.
+     * @param node a {@link ffx.potential.bonded.MSNode} object.
      */
     public MSGroup(String n, MSNode node) {
         this(n);
@@ -125,9 +139,15 @@ public abstract class MSGroup extends MSNode {
     /**
      * Abstract method that should specify how to add various MSNodes subclasses
      * (such as Atoms, Residues and Polymers) to the MSGroup
+     *
+     * @param m a {@link ffx.potential.bonded.MSNode} object.
+     * @return a {@link ffx.potential.bonded.MSNode} object.
      */
     public abstract MSNode addMSNode(MSNode m);
 
+    /**
+     * <p>reOrderAtoms</p>
+     */
     public void reOrderAtoms() {
         ArrayList<Atom> atomList = getAtomList();
         int nAtoms = atomList.size();
@@ -153,6 +173,9 @@ public abstract class MSGroup extends MSNode {
         }
     }
 
+    /**
+     * <p>collectValenceTerms</p>
+     */
     public void collectValenceTerms() {
         MSNode newBondNode = new MSNode("Bonds");
         MSNode newAngleNode = new MSNode("Angles");
@@ -414,6 +437,9 @@ public abstract class MSGroup extends MSNode {
         termNode.setName("Valence Terms (" + numberOfValenceTerms + ")");
     }
 
+    /**
+     * <p>constructValenceTerms</p>
+     */
     public void constructValenceTerms() {
         MSNode b = new MSNode("Bonds");
         MSNode a = new MSNode("Angles");
@@ -466,6 +492,8 @@ public abstract class MSGroup extends MSNode {
      * @param bond
      *            Bond
      * @return Joint
+     * @param group1 a {@link ffx.potential.bonded.MSGroup} object.
+     * @param group2 a {@link ffx.potential.bonded.MSGroup} object.
      */
     public Joint createJoint(Bond bond, MSGroup group1, MSGroup group2) {
         MSNode newBondNode = new MSNode("Bonds");
@@ -686,6 +714,10 @@ public abstract class MSGroup extends MSNode {
     /**
      * Joiner joins Moieties m1 and m2 and returns the Geometry objects formed
      * in a Joint.
+     *
+     * @param group1 a {@link ffx.potential.bonded.MSGroup} object.
+     * @param group2 a {@link ffx.potential.bonded.MSGroup} object.
+     * @return a {@link ffx.potential.bonded.Joint} object.
      */
     public Joint createJoint(MSGroup group1, MSGroup group2) {
         Joint joint = null;
@@ -711,6 +743,8 @@ public abstract class MSGroup extends MSNode {
 
     /**
      * Abstact method that should specify how to finalize a MultiScaleGroup
+     *
+     * @param finalizeGroups a boolean.
      */
     public abstract void finalize(boolean finalizeGroups);
 
@@ -730,6 +764,8 @@ public abstract class MSGroup extends MSNode {
 
     /**
      * Returns the MultiScaleGroup's angles FNode.
+     *
+     * @return a {@link ffx.potential.bonded.MSNode} object.
      */
     public MSNode getAngles() {
         return angleNode;
@@ -737,6 +773,8 @@ public abstract class MSGroup extends MSNode {
 
     /**
      * Returns the AtomNode.
+     *
+     * @return a {@link ffx.potential.bonded.MSNode} object.
      */
     public MSNode getAtomNode() {
         return atomNode;
@@ -744,6 +782,9 @@ public abstract class MSGroup extends MSNode {
 
     /**
      * Returns the MSNode at the given index.
+     *
+     * @param index a int.
+     * @return a {@link ffx.potential.bonded.MSNode} object.
      */
     public MSNode getAtomNode(int index) {
         return getAtomNodeList().get(index);
@@ -751,6 +792,9 @@ public abstract class MSGroup extends MSNode {
 
     /**
      * Returns the AtomNode specified by the String n.
+     *
+     * @param n a {@link java.lang.String} object.
+     * @return a {@link ffx.potential.bonded.MSNode} object.
      */
     public MSNode getAtomNode(String n) {
         ArrayList<MSNode> list = getAtomNodeList();
@@ -764,6 +808,8 @@ public abstract class MSGroup extends MSNode {
 
     /**
      * Returns an ArrayList of the AtomNode's children.
+     *
+     * @return a {@link java.util.ArrayList} object.
      */
     public ArrayList<MSNode> getAtomNodeList() {
         return atomNode.getChildList();
@@ -771,6 +817,9 @@ public abstract class MSGroup extends MSNode {
 
     /**
      * Returns the Bond at the supplied index.
+     *
+     * @param index a int.
+     * @return a {@link ffx.potential.bonded.Bond} object.
      */
     public Bond getBond(int index) {
         return (Bond) bondNode.getChildAt(index);
@@ -778,6 +827,9 @@ public abstract class MSGroup extends MSNode {
 
     /**
      * Returns the Bond with the given id.
+     *
+     * @param id a {@link java.lang.String} object.
+     * @return a {@link ffx.potential.bonded.Bond} object.
      */
     public Bond getBond(String id) {
         int i = bondNode.getIndex(new Bond(id));
@@ -789,6 +841,8 @@ public abstract class MSGroup extends MSNode {
 
     /**
      * Returns the MultiScaleGroup's bonds FNode.
+     *
+     * @return a {@link ffx.potential.bonded.MSNode} object.
      */
     public MSNode getBonds() {
         return bondNode;
@@ -801,6 +855,8 @@ public abstract class MSGroup extends MSNode {
      */
     /**
      * Returns the MultiScaleGroup's center as a double[3].
+     *
+     * @return an array of double.
      */
     public double[] getCenter() {
         return center;
@@ -808,6 +864,8 @@ public abstract class MSGroup extends MSNode {
 
     /**
      * Returns the MultiScaleGroup's dangelingatoms list.
+     *
+     * @return a {@link java.util.ArrayList} object.
      */
     public ArrayList getDangelingAtoms() {
         return dangelingatoms;
@@ -815,6 +873,8 @@ public abstract class MSGroup extends MSNode {
 
     /**
      * Returns the MultiScaleGroup's Torsion MSNode.
+     *
+     * @return a {@link ffx.potential.bonded.MSNode} object.
      */
     public MSNode getTorsions() {
         return torsionNode;
@@ -824,6 +884,9 @@ public abstract class MSGroup extends MSNode {
      * This method finds the Geometrical center of this MultiScaleGroup, or the
      * atomicWeight-weighted center if w is set to true, and returns it as a
      * double[3].
+     *
+     * @param w a boolean.
+     * @return an array of double.
      */
     public double[] getMultiScaleCenter(boolean w) {
         // Find the center of atomicWeight if w == true, the center of geometry
@@ -859,6 +922,8 @@ public abstract class MSGroup extends MSNode {
 
     /**
      * Returns the MultiScaleGroup's terms FNode.
+     *
+     * @return a {@link ffx.potential.bonded.MSNode} object.
      */
     public MSNode getTerms() {
         return termNode;
@@ -866,12 +931,16 @@ public abstract class MSGroup extends MSNode {
 
     /**
      * Returns true if the MultiScaleGroup is finalized.
+     *
+     * @return a boolean.
      */
     public boolean isFinalized() {
         return finalized;
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Prints the MultiScaleGroup's Atoms and Bonds.
      */
     @Override
@@ -886,6 +955,9 @@ public abstract class MSGroup extends MSNode {
         }
     }
 
+    /**
+     * <p>removeLeaves</p>
+     */
     protected void removeLeaves() {
         if (termNode.getParent() == null) {
             return;
@@ -921,6 +993,8 @@ public abstract class MSGroup extends MSNode {
 
     /**
      * Sets the Angles node to t.
+     *
+     * @param t a {@link ffx.potential.bonded.MSNode} object.
      */
     public void setAngles(MSNode t) {
         termNode.remove(angleNode);
@@ -930,6 +1004,8 @@ public abstract class MSGroup extends MSNode {
 
     /**
      * Sets the Moieties node to t.
+     *
+     * @param t a {@link ffx.potential.bonded.MSNode} object.
      */
     public void setAtomNode(MSNode t) {
         remove(atomNode);
@@ -939,6 +1015,8 @@ public abstract class MSGroup extends MSNode {
 
     /**
      * Sets the Bonds node to t.
+     *
+     * @param t a {@link ffx.potential.bonded.MSNode} object.
      */
     public void setBonds(MSNode t) {
         termNode.remove(bondNode);
@@ -949,6 +1027,8 @@ public abstract class MSGroup extends MSNode {
 
     /**
      * Sets the Stretch-Bends node to t.
+     *
+     * @param t a {@link ffx.potential.bonded.MSNode} object.
      */
     public void setStretchBends(MSNode t) {
         termNode.remove(stretchBendNode);
@@ -959,6 +1039,8 @@ public abstract class MSGroup extends MSNode {
 
     /**
      * Sets the Urey-Bradley node to t.
+     *
+     * @param t a {@link ffx.potential.bonded.MSNode} object.
      */
     public void setUreyBradleys(MSNode t) {
         termNode.remove(ureyBradleyNode);
@@ -969,6 +1051,8 @@ public abstract class MSGroup extends MSNode {
 
     /**
      * Sets the Out-of-Plane Bend node to t.
+     *
+     * @param t a {@link ffx.potential.bonded.MSNode} object.
      */
     public void setOutOfPlaneBends(MSNode t) {
         termNode.remove(outOfPlaneBendNode);
@@ -985,11 +1069,14 @@ public abstract class MSGroup extends MSNode {
     } */
     /**
      * Set the value of Center to d.
+     *
+     * @param d an array of double.
      */
     public void setCenter(double[] d) {
         center = d;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setColor(RendererCache.ColorModel newColorModel, Color3f color,
                          Material mat) {
@@ -1001,6 +1088,8 @@ public abstract class MSGroup extends MSNode {
 
     /**
      * Sets the MultiScaleGroup's dangelingatoms member to a.
+     *
+     * @param a a {@link java.util.ArrayList} object.
      */
     public void setDangelingAtoms(ArrayList<Atom> a) {
         dangelingatoms = a;
@@ -1008,6 +1097,8 @@ public abstract class MSGroup extends MSNode {
 
     /**
      * Sets the MultiScaleGroup's torsion node to t.
+     *
+     * @param t a {@link ffx.potential.bonded.MSNode} object.
      */
     public void setTorsions(MSNode t) {
         termNode.remove(torsionNode);
@@ -1017,6 +1108,8 @@ public abstract class MSGroup extends MSNode {
 
     /**
      * Sets the MultiScaleGroup's Pi-Orbital Torsion node to t.
+     *
+     * @param t a {@link ffx.potential.bonded.MSNode} object.
      */
     public void setPiOrbitalTorsions(MSNode t) {
         termNode.remove(piOrbitalTorsionNode);
@@ -1026,6 +1119,8 @@ public abstract class MSGroup extends MSNode {
 
     /**
      * Sets the MultiScaleGroup's Torsion-Torsion node to t.
+     *
+     * @param t a {@link ffx.potential.bonded.MSNode} object.
      */
     public void setTorsionTorsions(MSNode t) {
         termNode.remove(torsionTorsionNode);
@@ -1035,6 +1130,8 @@ public abstract class MSGroup extends MSNode {
 
     /**
      * Specifies whether the MultiScaleGroup has been finalized.
+     *
+     * @param t a boolean.
      */
     public void setFinalized(boolean t) {
         finalized = t;
@@ -1042,6 +1139,8 @@ public abstract class MSGroup extends MSNode {
 
     /**
      * Sets the MultiScaleGroup's terms node to t.
+     *
+     * @param t a {@link ffx.potential.bonded.MSNode} object.
      */
     public void setTerms(MSNode t) {
         remove(termNode);
@@ -1049,6 +1148,7 @@ public abstract class MSGroup extends MSNode {
         add(termNode);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setView(RendererCache.ViewModel newViewModel,
                         List<BranchGroup> newShapes) {
@@ -1057,6 +1157,8 @@ public abstract class MSGroup extends MSNode {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Returns the MultiScaleGroup's name.
      */
     @Override
@@ -1064,18 +1166,25 @@ public abstract class MSGroup extends MSNode {
         return getName();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void update() {
         updateAtoms();
         updateBonds();
     }
 
+    /**
+     * <p>updateAtoms</p>
+     */
     public void updateAtoms() {
         for (Atom a : getAtomList()) {
             a.update();
         }
     }
 
+    /**
+     * <p>updateBonds</p>
+     */
     public void updateBonds() {
         for (ROLS b : getBondList()) {
             b.update();

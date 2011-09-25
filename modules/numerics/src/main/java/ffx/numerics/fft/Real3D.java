@@ -22,8 +22,9 @@ package ffx.numerics.fft;
 
 /**
  * Compute the 3D FFT of real, double precision input of arbitrary dimensions.<p>
- * 
+ *
  * @author Michal J. Schnieders
+ * @version $Id: $
  */
 public class Real3D {
 
@@ -124,6 +125,11 @@ public class Real3D {
         }
     }
 
+    /**
+     * <p>Setter for the field <code>recip</code>.</p>
+     *
+     * @param recip an array of double.
+     */
     public void setRecip(double recip[]) {
         int offset, y, x, z, i;
 
@@ -141,6 +147,11 @@ public class Real3D {
         }
     }
 
+    /**
+     * <p>convolution</p>
+     *
+     * @param input an array of double.
+     */
     public void convolution(final double input[]) {
         int i, j, x, y, z, index, offset, stride;
         for (z = 0; z < nZ; z++) {
@@ -180,6 +191,16 @@ public class Real3D {
         }
     }
 
+    /**
+     * <p>iReal3D</p>
+     *
+     * @param i a int.
+     * @param j a int.
+     * @param k a int.
+     * @param nX a int.
+     * @param nY a int.
+     * @return a int.
+     */
     public static int iReal3D(int i, int j, int k, int nX, int nY) {
         int xSide = nX + 2;
         int xySlice = xSide * nY;

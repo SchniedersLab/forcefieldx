@@ -36,6 +36,9 @@ import javax.media.j3d.BranchGroup;
  * thread of execution to be created for all operations on nodes below the ROLSP
  * node. This is very preliminary code, but a useful concept for parallelizing
  * ROLS in ffe.lang.
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public class ROLSP extends MSNode implements ROLS, Runnable {
 
@@ -46,7 +49,9 @@ public class ROLSP extends MSNode implements ROLS, Runnable {
         SETVIEW, NONE;
     }
     private static final long serialVersionUID = 1L;
+    /** Constant <code>GO_PARALLEL=false</code> */
     public static boolean GO_PARALLEL = false;
+    /** Constant <code>parallelNotDone=0</code> */
     public static int parallelNotDone = 0;
 
     static {
@@ -65,11 +70,16 @@ public class ROLSP extends MSNode implements ROLS, Runnable {
     private RendererCache.ViewModel viewModel = null;
     private List<BranchGroup> newShapes = null;
 
+    /**
+     * <p>Constructor for ROLSP.</p>
+     */
     public ROLSP() {
         super("Parallel Node");
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Overidden equals method.
      */
     @Override
@@ -83,6 +93,7 @@ public class ROLSP extends MSNode implements ROLS, Runnable {
         return false;
     }
 
+    /** {@inheritDoc} */
     @Override
     public int hashCode() {
         MSNode child = (MSNode) getChildAt(0);
@@ -92,6 +103,7 @@ public class ROLSP extends MSNode implements ROLS, Runnable {
         return hash(SEED, child.hashCode());
     }
 
+    /** {@inheritDoc} */
     @Override
     public void run() {
         switch (parallelMethod) {
@@ -106,6 +118,7 @@ public class ROLSP extends MSNode implements ROLS, Runnable {
         parallelNotDone--;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setView(RendererCache.ViewModel viewModel,
                         List<BranchGroup> newShapes) {
@@ -137,6 +150,7 @@ public class ROLSP extends MSNode implements ROLS, Runnable {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public String toString() {
         if (threadTime != 0) {

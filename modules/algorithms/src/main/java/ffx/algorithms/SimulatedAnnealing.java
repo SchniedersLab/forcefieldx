@@ -34,8 +34,8 @@ import ffx.potential.bonded.MolecularAssembly;
  * Run NVT molecular dynamics at a series of temperatures.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
+ * @version $Id: $
  */
 public class SimulatedAnnealing implements Runnable, Terminatable {
 
@@ -47,6 +47,14 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
     private int mdSteps;
     private boolean done, terminate;
 
+    /**
+     * <p>Constructor for SimulatedAnnealing.</p>
+     *
+     * @param assembly a {@link ffx.potential.bonded.MolecularAssembly} object.
+     * @param potentialEnergy a {@link ffx.numerics.Potential} object.
+     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
+     */
     public SimulatedAnnealing(MolecularAssembly assembly,
                               Potential potentialEnergy,
                               CompositeConfiguration properties,
@@ -59,6 +67,14 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
         done = true;
     }
 
+    /**
+     * <p>anneal</p>
+     *
+     * @param highTemperature a double.
+     * @param lowTemperature a double.
+     * @param annealingSteps a int.
+     * @param mdSteps a int.
+     */
     public void anneal(double highTemperature,
                        double lowTemperature,
                        int annealingSteps,
@@ -117,6 +133,8 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * This method should only be invoked within the
      * SimulatedAnnealing instance.
      */
@@ -143,6 +161,7 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
         terminate = false;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void terminate() {
         terminate = true;

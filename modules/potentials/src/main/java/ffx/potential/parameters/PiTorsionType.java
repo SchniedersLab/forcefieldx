@@ -27,8 +27,8 @@ import java.util.Comparator;
  * The PiTorsionType class defines a Pi-Torsion energy term.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
+ * @version $Id: $
  */
 public final class PiTorsionType extends BaseType implements Comparator<String> {
 
@@ -55,6 +55,11 @@ public final class PiTorsionType extends BaseType implements Comparator<String> 
         this.forceConstant = forceConstant;
     }
 
+    /**
+     * <p>incrementClasses</p>
+     *
+     * @param increment a int.
+     */
     public void incrementClasses(int increment) {
         for (int i = 0; i < atomClasses.length; i++) {
             atomClasses[i] += increment;
@@ -85,9 +90,9 @@ public final class PiTorsionType extends BaseType implements Comparator<String> 
     }
 
     /**
-     * Nicely formatted Pi-Torsion type.
+     * {@inheritDoc}
      *
-     * @return String
+     * Nicely formatted Pi-Torsion type.
      */
     @Override
     public String toString() {
@@ -99,6 +104,7 @@ public final class PiTorsionType extends BaseType implements Comparator<String> 
      */
     public static double units = 1.0;
 
+    /** {@inheritDoc} */
     @Override
     public int compare(String s1, String s2) {
         String keys1[] = s1.split(" ");
@@ -116,6 +122,7 @@ public final class PiTorsionType extends BaseType implements Comparator<String> 
         return 0;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean equals(Object other) {
         if (other == this) {
@@ -133,6 +140,7 @@ public final class PiTorsionType extends BaseType implements Comparator<String> 
         return true;
     }
 
+    /** {@inheritDoc} */
     @Override
     public int hashCode() {
         int hash = 5;

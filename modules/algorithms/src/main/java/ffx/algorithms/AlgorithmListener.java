@@ -29,6 +29,7 @@ import ffx.potential.bonded.MolecularAssembly;
  *
  * @author Michael J. Schnieders
  * @since 1.0
+ * @version $Id: $
  */
 public interface AlgorithmListener {
 

@@ -118,6 +118,9 @@ import ffx.utilities.Keyword;
  * The MainPanel class is the main container for Force Field X, handles
  * file input/output and is used to pass references among the various
  * sub-Panels.
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public final class MainPanel extends JPanel implements ActionListener,
         ChangeListener {
@@ -125,22 +128,36 @@ public final class MainPanel extends JPanel implements ActionListener,
     // Static Variables
     private static final Logger logger = Logger.getLogger(MainPanel.class.getName());
     // Panel Order in the TabbedPane
+    /** Constant <code>GRAPHICS=0</code> */
     public static final int GRAPHICS = 0;
+    /** Constant <code>KEYWORDS=1</code> */
     public static final int KEYWORDS = 1;
+    /** Constant <code>MODELING=2</code> */
     public static final int MODELING = 2;
+    /** Constant <code>classpath=""</code> */
     public static String classpath;
+    /** Constant <code>ffxDir</code> */
     public static File ffxDir;
     private static File pwd;
     // FileFilters for filtering file selection in the JFileChooser
     private static JFileChooser fileChooser = null;
+    /** Constant <code>xyzFileFilter</code> */
     public static final XYZFileFilter xyzFileFilter = new XYZFileFilter();
+    /** Constant <code>arcFileFilter</code> */
     public static final ARCFileFilter arcFileFilter = new ARCFileFilter();
+    /** Constant <code>intFileFilter</code> */
     public static final INTFileFilter intFileFilter = new INTFileFilter();
+    /** Constant <code>dynFileFilter</code> */
     public static final DYNFileFilter dynFileFilter = new DYNFileFilter();
+    /** Constant <code>indFileFilter</code> */
     public static final InducedFileFilter indFileFilter = new InducedFileFilter();
+    /** Constant <code>forceFieldFileFilter</code> */
     public static final ForceFieldFileFilter forceFieldFileFilter = new ForceFieldFileFilter();
+    /** Constant <code>pdbFileFilter</code> */
     public static final PDBFileFilter pdbFileFilter = new PDBFileFilter();
+    /** Constant <code>keyFileFilter</code> */
     public static final KeyFileFilter keyFileFilter = new KeyFileFilter();
+    /** Constant <code>ffxFileFilter</code> */
     public static final FFXFileFilter ffxFileFilter = new FFXFileFilter();
 
     static {
@@ -157,6 +174,11 @@ public final class MainPanel extends JPanel implements ActionListener,
         }
     }
 
+    /**
+     * <p>getPWD</p>
+     *
+     * @return a {@link java.io.File} object.
+     */
     public static File getPWD() {
         if (pwd == null) {
             pwd = new File(System.getProperty("user.dir", FileSystemView.getFileSystemView().getDefaultDirectory().getAbsolutePath()));
@@ -166,6 +188,8 @@ public final class MainPanel extends JPanel implements ActionListener,
 
     /**
      * JFileChooser
+     *
+     * @return a {@link javax.swing.JFileChooser} object.
      */
     public static JFileChooser resetFileChooser() {
         if (fileChooser == null) {
@@ -226,10 +250,16 @@ public final class MainPanel extends JPanel implements ActionListener,
         frame = f;
     }
 
+    /**
+     * <p>Constructor for MainPanel.</p>
+     */
     public MainPanel() {
         frame = null;
     }
 
+    /**
+     * <p>help</p>
+     */
     public void help() {
         String helpHS = "ffx/help/jhelpset.hs";
         ClassLoader cl = getClass().getClassLoader();
@@ -252,6 +282,9 @@ public final class MainPanel extends JPanel implements ActionListener,
         helpFrame.toFront();
     }
 
+    /**
+     * <p>about</p>
+     */
     public void about() {
         if (aboutDialog == null) {
             aboutDialog = new JDialog(frame, "About... ", true);
@@ -276,6 +309,8 @@ public final class MainPanel extends JPanel implements ActionListener,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Handle most File, Selection, Trajectory, Simulation, Window and Help Menu
      * Commands This should probably be partitioned between a few different
      * handlers
@@ -427,12 +462,17 @@ public final class MainPanel extends JPanel implements ActionListener,
     /**
      * Detach the active FSystem's BranchGroup from the Scene and clear that
      * FSystem's data
+     *
+     * @return a {@link java.lang.Thread} object.
      */
     public Thread close() {
         FFXSystem m = hierarchy.getActive();
         return close(m);
     }
 
+    /**
+     * <p>closeWait</p>
+     */
     public void closeWait() {
         FFXSystem active = hierarchy.getActive();
         Thread thread = close(active);
@@ -446,6 +486,12 @@ public final class MainPanel extends JPanel implements ActionListener,
         }
     }
 
+    /**
+     * <p>close</p>
+     *
+     * @param closedModel a {@link ffx.ui.FFXSystem} object.
+     * @return a {@link java.lang.Thread} object.
+     */
     public Thread close(FFXSystem closedModel) {
         if (closedModel != null && closedModel.getParent() != null) {
             Trajectory traj = closedModel.getTrajectory();
@@ -488,6 +534,12 @@ public final class MainPanel extends JPanel implements ActionListener,
         }
     }
 
+    /**
+     * <p>connectToTINKER</p>
+     *
+     * @param system a {@link ffx.ui.FFXSystem} object.
+     * @param modelingThread a {@link java.lang.Thread} object.
+     */
     public void connectToTINKER(FFXSystem system, Thread modelingThread) {
         if (simulation == null || simulation.isFinished()) {
             if (simulation != null) {
@@ -516,6 +568,12 @@ public final class MainPanel extends JPanel implements ActionListener,
         }
     }
 
+    /**
+     * <p>createKeyFile</p>
+     *
+     * @param system a {@link ffx.ui.FFXSystem} object.
+     * @return a boolean.
+     */
     public boolean createKeyFile(FFXSystem system) {
         String message = new String("Please select a parameter file " + "and a TINKER Key file will be created.");
         String params = (String) JOptionPane.showInputDialog(this, message,
@@ -584,11 +642,17 @@ public final class MainPanel extends JPanel implements ActionListener,
         return false;
     }
 
+    /**
+     * <p>exit</p>
+     */
     public void exit() {
         savePrefs();
         System.exit(0);
     }
 
+    /**
+     * <p>frame</p>
+     */
     public void frame() {
         Trajectory trajectory = getTrajectory();
         if (trajectory == null) {
@@ -605,30 +669,65 @@ public final class MainPanel extends JPanel implements ActionListener,
         }
     }
 
+    /**
+     * <p>Getter for the field <code>dataRoot</code>.</p>
+     *
+     * @return a {@link ffx.potential.bonded.MSRoot} object.
+     */
     public MSRoot getDataRoot() {
         return dataRoot;
     }
 
+    /**
+     * <p>getFFXLocale</p>
+     *
+     * @return a {@link ffx.ui.properties.FFXLocale} object.
+     */
     public FFXLocale getFFXLocale() {
         return locale;
     }
 
+    /**
+     * <p>getGraphics3D</p>
+     *
+     * @return a {@link ffx.ui.GraphicsCanvas} object.
+     */
     public GraphicsCanvas getGraphics3D() {
         return graphicsCanvas;
     }
 
+    /**
+     * <p>Getter for the field <code>hierarchy</code>.</p>
+     *
+     * @return a {@link ffx.ui.Hierarchy} object.
+     */
     public Hierarchy getHierarchy() {
         return hierarchy;
     }
 
+    /**
+     * <p>Getter for the field <code>keywordPanel</code>.</p>
+     *
+     * @return a {@link ffx.ui.KeywordPanel} object.
+     */
     public KeywordPanel getKeywordPanel() {
         return keywordPanel;
     }
 
+    /**
+     * <p>Getter for the field <code>mainMenu</code>.</p>
+     *
+     * @return a {@link ffx.ui.MainMenu} object.
+     */
     public MainMenu getMainMenu() {
         return mainMenu;
     }
 
+    /**
+     * <p>Getter for the field <code>frame</code>.</p>
+     *
+     * @return a {@link java.awt.Frame} object.
+     */
     public Frame getFrame() {
         return frame;
     }
@@ -637,6 +736,11 @@ public final class MainPanel extends JPanel implements ActionListener,
     public ModelingPanel getModelingPanel() {
     return modelingPanel;
     } */
+    /**
+     * <p>Getter for the field <code>modelingShell</code>.</p>
+     *
+     * @return a {@link ffx.ui.ModelingShell} object.
+     */
     public ModelingShell getModelingShell() {
         //if (frame != null) {
         if (modelingShell == null) {
@@ -649,6 +753,11 @@ public final class MainPanel extends JPanel implements ActionListener,
         } */
     }
 
+    /**
+     * <p>getStatusBar</p>
+     *
+     * @return a {@link javax.swing.JLabel} object.
+     */
     public JLabel getStatusBar() {
         return statusLabel;
     }
@@ -673,6 +782,11 @@ public final class MainPanel extends JPanel implements ActionListener,
         return trajectory;
     }
 
+    /**
+     * <p>highlightSelections</p>
+     *
+     * @param evt a {@link java.awt.event.ActionEvent} object.
+     */
     public void highlightSelections(ActionEvent evt) {
         if (evt.getSource() instanceof JCheckBoxMenuItem) {
             JCheckBoxMenuItem jcb = (JCheckBoxMenuItem) evt.getSource();
@@ -692,12 +806,17 @@ public final class MainPanel extends JPanel implements ActionListener,
             }
         }
     }
+    /** Constant <code>version="Version 1.0.0-ALPHA"</code> */
     public static final String version = "Version 1.0.0-ALPHA";
+    /** Constant <code>date="March 2011"</code> */
     public static final String date = "March 2011";
+    /** Constant <code>border=" ______________________________________"{trunked}</code> */
     public static final String border =
             " ______________________________________________________________________________\n";
+    /** Constant <code>title="        FORCE FIELD X - Software for Mo"{trunked}</code> */
     public static final String title =
             "        FORCE FIELD X - Software for Molecular Biophysics \n";
+    /** Constant <code>aboutString="         + version +    + date +  \n   "{trunked}</code> */
     public static final String aboutString =
             "        " + version + "  " + date + " \n"
             + "        Copyright (c)  Michael J. Schnieders  2001-2011 \n"
@@ -725,6 +844,9 @@ public final class MainPanel extends JPanel implements ActionListener,
         aboutTextArea.setEditable(false);
     }
 
+    /**
+     * <p>initialize</p>
+     */
     public void initialize() {
         if (init) {
             return;
@@ -817,6 +939,11 @@ public final class MainPanel extends JPanel implements ActionListener,
         }
     }
 
+    /**
+     * <p>isOpening</p>
+     *
+     * @return a boolean.
+     */
     public boolean isOpening() {
         return (openThread != null && openThread.isAlive());
     }
@@ -878,6 +1005,9 @@ public final class MainPanel extends JPanel implements ActionListener,
         }
     }
 
+    /**
+     * <p>merge</p>
+     */
     public void merge() {
         ArrayList<MSNode> activeNodes = hierarchy.getActiveNodes();
         if (activeNodes.size() >= 2) {
@@ -888,6 +1018,8 @@ public final class MainPanel extends JPanel implements ActionListener,
     /**
      * Merge two or more selected FSystem Nodes into one FSystem node. There are
      * a few gotchas that need to be fixed
+     *
+     * @param nodesToMerge a {@link java.util.ArrayList} object.
      */
     public void merge(ArrayList<MSNode> nodesToMerge) {
         ArrayList<MSNode> activeNodes = new ArrayList<MSNode>();
@@ -962,6 +1094,11 @@ public final class MainPanel extends JPanel implements ActionListener,
         thread.start();
     }
 
+    /**
+     * <p>merge</p>
+     *
+     * @param nodesToMerge an array of {@link ffx.potential.bonded.MSNode} objects.
+     */
     public void merge(MSNode[] nodesToMerge) {
         ArrayList<MSNode> activeNodes = new ArrayList<MSNode>();
         for (MSNode node : nodesToMerge) {
@@ -974,6 +1111,9 @@ public final class MainPanel extends JPanel implements ActionListener,
         }
     }
 
+    /**
+     * <p>oceanLookAndFeel</p>
+     */
     public void oceanLookAndFeel() {
         try {
             UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
@@ -1013,6 +1153,7 @@ public final class MainPanel extends JPanel implements ActionListener,
      *            File to open
      * @param commandDescription
      *            Description of the command that created this file.
+     * @return a {@link java.lang.Thread} object.
      */
     public Thread open(File file, String commandDescription) {
         if (file == null || !file.isFile() || !file.canRead()) {
@@ -1087,6 +1228,7 @@ public final class MainPanel extends JPanel implements ActionListener,
      *            Files to open
      * @param commandDescription
      *            Description of the command that created this file.
+     * @return a {@link java.lang.Thread} object.
      */
     public Thread open(List<File> files, String commandDescription) {
         if (files == null) {
@@ -1140,6 +1282,12 @@ public final class MainPanel extends JPanel implements ActionListener,
         return openThread;
     }
 
+    /**
+     * <p>openWait</p>
+     *
+     * @param file a {@link java.lang.String} object.
+     * @return an array of {@link ffx.ui.FFXSystem} objects.
+     */
     public FFXSystem[] openWait(String file) {
         Thread thread = open(file);
         while (thread != null && thread.isAlive()) {
@@ -1169,6 +1317,12 @@ public final class MainPanel extends JPanel implements ActionListener,
         }
     }
 
+    /**
+     * <p>openWait</p>
+     *
+     * @param files an array of {@link java.lang.String} objects.
+     * @return an array of {@link ffx.ui.FFXSystem} objects.
+     */
     public FFXSystem[] openWait(String files[]) {
         Thread thread = open(files);
         while (thread != null && thread.isAlive()) {
@@ -1198,6 +1352,12 @@ public final class MainPanel extends JPanel implements ActionListener,
         }
     }
 
+    /**
+     * <p>open</p>
+     *
+     * @param name a {@link java.lang.String} object.
+     * @return a {@link java.lang.Thread} object.
+     */
     public Thread open(String name) {
         if (name == null) {
             return null;
@@ -1215,6 +1375,12 @@ public final class MainPanel extends JPanel implements ActionListener,
         return open(f, null);
     }
 
+    /**
+     * <p>open</p>
+     *
+     * @param name an array of {@link java.lang.String} objects.
+     * @return a {@link java.lang.Thread} object.
+     */
     public Thread open(String name[]) {
         if (name == null) {
             return null;
@@ -1390,6 +1556,13 @@ public final class MainPanel extends JPanel implements ActionListener,
         return false;
     }
 
+    /**
+     * <p>openOn</p>
+     *
+     * @param f a {@link java.io.File} object.
+     * @param oldSystem a {@link ffx.ui.FFXSystem} object.
+     * @param command a {@link java.lang.String} object.
+     */
     public void openOn(File f, FFXSystem oldSystem, String command) {
         XYZFilter.readOnto(f, oldSystem);
         oldSystem.setCommandDescription(command);
@@ -1398,6 +1571,11 @@ public final class MainPanel extends JPanel implements ActionListener,
         getHierarchy().repaint();
     }
 
+    /**
+     * <p>oscillate</p>
+     *
+     * @param evt a {@link java.awt.event.ActionEvent} object.
+     */
     public void oscillate(ActionEvent evt) {
         oscillate = ((JCheckBoxMenuItem) evt.getSource()).isSelected();
         FFXSystem[] systems = getHierarchy().getSystems();
@@ -1414,6 +1592,9 @@ public final class MainPanel extends JPanel implements ActionListener,
         }
     }
 
+    /**
+     * <p>platformLookAndFeel</p>
+     */
     public void platformLookAndFeel() {
         try {
             if (SystemUtils.IS_OS_LINUX) {
@@ -1427,6 +1608,9 @@ public final class MainPanel extends JPanel implements ActionListener,
         }
     }
 
+    /**
+     * <p>play</p>
+     */
     public void play() {
         Trajectory trajectory = getTrajectory();
         if (trajectory == null) {
@@ -1446,6 +1630,9 @@ public final class MainPanel extends JPanel implements ActionListener,
         }
     }
 
+    /**
+     * <p>reset</p>
+     */
     public void reset() {
         Trajectory trajectory = getTrajectory();
         if (trajectory == null) {
@@ -1455,10 +1642,16 @@ public final class MainPanel extends JPanel implements ActionListener,
         trajectory.rewind();
     }
 
+    /**
+     * <p>resetPanes</p>
+     */
     public void resetPanes() {
         resizePanes(0);
     }
 
+    /**
+     * <p>resetShell</p>
+     */
     public void resetShell() {
         if (!GraphicsEnvironment.isHeadless()) {
             modelingShell = getModelingShell();
@@ -1470,6 +1663,8 @@ public final class MainPanel extends JPanel implements ActionListener,
 
     /**
      * Set the split panes to their default proportions
+     *
+     * @param move a int.
      */
     public void resizePanes(int move) {
         if (move == 0) {
@@ -1487,7 +1682,6 @@ public final class MainPanel extends JPanel implements ActionListener,
      * Save the currently selected FFXSystem to disk.
      *
      * @param file File to save the system to.
-     *
      * @since 1.0
      */
     public void saveAsXYZ(File file) {
@@ -1519,7 +1713,6 @@ public final class MainPanel extends JPanel implements ActionListener,
      * Save the currently selected FFXSystem to disk.
      *
      * @param file File to save the system to.
-     *
      * @since 1.0
      */
     public void saveAsP1(File file) {
@@ -1561,7 +1754,6 @@ public final class MainPanel extends JPanel implements ActionListener,
      * Save the currently selected FFXSystem to a PDB file.
      *
      * @param file File to save the system to.
-     *
      * @since 1.0
      */
     public void saveAsPDB(File file) {
@@ -1589,6 +1781,12 @@ public final class MainPanel extends JPanel implements ActionListener,
         }
     }
 
+    /**
+     * <p>saveAsPDB</p>
+     *
+     * @param activeSystems an array of {@link ffx.potential.bonded.MolecularAssembly} objects.
+     * @param file a {@link java.io.File} object.
+     */
     public void saveAsPDB(MolecularAssembly activeSystems[], File file) {
         File saveFile = file;
         if (saveFile == null) {
@@ -1651,6 +1849,9 @@ public final class MainPanel extends JPanel implements ActionListener,
         }
     }
 
+    /**
+     * <p>selectAll</p>
+     */
     public void selectAll() {
         if (dataRoot.getChildCount() == 0) {
             return;
@@ -1658,6 +1859,11 @@ public final class MainPanel extends JPanel implements ActionListener,
         hierarchy.selectAll();
     }
 
+    /**
+     * <p>setCWD</p>
+     *
+     * @param file a {@link java.io.File} object.
+     */
     public void setCWD(File file) {
         if ((file == null) || (!file.exists())) {
             return;
@@ -1665,10 +1871,18 @@ public final class MainPanel extends JPanel implements ActionListener,
         pwd = file;
     }
 
+    /**
+     * <p>setPanel</p>
+     *
+     * @param panel a int.
+     */
     public void setPanel(int panel) {
         tabbedPane.setSelectedIndex(panel);
     }
 
+    /**
+     * <p>Setter for the field <code>port</code>.</p>
+     */
     public void setPort() {
         String s = new String("" + port);
         s = JOptionPane.showInputDialog("Enter a port number", s);
@@ -1685,6 +1899,9 @@ public final class MainPanel extends JPanel implements ActionListener,
         socketAddress = new InetSocketAddress(address, port);
     }
 
+    /**
+     * <p>setRemoteJobAddress</p>
+     */
     public void setRemoteJobAddress() {
         if (address == null) {
             try {
@@ -1717,11 +1934,21 @@ public final class MainPanel extends JPanel implements ActionListener,
         socketAddress = newSocketAddress;
     }
 
+    /**
+     * <p>showGlobalAxes</p>
+     *
+     * @param evt a {@link java.awt.event.ActionEvent} object.
+     */
     public void showGlobalAxes(ActionEvent evt) {
         JCheckBoxMenuItem showAxesCheckBox = (JCheckBoxMenuItem) evt.getSource();
         graphicsCanvas.setAxisShowing(showAxesCheckBox.isSelected());
     }
 
+    /**
+     * <p>showToolBar</p>
+     *
+     * @param evt a {@link java.awt.event.ActionEvent} object.
+     */
     public void showToolBar(ActionEvent evt) {
         JCheckBoxMenuItem toolBarCheckBox = (JCheckBoxMenuItem) evt.getSource();
         if (toolBarCheckBox.isSelected()) {
@@ -1733,6 +1960,11 @@ public final class MainPanel extends JPanel implements ActionListener,
         }
     }
 
+    /**
+     * <p>showTree</p>
+     *
+     * @param evt a {@link java.awt.event.ActionEvent} object.
+     */
     public void showTree(ActionEvent evt) {
         JCheckBoxMenuItem treeCheckBox = (JCheckBoxMenuItem) evt.getSource();
         if (treeCheckBox.isSelected()) {
@@ -1746,6 +1978,9 @@ public final class MainPanel extends JPanel implements ActionListener,
         }
     }
 
+    /**
+     * <p>skip</p>
+     */
     public void skip() {
         Trajectory trajectory = getTrajectory();
         if (trajectory == null) {
@@ -1762,6 +1997,9 @@ public final class MainPanel extends JPanel implements ActionListener,
         }
     }
 
+    /**
+     * <p>speed</p>
+     */
     public void speed() {
         Trajectory trajectory = getTrajectory();
         if (trajectory == null) {
@@ -1778,6 +2016,7 @@ public final class MainPanel extends JPanel implements ActionListener,
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void stateChanged(ChangeEvent evt) {
         JTabbedPane jtp = (JTabbedPane) evt.getSource();
@@ -1792,6 +2031,9 @@ public final class MainPanel extends JPanel implements ActionListener,
         } */
     }
 
+    /**
+     * <p>stepBack</p>
+     */
     public void stepBack() {
         Trajectory trajectory = getTrajectory();
         if (trajectory == null) {
@@ -1801,6 +2043,9 @@ public final class MainPanel extends JPanel implements ActionListener,
         trajectory.back();
     }
 
+    /**
+     * <p>stepForward</p>
+     */
     public void stepForward() {
         Trajectory trajectory = getTrajectory();
         if (trajectory == null) {
@@ -1810,6 +2055,9 @@ public final class MainPanel extends JPanel implements ActionListener,
         trajectory.forward();
     }
 
+    /**
+     * <p>stop</p>
+     */
     public void stop() {
         Trajectory trajectory = getTrajectory();
         if (trajectory == null) {
@@ -1818,6 +2066,7 @@ public final class MainPanel extends JPanel implements ActionListener,
         trajectory.stop();
     }
 
+    /** {@inheritDoc} */
     @Override
     public String toString() {
         return "Program Control";

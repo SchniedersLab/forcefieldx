@@ -29,6 +29,7 @@ import org.apache.commons.math.util.MathUtils;
  *
  * @author fennt
  * @since 1.0
+ * @version $Id: $
  */
 public class Resolution {
 
@@ -36,16 +37,33 @@ public class Resolution {
     public final double resolution;
     public final double invres;
 
+    /**
+     * <p>Constructor for Resolution.</p>
+     *
+     * @param resolution a double.
+     * @param sampling a double.
+     */
     public Resolution(double resolution, double sampling) {
         this.resolution = resolution;
         this.invres = 1.0 / (resolution * resolution);
         this.sampling = sampling;
     }
 
+    /**
+     * <p>Constructor for Resolution.</p>
+     *
+     * @param resolution a double.
+     */
     public Resolution(double resolution) {
         this(resolution, 1.0 / 1.5);
     }
 
+    /**
+     * <p>checkProperties</p>
+     *
+     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * @return a {@link ffx.crystal.Resolution} object.
+     */
     public static Resolution checkProperties(CompositeConfiguration properties) {
         double res = properties.getDouble("resolution", -1.0);
         double sampling = properties.getDouble("sampling", 1.0 / 1.5);
@@ -57,18 +75,39 @@ public class Resolution {
         return new Resolution(res, sampling);
     }
 
+    /**
+     * <p>res_limit</p>
+     *
+     * @return a double.
+     */
     public double res_limit() {
         return resolution;
     }
 
+    /**
+     * <p>invressq_limit</p>
+     *
+     * @return a double.
+     */
     public double invressq_limit() {
         return invres;
     }
 
+    /**
+     * <p>sampling_limit</p>
+     *
+     * @return a double.
+     */
     public double sampling_limit() {
         return sampling;
     }
 
+    /**
+     * <p>inResolutionRange</p>
+     *
+     * @param res a double.
+     * @return a boolean.
+     */
     public boolean inResolutionRange(double res) {
         if (MathUtils.equals(res, this.resolution, 1e-8)) {
             return true;
@@ -79,6 +118,12 @@ public class Resolution {
         }
     }
 
+    /**
+     * <p>inInvresolutionRange</p>
+     *
+     * @param res a double.
+     * @return a boolean.
+     */
     public boolean inInvresolutionRange(double res) {
         if (MathUtils.equals(res, this.invres, 1e-8)) {
             return true;

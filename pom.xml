@@ -13,6 +13,7 @@
     <url>http://ffx.kenai.com</url>
     <prerequisites>
         <maven>3.0.2</maven>
+        <!-- 3.0.3 also works -->
     </prerequisites>
     <issueManagement>
         <system>Jira</system>
@@ -244,6 +245,7 @@
                     </descriptors>
                     <finalName>ffx-${project.version}</finalName>
                     <outputDirectory>${project.build.directory}/site</outputDirectory>
+                    <skipAssembly>true</skipAssembly>
                 </configuration>
                 <executions>
                     <execution>
@@ -264,7 +266,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
-                <version>1.2</version>
+                <version>1.2.1</version>
                 <inherited>false</inherited>
                 <executions>
                     <execution>
@@ -276,21 +278,19 @@
                 <configuration>
                     <executable>java</executable>
                     <arguments>
-                        <argument>-ms6G</argument>
-                        <argument>-mx6G</argument>
+                        <argument>-ms2G</argument>
+                        <argument>-mx2G</argument>
+                        <argument>-Djava.system.class.loader=ffx.FFXClassLoader</argument>
                         <argument>-Djava.awt.headless=true</argument>
                         <argument>-Dj3d.rend=jogl</argument>
-                        <argument>-Dpj.nt=8</argument>
-                        <!-- argument>-Dpolar-eps=0.001</argument -->
                         <argument>-classpath</argument>
                         <argument>bin/ffx-all.jar</argument>
-                        <argument>ffx.Launcher</argument>
+                        <argument>ffx.Main</argument>
                         <argument>testLambdaGradient</argument>
                         <argument>examples/watersmall.xyz</argument>
                         <argument>1</argument>
                         <argument>3</argument>
-                        <argument>0.99</argument> 
-                        <!-- argument>20</argument -->
+                        <argument>0.99</argument>
                     </arguments>
                 </configuration>
             </plugin>
@@ -300,7 +300,7 @@
                 <configuration>
                     <!-- This prevents Mac OS X from using its old Java3D verion.  -->
                     <useSystemClassLoader>false</useSystemClassLoader>
-                    <argLine>-ms1G -mx1G -Dj3d.rend=jogl -Dffx.ci=${ffx.ci} -Djava.library.path=${basedir}/../../bin/${platform}/jogl-${bit}:${basedir}/../../bin/${platform}/jocl-${bit}</argLine>
+                    <argLine>-ms1G -mx1G -Dj3d.rend=jogl -Dffx.ci=${ffx.ci}</argLine>
                 </configuration>
             </plugin>
             <!-- plugin>
@@ -414,7 +414,7 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.6</version>
+            <version>4.9</version>
             <type>jar</type>
             <scope>test</scope>
         </dependency>

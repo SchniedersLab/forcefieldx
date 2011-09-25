@@ -39,8 +39,8 @@ import ffx.potential.parsers.XYZFilter;
  * Run NVE or NVT molecular dynamics.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
+ * @version $Id: $
  */
 public class MolecularDynamics implements Runnable, Terminatable {
 
@@ -78,6 +78,15 @@ public class MolecularDynamics implements Runnable, Terminatable {
     private boolean initVelocities = true;
     private boolean loadRestart = false;
 
+    /**
+     * <p>Constructor for MolecularDynamics.</p>
+     *
+     * @param assembly a {@link ffx.potential.bonded.MolecularAssembly} object.
+     * @param potentialEnergy a {@link ffx.numerics.Potential} object.
+     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
+     * @param requestedThermostat a {@link ffx.algorithms.Thermostat.Thermostats} object.
+     */
     public MolecularDynamics(MolecularAssembly assembly,
                              Potential potentialEnergy,
                              CompositeConfiguration properties,
@@ -124,22 +133,53 @@ public class MolecularDynamics implements Runnable, Terminatable {
         done = true;
     }
 
+    /**
+     * <p>Setter for the field <code>thermostat</code>.</p>
+     *
+     * @param thermostat a {@link ffx.algorithms.Thermostat} object.
+     */
     public void setThermostat(Thermostat thermostat) {
         this.thermostat = thermostat;
     }
 
+    /**
+     * <p>Getter for the field <code>thermostat</code>.</p>
+     *
+     * @return a {@link ffx.algorithms.Thermostat} object.
+     */
     public Thermostat getThermostat() {
         return thermostat;
     }
 
+    /**
+     * <p>Setter for the field <code>archiveFile</code>.</p>
+     *
+     * @param archive a {@link java.io.File} object.
+     */
     public void setArchiveFile(File archive) {
         this.archiveFile = archive;
     }
 
+    /**
+     * <p>Getter for the field <code>archiveFile</code>.</p>
+     *
+     * @return a {@link java.io.File} object.
+     */
     public File getArchiveFile() {
         return archiveFile;
     }
 
+    /**
+     * <p>init</p>
+     *
+     * @param nSteps a int.
+     * @param timeStep a double.
+     * @param printInterval a double.
+     * @param saveInterval a double.
+     * @param temperature a double.
+     * @param initVelocities a boolean.
+     * @param dyn a {@link java.io.File} object.
+     */
     public void init(final int nSteps, final double timeStep, final double printInterval,
                      final double saveInterval, final double temperature, final boolean initVelocities,
                      final File dyn) {
@@ -214,12 +254,13 @@ public class MolecularDynamics implements Runnable, Terminatable {
     /**
      * Blocking molecular dynamics. When this method returns, the MD run is done.
      *
-     * @param nSteps
-     * @param timeStep
-     * @param printInterval
-     * @param saveInterval
-     * @param temperature
-     * @param initVelocities
+     * @param nSteps a int.
+     * @param timeStep a double.
+     * @param printInterval a double.
+     * @param saveInterval a double.
+     * @param temperature a double.
+     * @param initVelocities a boolean.
+     * @param dyn a {@link java.io.File} object.
      */
     public void dynamic(final int nSteps, final double timeStep, final double printInterval,
                         final double saveInterval, final double temperature, final boolean initVelocities,
@@ -268,6 +309,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void run() {
         done = false;
@@ -393,6 +435,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
         terminate = false;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void terminate() {
         terminate = true;

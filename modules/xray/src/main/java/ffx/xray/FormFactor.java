@@ -24,8 +24,10 @@ package ffx.xray;
 import ffx.xray.RefinementMinimize.RefinementMode;
 
 /**
+ * <p>FormFactor interface.</p>
  *
  * @author Tim Fenn
+ * @version $Id: $
  */
 public interface FormFactor {
     /**
@@ -50,11 +52,16 @@ public interface FormFactor {
 
     /**
      * update the coordinates to the current position
+     *
+     * @param xyz an array of double.
      */
     void update(double xyz[]);
 
     /**
      * update the coordinates to the current position and Badd
+     *
+     * @param xyz an array of double.
+     * @param badd a double.
      */
     void update(double xyz[], double badd);
 }

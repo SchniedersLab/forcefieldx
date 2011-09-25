@@ -36,6 +36,7 @@ import ffx.potential.parameters.AngleType;
  *
  * @author Michael J. Schnieders
  * @since 1.0
+ * @version $Id: $
  */
 public class Angle extends BondedTerm implements Comparable<Angle> {
 
@@ -89,6 +90,12 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
         setID_Key(false);
     }
 
+    /**
+     * <p>Setter for the field <code>angleMode</code>.</p>
+     *
+     * @param mode a {@link ffx.potential.bonded.Angle.AngleMode} object.
+     * @param a4 a {@link ffx.potential.bonded.Atom} object.
+     */
     public void setAngleMode(AngleMode mode, Atom a4) {
         angleMode = mode;
         atom4 = a4;
@@ -97,7 +104,7 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
     /**
      * Set a reference to the force field parameters for <b>this</b> Angle.
      *
-     * @param a
+     * @param a a {@link ffx.potential.parameters.AngleType} object.
      */
     public void setAngleType(AngleType a) {
         angleType = a;
@@ -121,12 +128,18 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
         }
     }
 
+    /**
+     * <p>Setter for the field <code>rigidScale</code>.</p>
+     *
+     * @param rigidScale a double.
+     */
     public void setRigidScale(double rigidScale) {
         this.rigidScale = rigidScale;
     }
 
     /**
      * Get the AngleType for this angle.
+     *
      * @return This angle's AngleType.
      */
     public AngleType getAngleType() {
@@ -217,6 +230,8 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Update recomputes <b>this</b> Angle's value and energy.
      */
     @Override
@@ -366,6 +381,8 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Overidden toString Method returns the Term's id.
      */
     @Override
@@ -373,6 +390,7 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
         return String.format("%s  (%7.1f,%7.2f)", id, value, energy);
     }
 
+    /** {@inheritDoc} */
     @Override
     public int compareTo(Angle a) {
         if (a == null) {
@@ -429,9 +447,13 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
      * Vector v10 cross v30.
      */
     protected static final double p[] = new double[3];
+    /** Constant <code>ip=new double[3]</code> */
     protected static final double ip[] = new double[3];
+    /** Constant <code>jp=new double[3]</code> */
     protected static final double jp[] = new double[3];
+    /** Constant <code>kp=new double[3]</code> */
     protected static final double kp[] = new double[3];
+    /** Constant <code>lp=new double[3]</code> */
     protected static final double lp[] = new double[3];
     /**
      * Gradient on atom 0.
@@ -445,6 +467,7 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
      * Gradient on Atom 2.
      */
     protected static final double g2[] = new double[3];
+    /** Constant <code>g3=new double[3]</code> */
     protected static final double g3[] = new double[3];
     private static final double ded0[] = new double[3];
     private static final double ded2[] = new double[3];

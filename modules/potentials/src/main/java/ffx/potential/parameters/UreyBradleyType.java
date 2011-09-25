@@ -27,8 +27,8 @@ import java.util.Comparator;
  * The UreyBradleyType class defines one harmonic UreyBradley cross term.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
+ * @version $Id: $
  */
 public final class UreyBradleyType extends BaseType implements Comparator<String> {
 
@@ -63,6 +63,11 @@ public final class UreyBradleyType extends BaseType implements Comparator<String
         this.distance = distance;
     }
 
+    /**
+     * <p>incrementClasses</p>
+     *
+     * @param increment a int.
+     */
     public void incrementClasses(int increment) {
         for (int i = 0; i < atomClasses.length; i++) {
             atomClasses[i] += increment;
@@ -91,9 +96,9 @@ public final class UreyBradleyType extends BaseType implements Comparator<String
     }
 
     /**
-     * Nicely formatted Urey-Bradley string.
+     * {@inheritDoc}
      *
-     * @return String
+     * Nicely formatted Urey-Bradley string.
      */
     @Override
     public String toString() {
@@ -114,6 +119,7 @@ public final class UreyBradleyType extends BaseType implements Comparator<String
      */
     public static final double quartic = 0.0;
 
+    /** {@inheritDoc} */
     @Override
     public int compare(String key1, String key2) {
         String keys1[] = key1.split(" ");
@@ -140,6 +146,7 @@ public final class UreyBradleyType extends BaseType implements Comparator<String
         return 0;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean equals(Object other) {
         if (other == this) {
@@ -156,6 +163,7 @@ public final class UreyBradleyType extends BaseType implements Comparator<String
         return false;
     }
 
+    /** {@inheritDoc} */
     @Override
     public int hashCode() {
         int hash = 3;

@@ -35,6 +35,7 @@ import ffx.potential.parameters.StretchBendType;
  *
  * @author Michael J. Schnieders
  * @since 1.0
+ * @version $Id: $
  */
 public class StretchBend extends BondedTerm implements Comparable<StretchBend> {
 
@@ -54,6 +55,11 @@ public class StretchBend extends BondedTerm implements Comparable<StretchBend> {
     final private double bond0Eq;
     final private double bond1Eq;
 
+    /**
+     * <p>Setter for the field <code>stretchBendType</code>.</p>
+     *
+     * @param stretchBendType a {@link ffx.potential.parameters.StretchBendType} object.
+     */
     public void setStretchBendType(StretchBendType stretchBendType) {
         this.stretchBendType = stretchBendType;
         /**
@@ -69,6 +75,11 @@ public class StretchBend extends BondedTerm implements Comparable<StretchBend> {
         }
     }
 
+    /**
+     * <p>Setter for the field <code>rigidScale</code>.</p>
+     *
+     * @param rigidScale a double.
+     */
     public void setRigidScale(double rigidScale) {
         this.rigidScale = rigidScale;
     }
@@ -91,16 +102,23 @@ public class StretchBend extends BondedTerm implements Comparable<StretchBend> {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Update recomputes the StrechBend's value and energy.
      */
     @Override
     public void update() {
         energy(false);
     }
+    /** Constant <code>v10=new double[3]</code> */
     protected static final double v10[] = new double[3];
+    /** Constant <code>v12=new double[3]</code> */
     protected static final double v12[] = new double[3];
+    /** Constant <code>p=new double[3]</code> */
     protected static final double p[] = new double[3];
+    /** Constant <code>dta=new double[3]</code> */
     protected static final double dta[] = new double[3];
+    /** Constant <code>dtc=new double[3]</code> */
     protected static final double dtc[] = new double[3];
     /**
      * Gradient on atom 0.
@@ -170,6 +188,9 @@ public class StretchBend extends BondedTerm implements Comparable<StretchBend> {
         return energy;
     }
 
+    /**
+     * <p>log</p>
+     */
     public void log() {
         logger.info(String.format(" %s %6d-%s %6d-%s %6d-%s"
                                   + "%7.4f %10.4f",
@@ -180,6 +201,8 @@ public class StretchBend extends BondedTerm implements Comparable<StretchBend> {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Overidden toString Method returns the Term's id.
      */
     @Override
@@ -188,6 +211,7 @@ public class StretchBend extends BondedTerm implements Comparable<StretchBend> {
                              bonds[0].value, bonds[1].value, angle.value, energy);
     }
 
+    /** {@inheritDoc} */
     @Override
     public int compareTo(StretchBend sb) {
         return angle.compareTo(sb.angle);

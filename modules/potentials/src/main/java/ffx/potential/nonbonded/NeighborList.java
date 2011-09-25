@@ -72,8 +72,8 @@ import ffx.potential.bonded.Atom;
  * </ol>
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
+ * @version $Id: $
  */
 public class NeighborList extends ParallelRegion {
 
@@ -245,7 +245,6 @@ public class NeighborList extends ParallelRegion {
      * @param cutoff The cutoff distance.
      * @param buffer The buffer distance.
      * @param parallelTeam Specifies the parallel environment.
-     *
      * @since 1.0
      */
     public NeighborList(MaskingInterface maskingRules, Crystal crystal,
@@ -330,8 +329,9 @@ public class NeighborList extends ParallelRegion {
      * @param lists The neighbor lists [nSymm][nAtoms][nPairs].
      * @param forceRebuild If true, the list is rebuilt even if no atom has moved
      *      half the buffer size.
-     *
      * @since 1.0
+     * @param use an array of boolean.
+     * @param log a boolean.
      */
     public void buildList(final double coordinates[][], final int lists[][][],
             boolean use[], boolean forceRebuild, boolean log) {
@@ -370,6 +370,11 @@ public class NeighborList extends ParallelRegion {
         }
     }
 
+    /**
+     * <p>Getter for the field <code>pairwiseSchedule</code>.</p>
+     *
+     * @return a {@link ffx.potential.nonbonded.PairwiseSchedule} object.
+     */
     public PairwiseSchedule getPairwiseSchedule() {
         return pairwiseSchedule;
     }
@@ -499,8 +504,9 @@ public class NeighborList extends ParallelRegion {
     }
 
     /**
-     * This is method should not be called; it is invoked by Parallel Java.
+     * {@inheritDoc}
      *
+     * This is method should not be called; it is invoked by Parallel Java.
      * @since 0.l
      */
     @Override
@@ -510,8 +516,9 @@ public class NeighborList extends ParallelRegion {
     }
 
     /**
-     * This is method should not be called; it is invoked by Parallel Java.
+     * {@inheritDoc}
      *
+     * This is method should not be called; it is invoked by Parallel Java.
      * @since 1.0
      */
     @Override
@@ -525,6 +532,8 @@ public class NeighborList extends ParallelRegion {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * This is method should not be called; it is invoked by Parallel Java.
      *
      * since 0.1

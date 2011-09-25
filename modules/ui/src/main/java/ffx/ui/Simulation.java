@@ -1,3 +1,4 @@
+
 /**
  * Title: Force Field X
  * Description: Force Field X - Software for Molecular Biophysics.
@@ -17,6 +18,9 @@
  * You should have received a copy of the GNU General Public License
  * along with Force Field X; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ *
+ * @author schnied
+ * @version $Id: $
  */
 package ffx.ui;
 
@@ -29,23 +33,22 @@ import java.util.logging.Logger;
 import ffx.numerics.VectorMath;
 import ffx.potential.bonded.Atom;
 import ffx.potential.parameters.MultipoleType;
-
 public final class Simulation {
 	private static final double rotmat[][] = new double[3][3];
 	private static final double oldQuad[][] = new double[3][3];
 
 	/**
 	 * Rotate atomic multipoles into the global frame.
-	 * 
-	 * @param numberOfMultipoles
-	 * @param x
-	 * @param multipoleReference
-	 * @param multipoleIndex
-	 * @param frameDefinition
-	 * @param localDipole
-	 * @param localQuadrupole
-	 * @param dipole
-	 * @param quadrupole
+	 *
+	 * @param numberOfMultipoles a int.
+	 * @param x an array of double.
+	 * @param multipoleReference an array of int.
+	 * @param multipoleIndex an array of int.
+	 * @param frameDefinition an array of {@link ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition} objects.
+	 * @param localDipole an array of double.
+	 * @param localQuadrupole an array of double.
+	 * @param dipole an array of double.
+	 * @param quadrupole an array of double.
 	 */
 	public static void rotateMultipoles(int numberOfMultipoles, double x[][],
 			int multipoleReference[][], int multipoleIndex[],
@@ -158,6 +161,11 @@ public final class Simulation {
 	// Logging
 	private final Logger logger = Logger.getLogger("ffx");
 
+	/**
+	 * <p>Constructor for Simulation.</p>
+	 *
+	 * @param atoms a {@link java.util.List} object.
+	 */
 	public Simulation(List<Atom> atoms) {
 		numberOfAtoms = atoms.size();
 		x = new double[numberOfAtoms][3];

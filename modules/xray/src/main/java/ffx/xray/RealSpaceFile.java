@@ -28,8 +28,10 @@ import java.io.File;
 import java.util.logging.Logger;
 
 /**
+ * <p>RealSpaceFile class.</p>
  *
  * @author Tim Fenn
+ * @version $Id: $
  */
 public class RealSpaceFile {
 

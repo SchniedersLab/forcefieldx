@@ -57,6 +57,7 @@ import ffx.potential.parameters.ForceField.ForceFieldString;
  *
  * @author Michael J. Schnieders
  * @since 1.0
+ * @version $Id: $
  */
 public class ForceFieldEnergy implements Potential, LambdaInterface {
 
@@ -125,6 +126,11 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     protected double[] optimizationScaling = null;
     private static final double toSeconds = 0.000000001;
 
+    /**
+     * <p>Constructor for ForceFieldEnergy.</p>
+     *
+     * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly} object.
+     */
     public ForceFieldEnergy(MolecularAssembly molecularAssembly) {
         parallelTeam = new ParallelTeam();
         logger.info(format(" Constructing Force Field"));
@@ -388,6 +394,13 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         molecularAssembly.setPotential(this);
     }
 
+    /**
+     * <p>energy</p>
+     *
+     * @param gradient a boolean.
+     * @param print a boolean.
+     * @return a double.
+     */
     public double energy(boolean gradient, boolean print) {
         bondTime = 0;
         angleTime = 0;
@@ -557,11 +570,17 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         return totalEnergy;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double getTotal() {
         return totalEnergy;
     }
 
+    /**
+     * <p>getPDBHeaderString</p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
     public String getPDBHeaderString() {
         energy(false, false);
         StringBuilder sb = new StringBuilder();
@@ -635,6 +654,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         return sb.toString();
     }
 
+    /** {@inheritDoc} */
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("\n");
@@ -724,10 +744,16 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         return sb.toString();
     }
 
+    /**
+     * <p>Getter for the field <code>crystal</code>.</p>
+     *
+     * @return a {@link ffx.crystal.Crystal} object.
+     */
     public Crystal getCrystal() {
         return crystal;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setLambda(double lambda) {
         if (lambda <= 1.0 && lambda >= 0.0) {
@@ -744,6 +770,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setScaling(double scaling[]) {
         if (scaling != null) {
@@ -753,11 +780,13 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public double[] getScaling() {
         return optimizationScaling;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double energyAndGradient(double x[], double g[]) {
         /**
@@ -785,6 +814,11 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         return e;
     }
 
+    /**
+     * <p>getGradients</p>
+     *
+     * @param g an array of double.
+     */
     public void getGradients(double g[]) {
         assert (g != null);
         double grad[] = new double[3];
@@ -818,6 +852,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public double[] getCoordinates(double x[]) {
         int n = getNumberOfVariables();
@@ -835,6 +870,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         return x;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double[] getMass() {
         int n = getNumberOfVariables();
@@ -849,11 +885,13 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         return mass;
     }
 
+    /** {@inheritDoc} */
     @Override
     public int getNumberOfVariables() {
         return nAtoms * 3;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double getdEdL() {
         double dEdLambda = 0.0;
@@ -866,6 +904,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         return dEdLambda;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void getdEdXdL(double gradients[]) {
         if (vanderWaalsTerm) {
@@ -876,11 +915,13 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public double getLambda() {
         return lambda;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double getd2EdL2() {
         double d2EdLambda2 = 0.0;
@@ -893,6 +934,13 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         return d2EdLambda2;
     }
 
+    /**
+     * <p>setRestraintBond</p>
+     *
+     * @param a1 a {@link ffx.potential.bonded.Atom} object.
+     * @param a2 a {@link ffx.potential.bonded.Atom} object.
+     * @param distance a double.
+     */
     public void setRestraintBond(Atom a1, Atom a2, double distance) {
         double forceConstant = 1.0;
         restraintBondTerm = true;

@@ -30,8 +30,8 @@ import org.apache.commons.io.FilenameUtils;
  * The PDBFileFilter class is used to choose a Protein Databank (*.PDB) file.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
+ * @version $Id: $
  */
 public final class PDBFileFilter extends FileFilter {
 
@@ -42,6 +42,8 @@ public final class PDBFileFilter extends FileFilter {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * This method return <code>true</code> if the file is a directory or
      * Protein Databank File (*.PDB).
      */
@@ -55,6 +57,8 @@ public final class PDBFileFilter extends FileFilter {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Provides a description of the PDBFileFilter.
      */
     @Override

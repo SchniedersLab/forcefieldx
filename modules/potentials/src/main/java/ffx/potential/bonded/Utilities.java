@@ -31,6 +31,9 @@ import java.util.logging.Logger;
 /**
  * The Utilities class provides methods to locate functional units of an organic
  * system.
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public final class Utilities {
 
@@ -115,6 +118,11 @@ public final class Utilities {
         sidechainStoichiometry.put("O2N5C7", "3"); // DNA Gaunine / RNA Adenine
     }
 
+    /**
+     * <p>addAtomListToPool</p>
+     *
+     * @param a a {@link java.util.List} object.
+     */
     public static void addAtomListToPool(List<Atom> a) {
         a.clear();
         atomListPool.add(a);
@@ -307,8 +315,8 @@ public final class Utilities {
      * This routine sub-divides a system into groups of ions, water, hetero
      * molecules, and polynucleotides/polypeptides.
      *
-     * @param m
-     * @param atoms
+     * @param m a {@link ffx.potential.bonded.MolecularAssembly} object.
+     * @param atoms a {@link java.util.List} object.
      */
     public static void biochemistry(MolecularAssembly m, List<Atom> atoms) {
         Atom atom, seed = null;
@@ -469,6 +477,12 @@ public final class Utilities {
         }
     }
 
+    /**
+     * <p>countCO</p>
+     *
+     * @param adjacent a {@link ffx.potential.bonded.Atom} object.
+     * @return a int.
+     */
     public static int countCO(Atom adjacent) {
         int total = 0;
         for (Bond b : adjacent.getBonds()) {
@@ -485,6 +499,13 @@ public final class Utilities {
         return total;
     }
 
+    /**
+     * <p>divideBackbone</p>
+     *
+     * @param backbone a {@link java.util.List} object.
+     * @param c a {@link ffx.potential.bonded.Polymer} object.
+     * @return a boolean.
+     */
     public static boolean divideBackbone(List<Atom> backbone, Polymer c) {
         int length = backbone.size();
         // Try to find a Phosphorus or Nitrogen in the backbone
@@ -758,6 +779,8 @@ public final class Utilities {
      *            Atom
      * @param atomicNumber
      *            int
+     * @param atomicNumber
+     *            int
      * @return Atom
      */
     public static Atom findBondWith(Atom a, int atomicNumber) {
@@ -831,7 +854,7 @@ public final class Utilities {
     /**
      * Returns the first nitrogen atom found that is bonded to the
      * adjacent atom.
-     * 
+     *
      * @param adjacent Atom
      * @return Atom a nitrogen atom.
      */
@@ -885,6 +908,8 @@ public final class Utilities {
     }
 
     /**
+     * <p>findPolymer</p>
+     *
      * @param atoms
      *            List
      * @param currentAtom
@@ -1022,6 +1047,8 @@ public final class Utilities {
      *            Atom
      * @param atomicNumber
      *            int
+     * @param atomicNumber
+     *            int
      * @return boolean
      */
     public static boolean formsBondsWith(Atom a, int atomicNumber) {
@@ -1034,6 +1061,11 @@ public final class Utilities {
         return false;
     }
 
+    /**
+     * <p>getAtomListFromPool</p>
+     *
+     * @return a {@link java.util.List} object.
+     */
     public static List<Atom> getAtomListFromPool() {
         if (atomListPool.isEmpty()) {
             return new ArrayList<Atom>();
@@ -1088,6 +1120,8 @@ public final class Utilities {
      *
      * @param a
      *            Atom
+     * @param atomicNumber
+     *            int
      * @param atomicNumber
      *            int
      * @return int
@@ -1185,6 +1219,7 @@ public final class Utilities {
 
     /**
      * Determine chainID for a given polymer number.
+     *
      * @param i int
      * @return Character
      */
@@ -1228,6 +1263,10 @@ public final class Utilities {
     /**
      * Finds the RMS deviation between the atoms of MolecularAssembly m1 and m2
      * provided they have the same number of atoms.
+     *
+     * @param m1 a {@link ffx.potential.bonded.MolecularAssembly} object.
+     * @param m2 a {@link ffx.potential.bonded.MolecularAssembly} object.
+     * @return a double.
      */
     public static double RMSCoordDev(MolecularAssembly m1, MolecularAssembly m2) {
         if (m1 == null || m2 == null) {

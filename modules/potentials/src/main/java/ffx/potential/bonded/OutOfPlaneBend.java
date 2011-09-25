@@ -34,6 +34,7 @@ import ffx.potential.parameters.OutOfPlaneBendType;
  *
  * @author Michael J. Schnieders
  * @since 1.0
+ * @version $Id: $
  */
 public class OutOfPlaneBend extends BondedTerm implements
         Comparable<OutOfPlaneBend> {
@@ -70,13 +71,15 @@ public class OutOfPlaneBend extends BondedTerm implements
     /**
      * Set a reference to the force field parameters for <b>this</b> Angle.
      *
-     * @param a
+     * @param a a {@link ffx.potential.parameters.OutOfPlaneBendType} object.
      */
     public void setAngleType(OutOfPlaneBendType a) {
         outOfPlaneBendType = a;
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Update recomputes OutOfPlaneBend value and energy.
      */
     @Override
@@ -177,6 +180,8 @@ public class OutOfPlaneBend extends BondedTerm implements
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Overridden toString Method returns the Term's id.
      */
     @Override
@@ -184,6 +189,7 @@ public class OutOfPlaneBend extends BondedTerm implements
         return String.format("%s  (%7.1f,%7.2f)", id, value, energy);
     }
 
+    /** {@inheritDoc} */
     @Override
     public int compareTo(OutOfPlaneBend o) {
         if (o == null) {

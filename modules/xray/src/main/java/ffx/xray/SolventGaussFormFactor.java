@@ -25,8 +25,10 @@ import ffx.potential.bonded.Atom;
 import ffx.xray.RefinementMinimize.RefinementMode;
 
 /**
+ * <p>SolventGaussFormFactor class.</p>
  *
  * @author fenn
+ * @version $Id: $
  */
 public final class SolventGaussFormFactor implements FormFactor {
 
@@ -36,10 +38,23 @@ public final class SolventGaussFormFactor implements FormFactor {
     private double g[] = new double[3];
     private double sd;
 
+    /**
+     * <p>Constructor for SolventGaussFormFactor.</p>
+     *
+     * @param atom a {@link ffx.potential.bonded.Atom} object.
+     * @param sd a double.
+     */
     public SolventGaussFormFactor(Atom atom, double sd) {
         this(atom, sd, atom.getXYZ());
     }
 
+    /**
+     * <p>Constructor for SolventGaussFormFactor.</p>
+     *
+     * @param atom a {@link ffx.potential.bonded.Atom} object.
+     * @param sd a double.
+     * @param xyz an array of double.
+     */
     public SolventGaussFormFactor(Atom atom, double sd, double xyz[]) {
         this.atom = atom;
         this.sd = sd;
@@ -47,17 +62,27 @@ public final class SolventGaussFormFactor implements FormFactor {
         update(xyz);
     }
 
+    /** {@inheritDoc} */
     @Override
     public double rho(double f, double lambda, double xyz[]) {
         VectorMath.diff(this.xyz, xyz, dxyz);
         return rho(f, lambda, VectorMath.rsq(dxyz));
     }
 
+    /**
+     * <p>rho</p>
+     *
+     * @param f a double.
+     * @param lambda a double.
+     * @param rsq a double.
+     * @return a double.
+     */
     public double rho(double f, double lambda, double rsq) {
         double sd2 = sd * sd;
         return f + Math.exp(-rsq / sd2);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void rho_grad(double[] xyz, double dfc, RefinementMode refinementmode) {
         if (refinementmode == RefinementMode.BFACTORS
@@ -78,11 +103,13 @@ public final class SolventGaussFormFactor implements FormFactor {
         atom.addToXYZGradient(g[0], g[1], g[2]);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void update(double xyz[]) {
         update(xyz, 0.0);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void update(double xyz[], double badd) {
         this.xyz[0] = xyz[0];

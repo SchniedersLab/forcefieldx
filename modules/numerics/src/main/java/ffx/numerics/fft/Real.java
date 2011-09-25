@@ -32,6 +32,7 @@ import static java.lang.Math.cos;
  * Burrus. Real-valued fast fourier fft algorithms. IEEE Transactions on
  * Acoustics, Speech, and Signal Processing, ASSP-35(6):849–863, 1987."
  * <p>
+ *
  * @author Michal J. Schnieders<br>
  *         Derived from:<br>
  *         Bruce R. Miller bruce.miller@nist.gov<br>
@@ -44,6 +45,7 @@ import static java.lang.Math.cos;
  *      (1965)</a><br>
  *      <a href="http://en.wikipedia.org/wiki/Fast_Fourier_transform"
  *      target="_blank">FFT at Wikipedia</a><br>
+ * @version $Id: $
  */
 public class Real {
 
@@ -58,7 +60,8 @@ public class Real {
 
     /**
      * Constructs a Complex FFT of length (n / 2) for real data of length n.
-     * @param n
+     *
+     * @param n a int.
      */
     public Real(int n) {
         //assert (n % 2 == 0);
@@ -71,11 +74,23 @@ public class Real {
         work = new double[n+2];
     }
 
+    /**
+     * <p>fft</p>
+     *
+     * @param data an array of double.
+     * @param offset a int.
+     */
     public void fft(double data[], int offset) {
         complexFFT.fft(data, offset, 2);
         unpack(data, offset);
     }
 
+    /**
+     * <p>ifft</p>
+     *
+     * @param data an array of double.
+     * @param offset a int.
+     */
     public void ifft(double data[], int offset) {
         pack(data, offset);
         complexFFT.ifft(data, offset, 2);
@@ -89,11 +104,19 @@ public class Real {
     /**
      * Return the normalization factor. Multiply the elements of the
      * back-transformed data to get the normalized inverse.
+     *
+     * @return a double.
      */
     public double normalization() {
         return 1.0 / n;
     }
 
+    /**
+     * <p>inverse</p>
+     *
+     * @param data an array of double.
+     * @param offset a int.
+     */
     public void inverse(double data[], int offset) {
         ifft(data, offset);
         /**

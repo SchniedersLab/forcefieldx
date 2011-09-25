@@ -22,10 +22,14 @@ package ffx.potential.bonded;
 
 /**
  * The MSRoot class is the root of the Force Field X data structure.
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public class MSRoot extends MSNode {
 
     private static final long serialVersionUID = 1L;
+    /** Constant <code>MultiScaleLevel=ROLS.MaxLengthScale</code> */
     public static final int MultiScaleLevel = ROLS.MaxLengthScale;
 
     /**
@@ -35,11 +39,13 @@ public class MSRoot extends MSNode {
         super("Structural Heirarchy");
     }
 
+    /** {@inheritDoc} */
     @Override
     public String toString() {
         return "Structural Heirarchy";
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean equals(Object object) {
         if (this == object) {
@@ -50,6 +56,7 @@ public class MSRoot extends MSNode {
         return false;
     }
 
+    /** {@inheritDoc} */
     @Override
     public int hashCode() {
         int hash = 7;

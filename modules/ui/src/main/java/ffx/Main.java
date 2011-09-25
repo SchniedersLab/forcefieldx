@@ -53,9 +53,10 @@ import ffx.ui.macosx.OSXAdapter;
 /**
  * The Main class is the entry point to the graphical user interface version of
  * Force Field X.
- * 
+ *
  * @author Michael J. Schnieders
  * @since 1.0
+ * @version $Id: $
  */
 public class Main extends JFrame {
 
@@ -97,6 +98,9 @@ public class Main extends JFrame {
 
     /**
      * Create an instance of Force Field X
+     *
+     * @param args an array of {@link java.lang.String} objects.
+     * @throws java.lang.Exception if any.
      */
     public static void main(String[] args) throws Exception {
 
@@ -207,6 +211,9 @@ public class Main extends JFrame {
 
     /**
      * Main does some window initializations.
+     *
+     * @param commandLineFile a {@link java.io.File} object.
+     * @param argList a {@link java.util.List} object.
      */
     public Main(File commandLineFile, List<String> argList) {
         super("Force Field X");
@@ -294,6 +301,8 @@ public class Main extends JFrame {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Commons.Lang Style toString.
      */
     @Override
@@ -306,5 +315,6 @@ public class Main extends JFrame {
      * This is the main application wrapper.
      */
     public MainPanel mainPanel;
+    /** Constant <code>stopWatch</code> */
     public static StopWatch stopWatch = new StopWatch();
 }

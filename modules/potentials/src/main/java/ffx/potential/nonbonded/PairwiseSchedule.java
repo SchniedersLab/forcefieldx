@@ -29,8 +29,8 @@ import edu.rit.util.Range;
  * A fixed schedule that balances pairwise work across threads.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
+ * @version $Id: $
  */
 public class PairwiseSchedule extends IntegerSchedule {
 
@@ -40,6 +40,13 @@ public class PairwiseSchedule extends IntegerSchedule {
     private final Range ranges[];
     private final boolean threadDone[];
 
+    /**
+     * <p>Constructor for PairwiseSchedule.</p>
+     *
+     * @param nThreads a int.
+     * @param nAtoms a int.
+     * @param ranges an array of {@link edu.rit.util.Range} objects.
+     */
     public PairwiseSchedule(int nThreads, int nAtoms, Range ranges[]) {
         this.nAtoms = nAtoms;
         this.nThreads = nThreads;
@@ -48,14 +55,16 @@ public class PairwiseSchedule extends IntegerSchedule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * This is a fixed schedule.
-     * @return true
      */
     @Override
     public boolean isFixedSchedule() {
         return true;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void start(int nThreads, Range chunkRange) {
         assert (nThreads == this.nThreads);
@@ -67,6 +76,7 @@ public class PairwiseSchedule extends IntegerSchedule {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public Range next(int threadID) {
         if (!threadDone[threadID]) {
@@ -76,6 +86,12 @@ public class PairwiseSchedule extends IntegerSchedule {
         return null;
     }
 
+    /**
+     * <p>updateRanges</p>
+     *
+     * @param totalInteractions a int.
+     * @param listCount an array of int.
+     */
     public void updateRanges(int totalInteractions, int listCount[]) {
         int id = 0;
         int goal = totalInteractions / nThreads;

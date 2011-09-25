@@ -49,8 +49,10 @@ import ffx.xray.CrystalReciprocalSpace.SolventModel;
 import ffx.xray.RefinementMinimize.RefinementMode;
 
 /**
+ * <p>DiffractionData class.</p>
  *
  * @author Tim Fenn
+ * @version $Id: $
  */
 public class DiffractionData implements DataContainer {
 
@@ -373,7 +375,6 @@ public class DiffractionData implements DataContainer {
      * of the {@link Atom} object coordinates as it uses a linearized array
      *
      * @param x array of coordinates to move atoms to
-     *
      * @see CrystalReciprocalSpace#setCoordinates(double[])
      */
     public void setFFTCoordinates(double x[]) {
@@ -389,7 +390,6 @@ public class DiffractionData implements DataContainer {
      *
      * @param refinementMode the
      * {@link RefinementMinimize.RefinementMode refinement mode} requested
-     *
      * @see CrystalReciprocalSpace#computeAtomicGradients(double[][], int[], int, ffx.xray.RefinementMinimize.RefinementMode, boolean) computeAtomicGradients
      */
     public void computeAtomicGradients(RefinementMode refinementMode) {
@@ -420,7 +420,6 @@ public class DiffractionData implements DataContainer {
      * compute total crystallographic likelihood target
      *
      * @return the total -log likelihood
-     *
      * @see SigmaAMinimize#calculateLikelihood()
      */
     public double computeLikelihood() {
@@ -432,45 +431,52 @@ public class DiffractionData implements DataContainer {
     }
 
     /**
-     * return the atomarray for the model associated with this data
+     * {@inheritDoc}
      *
-     * @return an {@link ffx.potential.bonded.Atom} array
+     * return the atomarray for the model associated with this data
      */
     @Override
     public Atom[] getAtomArray() {
         return refinementmodel.atomarray;
     }
 
+    /** {@inheritDoc} */
     @Override
     public ArrayList<ArrayList<Residue>> getAltResidues() {
         return refinementmodel.altresidues;
     }
 
+    /** {@inheritDoc} */
     @Override
     public ArrayList<ArrayList<Molecule>> getAltMolecules() {
         return refinementmodel.altmolecules;
     }
 
+    /** {@inheritDoc} */
     @Override
     public MolecularAssembly[] getMolecularAssembly() {
         return assembly;
     }
 
+    /** {@inheritDoc} */
     @Override
     public RefinementModel getRefinementModel() {
         return refinementmodel;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double getWeight() {
         return xweight;
     }
 
+    /** {@inheritDoc} */
     @Override
     public String printOptimizationHeader() {
         return "R  Rfree";
     }
 
+    /** {@inheritDoc} */
     @Override
     public String printOptimizationUpdate() {
         StringBuilder sb = new StringBuilder();
@@ -483,6 +489,7 @@ public class DiffractionData implements DataContainer {
         return sb.toString();
     }
 
+    /** {@inheritDoc} */
     @Override
     public String printEnergyUpdate() {
         StringBuilder sb = new StringBuilder();
@@ -560,6 +567,8 @@ public class DiffractionData implements DataContainer {
 
     /**
      * scale model and fit bulk solvent to dataset i of n
+     *
+     * @param i a int.
      */
     public void scaleBulkFit(int i) {
         StringBuilder sb = new StringBuilder();
@@ -609,8 +618,8 @@ public class DiffractionData implements DataContainer {
 
     /**
      * Set the current value of the state variable.
-     * 
-     * @param lambda
+     *
+     * @param lambda a double.
      */
     protected void setLambda(double lambda) {
         for (int i = 0; i < n; i++) {
@@ -624,7 +633,6 @@ public class DiffractionData implements DataContainer {
      *
      * @param a typically the width of the atom
      * @param b typically the rate with which the atom transitions to bulk
-     *
      * @see CrystalReciprocalSpace#setSolventAB(double, double)
      */
     public void setSolventAB(double a, double b) {
@@ -658,9 +666,8 @@ public class DiffractionData implements DataContainer {
 
     /**
      * write current model to PDB file
-     * 
+     *
      * @param filename output PDB filename
-     * 
      * @see PDBFilter#writeFile()
      */
     public void writeModel(String filename) {
@@ -698,7 +705,6 @@ public class DiffractionData implements DataContainer {
      * write current datasets to MTZ files
      *
      * @param filename output filename, or filename root for multiple datasets
-     *
      * @see MTZWriter#write()
      */
     public void writeData(String filename) {
@@ -716,7 +722,6 @@ public class DiffractionData implements DataContainer {
      *
      * @param filename output filename
      * @param i dataset to write out
-     *
      * @see MTZWriter#write()
      */
     public void writeData(String filename, int i) {
@@ -731,7 +736,7 @@ public class DiffractionData implements DataContainer {
 
     /**
      * write 2Fo-Fc and Fo-Fc maps for all datasets
-     * 
+     *
      * @param filename output root filename for Fo-Fc and 2Fo-Fc maps
      */
     public void writeMaps(String filename) {
@@ -746,8 +751,9 @@ public class DiffractionData implements DataContainer {
 
     /**
      * write 2Fo-Fc and Fo-Fc maps for a datasets
-     * 
+     *
      * @param filename output root filename for Fo-Fc and 2Fo-Fc maps
+     * @param i a int.
      */
     public void writeMaps(String filename, int i) {
         if (!scaled[i]) {
@@ -830,7 +836,6 @@ public class DiffractionData implements DataContainer {
      *
      * @param filename output filename, or output root filename for multiple
      * datasets
-     *
      * @see CCP4MapWriter#write(double[], boolean)
      */
     public void writeSolventMask(String filename) {
@@ -848,7 +853,6 @@ public class DiffractionData implements DataContainer {
      *
      * @param filename output filename
      * @param i dataset to write out
-     *
      * @see CCP4MapWriter#write(double[], boolean)
      */
     public void writeSolventMask(String filename, int i) {

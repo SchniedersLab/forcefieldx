@@ -27,8 +27,8 @@ import java.util.Comparator;
  * The BondType class defines one harmonic bond stretch energy term.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
+ * @version $Id: $
  */
 public final class BondType extends BaseType implements Comparator<String> {
 
@@ -62,6 +62,11 @@ public final class BondType extends BaseType implements Comparator<String> {
         this.distance = distance;
     }
 
+    /**
+     * <p>incrementClasses</p>
+     *
+     * @param increment a int.
+     */
     public void incrementClasses(int increment) {
         for (int i = 0; i < atomClasses.length; i++) {
             atomClasses[i] += increment;
@@ -70,9 +75,9 @@ public final class BondType extends BaseType implements Comparator<String> {
     }
 
     /**
-     * Nicely formatted bond stretch string.
+     * {@inheritDoc}
      *
-     * @return String
+     * Nicely formatted bond stretch string.
      */
     @Override
     public String toString() {
@@ -114,6 +119,7 @@ public final class BondType extends BaseType implements Comparator<String> {
      */
     public static final double quartic = 3.793125;
 
+    /** {@inheritDoc} */
     @Override
     public int compare(String key1, String key2) {
         String keys1[] = key1.split(" ");
@@ -138,6 +144,7 @@ public final class BondType extends BaseType implements Comparator<String> {
         return 0;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean equals(Object other) {
         if (other == this) {
@@ -154,6 +161,7 @@ public final class BondType extends BaseType implements Comparator<String> {
         return false;
     }
 
+    /** {@inheritDoc} */
     @Override
     public int hashCode() {
         int hash = 7;

@@ -26,8 +26,8 @@ import java.util.Comparator;
  * The BioType class maps PDB identifiers to atom types.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
+ * @version $Id: $
  */
 public final class BioType extends BaseType implements Comparator<String> {
 
@@ -48,6 +48,7 @@ public final class BioType extends BaseType implements Comparator<String> {
      *            String
      * @param atomType
      *            int
+     * @param bonds an array of {@link java.lang.String} objects.
      */
     public BioType(int index, String atomName, String moleculeName, int atomType, String bonds[]) {
         super(ForceField.ForceFieldType.BIOTYPE, Integer.toString(index));
@@ -62,6 +63,12 @@ public final class BioType extends BaseType implements Comparator<String> {
         this.bonds = bonds;
     }
 
+    /**
+     * <p>incrementIndexAndType</p>
+     *
+     * @param indexIncrement a int.
+     * @param typeIncrement a int.
+     */
     public void incrementIndexAndType(int indexIncrement, int typeIncrement) {
         index += indexIncrement;
         atomType += typeIncrement;
@@ -69,9 +76,9 @@ public final class BioType extends BaseType implements Comparator<String> {
     }
 
     /**
-     * Nicely formatted biotype.
+     * {@inheritDoc}
      *
-     * @return String
+     * Nicely formatted biotype.
      */
     @Override
     public String toString() {
@@ -85,6 +92,7 @@ public final class BioType extends BaseType implements Comparator<String> {
         return sb.toString();
     }
 
+    /** {@inheritDoc} */
     @Override
     public int compare(String s1, String s2) {
 
@@ -101,6 +109,7 @@ public final class BioType extends BaseType implements Comparator<String> {
         return 0;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean equals(Object other) {
         if (other == this) {
@@ -117,6 +126,7 @@ public final class BioType extends BaseType implements Comparator<String> {
         return false;
     }
 
+    /** {@inheritDoc} */
     @Override
     public int hashCode() {
         int hash = 3;

@@ -55,6 +55,9 @@ import javax.swing.border.EtchedBorder;
 /**
  * The LogPanel is a *very* simple editor that displays log files created by
  * TINKER jobs. Any text file can be edited.
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public class LogPanel extends JPanel implements ActionListener {
 
@@ -82,7 +85,7 @@ public class LogPanel extends JPanel implements ActionListener {
     /**
      * Constructor
      *
-     * @param f
+     * @param f a {@link ffx.ui.MainPanel} object.
      */
     public LogPanel(MainPanel f) {
         mainPanel = f;
@@ -106,6 +109,7 @@ public class LogPanel extends JPanel implements ActionListener {
         refreshStatus();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void actionPerformed(ActionEvent evt) {
         if (evt.getSource() instanceof javax.swing.Timer) {
@@ -163,6 +167,9 @@ public class LogPanel extends JPanel implements ActionListener {
         loadText(logTextArea, logFile);
     }
 
+    /**
+     * <p>close</p>
+     */
     public void close() {
         int index = resultsTabbedPane.getSelectedIndex();
         if (index >= 0) {
@@ -185,6 +192,11 @@ public class LogPanel extends JPanel implements ActionListener {
         }
     }
 
+    /**
+     * <p>close</p>
+     *
+     * @param file a {@link java.lang.String} object.
+     */
     public void close(String file) {
         synchronized (this) {
             int index = -1;
@@ -217,6 +229,9 @@ public class LogPanel extends JPanel implements ActionListener {
         }
     }
 
+    /**
+     * <p>closeAll</p>
+     */
     public void closeAll() {
         synchronized (this) {
             resultsTabbedPane.removeAll();
@@ -225,6 +240,11 @@ public class LogPanel extends JPanel implements ActionListener {
         }
     }
 
+    /**
+     * <p>getProgressBar</p>
+     *
+     * @return a {@link javax.swing.JProgressBar} object.
+     */
     public JProgressBar getProgressBar() {
         return statusProgressBar;
     }
@@ -299,6 +319,9 @@ public class LogPanel extends JPanel implements ActionListener {
         // mainPanel.setPanel(MainPanel.LOGS);
     }
 
+    /**
+     * <p>refresh</p>
+     */
     public void refresh() {
         synchronized (tinkerThreads) {
             for (Thread t : tinkerThreads) {
@@ -321,6 +344,9 @@ public class LogPanel extends JPanel implements ActionListener {
         repaint();
     }
 
+    /**
+     * <p>refreshStatus</p>
+     */
     public void refreshStatus() {
         int count = tinkerThreads.size();
         if (count == 0) {
@@ -394,11 +420,19 @@ public class LogPanel extends JPanel implements ActionListener {
         }
     }
 
+    /**
+     * <p>selected</p>
+     */
     public void selected() {
         validate();
         repaint();
     }
 
+    /**
+     * <p>setDone</p>
+     *
+     * @param logFileName a {@link java.lang.String} object.
+     */
     public void setDone(String logFileName) {
         synchronized (this) {
             if (logFileName == null) {
@@ -427,6 +461,11 @@ public class LogPanel extends JPanel implements ActionListener {
         }
     }
 
+    /**
+     * <p>toString</p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
     public String toString() {
         return "Logging";
     }

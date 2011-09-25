@@ -25,11 +25,20 @@ import ffx.crystal.Crystal;
 import org.apache.commons.configuration.CompositeConfiguration;
 
 /**
+ * <p>RealSpaceFileFilter interface.</p>
  *
  * @author Tim Fenn
+ * @version $Id: $
  */
 public interface RealSpaceFileFilter {
 
+    /**
+     * <p>getCrystal</p>
+     *
+     * @param filename a {@link java.lang.String} object.
+     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * @return a {@link ffx.crystal.Crystal} object.
+     */
     Crystal getCrystal(String filename, CompositeConfiguration properties);
 
     /**

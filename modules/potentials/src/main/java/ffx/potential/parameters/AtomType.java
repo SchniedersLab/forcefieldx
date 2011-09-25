@@ -26,8 +26,8 @@ import java.util.Comparator;
  * The AtomType class represents one molecular mechanics atom type.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
+ * @version $Id: $
  */
 public final class AtomType extends BaseType implements Comparator<String> {
 
@@ -85,6 +85,12 @@ public final class AtomType extends BaseType implements Comparator<String> {
         this.valence = valence;
     }
 
+    /**
+     * <p>incrementClassAndType</p>
+     *
+     * @param classIncrement a int.
+     * @param typeIncrement a int.
+     */
     public void incrementClassAndType(int classIncrement, int typeIncrement) {
         atomClass += classIncrement;
         type += typeIncrement;
@@ -92,9 +98,9 @@ public final class AtomType extends BaseType implements Comparator<String> {
     }
 
     /**
-     * Nicely formatted atom type string.
+     * {@inheritDoc}
      *
-     * @return String
+     * Nicely formatted atom type string.
      */
     @Override
     public String toString() {
@@ -110,6 +116,7 @@ public final class AtomType extends BaseType implements Comparator<String> {
         return s;
     }
 
+    /** {@inheritDoc} */
     @Override
     public int compare(String s1, String s2) {
 
@@ -126,6 +133,7 @@ public final class AtomType extends BaseType implements Comparator<String> {
         return 0;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean equals(Object other) {
         if (other == this) {
@@ -142,6 +150,7 @@ public final class AtomType extends BaseType implements Comparator<String> {
         return false;
     }
 
+    /** {@inheritDoc} */
     @Override
     public int hashCode() {
         int hash = 7;

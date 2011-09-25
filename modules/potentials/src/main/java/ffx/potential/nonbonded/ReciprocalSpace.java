@@ -68,6 +68,7 @@ import static ffx.potential.parameters.MultipoleType.*;
  *
  * @author Michael J. Schnieders
  * @since 1.0
+ * @version $Id: $
  */
 public class ReciprocalSpace {
 
@@ -120,6 +121,14 @@ public class ReciprocalSpace {
 
     /**
      * Reciprocal Space PME contribution.
+     *
+     * @param crystal a {@link ffx.crystal.Crystal} object.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param coordinates an array of double.
+     * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
+     * @param aewald a double.
+     * @param fftTeam a {@link edu.rit.pj.ParallelTeam} object.
+     * @param parallelTeam a {@link edu.rit.pj.ParallelTeam} object.
      */
     public ReciprocalSpace(Crystal crystal, ForceField forceField,
             double coordinates[][][], Atom atoms[], double aewald,
@@ -286,6 +295,9 @@ public class ReciprocalSpace {
         complexFFT3DSpace = fftX * fftY * fftZ * 2;
     }
 
+    /**
+     * <p>computeBSplines</p>
+     */
     public void computeBSplines() {
         try {
             long time = -System.nanoTime();
@@ -303,9 +315,9 @@ public class ReciprocalSpace {
     /**
      * Use b-Splines to place the permanent multipoles onto the FFT grid for
      * the atoms in use.
-     * 
-     * @param globalMultipoles
-     * @param use 
+     *
+     * @param globalMultipoles an array of double.
+     * @param use an array of boolean.
      */
     public void splinePermanentMultipoles(double globalMultipoles[][][], boolean use[]) {
         spatialDensityRegion.assignAtomsToCells();
@@ -327,6 +339,9 @@ public class ReciprocalSpace {
         }
     }
 
+    /**
+     * <p>permanentMultipoleConvolution</p>
+     */
     public void permanentMultipoleConvolution() {
         try {
             if (cudaFFT) {
@@ -352,8 +367,8 @@ public class ReciprocalSpace {
 
     /**
      * Compute the potential Phi and its derivatives for all atoms.
-     * 
-     * @param cartMultipolePhi
+     *
+     * @param cartPermanentPhi an array of double.
      */
     public void computePermanentPhi(double cartPermanentPhi[][]) {
         try {
@@ -372,8 +387,9 @@ public class ReciprocalSpace {
 
     /**
      * Place the induced dipoles onto the FFT grid for the atoms in use.
-     * 
+     *
      * @param inducedDipole Induced dipoles.
+     * @param inducedDipoleCR Chain rule term for induced dipole gradient.
      * @param inducedDipoleCR Chain rule term for induced dipole gradient.
      * @param use The atoms in use.
      */
@@ -429,6 +445,12 @@ public class ReciprocalSpace {
         }
     }
 
+    /**
+     * <p>computeInducedPhi</p>
+     *
+     * @param cartInducedDipolePhi an array of double.
+     * @param cartInducedDipoleCRPhi an array of double.
+     */
     public void computeInducedPhi(double cartInducedDipolePhi[][],
             double cartInducedDipoleCRPhi[][]) {
         try {
@@ -446,6 +468,12 @@ public class ReciprocalSpace {
         }
     }
 
+    /**
+     * <p>cartToFracInducedDipoles</p>
+     *
+     * @param inducedDipole an array of double.
+     * @param inducedDipoleCR an array of double.
+     */
     public void cartToFracInducedDipoles(double inducedDipole[][][],
             double inducedDipoleCR[][][]) {
         for (int iSymm = 0; iSymm < nSymm; iSymm++) {
@@ -464,38 +492,83 @@ public class ReciprocalSpace {
         }
     }
 
+    /**
+     * <p>Getter for the field <code>fracMultipolePhi</code>.</p>
+     *
+     * @return an array of double.
+     */
     public double[][] getFracMultipolePhi() {
         return fracMultipolePhi;
     }
 
+    /**
+     * <p>getFracMultipoles</p>
+     *
+     * @return an array of double.
+     */
     public double[][] getFracMultipoles() {
         return fracMultipole[0];
     }
 
+    /**
+     * <p>Getter for the field <code>fracInducedDipolePhi</code>.</p>
+     *
+     * @return an array of double.
+     */
     public double[][] getFracInducedDipolePhi() {
         return fracInducedDipolePhi;
     }
 
+    /**
+     * <p>getFracInducedDipoles</p>
+     *
+     * @return an array of double.
+     */
     public double[][] getFracInducedDipoles() {
         return fracInducedDipole[0];
     }
 
+    /**
+     * <p>getFracInducedDipoleCRPhi</p>
+     *
+     * @return an array of double.
+     */
     public double[][] getFracInducedDipoleCRPhi() {
         return fracInducedDipolePhiCR;
     }
 
+    /**
+     * <p>getFracInducedDipolesCR</p>
+     *
+     * @return an array of double.
+     */
     public double[][] getFracInducedDipolesCR() {
         return fracInducedDipoleCR[0];
     }
 
+    /**
+     * <p>getXDim</p>
+     *
+     * @return a double.
+     */
     public double getXDim() {
         return fftX;
     }
 
+    /**
+     * <p>getYDim</p>
+     *
+     * @return a double.
+     */
     public double getYDim() {
         return fftY;
     }
 
+    /**
+     * <p>getZDim</p>
+     *
+     * @return a double.
+     */
     public double getZDim() {
         return fftZ;
     }

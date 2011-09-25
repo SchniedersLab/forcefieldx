@@ -66,12 +66,17 @@ import java.util.Arrays;
 /**
  * The MolecularAssembly class is a collection of Polymers, Hetero Molecules,
  * Ions and Water
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public class MolecularAssembly extends MSGroup {
 
     private static final Logger logger = Logger.getLogger(MolecularAssembly.class.getName());
     private static final long serialVersionUID = 1L;
+    /** Constant <code>MultiScaleLevel=4</code> */
     public static final int MultiScaleLevel = 4;
+    /** Constant <code>KCAL_TO_KJ=4.184</code> */
     public static final double KCAL_TO_KJ = 4.184;
     private static double[] a = new double[3];
     // MolecularSystem member variables
@@ -111,6 +116,11 @@ public class MolecularAssembly extends MSGroup {
     private final ArrayList<BranchGroup> myNewShapes = new ArrayList<BranchGroup>();
 
     // Constructors
+    /**
+     * <p>Constructor for MolecularAssembly.</p>
+     *
+     * @param name a {@link java.lang.String} object.
+     */
     public MolecularAssembly(String name) {
         super(name);
         getAtomNode().setName("MacroMolecules");
@@ -119,22 +129,48 @@ public class MolecularAssembly extends MSGroup {
         add(water);
     }
 
+    /**
+     * <p>Constructor for MolecularAssembly.</p>
+     *
+     * @param name a {@link java.lang.String} object.
+     * @param Polymers a {@link ffx.potential.bonded.MSNode} object.
+     */
     public MolecularAssembly(String name, MSNode Polymers) {
         super(name, Polymers);
     }
 
+    /**
+     * <p>Setter for the field <code>forceField</code>.</p>
+     *
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     */
     public void setForceField(ForceField forceField) {
         this.forceField = forceField;
     }
 
+    /**
+     * <p>setPotential</p>
+     *
+     * @param potentialEnergy a {@link ffx.potential.ForceFieldEnergy} object.
+     */
     public void setPotential(ForceFieldEnergy potentialEnergy) {
         this.potentialEnergy = potentialEnergy;
     }
 
+    /**
+     * <p>Getter for the field <code>potentialEnergy</code>.</p>
+     *
+     * @return a {@link ffx.potential.ForceFieldEnergy} object.
+     */
     public ForceFieldEnergy getPotentialEnergy() {
         return potentialEnergy;
     }
 
+    /**
+     * <p>getCrystal</p>
+     *
+     * @return a {@link ffx.crystal.Crystal} object.
+     */
     public Crystal getCrystal() {
         if (potentialEnergy == null) {
             return null;
@@ -142,10 +178,20 @@ public class MolecularAssembly extends MSGroup {
         return potentialEnergy.getCrystal();
     }
 
+    /**
+     * <p>Getter for the field <code>forceField</code>.</p>
+     *
+     * @return a {@link ffx.potential.parameters.ForceField} object.
+     */
     public ForceField getForceField() {
         return forceField;
     }
 
+    /**
+     * <p>addAltLocation</p>
+     *
+     * @param s a {@link java.lang.String} object.
+     */
     public void addAltLocation(String s) {
         if (altLoc == null) {
             altLoc = new Vector<String>();
@@ -155,6 +201,7 @@ public class MolecularAssembly extends MSGroup {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public MSNode addMSNode(MSNode o) {
         ArrayList Polymers = getAtomNodeList();
@@ -212,6 +259,9 @@ public class MolecularAssembly extends MSGroup {
         }
     }
 
+    /**
+     * <p>center</p>
+     */
     public void center() {
         double center[] = getMultiScaleCenter(false);
         offset = new Vector3d(center);
@@ -230,6 +280,11 @@ public class MolecularAssembly extends MSGroup {
         originToRotT3D.get(offset);
     }
 
+    /**
+     * <p>centerAt</p>
+     *
+     * @param d an array of double.
+     */
     public void centerAt(double[] d) {
         double[] Rc = {0, 0, 0};
         double[] c = new double[3];
@@ -250,6 +305,12 @@ public class MolecularAssembly extends MSGroup {
         }
     }
 
+    /**
+     * <p>centerView</p>
+     *
+     * @param rot a boolean.
+     * @param trans a boolean.
+     */
     public void centerView(boolean rot, boolean trans) {
         originToRot.getTransform(originToRotT3D);
         if (rot) {
@@ -266,6 +327,9 @@ public class MolecularAssembly extends MSGroup {
         // rotToCOM.setTransform(rotToCOMT3D);
     }
 
+    /**
+     * <p>createBox</p>
+     */
     public void createBox() {
         int vertices = 8;
         LineArray la = new LineArray(4 * vertices, GeometryArray.COORDINATES | GeometryArray.COLOR_4 | GeometryArray.NORMALS);
@@ -378,12 +442,16 @@ public class MolecularAssembly extends MSGroup {
         return branchGroup;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean destroy() {
         detach();
         return super.destroy();
     }
 
+    /**
+     * <p>detach</p>
+     */
     public void detach() {
         synchronized (this) {
             if (branchGroup != null && branchGroup.isLive()) {
@@ -392,9 +460,7 @@ public class MolecularAssembly extends MSGroup {
         }
     }
 
-    /**
-     * @param finalizeGroups
-     */
+    /** {@inheritDoc} */
     @Override
     public void finalize(boolean finalizeGroups) {
         setFinalized(false);
@@ -462,6 +528,12 @@ public class MolecularAssembly extends MSGroup {
         setFinalized(true);
     }
 
+    /**
+     * <p>findAtom</p>
+     *
+     * @param atom a {@link ffx.potential.bonded.Atom} object.
+     * @return a {@link ffx.potential.bonded.Atom} object.
+     */
     public Atom findAtom(Atom atom) {
         if (!atom.isHetero()) {
             Polymer polymer = getPolymer(atom.getChainID(), atom.getSegID(), false);
@@ -509,6 +581,11 @@ public class MolecularAssembly extends MSGroup {
         }
     }
 
+    /**
+     * <p>getAltLocations</p>
+     *
+     * @return an array of {@link java.lang.String} objects.
+     */
     public String[] getAltLocations() {
         if (altLoc == null || altLoc.size() == 0) {
             return null;
@@ -523,6 +600,12 @@ public class MolecularAssembly extends MSGroup {
         return names;
     }
 
+    /**
+     * <p>getAtomFromWireVertex</p>
+     *
+     * @param i a int.
+     * @return a {@link ffx.potential.bonded.Atom} object.
+     */
     public Atom getAtomFromWireVertex(
             int i) {
         if (atomLookUp != null && atomLookUp.length > i) {
@@ -531,6 +614,11 @@ public class MolecularAssembly extends MSGroup {
         return null;
     }
 
+    /**
+     * <p>getAtomArray</p>
+     *
+     * @return an array of {@link ffx.potential.bonded.Atom} objects.
+     */
     public Atom[] getAtomArray() {
         ArrayList<Atom> atoms = getAtomList();
         int n = atoms.size();
@@ -539,6 +627,11 @@ public class MolecularAssembly extends MSGroup {
         return atomArray;
     }
 
+    /**
+     * <p>getBackBoneAtoms</p>
+     *
+     * @return a {@link java.util.ArrayList} object.
+     */
     public ArrayList<Atom> getBackBoneAtoms() {
         ArrayList<Atom> backbone = new ArrayList<Atom>();
         Atom ca = new Atom("CA");
@@ -554,6 +647,7 @@ public class MolecularAssembly extends MSGroup {
         return backbone;
     }
 
+    /** {@inheritDoc} */
     @Override
     public ArrayList<ROLS> getBondList() {
         if (bondList != null) {
@@ -564,10 +658,21 @@ public class MolecularAssembly extends MSGroup {
         return bondList;
     }
 
+    /**
+     * <p>Getter for the field <code>branchGroup</code>.</p>
+     *
+     * @return a {@link javax.media.j3d.BranchGroup} object.
+     */
     public BranchGroup getBranchGroup() {
         return branchGroup;
     }
 
+    /**
+     * <p>getChain</p>
+     *
+     * @param name a {@link java.lang.String} object.
+     * @return a {@link ffx.potential.bonded.Polymer} object.
+     */
     public Polymer getChain(String name) {
         for (ListIterator li = getAtomNodeList().listIterator(); li.hasNext();) {
             MSNode node = (MSNode) li.next();
@@ -581,6 +686,11 @@ public class MolecularAssembly extends MSGroup {
         return null;
     }
 
+    /**
+     * <p>getChainNames</p>
+     *
+     * @return an array of {@link java.lang.String} objects.
+     */
     public String[] getChainNames() {
         ArrayList<String> temp = new ArrayList<String>();
         for (ListIterator li = getAtomNodeList().listIterator(); li.hasNext();) {
@@ -602,6 +712,11 @@ public class MolecularAssembly extends MSGroup {
         return names;
     }
 
+    /**
+     * <p>getChains</p>
+     *
+     * @return an array of {@link ffx.potential.bonded.Polymer} objects.
+     */
     public Polymer[] getChains() {
         ArrayList<Polymer> polymers = new ArrayList<Polymer>();
         for (ListIterator li = getAtomNodeList().listIterator(); li.hasNext();) {
@@ -616,14 +731,25 @@ public class MolecularAssembly extends MSGroup {
         return polymers.toArray(new Polymer[polymers.size()]);
     }
 
+    /**
+     * <p>Getter for the field <code>currentCycle</code>.</p>
+     *
+     * @return a int.
+     */
     public int getCurrentCycle() {
         return currentCycle;
     }
 
+    /**
+     * <p>Getter for the field <code>cycles</code>.</p>
+     *
+     * @return a int.
+     */
     public int getCycles() {
         return cycles;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double getExtent() {
         double[] Rc = {0, 0, 0};
@@ -655,10 +781,20 @@ public class MolecularAssembly extends MSGroup {
         return d;
     }
 
+    /**
+     * <p>Getter for the field <code>file</code>.</p>
+     *
+     * @return a {@link java.io.File} object.
+     */
     public File getFile() {
         return file;
     }
 
+    /**
+     * <p>Getter for the field <code>offset</code>.</p>
+     *
+     * @return a {@link javax.vecmath.Vector3d} object.
+     */
     public Vector3d getOffset() {
         if (offset == null) {
             offset = new Vector3d(0.0, 0.0, 0.0);
@@ -667,10 +803,23 @@ public class MolecularAssembly extends MSGroup {
         return offset;
     }
 
+    /**
+     * <p>Getter for the field <code>originToRot</code>.</p>
+     *
+     * @return a {@link javax.media.j3d.TransformGroup} object.
+     */
     public TransformGroup getOriginToRot() {
         return originToRot;
     }
 
+    /**
+     * <p>getPolymer</p>
+     *
+     * @param chainID a {@link java.lang.Character} object.
+     * @param segID a {@link java.lang.String} object.
+     * @param create a boolean.
+     * @return a {@link ffx.potential.bonded.Polymer} object.
+     */
     public Polymer getPolymer(Character chainID, String segID, boolean create) {
         for (ListIterator li = getAtomNodeList().listIterator(); li.hasNext();) {
             MSNode node = (MSNode) li.next();
@@ -708,18 +857,38 @@ public class MolecularAssembly extends MSGroup {
         return null;
     }
 
+    /**
+     * <p>Getter for the field <code>ions</code>.</p>
+     *
+     * @return a {@link java.util.ArrayList} object.
+     */
     public ArrayList<MSNode> getIons() {
         return ions.getChildList();
     }
 
+    /**
+     * <p>Getter for the field <code>molecules</code>.</p>
+     *
+     * @return a {@link java.util.ArrayList} object.
+     */
     public ArrayList<MSNode> getMolecules() {
         return molecules.getChildList();
     }
 
+    /**
+     * <p>getWaters</p>
+     *
+     * @return a {@link java.util.ArrayList} object.
+     */
     public ArrayList<MSNode> getWaters() {
         return water.getChildList();
     }
 
+    /**
+     * <p>deleteMolecule</p>
+     *
+     * @param molecule a {@link ffx.potential.bonded.Molecule} object.
+     */
     public void deleteMolecule(Molecule molecule) {
         ArrayList<MSNode> list = ions.getChildList();
         for (MSNode node : list) {
@@ -801,6 +970,11 @@ public class MolecularAssembly extends MSGroup {
         }
     }
 
+    /**
+     * <p>getResidueList</p>
+     *
+     * @return a {@link java.util.ArrayList} object.
+     */
     public ArrayList<Residue> getResidueList() {
         ArrayList<Residue> residues = new ArrayList<Residue>();
         ListIterator li,
@@ -823,6 +997,11 @@ public class MolecularAssembly extends MSGroup {
         return residues;
     }
 
+    /**
+     * <p>getNodeList</p>
+     *
+     * @return a {@link java.util.ArrayList} object.
+     */
     public ArrayList<MSNode> getNodeList() {
         ArrayList<MSNode> residues = new ArrayList<MSNode>();
         ListIterator li,
@@ -860,18 +1039,38 @@ public class MolecularAssembly extends MSGroup {
         return residues;
     }
 
+    /**
+     * <p>getTransformGroup</p>
+     *
+     * @return a {@link javax.media.j3d.TransformGroup} object.
+     */
     public TransformGroup getTransformGroup() {
         return originToRot;
     }
 
+    /**
+     * <p>getWireFrame</p>
+     *
+     * @return a {@link javax.media.j3d.Node} object.
+     */
     public Node getWireFrame() {
         return wire;
     }
 
+    /**
+     * <p>isVisible</p>
+     *
+     * @return a boolean.
+     */
     public boolean isVisible() {
         return visible;
     }
 
+    /**
+     * <p>loadVRML</p>
+     *
+     * @return a {@link javax.media.j3d.BranchGroup} object.
+     */
     public BranchGroup loadVRML() {
         try {
             VrmlLoader loader = new VrmlLoader();
@@ -898,6 +1097,11 @@ public class MolecularAssembly extends MSGroup {
 
     }
 
+    /**
+     * <p>moveCenter</p>
+     *
+     * @param d an array of double.
+     */
     public void moveCenter(double[] d) {
         for (ListIterator li = getAtomList().listIterator(); li.hasNext();) {
             ((Atom) li.next()).move(d);
@@ -951,6 +1155,7 @@ public class MolecularAssembly extends MSGroup {
 
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void removeLeaves() {
         super.removeLeaves();
@@ -1119,6 +1324,11 @@ public class MolecularAssembly extends MSGroup {
         rotToCOM.setTransform(rotToCOMT3D);
     }
 
+    /**
+     * <p>sceneGraphChange</p>
+     *
+     * @param newShapes a {@link java.util.List} object.
+     */
     public void sceneGraphChange(List<BranchGroup> newShapes) {
         if (newShapes == null) {
             newShapes = myNewShapes;
@@ -1172,6 +1382,7 @@ public class MolecularAssembly extends MSGroup {
 
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setColor(RendererCache.ColorModel newColorModel, Color3f color,
             Material mat) {
@@ -1194,6 +1405,11 @@ public class MolecularAssembly extends MSGroup {
 
     }
 
+    /**
+     * <p>Setter for the field <code>currentCycle</code>.</p>
+     *
+     * @param c a int.
+     */
     public void setCurrentCycle(int c) {
         if (c <= cycles && c > 0) {
             currentCycle = c;
@@ -1204,10 +1420,20 @@ public class MolecularAssembly extends MSGroup {
         }
     }
 
+    /**
+     * <p>Setter for the field <code>cycles</code>.</p>
+     *
+     * @param c a int.
+     */
     public void setCycles(int c) {
         cycles = c;
     }
 
+    /**
+     * <p>Setter for the field <code>file</code>.</p>
+     *
+     * @param f a {@link java.io.File} object.
+     */
     public void setFile(File f) {
         if (f == null) {
             return;
@@ -1215,10 +1441,16 @@ public class MolecularAssembly extends MSGroup {
         file = f;
     }
 
+    /**
+     * <p>Setter for the field <code>offset</code>.</p>
+     *
+     * @param o a {@link javax.vecmath.Vector3d} object.
+     */
     public void setOffset(Vector3d o) {
         offset = o;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setView(RendererCache.ViewModel newViewModel,
             List<BranchGroup> newShapes) {
@@ -1296,6 +1528,11 @@ public class MolecularAssembly extends MSGroup {
         }
     }
 
+    /**
+     * <p>setVRML</p>
+     *
+     * @param v a {@link javax.media.j3d.BranchGroup} object.
+     */
     public void setVRML(BranchGroup v) {
         vrmlURL = null;
         vrmlFile =
@@ -1304,18 +1541,33 @@ public class MolecularAssembly extends MSGroup {
                 v;
     }
 
+    /**
+     * <p>setVRML</p>
+     *
+     * @param file a {@link java.io.File} object.
+     */
     public void setVRML(File file) {
         vrmlFile = file;
         vrmlURL =
                 null;
     }
 
+    /**
+     * <p>setVRML</p>
+     *
+     * @param url a {@link java.net.URL} object.
+     */
     public void setVRML(URL url) {
         vrmlURL = url;
         vrmlFile =
                 null;
     }
 
+    /**
+     * <p>setWireWidth</p>
+     *
+     * @param f a float.
+     */
     public void setWireWidth(float f) {
         if (wire == null) {
             return;
@@ -1324,6 +1576,9 @@ public class MolecularAssembly extends MSGroup {
         lineAttributes.setLineWidth(f);
     }
 
+    /**
+     * <p>sidePolymerCOM</p>
+     */
     public void sidePolymerCOM() {
         ArrayList residues = getResidueList();
         Residue r;

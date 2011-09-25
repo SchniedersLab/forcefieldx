@@ -38,6 +38,9 @@ import javax.vecmath.Vector3d;
 // import ffe.panels.*;
 /**
  * The MouseRotate class implements a mouse rotation behavior.
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public class MouseRotate extends MouseBehavior {
 	private static Transform3D VPTG_T3D = new Transform3D();
@@ -50,10 +53,25 @@ public class MouseRotate extends MouseBehavior {
 	int doneID = 0;
 	private MouseBehaviorCallback callback = null;
 
+	/**
+	 * <p>Constructor for MouseRotate.</p>
+	 *
+	 * @param flags a int.
+	 * @param VPTG a {@link javax.media.j3d.TransformGroup} object.
+	 */
 	public MouseRotate(int flags, TransformGroup VPTG) {
 		super(flags, VPTG);
 	}
 
+	/**
+	 * <p>Constructor for MouseRotate.</p>
+	 *
+	 * @param flags a int.
+	 * @param VPTG a {@link javax.media.j3d.TransformGroup} object.
+	 * @param behavior a {@link javax.media.j3d.Behavior} object.
+	 * @param postID a int.
+	 * @param dID a int.
+	 */
 	public MouseRotate(int flags, TransformGroup VPTG, Behavior behavior,
 			int postID, int dID) {
 		super(flags, VPTG, behavior, postID);
@@ -63,6 +81,11 @@ public class MouseRotate extends MouseBehavior {
 	/*
 	 * Return the x-axis movement multipler.
 	 */
+	/**
+	 * <p>getXFactor</p>
+	 *
+	 * @return a double.
+	 */
 	public double getXFactor() {
 		return x_factor;
 	}
@@ -70,10 +93,18 @@ public class MouseRotate extends MouseBehavior {
 	/*
 	 * Return the y-axis movement multipler.
 	 */
+	/**
+	 * <p>getYFactor</p>
+	 *
+	 * @return a double.
+	 */
 	public double getYFactor() {
 		return y_factor;
 	}
 
+	/**
+	 * <p>initialize</p>
+	 */
 	public void initialize() {
 		super.initialize();
 		x_angle = 0;
@@ -85,6 +116,7 @@ public class MouseRotate extends MouseBehavior {
 		}
 	}
 
+	/** {@inheritDoc} */
 	public void processStimulus(Enumeration criteria) {
 		while (criteria.hasMoreElements()) {
 			WakeupCriterion wakeup = (WakeupCriterion) criteria.nextElement();
@@ -161,6 +193,11 @@ public class MouseRotate extends MouseBehavior {
 	/*
 	 * Set the x-axis amd y-axis movement multipler with factor.
 	 */
+	/**
+	 * <p>setFactor</p>
+	 *
+	 * @param factor a double.
+	 */
 	public void setFactor(double factor) {
 		x_factor = y_factor = factor;
 	}
@@ -169,15 +206,31 @@ public class MouseRotate extends MouseBehavior {
 	 * Set the x-axis amd y-axis movement multipler with xFactor and yFactor
 	 * respectively.
 	 */
+	/**
+	 * <p>setFactor</p>
+	 *
+	 * @param xFactor a double.
+	 * @param yFactor a double.
+	 */
 	public void setFactor(double xFactor, double yFactor) {
 		x_factor = xFactor;
 		y_factor = yFactor;
 	}
 
+	/**
+	 * <p>setupCallback</p>
+	 *
+	 * @param c a {@link ffx.ui.behaviors.MouseBehaviorCallback} object.
+	 */
 	public void setupCallback(MouseBehaviorCallback c) {
 		callback = c;
 	}
 
+	/**
+	 * <p>transformChanged</p>
+	 *
+	 * @param transform a {@link javax.media.j3d.Transform3D} object.
+	 */
 	public void transformChanged(Transform3D transform) {
 	}
 }

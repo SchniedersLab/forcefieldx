@@ -34,7 +34,7 @@ import java.util.logging.Logger;
  * "Clive Temperton. Self-sorting mixed-radix fast fourier transforms. Journal
  * of Computational Physics, 52(1):1-23, 1983."
  * <p>
- * 
+ *
  * @author Michal J. Schnieders<br>
  *         Derived from:<br>
  *         Bruce R. Miller (bruce.miller@nist.gov)<br>
@@ -47,8 +47,8 @@ import java.util.logging.Logger;
  *      (1965)</a><br>
  *      <a href="http://en.wikipedia.org/wiki/Fast_Fourier_transform"
  *      target="_blank">FFT at Wikipedia</a><br>
- * 
  * @since 1.0
+ * @version $Id: $
  */
 public class Complex {
 
@@ -80,6 +80,12 @@ public class Complex {
         scratch = new double[2 * n];
     }
 
+    /**
+     * <p>preferredDimension</p>
+     *
+     * @param dim a int.
+     * @return a boolean.
+     */
     public static boolean preferredDimension(int dim) {
         if (dim < 2) {
             return false;
@@ -171,6 +177,11 @@ public class Complex {
         return ret;
     }
 
+    /**
+     * <p>Getter for the field <code>factors</code>.</p>
+     *
+     * @return an array of int.
+     */
     public int[] getFactors() {
         return factors;
     }
@@ -184,9 +195,9 @@ public class Complex {
      * Im(d[i]) = data[offset + stride*i+1]
      * </PRE>
      *
-     * @param data
-     * @param offset
-     * @param stride
+     * @param data an array of double.
+     * @param offset a int.
+     * @param stride a int.
      */
     public void fft(double data[], int offset, int stride) {
         transformInternal(data, offset, stride, -1);
@@ -202,9 +213,9 @@ public class Complex {
      *    Im(D[i]) = data[offset + stride*i+1]
      *</PRE>
      *
-     * @param data
-     * @param offset
-     * @param stride
+     * @param data an array of double.
+     * @param offset a int.
+     * @param stride a int.
      */
     public void ifft(double data[], int offset, int stride) {
         transformInternal(data, offset, stride, +1);
@@ -219,9 +230,9 @@ public class Complex {
      * Im(D[i]) = data[offset + stride*i+1]
      * </PRE>
      *
-     * @param data
-     * @param offset
-     * @param stride
+     * @param data an array of double.
+     * @param offset a int.
+     * @param stride a int.
      */
     public void inverse(double data[], int offset, int stride) {
         ifft(data, offset, stride);
@@ -319,6 +330,8 @@ public class Complex {
     /**
      * Return the normalization factor. Multiply the elements of the
      * back-transformed data to get the normalized inverse.
+     *
+     * @return a double.
      */
     public double normalization() {
         return 1.0 / n;

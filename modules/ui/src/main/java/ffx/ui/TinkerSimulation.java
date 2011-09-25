@@ -41,6 +41,9 @@ import ffx.utilities.Keyword;
 /**
  * This TinkerSimulation class oversees loading information from an executing
  * TINKER program into Force Field X.
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public class TinkerSimulation implements ActionListener {
     // The client monitors a socket based connection to an executing TINKER
@@ -67,6 +70,14 @@ public class TinkerSimulation implements ActionListener {
     private int step = 0;
 
     // Constructor
+    /**
+     * <p>Constructor for TinkerSimulation.</p>
+     *
+     * @param s a {@link ffx.ui.FFXSystem} object.
+     * @param j a {@link java.lang.Thread} object.
+     * @param f a {@link ffx.ui.MainPanel} object.
+     * @param a a {@link java.net.InetSocketAddress} object.
+     */
     public TinkerSimulation(FFXSystem s, Thread j, MainPanel f,
             InetSocketAddress a) {
         system = s;
@@ -79,6 +90,7 @@ public class TinkerSimulation implements ActionListener {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void actionPerformed(ActionEvent e) {
         // Check if we're connected to a TINKER Server.
@@ -116,6 +128,11 @@ public class TinkerSimulation implements ActionListener {
         }
     }
 
+    /**
+     * <p>connect</p>
+     *
+     * @return a boolean.
+     */
     public boolean connect() {
         if (isFinished()) {
             return false;
@@ -148,10 +165,20 @@ public class TinkerSimulation implements ActionListener {
         return false;
     }
 
+    /**
+     * <p>getFSystem</p>
+     *
+     * @return a {@link ffx.ui.FFXSystem} object.
+     */
     public FFXSystem getFSystem() {
         return system;
     }
 
+    /**
+     * <p>isConnected</p>
+     *
+     * @return a boolean.
+     */
     public boolean isConnected() {
         if (client != null && client.isConnected()) {
             return true;
@@ -159,6 +186,11 @@ public class TinkerSimulation implements ActionListener {
         return false;
     }
 
+    /**
+     * <p>isFinished</p>
+     *
+     * @return a boolean.
+     */
     public boolean isFinished() {
         if (client != null && client.isClosed()) {
             finished = true;
@@ -177,6 +209,9 @@ public class TinkerSimulation implements ActionListener {
     }
 
     // Release the simulation
+    /**
+     * <p>release</p>
+     */
     public void release() {
         finished = true;
         if (timer != null) {

@@ -30,8 +30,8 @@ import org.apache.commons.io.FilenameUtils;
  * The PDBXFileFilter class is used to choose a PDBML File (*.XML).
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0.
+ * @version $Id: $
  */
 public final class PDBMLFileFilter extends FileFilter {
 
@@ -42,6 +42,8 @@ public final class PDBMLFileFilter extends FileFilter {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * This method return <code>true</code> if the file is a directory or
      * Protein Databank XML File (*.XML).
      */
@@ -55,6 +57,8 @@ public final class PDBMLFileFilter extends FileFilter {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Provides a description of the PDBMLFileFilter.
      */
     @Override

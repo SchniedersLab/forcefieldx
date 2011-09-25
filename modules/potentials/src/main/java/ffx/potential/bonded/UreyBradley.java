@@ -32,6 +32,7 @@ import ffx.potential.parameters.UreyBradleyType;
  *
  * @author Michael J. Schnieders
  * @since 1.0
+ * @version $Id: $
  */
 public class UreyBradley extends BondedTerm implements Comparable<UreyBradley> {
 
@@ -47,16 +48,28 @@ public class UreyBradley extends BondedTerm implements Comparable<UreyBradley> {
      */
     protected Angle angle = null;
 
+    /**
+     * <p>Setter for the field <code>ureyBradleyType</code>.</p>
+     *
+     * @param a a {@link ffx.potential.parameters.UreyBradleyType} object.
+     */
     public void setUreyBradleyType(UreyBradleyType a) {
         ureyBradleyType = a;
     }
 
+    /**
+     * <p>Setter for the field <code>rigidScale</code>.</p>
+     *
+     * @param rigidScale a double.
+     */
     public void setRigidScale(double rigidScale) {
         this.rigidScale = rigidScale;
     }
 
     /**
      * Constructor for the UreyBradley class.
+     *
+     * @param a a {@link ffx.potential.bonded.Angle} object.
      */
     public UreyBradley(Angle a) {
         super();
@@ -67,6 +80,8 @@ public class UreyBradley extends BondedTerm implements Comparable<UreyBradley> {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Update recomputes the UreyBradley's value and energy.
      */
     @Override
@@ -116,6 +131,9 @@ public class UreyBradley extends BondedTerm implements Comparable<UreyBradley> {
     /*
      * Log details for this Angle energy term.
      */
+    /**
+     * <p>log</p>
+     */
     public void log() {
         logger.info(String.format(" %s %6d-%s %6d-%s %6.4f  %6.4f  %10.4f",
                                   "Urey-Bradley", atoms[0].getXYZIndex(), atoms[0].getAtomType().name,
@@ -123,6 +141,7 @@ public class UreyBradley extends BondedTerm implements Comparable<UreyBradley> {
                                   energy));
     }
 
+    /** {@inheritDoc} */
     @Override
     public int compareTo(UreyBradley ub) {
         return angle.compareTo(ub.angle);

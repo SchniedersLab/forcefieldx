@@ -31,8 +31,8 @@ import org.apache.commons.math.linear.RealMatrix;
  * Superpose two molecules.
  *
  * @author Gaurav Chattree
- * 
- * @since 1.0 
+ * @since 1.0
+ * @version $Id: $
  */
 public class Superpose {
 
@@ -41,6 +41,12 @@ public class Superpose {
     String name1[], name2[];
     double xmid = 0, ymid = 0, zmid = 0;
 
+    /**
+     * <p>Constructor for Superpose.</p>
+     *
+     * @param xyzfname1 a {@link java.lang.String} object.
+     * @param xyzfname2 a {@link java.lang.String} object.
+     */
     public Superpose(String xyzfname1, String xyzfname2) {
 
         File structure_xyz1 = new File(xyzfname1);
@@ -129,6 +135,9 @@ public class Superpose {
         output();
     }
 
+    /**
+     * <p>center</p>
+     */
     public void center() {
         double norm = 0;
         for (int i = 0; i < n2; i++) {
@@ -165,6 +174,9 @@ public class Superpose {
         }
     }
 
+    /**
+     * <p>quatfit</p>
+     */
     public void quatfit() {
         double xxyx = 0.0;
         double xxyy = 0.0;
@@ -226,6 +238,11 @@ public class Superpose {
         }
     }
 
+    /**
+     * <p>rms</p>
+     *
+     * @return a double.
+     */
     public double rms() {
         double xr = 0, yr = 0, zr = 0, rms = 0, norm = 0;
         for (int i = 0; i < nfit; i++) {
@@ -239,6 +256,9 @@ public class Superpose {
         return rms;
     }
 
+    /**
+     * <p>output</p>
+     */
     public void output() {
         DecimalFormat myFormatter = new DecimalFormat(" ##########0.000000;-##########0.000000");
         String headings = String.format("\n   %9s%25s%20s\n  %9s%26s%17s\n", "Atom in the", "Atom in the", "Distance", "First Structure", "Second Structure", "Separated");
@@ -257,6 +277,11 @@ public class Superpose {
 
     }
 
+    /**
+     * <p>main</p>
+     *
+     * @param args an array of {@link java.lang.String} objects.
+     */
     public static void main(String args[]) {
         Superpose s = new Superpose("/home/gchattree/Research/Compounds/s_test3_compounds/famotidine/famotidine.xyz", "/home/gchattree/Research/Compounds/s_test3_compounds/famotidine/ttt.xyz");
     }

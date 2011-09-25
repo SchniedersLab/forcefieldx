@@ -85,6 +85,9 @@ import ffx.potential.parsers.SystemFilter;
 /**
  * The ModelingPanel class encapsulates functionality needed to run TINKER
  * executables.
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public class ModelingPanel extends JPanel implements ActionListener,
         MouseListener {
@@ -179,6 +182,8 @@ public class ModelingPanel extends JPanel implements ActionListener,
 
     /**
      * Constructor
+     *
+     * @param f a {@link ffx.ui.MainPanel} object.
      */
     public ModelingPanel(MainPanel f) {
         super();
@@ -186,6 +191,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
         initialize();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void actionPerformed(ActionEvent evt) {
         synchronized (this) {
@@ -546,6 +552,8 @@ public class ModelingPanel extends JPanel implements ActionListener,
 
     /**
      * Launch the TINKER command specified by the ModelingPanel
+     *
+     * @return a {@link ffx.ui.FFXExec} object.
      */
     public FFXExec executeCommand() {
         FFXSystem s = mainPanel.getHierarchy().getActive();
@@ -582,6 +590,11 @@ public class ModelingPanel extends JPanel implements ActionListener,
         return aminoPanel;
     }
 
+    /**
+     * <p>getAvailableCommands</p>
+     *
+     * @return a {@link java.util.ArrayList} object.
+     */
     public ArrayList<String> getAvailableCommands() {
         ArrayList<String> availableCommands = new ArrayList<String>();
         for (int i = 0; i < currentCommandBox.getItemCount(); i++) {
@@ -590,7 +603,11 @@ public class ModelingPanel extends JPanel implements ActionListener,
         return availableCommands;
     }
 
-    /** ********************************************************************** */
+    /**
+     **********************************************************************
+     *
+     * @return a {@link java.lang.String} object.
+     */
     // Modeling Command Configuration
     public String getCommand() {
         return activeCommand;
@@ -838,6 +855,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
      *            The command to be excuted.
      * @param dir
      *            The directory to execute the command in.
+     * @return a {@link ffx.ui.FFXExec} object.
      */
     public FFXExec launch(String command, String dir) {
         logger.info("Command: " + command + "\nDirectory: " + dir);
@@ -1029,6 +1047,8 @@ public class ModelingPanel extends JPanel implements ActionListener,
     /**
      * Load the active system into the JobPanel. This should be called whenever
      * the active system changes.
+     *
+     * @param active a {@link ffx.ui.FFXSystem} object.
      */
     public void loadActive(FFXSystem active) {
         synchronized (this) {
@@ -1511,27 +1531,30 @@ public class ModelingPanel extends JPanel implements ActionListener,
     }
 
     /**
-     * Mouse events are used to trigger status bar updates.
+     * {@inheritDoc}
      *
-     * @param evt
-     *            A mouse event
+     * Mouse events are used to trigger status bar updates.
      */
     public void mouseClicked(MouseEvent evt) {
         statusLabel.setText("  " + createCommandInput());
     }
 
+    /** {@inheritDoc} */
     public void mouseEntered(MouseEvent evt) {
         mouseClicked(evt);
     }
 
+    /** {@inheritDoc} */
     public void mouseExited(MouseEvent evt) {
         mouseClicked(evt);
     }
 
+    /** {@inheritDoc} */
     public void mousePressed(MouseEvent evt) {
         mouseClicked(evt);
     }
 
+    /** {@inheritDoc} */
     public void mouseReleased(MouseEvent evt) {
         mouseClicked(evt);
     }
@@ -1573,7 +1596,9 @@ public class ModelingPanel extends JPanel implements ActionListener,
         prefs.putBoolean(c + ".description", descriptCheckBox.isSelected());
     }
 
-    /** ********************************************************************** */
+    /**
+     **********************************************************************
+     */
     // Initialization code and misc. methods.
     public void selected() {
         loadLogSettings();
@@ -1582,6 +1607,12 @@ public class ModelingPanel extends JPanel implements ActionListener,
         repaint();
     }
 
+    /**
+     * <p>setCommand</p>
+     *
+     * @param command a {@link java.lang.String} object.
+     * @return a boolean.
+     */
     public boolean setCommand(String command) {
         if (command == null) {
             return false;
@@ -1655,7 +1686,11 @@ public class ModelingPanel extends JPanel implements ActionListener,
         }
     }
 
-    /** ********************************************************************** */
+    /**
+     **********************************************************************
+     *
+     * @param mode a {@link java.lang.String} object.
+     */
     // Logging Configuation
     public void setLogMode(String mode) {
         mode = mode.toUpperCase();
@@ -1669,6 +1704,9 @@ public class ModelingPanel extends JPanel implements ActionListener,
         loadLogSettings();
     }
 
+    /**
+     * <p>deleteLogs</p>
+     */
     public void deleteLogs() {
         if (activeSystem != null) {
             File file = activeSystem.getFile();
@@ -1695,6 +1733,11 @@ public class ModelingPanel extends JPanel implements ActionListener,
         }
     }
 
+    /**
+     * <p>toString</p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
     public String toString() {
         return "Modeling Panel";
     }

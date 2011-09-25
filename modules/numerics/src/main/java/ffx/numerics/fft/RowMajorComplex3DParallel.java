@@ -43,9 +43,10 @@ import edu.rit.pj.ParallelTeam;
  * int nextY = 2*nX<br>
  * int nextZ = 2*nX*nY<br>
  * <p>
- * 
+ *
  * @author Michal J. Schnieders
  * @since 1.0
+ * @version $Id: $
  */
 public class RowMajorComplex3DParallel {
 
@@ -72,7 +73,6 @@ public class RowMajorComplex3DParallel {
      *            Z-dimension.
      * @param parallelTeam
      *            A ParallelTeam instance.
-     *
      * @since 1.0
      */
     public RowMajorComplex3DParallel(int nX, int nY, int nZ, ParallelTeam parallelTeam) {
@@ -92,7 +92,6 @@ public class RowMajorComplex3DParallel {
      *            A ParallelTeam instance.
      * @param integerSchedule
      *            The IntegerSchedule to use.
-     *
      * @since 1.0
      */
     public RowMajorComplex3DParallel(int nX, int nY, int nZ, ParallelTeam parallelTeam,
@@ -125,7 +124,6 @@ public class RowMajorComplex3DParallel {
      *
      * @param input
      *            The input array must be of size 2 * nX * nY * nZ.
-     *
      * @since 1.0
      */
     public void fft(final double input[]) {
@@ -143,7 +141,6 @@ public class RowMajorComplex3DParallel {
      *
      * @param input
      *            The input array must be of size 2 * nX * nY * nZ.
-     *
      * @since 1.0
      */
     public void ifft(final double input[]) {
@@ -162,7 +159,6 @@ public class RowMajorComplex3DParallel {
      *
      * @param input
      *            The input array must be of size 2 * nX * nY * nZ.
-     *
      * @since 1.0
      */
     public void convolution(final double input[]) {
@@ -175,6 +171,11 @@ public class RowMajorComplex3DParallel {
         }
     }
 
+    /**
+     * <p>Setter for the field <code>recip</code>.</p>
+     *
+     * @param recip an array of double.
+     */
     public void setRecip(double recip[]) {
         int offset, y, x, z, i;
 
@@ -496,9 +497,8 @@ public class RowMajorComplex3DParallel {
     /**
      * Test the Complex3DParallel FFT.
      *
-     * @param args
-     * @throws Exception
-     *
+     * @param args an array of {@link java.lang.String} objects.
+     * @throws java.lang.Exception if any.
      * @since 1.0
      */
     public static void main(String[] args) throws Exception {

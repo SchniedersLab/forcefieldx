@@ -58,8 +58,8 @@ import ffx.potential.bonded.Atom;
  * </ol>
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
+ * @version $Id: $
  */
 public class BulkSolventList extends ParallelRegion {
 
@@ -187,7 +187,6 @@ public class BulkSolventList extends ParallelRegion {
      * @param atoms The atoms to generate Verlet lists for.
      * @param cutoff The cutoff distance.
      * @param parallelTeam Specifies the parallel environment.
-     *
      * @since 1.0
      */
     public BulkSolventList(Crystal crystal, Atom atoms[], double cutoff,
@@ -258,8 +257,8 @@ public class BulkSolventList extends ParallelRegion {
      *
      * @param coordinates The coordinates of each atom [nSymm][nAtoms*3].
      * @param selected The list of selected atoms [nSymm][nAtoms].
-     *
      * @since 1.0
+     * @param log a boolean.
      */
     public void buildList(final double coordinates[][][], final boolean selected[][],
             boolean log) {
@@ -411,8 +410,9 @@ public class BulkSolventList extends ParallelRegion {
     }
 
     /**
-     * This is method should not be called; it is invoked by Parallel Java.
+     * {@inheritDoc}
      *
+     * This is method should not be called; it is invoked by Parallel Java.
      * @since 1.0
      */
     @Override
@@ -421,8 +421,9 @@ public class BulkSolventList extends ParallelRegion {
     }
 
     /**
-     * This is method should not be called; it is invoked by Parallel Java.
+     * {@inheritDoc}
      *
+     * This is method should not be called; it is invoked by Parallel Java.
      * @since 1.0
      */
     @Override
@@ -436,6 +437,8 @@ public class BulkSolventList extends ParallelRegion {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * This is method should not be called; it is invoked by Parallel Java.
      *
      * since 0.1

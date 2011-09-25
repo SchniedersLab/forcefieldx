@@ -31,8 +31,8 @@ import org.apache.commons.io.FilenameUtils;
  * dipole (*.IND) file.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
+ * @version $Id: $
  */
 public final class InducedFileFilter extends FileFilter {
 
@@ -43,6 +43,8 @@ public final class InducedFileFilter extends FileFilter {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * This method return <code>true</code> if the file is a directory or
      * matches the extension for TINKER induced dipole (*.*U) file.
      */
@@ -56,6 +58,8 @@ public final class InducedFileFilter extends FileFilter {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Provides a description of the InducedFileFilter.
      */
     @Override

@@ -20,11 +20,11 @@
  */
 package ffx.ui;
 
-import edu.rit.pj.Comm;
-import ffx.Launcher;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.SimpleFormatter;
+
+import edu.rit.pj.Comm;
 
 /**
  * A minor extension to the SimpleFormatter to reduce verbosity
@@ -32,6 +32,7 @@ import java.util.logging.SimpleFormatter;
  *
  * @author Michael J. Schnieders
  * @since 1.0
+ * @version $Id: $
  */
 public class LogFormatter extends SimpleFormatter {
 
@@ -40,6 +41,7 @@ public class LogFormatter extends SimpleFormatter {
 
     /**
      * Constructor for the LogFormatter.
+     *
      * @param debug If debug is true, then LogFormatter is equivalent to
      *      {@link SimpleFormatter}.
      * @since 1.0
@@ -49,14 +51,13 @@ public class LogFormatter extends SimpleFormatter {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Unless debugging is turned on or the LogRecord is of level WARNING or
      * greater, just return the message.
-     * 
+     *
      * If more than one process is active, prepend the rank of the process to
      * each line of the message.
-     *
-     * @param record The LogRecord to format.
-     * @return A formatted string.
      * @since 1.0
      */
     @Override
@@ -83,10 +84,7 @@ public class LogFormatter extends SimpleFormatter {
                 }
             }
         } catch (Exception e) {
-            if (Launcher.world != null) {
-                System.err.println(Launcher.world.toString() + e.toString());
-            }
-            // Do nothing.
+            System.err.println(e.toString());
         }
 
         return message;

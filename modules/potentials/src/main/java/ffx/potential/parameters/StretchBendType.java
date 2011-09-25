@@ -29,8 +29,8 @@ import java.util.Comparator;
  * The StretchBendType class defines one out-of-plane angle bending energy type.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
+ * @version $Id: $
  */
 public final class StretchBendType extends BaseType implements Comparator<String> {
 
@@ -75,6 +75,11 @@ public final class StretchBendType extends BaseType implements Comparator<String
         this.forceConstants = forceConstants;
     }
 
+    /**
+     * <p>incrementClasses</p>
+     *
+     * @param increment a int.
+     */
     public void incrementClasses(int increment) {
         for (int i = 0; i < atomClasses.length; i++) {
             atomClasses[i] += increment;
@@ -104,9 +109,9 @@ public final class StretchBendType extends BaseType implements Comparator<String
     }
 
     /**
-     * Nicely formatted Stretch-Bend string.
+     * {@inheritDoc}
      *
-     * @return String
+     * Nicely formatted Stretch-Bend string.
      */
     @Override
     public String toString() {
@@ -114,8 +119,10 @@ public final class StretchBendType extends BaseType implements Comparator<String
                              atomClasses[0], atomClasses[1], atomClasses[2],
                              forceConstants[0], forceConstants[1]);
     }
+    /** Constant <code>units=PI / 180.0</code> */
     public static final double units = PI / 180.0;
 
+    /** {@inheritDoc} */
     @Override
     public int compare(String key1, String key2) {
         String keys1[] = key1.split(" ");
@@ -142,6 +149,7 @@ public final class StretchBendType extends BaseType implements Comparator<String
         return 0;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean equals(Object other) {
         if (other == this) {
@@ -158,6 +166,7 @@ public final class StretchBendType extends BaseType implements Comparator<String
         return false;
     }
 
+    /** {@inheritDoc} */
     @Override
     public int hashCode() {
         int hash = 3;

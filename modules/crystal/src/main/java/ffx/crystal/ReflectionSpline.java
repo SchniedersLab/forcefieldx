@@ -29,9 +29,9 @@ import static java.lang.Math.max;
  * Spline basis function
  *
  * @author Tim Fenn<br>
- *
  * @see <a href="http://dx.doi.org/10.1107/S0021889802013420" target="_blank">
  * K. Cowtan, J. Appl. Cryst. (2002). 35, 655-663</a>
+ * @version $Id: $
  */
 public class ReflectionSpline {
 
@@ -42,36 +42,77 @@ public class ReflectionSpline {
     private int i0, i1, i2;
     private double dfi0, dfi1, dfi2;
 
+    /**
+     * <p>Constructor for ReflectionSpline.</p>
+     *
+     * @param reflectionlist a {@link ffx.crystal.ReflectionList} object.
+     * @param nparams a int.
+     */
     public ReflectionSpline(ReflectionList reflectionlist, int nparams) {
         this.reflectionlist = reflectionlist;
         this.crystal = reflectionlist.crystal;
         this.nparams = nparams;
     }
 
+    /**
+     * <p>f</p>
+     *
+     * @return a double.
+     */
     public double f() {
         return f;
     }
 
+    /**
+     * <p>i0</p>
+     *
+     * @return a int.
+     */
     public int i0() {
         return i0;
     }
 
+    /**
+     * <p>i1</p>
+     *
+     * @return a int.
+     */
     public int i1() {
         return i1;
     }
 
+    /**
+     * <p>i2</p>
+     *
+     * @return a int.
+     */
     public int i2() {
         return i2;
     }
 
+    /**
+     * <p>dfi0</p>
+     *
+     * @return a double.
+     */
     public double dfi0() {
         return dfi0;
     }
 
+    /**
+     * <p>dfi1</p>
+     *
+     * @return a double.
+     */
     public double dfi1() {
         return dfi1;
     }
 
+    /**
+     * <p>dfi2</p>
+     *
+     * @return a double.
+     */
     public double dfi2() {
         return dfi2;
     }

@@ -35,27 +35,86 @@ import ffx.potential.bonded.RendererCache.ViewModel;
 
 /**
  * The ROLS Interace defines "Recursive Over Length Scales" (ROLS) Methods.
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public interface ROLS {
 
+    /** Constant <code>MaxLengthScale=5</code> */
     public static final int MaxLengthScale = 5;
+    /** Constant <code>LengthScale=MaxLengthScale</code> */
     public static int LengthScale = MaxLengthScale;
 
+    /**
+     * <p>drawLabel</p>
+     *
+     * @param graphics a {@link javax.media.j3d.Canvas3D} object.
+     * @param g2d a {@link javax.media.j3d.J3DGraphics2D} object.
+     * @param node a {@link javax.media.j3d.Node} object.
+     */
     public void drawLabel(Canvas3D graphics, J3DGraphics2D g2d, Node node);
 
+    /**
+     * <p>getCenter</p>
+     *
+     * @param w a boolean.
+     * @return an array of double.
+     */
     public double[] getCenter(boolean w);
 
+    /**
+     * <p>getList</p>
+     *
+     * @param c a {@link java.lang.Class} object.
+     * @param nodes a {@link java.util.ArrayList} object.
+     * @return a {@link java.util.ArrayList} object.
+     */
     public ArrayList<ROLS> getList(Class c, ArrayList<ROLS> nodes);
 
+    /**
+     * <p>getMSCount</p>
+     *
+     * @param c a {@link java.lang.Class} object.
+     * @param count a long.
+     * @return a long.
+     */
     public long getMSCount(Class c, long count);
 
+    /**
+     * <p>getMSNode</p>
+     *
+     * @param c a {@link java.lang.Class} object.
+     * @return a {@link ffx.potential.bonded.ROLS} object.
+     */
     public ROLS getMSNode(Class c);
 
+    /**
+     * <p>getMW</p>
+     *
+     * @return a double.
+     */
     public double getMW();
 
+    /**
+     * <p>setColor</p>
+     *
+     * @param colorModel a {@link ffx.potential.bonded.RendererCache.ColorModel} object.
+     * @param color a {@link javax.vecmath.Color3f} object.
+     * @param mat a {@link javax.media.j3d.Material} object.
+     */
     public void setColor(ColorModel colorModel, Color3f color, Material mat);
 
+    /**
+     * <p>setView</p>
+     *
+     * @param viewModel a {@link ffx.potential.bonded.RendererCache.ViewModel} object.
+     * @param newShapes a {@link java.util.List} object.
+     */
     public void setView(ViewModel viewModel, List<BranchGroup> newShapes);
 
+    /**
+     * <p>update</p>
+     */
     public void update();
 }

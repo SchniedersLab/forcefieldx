@@ -28,58 +28,118 @@ import java.io.Serializable;
 /**
  * The FFXMessage class is used to pass simple messages between a TinkerServer
  * and its FFXClient(s).
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public class FFXMessage implements Serializable {
 	private static final long serialVersionUID = 1L;
+	/** Constant <code>SYSTEM=0</code> */
 	public static int SYSTEM = 0;
+	/** Constant <code>UPDATE=1</code> */
 	public static int UPDATE = 1;
+	/** Constant <code>CLOSING=2</code> */
 	public static int CLOSING = 2;
+	/** Constant <code>OK=3</code> */
 	public static int OK = 3;
 	private int message = 0;
 	private int step = -1;
 	private double time = -1.0;
 	private int type = 0;
 
+	/**
+	 * <p>Constructor for FFXMessage.</p>
+	 *
+	 * @param m a int.
+	 */
 	public FFXMessage(int m) {
 		message = m;
 	}
 
+	/**
+	 * <p>Getter for the field <code>message</code>.</p>
+	 *
+	 * @return a int.
+	 */
 	public int getMessage() {
 		return message;
 	}
 
+	/**
+	 * <p>Getter for the field <code>step</code>.</p>
+	 *
+	 * @return a int.
+	 */
 	public int getStep() {
 		return step;
 	}
 
+	/**
+	 * <p>Getter for the field <code>time</code>.</p>
+	 *
+	 * @return a double.
+	 */
 	public double getTime() {
 		return time;
 	}
 
+	/**
+	 * <p>Getter for the field <code>type</code>.</p>
+	 *
+	 * @return a int.
+	 */
 	public int getType() {
 		return type;
 	}
 
+	/**
+	 * <p>print</p>
+	 */
 	public void print() {
 		System.out.println(toString());
 	}
 
+	/**
+	 * <p>Setter for the field <code>message</code>.</p>
+	 *
+	 * @param m a int.
+	 */
 	public void setMessage(int m) {
 		message = m;
 	}
 
+	/**
+	 * <p>Setter for the field <code>step</code>.</p>
+	 *
+	 * @param s a int.
+	 */
 	public void setStep(int s) {
 		step = s;
 	}
 
+	/**
+	 * <p>Setter for the field <code>time</code>.</p>
+	 *
+	 * @param t a double.
+	 */
 	public void setTime(double t) {
 		time = t;
 	}
 
+	/**
+	 * <p>Setter for the field <code>type</code>.</p>
+	 *
+	 * @param t a int.
+	 */
 	public void setType(int t) {
 		type = t;
 	}
 
+	/**
+	 * <p>toString</p>
+	 *
+	 * @return a {@link java.lang.String} object.
+	 */
 	public String toString() {
 		if (message == 0) {
 			return new String("SYSTEM").intern();

@@ -31,12 +31,16 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * <p>CCP4MapWriter class.</p>
  *
  * @author Tim Fenn
- *
  * @see <a href="http://www.ccp4.ac.uk/html/maplib.html" target="_blank">CCP4 map format</a>
  *
  * @see <a href="http://www.ccp4.ac.uk/dist/html/library.html" target="_blank">CCP4 library documentation</a>
+ * @see <a href="http://www.ccp4.ac.uk/html/maplib.html" target="_blank">CCP4 map format</a>
+ *
+ * @see <a href="http://www.ccp4.ac.uk/dist/html/library.html" target="_blank">CCP4 library documentation</a>
+ * @version $Id: $
  */
 public class CCP4MapWriter {
 
@@ -72,6 +76,21 @@ public class CCP4MapWriter {
         this.stride = 2;
     }
 
+    /**
+     * <p>Constructor for CCP4MapWriter.</p>
+     *
+     * @param orix a int.
+     * @param oriy a int.
+     * @param oriz a int.
+     * @param extx a int.
+     * @param exty a int.
+     * @param extz a int.
+     * @param nx a int.
+     * @param ny a int.
+     * @param nz a int.
+     * @param crystal a {@link ffx.crystal.Crystal} object.
+     * @param filename a {@link java.lang.String} object.
+     */
     public CCP4MapWriter(int orix, int oriy, int oriz, int extx, int exty, int extz,
             int nx, int ny, int nz, Crystal crystal, String filename){
         this.orix = orix;
@@ -90,6 +109,7 @@ public class CCP4MapWriter {
 
     /**
      * set the stepping across the array (e.g. 2 if data is separated by 1 space)
+     *
      * @param stride the step size desired
      */
     public void setStride(int stride) {

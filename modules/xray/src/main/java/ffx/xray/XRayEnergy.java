@@ -41,8 +41,8 @@ import java.util.logging.Logger;
  * Combine the X-ray target and chemical potential energy.
  *
  * @author Timothy D. Fenn and Michael J. Schnieders
- *
  * @since 1.0
+ * @version $Id: $
  */
 public class XRayEnergy implements LambdaInterface, Potential {
 
@@ -106,6 +106,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public double energyAndGradient(double[] x, double[] g) {
         double e = 0.0;
@@ -197,10 +198,20 @@ public class XRayEnergy implements LambdaInterface, Potential {
         return e;
     }
 
+    /**
+     * <p>Getter for the field <code>refinementMode</code>.</p>
+     *
+     * @return a {@link ffx.xray.RefinementMinimize.RefinementMode} object.
+     */
     public RefinementMode getRefinementMode() {
         return refinementMode;
     }
 
+    /**
+     * <p>Setter for the field <code>refinementMode</code>.</p>
+     *
+     * @param refinementmode a {@link ffx.xray.RefinementMinimize.RefinementMode} object.
+     */
     public void setRefinementMode(RefinementMode refinementmode) {
         this.refinementMode = refinementmode;
         setRefinementBooleans();
@@ -240,6 +251,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
 
     /**
      * get the number of xyz parameters being fit
+     *
      * @return the number of xyz parameters
      */
     public int getNXYZ() {
@@ -248,6 +260,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
 
     /**
      * set the number of xyz parameters
+     *
      * @param nxyz requested number of xyz parameters
      */
     public void setNXYZ(int nxyz) {
@@ -256,6 +269,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
 
     /**
      * get the number of B factor parameters being fit
+     *
      * @return the number of B factor parameters
      */
     public int getNB() {
@@ -264,6 +278,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
 
     /**
      * set the number of B factor parameters
+     *
      * @param nb requested number of B factor parameters
      */
     public void setNB(int nb) {
@@ -272,6 +287,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
 
     /**
      * get the number of occupancy parameters being fit
+     *
      * @return the number of occupancy parameters
      */
     public int getNOcc() {
@@ -280,6 +296,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
 
     /**
      * set the number of occupancy parameters
+     *
      * @param nocc requested number of occupancy parameters
      */
     public void setNOcc(int nocc) {
@@ -407,6 +424,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public double[] getCoordinates(double x[]) {
         assert (x != null);
@@ -768,16 +786,19 @@ public class XRayEnergy implements LambdaInterface, Potential {
         return e;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setScaling(double[] scaling) {
         optimizationScaling = scaling;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double[] getScaling() {
         return optimizationScaling;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double[] getMass() {
         double mass[] = new double[nxyz + nb + nocc];
@@ -805,16 +826,19 @@ public class XRayEnergy implements LambdaInterface, Potential {
         return mass;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double getTotal() {
         return totalEnergy;
     }
 
+    /** {@inheritDoc} */
     @Override
     public int getNumberOfVariables() {
         return nxyz + nb + nocc;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setLambda(double lambda) {
         if (lambda <= 1.0 && lambda >= 0.0) {
@@ -826,11 +850,13 @@ public class XRayEnergy implements LambdaInterface, Potential {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public double getLambda() {
         return lambda;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double getdEdL() {
         diffractiondata.setLambda(1.0);
@@ -844,11 +870,13 @@ public class XRayEnergy implements LambdaInterface, Potential {
         return e;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double getd2EdL2() {
         return 0.0;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void getdEdXdL(double[] gradient) {
         // compute the crystal gradients

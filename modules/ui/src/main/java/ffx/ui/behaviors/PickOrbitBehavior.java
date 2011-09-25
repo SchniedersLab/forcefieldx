@@ -33,6 +33,9 @@ import com.sun.j3d.utils.picking.PickResult;
 
 /**
  * The PickOrbitBehavior class implements a mouse orbit behavior.
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public class PickOrbitBehavior extends PickMouseBehavior implements
 		MouseBehaviorCallback {
@@ -40,6 +43,15 @@ public class PickOrbitBehavior extends PickMouseBehavior implements
 	private PickingCallback callback = null;
 	private TransformGroup currentTG;
 
+	/**
+	 * <p>Constructor for PickOrbitBehavior.</p>
+	 *
+	 * @param root a {@link javax.media.j3d.BranchGroup} object.
+	 * @param canvas a {@link javax.media.j3d.Canvas3D} object.
+	 * @param bounds a {@link javax.media.j3d.Bounds} object.
+	 * @param VPTG a {@link javax.media.j3d.TransformGroup} object.
+	 * @param pickMode a int.
+	 */
 	public PickOrbitBehavior(BranchGroup root, Canvas3D canvas, Bounds bounds,
 			TransformGroup VPTG, int pickMode) {
 		super(canvas, root, bounds);
@@ -54,6 +66,11 @@ public class PickOrbitBehavior extends PickMouseBehavior implements
 	/*
 	 * Return the pickMode component of this PickTranslateBehavior.
 	 */
+	/**
+	 * <p>getPickMode</p>
+	 *
+	 * @return a int.
+	 */
 	public int getPickMode() {
 		return pickCanvas.getMode();
 	}
@@ -62,10 +79,21 @@ public class PickOrbitBehavior extends PickMouseBehavior implements
 	 * Sets the pickMode component of this PickTranslateBehavior to the value of
 	 * the passed pickMode. @param pickMode the pickMode to be copied.
 	 */
+	/**
+	 * <p>setPickMode</p>
+	 *
+	 * @param pickMode a int.
+	 */
 	public void setPickMode(int pickMode) {
 		pickCanvas.setMode(pickMode);
 	}
 
+	/**
+	 * <p>setTransformGroups</p>
+	 *
+	 * @param StarTG a {@link javax.media.j3d.TransformGroup} object.
+	 * @param VPTG a {@link javax.media.j3d.TransformGroup} object.
+	 */
 	public void setTransformGroups(TransformGroup StarTG, TransformGroup VPTG) {
 		orbit.setTransformGroups(StarTG, VPTG);
 	}
@@ -73,6 +101,11 @@ public class PickOrbitBehavior extends PickMouseBehavior implements
 	/*
 	 * Register the class @param callback to be called each time the picked
 	 * object moves
+	 */
+	/**
+	 * <p>setupCallback</p>
+	 *
+	 * @param c a {@link ffx.ui.behaviors.PickingCallback} object.
 	 */
 	public void setupCallback(PickingCallback c) {
 		callback = c;
@@ -87,14 +120,17 @@ public class PickOrbitBehavior extends PickMouseBehavior implements
 	 * Callback method from MouseOrbit This is used when the Picking callback is
 	 * enabled
 	 */
+	/** {@inheritDoc} */
 	public void transformChanged(int type, Transform3D transform) {
 		callback.transformChanged(PickingCallback.ORBIT, currentTG);
 	}
 
+	/** {@inheritDoc} */
 	public void transformClicked(int type, Transform3D transform) {
 		callback.transformClicked(PickingCallback.ORBIT, currentTG);
 	}
 
+	/** {@inheritDoc} */
 	public void transformDoubleClicked(int type, Transform3D transform) {
 		callback.transformDoubleClicked(PickingCallback.ORBIT, currentTG);
 	}
@@ -105,6 +141,7 @@ public class PickOrbitBehavior extends PickMouseBehavior implements
 	 * you know what you are doing.
 	 * @param xpos Current mouse X pos. @param ypos Current mouse Y pos.
 	 */
+	/** {@inheritDoc} */
 	public void updateScene(int xpos, int ypos) {
 		TransformGroup tg = null;
 		if (mevent.isMetaDown() && !mevent.isAltDown()) {

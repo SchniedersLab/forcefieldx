@@ -32,8 +32,11 @@ import java.util.Vector;
 import java.util.logging.Logger;
 
 /**
- * The TinkerServer is launched by TINKER executables to allow 
+ * The TinkerServer is launched by TINKER executables to allow
  * Force Field X Clients to connect.
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public class TinkerServer implements Runnable {
 	private static final Logger logger = Logger.getLogger(TinkerServer.class.getName());
@@ -53,6 +56,11 @@ public class TinkerServer implements Runnable {
 	private TinkerSystem system = null;
 	private TinkerUpdate update = null;
 
+	/**
+	 * <p>Constructor for TinkerServer.</p>
+	 *
+	 * @param s a {@link ffx.ui.commands.TinkerSystem} object.
+	 */
 	public TinkerServer(TinkerSystem s) {
 		system = s;
 	}
@@ -140,6 +148,11 @@ public class TinkerServer implements Runnable {
 		}
 	}
 
+	/**
+	 * <p>isAlive</p>
+	 *
+	 * @return a boolean.
+	 */
 	public boolean isAlive() {
 		if (thread == null) {
 			return false;
@@ -179,10 +192,20 @@ public class TinkerServer implements Runnable {
 		}
 	}
 
+	/**
+	 * <p>loadUpdate</p>
+	 *
+	 * @param u a {@link ffx.ui.commands.TinkerUpdate} object.
+	 */
 	public void loadUpdate(TinkerUpdate u) {
 		update = u;
 	}
 
+	/**
+	 * <p>needUpdate</p>
+	 *
+	 * @return a boolean.
+	 */
 	public boolean needUpdate() {
 		if (clients.size() == 0) {
 			sleepTime = 100;
@@ -195,6 +218,9 @@ public class TinkerServer implements Runnable {
 		return true;
 	}
 
+	/**
+	 * <p>run</p>
+	 */
 	public void run() {
 		startServer();
 		while (!shutdown) {
@@ -287,10 +313,16 @@ public class TinkerServer implements Runnable {
 		}
 	}
 
+	/**
+	 * <p>setUpdated</p>
+	 */
 	public void setUpdated() {
 		request = false;
 	}
 
+	/**
+	 * <p>start</p>
+	 */
 	public void start() {
 		if (thread == null || !thread.isAlive()) {
 			thread = new Thread(this);
@@ -322,6 +354,9 @@ public class TinkerServer implements Runnable {
 		// "Server Address", JOptionPane.ERROR_MESSAGE);
 	}
 
+	/**
+	 * <p>stop</p>
+	 */
 	public void stop() {
 		shutdown = true;
 	}

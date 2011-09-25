@@ -66,7 +66,7 @@ import static ffx.potential.parameters.MultipoleType.*;
  * {@link Crystal}. The real space contribution is contained within this
  * class, but the reciprocal space contribution is delegated to the
  * {@link ReciprocalSpace} class.
- * 
+ *
  * @author Michael J. Schnieders<br>
  *         derived from:<br>
  *         TINKER code by Jay Ponder, Pengyu Ren and Tom Darden.<br>
@@ -79,10 +79,13 @@ import static ffx.potential.parameters.MultipoleType.*;
  *      <a href="http://www.ccp5.org" target="_blank"> W. Smith,
  *      "Point Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter,
  *      46, 18-30, 1998</a><br>
+ * @version $Id: $
  */
 public class PME_2 implements Potential {
 
+    /** Constant <code>pedit=false</code> */
     public static boolean pedit = false;
+    /** Constant <code>propyze=false</code> */
     public static boolean propyze = false;
     private Boolean use_pme = false;
     private double target_grid[][][];//nSymm, nAtoms, 4
@@ -90,6 +93,7 @@ public class PME_2 implements Potential {
     private ArrayList<String> key;
     public boolean fitmpl = true, fitdpl = true, fitqdpl = true;
     private int nvars;
+    /** Constant <code>logger</code> */
     public static final Logger logger = Logger.getLogger(PME_2.class.getName());
     private double totalEnergy;
 
@@ -105,6 +109,7 @@ public class PME_2 implements Potential {
     private int interactions;
     private double multipoleEnergy;
     private double polarizationEnergy;
+    /** Constant <code>lambda=1.0</code> */
     public static double lambda = 1.0;
     /**
      * Reference to the force field being used.
@@ -130,6 +135,7 @@ public class PME_2 implements Potential {
      * Dimensions of [nsymm][3][nAtoms].
      */
     public static double coordinates[][][];
+    /** Constant <code>neighborLists=</code> */
     public static int neighborLists[][][];
     private final int[][][] ewaldLists;
     private final int[][] ewaldCounts;
@@ -140,8 +146,11 @@ public class PME_2 implements Potential {
      * Permanent multipoles in their local frame.
      */
     public static double localMultipole[][];
+    /** Constant <code>frame</code> */
     public static MultipoleType.MultipoleFrameDefinition frame[];
+    /** Constant <code>axisAtom=</code> */
     public static int axisAtom[][];
+    /** Constant <code>lol=</code> */
     public static int lol[];
     /**
      * Dimensions of [nsymm][nAtoms][10]
@@ -171,7 +180,9 @@ public class PME_2 implements Potential {
      * Polarization mode.
      */
     public static Polarization polarization;
+    /** Constant <code>polsor=</code> */
     public static double polsor;
+    /** Constant <code>poleps=</code> */
     public static double poleps;
     /**
      * Direct polarization field due to permanent multipoles at polarizable
@@ -188,15 +199,21 @@ public class PME_2 implements Potential {
      * that are 1-3 is scaled by p13scale.
      */
     public static double p13scale;
+    /** Constant <code>pdamp=</code> */
     public static double pdamp[];
+    /** Constant <code>thole=</code> */
     public static double thole[];
+    /** Constant <code>polarizability=</code> */
     public static double polarizability[];
     /**
      * Dimensions of [nsymm][nAtoms][3]
      */
     public static double inducedDipole[][][];
+    /** Constant <code>inducedDipolep=</code> */
     public static double inducedDipolep[][][];
+    /** Constant <code>directDipole=</code> */
     public static double directDipole[][];
+    /** Constant <code>directDipolep=</code> */
     public static double directDipolep[][];
     private final double cartesianDipolePhi[][];
     private final double cartesianDipolepPhi[][];
@@ -204,10 +221,15 @@ public class PME_2 implements Potential {
      * Dimensions of [nsymm][nAtoms][3]
      */
     public static double field1[][];
+    /** Constant <code>field2=</code> */
     public static double field2[][];
+    /** Constant <code>ip11=</code> */
     public static int ip11[][];
+    /** Constant <code>ip12=</code> */
     public static int ip12[][];
+    /** Constant <code>ip13=</code> */
     public static int ip13[][];
+    /** Constant <code>ip14=</code> */
     public static int ip14[][]; //added by gchattree
     /***************************************************************************
      * Mutable Particle Mesh Ewald constants.
@@ -217,6 +239,7 @@ public class PME_2 implements Potential {
     private double piEwald;
     private double aewald3;
     private double off;
+    /** Constant <code>off2=</code> */
     public static double off2;
     private double permanentSelfEnergy;
     /***************************************************************************
@@ -277,14 +300,17 @@ public class PME_2 implements Potential {
      * Otherwise, reciprocalSpaceThreads = maxThreads - realSpaceThreads
      */
     private final int fftThreads;
+    /** Constant <code>rotateMultipolesRegion</code> */
     public static RotateMultipolesRegion rotateMultipolesRegion;
     private final ExpandCoordinatesRegion expandCoordinatesRegion;
+    /** Constant <code>expandInducedDipolesRegion</code> */
     public static ExpandInducedDipolesRegion expandInducedDipolesRegion;
     //private ReciprocalSpace reciprocalSpace;
     //private PermanentFieldRegion permanentFieldRegion;
     //private InducedDipoleFieldRegion inducedDipoleFieldRegion;
     private RealSpaceEnergyRegion realSpaceEnergyRegion;
     private TorqueRegion torqueRegion;
+    /** Constant <code>pairWiseSchedule</code> */
     public static IntegerSchedule pairWiseSchedule;
     private final SharedDoubleArray sharedGrad[];
     private final SharedDoubleArray sharedTorque[];
@@ -292,6 +318,7 @@ public class PME_2 implements Potential {
     private long realSpaceTime;
     //private long reciprocalSpaceTime;
     //private long bsplineTime, densityTime, realAndFFTTime, phiTime;
+    /** Constant <code>toSeconds=1.0e-9</code> */
     public static double toSeconds = 1.0e-9;
     /**
      * Conversion from electron^2/Ang to Kcal/mole
@@ -304,12 +331,14 @@ public class PME_2 implements Potential {
     //private ArrayList<Double> put;
 
     /**
+     * <p>Constructor for PME_2.</p>
      *
-     * @param forceField
-     * @param unOrderedAtoms
-     * @param crystal
-     * @param parallelTeam
-     * @param neighborLists
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param crystal a {@link ffx.crystal.Crystal} object.
+     * @param parallelTeam a {@link edu.rit.pj.ParallelTeam} object.
+     * @param neighborLists an array of int.
+     * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
+     * @param key a {@link java.util.ArrayList} object.
      */
     public PME_2(ForceField forceField, Atom[] atoms,
             Crystal crystal, ParallelTeam parallelTeam, int neighborLists[][][], ArrayList<String> key) {
@@ -618,10 +647,22 @@ public class PME_2 implements Potential {
 //    public void getdEdXdL(double[] gradients) {
 //        throw new UnsupportedOperationException("Not supported yet.");
 //    }
+    /**
+     * <p>set_target_grid</p>
+     *
+     * @param target_grid an array of double.
+     */
     public void set_target_grid(double target_grid[][][]) {
         this.target_grid = target_grid;
     }
 
+    /**
+     * <p>varprm</p>
+     *
+     * @param x an array of double.
+     * @param ivar a int.
+     * @param eps a double.
+     */
     public void varprm(double x[], int ivar, double eps) {
         int n = 0;
         ArrayList<Integer> types = new ArrayList<Integer>();
@@ -693,6 +734,13 @@ public class PME_2 implements Potential {
     }
 
     /*Methods needed to implement Potential interface*/
+    /**
+     * <p>energyAndGradient</p>
+     *
+     * @param x an array of double.
+     * @param g an array of double.
+     * @return a double.
+     */
     public double energyAndGradient(double x[], double g[]) {
         //long currenttime = System.nanoTime(); 
         double pot_grid[][][] = new double[nSymm][][];
@@ -807,14 +855,30 @@ public class PME_2 implements Potential {
         return total_error;
     }
 
+    /**
+     * <p>Setter for the field <code>scaling</code>.</p>
+     *
+     * @param scaling an array of double.
+     */
     public void setScaling(double scaling[]) {
         this.scaling = scaling;
     }
 
+    /**
+     * <p>Getter for the field <code>scaling</code>.</p>
+     *
+     * @return an array of double.
+     */
     public double[] getScaling() {
         return scaling;
     }
 
+    /**
+     * <p>Getter for the field <code>coordinates</code>.</p>
+     *
+     * @param parameters an array of double.
+     * @return an array of double.
+     */
     public double[] getCoordinates(double parameters[]) {
         ArrayList<Double> p = new ArrayList<Double>();
         ArrayList<Integer> types = new ArrayList<Integer>();
@@ -872,6 +936,12 @@ public class PME_2 implements Potential {
         return parameters;
     }
 
+    /**
+     * <p>getallmpoles</p>
+     *
+     * @param x an array of double.
+     * @return an array of double.
+     */
     public double[] getallmpoles(double x[]) {
         ArrayList<Double> p = new ArrayList<Double>();
         ArrayList<Integer> types = new ArrayList<Integer>();
@@ -967,26 +1037,37 @@ public class PME_2 implements Potential {
         return parameters;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double[] getMass() {
         return null;
     }
 
+    /** {@inheritDoc} */
     @Override
     public int getNumberOfVariables() {
         return nvars;
     }
     
+    /** {@inheritDoc} */
     @Override
     public double getTotal() {
         return totalEnergy;
     }
 
+    /**
+     * <p>Setter for the field <code>key</code>.</p>
+     *
+     * @param key a {@link java.util.ArrayList} object.
+     */
     public void setkey(ArrayList<String> key) {
         this.key = key;
     }
 
     //added by gchattree
+    /**
+     * <p>polargrp</p>
+     */
     public static void polargrp() {
         int index;
 
@@ -1263,6 +1344,9 @@ public class PME_2 implements Potential {
         }
     }
 
+    /**
+     * <p>induce_pedit</p>
+     */
     public static void induce_pedit() {
         double d12scale = 1;
         double d13scale = 1;
@@ -1464,6 +1548,9 @@ public class PME_2 implements Potential {
     }
 
     //added by gchattree
+    /**
+     * <p>induce0a</p>
+     */
     public static void induce0a() {
         double d12scale = 1;
         double d13scale = 1;
@@ -1819,6 +1906,11 @@ public class PME_2 implements Potential {
         setDipoleMoments(false);
     }
 
+    /**
+     * <p>setDipoleMoments</p>
+     *
+     * @param print a boolean.
+     */
     public static void setDipoleMoments(boolean print) {
         long startTime = System.nanoTime();
         //set the induced dipoles
@@ -1879,6 +1971,12 @@ public class PME_2 implements Potential {
         }
     }
 
+    /**
+     * <p>calcMutualDipoleMoments</p>
+     *
+     * @param print a boolean.
+     * @param startTime a long.
+     */
     public static void calcMutualDipoleMoments(boolean print, long startTime) {
         double mask_local[] = new double[nAtoms];
         double dx_local[] = new double[3];
@@ -2234,6 +2332,9 @@ public class PME_2 implements Potential {
         }
     }
 
+    /**
+     * <p>init_prms</p>
+     */
     public void init_prms() {
         if (propyze) {
             dividempoles3();
@@ -2251,6 +2352,9 @@ public class PME_2 implements Potential {
         }
     }
 
+    /**
+     * <p>dividempoles3</p>
+     */
     public void dividempoles3() {
         for (int i = 0; i < nAtoms; i++) {
             for (int j = 4; j < 10; j++) {
@@ -2260,6 +2364,12 @@ public class PME_2 implements Potential {
     }
 
     //added by gchattree
+    /**
+     * <p>potpoint</p>
+     *
+     * @param xyz an array of {@link java.lang.Double} objects.
+     * @return a double.
+     */
     public double potpoint(Double xyz[]) {
         double epot = 0;
         double xi = xyz[0];
@@ -2544,6 +2654,139 @@ public class PME_2 implements Potential {
 //             * permanent dipole.
 //             */
 //            eselfi = inducedDipoleSelfEnergy(gradient);
+    /**
+     * Calculate the PME electrostatic energy.
+     *
+     * @return return the total electrostatic energy (permanent + polarization).
+     */
+//    public double energy(boolean gradient, boolean print) {
+//        /**
+//         * Initialize the energy components.
+//         */
+//        double eself = 0.0;
+//        double erecip = 0.0;
+//        double ereal = 0.0;
+//        double eselfi = 0.0;
+//        double erecipi = 0.0;
+//        double ereali = 0.0;
+//        multipoleEnergy = 0.0;
+//        polarizationEnergy = 0.0;
+//        interactions = 0;
+//        realSpaceTime = 0;
+//        reciprocalSpaceTime = 0;
+//
+//        /**
+//         * Initialize the coordinates.
+//         */
+//        double x[] = coordinates[0][0];
+//        double y[] = coordinates[0][1];
+//        double z[] = coordinates[0][2];
+//        for (int i = 0; i < nAtoms; i++) {
+//            double xyz[] = atoms[i].getXYZ();
+//            x[i] = xyz[0];
+//            y[i] = xyz[1];
+//            z[i] = xyz[2];
+//        }
+//
+//        checkCacheSize();
+//
+//        /**
+//         * Initialize the gradient accumulation arrays.
+//         */
+//        if (gradient) {
+//            for (int j = 0; j < nAtoms; j++) {
+//                sharedGrad[0].set(j, 0.0);
+//                sharedGrad[1].set(j, 0.0);
+//                sharedGrad[2].set(j, 0.0);
+//                sharedTorque[0].set(j, 0.0);
+//                sharedTorque[1].set(j, 0.0);
+//                sharedTorque[2].set(j, 0.0);
+//            }
+//        }
+//
+//        /**
+//         * Find the permanent multipole potential and its gradients.
+//         */
+//        try {
+//            parallelTeam.execute(expandCoordinatesRegion);
+//            parallelTeam.execute(rotateMultipolesRegion);
+//
+//            bsplineTime = -System.nanoTime();
+//            reciprocalSpace.computeBSplines();
+//            bsplineTime += System.nanoTime();
+//
+//            densityTime = -System.nanoTime();
+//            reciprocalSpace.splinePermanentMultipoles(globalMultipole, null);
+//            densityTime += System.nanoTime();
+//            /**
+//             * Here the real space contribution to the field is calculated at
+//             * the same time the reciprocal space convolution is being done.
+//             * This is useful since the reciprocal space convolution
+//             * (the 3D FFT and inverse FFT) do not parallelize well.
+//             */
+//            realAndFFTTime = -System.nanoTime();
+//            sectionTeam.execute(permanentFieldRegion);
+//            realAndFFTTime += System.nanoTime();
+//
+//            phiTime = -System.nanoTime();
+//            reciprocalSpace.computePermanentPhi(cartesianMultipolePhi);
+//            phiTime += System.nanoTime();
+//        } catch (Exception e) {
+//            String message = "Fatal exception computing the permanent multipole field.\n";
+//            logger.log(Level.SEVERE, message, e);
+//        }
+//
+//        /**
+//         * Do the self consistent field calculation.
+//         */
+//        selfConsistentField(logger.isLoggable(Level.FINE));
+//
+//        if (logger.isLoggable(Level.FINE)) {
+//            StringBuilder sb = new StringBuilder();
+//            sb.append(format("\n b-Spline:   %8.3f (sec)\n", bsplineTime * toSeconds));
+//            sb.append(format(" Density:    %8.3f (sec)\n", densityTime * toSeconds));
+//            sb.append(format(" Real + FFT: %8.3f (sec)\n", realAndFFTTime * toSeconds));
+//            sb.append(format(" Phi:        %8.3f (sec)\n", phiTime * toSeconds));
+//            logger.fine(sb.toString());
+//        }
+//
+//        /**
+//         * The self energy of the permanent multipoles is constant.
+//         */
+//        eself = permanentSelfEnergy;
+//        interactions = nAtoms;
+//
+//        /**
+//         * The energy of the permanent multipoles in their reciprocal space
+//         * potential. This potential was computed prior to the SCF.
+//         */
+//        erecip = permanentReciprocalSpaceEnergy(gradient);
+//
+//        /**
+//         * Find the total real space energy. This includes the permanent
+//         * multipoles in their own real space potential and the interaction of
+//         * permanent multipoles with induced dipoles.
+//         */
+//        long time = System.nanoTime();
+//        try {
+//            realSpaceEnergyRegion.setGradient(gradient);
+//            parallelTeam.execute(realSpaceEnergyRegion);
+//            ereal = realSpaceEnergyRegion.getPermanentEnergy();
+//            ereali = realSpaceEnergyRegion.getPolarizationEnergy();
+//            interactions += realSpaceEnergyRegion.getInteractions();
+//        } catch (Exception e) {
+//            String message = "Exception computing the real space energy.\n";
+//            logger.log(Level.SEVERE, message, e);
+//        }
+//        time = System.nanoTime() - time;
+//        realSpaceTime += time;
+//
+//        if (polarization != Polarization.NONE) {
+//            /**
+//             * The induced dipole self energy due to interaction with the
+//             * permanent dipole.
+//             */
+//            eselfi = inducedDipoleSelfEnergy(gradient);
 //            /**
 //             * The energy of the permanent multipoles in the induced dipole
 //             * reciprocal potential.
@@ -2588,14 +2831,29 @@ public class PME_2 implements Potential {
         return interactions;
     }
 
+    /**
+     * <p>getPermanentEnergy</p>
+     *
+     * @return a double.
+     */
     public double getPermanentEnergy() {
         return multipoleEnergy;
     }
 
+    /**
+     * <p>Getter for the field <code>polarizationEnergy</code>.</p>
+     *
+     * @return a double.
+     */
     public double getPolarizationEnergy() {
         return polarizationEnergy;
     }
 
+    /**
+     * <p>getGradients</p>
+     *
+     * @param grad an array of double.
+     */
     public void getGradients(double grad[][]) {
         for (int i = 0; i < nAtoms; i++) {
             grad[0][i] = sharedGrad[0].get(i);
@@ -2907,6 +3165,108 @@ public class PME_2 implements Potential {
      * run concurrently, each with the number of threads defined by their
      * respective ParallelTeam instances.
      */
+//    private class InducedDipoleFieldRegion extends ParallelRegion {
+//
+//        private InducedDipoleRealSpaceFieldSection inducedRealSpaceFieldSection;
+//        private InducedDipoleReciprocalFieldSection inducedReciprocalFieldSection;
+//
+//        public InducedDipoleFieldRegion(ParallelTeam pt) {
+//            inducedRealSpaceFieldSection = new InducedDipoleRealSpaceFieldSection(pt);
+//            inducedReciprocalFieldSection = new InducedDipoleReciprocalFieldSection();
+//        }
+//
+//        @Override
+//        public void run() {
+//            try {
+//                execute(inducedRealSpaceFieldSection, inducedReciprocalFieldSection);
+//            } catch (Exception e) {
+//                String message = "Fatal exception computing the induced dipole field.\n";
+//                logger.log(Level.SEVERE, message, e);
+//            }
+//        }
+//    }
+//
+//    private class InducedDipoleRealSpaceFieldSection extends ParallelSection {
+//
+//        private final InducedDipoleRealSpaceFieldRegion polarizationRealSpaceFieldRegion;
+//        private final ParallelTeam pt;
+//
+//        public InducedDipoleRealSpaceFieldSection(ParallelTeam pt) {
+//            this.pt = pt;
+//            int nt = pt.getThreadCount();
+//            polarizationRealSpaceFieldRegion = new InducedDipoleRealSpaceFieldRegion(nt);
+//        }
+//
+//        @Override
+//        public void run() {
+//            try {
+//                long time = System.nanoTime();
+//                pt.execute(polarizationRealSpaceFieldRegion);
+//                polarizationRealSpaceFieldRegion.setField(field1, field2);
+//                time = System.nanoTime() - time;
+//                realSpaceTime += time;
+//            } catch (Exception e) {
+//                String message = "Fatal exception computing the real space field.\n";
+//                logger.log(Level.SEVERE, message, e);
+//            }
+//        }
+//    }
+//    private class InducedDipoleReciprocalFieldSection extends ParallelSection {
+//
+//        @Override
+//        public void run() {
+//            reciprocalSpace.inducedDipoleConvolution();
+//        }
+//    }
+//    private double permanentReciprocalSpaceEnergy(boolean gradient) {
+//        double erecip = 0.0;
+//        final double pole[][] = globalMultipole[0];
+//        final double fpole[][] = reciprocalSpace.getFracMultipoles();
+//        final double fractionalMultipolePhi[][] = reciprocalSpace.getFracMultipolePhi();
+//        final double nfftX = reciprocalSpace.getXDim();
+//        final double nfftY = reciprocalSpace.getYDim();
+//        final double nfftZ = reciprocalSpace.getZDim();
+//        for (int i = 0; i < nAtoms; i++) {
+//            final double phi[] = cartesianMultipolePhi[i];
+//            final double fPhi[] = fractionalMultipolePhi[i];
+//            final double mpole[] = pole[i];
+//            final double fmpole[] = fpole[i];
+//            double e = fmpole[t000] * fPhi[t000] + fmpole[t100] * fPhi[t100]
+//                       + fmpole[t010] * fPhi[t010] + fmpole[t001] * fPhi[t001]
+//                       + fmpole[t200] * fPhi[t200] + fmpole[t020] * fPhi[t020]
+//                       + fmpole[t002] * fPhi[t002] + fmpole[t110] * fPhi[t110]
+//                       + fmpole[t101] * fPhi[t101] + fmpole[t011] * fPhi[t011];
+//            erecip += e;
+//            if (gradient) {
+//                double gx = fmpole[t000] * fPhi[t100] + fmpole[t100] * fPhi[t200] + fmpole[t010] * fPhi[t110] + fmpole[t001] * fPhi[t101] + fmpole[t200] * fPhi[t300] + fmpole[t020] * fPhi[t120] + fmpole[t002] * fPhi[t102] + fmpole[t110] * fPhi[t210] + fmpole[t101] * fPhi[t201] + fmpole[t011] * fPhi[t111];
+//                double gy = fmpole[t000] * fPhi[t010] + fmpole[t100] * fPhi[t110] + fmpole[t010] * fPhi[t020] + fmpole[t001] * fPhi[t011] + fmpole[t200] * fPhi[t210] + fmpole[t020] * fPhi[t030] + fmpole[t002] * fPhi[t012] + fmpole[t110] * fPhi[t120] + fmpole[t101] * fPhi[t111] + fmpole[t011] * fPhi[t021];
+//                double gz = fmpole[t000] * fPhi[t001] + fmpole[t100] * fPhi[t101] + fmpole[t010] * fPhi[t011] + fmpole[t001] * fPhi[t002] + fmpole[t200] * fPhi[t201] + fmpole[t020] * fPhi[t021] + fmpole[t002] * fPhi[t003] + fmpole[t110] * fPhi[t111] + fmpole[t101] * fPhi[t102] + fmpole[t011] * fPhi[t012];
+//                gx *= nfftX;
+//                gy *= nfftY;
+//                gz *= nfftZ;
+//                final double recip[][] = crystal.getUnitCell().A;
+//                final double dfx = recip[0][0] * gx + recip[0][1] * gy + recip[0][2] * gz;
+//                final double dfy = recip[1][0] * gx + recip[1][1] * gy + recip[1][2] * gz;
+//                final double dfz = recip[2][0] * gx + recip[2][1] * gy + recip[2][2] * gz;
+//                // Compute dipole torques
+//                double tqx = -mpole[t010] * phi[t001] + mpole[t001] * phi[t010];
+//                double tqy = -mpole[t001] * phi[t100] + mpole[t100] * phi[t001];
+//                double tqz = -mpole[t100] * phi[t010] + mpole[t010] * phi[t100];
+//                // Compute quadrupole torques
+//                tqx -= 2.0 / 3.0 * (mpole[t110] * phi[t101] + mpole[t020] * phi[t011] + mpole[t011] * phi[t002] - mpole[t101] * phi[t110] - mpole[t011] * phi[t020] - mpole[t002] * phi[t011]);
+//                tqy -= 2.0 / 3.0 * (mpole[t101] * phi[t200] + mpole[t011] * phi[t110] + mpole[t002] * phi[t101] - mpole[t200] * phi[t101] - mpole[t110] * phi[t011] - mpole[t101] * phi[t002]);
+//                tqz -= 2.0 / 3.0 * (mpole[t200] * phi[t110] + mpole[t110] * phi[t020] + mpole[t101] * phi[t011] - mpole[t110] * phi[t200] - mpole[t020] * phi[t110] - mpole[t011] * phi[t101]);
+//                sharedGrad[0].addAndGet(i, electric * dfx);
+//                sharedGrad[1].addAndGet(i, electric * dfy);
+//                sharedGrad[2].addAndGet(i, electric * dfz);
+//                sharedTorque[0].addAndGet(i, electric * tqx);
+//                sharedTorque[1].addAndGet(i, electric * tqy);
+//                sharedTorque[2].addAndGet(i, electric * tqz);
+//            }
+//        }
+//        erecip = 0.5 * electric * erecip;
+//        return erecip;
+//    }
 //    private class InducedDipoleFieldRegion extends ParallelRegion {
 //
 //        private InducedDipoleRealSpaceFieldSection inducedRealSpaceFieldSection;
@@ -5633,6 +5993,14 @@ public class PME_2 implements Potential {
         return x;
     }
 
+    /**
+     * <p>ewaldCutoff</p>
+     *
+     * @param coeff a double.
+     * @param maxCutoff a double.
+     * @param eps a double.
+     * @return a double.
+     */
     public static double ewaldCutoff(double coeff, double maxCutoff, double eps) {
         /*
          * Set the tolerance value; use of 1.0d-8 requires strict convergence

@@ -56,6 +56,9 @@ import ffx.ui.behaviors.MouseBehaviorCallback;
 /**
  * The GraphicsAxis class encapsulates the 3D Axis that is used to display and
  * control rotation/translation in the global frame.
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public final class GraphicsAxis extends Group implements MouseBehaviorCallback {
 
@@ -68,6 +71,13 @@ public final class GraphicsAxis extends Group implements MouseBehaviorCallback {
     Vector3d axisVector3d = new Vector3d(-0.7, -0.6, -1.25);
     public Matrix3d matrix = new Matrix3d();
 
+    /**
+     * <p>Constructor for GraphicsAxis.</p>
+     *
+     * @param v a {@link com.sun.j3d.utils.universe.ViewingPlatform} object.
+     * @param c a {@link javax.media.j3d.Canvas3D} object.
+     * @param b a {@link javax.media.j3d.Bounds} object.
+     */
     public GraphicsAxis(ViewingPlatform v, Canvas3D c, Bounds b) {
         viewingPlatform = v;
         canvas = c;
@@ -89,6 +99,9 @@ public final class GraphicsAxis extends Group implements MouseBehaviorCallback {
         viewingPlatform.getViewPlatformTransform().addChild(axisBranchGroup);
     }
 
+    /**
+     * <p>center</p>
+     */
     public void center() {
         axisTransform3D.setIdentity();
         axisTransform3D.setScale(0.015);
@@ -96,6 +109,9 @@ public final class GraphicsAxis extends Group implements MouseBehaviorCallback {
         axisTransformGroup.setTransform(axisTransform3D);
     }
 
+    /**
+     * <p>createAxis</p>
+     */
     public void createAxis() {
         Appearance ap = new Appearance();
         Color3f col = new Color3f(Color.lightGray);
@@ -200,6 +216,11 @@ public final class GraphicsAxis extends Group implements MouseBehaviorCallback {
         return tg;
     }
 
+    /**
+     * <p>Getter for the field <code>axisTransformGroup</code>.</p>
+     *
+     * @return a {@link javax.media.j3d.TransformGroup} object.
+     */
     public TransformGroup getAxisTransformGroup() {
         return axisTransformGroup;
     }
@@ -223,6 +244,11 @@ public final class GraphicsAxis extends Group implements MouseBehaviorCallback {
         }
     }
 
+    /**
+     * <p>showAxis</p>
+     *
+     * @param b a boolean.
+     */
     public void showAxis(boolean b) {
         if (b == true && !axisBranchGroup.isLive()) {
             viewingPlatform.getViewPlatformTransform().addChild(axisBranchGroup);
@@ -231,6 +257,7 @@ public final class GraphicsAxis extends Group implements MouseBehaviorCallback {
         }
     }
 
+    /** {@inheritDoc} */
     public void transformChanged(int type, Transform3D viewTransform) {
         viewTransform.get(matrix);
         matrix.invert();
@@ -241,10 +268,12 @@ public final class GraphicsAxis extends Group implements MouseBehaviorCallback {
         axisTransformGroup.setTransform(axisTransform3D);
     }
 
+    /** {@inheritDoc} */
     public void transformClicked(int type, Transform3D transform) {
         transformChanged(type, transform);
     }
 
+    /** {@inheritDoc} */
     public void transformDoubleClicked(int type, Transform3D transform) {
         transformChanged(type, transform);
     }

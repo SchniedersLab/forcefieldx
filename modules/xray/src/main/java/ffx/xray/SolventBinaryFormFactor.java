@@ -26,8 +26,10 @@ import ffx.potential.bonded.Atom;
 import ffx.xray.RefinementMinimize.RefinementMode;
 
 /**
+ * <p>SolventBinaryFormFactor class.</p>
  *
  * @author fenn
+ * @version $Id: $
  */
 public final class SolventBinaryFormFactor implements FormFactor {
     private final Atom atom;
@@ -35,10 +37,23 @@ public final class SolventBinaryFormFactor implements FormFactor {
     private double dxyz[] = new double[3];
     private double proberad;
 
+    /**
+     * <p>Constructor for SolventBinaryFormFactor.</p>
+     *
+     * @param atom a {@link ffx.potential.bonded.Atom} object.
+     * @param proberad a double.
+     */
     public SolventBinaryFormFactor(Atom atom, double proberad) {
         this(atom, proberad, atom.getXYZ());
     }
 
+    /**
+     * <p>Constructor for SolventBinaryFormFactor.</p>
+     *
+     * @param atom a {@link ffx.potential.bonded.Atom} object.
+     * @param proberad a double.
+     * @param xyz an array of double.
+     */
     public SolventBinaryFormFactor(Atom atom, double proberad, double xyz[]) {
         this.atom = atom;
         this.proberad = proberad;
@@ -46,12 +61,21 @@ public final class SolventBinaryFormFactor implements FormFactor {
         update(xyz);
     }
 
+    /** {@inheritDoc} */
     @Override
     public double rho(double f, double lambda, double[] xyz) {
         VectorMath.diff(this.xyz, xyz, dxyz);
         return rho(f, lambda, VectorMath.r(dxyz));
     }
 
+    /**
+     * <p>rho</p>
+     *
+     * @param f a double.
+     * @param lambda a double.
+     * @param ri a double.
+     * @return a double.
+     */
     public double rho(double f, double lambda, double ri) {
         if (ri <= proberad) {
             return 0.0;
@@ -61,15 +85,18 @@ public final class SolventBinaryFormFactor implements FormFactor {
     }
 
     // no derivative for the binary model!!!
+    /** {@inheritDoc} */
     @Override
     public void rho_grad(double[] xyz, double dfc, RefinementMode refinementmode) {
     }
     
+    /** {@inheritDoc} */
     @Override
     public void update(double xyz[]) {
         update(xyz, 0.0);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void update(double xyz[], double badd) {
         this.xyz[0] = xyz[0];

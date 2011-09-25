@@ -26,6 +26,7 @@ package ffx.algorithms;
  *
  * @author Michael J. Schnieders
  * @since 1.0
+ * @version $Id: $
  */
 public interface Terminatable {
 

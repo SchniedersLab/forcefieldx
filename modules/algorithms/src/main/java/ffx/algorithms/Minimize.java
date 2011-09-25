@@ -36,6 +36,7 @@ import ffx.potential.bonded.MolecularAssembly;
  *
  * @author Michael J. Schnieders
  * @since 1.0
+ * @version $Id: $
  */
 public class Minimize implements OptimizationListener, Terminatable {
 
@@ -53,6 +54,12 @@ public class Minimize implements OptimizationListener, Terminatable {
     private double grms;
     private int nSteps;
 
+    /**
+     * <p>Constructor for Minimize.</p>
+     *
+     * @param assembly a {@link ffx.potential.bonded.MolecularAssembly} object.
+     * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
+     */
     public Minimize(MolecularAssembly assembly, AlgorithmListener listener) {
         assert (assembly != null);
         molecularAssembly = assembly;
@@ -71,6 +78,7 @@ public class Minimize implements OptimizationListener, Terminatable {
         potential.setScaling(scaling);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void terminate() {
         terminate = true;
@@ -85,14 +93,32 @@ public class Minimize implements OptimizationListener, Terminatable {
         }
     }
 
+    /**
+     * <p>minimize</p>
+     *
+     * @return a {@link ffx.numerics.Potential} object.
+     */
     public Potential minimize() {
         return minimize(1.0);
     }
 
+    /**
+     * <p>minimize</p>
+     *
+     * @param eps a double.
+     * @return a {@link ffx.numerics.Potential} object.
+     */
     public Potential minimize(double eps) {
         return minimize(7, eps);
     }
 
+    /**
+     * <p>minimize</p>
+     *
+     * @param m a int.
+     * @param eps a double.
+     * @return a {@link ffx.numerics.Potential} object.
+     */
     public Potential minimize(int m, double eps) {
         time = System.nanoTime();
         potential.getCoordinates(x);
@@ -123,16 +149,9 @@ public class Minimize implements OptimizationListener, Terminatable {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Implement the OptimizationListener interface.
-     *
-     * @param iter Number of iterations so far.
-     * @param nfun Number of function evaluations so far.
-     * @param grms Gradient RMS at current solution.
-     * @param xrms Coordinate change RMS at current solution.
-     * @param f Function value at current solution.
-     * @param df Change in the function value compared to the previous solution.
-     * @param angle Current angle between gradient and search direction.
-     *
      * @since 1.0
      */
     @Override
@@ -179,8 +198,8 @@ public class Minimize implements OptimizationListener, Terminatable {
      * @param xrms Coordinate change RMS at current solution.
      * @param f Function value at current solution.
      * @param df Change in the function value compared to the previous solution.
-     *
      * @since 1.0
+     * @return a boolean.
      */
     public boolean optimizationUpdate(int iter, int nfun, double grms, double xrms, double f, double df) {
         long currentTime = System.nanoTime();

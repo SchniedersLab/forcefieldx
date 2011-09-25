@@ -30,8 +30,10 @@ import ffx.numerics.ComplexNumber;
 import java.util.Random;
 
 /**
+ * <p>DiffractionRefinementData class.</p>
  *
  * @author fennt
+ * @version $Id: $
  */
 public class DiffractionRefinementData {
 
@@ -194,10 +196,20 @@ public class DiffractionRefinementData {
         model_k = 0.0;
     }
 
+    /**
+     * <p>setCrystalReciprocalSpace_fc</p>
+     *
+     * @param crs a {@link ffx.xray.CrystalReciprocalSpace} object.
+     */
     public void setCrystalReciprocalSpace_fc(CrystalReciprocalSpace crs) {
         this.crs_fc = crs;
     }
 
+    /**
+     * <p>setCrystalReciprocalSpace_fs</p>
+     *
+     * @param crs a {@link ffx.xray.CrystalReciprocalSpace} object.
+     */
     public void setCrystalReciprocalSpace_fs(CrystalReciprocalSpace crs) {
         this.crs_fs = crs;
     }
@@ -247,6 +259,8 @@ public class DiffractionRefinementData {
 
     /**
      * generate average F/sigF from anomalous F/sigF
+     *
+     * @param anofsigf an array of double.
      */
     public void generate_fsigf_from_anofsigf(double anofsigf[][]) {
         for (int i = 0; i < n; i++) {
@@ -276,6 +290,12 @@ public class DiffractionRefinementData {
         fsigf[i][0] = f;
     }
 
+    /**
+     * <p>get_f</p>
+     *
+     * @param i a int.
+     * @return a double.
+     */
     public double get_f(int i) {
         return fsigf[i][0];
     }
@@ -290,6 +310,12 @@ public class DiffractionRefinementData {
         fsigf[i][1] = sigf;
     }
 
+    /**
+     * <p>get_sigf</p>
+     *
+     * @param i a int.
+     * @return a double.
+     */
     public double get_sigf(int i) {
         return fsigf[i][1];
     }
@@ -306,6 +332,12 @@ public class DiffractionRefinementData {
         fsigf[i][1] = sigf;
     }
 
+    /**
+     * <p>get_fsigf</p>
+     *
+     * @param i a int.
+     * @return an array of double.
+     */
     public double[] get_fsigf(int i) {
         return fsigf[i];
     }
@@ -329,14 +361,33 @@ public class DiffractionRefinementData {
         freer[i] = f;
     }
 
+    /**
+     * <p>get_freer</p>
+     *
+     * @param i a int.
+     * @return a int.
+     */
     public int get_freer(int i) {
         return freer[i];
     }
 
+    /**
+     * <p>isfreer</p>
+     *
+     * @param i a int.
+     * @param f a int.
+     * @return a boolean.
+     */
     public boolean isfreer(int i, int f) {
         return (freer[i] == f);
     }
 
+    /**
+     * <p>isfreer</p>
+     *
+     * @param i a int.
+     * @return a boolean.
+     */
     public boolean isfreer(int i) {
         return (freer[i] == rfreeflag);
     }
@@ -397,104 +448,224 @@ public class DiffractionRefinementData {
         return c.phase();
     }
 
+    /**
+     * <p>set_fs</p>
+     *
+     * @param i a int.
+     * @param c a {@link ffx.numerics.ComplexNumber} object.
+     */
     public void set_fs(int i, ComplexNumber c) {
         fs[i][0] = c.re();
         fs[i][1] = c.im();
     }
 
+    /**
+     * <p>get_fs</p>
+     *
+     * @param i a int.
+     * @return a {@link ffx.numerics.ComplexNumber} object.
+     */
     public ComplexNumber get_fs(int i) {
         return new ComplexNumber(fs[i][0], fs[i][1]);
     }
 
+    /**
+     * <p>get_fs_ip</p>
+     *
+     * @param i a int.
+     * @param c a {@link ffx.numerics.ComplexNumber} object.
+     */
     public void get_fs_ip(int i, ComplexNumber c) {
         c.re(fs[i][0]);
         c.im(fs[i][1]);
     }
 
+    /**
+     * <p>fs_f</p>
+     *
+     * @param i a int.
+     * @return a double.
+     */
     public double fs_f(int i) {
         ComplexNumber c = new ComplexNumber(fs[i][0], fs[i][1]);
 
         return c.abs();
     }
 
+    /**
+     * <p>fs_phi</p>
+     *
+     * @param i a int.
+     * @return a double.
+     */
     public double fs_phi(int i) {
         ComplexNumber c = new ComplexNumber(fs[i][0], fs[i][1]);
 
         return c.phase();
     }
 
+    /**
+     * <p>set_fctot</p>
+     *
+     * @param i a int.
+     * @param c a {@link ffx.numerics.ComplexNumber} object.
+     */
     public void set_fctot(int i, ComplexNumber c) {
         fctot[i][0] = c.re();
         fctot[i][1] = c.im();
     }
 
+    /**
+     * <p>get_fctot</p>
+     *
+     * @param i a int.
+     * @return a {@link ffx.numerics.ComplexNumber} object.
+     */
     public ComplexNumber get_fctot(int i) {
         return new ComplexNumber(fctot[i][0], fctot[i][1]);
     }
 
+    /**
+     * <p>get_fctot_ip</p>
+     *
+     * @param i a int.
+     * @param c a {@link ffx.numerics.ComplexNumber} object.
+     */
     public void get_fctot_ip(int i, ComplexNumber c) {
         c.re(fctot[i][0]);
         c.im(fctot[i][1]);
     }
 
+    /**
+     * <p>fctot_f</p>
+     *
+     * @param i a int.
+     * @return a double.
+     */
     public double fctot_f(int i) {
         ComplexNumber c = new ComplexNumber(fctot[i][0], fctot[i][1]);
 
         return c.abs();
     }
 
+    /**
+     * <p>fctot_phi</p>
+     *
+     * @param i a int.
+     * @return a double.
+     */
     public double fctot_phi(int i) {
         ComplexNumber c = new ComplexNumber(fctot[i][0], fctot[i][1]);
 
         return c.phase();
     }
 
+    /**
+     * <p>set_fofc2</p>
+     *
+     * @param i a int.
+     * @param c a {@link ffx.numerics.ComplexNumber} object.
+     */
     public void set_fofc2(int i, ComplexNumber c) {
         fofc2[i][0] = c.re();
         fofc2[i][1] = c.im();
     }
 
+    /**
+     * <p>get_fofc2</p>
+     *
+     * @param i a int.
+     * @return a {@link ffx.numerics.ComplexNumber} object.
+     */
     public ComplexNumber get_fofc2(int i) {
         return new ComplexNumber(fofc2[i][0], fofc2[i][1]);
     }
 
+    /**
+     * <p>get_fofc2_ip</p>
+     *
+     * @param i a int.
+     * @param c a {@link ffx.numerics.ComplexNumber} object.
+     */
     public void get_fofc2_ip(int i, ComplexNumber c) {
         c.re(fofc2[i][0]);
         c.im(fofc2[i][1]);
     }
 
+    /**
+     * <p>fofc2_f</p>
+     *
+     * @param i a int.
+     * @return a double.
+     */
     public double fofc2_f(int i) {
         ComplexNumber c = new ComplexNumber(fofc2[i][0], fofc2[i][1]);
 
         return c.abs();
     }
 
+    /**
+     * <p>fofc2_phi</p>
+     *
+     * @param i a int.
+     * @return a double.
+     */
     public double fofc2_phi(int i) {
         ComplexNumber c = new ComplexNumber(fofc2[i][0], fofc2[i][1]);
 
         return c.phase();
     }
 
+    /**
+     * <p>set_fofc1</p>
+     *
+     * @param i a int.
+     * @param c a {@link ffx.numerics.ComplexNumber} object.
+     */
     public void set_fofc1(int i, ComplexNumber c) {
         fofc1[i][0] = c.re();
         fofc1[i][1] = c.im();
     }
 
+    /**
+     * <p>get_fofc1</p>
+     *
+     * @param i a int.
+     * @return a {@link ffx.numerics.ComplexNumber} object.
+     */
     public ComplexNumber get_fofc1(int i) {
         return new ComplexNumber(fofc1[i][0], fofc1[i][1]);
     }
 
+    /**
+     * <p>get_fofc1_ip</p>
+     *
+     * @param i a int.
+     * @param c a {@link ffx.numerics.ComplexNumber} object.
+     */
     public void get_fofc1_ip(int i, ComplexNumber c) {
         c.re(fofc1[i][0]);
         c.im(fofc1[i][1]);
     }
 
+    /**
+     * <p>fofc1_f</p>
+     *
+     * @param i a int.
+     * @return a double.
+     */
     public double fofc1_f(int i) {
         ComplexNumber c = new ComplexNumber(fofc1[i][0], fofc1[i][1]);
 
         return c.abs();
     }
 
+    /**
+     * <p>fofc1_phi</p>
+     *
+     * @param i a int.
+     * @return a double.
+     */
     public double fofc1_phi(int i) {
         ComplexNumber c = new ComplexNumber(fofc1[i][0], fofc1[i][1]);
 

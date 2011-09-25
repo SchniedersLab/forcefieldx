@@ -32,14 +32,33 @@ import ffx.potential.bonded.MSNode;
 /**
  * The Selection class will be used to make recursive multiscale selections,
  * however its implementation is not yet complete.
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public class Selection {
+	/**
+	 * <p>select</p>
+	 *
+	 * @param m a {@link ffx.potential.bonded.MSNode} object.
+	 * @param scale a {@link java.lang.Class} object.
+	 * @param criteria a {@link java.lang.String} object.
+	 * @return a {@link ffx.ui.Selection} object.
+	 */
 	public static Selection select(MSNode m, Class scale, String criteria) {
 		Selection s = new Selection(m, scale, criteria);
 		s.evaluate();
 		return s;
 	}
 
+	/**
+	 * <p>select</p>
+	 *
+	 * @param m a {@link ffx.potential.bonded.MSNode} object.
+	 * @param scale a {@link java.lang.String} object.
+	 * @param criteria a {@link java.lang.String} object.
+	 * @return a {@link ffx.ui.Selection} object.
+	 */
 	public static Selection select(MSNode m, String scale, String criteria) {
 		Selection s = new Selection(m, scale, criteria);
 		s.evaluate();
@@ -69,6 +88,13 @@ public class Selection {
 		selected = new ArrayList<MSNode>();
 	}
 
+	/**
+	 * <p>and</p>
+	 *
+	 * @param scale a {@link java.lang.Class} object.
+	 * @param criteria a {@link java.lang.String} object.
+	 * @return a {@link ffx.ui.Selection} object.
+	 */
 	public Selection and(Class scale, String criteria) {
 		this.scale = scale;
 		this.criteria = criteria;
@@ -86,6 +112,13 @@ public class Selection {
 		}
 	}
 
+	/**
+	 * <p>or</p>
+	 *
+	 * @param scale a {@link java.lang.Class} object.
+	 * @param criteria a {@link java.lang.String} object.
+	 * @return a {@link ffx.ui.Selection} object.
+	 */
 	public Selection or(Class scale, String criteria) {
 		this.scale = scale;
 		this.criteria = criteria;

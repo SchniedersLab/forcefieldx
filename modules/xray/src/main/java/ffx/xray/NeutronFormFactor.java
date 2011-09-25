@@ -50,7 +50,6 @@ import java.util.logging.Logger;
  * chapter 4.4.4.
  *
  * @author Tim Fenn<br>
- *
  * @see <a href="http://dx.doi.org/10.1107/97809553602060000594" target="_blank">
  * V. F. Sears, Int. Tables Vol. C (2006). Table 4.4.4.1</a>
  *
@@ -60,6 +59,25 @@ import java.util.logging.Logger;
  * @see <a href="http://dx.doi.org/10.1107/S0907444909022707" target="_blank">
  * M. J. Schnieders, T. D. Fenn, V. S. Pande and A. T. Brunger,
  * Acta Cryst. (2009). D65 952-965.</a>
+ * @see <a href="http://dx.doi.org/10.1107/97809553602060000594" target="_blank">
+ * V. F. Sears, Int. Tables Vol. C (2006). Table 4.4.4.1</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1107/97809553602060000600" target="_blank">
+ * B. T. M. Willis, Int. Tables Vol. C (2006). Chapter 6.1.3</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1107/S0907444909022707" target="_blank">
+ * M. J. Schnieders, T. D. Fenn, V. S. Pande and A. T. Brunger,
+ * Acta Cryst. (2009). D65 952-965.</a>
+ * @see <a href="http://dx.doi.org/10.1107/97809553602060000594" target="_blank">
+ * V. F. Sears, Int. Tables Vol. C (2006). Table 4.4.4.1</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1107/97809553602060000600" target="_blank">
+ * B. T. M. Willis, Int. Tables Vol. C (2006). Chapter 6.1.3</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1107/S0907444909022707" target="_blank">
+ * M. J. Schnieders, T. D. Fenn, V. S. Pande and A. T. Brunger,
+ * Acta Cryst. (2009). D65 952-965.</a>
+ * @version $Id: $
  */
 public final class NeutronFormFactor implements FormFactor {
 
@@ -204,14 +222,32 @@ public final class NeutronFormFactor implements FormFactor {
     private double resv[] = new double[3];
     private double resm[][] = new double[3][3];
 
+    /**
+     * <p>Constructor for NeutronFormFactor.</p>
+     *
+     * @param atom a {@link ffx.potential.bonded.Atom} object.
+     */
     public NeutronFormFactor(Atom atom) {
         this(atom, 0.0, atom.getXYZ());
     }
 
+    /**
+     * <p>Constructor for NeutronFormFactor.</p>
+     *
+     * @param atom a {@link ffx.potential.bonded.Atom} object.
+     * @param badd a double.
+     */
     public NeutronFormFactor(Atom atom, double badd) {
         this(atom, badd, atom.getXYZ());
     }
 
+    /**
+     * <p>Constructor for NeutronFormFactor.</p>
+     *
+     * @param atom a {@link ffx.potential.bonded.Atom} object.
+     * @param badd a double.
+     * @param xyz an array of double.
+     */
     public NeutronFormFactor(Atom atom, double badd, double xyz[]) {
         this.atom = atom;
         this.uadd = b2u(badd);
@@ -247,6 +283,12 @@ public final class NeutronFormFactor implements FormFactor {
         update(xyz, uadd);
     }
 
+    /**
+     * <p>getFormFactorIndex</p>
+     *
+     * @param atom a {@link java.lang.String} object.
+     * @return a int.
+     */
     public static int getFormFactorIndex(String atom) {
         double ffactor[][] = null;
 
@@ -258,6 +300,12 @@ public final class NeutronFormFactor implements FormFactor {
         }
     }
 
+    /**
+     * <p>getFormFactorA</p>
+     *
+     * @param atom a {@link java.lang.String} object.
+     * @return an array of double.
+     */
     public static double[] getFormFactorA(String atom) {
         double ffactor[][] = null;
 
@@ -269,6 +317,12 @@ public final class NeutronFormFactor implements FormFactor {
         }
     }
 
+    /**
+     * <p>getFormFactor</p>
+     *
+     * @param atom a {@link java.lang.String} object.
+     * @return an array of double.
+     */
     public static double[][] getFormFactor(String atom) {
         double ffactor[][] = null;
 
@@ -283,11 +337,18 @@ public final class NeutronFormFactor implements FormFactor {
         return ffactor;
     }
 
+    /**
+     * <p>f</p>
+     *
+     * @param hkl a {@link ffx.crystal.HKL} object.
+     * @return a double.
+     */
     public double f(HKL hkl) {
         double sum = a[0] * exp(-twopi2 * Crystal.quad_form(hkl, u[0]));
         return occ * sum;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double rho(double f, double lambda, double xyz[]) {
         diff(this.xyz, xyz, dxyz);
@@ -299,6 +360,7 @@ public final class NeutronFormFactor implements FormFactor {
         return f + (lambda * occ * twopi32 * sum);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void rho_grad(double xyz[], double dfc, RefinementMode refinementmode) {
         diff(this.xyz, xyz, dxyz);
@@ -405,11 +467,13 @@ public final class NeutronFormFactor implements FormFactor {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void update(double xyz[]) {
         update(xyz, u2b(uadd));
     }
 
+    /** {@inheritDoc} */
     @Override
     public void update(double xyz[], double badd) {
         this.xyz[0] = xyz[0];

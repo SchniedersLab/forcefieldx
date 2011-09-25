@@ -78,6 +78,7 @@ import static ffx.potential.parameters.MultipoleType.*;
  *      <a href="http://www.ccp5.org" target="_blank"> W. Smith,
  *      "Point Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter,
  *      46, 18-30, 1998</a><br>
+ * @version $Id: $
  */
 public class ParticleMeshEwald implements LambdaInterface {
 
@@ -458,15 +459,12 @@ public class ParticleMeshEwald implements LambdaInterface {
      * ParticleMeshEwald constructor.
      *
      * @param forceField The forceField parameters to use.
-     *
      * @param atoms An ordered array of Atoms.
-     *
      * @param crystal The definition of the unit cell, space group symmetry and,
      *                if necessary, replicates symmetry.
-     *
      * @param parallelTeam A ParallelTeam that delegates parallelization.
-     *
      * @param neighborLists The NeighborLists for both van der Waals and PME.
+     * @param permanentSchedule a {@link edu.rit.pj.IntegerSchedule} object.
      */
     public ParticleMeshEwald(ForceField forceField, Atom[] atoms,
             Crystal crystal, ParallelTeam parallelTeam,
@@ -1231,26 +1229,56 @@ public class ParticleMeshEwald implements LambdaInterface {
         return multipoleEnergy + polarizationEnergy;
     }
 
+    /**
+     * <p>Getter for the field <code>interactions</code>.</p>
+     *
+     * @return a int.
+     */
     public int getInteractions() {
         return interactions;
     }
 
+    /**
+     * <p>getPermanentEnergy</p>
+     *
+     * @return a double.
+     */
     public double getPermanentEnergy() {
         return multipoleEnergy;
     }
 
+    /**
+     * <p>Getter for the field <code>polarizationEnergy</code>.</p>
+     *
+     * @return a double.
+     */
     public double getPolarizationEnergy() {
         return polarizationEnergy;
     }
 
+    /**
+     * <p>getGKEnergy</p>
+     *
+     * @return a double.
+     */
     public double getGKEnergy() {
         return gkEnergy;
     }
 
+    /**
+     * <p>getGKInteractions</p>
+     *
+     * @return a int.
+     */
     public int getGKInteractions() {
         return gkInteractions;
     }
 
+    /**
+     * <p>getGradients</p>
+     *
+     * @param grad an array of double.
+     */
     public void getGradients(double grad[][]) {
         double gx[] = this.grad[0][0];
         double gy[] = this.grad[0][1];
@@ -1265,10 +1293,20 @@ public class ParticleMeshEwald implements LambdaInterface {
         }
     }
 
+    /**
+     * <p>Getter for the field <code>gradient</code>.</p>
+     *
+     * @return an array of double.
+     */
     protected double[][][] getGradient() {
         return grad;
     }
 
+    /**
+     * <p>Getter for the field <code>torque</code>.</p>
+     *
+     * @return an array of double.
+     */
     protected double[][][] getTorque() {
         return torque;
     }
@@ -5178,6 +5216,14 @@ public class ParticleMeshEwald implements LambdaInterface {
         return x;
     }
 
+    /**
+     * <p>ewaldCutoff</p>
+     *
+     * @param coeff a double.
+     * @param maxCutoff a double.
+     * @param eps a double.
+     * @return a double.
+     */
     public static double ewaldCutoff(double coeff, double maxCutoff, double eps) {
         /*
          * Set the tolerance value; use of 1.0d-8 requires strict convergence
@@ -5857,10 +5903,9 @@ public class ParticleMeshEwald implements LambdaInterface {
     }
 
     /**
-     * Set the electrostatic lambda scaling factor.
+     * {@inheritDoc}
      *
-     * @param lambda Must satisfy greater than or equal to 0.0 and less than or
-     *      equal to 1.0.
+     * Set the electrostatic lambda scaling factor.
      */
     @Override
     public void setLambda(double lambda) {
@@ -5921,24 +5966,28 @@ public class ParticleMeshEwald implements LambdaInterface {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Get the current lambda scale value.
-     * @return lambda
      */
     @Override
     public double getLambda() {
         return lambda;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double getdEdL() {
         return shareddEdLambda.get();
     }
 
+    /** {@inheritDoc} */
     @Override
     public double getd2EdL2() {
         return sharedd2EdLambda2.get();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void getdEdXdL(double[] gradient) {
         if (!lambdaTerm) {

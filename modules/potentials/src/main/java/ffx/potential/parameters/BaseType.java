@@ -29,8 +29,8 @@ import ffx.potential.parameters.ForceField.ForceFieldType;
  * All force field types should extend the BaseType class.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
+ * @version $Id: $
  */
 public abstract class BaseType {
 
@@ -41,9 +41,8 @@ public abstract class BaseType {
     /**
      * Public constructor.
      *
-     * @param forceFieldType
-     * @param keys
-     *
+     * @param forceFieldType a {@link ffx.potential.parameters.ForceField.ForceFieldType} object.
+     * @param keys an array of int.
      * @since 1.0
      */
     public BaseType(ForceFieldType forceFieldType, int keys[]) {
@@ -63,9 +62,8 @@ public abstract class BaseType {
     /**
      * Public constructor.
      *
-     * @param forceFieldType
-     * @param key
-     *
+     * @param forceFieldType a {@link ffx.potential.parameters.ForceField.ForceFieldType} object.
+     * @param key a {@link java.lang.String} object.
      * @since 1.0
      */
     public BaseType(ForceFieldType forceFieldType, String key) {
@@ -73,6 +71,11 @@ public abstract class BaseType {
         this.key = key;
     }
 
+    /**
+     * <p>Setter for the field <code>key</code>.</p>
+     *
+     * @param keys an array of int.
+     */
     public void setKey(int[] keys) {
         StringBuilder keyBuffer = new StringBuilder(Integer.toString(keys[0]));
         for (int i = 1; i < keys.length; i++) {
@@ -82,6 +85,11 @@ public abstract class BaseType {
         key = keyBuffer.toString();
     }
 
+    /**
+     * <p>Setter for the field <code>key</code>.</p>
+     *
+     * @param key a {@link java.lang.String} object.
+     */
     public void setKey(String key) {
         this.key = key;
     }
@@ -90,7 +98,6 @@ public abstract class BaseType {
      * Get the <code>key</code> for this Type.
      *
      * @return the key
-     *
      * @since 1.0
      */
     public String getKey() {
@@ -118,10 +125,9 @@ public abstract class BaseType {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Basic toString method.
-     *
-     * @return "Type Key"
-     *
      * @since 1.0
      */
     @Override

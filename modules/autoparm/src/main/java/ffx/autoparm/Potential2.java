@@ -46,9 +46,11 @@ import static ffx.numerics.VectorMath.diff;
 import static ffx.numerics.VectorMath.r;
 
 /**
+ * <p>Potential2 class.</p>
+ *
  * @author Gaurav Chattree
- * 
- * @since 1.0 
+ * @since 1.0
+ * @version $Id: $
  */
 public class Potential2 implements OptimizationListener {
 
@@ -77,6 +79,7 @@ public class Potential2 implements OptimizationListener {
     public int nSteps;
     public int nvars;
     private static final Logger logger = Logger.getLogger(Potential2.class.getName());
+    /** Constant <code>BOHR=0.52917720859</code> */
     public static final double BOHR = 0.52917720859;
     public PME_2 pme = null;
     public double stats[] = new double[5];
@@ -87,12 +90,12 @@ public class Potential2 implements OptimizationListener {
      * key_filename and cube_filename can be null if they are in the same directory as xyz_filename
      * eps is only needed if choice == 4, otherwise leave as null
      * cube_filename is needed if choice == 1
-     * @param choice
-     * @param xyz_filename
-     * @param key_filename
-     * @param cube_filename
-     * @param eps
-     * @throws IOException
+     *
+     * @param choice a int.
+     * @param xyz_filename a {@link java.lang.String} object.
+     * @param cube_filename a {@link java.lang.String} object.
+     * @param eps a {@link java.lang.Double} object.
+     * @throws java.io.IOException if any.
      */
     public Potential2(int choice, String xyz_filename, String cube_filename, Double eps) throws IOException {
         if (choice == 1) {
@@ -275,6 +278,13 @@ public class Potential2 implements OptimizationListener {
         }
     }
 
+    /**
+     * <p>output_keyfile</p>
+     *
+     * @param mpoles an array of double.
+     * @param outfname a {@link java.lang.String} object.
+     * @throws java.io.IOException if any.
+     */
     public void output_keyfile(double[] mpoles, String outfname) throws IOException {
         File outf = new File(outfname);
         BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outf)));
@@ -368,6 +378,12 @@ public class Potential2 implements OptimizationListener {
         System.out.println("Keyfile written to " + outfname);
     }
 
+    /**
+     * <p>do_cube</p>
+     *
+     * @param cfname a {@link java.lang.String} object.
+     * @throws java.io.IOException if any.
+     */
     public void do_cube(String cfname) throws IOException {
         int n = 1;
         final double HARTREE = 627.5094688;
@@ -432,6 +448,13 @@ public class Potential2 implements OptimizationListener {
         }
     }
 
+    /**
+     * <p>create_crystal</p>
+     *
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
+     * @return a {@link ffx.crystal.Crystal} object.
+     */
     public Crystal create_crystal(ForceField forceField, Atom atoms[]) {
         // Determine the unit cell dimensions and Spacegroup
         String spacegroup;
@@ -480,6 +503,14 @@ public class Potential2 implements OptimizationListener {
         return unitCell;
     }
 
+    /**
+     * <p>gen_pot_grid</p>
+     *
+     * @param target_file a {@link java.io.File} object.
+     * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
+     * @param type a int.
+     * @return an array of double.
+     */
     public double[][][] gen_pot_grid(File target_file, Atom atoms[], int type) {
         double pot_grid[][][] = new double[nSymm][][];//nSymm, nPoints, 4
         ArrayList<Double[]> temp_grid = new ArrayList<Double[]>();
@@ -519,6 +550,14 @@ public class Potential2 implements OptimizationListener {
         return pot_grid;
     }
 
+    /**
+     * <p>read_target_file</p>
+     *
+     * @param target_file a {@link java.io.File} object.
+     * @param grid a {@link java.util.ArrayList} object.
+     * @param type a int.
+     * @throws java.io.IOException if any.
+     */
     public void read_target_file(File target_file, ArrayList<Double[]> grid, int type) throws IOException {
         Double xyz[] = new Double[3];
         String line;
@@ -630,6 +669,12 @@ public class Potential2 implements OptimizationListener {
         }
     }
 
+    /**
+     * <p>make_grid</p>
+     *
+     * @param grid a {@link java.util.ArrayList} object.
+     * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
+     */
     public void make_grid(ArrayList<Double[]> grid, Atom atoms[]) {
 
         int nAtoms = atoms.length;
@@ -753,6 +798,12 @@ public class Potential2 implements OptimizationListener {
         }
     }
 
+    /**
+     * <p>sphere</p>
+     *
+     * @param ndot a int.
+     * @return an array of double.
+     */
     public double[][] sphere(int ndot) {
         double dot[][] = new double[ndot][3];
         double tot = (double) ndot;
@@ -779,6 +830,14 @@ public class Potential2 implements OptimizationListener {
         return dot;
     }
 
+    /**
+     * <p>output_pgrid</p>
+     *
+     * @param outfpot a {@link java.io.File} object.
+     * @param outfgrid a {@link java.io.File} object.
+     * @param pgrid an array of double.
+     * @throws java.io.IOException if any.
+     */
     public void output_pgrid(File outfpot, File outfgrid, double[][][] pgrid) throws IOException {
         BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outfpot)));
         BufferedWriter bw2 = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outfgrid)));
@@ -805,6 +864,9 @@ public class Potential2 implements OptimizationListener {
         System.out.println("Gaussian CUBEGEN Input Written to File: " + outfgrid.getAbsolutePath());
     }
 
+    /**
+     * <p>output_stats</p>
+     */
     public void output_stats() {
         ArrayList<Integer> natm = new ArrayList<Integer>();
         ArrayList<Double> rmsa = new ArrayList<Double>();
@@ -873,6 +935,11 @@ public class Potential2 implements OptimizationListener {
         stats[4] = avgrms;
     }
 
+    /**
+     * <p>avgrms</p>
+     *
+     * @return a double.
+     */
     public double avgrms() {
         double er = 0;
         pme.init_prms();
@@ -887,6 +954,12 @@ public class Potential2 implements OptimizationListener {
         return Math.sqrt(er);
     }
 
+    /**
+     * <p>store_key_file</p>
+     *
+     * @param keyfile a {@link java.io.File} object.
+     * @throws java.io.IOException if any.
+     */
     public void store_key_file(File keyfile) throws IOException {
         if (keyfile != null && keyfile.exists() && keyfile.canRead()) {
             BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(keyfile)));
@@ -897,6 +970,7 @@ public class Potential2 implements OptimizationListener {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean optimizationUpdate(int iter, int nfun, double grms,
             double xrms, double f, double df, double angle,
@@ -932,6 +1006,12 @@ public class Potential2 implements OptimizationListener {
         return true;
     }
 
+    /**
+     * <p>main</p>
+     *
+     * @param args an array of {@link java.lang.String} objects.
+     * @throws java.io.IOException if any.
+     */
     public static void main(String args[]) throws IOException {
         //Potential2 p1 = new Potential2(4, "/users/gchattree/Research/Compounds/test_compounds/phenobarbital-test/phenobarbital.xyz", null, .1);
         //Potential2 p2 = new Potential2(3, "/users/gchattree/Research/Compounds/s_test3_compounds/famotidine/famotidine.xyz", null, null);

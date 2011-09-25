@@ -21,11 +21,12 @@
 package ffx.numerics;
 
 /**
+ * <p>TriCubicSpline class.</p>
  *
  * @author Tim Fenn
- *
  * @see <a href="http://www.cs.cmu.edu/~fp/courses/graphics/asst5/catmullRom.pdf" target="_blank">
  * Catmull-Rom splines</a>
+ * @version $Id: $
  */
 public class TriCubicSpline {
 

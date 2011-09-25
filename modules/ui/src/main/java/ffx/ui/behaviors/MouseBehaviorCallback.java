@@ -28,13 +28,22 @@ import javax.media.j3d.Transform3D;
 /**
  * The MouseBehaviorCallback interface is implemented by classes that want to
  * receive callbacks when transforms are updated.
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public interface MouseBehaviorCallback {
+	/** Constant <code>ROTATE=0</code> */
 	public final static int ROTATE = 0;
+	/** Constant <code>TRANSLATE=1</code> */
 	public final static int TRANSLATE = 1;
+	/** Constant <code>ZOOM=2</code> */
 	public final static int ZOOM = 2;
+	/** Constant <code>SELECTION=4</code> */
 	public final static int SELECTION = 4;
+	/** Constant <code>PROPERTIES=5</code> */
 	public final static int PROPERTIES = 5;
+	/** Constant <code>ORBIT=6</code> */
 	public final static int ORBIT = 6;
 
 	/*
@@ -42,10 +51,28 @@ public interface MouseBehaviorCallback {
 	 * MouseBehaviors will be called every time the behavior updates the
 	 * Transform @param type will be one of ROTATE, TRANSLATE or ZOOM
 	 */
+	/**
+	 * <p>transformChanged</p>
+	 *
+	 * @param type a int.
+	 * @param transform a {@link javax.media.j3d.Transform3D} object.
+	 */
 	public void transformChanged(int type, Transform3D transform);
 
+	/**
+	 * <p>transformClicked</p>
+	 *
+	 * @param type a int.
+	 * @param transform a {@link javax.media.j3d.Transform3D} object.
+	 */
 	public void transformClicked(int type, Transform3D transform);
 
+	/**
+	 * <p>transformDoubleClicked</p>
+	 *
+	 * @param type a int.
+	 * @param transform a {@link javax.media.j3d.Transform3D} object.
+	 */
 	public void transformDoubleClicked(int type, Transform3D transform);
 }
 /*

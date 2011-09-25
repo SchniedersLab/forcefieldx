@@ -37,8 +37,8 @@ import java.util.List;
  * The SystemFilter class is the base class for most Force Field X file parsers.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
+ * @version $Id: $
  */
 public abstract class SystemFilter {
 
@@ -89,6 +89,12 @@ public abstract class SystemFilter {
         return newFile;
     }
 
+    /**
+     * <p>previousVersion</p>
+     *
+     * @param file a {@link java.io.File} object.
+     * @return a {@link java.io.File} object.
+     */
     public static File previousVersion(File file) {
         if (file == null) {
             return null;
@@ -172,6 +178,14 @@ public abstract class SystemFilter {
      */
     protected boolean fileRead = false;
 
+    /**
+     * <p>Constructor for SystemFilter.</p>
+     *
+     * @param files a {@link java.util.List} object.
+     * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly} object.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     */
     public SystemFilter(List<File> files, MolecularAssembly molecularAssembly,
                         ForceField forceField, CompositeConfiguration properties) {
         this.files = files;
@@ -183,6 +197,14 @@ public abstract class SystemFilter {
         this.properties = properties;
     }
 
+    /**
+     * <p>Constructor for SystemFilter.</p>
+     *
+     * @param file a {@link java.io.File} object.
+     * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly} object.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     */
     public SystemFilter(File file, MolecularAssembly molecularAssembly,
                         ForceField forceField, CompositeConfiguration properties) {
         files = new ArrayList<File>();
@@ -195,6 +217,14 @@ public abstract class SystemFilter {
         this.properties = properties;
     }
 
+    /**
+     * <p>Constructor for SystemFilter.</p>
+     *
+     * @param file a {@link java.io.File} object.
+     * @param molecularAssemblies a {@link java.util.List} object.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     */
     public SystemFilter(File file, List<MolecularAssembly> molecularAssemblies,
                         ForceField forceField, CompositeConfiguration properties) {
         files = new ArrayList<File>();
@@ -210,11 +240,18 @@ public abstract class SystemFilter {
 
     /**
      * Returns true if the read was successful
+     *
+     * @return a boolean.
      */
     public boolean fileRead() {
         return fileRead;
     }
 
+    /**
+     * <p>getAtomCount</p>
+     *
+     * @return a int.
+     */
     public int getAtomCount() {
         if (atomList == null) {
             return 0;
@@ -222,10 +259,20 @@ public abstract class SystemFilter {
         return atomList.size();
     }
 
+    /**
+     * <p>Getter for the field <code>atomList</code>.</p>
+     *
+     * @return a {@link java.util.ArrayList} object.
+     */
     public ArrayList<Atom> getAtomList() {
         return atomList;
     }
 
+    /**
+     * <p>getBondCount</p>
+     *
+     * @return a int.
+     */
     public int getBondCount() {
         if (bondList == null) {
             return 0;
@@ -235,11 +282,18 @@ public abstract class SystemFilter {
 
     /**
      * Return the MolecularSystem that has been read in
+     *
+     * @return a {@link ffx.potential.bonded.MolecularAssembly} object.
      */
     public MolecularAssembly getActiveMolecularSystem() {
         return activeMolecularAssembly;
     }
 
+    /**
+     * <p>getMolecularAssemblys</p>
+     *
+     * @return an array of {@link ffx.potential.bonded.MolecularAssembly} objects.
+     */
     public MolecularAssembly[] getMolecularAssemblys() {
         if (systems.size() > 0) {
             MolecularAssembly assemblies[] = new MolecularAssembly[systems.size()];
@@ -250,43 +304,90 @@ public abstract class SystemFilter {
         }
     }
 
+    /**
+     * <p>getType</p>
+     *
+     * @return a {@link ffx.potential.bonded.Utilities.FileType} object.
+     */
     public FileType getType() {
         return fileType;
     }
 
+    /**
+     * <p>getFile</p>
+     *
+     * @return a {@link java.io.File} object.
+     */
     public File getFile() {
         return currentFile;
     }
 
+    /**
+     * <p>Getter for the field <code>files</code>.</p>
+     *
+     * @return a {@link java.util.List} object.
+     */
     public List<File> getFiles() {
         return files;
     }
 
     /**
      * This method is different for each subclass and must be overidden
+     *
+     * @return a boolean.
      */
     public abstract boolean readFile();
 
+    /**
+     * <p>Setter for the field <code>fileRead</code>.</p>
+     *
+     * @param fileRead a boolean.
+     */
     public void setFileRead(boolean fileRead) {
         this.fileRead = fileRead;
     }
 
+    /**
+     * <p>Setter for the field <code>forceField</code>.</p>
+     *
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     */
     public void setForceField(ForceField forceField) {
         this.forceField = forceField;
     }
 
+    /**
+     * <p>Setter for the field <code>properties</code>.</p>
+     *
+     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     */
     public void setProperties(CompositeConfiguration properties) {
         this.properties = properties;
     }
 
+    /**
+     * <p>setMolecularSystem</p>
+     *
+     * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly} object.
+     */
     public void setMolecularSystem(MolecularAssembly molecularAssembly) {
         activeMolecularAssembly = molecularAssembly;
     }
 
+    /**
+     * <p>setType</p>
+     *
+     * @param fileType a {@link ffx.potential.bonded.Utilities.FileType} object.
+     */
     public void setType(FileType fileType) {
         this.fileType = fileType;
     }
 
+    /**
+     * <p>setFile</p>
+     *
+     * @param file a {@link java.io.File} object.
+     */
     public void setFile(File file) {
         this.currentFile = file;
         files = new ArrayList<File>();
@@ -295,6 +396,11 @@ public abstract class SystemFilter {
         }
     }
 
+    /**
+     * <p>Setter for the field <code>files</code>.</p>
+     *
+     * @param files a {@link java.util.List} object.
+     */
     public void setFiles(List<File> files) {
         this.files = files;
         if (files != null) {
@@ -309,6 +415,10 @@ public abstract class SystemFilter {
      *
      * If the append flag is true, "saveFile" will be appended to. Otherwise
      * the default versioning scheme will be applied.
+     *
+     * @param saveFile a {@link java.io.File} object.
+     * @param append a boolean.
+     * @return a boolean.
      */
     public abstract boolean writeFile(File saveFile, boolean append);
 }

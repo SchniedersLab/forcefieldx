@@ -25,20 +25,18 @@ package ffx.numerics;
  * dynamics.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
+ * @version $Id: $
  */
 public interface Potential {
 
     /**
      * This method is called repeatedly to compute the
      * function energy and gradient.
-     * 
+     *
      * @param x Input parameters.
      * @param g Output gradients with respect to each parameter.
-     * 
      * @return Function value at <code>x</code>.
-     * 
      * @since 1.0
      */
     public abstract double energyAndGradient(double x[], double g[]);
@@ -46,9 +44,8 @@ public interface Potential {
     /**
      * Scale the problem. A good choice for optimization is the square root
      * of the median eigenvalue of a typical Hessian.
-     * 
+     *
      * @param scaling The scaling value to use for each variable.
-     * 
      * @since 1.0
      */
     public abstract void setScaling(double scaling[]);
@@ -57,7 +54,6 @@ public interface Potential {
      * Get the problem scaling.
      *
      * @return The scaling value used for each variable.
-     * 
      * @since 1.0
      */
     public abstract double[] getScaling();
@@ -82,7 +78,7 @@ public interface Potential {
     
     /**
      * Get the total energy of the system
-     * 
+     *
      * @return the total energy
      */
     public abstract double getTotal();

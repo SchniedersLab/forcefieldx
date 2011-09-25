@@ -46,8 +46,8 @@ import java.util.List;
  * The INTFilter class parses TINKER internal coordinate (*.INT) files.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
+ * @version $Id: $
  */
 public class INTFilter extends SystemFilter {
 
@@ -68,12 +68,28 @@ public class INTFilter extends SystemFilter {
     private static double xtmp, ztmp;
     private static double eps = 0.0000001d;
 
+    /**
+     * <p>Constructor for INTFilter.</p>
+     *
+     * @param files a {@link java.util.List} object.
+     * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly} object.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     */
     public INTFilter(List<File> files, MolecularAssembly molecularAssembly,
                      ForceField forceField, CompositeConfiguration properties) {
         super(files, molecularAssembly, forceField, properties);
         fileType = FileType.INT;
     }
 
+    /**
+     * <p>Constructor for INTFilter.</p>
+     *
+     * @param file a {@link java.io.File} object.
+     * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly} object.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     */
     public INTFilter(File file, MolecularAssembly molecularAssembly,
                      ForceField forceField, CompositeConfiguration properties) {
         super(file, molecularAssembly, forceField, properties);
@@ -82,6 +98,15 @@ public class INTFilter extends SystemFilter {
 
     /**
      * This routine was derived from a similar routine in TINKER.
+     *
+     * @param atom a {@link ffx.potential.bonded.Atom} object.
+     * @param ia a {@link ffx.potential.bonded.Atom} object.
+     * @param bond a double.
+     * @param ib a {@link ffx.potential.bonded.Atom} object.
+     * @param angle1 a double.
+     * @param ic a {@link ffx.potential.bonded.Atom} object.
+     * @param angle2 a double.
+     * @param chiral a int.
      */
     public static void intxyz(Atom atom, Atom ia, double bond, Atom ib, double angle1, Atom ic, double angle2, int chiral) {
         angle1 = toRadians(angle1);
@@ -182,10 +207,9 @@ public class INTFilter extends SystemFilter {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Parse the INT File.
-     *
-     * @return Returns true on successful read, false otherwise.
-     *
      * @since 1.0
      */
     @Override
@@ -382,6 +406,7 @@ public class INTFilter extends SystemFilter {
         return false;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean writeFile(File saveFile, boolean append) {
         /*

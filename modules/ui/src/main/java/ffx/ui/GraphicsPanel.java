@@ -31,12 +31,21 @@ import javax.swing.JPanel;
 
 /**
  * The GraphicsPanel class contains the 3D Canvas and its status box.
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public class GraphicsPanel extends JPanel {
 	private GraphicsCanvas graphics;
 	private JPanel canvasPanel;
 	private JPanel statusPanel;
 
+	/**
+	 * <p>Constructor for GraphicsPanel.</p>
+	 *
+	 * @param g a {@link ffx.ui.GraphicsCanvas} object.
+	 * @param s a {@link javax.swing.JPanel} object.
+	 */
 	public GraphicsPanel(GraphicsCanvas g, JPanel s) {
 		super();
 		setLayout(new BorderLayout());
@@ -51,6 +60,7 @@ public class GraphicsPanel extends JPanel {
 		add(statusPanel, BorderLayout.SOUTH);
 	}
 
+	/** {@inheritDoc} */
 	public void setVisible(boolean v) {
 		super.setVisible(v);
 		if (graphics != null) {

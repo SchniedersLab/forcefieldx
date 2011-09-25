@@ -39,14 +39,19 @@ import ffx.numerics.VectorMath;
 
 /**
  * The Polymer class encapsulates a peptide or nucleotide chain.
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public class Polymer extends MSGroup {
 
     private static final long serialVersionUID = 1L;
+    /** Constant <code>MultiScaleLevel=3</code> */
     public static final int MultiScaleLevel = 3;
     private static int count = 0;
     private static double[] da = new double[3];
     private static double[] db = new double[3];
+    /** Constant <code>polymerColor</code> */
     public static Map<Integer, Color3f> polymerColor = new HashMap<Integer, Color3f>();
 
     static {
@@ -67,6 +72,7 @@ public class Polymer extends MSGroup {
 
     /**
      * Polymer constructor.
+     *
      * @param chainID Possibly redundant PDB chainID.
      * @param segID Unique identifier from A-Z,0-9, then 1A-1Z,10-19, etc.
      */
@@ -78,8 +84,10 @@ public class Polymer extends MSGroup {
 
     /**
      * Polymer constructor.
+     *
      * @param chainID Possibly redundant PDB chainID.
      * @param segID Unique identifier from A-Z,0-9, then 1A-1Z,10-19, etc.
+     * @param link a boolean.
      */
     public Polymer(Character chainID, String segID, boolean link) {
         this(chainID, segID);
@@ -88,9 +96,11 @@ public class Polymer extends MSGroup {
 
     /**
      * Polymer Constructor.
+     *
      * @param segID A unique identifier from A-Z,0-9, then 1A-1Z,10-19, etc.
      * @param residues Represents a MSNode where the Polymer's residues have
      *              been attached.
+     * @param chainID a {@link java.lang.Character} object.
      */
     public Polymer(Character chainID, String segID, MSNode residues) {
         super(segID, residues);
@@ -99,9 +109,9 @@ public class Polymer extends MSGroup {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * A generic method for adding a MSNode to the Polymer.
-     * @param msNode If the MSNode is a Residue instance, it will be added to
-     *               the Polymer.
      */
     @Override
     public MSNode addMSNode(MSNode msNode) {
@@ -113,6 +123,10 @@ public class Polymer extends MSGroup {
     /**
      * Joiner joins Moieties m1 and m2 and returns the Geometry objects formed
      * in a Joint.
+     *
+     * @param residue1 a {@link ffx.potential.bonded.Residue} object.
+     * @param residue2 a {@link ffx.potential.bonded.Residue} object.
+     * @return a {@link ffx.potential.bonded.Joint} object.
      */
     public Joint createJoint(Residue residue1, Residue residue2) {
         Joint joint = null;
@@ -139,12 +153,9 @@ public class Polymer extends MSGroup {
     }
 
     /**
-     * Overidden equals method.
+     * {@inheritDoc}
      *
-     * @param object Object to compare
-     * @return True if object is not <b>this</b> Polymer, is of Class Polymer,
-     *         and both object and this Polymer have identical names (note
-     *         that Polymer names are based on unique segIDs.
+     * Overidden equals method.
      */
     @Override
     public boolean equals(Object object) {
@@ -158,6 +169,8 @@ public class Polymer extends MSGroup {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Finalize should be called after all the Residues have been added to the
      * Polymer. This method in turn calls the Finalize method of each Residue,
      * then forms Joints between adjacent Residues in the Polymer
@@ -225,10 +238,20 @@ public class Polymer extends MSGroup {
         setFinalized(true);
     }
 
+    /**
+     * <p>Getter for the field <code>link</code>.</p>
+     *
+     * @return a boolean.
+     */
     public boolean getLink() {
         return link;
     }
 
+    /**
+     * <p>Getter for the field <code>chainID</code>.</p>
+     *
+     * @return a {@link java.lang.Character} object.
+     */
     public Character getChainID() {
         return chainID;
     }
@@ -265,6 +288,11 @@ public class Polymer extends MSGroup {
         return phipsi;
     }
 
+    /**
+     * <p>getFirstResidue</p>
+     *
+     * @return a {@link ffx.potential.bonded.Residue} object.
+     */
     public Residue getFirstResidue() {
         MSNode atomNode = getAtomNode();
         if (atomNode == null) {
@@ -273,6 +301,11 @@ public class Polymer extends MSGroup {
         return (Residue) atomNode.getChildAt(0);
     }
 
+    /**
+     * <p>getResidues</p>
+     *
+     * @return a {@link java.util.ArrayList} object.
+     */
     public ArrayList<Residue> getResidues() {
         ArrayList<Residue> residues = new ArrayList<Residue>();
         for (Enumeration e = getAtomNode().children(); e.hasMoreElements();) {
@@ -282,6 +315,12 @@ public class Polymer extends MSGroup {
         return residues;
     }
 
+    /**
+     * <p>getResidue</p>
+     *
+     * @param resNum a int.
+     * @return a {@link ffx.potential.bonded.Residue} object.
+     */
     public Residue getResidue(int resNum) {
         if (resNum > 0 && getAtomNode().getChildCount() >= resNum) {
             Residue r = (Residue) getAtomNode().getChildAt(resNum - 1);
@@ -299,6 +338,14 @@ public class Polymer extends MSGroup {
         return null;
     }
 
+    /**
+     * <p>getResidue</p>
+     *
+     * @param resName a {@link java.lang.String} object.
+     * @param resNum a int.
+     * @param create a boolean.
+     * @return a {@link ffx.potential.bonded.Residue} object.
+     */
     public Residue getResidue(String resName, int resNum, boolean create) {
         if (resNum > 0 && getAtomNode().getChildCount() >= resNum) {
             Residue r = (Residue) getAtomNode().getChildAt(resNum - 1);
@@ -353,11 +400,13 @@ public class Polymer extends MSGroup {
         return residue;
     }
 
+    /** {@inheritDoc} */
     @Override
     public int hashCode() {
         return hash(SEED, polymerNumber);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setColor(RendererCache.ColorModel newColorModel, Color3f color,
                          Material mat) {
@@ -377,10 +426,16 @@ public class Polymer extends MSGroup {
         }
     }
 
+    /**
+     * <p>Setter for the field <code>link</code>.</p>
+     *
+     * @param t a boolean.
+     */
     public void setLink(boolean t) {
         link = t;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setView(RendererCache.ViewModel newViewModel,
                         List<BranchGroup> newShapes) {

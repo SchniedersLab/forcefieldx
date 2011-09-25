@@ -30,6 +30,9 @@ import java.awt.event.KeyListener;
 
 /**
  * The FullScreenWindow class controls full screen graphics.
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public class GraphicsFullScreen extends Window implements KeyListener {
 	/**
@@ -38,6 +41,12 @@ public class GraphicsFullScreen extends Window implements KeyListener {
 	private static final long serialVersionUID = 1L;
 	private boolean fullScreen = false;
 
+	/**
+	 * <p>Constructor for GraphicsFullScreen.</p>
+	 *
+	 * @param f a {@link java.awt.Frame} object.
+	 * @param graphics a {@link ffx.ui.GraphicsCanvas} object.
+	 */
 	public GraphicsFullScreen(Frame f, GraphicsCanvas graphics) {
 		super(f);
 		/*
@@ -52,6 +61,9 @@ public class GraphicsFullScreen extends Window implements KeyListener {
 		 */
 	}
 
+	/**
+	 * <p>enterFullScreen</p>
+	 */
 	public void enterFullScreen() {
 		/*
 		 * if (fullScreen) { return; } fullScreenCanvas.startRenderer();
@@ -59,6 +71,9 @@ public class GraphicsFullScreen extends Window implements KeyListener {
 		 */
 	}
 
+	/**
+	 * <p>exitFullScreen</p>
+	 */
 	public void exitFullScreen() {
 		/*
 		 * if (!fullScreen) { return; } setVisible(false);
@@ -66,6 +81,7 @@ public class GraphicsFullScreen extends Window implements KeyListener {
 		 */
 	}
 
+	/** {@inheritDoc} */
 	public void keyPressed(KeyEvent evt) {
 		if (evt.getKeyCode() == KeyEvent.VK_ESCAPE) {
 			exitFullScreen();
@@ -76,14 +92,19 @@ public class GraphicsFullScreen extends Window implements KeyListener {
 		}
 	}
 
+	/** {@inheritDoc} */
 	public void keyReleased(KeyEvent evt) {
 		keyPressed(evt);
 	}
 
+	/** {@inheritDoc} */
 	public void keyTyped(KeyEvent evt) {
 		keyPressed(evt);
 	}
 
+	/**
+	 * <p>toggleFullScreen</p>
+	 */
 	public void toggleFullScreen() {
 		if (fullScreen) {
 			exitFullScreen();

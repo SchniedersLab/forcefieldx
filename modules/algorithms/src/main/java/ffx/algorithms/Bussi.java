@@ -34,19 +34,28 @@ import java.util.Random;
  *
  *         Derived from TINKER temperature control by Alan Grossfield
  *         and Jay Ponder.
- *
  * @see <a href="http://dx.doi.org/10.1016/j.cpc.2008.01.006">
  *      G. Bussi and M. Parrinello, "Stochastic Thermostats: Comparison
  *      of Local and Global Schemes", Computer Physics Communications,
  *      179, 26-29 (2008)</a>
- *
  * @since 1.0
+ * @version $Id: $
  */
 public class Bussi extends Thermostat {
 
     private double tau;
     private final Random random;
 
+    /**
+     * <p>Constructor for Bussi.</p>
+     *
+     * @param dof a int.
+     * @param x an array of double.
+     * @param v an array of double.
+     * @param mass an array of double.
+     * @param targetTemperature a double.
+     * @param tau a double.
+     */
     public Bussi(int dof, double x[], double v[], double mass[], double targetTemperature,
             double tau) {
         super(dof, x, v, mass, targetTemperature);
@@ -55,24 +64,46 @@ public class Bussi extends Thermostat {
         this.random = new Random(0);
     }
 
+    /**
+     * <p>Constructor for Bussi.</p>
+     *
+     * @param dof a int.
+     * @param x an array of double.
+     * @param v an array of double.
+     * @param mass an array of double.
+     * @param targetTemperature a double.
+     */
     public Bussi(int dof, double x[], double v[], double mass[], double targetTemperature) {
         this(dof, x, v, mass, targetTemperature, 0.2e0);
     }
 
+    /**
+     * <p>Setter for the field <code>tau</code>.</p>
+     *
+     * @param tau a double.
+     */
     public void setTau(double tau) {
         this.tau = tau;
     }
 
+    /**
+     * <p>Getter for the field <code>tau</code>.</p>
+     *
+     * @return a double.
+     */
     public double getTau() {
         return tau;
     }
 
+    /** {@inheritDoc} */
     @Override
     public String toString() {
         return String.format("%s thermostat (tau = %8.3f)", name, tau);
     }
 
     /**
+     * {@inheritDoc}
+     *
      * No velocity modifications are made by the Bussi method at
      * the half-step.
      */
@@ -82,6 +113,8 @@ public class Bussi extends Thermostat {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Full step velocity modification.
      */
     @Override

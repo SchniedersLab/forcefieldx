@@ -71,10 +71,9 @@ import ffx.utilities.Hybrid36;
  *
  * @see <a href="http://www.wwpdb.org/documentation/format32/v3.2.html">
  *  PDB format 3.2</a>
- *
  * @author Michael J. Schnieders
- *
  * @since 1.0
+ * @version $Id: $
  */
 public final class PDBFilter extends SystemFilter {
 
@@ -112,6 +111,9 @@ public final class PDBFilter extends SystemFilter {
     private Character currentChainID = null;
     private String currentSegID = null;
 
+    /**
+     * <p>clearSegIDs</p>
+     */
     public void clearSegIDs() {
         segIDs.clear();
     }
@@ -162,6 +164,14 @@ public final class PDBFilter extends SystemFilter {
      */
     private HashMap<Integer, Atom> atoms = new HashMap<Integer, Atom>();
 
+    /**
+     * <p>Constructor for PDBFilter.</p>
+     *
+     * @param files a {@link java.util.List} object.
+     * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly} object.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     */
     public PDBFilter(List<File> files, MolecularAssembly molecularAssembly,
                      ForceField forceField, CompositeConfiguration properties) {
         super(files, molecularAssembly, forceField, properties);
@@ -170,6 +180,11 @@ public final class PDBFilter extends SystemFilter {
 
     /**
      * Parse the PDB File from a URL.
+     *
+     * @param file a {@link java.io.File} object.
+     * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly} object.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration} object.
      */
     public PDBFilter(File file, MolecularAssembly molecularAssembly,
                      ForceField forceField, CompositeConfiguration properties) {
@@ -179,6 +194,11 @@ public final class PDBFilter extends SystemFilter {
 
     /**
      * Parse the PDB File from a URL.
+     *
+     * @param file a {@link java.io.File} object.
+     * @param molecularAssemblies a {@link java.util.List} object.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration} object.
      */
     public PDBFilter(File file, List<MolecularAssembly> molecularAssemblies,
                      ForceField forceField, CompositeConfiguration properties) {
@@ -186,6 +206,12 @@ public final class PDBFilter extends SystemFilter {
         this.fileType = FileType.PDB;
     }
 
+    /**
+     * <p>pdbForID</p>
+     *
+     * @param id a {@link java.lang.String} object.
+     * @return a {@link java.lang.String} object.
+     */
     public static String pdbForID(String id) {
         if (id.length() != 4) {
             return null;
@@ -193,6 +219,12 @@ public final class PDBFilter extends SystemFilter {
         return "http://www.rcsb.org/pdb/files/" + id.toLowerCase() + ".pdb.gz";
     }
 
+    /**
+     * <p>cifForID</p>
+     *
+     * @param id a {@link java.lang.String} object.
+     * @return a {@link java.lang.String} object.
+     */
     public static String cifForID(String id) {
         if (id.length() != 4) {
             return null;
@@ -202,6 +234,7 @@ public final class PDBFilter extends SystemFilter {
 
     /**
      * Specify the alternate location.
+     *
      * @param molecularAssembly The MolecularAssembly to populate.
      * @param altLoc The alternate location to use.
      */
@@ -213,6 +246,7 @@ public final class PDBFilter extends SystemFilter {
 
     /**
      * Get the list of alternate locations encountered.
+     *
      * @return the alternate location list.
      */
     public List<Character> getAltLocs() {
@@ -220,6 +254,8 @@ public final class PDBFilter extends SystemFilter {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Parse the PDB File
      */
     @Override
@@ -746,6 +782,9 @@ public final class PDBFilter extends SystemFilter {
         return true;
     }
 
+    /**
+     * <p>numberAtoms</p>
+     */
     public void numberAtoms() {
         int index = 1;
         for (Atom a : activeMolecularAssembly.getAtomArray()) {
@@ -2761,14 +2800,35 @@ public final class PDBFilter extends SystemFilter {
         return null;
     }
 
+    /**
+     * <p>padRight</p>
+     *
+     * @param s a {@link java.lang.String} object.
+     * @param n a int.
+     * @return a {@link java.lang.String} object.
+     */
     public static String padRight(String s, int n) {
         return String.format("%-" + n + "s", s);
     }
 
+    /**
+     * <p>padLeft</p>
+     *
+     * @param s a {@link java.lang.String} object.
+     * @param n a int.
+     * @return a {@link java.lang.String} object.
+     */
     public static String padLeft(String s, int n) {
         return String.format("%" + n + "s", s);
     }
 
+    /**
+     * <p>writeFileWithHeader</p>
+     *
+     * @param saveFile a {@link java.io.File} object.
+     * @param header a {@link java.lang.StringBuilder} object.
+     * @return a boolean.
+     */
     public boolean writeFileWithHeader(File saveFile, StringBuilder header) {
         FileWriter fw = null;
         BufferedWriter bw = null;
@@ -2789,9 +2849,9 @@ public final class PDBFilter extends SystemFilter {
     }
     
     /**
-     * Write out the Atomic information in PDB format.
+     * {@inheritDoc}
      *
-     * @return <code>true</code> if the read was successful.
+     * Write out the Atomic information in PDB format.
      */
     @Override
     public boolean writeFile(File saveFile, boolean append) {
@@ -3112,6 +3172,16 @@ public final class PDBFilter extends SystemFilter {
         return true;
     }
 
+    /**
+     * <p>writeAtom</p>
+     *
+     * @param atom a {@link ffx.potential.bonded.Atom} object.
+     * @param serial a int.
+     * @param sb a {@link java.lang.StringBuilder} object.
+     * @param anisouSB a {@link java.lang.StringBuilder} object.
+     * @param bw a {@link java.io.BufferedWriter} object.
+     * @throws java.io.IOException if any.
+     */
     public void writeAtom(Atom atom, int serial, StringBuilder sb,
                           StringBuilder anisouSB, BufferedWriter bw)
             throws IOException {

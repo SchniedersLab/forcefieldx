@@ -31,8 +31,8 @@ import java.util.logging.Logger;
  * Combine the Real Space target and chemical potential energy.
  *
  * @author Timothy D. Fenn and Michael J. Schnieders
- *
  * @since 1.0
+ * @version $Id: $
  */
 public class RealSpaceEnergy implements LambdaInterface, Potential {
 
@@ -71,6 +71,7 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
         setRefinementBooleans();
     }
 
+    /** {@inheritDoc} */
     @Override
     public double energyAndGradient(double[] x, double[] g) {
         double e = 0.0;
@@ -112,10 +113,20 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
         return e;
     }
 
+    /**
+     * <p>Getter for the field <code>refinementMode</code>.</p>
+     *
+     * @return a {@link ffx.xray.RefinementMinimize.RefinementMode} object.
+     */
     public RefinementMode getRefinementMode() {
         return refinementMode;
     }
 
+    /**
+     * <p>Setter for the field <code>refinementMode</code>.</p>
+     *
+     * @param refinementmode a {@link ffx.xray.RefinementMinimize.RefinementMode} object.
+     */
     public void setRefinementMode(RefinementMode refinementmode) {
         this.refinementMode = refinementmode;
         setRefinementBooleans();
@@ -139,6 +150,7 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
 
     /**
      * get the number of xyz parameters being fit
+     *
      * @return the number of xyz parameters
      */
     public int getNXYZ() {
@@ -147,6 +159,7 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
 
     /**
      * set the number of xyz parameters
+     *
      * @param nxyz requested number of xyz parameters
      */
     public void setNXYZ(int nxyz) {
@@ -170,6 +183,7 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public double[] getCoordinates(double x[]) {
         assert (x != null);
@@ -207,16 +221,19 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setScaling(double[] scaling) {
         optimizationScaling = scaling;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double[] getScaling() {
         return optimizationScaling;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double[] getMass() {
         double mass[] = new double[nxyz];
@@ -233,16 +250,19 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
         return mass;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double getTotal() {
         return totalEnergy;
     }
 
+    /** {@inheritDoc} */
     @Override
     public int getNumberOfVariables() {
         return nxyz;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setLambda(double lambda) {
         if (lambda <= 1.0 && lambda >= 0.0) {
@@ -254,21 +274,25 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public double getLambda() {
         return lambda;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double getdEdL() {
         return realspacedata.computeRealSpaceTarget(true);
     }
 
+    /** {@inheritDoc} */
     @Override
     public double getd2EdL2() {
         return 0.0;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void getdEdXdL(double[] gradient) {
         realspacedata.computeRealSpaceTarget(true);

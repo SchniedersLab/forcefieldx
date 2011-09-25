@@ -56,6 +56,7 @@ import ffx.potential.parameters.VDWType;
  *
  * @author Michael J. Schnieders
  * @since 1.0
+ * @version $Id: $
  */
 public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         LambdaInterface {
@@ -410,6 +411,11 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         }
     }
 
+    /**
+     * <p>Getter for the field <code>pairwiseSchedule</code>.</p>
+     *
+     * @return a {@link edu.rit.pj.IntegerSchedule} object.
+     */
     public IntegerSchedule getPairwiseSchedule() {
         return pairwiseSchedule;
     }
@@ -504,6 +510,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
 
     /**
      * Get the total van der Waals potential energy.
+     *
      * @return The energy.
      * @since 1.0
      */
@@ -513,6 +520,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
 
     /**
      * Get the number of interacting pairs.
+     *
      * @return The interaction count.
      * @since 1.0
      */
@@ -522,6 +530,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
 
     /**
      * Get the buffer size.
+     *
      * @return The buffer.
      * @since 1.0
      */
@@ -576,10 +585,9 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
     }
 
     /**
-     * Apply masking rules for 1-2 and 1-3 interactions.
+     * {@inheritDoc}
      *
-     * @param mask The masking array.
-     * @param i The atom whose mask should be applied.
+     * Apply masking rules for 1-2 and 1-3 interactions.
      */
     @Override
     public void applyMask(final double mask[], final int i) {
@@ -596,10 +604,9 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
     }
 
     /**
-     * Remove the masking rules for 1-2 and 1-3 interactions.
+     * {@inheritDoc}
      *
-     * @param mask The masking array.
-     * @param i The atom whose mask should be removed.
+     * Remove the masking rules for 1-2 and 1-3 interactions.
      */
     @Override
     public void removeMask(final double mask[], final int i) {
@@ -615,13 +622,19 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         }
     }
 
+    /**
+     * <p>Getter for the field <code>neighborLists</code>.</p>
+     *
+     * @return an array of int.
+     */
     public int[][][] getNeighborLists() {
         return neighborLists;
     }
 
     /**
-     * This is method should not be called; it is invoked by Parallel Java.
+     * {@inheritDoc}
      *
+     * This is method should not be called; it is invoked by Parallel Java.
      * @since 0.l
      */
     @Override
@@ -642,8 +655,9 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
     }
 
     /**
-     * This is method should not be called; it is invoked by Parallel Java.
+     * {@inheritDoc}
      *
+     * This is method should not be called; it is invoked by Parallel Java.
      * @since 0.l
      */
     @Override
@@ -674,6 +688,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                 radEps[classi][classk * 2 + RADMIN] / ZERO_07, r, eij));
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setLambda(double lambda) {
         assert (lambda >= 0.0 && lambda <= 1.0);
@@ -718,16 +733,19 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
 
     }
 
+    /** {@inheritDoc} */
     @Override
     public double getLambda() {
         return lambda;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double getdEdL() {
         return shareddEdL.get();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void getdEdXdL(double[] gradient) {
         int index = 0;
@@ -738,6 +756,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public double getd2EdL2() {
         return sharedd2EdL2.get();

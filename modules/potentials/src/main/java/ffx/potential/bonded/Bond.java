@@ -44,11 +44,13 @@ import ffx.potential.parameters.BondType;
  *
  * @author Michael J. Schnieders
  * @since 1.0
+ * @version $Id: $
  */
 public class Bond extends BondedTerm implements Comparable<Bond> {
 
     private static final Logger logger = Logger.getLogger(Bond.class.getName());
 
+    /** {@inheritDoc} */
     @Override
     public int compareTo(Bond b) {
         if (b == null) {
@@ -171,12 +173,17 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
     /**
      * Set a reference to the force field parameters.
      *
-     * @param bondType
+     * @param bondType a {@link ffx.potential.parameters.BondType} object.
      */
     public void setBondType(BondType bondType) {
         this.bondType = bondType;
     }
 
+    /**
+     * <p>Setter for the field <code>rigidScale</code>.</p>
+     *
+     * @param rigidScale a double.
+     */
     public void setRigidScale(double rigidScale) {
         this.rigidScale = rigidScale;
     }
@@ -185,6 +192,7 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
      * Check to see if <b>this</b> Bond and another combine to form an angle
      *
      * @return True if Bond b helps form an angle with <b>this</b> Bond
+     * @param b a {@link ffx.potential.bonded.Bond} object.
      */
     public boolean formsAngleWith(Bond b) {
         for (Bond bond : formsAngleWith) {
@@ -288,6 +296,7 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
         update();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void removeFromParent() {
         super.removeFromParent();
@@ -309,6 +318,11 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
         }
     }
 
+    /**
+     * <p>sameGroup</p>
+     *
+     * @return a boolean.
+     */
     public boolean sameGroup() {
         if (atoms[0].getParent() == atoms[1].getParent()) {
             return true;
@@ -326,6 +340,15 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
         formsAngleWith.add(b);
     }
 
+    /**
+     * <p>setBondTransform3d</p>
+     *
+     * @param t3d a {@link javax.media.j3d.Transform3D} object.
+     * @param pos an array of double.
+     * @param orient an array of double.
+     * @param len a double.
+     * @param newRot a boolean.
+     */
     public void setBondTransform3d(Transform3D t3d, double[] pos,
                                    double[] orient, double len, boolean newRot) {
         // Bond Orientation
@@ -395,12 +418,9 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
     }
 
     /**
-     * Polymorphic setView method.
+     * {@inheritDoc}
      *
-     * @param newViewModel
-     *            ViewModel
-     * @param newShapes
-     *            List
+     * Polymorphic setView method.
      */
     @Override
     public void setView(RendererCache.ViewModel newViewModel,
@@ -503,6 +523,12 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
         }
     }
 
+    /**
+     * <p>setWire</p>
+     *
+     * @param l a {@link javax.media.j3d.LineArray} object.
+     * @param i a int.
+     */
     public void setWire(LineArray l, int i) {
         la = l;
         lineIndex = i;
@@ -511,7 +537,7 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
     /**
      * Manage wireframe visibility.
      *
-     * @param visible
+     * @param visible a boolean.
      */
     public void setWireVisible(boolean visible) {
         if (!visible) {
@@ -535,6 +561,8 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Update recomputes the bonds length, Wireframe vertices, and Cylinder
      * Transforms
      */

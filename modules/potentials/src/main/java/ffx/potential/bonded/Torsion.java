@@ -34,6 +34,7 @@ import ffx.potential.parameters.TorsionType;
  *
  * @author Michael J. Schnieders
  * @since 1.0
+ * @version $Id: $
  */
 public class Torsion extends BondedTerm {
 
@@ -58,6 +59,15 @@ public class Torsion extends BondedTerm {
         Initialize();
     }
 
+    /**
+     * <p>compare</p>
+     *
+     * @param a0 a {@link ffx.potential.bonded.Atom} object.
+     * @param a1 a {@link ffx.potential.bonded.Atom} object.
+     * @param a2 a {@link ffx.potential.bonded.Atom} object.
+     * @param a3 a {@link ffx.potential.bonded.Atom} object.
+     * @return a boolean.
+     */
     public boolean compare(Atom a0, Atom a1, Atom a2, Atom a3) {
         if (a0 == atoms[0] && a1 == atoms[1] && a2 == atoms[2]
                 && a3 == atoms[3]) {
@@ -155,6 +165,7 @@ public class Torsion extends BondedTerm {
         return null;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void update() {
         energy(false);
@@ -296,6 +307,8 @@ public class Torsion extends BondedTerm {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Overidden toString Method returns the Term's id.
      */
     @Override

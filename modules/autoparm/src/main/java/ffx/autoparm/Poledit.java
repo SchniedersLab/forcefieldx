@@ -46,12 +46,12 @@ import static ffx.potential.parameters.MultipoleType.*;
 
 /**
  * Poledit Provides Multipole Parameters from GDMA Output.
- * 
+ *
  * Possible issue: xyzIndex and Type are the same always.
  *
  * @author Gaurav Chattree
- * 
- * @since 1.0 
+ * @since 1.0
+ * @version $Id: $
  */
 public class Poledit {
 
@@ -64,10 +64,9 @@ public class Poledit {
 
     /**
      * This method takes data from GDMA and prints out multipole parameters
-     * 
+     *
      * @param gdmaoutfname
      * File location of multipole params output by GDMA
-     * 
      * @param peditinfname
      * File location of molecular polarization group information
      */
@@ -134,6 +133,13 @@ public class Poledit {
         prtpolar(name);
     }
 
+    /**
+     * <p>posinarray</p>
+     *
+     * @param find a {@link java.lang.String} object.
+     * @param ln a {@link java.lang.String} object.
+     * @return a int.
+     */
     public int posinarray(String find, String ln) {
         int pos = -1;
 
@@ -147,6 +153,11 @@ public class Poledit {
         return pos;
     }
 
+    /**
+     * <p>readGDMA</p>
+     *
+     * @param gdmaoutfname a {@link java.lang.String} object.
+     */
     public void readGDMA(String gdmaoutfname) {
         ArrayList<double[]> sphmultipole = new ArrayList<double[]>();
         File gdmaoutf = new File(gdmaoutfname);
@@ -379,15 +390,16 @@ public class Poledit {
 
     /**
      * Creates and returns an atomType object from an element name
-     * 
+     *
      * To work on:
      * What is 'thole' and is it necessary in this function.
-     * 
-     * @param type
-     * @param element
-     * @param radius
-     * @param pdamp
+     *
+     * @param type a int.
+     * @param element a {@link java.lang.String} object.
+     * @param radius an array of double.
+     * @param pdamp an array of double.
      * @return atomType
+     * @param polarity an array of double.
      */
     public AtomType get_atom_type(int type, String element, double[] radius,
             double[] polarity, double[] pdamp) {
@@ -523,6 +535,8 @@ public class Poledit {
 
     /**
      * Sets up connectivities based on radii and then prints this information out to an xyz file
+     *
+     * @param name a {@link java.lang.String} object.
      */
     public void setup_print_xyz(String name) {
         //Set up connectivities based on radii
@@ -563,7 +577,9 @@ public class Poledit {
         }
     }
 
-    /**An example MultipoleFrameTypes would be: {401,401,404}**/
+    /**
+     *An example MultipoleFrameTypes would be: {401,401,404}*
+     */
     public void setframeAutomatic() {
         for (int i = 0; i < atoms.length; i++) {
             double charge = globalMultipole[0][i][0];
@@ -721,6 +737,11 @@ public class Poledit {
         }
     }
 
+    /**
+     * <p>setframe</p>
+     *
+     * @param peditinfname a {@link java.lang.String} object.
+     */
     public void setframe(String peditinfname) {
         axisAtom = new int[atoms.length][3];
         xaxis = new int[atoms.length];
@@ -822,6 +843,12 @@ public class Poledit {
 
     }
 
+    /**
+     * <p>isInteger</p>
+     *
+     * @param string a {@link java.lang.String} object.
+     * @return a boolean.
+     */
     public boolean isInteger(String string) {
         try {
             Integer.valueOf(string);
@@ -831,6 +858,14 @@ public class Poledit {
         }
     }
 
+    /**
+     * <p>priority</p>
+     *
+     * @param o a {@link ffx.potential.bonded.Atom} object.
+     * @param a a {@link ffx.potential.bonded.Atom} object.
+     * @param b a {@link ffx.potential.bonded.Atom} object.
+     * @return a {@link ffx.potential.bonded.Atom} object.
+     */
     public Atom priority(Atom o, Atom a, Atom b) {
         int ka = a.getAtomicNumber();
         int kb = b.getAtomicNumber();
@@ -871,6 +906,9 @@ public class Poledit {
         }
     }
 
+    /**
+     * <p>printlocalmpoles</p>
+     */
     public void printlocalmpoles() {
         for (int i = 0; i < nAtoms; i++) {
             System.out.println("\n\nSite: " + (i + 1) + " Name: " + atoms[i].getAtomType().name + " Atomic Number: " + atoms[i].getAtomicNumber());
@@ -883,6 +921,9 @@ public class Poledit {
         }
     }
 
+    /**
+     * <p>printglobalmpoles</p>
+     */
     public void printglobalmpoles() {
         for (int i = 0; i < nAtoms; i++) {
             System.out.println("\n\nSite: " + (i + 1) + " Name: " + atoms[i].getAtomType().name + " Atomic Number: " + atoms[i].getAtomicNumber());
@@ -895,6 +936,9 @@ public class Poledit {
         }
     }
 
+    /**
+     * <p>fixpolar</p>
+     */
     public void fixpolar() {
         if (remove_symmetry) {
             for (int i = 0; i < nAtoms; i++) {
@@ -966,6 +1010,9 @@ public class Poledit {
 
     }
 
+    /**
+     * <p>removeInducedFromGlobal</p>
+     */
     public void removeInducedFromGlobal() {
         for (int i = 0; i < nAtoms; i++) {
             for (int j = 0; j < 3; j++) {
@@ -974,6 +1021,11 @@ public class Poledit {
         }
     }
 
+    /**
+     * <p>prtpolar</p>
+     *
+     * @param name a {@link java.lang.String} object.
+     */
     public void prtpolar(String name) {
         File outf = new File(name + ".key");
         try {
@@ -1046,6 +1098,11 @@ public class Poledit {
         }
     }
 
+    /**
+     * <p>main</p>
+     *
+     * @param args an array of {@link java.lang.String} objects.
+     */
     public static void main(String args[]) {
         //Poledit p = new Poledit("/users/gchattree/Research/Compounds/test_compounds/12-ethanediol-test/12-ethanediol.gdmaout", "/users/gchattree/Research/Compounds/test_compounds/12-ethanediol-test/12-ethanediol-peditin.txt");
         //Poledit p2 = new Poledit("/users/gchattree/Research/Compounds/test_compounds/phenobarbital-tinker-goal/phenobarbital.gdmaout","/users/gchattree/Research/Compounds/test_compounds/phenobarbital-test/phenobarbital-peditin.txt");

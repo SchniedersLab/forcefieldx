@@ -35,13 +35,21 @@ import edu.rit.pj.Comm;
  *
  * @author Michael J. Schnieders<br>
  *         Derived from a similar class by Emmanuel Puybaret
- *
  * @since 1.0
+ * @version $Id: $
  */
 public class Launcher {
     
-    public static Comm world = null;
-
+    /**
+     * <p>main</p>
+     *
+     * @param args an array of {@link java.lang.String} objects.
+     * @throws java.lang.ClassNotFoundException if any.
+     * @throws java.lang.NoSuchMethodException if any.
+     * @throws java.lang.IllegalAccessException if any.
+     * @throws java.lang.IllegalArgumentException if any.
+     * @throws java.lang.reflect.InvocationTargetException if any.
+     */
     public static void main(String[] args) throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
 
         List<String> ffxFiles = new ArrayList<String>(Arrays.asList(new String[]{

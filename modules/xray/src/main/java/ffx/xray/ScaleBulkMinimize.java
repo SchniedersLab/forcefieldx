@@ -33,8 +33,10 @@ import ffx.numerics.OptimizationListener;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
 
 /**
+ * <p>ScaleBulkMinimize class.</p>
  *
  * @author fennt
+ * @version $Id: $
  */
 public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
 
@@ -57,6 +59,13 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
     private double grms;
     private int nSteps;
 
+    /**
+     * <p>Constructor for ScaleBulkMinimize.</p>
+     *
+     * @param reflectionlist a {@link ffx.crystal.ReflectionList} object.
+     * @param refinementdata a {@link ffx.xray.DiffractionRefinementData} object.
+     * @param crs a {@link ffx.xray.CrystalReciprocalSpace} object.
+     */
     public ScaleBulkMinimize(ReflectionList reflectionlist,
             DiffractionRefinementData refinementdata, CrystalReciprocalSpace crs) {
         this.reflectionlist = reflectionlist;
@@ -119,6 +128,9 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         x[0] = Math.log(4.0 * sumfofc / sumfc);
     }
 
+    /**
+     * <p>ksbsGridOptimize</p>
+     */
     public void ksbsGridOptimize() {
         if (solvent_n < 3) {
             return;
@@ -153,6 +165,9 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         refinementdata.solvent_ueq = b;
     }
 
+    /**
+     * <p>GridOptimize</p>
+     */
     public void GridOptimize() {
         if (crs == null) {
             return;
@@ -194,14 +209,32 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         crs.computeDensity(refinementdata.fs);
     }
 
+    /**
+     * <p>minimize</p>
+     *
+     * @return a {@link ffx.xray.ScaleBulkEnergy} object.
+     */
     public ScaleBulkEnergy minimize() {
         return minimize(0.5);
     }
 
+    /**
+     * <p>minimize</p>
+     *
+     * @param eps a double.
+     * @return a {@link ffx.xray.ScaleBulkEnergy} object.
+     */
     public ScaleBulkEnergy minimize(double eps) {
         return minimize(5, eps);
     }
 
+    /**
+     * <p>minimize</p>
+     *
+     * @param m a int.
+     * @param eps a double.
+     * @return a {@link ffx.xray.ScaleBulkEnergy} object.
+     */
     public ScaleBulkEnergy minimize(int m, double eps) {
 
         double e = bulksolventenergy.energyAndGradient(x, grad);
@@ -249,6 +282,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         return bulksolventenergy;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean optimizationUpdate(int iter, int nfun, double grms, double xrms, double f, double df, double angle, LineSearchResult info) {
         long currentTime = System.nanoTime();
@@ -281,6 +315,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         return true;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void terminate() {
         terminate = true;

@@ -46,11 +46,10 @@ import java.util.HashMap;
 import java.util.logging.Logger;
 
 /**
- * This implementation uses the coefficients from Su and Coppens and 
+ * This implementation uses the coefficients from Su and Coppens and
  * 3 coefficient parameters derived from CCTBX.
  *
  * @author Tim Fenn<br>
- *
  * @see <a href="http://dx.doi.org/10.1107/S0108767397004558" target="_blank">
  * Z. Su and P. Coppens, Acta Cryst. (1997). A53, 749-762</a>
  *
@@ -67,6 +66,71 @@ import java.util.logging.Logger;
  * @see <a href="http://dx.doi.org/10.1107/S0907444909022707" target="_blank">
  * M. J. Schnieders, T. D. Fenn, V. S. Pande and A. T. Brunger,
  * Acta Cryst. (2009). D65 952-965.</a>
+ * @see <a href="http://dx.doi.org/10.1107/S0108767397004558" target="_blank">
+ * Z. Su and P. Coppens, Acta Cryst. (1997). A53, 749-762</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1107/S010876739800124X" target="_blank">
+ * Z. Su and P. Coppens, Acta Cryst. (1998). A54, 357</a>
+ *
+ * @see <a href="http://harker.chem.buffalo.edu/group/groupindex.html" target="_blank">
+ * The Coppens lab website (Source data)</a>
+ *
+ * @see <a href="http://www.iucr.org/resources/commissions/crystallographic-computing/newsletters/3" target="_blank">
+ * R. W. Grosse-Kunstleve, N. K. Sauter and P. D. Adams.
+ * Newsletter of the IUCr Commission on Crystallographic Computing. (2004). 3, 22-31.</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1107/S0907444909022707" target="_blank">
+ * M. J. Schnieders, T. D. Fenn, V. S. Pande and A. T. Brunger,
+ * Acta Cryst. (2009). D65 952-965.</a>
+ * @see <a href="http://dx.doi.org/10.1107/S0108767397004558" target="_blank">
+ * Z. Su and P. Coppens, Acta Cryst. (1997). A53, 749-762</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1107/S010876739800124X" target="_blank">
+ * Z. Su and P. Coppens, Acta Cryst. (1998). A54, 357</a>
+ *
+ * @see <a href="http://harker.chem.buffalo.edu/group/groupindex.html" target="_blank">
+ * The Coppens lab website (Source data)</a>
+ *
+ * @see <a href="http://www.iucr.org/resources/commissions/crystallographic-computing/newsletters/3" target="_blank">
+ * R. W. Grosse-Kunstleve, N. K. Sauter and P. D. Adams.
+ * Newsletter of the IUCr Commission on Crystallographic Computing. (2004). 3, 22-31.</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1107/S0907444909022707" target="_blank">
+ * M. J. Schnieders, T. D. Fenn, V. S. Pande and A. T. Brunger,
+ * Acta Cryst. (2009). D65 952-965.</a>
+ * @see <a href="http://dx.doi.org/10.1107/S0108767397004558" target="_blank">
+ * Z. Su and P. Coppens, Acta Cryst. (1997). A53, 749-762</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1107/S010876739800124X" target="_blank">
+ * Z. Su and P. Coppens, Acta Cryst. (1998). A54, 357</a>
+ *
+ * @see <a href="http://harker.chem.buffalo.edu/group/groupindex.html" target="_blank">
+ * The Coppens lab website (Source data)</a>
+ *
+ * @see <a href="http://www.iucr.org/resources/commissions/crystallographic-computing/newsletters/3" target="_blank">
+ * R. W. Grosse-Kunstleve, N. K. Sauter and P. D. Adams.
+ * Newsletter of the IUCr Commission on Crystallographic Computing. (2004). 3, 22-31.</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1107/S0907444909022707" target="_blank">
+ * M. J. Schnieders, T. D. Fenn, V. S. Pande and A. T. Brunger,
+ * Acta Cryst. (2009). D65 952-965.</a>
+ * @see <a href="http://dx.doi.org/10.1107/S0108767397004558" target="_blank">
+ * Z. Su and P. Coppens, Acta Cryst. (1997). A53, 749-762</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1107/S010876739800124X" target="_blank">
+ * Z. Su and P. Coppens, Acta Cryst. (1998). A54, 357</a>
+ *
+ * @see <a href="http://harker.chem.buffalo.edu/group/groupindex.html" target="_blank">
+ * The Coppens lab website (Source data)</a>
+ *
+ * @see <a href="http://www.iucr.org/resources/commissions/crystallographic-computing/newsletters/3" target="_blank">
+ * R. W. Grosse-Kunstleve, N. K. Sauter and P. D. Adams.
+ * Newsletter of the IUCr Commission on Crystallographic Computing. (2004). 3, 22-31.</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1107/S0907444909022707" target="_blank">
+ * M. J. Schnieders, T. D. Fenn, V. S. Pande and A. T. Brunger,
+ * Acta Cryst. (2009). D65 952-965.</a>
+ * @version $Id: $
  */
 public final class XRayFormFactor implements FormFactor {
 
@@ -655,18 +719,44 @@ public final class XRayFormFactor implements FormFactor {
     private double resv[] = new double[3];
     private double resm[][] = new double[3][3];
 
+    /**
+     * <p>Constructor for XRayFormFactor.</p>
+     *
+     * @param atom a {@link ffx.potential.bonded.Atom} object.
+     */
     public XRayFormFactor(Atom atom) {
         this(atom, true, 0.0, atom.getXYZ());
     }
 
+    /**
+     * <p>Constructor for XRayFormFactor.</p>
+     *
+     * @param atom a {@link ffx.potential.bonded.Atom} object.
+     * @param use_3g a boolean.
+     */
     public XRayFormFactor(Atom atom, boolean use_3g) {
         this(atom, use_3g, 0.0, atom.getXYZ());
     }
 
+    /**
+     * <p>Constructor for XRayFormFactor.</p>
+     *
+     * @param atom a {@link ffx.potential.bonded.Atom} object.
+     * @param use_3g a boolean.
+     * @param badd a double.
+     */
     public XRayFormFactor(Atom atom, boolean use_3g, double badd) {
         this(atom, use_3g, badd, atom.getXYZ());
     }
 
+    /**
+     * <p>Constructor for XRayFormFactor.</p>
+     *
+     * @param atom a {@link ffx.potential.bonded.Atom} object.
+     * @param use_3g a boolean.
+     * @param badd a double.
+     * @param xyz an array of double.
+     */
     public XRayFormFactor(Atom atom, boolean use_3g, double badd, double xyz[]) {
         this.atom = atom;
         this.uadd = b2u(badd);
@@ -716,6 +806,12 @@ public final class XRayFormFactor implements FormFactor {
         update(xyz, uadd);
     }
 
+    /**
+     * <p>getFormFactorIndex</p>
+     *
+     * @param atom a {@link java.lang.String} object.
+     * @return a int.
+     */
     public static int getFormFactorIndex(String atom) {
         double ffactor[][] = null;
 
@@ -727,6 +823,12 @@ public final class XRayFormFactor implements FormFactor {
         }
     }
 
+    /**
+     * <p>getFormFactorA</p>
+     *
+     * @param atom a {@link java.lang.String} object.
+     * @return an array of double.
+     */
     public static double[] getFormFactorA(String atom) {
         double ffactor[][] = null;
 
@@ -738,6 +840,12 @@ public final class XRayFormFactor implements FormFactor {
         }
     }
 
+    /**
+     * <p>getFormFactorB</p>
+     *
+     * @param atom a {@link java.lang.String} object.
+     * @return an array of double.
+     */
     public static double[] getFormFactorB(String atom) {
         double ffactor[][] = null;
 
@@ -749,6 +857,12 @@ public final class XRayFormFactor implements FormFactor {
         }
     }
 
+    /**
+     * <p>getFormFactor</p>
+     *
+     * @param atom a {@link java.lang.String} object.
+     * @return an array of double.
+     */
     public static double[][] getFormFactor(String atom) {
         double ffactor[][] = null;
 
@@ -763,10 +877,23 @@ public final class XRayFormFactor implements FormFactor {
         return ffactor;
     }
 
+    /**
+     * <p>f</p>
+     *
+     * @param hkl a {@link ffx.crystal.HKL} object.
+     * @return a double.
+     */
     public double f(HKL hkl) {
         return f_n(hkl, n);
     }
 
+    /**
+     * <p>f_n</p>
+     *
+     * @param hkl a {@link ffx.crystal.HKL} object.
+     * @param ng a int.
+     * @return a double.
+     */
     public double f_n(HKL hkl, int ng) {
         double sum = 0.0;
 
@@ -776,11 +903,21 @@ public final class XRayFormFactor implements FormFactor {
         return occ * sum;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double rho(double f, double lambda, double xyz[]) {
         return rho_n(f, lambda, xyz, n);
     }
 
+    /**
+     * <p>rho_n</p>
+     *
+     * @param f a double.
+     * @param lambda a double.
+     * @param xyz an array of double.
+     * @param ng a int.
+     * @return a double.
+     */
     public double rho_n(double f, double lambda, double xyz[], int ng) {
         assert (ng > 0 && ng <= n);
         diff(this.xyz, xyz, dxyz);
@@ -797,11 +934,20 @@ public final class XRayFormFactor implements FormFactor {
         return f + (lambda * occ * twopi32 * sum);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void rho_grad(double xyz[], double dfc, RefinementMode refinementmode) {
         rho_grad_n(xyz, n, dfc, refinementmode);
     }
 
+    /**
+     * <p>rho_grad_n</p>
+     *
+     * @param xyz an array of double.
+     * @param ng a int.
+     * @param dfc a double.
+     * @param refinementmode a {@link ffx.xray.RefinementMinimize.RefinementMode} object.
+     */
     public void rho_grad_n(double xyz[], int ng, double dfc, RefinementMode refinementmode) {
         assert (ng > 0 && ng <= n);
         diff(this.xyz, xyz, dxyz);
@@ -910,11 +1056,13 @@ public final class XRayFormFactor implements FormFactor {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void update(double xyz[]) {
         update(xyz, u2b(uadd));
     }
 
+    /** {@inheritDoc} */
     @Override
     public void update(double xyz[], double badd) {
         this.xyz[0] = xyz[0];

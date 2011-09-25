@@ -35,6 +35,9 @@ import com.sun.j3d.utils.picking.PickResult;
 
 /**
  * The PickSelectionBehavior class implements a mouse based selections behavior.
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public class PickSelectionBehavior extends PickMouseBehavior implements
 		MouseBehaviorCallback {
@@ -42,6 +45,15 @@ public class PickSelectionBehavior extends PickMouseBehavior implements
 	private PickingCallback callback = null;
 	private TransformGroup currentTG;
 
+	/**
+	 * <p>Constructor for PickSelectionBehavior.</p>
+	 *
+	 * @param root a {@link javax.media.j3d.BranchGroup} object.
+	 * @param canvas a {@link javax.media.j3d.Canvas3D} object.
+	 * @param bounds a {@link javax.media.j3d.Bounds} object.
+	 * @param VPTG a {@link javax.media.j3d.TransformGroup} object.
+	 * @param pickMode a int.
+	 */
 	public PickSelectionBehavior(BranchGroup root, Canvas3D canvas,
 			Bounds bounds, TransformGroup VPTG, int pickMode) {
 		super(canvas, root, bounds);
@@ -56,6 +68,11 @@ public class PickSelectionBehavior extends PickMouseBehavior implements
 	/*
 	 * Return the pickMode component of this PickRotateBehavior.
 	 */
+	/**
+	 * <p>getPickMode</p>
+	 *
+	 * @return a int.
+	 */
 	public int getPickMode() {
 		return pickCanvas.getMode();
 	}
@@ -64,6 +81,11 @@ public class PickSelectionBehavior extends PickMouseBehavior implements
 	 * Sets the pickMode component of this PickRotateBehavior to the value of
 	 * the passed pickMode. @param pickMode the pickMode to be copied.
 	 */
+	/**
+	 * <p>setPickMode</p>
+	 *
+	 * @param pickMode a int.
+	 */
 	public void setPickMode(int pickMode) {
 		pickCanvas.setMode(pickMode);
 	}
@@ -71,6 +93,11 @@ public class PickSelectionBehavior extends PickMouseBehavior implements
 	/*
 	 * Register the class @param callback to be called each time the picked
 	 * object moves
+	 */
+	/**
+	 * <p>setupCallback</p>
+	 *
+	 * @param c a {@link ffx.ui.behaviors.PickingCallback} object.
 	 */
 	public void setupCallback(PickingCallback c) {
 		callback = c;
@@ -81,14 +108,17 @@ public class PickSelectionBehavior extends PickMouseBehavior implements
 		}
 	}
 
+	/** {@inheritDoc} */
 	public void transformChanged(int type, Transform3D transform) {
 		callback.transformChanged(PickingCallback.SELECTION, currentTG);
 	}
 
+	/** {@inheritDoc} */
 	public void transformClicked(int type, Transform3D transform) {
 		callback.transformClicked(PickingCallback.SELECTION, currentTG);
 	}
 
+	/** {@inheritDoc} */
 	public void transformDoubleClicked(int type, Transform3D transform) {
 		callback.transformDoubleClicked(PickingCallback.SELECTION, currentTG);
 	}
@@ -97,6 +127,7 @@ public class PickSelectionBehavior extends PickMouseBehavior implements
 	 * Update the scene to manipulate any nodes.
 	 * @param xpos Current mouse X pos. @param ypos Current mouse Y pos.
 	 */
+	/** {@inheritDoc} */
 	public void updateScene(int xpos, int ypos) {
 		TransformGroup tg = null;
 		if ((mevent.getModifiersEx() & MouseEvent.BUTTON1) == MouseEvent.BUTTON1) {

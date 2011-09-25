@@ -31,8 +31,8 @@ import java.util.logging.Logger;
  * The TorsionTorsionType class defines a Torsion-Torsion spline.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
+ * @version $Id: $
  */
 public final class TorsionTorsionType extends BaseType implements Comparator<String> {
 
@@ -225,6 +225,15 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
     public final double dxy[];
     public final boolean cyclic;
 
+    /**
+     * <p>Constructor for TorsionTorsionType.</p>
+     *
+     * @param atomClasses an array of int.
+     * @param gridPoints an array of int.
+     * @param torsion1 an array of double.
+     * @param torsion2 an array of double.
+     * @param energy an array of double.
+     */
     public TorsionTorsionType(int atomClasses[], int gridPoints[],
             double torsion1[], double torsion2[], double energy[]) {
         super(ForceField.ForceFieldType.TORTORS, sortKey(atomClasses));
@@ -372,6 +381,11 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
         }
     }
 
+    /**
+     * <p>incrementClasses</p>
+     *
+     * @param increment a int.
+     */
     public void incrementClasses(int increment) {
         for (int i = 0; i < atomClasses.length; i++) {
             atomClasses[i] += increment;
@@ -535,9 +549,9 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
     }
 
     /**
-     * Nicely formatted torsion-torsion type.
+     * {@inheritDoc}
      *
-     * @return String
+     * Nicely formatted torsion-torsion type.
      */
     @Override
     public String toString() {
@@ -560,6 +574,7 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
      */
     public static final double units = 1.0;
 
+    /** {@inheritDoc} */
     @Override
     public int compare(String key1, String key2) {
         String keys1[] = key1.split(" ");
@@ -574,6 +589,7 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
         return 0;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean equals(Object other) {
         if (other == this) {
@@ -592,6 +608,7 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
         return true;
     }
 
+    /** {@inheritDoc} */
     @Override
     public int hashCode() {
         int hash = 3;

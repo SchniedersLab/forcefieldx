@@ -33,8 +33,8 @@ import org.apache.commons.io.FilenameUtils;
  * Coordinate (*.XYZ) file.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
+ * @version $Id: $
  */
 public final class XYZFileFilter extends FileFilter {
 
@@ -45,6 +45,8 @@ public final class XYZFileFilter extends FileFilter {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * This method return <code>true</code> if the file is a directory or
      * TINKER Cartesian coordinate (*.XYZ) file.
      */
@@ -57,6 +59,12 @@ public final class XYZFileFilter extends FileFilter {
         return ext.toUpperCase().startsWith("XYZ");
     }
 
+    /**
+     * <p>acceptDeep</p>
+     *
+     * @param file a {@link java.io.File} object.
+     * @return a boolean.
+     */
     public boolean acceptDeep(File file) {
         try {
             if (file == null || file.isDirectory() || !file.canRead()) {
@@ -109,6 +117,8 @@ public final class XYZFileFilter extends FileFilter {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Provides a description of the XYZFileFilter.
      */
     @Override

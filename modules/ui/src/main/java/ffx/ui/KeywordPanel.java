@@ -74,6 +74,9 @@ import ffx.potential.parsers.KeyFilter;
 /**
  * The KeywordPanel class provides a View and Control of TINKER Keyword (*.KEY)
  * files.
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public final class KeywordPanel extends JPanel implements ActionListener {
 
@@ -142,6 +145,8 @@ public final class KeywordPanel extends JPanel implements ActionListener {
 
     /**
      * Default Construtor where parent is the tinker Window Frame object.
+     *
+     * @param f a {@link ffx.ui.MainPanel} object.
      */
     public KeywordPanel(MainPanel f) {
         super();
@@ -150,6 +155,8 @@ public final class KeywordPanel extends JPanel implements ActionListener {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Handles input from KeywordPanel ToolBar buttons.
      */
     @Override
@@ -172,6 +179,12 @@ public final class KeywordPanel extends JPanel implements ActionListener {
         }
     }
 
+    /**
+     * <p>getKeyword</p>
+     *
+     * @param key a {@link java.lang.String} object.
+     * @return a {@link java.lang.String} object.
+     */
     public String getKeyword(String key) {
         if (key == null) {
             return null;
@@ -185,6 +198,12 @@ public final class KeywordPanel extends JPanel implements ActionListener {
         }
     }
 
+    /**
+     * <p>getKeywordDescription</p>
+     *
+     * @param key a {@link java.lang.String} object.
+     * @return a {@link java.lang.String} object.
+     */
     public String getKeywordDescription(String key) {
         if (key == null) {
             return null;
@@ -198,6 +217,12 @@ public final class KeywordPanel extends JPanel implements ActionListener {
         }
     }
 
+    /**
+     * <p>getKeywordValue</p>
+     *
+     * @param key a {@link java.lang.String} object.
+     * @return a {@link java.lang.String} object.
+     */
     public String getKeywordValue(String key) {
         if (key == null) {
             return null;
@@ -219,10 +244,21 @@ public final class KeywordPanel extends JPanel implements ActionListener {
         }
     }
 
+    /**
+     * <p>Getter for the field <code>paramFiles</code>.</p>
+     *
+     * @return an array of {@link java.lang.String} objects.
+     */
     public String[] getParamFiles() {
         return paramNames;
     }
 
+    /**
+     * <p>getParamPath</p>
+     *
+     * @param key a {@link java.lang.String} object.
+     * @return a {@link java.lang.String} object.
+     */
     public String getParamPath(String key) {
         return paramHashtable.get(key);
     }
@@ -277,6 +313,9 @@ public final class KeywordPanel extends JPanel implements ActionListener {
         loadKeywordGroup();
     }
 
+    /**
+     * <p>initToolBar</p>
+     */
     public void initToolBar() {
         toolBar = new JToolBar("Keyword Editor");
         toolBar.setLayout(flowLayout);
@@ -330,10 +369,21 @@ public final class KeywordPanel extends JPanel implements ActionListener {
         toolBar.setOrientation(JToolBar.HORIZONTAL);
     }
 
+    /**
+     * <p>isFileOpen</p>
+     *
+     * @return a boolean.
+     */
     public boolean isFileOpen() {
         return fileOpen;
     }
 
+    /**
+     * <p>isKeyword</p>
+     *
+     * @param key a {@link java.lang.String} object.
+     * @return a boolean.
+     */
     public boolean isKeyword(String key) {
         synchronized (this) {
             KeywordComponent keyword = keywordHashMap.get(key.toUpperCase());
@@ -344,6 +394,9 @@ public final class KeywordPanel extends JPanel implements ActionListener {
         }
     }
 
+    /**
+     * <p>keyClear</p>
+     */
     public void keyClear() {
         synchronized (this) {
             // Clear each KeywordComponent
@@ -363,6 +416,11 @@ public final class KeywordPanel extends JPanel implements ActionListener {
         }
     }
 
+    /**
+     * <p>keyClose</p>
+     *
+     * @return a boolean.
+     */
     public boolean keyClose() {
         if (KeywordComponent.isKeywordModified()) {
             return false;
@@ -407,6 +465,12 @@ public final class KeywordPanel extends JPanel implements ActionListener {
         }
     }
 
+    /**
+     * <p>keyOpen</p>
+     *
+     * @param newKeyFile a {@link java.io.File} object.
+     * @return a boolean.
+     */
     public boolean keyOpen(File newKeyFile) {
         if (newKeyFile != null && newKeyFile.exists() && newKeyFile.canRead()) {
             Hashtable<String, Keyword> newKeys = KeyFilter.open(newKeyFile);
@@ -422,6 +486,11 @@ public final class KeywordPanel extends JPanel implements ActionListener {
         return false;
     }
 
+    /**
+     * <p>keySave</p>
+     *
+     * @param f a {@link java.io.File} object.
+     */
     public void keySave(File f) {
         if (f != null) {
             currentKeyFile = f;
@@ -433,6 +502,9 @@ public final class KeywordPanel extends JPanel implements ActionListener {
         saveKeywords(currentKeyFile, keywordHashMap, commentStringBuffer);
     }
 
+    /**
+     * <p>keySaveAs</p>
+     */
     public void keySaveAs() {
         if (!fileOpen) {
             return;
@@ -452,6 +524,12 @@ public final class KeywordPanel extends JPanel implements ActionListener {
         }
     }
 
+    /**
+     * <p>loadActive</p>
+     *
+     * @param newSystem a {@link ffx.ui.FFXSystem} object.
+     * @return a boolean.
+     */
     public boolean loadActive(FFXSystem newSystem) {
         synchronized (this) {
             if (newSystem == null) {
@@ -467,6 +545,14 @@ public final class KeywordPanel extends JPanel implements ActionListener {
         }
     }
 
+    /**
+     * <p>loadActive</p>
+     *
+     * @param newSystem a {@link ffx.ui.FFXSystem} object.
+     * @param newKeys a {@link java.util.Hashtable} object.
+     * @param newKeyFile a {@link java.io.File} object.
+     * @return a boolean.
+     */
     public boolean loadActive(FFXSystem newSystem,
             Hashtable<String, Keyword> newKeys, File newKeyFile) {
         synchronized (this) {
@@ -654,6 +740,9 @@ public final class KeywordPanel extends JPanel implements ActionListener {
         }
     }
 
+    /**
+     * <p>loadPrefs</p>
+     */
     public void loadPrefs() {
         String c = KeywordPanel.class.getName();
         descriptCheckBox.setSelected(!preferences.getBoolean(c + ".description", true));
@@ -746,6 +835,9 @@ public final class KeywordPanel extends JPanel implements ActionListener {
         groupComboBox.setSelectedIndex(0);
     }
 
+    /**
+     * <p>publishKeywords</p>
+     */
     public void publishKeywords() {
         synchronized (this) {
             flatfileTextArea.setText("");
@@ -779,6 +871,11 @@ public final class KeywordPanel extends JPanel implements ActionListener {
         }
     }
 
+    /**
+     * <p>saveChanges</p>
+     *
+     * @return a boolean.
+     */
     public boolean saveChanges() {
         if (KeywordComponent.isKeywordModified() && currentKeyFile != null) {
             keySave(currentKeyFile);
@@ -787,6 +884,14 @@ public final class KeywordPanel extends JPanel implements ActionListener {
         return false;
     }
 
+    /**
+     * <p>saveKeywords</p>
+     *
+     * @param keyFile a {@link java.io.File} object.
+     * @param keywordHashMap a {@link java.util.LinkedHashMap} object.
+     * @param comments a {@link java.lang.StringBuilder} object.
+     * @return a boolean.
+     */
     public boolean saveKeywords(File keyFile,
             LinkedHashMap<String, KeywordComponent> keywordHashMap,
             StringBuilder comments) {
@@ -850,18 +955,29 @@ public final class KeywordPanel extends JPanel implements ActionListener {
 
     private static final Preferences preferences = Preferences.userNodeForPackage(KeywordPanel.class);
 
+    /**
+     * <p>savePrefs</p>
+     */
     public void savePrefs() {
         String c = KeywordPanel.class.getName();
         preferences.putInt(c + ".divider", splitPane.getDividerLocation());
         preferences.putBoolean(c + ".description", descriptCheckBox.isSelected());
     }
 
+    /**
+     * <p>selected</p>
+     */
     public void selected() {
         setDivider(descriptCheckBox.isSelected());
         validate();
         repaint();
     }
 
+    /**
+     * <p>setDivider</p>
+     *
+     * @param b a boolean.
+     */
     public void setDivider(boolean b) {
         if (b) {
             descriptCheckBox.setSelected(b);
@@ -918,6 +1034,9 @@ public final class KeywordPanel extends JPanel implements ActionListener {
         }
     }
 
+    /**
+     * <p>setParamPath</p>
+     */
     public void setParamPath() {
         paramDir = new File(MainPanel.ffxDir.getAbsolutePath() + File.separator
                 + "params");
@@ -994,6 +1113,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public String toString() {
         return "Keyword Editor";

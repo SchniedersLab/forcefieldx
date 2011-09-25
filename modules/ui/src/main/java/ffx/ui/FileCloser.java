@@ -25,15 +25,24 @@ package ffx.ui;
 
 /**
  * The FileCloser class wraps the closing of an FFXSystem within a thread.
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public final class FileCloser implements Runnable {
 
     FFXSystem ffxSystem;
 
+    /**
+     * <p>Constructor for FileCloser.</p>
+     *
+     * @param sys a {@link ffx.ui.FFXSystem} object.
+     */
     public FileCloser(FFXSystem sys) {
         ffxSystem = sys;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void run() {
         ffxSystem.destroy();

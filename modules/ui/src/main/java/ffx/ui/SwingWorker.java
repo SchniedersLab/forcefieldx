@@ -32,6 +32,9 @@ import javax.swing.SwingUtilities;
  * http://java.sun.com/docs/books/tutorial/uiswing/misc/threads.html Note that
  * the API changed slightly in the 3rd version: You must now invoke start() on
  * the SwingWorker after creating it.
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public abstract class SwingWorker {
 	/**
@@ -84,6 +87,8 @@ public abstract class SwingWorker {
 
 	/**
 	 * Compute the value to be returned by the <code>get</code> method.
+	 *
+	 * @return a {@link java.lang.Object} object.
 	 */
 	public abstract Object construct();
 
@@ -98,7 +103,7 @@ public abstract class SwingWorker {
 	 * Return the value created by the <code>construct</code> method. Returns
 	 * null if either the constructing thread or the current thread was
 	 * interrupted before a value was produced.
-	 * 
+	 *
 	 * @return the value created by the <code>construct</code> method
 	 */
 	public Object get() {
@@ -119,6 +124,8 @@ public abstract class SwingWorker {
 	/**
 	 * Get the value produced by the worker thread, or null if it hasn't been
 	 * constructed yet.
+	 *
+	 * @return a {@link java.lang.Object} object.
 	 */
 	protected synchronized Object getValue() {
 		return value;

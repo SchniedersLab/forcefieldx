@@ -25,11 +25,15 @@ import java.util.logging.Logger;
 /**
  * The Molecule class is a general container used for simple compounds or in
  * cases where more specialized classes have not been implemented.
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public class Molecule extends MSGroup {
 
     private Logger logger = Logger.getLogger(Molecule.class.getName());
     private static final long serialVersionUID = 1L;
+    /** Constant <code>MultiScaleLevel=2</code> */
     public static final int MultiScaleLevel = 2;
     /**
      * Residue number assigned in PDB files.
@@ -48,15 +52,31 @@ public class Molecule extends MSGroup {
      */
     private String segID = null;
 
+    /**
+     * <p>Constructor for Molecule.</p>
+     */
     public Molecule() {
     }
 
+    /**
+     * <p>Constructor for Molecule.</p>
+     *
+     * @param name a {@link java.lang.String} object.
+     */
     public Molecule(String name) {
         super(name);
         residueName = name;
         chainID = 'A';
     }
 
+    /**
+     * <p>Constructor for Molecule.</p>
+     *
+     * @param name a {@link java.lang.String} object.
+     * @param residueNum a int.
+     * @param chainID a {@link java.lang.Character} object.
+     * @param segID a {@link java.lang.String} object.
+     */
     public Molecule(String name, int residueNum, 
             Character chainID, String segID) {
         super(name + "-" + residueNum + " " + segID);
@@ -66,28 +86,55 @@ public class Molecule extends MSGroup {
         this.segID = segID;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setName(String name) {
         super.setName(name + "-" + residueNum + " " + segID);
         this.residueName = name;
     }
 
+    /**
+     * <p>Getter for the field <code>residueName</code>.</p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
     public String getResidueName() {
         return residueName;
     }
 
+    /**
+     * <p>getResidueNumber</p>
+     *
+     * @return a int.
+     */
     public int getResidueNumber() {
         return residueNum;
     }
 
+    /**
+     * <p>Getter for the field <code>chainID</code>.</p>
+     *
+     * @return a {@link java.lang.Character} object.
+     */
     public Character getChainID() {
         return chainID;
     }
 
+    /**
+     * <p>Getter for the field <code>segID</code>.</p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
     public String getSegID() {
         return segID;
     }
 
+    /**
+     * <p>getAtom</p>
+     *
+     * @param name a {@link java.lang.String} object.
+     * @return a {@link ffx.potential.bonded.Atom} object.
+     */
     public Atom getAtom(String name) {
         for (Atom a : getAtomList()) {
             if (a.getName().equalsIgnoreCase(name)) {
@@ -98,6 +145,8 @@ public class Molecule extends MSGroup {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Allows adding Atom FNodes to the Molecule.
      */
     @Override
@@ -134,6 +183,7 @@ public class Molecule extends MSGroup {
         return currentAtom;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void finalize(boolean finalizeGeometry) {
         setFinalized(false);

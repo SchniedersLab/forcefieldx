@@ -37,6 +37,9 @@ import javax.vecmath.Vector3f;
 
 /**
  * The MouseOrbit class implements a mouse orbit behavior.
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public class MouseOrbit extends MouseBehavior {
 	double x_angle, y_angle;
@@ -46,12 +49,23 @@ public class MouseOrbit extends MouseBehavior {
 	private Transform3D VPTG_ghost_T3D;
 	private MouseBehaviorCallback callback = null;
 
+	/**
+	 * <p>Constructor for MouseOrbit.</p>
+	 *
+	 * @param flags a int.
+	 * @param VPTG a {@link javax.media.j3d.TransformGroup} object.
+	 */
 	public MouseOrbit(int flags, TransformGroup VPTG) {
 		super(flags, VPTG);
 	}
 
 	/*
 	 * Return the x-axis movement multipler.
+	 */
+	/**
+	 * <p>getXFactor</p>
+	 *
+	 * @return a double.
 	 */
 	public double getXFactor() {
 		return x_factor;
@@ -60,10 +74,18 @@ public class MouseOrbit extends MouseBehavior {
 	/*
 	 * Return the y-axis movement multipler.
 	 */
+	/**
+	 * <p>getYFactor</p>
+	 *
+	 * @return a double.
+	 */
 	public double getYFactor() {
 		return y_factor;
 	}
 
+	/**
+	 * <p>initialize</p>
+	 */
 	public void initialize() {
 		super.initialize();
 		x_angle = 0;
@@ -75,6 +97,7 @@ public class MouseOrbit extends MouseBehavior {
 		}
 	}
 
+	/** {@inheritDoc} */
 	public void processStimulus(Enumeration criteria) {
 		WakeupCriterion wakeup;
 		AWTEvent[] event;
@@ -187,6 +210,11 @@ public class MouseOrbit extends MouseBehavior {
 	/*
 	 * Set the x-axis amd y-axis movement multipler with factor.
 	 */
+	/**
+	 * <p>setFactor</p>
+	 *
+	 * @param factor a double.
+	 */
 	public void setFactor(double factor) {
 		x_factor = y_factor = factor;
 	}
@@ -195,11 +223,23 @@ public class MouseOrbit extends MouseBehavior {
 	 * Set the x-axis amd y-axis movement multipler with xFactor and yFactor
 	 * respectively.
 	 */
+	/**
+	 * <p>setFactor</p>
+	 *
+	 * @param xFactor a double.
+	 * @param yFactor a double.
+	 */
 	public void setFactor(double xFactor, double yFactor) {
 		x_factor = xFactor;
 		y_factor = yFactor;
 	}
 
+	/**
+	 * <p>setTransformGroups</p>
+	 *
+	 * @param tg a {@link javax.media.j3d.TransformGroup} object.
+	 * @param VPTG a {@link javax.media.j3d.TransformGroup} object.
+	 */
 	public void setTransformGroups(TransformGroup tg, TransformGroup VPTG) {
 		super.ViewerTG = VPTG;
 		tg_ghost = new TransformGroup();
@@ -213,10 +253,20 @@ public class MouseOrbit extends MouseBehavior {
 	 * The transformChanged method in the callback class will be called every
 	 * time the transform is updated
 	 */
+	/**
+	 * <p>setupCallback</p>
+	 *
+	 * @param c a {@link ffx.ui.behaviors.MouseBehaviorCallback} object.
+	 */
 	public void setupCallback(MouseBehaviorCallback c) {
 		callback = c;
 	}
 
+	/**
+	 * <p>transformChanged</p>
+	 *
+	 * @param transform a {@link javax.media.j3d.Transform3D} object.
+	 */
 	public void transformChanged(Transform3D transform) {
 	}
 }

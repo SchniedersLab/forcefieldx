@@ -51,6 +51,7 @@ import ffx.numerics.LineSearch.LineSearchResult;
  *      <a href="http://www.netlib.org/opt/lbfgs_um.shar" target="_blank">
  *      Nocedal's original FORTRAN code at Netlib</a>
  * @since 1.0
+ * @version $Id: $
  */
 public class LBFGS {
 
@@ -81,8 +82,11 @@ public class LBFGS {
      * should be increased).
      */
     public static final double stepMax = 5.0;
+    /** Constant <code>slopMax=1.0e4</code> */
     public static final double slopMax = 1.0e4;
+    /** Constant <code>angMax=180.0</code> */
     public static final double angMax = 180.0;
+    /** Constant <code>intMax=5</code> */
     public static final int intMax = 5;
 
     /**
@@ -98,7 +102,7 @@ public class LBFGS {
      * </pre>
      * using the limited-memory BFGS method. The routine is especially
      * effective on problems involving a large number of variables. In
-     * a typical iteration of this method an approximation <code>Hk</code> to 
+     * a typical iteration of this method an approximation <code>Hk</code> to
      * the inverse of the Hessian is obtained by applying <code>m</code> BFGS
      * updates to a diagonal matrix <code>Hk0</code>, using information from the
      * previous <code>m</code> steps.
@@ -106,7 +110,7 @@ public class LBFGS {
      * The user specifies the number <code>m</code>, which determines the amount
      * of storage required by the routine.
      *
-     * The user is required to calculate the function value <code>f</code> and 
+     * The user is required to calculate the function value <code>f</code> and
      * its gradient <code>g</code>.
      *
      * The steplength is determined at each iteration by means of the
@@ -116,40 +120,30 @@ public class LBFGS {
      *
      * @param n The number of variables in the minimization problem.
      *		Restriction: <code>n &gt; 0</code>.
-     *
      * @param mSave The number of corrections used in the BFGS update.
      *		Values of <code>mSave</code> less than 3 are not recommended;
      *		large values of <code>mSave</code> will result in excessive
      *		computing time. <code>3 &lt;= mSave &lt;= 7</code> is recommended.
      *		Restriction: <code>mSave &gt; 0</code>.
-     *
      * @param x On initial entry this must be set by the user to the values
      *		of the initial estimate of the solution vector. On exit it
      *          contains the values of the variables at the best point found
      *          (usually a solution).
-     *
      * @param f The value of the function <code>f</code> at the
      *          point <code>x</code>.
-     *
      * @param g The components of the gradient <code>g</code> at the
      *          point <code>x</code>.
-     *
      * @param eps Determines the accuracy with which the solution
      *		is to be found. The subroutine terminates when
      *		<code>
      *            G RMS &lt; EPS
      *		</code>
-     *
      * @param maxIterations Maximum number of optimization steps.
-     *
      * @param potential Implements the {@link Potential} interface
      *        to supply function values and gradients.
-     *
      * @param listener Implements the {@link OptimizationListener} interface
      *        and will be notified after each successful step.
-     *
      * @return status code (0 = success, 1 = max iterations reached, -1 = failed)
-     *
      * @since 1.0
      */
     public static int minimize(final int n, int mSave, final double[] x, double f, double[] g,
@@ -398,38 +392,29 @@ public class LBFGS {
      *
      * @param n The number of variables in the minimization problem.
      *		Restriction: <code>n &gt; 0</code>.
-     *
      * @param mSave The number of corrections used in the BFGS update.
      *		Values of <code>mSave</code> less than 3 are not recommended;
      *		large values of <code>mSave</code> will result in excessive
      *		computing time. <code>3 &lt;= mSave &lt;= 7</code> is recommended.
      *		Restriction: <code>mSave &gt; 0</code>.
-     *
      * @param x On initial entry this must be set by the user to the values
      *		of the initial estimate of the solution vector. On exit it
      *          contains the values of the variables at the best point found
      *          (usually a solution).
-     *
      * @param f The value of the function <code>f</code> at the
      *          point <code>x</code>.
-     *
      * @param g The components of the gradient <code>g</code> at the
      *          point <code>x</code>.
-     *
      * @param eps Determines the accuracy with which the solution
      *		is to be found. The subroutine terminates when
      *		<code>
      *            G RMS &lt; EPS
      *		</code>
-     *
      * @param potential Implements the {@link Potential} interface
      *        to supply function values and gradients.
-     *
      * @param listener Implements the {@link OptimizationListener} interface
      *        and will be notified after each successful step.
-     *
      * @return status code (0 = success, -1 = failed)
-     *
      * @since 1.0
      */
     public static int minimize(int n, int mSave, double[] x, double f, double[] g,
@@ -472,11 +457,12 @@ public class LBFGS {
      * @param a scalar.
      * @param x X array.
      * @param x0 First point in the X array.
+     * @param x0 First point in the X array.
      * @param dx X increment.
      * @param y Y Array.
      * @param y0 First point in the Y array.
+     * @param y0 First point in the Y array.
      * @param dy Y increment.
-     *
      * @since 1.0
      */
     public static void aXplusY(int n, double a, double[] x, int x0, int dx, double[] y, int y0, int dy) {
@@ -496,13 +482,13 @@ public class LBFGS {
      * @param n Number of entries to include.
      * @param x X array.
      * @param x0 First point in the X array.
+     * @param x0 First point in the X array.
      * @param dx X increment.
      * @param y Y Array.
      * @param y0 First point in the Y array.
+     * @param y0 First point in the Y array.
      * @param dy Y increment.
-     *
      * @return dot product
-     *
      * @since 1.0
      */
     public static double XdotY(int n, double[] x, int x0, int dx, double[] y, int y0, int dy) {

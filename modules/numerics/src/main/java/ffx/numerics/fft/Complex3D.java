@@ -34,7 +34,9 @@ package ffx.numerics.fft;
  * int nextY = 2*nX<br>
  * int nextZ = 2*nX*nY<br>
  * <p>
+ *
  * @author Michal J. Schnieders
+ * @version $Id: $
  */
 public class Complex3D {
 
@@ -135,6 +137,11 @@ public class Complex3D {
         }
     }
 
+    /**
+     * <p>Setter for the field <code>recip</code>.</p>
+     *
+     * @param recip an array of double.
+     */
     public void setRecip(double recip[]){
         int offset, y, x, z, i;
 
@@ -152,6 +159,11 @@ public class Complex3D {
         }
     }
 
+    /**
+     * <p>convolution</p>
+     *
+     * @param input an array of double.
+     */
     public void convolution(final double input[]) {
         int x, y, z, i, index, stride, offset;
         for (z = 0; z < nZ; z++) {
@@ -192,6 +204,16 @@ public class Complex3D {
         }
     }
 
+    /**
+     * <p>iComplex3D</p>
+     *
+     * @param i a int.
+     * @param j a int.
+     * @param k a int.
+     * @param nX a int.
+     * @param nY a int.
+     * @return a int.
+     */
     public static int iComplex3D(int i, int j, int k, int nX, int nY) {
         return 2 * (i + nX * (j + nY * k));
     }

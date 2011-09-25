@@ -24,13 +24,14 @@ package ffx.numerics;
  * Static methods to generate and differentiate uniform b-Splines.
  * <p>
  * C. de Boor, A Practical Guide to Splines. (Springer, New York, 2001)
- * 
+ *
  * @author Michael J. Schnieders
  * @see <a href="http://www.wikipedia.org/wiki/B-spline"
  *      target="_blank">b-Splines at Wikipedia</a><br>
  *      <a href="http://mathworld.wolfram.com/B-Spline.html"
  *      target="_blank">b-Splines at MathWorld</a><br>
  * @since 1.0
+ * @version $Id: $
  */
 public class UniformBSpline {
 
@@ -43,7 +44,6 @@ public class UniformBSpline {
      * @param x     A double in the range [0.0, 1.0].
      * @param order     b-Spline order (degree + 1).
      * @param coefficients  b-Spline coefficients (n coefficients for order n).
-     *
      * @since 1.0
      */
     public static void bSpline(final double x, final int order,
@@ -98,7 +98,6 @@ public class UniformBSpline {
      *                    The method is currently limited to deriveOrder <= 5.<br>
      * @param coefficients  The b-Spline coefficient array of size [order][deriveOrder + 1].
      * @param work  A work array of size [order][order].
-     * 
      * @since 1.0
      */
     public static void bSplineDerivatives(final double x, final int order,

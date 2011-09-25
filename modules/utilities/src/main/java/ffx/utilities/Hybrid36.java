@@ -27,10 +27,9 @@ package ffx.utilities;
  * @author Michael J. Schnieders
  *         Derived from code by:
  *         Ralf W. Grosse-Kunstleve, Vincent B. Chen, Jeff J. Headd, Sep 2007.
- *
  * @see <a href="http://cci.lbl.gov/hybrid_36/">LBL Hybrid36 Reference</a>
- * 
  * @since 1.0
+ * @version $Id: $
  */
 public class Hybrid36 {
 
@@ -109,14 +108,19 @@ public class Hybrid36 {
         return value;
     }
 
-    /** hybrid-36 encoder: converts integer value to string result
-
-    width: must be 4 (e.g. for residue sequence numbers)
-    or 5 (e.g. for atom serial numbers)
-
-    value: integer value to be converted
-
-    return value: String of size width
+    /**
+     * hybrid-36 encoder: converts integer value to string result
+     *
+     *    width: must be 4 (e.g. for residue sequence numbers)
+     *    or 5 (e.g. for atom serial numbers)
+     *
+     *    value: integer value to be converted
+     *
+     *    return value: String of size width
+     *
+     * @param width a int.
+     * @param value a int.
+     * @return a {@link java.lang.String} object.
      */
     public static String encode(int width, int value) {
         int i = value;
@@ -158,14 +162,19 @@ public class Hybrid36 {
         throw new Error(valueOutOfRange);
     }
 
-    /** hybrid-36 decoder: converts string s to integer result
-
-    width: must be 4 (e.g. for residue sequence numbers)
-    or 5 (e.g. for atom serial numbers)
-
-    s: string to be converted
-
-    return value: conversion result
+    /**
+     * hybrid-36 decoder: converts string s to integer result
+     *
+     *    width: must be 4 (e.g. for residue sequence numbers)
+     *    or 5 (e.g. for atom serial numbers)
+     *
+     *    s: string to be converted
+     *
+     *    return value: conversion result
+     *
+     * @param width a int.
+     * @param s a {@link java.lang.String} object.
+     * @return a int.
      */
     public static int decode(int width, String s) {
         String ie_range = "internal error hy36.decode: integer value out of range.";
@@ -281,6 +290,11 @@ public class Hybrid36 {
         return result;
     }
 
+    /**
+     * <p>main</p>
+     *
+     * @param args an array of {@link java.lang.String} objects.
+     */
     public static void main(String[] args) {
         checkInt(decode(4, "    "), 0);
         checkInt(decode(4, "  -0"), 0);

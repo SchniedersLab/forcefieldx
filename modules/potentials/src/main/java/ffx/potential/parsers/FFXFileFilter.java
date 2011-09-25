@@ -31,8 +31,8 @@ import org.apache.commons.io.FilenameUtils;
  * files.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
+ * @version $Id: $
  */
 public final class FFXFileFilter extends FileFilter {
 
@@ -43,6 +43,8 @@ public final class FFXFileFilter extends FileFilter {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * This method return <code>true</code> if the file is a directory or
      * Force Field X script (*.FFX).
      */
@@ -56,6 +58,8 @@ public final class FFXFileFilter extends FileFilter {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Provides a description of the FFXFileFilter.
      */
     @Override

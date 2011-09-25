@@ -28,8 +28,10 @@ import java.io.File;
 import java.util.logging.Logger;
 
 /**
+ * <p>DiffractionFile class.</p>
  *
  * @author Tim Fenn
+ * @version $Id: $
  */
 public class DiffractionFile {
 
@@ -97,10 +99,23 @@ public class DiffractionFile {
         this(assembly[0], 1.0, false);
     }
 
+    /**
+     * <p>Constructor for DiffractionFile.</p>
+     *
+     * @param assembly an array of {@link ffx.potential.bonded.MolecularAssembly} objects.
+     * @param weight a double.
+     */
     public DiffractionFile(MolecularAssembly assembly[], double weight) {
         this(assembly[0], weight, false);
     }
 
+    /**
+     * <p>Constructor for DiffractionFile.</p>
+     *
+     * @param assembly an array of {@link ffx.potential.bonded.MolecularAssembly} objects.
+     * @param weight a double.
+     * @param neutron a boolean.
+     */
     public DiffractionFile(MolecularAssembly assembly[], double weight,
             boolean neutron) {
         this(assembly[0], weight, neutron);

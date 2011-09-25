@@ -38,12 +38,16 @@ import ffx.crystal.SpaceGroup;
 import ffx.crystal.SymOp;
 
 /**
+ * <p>MTZWriter class.</p>
  *
  * @author Tim Fenn
- *
  * @see <a href="http://www.ccp4.ac.uk/html/maplib.html" target="_blank">CCP4 map format</a>
  *
  * @see <a href="http://www.ccp4.ac.uk/dist/html/library.html" target="_blank">CCP4 library documentation</a>
+ * @see <a href="http://www.ccp4.ac.uk/html/maplib.html" target="_blank">CCP4 map format</a>
+ *
+ * @see <a href="http://www.ccp4.ac.uk/dist/html/library.html" target="_blank">CCP4 library documentation</a>
+ * @version $Id: $
  */
 public class MTZWriter {
 
@@ -58,11 +62,26 @@ public class MTZWriter {
     private final int ncol;
     private final boolean dataonly;
 
+    /**
+     * <p>Constructor for MTZWriter.</p>
+     *
+     * @param reflectionlist a {@link ffx.crystal.ReflectionList} object.
+     * @param refinementdata a {@link ffx.xray.DiffractionRefinementData} object.
+     * @param filename a {@link java.lang.String} object.
+     */
     public MTZWriter(ReflectionList reflectionlist,
             DiffractionRefinementData refinementdata, String filename) {
         this(reflectionlist, refinementdata, filename, false);
     }
 
+    /**
+     * <p>Constructor for MTZWriter.</p>
+     *
+     * @param reflectionlist a {@link ffx.crystal.ReflectionList} object.
+     * @param refinementdata a {@link ffx.xray.DiffractionRefinementData} object.
+     * @param filename a {@link java.lang.String} object.
+     * @param dataonly a boolean.
+     */
     public MTZWriter(ReflectionList reflectionlist,
             DiffractionRefinementData refinementdata, String filename, boolean dataonly) {
         this.reflectionlist = reflectionlist;
@@ -82,6 +101,9 @@ public class MTZWriter {
         }
     }
 
+    /**
+     * <p>write</p>
+     */
     public void write() {
         ByteOrder b = ByteOrder.nativeOrder();
         FileOutputStream fos;

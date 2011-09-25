@@ -50,7 +50,12 @@ import java.util.Vector;
  *      Crystallography Volume A: Space-group symmetry</a>
  *
  * @see <a href="http://www.ccp4.ac.uk/html/symlib.html">CCP4 symlib</a>
+ * @see <a href="http://it.iucr.org/Ab/">International Tables for
+ *      Crystallography Volume A: Space-group symmetry</a>
+ *
+ * @see <a href="http://www.ccp4.ac.uk/html/symlib.html">CCP4 symlib</a>
  * @since 1.0
+ * @version $Id: $
  */
 public class SpaceGroup {
 
@@ -162,6 +167,7 @@ public class SpaceGroup {
         "P4332", "P4132", "I4132", "P-43m", "F-43m", "I-43m", "P-43n",
         "F-43c", "I-43d", "Pm-3m", "Pn-3n", "Pm-3n", "Pn-3m", "Fm-3m",
         "Fm-3c", "Fd-3m", "Fd-3c", "Im-3m", "Ia-3d"};
+    /** Constant <code>pdbSpaceGroupNames="{P 1, P -1, P 1 2 1,P 1 21 1, C 1 2 1, "{trunked}</code> */
     public static String pdbSpaceGroupNames[] = {"P 1", "P -1", "P 1 2 1",
         "P 1 21 1", "C 1 2 1", "P 1 m 1", "P 1 c 1", "C 1 m 1", "C 1 c 1",
         "P 1 2/m 1", "P 1 21/m 1", "C 1 2/m 1", "P 1 2/c 1", "P 1 21/c 1",
@@ -250,10 +256,12 @@ public class SpaceGroup {
 
     /**
      * Check the given HKL is valid given the crystal/Laue system
+     *
+     * @param laueSystem a {@link ffx.crystal.SpaceGroup.LaueSystem} object.
+     * @param h a int.
+     * @param k a int.
      * @param laueSystem
-     * @param h
-     * @param k
-     * @param l
+     * @param l a int.
      * @return True if the reflection is valid, false otherwise
      */
     public static boolean checkLaueRestrictions(LaueSystem laueSystem,
@@ -357,9 +365,10 @@ public class SpaceGroup {
 
     /**
      * Check the given point is within the real space ASU
-     * @param asulim
-     * @param lim
-     * @param x
+     *
+     * @param asulim a {@link ffx.crystal.SpaceGroup.ASULimit} object.
+     * @param lim a double.
+     * @param x a double.
      * @return True if the point is within the real space ASU, false otherwise
      */
     public static boolean checkASULimit(ASULimit asulim, double lim, double x) {
@@ -385,13 +394,16 @@ public class SpaceGroup {
      * Check that the lattice parameters satisfy the restrictions of the
      * crystal systems.
      *
-     * @param crystalSystem
+     * @param crystalSystem a {@link ffx.crystal.SpaceGroup.CrystalSystem} object.
      * @param a
-     * @param b
-     * @param c
      * @param alpha
+     * @param b
      * @param beta
-     * @param gamma
+     * @param crystalSystem
+     * @param c a double.
+     * @param alpha a double.
+     * @param beta a double.
+     * @param gamma a double.
      * @return True if the restrictions are satisfied, false otherwise.
      */
     public static boolean checkRestrictions(CrystalSystem crystalSystem,
@@ -424,6 +436,7 @@ public class SpaceGroup {
 
     /**
      * Return the ith symmetry operator.
+     *
      * @param i the symmetry operator number.
      * @return the SymOp
      * @since 1.0
@@ -434,6 +447,7 @@ public class SpaceGroup {
 
     /**
      * Return the number of symmetry operators.
+     *
      * @return the number of symmetry operators.
      * @since 1.0
      */
@@ -462,6 +476,7 @@ public class SpaceGroup {
 
     /**
      * Return a SpaceGroup based on its name.
+     *
      * @param name Available SpaceGroup names are given in
      *              the "spaceGroupName" array.
      * @return The space group corresponding to the given number.
@@ -6309,6 +6324,7 @@ public class SpaceGroup {
 
     /**
      * Returns the space group number for a given space group name.
+     *
      * @param name The space group name.
      * @return The space group number.
      * @since 1.0
@@ -6330,6 +6346,7 @@ public class SpaceGroup {
 
     /**
      * Returns the space group name for the given PDB name.
+     *
      * @param pdbName PDB space group name.
      * @return A short space group name.
      * @since 1.0
@@ -6350,6 +6367,9 @@ public class SpaceGroup {
 
     /**
      * Print out info for each space group.
+     *
+     * @param args an array of {@link java.lang.String} objects.
+     * @throws java.lang.Exception if any.
      */
     public static void main(String[] args) throws Exception {
         SpaceGroup sg = SpaceGroup.spaceGroupFactory(1);

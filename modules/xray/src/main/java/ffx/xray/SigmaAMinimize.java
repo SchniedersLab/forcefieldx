@@ -37,8 +37,10 @@ import ffx.numerics.LineSearch.LineSearchResult;
 import ffx.numerics.OptimizationListener;
 
 /**
+ * <p>SigmaAMinimize class.</p>
  *
  * @author fennt
+ * @version $Id: $
  */
 public class SigmaAMinimize implements OptimizationListener, Terminatable {
 
@@ -58,6 +60,12 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
     private double grms;
     private int nSteps;
 
+    /**
+     * <p>Constructor for SigmaAMinimize.</p>
+     *
+     * @param reflectionlist a {@link ffx.crystal.ReflectionList} object.
+     * @param refinementdata a {@link ffx.xray.DiffractionRefinementData} object.
+     */
     public SigmaAMinimize(ReflectionList reflectionlist,
             DiffractionRefinementData refinementdata) {
         this.reflectionlist = reflectionlist;
@@ -136,23 +144,51 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
         sigmaaenergy.setScaling(scaling);
     }
 
+    /**
+     * <p>calculateLikelihood</p>
+     *
+     * @return a double.
+     */
     public double calculateLikelihood() {
         sigmaaenergy.energyAndGradient(x, grad);
         return refinementdata.llkr;
     }
 
+    /**
+     * <p>calculateLikelihoodFree</p>
+     *
+     * @return a double.
+     */
     public double calculateLikelihoodFree() {
         return sigmaaenergy.energyAndGradient(x, grad);
     }
 
+    /**
+     * <p>minimize</p>
+     *
+     * @return a {@link ffx.xray.SigmaAEnergy} object.
+     */
     public SigmaAEnergy minimize() {
         return minimize(0.5);
     }
 
+    /**
+     * <p>minimize</p>
+     *
+     * @param eps a double.
+     * @return a {@link ffx.xray.SigmaAEnergy} object.
+     */
     public SigmaAEnergy minimize(double eps) {
         return minimize(7, eps);
     }
 
+    /**
+     * <p>minimize</p>
+     *
+     * @param m a int.
+     * @param eps a double.
+     * @return a {@link ffx.xray.SigmaAEnergy} object.
+     */
     public SigmaAEnergy minimize(int m, double eps) {
 
         double e = sigmaaenergy.energyAndGradient(x, grad);
@@ -189,6 +225,7 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
         return sigmaaenergy;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean optimizationUpdate(int iter, int nfun, double grms, double xrms, double f, double df, double angle, LineSearchResult info) {
         long currentTime = System.nanoTime();
@@ -221,6 +258,7 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
         return true;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void terminate() {
         terminate = true;

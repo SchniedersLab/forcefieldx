@@ -36,6 +36,7 @@ import java.util.logging.Logger;
  * - map is set up for passage into FFTs (so X axis has +2 offset)
  *
  * @author fennt
+ * @version $Id: $
  */
 public class CNSMapWriter {
 
@@ -44,6 +45,15 @@ public class CNSMapWriter {
     private final Crystal crystal;
     private final int nx, ny, nz;
 
+    /**
+     * <p>Constructor for CNSMapWriter.</p>
+     *
+     * @param nx a int.
+     * @param ny a int.
+     * @param nz a int.
+     * @param crystal a {@link ffx.crystal.Crystal} object.
+     * @param filename a {@link java.lang.String} object.
+     */
     public CNSMapWriter(int nx, int ny, int nz, Crystal crystal,
             String filename) {
         this.nx = nx;
@@ -53,6 +63,11 @@ public class CNSMapWriter {
         this.filename = filename;
     }
 
+    /**
+     * <p>write</p>
+     *
+     * @param data an array of double.
+     */
     public void write(double data[]) {
         try {
             StringBuilder sb = new StringBuilder();

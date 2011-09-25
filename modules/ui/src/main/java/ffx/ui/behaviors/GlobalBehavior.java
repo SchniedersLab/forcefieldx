@@ -33,6 +33,9 @@ import com.sun.j3d.utils.behaviors.vp.OrbitBehavior;
 /**
  * The GlobalBehavior class allows mouse control over camera position, adding a
  * few functions to the OrbitBehavior class.
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public class GlobalBehavior extends OrbitBehavior {
 	private Transform3D trans3D = new Transform3D();
@@ -42,10 +45,18 @@ public class GlobalBehavior extends OrbitBehavior {
 	private MouseBehaviorCallback navigation = null;
 	private boolean first = false;
 
+	/**
+	 * <p>Constructor for GlobalBehavior.</p>
+	 */
 	public GlobalBehavior() {
 		super();
 	}
 
+	/**
+	 * <p>Constructor for GlobalBehavior.</p>
+	 *
+	 * @param canvas a {@link javax.media.j3d.Canvas3D} object.
+	 */
 	public GlobalBehavior(Canvas3D canvas) {
 		super(canvas, OrbitBehavior.MOUSE_MOTION_LISTENER);
 		trans3D.setTranslation(homeTrans);
@@ -58,6 +69,12 @@ public class GlobalBehavior extends OrbitBehavior {
 		homeQuat.setIdentity();
 	}
 
+	/**
+	 * <p>centerView</p>
+	 *
+	 * @param resetRotation a boolean.
+	 * @param resetTranslation a boolean.
+	 */
 	public void centerView(boolean resetRotation, boolean resetTranslation) {
 		if (!resetRotation && !resetTranslation) {
 			return;
@@ -78,6 +95,9 @@ public class GlobalBehavior extends OrbitBehavior {
 		}
 	}
 
+	/**
+	 * <p>integrateTransforms</p>
+	 */
 	public void integrateTransforms() {
 		// The "first" flag allows the mouse motion to be reset
 		// (ie. dx = x - x_last where x_last is wrong initially)
@@ -93,6 +113,7 @@ public class GlobalBehavior extends OrbitBehavior {
 		navigation.transformChanged(MouseBehaviorCallback.ORBIT, trans3D);
 	}
 
+	/** {@inheritDoc} */
 	public void setEnable(boolean b) {
 		super.setEnable(b);
 		if (b) {
@@ -100,6 +121,11 @@ public class GlobalBehavior extends OrbitBehavior {
 		}
 	}
 
+	/**
+	 * <p>setUpCallback</p>
+	 *
+	 * @param m a {@link ffx.ui.behaviors.MouseBehaviorCallback} object.
+	 */
 	public void setUpCallback(MouseBehaviorCallback m) {
 		navigation = m;
 	}

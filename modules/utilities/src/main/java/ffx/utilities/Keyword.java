@@ -36,8 +36,8 @@ import org.apache.commons.configuration.SystemConfiguration;
  * The Keyword class holds a single Force Field X keyword entry.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
+ * @version $Id: $
  */
 public class Keyword {
 
@@ -45,16 +45,33 @@ public class Keyword {
     private String keyword = null;
     private Vector<String> data = null;
 
+    /**
+     * <p>Constructor for Keyword.</p>
+     *
+     * @param k a {@link java.lang.String} object.
+     */
     public Keyword(String k) {
         keyword = k;
         data = new Vector<String>();
     }
 
+    /**
+     * <p>Constructor for Keyword.</p>
+     *
+     * @param k a {@link java.lang.String} object.
+     * @param entry a {@link java.lang.String} object.
+     */
     public Keyword(String k, String entry) {
         this(k);
         data.add(entry);
     }
 
+    /**
+     * <p>Constructor for Keyword.</p>
+     *
+     * @param k a {@link java.lang.String} object.
+     * @param entry an array of {@link java.lang.String} objects.
+     */
     public Keyword(String k, String entry[]) {
         this(k);
         for (String s : entry) {
@@ -62,36 +79,69 @@ public class Keyword {
         }
     }
 
+    /**
+     * <p>append</p>
+     *
+     * @param entry a {@link java.lang.String} object.
+     */
     public void append(String entry) {
         data.add(entry);
     }
 
+    /**
+     * <p>append</p>
+     *
+     * @param entry an array of {@link java.lang.String} objects.
+     */
     public void append(String entry[]) {
         for (String s : entry) {
             data.add(s);
         }
     }
 
+    /**
+     * <p>clear</p>
+     */
     public void clear() {
         data.clear();
     }
 
+    /**
+     * <p>getEntries</p>
+     *
+     * @return a {@link java.util.Vector} object.
+     */
     public Vector<String> getEntries() {
         return data;
     }
 
+    /**
+     * <p>getEntry</p>
+     *
+     * @param i a int.
+     * @return a {@link java.lang.String} object.
+     */
     public String getEntry(int i) {
         return data.get(i);
     }
 
+    /**
+     * <p>Getter for the field <code>keyword</code>.</p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
     public String getKeyword() {
         return keyword;
     }
 
+    /**
+     * <p>print</p>
+     */
     public void print() {
         logger.info(this.toString());
     }
 
+    /** {@inheritDoc} */
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder(keyword + " ");
@@ -117,6 +167,8 @@ public class Keyword {
      * 5.) Internal force field definition.
      *
      * @since 1.0
+     * @param file a {@link java.io.File} object.
+     * @return a {@link org.apache.commons.configuration.CompositeConfiguration} object.
      */
     public static CompositeConfiguration loadProperties(File file) {
         /**

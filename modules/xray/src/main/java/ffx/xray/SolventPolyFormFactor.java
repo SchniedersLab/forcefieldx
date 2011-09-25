@@ -25,8 +25,10 @@ import ffx.potential.bonded.Atom;
 import ffx.xray.RefinementMinimize.RefinementMode;
 
 /**
+ * <p>SolventPolyFormFactor class.</p>
  *
  * @author fenn
+ * @version $Id: $
  */
 public final class SolventPolyFormFactor implements FormFactor {
 
@@ -36,10 +38,25 @@ public final class SolventPolyFormFactor implements FormFactor {
     private double g[] = new double[3];
     private double arad, w;
 
+    /**
+     * <p>Constructor for SolventPolyFormFactor.</p>
+     *
+     * @param atom a {@link ffx.potential.bonded.Atom} object.
+     * @param arad a double.
+     * @param w a double.
+     */
     public SolventPolyFormFactor(Atom atom, double arad, double w) {
         this(atom, arad, w, atom.getXYZ());
     }
 
+    /**
+     * <p>Constructor for SolventPolyFormFactor.</p>
+     *
+     * @param atom a {@link ffx.potential.bonded.Atom} object.
+     * @param arad a double.
+     * @param w a double.
+     * @param xyz an array of double.
+     */
     public SolventPolyFormFactor(Atom atom, double arad, double w, double xyz[]) {
         this.atom = atom;
         this.arad = arad;
@@ -48,12 +65,21 @@ public final class SolventPolyFormFactor implements FormFactor {
         update(xyz);
     }
 
+    /** {@inheritDoc} */
     @Override
     public double rho(double f, double lambda, double[] xyz) {
         VectorMath.diff(this.xyz, xyz, dxyz);
         return rho(f, lambda, VectorMath.r(dxyz));
     }
 
+    /**
+     * <p>rho</p>
+     *
+     * @param f a double.
+     * @param lambda a double.
+     * @param ri a double.
+     * @return a double.
+     */
     public double rho(double f, double lambda, double ri) {
         double bi = arad - w;
         double ei = arad + w;
@@ -73,6 +99,7 @@ public final class SolventPolyFormFactor implements FormFactor {
         return f * (0.75 * d2 / w2 - 0.25 * d3 / w3);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void rho_grad(double[] xyz, double dfc, RefinementMode refinementmode) {
         if (refinementmode == RefinementMode.BFACTORS
@@ -108,11 +135,13 @@ public final class SolventPolyFormFactor implements FormFactor {
         atom.addToXYZGradient(g[0], g[1], g[2]);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void update(double xyz[]) {
         update(xyz, 0.0);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void update(double xyz[], double badd) {
         this.xyz[0] = xyz[0];

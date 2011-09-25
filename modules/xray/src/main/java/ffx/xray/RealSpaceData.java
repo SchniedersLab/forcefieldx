@@ -34,8 +34,10 @@ import java.util.logging.Logger;
 import org.apache.commons.configuration.CompositeConfiguration;
 
 /**
+ * <p>RealSpaceData class.</p>
  *
  * @author Tim Fenn
+ * @version $Id: $
  */
 public class RealSpaceData implements DataContainer {
 
@@ -218,7 +220,9 @@ public class RealSpaceData implements DataContainer {
 
     /**
      * compute real space target value, also fills in atomic derivatives
+     *
      * @return target value sum over all data sets
+     * @param dLambda a boolean.
      */
     public double computeRealSpaceTarget(boolean dLambda) {
         double xyz[] = new double[3];
@@ -314,48 +318,56 @@ public class RealSpaceData implements DataContainer {
 
     /**
      * Set the current value of the state variable.
-     * 
-     * @param lambda
+     *
+     * @param lambda a double.
      */
     protected void setLambda(double lambda) {
         this.lambda = lambda;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Atom[] getAtomArray() {
         return refinementmodel.atomarray;
     }
 
+    /** {@inheritDoc} */
     @Override
     public ArrayList<ArrayList<Residue>> getAltResidues() {
         return refinementmodel.altresidues;
     }
 
+    /** {@inheritDoc} */
     @Override
     public ArrayList<ArrayList<Molecule>> getAltMolecules() {
         return refinementmodel.altmolecules;
     }
 
+    /** {@inheritDoc} */
     @Override
     public MolecularAssembly[] getMolecularAssembly() {
         return assembly;
     }
 
+    /** {@inheritDoc} */
     @Override
     public RefinementModel getRefinementModel() {
         return refinementmodel;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double getWeight() {
         return xweight;
     }
 
+    /** {@inheritDoc} */
     @Override
     public String printOptimizationHeader() {
         return "Density score";
     }
 
+    /** {@inheritDoc} */
     @Override
     public String printOptimizationUpdate() {
         StringBuilder sb = new StringBuilder();
@@ -365,6 +377,7 @@ public class RealSpaceData implements DataContainer {
         return sb.toString();
     }
 
+    /** {@inheritDoc} */
     @Override
     public String printEnergyUpdate() {
         StringBuilder sb = new StringBuilder();

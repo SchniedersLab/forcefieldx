@@ -32,6 +32,9 @@ import java.util.logging.Logger;
  * The FFXClient class encapsulates a socket connection to an TinkerServer
  * started by an executing TINKER program. TinkerSystem and TinkerUpdate objects
  * are sent by the TinkerServer to the FFXClient on request.
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public class FFXClient {
 	private static final Logger logger = Logger.getLogger(FFXClient.class.getName());
@@ -53,14 +56,27 @@ public class FFXClient {
 	// or if the retryLimit is reached
 	private boolean closed = false;
 
+	/**
+	 * <p>Constructor for FFXClient.</p>
+	 */
 	public FFXClient() {
 		address = new InetSocketAddress(2000);
 	}
 
+	/**
+	 * <p>Constructor for FFXClient.</p>
+	 *
+	 * @param a a {@link java.net.InetSocketAddress} object.
+	 */
 	public FFXClient(InetSocketAddress a) {
 		address = a;
 	}
 
+	/**
+	 * <p>Constructor for FFXClient.</p>
+	 *
+	 * @param port a int.
+	 */
 	public FFXClient(int port) {
 		address = new InetSocketAddress(port);
 	}
@@ -93,20 +109,40 @@ public class FFXClient {
 		}
 	}
 
+	/**
+	 * <p>Getter for the field <code>system</code>.</p>
+	 *
+	 * @return a {@link ffx.ui.commands.TinkerSystem} object.
+	 */
 	public TinkerSystem getSystem() {
 		readSocket();
 		return system;
 	}
 
+	/**
+	 * <p>Getter for the field <code>update</code>.</p>
+	 *
+	 * @return a {@link ffx.ui.commands.TinkerUpdate} object.
+	 */
 	public TinkerUpdate getUpdate() {
 		readSocket();
 		return update;
 	}
 
+	/**
+	 * <p>isClosed</p>
+	 *
+	 * @return a boolean.
+	 */
 	public boolean isClosed() {
 		return closed;
 	}
 
+	/**
+	 * <p>isConnected</p>
+	 *
+	 * @return a boolean.
+	 */
 	public boolean isConnected() {
 		if (client != null && client.isConnected()) {
 			return true;
@@ -114,6 +150,9 @@ public class FFXClient {
 		return false;
 	}
 
+	/**
+	 * <p>readSocket</p>
+	 */
 	public void readSocket() {
 		try {
 			while (oin != null && in.available() > 0) {
@@ -158,6 +197,9 @@ public class FFXClient {
 		}
 	}
 
+	/**
+	 * <p>release</p>
+	 */
 	public void release() {
 		if (client == null) {
 			return;

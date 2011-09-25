@@ -31,8 +31,10 @@ import ffx.potential.bonded.Residue;
 import java.util.logging.Logger;
 
 /**
+ * <p>RefinementModel class.</p>
  *
  * @author Tim Fenn
+ * @version $Id: $
  */
 public class RefinementModel {
 
@@ -43,10 +45,21 @@ public class RefinementModel {
     protected ArrayList<ArrayList<Residue>> altresidues;
     protected ArrayList<ArrayList<Molecule>> altmolecules;
 
+    /**
+     * <p>Constructor for RefinementModel.</p>
+     *
+     * @param assembly an array of {@link ffx.potential.bonded.MolecularAssembly} objects.
+     */
     public RefinementModel(MolecularAssembly assembly[]){
         this(assembly, false);
     }
 
+    /**
+     * <p>Constructor for RefinementModel.</p>
+     *
+     * @param assembly an array of {@link ffx.potential.bonded.MolecularAssembly} objects.
+     * @param refinemolocc a boolean.
+     */
     public RefinementModel(MolecularAssembly assembly[], boolean refinemolocc) {
         List<Atom> alist;
 

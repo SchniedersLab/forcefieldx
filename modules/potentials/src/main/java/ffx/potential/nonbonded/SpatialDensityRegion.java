@@ -38,11 +38,12 @@ import ffx.potential.bonded.Atom;
  * grid into octants.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
+ * @version $Id: $
  */
 public class SpatialDensityRegion extends ParallelRegion {
 
+    /** Constant <code>logger</code> */
     protected static final Logger logger = Logger.getLogger(SpatialDensityRegion.class.getName());
     /**
      * The number of divisions along the A-axis.
@@ -136,6 +137,21 @@ public class SpatialDensityRegion extends ParallelRegion {
     protected SpatialDensityLoop spatialDensityLoop[];
     private GridInitLoop gridInitLoop;
 
+    /**
+     * <p>Constructor for SpatialDensityRegion.</p>
+     *
+     * @param gX a int.
+     * @param gY a int.
+     * @param gZ a int.
+     * @param grid an array of double.
+     * @param basisSize a int.
+     * @param nSymm a int.
+     * @param minWork a int.
+     * @param threadCount a int.
+     * @param crystal a {@link ffx.crystal.Crystal} object.
+     * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
+     * @param coordinates an array of double.
+     */
     public SpatialDensityRegion(int gX, int gY, int gZ, double grid[],
                                 int basisSize, int nSymm, int minWork,
                                 int threadCount, Crystal crystal,
@@ -144,6 +160,21 @@ public class SpatialDensityRegion extends ParallelRegion {
         this.grid = grid;
     }
 
+    /**
+     * <p>Constructor for SpatialDensityRegion.</p>
+     *
+     * @param gX a int.
+     * @param gY a int.
+     * @param gZ a int.
+     * @param grid an array of float.
+     * @param basisSize a int.
+     * @param nSymm a int.
+     * @param minWork a int.
+     * @param threadCount a int.
+     * @param crystal a {@link ffx.crystal.Crystal} object.
+     * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
+     * @param coordinates an array of double.
+     */
     public SpatialDensityRegion(int gX, int gY, int gZ, float grid[],
                                 int basisSize, int nSymm, int minWork,
                                 int threadCount, Crystal crystal,
@@ -266,18 +297,38 @@ public class SpatialDensityRegion extends ParallelRegion {
         cellCount = new int[nSymm][nCells];         
     }
 
+    /**
+     * <p>Getter for the field <code>grid</code>.</p>
+     *
+     * @return an array of double.
+     */
     public double[] getGrid() {
         return grid;
     }
 
+    /**
+     * <p>Getter for the field <code>floatGrid</code>.</p>
+     *
+     * @return an array of float.
+     */
     public float[] getFloatGrid() {
         return floatGrid;
     }
 
+    /**
+     * <p>getNsymm</p>
+     *
+     * @return a int.
+     */
     public int getNsymm() {
         return nSymm;
     }
 
+    /**
+     * <p>setDensityLoop</p>
+     *
+     * @param loops an array of {@link ffx.potential.nonbonded.SpatialDensityLoop} objects.
+     */
     public void setDensityLoop(SpatialDensityLoop loops[]) {
         spatialDensityLoop = loops;
     }
@@ -309,10 +360,16 @@ public class SpatialDensityRegion extends ParallelRegion {
         }
     }
 
+    /**
+     * <p>Setter for the field <code>initValue</code>.</p>
+     *
+     * @param initValue a double.
+     */
     public void setInitValue(double initValue) {
         this.initValue = initValue;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void run() {
         int ti = getThreadIndex();
@@ -502,6 +559,14 @@ public class SpatialDensityRegion extends ParallelRegion {
         return count;
     }
 
+    /**
+     * <p>index</p>
+     *
+     * @param ia a int.
+     * @param ib a int.
+     * @param ic a int.
+     * @return a int.
+     */
     public int index(int ia, int ib, int ic) {
         return ia + ib * nA + ic * nAB;
     }

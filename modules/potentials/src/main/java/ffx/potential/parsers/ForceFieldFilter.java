@@ -68,8 +68,8 @@ import ffx.utilities.Keyword;
  * Alternatively, an Apache Commons "Configuration" instance can be parsed.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
+ * @version $Id: $
  */
 public class ForceFieldFilter {
 
@@ -78,6 +78,11 @@ public class ForceFieldFilter {
     private CompositeConfiguration properties;
     private File forceFieldFile;
 
+    /**
+     * <p>Constructor for ForceFieldFilter.</p>
+     *
+     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     */
     public ForceFieldFilter(CompositeConfiguration properties) {
         this.properties = properties;
         if (properties.containsKey("parameters")) {
@@ -95,6 +100,13 @@ public class ForceFieldFilter {
         forceField = new ForceField(properties, forceFieldFile);
     }
 
+    /**
+     * <p>parseParameterLocation</p>
+     *
+     * @param parameterLocation a {@link java.lang.String} object.
+     * @param keyFile a {@link java.io.File} object.
+     * @return a {@link java.io.File} object.
+     */
     public static File parseParameterLocation(String parameterLocation, File keyFile) {
         File parameterFile = null;
         if (parameterLocation != null && !parameterLocation.equalsIgnoreCase("NONE")) {
@@ -115,6 +127,11 @@ public class ForceFieldFilter {
         return parameterFile;
     }
 
+    /**
+     * <p>parse</p>
+     *
+     * @return a {@link ffx.potential.parameters.ForceField} object.
+     */
     public ForceField parse() {
         try {
             /**
@@ -907,6 +924,9 @@ public class ForceFieldFilter {
 
     /**
      * Parse a Force Field paramter file and echo the results with slashes.
+     *
+     * @param args an array of {@link java.lang.String} objects.
+     * @throws java.lang.Exception if any.
      */
     public static void main(String[] args) throws Exception {
         if (args == null || args.length < 1) {

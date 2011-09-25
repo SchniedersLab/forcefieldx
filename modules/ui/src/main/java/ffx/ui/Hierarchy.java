@@ -47,6 +47,9 @@ import ffx.potential.bonded.RendererCache;
  * The Hierarchy Class creates and manages a JTree view of the data structure.
  * It is used for synchronization, handles the selection mechanism, and sets the
  * active system and nodes.
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public final class Hierarchy extends JTree implements TreeSelectionListener {
 
@@ -74,6 +77,8 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
      * The Default Constructor initializes JTree properties, then updates is
      * representation based on the Structure of the Tree that extends from the
      * Root argument.
+     *
+     * @param f a {@link ffx.ui.MainPanel} object.
      */
     public Hierarchy(MainPanel f) {
         mainPanel = f;
@@ -81,6 +86,11 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
         initTree();
     }
 
+    /**
+     * <p>addSelection</p>
+     *
+     * @param f a {@link ffx.potential.bonded.MSNode} object.
+     */
     public void addSelection(MSNode f) {
         if (f == null) {
             return;
@@ -92,6 +102,11 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
         }
     }
 
+    /**
+     * <p>addSelections</p>
+     *
+     * @param a a {@link java.util.ArrayList} object.
+     */
     public void addSelections(ArrayList<MSNode> a) {
         synchronized (this) {
             for (MSNode f : a) {
@@ -100,10 +115,22 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
         }
     }
 
+    /**
+     * <p>addSystemNode</p>
+     *
+     * @param newSystem a {@link ffx.ui.FFXSystem} object.
+     */
     public void addSystemNode(FFXSystem newSystem) {
         addTreeNode(newSystem, root, root.getChildCount());
     }
 
+    /**
+     * <p>addTreeNode</p>
+     *
+     * @param nodeToAdd a {@link ffx.potential.bonded.MSNode} object.
+     * @param parent a {@link ffx.potential.bonded.MSNode} object.
+     * @param index a int.
+     */
     public void addTreeNode(MSNode nodeToAdd, MSNode parent, int index) {
         if (nodeToAdd == null || nodeToAdd.getParent() != null) {
             return;
@@ -147,6 +174,9 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
         }
     }
 
+    /**
+     * <p>collapseAll</p>
+     */
     public void collapseAll() {
         int row = getRowCount() - 1;
         while (row >= 0) {
@@ -157,19 +187,36 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
 
     /**
      * Returns the active FSystem.
+     *
+     * @return a {@link ffx.ui.FFXSystem} object.
      */
     public FFXSystem getActive() {
         return activeSystem;
     }
 
+    /**
+     * <p>Getter for the field <code>activeNode</code>.</p>
+     *
+     * @return a {@link ffx.potential.bonded.MSNode} object.
+     */
     public MSNode getActiveNode() {
         return activeNode;
     }
 
+    /**
+     * <p>Getter for the field <code>activeNodes</code>.</p>
+     *
+     * @return a {@link java.util.ArrayList} object.
+     */
     public ArrayList<MSNode> getActiveNodes() {
         return activeNodes;
     }
 
+    /**
+     * <p>getNonActiveSystems</p>
+     *
+     * @return an array of {@link ffx.ui.FFXSystem} objects.
+     */
     public FFXSystem[] getNonActiveSystems() {
         synchronized (this) {
             int childCount = root.getChildCount();
@@ -188,6 +235,11 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
         }
     }
 
+    /**
+     * <p>getSystems</p>
+     *
+     * @return an array of {@link ffx.ui.FFXSystem} objects.
+     */
     public FFXSystem[] getSystems() {
         synchronized (this) {
             int childCount = root.getChildCount();
@@ -203,6 +255,12 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
         }
     }
 
+    /**
+     * <p>groupSelection</p>
+     *
+     * @param f1 a {@link ffx.potential.bonded.MSNode} object.
+     * @param f2 a {@link ffx.potential.bonded.MSNode} object.
+     */
     public void groupSelection(MSNode f1, MSNode f2) {
         if (f1 == null || f2 == null) {
             return;
@@ -240,6 +298,11 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
         setRootVisible(false);
     }
 
+    /**
+     * <p>onlySelection</p>
+     *
+     * @param f a {@link ffx.potential.bonded.MSNode} object.
+     */
     public void onlySelection(MSNode f) {
         synchronized (this) {
             if (activeNodes != null) {
@@ -255,6 +318,11 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
         }
     }
 
+    /**
+     * <p>removeSelection</p>
+     *
+     * @param f a {@link ffx.potential.bonded.MSNode} object.
+     */
     public void removeSelection(MSNode f) {
         if (f == null) {
             return;
@@ -270,6 +338,11 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
         }
     }
 
+    /**
+     * <p>removeSelections</p>
+     *
+     * @param a a {@link java.util.ArrayList} object.
+     */
     public void removeSelections(ArrayList<MSNode> a) {
         synchronized (this) {
             for (MSNode f : a) {
@@ -278,6 +351,11 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
         }
     }
 
+    /**
+     * <p>removeTreeNode</p>
+     *
+     * @param nodeToRemove a {@link ffx.potential.bonded.MSNode} object.
+     */
     public void removeTreeNode(MSNode nodeToRemove) {
         if (nodeToRemove == null) {
             return;
@@ -297,6 +375,9 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
         }
     }
 
+    /**
+     * <p>selectAll</p>
+     */
     public void selectAll() {
         if (activeSystem == null) {
             return;
@@ -308,6 +389,8 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
 
     /**
      * Sets the FFXSystem s to be active.
+     *
+     * @param s a {@link ffx.ui.FFXSystem} object.
      */
     public void setActive(FFXSystem s) {
         if (s == activeSystem) {
@@ -325,6 +408,11 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
         }
     }
 
+    /**
+     * <p>setActive</p>
+     *
+     * @param i a int.
+     */
     public void setActive(int i) {
         synchronized (this) {
             if (i < root.getChildCount()) {
@@ -335,6 +423,11 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
         }
     }
 
+    /**
+     * <p>setHighlighting</p>
+     *
+     * @param h a boolean.
+     */
     public void setHighlighting(boolean h) {
         synchronized (this) {
             if (RendererCache.highlightSelections != h) {
@@ -348,12 +441,24 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
         }
     }
 
+    /**
+     * <p>Setter for the field <code>status</code>.</p>
+     *
+     * @param s a {@link javax.swing.JLabel} object.
+     * @param t a {@link javax.swing.JLabel} object.
+     * @param e a {@link javax.swing.JLabel} object.
+     */
     public void setStatus(JLabel s, JLabel t, JLabel e) {
         status = s;
         step = t;
         energy = e;
     }
 
+    /**
+     * <p>toggleSelection</p>
+     *
+     * @param f a {@link ffx.potential.bonded.MSNode} object.
+     */
     public void toggleSelection(MSNode f) {
         if (f == null) {
             return;
@@ -368,6 +473,11 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
         }
     }
 
+    /**
+     * <p>toggleSelections</p>
+     *
+     * @param a a {@link java.util.ArrayList} object.
+     */
     public void toggleSelections(ArrayList<MSNode> a) {
         synchronized (this) {
             for (MSNode f : a) {
@@ -376,11 +486,15 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public String toString() {
         return "Structural Hierarchy";
     }
 
+    /**
+     * <p>updateStatus</p>
+     */
     public void updateStatus() {
         if (activeSystem == null) {
             status.setText("  ");
@@ -407,6 +521,7 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void valueChanged(TreeSelectionEvent e) {
         synchronized (this) {

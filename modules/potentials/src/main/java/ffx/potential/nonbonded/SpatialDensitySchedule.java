@@ -29,8 +29,8 @@ import edu.rit.util.Range;
  * A fixed schedule that load balances work chunks across threads.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
+ * @version $Id: $
  */
 public class SpatialDensitySchedule extends IntegerSchedule {
 
@@ -43,6 +43,14 @@ public class SpatialDensitySchedule extends IntegerSchedule {
     private boolean threadDone[];
     private Range ranges[];
 
+    /**
+     * <p>Constructor for SpatialDensitySchedule.</p>
+     *
+     * @param nThreads a int.
+     * @param nAtoms a int.
+     * @param atomsPerChunk an array of int.
+     * @param loadBalancePercentage a double.
+     */
     public SpatialDensitySchedule(int nThreads, int nAtoms,
                                   int atomsPerChunk[], double loadBalancePercentage) {
         this.nAtoms = nAtoms;
@@ -60,14 +68,16 @@ public class SpatialDensitySchedule extends IntegerSchedule {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * This is a fixed schedule.
-     * @return true
      */
     @Override
     public boolean isFixedSchedule() {
         return true;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void start(int nThreads, Range chunkRange) {
         this.nThreads = nThreads;
@@ -87,6 +97,7 @@ public class SpatialDensitySchedule extends IntegerSchedule {
         defineRanges();
     }
 
+    /** {@inheritDoc} */
     @Override
     public Range next(int threadID) {
         if (!threadDone[threadID]) {

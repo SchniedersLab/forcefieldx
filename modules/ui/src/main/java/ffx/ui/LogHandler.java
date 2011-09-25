@@ -34,6 +34,7 @@ import java.util.logging.LogRecord;
  *
  * @author Michael J. Schnieders
  * @since 1.0
+ * @version $Id: $
  */
 public class LogHandler extends Handler {
 
@@ -48,7 +49,6 @@ public class LogHandler extends Handler {
      * Headless mode, then LogRecords can be published to the ModelingShell.
      *
      * @param mainPanel the Force Field X MainPanel.
-     *
      * @since 1.0
      */
     public void setMainPanel(MainPanel mainPanel) {
@@ -66,10 +66,9 @@ public class LogHandler extends Handler {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Publish a LogRecord.
-     *
-     * @param record The LogRecord to publish.
-     *
      * @since 1.0.
      */
     @Override
@@ -122,6 +121,7 @@ public class LogHandler extends Handler {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void flush() {
 
@@ -133,8 +133,9 @@ public class LogHandler extends Handler {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Flush, but do not close System.out or the Shell.
-     * 
      * @since 1.0
      */
     @Override

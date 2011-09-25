@@ -21,7 +21,10 @@
 package ffx.utilities;
 
 /**
+ * <p>ByteSwap class.</p>
+ *
  * @author Tim Fenn
+ * @version $Id: $
  */
 public class ByteSwap {
 

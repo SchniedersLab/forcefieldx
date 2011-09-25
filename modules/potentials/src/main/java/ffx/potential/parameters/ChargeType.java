@@ -24,8 +24,8 @@ package ffx.potential.parameters;
  * The ChargeType class defines a partial atomic charge type.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
+ * @version $Id: $
  */
 public final class ChargeType extends BaseType {
 	/**
@@ -39,7 +39,7 @@ public final class ChargeType extends BaseType {
 
 	/**
 	 * ChargeType constructor.
-	 * 
+	 *
 	 * @param atomType
 	 *            int
 	 * @param charge
@@ -51,14 +51,19 @@ public final class ChargeType extends BaseType {
 		this.charge = charge;
 	}
 
+        /**
+         * <p>incrementType</p>
+         *
+         * @param increment a int.
+         */
         public void incrementType(int increment) {
             this.atomType += increment;
         }
 
 	/**
+	 * {@inheritDoc}
+	 *
 	 * Nicely formatted Charge type.
-	 * 
-	 * @return String
 	 */
 	@Override
 	public String toString() {

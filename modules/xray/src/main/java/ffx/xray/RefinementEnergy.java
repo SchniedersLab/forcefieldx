@@ -43,8 +43,8 @@ import java.util.logging.Logger;
  * {@link Potential} interface
  *
  * @author Timothy D. Fenn and Michael J. Schnieders
- *
  * @since 1.0
+ * @version $Id: $
  */
 public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmListener {
 
@@ -215,11 +215,9 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
     }
 
     /**
-     * Implementation of the {@link Potential} interface for the RefinementEnergy.
+     * {@inheritDoc}
      *
-     * @param x input params
-     * @param g output gradients
-     * @return energy
+     * Implementation of the {@link Potential} interface for the RefinementEnergy.
      */
     @Override
     public double energyAndGradient(double[] x, double[] g) {
@@ -350,6 +348,8 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
      * @param x all parameters
      * @param xchem the xchem parameters for the particular molecular assembly
      * that will be passed to {@link ForceFieldEnergy}
+     * @param xchem the xchem parameters for the particular molecular assembly
+     * that will be passed to {@link ForceFieldEnergy}
      */
     public void getAssemblyi(int i, double x[], double xchem[]) {
         assert (x != null && xchem != null);
@@ -367,6 +367,8 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
      *
      * @param i the desired molecular assembly index to "set" x to
      * @param x all parameters
+     * @param xchem the xchem parameters for the particular molecular assembly
+     * that will be passed to {@link ForceFieldEnergy}
      * @param xchem the xchem parameters for the particular molecular assembly
      * that will be passed to {@link ForceFieldEnergy}
      */
@@ -399,36 +401,43 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
         this.weight = weight;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setScaling(double[] scaling) {
         optimizationScaling = scaling;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double[] getScaling() {
         return optimizationScaling;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double[] getMass() {
         return dataEnergy.getMass();
     }
     
+    /** {@inheritDoc} */
     @Override
     public double getTotal() {
         return totalEnergy;
     }
 
+    /** {@inheritDoc} */
     @Override
     public int getNumberOfVariables() {
         return dataEnergy.getNumberOfVariables();
     }
 
+    /** {@inheritDoc} */
     @Override
     public double[] getCoordinates(double[] parameters) {
         return dataEnergy.getCoordinates(parameters);
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean algorithmUpdate(MolecularAssembly active) {
         double ktscale = 1.0;
@@ -442,15 +451,26 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
     }
 
     // this should probably be part of the potential class
+    /**
+     * <p>Setter for the field <code>thermostat</code>.</p>
+     *
+     * @param thermostat a {@link ffx.algorithms.Thermostat} object.
+     */
     public void setThermostat(Thermostat thermostat) {
         this.thermostat = thermostat;
     }
 
     // this should probably be part of the potential class
+    /**
+     * <p>Getter for the field <code>thermostat</code>.</p>
+     *
+     * @return a {@link ffx.algorithms.Thermostat} object.
+     */
     public Thermostat getThermostat() {
         return thermostat;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setLambda(double lambda) {
         for (MolecularAssembly ma : molecularAssembly) {
@@ -467,6 +487,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public double getLambda() {
         double l = 1.0;
@@ -481,6 +502,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
         return l;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double getdEdL() {
         double e = 0.0;
@@ -510,6 +532,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
         return e;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double getd2EdL2() {
         double e = 0.0;
@@ -534,6 +557,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
     /*
      * FIXME: needs to handle multiple conformations
      */
+    /** {@inheritDoc} */
     @Override
     public void getdEdXdL(double[] gradient) {
         double ktscale = 1.0;

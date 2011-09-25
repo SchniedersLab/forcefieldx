@@ -29,10 +29,14 @@ import org.xml.sax.InputSource;
 /**
  * The DTDResolver class just points the DOM DocumentBuilder to the XML Document
  * Type Definition files.
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public class DTDResolver implements EntityResolver {
 	private static final Logger logger = Logger.getLogger(DTDResolver.class.getName());
 
+	/** {@inheritDoc} */
 	public InputSource resolveEntity(String publicId, String systemId) {
 		if (systemId.lastIndexOf("keywords.dtd") >= 0) {
 			URL keyURL = getClass().getClassLoader().getResource(

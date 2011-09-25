@@ -39,18 +39,33 @@ import ffx.potential.bonded.MolecularAssembly;
  * The DYNFilter class parses TINKER Restart (*.DYN) files.
  *
  * @author Michael J. Schnieders
- * 
  * @since 1.0
+ * @version $Id: $
  */
 public class DYNFilter {
 
     private static final Logger logger = Logger.getLogger(DYNFilter.class.getName());
     MolecularAssembly molecularAssembly;
  
+    /**
+     * <p>Constructor for DYNFilter.</p>
+     *
+     * @param s a {@link ffx.potential.bonded.MolecularAssembly} object.
+     */
     public DYNFilter(MolecularAssembly s) {
         molecularAssembly = s;
     }
 
+    /**
+     * <p>readFile</p>
+     *
+     * @param dynFile a {@link java.io.File} object.
+     * @param x an array of double.
+     * @param v an array of double.
+     * @param a an array of double.
+     * @param ap an array of double.
+     * @return a boolean.
+     */
     public boolean readFile(File dynFile, double x[], double v[], double a[], double ap[]) {
         if (!dynFile.exists() || !dynFile.canRead()) {
             return false;
@@ -163,6 +178,17 @@ public class DYNFilter {
         return true;
     }
 
+    /**
+     * <p>writeFile</p>
+     *
+     * @param writeFile a {@link java.io.File} object.
+     * @param crystal a {@link ffx.crystal.Crystal} object.
+     * @param x an array of double.
+     * @param v an array of double.
+     * @param a an array of double.
+     * @param ap an array of double.
+     * @return a boolean.
+     */
     public boolean writeFile(File writeFile, Crystal crystal, double x[], double v[],
             double[] a, double ap[]) {
         FileWriter fw = null;

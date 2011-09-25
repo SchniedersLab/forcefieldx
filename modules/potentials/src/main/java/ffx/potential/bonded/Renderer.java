@@ -33,6 +33,9 @@ import javax.swing.JLabel;
 /**
  * The Renderer class attempts to maximize throughput of graphics operations on
  * MolecularAssembly instances.
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public class Renderer extends Behavior {
 
@@ -81,8 +84,12 @@ public class Renderer extends Behavior {
      *            True for a change in rendering method
      * @param vtype
      *            The rendering method to use
+     * @param vtype
+     *            The rendering method to use
      * @param c
      *            True for a change in rendering color
+     * @param ctype
+     *            The coloring method to use
      * @param ctype
      *            The coloring method to use
      */
@@ -109,6 +116,16 @@ public class Renderer extends Behavior {
         }
     }
 
+    /**
+     * <p>arm</p>
+     *
+     * @param node a {@link ffx.potential.bonded.MSNode} object.
+     * @param t a boolean.
+     * @param v a boolean.
+     * @param vtype a {@link ffx.potential.bonded.RendererCache.ViewModel} object.
+     * @param c a boolean.
+     * @param ctype a {@link ffx.potential.bonded.RendererCache.ColorModel} object.
+     */
     public void arm(MSNode node, boolean t, boolean v,
             RendererCache.ViewModel vtype, boolean c,
             RendererCache.ColorModel ctype) {
@@ -118,6 +135,8 @@ public class Renderer extends Behavior {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Initialize this behavior to respond to postID messages
      */
     @Override
@@ -138,6 +157,11 @@ public class Renderer extends Behavior {
         return false;
     }
 
+    /**
+     * <p>isCacheFull</p>
+     *
+     * @return a boolean.
+     */
     public boolean isCacheFull() {
         if (nodesCache != null) {
             return true;
@@ -146,11 +170,11 @@ public class Renderer extends Behavior {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * This method is called by the Java3D Behavior thread after the following
      * sequence of events: 1.) A graphics operation is loaded using the "arm"
      * method. 2.) The PostID call is processed by the Java3D Behavior Thread.
-     *
-     * @param parm1
      */
     @Override
     public void processStimulus(Enumeration parm1) {

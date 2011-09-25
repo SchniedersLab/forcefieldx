@@ -36,6 +36,7 @@ import javax.vecmath.Color3f;
  *
  * @author Michael J. Schnieders
  * @since 1.0
+ * @version $Id: $
  */
 public abstract class BondedTerm extends MSNode {
 
@@ -63,12 +64,15 @@ public abstract class BondedTerm extends MSNode {
 
     /**
      * Constructor which sets the Term's id.
+     *
+     * @param i a {@link java.lang.String} object.
      */
     public BondedTerm(String i) {
         this();
         id = i;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean destroy() {
         super.destroy();
@@ -77,6 +81,11 @@ public abstract class BondedTerm extends MSNode {
         return true;
     }
 
+    /**
+     * <p>containsHydrogen</p>
+     *
+     * @return a boolean.
+     */
     public boolean containsHydrogen() {
         for (Atom atom : atoms) {
             if (atom.isHydrogen()) {
@@ -87,6 +96,8 @@ public abstract class BondedTerm extends MSNode {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Overidden method that returns true if object is equals to this, is of
      * the same Class and has the same id.
      */
@@ -103,6 +114,9 @@ public abstract class BondedTerm extends MSNode {
 
     /**
      * Get the constituent Atom specified by index.
+     *
+     * @param index a int.
+     * @return a {@link ffx.potential.bonded.Atom} object.
      */
     public Atom getAtom(int index) {
         if (index >= 0 && index < atoms.length) {
@@ -111,6 +125,12 @@ public abstract class BondedTerm extends MSNode {
         return null;
     }
 
+    /**
+     * <p>containsAtom</p>
+     *
+     * @param atom a {@link ffx.potential.bonded.Atom} object.
+     * @return a boolean.
+     */
     public boolean containsAtom(Atom atom) {
         for (Atom a : atoms) {
             if (a.equals(atom)) {
@@ -122,6 +142,9 @@ public abstract class BondedTerm extends MSNode {
 
     /**
      * Get the constituent Bond specified by index.
+     *
+     * @param index a int.
+     * @return a {@link ffx.potential.bonded.Bond} object.
      */
     public Bond getBond(int index) {
         if (index >= 0 && index < atoms.length) {
@@ -132,6 +155,8 @@ public abstract class BondedTerm extends MSNode {
 
     /**
      * Get the Term's id.
+     *
+     * @return a {@link java.lang.String} object.
      */
     public String getID() {
         return new String(id);
@@ -139,17 +164,22 @@ public abstract class BondedTerm extends MSNode {
 
     /**
      * Get the Term's value.
+     *
+     * @return a double.
      */
     public double getValue() {
         return value;
     }
 
+    /** {@inheritDoc} */
     @Override
     public final int hashCode() {
         return hash(SEED, getID().hashCode());
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Prints the toString method to stdout
      */
     @Override
@@ -159,6 +189,8 @@ public abstract class BondedTerm extends MSNode {
 
     /**
      * Add a constituent Atom to the Term.
+     *
+     * @param a an array of {@link ffx.potential.bonded.Atom} objects.
      */
     public void setAtoms(Atom a[]) {
         atoms = a;
@@ -166,11 +198,14 @@ public abstract class BondedTerm extends MSNode {
 
     /**
      * Add constituent Bonds to the Term.
+     *
+     * @param b an array of {@link ffx.potential.bonded.Bond} objects.
      */
     public void setBonds(Bond b[]) {
         bonds = b;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setColor(RendererCache.ColorModel newColorModel, Color3f color,
                          Material mat) {
@@ -184,11 +219,18 @@ public abstract class BondedTerm extends MSNode {
 
     /**
      * Sets the Term's id.
+     *
+     * @param i a {@link java.lang.String} object.
      */
     public void setID(String i) {
         id = new String(i);
     }
 
+    /**
+     * <p>setID_Key</p>
+     *
+     * @param reverse a boolean.
+     */
     public final void setID_Key(boolean reverse) {
         Atom a;
         // Reuse the string buffers
@@ -219,6 +261,7 @@ public abstract class BondedTerm extends MSNode {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setSelected(boolean b) {
         super.setSelected(b);
@@ -240,11 +283,14 @@ public abstract class BondedTerm extends MSNode {
 
     /**
      * Sets the Term's value.
+     *
+     * @param v a double.
      */
     public void setValue(double v) {
         value = v;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setView(RendererCache.ViewModel newViewModel,
                         List<BranchGroup> newShapes) {
@@ -263,6 +309,8 @@ public abstract class BondedTerm extends MSNode {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Overidden toString Method returns the Term's id.
      */
     @Override
@@ -270,6 +318,7 @@ public abstract class BondedTerm extends MSNode {
         return String.format("%s  (%7.2f,%7.2f)", id, value, energy);
     }
 
+    /** {@inheritDoc} */
     @Override
     public abstract void update();
 }

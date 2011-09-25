@@ -17,17 +17,22 @@ import java.util.logging.Logger;
 import org.apache.commons.configuration.CompositeConfiguration;
 
 /**
+ * <p>CCP4MapFilter class.</p>
  *
  * @author Tim Fenn
- *
  * @see <a href="http://www.ccp4.ac.uk/html/maplib.html" target="_blank">CCP4 map format</a>
  *
  * @see <a href="http://www.ccp4.ac.uk/dist/html/library.html" target="_blank">CCP4 library documentation</a>
+ * @see <a href="http://www.ccp4.ac.uk/html/maplib.html" target="_blank">CCP4 map format</a>
+ *
+ * @see <a href="http://www.ccp4.ac.uk/dist/html/library.html" target="_blank">CCP4 library documentation</a>
+ * @version $Id: $
  */
 public class CCP4MapFilter implements RealSpaceFileFilter {
 
     private static final Logger logger = Logger.getLogger(CCP4MapFilter.class.getName());
 
+    /** {@inheritDoc} */
     @Override
     public Crystal getCrystal(String filename, CompositeConfiguration properties) {
         int imapdata;
@@ -113,6 +118,7 @@ public class CCP4MapFilter implements RealSpaceFileFilter {
                 SpaceGroup.spaceGroupNames[sg - 1]);
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean readFile(String filename, RealSpaceRefinementData refinementdata,
             CompositeConfiguration properties) {

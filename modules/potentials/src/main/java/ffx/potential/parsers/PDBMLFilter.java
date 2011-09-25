@@ -1,8 +1,10 @@
+
 /**
  * <p>Title: Force Field X</p>
  * <p>Description: Force Field X is a Molecular Engineering Environment</p>
  * <p>Copyright: Copyright (c) Michael J. Schnieders 2002-2009</p>
  * <p>Institution: Labs of Axel T. Brunger (Stanford), Vijay S. Pande (Stanford) and Jay W. Ponder (WUSTL)</p>
+ *
  * @author Michael J. Schnieders
  * @version 0.1
  */
@@ -20,7 +22,6 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
-
 public class PDBMLFilter implements ErrorHandler {
 	private File pdbxFile = null;
 	static final String JAXP_SCHEMA_LANGUAGE = "http://java.sun.com/xml/jaxp/properties/schemaLanguage";
@@ -60,6 +61,9 @@ public class PDBMLFilter implements ErrorHandler {
 
 	/**
 	 * Create an instance of the PDBML Filter
+	 *
+	 * @param args an array of {@link java.lang.String} objects.
+	 * @throws java.lang.Exception if any.
 	 */
 	public static void main(String[] args) throws Exception {
 		if (args.length != 1) {
@@ -70,23 +74,17 @@ public class PDBMLFilter implements ErrorHandler {
 		pdbx.parse(pdbxFile);
 	}
 
-	/**
-	 * @throws SAXException
-	 */
+	/** {@inheritDoc} */
 	public void error(SAXParseException e) throws SAXException {
 		System.out.println("Could not parse: " + pdbxFile + "\n" + e);
 	}
 
-	/**
-	 * @throws SAXException
-	 */
+	/** {@inheritDoc} */
 	public void fatalError(SAXParseException e) throws SAXException {
 		System.out.println("Could not parse: " + pdbxFile + "\n" + e);
 	}
 
-	/**
-	 * @throws SAXException
-	 */
+	/** {@inheritDoc} */
 	public void warning(SAXParseException e) throws SAXException {
 		System.out.println("Could not parse: " + pdbxFile + "\n" + e);
 	}

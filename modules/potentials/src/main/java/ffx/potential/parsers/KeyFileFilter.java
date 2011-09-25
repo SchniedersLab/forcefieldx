@@ -31,8 +31,8 @@ import org.apache.commons.io.FilenameUtils;
  * property (*.properties) file.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
+ * @version $Id: $
  */
 public final class KeyFileFilter extends FileFilter {
 
@@ -43,6 +43,8 @@ public final class KeyFileFilter extends FileFilter {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * This method return <code>true</code> if the file is a directory or
      * Force Field X script (*.FFX).
      */
@@ -57,6 +59,8 @@ public final class KeyFileFilter extends FileFilter {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Provides a description of the KeyFileFilter.
      */
     @Override

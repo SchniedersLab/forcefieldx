@@ -47,6 +47,9 @@ import ffx.ui.properties.FFXLocale;
 
 /**
  * The MainMenu class creates the Force Field X Menu Bar
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public class MainMenu extends JMenuBar {
 
@@ -103,6 +106,11 @@ public class MainMenu extends JMenuBar {
     /*
      * Constructor
      * @param f Main application controller.
+     */
+    /**
+     * <p>Constructor for MainMenu.</p>
+     *
+     * @param f a {@link ffx.ui.MainPanel} object.
      */
     public MainMenu(MainPanel f) {
 
@@ -435,10 +443,20 @@ public class MainMenu extends JMenuBar {
         return menu;
     }
 
+    /**
+     * <p>getHighlighting</p>
+     *
+     * @return a boolean.
+     */
     public boolean getHighlighting() {
         return highlightCBMI.isSelected();
     }
 
+    /**
+     * <p>getMouseMode</p>
+     *
+     * @return a {@link ffx.ui.GraphicsCanvas.MouseMode} object.
+     */
     public GraphicsCanvas.MouseMode getMouseMode() {
         if (activeRBMI.isSelected()) {
             return GraphicsCanvas.MouseMode.ACTIVESYSTEM;
@@ -446,6 +464,11 @@ public class MainMenu extends JMenuBar {
         return GraphicsCanvas.MouseMode.SYSTEMBELOWMOUSE;
     }
 
+    /**
+     * <p>getPicking</p>
+     *
+     * @return a boolean.
+     */
     public boolean getPicking() {
         return pickingCBMI.isSelected();
     }
@@ -459,40 +482,78 @@ public class MainMenu extends JMenuBar {
         return toolBar;
     }
 
+    /**
+     * <p>isAxisShowing</p>
+     *
+     * @return a boolean.
+     */
     public boolean isAxisShowing() {
         return globalAxisCBMI.isSelected();
     }
 
+    /**
+     * <p>isMenuShowing</p>
+     *
+     * @return a boolean.
+     */
     public boolean isMenuShowing() {
         return toolBarCBMI.isSelected();
     }
 
+    /**
+     * <p>isPickingActive</p>
+     *
+     * @return a boolean.
+     */
     public boolean isPickingActive() {
         return pickingCBMI.isSelected();
     }
 
+    /**
+     * <p>toggleSystemShowing</p>
+     */
     public void toggleSystemShowing() {
         systemsCBMI.doClick();
     }
 
+    /**
+     * <p>isSystemShowing</p>
+     *
+     * @return a boolean.
+     */
     public boolean isSystemShowing() {
         return systemsCBMI.isSelected();
     }
 
+    /**
+     * <p>toggleToolBarShowing</p>
+     */
     public void toggleToolBarShowing() {
         toolBarCBMI.doClick();
     }
 
+    /**
+     * <p>setAtomLabels</p>
+     *
+     * @param b a boolean.
+     */
     public void setAtomLabels(boolean b) {
         labelAtomsMI.setSelected(b);
     }
 
+    /**
+     * <p>setAxisShowing</p>
+     *
+     * @param b a boolean.
+     */
     public void setAxisShowing(boolean b) {
         globalAxisCBMI.setSelected(b);
     }
 
     /**
      * Toggle connection status
+     *
+     * @param b a boolean.
      */
     public void setConnect(boolean b) {
         localMI.setEnabled(b);
@@ -500,14 +561,29 @@ public class MainMenu extends JMenuBar {
         releaseMI.setEnabled(!b);
     }
 
+    /**
+     * <p>setHighlighting</p>
+     *
+     * @param h a boolean.
+     */
     public void setHighlighting(boolean h) {
         highlightCBMI.setSelected(h);
     }
 
+    /**
+     * <p>setMenuShowing</p>
+     *
+     * @param b a boolean.
+     */
     public void setMenuShowing(boolean b) {
         toolBarCBMI.setSelected(b);
     }
 
+    /**
+     * <p>setMouseMode</p>
+     *
+     * @param m a {@link ffx.ui.GraphicsCanvas.MouseMode} object.
+     */
     public void setMouseMode(GraphicsCanvas.MouseMode m) {
         if (m == GraphicsCanvas.MouseMode.ACTIVESYSTEM) {
             activeRBMI.doClick();
@@ -516,10 +592,20 @@ public class MainMenu extends JMenuBar {
         }
     }
 
+    /**
+     * <p>setPickBehavior</p>
+     *
+     * @param pick a boolean.
+     */
     public void setPickBehavior(boolean pick) {
         pickingCBMI.setSelected(pick);
     }
 
+    /**
+     * <p>setPickLevel</p>
+     *
+     * @param arg a {@link java.lang.String} object.
+     */
     public void setPickLevel(String arg) {
         if (arg.equals("PickAtom")) {
             atomRBMI.doClick();
@@ -546,14 +632,27 @@ public class MainMenu extends JMenuBar {
         }
     }
 
+    /**
+     * <p>setResidueLabels</p>
+     *
+     * @param b a boolean.
+     */
     public void setResidueLabels(boolean b) {
         labelResiduesMI.setSelected(b);
     }
 
+    /**
+     * <p>setSystemShowing</p>
+     *
+     * @param b a boolean.
+     */
     public void setSystemShowing(boolean b) {
         systemsCBMI.setSelected(b);
     }
 
+    /**
+     * <p>systemClick</p>
+     */
     public void systemClick() {
         systemsCBMI.doClick();
     }

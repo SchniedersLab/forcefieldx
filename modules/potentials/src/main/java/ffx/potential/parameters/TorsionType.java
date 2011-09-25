@@ -31,8 +31,8 @@ import java.util.Comparator;
  * The TorsionType class defines a torsional angle.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
+ * @version $Id: $
  */
 public final class TorsionType extends BaseType implements Comparator<String> {
 
@@ -107,6 +107,11 @@ public final class TorsionType extends BaseType implements Comparator<String> {
         }
     }
 
+    /**
+     * <p>incrementClasses</p>
+     *
+     * @param increment a int.
+     */
     public void incrementClasses(int increment) {
         for (int i = 0; i < atomClasses.length; i++) {
             atomClasses[i] += increment;
@@ -115,10 +120,9 @@ public final class TorsionType extends BaseType implements Comparator<String> {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Nicely formatted Torsion angle.
-     *
-     * @return String
-     *
      * @since 1.0
      */
     @Override
@@ -139,7 +143,6 @@ public final class TorsionType extends BaseType implements Comparator<String> {
      *
      * @param c atomClasses
      * @return lookup key
-     *
      * @since 1.0
      */
     public static String sortKey(int c[]) {
@@ -178,12 +181,9 @@ public final class TorsionType extends BaseType implements Comparator<String> {
     public static final double units = 0.5;
 
     /**
+     * {@inheritDoc}
+     *
      * Implements the Comparator<String> interface.
-     *
-     * @param s1
-     * @param s2
-     * @return -1 if s1 < s2, 0 if s1 == s2, 1 if s1 > s2.
-     *
      * @since 1.0
      */
     @Override
@@ -220,12 +220,9 @@ public final class TorsionType extends BaseType implements Comparator<String> {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Override the default <code>equals</code> method.
-     *
-     * @param other
-     * @return true if <this> and <other> are both TorsionType defined by
-     * the same atom classes.
-     *
      * @since 1.0
      */
     @Override
@@ -246,10 +243,9 @@ public final class TorsionType extends BaseType implements Comparator<String> {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Implementation of the <code>hashCode</code> method.
-     *
-     * @return the hash code.
-     *
      * @since 1.0
      */
     @Override

@@ -32,18 +32,29 @@ import javax.swing.UIManager;
 /**
  * The KeyFileEditor class is a wrapper for the KeywordPanel to create a stand
  * alone Key File Editor (it needs updating).
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public final class KeyFileEditor extends JFrame {
 
     private static final long serialVersionUID = 1L;
     private static final Logger logger = Logger.getLogger(KeyFileEditor.class.getName());
 
+    /**
+     * <p>main</p>
+     *
+     * @param args an array of {@link java.lang.String} objects.
+     */
     public static void main(String[] args) {
         KeyFileEditor editor = new KeyFileEditor();
         editor.setVisible(true);
     }
     KeywordPanel tkp;
 
+    /**
+     * <p>Constructor for KeyFileEditor.</p>
+     */
     public KeyFileEditor() {
         try {
             UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());

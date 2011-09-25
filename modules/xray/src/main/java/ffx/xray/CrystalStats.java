@@ -36,6 +36,7 @@ import ffx.xray.CrystalReciprocalSpace.SolventModel;
  * Crystal statistics output/logger
  *
  * @author Tim Fenn
+ * @version $Id: $
  */
 public class CrystalStats {
 
@@ -80,6 +81,11 @@ public class CrystalStats {
         this.print = true;
     }
 
+    /**
+     * <p>getPDBHeaderString</p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
     public String getPDBHeaderString() {
         print = false;
         printHKLStats();
@@ -331,7 +337,10 @@ public class CrystalStats {
      *
      * @param natoms number of atoms in the structure
      * @param nnonhatoms number of non-H atoms in the structure
-     *
+     * @see <a href="http://dx.doi.org/10.1107/S0907444998012645" target="_blank">
+     * D. W. J. Cruickshank, Acta Cryst. (1999). D55, 583-601</a>
+     * @see <a href="http://dx.doi.org/10.1107/S0907444902003931" target="_blank">
+     * D. M. Blow, Acta Cryst. (2002). D58, 792-797</a>
      * @see <a href="http://dx.doi.org/10.1107/S0907444998012645" target="_blank">
      * D. W. J. Cruickshank, Acta Cryst. (1999). D55, 583-601</a>
      * @see <a href="http://dx.doi.org/10.1107/S0907444902003931" target="_blank">

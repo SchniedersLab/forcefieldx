@@ -42,6 +42,7 @@ import static ffx.numerics.VectorMath.transpose3;
  *
  * @author Michael J. Schnieders
  * @since 1.0
+ * @version $Id: $
  */
 public class Crystal {
 
@@ -134,7 +135,9 @@ public class Crystal {
      * space group operators.
      *
      * @param a The a-axis length.
+     * @param alpha The alpha angle.
      * @param b The b-axis length.
+     * @param beta The beta angle.
      * @param c The c-axis length.
      * @param alpha The alpha angle.
      * @param beta The beta angle.
@@ -372,15 +375,31 @@ public class Crystal {
         } */
     }
 
+    /**
+     * <p>Setter for the field <code>specialPositionCutoff</code>.</p>
+     *
+     * @param cutoff a double.
+     */
     public void setSpecialPositionCutoff(double cutoff) {
         specialPositionCutoff = cutoff;
         specialPositionCutoff2 = cutoff * cutoff;
     }
 
+    /**
+     * <p>Getter for the field <code>specialPositionCutoff</code>.</p>
+     *
+     * @return a double.
+     */
     public double getSpecialPositionCutoff() {
         return specialPositionCutoff;
     }
 
+    /**
+     * <p>checkProperties</p>
+     *
+     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * @return a {@link ffx.crystal.Crystal} object.
+     */
     public static Crystal checkProperties(CompositeConfiguration properties) {
         double a = properties.getDouble("a-axis", -1.0);
         double b = properties.getDouble("b-axis", -1.0);
@@ -411,6 +430,7 @@ public class Crystal {
         return new Crystal(a, b, c, alpha, beta, gamma, sg);
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean equals(Object obj) {
         if (obj == null) {
@@ -431,6 +451,7 @@ public class Crystal {
                 && this.spaceGroup.number == ((Crystal) obj).spaceGroup.number);
     }
 
+    /** {@inheritDoc} */
     @Override
     public int hashCode() {
         int hash = HashCodeUtil.SEED;
@@ -456,11 +477,18 @@ public class Crystal {
 
     /**
      * Is this a finite system - ie. one unit cell in isolation?
+     *
+     * @param aperiodic a boolean.
      */
     public void setAperiodic(boolean aperiodic) {
         this.aperiodic = aperiodic;
     }
 
+    /**
+     * <p>aperiodic</p>
+     *
+     * @return a boolean.
+     */
     public boolean aperiodic() {
         return aperiodic;
     }
@@ -517,6 +545,12 @@ public class Crystal {
         return dx * dx + dy * dy + dz * dz;
     }
 
+    /**
+     * <p>averageTensor</p>
+     *
+     * @param m an array of double.
+     * @param r an array of double.
+     */
     public void averageTensor(double m[][], double r[][]) {
         int n = spaceGroup.symOps.size();
         for (int i = 0; i < n; i++) {
@@ -537,6 +571,12 @@ public class Crystal {
         }
     }
 
+    /**
+     * <p>averageTensor</p>
+     *
+     * @param v an array of double.
+     * @param r an array of double.
+     */
     public void averageTensor(double v[], double r[][]) {
         int n = spaceGroup.symOps.size();
         for (int i = 0; i < n; i++) {
@@ -765,6 +805,7 @@ public class Crystal {
      *            Symmetry mate coordinates.
      * @param symOp
      *            The symmetry operator.
+     * @param rotmat an array of double.
      */
     public void applyTransSymRot(double xyz[], double mate[], SymOp symOp, double rotmat[][]) {
 
@@ -918,6 +959,7 @@ public class Crystal {
      *            Output z coordinates.
      * @param symOp
      *            The symmetry operator.
+     * @param rotmat an array of double.
      */
     public void applyTransSymRot(int n, double x[], double y[], double z[],
             double mateX[], double mateY[], double mateZ[],
@@ -964,6 +1006,17 @@ public class Crystal {
         }
     }
 
+    /**
+     * <p>toFractionalCoordinates</p>
+     *
+     * @param n a int.
+     * @param x an array of double.
+     * @param y an array of double.
+     * @param z an array of double.
+     * @param xf an array of double.
+     * @param yf an array of double.
+     * @param zf an array of double.
+     */
     public void toFractionalCoordinates(int n, double x[], double y[],
             double z[], double xf[], double yf[], double zf[]) {
         for (int i = 0; i < n; i++) {
@@ -976,6 +1029,13 @@ public class Crystal {
         }
     }
 
+    /**
+     * <p>toFractionalCoordinates</p>
+     *
+     * @param n a int.
+     * @param cart an array of double.
+     * @param frac an array of double.
+     */
     public void toFractionalCoordinates(int n, double cart[], double frac[]) {
         int i3 = 0;
         for (int i = 0; i < n; i++) {
@@ -993,6 +1053,12 @@ public class Crystal {
         }
     }
 
+    /**
+     * <p>toPrimaryCell</p>
+     *
+     * @param in an array of double.
+     * @param out an array of double.
+     */
     public void toPrimaryCell(double in[], double out[]) {
         toFractionalCoordinates(in, out);
         out[0] = mod(out[0], 1.0) - 0.5;
@@ -1001,6 +1067,12 @@ public class Crystal {
         toCartesianCoordinates(out, out);
     }
 
+    /**
+     * <p>toFractionalCoordinates</p>
+     *
+     * @param x an array of double.
+     * @param xf an array of double.
+     */
     public void toFractionalCoordinates(double x[], double xf[]) {
         double xc = x[0];
         double yc = x[1];
@@ -1010,6 +1082,17 @@ public class Crystal {
         xf[2] = xc * A02 + yc * A12 + zc * A22;
     }
 
+    /**
+     * <p>toCartesianCoordinates</p>
+     *
+     * @param n a int.
+     * @param xf an array of double.
+     * @param yf an array of double.
+     * @param zf an array of double.
+     * @param x an array of double.
+     * @param y an array of double.
+     * @param z an array of double.
+     */
     public void toCartesianCoordinates(int n, double xf[], double yf[],
             double zf[], double x[], double y[], double z[]) {
         for (int i = 0; i < n; i++) {
@@ -1022,6 +1105,13 @@ public class Crystal {
         }
     }
 
+    /**
+     * <p>toCartesianCoordinates</p>
+     *
+     * @param n a int.
+     * @param frac an array of double.
+     * @param cart an array of double.
+     */
     public void toCartesianCoordinates(int n, double frac[], double cart[]) {
         int i3 = 0;
         for (int i = 0; i < n; i++) {
@@ -1039,6 +1129,12 @@ public class Crystal {
         }
     }
 
+    /**
+     * <p>toCartesianCoordinates</p>
+     *
+     * @param xf an array of double.
+     * @param x an array of double.
+     */
     public void toCartesianCoordinates(double xf[], double x[]) {
         double fx = xf[0];
         double fy = xf[1];
@@ -1048,6 +1144,12 @@ public class Crystal {
         x[2] = fx * Ai02 + fy * Ai12 + fz * Ai22;
     }
 
+    /**
+     * <p>toFractionalCoordinatesTINKER</p>
+     *
+     * @param x an array of double.
+     * @param xf an array of double.
+     */
     public void toFractionalCoordinatesTINKER(double x[], double xf[]) {
         // Convert to fractional coordinates.
         xf[2] = (x[2] / gamma_term) / c;
@@ -1055,26 +1157,61 @@ public class Crystal {
         xf[0] = (x[0] - xf[1] * b * cos_gamma - xf[2] * c * cos_beta) / a;
     }
 
+    /**
+     * <p>quad_form</p>
+     *
+     * @param v an array of double.
+     * @param mat an array of double.
+     * @return a double.
+     */
     public static double quad_form(double v[], double mat[][]) {
         return (v[0] * (v[0] * mat[0][0] + 2 * (v[1] * mat[0][1] + v[2] * mat[0][2]))
                 + v[1] * (v[1] * mat[1][1] + 2 * (v[2] * mat[1][2]))
                 + v[2] * v[2] * mat[2][2]);
     }
 
+    /**
+     * <p>quad_form</p>
+     *
+     * @param hkl a {@link ffx.crystal.HKL} object.
+     * @param mat an array of double.
+     * @return a double.
+     */
     public static double quad_form(HKL hkl, double mat[][]) {
         return (hkl.h() * (hkl.h() * mat[0][0] + 2 * (hkl.k() * mat[0][1] + hkl.l() * mat[0][2]))
                 + hkl.k() * (hkl.k() * mat[1][1] + 2 * (hkl.l() * mat[1][2]))
                 + hkl.l() * hkl.l() * mat[2][2]);
     }
 
+    /**
+     * <p>invressq</p>
+     *
+     * @param crystal a {@link ffx.crystal.Crystal} object.
+     * @param hkl a {@link ffx.crystal.HKL} object.
+     * @return a double.
+     */
     public static double invressq(Crystal crystal, HKL hkl) {
         return quad_form(hkl, crystal.Gstar);
     }
 
+    /**
+     * <p>res</p>
+     *
+     * @param crystal a {@link ffx.crystal.Crystal} object.
+     * @param hkl a {@link ffx.crystal.HKL} object.
+     * @return a double.
+     */
     public static double res(Crystal crystal, HKL hkl) {
         return 1.0 / sqrt(quad_form(hkl, crystal.Gstar));
     }
 
+    /**
+     * <p>sym_phase_shift</p>
+     *
+     * @param hkl an array of double.
+     * @param symOp a {@link ffx.crystal.SymOp} object.
+     * @return a double.
+     */
     public static double sym_phase_shift(double hkl[], SymOp symOp) {
         double trans[] = symOp.tr;
         // Apply translation
@@ -1082,6 +1219,13 @@ public class Crystal {
                 * (hkl[0] * trans[0] + hkl[1] * trans[1] + hkl[2] * trans[2]);
     }
 
+    /**
+     * <p>sym_phase_shift</p>
+     *
+     * @param hkl a {@link ffx.crystal.HKL} object.
+     * @param symOp a {@link ffx.crystal.SymOp} object.
+     * @return a double.
+     */
     public static double sym_phase_shift(HKL hkl, SymOp symOp) {
         double trans[] = symOp.tr;
         // Apply translation
@@ -1090,6 +1234,13 @@ public class Crystal {
     }
 
     // this is here as its an atypical mod function used by xtal methods
+    /**
+     * <p>mod</p>
+     *
+     * @param a a double.
+     * @param b a double.
+     * @return a double.
+     */
     public static double mod(double a, double b) {
         double res = a % b;
         if (res < 0.0) {
@@ -1098,6 +1249,13 @@ public class Crystal {
         return res;
     }
 
+    /**
+     * <p>mod</p>
+     *
+     * @param a a int.
+     * @param b a int.
+     * @return a int.
+     */
     public static int mod(int a, int b) {
         int res = a % b;
         if (res < 0) {
@@ -1106,6 +1264,7 @@ public class Crystal {
         return res;
     }
 
+    /** {@inheritDoc} */
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("\n Unit Cell\n");

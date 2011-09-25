@@ -32,8 +32,10 @@ import ffx.numerics.OptimizationListener;
 import ffx.xray.SplineEnergy.Type;
 
 /**
+ * <p>SplineMinimize class.</p>
  *
  * @author fennt
+ * @version $Id: $
  */
 public class SplineMinimize implements OptimizationListener, Terminatable {
 
@@ -52,6 +54,14 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
     private double grms;
     private int nSteps;
 
+    /**
+     * <p>Constructor for SplineMinimize.</p>
+     *
+     * @param reflectionlist a {@link ffx.crystal.ReflectionList} object.
+     * @param refinementdata a {@link ffx.xray.DiffractionRefinementData} object.
+     * @param x an array of double.
+     * @param type a int.
+     */
     public SplineMinimize(ReflectionList reflectionlist,
             DiffractionRefinementData refinementdata, double x[], int type) {
         this.reflectionlist = reflectionlist;
@@ -76,14 +86,32 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
         splineenergy.setScaling(scaling);
     }
 
+    /**
+     * <p>minimize</p>
+     *
+     * @return a {@link ffx.xray.SplineEnergy} object.
+     */
     public SplineEnergy minimize() {
         return minimize(0.5);
     }
 
+    /**
+     * <p>minimize</p>
+     *
+     * @param eps a double.
+     * @return a {@link ffx.xray.SplineEnergy} object.
+     */
     public SplineEnergy minimize(double eps) {
         return minimize(5, eps);
     }
 
+    /**
+     * <p>minimize</p>
+     *
+     * @param m a int.
+     * @param eps a double.
+     * @return a {@link ffx.xray.SplineEnergy} object.
+     */
     public SplineEnergy minimize(int m, double eps) {
 
         double e = splineenergy.energyAndGradient(x, grad);
@@ -105,6 +133,7 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
         return splineenergy;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean optimizationUpdate(int iter, int nfun, double grms, double xrms, double f, double df, double angle, LineSearchResult info) {
         long currentTime = System.nanoTime();
@@ -140,6 +169,7 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
         return true;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void terminate() {
         terminate = true;

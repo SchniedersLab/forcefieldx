@@ -40,6 +40,9 @@ import java.lang.reflect.Array;
  *    return result;
  *  }
  * </pre>
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public final class HashCodeUtil {
 
@@ -52,6 +55,10 @@ public final class HashCodeUtil {
 
     /**
      * booleans.
+     *
+     * @param aSeed a int.
+     * @param aBoolean a boolean.
+     * @return a int.
      */
     public static int hash(int aSeed, boolean aBoolean) {
         return firstTerm(aSeed) + (aBoolean ? 1 : 0);
@@ -59,6 +66,10 @@ public final class HashCodeUtil {
 
     /**
      * chars.
+     *
+     * @param aSeed a int.
+     * @param aChar a char.
+     * @return a int.
      */
     public static int hash(int aSeed, char aChar) {
         return firstTerm(aSeed) + (int) aChar;
@@ -66,6 +77,10 @@ public final class HashCodeUtil {
 
     /**
      * ints.
+     *
+     * @param aSeed a int.
+     * @param aInt a int.
+     * @return a int.
      */
     public static int hash(int aSeed, int aInt) {
         /*
@@ -78,6 +93,10 @@ public final class HashCodeUtil {
 
     /**
      * longs.
+     *
+     * @param aSeed a int.
+     * @param aLong a long.
+     * @return a int.
      */
     public static int hash(int aSeed, long aLong) {
         System.out.println("long...");
@@ -86,6 +105,10 @@ public final class HashCodeUtil {
 
     /**
      * floats.
+     *
+     * @param aSeed a int.
+     * @param aFloat a float.
+     * @return a int.
      */
     public static int hash(int aSeed, float aFloat) {
         return hash(aSeed, Float.floatToIntBits(aFloat));
@@ -93,6 +116,10 @@ public final class HashCodeUtil {
 
     /**
      * doubles.
+     *
+     * @param aSeed a int.
+     * @param aDouble a double.
+     * @return a int.
      */
     public static int hash(int aSeed, double aDouble) {
         return hash(aSeed, Double.doubleToLongBits(aDouble));
@@ -103,6 +130,10 @@ public final class HashCodeUtil {
      *
      * If <code>aObject</code> is an array, then each element may be a primitive
      * or a possibly-null object.
+     *
+     * @param aSeed a int.
+     * @param aObject a {@link java.lang.Object} object.
+     * @return a int.
      */
     public static int hash(int aSeed, Object aObject) {
         int result = aSeed;

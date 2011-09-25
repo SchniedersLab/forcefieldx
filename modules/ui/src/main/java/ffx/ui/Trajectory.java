@@ -32,6 +32,9 @@ import ffx.potential.bonded.MolecularAssembly;
 
 /**
  * The Trajectory class controls playback of a TINKER trajectory.
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public class Trajectory implements ActionListener {
 	private MolecularAssembly molecularSystem;
@@ -44,6 +47,12 @@ public class Trajectory implements ActionListener {
 	private int skip = 1;
 	private boolean oscillate = false;
 
+	/**
+	 * <p>Constructor for Trajectory.</p>
+	 *
+	 * @param mol a {@link ffx.potential.bonded.MolecularAssembly} object.
+	 * @param f a {@link ffx.ui.MainPanel} object.
+	 */
 	public Trajectory(MolecularAssembly mol, MainPanel f) {
 		molecularSystem = mol;
 		mainPanel = f;
@@ -51,6 +60,7 @@ public class Trajectory implements ActionListener {
 		timer.setCoalesce(true);
 	}
 
+	/** {@inheritDoc} */
 	public void actionPerformed(ActionEvent e) {
 		if (mainPanel.getGraphics3D().isCacheFull()) {
 			return;
@@ -84,38 +94,77 @@ public class Trajectory implements ActionListener {
 		return 0;
 	}
 
+	/**
+	 * <p>back</p>
+	 */
 	public void back() {
 		setFrame(getFrame() - 1);
 	}
 
+	/**
+	 * <p>forward</p>
+	 */
 	public void forward() {
 		setFrame(getFrame() + 1);
 	}
 
+	/**
+	 * <p>getFrame</p>
+	 *
+	 * @return a int.
+	 */
 	public int getFrame() {
 		return molecularSystem.getCurrentCycle();
 	}
 
+	/**
+	 * <p>getFSystem</p>
+	 *
+	 * @return a {@link ffx.potential.bonded.MolecularAssembly} object.
+	 */
 	public MolecularAssembly getFSystem() {
 		return molecularSystem;
 	}
 
+	/**
+	 * <p>Getter for the field <code>oscillate</code>.</p>
+	 *
+	 * @return a boolean.
+	 */
 	public boolean getOscillate() {
 		return oscillate;
 	}
 
+	/**
+	 * <p>getRate</p>
+	 *
+	 * @return a int.
+	 */
 	public int getRate() {
 		return desiredspeed;
 	}
 
+	/**
+	 * <p>Getter for the field <code>skip</code>.</p>
+	 *
+	 * @return a int.
+	 */
 	public int getSkip() {
 		return skip;
 	}
 
+	/**
+	 * <p>rewind</p>
+	 */
 	public void rewind() {
 		setFrame(1);
 	}
 
+	/**
+	 * <p>setFrame</p>
+	 *
+	 * @param f a int.
+	 */
 	public void setFrame(int f) {
 		if (molecularSystem != null) {
 			molecularSystem.setCurrentCycle(f);
@@ -125,10 +174,20 @@ public class Trajectory implements ActionListener {
 		}
 	}
 
+	/**
+	 * <p>Setter for the field <code>oscillate</code>.</p>
+	 *
+	 * @param o a boolean.
+	 */
 	public void setOscillate(boolean o) {
 		oscillate = o;
 	}
 
+	/**
+	 * <p>setRate</p>
+	 *
+	 * @param s a int.
+	 */
 	public void setRate(int s) {
 		if (s > 0 && s <= 100) {
 			desiredspeed = s;
@@ -137,6 +196,11 @@ public class Trajectory implements ActionListener {
 		}
 	}
 
+	/**
+	 * <p>Setter for the field <code>skip</code>.</p>
+	 *
+	 * @param s a int.
+	 */
 	public void setSkip(int s) {
 		if (s < 1) {
 			return;
@@ -144,10 +208,16 @@ public class Trajectory implements ActionListener {
 		skip = s % molecularSystem.getAtomList().size();
 	}
 
+	/**
+	 * <p>start</p>
+	 */
 	public void start() {
 		timer.start();
 	}
 
+	/**
+	 * <p>stop</p>
+	 */
 	public void stop() {
 		timer.stop();
 	}

@@ -39,12 +39,21 @@ import ffx.potential.parameters.AtomType;
 /**
  * The SimulationFilter class parses system data sent by TINKER to Force Field
  * Xplor.
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public final class SimulationFilter extends SystemFilter {
 
     TinkerSystem system;
     Hashtable<Integer, AtomType> atomTypes = new Hashtable<Integer, AtomType>();
 
+    /**
+     * <p>Constructor for SimulationFilter.</p>
+     *
+     * @param sys a {@link ffx.ui.commands.TinkerSystem} object.
+     * @param m a {@link ffx.potential.bonded.MolecularAssembly} object.
+     */
     public SimulationFilter(TinkerSystem sys, MolecularAssembly m) {
         super(new File(""), m, null, null);
         system = sys;
@@ -52,6 +61,7 @@ public final class SimulationFilter extends SystemFilter {
         fileRead = false;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean readFile() {
         // Create Molecular Mechanics Data Objects from the TinkerSystem
@@ -105,6 +115,7 @@ public final class SimulationFilter extends SystemFilter {
         return true;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean writeFile(File saveFile, boolean append) {
         return false;

@@ -28,8 +28,10 @@ import ffx.crystal.Crystal;
 import ffx.crystal.ReflectionList;
 
 /**
+ * <p>DiffractionFileFilter interface.</p>
  *
  * @author Tim Fenn
+ * @version $Id: $
  */
 public interface DiffractionFileFilter {
 
@@ -40,6 +42,12 @@ public interface DiffractionFileFilter {
      * @return the {@link ReflectionList}, or null if not enough
      *         information present in the reflection file
      */
+    /**
+     * <p>getReflectionList</p>
+     *
+     * @param file a {@link java.io.File} object.
+     * @return a {@link ffx.crystal.ReflectionList} object.
+     */
     ReflectionList getReflectionList(File file);
 
     /*
@@ -49,6 +57,13 @@ public interface DiffractionFileFilter {
      * @param properties system properties
      * @return the {@link ReflectionList}, or null if not enough
      *         information present in the reflection file
+     */
+    /**
+     * <p>getReflectionList</p>
+     *
+     * @param file a {@link java.io.File} object.
+     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * @return a {@link ffx.crystal.ReflectionList} object.
      */
     ReflectionList getReflectionList(File file, CompositeConfiguration properties);
 
@@ -61,6 +76,15 @@ public interface DiffractionFileFilter {
      * @param properties system properties
      * @return true if read in properly
      */
+    /**
+     * <p>readFile</p>
+     *
+     * @param file a {@link java.io.File} object.
+     * @param reflectionlist a {@link ffx.crystal.ReflectionList} object.
+     * @param refinementdata a {@link ffx.xray.DiffractionRefinementData} object.
+     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * @return a boolean.
+     */
     boolean readFile(File file, ReflectionList reflectionlist,
             DiffractionRefinementData refinementdata, CompositeConfiguration properties);
     
@@ -69,6 +93,13 @@ public interface DiffractionFileFilter {
      * 
      * @param file file to read in
      * @param crystal crystal system to determine resolution information from
+     */
+    /**
+     * <p>getResolution</p>
+     *
+     * @param file a {@link java.io.File} object.
+     * @param crystal a {@link ffx.crystal.Crystal} object.
+     * @return a double.
      */
     double getResolution(File file, Crystal crystal);
 }

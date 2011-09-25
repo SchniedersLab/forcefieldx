@@ -28,9 +28,10 @@ import org.apache.commons.io.FilenameUtils;
 
 /**
  * The ARCFileFilter class is used to choose a TINKER Archive (*.ARC).
- * 
+ *
  * @author Michael J. Schnieders
  * @since 1.0
+ * @version $Id: $
  */
 public final class ARCFileFilter extends FileFilter {
 
@@ -41,6 +42,8 @@ public final class ARCFileFilter extends FileFilter {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * This method return <code>true</code> if the file is a directory or
      * TINKER Archive (*.ARC).
      */
@@ -54,6 +57,8 @@ public final class ARCFileFilter extends FileFilter {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Provides a description of this FileFilter
      */
     @Override

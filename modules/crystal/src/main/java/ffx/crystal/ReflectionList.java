@@ -40,6 +40,7 @@ import org.apache.commons.configuration.CompositeConfiguration;
  * function of position in reciprocal space. J. Appl. Cryst. 35:655-663.
  *
  * @author fennt
+ * @version $Id: $
  */
 public class ReflectionList {
 
@@ -55,10 +56,23 @@ public class ReflectionList {
     public double hist[] = new double[1001];
     public double minres, maxres;
 
+    /**
+     * <p>Constructor for ReflectionList.</p>
+     *
+     * @param crystal a {@link ffx.crystal.Crystal} object.
+     * @param resolution a {@link ffx.crystal.Resolution} object.
+     */
     public ReflectionList(Crystal crystal, Resolution resolution) {
         this(crystal, resolution, null);
     }
 
+    /**
+     * <p>Constructor for ReflectionList.</p>
+     *
+     * @param crystal a {@link ffx.crystal.Crystal} object.
+     * @param resolution a {@link ffx.crystal.Resolution} object.
+     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     */
     public ReflectionList(Crystal crystal, Resolution resolution,
             CompositeConfiguration properties) {
         this.crystal = crystal;
@@ -131,6 +145,18 @@ public class ReflectionList {
         setResolutionBins(properties);
     }
 
+    /**
+     * <p>Constructor for ReflectionList.</p>
+     *
+     * @param a a double.
+     * @param b a double.
+     * @param c a double.
+     * @param alpha a double.
+     * @param beta a double.
+     * @param gamma a double.
+     * @param sg a {@link java.lang.String} object.
+     * @param resolution a double.
+     */
     public ReflectionList(double a, double b, double c,
             double alpha, double beta, double gamma, String sg,
             double resolution) {
@@ -138,6 +164,7 @@ public class ReflectionList {
                 new Resolution(resolution));
     }
 
+    /** {@inheritDoc} */
     @Override
     public String toString() {
         return "reflection list with " + this.hkllist.size()
@@ -145,18 +172,52 @@ public class ReflectionList {
                 + " resolution limit: " + resolution.res_limit();
     }
 
+    /**
+     * <p>findSymHKL</p>
+     *
+     * @param hkl a {@link ffx.crystal.HKL} object.
+     * @param mate a {@link ffx.crystal.HKL} object.
+     * @return a boolean.
+     */
     public boolean findSymHKL(HKL hkl, HKL mate) {
         return findSymHKL(hkl, mate, false);
     }
 
+    /**
+     * <p>findSymHKL</p>
+     *
+     * @param h a int.
+     * @param k a int.
+     * @param l a int.
+     * @param mate a {@link ffx.crystal.HKL} object.
+     * @return a boolean.
+     */
     public boolean findSymHKL(int h, int k, int l, HKL mate) {
         return findSymHKL(new HKL(h, k, l), mate, false);
     }
 
+    /**
+     * <p>findSymHKL</p>
+     *
+     * @param h a int.
+     * @param k a int.
+     * @param l a int.
+     * @param mate a {@link ffx.crystal.HKL} object.
+     * @param transpose a boolean.
+     * @return a boolean.
+     */
     public boolean findSymHKL(int h, int k, int l, HKL mate, boolean transpose) {
         return findSymHKL(new HKL(h, k, l), mate, transpose);
     }
 
+    /**
+     * <p>findSymHKL</p>
+     *
+     * @param hkl a {@link ffx.crystal.HKL} object.
+     * @param mate a {@link ffx.crystal.HKL} object.
+     * @param transpose a boolean.
+     * @return a boolean.
+     */
     public boolean findSymHKL(HKL hkl, HKL mate, boolean transpose) {
         int nsym = spaceGroup.numPrimitiveSymEquiv;
 
@@ -185,15 +246,37 @@ public class ReflectionList {
         return false;
     }
 
+    /**
+     * <p>getHKL</p>
+     *
+     * @param h a int.
+     * @param k a int.
+     * @param l a int.
+     * @return a {@link ffx.crystal.HKL} object.
+     */
     public HKL getHKL(int h, int k, int l) {
         String s = ("" + h + "_" + k + "_" + l);
         return hklmap.get(s);
     }
 
+    /**
+     * <p>getHKL</p>
+     *
+     * @param hkl a {@link ffx.crystal.HKL} object.
+     * @return a {@link ffx.crystal.HKL} object.
+     */
     public HKL getHKL(HKL hkl) {
         return getHKL(hkl.h(), hkl.k(), hkl.l());
     }
 
+    /**
+     * <p>hasHKL</p>
+     *
+     * @param h a int.
+     * @param k a int.
+     * @param l a int.
+     * @return a boolean.
+     */
     public boolean hasHKL(int h, int k, int l) {
         String s = ("" + h + "_" + k + "_" + l);
         if (hklmap.containsKey(s)) {
@@ -203,6 +286,12 @@ public class ReflectionList {
         }
     }
 
+    /**
+     * <p>hasHKL</p>
+     *
+     * @param hkl a {@link ffx.crystal.HKL} object.
+     * @return a boolean.
+     */
     public boolean hasHKL(HKL hkl) {
         return hasHKL(hkl.h(), hkl.k(), hkl.l());
     }
@@ -237,6 +326,12 @@ public class ReflectionList {
         hkl.allowed(allowed);
     }
 
+    /**
+     * <p>ordinal</p>
+     *
+     * @param s a double.
+     * @return a double.
+     */
     public double ordinal(double s) {
         double r = (s - minres) / (maxres - minres);
         r = min(r, 0.999) * 1000.0;

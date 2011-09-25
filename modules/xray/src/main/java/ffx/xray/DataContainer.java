@@ -29,25 +29,72 @@ import ffx.potential.bonded.Residue;
 import java.util.ArrayList;
 
 /**
+ * <p>DataContainer interface.</p>
  *
  * @author Tim Fenn
+ * @version $Id: $
  */
 public interface DataContainer {
+    /**
+     * <p>getAtomArray</p>
+     *
+     * @return an array of {@link ffx.potential.bonded.Atom} objects.
+     */
     public Atom[] getAtomArray();
 
+    /**
+     * <p>getAltResidues</p>
+     *
+     * @return a {@link java.util.ArrayList} object.
+     */
     public ArrayList<ArrayList<Residue>> getAltResidues();
 
+    /**
+     * <p>getAltMolecules</p>
+     *
+     * @return a {@link java.util.ArrayList} object.
+     */
     public ArrayList<ArrayList<Molecule>> getAltMolecules();
 
+    /**
+     * <p>getMolecularAssembly</p>
+     *
+     * @return an array of {@link ffx.potential.bonded.MolecularAssembly} objects.
+     */
     public MolecularAssembly[] getMolecularAssembly();
 
+    /**
+     * <p>getRefinementModel</p>
+     *
+     * @return a {@link ffx.xray.RefinementModel} object.
+     */
     public RefinementModel getRefinementModel();
 
+    /**
+     * <p>getWeight</p>
+     *
+     * @return a double.
+     */
     public double getWeight();
 
+    /**
+     * <p>printOptimizationHeader</p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
     public String printOptimizationHeader();
 
+    /**
+     * <p>printOptimizationUpdate</p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
     public String printOptimizationUpdate();
 
+    /**
+     * <p>printEnergyUpdate</p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
     public String printEnergyUpdate();
 }

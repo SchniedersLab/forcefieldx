@@ -26,8 +26,8 @@ import java.util.Comparator;
  * The VDWType class defines a van der Waals type.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
+ * @version $Id: $
  */
 public final class VDWType extends BaseType implements Comparator<String> {
 
@@ -81,15 +81,20 @@ public final class VDWType extends BaseType implements Comparator<String> {
         this.reductionFactor = reductionFactor;
     }
 
+    /**
+     * <p>incrementClass</p>
+     *
+     * @param increment a int.
+     */
     public void incrementClass(int increment) {
         atomClass += increment;
         setKey(Integer.toString(atomClass));
     }
 
     /**
-     * Nicely formatted van der Waals type.
+     * {@inheritDoc}
      *
-     * @return String
+     * Nicely formatted van der Waals type.
      */
     @Override
     public String toString() {
@@ -105,6 +110,7 @@ public final class VDWType extends BaseType implements Comparator<String> {
         return vdwString;
     }
 
+    /** {@inheritDoc} */
     @Override
     public int compare(String s1, String s2) {
 
@@ -121,6 +127,7 @@ public final class VDWType extends BaseType implements Comparator<String> {
         return 0;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean equals(Object other) {
         if (other == this) {
@@ -137,6 +144,7 @@ public final class VDWType extends BaseType implements Comparator<String> {
         return false;
     }
 
+    /** {@inheritDoc} */
     @Override
     public int hashCode() {
         int hash = 7;

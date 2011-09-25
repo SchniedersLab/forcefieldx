@@ -33,8 +33,8 @@ import org.apache.commons.io.FilenameUtils;
  * files.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
+ * @version $Id: $
  */
 public final class INTFileFilter extends FileFilter {
 
@@ -45,6 +45,8 @@ public final class INTFileFilter extends FileFilter {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * This method return <code>true</code> if the file is a directory or
      * matches the extension for TINKER internal coordinates (*.INT).
      */
@@ -57,6 +59,12 @@ public final class INTFileFilter extends FileFilter {
         return ext.toUpperCase().startsWith("INT");
     }
 
+    /**
+     * <p>acceptDeep</p>
+     *
+     * @param parm a {@link java.io.File} object.
+     * @return a boolean.
+     */
     public boolean acceptDeep(File parm) {
         try {
             if (parm == null || parm.isDirectory() || !parm.canRead()) {
@@ -105,6 +113,8 @@ public final class INTFileFilter extends FileFilter {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Provides a description of the INTFileFilter.
      */
     @Override

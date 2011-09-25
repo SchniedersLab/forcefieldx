@@ -32,6 +32,7 @@ import static java.lang.Math.floor;
  * Adapted from an original program written by W. J. Cody, Mathematics and
  * Computer Science Division, Argonne National Laboratory, Argonne, IL 60439
  * <p>
+ *
  * @author Michael J. Schnieders
  * @see <a href="http://www.jstor.org/stable/2004390" target="_blank"> W. J.
  *      Cody, Mathematics of Computation 23 (107), 631 (1969).</a><br>
@@ -40,6 +41,7 @@ import static java.lang.Math.floor;
  *      <a href="http://mathworld.wolfram.com/Erf.html" target="_blank"> Error
  *      function at MathWorld</a>
  * @since 1.0
+ * @version $Id: $
  */
 public class Erf {
 
@@ -62,12 +64,11 @@ public class Erf {
 
 	/**
 	 * Evaluates erf(x) for a real argument x.
-	 * 
+	 *
 	 * @param arg
 	 *            the value to evaluate erf at.
 	 * @return erf of the argument.
-         *
-         * @since 1.0
+	 * @since 1.0
 	 */
 	public static double erf(double arg) {
 		return erfCore(arg, false);
@@ -75,12 +76,11 @@ public class Erf {
 
 	/**
 	 * Evaluate erfc(x) for a real argument x.
-	 * 
+	 *
 	 * @param arg
 	 *            the value to evaluate erfc at.
 	 * @return erfc of the argument.
-         *
-         * @since 1.0
+	 * @since 1.0
 	 */
 	public static double erfc(double arg) {
 		return erfCore(arg, true);

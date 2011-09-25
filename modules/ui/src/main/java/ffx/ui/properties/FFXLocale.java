@@ -32,6 +32,7 @@ import java.util.logging.Logger;
  *
  * @author Michael J. Schnieders
  * @since 1.0
+ * @version $Id: $
  */
 public class FFXLocale {
 
@@ -40,6 +41,9 @@ public class FFXLocale {
     private PropertyResourceBundle ffxLabels;
     private Hashtable<String, String> reverseLookUp = new Hashtable<String, String>();
 
+    /**
+     * <p>Constructor for FFXLocale.</p>
+     */
     public FFXLocale() {
         currentLocale = Locale.getDefault();
         ffxLabels = (PropertyResourceBundle) ResourceBundle.getBundle(
@@ -47,18 +51,39 @@ public class FFXLocale {
         loadHashtable();
     }
 
+    /**
+     * <p>Constructor for FFXLocale.</p>
+     *
+     * @param language a {@link java.lang.String} object.
+     * @param country a {@link java.lang.String} object.
+     */
     public FFXLocale(String language, String country) {
         setLocale(language, country);
     }
 
+    /**
+     * <p>getKey</p>
+     *
+     * @param string a {@link java.lang.String} object.
+     * @return a {@link java.lang.String} object.
+     */
     public String getKey(String string) {
         return reverseLookUp.get(string);
     }
 
+    /**
+     * <p>getValue</p>
+     *
+     * @param key a {@link java.lang.String} object.
+     * @return a {@link java.lang.String} object.
+     */
     public String getValue(String key) {
         return ffxLabels.getString(key).trim();
     }
 
+    /**
+     * <p>list</p>
+     */
     public void list() {
         for (String value : reverseLookUp.keySet()) {
             String key = reverseLookUp.get(value);
@@ -76,6 +101,13 @@ public class FFXLocale {
         }
     }
 
+    /**
+     * <p>setLocale</p>
+     *
+     * @param language a {@link java.lang.String} object.
+     * @param country a {@link java.lang.String} object.
+     * @return a boolean.
+     */
     public boolean setLocale(String language, String country) {
         Locale locale = new Locale(language, country);
         try {

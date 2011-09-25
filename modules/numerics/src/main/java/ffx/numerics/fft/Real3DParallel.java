@@ -31,9 +31,10 @@ import edu.rit.pj.ParallelTeam;
 
 /**
  * Compute the 3D FFT of real, double precision input of arbitrary dimensions in parallel.<p>
- * 
+ *
  * @author Michal J. Schnieders
  * @since 1.0
+ * @version $Id: $
  */
 public class Real3DParallel {
 
@@ -58,6 +59,7 @@ public class Real3DParallel {
      * @param nZ
      *            Z-dimension.
      * @since 1.0
+     * @param parallelTeam a {@link edu.rit.pj.ParallelTeam} object.
      */
     public Real3DParallel(int nX, int nY, int nZ, ParallelTeam parallelTeam) {
         this.nX = nX / 2;
@@ -91,7 +93,6 @@ public class Real3DParallel {
      *            The ParallelTeam that will execute the transforms.
      * @param integerSchedule
      *            The IntegerSchedule to use.
-     * 
      * @since 1.0
      */
     public Real3DParallel(int nX, int nY, int nZ, ParallelTeam parallelTeam,
@@ -123,7 +124,6 @@ public class Real3DParallel {
      *
      * @param input
      *            The input array must be of size (nX + 2) * nY * nZ.
-     *
      * @since 1.0
      */
     public void fft(final double input[]) {
@@ -142,7 +142,6 @@ public class Real3DParallel {
      *
      * @param input
      *            The input array must be of size (nX + 2) * nY * nZ.
-     *
      * @since 1.0
      */
     public void ifft(final double input[]) {
@@ -160,7 +159,6 @@ public class Real3DParallel {
      * Compute a convolution in parallel.
      *
      * @param input The input array must be of size (nX + 2) * nY * nZ.
-     * 
      * @since 1.0
      */
     public void convolution(final double input[]) {
@@ -175,6 +173,8 @@ public class Real3DParallel {
     }
 
     /**
+     * <p>Setter for the field <code>recip</code>.</p>
+     *
      * @param recip The recip array must be of size [(nX/2 + 1) * nY * nZ].
      */
     public void setRecip(double recip[]) {
@@ -516,9 +516,8 @@ public class Real3DParallel {
     /**
      * Test the real 3D FFT.
      *
-     * @param args
-     * @throws Exception
-     * 
+     * @param args an array of {@link java.lang.String} objects.
+     * @throws java.lang.Exception if any.
      * @since 1.0
      */
     public static void main(String[] args) throws Exception {

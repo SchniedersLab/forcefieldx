@@ -46,7 +46,6 @@ import ffx.xray.CrystalReciprocalSpace.SolventModel;
  * factors against data
  *
  * @author Tim Fenn<br>
- *
  * @see <a href="http://dx.doi.org/10.1107/S0907444905007894" target="_blank">
  * P. V. Afonine, R. W. Grosse-Kunstleve and P. D. Adams,
  * Acta Cryst. (2005). D61, 850-855</a>
@@ -59,6 +58,43 @@ import ffx.xray.CrystalReciprocalSpace.SolventModel;
  *
  * @see <a href="http://dx.doi.org/10.1006/jmbi.1994.1633" target="_blank">
  * J. S. Jiang, A. T. Brunger, JMB (1994) 243, 100-115.</a>
+ * @see <a href="http://dx.doi.org/10.1107/S0907444905007894" target="_blank">
+ * P. V. Afonine, R. W. Grosse-Kunstleve and P. D. Adams,
+ * Acta Cryst. (2005). D61, 850-855</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1107/S0021889802008580" target="_blank">
+ * R. W. Grosse-Kunstleve and P. D. Adams, J. Appl. Cryst. (2002). 35, 477-480.</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1002/jcc.1032" target="_blank">
+ * J. A. Grant, B. T. Pickup, A. Nicholls, J. Comp. Chem. (2001). 22, 608-640</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1006/jmbi.1994.1633" target="_blank">
+ * J. S. Jiang, A. T. Brunger, JMB (1994) 243, 100-115.</a>
+ * @see <a href="http://dx.doi.org/10.1107/S0907444905007894" target="_blank">
+ * P. V. Afonine, R. W. Grosse-Kunstleve and P. D. Adams,
+ * Acta Cryst. (2005). D61, 850-855</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1107/S0021889802008580" target="_blank">
+ * R. W. Grosse-Kunstleve and P. D. Adams, J. Appl. Cryst. (2002). 35, 477-480.</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1002/jcc.1032" target="_blank">
+ * J. A. Grant, B. T. Pickup, A. Nicholls, J. Comp. Chem. (2001). 22, 608-640</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1006/jmbi.1994.1633" target="_blank">
+ * J. S. Jiang, A. T. Brunger, JMB (1994) 243, 100-115.</a>
+ * @see <a href="http://dx.doi.org/10.1107/S0907444905007894" target="_blank">
+ * P. V. Afonine, R. W. Grosse-Kunstleve and P. D. Adams,
+ * Acta Cryst. (2005). D61, 850-855</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1107/S0021889802008580" target="_blank">
+ * R. W. Grosse-Kunstleve and P. D. Adams, J. Appl. Cryst. (2002). 35, 477-480.</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1002/jcc.1032" target="_blank">
+ * J. A. Grant, B. T. Pickup, A. Nicholls, J. Comp. Chem. (2001). 22, 608-640</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1006/jmbi.1994.1633" target="_blank">
+ * J. S. Jiang, A. T. Brunger, JMB (1994) 243, 100-115.</a>
+ * @version $Id: $
  */
 public class ScaleBulkEnergy implements Potential {
 
@@ -101,6 +137,13 @@ public class ScaleBulkEnergy implements Potential {
     private ComplexNumber kfct = new ComplexNumber();
     private double totalEnergy;
 
+    /**
+     * <p>Constructor for ScaleBulkEnergy.</p>
+     *
+     * @param reflectionlist a {@link ffx.crystal.ReflectionList} object.
+     * @param refinementdata a {@link ffx.xray.DiffractionRefinementData} object.
+     * @param n a int.
+     */
     public ScaleBulkEnergy(ReflectionList reflectionlist, DiffractionRefinementData refinementdata, int n) {
         this.reflectionlist = reflectionlist;
         this.crystal = reflectionlist.crystal;
@@ -122,6 +165,15 @@ public class ScaleBulkEnergy implements Potential {
         j23 = mat3mat3(mat3mat3(crystal.A, u23), recipt);
     }
 
+    /**
+     * <p>target</p>
+     *
+     * @param x an array of double.
+     * @param g an array of double.
+     * @param gradient a boolean.
+     * @param print a boolean.
+     * @return a double.
+     */
     public double target(double x[], double g[],
             boolean gradient, boolean print) {
         double r, rf, rfree, rfreef, sum, sumfo;
@@ -295,6 +347,7 @@ public class ScaleBulkEnergy implements Potential {
         return sum / sumfo;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double energyAndGradient(double[] x, double[] g) {
         if (optimizationScaling != null) {
@@ -317,6 +370,7 @@ public class ScaleBulkEnergy implements Potential {
         return sum;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setScaling(double[] scaling) {
         if (scaling != null && scaling.length == n) {
@@ -326,26 +380,31 @@ public class ScaleBulkEnergy implements Potential {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public double[] getScaling() {
         return optimizationScaling;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double[] getMass() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
     
+    /** {@inheritDoc} */
     @Override
     public double getTotal() {
         return totalEnergy;
     }
 
+    /** {@inheritDoc} */
     @Override
     public int getNumberOfVariables() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    /** {@inheritDoc} */
     @Override
     public double[] getCoordinates(double[] parameters) {
         throw new UnsupportedOperationException("Not supported yet.");

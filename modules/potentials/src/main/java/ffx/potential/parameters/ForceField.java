@@ -40,8 +40,8 @@ import org.apache.commons.configuration.CompositeConfiguration;
  * field.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
+ * @version $Id: $
  */
 public class ForceField {
 
@@ -123,6 +123,12 @@ public class ForceField {
     private final Map<String, VDWType> vanderWaalsTypes;
     private final Map<ForceFieldType, Map> forceFieldTypes;
 
+    /**
+     * <p>Getter for the field <code>forceFieldURL</code>.</p>
+     *
+     * @param forceField a {@link ffx.potential.parameters.ForceField.Force_Field} object.
+     * @return a {@link java.net.URL} object.
+     */
     public static URL getForceFieldURL(Force_Field forceField) {
         if (forceField != null) {
             return forceFields.get(forceField);
@@ -133,6 +139,9 @@ public class ForceField {
 
     /**
      * ForceField Constructor.
+     *
+     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * @param parameterFile a {@link java.io.File} object.
      */
     public ForceField(CompositeConfiguration properties, File parameterFile) {
         this(properties);
@@ -141,6 +150,8 @@ public class ForceField {
 
     /**
      * ForceField Constructor.
+     *
+     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration} object.
      */
     public ForceField(CompositeConfiguration properties) {
         this.properties = properties;
@@ -288,6 +299,13 @@ public class ForceField {
         return s.toLowerCase().replace("_", "-");
     }
 
+    /**
+     * <p>getDouble</p>
+     *
+     * @param forceFieldDouble a {@link ffx.potential.parameters.ForceField.ForceFieldDouble} object.
+     * @return a double.
+     * @throws java.lang.Exception if any.
+     */
     public double getDouble(ForceFieldDouble forceFieldDouble)
             throws Exception {
         if (forceFieldDouble == null) {
@@ -300,6 +318,13 @@ public class ForceField {
         return properties.getDouble(key);
     }
 
+    /**
+     * <p>getDouble</p>
+     *
+     * @param forceFieldDouble a {@link ffx.potential.parameters.ForceField.ForceFieldDouble} object.
+     * @param defaultValue a double.
+     * @return a double.
+     */
     public double getDouble(ForceFieldDouble forceFieldDouble,
                             double defaultValue) {
         try {
@@ -309,6 +334,13 @@ public class ForceField {
         }
     }
 
+    /**
+     * <p>getInteger</p>
+     *
+     * @param forceFieldInteger a {@link ffx.potential.parameters.ForceField.ForceFieldInteger} object.
+     * @return a int.
+     * @throws java.lang.Exception if any.
+     */
     public int getInteger(ForceFieldInteger forceFieldInteger)
             throws Exception {
         if (forceFieldInteger == null) {
@@ -321,6 +353,13 @@ public class ForceField {
         return properties.getInt(key);
     }
 
+    /**
+     * <p>getInteger</p>
+     *
+     * @param forceFieldInteger a {@link ffx.potential.parameters.ForceField.ForceFieldInteger} object.
+     * @param defaultValue a int.
+     * @return a int.
+     */
     public int getInteger(ForceFieldInteger forceFieldInteger,
                           int defaultValue) {
         try {
@@ -330,6 +369,13 @@ public class ForceField {
         }
     }
 
+    /**
+     * <p>getString</p>
+     *
+     * @param forceFieldString a {@link ffx.potential.parameters.ForceField.ForceFieldString} object.
+     * @return a {@link java.lang.String} object.
+     * @throws java.lang.Exception if any.
+     */
     public String getString(ForceFieldString forceFieldString)
             throws Exception {
         if (forceFieldString == null) {
@@ -342,6 +388,13 @@ public class ForceField {
         return properties.getString(key);
     }
 
+    /**
+     * <p>getString</p>
+     *
+     * @param forceFieldString a {@link ffx.potential.parameters.ForceField.ForceFieldString} object.
+     * @param defaultString a {@link java.lang.String} object.
+     * @return a {@link java.lang.String} object.
+     */
     public String getString(ForceFieldString forceFieldString,
                             String defaultString) {
         try {
@@ -351,6 +404,13 @@ public class ForceField {
         }
     }
 
+    /**
+     * <p>getBoolean</p>
+     *
+     * @param forceFieldBoolean a {@link ffx.potential.parameters.ForceField.ForceFieldBoolean} object.
+     * @return a boolean.
+     * @throws java.lang.Exception if any.
+     */
     public boolean getBoolean(ForceFieldBoolean forceFieldBoolean)
             throws Exception {
         if (forceFieldBoolean == null) {
@@ -363,6 +423,13 @@ public class ForceField {
         return properties.getBoolean(key);
     }
 
+    /**
+     * <p>getBoolean</p>
+     *
+     * @param forceFieldBoolean a {@link ffx.potential.parameters.ForceField.ForceFieldBoolean} object.
+     * @param defaultBoolean a {@link java.lang.Boolean} object.
+     * @return a boolean.
+     */
     public boolean getBoolean(ForceFieldBoolean forceFieldBoolean,
                               Boolean defaultBoolean) {
         try {
@@ -451,7 +518,6 @@ public class ForceField {
      * Store a force field keyword that is represented by a Boolean.
      *
      * @param forceFieldBoolean ForceFielBoolean
-     *
      * @param value Boolean
      */
     public void addForceFieldBoolean(ForceFieldBoolean forceFieldBoolean, Boolean value) {
@@ -499,14 +565,33 @@ public class ForceField {
         treeMap.put(type.key, baseTypeClass.cast(type));
     }
 
+    /**
+     * <p>getAngleType</p>
+     *
+     * @param key a {@link java.lang.String} object.
+     * @return a {@link ffx.potential.parameters.AngleType} object.
+     */
     public AngleType getAngleType(String key) {
         return angleTypes.get(key);
     }
 
+    /**
+     * <p>getAtomType</p>
+     *
+     * @param key a {@link java.lang.String} object.
+     * @return a {@link ffx.potential.parameters.AtomType} object.
+     */
     public AtomType getAtomType(String key) {
         return atomTypes.get(key);
     }
 
+    /**
+     * <p>getAtomType</p>
+     *
+     * @param moleculeName a {@link java.lang.String} object.
+     * @param atomName a {@link java.lang.String} object.
+     * @return a {@link ffx.potential.parameters.AtomType} object.
+     */
     public AtomType getAtomType(String moleculeName, String atomName) {
         for (BioType bioType : bioTypes.values()) {
             if (bioType.moleculeName.equalsIgnoreCase(moleculeName)
@@ -518,6 +603,12 @@ public class ForceField {
         return null;
     }
 
+    /**
+     * <p>Getter for the field <code>atomTypes</code>.</p>
+     *
+     * @param moleculeName a {@link java.lang.String} object.
+     * @return a {@link java.util.HashMap} object.
+     */
     public HashMap<String, AtomType> getAtomTypes(String moleculeName) {
         HashMap<String, AtomType> types = new HashMap<String, AtomType>();
         for (BioType bioType : bioTypes.values()) {
@@ -530,6 +621,13 @@ public class ForceField {
         return types;
     }
 
+    /**
+     * <p>getBonds</p>
+     *
+     * @param moleculeName a {@link java.lang.String} object.
+     * @param atomName a {@link java.lang.String} object.
+     * @return an array of {@link java.lang.String} objects.
+     */
     public String[] getBonds(String moleculeName, String atomName) {
         for (BioType bioType : bioTypes.values()) {
             if (bioType.moleculeName.equalsIgnoreCase(moleculeName)
@@ -540,54 +638,131 @@ public class ForceField {
         return null;
     }
 
+    /**
+     * <p>getBondType</p>
+     *
+     * @param key a {@link java.lang.String} object.
+     * @return a {@link ffx.potential.parameters.BondType} object.
+     */
     public BondType getBondType(String key) {
         return bondTypes.get(key);
     }
 
+    /**
+     * <p>getBioType</p>
+     *
+     * @param key a {@link java.lang.String} object.
+     * @return a {@link ffx.potential.parameters.BioType} object.
+     */
     public BioType getBioType(String key) {
         return bioTypes.get(key);
     }
 
+    /**
+     * <p>getMultipoleType</p>
+     *
+     * @param key a {@link java.lang.String} object.
+     * @return a {@link ffx.potential.parameters.MultipoleType} object.
+     */
     public MultipoleType getMultipoleType(String key) {
         return multipoleTypes.get(key);
     }
 
+    /**
+     * <p>getOutOfPlaneBendType</p>
+     *
+     * @param key a {@link java.lang.String} object.
+     * @return a {@link ffx.potential.parameters.OutOfPlaneBendType} object.
+     */
     public OutOfPlaneBendType getOutOfPlaneBendType(String key) {
         return outOfPlaneBendTypes.get(key);
     }
 
+    /**
+     * <p>getPolarizeType</p>
+     *
+     * @param key a {@link java.lang.String} object.
+     * @return a {@link ffx.potential.parameters.PolarizeType} object.
+     */
     public PolarizeType getPolarizeType(String key) {
         return polarizeTypes.get(key);
     }
 
+    /**
+     * <p>getStretchBendType</p>
+     *
+     * @param key a {@link java.lang.String} object.
+     * @return a {@link ffx.potential.parameters.StretchBendType} object.
+     */
     public StretchBendType getStretchBendType(String key) {
         return stretchBendTypes.get(key);
     }
 
+    /**
+     * <p>getPiTorsionType</p>
+     *
+     * @param key a {@link java.lang.String} object.
+     * @return a {@link ffx.potential.parameters.PiTorsionType} object.
+     */
     public PiTorsionType getPiTorsionType(String key) {
         return piTorsionTypes.get(key);
     }
 
+    /**
+     * <p>getTorsionType</p>
+     *
+     * @param key a {@link java.lang.String} object.
+     * @return a {@link ffx.potential.parameters.TorsionType} object.
+     */
     public TorsionType getTorsionType(String key) {
         return torsionTypes.get(key);
     }
 
+    /**
+     * <p>getTorsionTorsionType</p>
+     *
+     * @param key a {@link java.lang.String} object.
+     * @return a {@link ffx.potential.parameters.TorsionTorsionType} object.
+     */
     public TorsionTorsionType getTorsionTorsionType(String key) {
         return torsionTorsionTypes.get(key);
     }
 
+    /**
+     * <p>getUreyBradleyType</p>
+     *
+     * @param key a {@link java.lang.String} object.
+     * @return a {@link ffx.potential.parameters.UreyBradleyType} object.
+     */
     public UreyBradleyType getUreyBradleyType(String key) {
         return ureyBradleyTypes.get(key);
     }
 
+    /**
+     * <p>getVDWType</p>
+     *
+     * @param key a {@link java.lang.String} object.
+     * @return a {@link ffx.potential.parameters.VDWType} object.
+     */
     public VDWType getVDWType(String key) {
         return vanderWaalsTypes.get(key);
     }
 
+    /**
+     * <p>getVDWTypes</p>
+     *
+     * @return a {@link java.util.Map} object.
+     */
     public Map<String, VDWType> getVDWTypes() {
         return vanderWaalsTypes;
     }
 
+    /**
+     * <p>getForceFieldTypeCount</p>
+     *
+     * @param type a {@link ffx.potential.parameters.ForceField.ForceFieldType} object.
+     * @return a int.
+     */
     public int getForceFieldTypeCount(ForceFieldType type) {
         TreeMap<String, BaseType> treeMap =
                                   (TreeMap<String, BaseType>) forceFieldTypes.get(type);
@@ -644,6 +819,9 @@ public class ForceField {
         }
     }
 
+    /**
+     * <p>log</p>
+     */
     public void log() {
         for (ForceFieldType s : forceFieldTypes.keySet()) {
             log(s.toString());
@@ -661,12 +839,20 @@ public class ForceField {
         logger.info(toString(type));
     }
 
+    /**
+     * <p>print</p>
+     */
     public void print() {
         for (ForceFieldType s : forceFieldTypes.keySet()) {
             print(s.toString());
         }
     }
 
+    /**
+     * <p>print</p>
+     *
+     * @param key a {@link java.lang.String} object.
+     */
     public void print(String key) {
         ForceFieldType type = ForceFieldType.valueOf(key);
         System.out.println(toString(type));
@@ -693,6 +879,12 @@ public class ForceField {
         return "";
     }
 
+    /**
+     * <p>toString</p>
+     *
+     * @param key a {@link java.lang.String} object.
+     * @return a {@link java.lang.String} object.
+     */
     public String toString(String key) {
         if (key == null) {
             return null;

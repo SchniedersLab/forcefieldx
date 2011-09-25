@@ -30,7 +30,7 @@
                         Binaries of the OpenJDK project.
                         </td>
                         <td>
-                            1.6.0
+                            1.6.0 or later.
                         </td>
                     </tr>
                     <tr>
@@ -41,7 +41,7 @@
                             Maven build system.
                         </td>
                         <td>
-                            3.0.2
+                            3.0.2 or later.
                         </td>
                     </tr>
                     <tr>
@@ -52,7 +52,7 @@
                             An integrated development environment for Java applications.
                         </td>
                         <td>
-                            7.0-beta-2
+                            7.0.0 or later.
                         </td>
                     </tr>
                     <tr>

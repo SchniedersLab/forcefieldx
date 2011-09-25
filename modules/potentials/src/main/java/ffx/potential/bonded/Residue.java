@@ -39,6 +39,9 @@ import javax.vecmath.Vector3d;
 
 /**
  * The Residue class represents individual amino acids or nucleic acid bases.
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public class Residue extends MSGroup {
 
@@ -93,17 +96,29 @@ public class Residue extends MSGroup {
     private static final long serialVersionUID = 1L;
     private static Point3d point3d = new Point3d();
     private static Point2d point2d = new Point2d();
+    /** Constant <code>NA1Set</code> */
     public static EnumSet NA1Set = EnumSet.allOf(NA1.class);
+    /** Constant <code>NA3Set</code> */
     public static EnumSet NA3Set = EnumSet.allOf(NA3.class);
+    /** Constant <code>NASet</code> */
     public static EnumSet NASet = EnumSet.allOf(NA.class);
+    /** Constant <code>NA1toNA3</code> */
     public static Hashtable<NA1, NA3> NA1toNA3 = new Hashtable<NA1, NA3>();
+    /** Constant <code>NA3Color</code> */
     public static Hashtable<NA3, Color3f> NA3Color = new Hashtable<NA3, Color3f>();
+    /** Constant <code>AA1Set</code> */
     public static EnumSet AA1Set = EnumSet.allOf(AA1.class);
+    /** Constant <code>AA3Set</code> */
     public static EnumSet AA3Set = EnumSet.allOf(AA3.class);
+    /** Constant <code>AASet</code> */
     public static EnumSet AASet = EnumSet.allOf(AA.class);
+    /** Constant <code>AA1toAA3</code> */
     public static Hashtable<AA1, AA3> AA1toAA3 = new Hashtable<AA1, AA3>();
+    /** Constant <code>AA3Color</code> */
     public static Hashtable<AA3, Color3f> AA3Color = new Hashtable<AA3, Color3f>();
+    /** Constant <code>SSTypeColor</code> */
     public static Hashtable<SSType, Color3f> SSTypeColor = new Hashtable<SSType, Color3f>();
+    /** Constant <code>Ramachandran="new String[17]"</code> */
     public static String Ramachandran[] = new String[17];
 
     static {
@@ -221,6 +236,9 @@ public class Residue extends MSGroup {
 
     /**
      * Default Constructor where num is this Residue's position in the Polymer.
+     *
+     * @param num a int.
+     * @param rt a {@link ffx.potential.bonded.Residue.ResidueType} object.
      */
     public Residue(int num, ResidueType rt) {
         resNumber = num;
@@ -228,6 +246,12 @@ public class Residue extends MSGroup {
         assignResidueType();
     }
 
+    /**
+     * <p>Constructor for Residue.</p>
+     *
+     * @param name a {@link java.lang.String} object.
+     * @param rt a {@link ffx.potential.bonded.Residue.ResidueType} object.
+     */
     public Residue(String name, ResidueType rt) {
         super(name);
         residueType = rt;
@@ -237,6 +261,10 @@ public class Residue extends MSGroup {
     /**
      * Name is the residue's 3 letter abbreviation and num is its position in
      * the Polymer.
+     *
+     * @param name a {@link java.lang.String} object.
+     * @param num a int.
+     * @param rt a {@link ffx.potential.bonded.Residue.ResidueType} object.
      */
     public Residue(String name, int num, ResidueType rt) {
         this(name, rt);
@@ -246,6 +274,12 @@ public class Residue extends MSGroup {
     /**
      * Name is the residue's 3 letter abbreviation and num is its position in
      * the Polymer.
+     *
+     * @param name a {@link java.lang.String} object.
+     * @param resNumber a int.
+     * @param rt a {@link ffx.potential.bonded.Residue.ResidueType} object.
+     * @param chainID a {@link java.lang.Character} object.
+     * @param segID a {@link java.lang.String} object.
      */
     public Residue(String name, int resNumber, ResidueType rt, Character chainID,
             String segID) {
@@ -258,6 +292,11 @@ public class Residue extends MSGroup {
     /**
      * As above, with atoms being a FNode with this Residue's atoms as child
      * nodes
+     *
+     * @param name a {@link java.lang.String} object.
+     * @param num a int.
+     * @param atoms a {@link ffx.potential.bonded.MSNode} object.
+     * @param rt a {@link ffx.potential.bonded.Residue.ResidueType} object.
      */
     public Residue(String name, int num, MSNode atoms, ResidueType rt) {
         super(name, atoms);
@@ -268,6 +307,8 @@ public class Residue extends MSGroup {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Allows adding Atoms to the Residue.
      */
     @Override
@@ -304,6 +345,11 @@ public class Residue extends MSGroup {
         return currentAtom;
     }
     
+    /**
+     * <p>deleteAtom</p>
+     *
+     * @param atomToDelete a {@link ffx.potential.bonded.Atom} object.
+     */
     public void deleteAtom(Atom atomToDelete) {
         MSNode atoms = getAtomNode();
         if (atoms.contains(atomToDelete) != null) {
@@ -345,6 +391,7 @@ public class Residue extends MSGroup {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void drawLabel(Canvas3D canvas, J3DGraphics2D g2d, Node node) {
         if (RendererCache.labelResidues) {
@@ -361,6 +408,8 @@ public class Residue extends MSGroup {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Overidden equals method that return true if object is not equals to this,
      * is of the same class, has the same parent Polymer and the same sequence
      * number.
@@ -383,6 +432,8 @@ public class Residue extends MSGroup {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * The Finalize method should be called once all atoms have been added to
      * the Residue. Geometry objects (Bonds, Angles, etc) are then formed,
      * followed by a determination of under-constrained (Dangeling) atoms.
@@ -404,6 +455,8 @@ public class Residue extends MSGroup {
     /**
      * Returns the position of this Residue's Alpha Carbon (if it is an amino
      * acid).
+     *
+     * @return a {@link javax.vecmath.Vector3d} object.
      */
     public Vector3d getAlpha3d() {
         Atom a = (Atom) getAtomNode("CA");
@@ -417,6 +470,8 @@ public class Residue extends MSGroup {
 
     /**
      * Returns this Residues Parent Polymer name.
+     *
+     * @return a {@link java.lang.Character} object.
      */
     public Character getChainID() {
         return chainID;
@@ -425,11 +480,14 @@ public class Residue extends MSGroup {
     // Public data access methods
     /**
      * Returns this Residue's sequence number.
+     *
+     * @return a int.
      */
     public int getResidueNumber() {
         return resNumber;
     }
 
+    /** {@inheritDoc} */
     @Override
     public final int hashCode() {
         int hash = hash(SEED, getParent().hashCode());
@@ -437,6 +495,8 @@ public class Residue extends MSGroup {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Prints "Residue Number: x" to stdout.
      */
     @Override
@@ -445,6 +505,9 @@ public class Residue extends MSGroup {
         super.print();
     }
 
+    /**
+     * <p>printSideChainCOM</p>
+     */
     public void printSideChainCOM() {
         Atom a;
         Vector3d v = new Vector3d();
@@ -466,6 +529,7 @@ public class Residue extends MSGroup {
         logger.info(getName() + " " + v.toString());
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setColor(RendererCache.ColorModel newColorModel, Color3f color,
                          Material mat) {
@@ -492,23 +556,44 @@ public class Residue extends MSGroup {
         super.setColor(newColorModel, color, mat);
     }
 
+    /**
+     * <p>setNumber</p>
+     *
+     * @param n a int.
+     */
     public void setNumber(int n) {
         resNumber = n;
     }
 
+    /**
+     * <p>Setter for the field <code>chainID</code>.</p>
+     *
+     * @param c a {@link java.lang.Character} object.
+     */
     public void setChainID(Character c) {
         chainID = c;
     }
 
+    /**
+     * <p>Getter for the field <code>segID</code>.</p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
     public String getSegID() {
         return segID;
     }
 
+    /**
+     * <p>setSSType</p>
+     *
+     * @param ss a {@link ffx.potential.bonded.Residue.SSType} object.
+     */
     public void setSSType(SSType ss) {
         ssType = ss;
     }
     private String shortString = null;
 
+    /** {@inheritDoc} */
     @Override
     public String toString() {
         if (shortString == null) {

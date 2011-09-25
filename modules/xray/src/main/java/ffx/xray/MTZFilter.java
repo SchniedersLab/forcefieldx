@@ -43,12 +43,15 @@ import ffx.crystal.SpaceGroup;
 
 /**
  * This class parses CCP4 MTZ files.<br>
- * 
- * @author Tim Fenn<br>
  *
+ * @author Tim Fenn<br>
  * @see <a href="http://www.ccp4.ac.uk/html/maplib.html" target="_blank">CCP4 map format</a>
  *
  * @see <a href="http://www.ccp4.ac.uk/dist/html/library.html" target="_blank">CCP4 library documentation</a>
+ * @see <a href="http://www.ccp4.ac.uk/html/maplib.html" target="_blank">CCP4 map format</a>
+ *
+ * @see <a href="http://www.ccp4.ac.uk/dist/html/library.html" target="_blank">CCP4 library documentation</a>
+ * @version $Id: $
  */
 public class MTZFilter implements DiffractionFileFilter {
 
@@ -100,6 +103,9 @@ public class MTZFilter implements DiffractionFileFilter {
     public double reshigh;
 
     // null constructor
+    /**
+     * <p>Constructor for MTZFilter.</p>
+     */
     public MTZFilter() {
     }
 
@@ -108,11 +114,13 @@ public class MTZFilter implements DiffractionFileFilter {
     this(readFile(molecularAssembly.getFile()));
     }
      */
+    /** {@inheritDoc} */
     @Override
     public ReflectionList getReflectionList(File mtzFile) {
         return getReflectionList(mtzFile, null);
     }
 
+    /** {@inheritDoc} */
     @Override
     public ReflectionList getReflectionList(File mtzFile, CompositeConfiguration properties) {
         ByteOrder b = ByteOrder.nativeOrder();
@@ -217,12 +225,14 @@ public class MTZFilter implements DiffractionFileFilter {
         return new ReflectionList(crystal, resolution, properties);
     }
 
+    /** {@inheritDoc} */
     @Override
     public double getResolution(File mtzFile, Crystal crystal){
         ReflectionList reflectionlist = getReflectionList(mtzFile, null);
         return reflectionlist.maxres;
     }
     
+    /** {@inheritDoc} */
     @Override
     public boolean readFile(File mtzFile, ReflectionList reflectionlist,
             DiffractionRefinementData refinementdata, CompositeConfiguration properties) {
@@ -721,6 +731,9 @@ public class MTZFilter implements DiffractionFileFilter {
         }
     }
 
+    /**
+     * <p>print_header</p>
+     */
     public void print_header() {
         StringBuilder sb = new StringBuilder();
         sb.append("MTZ title: " + title + "\n");

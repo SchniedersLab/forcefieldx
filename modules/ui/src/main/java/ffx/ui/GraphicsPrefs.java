@@ -46,6 +46,9 @@ import ffx.potential.bonded.RendererCache;
 
 /**
  * The GraphicsPrefs class allows users to select graphics preferences.
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public class GraphicsPrefs extends JDialog implements ActionListener {
 
@@ -134,6 +137,7 @@ public class GraphicsPrefs extends JDialog implements ActionListener {
                 (dim.height - ddim.height) / 2);
     }
 
+    /** {@inheritDoc} */
     public void actionPerformed(ActionEvent e) {
         if (e.getActionCommand().equalsIgnoreCase("Apply")) {
             if (change != false) {
@@ -149,6 +153,13 @@ public class GraphicsPrefs extends JDialog implements ActionListener {
         }
     }
 
+    /**
+     * <p>addSlider</p>
+     *
+     * @param s a {@link javax.swing.JSlider} object.
+     * @param description a {@link java.lang.String} object.
+     * @param sliderID a int.
+     */
     public void addSlider(JSlider s, String description, final int sliderID) {
         Border eb = BorderFactory.createEtchedBorder(EtchedBorder.LOWERED);
         s.setSnapToTicks(true);

@@ -34,6 +34,9 @@ import javax.media.j3d.TransformGroup;
 /**
  * The PickRotateBehavior class implements a mouse rotate behavior on a picked
  * object.
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public class PickRotateBehavior extends PickMouseBehavior implements
 		MouseBehaviorCallback {
@@ -41,6 +44,15 @@ public class PickRotateBehavior extends PickMouseBehavior implements
 	private PickingCallback callback = null;
 	private TransformGroup currentTG;
 
+	/**
+	 * <p>Constructor for PickRotateBehavior.</p>
+	 *
+	 * @param bg a {@link javax.media.j3d.BranchGroup} object.
+	 * @param canvas a {@link javax.media.j3d.Canvas3D} object.
+	 * @param bounds a {@link javax.media.j3d.Bounds} object.
+	 * @param VPTG a {@link javax.media.j3d.TransformGroup} object.
+	 * @param pickMode a int.
+	 */
 	public PickRotateBehavior(BranchGroup bg, Canvas3D canvas, Bounds bounds,
 			TransformGroup VPTG, int pickMode) {
 		super(canvas, bg, bounds);
@@ -56,6 +68,11 @@ public class PickRotateBehavior extends PickMouseBehavior implements
 	/*
 	 * Return the pickMode component of this PickRotateBehavior.
 	 */
+	/**
+	 * <p>getPickMode</p>
+	 *
+	 * @return a int.
+	 */
 	public int getPickMode() {
 		return pickCanvas.getMode();
 	}
@@ -64,6 +81,11 @@ public class PickRotateBehavior extends PickMouseBehavior implements
 	 * Sets the pickMode component of this PickRotateBehavior to the value of
 	 * the passed pickMode. @param pickMode the pickMode to be copied.
 	 */
+	/**
+	 * <p>setPickMode</p>
+	 *
+	 * @param pickMode a int.
+	 */
 	public void setPickMode(int pickMode) {
 		pickCanvas.setMode(pickMode);
 	}
@@ -71,6 +93,11 @@ public class PickRotateBehavior extends PickMouseBehavior implements
 	/*
 	 * Register the class @param callback to be called each time the picked
 	 * object moves
+	 */
+	/**
+	 * <p>setupCallback</p>
+	 *
+	 * @param c a {@link ffx.ui.behaviors.PickingCallback} object.
 	 */
 	public void setupCallback(PickingCallback c) {
 		callback = c;
@@ -85,14 +112,17 @@ public class PickRotateBehavior extends PickMouseBehavior implements
 	 * Callback method from MouseRotate This is used when the Picking callback
 	 * is enabled
 	 */
+	/** {@inheritDoc} */
 	public void transformChanged(int type, Transform3D transform) {
 		callback.transformChanged(PickingCallback.ROTATE, currentTG);
 	}
 
+	/** {@inheritDoc} */
 	public void transformClicked(int type, Transform3D transform) {
 		callback.transformClicked(PickingCallback.ROTATE, currentTG);
 	}
 
+	/** {@inheritDoc} */
 	public void transformDoubleClicked(int type, Transform3D transform) {
 		callback.transformDoubleClicked(PickingCallback.ROTATE, currentTG);
 	}
@@ -103,6 +133,7 @@ public class PickRotateBehavior extends PickMouseBehavior implements
 	 * you know what you are doing.
 	 * @param xpos Current mouse X pos. @param ypos Current mouse Y pos.
 	 */
+	/** {@inheritDoc} */
 	public void updateScene(int xpos, int ypos) {
 		if ((mevent.getModifiersEx() & MouseEvent.BUTTON1_DOWN_MASK) == MouseEvent.BUTTON1_DOWN_MASK) {
 			pickCanvas.setShapeLocation(xpos, ypos);

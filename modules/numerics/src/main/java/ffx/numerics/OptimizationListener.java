@@ -28,12 +28,13 @@ import ffx.numerics.LineSearch.LineSearchResult;
  *
  * @author Michael J. Schnieders
  * @since 1.0
+ * @version $Id: $
  */
 public interface OptimizationListener {
 
     /**
      * This method is called by the optimizer after each step.
-     * 
+     *
      * It can be used to log status messages, update the user interface, or
      * gracefully terminate the optimizer.
      *
@@ -45,12 +46,9 @@ public interface OptimizationListener {
      * @param df Change in the function value compared to the previous solution.
      * @param angle Current angle between gradient and search direction.
      * @param info Result of the line search (null at iteraction == 0).
-     *
      * @return A return value of false will terminate the optimization.
-     *
      * @since 1.0
      */
-
     public abstract boolean optimizationUpdate(int iter, int nfun, double grms,
             double xrms, double f, double df, double angle, LineSearchResult info);
 

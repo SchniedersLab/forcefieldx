@@ -53,8 +53,8 @@ import static ffx.numerics.VectorMath.*;
  * Compute the potential energy and derivatives of an AMOEBA system.
  *
  * @author Gaurav Chattree and Michael J. Schnieders
- * 
  * @since 1.0
+ * @version $Id: $
  */
 public class Energy {
 
@@ -76,6 +76,14 @@ public class Energy {
     private boolean do_propyze = false;
     private boolean do_detail = false;
 
+    /**
+     * <p>Constructor for Energy.</p>
+     *
+     * @param xyz_filename a {@link java.lang.String} object.
+     * @param keyfname a {@link java.lang.String} object.
+     * @param options a {@link java.lang.String} object.
+     * @throws java.io.IOException if any.
+     */
     public Energy(String xyz_filename, String keyfname, String options) throws IOException{
         
         parallelTeam = new ParallelTeam();
@@ -235,6 +243,12 @@ public class Energy {
         }
     }
     
+    /**
+     * <p>energy</p>
+     *
+     * @param gradient a boolean.
+     * @param print a boolean.
+     */
     public void energy(boolean gradient, boolean print){
         ForceFieldEnergy energy = new ForceFieldEnergy(molecularAssembly);
         molecularAssembly.setPotential(energy);
@@ -247,10 +261,16 @@ public class Energy {
         }
     }
     
+    /**
+     * <p>torsional_angles</p>
+     */
     public void torsional_angles(){
     	
     }
     
+    /**
+     * <p>system_mpoles</p>
+     */
     public void system_mpoles(){
         //Find center of mass.
         double weigh = 0;
@@ -366,6 +386,9 @@ public class Energy {
 
     }
     
+    /**
+     * <p>addInducedToGlobal</p>
+     */
     public void addInducedToGlobal(){
         for(int i = 0; i < nAtoms; i++){
             for(int j = 0; j < 3;j++){
@@ -374,6 +397,12 @@ public class Energy {
         }
     }
     
+    /**
+     * <p>main</p>
+     *
+     * @param args an array of {@link java.lang.String} objects.
+     * @throws java.io.IOException if any.
+     */
     public static void main(String args[]) throws IOException{
         Energy e = new Energy("/users/gchattree/Research/Compounds/s_test3_compounds/famotidine/ttt.xyz",null,"d");
         e.energy(false,true);

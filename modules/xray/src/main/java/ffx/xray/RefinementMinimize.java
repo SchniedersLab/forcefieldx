@@ -38,6 +38,7 @@ import java.util.ArrayList;
  * constructs a {@link RefinementEnergy} object for this purpose
  *
  * @author Tim Fenn
+ * @version $Id: $
  */
 public class RefinementMinimize implements OptimizationListener, Terminatable {
 
@@ -233,6 +234,11 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
         refinementenergy.setScaling(scaling);
     }
 
+    /**
+     * <p>Getter for the field <code>eps</code>.</p>
+     *
+     * @return a {@link java.lang.Double} object.
+     */
     public Double getEps() {
         boolean hasaniso = false;
 
@@ -292,6 +298,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
 
     /**
      * get the number of xyz parameters being fit
+     *
      * @return the number of xyz parameters
      */
     public int getNXYZ() {
@@ -300,6 +307,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
 
     /**
      * get the number of B factor parameters being fit
+     *
      * @return the number of B factor parameters
      */
     public int getNB() {
@@ -308,6 +316,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
 
     /**
      * get the number of occupancy parameters being fit
+     *
      * @return the number of occupancy parameters
      */
     public int getNOcc() {
@@ -358,6 +367,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
      * minimize with input cycles for matrix conditioning, eps and cycles
      *
      * @param m number of cycles of matrix updates
+     * @param maxiter maximum iterations allowed
      * @param eps input gradient rms desired
      * @param maxiter maximum iterations allowed
      * @return {@link RefinementEnergy} result
@@ -432,6 +442,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
         return refinementenergy;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean optimizationUpdate(int iter, int nfun, double grms, double xrms, double f, double df, double angle, LineSearchResult info) {
         long currentTime = System.nanoTime();
@@ -469,6 +480,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
         return true;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void terminate() {
         terminate = true;

@@ -28,27 +28,55 @@ import javax.media.j3d.TransformGroup;
 /**
  * The PickingCallback interface is implemented by classes wishing to recieve
  * notification that a picked object has moved.
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public interface PickingCallback {
+	/** Constant <code>ROTATE=0</code> */
 	public final static int ROTATE = 0;
+	/** Constant <code>TRANSLATE=1</code> */
 	public final static int TRANSLATE = 1;
+	/** Constant <code>ZOOM=2</code> */
 	public final static int ZOOM = 2;
+	/** Constant <code>SELECTION=4</code> */
 	public final static int SELECTION = 4;
+	/** Constant <code>PROPERTIES=5</code> */
 	public final static int PROPERTIES = 5;
+	/** Constant <code>ORBIT=6</code> */
 	public final static int ORBIT = 6;
 	/*
 	 * The user made a selection but nothing was actually picked
 	 */
+	/** Constant <code>NO_PICK=3</code> */
 	public final static int NO_PICK = 3;
 
 	/*
 	 * Called by the Pick Behavior with which this callback is registered each
 	 * time the Picked object is moved
 	 */
+	/**
+	 * <p>transformChanged</p>
+	 *
+	 * @param type a int.
+	 * @param tg a {@link javax.media.j3d.TransformGroup} object.
+	 */
 	public void transformChanged(int type, TransformGroup tg);
 
+	/**
+	 * <p>transformClicked</p>
+	 *
+	 * @param type a int.
+	 * @param tg a {@link javax.media.j3d.TransformGroup} object.
+	 */
 	public void transformClicked(int type, TransformGroup tg);
 
+	/**
+	 * <p>transformDoubleClicked</p>
+	 *
+	 * @param type a int.
+	 * @param tg a {@link javax.media.j3d.TransformGroup} object.
+	 */
 	public void transformDoubleClicked(int type, TransformGroup tg);
 }
 /*

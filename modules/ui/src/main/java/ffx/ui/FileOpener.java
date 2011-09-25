@@ -38,6 +38,9 @@ import ffx.potential.parsers.SystemFilter;
  * The FileOpener class opens a file into Force Field X using a filter
  * from the ffe.parsers package. The OpenFile class implements the Runnable
  * interface so that opening a file does not freeze FFX.
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public class FileOpener
         implements Runnable {
@@ -52,6 +55,12 @@ public class FileOpener
     private long occupiedMemory;
     private long time;
 
+    /**
+     * <p>Constructor for FileOpener.</p>
+     *
+     * @param systemFilter a {@link ffx.potential.parsers.SystemFilter} object.
+     * @param mainPanel a {@link ffx.ui.MainPanel} object.
+     */
     public FileOpener(SystemFilter systemFilter, MainPanel mainPanel) {
         this.systemFilter = systemFilter;
         this.mainPanel = mainPanel;
@@ -126,6 +135,7 @@ public class FileOpener
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void run() {
         if (mainPanel != null && systemFilter != null) {

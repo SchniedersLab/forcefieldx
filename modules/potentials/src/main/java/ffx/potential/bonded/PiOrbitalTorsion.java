@@ -33,6 +33,7 @@ import ffx.potential.parameters.PiTorsionType;
  *
  * @author Michael J. Schnieders
  * @since 1.0
+ * @version $Id: $
  */
 public class PiOrbitalTorsion extends BondedTerm {
 
@@ -42,6 +43,8 @@ public class PiOrbitalTorsion extends BondedTerm {
 
     /**
      * Pi-Orbital Torsion constructor.
+     *
+     * @param middleBond a {@link ffx.potential.bonded.Bond} object.
      */
     public PiOrbitalTorsion(Bond middleBond) {
         super();
@@ -69,6 +72,7 @@ public class PiOrbitalTorsion extends BondedTerm {
         setID_Key(false);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void update() {
         energy(false);
@@ -280,6 +284,8 @@ public class PiOrbitalTorsion extends BondedTerm {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Over-ridden toString Method returns the Term's id.
      */
     @Override

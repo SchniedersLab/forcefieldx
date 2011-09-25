@@ -34,6 +34,9 @@ import javax.media.j3d.WakeupOnAWTEvent;
 
 /**
  * The MouseSelection class implements a mouse selection behavior.
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public class MouseSelection extends MouseBehavior {
 	double x_angle, y_angle;
@@ -41,12 +44,23 @@ public class MouseSelection extends MouseBehavior {
 	double y_factor = .03;
 	private MouseBehaviorCallback callback = null;
 
+	/**
+	 * <p>Constructor for MouseSelection.</p>
+	 *
+	 * @param flags a int.
+	 * @param VPTG a {@link javax.media.j3d.TransformGroup} object.
+	 */
 	public MouseSelection(int flags, TransformGroup VPTG) {
 		super(flags, VPTG);
 	}
 
 	/*
 	 * Return the x-axis movement multipler.
+	 */
+	/**
+	 * <p>getXFactor</p>
+	 *
+	 * @return a double.
 	 */
 	public double getXFactor() {
 		return x_factor;
@@ -55,10 +69,18 @@ public class MouseSelection extends MouseBehavior {
 	/*
 	 * Return the y-axis movement multipler.
 	 */
+	/**
+	 * <p>getYFactor</p>
+	 *
+	 * @return a double.
+	 */
 	public double getYFactor() {
 		return y_factor;
 	}
 
+	/**
+	 * <p>initialize</p>
+	 */
 	public void initialize() {
 		super.initialize();
 		x_angle = 0;
@@ -70,6 +92,7 @@ public class MouseSelection extends MouseBehavior {
 		}
 	}
 
+	/** {@inheritDoc} */
 	public void processStimulus(Enumeration criteria) {
 		WakeupCriterion wakeup;
 		AWTEvent[] event;
@@ -111,6 +134,11 @@ public class MouseSelection extends MouseBehavior {
 	/*
 	 * Set the x-axis amd y-axis movement multipler with factor.
 	 */
+	/**
+	 * <p>setFactor</p>
+	 *
+	 * @param factor a double.
+	 */
 	public void setFactor(double factor) {
 		x_factor = y_factor = factor;
 	}
@@ -118,6 +146,12 @@ public class MouseSelection extends MouseBehavior {
 	/*
 	 * Set the x-axis amd y-axis movement multipler with xFactor and yFactor
 	 * respectively.
+	 */
+	/**
+	 * <p>setFactor</p>
+	 *
+	 * @param xFactor a double.
+	 * @param yFactor a double.
 	 */
 	public void setFactor(double xFactor, double yFactor) {
 		x_factor = xFactor;
@@ -128,10 +162,20 @@ public class MouseSelection extends MouseBehavior {
 	 * The transformChanged method in the callback class will be called every
 	 * time the transform is updated
 	 */
+	/**
+	 * <p>setupCallback</p>
+	 *
+	 * @param c a {@link ffx.ui.behaviors.MouseBehaviorCallback} object.
+	 */
 	public void setupCallback(MouseBehaviorCallback c) {
 		callback = c;
 	}
 
+	/**
+	 * <p>transformChanged</p>
+	 *
+	 * @param transform a {@link javax.media.j3d.Transform3D} object.
+	 */
 	public void transformChanged(Transform3D transform) {
 	}
 }

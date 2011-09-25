@@ -38,6 +38,7 @@ import ffx.ui.MainPanel;
  *
  * @author Michael J. Schnieders
  * @since 1.0
+ * @version $Id: $
  */
 public class HeadlessMain {
 
@@ -45,6 +46,10 @@ public class HeadlessMain {
 
     /**
      * Main does some window initializations.
+     *
+     * @param commandLineFile a {@link java.io.File} object.
+     * @param argList a {@link java.util.List} object.
+     * @param logHandler a {@link ffx.ui.LogHandler} object.
      */
     public HeadlessMain(File commandLineFile, List<String> argList, LogHandler logHandler) {
         stopWatch.start();
@@ -99,6 +104,8 @@ public class HeadlessMain {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Commons.Lang Style toString.
      */
     @Override
@@ -111,5 +118,6 @@ public class HeadlessMain {
      * This is the main application wrapper.
      */
     public MainPanel mainPanel;
+    /** Constant <code>stopWatch</code> */
     public static StopWatch stopWatch = new StopWatch();
 }

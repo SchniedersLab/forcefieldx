@@ -35,8 +35,8 @@ import org.apache.commons.math.linear.RealMatrix;
  * half-step and full-step modification of velocities thermostat implementions.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
+ * @version $Id: $
  */
 public abstract class Thermostat {
 
@@ -74,6 +74,15 @@ public abstract class Thermostat {
     protected Random random;
     protected Thermostats name;
 
+    /**
+     * <p>Constructor for Thermostat.</p>
+     *
+     * @param dof a int.
+     * @param x an array of double.
+     * @param v an array of double.
+     * @param mass an array of double.
+     * @param t a double.
+     */
     public Thermostat(int dof, double x[], double v[], double mass[], double t) {
         this.dof = dof;
         this.x = x;
@@ -86,10 +95,20 @@ public abstract class Thermostat {
         setTargetTemperature(t);
     }
 
+    /**
+     * <p>setRandomSeed</p>
+     *
+     * @param seed a long.
+     */
     public void setRandomSeed(long seed) {
         random.setSeed(seed);
     }
     
+    /**
+     * <p>log</p>
+     *
+     * @param level a {@link java.util.logging.Level} object.
+     */
     protected void log(Level level) {
         if (logger.isLoggable(level)) {
             logger.log(level, String.format("\nThermostat target temperature %6.2.", targetTemperature));
@@ -97,14 +116,29 @@ public abstract class Thermostat {
         }
     }
 
+    /**
+     * <p>getCurrentTemperture</p>
+     *
+     * @return a double.
+     */
     public double getCurrentTemperture() {
         return currentTemperature;
     }
 
+    /**
+     * <p>Getter for the field <code>kineticEnergy</code>.</p>
+     *
+     * @return a double.
+     */
     public double getKineticEnergy() {
         return kineticEnergy;
     }
 
+    /**
+     * <p>Getter for the field <code>targetTemperature</code>.</p>
+     *
+     * @return a double.
+     */
     public double getTargetTemperature() {
         return targetTemperature;
     }
@@ -113,7 +147,6 @@ public abstract class Thermostat {
      * Set the target temperature.
      *
      * @param t Target temperature must be greater than absolute zero.
-     *
      * @since 1.0
      */
     public final void setTargetTemperature(double t) {
@@ -139,6 +172,12 @@ public abstract class Thermostat {
         kineticEnergy();
     }
 
+    /**
+     * <p>centerOfMassMotion</p>
+     *
+     * @param remove a boolean.
+     * @param print a boolean.
+     */
     protected void centerOfMassMotion(boolean remove, boolean print) {
         totalMass = 0.0;
         for (int i = 0; i < 3; i++) {
@@ -281,7 +320,17 @@ public abstract class Thermostat {
         kineticEnergy = e;
     }
 
+    /**
+     * <p>halfStep</p>
+     *
+     * @param dt a double.
+     */
     public abstract void halfStep(double dt);
 
+    /**
+     * <p>fullStep</p>
+     *
+     * @param dt a double.
+     */
     public abstract void fullStep(double dt);
 }

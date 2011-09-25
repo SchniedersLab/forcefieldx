@@ -39,13 +39,13 @@ import ffx.numerics.Potential;
  * Fit structure factors using spline coefficients
  *
  * @author Tim Fenn<br>
- *
  * @see <a href="http://dx.doi.org/10.1107/S0021889802013420" target="_blank">
  * K. Cowtan, J. Appl. Cryst. (2002). 35, 655-663</a>
- *
+ * @version $Id: $
  */
 public class SplineEnergy implements Potential {
 
+    /** {@inheritDoc} */
     @Override
     public double[] getCoordinates(double[] parameters) {
         throw new UnsupportedOperationException("Not supported yet.");
@@ -75,6 +75,14 @@ public class SplineEnergy implements Potential {
     private ComplexNumber fct = new ComplexNumber();
     private double totalEnergy;
 
+    /**
+     * <p>Constructor for SplineEnergy.</p>
+     *
+     * @param reflectionlist a {@link ffx.crystal.ReflectionList} object.
+     * @param refinementdata a {@link ffx.xray.DiffractionRefinementData} object.
+     * @param nparams a int.
+     * @param type a int.
+     */
     public SplineEnergy(ReflectionList reflectionlist,
             DiffractionRefinementData refinementdata, int nparams, int type) {
         this.reflectionlist = reflectionlist;
@@ -92,6 +100,15 @@ public class SplineEnergy implements Potential {
         this.nparams = nparams;
     }
 
+    /**
+     * <p>target</p>
+     *
+     * @param x an array of double.
+     * @param g an array of double.
+     * @param gradient a boolean.
+     * @param print a boolean.
+     * @return a double.
+     */
     public double target(double x[], double g[],
             boolean gradient, boolean print) {
         double r, rf, rfree, rfreef, sum, sumfo;
@@ -219,6 +236,7 @@ public class SplineEnergy implements Potential {
         return sum / sumfo;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double energyAndGradient(double x[], double g[]) {
         if (optimizationScaling != null) {
@@ -241,6 +259,7 @@ public class SplineEnergy implements Potential {
         return sum;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setScaling(double[] scaling) {
         if (scaling != null && scaling.length == nparams) {
@@ -250,21 +269,25 @@ public class SplineEnergy implements Potential {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public double[] getScaling() {
         return optimizationScaling;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double[] getMass() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
     
+    /** {@inheritDoc} */
     @Override
     public double getTotal() {
         return totalEnergy;
     }
 
+    /** {@inheritDoc} */
     @Override
     public int getNumberOfVariables() {
         throw new UnsupportedOperationException("Not supported yet.");

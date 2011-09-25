@@ -29,8 +29,8 @@ import edu.rit.pj.IntegerSchedule;
  * Loop over a list of atoms and assign their density to a grid.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
+ * @version $Id: $
  */
 public abstract class SpatialDensityLoop extends IntegerForLoop {
 
@@ -40,6 +40,13 @@ public abstract class SpatialDensityLoop extends IntegerForLoop {
     private int octant = 0;
     private final SpatialDensitySchedule spatialDensitySchedule;
 
+    /**
+     * <p>Constructor for SpatialDensityLoop.</p>
+     *
+     * @param region a {@link ffx.potential.nonbonded.SpatialDensityRegion} object.
+     * @param nSymm a int.
+     * @param atomsPerChunk an array of int.
+     */
     public SpatialDensityLoop(SpatialDensityRegion region, int nSymm,
                               int atomsPerChunk[]) {
         this.region = region;
@@ -49,21 +56,34 @@ public abstract class SpatialDensityLoop extends IntegerForLoop {
         assert (nSymm <= region.nSymm);
     }
 
+    /** {@inheritDoc} */
     @Override
     public IntegerSchedule schedule() {
         return spatialDensitySchedule;
     }
 
+    /**
+     * <p>setNsymm</p>
+     *
+     * @param nSymm a int.
+     */
     public void setNsymm(int nSymm) {
         this.nSymm = nSymm;
         assert (nSymm <= region.nSymm);
     }
 
+    /**
+     * <p>Setter for the field <code>octant</code>.</p>
+     *
+     * @param octant a int.
+     * @return a {@link ffx.potential.nonbonded.SpatialDensityLoop} object.
+     */
     public SpatialDensityLoop setOctant(int octant) {
         this.octant = octant;
         return this;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void run(int lb, int ub) {
         // Loop over work cells
@@ -120,5 +140,11 @@ public abstract class SpatialDensityLoop extends IntegerForLoop {
         }
     }
 
+    /**
+     * <p>gridDensity</p>
+     *
+     * @param iSymm a int.
+     * @param iAtom a int.
+     */
     public abstract void gridDensity(int iSymm, int iAtom);
 }

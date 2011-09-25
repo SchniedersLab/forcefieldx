@@ -36,6 +36,9 @@ import javax.vecmath.Vector3d;
 
 /**
  * The MouseZoom class implements a Mouse Zoom behavior.
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public class MouseZoom extends MouseBehavior {
 	double z_factor = 0.0002;
@@ -45,10 +48,25 @@ public class MouseZoom extends MouseBehavior {
 	int doneID = 0;
 	boolean first = true;
 
+	/**
+	 * <p>Constructor for MouseZoom.</p>
+	 *
+	 * @param flags a int.
+	 * @param VPTG a {@link javax.media.j3d.TransformGroup} object.
+	 */
 	public MouseZoom(int flags, TransformGroup VPTG) {
 		super(flags, VPTG);
 	}
 
+	/**
+	 * <p>Constructor for MouseZoom.</p>
+	 *
+	 * @param flags a int.
+	 * @param VPTG a {@link javax.media.j3d.TransformGroup} object.
+	 * @param behavior a {@link javax.media.j3d.Behavior} object.
+	 * @param postID a int.
+	 * @param dID a int.
+	 */
 	public MouseZoom(int flags, TransformGroup VPTG, Behavior behavior,
 			int postID, int dID) {
 		super(flags, VPTG, behavior, postID);
@@ -58,10 +76,18 @@ public class MouseZoom extends MouseBehavior {
 	/*
 	 * Return the y-axis movement multipler.
 	 */
+	/**
+	 * <p>getFactor</p>
+	 *
+	 * @return a double.
+	 */
 	public double getFactor() {
 		return z_factor;
 	}
 
+	/**
+	 * <p>initialize</p>
+	 */
 	public void initialize() {
 		super.initialize();
 		if ((flags & INVERT_INPUT) == INVERT_INPUT) {
@@ -70,10 +96,16 @@ public class MouseZoom extends MouseBehavior {
 		}
 	}
 
+	/**
+	 * <p>Setter for the field <code>mouseButton</code>.</p>
+	 *
+	 * @param button a int.
+	 */
 	public void setMouseButton(int button) {
 		mouseButton = button;
 	}
 
+	/** {@inheritDoc} */
 	public void processStimulus(Enumeration criteria) {
 		AWTEvent[] event;
 		boolean done = false;
@@ -134,6 +166,11 @@ public class MouseZoom extends MouseBehavior {
 	/*
 	 * Set the y-axis movement multipler with factor.
 	 */
+	/**
+	 * <p>setFactor</p>
+	 *
+	 * @param factor a double.
+	 */
 	public void setFactor(double factor) {
 		z_factor = factor;
 	}
@@ -142,10 +179,20 @@ public class MouseZoom extends MouseBehavior {
 	 * The transformChanged method in the callback class will be called every
 	 * time the transform is updated
 	 */
+	/**
+	 * <p>setupCallback</p>
+	 *
+	 * @param c a {@link ffx.ui.behaviors.MouseBehaviorCallback} object.
+	 */
 	public void setupCallback(MouseBehaviorCallback c) {
 		callback = c;
 	}
 
+	/**
+	 * <p>transformChanged</p>
+	 *
+	 * @param transform a {@link javax.media.j3d.Transform3D} object.
+	 */
 	public void transformChanged(Transform3D transform) {
 	}
 }

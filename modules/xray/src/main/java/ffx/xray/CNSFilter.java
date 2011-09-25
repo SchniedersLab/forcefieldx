@@ -18,8 +18,10 @@ import java.util.logging.Logger;
 import org.apache.commons.configuration.CompositeConfiguration;
 
 /**
+ * <p>CNSFilter class.</p>
  *
  * @author Tim Fenn
+ * @version $Id: $
  */
 public class CNSFilter implements DiffractionFileFilter {
 
@@ -31,14 +33,19 @@ public class CNSFilter implements DiffractionFileFilter {
     private int sgnum = -1;
 
     // null constructor
+    /**
+     * <p>Constructor for CNSFilter.</p>
+     */
     public CNSFilter() {
     }
 
+    /** {@inheritDoc} */
     @Override
     public ReflectionList getReflectionList(File cnsFile) {
         return getReflectionList(cnsFile, null);
     }
 
+    /** {@inheritDoc} */
     @Override
     public ReflectionList getReflectionList(File cnsFile, CompositeConfiguration properties) {
         try {
@@ -112,6 +119,7 @@ public class CNSFilter implements DiffractionFileFilter {
         return reflectionlist;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double getResolution(File cnsFile, Crystal crystal) {
         double res = Double.POSITIVE_INFINITY;
@@ -151,6 +159,7 @@ public class CNSFilter implements DiffractionFileFilter {
         return res;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean readFile(File cnsFile, ReflectionList reflectionlist,
             DiffractionRefinementData refinementdata, CompositeConfiguration properties) {

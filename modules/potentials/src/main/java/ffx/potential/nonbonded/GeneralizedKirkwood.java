@@ -54,11 +54,11 @@ import ffx.potential.parameters.ForceField;
  * @author Michael J. Schnieders<br>
  *         derived from:<br>
  *         TINKER code by Michael J. Schnieders and Jay W. Ponder<br>
- *
  * @see <a href="http://dx.doi.org/10.1021/ct7001336" target="_blank">M. J.
  *      Schnieders and J. W. Ponder, Polarizable atomic multipole solutes in a
  *      generalized Kirkwood continuum, Journal of Chemical Theory and
  *      Computation 2007, 3, (6), 2083-2097.</a><br>
+ * @version $Id: $
  */
 public class GeneralizedKirkwood {
 
@@ -88,6 +88,14 @@ public class GeneralizedKirkwood {
     private final double cutoff;
     private final double cut2;
 
+    /**
+     * <p>Constructor for GeneralizedKirkwood.</p>
+     *
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
+     * @param particleMeshEwald a {@link ffx.potential.nonbonded.ParticleMeshEwald} object.
+     * @param parallelTeam a {@link edu.rit.pj.ParallelTeam} object.
+     */
     public GeneralizedKirkwood(ForceField forceField, Atom[] atoms,
                                ParticleMeshEwald particleMeshEwald,
                                ParallelTeam parallelTeam) {
@@ -207,6 +215,9 @@ public class GeneralizedKirkwood {
         logger.info("");
     }
 
+    /**
+     * <p>computeBornRadii</p>
+     */
     public void computeBornRadii() {
         try {
             parallelTeam.execute(bornRadiiRegion);
@@ -221,6 +232,9 @@ public class GeneralizedKirkwood {
         } */
     }
 
+    /**
+     * <p>computePermanentGKField</p>
+     */
     public void computePermanentGKField() {
         try {
             parallelTeam.execute(permanentGKFieldRegion);
@@ -230,6 +244,9 @@ public class GeneralizedKirkwood {
         }
     }
 
+    /**
+     * <p>computeInducedGKField</p>
+     */
     public void computeInducedGKField() {
         try {
             parallelTeam.execute(inducedGKFieldRegion);
@@ -239,6 +256,13 @@ public class GeneralizedKirkwood {
         }
     }
 
+    /**
+     * <p>solvationEnergy</p>
+     *
+     * @param gradient a boolean.
+     * @param print a boolean.
+     * @return a double.
+     */
     public double solvationEnergy(boolean gradient, boolean print) {
         /**
          * Initialize the gradient accumulation arrays.
@@ -291,6 +315,11 @@ public class GeneralizedKirkwood {
         return gkEnergyRegion.getEnergy() + hydrophobicPMFRegion.getEnergy();
     }
 
+    /**
+     * <p>getInteractions</p>
+     *
+     * @return a int.
+     */
     public int getInteractions() {
         return gkEnergyRegion.getInteractions();
     }

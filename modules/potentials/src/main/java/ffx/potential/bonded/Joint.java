@@ -31,6 +31,9 @@ import javax.swing.tree.TreeNode;
 
 /**
  * The Joint class contains the geometry produced by the FGroup Joiner method.
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public class Joint extends MSNode {
 
@@ -51,6 +54,17 @@ public class Joint extends MSNode {
 
     /**
      * Constructs a Joint between Group 1 and Group 2.
+     *
+     * @param group1 a {@link ffx.potential.bonded.MSGroup} object.
+     * @param group2 a {@link ffx.potential.bonded.MSGroup} object.
+     * @param bondNode a {@link ffx.potential.bonded.MSNode} object.
+     * @param angleNode a {@link ffx.potential.bonded.MSNode} object.
+     * @param stretchBendNode a {@link ffx.potential.bonded.MSNode} object.
+     * @param ureyBradleyNode a {@link ffx.potential.bonded.MSNode} object.
+     * @param outOfPlaneNode a {@link ffx.potential.bonded.MSNode} object.
+     * @param torsionNode a {@link ffx.potential.bonded.MSNode} object.
+     * @param piOrbitalTorsionNode a {@link ffx.potential.bonded.MSNode} object.
+     * @param torsionTorsionNode a {@link ffx.potential.bonded.MSNode} object.
      */
     public Joint(MSGroup group1, MSGroup group2, MSNode bondNode,
             MSNode angleNode, MSNode stretchBendNode, MSNode ureyBradleyNode,
@@ -88,6 +102,11 @@ public class Joint extends MSNode {
         refresh(null, null, null, null, null, null, null, null);
     }
 
+    /**
+     * <p>getAngles</p>
+     *
+     * @return a {@link ffx.potential.bonded.MSNode} object.
+     */
     public MSNode getAngles() {
         for (Enumeration e = children(); e.hasMoreElements();) {
             MSNode m = (MSNode) e.nextElement();
@@ -99,6 +118,11 @@ public class Joint extends MSNode {
         return null;
     }
 
+    /**
+     * <p>getBonds</p>
+     *
+     * @return a {@link ffx.potential.bonded.MSNode} object.
+     */
     public MSNode getBonds() {
         for (Enumeration e = children(); e.hasMoreElements();) {
             MSNode m = (MSNode) e.nextElement();
@@ -110,6 +134,11 @@ public class Joint extends MSNode {
         return null;
     }
 
+    /**
+     * <p>getStretchBends</p>
+     *
+     * @return a {@link ffx.potential.bonded.MSNode} object.
+     */
     public MSNode getStretchBends() {
         for (Enumeration e = children(); e.hasMoreElements();) {
             MSNode m = (MSNode) e.nextElement();
@@ -121,6 +150,11 @@ public class Joint extends MSNode {
         return null;
     }
 
+    /**
+     * <p>getUreyBradleys</p>
+     *
+     * @return a {@link ffx.potential.bonded.MSNode} object.
+     */
     public MSNode getUreyBradleys() {
         for (Enumeration e = children(); e.hasMoreElements();) {
             MSNode m = (MSNode) e.nextElement();
@@ -132,6 +166,11 @@ public class Joint extends MSNode {
         return null;
     }
 
+    /**
+     * <p>getOutOfPlaneBends</p>
+     *
+     * @return a {@link ffx.potential.bonded.MSNode} object.
+     */
     public MSNode getOutOfPlaneBends() {
         for (Enumeration e = children(); e.hasMoreElements();) {
             MSNode m = (MSNode) e.nextElement();
@@ -143,6 +182,11 @@ public class Joint extends MSNode {
         return null;
     }
 
+    /**
+     * <p>getTorsions</p>
+     *
+     * @return a {@link ffx.potential.bonded.MSNode} object.
+     */
     public MSNode getTorsions() {
         for (Enumeration e = children(); e.hasMoreElements();) {
             MSNode m = (MSNode) e.nextElement();
@@ -154,6 +198,11 @@ public class Joint extends MSNode {
         return null;
     }
 
+    /**
+     * <p>getPiOrbitalTorsions</p>
+     *
+     * @return a {@link ffx.potential.bonded.MSNode} object.
+     */
     public MSNode getPiOrbitalTorsions() {
         for (Enumeration e = children(); e.hasMoreElements();) {
             MSNode m = (MSNode) e.nextElement();
@@ -165,6 +214,11 @@ public class Joint extends MSNode {
         return null;
     }
 
+    /**
+     * <p>getTorsionTorsions</p>
+     *
+     * @return a {@link ffx.potential.bonded.MSNode} object.
+     */
     public MSNode getTorsionTorsions() {
         for (Enumeration e = children(); e.hasMoreElements();) {
             MSNode m = (MSNode) e.nextElement();
@@ -176,6 +230,11 @@ public class Joint extends MSNode {
         return null;
     }
 
+    /**
+     * <p>merge</p>
+     *
+     * @param j a {@link ffx.potential.bonded.Joint} object.
+     */
     public void merge(Joint j) {
         if (!((group1 == j.group1 && group2 == j.group2) || (group2 == j.group1 && group1 == j.group2))) {
             return;
@@ -292,6 +351,11 @@ public class Joint extends MSNode {
         }
     }
 
+    /**
+     * <p>setColor</p>
+     *
+     * @param newColorModel a {@link ffx.potential.bonded.RendererCache.ColorModel} object.
+     */
     public void setColor(RendererCache.ColorModel newColorModel) {
         MSNode bonds = getBonds();
         if (bonds == null) {
@@ -304,6 +368,7 @@ public class Joint extends MSNode {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setView(RendererCache.ViewModel newViewModel,
             List<BranchGroup> newShapes) {
@@ -318,6 +383,8 @@ public class Joint extends MSNode {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Overidden toString method returns: "Joint: m1 Name - m2 Name"
      */
     @Override

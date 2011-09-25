@@ -28,6 +28,9 @@ import java.io.Serializable;
 /**
  * The TinkerSystem class is a serializable wrapper that specifies a TINKER
  * system.
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public class TinkerSystem implements Serializable {
 	private static final long serialVersionUID = 1L;
@@ -49,7 +52,7 @@ public class TinkerSystem implements Serializable {
 
 	/**
 	 * Constructor that allocates space for a TINKER system
-	 * 
+	 *
 	 * @param a
 	 *            The number of atoms
 	 * @param k
@@ -69,10 +72,18 @@ public class TinkerSystem implements Serializable {
 		atomic = new int[a];
 	}
 
+	/**
+	 * <p>print</p>
+	 */
 	public void print() {
 		System.out.println(this.toString());
 	}
 
+	/**
+	 * <p>toString</p>
+	 *
+	 * @return a {@link java.lang.String} object.
+	 */
 	public String toString() {
 		return new String("Atoms: " + numatoms + " Keywords: " + numkeys);
 	}

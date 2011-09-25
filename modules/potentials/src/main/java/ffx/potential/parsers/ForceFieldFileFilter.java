@@ -31,8 +31,8 @@ import org.apache.commons.io.FilenameUtils;
  * file (*.PRM).
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
+ * @version $Id: $
  */
 public final class ForceFieldFileFilter extends FileFilter {
 
@@ -43,6 +43,8 @@ public final class ForceFieldFileFilter extends FileFilter {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * This method return <code>true</code> if the file is a directory or
      * TINKER Parameter file (*.PRM).
      */
@@ -56,6 +58,8 @@ public final class ForceFieldFileFilter extends FileFilter {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Provides a description of this FileFilter
      */
     @Override

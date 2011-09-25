@@ -39,7 +39,7 @@ import ffx.crystal.SpaceGroup;
  * CIF file reader
  *
  * @author Tim Fenn
- *
+ * @version $Id: $
  */
 public class CIFFilter implements DiffractionFileFilter {
 
@@ -74,11 +74,13 @@ public class CIFFilter implements DiffractionFileFilter {
     public CIFFilter() {
     }
 
+    /** {@inheritDoc} */
     @Override
     public ReflectionList getReflectionList(File cifFile) {
         return getReflectionList(cifFile, null);
     }
 
+    /** {@inheritDoc} */
     @Override
     public ReflectionList getReflectionList(File cifFile, CompositeConfiguration properties) {
         try {
@@ -179,6 +181,7 @@ public class CIFFilter implements DiffractionFileFilter {
         return reflectionlist;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double getResolution(File cifFile, Crystal crystal) {
         double res = Double.POSITIVE_INFINITY;
@@ -254,6 +257,7 @@ public class CIFFilter implements DiffractionFileFilter {
         return res;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean readFile(File cifFile, ReflectionList reflectionlist,
             DiffractionRefinementData refinementdata, CompositeConfiguration properties) {

@@ -27,53 +27,48 @@ package ffx.potential;
  * path between states 0 and 1.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
+ * @version $Id: $
  */
 public interface LambdaInterface {
 
     /**
      * Set the current value of the state variable.
-     * 
-     * @param lambda
-     * 
+     *
+     * @param lambda a double.
      * @since 1.0
      */
     public void setLambda(double lambda);
 
     /**
      * Get the current value of the state variable.
-     * 
+     *
      * @return state
-     * 
      * @since 1.0
      */
     public double getLambda();
     
     /**
      * Get the partial derivative of the energy with respect to lambda.
-     * 
+     *
      * @return dEdL
-     * 
      * @since  1.0
      */
     public double getdEdL();
     
     /**
      * Get the 2nd partial derivative of the energy with respect to lambda.
-     * 
+     *
      * @return d2EdL2
-     * 
      * @since  1.0
      */
     public double getd2EdL2();
     
     /**
      * Get the gradient of dEdL with respect to each parameter.
-     * 
-     * @param gradient - A double array of length the number of parameters 
+     *
+     * @param gradient - A double array of length the number of parameters
      *        in the model (commonly 3 * number of atoms).
-     * 
      * @since 1.0
      */
     public void getdEdXdL(double gradient[]);

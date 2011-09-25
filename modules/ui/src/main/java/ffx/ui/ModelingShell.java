@@ -67,6 +67,9 @@ import ffx.potential.bonded.RendererCache.ViewModel;
  * The ModelingShell is used to script Multiscale Modeling Routines via the
  * Groovy scripting language. Functionality available through the modeling shell
  * includes the Force Field X API, Java API and Groovy extensions.
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public class ModelingShell extends Console implements AlgorithmListener {
 
@@ -83,6 +86,11 @@ public class ModelingShell extends Console implements AlgorithmListener {
     public boolean scriptRunning;
     private static final double toSeconds = 1.0e-9;
 
+    /**
+     * <p>Constructor for ModelingShell.</p>
+     *
+     * @param m a {@link ffx.ui.MainPanel} object.
+     */
     public ModelingShell(MainPanel m) {
         mainPanel = m;
         headless = java.awt.GraphicsEnvironment.isHeadless();
@@ -194,10 +202,20 @@ public class ModelingShell extends Console implements AlgorithmListener {
         loadPrefs();
     }
 
+    /**
+     * <p>setArgList</p>
+     *
+     * @param argList a {@link java.util.List} object.
+     */
     public void setArgList(List<String> argList) {
         setVariable("args", argList);
     }
 
+    /**
+     * <p>headlessRun</p>
+     *
+     * @param file a {@link java.io.File} object.
+     */
     public void headlessRun(File file) {
         try {
             before();
@@ -209,6 +227,11 @@ public class ModelingShell extends Console implements AlgorithmListener {
         }
     }
 
+    /**
+     * <p>time</p>
+     *
+     * @return a {@link java.lang.Double} object.
+     */
     public Double time() {
         long current = System.nanoTime();
         double timer = (current - subTime) * toSeconds;
@@ -217,6 +240,11 @@ public class ModelingShell extends Console implements AlgorithmListener {
         return timer;
     }
 
+    /**
+     * <p>select</p>
+     *
+     * @param node a {@link ffx.potential.bonded.MSNode} object.
+     */
     public void select(MSNode node) {
         if (node != null) {
             mainPanel.getHierarchy().onlySelection(node);
@@ -225,6 +253,11 @@ public class ModelingShell extends Console implements AlgorithmListener {
         }
     }
 
+    /**
+     * <p>energy</p>
+     *
+     * @return a {@link ffx.potential.ForceFieldEnergy} object.
+     */
     public ForceFieldEnergy energy() {
         if (interrupted) {
             logger.info("Algorithm interrupted - skipping energy.");
@@ -248,6 +281,13 @@ public class ModelingShell extends Console implements AlgorithmListener {
         return null;
     }
 
+    /**
+     * <p>analyze</p>
+     *
+     * @param xyzfname a {@link java.lang.String} object.
+     * @param keyfile a {@link java.lang.String} object.
+     * @param options a {@link java.lang.String} object.
+     */
     public void analyze(String xyzfname, String keyfile, String options) {
         try {
             Energy e = new Energy(xyzfname, keyfile, options);
@@ -258,6 +298,12 @@ public class ModelingShell extends Console implements AlgorithmListener {
         }
     }
 
+    /**
+     * <p>minimize</p>
+     *
+     * @param eps a double.
+     * @return a {@link ffx.numerics.Potential} object.
+     */
     public Potential minimize(double eps) {
         if (interrupted) {
             logger.info("Algorithm interrupted - skipping minimization.");
@@ -280,6 +326,14 @@ public class ModelingShell extends Console implements AlgorithmListener {
         return null;
     }
 
+    /**
+     * <p>minimize_2</p>
+     *
+     * @param xyzf a {@link java.lang.String} object.
+     * @param eps a double.
+     * @param keyfile a {@link java.lang.String} object.
+     * @return a {@link ffx.numerics.Potential} object.
+     */
     public Potential minimize_2(String xyzf, double eps, String keyfile) {
         Potential potential = null;
         if (interrupted) {
@@ -303,10 +357,22 @@ public class ModelingShell extends Console implements AlgorithmListener {
         return potential;
     }
 
+    /**
+     * <p>superpose</p>
+     *
+     * @param file1 a {@link java.lang.String} object.
+     * @param file2 a {@link java.lang.String} object.
+     */
     public void superpose(String file1, String file2) {
         Superpose s = new Superpose(file1, file2);
     }
 
+    /**
+     * <p>poledit</p>
+     *
+     * @param gdmaoutfname a {@link java.lang.String} object.
+     * @param peditinfname a {@link java.lang.String} object.
+     */
     public void poledit(String gdmaoutfname, String peditinfname) {
         if (interrupted) {
             logger.info("Algorithm interrupted - skipping minimization.");
@@ -317,6 +383,17 @@ public class ModelingShell extends Console implements AlgorithmListener {
         Poledit p = new Poledit(gdmaoutfname, peditinfname);
     }
 
+    /**
+     * <p>md</p>
+     *
+     * @param nStep a int.
+     * @param timeStep a double.
+     * @param printInterval a double.
+     * @param saveInterval a double.
+     * @param temperature a double.
+     * @param initVelocities a boolean.
+     * @param dyn a {@link java.io.File} object.
+     */
     public void md(int nStep, double timeStep, double printInterval,
             double saveInterval, double temperature, boolean initVelocities,
             File dyn) {
@@ -336,6 +413,13 @@ public class ModelingShell extends Console implements AlgorithmListener {
         }
     }
 
+    /**
+     * <p>potential</p>
+     *
+     * @param choice a {@link java.lang.Integer} object.
+     * @param fname a {@link java.lang.String} object.
+     * @param eps a {@link java.lang.Double} object.
+     */
     public void potential(Integer choice, String fname, Double eps) {
         if (interrupted) {
             logger.info("Algorithm interrupted - skipping minimization.");
@@ -378,9 +462,9 @@ public class ModelingShell extends Console implements AlgorithmListener {
     super.runSelectedScript(evt);
     } */
     /**
-     * Return false if user elects to cancel.
+     * {@inheritDoc}
      *
-     * @return The result of the <code>fileSave</code> method.
+     * Return false if user elects to cancel.
      */
     @Override
     public boolean askToSaveFile() {
@@ -401,6 +485,8 @@ public class ModelingShell extends Console implements AlgorithmListener {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Print out the Force Field X promo.
      */
     @Override
@@ -457,6 +543,9 @@ public class ModelingShell extends Console implements AlgorithmListener {
         }
     }
 
+    /**
+     * <p>before</p>
+     */
     public void before() {
         interrupted = false;
         terminatableAlgorithm = null;
@@ -470,6 +559,9 @@ public class ModelingShell extends Console implements AlgorithmListener {
         }
     }
 
+    /**
+     * <p>after</p>
+     */
     public void after() {
         time = System.nanoTime() - time;
         if (!interrupted) {
@@ -479,6 +571,7 @@ public class ModelingShell extends Console implements AlgorithmListener {
 
     /**
      * Fix up the "Result: " message, then call the original method.
+     *
      * @param string String to ouput.
      * @param style Style to use.
      */
@@ -512,6 +605,9 @@ public class ModelingShell extends Console implements AlgorithmListener {
         }
     }
 
+    /**
+     * <p>scroll</p>
+     */
     public void scroll() {
         JTextPane output = getOutputArea();
         Dimension dim = output.getSize();
@@ -519,6 +615,12 @@ public class ModelingShell extends Console implements AlgorithmListener {
         output.scrollRectToVisible(scrollTo);
     }
 
+    /**
+     * <p>appendOutput</p>
+     *
+     * @param string a {@link java.lang.String} object.
+     * @param style a {@link javax.swing.text.Style} object.
+     */
     public void appendOutput(String string, Style style) {
         if (interrupted) {
             return;
@@ -561,12 +663,24 @@ public class ModelingShell extends Console implements AlgorithmListener {
     } */
     private static final Preferences preferences = Preferences.userNodeForPackage(ModelingShell.class);
 
+    /**
+     * <p>loadPrefs</p>
+     */
     final public void loadPrefs() {
     }
 
+    /**
+     * <p>savePrefs</p>
+     */
     public void savePrefs() {
     }
 
+    /**
+     * <p>setMeasurement</p>
+     *
+     * @param measurement a {@link java.lang.String} object.
+     * @param d a double.
+     */
     public void setMeasurement(String measurement, double d) {
         try {
             appendOutput(measurement, getOutputStyle());
@@ -576,6 +690,9 @@ public class ModelingShell extends Console implements AlgorithmListener {
         }
     }
 
+    /**
+     * <p>sync</p>
+     */
     public void sync() {
         try {
             setVariable("active", mainPanel.getHierarchy().getActive());
@@ -585,11 +702,13 @@ public class ModelingShell extends Console implements AlgorithmListener {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public String toString() {
         return "Force Field X Shell";
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean algorithmUpdate(MolecularAssembly active) {
         if (interrupted) {

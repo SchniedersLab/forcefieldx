@@ -42,7 +42,9 @@ import java.util.jar.JarFile;
 /**
  * Class loader able to load classes and DLLs with a higher priority from a given set of JARs.
  * Its bytecode is Java 1.1 compatible to be loadable by old JVMs.
+ *
  * @author Emmanuel Puybaret
+ * @version $Id: $
  */
 public class FFXClassLoader extends ClassLoader {
 
@@ -50,20 +52,20 @@ public class FFXClassLoader extends ClassLoader {
     private final Map extensionDlls = new HashMap();
     private JarFile[] extensionJars = null;
     private final String[] applicationPackages = {"ffx",
-        "javax.media.j3d",
-        "javax.vecmath",
-        "com.sun.j3d",
-        "com.sun.opengl",
-        "com.sun.gluegen.runtime",
-        "javax.media.opengl",
-        "groovy",
-        "org.codehaus.groovy",
-        "org.apache.commons.configuration",
-        "org.apache.commons.io",
-        "org.apache.commons.lang",
-        "org.apache.commons.math",
-        "edu.rit.pj",
-        "jcuda"};
+                                                  "javax.media.j3d",
+                                                  "javax.vecmath",
+                                                  "com.sun.j3d",
+                                                  "com.sun.opengl",
+                                                  "com.sun.gluegen.runtime",
+                                                  "javax.media.opengl",
+                                                  "groovy",
+                                                  "org.codehaus.groovy",
+                                                  "org.apache.commons.configuration",
+                                                  "org.apache.commons.io",
+                                                  "org.apache.commons.lang",
+                                                  "org.apache.commons.math",
+                                                  "edu.rit.pj",
+                                                  "jcuda"};
     static final List<String> ffxFiles;
 
     static {
@@ -172,10 +174,12 @@ public class FFXClassLoader extends ClassLoader {
     }
 
     /**
-     * Force Field X custom class loader considers JARs and DLLs of 
-     * <code>extensionJarsAndDlls</code> as classpath and libclasspath elements 
-     * with a higher priority than the ones of default classpath. It will load 
+     * Force Field X custom class loader considers JARs and DLLs of
+     * <code>extensionJarsAndDlls</code> as classpath and libclasspath elements
+     * with a higher priority than the ones of default classpath. It will load
      * itself all the classes belonging to packages of <code>applicationPackages</code>.
+     *
+     * @param parent a {@link java.lang.ClassLoader} object.
      */
     public FFXClassLoader(ClassLoader parent) {
         super(parent);
@@ -184,9 +188,14 @@ public class FFXClassLoader extends ClassLoader {
 
     /**
      * Returns the file name of a temporary copy of <code>input</code> content.
+     *
+     * @param input a {@link java.io.InputStream} object.
+     * @param suffix a {@link java.lang.String} object.
+     * @return a {@link java.lang.String} object.
+     * @throws java.io.IOException if any.
      */
     public static String copyInputStreamToTmpFile(InputStream input,
-            String suffix) throws IOException {
+                                                  String suffix) throws IOException {
         File tmpFile = null;
         try {
             tmpFile = File.createTempFile("tmp.", suffix);
@@ -216,6 +225,8 @@ public class FFXClassLoader extends ClassLoader {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Finds and defines the given class among the extension JARs
      * given in constructor, then among resources.
      */
@@ -268,13 +279,15 @@ public class FFXClassLoader extends ClassLoader {
             in.close();
             // Define class
             return defineClass(name, out.toByteArray(), 0, out.size(),
-                    this.protectionDomain);
+                               this.protectionDomain);
         } catch (IOException ex) {
             throw new ClassNotFoundException("Class " + name, ex);
         }
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Returns the library path of an extension DLL.
      */
     @Override
@@ -287,6 +300,8 @@ public class FFXClassLoader extends ClassLoader {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Returns the URL of the given resource searching first if it exists among
      * the extension JARs given in constructor.
      */
@@ -314,6 +329,8 @@ public class FFXClassLoader extends ClassLoader {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Loads a class with this class loader if its package belongs to <code>applicationPackages</code>
      * given in constructor.
      */
@@ -337,8 +354,8 @@ public class FFXClassLoader extends ClassLoader {
                     String applicationPackage = this.applicationPackages[i];
                     int applicationPackageLength = applicationPackage.length();
                     if ((applicationPackageLength == 0
-                            && name.indexOf('.') == 0)
-                            || (applicationPackageLength > 0
+                         && name.indexOf('.') == 0)
+                        || (applicationPackageLength > 0
                             && name.startsWith(applicationPackage))) {
                         loadedClass = findClass(name);
                         break;
@@ -400,7 +417,7 @@ public class FFXClassLoader extends ClassLoader {
                         String extensionDll = copyInputStreamToTmpFile(extensionJarOrDllUrl.openStream(), dllSuffix);
                         // Add tmp file to extension DLLs map
                         this.extensionDlls.put(extensionJarOrDll.substring(lastSlashIndex + 1 + dllPrefix.length(),
-                                extensionJarOrDll.indexOf(dllSuffix)), extensionDll);
+                                                                           extensionJarOrDll.indexOf(dllSuffix)), extensionDll);
                     }
                 }
             } catch (IOException ex) {

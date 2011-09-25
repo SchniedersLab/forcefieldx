@@ -57,7 +57,6 @@ import ffx.xray.CrystalReciprocalSpace.SolventModel;
  * this target can also be used for structure refinement
  *
  * @author Tim Fenn<br>
- *
  * @see <a href="http://dx.doi.org/10.1107/S0021889804031474" target="_blank">
  * K. Cowtan, J. Appl. Cryst. (2005). 38, 193-198</a>
  *
@@ -76,6 +75,97 @@ import ffx.xray.CrystalReciprocalSpace.SolventModel;
  *
  * @see <a href="http://dx.doi.org/10.1107/S0108767396004370" target="_blank">
  * N. S. Pannu and R. J. Read, Acta Cryst. (1996). A52, 659-668.</a>
+ * @see <a href="http://dx.doi.org/10.1107/S0021889804031474" target="_blank">
+ * K. Cowtan, J. Appl. Cryst. (2005). 38, 193-198</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1107/S0907444992007352" target="_blank">
+ * A. T. Brunger, Acta Cryst. (1993). D49, 24-36</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1107/S0907444996012255" target="_blank">
+ * G. N. Murshudov, A. A. Vagin and E. J. Dodson,
+ * Acta Cryst. (1997). D53, 240-255</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1107/S0108767388009183" target="_blank">
+ * A. T. Brunger, Acta Cryst. (1989). A45, 42-50.</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1107/S0108767386099622" target="_blank">
+ * R. J. Read, Acta Cryst. (1986). A42, 140-149.</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1107/S0108767396004370" target="_blank">
+ * N. S. Pannu and R. J. Read, Acta Cryst. (1996). A52, 659-668.</a>
+ * @see <a href="http://dx.doi.org/10.1107/S0021889804031474" target="_blank">
+ * K. Cowtan, J. Appl. Cryst. (2005). 38, 193-198</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1107/S0907444992007352" target="_blank">
+ * A. T. Brunger, Acta Cryst. (1993). D49, 24-36</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1107/S0907444996012255" target="_blank">
+ * G. N. Murshudov, A. A. Vagin and E. J. Dodson,
+ * Acta Cryst. (1997). D53, 240-255</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1107/S0108767388009183" target="_blank">
+ * A. T. Brunger, Acta Cryst. (1989). A45, 42-50.</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1107/S0108767386099622" target="_blank">
+ * R. J. Read, Acta Cryst. (1986). A42, 140-149.</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1107/S0108767396004370" target="_blank">
+ * N. S. Pannu and R. J. Read, Acta Cryst. (1996). A52, 659-668.</a>
+ * @see <a href="http://dx.doi.org/10.1107/S0021889804031474" target="_blank">
+ * K. Cowtan, J. Appl. Cryst. (2005). 38, 193-198</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1107/S0907444992007352" target="_blank">
+ * A. T. Brunger, Acta Cryst. (1993). D49, 24-36</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1107/S0907444996012255" target="_blank">
+ * G. N. Murshudov, A. A. Vagin and E. J. Dodson,
+ * Acta Cryst. (1997). D53, 240-255</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1107/S0108767388009183" target="_blank">
+ * A. T. Brunger, Acta Cryst. (1989). A45, 42-50.</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1107/S0108767386099622" target="_blank">
+ * R. J. Read, Acta Cryst. (1986). A42, 140-149.</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1107/S0108767396004370" target="_blank">
+ * N. S. Pannu and R. J. Read, Acta Cryst. (1996). A52, 659-668.</a>
+ * @see <a href="http://dx.doi.org/10.1107/S0021889804031474" target="_blank">
+ * K. Cowtan, J. Appl. Cryst. (2005). 38, 193-198</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1107/S0907444992007352" target="_blank">
+ * A. T. Brunger, Acta Cryst. (1993). D49, 24-36</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1107/S0907444996012255" target="_blank">
+ * G. N. Murshudov, A. A. Vagin and E. J. Dodson,
+ * Acta Cryst. (1997). D53, 240-255</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1107/S0108767388009183" target="_blank">
+ * A. T. Brunger, Acta Cryst. (1989). A45, 42-50.</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1107/S0108767386099622" target="_blank">
+ * R. J. Read, Acta Cryst. (1986). A42, 140-149.</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1107/S0108767396004370" target="_blank">
+ * N. S. Pannu and R. J. Read, Acta Cryst. (1996). A52, 659-668.</a>
+ * @see <a href="http://dx.doi.org/10.1107/S0021889804031474" target="_blank">
+ * K. Cowtan, J. Appl. Cryst. (2005). 38, 193-198</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1107/S0907444992007352" target="_blank">
+ * A. T. Brunger, Acta Cryst. (1993). D49, 24-36</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1107/S0907444996012255" target="_blank">
+ * G. N. Murshudov, A. A. Vagin and E. J. Dodson,
+ * Acta Cryst. (1997). D53, 240-255</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1107/S0108767388009183" target="_blank">
+ * A. T. Brunger, Acta Cryst. (1989). A45, 42-50.</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1107/S0108767386099622" target="_blank">
+ * R. J. Read, Acta Cryst. (1986). A42, 140-149.</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1107/S0108767396004370" target="_blank">
+ * N. S. Pannu and R. J. Read, Acta Cryst. (1996). A52, 659-668.</a>
+ * @version $Id: $
  */
 public class SigmaAEnergy implements Potential {
 
@@ -131,6 +221,12 @@ public class SigmaAEnergy implements Potential {
     private ComplexNumber dfcc = new ComplexNumber();
     private double totalEnergy;
 
+    /**
+     * <p>Constructor for SigmaAEnergy.</p>
+     *
+     * @param reflectionlist a {@link ffx.crystal.ReflectionList} object.
+     * @param refinementdata a {@link ffx.xray.DiffractionRefinementData} object.
+     */
     public SigmaAEnergy(ReflectionList reflectionlist,
             DiffractionRefinementData refinementdata) {
         this.reflectionlist = reflectionlist;
@@ -160,6 +256,15 @@ public class SigmaAEnergy implements Potential {
         wa = new double[n];
     }
 
+    /**
+     * <p>target</p>
+     *
+     * @param x an array of double.
+     * @param g an array of double.
+     * @param gradient a boolean.
+     * @param print a boolean.
+     * @return a double.
+     */
     public double target(double x[], double g[],
             boolean gradient, boolean print) {
         int nsum, nsumr;
@@ -381,6 +486,7 @@ public class SigmaAEnergy implements Potential {
         return sum;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double energyAndGradient(double x[], double g[]) {
         if (optimizationScaling != null) {
@@ -403,6 +509,7 @@ public class SigmaAEnergy implements Potential {
         return sum;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setScaling(double[] scaling) {
         if (scaling != null && scaling.length == n * 2) {
@@ -412,6 +519,7 @@ public class SigmaAEnergy implements Potential {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public double[] getScaling() {
         return optimizationScaling;
@@ -424,6 +532,12 @@ public class SigmaAEnergy implements Potential {
      * in scitbx module of cctbx:
      * http://cci.lbl.gov/cctbx_sources/scitbx/math/bessel.h
      */
+    /**
+     * <p>sim</p>
+     *
+     * @param x a double.
+     * @return a double.
+     */
     public static double sim(double x) {
         if (x >= 0.0) {
             return (((x + sim_a) * x + sim_b) * x)
@@ -434,6 +548,12 @@ public class SigmaAEnergy implements Potential {
         }
     }
 
+    /**
+     * <p>sim_integ</p>
+     *
+     * @param x0 a double.
+     * @return a double.
+     */
     public static double sim_integ(double x0) {
         double x = abs(x0);
         double z = (x + sim_p) / sim_q;
@@ -444,21 +564,25 @@ public class SigmaAEnergy implements Potential {
                 + x + 1.0;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double[] getMass() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
     
+    /** {@inheritDoc} */
     @Override
     public double getTotal() {
         return totalEnergy;
     }
 
+    /** {@inheritDoc} */
     @Override
     public int getNumberOfVariables() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    /** {@inheritDoc} */
     @Override
     public double[] getCoordinates(double[] parameters) {
         throw new UnsupportedOperationException("Not supported yet.");

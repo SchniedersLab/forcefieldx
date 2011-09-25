@@ -34,6 +34,9 @@ import org.apache.commons.lang.builder.ToStringBuilder;
  * routines execute indefinitely. Users may want to exit Force Field X and
  * shut down the JVM after launching a dynamics run, for example. In this case
  * the thread should not be dependent on a JVM instance.
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public class FFXExec implements Runnable {
 
@@ -97,10 +100,20 @@ public class FFXExec implements Runnable {
         logger.info(toString());
     }
 
+    /**
+     * <p>Getter for the field <code>returnValue</code>.</p>
+     *
+     * @return a int.
+     */
     public int getReturnValue() {
         return returnValue;
     }
 
+    /**
+     * <p>isAlive</p>
+     *
+     * @return a boolean.
+     */
     public boolean isAlive() {
         return alive;
     }
@@ -167,6 +180,8 @@ public class FFXExec implements Runnable {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Commons.Lang Style toString.
      */
     @Override

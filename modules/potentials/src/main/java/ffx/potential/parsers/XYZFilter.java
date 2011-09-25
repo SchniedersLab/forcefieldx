@@ -53,8 +53,8 @@ import org.apache.commons.configuration.CompositeConfiguration;
  * The XYZFilter class parses TINKER Cartesian coordinate (*.XYZ) files.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
+ * @version $Id: $
  */
 public class XYZFilter extends SystemFilter {
 
@@ -62,6 +62,13 @@ public class XYZFilter extends SystemFilter {
     private BufferedReader bin = null;
     private int snapShot;
 
+    /**
+     * <p>readOnto</p>
+     *
+     * @param newFile a {@link java.io.File} object.
+     * @param oldSystem a {@link ffx.potential.bonded.MolecularAssembly} object.
+     * @return a boolean.
+     */
     public static boolean readOnto(File newFile, MolecularAssembly oldSystem) {
         if (newFile == null || !newFile.exists() || oldSystem == null) {
             return false;
@@ -112,12 +119,28 @@ public class XYZFilter extends SystemFilter {
         }
     }
 
+    /**
+     * <p>Constructor for XYZFilter.</p>
+     *
+     * @param files a {@link java.util.List} object.
+     * @param system a {@link ffx.potential.bonded.MolecularAssembly} object.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     */
     public XYZFilter(List<File> files, MolecularAssembly system, 
             ForceField forceField, CompositeConfiguration properties) {
         super(files, system, forceField, properties);
         this.fileType = FileType.XYZ;
     }
 
+    /**
+     * <p>Constructor for XYZFilter.</p>
+     *
+     * @param file a {@link java.io.File} object.
+     * @param system a {@link ffx.potential.bonded.MolecularAssembly} object.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     */
     public XYZFilter(File file, MolecularAssembly system,
             ForceField forceField, CompositeConfiguration properties) {
         super(file, system, forceField, properties);
@@ -125,6 +148,8 @@ public class XYZFilter extends SystemFilter {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Parse the XYZ File
      */
     @Override
@@ -309,7 +334,7 @@ public class XYZFilter extends SystemFilter {
      * Reads the next snap-shot of an archive into the activeMolecularAssembly.
      * After calling this function, a BufferedReader will remain open until the
      * <code>close</code> method is called.
-     * 
+     *
      * @return true if successful.
      */
     public boolean readNext() {
@@ -384,6 +409,9 @@ public class XYZFilter extends SystemFilter {
         return false;
     }
 
+    /**
+     * <p>close</p>
+     */
     public void close() {
         if (bin != null) {
             try {
@@ -396,6 +424,11 @@ public class XYZFilter extends SystemFilter {
         }
     }
 
+    /**
+     * <p>readtrajectory</p>
+     *
+     * @return a boolean.
+     */
     public boolean readtrajectory() {
         // If the first entry was read successfully, reopen the
         // archive file and read the rest of the coordinates
@@ -464,6 +497,7 @@ public class XYZFilter extends SystemFilter {
         return false;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean writeFile(File saveFile, boolean append) {
         if (saveFile == null) {
@@ -517,6 +551,14 @@ public class XYZFilter extends SystemFilter {
         return true;
     }
 
+    /**
+     * <p>writeFileAsP1</p>
+     *
+     * @param saveFile a {@link java.io.File} object.
+     * @param append a boolean.
+     * @param crystal a {@link ffx.crystal.Crystal} object.
+     * @return a boolean.
+     */
     public boolean writeFileAsP1(File saveFile, boolean append, Crystal crystal) {
         if (saveFile == null) {
             return false;

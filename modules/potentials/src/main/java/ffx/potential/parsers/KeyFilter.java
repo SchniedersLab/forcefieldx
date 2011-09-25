@@ -34,13 +34,18 @@ import ffx.utilities.Keyword;
  * Property (*.PROPERTIES) files.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
+ * @version $Id: $
  */
 public class KeyFilter {
 
     private static final Logger logger = Logger.getLogger(KeyFilter.class.getName());
 
+    /**
+     * <p>loadSystemKeywords</p>
+     *
+     * @return a {@link java.util.Hashtable} object.
+     */
     public static Hashtable<String, Keyword> loadSystemKeywords() {
         File f = new File("/etc/ffx.conf");
         Hashtable<String, Keyword> systemKeywords = new Hashtable<String, Keyword>();
@@ -57,6 +62,12 @@ public class KeyFilter {
         return systemKeywords;
     }
 
+    /**
+     * <p>open</p>
+     *
+     * @param keyFile a {@link java.io.File} object.
+     * @return a {@link java.util.Hashtable} object.
+     */
     public static Hashtable<String, Keyword> open(File keyFile) {
         if (keyFile == null || !keyFile.exists() || !keyFile.canRead()) {
             return null;
@@ -65,6 +76,13 @@ public class KeyFilter {
         return open(keyFile, keywordHash);
     }
 
+    /**
+     * <p>open</p>
+     *
+     * @param keyFile a {@link java.io.File} object.
+     * @param keywordHash a {@link java.util.Hashtable} object.
+     * @return a {@link java.util.Hashtable} object.
+     */
     public static Hashtable<String, Keyword> open(File keyFile, Hashtable<String, Keyword> keywordHash) {
         if (keyFile == null || !keyFile.exists() || !keyFile.canRead()) {
             return null;
@@ -186,6 +204,9 @@ public class KeyFilter {
         }
     }
 
+    /**
+     * <p>Constructor for KeyFilter.</p>
+     */
     public KeyFilter() {
     }
 }

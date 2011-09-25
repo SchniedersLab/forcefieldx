@@ -33,11 +33,10 @@ import java.util.logging.Logger;
  *
  * @author Michael J. Schnieders<br>
  *         Derived from Jay Ponder's FORTRAN code (search.f).
- * 
  * @see <a href="http://dasher.wustl.edu/tinker" target="_blank">
  *      Jay Ponder's original FORTRAN code.</a>
- *
  * @since 1.0
+ * @version $Id: $
  */
 public class LineSearch {
 
@@ -65,7 +64,6 @@ public class LineSearch {
      * LineSearch constructor.
      *
      * @param n Number of variables.
-     *
      * @since 1.0
      */
     protected LineSearch(int n) {
@@ -293,33 +291,26 @@ public class LineSearch {
     /**
      * Minimize a function along a search direction.
      *
-     * This is a unidimensional line search based upon parabolic extrapolation 
+     * This is a unidimensional line search based upon parabolic extrapolation
      * and cubic interpolation using both function and gradient values; if
      * forced to search in an uphill direction, return is after the initial
      * step.
      *
      * @param n Number of variables.
-     *
      * @param x Current variable values.
-     * 
      * @param f Current function value.
-     * 
-     * @param g Current gradient values.
-     * 
-     * @param p Search direction.
-     * 
-     * @param angle Angle between the gradient and search direction.
-     * 
-     * @param fMove Change in function value due to previous step.
-     * 
-     * @param info Line search result.
-     * 
-     * @param functionEvaluations Number of function evaluations.
-     * 
-     * @param optimizationSystem Instance of the {@link Potential} interface.
-     * 
-     * @return The final function value.
      *
+     * @param fMove Change in function value due to previous step.
+     *
+     * @param functionEvaluations Number of function evaluations.
+     * @param g Current gradient values.
+     * @param p Search direction.
+     * @param angle Angle between the gradient and search direction.
+     * @param fMove Change in function value due to previous step.
+     * @param info Line search result.
+     * @param functionEvaluations Number of function evaluations.
+     * @param optimizationSystem Instance of the {@link Potential} interface.
+     * @return The final function value.
      * @since 1.0
      */
     public double search(int n, double[] x, double f, double[] g,

@@ -28,6 +28,7 @@ import static java.lang.Math.sqrt;
  *
  * @author Michael J. Schnieders
  * @since 1.0
+ * @version $Id: $
  */
 public class TensorRecursion {
 
@@ -49,7 +50,6 @@ public class TensorRecursion {
      * @param dy int The number of d/dy operations.
      * @param dz int The number of d/dz operations.
      * @param order int The maximum tensor order (0 <= dx + dy + dz <= order).
-     *
      * @return int in the range (0..binomial(order + 3, 3) - 1)
      * @since 1.0
      */
@@ -75,9 +75,9 @@ public class TensorRecursion {
 
     /**
      * Returns the number of tensors for derivatives to the given order.
+     *
      * @param order maximum number of derivatives.
      * @return the number of tensors.
-     *
      * @since 1.0
      */
     public static int tensorCount(int order) {
@@ -103,6 +103,11 @@ public class TensorRecursion {
     private final int im;
     private final int in;
 
+    /**
+     * <p>Constructor for TensorRecursion.</p>
+     *
+     * @param order a int.
+     */
     public TensorRecursion(int order) {
         assert(order > 0);
         o1 = order + 1;
@@ -181,6 +186,7 @@ public class TensorRecursion {
      * tensor[2] = -y/|r|^3 <br>
      * tensor[3] = -z/|r|^3 <br>
      * <p>
+     *
      * @param r
      *            double[] vector between two sites.
      * @param tensor

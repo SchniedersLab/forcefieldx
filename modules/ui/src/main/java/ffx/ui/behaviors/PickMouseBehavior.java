@@ -41,6 +41,9 @@ import com.sun.j3d.utils.picking.PickCanvas;
 
 /**
  * The PickMouseBehavior class is the base class for mouse picking behaviors.
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public abstract class PickMouseBehavior extends Behavior {
 	static int count = 0;
@@ -57,6 +60,13 @@ public abstract class PickMouseBehavior extends Behavior {
 	 * Creates a PickMouseBehavior given current canvas, root of the tree to
 	 * operate on, and the bounds.
 	 */
+	/**
+	 * <p>Constructor for PickMouseBehavior.</p>
+	 *
+	 * @param canvas a {@link javax.media.j3d.Canvas3D} object.
+	 * @param root a {@link javax.media.j3d.BranchGroup} object.
+	 * @param bounds a {@link javax.media.j3d.Bounds} object.
+	 */
 	public PickMouseBehavior(Canvas3D canvas, BranchGroup root, Bounds bounds) {
 		super();
 		setSchedulingBounds(bounds);
@@ -69,6 +79,9 @@ public abstract class PickMouseBehavior extends Behavior {
 		pickCanvas.setTolerance(10.0f);
 	}
 
+	/**
+	 * <p>initialize</p>
+	 */
 	public void initialize() {
 		conditions = new WakeupCriterion[1];
 		conditions[0] = new WakeupOnAWTEvent(Event.MOUSE_DOWN);
@@ -95,6 +108,7 @@ public abstract class PickMouseBehavior extends Behavior {
 		}
 	}
 
+	/** {@inheritDoc} */
 	public void processStimulus(Enumeration criteria) {
 		WakeupCriterion wakeup;
 		AWTEvent[] evt = null;
@@ -117,6 +131,11 @@ public abstract class PickMouseBehavior extends Behavior {
 		wakeupOn(wakeupCondition);
 	}
 
+	/**
+	 * <p>setTolerance</p>
+	 *
+	 * @param tol a float.
+	 */
 	public void setTolerance(float tol) {
 		if (pickCanvas != null) {
 			pickCanvas.setTolerance(tol);
@@ -125,6 +144,12 @@ public abstract class PickMouseBehavior extends Behavior {
 
 	/*
 	 * Subclasses shall implement this update function
+	 */
+	/**
+	 * <p>updateScene</p>
+	 *
+	 * @param xpos a int.
+	 * @param ypos a int.
 	 */
 	public abstract void updateScene(int xpos, int ypos);
 }

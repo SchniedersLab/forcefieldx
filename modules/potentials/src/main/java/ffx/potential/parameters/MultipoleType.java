@@ -30,8 +30,8 @@ import java.util.logging.Logger;
  * The MultipoleType class defines a multipole in its local frame.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
+ * @version $Id: $
  */
 public final class MultipoleType extends BaseType implements Comparator<String> {
 
@@ -99,6 +99,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
      *            double[]
      * @param multipoleFrameTypes
      *            int[]
+     * @param frameDefinition a {@link ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition} object.
      */
     public MultipoleType(double charge, double dipole[], double quadrupole[][],
                          int[] multipoleFrameTypes, MultipoleFrameDefinition frameDefinition) {
@@ -111,6 +112,11 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
         initMultipole();
     }
 
+    /**
+     * <p>incrementType</p>
+     *
+     * @param increment a int.
+     */
     public void incrementType(int increment) {
         for (int i = 0; i < frameAtomTypes.length; i++) {
             frameAtomTypes[i] += increment;
@@ -236,11 +242,13 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
         return multipoleBuffer.toString();
     }
 
+    /** {@inheritDoc} */
     @Override
     public String toString() {
         return toBohrString();
     }
 
+    /** {@inheritDoc} */
     @Override
     public int compare(String s1, String s2) {
         String keys1[] = s1.split(" ");
@@ -271,6 +279,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
         return 0;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean equals(Object other) {
         if (other == this) {
@@ -292,6 +301,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
         return true;
     }
 
+    /** {@inheritDoc} */
     @Override
     public int hashCode() {
         int hash = 7;
@@ -303,23 +313,42 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
      * makes multipole code much easier to read.
      */
     public static final int t000 = 0;
+    /** Constant <code>t100=1</code> */
     public static final int t100 = 1;
+    /** Constant <code>t010=2</code> */
     public static final int t010 = 2;
+    /** Constant <code>t001=3</code> */
     public static final int t001 = 3;
+    /** Constant <code>t200=4</code> */
     public static final int t200 = 4;
+    /** Constant <code>t020=5</code> */
     public static final int t020 = 5;
+    /** Constant <code>t002=6</code> */
     public static final int t002 = 6;
+    /** Constant <code>t110=7</code> */
     public static final int t110 = 7;
+    /** Constant <code>t101=8</code> */
     public static final int t101 = 8;
+    /** Constant <code>t011=9</code> */
     public static final int t011 = 9;
+    /** Constant <code>t300=10</code> */
     public static final int t300 = 10;
+    /** Constant <code>t030=11</code> */
     public static final int t030 = 11;
+    /** Constant <code>t003=12</code> */
     public static final int t003 = 12;
+    /** Constant <code>t210=13</code> */
     public static final int t210 = 13;
+    /** Constant <code>t201=14</code> */
     public static final int t201 = 14;
+    /** Constant <code>t120=15</code> */
     public static final int t120 = 15;
+    /** Constant <code>t021=16</code> */
     public static final int t021 = 16;
+    /** Constant <code>t102=17</code> */
     public static final int t102 = 17;
+    /** Constant <code>t012=18</code> */
     public static final int t012 = 18;
+    /** Constant <code>t111=19</code> */
     public static final int t111 = 19;
 }

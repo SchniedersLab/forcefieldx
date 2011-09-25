@@ -25,22 +25,33 @@ package ffx.algorithms;
  * particle velocities.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
+ * @version $Id: $
  */
 public class Adiabatic extends Thermostat {
 
+    /**
+     * <p>Constructor for Adiabatic.</p>
+     *
+     * @param n a int.
+     * @param x an array of double.
+     * @param v an array of double.
+     * @param mass an array of double.
+     */
     public Adiabatic(int n, double x[], double v[], double mass[]) {
         super(n, x, v, mass, 0.0);
         this.name = Thermostats.ADIABATIC;
     }
 
+    /** {@inheritDoc} */
     @Override
     public String toString() {
         return String.format("%s thermostat", name);
     }
 
     /**
+     * {@inheritDoc}
+     *
      * No half-step velocity modifications are made.
      */
     @Override
@@ -49,6 +60,8 @@ public class Adiabatic extends Thermostat {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * No full-step velocity modifications are made.
      */
     @Override

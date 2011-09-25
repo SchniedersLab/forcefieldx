@@ -58,12 +58,19 @@ import ffx.potential.bonded.Atom;
  * The GraphicsEvents class listens for mouse events over the Java3D
  * GraphicsCanvas, dispatching work to more specialized System Rotation &
  * Translation Behaviors or to the GlobalOrbitBehavior.
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public class GraphicsEvents extends Behavior {
 	// Behavior Post IDs
+	/** Constant <code>ROTATEPOST=1</code> */
 	public static int ROTATEPOST = 1;
+	/** Constant <code>TRANSLATEPOST=2</code> */
 	public static int TRANSLATEPOST = 2;
+	/** Constant <code>ZOOMPOST=3</code> */
 	public static int ZOOMPOST = 3;
+	/** Constant <code>BEHAVIORDONEPOST=4</code> */
 	public static int BEHAVIORDONEPOST = 4;
 	// GUI Panels
 	private MainPanel mainPanel;
@@ -94,6 +101,17 @@ public class GraphicsEvents extends Behavior {
 	private MouseZoom globalZoom;
 	private GlobalBehavior viewOrbitBehavior;
 
+	/**
+	 * <p>Constructor for GraphicsEvents.</p>
+	 *
+	 * @param f a {@link ffx.ui.MainPanel} object.
+	 * @param g a {@link ffx.ui.GraphicsCanvas} object.
+	 * @param n a {@link ffx.ui.GraphicsAxis} object.
+	 * @param u a {@link com.sun.j3d.utils.universe.SimpleUniverse} object.
+	 * @param b a {@link javax.media.j3d.Bounds} object.
+	 * @param root a {@link javax.media.j3d.BranchGroup} object.
+	 * @param tg a {@link javax.media.j3d.TransformGroup} object.
+	 */
 	public GraphicsEvents(MainPanel f, GraphicsCanvas g, GraphicsAxis n,
 			SimpleUniverse u, Bounds b, BranchGroup root, TransformGroup tg) {
 		mainPanel = f;
@@ -135,6 +153,13 @@ public class GraphicsEvents extends Behavior {
 		pickCanvas.setTolerance(20.0f);
 	}
 
+	/**
+	 * <p>centerView</p>
+	 *
+	 * @param resetRotation a boolean.
+	 * @param resetTranslation a boolean.
+	 * @param resetZoom a boolean.
+	 */
 	public void centerView(boolean resetRotation, boolean resetTranslation,
 			boolean resetZoom) {
 		viewOrbitBehavior.centerView(resetRotation, resetTranslation);
@@ -145,6 +170,9 @@ public class GraphicsEvents extends Behavior {
 		return true;
 	}
 
+	/**
+	 * <p>initialize</p>
+	 */
 	public void initialize() {
 		WakeupCriterion[] behaviorPost = new WakeupCriterion[3];
 		behaviorPost[0] = new WakeupOnBehaviorPost(systemRotate,
@@ -160,6 +188,11 @@ public class GraphicsEvents extends Behavior {
 		wakeupOn(mouseCriterion);
 	}
 
+	/**
+	 * <p>processMouseEvent</p>
+	 *
+	 * @param evt a {@link java.awt.event.MouseEvent} object.
+	 */
 	public void processMouseEvent(MouseEvent evt) {
 		buttonPress = false;
 		leftButton = false;
@@ -234,6 +267,7 @@ public class GraphicsEvents extends Behavior {
 	}
 
 	// Most of the logic for mouse interaction with the Scenegraph is here.
+	/** {@inheritDoc} */
 	public void processStimulus(Enumeration criteria) {
 		viewOrbitBehavior.setEnable(false);
 		AWTEvent awtEvents[] = null;
@@ -310,6 +344,11 @@ public class GraphicsEvents extends Behavior {
 		wakeupOn(mouseCriterion);
 	}
 
+	/**
+	 * <p>setGlobalCenter</p>
+	 *
+	 * @param d an array of double.
+	 */
 	public void setGlobalCenter(double d[]) {
 		Point3d point = new Point3d(d);
 		viewOrbitBehavior.setRotationCenter(point);

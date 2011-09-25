@@ -56,6 +56,9 @@ import ffx.utilities.Keyword;
 
 /**
  * The KeywordComponent class is used to represent one TINKER keyword.
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public final class KeywordComponent implements MouseListener, ActionListener,
         ChangeListener, DocumentListener {
@@ -85,6 +88,13 @@ public final class KeywordComponent implements MouseListener, ActionListener,
         entryDimension = textField.getPreferredSize();
     }
 
+    /**
+     * <p>fillPanel</p>
+     *
+     * @param p a {@link javax.swing.JPanel} object.
+     * @param g a {@link java.awt.GridBagLayout} object.
+     * @param c a {@link java.awt.GridBagConstraints} object.
+     */
     public static void fillPanel(JPanel p, GridBagLayout g, GridBagConstraints c) {
         JLabel jfill = new JLabel(" ");
         c.weightx = 1;
@@ -96,10 +106,20 @@ public final class KeywordComponent implements MouseListener, ActionListener,
         p.add(jfill);
     }
 
+    /**
+     * <p>isKeywordModified</p>
+     *
+     * @return a boolean.
+     */
     public static boolean isKeywordModified() {
         return isModified;
     }
 
+    /**
+     * <p>setKeywordModified</p>
+     *
+     * @param b a boolean.
+     */
     public static void setKeywordModified(boolean b) {
         isModified = b;
     }
@@ -131,6 +151,12 @@ public final class KeywordComponent implements MouseListener, ActionListener,
      * The Default Constructor k - Keyword String kg - Keyword Group t - Type of
      * GUI Components used to represent Keyword modifiers d - Keyword
      * description
+     *
+     * @param k a {@link java.lang.String} object.
+     * @param kg a {@link java.lang.String} object.
+     * @param s a {@link ffx.ui.KeywordComponent.SwingRepresentation} object.
+     * @param d a {@link java.lang.String} object.
+     * @param jta a {@link javax.swing.JTextArea} object.
      */
     public KeywordComponent(String k, String kg, SwingRepresentation s,
             String d, JTextArea jta) {
@@ -145,12 +171,23 @@ public final class KeywordComponent implements MouseListener, ActionListener,
         flowLayout.setVgap(1);
     }
 
+    /**
+     * <p>Constructor for KeywordComponent.</p>
+     *
+     * @param k a {@link java.lang.String} object.
+     * @param kg a {@link java.lang.String} object.
+     * @param s a {@link ffx.ui.KeywordComponent.SwingRepresentation} object.
+     * @param d a {@link java.lang.String} object.
+     * @param jta a {@link javax.swing.JTextArea} object.
+     * @param o an array of {@link java.lang.String} objects.
+     */
     public KeywordComponent(String k, String kg, SwingRepresentation s,
             String d, JTextArea jta, String o[]) {
         this(k, kg, s, d, jta);
         options = o;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void actionPerformed(ActionEvent evt) {
         synchronized (this) {
@@ -189,6 +226,7 @@ public final class KeywordComponent implements MouseListener, ActionListener,
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void changedUpdate(DocumentEvent evt) {
         isModified = true;
@@ -217,6 +255,9 @@ public final class KeywordComponent implements MouseListener, ActionListener,
         keywordValues.add(cb);
     }
 
+    /**
+     * <p>clearKeywordComponent</p>
+     */
     public void clearKeywordComponent() {
         synchronized (this) {
             active = false;
@@ -288,6 +329,8 @@ public final class KeywordComponent implements MouseListener, ActionListener,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Overidden equals method return true if object equals this, or if it of
      * the same class and has the same Tinker Keyword.
      */
@@ -302,10 +345,20 @@ public final class KeywordComponent implements MouseListener, ActionListener,
         return keyword.equalsIgnoreCase(other.keyword);
     }
 
+    /**
+     * <p>Getter for the field <code>keyword</code>.</p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
     public String getKeyword() {
         return keyword;
     }
 
+    /**
+     * <p>getKeywordData</p>
+     *
+     * @param keywordData a {@link ffx.utilities.Keyword} object.
+     */
     public void getKeywordData(Keyword keywordData) {
         synchronized (this) {
             if (keywordData == null || !active) {
@@ -347,10 +400,20 @@ public final class KeywordComponent implements MouseListener, ActionListener,
         }
     }
 
+    /**
+     * <p>Getter for the field <code>keywordDescription</code>.</p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
     public String getKeywordDescription() {
         return keywordDescription;
     }
 
+    /**
+     * <p>Getter for the field <code>keywordGroup</code>.</p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
     public String getKeywordGroup() {
         return keywordGroup;
     }
@@ -358,6 +421,8 @@ public final class KeywordComponent implements MouseListener, ActionListener,
     /**
      * Returns a JPanel with a GridLayout LayoutManager that contains a Swing
      * representation of the Keyword and Modifiers in a single row.
+     *
+     * @return a {@link javax.swing.JPanel} object.
      */
     public JPanel getKeywordGUI() {
         synchronized (this) {
@@ -378,6 +443,7 @@ public final class KeywordComponent implements MouseListener, ActionListener,
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public int hashCode() {
         return hash(SEED, keyword.hashCode());
@@ -400,11 +466,17 @@ public final class KeywordComponent implements MouseListener, ActionListener,
         init = true;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void insertUpdate(DocumentEvent evt) {
         isModified = true;
     }
 
+    /**
+     * <p>isActive</p>
+     *
+     * @return a boolean.
+     */
     public boolean isActive() {
         return active;
     }
@@ -451,6 +523,7 @@ public final class KeywordComponent implements MouseListener, ActionListener,
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void mouseClicked(MouseEvent evt) {
         synchronized (this) {
@@ -464,29 +537,35 @@ public final class KeywordComponent implements MouseListener, ActionListener,
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void mouseEntered(MouseEvent evt) {
         mouseClicked(evt);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void mouseExited(MouseEvent evt) {
         mouseClicked(evt);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void mousePressed(MouseEvent evt) {
     }
 
+    /** {@inheritDoc} */
     @Override
     public void mouseReleased(MouseEvent evt) {
     }
 
+    /** {@inheritDoc} */
     @Override
     public void removeUpdate(DocumentEvent evt) {
         isModified = true;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void stateChanged(ChangeEvent evt) {
         isModified = true;
@@ -517,6 +596,8 @@ public final class KeywordComponent implements MouseListener, ActionListener,
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Overridden toString methods facilitates Keyword output to a file.
      */
     @Override

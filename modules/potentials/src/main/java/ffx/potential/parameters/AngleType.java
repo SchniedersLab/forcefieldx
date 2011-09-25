@@ -30,8 +30,8 @@ import java.util.Comparator;
  * The AngleType class defines one harmonic angle bend energy term.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
+ * @version $Id: $
  */
 public final class AngleType extends BaseType implements Comparator<String> {
 
@@ -50,9 +50,11 @@ public final class AngleType extends BaseType implements Comparator<String> {
     public final double angle[];
 
     /**
-     * @param atomClasses
-     * @param forceConstant
-     * @param angle
+     * <p>Constructor for AngleType.</p>
+     *
+     * @param atomClasses an array of int.
+     * @param forceConstant a double.
+     * @param angle an array of double.
      */
     public AngleType(int atomClasses[], double forceConstant, double angle[]) {
         super(ForceField.ForceFieldType.ANGLE, sortKey(atomClasses));
@@ -61,6 +63,11 @@ public final class AngleType extends BaseType implements Comparator<String> {
         this.angle = angle;
     }
 
+    /**
+     * <p>incrementClasses</p>
+     *
+     * @param increment a int.
+     */
     public void incrementClasses(int increment) {
         for (int i=0; i<atomClasses.length; i++) {
             atomClasses[i] += increment;
@@ -89,9 +96,9 @@ public final class AngleType extends BaseType implements Comparator<String> {
     }
 
     /**
-     * Nicely formatted Angle bending string.
+     * {@inheritDoc}
      *
-     * @return String
+     * Nicely formatted Angle bending string.
      */
     @Override
     public String toString() {
@@ -124,6 +131,7 @@ public final class AngleType extends BaseType implements Comparator<String> {
      */
     public static double units = 1.0 / pow(180.0 / PI, 2);
 
+    /** {@inheritDoc} */
     @Override
     public int compare(String key1, String key2) {
         String keys1[] = key1.split(" ");
@@ -152,6 +160,7 @@ public final class AngleType extends BaseType implements Comparator<String> {
         return 0;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean equals(Object other) {
         if (other == this) {
@@ -168,6 +177,7 @@ public final class AngleType extends BaseType implements Comparator<String> {
         return false;
     }
 
+    /** {@inheritDoc} */
     @Override
     public int hashCode() {
         int hash = 5;

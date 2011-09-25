@@ -27,6 +27,9 @@ import javax.swing.filechooser.FileFilter;
 
 /**
  * The MTZFileFilter class is used to choose CCP4 MTZ files
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public final class MTZFileFilter extends FileFilter {
 
@@ -37,6 +40,8 @@ public final class MTZFileFilter extends FileFilter {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * This method determines whether or not the parm File parameter is a Tinker
      * *.xyz or not, returning true if it is. (Also returns true for any
      * directory)
@@ -50,6 +55,12 @@ public final class MTZFileFilter extends FileFilter {
         return filename.endsWith(".mtz");
     }
 
+    /**
+     * <p>acceptDeep</p>
+     *
+     * @param file a {@link java.io.File} object.
+     * @return a boolean.
+     */
     public boolean acceptDeep(File file) {
         try {
             if (file == null || file.isDirectory() || !file.canRead()) {
@@ -75,6 +86,8 @@ public final class MTZFileFilter extends FileFilter {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Provides a description of this FileFilter
      */
     @Override

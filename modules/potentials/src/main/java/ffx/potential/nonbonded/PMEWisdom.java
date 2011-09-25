@@ -53,6 +53,7 @@ import java.util.logging.Logger;
  *
  * @author Michael J. Schnieders
  * @since 1.0
+ * @version $Id: $
  */
 public class PMEWisdom {
 
@@ -76,7 +77,7 @@ public class PMEWisdom {
      * The PMEWisdom constructor requires a MolecularAssembly that is a
      * periodic.
      *
-     * @param molecularAssembly
+     * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly} object.
      * @since 1.0
      */
     public PMEWisdom(MolecularAssembly molecularAssembly) {
@@ -146,6 +147,9 @@ public class PMEWisdom {
     }
     private static double toSeconds = 0.000000001;
 
+    /**
+     * <p>run</p>
+     */
     public void run() {
         final double maxCutoff = min(min(crystal.a, crystal.b), crystal.c) /
                 2.0 - buffer;

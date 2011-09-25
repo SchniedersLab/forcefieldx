@@ -47,6 +47,7 @@ import jcuda.jcufft.*;
  *
  * @author Michal J. Schnieders
  * @since 1.0
+ * @version $Id: $
  */
 public class Real3DCuda implements Runnable {
 
@@ -65,7 +66,8 @@ public class Real3DCuda implements Runnable {
 
     /**
      * Blocking convolution method.
-     * @param data
+     *
+     * @param data an array of float.
      * @return A status flag (0 for success, -1 for failure).
      */
     public int convolution(float data[]) {
@@ -94,6 +96,7 @@ public class Real3DCuda implements Runnable {
 
     /**
      * Blocking free method.
+     *
      * @return A status flag (0 for success, -1 for failure).
      */
     public int free() {
@@ -117,6 +120,7 @@ public class Real3DCuda implements Runnable {
         return 0;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void run() {
         JCudaDriver.setExceptionsEnabled(true);
@@ -241,6 +245,8 @@ public class Real3DCuda implements Runnable {
      * @param nX X-dimension.
      * @param nY Y-dimension.
      * @param nZ Z-dimension.
+     * @param data an array of float.
+     * @param recip an array of float.
      */
     public Real3DCuda(int nX, int nY, int nZ, float data[], float recip[]) {
         this.nX = nX;
@@ -253,6 +259,7 @@ public class Real3DCuda implements Runnable {
         free = false;
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void finalize() throws Throwable {
         try {
@@ -262,6 +269,12 @@ public class Real3DCuda implements Runnable {
         }
     }
 
+    /**
+     * <p>main</p>
+     *
+     * @param args an array of {@link java.lang.String} objects.
+     * @throws java.lang.Exception if any.
+     */
     public static void main(String[] args) throws Exception {
         int dimNotFinal = 64;
         int reps = 10;

@@ -1,3 +1,4 @@
+
 /**
  * Title: Force Field X
  * Description: Force Field X - Software for Molecular Biophysics.
@@ -17,6 +18,9 @@
  * You should have received a copy of the GNU General Public License
  * along with Force Field X; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ *
+ * @author schnied
+ * @version $Id: $
  */
 
 package ffx.autoparm;
@@ -60,11 +64,11 @@ import ffx.potential.parameters.TorsionType;
 import ffx.potential.parameters.UreyBradleyType;
 import ffx.potential.parameters.VDWType;
 
-/* 
+/*
  * @author Gaurav Chattree and Michael J. Schnieders
- * 
+ *
  * @since 1.0
- * 
+ *
  */
 public class ForceFieldFilter_2 {
 
@@ -73,12 +77,25 @@ public class ForceFieldFilter_2 {
     private CompositeConfiguration properties;
     private File forceFieldFile;
 
+    /**
+     * <p>Constructor for ForceFieldFilter_2.</p>
+     *
+     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * @param forceFieldFile a {@link java.io.File} object.
+     */
     public ForceFieldFilter_2(CompositeConfiguration properties, File forceFieldFile) {
         forceField = new ForceField(properties, forceFieldFile);
         this.properties = properties;
         this.forceFieldFile = forceFieldFile;
     }
 
+    /**
+     * <p>parseParameterLocation</p>
+     *
+     * @param parameterLocation a {@link java.lang.String} object.
+     * @param keyFile a {@link java.io.File} object.
+     * @return a {@link java.io.File} object.
+     */
     public static File parseParameterLocation(String parameterLocation, File keyFile) {
         File parameterFile = null;
         if (parameterLocation != null && !parameterLocation.equalsIgnoreCase("NONE")) {
@@ -99,6 +116,11 @@ public class ForceFieldFilter_2 {
         return parameterFile;
     }
 
+    /**
+     * <p>parse</p>
+     *
+     * @return a {@link ffx.potential.parameters.ForceField} object.
+     */
     public ForceField parse() {
         try {
             /**

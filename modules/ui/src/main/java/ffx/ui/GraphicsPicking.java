@@ -50,6 +50,9 @@ import ffx.potential.bonded.BondedTerm;
 
 /**
  * The GraphicsPicking class is used to make selections and measurements.
+ *
+ * @author schnied
+ * @version $Id: $
  */
 public class GraphicsPicking extends PickMouseBehavior {
 	private static final Logger logger = Logger.getLogger(GraphicsPicking.class.getName());
@@ -58,6 +61,7 @@ public class GraphicsPicking extends PickMouseBehavior {
 		PICKATOM, PICKBOND, PICKANGLE, PICKDIHEDRAL, PICKRESIDUE, PICKMOLECULE, PICKPOLYMER, PICKSYSTEM, MEASUREDISTANCE, MEASUREANGLE, MEASUREDIHEDRAL;
 	}
 
+	/** Constant <code>pickLevelHash</code> */
 	public static final Hashtable<String, PickLevel> pickLevelHash = new Hashtable<String, PickLevel>();
 	static {
 		PickLevel values[] = PickLevel.values();
@@ -91,7 +95,7 @@ public class GraphicsPicking extends PickMouseBehavior {
 
 	/**
 	 * Constructor
-	 * 
+	 *
 	 * @param base
 	 *            Base of the Scenegraph
 	 * @param bounds
@@ -141,14 +145,29 @@ public class GraphicsPicking extends PickMouseBehavior {
 		atpos.get(pos);
 	}
 
+	/**
+	 * <p>getPick</p>
+	 *
+	 * @return a {@link ffx.potential.bonded.MSNode} object.
+	 */
 	public MSNode getPick() {
 		return previousPick;
 	}
 
+	/**
+	 * <p>Getter for the field <code>picking</code>.</p>
+	 *
+	 * @return a boolean.
+	 */
 	public boolean getPicking() {
 		return picking;
 	}
 
+	/**
+	 * <p>Getter for the field <code>pickLevel</code>.</p>
+	 *
+	 * @return a {@link java.lang.String} object.
+	 */
 	public String getPickLevel() {
 		return pickLevel.toString();
 	}
@@ -216,10 +235,18 @@ public class GraphicsPicking extends PickMouseBehavior {
 		count = 0;
 	}
 
+	/**
+	 * <p>resetCount</p>
+	 */
 	public void resetCount() {
 		count = 0;
 	}
 
+	/**
+	 * <p>Setter for the field <code>picking</code>.</p>
+	 *
+	 * @param m a boolean.
+	 */
 	public void setPicking(boolean m) {
 		picking = m;
 		if (picking == false) {
@@ -227,6 +254,11 @@ public class GraphicsPicking extends PickMouseBehavior {
 		}
 	}
 
+	/**
+	 * <p>Setter for the field <code>pickLevel</code>.</p>
+	 *
+	 * @param newPick a {@link java.lang.String} object.
+	 */
 	public void setPickLevel(String newPick) {
 		if (pickLevelHash.containsKey(newPick.toUpperCase())) {
 			newPickLevel = pickLevelHash.get(newPick.toUpperCase());
@@ -234,12 +266,9 @@ public class GraphicsPicking extends PickMouseBehavior {
 	}
 
 	/**
+	 * {@inheritDoc}
+	 *
 	 * Called by Java3D when an atom is picked
-	 * 
-	 * @param xpos
-	 *            Horizontal mouse position
-	 * @param ypos
-	 *            Vertical mouse position
 	 */
 	public void updateScene(int xpos, int ypos) {
 		if (picking == false) {

@@ -28,8 +28,8 @@ import java.util.Comparator;
  * The PolarizeType class defines an isotropic atomic polarizability.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
+ * @version $Id: $
  */
 public final class PolarizeType extends BaseType implements Comparator<String> {
 
@@ -64,6 +64,7 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
      *            double
      * @param polarizationGroup
      *            int[]
+     * @param thole a double.
      */
     public PolarizeType(int atomType, double polarizability, double thole,
                         int polarizationGroup[]) {
@@ -79,6 +80,11 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
         }
     }
 
+    /**
+     * <p>incrementType</p>
+     *
+     * @param increment a int.
+     */
     public void incrementType(int increment) {
         type += increment;
         setKey(Integer.toString(type));
@@ -89,6 +95,11 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
         }
     }
 
+    /**
+     * <p>add</p>
+     *
+     * @param key a int.
+     */
     public void add(int key) {
         for (int i : polarizationGroup) {
             if (key == i) {
@@ -105,9 +116,9 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
     }
 
     /**
-     * Nicely formatted polarization type.
+     * {@inheritDoc}
      *
-     * @return String
+     * Nicely formatted polarization type.
      */
     @Override
     public String toString() {
@@ -121,6 +132,7 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
         return polarizeString.toString();
     }
 
+    /** {@inheritDoc} */
     @Override
     public int compare(String s1, String s2) {
 
@@ -137,6 +149,7 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
         return 0;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean equals(Object other) {
         if (other == this) {
@@ -153,6 +166,7 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
         return false;
     }
 
+    /** {@inheritDoc} */
     @Override
     public int hashCode() {
         int hash = 5;

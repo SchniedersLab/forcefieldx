@@ -24,8 +24,10 @@ import java.util.logging.Logger;
 import org.apache.commons.configuration.CompositeConfiguration;
 
 /**
+ * <p>RealSpaceRefinementData class.</p>
  *
  * @author Tim Fenn
+ * @version $Id: $
  */
 public class RealSpaceRefinementData {
 
@@ -37,6 +39,11 @@ public class RealSpaceRefinementData {
     protected double data[];
     protected double densityscore;
 
+    /**
+     * <p>Constructor for RealSpaceRefinementData.</p>
+     *
+     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     */
     public RealSpaceRefinementData(CompositeConfiguration properties) {
         ori = new int[3];
         ext = new int[3];
@@ -44,6 +51,14 @@ public class RealSpaceRefinementData {
         periodic = false;
     }
 
+    /**
+     * <p>getDataIndex</p>
+     *
+     * @param x a int.
+     * @param y a int.
+     * @param z a int.
+     * @return a double.
+     */
     public double getDataIndex(int x, int y, int z){
         int index = x + ext[0] * (y + ext[1] * z);
         return data[index];
