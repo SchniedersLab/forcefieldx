@@ -245,7 +245,7 @@
                     </descriptors>
                     <finalName>ffx-${project.version}</finalName>
                     <outputDirectory>${project.build.directory}/site</outputDirectory>
-                    <skipAssembly>true</skipAssembly>
+                    <!-- skipAssembly>true</skipAssembly -->
                 </configuration>
                 <executions>
                     <execution>
