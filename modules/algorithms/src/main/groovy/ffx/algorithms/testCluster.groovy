@@ -15,7 +15,6 @@ if (filename == null) {
 // ===============================================================================================
 
 logger.info("\n Running testCluster");
-//systems = open(filename);
 
 Comm comm = Comm.world();
 int rank = comm.rank();
@@ -64,9 +63,4 @@ if (rank == 0) {
          " Energy " + rootTempAndEnergy[i][1]);
     }
 }
-
-
-
-
-
 

@@ -60,6 +60,7 @@ public class FFXClassLoader extends ClassLoader {
                                                   "javax.media.opengl",
                                                   "groovy",
                                                   "org.codehaus.groovy",
+                                                  "org.apache.commons.cli",
                                                   "org.apache.commons.configuration",
                                                   "org.apache.commons.io",
                                                   "org.apache.commons.lang",
@@ -102,6 +103,7 @@ public class FFXClassLoader extends ClassLoader {
                     // "org.jogamp/nativewindow.jar",
                     // Apache Commons
                     "commons-beanutils/commons-beanutils.jar",
+                    "commons-cli/commons-cli.jar",
                     "commons-collections/commons-collections.jar",
                     "commons-configuration/commons-configuration.jar",
                     "commons-digester/commons-digester.jar",

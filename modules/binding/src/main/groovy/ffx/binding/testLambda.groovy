@@ -1,22 +1,55 @@
 // TEST LAMBDA GRADIENTS
 
+// Groovy Imports
+import groovy.util.CliBuilder;
+
+// FFX Imports
 import ffx.numerics.Potential;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.ForceFieldEnergy;
 
-if (args.size() < 3) {
-   println("Usage: ffx testLambda filename ligandStart ligandStop");
-   return;
-}
+// First ligand atom.
+int ligandStart = 1;
 
-// Name of the file (PDB or XYZ).
-String filename = args[0];
-int ligandStart = Integer.parseInt(args[1]);
-int ligandStop = Integer.parseInt(args[2]);
+// Last ligand atom (set below to the last atom in the system by default).
+int ligandStop = -1;
+
+// Lambda value.
+double lambda = 0.5;
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
+
+// Create the command line parser.
+def cli = new CliBuilder(usage:' ffxc testLambda [options] <filename>');
+cli.h(longOpt:'help', 'Print this help message.');
+cli.s(longOpt:'start', args:1, argName:'1', 'Starting ligand atom.');
+cli.f(longOpt:'final', args:1, argName:'n', 'Final ligand atom.');
+cli.l(longOpt:'lambda', args:1, argName:'0.5', 'Lambda value.');
+def options = cli.parse(args);
+List<String> arguments = options.arguments();
+if (options.h || arguments == null || arguments.size() != 1) {
+    return cli.usage();
+}
+
+// Read in command line. 
+String filename = arguments.get(0);
+
+// Starting ligand atom.
+if (options.s) {
+    ligandStart = Int.parseInt(options.s);
+}
+
+// Final ligand atom.
+if (options.f) {
+    ligandStop = Int.parseInt(options.f);
+}
+
+// Lambda value to test.
+if (options.l) {
+    lambda =  Double.parseDouble(options.l);
+}
 
 println("\n Testing the Lambda gradients of " + filename);
 open(filename);
@@ -25,6 +58,10 @@ ForceFieldEnergy energy = active.getPotentialEnergy();
 Atom[] atoms = active.getAtomArray();
 int n = atoms.length;
 
+if (ligandStop < ligandStart) {
+    ligandStop = n;
+}
+
 // Apply the ligand atom selection
 for (int i = ligandStart; i <= ligandStop; i++) {
     Atom ai = atoms[i - 1];
@@ -32,7 +69,6 @@ for (int i = ligandStart; i <= ligandStop; i++) {
 }
 
 // Compute the Lambda = 1.0 energy.
-double lambda = 1.0;
 energy.setLambda(lambda);
 double e1 = energy.energy(false, false);
 println(String.format(" E(Lambda=1.0) : %20.8f.", e1));
