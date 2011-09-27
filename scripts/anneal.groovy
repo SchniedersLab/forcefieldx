@@ -41,12 +41,12 @@ String filename = arguments.get(0);
 
 // Load the number of molecular dynamics steps.
 if (options.n) {
-    steps = Int.parseInt(options.n);
+    steps = Integer.parseInt(options.n);
 }
 
 // Load the number of annealing windows.
 if (options.w) {
-    windows = Int.parseInt(options.w);
+    windows = Integer.parseInt(options.w);
 }
 
 // Low temperature in degrees Kelvin.

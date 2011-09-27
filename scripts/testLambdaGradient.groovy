@@ -46,12 +46,12 @@ String filename = arguments.get(0);
 
 // Starting ligand atom.
 if (options.s) {
-    ligandStart = Int.parseInt(options.s);
+    ligandStart = Integer.parseInt(options.s);
 }
 
 // Final ligand atom.
 if (options.f) {
-    ligandStop = Int.parseInt(options.f);
+    ligandStop = Integer.parseInt(options.f);
 }
 
 // Starting lambda value.

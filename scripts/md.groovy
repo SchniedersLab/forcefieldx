@@ -54,27 +54,27 @@ String filename = arguments.get(0);
 
 // Load the number of molecular dynamics steps.
 if (options.n) {
-    nSteps = Int.parseInt(options.n);
+    nSteps = Integer.parseInt(options.n);
 }
 
 // Load the time steps in femtoseconds.
 if (options.d) {
-    timeStep =  Double.parseDouble(options.d);
+    timeStep = Double.parseDouble(options.d);
 }
 
 // Print interval in picoseconds.
 if (options.p) {
-    printInterval =  Double.parseDouble(options.p);
+    printInterval = Double.parseDouble(options.p);
 }
 
 // Write interval in picoseconds.
 if (options.w) {
-    saveInterval =  Double.parseDouble(options.w);
+    saveInterval = Double.parseDouble(options.w);
 }
 
 // Temperature in degrees Kelvin.
 if (options.t) {
-    temperature =  Double.parseDouble(options.t);
+    temperature = Double.parseDouble(options.t);
 }
 
 // Thermostat.

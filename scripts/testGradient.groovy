@@ -20,7 +20,7 @@ boolean print = false;
 // Create the command line parser.
 def cli = new CliBuilder(usage:' ffxc testGradient [options] <filename>');
 cli.h(longOpt:'help', 'Print this help message.');
-cli.d(longOpt:'dx', args:1, argName:'1.0e-5', 'Finite-difference step size in Angstroms');
+cli.d(longOpt:'dx', args:1, argName:'1.0e-5', 'Finite-difference step size (Angstroms)');
 cli.v(longOpt:'verbose', args:1, argName:'false', 'Print out the energy for each step');
 def options = cli.parse(args);
 

@@ -35,7 +35,7 @@ if (options.h || arguments == null || arguments.size() != 1) {
 
 // Load the number iterations.
 if (options.n) {
-    nEvals = Int.parseInt(options.n);
+    nEvals = Integer.parseInt(options.n);
 }
 
 // Load the number of threads.
