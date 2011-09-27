@@ -9,7 +9,7 @@ import groovy.util.CliBuilder;
 // Force Field X Imports
 import ffx.algorithms.MolecularDynamics;
 import ffx.algorithms.Thermostat.Thermostats;
- 
+
 // Number of molecular dynamics steps
 int nSteps = 1000000;
 
@@ -49,7 +49,7 @@ if (options.h || arguments == null || arguments.size() != 1) {
     return cli.usage();
 }
 
-// Read in command line. 
+// Read in command line.
 String filename = arguments.get(0);
 
 // Load the number of molecular dynamics steps.
@@ -91,7 +91,7 @@ logger.info("\n Running molecular dynmaics on " + filename);
 open(filename);
 
 // Restart File
-File dyn = new File(FilenameUtils.removeExtension(filename) + ".dyn"); 
+File dyn = new File(FilenameUtils.removeExtension(filename) + ".dyn");
 if (!dyn.exists()) {
     dyn = null;
 }

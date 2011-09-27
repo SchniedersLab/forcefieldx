@@ -1,16 +1,26 @@
 // ENERGY
 
-// Name of the file (PDB or XYZ).
-String filename = args[0];
-if (filename == null) {
-   println("\n Usage: ffxc energy filename");
-   return;
-}
+// Groovy Imports
+import groovy.util.CliBuilder;
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 
-println("\n Running energy on " + filename);
+// Create the command line parser.
+def cli = new CliBuilder(usage:' ffxc energy [options] <filename>');
+cli.h(longOpt:'help', 'Print this help message.');
+def options = cli.parse(args);
 
-open(filename); 
+List<String> arguments = options.arguments();
+if (options.h || arguments == null || arguments.size() != 1) {
+    return cli.usage();
+}
+
+// Read in command line.
+String filename = arguments.get(0);
+
+logger.info("\n Running energy on " + filename);
+
+open(filename);
+
 energy();

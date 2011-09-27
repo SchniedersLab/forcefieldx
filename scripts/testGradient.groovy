@@ -1,34 +1,48 @@
 // TEST ATOMIC COORDINATE GRADIENT
 
+// Groovy Imports
+import groovy.util.CliBuilder;
+
+// FFX Imports
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
 
-int nargs = args.size();
-
-// Name of the file (PDB or XYZ).
-String filename = args[0];
-if (filename == null) {
-    println("Usage: ffx testGradient filename fdstep verbose");
-    return;
-}
-
 // Finite-difference step size in Angstroms.
 double step = 1.0e-5;
-if (nargs > 1) {
-    step = Double.parseDouble(args[1]);
-}
 
 // Print out the energy for each step.
 boolean print = false;
-if (nargs > 2) {
-    print = Boolean.parseBoolean(args[2]);
-}
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 
-println("\n Testing the atomic coordinate gradient of " + filename);
+// Create the command line parser.
+def cli = new CliBuilder(usage:' ffxc testGradient [options] <filename>');
+cli.h(longOpt:'help', 'Print this help message.');
+cli.d(longOpt:'dx', args:1, argName:'1.0e-5', 'Finite-difference step size in Angstroms');
+cli.v(longOpt:'verbose', args:1, argName:'false', 'Print out the energy for each step');
+def options = cli.parse(args);
+
+List<String> arguments = options.arguments();
+if (options.h || arguments == null || arguments.size() != 1) {
+    return cli.usage();
+}
+
+// Read in command line.
+String filename = arguments.get(0);
+
+// Load the finite-difference step size in Angstroms.
+if (options.d) {
+    step =  Double.parseDouble(options.d);
+}
+
+// Print the energy for each step.
+if (options.v) {
+    print = Boolean.parseBoolean(options.v);
+}
+
+logger.info("\n Testing the atomic coordinate gradient of " + filename);
 
 open(filename);
 
@@ -56,7 +70,7 @@ for (int i=0; i<n; i++) {
     double orig = x[i0];
     x[i0] += step;
     energy.setCoordinates(x);
-    double e = energy.energy(false, print);    
+    double e = energy.energy(false, print);
     x[i0] = orig - step;
     energy.setCoordinates(x);
     e -= energy.energy(false, print);
@@ -90,13 +104,13 @@ for (int i=0; i<n; i++) {
     double dz = analytic[i2] - numeric[2];
     double len = Math.sqrt(dx * dx + dy * dy + dz * dz);
     if (len > gradientTolerance) {
-        System.out.println(" " + a0.toShortString() + String.format(" failed: %10.6f.", len) 
-            + String.format("\n Analytic: (%12.4f, %12.4f, %12.4f)\n", analytic[i0], analytic[i1], analytic[i2]) 
+        logger.info(" " + a0.toShortString() + String.format(" failed: %10.6f.", len)
+            + String.format("\n Analytic: (%12.4f, %12.4f, %12.4f)\n", analytic[i0], analytic[i1], analytic[i2])
             + String.format(" Numeric:  (%12.4f, %12.4f, %12.4f)\n", numeric[0], numeric[1], numeric[2]));
         return;
     } else {
-        System.out.println(" " + a0.toShortString() + String.format(" passed: %10.6f.", len) 
-            + String.format("\n Analytic: (%12.4f, %12.4f, %12.4f)\n", analytic[i0], analytic[i1], analytic[i2]) 
+        logger.info(" " + a0.toShortString() + String.format(" passed: %10.6f.", len)
+            + String.format("\n Analytic: (%12.4f, %12.4f, %12.4f)\n", analytic[i0], analytic[i1], analytic[i2])
             + String.format(" Numeric:  (%12.4f, %12.4f, %12.4f)\n", numeric[0], numeric[1], numeric[2]));
     }
 }

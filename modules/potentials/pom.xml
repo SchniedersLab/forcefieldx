@@ -157,6 +157,12 @@
             <version>1.5</version>
         </dependency>
         <dependency>
+            <groupId>org.codehaus.groovy</groupId>
+            <artifactId>groovy-all</artifactId>
+            <type>jar</type>
+            <version>1.8.2</version>
+        </dependency>
+        <dependency>
             <groupId>java3d</groupId>
             <artifactId>j3dcore</artifactId>
             <type>jar</type>

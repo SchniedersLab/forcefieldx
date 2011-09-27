@@ -41,14 +41,14 @@
         </faq>
         <faq id="10">
             <question>
+                <a href="http://dx.doi.org/10.1016/j.str.2011.01.015">
+                    <img src="images/pdf.png" alt="PDF"/>
+                </a>
                 Fenn, T. D., M. J. Schnieders, M. Mustyakimov, C. Wu, V. S. Pande, P. Langan and A. T. Brunger,
                 Reintroducing electrostatics into macromolecular crystallographic refinement: 
                 Application to neutron crystallography and DNA hydration.
                 <i>Structure</i>
                 <b>2011</b> 19, (4), 523-33.
-                <a href="http://dx.doi.org/10.1016/j.str.2011.01.015">
-                    <img src="images/pdf.png" alt="PDF"/>
-                </a>
             </question>
             <answer>
                 <p>
@@ -71,14 +71,14 @@
         </faq>
         <faq id="9">
             <question>
+                <a href="http://dx.doi.org/10.1021/ct100506d">
+                    <img src="images/pdf.png" alt="PDF"/>
+                </a>
                 Schnieders, M. J., T. D. Fenn and V. S. Pande, 
                 Polarizable atomic multipole X-ray refinement: 
                 Particle-mesh Ewald electrostatics for macromolecular crystals.
                 <i>Journal of Chemical Theory and Computation</i>
-                <b>2011</b> 7, (4), 1141-56.    
-                <a href="http://dx.doi.org/10.1021/ct100506d">
-                    <img src="images/pdf.png" alt="PDF"/>
-                </a>
+                <b>2011</b> 7, (4), 1141-56.
             </question>
             <answer>
                 <p>
@@ -125,14 +125,14 @@
         <title>2010</title>
         <faq id="8">
             <question>
+                <a target="_blank" href="http://dx.doi.org/10.1016/j.bpj.2010.02.057">
+                    <img src="images/pdf.png" alt="PDF"/>
+                </a>
                 Fenn, T. D.*, M. J. Schnieders*, A. T. Brunger and V. S. Pande, 
                 Polarizable atomic multipole X-ray refinement: 
                 Hydration geometry and application to macromolecules.
                 <i>Biophysical Journal</i>
                 <b>2010</b>, 98, (12), 2984-92 (*joint first authors).
-                <a target="_blank" href="http://dx.doi.org/10.1016/j.bpj.2010.02.057">
-                    <img src="images/pdf.png" alt="PDF"/>
-                </a>
             </question>
             <answer>
                 <p>
@@ -158,13 +158,13 @@
         </faq>
         <faq id="7">
             <question>
+                <a target="_blank" href="http://dx.doi.org/10.1107/S0907444910031045">
+                    <img src="images/pdf.png" alt="PDF"/>
+                </a>
                 Fenn, T. D., M. J. Schnieders and A. T. Brunger,
                 A smooth and differentiable bulk-solvent model for macromolecular diffraction.
                 <i>Acta Crystallographica Section D</i>
                 <b>2010</b>, 66, (9), 1024-31.
-                <a target="_blank" href="http://dx.doi.org/10.1107/S0907444910031045">
-                    <img src="images/pdf.png" alt="PDF"/>
-                </a>            
             </question>
             <answer>
                 <p>
@@ -191,15 +191,15 @@
         </faq>
         <faq id="6">
             <question>
+                <a target="_blank" href="http://dx.doi.org/10.1021/jp910674d">
+                    <img src="images/pdf.png" alt="PDF"/>
+                </a>
                 Ponder, J. W., C. Wu, P. Ren, V. S. Pande, J. D. Chodera, M. J. Schnieders,
                 I. Haque, D. L. Mobley, D. S. Lambrecht, R. A. DiStasio, M. Head-Gordon, 
                 G. N. I. Clark, M. E. Johnson and T. Head-Gordon,
                 Current Status of the AMOEBA Polarizable Force Field.
                 <i>The Journal of Physical Chemistry B.</i>
                 <b>2010</b>, 114, 2549-64.
-                <a target="_blank" href="http://dx.doi.org/10.1021/jp910674d">
-                    <img src="images/pdf.png" alt="PDF"/>
-                </a>
             </question>
             <answer>
                 <p>
@@ -228,14 +228,14 @@
         <title>2009</title>
         <faq id="5">
             <question>
+                <a href="http://dx.doi.org/10.1107/S0907444909022707" target="_blank">
+                    <img src="images/pdf.png" alt="PDF"/>
+                </a>                            
                  Schnieders, M. J., T. D. Fenn, V. S. Pande and A. T. Brunger, 
                  Polarizable atomic multipole X-ray refinement: 
                  Application to peptide crystals.
                 <i>Acta Crystallographica Section D</i>
                 <b>2009</b>, 65, (9), 952-65.
-                <a href="http://dx.doi.org/10.1107/S0907444909022707" target="_blank">
-                    <img src="images/pdf.png" alt="PDF"/>
-                </a>                            
             </question>
             <answer>
                 <p> 
@@ -262,15 +262,15 @@
         </faq>
         <faq id="4">
             <question>
+                <a href="http://dx.doi.org/10.1109/IEMBS.2009.5335108" target="_blank">
+                    <img src="images/pdf.png" alt="PDF"/>
+                </a>
                 Yue, S. J. Dian, M. J. Schnieders and P. Ren,
                 Trypsin-ligand binding free energy calculation with AMOEBA.
                 <i>Engineering in Medicine and Biology Society. EMBC. 
                     Annual International Conference of the IEEE
                 </i> 
                 <b>2009</b>, 2328-31.
-                <a href="http://dx.doi.org/10.1109/IEMBS.2009.5335108" target="_blank">
-                    <img src="images/pdf.png" alt="PDF"/>
-                </a>
             </question>
             <answer>
                 <p>
@@ -286,14 +286,14 @@
         </faq>
         <faq id="3">
             <question>
+                <a href="http://dx.doi.org/10.1002/jcc.21268" target="_blank">
+                    <img src="images/pdf.png" alt="PDF"/>
+                </a>
                 Jiao, D., J. J. Zhang, R. E. Duke, G. H. Li, M. J. Schnieders and P. Ren, 
                 Trypsin-ligand binding free energies from explicit and implicit solvent 
                 simulations with polarizable potential.
                 <i>Journal of Computational Chemistry</i>
                 <b>2009</b>, 30, (11), 1701-11.
-                <a href="http://dx.doi.org/10.1002/jcc.21268" target="_blank">
-                    <img src="images/pdf.png" alt="PDF"/>
-                </a>
             </question>
             <answer>
                 <p>
@@ -323,13 +323,13 @@
         <title>2007</title>
         <faq id="2">
             <question>
+                <a target="_blank" href="http://dx.doi.org/10.1021/ct7001336">
+                    <img src="images/pdf.png" alt="PDF"/>
+                </a>
                 Schnieders, M. J. and J. W. Ponder, 
                 Polarizable atomic multipole solutes in a generalized Kirkwood continuum.
                 <i>Journal of Chemical Theory and Computation</i>
                 <b>2007</b>, 3, (6), 2083-97.
-                <a target="_blank" href="http://dx.doi.org/10.1021/ct7001336">
-                    <img src="images/pdf.png" alt="PDF"/>
-                </a>
             </question>
             <answer>
                 <p>
@@ -357,13 +357,13 @@
         </faq>
         <faq id="1">
             <question>
-                Schnieders, M. J., N. A. Baker, P. Ren and J. W. Ponder, 
-                Polarizable atomic multipole solutes in a Poisson-Boltzmann continuum.
-                <i>Journal of Chemical Physics</i>
-                <b>2007</b>, 126, (12), 124114.    
                 <a target="_blank" href="http://dx.doi.org/10.1063/1.2714528">
                     <img src="images/pdf.png" alt="PDF"/>
                 </a>
+                Schnieders, M. J., N. A. Baker, P. Ren and J. W. Ponder, 
+                Polarizable atomic multipole solutes in a Poisson-Boltzmann continuum.
+                <i>Journal of Chemical Physics</i>
+                <b>2007</b>, 126, (12), 124114.
             </question>
             <answer>
                 <p>

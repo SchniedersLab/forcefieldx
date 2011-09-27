@@ -23,7 +23,7 @@ if (options.h || arguments == null || arguments.size() != 1) {
     return cli.usage();
 }
 
-// Read in command line. 
+// Read in command line.
 String filename = arguments.get(0);
 
 // Load convergence criteria.

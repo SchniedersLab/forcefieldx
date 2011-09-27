@@ -245,7 +245,7 @@
                     </descriptors>
                     <finalName>ffx-${project.version}</finalName>
                     <outputDirectory>${project.build.directory}/site</outputDirectory>
-                    <!-- skipAssembly>true</skipAssembly -->
+                    <skipAssembly>${skipAssembly}</skipAssembly>
                 </configuration>
                 <executions>
                     <execution>
@@ -548,6 +548,8 @@
         <website.repo>file:website</website.repo>
         <snapshot.repo>file:lib</snapshot.repo>
         <release.repo>file:release</release.repo>
+        <!-- Default website build skips the assembly -->
+        <skipAssembly>true</skipAssembly>
         <!-- Setting the source encoding is required for builds
              that are platform independent. -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

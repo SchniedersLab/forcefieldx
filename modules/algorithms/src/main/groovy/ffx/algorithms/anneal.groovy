@@ -22,7 +22,7 @@ int steps = 1000;
 // ===============================================================================================
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc md [options] <filename>');
+def cli = new CliBuilder(usage:' ffxc anneal [options] <filename>');
 cli.h(longOpt:'help', 'Print this help message.');
 cli.n(longOpt:'steps', args:1, argName:'1000', 'Number of molecular dynamics steps per annealing window.');
 cli.w(longOpt:'windows', args:1, argName:'10', 'Number of annealing windows.');
@@ -36,7 +36,7 @@ if (options.h || arguments == null || arguments.size() != 1) {
     return cli.usage();
 }
 
-// Read in command line. 
+// Read in command line.
 String filename = arguments.get(0);
 
 // Load the number of molecular dynamics steps.
@@ -62,6 +62,6 @@ if (options.t) {
 logger.info("\n Running simulated annealing on " + filename);
 open(filename);
 SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(active, active.getPotentialEnergy(),
-		 active.getProperties(), null);
+    active.getProperties(), null);
 simulatedAnnealing.anneal(high, low, windows, steps);
 

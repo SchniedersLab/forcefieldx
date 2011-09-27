@@ -51,7 +51,7 @@ if (options.l) {
     lambda =  Double.parseDouble(options.l);
 }
 
-println("\n Testing the Lambda gradients of " + filename);
+logger.info("\n Testing the Lambda gradients of " + filename);
 open(filename);
 
 ForceFieldEnergy energy = active.getPotentialEnergy();
@@ -71,14 +71,14 @@ for (int i = ligandStart; i <= ligandStop; i++) {
 // Compute the Lambda = 1.0 energy.
 energy.setLambda(lambda);
 double e1 = energy.energy(false, false);
-println(String.format(" E(Lambda=1.0) : %20.8f.", e1));
+logger.info(String.format(" E(Lambda=1.0) : %20.8f.", e1));
 
 // Compute the Lambda = 0.0 energy.
 lambda = 0.0;
 energy.setLambda(lambda);
 double e0 = energy.energy(false, false);
-println(String.format(" E(Lambda=0.0) : %20.8f.", e0));
-println(String.format(" E(1)-E(0): %20.8f.", e1-e0));
+logger.info(String.format(" E(Lambda=0.0) : %20.8f.", e0));
+logger.info(String.format(" E(1)-E(0): %20.8f.", e1-e0));
 
 // Set Lambda to be 0.5.
 lambda = 0.5;
@@ -114,8 +114,8 @@ energy.getGradients(dedx[1]);
 double dedl = (dedlp - dedlm) / (2.0 * step);
 double d2edl2 = (d2edl2p - d2edl2m) / (2.0 * step);
 
-println(String.format(" Analytic vs. Numeric dE/dLambda:   %15.8f %15.8f", dEdLambda, dedl));
-println(String.format(" Analytic vs. Numeric d2E/dLambda2: %15.8f %15.8f", dE2dLambda2, d2edl2));
+logger.info(String.format(" Analytic vs. Numeric dE/dLambda:   %15.8f %15.8f", dEdLambda, dedl));
+logger.info(String.format(" Analytic vs. Numeric d2E/dLambda2: %15.8f %15.8f", dE2dLambda2, d2edl2));
 
 for (int i = ligandStart - 1; i < ligandStop; i++) {
     println(" dE/dX/dLambda for Ligand Atom " + (i + 1));
@@ -125,7 +125,7 @@ for (int i = ligandStart - 1; i < ligandStop; i++) {
     double dY = (dedx[0][index] - dedx[1][index]) / (2.0 * step);
     index++;
     double dZ = (dedx[0][index] - dedx[1][index]) / (2.0 * step);
-    println(String.format(" Analytic: (%15.8f, %15.8f, %15.8f)", 
+    logger.info(String.format(" Analytic: (%15.8f, %15.8f, %15.8f)", 
             dEdLdX[i*3],dEdLdX[i*3+1],dEdLdX[i*3+2]));
-    println(String.format(" Numeric:  (%15.8f, %15.8f, %15.8f)", dX,dY,dZ));
+    logger.info(String.format(" Numeric:  (%15.8f, %15.8f, %15.8f)", dX,dY,dZ));
 }

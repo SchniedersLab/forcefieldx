@@ -1,38 +1,70 @@
 // TEST LAMBDA GRADIENT
 
+// Apache Imports
 import org.apache.commons.io.FilenameUtils;
 
+// Groovy Imports
+import groovy.util.CliBuilder;
+
+// FFX Imports
 import ffx.numerics.Potential;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.ForceFieldEnergy;
 
-// Name of the file (PDB or XYZ).
-String filename = args[0];
-if (filename == null) {
-    println("\n Usage: ffxc testLambdaGradient filename ligandStart ligandStop lambda");
-    return; 
-}
-
+// First ligand atom.
 int ligandStart = 1;
-if (args.size() > 1) {
-    ligandStart = Integer.parseInt(args[1]);
-}
 
+// Last ligand atom.
 int ligandStop = ligandStart;
-if (args.size() > 2) {
-    ligandStop = Integer.parseInt(args[2]);
-}
 
-double initialLambda = 1.0;
-if (args.size() > 3) {
-    initialLambda = Double.parseDouble(args[3]);
-}
+// Initial lambda value.
+double initialLambda = 0.5;
+
+// Print out the energy for each step.
+boolean print = false;
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 
-println("\n Testing lambda gradient for " + filename);
+// Create the command line parser.
+def cli = new CliBuilder(usage:' ffxc testLambdaGradient [options] <filename>');
+cli.h(longOpt:'help', 'Print this help message.');
+cli.s(longOpt:'start', args:1, argName:'1', 'Starting ligand atom.');
+cli.f(longOpt:'final', args:1, argName:'start', 'Final ligand atom.');
+cli.l(longOpt:'lambda', args:1, argName:'0.5', 'Lambda value.');
+cli.v(longOpt:'verbose', 'Print out the energy for each step');
+
+def options = cli.parse(args);
+List<String> arguments = options.arguments();
+if (options.h || arguments == null || arguments.size() != 1) {
+    return cli.usage();
+}
+
+// Read in command line file.
+String filename = arguments.get(0);
+
+// Starting ligand atom.
+if (options.s) {
+    ligandStart = Int.parseInt(options.s);
+}
+
+// Final ligand atom.
+if (options.f) {
+    ligandStop = Int.parseInt(options.f);
+}
+
+// Starting lambda value.
+if (options.l) {
+    initialLambda = Double.parseDouble(options.l);
+}
+
+// Print the energy for each step.
+if (options.v) {
+    print = Boolean.parseBoolean(options.v);
+}
+
+logger.info("\n Testing lambda gradient for " + filename);
 
 System.setProperty("lambdaterm","true");
 System.setProperty("ligand-start", Integer.toString(ligandStart));
@@ -54,22 +86,22 @@ for (int i = ligandStart; i <= ligandStop; i++) {
 // Compute the Lambda = 1.0 energy.
 double lambda = 1.0;
 energy.setLambda(lambda);
-double e1 = energy.energy(false, true);
-println(String.format(" E(1):      %20.8f.", e1));
+double e1 = energy.energy(false, print);
+logger.info(String.format(" E(1):      %20.8f.", e1));
 
 // Compute the Lambda = 0.0 energy.
 lambda = 0.0;
 energy.setLambda(lambda);
-double e0 = energy.energy(false, true);
-println(String.format(" E(0):      %20.8f.", e0));
-println(String.format(" E(1)-E(0): %20.8f.\n", e1-e0));
+double e0 = energy.energy(false, print);
+logger.info(String.format(" E(0):      %20.8f.", e0));
+logger.info(String.format(" E(1)-E(0): %20.8f.\n", e1-e0));
 
 // Finite-difference step size.
 double step = 1.0e-5;
 
 // Error tolerence
 double errTol = 1.0e-3;
-   
+
 // Test Lambda gradient in the neighborhood of the lambda variable.
 for (int j=0; j<3; j++) {
     lambda = initialLambda - 0.01 + 0.01 * j;
@@ -80,13 +112,13 @@ for (int j=0; j<3; j++) {
     if (lambda + step > 1.0) {
         continue;
     }
-   
-    println(String.format(" Current lambda value %6.4f", lambda));
-    
+
+    logger.info(String.format(" Current lambda value %6.4f", lambda));
+
     energy.setLambda(lambda);
 
     // Calculate the energy, dE/dX, dE/dLambda, d2E/dLambda2 and dE/dLambda/dX
-    double e = energy.energy(true, false);
+    double e = energy.energy(true, print);
 
     // Analytic dEdLambda and d2E/dLambda2
     double dEdLambda = energy.getdEdL();
@@ -100,12 +132,12 @@ for (int j=0; j<3; j++) {
     double[][] dedx = new double[2][n * 3];
 
     energy.setLambda(lambda + step);
-    double lp = energy.energy(true, false);
+    double lp = energy.energy(true, print);
     double dedlp = energy.getdEdL();
     energy.getGradients(dedx[0]);
 
     energy.setLambda(lambda - step);
-    double lm = energy.energy(true, false);
+    double lm = energy.energy(true, print);
     double dedlm = energy.getdEdL();
     energy.getGradients(dedx[1]);
 
@@ -114,22 +146,22 @@ for (int j=0; j<3; j++) {
 
     double err = Math.abs(dedl - dEdLambda);
     if (err < errTol) {
-        println(String.format(" dE/dL passed:   %10.6f", err));
+        logger.info(String.format(" dE/dL passed:   %10.6f", err));
     } else {
-        println(String.format(" dE/dL failed: %10.6f", err));
+        logger.info(String.format(" dE/dL failed: %10.6f", err));
     }
-    println(String.format(" Numeric:   %15.8f", dedl));
-    println(String.format(" Analytic:  %15.8f", dEdLambda));
-        
+    logger.info(String.format(" Numeric:   %15.8f", dedl));
+    logger.info(String.format(" Analytic:  %15.8f", dEdLambda));
+
     err = Math.abs(d2edl2 - dE2dLambda2);
     if (err < errTol) {
-        println(String.format(" d2E/dL2 passed: %10.6f", err));
+        logger.info(String.format(" d2E/dL2 passed: %10.6f", err));
     } else {
-        println(String.format(" d2E/dL2 failed: %10.6f", err));
+        logger.info(String.format(" d2E/dL2 failed: %10.6f", err));
     }
-    println(String.format(" Numeric:   %15.8f", d2edl2));
-    println(String.format(" Analytic:  %15.8f", dE2dLambda2));
-    
+    logger.info(String.format(" Numeric:   %15.8f", d2edl2));
+    logger.info(String.format(" Analytic:  %15.8f", dE2dLambda2));
+
     for (int i = ligandStart - 1; i < ligandStop; i++) {
         int ii = i * 3;
         double dX = (dedx[0][ii] - dedx[1][ii]) / (2.0 * step);
@@ -143,16 +175,16 @@ for (int j=0; j<3; j++) {
         double dZ = (dedx[0][ii] - dedx[1][ii]) / (2.0 * step);
         double dZa = dEdLdX[ii];
         double eZ = dZ - dZa;
-        
+
         double error = Math.sqrt(eX * eX + eY * eY + eZ * eZ);
         if (error < errTol) {
-            println(String.format(" dE/dX/dL for Ligand Atom %d passed: %10.6f", i + 1, error));
+            logger.info(String.format(" dE/dX/dL for Ligand Atom %d passed: %10.6f", i + 1, error));
         } else {
-            println(String.format(" dE/dX/dL for Ligand Atom %d failed: %10.6f", i + 1, error));
+            logger.info(String.format(" dE/dX/dL for Ligand Atom %d failed: %10.6f", i + 1, error));
         }
-        println(String.format(" Analytic: (%15.8f, %15.8f, %15.8f)", dXa,dYa,dZa));
-        println(String.format(" Numeric:  (%15.8f, %15.8f, %15.8f)", dX, dY, dZ));
+        logger.info(String.format(" Analytic: (%15.8f, %15.8f, %15.8f)", dXa,dYa,dZa));
+        logger.info(String.format(" Numeric:  (%15.8f, %15.8f, %15.8f)", dX, dY, dZ));
     }
-    
-    println();
+
+    logger.info("");
 }

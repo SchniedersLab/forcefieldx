@@ -4,13 +4,6 @@
 import edu.rit.pj.Comm;
 import edu.rit.mp.DoubleBuf;
 
-// Name of the file (PDB or XYZ).
-String filename = args[0];
-if (filename == null) {
-   logger.info("\n Usage: ffxc -Dpj.nn=X testCluster filename");
-   return;
-}
-
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 
@@ -36,7 +29,7 @@ if (rank == 0) {
         // Initialize temperature and energy
         rootTempAndEnergy[i][0] = 300.0 + i * 10.0;
         rootTempAndEnergy[i][1] = 0.0;
-    }  
+    }
 }
 
 // Scatter the initial temperatures.
@@ -58,7 +51,7 @@ comm.gather(0, myBuf, rootBuf);
 if (rank == 0) {
     // Could do RepEx here.
     for (int i=0; i<size; i++) {
-        logger.info(" " + i + 
+        logger.info(" " + i +
          " Temperature " + rootTempAndEnergy[i][0] +
          " Energy " + rootTempAndEnergy[i][1]);
     }
