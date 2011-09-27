@@ -270,7 +270,7 @@ public class Main extends JFrame {
                 try {
                     commandLineFile = new File(
                             FFXClassLoader.copyInputStreamToTmpFile(
-                            embeddedScript.openStream(), ".ffx"));
+                            embeddedScript.openStream(), commandLineFile.getName(), ".ffx"));
                 } catch (Exception e) {
                     logger.warning("Exception extracting embedded script "
                                    + embeddedScript.toString() + "\n" + e.toString());

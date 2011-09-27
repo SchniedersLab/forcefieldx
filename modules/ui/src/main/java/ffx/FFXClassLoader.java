@@ -196,11 +196,12 @@ public class FFXClassLoader extends ClassLoader {
      * @return a {@link java.lang.String} object.
      * @throws java.io.IOException if any.
      */
-    public static String copyInputStreamToTmpFile(InputStream input,
-                                                  String suffix) throws IOException {
+    public static String copyInputStreamToTmpFile(InputStream input, String name,
+                                                   String suffix) throws IOException {
         File tmpFile = null;
+        name = "ffx." + name + ".";
         try {
-            tmpFile = File.createTempFile("tmp.", suffix);
+            tmpFile = File.createTempFile(name, suffix);
         } catch (Exception e) {
             System.out.println(" Could not extract a Force Field X library.");
             System.err.println(e.toString());
@@ -408,18 +409,25 @@ public class FFXClassLoader extends ClassLoader {
             try {
                 URL extensionJarOrDllUrl = getResource(extensionJarOrDll);
                 if (extensionJarOrDllUrl != null) {
+                    int lastSlashIndex = extensionJarOrDll.lastIndexOf('/');
                     if (extensionJarOrDll.endsWith(".jar")) {
+                        int start = lastSlashIndex + 1;
+                        int end = extensionJarOrDll.indexOf(".jar");
+                        String name = extensionJarOrDll.substring(start,end);
                         // Copy jar to a tmp file
-                        String extensionJar = copyInputStreamToTmpFile(extensionJarOrDllUrl.openStream(), ".jar");
-                        // Add tmp file to extension jars list
+                        String extensionJar = copyInputStreamToTmpFile(extensionJarOrDllUrl.openStream(),
+                                                                       name, ".jar");
+                        // Add extracted file to the extension jars list
                         extensionJarList.add(new JarFile(extensionJar, false));
                     } else if (extensionJarOrDll.endsWith(dllSuffix)) {
-                        int lastSlashIndex = extensionJarOrDll.lastIndexOf('/');
+                        int start = lastSlashIndex + 1 + dllPrefix.length();
+                        int end = extensionJarOrDll.indexOf(dllSuffix);
+                        String name = extensionJarOrDll.substring(start,end);
                         // Copy DLL to a tmp file
-                        String extensionDll = copyInputStreamToTmpFile(extensionJarOrDllUrl.openStream(), dllSuffix);
-                        // Add tmp file to extension DLLs map
-                        this.extensionDlls.put(extensionJarOrDll.substring(lastSlashIndex + 1 + dllPrefix.length(),
-                                                                           extensionJarOrDll.indexOf(dllSuffix)), extensionDll);
+                        String extensionDll = copyInputStreamToTmpFile(extensionJarOrDllUrl.openStream(), 
+                                                                       name, dllSuffix);
+                        // Add extracted file to extension DLLs map
+                        extensionDlls.put(name, extensionDll);
                     }
                 }
             } catch (IOException ex) {
