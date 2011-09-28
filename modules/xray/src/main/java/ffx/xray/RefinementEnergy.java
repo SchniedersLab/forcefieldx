@@ -63,6 +63,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
     protected int nocc;
     private int n;
     private double weight;
+    private double ktscale;
     private double xChemical[][];
     private double gChemical[][];
     private double gXray[];
@@ -98,6 +99,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
         this.refinementMode = refinementmode;
         this.optimizationScaling = scaling;
         this.thermostat = null;
+        this.ktscale = 1.0;
 
         // determine size of fit
         n = nxyz = nb = nocc = 0;
@@ -224,7 +226,6 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
         double e = 0.0;
         Arrays.fill(g, 0.0);
 
-        double ktscale = 1.0;
         if (thermostat != null) {
             ktscale = Thermostat.convert / (thermostat.getCurrentTemperture() * Thermostat.kB);
         }
@@ -400,6 +401,24 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
     public void setXWeight(double weight) {
         this.weight = weight;
     }
+    
+    /**
+     * get the current kT scaling weight
+     * 
+     * @return kT scale
+     */
+    public double getKTScale() {
+        return this.ktscale;
+    }
+    
+    /**
+     * set the current kT scaling weight
+     *
+     * @param ktscale requested kT scale
+     */
+    public void setKTScale(double ktscale) {
+        this.ktscale = ktscale;
+    }
 
     /** {@inheritDoc} */
     @Override
@@ -440,7 +459,6 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
     /** {@inheritDoc} */
     @Override
     public boolean algorithmUpdate(MolecularAssembly active) {
-        double ktscale = 1.0;
         if (thermostat != null) {
             ktscale = Thermostat.convert / (thermostat.getCurrentTemperture() * Thermostat.kB);
         }
@@ -507,7 +525,6 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
     public double getdEdL() {
         double e = 0.0;
 
-        double ktscale = 1.0;
         if (thermostat != null) {
             ktscale = Thermostat.convert / (thermostat.getCurrentTemperture() * Thermostat.kB);
         }
@@ -537,7 +554,6 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
     public double getd2EdL2() {
         double e = 0.0;
 
-        double ktscale = 1.0;
         if (thermostat != null) {
             ktscale = Thermostat.convert / (thermostat.getCurrentTemperture() * Thermostat.kB);
         }
@@ -560,7 +576,6 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
     /** {@inheritDoc} */
     @Override
     public void getdEdXdL(double[] gradient) {
-        double ktscale = 1.0;
         if (thermostat != null) {
             ktscale = Thermostat.convert / (thermostat.getCurrentTemperture() * Thermostat.kB);
         }

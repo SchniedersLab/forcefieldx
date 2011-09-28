@@ -1,4 +1,4 @@
-// REALSPACE MINIMIZE
+// REALSPACE SIMULATED ANNEALING
 
 // Apache Imports
 import org.apache.commons.io.FilenameUtils;
@@ -7,22 +7,33 @@ import org.apache.commons.io.FilenameUtils;
 import groovy.util.CliBuilder;
 
 // Force Field X Imports
+import ffx.algorithms.SimulatedAnnealing;
+import ffx.xray.CrystalReciprocalSpace.SolventModel;
 import ffx.xray.RealSpaceData;
 import ffx.xray.RealSpaceFile;
-import ffx.xray.RefinementMinimize;
+import ffx.xray.RefinementEnergy;
 import ffx.xray.RefinementMinimize.RefinementMode;
 
-// RMS gradient per atom convergence criteria
-double eps = 1.0;
-
-// maximum number of refinement cycles
-int maxiter = 1000;
-
 // suffix to append to output data
-String suffix = "_rsrefine";
+String suffix = "_anneal";
 
 // include SCF/polarization?
 boolean noscf = false;
+
+// starting temp
+double highTemperature = 1000.0;
+
+// ending temp
+double lowTemperature = 100.0;
+
+// number of steps to take between high and low temps
+int annealingSteps = 10;
+
+// number of MD steps at each annealing step
+int mdSteps = 200;
+
+// Reset velocities (ignored if a restart file is given)
+boolean initVelocities = true;
 
 
 // Things below this line normally do not need to be changed.
@@ -34,13 +45,15 @@ logger.info(" command line variables:");
 logger.info(" " + args + "\n");
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc realspace.minimize [options] <pdbfilename> [datafilename]');
+def cli = new CliBuilder(usage:' ffxc realspace.anneal [options] <pdbfilename> [datafilename]');
 cli.h(longOpt:'help', 'Print this help message.');
 cli.D(longOpt:'data', args:2, valueSeparator:',', argName:'data.map,1.0', 'specify input data filename (or simply provide the datafilename argument after the PDB file) and weight to apply to the data (wA)');
-cli.e(longOpt:'eps', args:1, argName:'1.0', 'RMS gradient convergence criteria');
-cli.m(longOpt:'maxiter', args:1, argName:'1000', 'maximum number of allowed refinement iterations');
-cli.s(longOpt:'suffix', args:1, argName:'_rsrefine', 'output suffix');
+cli.s(longOpt:'suffix', args:1, argName:'_anneal', 'output suffix');
 cli.S(longOpt:'scf', 'set to turn off SCF/polarization');
+cli.H(longOpt:'hightemp', args:1, argName:'1000.0', 'starting temperature');
+cli.L(longOpt:'lowtemp', args:1, argName:'100.0', 'ending temperature');
+cli.N(longOpt:'annealsteps', args:1, argName:'10', 'Number of steps between high and low temperature');
+cli.n(longOpt:'mdsteps', args:1, argName:'200', 'Number of molecular dynamics steps at each temperature.');
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
 if (options.h || arguments == null || arguments.size() < 1) {
@@ -64,14 +77,6 @@ if (options.D) {
     }
 }
 
-if (options.e) {
-    eps = Double.parseDouble(options.e);
-}
-
-if (options.m) {
-    maxiter = Integer.parseInt(options.m);
-}
-
 if (options.s) {
     suffix = options.s;
 }
@@ -83,25 +88,37 @@ if (options.S) {
     System.setProperty("tau-temperature","0.001");
 }
 
-logger.info("\n Running x-ray minimize on " + modelfilename);
-systems = open(modelfilename);
+if (options.H) {
+    highTemperature = Double.parseDouble(options.H);
+}
+
+if (options.L) {
+    lowTemperature = Double.parseDouble(options.L);
+}
+
+if (options.N) {
+    annealingSteps = Integer.parseInteger(options.N);
+}
+
+if (options.n) {
+    mdSteps = Integer.parseInteger(options.n);
+}
+
+logger.info("\n Running simulated annealing on " + modelfilename);
+open(modelfilename);
 
 if (mapfiles.size() == 0) {
-    RealSpaceFile realspacefile = new RealSpaceFile(systems, 1.0);
+    RealSpaceFile realspacefile = new RealSpaceFile(active, 1.0);
     mapfiles.add(realspacefile);
 }
 
-RealSpaceData realspacedata = new RealSpaceData(systems, systems[0].getProperties(), mapfiles.toArray(new RealSpaceFile[mapfiles.size()]));
+RealSpaceData realspacedata = new RealSpaceData(active, active.getProperties(), mapfiles.toArray(new RealSpaceFile[mapfiles.size()]));
 
 energy();
 
-RefinementMinimize refinementMinimize = new RefinementMinimize(diffractiondata, RefinementMode.COORDINATES);
-if (eps < 0.0) {
-    eps = 1.0;
-}
-logger.info("\n RMS gradient convergence criteria: " + eps + " max number of iterations: " + maxiter);
-refinementMinimize.minimize(eps, maxiter);
-
+RefinementEnergy refinementEnergy = new RefinementEnergy(realspacedata, RefinementMode.COORDINATES);
+SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(active, refinementEnergy, active.getProperties(), refinementEnergy);
+simulatedAnnealing.anneal(highTemperature, lowTemperature, annealingSteps, mdSteps);
 energy();
 
 saveAsPDB(systems, new File(FilenameUtils.removeExtension(modelfilename) + suffix + ".pdb"));

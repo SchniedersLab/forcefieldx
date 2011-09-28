@@ -150,6 +150,24 @@ public class MolecularDynamics implements Runnable, Terminatable {
     public Thermostat getThermostat() {
         return thermostat;
     }
+    
+    /**
+     * <p>Setter for the field <code>x</code>.</p>
+     *
+     * @param double[] x a double array to set the current parameters to.
+     */
+    public void setParameters(double x[]) {
+        System.arraycopy(x, 0, this.x, 0, dof);
+    }
+    
+    /**
+     * <p>Getter for the field <code>x</code>.</p>
+     *
+     * @return a double array with the current parameters
+     */
+    public double[] getParameters() {
+        return x;
+    }
 
     /**
      * <p>Setter for the field <code>archiveFile</code>.</p>
