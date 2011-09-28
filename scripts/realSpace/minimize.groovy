@@ -36,7 +36,7 @@ logger.info(" " + args + "\n");
 // Create the command line parser.
 def cli = new CliBuilder(usage:' ffxc realspace.minimize [options] <pdbfilename> [datafilename]');
 cli.h(longOpt:'help', 'Print this help message.');
-cli.D(longOpt:'data', args:2, valueSeparator:',', argName:'data.map,1.0', 'specify input data filename (or simply provide the datafilename argument after the PDB file) and weight to apply to the data (wA)');
+cli.d(longOpt:'data', args:2, valueSeparator:',', argName:'data.map,1.0', 'specify input data filename (or simply provide the datafilename argument after the PDB file) and weight to apply to the data (wA)');
 cli.e(longOpt:'eps', args:1, argName:'1.0', 'RMS gradient convergence criteria');
 cli.m(longOpt:'maxiter', args:1, argName:'1000', 'maximum number of allowed refinement iterations');
 cli.s(longOpt:'suffix', args:1, argName:'_rsrefine', 'output suffix');
@@ -56,10 +56,10 @@ if (arguments.size() > 1) {
     RealSpaceFile realspacefile = new RealSpaceFile(arguments.get(1), 1.0);
     mapfiles.add(realspacefile);
 }
-if (options.D) {
-    for (int i=0; i<options.Ds.size(); i+=2) {
-	double wA = Double.parseDouble(options.Ds[i+1]);
-	RealSpaceFile realspacefile = new RealSpaceFile(options.Ds[i], wA);
+if (options.d) {
+    for (int i=0; i<options.ds.size(); i+=2) {
+	double wA = Double.parseDouble(options.ds[i+1]);
+	RealSpaceFile realspacefile = new RealSpaceFile(options.ds[i], wA);
 	mapfiles.add(realspacefile);
     }
 }

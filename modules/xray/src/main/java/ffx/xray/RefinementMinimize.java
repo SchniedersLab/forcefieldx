@@ -366,7 +366,6 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
      * minimize with input cycles for matrix conditioning, eps and cycles
      *
      * @param m number of cycles of matrix updates
-     * @param maxiter maximum iterations allowed
      * @param eps input gradient rms desired
      * @param maxiter maximum iterations allowed
      * @return {@link RefinementEnergy} result

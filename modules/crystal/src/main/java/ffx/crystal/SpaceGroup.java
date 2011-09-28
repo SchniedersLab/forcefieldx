@@ -260,7 +260,6 @@ public class SpaceGroup {
      * @param laueSystem a {@link ffx.crystal.SpaceGroup.LaueSystem} object.
      * @param h a int.
      * @param k a int.
-     * @param laueSystem
      * @param l a int.
      * @return True if the reflection is valid, false otherwise
      */
@@ -396,10 +395,7 @@ public class SpaceGroup {
      *
      * @param crystalSystem a {@link ffx.crystal.SpaceGroup.CrystalSystem} object.
      * @param a
-     * @param alpha
      * @param b
-     * @param beta
-     * @param crystalSystem
      * @param c a double.
      * @param alpha a double.
      * @param beta a double.

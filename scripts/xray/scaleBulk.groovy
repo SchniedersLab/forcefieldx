@@ -9,11 +9,15 @@ import ffx.xray.DiffractionData;
 import ffx.xray.DiffractionFile;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
 
+// include SCF/polarization?
+boolean noscf = false;
+
 boolean writemaps = false;
 
 boolean writemtz = false;
 
 boolean timings = false;
+
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
@@ -27,6 +31,7 @@ logger.info(" " + args + "\n");
 def cli = new CliBuilder(usage:' ffxc xray.scaleBulk [options] <pdbfilename> [datafilename]');
 cli.h(longOpt:'help', 'Print this help message.');
 cli.d(longOpt:'data', args:3, valueSeparator:',', argName:'data.mtz,1.0,false', 'specify input data filename (or simply provide the datafilename argument after the PDB file), weight applied to the data (wA) and if the data is from a neutron experiment');
+cli.S(longOpt:'scf', 'set to turn off SCF/polarization');
 cli.m(longOpt:'maps', 'set to output sigmaA weighted 2Fo-Fc and Fo-Fc electron density maps');
 cli.t(longOpt:'timings', 'set to perform FFT test timings');
 cli.w(longOpt:'mtz', 'write out MTZ containing structure factor coefficients');
@@ -52,6 +57,13 @@ if (options.d) {
 	DiffractionFile diffractionfile = new DiffractionFile(options.ds[i], wA, neutron);
 	diffractionfiles.add(diffractionfile);
     }
+}
+
+if (options.S) {
+    noscf = true;
+    logger.info(" setting polarization to direct (turning off SCF)!");
+    System.setProperty("polarization","direct");
+    System.setProperty("tau-temperature","0.001");
 }
 
 if (options.m) {

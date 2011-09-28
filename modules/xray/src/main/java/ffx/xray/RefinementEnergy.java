@@ -349,8 +349,6 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
      * @param x all parameters
      * @param xchem the xchem parameters for the particular molecular assembly
      * that will be passed to {@link ForceFieldEnergy}
-     * @param xchem the xchem parameters for the particular molecular assembly
-     * that will be passed to {@link ForceFieldEnergy}
      */
     public void getAssemblyi(int i, double x[], double xchem[]) {
         assert (x != null && xchem != null);
@@ -368,8 +366,6 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
      *
      * @param i the desired molecular assembly index to "set" x to
      * @param x all parameters
-     * @param xchem the xchem parameters for the particular molecular assembly
-     * that will be passed to {@link ForceFieldEnergy}
      * @param xchem the xchem parameters for the particular molecular assembly
      * that will be passed to {@link ForceFieldEnergy}
      */

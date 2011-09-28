@@ -51,7 +51,7 @@ logger.info(" " + args + "\n");
 // Create the command line parser.
 def cli = new CliBuilder(usage:' ffxc xray.anneal [options] <pdbfilename> [datafilename]');
 cli.h(longOpt:'help', 'Print this help message.');
-cli.D(longOpt:'data', args:3, valueSeparator:',', argName:'data.mtz,1.0,false', 'specify input data filename (or simply provide the datafilename argument after the PDB file), weight applied to the data (wA) and if the data is from a neutron experiment');
+cli.d(longOpt:'data', args:3, valueSeparator:',', argName:'data.mtz,1.0,false', 'specify input data filename (or simply provide the datafilename argument after the PDB file), weight applied to the data (wA) and if the data is from a neutron experiment');
 cli.r(longOpt:'mode', args:1, argName:'coordinates', 'type of refinement: [coordinates / bfactors / coordinates_and_bfactors / occupancies / bfactors_and_occupancies / coordinates_and_occupancies / coordinates_and_bfactors_and_occupancies]');
 cli.s(longOpt:'suffix', args:1, argName:'_anneal', 'output suffix');
 cli.S(longOpt:'scf', 'set to turn off SCF/polarization');
@@ -74,11 +74,11 @@ if (arguments.size() > 1) {
     DiffractionFile diffractionfile = new DiffractionFile(arguments.get(1), 1.0, false);
     diffractionfiles.add(diffractionfile);
 }
-if (options.D) {
-    for (int i=0; i<options.Ds.size(); i+=3) {
-	double wA = Double.parseDouble(options.Ds[i+1]);
-	boolean neutron = Boolean.parseBoolean(options.Ds[i+2]);
-	DiffractionFile diffractionfile = new DiffractionFile(options.Ds[i], wA, neutron);
+if (options.d) {
+    for (int i=0; i<options.ds.size(); i+=3) {
+	double wA = Double.parseDouble(options.ds[i+1]);
+	boolean neutron = Boolean.parseBoolean(options.ds[i+2]);
+	DiffractionFile diffractionfile = new DiffractionFile(options.ds[i], wA, neutron);
 	diffractionfiles.add(diffractionfile);
     }
 }

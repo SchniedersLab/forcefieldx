@@ -154,7 +154,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     /**
      * <p>Setter for the field <code>x</code>.</p>
      *
-     * @param double[] x a double array to set the current parameters to.
+     * @param x a double array to set the current parameters to.
      */
     public void setParameters(double x[]) {
         System.arraycopy(x, 0, this.x, 0, dof);

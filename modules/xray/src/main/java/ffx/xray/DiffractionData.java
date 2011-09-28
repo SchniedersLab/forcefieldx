@@ -668,7 +668,6 @@ public class DiffractionData implements DataContainer {
      * write current model to PDB file
      *
      * @param filename output PDB filename
-     * @see PDBFilter#writeFile()
      */
     public void writeModel(String filename) {
         StringBuilder remark = new StringBuilder();
