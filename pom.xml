@@ -190,6 +190,18 @@
                 </configuration>
             </plugin>
             <plugin>
+                <artifactId>maven-clean-plugin</artifactId>
+                <version>2.4.1</version>
+                <inherited>false</inherited>
+                <configuration>
+                    <filesets>
+                        <fileset>
+                            <directory>scripts</directory>
+                        </fileset>
+                    </filesets>
+                </configuration>
+            </plugin>
+            <plugin>
                 <artifactId>maven-scm-plugin</artifactId>
                 <version>1.5</version>
                 <configuration>
@@ -286,11 +298,14 @@
                         <argument>-classpath</argument>
                         <argument>bin/ffx-all.jar</argument>
                         <argument>ffx.Main</argument>
-                        <argument>testLambdaGradient</argument>
-                        <argument>examples/watersmall.xyz</argument>
+                        <argument>energy</argument>
+                        <!-- argument>-s</argument>
                         <argument>1</argument>
+                        <argument>-f</argument>
                         <argument>3</argument>
-                        <argument>0.99</argument>
+                        <argument>-l</argument>
+                        <argument>0.99</argument -->
+                        <argument>examples/watersmall.xyz</argument>
                     </arguments>
                 </configuration>
             </plugin>
