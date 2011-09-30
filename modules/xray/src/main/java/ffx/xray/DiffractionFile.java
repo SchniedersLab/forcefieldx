@@ -82,6 +82,10 @@ public class DiffractionFile {
         } else {
             diffractionfilter = null;
         }
+        
+        if (diffractionfilter == null){
+            logger.severe("input data file format not recognized!\n Please use an appropriate file extension: [MTZ: mtz] [CIF: cif, ent, sf] [CNS: cns, hkl] to identify your data file type!");
+        }
 
         this.filename = filename;
         this.weight = weight;

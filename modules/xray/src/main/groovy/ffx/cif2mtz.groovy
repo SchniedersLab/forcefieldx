@@ -1,6 +1,9 @@
 // Apache Imports
 import org.apache.commons.io.FilenameUtils;
 
+// Groovy Imports
+import groovy.util.CliBuilder;
+
 // Force Field X Imports
 import ffx.crystal.Crystal;
 import ffx.crystal.ReflectionList;
@@ -9,20 +12,28 @@ import ffx.xray.CIFFilter;
 import ffx.xray.DiffractionRefinementData;
 import ffx.xray.MTZWriter;
 
-// Name of the PDB with crystal header information
-String modelfilename = args[0];
-
-// input CIF file
-String datafilename = args[1];
-
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 
-if (modelfilename == null
-    || datafilename == null){
-  logger.info("\n Usage: ffxc cif2mtz PDBfilename CIFfilename");
-  return;
+def today = new Date();
+logger.info(" " + today);
+logger.info(" command line variables:");
+logger.info(" " + args + "\n");
+
+// Create the command line parser.
+def cli = new CliBuilder(usage:' ffxc cif2mtz [options] <pdbfilename> <ciffilename>');
+cli.h(longOpt:'help', 'Print this help message.');
+def options = cli.parse(args);
+List<String> arguments = options.arguments();
+if (options.h || arguments == null || arguments.size() != 2) {
+    return cli.usage();
 }
+
+// Name of the PDB with crystal header information
+String modelfilename = arguments.get(0);
+
+// input CIF file
+String datafilename = arguments.get(1);
 
 systems = open(modelfilename);
 

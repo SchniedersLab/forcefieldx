@@ -19,8 +19,8 @@
                     <li>CIF format</li>
                     <li>CNS format</li>
                 </ul>
-                <p>If you are using the CIF format, the reflection file should
-                contain the following header information:
+                <p>If you are using the CIF format, FFX will attempt to read in
+                the following header information:
                 </p>
                 <ul>
                     <li>symmetry.Int_Tables_number or symmetry.space_group_name_H-M</li>
@@ -28,11 +28,11 @@
                     <li>reflns.d_resolution_high</li>
                     <li>refln.status (for Rfree), F_meas_au and F_meas_sigma_au</li>
                 </ul>
-                <p>Alternatively, if you are using a CNS file, the reflection
-                file should have a
-                    <source>{sg=P6(1) a=102.1 b=...}</source> header,
-                and the resolution information can be provided in a property
-                file.
+                <p>Alternatively, if you are using a CNS file, FFX will attempt
+                to read the header information:
+                    <source>{sg=P6(1) a=102.1 b=...}</source>
+                Alternatively, the information will be obtained from the CRYST
+                header information in the PDB file provided for refinement.
                 </p>
                 <p>Any of the data information (resolution, Rfree integer flag,
                 cell lengths/angles) can be overwritten by providing a property
@@ -139,10 +139,10 @@ s and w are analagous to D and sum_wc - J. Appl. Cryst. (2005) 38, 193-198
                 </source>
                 <p>This output provides all the scaling values, data statistics
                 and model-versus-data statistics required to carry out a quick
-                analysis of a structure. The output MTZ file contains Fourier
-                coefficients (Fo-Fc and 2Fo-Fc) that can be auto-opened for
-                inspection in coot, along with other useful coefficients (bulk
-                solvent and Fc coefficients, sigmaA, FOM, etc).
+                analysis of a structure. The (optional) output MTZ file contains
+                Fourier coefficients (Fo-Fc and 2Fo-Fc) that can be auto-opened
+                in coot, along with other useful coefficients (bulk solvent and
+                Fc coefficients, sigmaA, FOM, etc).
                 </p>
             </subsection>
             <subsection name="X-Ray refinement">
@@ -155,59 +155,43 @@ s and w are analagous to D and sum_wc - J. Appl. Cryst. (2005) 38, 193-198
                 </p>
                 <p>For example, to carry out simulated annealing followed by
                 coordinate and then B-factor refinement, the provided
-                <a href="http://kenai.com/projects/ffx/sources/source/content/modules/xray/src/main/groovy/ffx/xray/annealMinimize.groovy">xray.annealMinimize</a>
+                <a href="http://kenai.com/projects/ffx/sources/source/content/modules/xray/src/main/groovy/ffx/xray/anneal.groovy">xray.anneal</a>
                 script should suffice. The job can be run
                 by providing the atomic coordinates and structure factors:
                 </p>
-                <source>ffxc xray.annealMinimize 1N7S.pdb 1N7S.mtz</source>
-                <p>The xray.annealMinimize script is provided in the scripts
-                directory, which partly contains:
+                <source>ffxc xray.anneal 1N7S.pdb 1N7S.mtz</source>
+                <p>The xray.anneal script is provided in the scripts
+                directory.  Running the script without any arguments prints out
+                the usage information, reproduced here:
                 </p>
                 <source>
-// Name of the file (PDB or XYZ).
-String modelfilename = args[0];
-
-// input MTZ/CIF/CNS data (optional - if not given, data must be present as pdbfilename.[mtz/cif/ent/cns])
-String datafilename = args[1];
-
-// data weight
-double wA = 1.0;
-
-// is this neutron data?
-boolean neutron = false;
-
-// Set the RMS gradient per atom convergence criteria (optional)
-String coordepsString = args[2];
-
-// same, but for B factors
-String bepsString = args[3];
-
-// set the maximum number of refinement cycles
-int maxiter = 50000;
-
-// simulated annealing settings:
-// type of simulated annealing refinement
-RefinementMode refinementmode = RefinementMode.COORDINATES_AND_BFACTORS;
-// starting temp
-double highTemperature = 1000.0;
-// ending temp
-double lowTemperature = 100.0;
-// number of steps to take between high and low temps
-int annealingSteps = 10;
-// number of MD steps at each annealing step
-int mdSteps = 200;
+usage:  ffxc xray.anneal [options] &lt;pdbfilename&gt; [datafilename]
+ -d,--data &lt;data.mtz,1.0,false&gt;   specify input data filename (or simply
+                                  provide the datafilename argument after
+                                  the PDB file), weight applied to the
+                                  data (wA) and if the data is from a
+                                  neutron experiment
+ -H,--hightemp &lt;1000.0&gt;           starting temperature
+ -h,--help                        Print this help message.
+ -L,--lowtemp &lt;100.0&gt;             ending temperature
+ -n,--mdsteps &lt;200&gt;               Number of molecular dynamics steps at
+                                  each temperature.
+ -N,--annealsteps &lt;10&gt;            Number of steps between high and low
+                                  temperature
+ -r,--mode &lt;coordinates&gt;          type of refinement: [coordinates /
+                                  bfactors / coordinates_and_bfactors /
+                                  occupancies / bfactors_and_occupancies /
+                                  coordinates_and_occupancies /
+                                  coordinates_and_bfactors_and_occupancies
+                                  ]
+ -s,--suffix &lt;_anneal&gt;            output suffix
+ -S,--scf                         set to turn off SCF/polarization
                 </source>
-                <p>So four options can be provided on the command line: the
-                input coordinates (the first argument), the input structure
-                factors (the second argument), the coordinate optimization
-                desired (the third) and B optimization desired (the fourth).
-                However, only the input coordinates are absolutely required to
-                run the script, the remainder have default values the program
-                will try to use if they are not provided. Within the script
-                itself, a number of additional options can be set, such as the
-                type of refinement, weight of the data and simulated annealing
-                parameters.  As mentioned above, these values can be modified
-                as needed by the user, and we encourage you to do so!
+                <p>So an equivalent way to run the annealing script would be:
+                </p>
+                <source>ffxc xray.anneal -d 1N7S.mtz,1.0,false 1N7S.pdb</source>
+                <p>The -d flag can be present multiple times on the command
+                line, which can be used for joint neutron/X-ray refinement.
                 </p>
             </subsection>
             <subsection name="Properties associated with Diffraction data">
@@ -303,26 +287,14 @@ int mdSteps = 200;
                     if bonded to N, O or S) and water with deuterium water
                     for the purposes of neutron refinement</li>
                     <li>mtzInfo: print info regarding a MTZ file</li>
-                    <li>xray.annealMinimize: simulated annealing followed by
-                    coordinate and B factor optimization</li>
-                    <li>xray.minimize: simulatenous optimization of coordinates,
-                    Bs and occupancies (the latter is done only if necessary)</li>
-                    <li>xray.minimize3Stage: same as above, but split into
-                    stages (recommended)</li>
-                    <li>xray.minimizeNoSCF: optimization of coordinates without
-                    a polarization term (fast, useful if the starting model is
-                    poor)</li>
-                    <li>xray.minimizeXYZ: same as xray.minimize, but only
-                    optimizes coordinates</li>
-                    <li>xray.minimizeB: same as xray.minimize, but only
-                    optimizes B factors (atoms with ANISOU records are refined
-                    anisotropically)</li>
-                    <li>xray.minimizeOcc: same as xray.minimize, but only
-                    optimizes occupancies</li>
+                    <li>xray.anneal: simulated annealing</li>
+                    <li>xray.minimize: optimization of coordinates,
+                    Bs and occupancies in any combination (or all three can be
+                    performed in order)</li>
                     <li>xray.scaleBulk: simply scale the model and data, then
                     print statistics and write out a MTZ file</li>
                 </ol>
-                <p>Similar scripts are included for neutron and real space
+                <p>Similar scripts are included for real space
                 refinement.</p>
             </subsection>
         </section>

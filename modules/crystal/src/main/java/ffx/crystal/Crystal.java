@@ -135,9 +135,7 @@ public class Crystal {
      * space group operators.
      *
      * @param a The a-axis length.
-     * @param alpha The alpha angle.
      * @param b The b-axis length.
-     * @param beta The beta angle.
      * @param c The c-axis length.
      * @param alpha The alpha angle.
      * @param beta The beta angle.
