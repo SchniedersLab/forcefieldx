@@ -189,7 +189,7 @@ public class MTZFilter implements DiffractionFileFilter {
         parse_columns();
 
         if (fo < 0 && fplus < 0) {
-            logger.info("insufficient information in MTZ header to generate Reflection List");
+            logger.info("insufficient information in MTZ header to generate Reflection List - non-default column label?  Try setting fostring/sigfostring in the .properties file.");
             return null;
         }
 

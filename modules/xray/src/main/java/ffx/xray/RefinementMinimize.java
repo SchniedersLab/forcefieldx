@@ -28,7 +28,6 @@ import ffx.numerics.LBFGS;
 import ffx.numerics.LineSearch.LineSearchResult;
 import ffx.numerics.OptimizationListener;
 import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Residue;
 import java.util.ArrayList;
@@ -82,7 +81,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
     private final RefinementModel refinementmodel;
     private final Atom atomarray[];
     private final int nAtoms;
-    private final RefinementEnergy refinementenergy;
+    public final RefinementEnergy refinementenergy;
     private RefinementMode refinementMode;
     private final int nxyz;
     private final int nb;
@@ -367,7 +366,6 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
      * minimize with input cycles for matrix conditioning, eps and cycles
      *
      * @param m number of cycles of matrix updates
-     * @param maxiter maximum iterations allowed
      * @param eps input gradient rms desired
      * @param maxiter maximum iterations allowed
      * @return {@link RefinementEnergy} result

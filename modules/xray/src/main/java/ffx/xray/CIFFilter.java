@@ -133,7 +133,11 @@ public class CIFFilter implements DiffractionFileFilter {
                             break;
                         case space_group_name_H_M:
                             String sgnamearray[] = str.split("'+");
-                            sgname = sgnamearray[1];
+                            if (sgnamearray.length > 1) {
+                                sgname = sgnamearray[1];
+                            } else if (strarray.length > 1) {
+                                sgname = strarray[1];
+                            }
                             break;
                     }
                 }
@@ -228,6 +232,8 @@ public class CIFFilter implements DiffractionFileFilter {
             while ((str = br.readLine()) != null) {
                 // reached end, break
                 if (str.trim().startsWith("#END")) {
+                    break;
+                } else if (str.trim().startsWith("data")) {
                     break;
                 } else if (str.trim().startsWith("#")) {
                     continue;
@@ -329,6 +335,8 @@ public class CIFFilter implements DiffractionFileFilter {
                 // reached end, break
                 if (str.trim().startsWith("#END")) {
                     break;
+                } else if (str.trim().startsWith("data")) {
+                    break;
                 } else if (str.trim().startsWith("#")) {
                     continue;
                 }
@@ -395,6 +403,8 @@ public class CIFFilter implements DiffractionFileFilter {
             while ((str = br.readLine()) != null) {
                 // reached end, break
                 if (str.trim().startsWith("#END")) {
+                    break;
+                } else if (str.trim().startsWith("data")) {
                     break;
                 } else if (str.trim().startsWith("#")) {
                     continue;

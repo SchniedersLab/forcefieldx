@@ -1,26 +1,35 @@
 // Apache Imports
 import org.apache.commons.io.FilenameUtils;
 
+// Groovy Imports
+import groovy.util.CliBuilder;
+
 // Force Field X Imports
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.MSNode;
 
-// input PDB file
-String filename = args[0];
-if (filename == null){
-  filename = "examples/1N7S.pdb";
-}
-
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 
-if (filename == null){
-  logger.info("\n Usage: ffxc deuterate PDBfilename");
-  return;
+def today = new Date();
+logger.info(" " + today);
+logger.info(" command line variables:");
+logger.info(" " + args + "\n");
+
+// Create the command line parser.
+def cli = new CliBuilder(usage:' ffxc deuterate [options] <pdbfilename>');
+cli.h(longOpt:'help', 'Print this help message.');
+def options = cli.parse(args);
+List<String> arguments = options.arguments();
+if (options.h || arguments == null || arguments.size() != 1) {
+    return cli.usage();
 }
 
-systems = open(filename);
+// Name of the PDB with crystal header information
+String modelfilename = arguments.get(0);
+
+systems = open(modelfilename);
 
 for (int i=0; i<systems.length; i++) {
     Atom[] atoms = systems[i].getAtomArray();
@@ -44,4 +53,4 @@ for (int i=0; i<systems.length; i++) {
     }
 }
 
-saveAsPDB(systems, new File(FilenameUtils.removeExtension(filename) + "_deuterate.pdb"));
+saveAsPDB(systems, new File(FilenameUtils.removeExtension(modelfilename) + "_deuterate.pdb"));
