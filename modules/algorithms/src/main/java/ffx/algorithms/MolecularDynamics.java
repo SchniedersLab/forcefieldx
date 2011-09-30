@@ -386,10 +386,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
              * so that restarted trajectories report an initial temperature
              * exactly equal to the last temperature printed out.
              */
-            thermostat.kineticEnergy();
-
-            if (step % 10 == 0) {
-                thermostat.centerOfMassMotion(true, false);
+            //thermostat.kineticEnergy();
+ 
+            if (step % 1 == 0) {
+               thermostat.centerOfMassMotion(true, false);
             }
 
             kinetic = thermostat.getKineticEnergy();
