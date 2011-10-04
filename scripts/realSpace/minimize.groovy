@@ -21,9 +21,6 @@ int maxiter = 1000;
 // suffix to append to output data
 String suffix = "_rsrefine";
 
-// include SCF/polarization?
-boolean noscf = false;
-
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
@@ -37,10 +34,10 @@ logger.info(" " + args + "\n");
 def cli = new CliBuilder(usage:' ffxc realspace.minimize [options] <pdbfilename> [datafilename]');
 cli.h(longOpt:'help', 'Print this help message.');
 cli.d(longOpt:'data', args:2, valueSeparator:',', argName:'data.map,1.0', 'specify input data filename (or simply provide the datafilename argument after the PDB file) and weight to apply to the data (wA)');
+cli.p(longOpt:'polarization', args:1, argName:'default', 'polarization model: [none / direct / default / tight]');
 cli.e(longOpt:'eps', args:1, argName:'1.0', 'RMS gradient convergence criteria');
 cli.m(longOpt:'maxiter', args:1, argName:'1000', 'maximum number of allowed refinement iterations');
 cli.s(longOpt:'suffix', args:1, argName:'_rsrefine', 'output suffix');
-cli.S(longOpt:'scf', 'set to turn off SCF/polarization');
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
 if (options.h || arguments == null || arguments.size() < 1) {
@@ -76,11 +73,8 @@ if (options.s) {
     suffix = options.s;
 }
 
-if (options.S) {
-    noscf = true;
-    logger.info(" setting polarization to direct (turning off SCF)!");
-    System.setProperty("polarization","direct");
-    System.setProperty("tau-temperature","0.001");
+if (options.p) {
+    System.setProperty("polarization", options.p);
 }
 
 logger.info("\n Running x-ray minimize on " + modelfilename);

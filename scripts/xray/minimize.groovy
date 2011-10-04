@@ -33,9 +33,6 @@ boolean threestage = false;
 // suffix to append to output data
 String suffix = "_refine";
 
-// include SCF/polarization?
-boolean noscf = false;
-
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
@@ -53,9 +50,9 @@ cli.e(longOpt:'eps', args:1, argName:'-1.0', 'RMS gradient convergence criteria 
 cli.f(longOpt:'threeeps', args:3, valueSeparator:',', argName:'-1.0,-1.0,-1.0', 'RMS gradient convergence criteria for three stage refinement (negative: automatically determine for each stage)');
 cli.m(longOpt:'maxiter', args:1, argName:'1000', 'maximum number of allowed refinement iterations');
 cli.r(longOpt:'mode', args:1, argName:'coordinates', 'type of refinement: [coordinates / bfactors / coordinates_and_bfactors / occupancies / bfactors_and_occupancies / coordinates_and_occupancies / coordinates_and_bfactors_and_occupancies]');
+cli.p(longOpt:'polarization', args:1, argName:'default', 'polarization model: [none / direct / default / tight]');
 cli.t(longOpt:'threestage', 'set to perform refinement in 3 stages: coordinates, bfactors, then occupancies - overrides mode setting if true');
 cli.s(longOpt:'suffix', args:1, argName:'_refine', 'output suffix');
-cli.S(longOpt:'scf', 'set to turn off SCF/polarization');
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
 if (options.h || arguments == null || arguments.size() < 1) {
@@ -102,19 +99,16 @@ if (options.r) {
     }
 }
 
+if (options.p) {
+    System.setProperty("polarization", options.p);
+}
+
 if (options.t) {
     threestage = true;
 }
 
 if (options.s) {
     suffix = options.s;
-}
-
-if (options.S) {
-    noscf = true;
-    logger.info(" setting polarization to direct (turning off SCF)!");
-    System.setProperty("polarization","direct");
-    System.setProperty("tau-temperature","0.001");
 }
 
 logger.info("\n Running x-ray minimize on " + modelfilename);

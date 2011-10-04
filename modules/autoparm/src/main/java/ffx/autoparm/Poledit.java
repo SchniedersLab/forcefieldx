@@ -111,7 +111,7 @@ public class Poledit {
         printlocalmpoles();
         /*create polarization groups*/
         polargrp();
-        polarization = Polarization.MUTUAL;
+        polarization = Polarization.TIGHT;
 
         /*find induced values and remove them from the multipoles*/
         induce_pedit();

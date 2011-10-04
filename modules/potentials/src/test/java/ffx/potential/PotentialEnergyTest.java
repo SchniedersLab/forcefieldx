@@ -207,6 +207,9 @@ public class PotentialEnergyTest {
             return;
         }
 
+        polarization = Polarization.TIGHT;
+        System.setProperty("polarization", "tight");
+        
         ClassLoader cl = this.getClass().getClassLoader();
         structure = new File(cl.getResource(filename).getPath());
 
@@ -231,16 +234,6 @@ public class PotentialEnergyTest {
         nAtoms = molecularAssembly.getAtomArray().length;
         energy = new ForceFieldEnergy(molecularAssembly);
         mpoleTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.MPOLETERM, true);
-
-        String polar = forceField.getString(ForceFieldString.POLARIZATION,
-                                            "MUTUAL");
-        if (polar.equalsIgnoreCase("MUTUAL")) {
-            polarization = Polarization.MUTUAL;
-        } else if (polar.equalsIgnoreCase("DIRECT")) {
-            polarization = Polarization.DIRECT;
-        } else {
-            polarization = Polarization.NONE;
-        }
 
         /*
         if (ci) {
@@ -298,7 +291,7 @@ public class PotentialEnergyTest {
             assertEquals(info + " Permanent Multipole Count", nPermanent, energy.nPME);
         }
         // Polarization
-        if (polarization == Polarization.MUTUAL) {
+        if (polarization == Polarization.TIGHT) {
             assertEquals(info + " Polarization Energy", polarizationEnergy, energy.polarizationEnergy, tolerance);
             assertEquals(info + " Polarization Count", nPolar, energy.nPME);
         }
