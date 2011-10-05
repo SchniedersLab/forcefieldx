@@ -104,7 +104,7 @@ public class PME_2 implements Potential {
      */
     public enum Polarization {
 
-        DIRECT, MUTUAL, NONE
+        DEFAULT, DIRECT, NONE, TIGHT
     }
     private int interactions;
     private double multipoleEnergy;
@@ -375,7 +375,6 @@ public class PME_2 implements Potential {
         ewaldCounts = new int[nSymm][nAtoms];
 
         polsor = forceField.getDouble(ForceFieldDouble.POLAR_SOR, 0.70);
-        poleps = forceField.getDouble(ForceFieldDouble.POLAR_EPS, 1e-6);
         m12scale = forceField.getDouble(ForceFieldDouble.MPOLE_12_SCALE, 0.0);
         m13scale = forceField.getDouble(ForceFieldDouble.MPOLE_13_SCALE, 0.0);
         m14scale = forceField.getDouble(ForceFieldDouble.MPOLE_14_SCALE, 0.4);
@@ -383,15 +382,26 @@ public class PME_2 implements Potential {
         d11scale = forceField.getDouble(ForceFieldDouble.DIRECT_11_SCALE, 0.0);
         p12scale = forceField.getDouble(ForceFieldDouble.POLAR_12_SCALE, 0.0);
         p13scale = forceField.getDouble(ForceFieldDouble.POLAR_13_SCALE, 0.0);
-        String polar = forceField.getString(ForceFieldString.POLARIZATION, "MUTUAL");
+        String polar = forceField.getString(ForceFieldString.POLARIZATION, "DEFAULT");
         boolean polarizationTerm = forceField.getBoolean(ForceFieldBoolean.POLARIZETERM, true);
 
-        if (polarizationTerm == false) {
-            polarization = Polarization.NONE;
-        } else if (polar.equalsIgnoreCase("DIRECT")) {
-            polarization = Polarization.DIRECT;
+        Polarization initPolarization;
+        try {
+            initPolarization = Polarization.valueOf(polar.toUpperCase());
+        } catch (Exception e) {
+            initPolarization = Polarization.DEFAULT;
+        }
+
+        if (!polarizationTerm) {
+            initPolarization = Polarization.NONE;
+        }
+
+        if (initPolarization == Polarization.TIGHT) {
+            polarization = Polarization.DEFAULT;
+            poleps = 1e-6;
         } else {
-            polarization = Polarization.MUTUAL;
+            polarization = initPolarization;
+            poleps = forceField.getDouble(ForceFieldDouble.POLAR_EPS, 1e-2);
         }
 
         cudaFFT = forceField.getBoolean(ForceField.ForceFieldBoolean.CUDAFFT, false);
@@ -437,7 +447,7 @@ public class PME_2 implements Potential {
         if (logger.isLoggable(Level.INFO)) {
             StringBuilder sb = new StringBuilder("\n Electrostatics\n");
             sb.append(format(" Polarization:                         %8s\n", polarization.toString()));
-            if (polarization == Polarization.MUTUAL) {
+            if (polarization == Polarization.DEFAULT) {
                 sb.append(format(" SCF convergence criteria:            %8.3e\n", poleps));
                 sb.append(format(" SOR parameter                         %8.3f\n", polsor));
             }
@@ -1966,7 +1976,7 @@ public class PME_2 implements Potential {
 //            e.printStackTrace();
 //        }
 
-        if (polarization == Polarization.MUTUAL) {
+        if (polarization == Polarization.DEFAULT) {
             calcMutualDipoleMoments(print, startTime);
         }
     }

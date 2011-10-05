@@ -91,7 +91,7 @@ public class ParticleMeshEwald implements LambdaInterface {
      */
     public enum Polarization {
 
-        DIRECT, MUTUAL, NONE
+        DEFAULT, DIRECT, NONE, TIGHT
     }
     /**
      * Polarization mode.
@@ -500,7 +500,6 @@ public class ParticleMeshEwald implements LambdaInterface {
         ewaldCounts = new int[nSymm][nAtoms];
 
         polsor = forceField.getDouble(ForceFieldDouble.POLAR_SOR, 0.70);
-        poleps = forceField.getDouble(ForceFieldDouble.POLAR_EPS, 1e-6);
         m12scale = forceField.getDouble(ForceFieldDouble.MPOLE_12_SCALE, 0.0);
         m13scale = forceField.getDouble(ForceFieldDouble.MPOLE_13_SCALE, 0.0);
         m14scale = forceField.getDouble(ForceFieldDouble.MPOLE_14_SCALE, 0.4);
@@ -572,20 +571,31 @@ public class ParticleMeshEwald implements LambdaInterface {
             logger.info("\n Electrostatic Lambda Parameters");
             logger.info(String.format(" Permanent multipole softcore alpha:  %5.3f", permanentLambdaAlpha));
             logger.info(String.format(" Permanent multipole lambda exponent: %5.3f", permanentLambdaExponent));
-            logger.info(String.format(" Polarization lambda exponent:        %5.3f", polarizationLambdaExponent));            
-            logger.info(String.format(" Polarization lambda range:  %5.3f .. %5.3f", 
+            logger.info(String.format(" Polarization lambda exponent:        %5.3f", polarizationLambdaExponent));
+            logger.info(String.format(" Polarization lambda range:  %5.3f .. %5.3f",
                     polarizationLambdaStart, polarizationLambdaEnd));
         }
 
-        String polar = forceField.getString(ForceFieldString.POLARIZATION, "MUTUAL");
+        String polar = forceField.getString(ForceFieldString.POLARIZATION, "DEFAULT");
         boolean polarizationTerm = forceField.getBoolean(ForceFieldBoolean.POLARIZETERM, true);
 
-        if (polarizationTerm == false) {
-            polarization = Polarization.NONE;
-        } else if (polar.equalsIgnoreCase("DIRECT")) {
-            polarization = Polarization.DIRECT;
+        Polarization initPolarization;
+        try {
+            initPolarization = Polarization.valueOf(polar.toUpperCase());
+        } catch (Exception e) {
+            initPolarization = Polarization.DEFAULT;
+        }
+
+        if (!polarizationTerm) {
+            initPolarization = Polarization.NONE;
+        }
+
+        if (initPolarization == Polarization.TIGHT) {
+            polarization = Polarization.DEFAULT;
+            poleps = 1e-6;
         } else {
-            polarization = Polarization.MUTUAL;
+            polarization = initPolarization;
+            poleps = forceField.getDouble(ForceFieldDouble.POLAR_EPS, 1e-2);
         }
 
         cudaFFT = forceField.getBoolean(ForceField.ForceFieldBoolean.CUDAFFT, false);
@@ -701,7 +711,7 @@ public class ParticleMeshEwald implements LambdaInterface {
         if (logger.isLoggable(Level.INFO)) {
             StringBuilder sb = new StringBuilder("\n Electrostatics\n");
             sb.append(format(" Polarization:                         %8s\n", polarization.toString()));
-            if (polarization == Polarization.MUTUAL) {
+            if (polarization == Polarization.DEFAULT) {
                 sb.append(format(" SCF convergence criteria:            %8.3e\n", poleps));
                 sb.append(format(" SOR parameter                         %8.3f\n", polsor));
             }
@@ -1334,7 +1344,7 @@ public class ParticleMeshEwald implements LambdaInterface {
             logger.log(Level.SEVERE, message, e);
         }
 
-        if (polarization == Polarization.MUTUAL) {
+        if (polarization == Polarization.DEFAULT) {
             StringBuilder sb = null;
             long directTime = System.nanoTime() - startTime;
             if (print) {
@@ -4344,7 +4354,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                             double gx = insx * fPhi[t200] + insy * fPhi[t110] + insz * fPhi[t101];
                             double gy = insx * fPhi[t110] + insy * fPhi[t020] + insz * fPhi[t011];
                             double gz = insx * fPhi[t101] + insy * fPhi[t011] + insz * fPhi[t002];
-                            if (polarization == Polarization.MUTUAL) {
+                            if (polarization == Polarization.DEFAULT) {
                                 gx += indx * fiCRPhi[t200] + inpx * fiPhi[t200] + indy * fiCRPhi[t110] + inpy * fiPhi[t110] + indz * fiCRPhi[t101] + inpz * fiPhi[t101];
                                 gy += indx * fiCRPhi[t110] + inpx * fiPhi[t110] + indy * fiCRPhi[t020] + inpy * fiPhi[t020] + indz * fiCRPhi[t011] + inpz * fiPhi[t011];
                                 gz += indx * fiCRPhi[t101] + inpx * fiPhi[t101] + indy * fiCRPhi[t011] + inpy * fiPhi[t011] + indz * fiCRPhi[t002] + inpz * fiPhi[t002];
@@ -5911,7 +5921,7 @@ public class ParticleMeshEwald implements LambdaInterface {
     public void setLambda(double lambda) {
         assert (lambda >= 0.0 && lambda <= 1.0);
         this.lambda = lambda;
-        
+
         /**
          * f = sqrt(r^2 + lAlpha)
          * df/dL = -alpha * (1.0 - lambda) / f
