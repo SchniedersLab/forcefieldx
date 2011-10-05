@@ -306,7 +306,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * @param xyzIndex Contiguous, unique atom index between 1..nAtoms.
      * @param name The Atom's molecular mechanics name.
      * @param atomType Molecular mechanics atom type.
-     * @param xyzIndex Contiguous, unique atom index between 1..nAtoms.
      * @param xyz Cartesian coordinates.
      * @since 1.0
      */
@@ -329,7 +328,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * @param xyzIndex Contiguous, unique atom index between 1..nAtoms.
      * @param name The Atom's molecular mechanics name.
      * @param altLoc The alternate locations (' ' or 'A' or 'B' etc.).
-     * @param xyzIndex Contiguous, unique atom index between 1..nAtoms.
      * @param xyz Cartesian coordinates.
      * @param resName Residue name.
      * @param resSeq Residue sequence number.

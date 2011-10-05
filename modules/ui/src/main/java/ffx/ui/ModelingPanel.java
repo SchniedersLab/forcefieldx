@@ -914,8 +914,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
                 // Determine names to use for the output of Protein/Nucleic
                 command = createCommandInput();
                 String structureName = commandTextArea.getText().trim();
-                if (structureName != null
-                        || !structureName.equalsIgnoreCase("")) {
+                if (!structureName.equalsIgnoreCase("")) {
                     structureName = (structureName.split("\n"))[0];
                     if (structureName != null) {
                         structureName = structureName.trim();

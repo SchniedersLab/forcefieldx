@@ -20,13 +20,13 @@
  */
 package ffx.potential.bonded;
 
-import static ffx.numerics.VectorMath.diff;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.logging.Logger;
+
+import static ffx.numerics.VectorMath.diff;
 
 /**
  * The Utilities class provides methods to locate functional units of an organic
@@ -779,8 +779,6 @@ public final class Utilities {
      *            Atom
      * @param atomicNumber
      *            int
-     * @param atomicNumber
-     *            int
      * @return Atom
      */
     public static Atom findBondWith(Atom a, int atomicNumber) {
@@ -1047,8 +1045,6 @@ public final class Utilities {
      *            Atom
      * @param atomicNumber
      *            int
-     * @param atomicNumber
-     *            int
      * @return boolean
      */
     public static boolean formsBondsWith(Atom a, int atomicNumber) {
@@ -1120,8 +1116,6 @@ public final class Utilities {
      *
      * @param a
      *            Atom
-     * @param atomicNumber
-     *            int
      * @param atomicNumber
      *            int
      * @return int
@@ -1293,5 +1287,4 @@ public final class Utilities {
         }
         return Math.sqrt(rms / n1);
     }
-
 }

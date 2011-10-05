@@ -390,7 +390,6 @@ public class ReciprocalSpace {
      *
      * @param inducedDipole Induced dipoles.
      * @param inducedDipoleCR Chain rule term for induced dipole gradient.
-     * @param inducedDipoleCR Chain rule term for induced dipole gradient.
      * @param use The atoms in use.
      */
     public void splineInducedDipoles(double inducedDipole[][][],

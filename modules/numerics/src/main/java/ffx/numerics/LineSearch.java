@@ -299,10 +299,6 @@ public class LineSearch {
      * @param n Number of variables.
      * @param x Current variable values.
      * @param f Current function value.
-     *
-     * @param fMove Change in function value due to previous step.
-     *
-     * @param functionEvaluations Number of function evaluations.
      * @param g Current gradient values.
      * @param p Search direction.
      * @param angle Angle between the gradient and search direction.

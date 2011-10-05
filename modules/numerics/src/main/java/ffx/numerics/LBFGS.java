@@ -457,10 +457,8 @@ public class LBFGS {
      * @param a scalar.
      * @param x X array.
      * @param x0 First point in the X array.
-     * @param x0 First point in the X array.
      * @param dx X increment.
      * @param y Y Array.
-     * @param y0 First point in the Y array.
      * @param y0 First point in the Y array.
      * @param dy Y increment.
      * @since 1.0
@@ -482,10 +480,8 @@ public class LBFGS {
      * @param n Number of entries to include.
      * @param x X array.
      * @param x0 First point in the X array.
-     * @param x0 First point in the X array.
      * @param dx X increment.
      * @param y Y Array.
-     * @param y0 First point in the Y array.
      * @param y0 First point in the Y array.
      * @param dy Y increment.
      * @return dot product

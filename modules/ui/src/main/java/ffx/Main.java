@@ -49,6 +49,9 @@ import edu.rit.pj.Comm;
 import ffx.ui.LogHandler;
 import ffx.ui.MainPanel;
 import ffx.ui.macosx.OSXAdapter;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.OptionBuilder;
+import org.apache.commons.cli.Options;
 
 /**
  * The Main class is the entry point to the graphical user interface version of
@@ -103,6 +106,17 @@ public class Main extends JFrame {
      * @throws java.lang.Exception if any.
      */
     public static void main(String[] args) throws Exception {
+
+        // create Options object
+        Options options = new Options();
+
+        // add t option
+        options.addOption("h", "help", false, "Display this message.");
+        options.addOption(OptionBuilder.withArgName("property=value").hasArgs(2).withValueSeparator().withDescription("use value for given property").create("D"));
+
+        // automatically generate the help statement
+        HelpFormatter formatter = new HelpFormatter();
+        formatter.printHelp("ffx", options);
 
         /**
          * Process any "-D" command line flags.
@@ -180,10 +194,19 @@ public class Main extends JFrame {
         }
 
         /**
+         * Determine the Process ID and location of FFX.
+         */
+        File basedir = new File(System.getProperty("basedir"));
+        int procID = Integer.parseInt(System.getProperty("app.pid"));
+
+        /**
          * Start up the GUI or command line version of Force Field X.
          */
         if (!GraphicsEnvironment.isHeadless()) {
-            logger.info(String.format("\n Starting up the graphical user interface on %s.", hostName));
+            logger.info(String.format("\n Starting up the graphical user interface."));
+            logger.info(String.format(" Process ID %d on %s.", procID, hostName));
+            logger.fine(String.format(" Force Field X directory is %s", basedir.getCanonicalPath()));
+
             // Some Mac OS X specific features that help FFX look native.
             // These need to be set before the MainPanel is created.
             if (SystemUtils.IS_OS_MAC_OSX) {
@@ -196,10 +219,12 @@ public class Main extends JFrame {
             Main m = new Main(commandLineFile, argList);
         } else {
             if (processes == 1) {
-                logger.info(String.format(" Starting up the command line interface on %s.", hostName));
+                logger.info(String.format(" Starting up the command line interface."));
+                logger.info(String.format(" Process ID %d on %s.", procID, hostName));
             } else {
-                logger.info(String.format(" Starting up process %d on %s.", rank, hostName));
+                logger.info(String.format(" Starting up process ID %d (rank %d) on %s.", procID, rank, hostName));
             }
+            logger.fine(String.format(" Force Field X directory is %s", basedir.getCanonicalPath()));
             HeadlessMain m = new HeadlessMain(commandLineFile, argList, logHandler);
         }
 

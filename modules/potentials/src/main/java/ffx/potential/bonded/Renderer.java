@@ -84,12 +84,8 @@ public class Renderer extends Behavior {
      *            True for a change in rendering method
      * @param vtype
      *            The rendering method to use
-     * @param vtype
-     *            The rendering method to use
      * @param c
      *            True for a change in rendering color
-     * @param ctype
-     *            The coloring method to use
      * @param ctype
      *            The coloring method to use
      */
