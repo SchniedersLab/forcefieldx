@@ -21,9 +21,6 @@ RefinementMode refinementmode = RefinementMode.COORDINATES;
 // suffix to append to output data
 String suffix = "_anneal";
 
-// include SCF/polarization?
-boolean noscf = false;
-
 // starting temp
 double highTemperature = 1000.0;
 
@@ -53,8 +50,8 @@ def cli = new CliBuilder(usage:' ffxc xray.anneal [options] <pdbfilename> [dataf
 cli.h(longOpt:'help', 'Print this help message.');
 cli.d(longOpt:'data', args:3, valueSeparator:',', argName:'data.mtz,1.0,false', 'specify input data filename (or simply provide the datafilename argument after the PDB file), weight applied to the data (wA) and if the data is from a neutron experiment');
 cli.r(longOpt:'mode', args:1, argName:'coordinates', 'type of refinement: [coordinates / bfactors / coordinates_and_bfactors / occupancies / bfactors_and_occupancies / coordinates_and_occupancies / coordinates_and_bfactors_and_occupancies]');
+cli.p(longOpt:'polarization', args:1, argName:'default', 'polarization model: [none / direct / mutual]');
 cli.s(longOpt:'suffix', args:1, argName:'_anneal', 'output suffix');
-cli.S(longOpt:'scf', 'set to turn off SCF/polarization');
 cli.H(longOpt:'hightemp', args:1, argName:'1000.0', 'starting temperature');
 cli.L(longOpt:'lowtemp', args:1, argName:'100.0', 'ending temperature');
 cli.N(longOpt:'annealsteps', args:1, argName:'10', 'Number of steps between high and low temperature');
@@ -91,15 +88,12 @@ if (options.r) {
     }
 }
 
-if (options.s) {
-    suffix = options.s;
+if (options.p) {
+    System.setProperty("polarization", options.p);
 }
 
-if (options.S) {
-    noscf = true;
-    logger.info(" setting polarization to direct (turning off SCF)!");
-    System.setProperty("polarization","direct");
-    System.setProperty("tau-temperature","0.001");
+if (options.s) {
+    suffix = options.s;
 }
 
 if (options.H) {

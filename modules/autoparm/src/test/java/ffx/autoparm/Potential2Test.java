@@ -101,7 +101,7 @@ public class Potential2Test {
         
         ClassLoader cl = this.getClass().getClassLoader();
         String xyzfname = cl.getResource(xyz_filename).getPath();
-        System.setProperty("polarization", "tight");
+        System.setProperty("polarization", "mutual");
         try {
             
             p = new Potential2(0, xyzfname, null, null);

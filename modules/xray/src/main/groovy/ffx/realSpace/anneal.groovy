@@ -45,7 +45,7 @@ logger.info(" " + args + "\n");
 def cli = new CliBuilder(usage:' ffxc realspace.anneal [options] <pdbfilename> [datafilename]');
 cli.h(longOpt:'help', 'Print this help message.');
 cli.d(longOpt:'data', args:2, valueSeparator:',', argName:'data.map,1.0', 'specify input data filename (or simply provide the datafilename argument after the PDB file) and weight to apply to the data (wA)');
-cli.p(longOpt:'polarization', args:1, argName:'default', 'polarization model: [none / direct / default / tight]');
+cli.p(longOpt:'polarization', args:1, argName:'default', 'polarization model: [none / direct / mutual]');
 cli.s(longOpt:'suffix', args:1, argName:'_anneal', 'output suffix');
 cli.H(longOpt:'hightemp', args:1, argName:'1000.0', 'starting temperature');
 cli.L(longOpt:'lowtemp', args:1, argName:'100.0', 'ending temperature');

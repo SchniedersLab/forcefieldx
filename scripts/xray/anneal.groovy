@@ -50,7 +50,7 @@ def cli = new CliBuilder(usage:' ffxc xray.anneal [options] <pdbfilename> [dataf
 cli.h(longOpt:'help', 'Print this help message.');
 cli.d(longOpt:'data', args:3, valueSeparator:',', argName:'data.mtz,1.0,false', 'specify input data filename (or simply provide the datafilename argument after the PDB file), weight applied to the data (wA) and if the data is from a neutron experiment');
 cli.r(longOpt:'mode', args:1, argName:'coordinates', 'type of refinement: [coordinates / bfactors / coordinates_and_bfactors / occupancies / bfactors_and_occupancies / coordinates_and_occupancies / coordinates_and_bfactors_and_occupancies]');
-cli.p(longOpt:'polarization', args:1, argName:'default', 'polarization model: [none / direct / default / tight]');
+cli.p(longOpt:'polarization', args:1, argName:'default', 'polarization model: [none / direct / mutual]');
 cli.s(longOpt:'suffix', args:1, argName:'_anneal', 'output suffix');
 cli.H(longOpt:'hightemp', args:1, argName:'1000.0', 'starting temperature');
 cli.L(longOpt:'lowtemp', args:1, argName:'100.0', 'ending temperature');

@@ -104,7 +104,7 @@ public class PME_2 implements Potential {
      */
     public enum Polarization {
 
-        DEFAULT, DIRECT, NONE, TIGHT
+        MUTUAL, DIRECT, NONE
     }
     private int interactions;
     private double multipoleEnergy;
@@ -341,7 +341,7 @@ public class PME_2 implements Potential {
      * @param key a {@link java.util.ArrayList} object.
      */
     public PME_2(ForceField forceField, Atom[] atoms,
-            Crystal crystal, ParallelTeam parallelTeam, int neighborLists[][][], ArrayList<String> key) {
+                 Crystal crystal, ParallelTeam parallelTeam, int neighborLists[][][], ArrayList<String> key) {
         this.forceField = forceField;
         this.atoms = atoms;
         this.crystal = crystal;
@@ -389,21 +389,15 @@ public class PME_2 implements Potential {
         try {
             initPolarization = Polarization.valueOf(polar.toUpperCase());
         } catch (Exception e) {
-            initPolarization = Polarization.DEFAULT;
+            initPolarization = Polarization.MUTUAL;
         }
 
         if (!polarizationTerm) {
             initPolarization = Polarization.NONE;
         }
 
-        if (initPolarization == Polarization.TIGHT) {
-            polarization = Polarization.DEFAULT;
-            poleps = 1e-6;
-        } else {
-            polarization = initPolarization;
-            poleps = forceField.getDouble(ForceFieldDouble.POLAR_EPS, 1e-2);
-        }
-
+        polarization = initPolarization;
+        poleps = forceField.getDouble(ForceFieldDouble.POLAR_EPS, 1e-6);
         cudaFFT = forceField.getBoolean(ForceField.ForceFieldBoolean.CUDAFFT, false);
 
         localMultipole = new double[nAtoms][10];
@@ -447,7 +441,7 @@ public class PME_2 implements Potential {
         if (logger.isLoggable(Level.INFO)) {
             StringBuilder sb = new StringBuilder("\n Electrostatics\n");
             sb.append(format(" Polarization:                         %8s\n", polarization.toString()));
-            if (polarization == Polarization.DEFAULT) {
+            if (polarization == Polarization.MUTUAL) {
                 sb.append(format(" SCF convergence criteria:            %8.3e\n", poleps));
                 sb.append(format(" SOR parameter                         %8.3f\n", polsor));
             }
@@ -1058,7 +1052,7 @@ public class PME_2 implements Potential {
     public int getNumberOfVariables() {
         return nvars;
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public double getTotal() {
@@ -1976,7 +1970,7 @@ public class PME_2 implements Potential {
 //            e.printStackTrace();
 //        }
 
-        if (polarization == Polarization.DEFAULT) {
+        if (polarization == Polarization.MUTUAL) {
             calcMutualDipoleMoments(print, startTime);
         }
     }
@@ -2323,10 +2317,10 @@ public class PME_2 implements Potential {
 
         if (print) {
             sb.append(String.format("\n Direct:                    %8.3f\n",
-                    toSeconds * directTime));
+                                    toSeconds * directTime));
             startTime = System.nanoTime() - startTime;
             sb.append(String.format(" SCF Total:                 %8.3f\n",
-                    startTime * toSeconds));
+                                    startTime * toSeconds));
             logger.info(sb.toString());
         }
         if (false) {
@@ -4566,11 +4560,11 @@ public class PME_2 implements Potential {
                          */
                         SymOp symOp = symOps.get(iSymm);
                         crystal.applySymRot(nAtoms, gxk_local, gyk_local,
-                                gzk_local, gxk_local, gyk_local, gzk_local,
-                                symOp);
+                                            gzk_local, gxk_local, gyk_local, gzk_local,
+                                            symOp);
                         crystal.applySymRot(nAtoms, txk_local, tyk_local,
-                                tzk_local, txk_local, tyk_local, tzk_local,
-                                symOp);
+                                            tzk_local, txk_local, tyk_local, tzk_local,
+                                            symOp);
                         /**
                          * The two force and torque arrays can now be condensed
                          * into single arrays.
@@ -5580,7 +5574,7 @@ public class PME_2 implements Potential {
 
                         // Check for chiral flipping.
                         if (frame[ii] == MultipoleType.MultipoleFrameDefinition.ZTHENX
-                                && referenceSites.length == 3 && !pedit) {
+                            && referenceSites.length == 3 && !pedit) {
                             localOrigin[0] = x[ii];
                             localOrigin[1] = y[ii];
                             localOrigin[2] = z[ii];
@@ -5627,15 +5621,15 @@ public class PME_2 implements Potential {
                                     for (int k = 0; k < 3; k++) {
                                         double[] localQuadrupolek = tempQuadrupole[k];
                                         quadrupolei[j] += rotmati[k]
-                                                * (rotmatj[0] * localQuadrupolek[0]
-                                                + rotmatj[1] * localQuadrupolek[1]
-                                                + rotmatj[2] * localQuadrupolek[2]);
+                                                          * (rotmatj[0] * localQuadrupolek[0]
+                                                             + rotmatj[1] * localQuadrupolek[1]
+                                                             + rotmatj[2] * localQuadrupolek[2]);
                                     }
                                 }
                             }
                         }
                         if (frame[ii] != MultipoleType.MultipoleFrameDefinition.ZTHENX
-                                && referenceSites.length == 3 && pedit && axisAtom[ii][2] != 0) {
+                            && referenceSites.length == 3 && pedit && axisAtom[ii][2] != 0) {
                             localOrigin[0] = x[ii];
                             localOrigin[1] = y[ii];
                             localOrigin[2] = z[ii];
@@ -6068,7 +6062,7 @@ public class PME_2 implements Potential {
             if (!assignMultipole(i)) {
                 Atom atom = atoms[i];
                 String message = "No multipole could be assigned to atom:\n"
-                        + atom + "\nof type:\n" + atom.getAtomType();
+                                 + atom + "\nof type:\n" + atom.getAtomType();
                 logger.log(Level.SEVERE, message);
             }
         }
@@ -6372,7 +6366,7 @@ public class PME_2 implements Potential {
                 //System.out.println(format("%d %d", index + 1, g11));
             } else {
                 String message = "The polarize keyword was not found for atom "
-                        + (index + 1) + " with type " + ai.getType();
+                                 + (index + 1) + " with type " + ai.getType();
                 logger.severe(message);
             }
         }
@@ -6462,7 +6456,7 @@ public class PME_2 implements Potential {
      *            group.
      */
     private void growGroup(List<Integer> polarizationGroup,
-            List<Integer> group, Atom seed) {
+                           List<Integer> group, Atom seed) {
         List<Bond> bonds = seed.getBonds();
         for (Bond bi : bonds) {
             Atom aj = bi.get1_2(seed);

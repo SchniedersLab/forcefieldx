@@ -207,8 +207,8 @@ public class PotentialEnergyTest {
             return;
         }
 
-        polarization = Polarization.TIGHT;
-        System.setProperty("polarization", "tight");
+        polarization = Polarization.MUTUAL;
+        System.setProperty("polarization", "mutual");
         
         ClassLoader cl = this.getClass().getClassLoader();
         structure = new File(cl.getResource(filename).getPath());
@@ -291,7 +291,7 @@ public class PotentialEnergyTest {
             assertEquals(info + " Permanent Multipole Count", nPermanent, energy.nPME);
         }
         // Polarization
-        if (polarization == Polarization.TIGHT) {
+        if (polarization == Polarization.MUTUAL) {
             assertEquals(info + " Polarization Energy", polarizationEnergy, energy.polarizationEnergy, tolerance);
             assertEquals(info + " Polarization Count", nPolar, energy.nPME);
         }

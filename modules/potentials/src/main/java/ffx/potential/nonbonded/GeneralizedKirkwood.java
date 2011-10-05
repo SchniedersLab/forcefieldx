@@ -2855,7 +2855,7 @@ public class GeneralizedKirkwood {
                 double dsumdri = dsymdr + 0.5 * (dwipdr + dwkpdr);
                 double dbi = 0.5 * rbk * dsumdri;
                 double dbk = 0.5 * rbi * dsumdri;
-                if (polarization == Polarization.DEFAULT) {
+                if (polarization == Polarization.MUTUAL) {
                     dpdx -= 0.5 * (dxi * (pxk * gux[5] + pyk * gux[6] + pzk * gux[7])
                                    + dyi * (pxk * guy[5] + pyk * guy[6] + pzk * guy[7])
                                    + dzi * (pxk * guz[5] + pyk * guz[6] + pzk * guz[7])

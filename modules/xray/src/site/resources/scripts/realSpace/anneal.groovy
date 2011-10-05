@@ -17,9 +17,6 @@ import ffx.xray.RefinementMinimize.RefinementMode;
 // suffix to append to output data
 String suffix = "_anneal";
 
-// include SCF/polarization?
-boolean noscf = false;
-
 // starting temp
 double highTemperature = 1000.0;
 
@@ -48,8 +45,8 @@ logger.info(" " + args + "\n");
 def cli = new CliBuilder(usage:' ffxc realspace.anneal [options] <pdbfilename> [datafilename]');
 cli.h(longOpt:'help', 'Print this help message.');
 cli.d(longOpt:'data', args:2, valueSeparator:',', argName:'data.map,1.0', 'specify input data filename (or simply provide the datafilename argument after the PDB file) and weight to apply to the data (wA)');
+cli.p(longOpt:'polarization', args:1, argName:'default', 'polarization model: [none / direct / mutual]');
 cli.s(longOpt:'suffix', args:1, argName:'_anneal', 'output suffix');
-cli.S(longOpt:'scf', 'set to turn off SCF/polarization');
 cli.H(longOpt:'hightemp', args:1, argName:'1000.0', 'starting temperature');
 cli.L(longOpt:'lowtemp', args:1, argName:'100.0', 'ending temperature');
 cli.N(longOpt:'annealsteps', args:1, argName:'10', 'Number of steps between high and low temperature');
@@ -81,11 +78,8 @@ if (options.s) {
     suffix = options.s;
 }
 
-if (options.S) {
-    noscf = true;
-    logger.info(" setting polarization to direct (turning off SCF)!");
-    System.setProperty("polarization","direct");
-    System.setProperty("tau-temperature","0.001");
+if (options.p) {
+    System.setProperty("polarization", options.p);
 }
 
 if (options.H) {
