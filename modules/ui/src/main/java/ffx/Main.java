@@ -94,7 +94,7 @@ public class Main extends JFrame {
     /**
      * Print out credits.
      */
-    private static void promo() {
+    private static void header() {
         logger.info(MainPanel.border);
         logger.info(MainPanel.title);
         logger.info(MainPanel.aboutString);
@@ -201,9 +201,9 @@ public class Main extends JFrame {
      */
     public static void main(String[] args) throws Exception {
         /**
-         * Print out credits.
+         * Print out the header.
          */
-        promo();
+        header();
 
         /**
          * Print out help for the command line interface.
@@ -211,7 +211,6 @@ public class Main extends JFrame {
         if (GraphicsEnvironment.isHeadless() && args.length < 2) {
             help();
         }
-
 
         /**
          * Start up the Parallel Java communication layer.

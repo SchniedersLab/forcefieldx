@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document
+    xmlns="http://maven.apache.org/XDOC/2.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
+    http://maven.apache.org/xsd/xdoc-2.0.xsd">
+    <properties>
+        <title>Properties</title>
+        <author email="michael.schnieders@gmail.com">Michael J. Schnieders</author>
+    </properties>
+    <body>
+        <section name="Properties">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Property</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Coming soon...</td>
+                        <td></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+    </body>
+</document>
