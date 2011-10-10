@@ -65,9 +65,12 @@
             <item name="Publications" href="/publications.html"/>
             <item name="Download" href="/download.html"/>
             <item name="Install" href="/install.html"/>
-            <item name="Examples" href="/examples.html"/>
-            <item name="Scripts" href="/scripts.html"/>
+        </menu>
+        <menu name="Manual" inherit="top">
+            <item name="Commands" href="/scripts.html"/>
+            <item name="Properties" href="/properties.html"/>
             <item name="Space Groups" href="/symmetry.html"/>
+            <item name="Examples" href="/examples.html"/>
         </menu>
         <menu name="Modules" inherit="top">
             <item name="Algorithms"  href="modules/algorithms/index.html"/>
