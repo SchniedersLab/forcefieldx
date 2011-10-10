@@ -49,6 +49,11 @@ import edu.rit.pj.Comm;
 import ffx.ui.LogHandler;
 import ffx.ui.MainPanel;
 import ffx.ui.macosx.OSXAdapter;
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.util.Arrays;
+import java.util.Date;
 
 /**
  * The Main class is the entry point to the graphical user interface version of
@@ -94,17 +99,22 @@ public class Main extends JFrame {
     /**
      * Print out credits.
      */
-    private static void header() {
-        logger.info(MainPanel.border);
-        logger.info(MainPanel.title);
-        logger.info(MainPanel.aboutString);
-        logger.info(MainPanel.border);
+    private static void header(String args[]) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(MainPanel.border).append("\n");
+        sb.append(MainPanel.title).append("\n");
+        sb.append(MainPanel.aboutString).append("\n");
+        sb.append(MainPanel.border);
+        sb.append("\n ").append(new Date());
+        sb.append("\n Command line arguments:\n ");
+        sb.append(Arrays.toString(args));
+        logger.info(sb.toString());
     }
 
     /**
      * Print out help for the command line version of Force Field X.
      */
-    private static void help() {
+    private static void commandLineInteraceHelp() {
         logger.info(" usage: ffxc [-D<property=value>] <command> [-options] <PDB|XYZ>");
         logger.info("\n where commands include:\n");
         ClassLoader classLoader = ClassLoader.getSystemClassLoader();
@@ -123,22 +133,68 @@ public class Main extends JFrame {
         } catch (UnknownHostException e) {
             // Do nothing.
         }
-        ffxDirectory = new File(System.getProperty("basedir"));
         procID = Integer.parseInt(System.getProperty("app.pid"));
+        ffxDirectory = new File(System.getProperty("basedir"));
+        try {
+            logger.fine(String.format(" Force Field X directory is %s", ffxDirectory.getCanonicalPath()));
+        } catch (Exception e) {
+            // Do Nothing.
+        }
+
     }
 
     /**
      * Start up the Parallel Java communication layer.
      */
     private static void startParallelJava(String args[]) {
+
+        /**
+         * Capture Parallel Java Output.
+         */
+        PrintStream origOut = System.out;
+        PrintStream origErr = System.err;
+
+        OutputStream redirectOut = new ByteArrayOutputStream();
+        PrintStream out = new PrintStream(redirectOut);
+        System.setOut(out);
+
+        OutputStream redirectErr = new ByteArrayOutputStream();
+        PrintStream err = new PrintStream(redirectErr);
+        System.setErr(err);
+
         try {
             Comm.init(args);
             Comm world = Comm.world();
             rank = world.rank();
             processes = world.size();
         } catch (Exception e) {
-            System.out.println(e.toString());
+            String message = " Exception starting up Parallel Java communication layer.";
+            logger.log(Level.WARNING, message, e.toString());
         }
+
+        /**
+         * Revert standard output/error.
+         */
+        System.setOut(origOut);
+        System.setErr(origErr);
+
+        
+        /**
+         * If more than one process is requested, log any Parallel Java output.
+         */
+        String processesRequested = System.getProperty("pj.nn", "1");
+        if (!processesRequested.equals("1")) {
+            out.flush();
+            err.flush();
+            logger.info(redirectOut.toString());
+            logger.info(redirectErr.toString());
+        }
+
+        /**
+         * Close the temporary streams.
+         */
+        out.close();
+        err.close();
     }
 
     /**
@@ -148,15 +204,10 @@ public class Main extends JFrame {
      */
     private static void startCommandLineInterface(File commandLineFile, List<String> argList) {
         if (processes == 1) {
-            logger.info(String.format(" Starting up the command line interface."));
             logger.info(String.format(" Process ID %d on %s.", procID, hostName));
+            logger.info(String.format(" Starting up the command line interface."));
         } else {
             logger.info(String.format(" Starting up process ID %d (rank %d) on %s.\n", procID, rank, hostName));
-        }
-        try {
-            logger.fine(String.format(" Force Field X directory is %s", ffxDirectory.getCanonicalPath()));
-        } catch (Exception e) {
-            // Do Nothing.
         }
         HeadlessMain m = new HeadlessMain(commandLineFile, argList, logHandler);
     }
@@ -167,14 +218,9 @@ public class Main extends JFrame {
      * @param argList
      */
     private static void startGraphicalUserInterface(File commandLineFile, List<String> argList) {
-        logger.info(String.format("\n Starting up the graphical user interface."));
         logger.info(String.format(" Process ID %d on %s.", procID, hostName));
+        logger.info(String.format(" Starting up the graphical user interface."));
 
-        try {
-            logger.fine(String.format(" Force Field X directory is %s", ffxDirectory.getCanonicalPath()));
-        } catch (Exception e) {
-            // Do Nothing.
-        }
         /**
          * Some Mac OS X specific features that help FFX look native.
          * These need to be set before the MainPanel is created.
@@ -188,7 +234,7 @@ public class Main extends JFrame {
         UIManager.put("swing.boldMetal", Boolean.FALSE);
         setDefaultLookAndFeelDecorated(false);
         /**
-         * Initialize the main frame and Force Field X MainPanel.
+         * Initialize the Main frame and Force Field X MainPanel.
          */
         Main m = new Main(commandLineFile, argList);
     }
@@ -203,24 +249,24 @@ public class Main extends JFrame {
         /**
          * Print out the header.
          */
-        header();
+        header(args);
 
         /**
          * Print out help for the command line interface.
          */
         if (GraphicsEnvironment.isHeadless() && args.length < 2) {
-            help();
+            commandLineInteraceHelp();
         }
-
-        /**
-         * Start up the Parallel Java communication layer.
-         */
-        startParallelJava(args);
 
         /**
          * Process any "-D" command line flags.
          */
         args = processProperties(args);
+
+        /**
+         * Start up the Parallel Java communication layer.
+         */
+        startParallelJava(args);
 
         /**
          * Determine host name and process ID.

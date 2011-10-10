@@ -23,7 +23,7 @@
                 <source><![CDATA[ffxc <command> -h]]>
                 </source>
                 <p>Custom modifications to a command, or the creation of a completely new command,
-            is possible by launching Force Field X with a script file.
+                is possible by launching Force Field X with a script file.
                 </p>
                 <source><![CDATA[ffxc [-D<property=value>] <path/to/script.groovy> [-options] <PDB|XYZ>]]>
                 </source>
