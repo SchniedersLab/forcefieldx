@@ -33,6 +33,7 @@ import java.net.URL;
 import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -197,7 +198,7 @@ public class FFXClassLoader extends ClassLoader {
      * @throws java.io.IOException if any.
      */
     public static String copyInputStreamToTmpFile(InputStream input, String name,
-                                                   String suffix) throws IOException {
+                                                  String suffix) throws IOException {
         File tmpFile = null;
         name = "ffx." + name + ".";
         try {
@@ -313,6 +314,11 @@ public class FFXClassLoader extends ClassLoader {
         if (!extensionsLoaded) {
             loadExtensions();
         }
+
+        if (name.equals("List all scripts")) {
+            listScripts();
+        }
+
         if (extensionJars != null) {
             // Try to find if resource belongs to one of the extracted jars
             for (int i = 0; i < extensionJars.length; i++) {
@@ -331,6 +337,35 @@ public class FFXClassLoader extends ClassLoader {
         return super.findResource(name);
     }
 
+    protected void listScripts() {
+        if (this.extensionJars != null) {
+
+            List<String> scripts = new ArrayList<String>();
+
+            // Check if searched class is an extension class
+            for (int i = 0; i < this.extensionJars.length; i++) {
+                JarFile extensionJar = this.extensionJars[i];
+                Enumeration<JarEntry> entries = extensionJar.entries();
+                while (entries.hasMoreElements()) {
+                    JarEntry entry = entries.nextElement();
+                    String name = entry.getName();
+                    if (name.startsWith("ffx") && name.endsWith(".groovy")) {
+                        name = name.replace('/', '.');
+                        name = name.replace("ffx.scripts.", "");
+                        name = name.replace(".groovy", "");
+                        scripts.add(name);
+                    }
+                }
+            }
+
+            String[] scriptArray = scripts.toArray(new String[scripts.size()]);
+            Arrays.sort(scriptArray);
+            for (String script : scriptArray) {
+                System.out.println(" " + script);
+            }
+        }
+    }
+
     /**
      * {@inheritDoc}
      *
@@ -343,9 +378,8 @@ public class FFXClassLoader extends ClassLoader {
             loadExtensions();
         }
 
-        // If no extension jars couldn't be found
+        // If no extension jars were found use the super.loadClass method.
         if (this.extensionJars == null) {
-            // Let default class loader do its job
             return super.loadClass(name, resolve);
         }
         // Check if the class has already been loaded
@@ -365,8 +399,9 @@ public class FFXClassLoader extends ClassLoader {
                     }
                 }
             } catch (ClassNotFoundException ex) {
-                // Let a chance to class to be loaded by default implementation
+                // Do Nothin.
             }
+            // Try to load the class via the default implementation.
             if (loadedClass == null) {
                 loadedClass = super.loadClass(name, resolve);
             }
@@ -413,7 +448,7 @@ public class FFXClassLoader extends ClassLoader {
                     if (extensionJarOrDll.endsWith(".jar")) {
                         int start = lastSlashIndex + 1;
                         int end = extensionJarOrDll.indexOf(".jar");
-                        String name = extensionJarOrDll.substring(start,end);
+                        String name = extensionJarOrDll.substring(start, end);
                         // Copy jar to a tmp file
                         String extensionJar = copyInputStreamToTmpFile(extensionJarOrDllUrl.openStream(),
                                                                        name, ".jar");
@@ -422,9 +457,9 @@ public class FFXClassLoader extends ClassLoader {
                     } else if (extensionJarOrDll.endsWith(dllSuffix)) {
                         int start = lastSlashIndex + 1 + dllPrefix.length();
                         int end = extensionJarOrDll.indexOf(dllSuffix);
-                        String name = extensionJarOrDll.substring(start,end);
+                        String name = extensionJarOrDll.substring(start, end);
                         // Copy DLL to a tmp file
-                        String extensionDll = copyInputStreamToTmpFile(extensionJarOrDllUrl.openStream(), 
+                        String extensionDll = copyInputStreamToTmpFile(extensionJarOrDllUrl.openStream(),
                                                                        name, dllSuffix);
                         // Add extracted file to extension DLLs map
                         extensionDlls.put(name, extensionDll);

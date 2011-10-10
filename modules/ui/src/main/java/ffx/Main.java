@@ -49,9 +49,6 @@ import edu.rit.pj.Comm;
 import ffx.ui.LogHandler;
 import ffx.ui.MainPanel;
 import ffx.ui.macosx.OSXAdapter;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.OptionBuilder;
-import org.apache.commons.cli.Options;
 
 /**
  * The Main class is the entry point to the graphical user interface version of
@@ -63,64 +60,10 @@ import org.apache.commons.cli.Options;
  */
 public class Main extends JFrame {
 
-    private static final Logger logger = Logger.getLogger(Main.class.getName());
-    private static final Level level;
-    private static final LogHandler logHandler;
-
-    static {
-        /*
-         * Remove the default console handler from the root logger.
-         */
-        try {
-            Logger defaultLogger = LogManager.getLogManager().getLogger("");
-            Handler defaultHandlers[] = defaultLogger.getHandlers();
-            for (Handler h : defaultHandlers) {
-                defaultLogger.removeHandler(h);
-            }
-        } catch (Exception e) {
-            System.err.println(e.toString());
-        }
-
-        /**
-         * Create a Handler for FFX logging.
-         */
-        String logLevel = System.getProperty("ffx.log", "info");
-        Level tempLevel;
-        try {
-            tempLevel = Level.parse(logLevel.toUpperCase());
-        } catch (Exception e) {
-            tempLevel = Level.INFO;
-        }
-        level = tempLevel;
-        logHandler = new LogHandler();
-        logHandler.setLevel(level);
-        Logger ffxLogger = Logger.getLogger("ffx");
-        ffxLogger.addHandler(logHandler);
-        ffxLogger.setLevel(level);
-    }
-
     /**
-     * Create an instance of Force Field X
-     *
-     * @param args an array of {@link java.lang.String} objects.
-     * @throws java.lang.Exception if any.
+     * Process any "-D" command line flags.
      */
-    public static void main(String[] args) throws Exception {
-
-        // create Options object
-        Options options = new Options();
-
-        // add t option
-        options.addOption("h", "help", false, "Display this message.");
-        options.addOption(OptionBuilder.withArgName("property=value").hasArgs(2).withValueSeparator().withDescription("use value for given property").create("D"));
-
-        // automatically generate the help statement
-        HelpFormatter formatter = new HelpFormatter();
-        formatter.printHelp("ffx", options);
-
-        /**
-         * Process any "-D" command line flags.
-         */
+    private static String[] processProperties(String args[]) {
         List newArgs = new ArrayList<String>();
         for (int i = 0; i < args.length; i++) {
             String arg = args[i].trim();
@@ -145,11 +88,49 @@ public class Main extends JFrame {
         args = new String[newArgs.size()];
         newArgs.toArray(args);
 
-        /**
-         * Start up the Parallel Java communication layer.
-         */
-        int rank = 0;
-        int processes = 1;
+        return args;
+    }
+
+    /**
+     * Print out credits.
+     */
+    private static void promo() {
+        logger.info(MainPanel.border);
+        logger.info(MainPanel.title);
+        logger.info(MainPanel.aboutString);
+        logger.info(MainPanel.border);
+    }
+
+    /**
+     * Print out help for the command line version of Force Field X.
+     */
+    private static void help() {
+        logger.info(" usage: ffxc [-D<property=value>] <command> [-options] <PDB|XYZ>");
+        logger.info("\n where commands include:\n");
+        ClassLoader classLoader = ClassLoader.getSystemClassLoader();
+        classLoader.getResource("List all scripts");
+        logger.info("\n For help on a spcific command: ffxc command -h\n");
+        System.exit(0);
+    }
+
+    /**
+     * Determine the host name, process ID, and FFX base directory.
+     */
+    private static void environment() {
+        try {
+            InetAddress addr = InetAddress.getLocalHost();
+            hostName = addr.getHostName();
+        } catch (UnknownHostException e) {
+            // Do nothing.
+        }
+        ffxDirectory = new File(System.getProperty("basedir"));
+        procID = Integer.parseInt(System.getProperty("app.pid"));
+    }
+
+    /**
+     * Start up the Parallel Java communication layer.
+     */
+    private static void startParallelJava(String args[]) {
         try {
             Comm.init(args);
             Comm world = Comm.world();
@@ -158,80 +139,124 @@ public class Main extends JFrame {
         } catch (Exception e) {
             System.out.println(e.toString());
         }
+    }
 
-        // If a file was supplied on the command line, get its absolute path
+    /**
+     * Start the Force Field X command line interface.
+     * @param commandLineFile
+     * @param argList
+     */
+    private static void startCommandLineInterface(File commandLineFile, List<String> argList) {
+        if (processes == 1) {
+            logger.info(String.format(" Starting up the command line interface."));
+            logger.info(String.format(" Process ID %d on %s.", procID, hostName));
+        } else {
+            logger.info(String.format(" Starting up process ID %d (rank %d) on %s.\n", procID, rank, hostName));
+        }
+        try {
+            logger.fine(String.format(" Force Field X directory is %s", ffxDirectory.getCanonicalPath()));
+        } catch (Exception e) {
+            // Do Nothing.
+        }
+        HeadlessMain m = new HeadlessMain(commandLineFile, argList, logHandler);
+    }
+
+    /**
+     * Start the Force Field X graphical user interface.
+     * @param commandLineFile
+     * @param argList
+     */
+    private static void startGraphicalUserInterface(File commandLineFile, List<String> argList) {
+        logger.info(String.format("\n Starting up the graphical user interface."));
+        logger.info(String.format(" Process ID %d on %s.", procID, hostName));
+
+        try {
+            logger.fine(String.format(" Force Field X directory is %s", ffxDirectory.getCanonicalPath()));
+        } catch (Exception e) {
+            // Do Nothing.
+        }
+        /**
+         * Some Mac OS X specific features that help FFX look native.
+         * These need to be set before the MainPanel is created.
+         */
+        if (SystemUtils.IS_OS_MAC_OSX) {
+            OSXAdapter.setOSXProperties();
+        }
+        /**
+         * Set some Swing Constants.
+         */
+        UIManager.put("swing.boldMetal", Boolean.FALSE);
+        setDefaultLookAndFeelDecorated(false);
+        /**
+         * Initialize the main frame and Force Field X MainPanel.
+         */
+        Main m = new Main(commandLineFile, argList);
+    }
+
+    /**
+     * Create an instance of Force Field X
+     *
+     * @param args an array of {@link java.lang.String} objects.
+     * @throws java.lang.Exception if any.
+     */
+    public static void main(String[] args) throws Exception {
+        /**
+         * Print out credits.
+         */
+        promo();
+
+        /**
+         * Print out help for the command line interface.
+         */
+        if (GraphicsEnvironment.isHeadless() && args.length < 2) {
+            help();
+        }
+
+
+        /**
+         * Start up the Parallel Java communication layer.
+         */
+        startParallelJava(args);
+
+        /**
+         * Process any "-D" command line flags.
+         */
+        args = processProperties(args);
+
+        /**
+         * Determine host name and process ID.
+         */
+        environment();
+
         File commandLineFile = null;
-        List<String> argList = new ArrayList<String>();
-        if (args != null && args.length > 0) {
+        int nArgs = args.length;
+        if (nArgs > 0) {
             commandLineFile = new File(args[0]);
             // Resolve a relavtive path
             if (commandLineFile.exists()) {
                 commandLineFile = new File(FilenameUtils.normalize(
                         commandLineFile.getAbsolutePath()));
             }
-            // Convert the args to a list
-            int nArgs = args.length;
-            if (nArgs > 1) {
-                for (int i = 1; i < nArgs; i++) {
-                    argList.add(args[i]);
-                }
+        }
+
+        /**
+         * Convert the args to a List<String>.
+         */
+        List<String> argList = new ArrayList<String>(nArgs);
+        if (nArgs > 1) {
+            for (int i = 1; i < nArgs; i++) {
+                argList.add(args[i]);
             }
         }
-        logger.info(MainPanel.border);
-        logger.info(MainPanel.title);
-        logger.info(MainPanel.aboutString);
-        logger.info(MainPanel.border);
 
         /**
-         * Determine the host computers name.
-         */
-        String hostName = "unknown host";
-        try {
-            InetAddress addr = InetAddress.getLocalHost();
-            hostName = addr.getHostName();
-        } catch (UnknownHostException e) {
-            // Do nothing.
-        }
-
-        /**
-         * Determine the Process ID and location of FFX.
-         */
-        File basedir = new File(System.getProperty("basedir"));
-        int procID = Integer.parseInt(System.getProperty("app.pid"));
-
-        /**
-         * Start up the GUI or command line version of Force Field X.
+         * Start up the GUI or CLI version of Force Field X.
          */
         if (!GraphicsEnvironment.isHeadless()) {
-            logger.info(String.format("\n Starting up the graphical user interface."));
-            logger.info(String.format(" Process ID %d on %s.", procID, hostName));
-            logger.fine(String.format(" Force Field X directory is %s", basedir.getCanonicalPath()));
-
-            // Some Mac OS X specific features that help FFX look native.
-            // These need to be set before the MainPanel is created.
-            if (SystemUtils.IS_OS_MAC_OSX) {
-                OSXAdapter.setOSXProperties();
-            }
-            // Set some Swing Constants
-            UIManager.put("swing.boldMetal", Boolean.FALSE);
-            setDefaultLookAndFeelDecorated(false);
-            // Initialize the main frame and Force Field X MainPanel
-            Main m = new Main(commandLineFile, argList);
+            startGraphicalUserInterface(commandLineFile, argList);
         } else {
-            if (processes == 1) {
-                logger.info(String.format(" Starting up the command line interface."));
-                logger.info(String.format(" Process ID %d on %s.", procID, hostName));
-            } else {
-                logger.info(String.format(" Starting up process ID %d (rank %d) on %s.", procID, rank, hostName));
-            }
-            logger.fine(String.format(" Force Field X directory is %s", basedir.getCanonicalPath()));
-            HeadlessMain m = new HeadlessMain(commandLineFile, argList, logHandler);
+            startCommandLineInterface(commandLineFile, argList);
         }
-
-        /**
-         * Report the logging level.
-         */
-        logger.info(" Log level is set to " + level.toString());
     }
 
     /**
@@ -336,10 +361,63 @@ public class Main extends JFrame {
                 "Up Time: " + stopWatch).append("Logger: " + logger.getName());
         return toStringBuilder.toString();
     }
+    private static final Logger logger = Logger.getLogger(Main.class.getName());
+    private static final Level level;
+    private static final LogHandler logHandler;
+    /** Constant <code>stopWatch</code> */
+    public static StopWatch stopWatch = new StopWatch();
     /**
      * This is the main application wrapper.
      */
     public MainPanel mainPanel;
-    /** Constant <code>stopWatch</code> */
-    public static StopWatch stopWatch = new StopWatch();
+    /**
+     * Rank of this process for a multi-process Parallel Java FFX job.
+     */
+    private static int rank = 0;
+    /**
+     * Number of processes for a multi-process Parallel Java FFX job.
+     */
+    private static int processes = 1;
+    /**
+     * Name of the machine FFX is running on.
+     */
+    private static String hostName = null;
+    /**
+     * Force Field X base directory.
+     */
+    private static File ffxDirectory = null;
+    /**
+     * Force Field X process ID.
+     */
+    private static int procID = -1;
+
+    /**
+     * Replace the default console handler with our custom FFX handler.
+     */
+    static {
+        try {
+            Logger defaultLogger = LogManager.getLogManager().getLogger("");
+            Handler defaultHandlers[] = defaultLogger.getHandlers();
+            for (Handler h : defaultHandlers) {
+                defaultLogger.removeHandler(h);
+            }
+        } catch (Exception e) {
+            System.err.println(e.toString());
+        }
+
+        String logLevel = System.getProperty("ffx.log", "info");
+        Level tempLevel;
+        try {
+            tempLevel = Level.parse(logLevel.toUpperCase());
+        } catch (Exception e) {
+            tempLevel = Level.INFO;
+        }
+
+        level = tempLevel;
+        logHandler = new LogHandler();
+        logHandler.setLevel(level);
+        Logger ffxLogger = Logger.getLogger("ffx");
+        ffxLogger.addHandler(logHandler);
+        ffxLogger.setLevel(level);
+    }
 }

@@ -84,7 +84,7 @@ public class LogFormatter extends SimpleFormatter {
                 }
             }
         } catch (Exception e) {
-            System.err.println(e.toString());
+            // If Comm.world does not exist, do not append the rank.
         }
 
         return message;
