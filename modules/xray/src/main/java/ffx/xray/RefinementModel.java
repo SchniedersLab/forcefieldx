@@ -50,7 +50,7 @@ public class RefinementModel {
      *
      * @param assembly an array of {@link ffx.potential.bonded.MolecularAssembly} objects.
      */
-    public RefinementModel(MolecularAssembly assembly[]){
+    public RefinementModel(MolecularAssembly assembly[]) {
         this(assembly, false);
     }
 

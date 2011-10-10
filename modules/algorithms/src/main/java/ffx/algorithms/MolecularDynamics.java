@@ -77,6 +77,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     private double temperature = 300.0;
     private boolean initVelocities = true;
     private boolean loadRestart = false;
+    private boolean initialized = false;
 
     /**
      * <p>Constructor for MolecularDynamics.</p>
@@ -88,10 +89,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * @param requestedThermostat a {@link ffx.algorithms.Thermostat.Thermostats} object.
      */
     public MolecularDynamics(MolecularAssembly assembly,
-                             Potential potentialEnergy,
-                             CompositeConfiguration properties,
-                             AlgorithmListener listener,
-                             Thermostats requestedThermostat) {
+            Potential potentialEnergy,
+            CompositeConfiguration properties,
+            AlgorithmListener listener,
+            Thermostats requestedThermostat) {
         this.molecularAssembly = assembly;
         this.algorithmListener = listener;
         this.potentialEnergy = potentialEnergy;
@@ -150,7 +151,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     public Thermostat getThermostat() {
         return thermostat;
     }
-    
+
     /**
      * <p>Setter for the field <code>x</code>.</p>
      *
@@ -159,7 +160,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     public void setParameters(double x[]) {
         System.arraycopy(x, 0, this.x, 0, dof);
     }
-    
+
     /**
      * <p>Getter for the field <code>x</code>.</p>
      *
@@ -199,8 +200,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * @param dyn a {@link java.io.File} object.
      */
     public void init(final int nSteps, final double timeStep, final double printInterval,
-                     final double saveInterval, final double temperature, final boolean initVelocities,
-                     final File dyn) {
+            final double saveInterval, final double temperature, final boolean initVelocities,
+            final File dyn) {
 
         /**
          * Return if already running.
@@ -250,7 +251,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
             if (xyzFilter == null) {
                 xyzFilter = new XYZFilter(file, molecularAssembly,
-                                          molecularAssembly.getForceField(), properties);
+                        molecularAssembly.getForceField(), properties);
             }
 
             if (dynFilter == null) {
@@ -281,8 +282,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * @param dyn a {@link java.io.File} object.
      */
     public void dynamic(final int nSteps, final double timeStep, final double printInterval,
-                        final double saveInterval, final double temperature, final boolean initVelocities,
-                        final File dyn) {
+            final double saveInterval, final double temperature, final boolean initVelocities,
+            final File dyn) {
 
         init(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);
 
@@ -340,27 +341,38 @@ public class MolecularDynamics implements Runnable, Terminatable {
             thermostat.setTargetTemperature(temperature);
         }
 
-        if (!loadRestart) {
+        if (initialized) {
             /**
-             * Initialize atomic coordinates.
-             */
-            potentialEnergy.getCoordinates(x);
-            /**
-             * Initialize atomic velocities.
+             * if we've already been here,
+             * don't update coordinates or velocities or try
+             * to read restart file.
              */
             if (initVelocities) {
                 thermostat.maxwell();
-            } else {
-                for (int i = 0; i < dof; i++) {
-                    v[i] = 0.0;
-                }
             }
         } else {
-            if (!dynFilter.readFile(dynFile, x, v, a, aPrevious)) {
-                String message = " Could not load the restart file - dynamics terminated.";
-                logger.log(Level.WARNING, message);
-                done = true;
-                return;
+            if (!loadRestart) {
+                /**
+                 * Initialize atomic coordinates.
+                 */
+                potentialEnergy.getCoordinates(x);
+                /**
+                 * Initialize atomic velocities.
+                 */
+                if (initVelocities) {
+                    thermostat.maxwell();
+                } else {
+                    for (int i = 0; i < dof; i++) {
+                        v[i] = 0.0;
+                    }
+                }
+            } else {
+                if (!dynFilter.readFile(dynFile, x, v, a, aPrevious)) {
+                    String message = " Could not load the restart file - dynamics terminated.";
+                    logger.log(Level.WARNING, message);
+                    done = true;
+                    return;
+                }
             }
         }
 
@@ -381,11 +393,14 @@ public class MolecularDynamics implements Runnable, Terminatable {
         /**
          * Initialize current and previous accelerations.
          */
-        if (!loadRestart) {
-            for (int i = 0; i < dof; i++) {
-                a[i] = -Thermostat.convert * grad[i] / mass[i];
-                aPrevious[i] = a[i];
+        if (!initialized) {
+            if (!loadRestart) {
+                for (int i = 0; i < dof; i++) {
+                    a[i] = -Thermostat.convert * grad[i] / mass[i];
+                    aPrevious[i] = a[i];
+                }
             }
+            initialized = true;
         }
 
         logger.info(String.format("\n   Step      Kinetic    Potential        Total     Temp     Time"));
@@ -405,9 +420,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
              * exactly equal to the last temperature printed out.
              */
             //thermostat.kineticEnergy();
- 
             if (step % 1 == 0) {
-               thermostat.centerOfMassMotion(true, false);
+                thermostat.centerOfMassMotion(true, false);
             }
 
             kinetic = thermostat.getKineticEnergy();
