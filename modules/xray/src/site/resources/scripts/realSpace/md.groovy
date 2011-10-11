@@ -1,4 +1,4 @@
-// MOLECULAR DYNAMICS
+// REALSPACE MOLECULAR DYNAMICS
 
 // Apache Imports
 import org.apache.commons.io.FilenameUtils;
@@ -9,6 +9,11 @@ import groovy.util.CliBuilder;
 // Force Field X Imports
 import ffx.algorithms.MolecularDynamics;
 import ffx.algorithms.Thermostat.Thermostats;
+import ffx.xray.CrystalReciprocalSpace.SolventModel;
+import ffx.xray.RealSpaceData;
+import ffx.xray.RealSpaceFile;
+import ffx.xray.RefinementEnergy;
+import ffx.xray.RefinementMinimize.RefinementMode;
 
 // Number of molecular dynamics steps
 int nSteps = 1000000;
@@ -23,7 +28,7 @@ double printInterval = 0.01;
 double saveInterval = 0.1;
 
 // Temperature in degrees Kelvin.
-double temperature = 298.15;
+double temperature = 100.0;
 
 // Thermostats [ ADIABATIC, BERENDSEN, BUSSI ]
 Thermostats thermostat = Thermostats.BERENDSEN;
@@ -35,14 +40,15 @@ boolean initVelocities = true;
 // ===============================================================================================
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc md [options] <filename>');
+def cli = new CliBuilder(usage:' ffxc realspace.md [options] <pdbfilename> [datafilename]');
 cli.h(longOpt:'help', 'Print this help message.');
+cli.d(longOpt:'data', args:2, valueSeparator:',', argName:'data.map,1.0', 'specify input data filename (or simply provide the datafilename argument after the PDB file) and weight to apply to the data (wA)');
 cli.p(longOpt:'polarization', args:1, 'polarization model: [none / direct / mutual]');
 cli.n(longOpt:'steps', args:1, argName:'1000000', 'Number of molecular dynamics steps.');
 cli.f(longOpt:'dt', args:1, argName:'1.0', 'Time step in femtoseconds.');
 cli.i(longOpt:'print', args:1, argName:'0.01', 'Interval to print out thermodyanamics in picoseconds.');
 cli.w(longOpt:'save', args:1, argName:'0.1', 'Interval to write out coordinates in picoseconds.');
-cli.t(longOpt:'temperature', args:1, argName:'298.15', 'Temperature in degrees Kelvin.');
+cli.t(longOpt:'temperature', args:1, argName:'100.0', 'Temperature in degrees Kelvin.');
 cli.b(longOpt:'thermostat', args:1, argName:'Berendsen', 'Thermostat: [Adiabatic/Berendsen/Bussi]')
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
@@ -50,8 +56,22 @@ if (options.h || arguments == null || arguments.size() != 1) {
     return cli.usage();
 }
 
-// Read in command line.
-String filename = arguments.get(0);
+// Name of the file (PDB or XYZ).
+String modelfilename = arguments.get(0);
+
+// set up real space map data (can be multiple files)
+List mapfiles = new ArrayList();
+if (arguments.size() > 1) {
+    RealSpaceFile realspacefile = new RealSpaceFile(arguments.get(1), 1.0);
+    mapfiles.add(realspacefile);
+}
+if (options.d) {
+    for (int i=0; i<options.ds.size(); i+=2) {
+	double wA = Double.parseDouble(options.ds[i+1]);
+	RealSpaceFile realspacefile = new RealSpaceFile(options.ds[i], wA);
+	mapfiles.add(realspacefile);
+    }
+}
 
 if (options.p) {
     System.setProperty("polarization", options.p);
@@ -91,14 +111,27 @@ if (options.b) {
     }
 }
 
-logger.info("\n Running molecular dynmaics on " + filename);
 
-open(filename);
+logger.info("\n Running molecular dynmaics on " + modelfilename);
+open(modelfilename);
+
+if (mapfiles.size() == 0) {
+    RealSpaceFile realspacefile = new RealSpaceFile(active, 1.0);
+    mapfiles.add(realspacefile);
+}
+
+RealSpaceData realspacedata = new RealSpaceData(active, active.getProperties(), mapfiles.toArray(new RealSpaceFile[mapfiles.size()]));
+
+energy();
+
+RefinementEnergy refinementEnergy = new RefinementEnergy(realspacedata, RefinementMode.COORDINATES);
 
 // Restart File
 File dyn = new File(FilenameUtils.removeExtension(filename) + ".dyn");
 if (!dyn.exists()) {
     dyn = null;
 }
-MolecularDynamics molDyn = new MolecularDynamics(active, active.getPotentialEnergy(), active.getProperties(), null, thermostat);
+MolecularDynamics molDyn = new MolecularDynamics(active, refinementEnergy, active.getProperties(), refinementEnergy, thermostat);
+refinementEnergy.setThermostat(molDyn.getThermostat());
+
 molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);

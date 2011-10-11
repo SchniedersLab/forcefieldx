@@ -37,9 +37,10 @@ boolean initVelocities = true;
 // Create the command line parser.
 def cli = new CliBuilder(usage:' ffxc md [options] <filename>');
 cli.h(longOpt:'help', 'Print this help message.');
+cli.p(longOpt:'polarization', args:1, 'polarization model: [none / direct / mutual]');
 cli.n(longOpt:'steps', args:1, argName:'1000000', 'Number of molecular dynamics steps.');
-cli.d(longOpt:'dt', args:1, argName:'1.0', 'Time step in femtoseconds.');
-cli.p(longOpt:'print', args:1, argName:'0.01', 'Interval to print out thermodyanamics in picoseconds.');
+cli.f(longOpt:'dt', args:1, argName:'1.0', 'Time step in femtoseconds.');
+cli.i(longOpt:'print', args:1, argName:'0.01', 'Interval to print out thermodyanamics in picoseconds.');
 cli.w(longOpt:'save', args:1, argName:'0.1', 'Interval to write out coordinates in picoseconds.');
 cli.t(longOpt:'temperature', args:1, argName:'298.15', 'Temperature in degrees Kelvin.');
 cli.b(longOpt:'thermostat', args:1, argName:'Berendsen', 'Thermostat: [Adiabatic/Berendsen/Bussi]')
@@ -52,19 +53,23 @@ if (options.h || arguments == null || arguments.size() != 1) {
 // Read in command line.
 String filename = arguments.get(0);
 
+if (options.p) {
+    System.setProperty("polarization", options.p);
+}
+
 // Load the number of molecular dynamics steps.
 if (options.n) {
     nSteps = Integer.parseInt(options.n);
 }
 
 // Load the time steps in femtoseconds.
-if (options.d) {
-    timeStep = Double.parseDouble(options.d);
+if (options.f) {
+    timeStep = Double.parseDouble(options.f);
 }
 
 // Print interval in picoseconds.
-if (options.p) {
-    printInterval = Double.parseDouble(options.p);
+if (options.i) {
+    printInterval = Double.parseDouble(options.i);
 }
 
 // Write interval in picoseconds.
