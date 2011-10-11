@@ -16,6 +16,7 @@ double eps = 1.0;
 def cli = new CliBuilder(usage:' ffxc minimize [options] <filename>');
 cli.h(longOpt:'help', 'Print this help message.');
 cli.e(longOpt:'eps', args:1, argName:'1.0', 'RMS gradient convergence criteria');
+cli.p(longOpt:'polarization', args:1, 'polarization model: [none / direct / mutual]');
 def options = cli.parse(args);
 
 List<String> arguments = options.arguments();
@@ -29,6 +30,10 @@ String filename = arguments.get(0);
 // Load convergence criteria.
 if (options.e) {
     eps = Double.parseDouble(options.e);
+}
+
+if (options.p) {
+    System.setProperty("polarization", options.p);
 }
 
 logger.info("\n Running minimize on " + filename);

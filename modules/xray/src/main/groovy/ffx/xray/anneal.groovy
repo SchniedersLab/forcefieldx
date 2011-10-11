@@ -22,16 +22,16 @@ RefinementMode refinementmode = RefinementMode.COORDINATES;
 String suffix = "_anneal";
 
 // starting temp
-double highTemperature = 1000.0;
+double high = 1000.0;
 
 // ending temp
-double lowTemperature = 100.0;
+double low = 100.0;
 
-// number of steps to take between high and low temps
-int annealingSteps = 10;
+// Number of annealing steps.
+int windows = 10;
 
-// number of MD steps at each annealing step
-int mdSteps = 200;
+// Number of molecular dynamics steps at each temperature.
+int steps = 1000;
 
 // Reset velocities (ignored if a restart file is given)
 boolean initVelocities = true;
@@ -40,22 +40,17 @@ boolean initVelocities = true;
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 
-def today = new Date();
-logger.info(" " + today);
-logger.info(" command line variables:");
-logger.info(" " + args + "\n");
-
 // Create the command line parser.
 def cli = new CliBuilder(usage:' ffxc xray.anneal [options] <pdbfilename> [datafilename]');
 cli.h(longOpt:'help', 'Print this help message.');
 cli.d(longOpt:'data', args:3, valueSeparator:',', argName:'data.mtz,1.0,false', 'specify input data filename (or simply provide the datafilename argument after the PDB file), weight applied to the data (wA) and if the data is from a neutron experiment');
 cli.r(longOpt:'mode', args:1, argName:'coordinates', 'type of refinement: [coordinates / bfactors / coordinates_and_bfactors / occupancies / bfactors_and_occupancies / coordinates_and_occupancies / coordinates_and_bfactors_and_occupancies]');
-cli.p(longOpt:'polarization', args:1, argName:'default', 'polarization model: [none / direct / mutual]');
+cli.p(longOpt:'polarization', args:1, 'polarization model: [none / direct / mutual]');
 cli.s(longOpt:'suffix', args:1, argName:'_anneal', 'output suffix');
-cli.H(longOpt:'hightemp', args:1, argName:'1000.0', 'starting temperature');
-cli.L(longOpt:'lowtemp', args:1, argName:'100.0', 'ending temperature');
-cli.N(longOpt:'annealsteps', args:1, argName:'10', 'Number of steps between high and low temperature');
-cli.n(longOpt:'mdsteps', args:1, argName:'200', 'Number of molecular dynamics steps at each temperature.');
+cli.l(longOpt:'low', args:1, argName:'100.0', 'Low temperature limit in degrees Kelvin.');
+cli.t(longOpt:'high', args:1, argName:'1000.0', 'High temperature limit in degrees Kelvin.');
+cli.w(longOpt:'windows', args:1, argName:'10', 'Number of annealing windows.');
+cli.n(longOpt:'steps', args:1, argName:'1000', 'Number of molecular dynamics steps at each temperature.');
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
 if (options.h || arguments == null || arguments.size() < 1) {
@@ -96,20 +91,20 @@ if (options.s) {
     suffix = options.s;
 }
 
-if (options.H) {
-    highTemperature = Double.parseDouble(options.H);
+if (options.t) {
+    high = Double.parseDouble(options.t);
 }
 
-if (options.L) {
-    lowTemperature = Double.parseDouble(options.L);
+if (options.l) {
+    low = Double.parseDouble(options.l);
 }
 
-if (options.N) {
-    annealingSteps = Integer.parseInteger(options.N);
+if (options.w) {
+    windows = Integer.parseInteger(options.w);
 }
 
 if (options.n) {
-    mdSteps = Integer.parseInteger(options.n);
+    steps = Integer.parseInteger(options.n);
 }
 
 logger.info("\n Running simulated annealing on " + modelfilename);
@@ -128,7 +123,7 @@ energy();
 
 RefinementEnergy refinementEnergy = new RefinementEnergy(diffractiondata, refinementmode);
 SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(active, refinementEnergy, active.getProperties(), refinementEnergy);
-simulatedAnnealing.anneal(highTemperature, lowTemperature, annealingSteps, mdSteps);
+simulatedAnnealing.anneal(high, low, windows, steps);
 diffractiondata.scaleBulkFit();
 diffractiondata.printStats();
 energy();

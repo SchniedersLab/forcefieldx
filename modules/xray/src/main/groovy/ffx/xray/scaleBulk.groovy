@@ -19,16 +19,11 @@ boolean timings = false;
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 
-def today = new Date();
-logger.info(" " + today);
-logger.info(" command line variables:");
-logger.info(" " + args + "\n");
-
 // Create the command line parser.
 def cli = new CliBuilder(usage:' ffxc xray.scaleBulk [options] <pdbfilename> [datafilename]');
 cli.h(longOpt:'help', 'Print this help message.');
 cli.d(longOpt:'data', args:3, valueSeparator:',', argName:'data.mtz,1.0,false', 'specify input data filename (or simply provide the datafilename argument after the PDB file), weight applied to the data (wA) and if the data is from a neutron experiment');
-cli.p(longOpt:'polarization', args:1, argName:'default', 'polarization model: [none / direct / mutual ]');
+cli.p(longOpt:'polarization', args:1, 'polarization model: [none / direct / mutual ]');
 cli.m(longOpt:'maps', 'set to output sigmaA weighted 2Fo-Fc and Fo-Fc electron density maps');
 cli.t(longOpt:'timings', 'set to perform FFT test timings');
 cli.w(longOpt:'mtz', 'write out MTZ containing structure factor coefficients');

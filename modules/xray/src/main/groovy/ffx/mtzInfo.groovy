@@ -8,11 +8,6 @@ import ffx.xray.MTZFilter;
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 
-def today = new Date();
-logger.info(" " + today);
-logger.info(" command line variables:");
-logger.info(" " + args + "\n");
-
 // Create the command line parser.
 def cli = new CliBuilder(usage:' ffxc mtzInfo [options] <mtzfilename>');
 cli.h(longOpt:'help', 'Print this help message.');

@@ -24,6 +24,7 @@ int steps = 1000;
 // Create the command line parser.
 def cli = new CliBuilder(usage:' ffxc anneal [options] <filename>');
 cli.h(longOpt:'help', 'Print this help message.');
+cli.p(longOpt:'polarization', args:1, 'polarization model: [none / direct / mutual]');
 cli.n(longOpt:'steps', args:1, argName:'1000', 'Number of molecular dynamics steps per annealing window.');
 cli.w(longOpt:'windows', args:1, argName:'10', 'Number of annealing windows.');
 cli.l(longOpt:'low', args:1, argName:'10.0', 'Low temperature limit in degrees Kelvin.');
@@ -38,6 +39,10 @@ if (options.h || arguments == null || arguments.size() != 1) {
 
 // Read in command line.
 String filename = arguments.get(0);
+
+if (options.p) {
+    System.setProperty("polarization", options.p);
+}
 
 // Load the number of molecular dynamics steps.
 if (options.n) {
@@ -60,8 +65,16 @@ if (options.t) {
 }
 
 logger.info("\n Running simulated annealing on " + filename);
-open(filename);
+systems = open(filename);
 SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(active, active.getPotentialEnergy(),
     active.getProperties(), null);
 simulatedAnnealing.anneal(high, low, windows, steps);
 
+String ext = FilenameUtils.getExtension(filename);
+filename = FilenameUtils.removeExtension(filename);
+
+if (ext.toUpperCase().contains("XYZ")) {
+    saveAsXYZ(new File(filename + ".xyz"));
+} else {
+    saveAsPDB(systems, new File(filename + ".pdb"));
+}
