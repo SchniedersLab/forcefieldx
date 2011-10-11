@@ -390,7 +390,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         } else {
             particleMeshEwald = null;
         }
-
+        
         molecularAssembly.setPotential(this);
     }
 
@@ -940,14 +940,14 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
      * @param a1 a {@link ffx.potential.bonded.Atom} object.
      * @param a2 a {@link ffx.potential.bonded.Atom} object.
      * @param distance a double.
+     * @param forceConstant the force constant in kcal/mole
      */
-    public void setRestraintBond(Atom a1, Atom a2, double distance) {
-        double forceConstant = 1.0;
+    public void setRestraintBond(Atom a1, Atom a2, double distance, double forceConstant) {
         restraintBondTerm = true;
         RestraintBond rb = new RestraintBond(a1, a2);
         int classes[] = {a1.getAtomType().atomClass, a2.getAtomType().atomClass};
         rb.setBondType((new BondType(classes, forceConstant, distance)));
-        RestraintBond restraint[] = new RestraintBond[nRestraintBonds + 1];
-        System.arraycopy(restraintBonds, 0, restraint, 0, nRestraintBonds++);
+        restraintBonds = new RestraintBond[1];
+        restraintBonds[0] = rb;
     }
 }

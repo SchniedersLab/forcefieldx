@@ -24,7 +24,7 @@ if (options.h || arguments == null || arguments.size() != 1) {
 }
 
 // Read in command line.
-String filename = arguments.get(0);
+String xyzname = arguments.get(0);
 
 systems = open(xyzname);
 energy();
@@ -33,14 +33,15 @@ String mol = FilenameUtils.getBaseName(xyzname);
 List atoms = active.getAtomList();
 int index = 1;
 for (Atom atom : atoms) {
-    logger.info(String.format(" biotype %3d %4s \"%s\" %3d", index++, atom.getName(), mol, atom.getAtomType().type));
+    StringBuilder sb = new StringBuilder();
+    sb.append(String.format(" biotype %3d %4s \"%s\" %3d", index++, atom.getName(), mol, atom.getAtomType().type));
     List bonds = atom.getBonds();
     if (bonds != null) {
         for (Bond bond : bonds) {
-            print String.format(" %4s", bond.get1_2(atom).getName());
+            sb.append(String.format(" %4s", bond.get1_2(atom).getName()));
         }
     }
-    logger.info("");
+    logger.info(sb.toString());
 }
 
 return;

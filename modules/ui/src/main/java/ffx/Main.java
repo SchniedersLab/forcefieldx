@@ -151,16 +151,16 @@ public class Main extends JFrame {
         /**
          * Capture Parallel Java Output.
          */
-        PrintStream origOut = System.out;
-        PrintStream origErr = System.err;
+        //PrintStream origOut = System.out;
+        //PrintStream origErr = System.err;
 
-        OutputStream redirectOut = new ByteArrayOutputStream();
-        PrintStream out = new PrintStream(redirectOut);
-        System.setOut(out);
+        //OutputStream redirectOut = new ByteArrayOutputStream();
+        //PrintStream out = new PrintStream(redirectOut);
+        //System.setOut(out);
 
-        OutputStream redirectErr = new ByteArrayOutputStream();
-        PrintStream err = new PrintStream(redirectErr);
-        System.setErr(err);
+        //OutputStream redirectErr = new ByteArrayOutputStream();
+        //PrintStream err = new PrintStream(redirectErr);
+        //System.setErr(err);
 
         try {
             Comm.init(args);
@@ -175,26 +175,26 @@ public class Main extends JFrame {
         /**
          * Revert standard output/error.
          */
-        System.setOut(origOut);
-        System.setErr(origErr);
+        //System.setOut(origOut);
+        //System.setErr(origErr);
 
         
         /**
          * If more than one process is requested, log any Parallel Java output.
          */
-        String processesRequested = System.getProperty("pj.nn", "1");
-        if (!processesRequested.equals("1")) {
-            out.flush();
-            err.flush();
-            logger.info(redirectOut.toString());
-            logger.info(redirectErr.toString());
-        }
+        //String processesRequested = System.getProperty("pj.nn", "1");
+        //if (!processesRequested.equals("1")) {
+        //    out.flush();
+        //    err.flush();
+        //    logger.info(redirectOut.toString());
+        //    logger.info(redirectErr.toString());
+       // }
 
         /**
          * Close the temporary streams.
          */
-        out.close();
-        err.close();
+        //out.close();
+        //err.close();
     }
 
     /**

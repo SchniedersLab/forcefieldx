@@ -1,6 +1,24 @@
+/**
+ * Title: Force Field X
+ * Description: Force Field X - Software for Molecular Biophysics.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ *
+ * This file is part of Force Field X.
+ *
+ * Force Field X is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 3 as published
+ * by the Free Software Foundation.
+ *
+ * Force Field X is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Force Field X; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ */
 package ffx.potential.bonded;
-import static ffx.numerics.VectorMath.*;
-import static ffx.potential.parameters.BondType.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,44 +35,18 @@ import javax.vecmath.Vector3d;
 
 import ffx.potential.bonded.RendererCache.ViewModel;
 import ffx.potential.parameters.BondType;
+import static ffx.numerics.VectorMath.*;
+import static ffx.potential.parameters.BondType.*;
+
 /**
  * <p>RestraintBond class.</p>
  *
  * @author schnied
  * @version $Id: $
  */
-public class RestraintBond extends BondedTerm{
+public class RestraintBond extends BondedTerm {
 
     private static final Logger logger = Logger.getLogger(RestraintBond.class.getName());
-
-//    @Override
-//    public int compareTo(RestraintBond b) {
-//        if (b == null) {
-//            throw new NullPointerException();
-//        }
-//        if (b == this) {
-//            return 0;
-//        }
-//        int this0 = atoms[0].xyzIndex;
-//        int a0 = b.atoms[0].xyzIndex;
-//        if (this0 < a0) {
-//            return -1;
-//        }
-//        if (this0 > a0) {
-//            return 1;
-//        }
-//        int this1 = atoms[1].xyzIndex;
-//        int a1 = b.atoms[1].xyzIndex;
-//        if (this1 < a1) {
-//            return -1;
-//        }
-//        if (this1 > a1) {
-//            return 1;
-//        }
-//        // There should not be duplicate, identical bond objects.
-//        assert (!(this0 == a0 && this1 == a1));
-//        return 0;
-//    }
 
     /**
      * Bonding Character
@@ -72,11 +64,11 @@ public class RestraintBond extends BondedTerm{
     public BondType bondType = null;
     private double rigidScale = 1.0;
     private static final float a0col[] = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
-                                          0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+        0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
     private static final float f4a[] = {0.0f, 0.0f, 0.0f, 0.9f};
     private static final float f4b[] = {0.0f, 0.0f, 0.0f, 0.9f};
     private static float f16[] = {0.0f, 0.0f, 0.0f, 0.9f, 0.0f, 0.0f, 0.0f,
-                                  0.9f, 0.0f, 0.0f, 0.0f, 0.9f, 0.0f, 0.0f, 0.0f, 0.9f};
+        0.9f, 0.0f, 0.0f, 0.0f, 0.9f, 0.0f, 0.0f, 0.0f, 0.9f};
     // Some static variables used for computing cylinder orientations
     private static double d;
     private static double a13d[] = new double[3];
@@ -145,7 +137,6 @@ public class RestraintBond extends BondedTerm{
 //    public Bond(String n) {
 //        super(n);
 //    }
-
     /**
      * Set a reference to the force field parameters.
      *
@@ -246,7 +237,7 @@ public class RestraintBond extends BondedTerm{
     private void initJ3D(List<BranchGroup> newShapes) {
         detail = RendererCache.detail;
         branchGroup = RendererCache.doubleCylinderFactory(atoms[0], atoms[1],
-                                                          detail);
+                detail);
         cy1tg = (TransformGroup) branchGroup.getChild(0);
         cy2tg = (TransformGroup) branchGroup.getChild(1);
         cy1 = (Shape3D) cy1tg.getChild(0);
@@ -301,7 +292,7 @@ public class RestraintBond extends BondedTerm{
      * @param newRot a boolean.
      */
     public void setBondTransform3d(Transform3D t3d, double[] pos,
-                                   double[] orient, double len, boolean newRot) {
+            double[] orient, double len, boolean newRot) {
         // Bond Orientation
         if (newRot) {
             angle = angle(orient, y);
@@ -375,7 +366,7 @@ public class RestraintBond extends BondedTerm{
      */
     @Override
     public void setView(RendererCache.ViewModel newViewModel,
-                        List<BranchGroup> newShapes) {
+            List<BranchGroup> newShapes) {
         switch (newViewModel) {
             case WIREFRAME:
                 viewModel = ViewModel.WIREFRAME;
@@ -594,8 +585,8 @@ public class RestraintBond extends BondedTerm{
      */
     public void log() {
         logger.info(String.format(" %s %6d-%s %6d-%s %6.4f  %6.4f  %10.4f",
-                                  "Bond", atoms[0].getXYZIndex(), atoms[0].getAtomType().name,
-                                  atoms[1].getXYZIndex(), atoms[1].getAtomType().name,
-                                  bondType.distance, value, energy));
+                "Bond", atoms[0].getXYZIndex(), atoms[0].getAtomType().name,
+                atoms[1].getXYZIndex(), atoms[1].getAtomType().name,
+                bondType.distance, value, energy));
     }
 }
