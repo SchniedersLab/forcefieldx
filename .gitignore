@@ -2,10 +2,12 @@
 bin/ffx-all.jar
 keystore/
 target/
+scripts/
 tests
 modules/*/target/
 lib/
 modules/*/catalog.xml
+modules/*/src/site/resources/scripts/
 website/
 modules/*/.classpath
 modules/*/.settings
