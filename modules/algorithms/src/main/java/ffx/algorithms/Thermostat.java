@@ -49,12 +49,11 @@ public abstract class Thermostat {
      * Conversion from kcal/mole to g*Ang**2/ps**2.
      */
     public static final double convert = 4.1840e2;
-    
     /**
      * Gas constant (in Kcal/mole/Kelvin).
      */
     public static final double R = 1.9872066e-3;
-    
+
     public enum Thermostats {
 
         ADIABATIC, BERENDSEN, BUSSI;
@@ -91,7 +90,7 @@ public abstract class Thermostat {
         assert (x.length == dof);
         assert (v.length == dof);
         assert (mass.length == dof);
-        random = new Random();        
+        random = new Random();
         setTargetTemperature(t);
     }
 
@@ -103,7 +102,7 @@ public abstract class Thermostat {
     public void setRandomSeed(long seed) {
         random.setSeed(seed);
     }
-    
+
     /**
      * <p>log</p>
      *
@@ -163,12 +162,29 @@ public abstract class Thermostat {
      * The variance of each independent momentum component is kT * mass.
      */
     public void maxwell() {
-
         for (int i = 0; i < dof; i++) {
             double m = mass[i];
-            v[i++] = random.nextGaussian() * Math.sqrt(m * kT) / m;
+            v[i] = random.nextGaussian() * Math.sqrt(kT / m);
         }
         centerOfMassMotion(true, true);
+        /**
+         * Find the current kinetic energy and temperature.
+         */
+        kineticEnergy();
+        /**
+         * The current temperature will deviate slightly from the target 
+         * temperature due to removing the center of mass motion and
+         * finite system size.
+         * 
+         * Scale the velocities to reach the target temperature.
+         */
+        double scale = Math.sqrt(targetTemperature / currentTemperature);
+        for (int i = 0; i < dof; i++) {
+            v[i] *= scale;
+        }
+        /**
+         * Update the kinetic energy and current temperature.
+         */
         kineticEnergy();
     }
 
@@ -186,7 +202,7 @@ public abstract class Thermostat {
             angularMomentum[i] = 0.0;
         }
 
-        for (int index = 0, i = 0; i < dof/3; i++) {
+        for (int index = 0, i = 0; i < dof / 3; i++) {
             double m = mass[index];
             double xx = x[index];
             double vx = v[index++];
@@ -239,7 +255,7 @@ public abstract class Thermostat {
         double xy = 0.0;
         double xz = 0.0;
         double yz = 0.0;
-        for (int index = 0, i = 0; i < dof/3; i++) {
+        for (int index = 0, i = 0; i < dof / 3; i++) {
             double m = mass[index];
             double xi = x[index++] - centerOfMass[0];
             double yi = x[index++] - centerOfMass[1];
@@ -275,7 +291,7 @@ public abstract class Thermostat {
         /**
          * Remove center of mass translational momentum.
          */
-        for (int index = 0, i = 0; i < dof/3; i++) {
+        for (int index = 0, i = 0; i < dof / 3; i++) {
             v[index++] -= linearMomentum[0];
             v[index++] -= linearMomentum[1];
             v[index++] -= linearMomentum[2];
@@ -286,7 +302,7 @@ public abstract class Thermostat {
          * non-periodic systems.
          */
         if (false) {
-            for (int index = 0, i = 0; i < dof/3; i++) {
+            for (int index = 0, i = 0; i < dof / 3; i++) {
                 double xi = x[index++] - centerOfMass[0];
                 double yi = x[index++] - centerOfMass[1];
                 double zi = x[index] - centerOfMass[2];
@@ -301,7 +317,7 @@ public abstract class Thermostat {
          */
         if (print) {
             logger.info(String.format(" Center of mass motion removed.\n"
-                                      + " Total degrees of freedom %d - 3 = %d", dof, dof-3));
+                                      + " Total degrees of freedom %d - 3 = %d", dof, dof - 3));
         }
     }
 
