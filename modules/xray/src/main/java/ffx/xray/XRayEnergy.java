@@ -892,6 +892,27 @@ public class XRayEnergy implements LambdaInterface, Potential {
      */
     @Override
     public VARIABLE_TYPE[] getVariableTypes() {
-        return null;
+        VARIABLE_TYPE vtypes[] = new VARIABLE_TYPE[nxyz + nb + nocc];
+        int i = 0;
+        if (refinexyz) {
+            for (Atom a : atomarray) {
+                vtypes[i++] = VARIABLE_TYPE.X;
+                vtypes[i++] = VARIABLE_TYPE.Y;
+                vtypes[i++] = VARIABLE_TYPE.Z;
+            }
+        }
+
+        if (refineb) {
+            for (int j = i; j < nxyz + nb; i++, j++) {
+                vtypes[j] = VARIABLE_TYPE.OTHER;
+            }
+        }
+
+        if (refineocc) {
+            for (int j = i; j < nxyz + nb + nocc; i++, j++) {
+                vtypes[j] = VARIABLE_TYPE.OTHER;
+            }
+        }
+        return vtypes;
     }
 }

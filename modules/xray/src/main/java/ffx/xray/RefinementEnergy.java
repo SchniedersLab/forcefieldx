@@ -397,7 +397,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
     public void setXWeight(double weight) {
         this.weight = weight;
     }
-    
+
     /**
      * get the current kT scaling weight
      * 
@@ -406,7 +406,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
     public double getKTScale() {
         return this.ktscale;
     }
-    
+
     /**
      * set the current kT scaling weight
      *
@@ -433,7 +433,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
     public double[] getMass() {
         return dataEnergy.getMass();
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public double getTotal() {
@@ -626,6 +626,6 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
      */
     @Override
     public VARIABLE_TYPE[] getVariableTypes() {
-        return null;
+        return dataEnergy.getVariableTypes();
     }
 }
