@@ -619,4 +619,13 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
             gradient[i] += weight * gXray[i];
         }
     }
+
+    /**
+     * Return a reference to each variables type.
+     * @return the type of each variable. 
+     */
+    @Override
+    public VARIABLE_TYPE[] getVariableTypes() {
+        return null;
+    }
 }

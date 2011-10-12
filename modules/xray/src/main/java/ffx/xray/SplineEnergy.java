@@ -292,4 +292,13 @@ public class SplineEnergy implements Potential {
     public int getNumberOfVariables() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
+
+    /**
+     * Return a reference to each variables type.
+     * @return the type of each variable. 
+     */
+    @Override
+    public VARIABLE_TYPE[] getVariableTypes() {
+        return null;
+    }
 }

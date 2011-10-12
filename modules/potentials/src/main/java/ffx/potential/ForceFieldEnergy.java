@@ -124,6 +124,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     protected long totalTime;
     protected double lambda = 1.0;
     protected double[] optimizationScaling = null;
+    protected VARIABLE_TYPE[] variableTypes = null;
     private static final double toSeconds = 0.000000001;
 
     /**
@@ -786,6 +787,15 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         return optimizationScaling;
     }
 
+    /**
+     * Return a reference to each variables type.
+     * @return the type of each variable. 
+     */
+    @Override
+    public VARIABLE_TYPE[] getVariableTypes() {
+        return variableTypes;
+    }
+    
     /** {@inheritDoc} */
     @Override
     public double energyAndGradient(double x[], double g[]) {

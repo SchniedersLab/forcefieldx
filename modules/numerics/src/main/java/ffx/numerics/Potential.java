@@ -30,6 +30,8 @@ package ffx.numerics;
  */
 public interface Potential {
 
+    public enum VARIABLE_TYPE { X, Y, Z, OTHER}; 
+    
     /**
      * This method is called repeatedly to compute the
      * function energy and gradient.
@@ -89,4 +91,7 @@ public interface Potential {
      * @return Number of variables.
      */
     public abstract int getNumberOfVariables();
+    
+    public abstract VARIABLE_TYPE[] getVariableTypes();
+    
 }

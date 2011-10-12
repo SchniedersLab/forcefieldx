@@ -300,4 +300,14 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
         // pack gradients into gradient array
         getXYZGradients(gradient);
     }
+
+    /**
+     * Return a reference to each variables type.
+     * @return the type of each variable. 
+     */
+    @Override
+    public VARIABLE_TYPE[] getVariableTypes() {
+        return null;
+    }
+
 }

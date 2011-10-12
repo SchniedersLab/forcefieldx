@@ -1046,6 +1046,15 @@ public class PME_2 implements Potential {
     public double[] getMass() {
         return null;
     }
+    
+        /**
+     * Return a reference to each variables type.
+     * @return the type of each variable. 
+     */
+    @Override
+    public VARIABLE_TYPE[] getVariableTypes() {
+        return null;
+    }
 
     /** {@inheritDoc} */
     @Override
@@ -6489,4 +6498,5 @@ public class PME_2 implements Potential {
     public static final int tensorCount = TensorRecursion.tensorCount(3);
     private final double sfPhi[] = new double[tensorCount];
     private final double sPhi[] = new double[tensorCount];
+
 }
