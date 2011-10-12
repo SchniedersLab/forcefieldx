@@ -20,6 +20,8 @@
  */
 package ffx.algorithms;
 
+import ffx.numerics.Potential.VARIABLE_TYPE;
+
 /**
  * The Adiabatic thermostat is for NVE simulations and does not alter
  * particle velocities.
@@ -38,8 +40,8 @@ public class Adiabatic extends Thermostat {
      * @param v an array of double.
      * @param mass an array of double.
      */
-    public Adiabatic(int n, double x[], double v[], double mass[]) {
-        super(n, x, v, mass, 0.0);
+    public Adiabatic(int n, double x[], double v[], double mass[], VARIABLE_TYPE type[]) {
+        super(n, x, v, mass, type, 0.0);
         this.name = Thermostats.ADIABATIC;
     }
 

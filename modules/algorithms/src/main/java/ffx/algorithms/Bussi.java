@@ -20,6 +20,7 @@
  */
 package ffx.algorithms;
 
+import ffx.numerics.Potential.VARIABLE_TYPE;
 import static java.lang.Math.exp;
 import static java.lang.Math.sqrt;
 
@@ -56,9 +57,10 @@ public class Bussi extends Thermostat {
      * @param targetTemperature a double.
      * @param tau a double.
      */
-    public Bussi(int dof, double x[], double v[], double mass[], double targetTemperature,
-            double tau) {
-        super(dof, x, v, mass, targetTemperature);
+    public Bussi(int dof, double x[], double v[], double mass[],
+                 VARIABLE_TYPE type[], double targetTemperature,
+                 double tau) {
+        super(dof, x, v, mass, type, targetTemperature);
         this.name = Thermostats.BUSSI;
         this.tau = tau;
         this.random = new Random(0);
@@ -73,8 +75,9 @@ public class Bussi extends Thermostat {
      * @param mass an array of double.
      * @param targetTemperature a double.
      */
-    public Bussi(int dof, double x[], double v[], double mass[], double targetTemperature) {
-        this(dof, x, v, mass, targetTemperature, 0.2e0);
+    public Bussi(int dof, double x[], double v[], double mass[],
+                 VARIABLE_TYPE type[], double targetTemperature) {
+        this(dof, x, v, mass, type, targetTemperature, 0.2e0);
     }
 
     /**

@@ -391,7 +391,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         } else {
             particleMeshEwald = null;
         }
-        
+
         molecularAssembly.setPotential(this);
     }
 
@@ -793,9 +793,17 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
      */
     @Override
     public VARIABLE_TYPE[] getVariableTypes() {
-        return variableTypes;
+        int n = getNumberOfVariables();
+        VARIABLE_TYPE type[] = new VARIABLE_TYPE[n];
+        int i = 0;
+        for (Atom a : atoms) {
+            type[i++] = VARIABLE_TYPE.X;
+            type[i++] = VARIABLE_TYPE.Y;
+            type[i++] = VARIABLE_TYPE.Z;
+        }
+        return type;
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public double energyAndGradient(double x[], double g[]) {

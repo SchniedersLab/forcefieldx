@@ -89,10 +89,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * @param requestedThermostat a {@link ffx.algorithms.Thermostat.Thermostats} object.
      */
     public MolecularDynamics(MolecularAssembly assembly,
-            Potential potentialEnergy,
-            CompositeConfiguration properties,
-            AlgorithmListener listener,
-            Thermostats requestedThermostat) {
+                             Potential potentialEnergy,
+                             CompositeConfiguration properties,
+                             AlgorithmListener listener,
+                             Thermostats requestedThermostat) {
         this.molecularAssembly = assembly;
         this.algorithmListener = listener;
         this.potentialEnergy = potentialEnergy;
@@ -115,15 +115,15 @@ public class MolecularDynamics implements Runnable, Terminatable {
         switch (requestedThermostat) {
             case ADIABATIC:
             default:
-                thermostat = new Adiabatic(dof, x, v, mass);
+                thermostat = new Adiabatic(dof, x, v, mass, potentialEnergy.getVariableTypes());
                 break;
             case BERENDSEN:
                 double tau = properties.getDouble("tau-temperature", 0.2);
-                thermostat = new Berendsen(dof, x, v, mass, 300.0, tau);
+                thermostat = new Berendsen(dof, x, v, mass, potentialEnergy.getVariableTypes(), 300.0, tau);
                 break;
             case BUSSI:
                 tau = properties.getDouble("tau-temperature", 0.2);
-                thermostat = new Bussi(dof, x, v, mass, 300.0, tau);
+                thermostat = new Bussi(dof, x, v, mass, potentialEnergy.getVariableTypes(), 300.0, tau);
         }
 
         if (properties.containsKey("randomseed")) {
@@ -200,8 +200,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * @param dyn a {@link java.io.File} object.
      */
     public void init(final int nSteps, final double timeStep, final double printInterval,
-            final double saveInterval, final double temperature, final boolean initVelocities,
-            final File dyn) {
+                     final double saveInterval, final double temperature, final boolean initVelocities,
+                     final File dyn) {
 
         /**
          * Return if already running.
@@ -251,7 +251,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
             if (xyzFilter == null) {
                 xyzFilter = new XYZFilter(file, molecularAssembly,
-                        molecularAssembly.getForceField(), properties);
+                                          molecularAssembly.getForceField(), properties);
             }
 
             if (dynFilter == null) {
@@ -282,8 +282,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * @param dyn a {@link java.io.File} object.
      */
     public void dynamic(final int nSteps, final double timeStep, final double printInterval,
-            final double saveInterval, final double temperature, final boolean initVelocities,
-            final File dyn) {
+                        final double saveInterval, final double temperature, final boolean initVelocities,
+                        final File dyn) {
 
         init(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);
 

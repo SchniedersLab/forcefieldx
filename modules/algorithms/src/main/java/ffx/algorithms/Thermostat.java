@@ -28,6 +28,8 @@ import org.apache.commons.math.linear.Array2DRowRealMatrix;
 import org.apache.commons.math.linear.LUDecompositionImpl;
 import org.apache.commons.math.linear.RealMatrix;
 
+import ffx.numerics.Potential.VARIABLE_TYPE;
+
 /**
  * The abstract Thermostat class implements methods common to all thermostats
  * for initalizing velocities from a Maxwell-Boltzmann distribution and
@@ -66,6 +68,7 @@ public abstract class Thermostat {
     protected double x[];
     protected double v[];
     protected double mass[];
+    protected VARIABLE_TYPE type[];
     protected double totalMass;
     protected final double centerOfMass[] = new double[3];
     protected final double linearMomentum[] = new double[3];
@@ -82,14 +85,17 @@ public abstract class Thermostat {
      * @param mass an array of double.
      * @param t a double.
      */
-    public Thermostat(int dof, double x[], double v[], double mass[], double t) {
+    public Thermostat(int dof, double x[], double v[], double mass[],
+                      VARIABLE_TYPE type[], double t) {
         this.dof = dof;
         this.x = x;
         this.v = v;
         this.mass = mass;
+        this.type = type;
         assert (x.length == dof);
         assert (v.length == dof);
         assert (mass.length == dof);
+        assert (type.length == dof);
         random = new Random();
         setTargetTemperature(t);
     }
@@ -202,12 +208,20 @@ public abstract class Thermostat {
             angularMomentum[i] = 0.0;
         }
 
-        for (int index = 0, i = 0; i < dof / 3; i++) {
+        int index = 0;
+        while (index < dof) {
+            if (type[index] == VARIABLE_TYPE.OTHER) {
+                index++;
+                continue;
+            }
+            assert (type[index] == VARIABLE_TYPE.X);
             double m = mass[index];
             double xx = x[index];
             double vx = v[index++];
+            assert (type[index] == VARIABLE_TYPE.Y);
             double yy = x[index];
             double vy = v[index++];
+            assert (type[index] == VARIABLE_TYPE.Z);
             double zz = x[index];
             double vz = v[index++];
             totalMass += m;
@@ -255,10 +269,18 @@ public abstract class Thermostat {
         double xy = 0.0;
         double xz = 0.0;
         double yz = 0.0;
-        for (int index = 0, i = 0; i < dof / 3; i++) {
+        int index = 0;
+        while (index < dof) {
+            if (type[index] == VARIABLE_TYPE.OTHER) {
+                index++;
+                continue;
+            }
             double m = mass[index];
+            assert (type[index] == VARIABLE_TYPE.X);
             double xi = x[index++] - centerOfMass[0];
+            assert (type[index] == VARIABLE_TYPE.Y);
             double yi = x[index++] - centerOfMass[1];
+            assert (type[index] == VARIABLE_TYPE.Z);
             double zi = x[index++] - centerOfMass[2];
             xx += xi * xi * m;
             yy += yi * yi * m;
@@ -291,7 +313,12 @@ public abstract class Thermostat {
         /**
          * Remove center of mass translational momentum.
          */
-        for (int index = 0, i = 0; i < dof / 3; i++) {
+        index = 0;
+        while (index < dof) {
+            if (type[index] == VARIABLE_TYPE.OTHER) {
+                index++;
+                continue;
+            }
             v[index++] -= linearMomentum[0];
             v[index++] -= linearMomentum[1];
             v[index++] -= linearMomentum[2];
@@ -302,7 +329,12 @@ public abstract class Thermostat {
          * non-periodic systems.
          */
         if (false) {
-            for (int index = 0, i = 0; i < dof / 3; i++) {
+            index = 0;
+            while (index < dof) {
+                if (type[index] == VARIABLE_TYPE.OTHER) {
+                    index++;
+                    continue;
+                }
                 double xi = x[index++] - centerOfMass[0];
                 double yi = x[index++] - centerOfMass[1];
                 double zi = x[index] - centerOfMass[2];

@@ -22,6 +22,8 @@ package ffx.algorithms;
 
 import static java.lang.Math.sqrt;
 
+import ffx.numerics.Potential.VARIABLE_TYPE;
+
 /**
  * Thermostat a molecular dynamics trajectory to an external bath
  * using the Berendensen weak-coupling thermostat.
@@ -49,9 +51,9 @@ public class Berendsen extends Thermostat {
      * @param targetTemperature a double.
      * @param tau a double.
      */
-    public Berendsen(int n, double x[], double v[], double mass[], double targetTemperature,
-            double tau) {
-        super(n, x, v, mass, targetTemperature);
+    public Berendsen(int n, double x[], double v[], double mass[],
+                     VARIABLE_TYPE type[], double targetTemperature, double tau) {
+        super(n, x, v, mass, type, targetTemperature);
         this.name = Thermostats.BERENDSEN;
         this.tau = tau;
     }
@@ -65,8 +67,9 @@ public class Berendsen extends Thermostat {
      * @param mass an array of double.
      * @param targetTemperature a double.
      */
-    public Berendsen(int n, double x[], double v[], double mass[], double targetTemperature) {
-        this(n, x, v, mass, targetTemperature, 0.2e0);
+    public Berendsen(int n, double x[], double v[], double mass[],
+                     VARIABLE_TYPE type[], double targetTemperature) {
+        this(n, x, v, mass, type, targetTemperature, 0.2e0);
     }
 
     /**
@@ -111,11 +114,10 @@ public class Berendsen extends Thermostat {
      */
     @Override
     public void fullStep(double dt) {
-        double ratio = targetTemperature/currentTemperature;
-        double scale = sqrt(1.0 + (dt/tau)*(ratio-1.0));
-        for (int i=0; i<dof; i++) {
+        double ratio = targetTemperature / currentTemperature;
+        double scale = sqrt(1.0 + (dt / tau) * (ratio - 1.0));
+        for (int i = 0; i < dof; i++) {
             v[i] *= scale;
         }
     }
-
 }
