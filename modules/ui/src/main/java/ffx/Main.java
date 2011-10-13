@@ -148,53 +148,16 @@ public class Main extends JFrame {
      */
     private static void startParallelJava(String args[]) {
 
-        /**
-         * Capture Parallel Java Output.
-         */
-        //PrintStream origOut = System.out;
-        //PrintStream origErr = System.err;
-
-        //OutputStream redirectOut = new ByteArrayOutputStream();
-        //PrintStream out = new PrintStream(redirectOut);
-        //System.setOut(out);
-
-        //OutputStream redirectErr = new ByteArrayOutputStream();
-        //PrintStream err = new PrintStream(redirectErr);
-        //System.setErr(err);
-
         try {
             Comm.init(args);
             Comm world = Comm.world();
             rank = world.rank();
             processes = world.size();
         } catch (Exception e) {
-            String message = " Exception starting up Parallel Java communication layer.";
+            String message = String.format(" Exception starting up the Parallel Java communication layer.");
             logger.log(Level.WARNING, message, e.toString());
         }
-
-        /**
-         * Revert standard output/error.
-         */
-        //System.setOut(origOut);
-        //System.setErr(origErr);
-
         
-        /**
-         * If more than one process is requested, log any Parallel Java output.
-         */
-        //String processesRequested = System.getProperty("pj.nn", "1");
-        //if (!processesRequested.equals("1")) {
-        //    out.flush();
-        //    err.flush();
-        //    logger.info(redirectOut.toString());
-        //    logger.info(redirectErr.toString());
-       // }
-
-        /**
-         * Close the temporary streams.
-         */
-        //out.close();
-        //err.close();
     }
 
     /**
@@ -207,7 +170,7 @@ public class Main extends JFrame {
             logger.info(String.format(" Process ID %d on %s.", procID, hostName));
             logger.info(String.format(" Starting up the command line interface."));
         } else {
-            logger.info(String.format(" Starting up process ID %d (rank %d) on %s.\n", procID, rank, hostName));
+            logger.info(String.format(" Starting up rank %d on %s.\n", rank, hostName));
         }
         HeadlessMain m = new HeadlessMain(commandLineFile, argList, logHandler);
     }
@@ -264,14 +227,14 @@ public class Main extends JFrame {
         args = processProperties(args);
 
         /**
-         * Start up the Parallel Java communication layer.
-         */
-        startParallelJava(args);
-
-        /**
          * Determine host name and process ID.
          */
         environment();
+        
+        /**
+         * Start up the Parallel Java communication layer.
+         */
+        startParallelJava(args);
 
         File commandLineFile = null;
         int nArgs = args.length;
