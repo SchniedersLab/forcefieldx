@@ -28,6 +28,8 @@ import java.net.InetAddress;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -49,11 +51,6 @@ import edu.rit.pj.Comm;
 import ffx.ui.LogHandler;
 import ffx.ui.MainPanel;
 import ffx.ui.macosx.OSXAdapter;
-import java.io.ByteArrayOutputStream;
-import java.io.OutputStream;
-import java.io.PrintStream;
-import java.util.Arrays;
-import java.util.Date;
 
 /**
  * The Main class is the entry point to the graphical user interface version of
@@ -133,8 +130,21 @@ public class Main extends JFrame {
         } catch (UnknownHostException e) {
             // Do nothing.
         }
-        procID = Integer.parseInt(System.getProperty("app.pid"));
-        ffxDirectory = new File(System.getProperty("basedir"));
+        
+        String procString = System.getProperty("app.pid");
+        if (procString != null) {
+            procID = Integer.parseInt(procString);
+        } else {
+            procID = 0;
+        }
+
+        String dirString = System.getProperty("basedir");
+        if (dirString != null) {
+            ffxDirectory = new File(dirString);
+        } else {
+            ffxDirectory = new File(".");
+        }
+
         try {
             logger.fine(String.format(" Force Field X directory is %s", ffxDirectory.getCanonicalPath()));
         } catch (Exception e) {
@@ -157,7 +167,7 @@ public class Main extends JFrame {
             String message = String.format(" Exception starting up the Parallel Java communication layer.");
             logger.log(Level.WARNING, message, e.toString());
         }
-        
+
     }
 
     /**
@@ -230,7 +240,7 @@ public class Main extends JFrame {
          * Determine host name and process ID.
          */
         environment();
-        
+
         /**
          * Start up the Parallel Java communication layer.
          */
@@ -331,7 +341,7 @@ public class Main extends JFrame {
                             embeddedScript.openStream(), commandLineFile.getName(), ".ffx"));
                 } catch (Exception e) {
                     logger.warning("Exception extracting embedded script "
-                                   + embeddedScript.toString() + "\n" + e.toString());
+                            + embeddedScript.toString() + "\n" + e.toString());
                 }
             }
         }

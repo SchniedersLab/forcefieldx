@@ -58,7 +58,7 @@
     </mailingLists>
     <developers>
         <developer>
-            <id>schnied</id>
+            <id>michael.schnieders</id>
             <name>Michael J. Schnieders</name>
             <email>michael.schnieders@gmail.com</email>
             <organization>Postdoc, Ren Lab, University of Texas at Austin</organization>
@@ -72,8 +72,7 @@
             <id>fenn</id>
             <name>Timothy D. Fenn</name>
             <email>fenn@stanford.edu</email>
-            <organization>Postdoc, Brunger Lab, Stanford University
-            </organization>
+            <organization>Postdoc, Stanford University</organization>
             <organizationUrl>http://ffx.kenai.com</organizationUrl>
             <roles>
                 <role>Chief Crystallograper</role>
@@ -86,7 +85,7 @@
             <id>prffx</id>
             <name>Pengyu Ren</name>
             <email>pren@mail.utexas.edu</email>
-            <organization>Assistant Professor, U. of Texas, Austin</organization>
+            <organization>Associate Professor, U. of Texas, Austin</organization>
             <organizationUrl>http://biomol.bme.utexas.edu/lab/</organizationUrl>
             <roles>
                 <role>AMOEBA Force Field</role>
@@ -301,14 +300,14 @@
                         <argument>-classpath</argument>
                         <argument>bin/ffx-all.jar</argument>
                         <argument>ffx.Main</argument>
-                        <argument>energy</argument>
+                        <argument>md</argument>
                         <!-- argument>-s</argument>
                         <argument>1</argument>
                         <argument>-f</argument>
                         <argument>3</argument>
                         <argument>-l</argument>
                         <argument>0.99</argument -->
-                        <argument>examples/watersmall.xyz</argument>
+                        <argument>/Volumes/schnied/binding/trypsin/trypsin.pdb</argument>
                     </arguments>
                 </configuration>
             </plugin>

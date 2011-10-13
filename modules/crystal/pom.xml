@@ -19,8 +19,7 @@
             <id>fenn</id>
             <name>Timothy D. Fenn</name>
             <email>fenn@stanford.edu</email>
-            <organization>Postdoc, Brunger Lab, Stanford University
-            </organization>
+            <organization>Postdoc, Stanford University</organization>
             <organizationUrl>http://ffx.kenai.com</organizationUrl>
             <roles>
                 <role>Chief Crystallographer</role>
@@ -28,12 +27,11 @@
             <timezone>-7</timezone>
         </developer>
         <developer>
-            <id>schnied</id>
+            <id>michael.schnieders</id>
             <name>Michael J. Schnieders</name>
             <email>michael.schnieders@gmail.com</email>
-            <url>http://www.stanford.edu/~schnied</url>
-            <organization>Postdoc, Pande and Brunger Labs, Stanford University
-            </organization>
+            <url>http://ffx.kenai.com</url>
+            <organization>Postdoc, Lab of Pengyu Ren, U. of Texas at Austin</organization>
             <organizationUrl>http://ffx.kenai.com</organizationUrl>
             <roles>
                 <role>Director of Force Field X</role>

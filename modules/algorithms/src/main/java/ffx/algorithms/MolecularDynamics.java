@@ -367,7 +367,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
                     }
                 }
             } else {
-                if (!dynFilter.readFile(dynFile, x, v, a, aPrevious)) {
+                if (!dynFilter.readDYN(dynFile, x, v, a, aPrevious)) {
                     String message = " Could not load the restart file - dynamics terminated.";
                     logger.log(Level.WARNING, message);
                     done = true;
@@ -439,7 +439,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 } else {
                     logger.warning(String.format(" Appending snap shot to " + archiveFile.getName() + " failed"));
                 }
-                if (dynFilter.writeFile(dynFile, molecularAssembly.getCrystal(), x, v, a, aPrevious)) {
+                if (dynFilter.writeDYN(dynFile, molecularAssembly.getCrystal(), x, v, a, aPrevious)) {
                     logger.info(String.format(" Wrote dynamics restart file to " + dynFile.getName()));
                 } else {
                     logger.info(String.format(" Writing dynamics restart file to " + dynFile.getName() + " failed"));

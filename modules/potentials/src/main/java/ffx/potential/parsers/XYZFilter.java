@@ -510,7 +510,12 @@ public class XYZFilter extends SystemFilter {
             }
             activeMolecularAssembly.setFile(newFile);
             activeMolecularAssembly.setName(newFile.getName());
-            FileWriter fw = new FileWriter(newFile, append);
+            FileWriter fw = null;
+            if (append && !newFile.exists()) {
+                fw = new FileWriter(newFile);                
+            } else {
+                fw = new FileWriter(newFile, append);
+            }
             BufferedWriter bw = new BufferedWriter(fw);
 
             // XYZ File First Line
