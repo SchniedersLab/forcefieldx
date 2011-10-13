@@ -736,6 +736,15 @@ public class OSRW implements Potential {
         return potential.getMass();
     }
     
+    /**
+     * Return a reference to each variables type.
+     * @return the type of each variable. 
+     */
+    @Override
+    public VARIABLE_TYPE[] getVariableTypes() {
+        return potential.getVariableTypes();
+    }
+    
     @Override
     public double getTotal() {
         return totalEnergy;
