@@ -68,7 +68,7 @@ for (int i=0; i<n; i++) {
 
     // Find numeric dX
     double orig = x[i0];
-    x[i0] += step;
+    x[i0] = x[i0] + step;
     energy.setCoordinates(x);
     double e = energy.energy(false, print);
     x[i0] = orig - step;
@@ -79,7 +79,7 @@ for (int i=0; i<n; i++) {
 
     // Find numeric dY
     orig = x[i1];
-    x[i1] += step;
+    x[i1] = x[i1] + step;
     energy.setCoordinates(x);
     e = energy.energy(false, print);
     x[i1] = orig - step;
@@ -90,7 +90,7 @@ for (int i=0; i<n; i++) {
 
     // Find numeric dZ
     orig = x[i2];
-    x[i2] += step;
+    x[i2] = x[i2] + step;
     energy.setCoordinates(x);
     e = energy.energy(false, print);
     x[i2] = orig - step;

@@ -57,7 +57,7 @@ cli.t(longOpt:'temperature', args:1, argName:'100.0', 'Temperature in degrees Ke
 cli.b(longOpt:'thermostat', args:1, argName:'Berendsen', 'Thermostat: [Adiabatic/Berendsen/Bussi]')
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
-if (options.h || arguments == null || arguments.size() != 1) {
+if (options.h || arguments == null || arguments.size() < 1) {
     return cli.usage();
 }
 
@@ -143,7 +143,7 @@ energy();
 RefinementEnergy refinementEnergy = new RefinementEnergy(diffractiondata, refinementmode);
 
 // Restart File
-File dyn = new File(FilenameUtils.removeExtension(filename) + ".dyn");
+File dyn = new File(FilenameUtils.removeExtension(modelfilename) + ".dyn");
 if (!dyn.exists()) {
     dyn = null;
 }

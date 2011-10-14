@@ -23,10 +23,8 @@
             <id>schnied</id>
             <name>Michael J. Schnieders</name>
             <email>michael.schnieders@gmail.com</email>
-            <url>http://www.stanford.edu/~schnied</url>
-            <organization>Joint Postdoc of the Pande and Brunger Labs,
-            Stanford University
-            </organization>
+            <url>http://ffx.kenai.com</url>
+            <organization>Post-Doctoral, Lab of Prof. Pengyu Ren, U. of Texas, Austin</organization>
             <organizationUrl>http://ffx.kenai.com</organizationUrl>
             <roles>
                 <role>Director of Force Field X</role>
@@ -37,7 +35,7 @@
             <id>pren</id>
             <name>Pengyu Ren</name>
             <email>pren@mail.utexas.edu</email>
-            <organization>Assistant Professor, U. of Texas, Austin</organization>
+            <organization>Associate Professor, U. of Texas, Austin</organization>
             <organizationUrl>http://biomol.bme.utexas.edu/lab/</organizationUrl>
             <roles>
                 <role>Chief Force Field Architect</role>

@@ -321,7 +321,7 @@ public class ModelingShell extends Console implements AlgorithmListener {
             terminatableAlgorithm = null;
             return potential;
         } else {
-            logger.info("No active system - skipping minimization.");
+            logger.info("No active system to minimize.");
         }
         return null;
     }
@@ -697,7 +697,7 @@ public class ModelingShell extends Console implements AlgorithmListener {
         try {
             setVariable("active", mainPanel.getHierarchy().getActive());
         } catch (Exception e) {
-            String message = "Exception syncing shell variables.\n";
+            String message = " Exception syncing shell variables.\n";
             logger.log(Level.WARNING, message, e);
         }
     }
