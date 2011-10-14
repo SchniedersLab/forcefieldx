@@ -74,6 +74,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     private int nSteps = 1000;
     private int printFrequency = 100;
     private int saveFrequency = 1000;
+    private int removeCOMMotionFrequency = 100;
     private double temperature = 300.0;
     private boolean initVelocities = true;
     private boolean loadRestart = false;
@@ -328,6 +329,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
         }
     }
 
+    public void setRemoveCOMMotionFrequency(int removeCOMMotionFrequency) {
+        this.removeCOMMotionFrequency = removeCOMMotionFrequency;
+    }
+    
     /** {@inheritDoc} */
     @Override
     public void run() {
@@ -414,13 +419,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
         for (int step = 1; step <= nSteps; step++) {
             beeman(dt);
 
-            /**
-             * Update the kinetic energy to the full-step value
-             * so that restarted trajectories report an initial temperature
-             * exactly equal to the last temperature printed out.
-             */
-            //thermostat.kineticEnergy();
-            if (step % 1 == 0) {
+            if (step % removeCOMMotionFrequency == 0) {
                 thermostat.centerOfMassMotion(true, false);
             }
 
