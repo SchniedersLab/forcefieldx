@@ -34,6 +34,7 @@ import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.parsers.DYNFilter;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.XYZFilter;
+import java.util.Random;
 
 /**
  * Run NVE or NVT molecular dynamics.
@@ -111,7 +112,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
         if (requestedThermostat == null) {
             requestedThermostat = Thermostats.ADIABATIC;
         }
-
 
         switch (requestedThermostat) {
             case ADIABATIC:
@@ -332,7 +332,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     public void setRemoveCOMMotionFrequency(int removeCOMMotionFrequency) {
         this.removeCOMMotionFrequency = removeCOMMotionFrequency;
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public void run() {
@@ -528,5 +528,95 @@ public class MolecularDynamics implements Runnable, Terminatable {
          * Do full-step thermostat operation.
          */
         thermostat.fullStep(dt);
+    }
+    private double friction = 1.0;
+    private Random random = null;
+    private double pfric[] = null;
+    private double vfric[] = null;
+    private double afric[] = null;
+    private double prand[] = null;
+    private double vrand[] = null;
+
+    private void stochastic(final double dt) {
+        /**
+         * Set the frictional and random coefficients.
+         */
+        for (int i = 0; i < dof; i++) {
+            double m = mass[i];
+            double fdt = friction * dt;
+            /**
+             * In the limit of no friction, SD recovers normal
+             * molecular dynamics.
+             */
+            if (fdt <= 0.0) {
+                pfric[i] = 1.0;
+                vfric[i] = dt;
+                afric[i] = 0.5 * dt * dt;
+                prand[i] = 0.0;
+                vrand[i] = 0.0;
+            } else {
+                double pterm = 0.0;
+                double vterm = 0.0;
+                double rho = 0.0;
+                if (fdt > 0.05) {
+                    /**
+                     * Analytical expressions when friction coefficient is large
+                     */
+                    double efdt = Math.exp(-fdt);
+                    pfric[i] = efdt;
+                    vfric[i] = (1.0 - efdt) / friction;
+                    afric[i] = (dt - vfric[i]) / friction;
+                    pterm = 2.0 * fdt - 3.0 + (4.0 - efdt) * efdt;
+                    vterm = 1.0 - efdt * efdt;
+                    rho = (1.0 - efdt) * (1.0 - efdt) / Math.sqrt(pterm * vterm);
+                } else {
+                    /**
+                     * Use a series expansions when friction coefficient is small.
+                     */
+                    double fdt2 = fdt * fdt;
+                    double fdt3 = fdt * fdt2;
+                    double fdt4 = fdt2 * fdt2;
+                    double fdt5 = fdt2 * fdt3;
+                    double fdt6 = fdt3 * fdt3;
+                    double fdt7 = fdt3 * fdt4;
+                    double fdt8 = fdt4 * fdt4;
+                    double fdt9 = fdt4 * fdt5;
+                    afric[i] = (fdt2 / 2.0 - fdt3 / 6.0 + fdt4 / 24.0
+                                - fdt5 / 120.0 + fdt6 / 720.0
+                                - fdt7 / 5040.0 + fdt8 / 40320.0
+                                - fdt9 / 362880.0) / (friction * friction);
+                    vfric[i] = dt - friction * afric[i];
+                    pfric[i] = 1.0 - friction * vfric[i];
+                    pterm = 2.0 * fdt3 / 3.0 - fdt4 / 2.0
+                            + 7.0 * fdt5 / 30.0 - fdt6 / 12.0
+                            + 31.0 * fdt7 / 1260.0 - fdt8 / 160.0
+                            + 127.0 * fdt9 / 90720.0;
+                    vterm = 2.0 * fdt - 2.0 * fdt2 + 4.0 * fdt3 / 3.0
+                            - 2.0 * fdt4 / 3.0 + 4.0 * fdt5 / 15.0
+                            - 4.0 * fdt6 / 45.0 + 8.0 * fdt7 / 315.0
+                            - 2.0 * fdt8 / 315.0 + 4.0 * fdt9 / 2835.0;
+                    rho = Math.sqrt(3.0) * (0.5 - fdt / 16.0
+                                            - 17.0 * fdt2 / 1280.0
+                                            + 17.0 * fdt3 / 6144.0
+                                            + 40967.0 * fdt4 / 34406400.0
+                                            - 57203.0 * fdt5 / 275251200.0
+                                            - 1429487.0 * fdt6 / 13212057600.0
+                                            + 1877509.0 * fdt7 / 105696460800.0);
+                }
+                /**
+                 * Compute random terms to thermostat the nonzero friction case.
+                 */
+                double kB = 0;
+                double kelvin = 0;
+                double ktm = kB * kelvin / mass[i];
+                double psig = Math.sqrt(ktm * pterm) / friction;
+                double vsig = Math.sqrt(ktm * vterm);
+                double rhoc = Math.sqrt(1.0 - rho * rho);
+                double pnorm = random.nextGaussian();
+                double vnorm = random.nextGaussian();
+                prand[i] = psig * pnorm;
+                vrand[i] = vsig * (rho * pnorm + rhoc * vnorm);
+            }
+        }
     }
 }

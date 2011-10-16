@@ -72,35 +72,6 @@ public class BulkSolventDensityRegion extends SpatialDensityRegion {
         bulkSolventList = new BulkSolventList(crystal, atoms, cutoff, parallelTeam);
     }
 
-    /**
-     * <p>Constructor for BulkSolventDensityRegion.</p>
-     *
-     * @param gX a int.
-     * @param gY a int.
-     * @param gZ a int.
-     * @param grid an array of float.
-     * @param basisSize a int.
-     * @param nSymm a int.
-     * @param minWork a int.
-     * @param threadCount a int.
-     * @param crystal a {@link ffx.crystal.Crystal} object.
-     * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
-     * @param coordinates an array of double.
-     * @param cutoff a double.
-     * @param parallelTeam a {@link edu.rit.pj.ParallelTeam} object.
-     */
-    public BulkSolventDensityRegion(int gX, int gY, int gZ, float grid[],
-            int basisSize, int nSymm, int minWork,
-            int threadCount, Crystal crystal,
-            Atom atoms[], double coordinates[][][],
-            double cutoff, ParallelTeam parallelTeam) {
-        super(gX, gY, gZ, grid, basisSize, nSymm, minWork,
-                threadCount, crystal, atoms, coordinates);
-        // Asymmetric unit atoms are always not selected by this class.
-        Arrays.fill(select[0], false);
-        bulkSolventList = new BulkSolventList(crystal, atoms, cutoff, parallelTeam);
-    }
-
     /** {@inheritDoc} */
     @Override
     public void run() {

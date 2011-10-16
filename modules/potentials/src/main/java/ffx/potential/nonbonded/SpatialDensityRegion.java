@@ -20,11 +20,10 @@
  */
 package ffx.potential.nonbonded;
 
-import static java.lang.Math.floor;
-
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import static java.lang.Math.floor;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
@@ -70,7 +69,7 @@ public class SpatialDensityRegion extends ParallelRegion {
      */
     private final int nWork;
     /**
-     * Number of octant work cells with at least one atom 
+     * Number of octant work cells with at least one atom
      * (actualWork is less than or equal to nWork).
      */
     protected int actualWork;
@@ -132,7 +131,6 @@ public class SpatialDensityRegion extends ParallelRegion {
     public final int nThreads;
     private final int gridSize;
     private double grid[] = null;
-    private float floatGrid[] = null;
     private double initValue = 0.0;
     protected SpatialDensityLoop spatialDensityLoop[];
     private GridInitLoop gridInitLoop;
@@ -158,29 +156,6 @@ public class SpatialDensityRegion extends ParallelRegion {
                                 Atom atoms[], double coordinates[][][]) {
         this(gX, gY, gZ, basisSize, nSymm, minWork, threadCount, crystal, atoms, coordinates);
         this.grid = grid;
-    }
-
-    /**
-     * <p>Constructor for SpatialDensityRegion.</p>
-     *
-     * @param gX a int.
-     * @param gY a int.
-     * @param gZ a int.
-     * @param grid an array of float.
-     * @param basisSize a int.
-     * @param nSymm a int.
-     * @param minWork a int.
-     * @param threadCount a int.
-     * @param crystal a {@link ffx.crystal.Crystal} object.
-     * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
-     * @param coordinates an array of double.
-     */
-    public SpatialDensityRegion(int gX, int gY, int gZ, float grid[],
-                                int basisSize, int nSymm, int minWork,
-                                int threadCount, Crystal crystal,
-                                Atom atoms[], double coordinates[][][]) {
-        this(gX, gY, gZ, basisSize, nSymm, minWork, threadCount, crystal, atoms, coordinates);
-        this.floatGrid = grid;
     }
 
     private SpatialDensityRegion(int gX, int gY, int gZ,
@@ -223,7 +198,7 @@ public class SpatialDensityRegion extends ParallelRegion {
                 nA = 1;
                 nB = 1;
                 // Reduce the number of divisions along the Z-axis if possible
-                while (currentWork > 2*minWork) {
+                while (currentWork > 2 * minWork) {
                     nC -= 2;
                     currentWork = nC / div / threadCount;
                 }
@@ -238,7 +213,7 @@ public class SpatialDensityRegion extends ParallelRegion {
                 // If we have 4 * threadCount * minWork chunks, stop dividing the domain.
                 if (currentWork > minWork || nX < 2) {
                     nA = 1;
-                    while (currentWork > 2*minWork) {
+                    while (currentWork > 2 * minWork) {
                         nB -= 2;
                         currentWork = nB * nC / div / threadCount;
                     }
@@ -249,7 +224,7 @@ public class SpatialDensityRegion extends ParallelRegion {
                     nA = nX;
                     div = 8;
                     currentWork = nA * nB * nC / div / threadCount;
-                    while (currentWork > 2*minWork) {
+                    while (currentWork > 2 * minWork) {
                         nA -= 2;
                         currentWork = nA * nB * nC / div / threadCount;
                     }
@@ -268,7 +243,7 @@ public class SpatialDensityRegion extends ParallelRegion {
         }
 
         //logger.info(String.format(" nA %d nB %d nC %d nWork %d", nA, nB, nC, nWork));
-        
+
         workA = new int[nWork];
         workB = new int[nWork];
         workC = new int[nWork];
@@ -294,7 +269,7 @@ public class SpatialDensityRegion extends ParallelRegion {
         cellIndex = new int[nSymm][nAtoms];
         cellOffset = new int[nSymm][nAtoms];
         cellStart = new int[nSymm][nCells];
-        cellCount = new int[nSymm][nCells];         
+        cellCount = new int[nSymm][nCells];
     }
 
     /**
@@ -304,15 +279,6 @@ public class SpatialDensityRegion extends ParallelRegion {
      */
     public double[] getGrid() {
         return grid;
-    }
-
-    /**
-     * <p>Getter for the field <code>floatGrid</code>.</p>
-     *
-     * @return an array of float.
-     */
-    public float[] getFloatGrid() {
-        return floatGrid;
     }
 
     /**
@@ -347,11 +313,6 @@ public class SpatialDensityRegion extends ParallelRegion {
 
         @Override
         public void run(int lb, int ub) {
-            if (floatGrid != null) {
-                for (int i = lb; i <= ub; i++) {
-                    floatGrid[i] = (float) initValue;
-                }
-            }
             if (grid != null) {
                 for (int i = lb; i <= ub; i++) {
                     grid[i] = initValue;
@@ -375,7 +336,7 @@ public class SpatialDensityRegion extends ParallelRegion {
         int ti = getThreadIndex();
         int actualWork1 = actualWork - 1;
         SpatialDensityLoop loop = spatialDensityLoop[ti];
-        
+
         /**
          * This lets the same SpatialDensityLoops be used with different
          * SpatialDensityRegions.

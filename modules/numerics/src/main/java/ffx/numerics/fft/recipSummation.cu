@@ -1,5 +1,5 @@
 extern "C"
-__global__ void recipSummation(float* data, float* recip, int len)
+__global__ void recipSummation(double* data, double* recip, int len)
 {
     const int y = blockIdx.y * gridDim.x * blockDim.x;
     const int x = blockIdx.x * blockDim.x;
