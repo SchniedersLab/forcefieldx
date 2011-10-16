@@ -141,15 +141,9 @@ public class FFXClassLoader extends ClassLoader {
                 ffxFiles.add("64-bit/libjogl_awt.so");
                 ffxFiles.add("64-bit/libjogl_cg.so");
                 // JCUDA
-                if (osArch.equalsIgnoreCase("x86_64")) {
-                    ffxFiles.add("64-bit/libJCudaDriver-linux-x86_64.so");
-                    ffxFiles.add("64-bit/libJCudaRuntime-linux-x86_64.so");
-                    ffxFiles.add("64-bit/libJCufft-linux-x86_64.so");
-                } else if (osArch.equalsIgnoreCase("amd64")) {
-                    ffxFiles.add("64-bit/libJCudaDriver-linux-amd64.so");
-                    ffxFiles.add("64-bit/libJCudaRuntime-linux-amd64.so");
-                    ffxFiles.add("64-bit/libJCufft-linux-amd64.so");
-                }
+                ffxFiles.add("64-bit/libJCudaDriver-linux-x86_64.so");
+                ffxFiles.add("64-bit/libJCudaRuntime-linux-x86_64.so");
+                ffxFiles.add("64-bit/libJCufft-linux-x86_64.so");
             } else {
                 ffxFiles.add("32-bit/libgluegen-rt.so");
                 ffxFiles.add("32-bit/libjogl.so");
