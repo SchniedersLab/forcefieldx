@@ -1,0 +1,1292 @@
+//******************************************************************************
+//
+// File:    Group.java
+// Package: edu.rit.draw.item
+// Unit:    Class edu.rit.draw.item.Group
+//
+// This Java source file is copyright (C) 2008 by Alan Kaminsky. All rights
+// reserved. For further information, contact the author, Alan Kaminsky, at
+// ark@cs.rit.edu.
+//
+// This Java source file is part of the Parallel Java Library ("PJ"). PJ is free
+// software; you can redistribute it and/or modify it under the terms of the GNU
+// General Public License as published by the Free Software Foundation; either
+// version 3 of the License, or (at your option) any later version.
+//
+// PJ is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+// A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+//
+// A copy of the GNU General Public License is provided in the file gpl.txt. You
+// may also obtain a copy of the GNU General Public License on the World Wide
+// Web at http://www.gnu.org/licenses/gpl.html.
+//
+//******************************************************************************
+
+package edu.rit.draw.item;
+
+import edu.rit.draw.Drawing;
+
+import java.awt.Graphics2D;
+
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Point2D;
+
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+
+import java.util.ArrayList;
+
+/**
+ * Class Group provides a {@linkplain DrawingItem} that consists of a group of
+ * other {@linkplain DrawingItem}s. To add drawing items to a group, call the
+ * group's <TT>append()</TT> and <TT>prepend()</TT> methods.
+ * <P>
+ * The group can be scaled as a unit by calling the <TT>xScale()</TT> and
+ * <TT>yScale()</TT> methods. The group can be sheared as a unit by calling the
+ * <TT>xShear()</TT> and <TT>yShear()</TT> methods. The group can be rotated as
+ * a unit by calling the <TT>rotationCenter()</TT> and <TT>rotationAngle()</TT>
+ * methods. The order in which these transforms are applied is first scaling,
+ * then shearing, then rotation.
+ * <P>
+ * The group's bounding box is the smallest rectangle that encloses all the
+ * contained drawing items' bounding boxes, <I>after</I> applying the scale,
+ * shear, and rotation transforms if any. The group can be translated as a unit
+ * by calling the <TT>nw()</TT>, <TT>n()</TT>, <TT>ne()</TT>, <TT>w()</TT>,
+ * <TT>c()</TT>, <TT>e()</TT>, <TT>sw()</TT>, <TT>s()</TT>, and <TT>se()</TT>
+ * methods. These methods specify the location of a certain point on the
+ * bounding box (i.e., the bounding box after applying the transforms).
+ * <P>
+ * The <TT>transform()</TT> method takes a point, applies the group's scaling,
+ * shearing, rotation, and translation transforms to the point, and returns the
+ * transformed point. You can use this method, for example, to find out where a
+ * point defined before applying transforms to the group would end up after
+ * applying transforms to the group.
+ *
+ * @author  Alan Kaminsky
+ * @version 23-Jun-2008
+ */
+public class Group
+	extends DrawingItem
+	implements Externalizable
+	{
+
+// Exported constants.
+
+	/**
+	 * The normal X scale factor (1).
+	 */
+	public static final double NORMAL_X_SCALE = 1.0;
+
+	/**
+	 * The normal Y scale factor (1).
+	 */
+	public static final double NORMAL_Y_SCALE = 1.0;
+
+	/**
+	 * The normal X shear factor (0).
+	 */
+	public static final double NORMAL_X_SHEAR = 0.0;
+
+	/**
+	 * The normal Y shear factor (0).
+	 */
+	public static final double NORMAL_Y_SHEAR = 0.0;
+
+	/**
+	 * The normal rotation center point (0,0).
+	 */
+	public static final Point NORMAL_ROTATION_CENTER = new Point();
+
+	/**
+	 * The normal rotation angle (0).
+	 */
+	public static final double NORMAL_ROTATION_ANGLE = 0.0;
+
+// Hidden data members.
+
+	private static final long serialVersionUID = 3441733318428437785L;
+
+	// Default attributes.
+	static double theDefaultXScale = NORMAL_X_SCALE;
+	static double theDefaultYScale = NORMAL_Y_SCALE;
+	static double theDefaultXShear = NORMAL_X_SHEAR;
+	static double theDefaultYShear = NORMAL_Y_SHEAR;
+	static Point theDefaultRotationCenter = NORMAL_ROTATION_CENTER;
+	static double theDefaultRotationAngle = NORMAL_ROTATION_ANGLE;
+
+	// List of drawing items in this group.
+	ArrayList<DrawingItem> myItemList;
+
+	// Coordinates of most recently specified corner.
+	double x;
+	double y;
+
+	// Factors for going from specified corner to northwest corner.
+	double xFactor;
+	double yFactor;
+
+	// Size. If mySize is null, the size must be recomputed.
+	Size mySize;
+	double width;
+	double height;
+
+	// Minimum X coordinate and minimum Y coordinate of all items in this group.
+	double minX;
+	double minY;
+
+	// Transform parameters.
+	double myXScale = theDefaultXScale;
+	double myYScale = theDefaultYScale;
+	double myXShear = theDefaultXShear;
+	double myYShear = theDefaultYShear;
+	Point myRotationCenter = theDefaultRotationCenter;
+	double myRotationAngle = theDefaultRotationAngle;
+
+	// Transform. If myTransform is null, the transform must be recomputed.
+	AffineTransform myTransform;
+
+// Exported constructors.
+
+	/**
+	 * Construct a new empty group. The group's northwest corner is located at
+	 * (0,0).
+	 */
+	public Group()
+		{
+		super();
+		this.myItemList = new ArrayList<DrawingItem>();
+		}
+
+	/**
+	 * Construct a new group that contains the same drawing items, has the same
+	 * transforms, and is at the same location, as the given group.
+	 *
+	 * @param  theGroup  Group.
+	 *
+	 * @exception  NullPointerException
+	 *     (unchecked exception) Thrown if <TT>theGroup</TT> is null.
+	 */
+	public Group
+		(Group theGroup)
+		{
+		super (theGroup);
+		this.myItemList = new ArrayList<DrawingItem> (theGroup.myItemList);
+		this.x = theGroup.x;
+		this.y = theGroup.y;
+		this.xFactor = theGroup.xFactor;
+		this.yFactor = theGroup.yFactor;
+		this.myXScale = theGroup.myXScale;
+		this.myYScale = theGroup.myYScale;
+		this.myXShear = theGroup.myXShear;
+		this.myYShear = theGroup.myYShear;
+		this.myRotationCenter = theGroup.myRotationCenter;
+		this.myRotationAngle = theGroup.myRotationAngle;
+		}
+
+// Exported operations.
+
+	/**
+	 * Returns the default X scale factor.
+	 *
+	 * @return  Default X scale factor.
+	 */
+	public static double defaultXScale()
+		{
+		return theDefaultXScale;
+		}
+
+	/**
+	 * Set the default X scale factor. Before calling this method the first
+	 * time, the default X scale factor is 1.
+	 *
+	 * @param  theXScale  Default X scale factor.
+	 */
+	public static void defaultXScale
+		(double theXScale)
+		{
+		theDefaultXScale = theXScale;
+		}
+
+	/**
+	 * Returns the default Y scale factor.
+	 *
+	 * @return  Default Y scale factor.
+	 */
+	public static double defaultYScale()
+		{
+		return theDefaultYScale;
+		}
+
+	/**
+	 * Set the default Y scale factor. Before calling this method the first
+	 * time, the default Y scale factor is 1.
+	 *
+	 * @param  theYScale  Default Y scale factor.
+	 */
+	public static void defaultYScale
+		(double theYScale)
+		{
+		theDefaultYScale = theYScale;
+		}
+
+	/**
+	 * Returns the default X shear factor.
+	 *
+	 * @return  Default X shear factor.
+	 */
+	public static double defaultXShear()
+		{
+		return theDefaultXShear;
+		}
+
+	/**
+	 * Set the default X shear factor. Before calling this method the first
+	 * time, the default X shear factor is 0.
+	 *
+	 * @param  theXShear  Default X shear factor.
+	 */
+	public static void defaultXShear
+		(double theXShear)
+		{
+		theDefaultXShear = theXShear;
+		}
+
+	/**
+	 * Returns the default Y shear factor.
+	 *
+	 * @return  Default Y shear factor.
+	 */
+	public static double defaultYShear()
+		{
+		return theDefaultYShear;
+		}
+
+	/**
+	 * Set the default Y shear factor. Before calling this method the first
+	 * time, the default Y shear factor is 0.
+	 *
+	 * @param  theYShear  Default Y shear factor.
+	 */
+	public static void defaultYShear
+		(double theYShear)
+		{
+		theDefaultYShear = theYShear;
+		}
+
+	/**
+	 * Returns the default rotation center point.
+	 *
+	 * @return  Default rotation center point.
+	 */
+	public static Point defaultRotationCenter()
+		{
+		return theDefaultRotationCenter;
+		}
+
+	/**
+	 * Set the default rotation center point. Before calling this method the
+	 * first time, the default rotation center point is (0,0).
+	 *
+	 * @param  theCenter  Default rotation center point.
+	 *
+	 * @exception  NullPointerException
+	 *     (unchecked exception) Thrown if <TT>theCenter</TT> is null.
+	 */
+	public static void defaultRotationCenter
+		(Point theCenter)
+		{
+		if (theCenter == null) throw new NullPointerException();
+		theDefaultRotationCenter = theCenter;
+		}
+
+	/**
+	 * Returns the default rotation angle.
+	 *
+	 * @return  Default rotation angle.
+	 */
+	public static double defaultRotationAngle()
+		{
+		return theDefaultRotationAngle;
+		}
+
+	/**
+	 * Set the default rotation angle. Before calling this method the first
+	 * time, the default rotation angle is 0.
+	 *
+	 * @param  theAngle  Default rotation angle.
+	 */
+	public static void defaultRotationAngle
+		(double theAngle)
+		{
+		theDefaultRotationAngle = theAngle;
+		}
+
+	/**
+	 * Returns this group's X scale factor.
+	 *
+	 * @return  X scale factor.
+	 */
+	public double xScale()
+		{
+		return myXScale;
+		}
+
+	/**
+	 * Set this group's X scale factor.
+	 *
+	 * @param  theXScale  X scale factor.
+	 *
+	 * @return  This group.
+	 */
+	public Group xScale
+		(double theXScale)
+		{
+		myXScale = theXScale;
+		mySize = null;
+		myTransform = null;
+		return this;
+		}
+
+	/**
+	 * Returns this group's Y scale factor.
+	 *
+	 * @return  Y scale factor.
+	 */
+	public double yScale()
+		{
+		return myYScale;
+		}
+
+	/**
+	 * Set this group's Y scale factor.
+	 *
+	 * @param  theYScale  Y scale factor.
+	 *
+	 * @return  This group.
+	 */
+	public Group yScale
+		(double theYScale)
+		{
+		myYScale = theYScale;
+		mySize = null;
+		myTransform = null;
+		return this;
+		}
+
+	/**
+	 * Returns this group's X shear factor.
+	 *
+	 * @return  X shear factor.
+	 */
+	public double xShear()
+		{
+		return myXShear;
+		}
+
+	/**
+	 * Set this group's X shear factor.
+	 *
+	 * @param  theXShear  X shear factor.
+	 *
+	 * @return  This group.
+	 */
+	public Group xShear
+		(double theXShear)
+		{
+		myXShear = theXShear;
+		mySize = null;
+		myTransform = null;
+		return this;
+		}
+
+	/**
+	 * Returns this group's Y shear factor.
+	 *
+	 * @return  Y shear factor.
+	 */
+	public double yShear()
+		{
+		return myYShear;
+		}
+
+	/**
+	 * Set this group's Y shear factor.
+	 *
+	 * @param  theYShear  Y shear factor.
+	 *
+	 * @return  This group.
+	 */
+	public Group yShear
+		(double theYShear)
+		{
+		myYShear = theYShear;
+		mySize = null;
+		myTransform = null;
+		return this;
+		}
+
+	/**
+	 * Returns this group's rotation center point.
+	 *
+	 * @return  Rotation center point.
+	 */
+	public Point rotationCenter()
+		{
+		return myRotationCenter;
+		}
+
+	/**
+	 * Set this group's rotation center point.
+	 *
+	 * @param  theCenter  Rotation center point.
+	 *
+	 * @return  This group.
+	 *
+	 * @exception  NullPointerException
+	 *     (unchecked exception) Thrown if <TT>theCenter</TT> is null.
+	 */
+	public Group rotationCenter
+		(Point theCenter)
+		{
+		if (theCenter == null) throw new NullPointerException();
+		myRotationCenter = theCenter;
+		mySize = null;
+		myTransform = null;
+		return this;
+		}
+
+	/**
+	 * Returns this group's rotation angle.
+	 *
+	 * @return  Rotation angle.
+	 */
+	public double rotationAngle()
+		{
+		return myRotationAngle;
+		}
+
+	/**
+	 * Set this group's rotation angle.
+	 *
+	 * @param  theAngle  Rotation angle.
+	 *
+	 * @return  This group.
+	 */
+	public Group rotationAngle
+		(double theAngle)
+		{
+		myRotationAngle = theAngle;
+		mySize = null;
+		myTransform = null;
+		return this;
+		}
+
+	/**
+	 * Clear this group. All drawing items in this group are removed.
+	 *
+	 * @return  This group.
+	 */
+	public Group clear()
+		{
+		myItemList.clear();
+		mySize = null;
+		return this;
+		}
+
+	/**
+	 * Add the given drawing item to the end of this group's list of drawing
+	 * items.
+	 *
+	 * @param  theItem  Drawing item.
+	 *
+	 * @return  This group.
+	 *
+	 * @exception  NullPointerException
+	 *     (unchecked exception) Thrown if <TT>theItem</TT> is null.
+	 */
+	public Group append
+		(DrawingItem theItem)
+		{
+		if (theItem == null) throw new NullPointerException();
+		myItemList.add (theItem);
+		mySize = null;
+		return this;
+		}
+
+	/**
+	 * Add the given drawing item to the beginning of this group's list of
+	 * drawing items.
+	 *
+	 * @param  theItem  Drawing item.
+	 *
+	 * @return  This group.
+	 *
+	 * @exception  NullPointerException
+	 *     (unchecked exception) Thrown if <TT>theItem</TT> is null.
+	 */
+	public Group prepend
+		(DrawingItem theItem)
+		{
+		if (theItem == null) throw new NullPointerException();
+		myItemList.add (0, theItem);
+		mySize = null;
+		return this;
+		}
+
+	/**
+	 * Returns the size of this group's bounding box.
+	 *
+	 * @return  Size.
+	 */
+	public Size size()
+		{
+		computeSize();
+		return mySize;
+		}
+
+	/**
+	 * Returns the width of this group's bounding box.
+	 *
+	 * @return  Width.
+	 */
+	public double width()
+		{
+		computeSize();
+		return width;
+		}
+
+	/**
+	 * Returns the height of this group's bounding box.
+	 *
+	 * @return  Height.
+	 */
+	public double height()
+		{
+		computeSize();
+		return height;
+		}
+
+	/**
+	 * Returns the northwest corner point of this group's bounding box.
+	 *
+	 * @return  Northwest corner point.
+	 */
+	public Point nw()
+		{
+		computeSize();
+		return new Point (x + xFactor * width, y + yFactor * height);
+		}
+
+	/**
+	 * Set the northwest corner point of this group's bounding box.
+	 *
+	 * @param  x  X coordinate of northwest corner point.
+	 * @param  y  Y coordinate of northwest corner point.
+	 *
+	 * @return  This group.
+	 */
+	public Group nw
+		(double x,
+		 double y)
+		{
+		doNw (x, y);
+		return this;
+		}
+
+	/**
+	 * Set the northwest corner point of this group's bounding box.
+	 *
+	 * @param  thePoint  Northwest corner point.
+	 *
+	 * @return  This group.
+	 *
+	 * @exception  NullPointerException
+	 *     (unchecked exception) Thrown if <TT>thePoint</TT> is null.
+	 */
+	public Group nw
+		(Point thePoint)
+		{
+		doNw (thePoint.x, thePoint.y);
+		return this;
+		}
+
+	/**
+	 * Set the north middle point of this group's bounding box.
+	 *
+	 * @param  x  X coordinate of north middle point.
+	 * @param  y  Y coordinate of north middle point.
+	 *
+	 * @return  This group.
+	 */
+	public Group n
+		(double x,
+		 double y)
+		{
+		doN (x, y);
+		return this;
+		}
+
+	/**
+	 * Set the north middle point of this group's bounding box.
+	 *
+	 * @param  thePoint  North middle point.
+	 *
+	 * @return  This group.
+	 *
+	 * @exception  NullPointerException
+	 *     (unchecked exception) Thrown if <TT>thePoint</TT> is null.
+	 */
+	public Group n
+		(Point thePoint)
+		{
+		doN (thePoint.x, thePoint.y);
+		return this;
+		}
+
+	/**
+	 * Set the northeast corner point of this group's bounding box.
+	 *
+	 * @param  x  X coordinate of northeast corner point.
+	 * @param  y  Y coordinate of northeast corner point.
+	 *
+	 * @return  This group.
+	 */
+	public Group ne
+		(double x,
+		 double y)
+		{
+		doNe (x, y);
+		return this;
+		}
+
+	/**
+	 * Set the northeast corner point of this group's bounding box.
+	 *
+	 * @param  thePoint  Northeast corner point.
+	 *
+	 * @return  This group.
+	 *
+	 * @exception  NullPointerException
+	 *     (unchecked exception) Thrown if <TT>thePoint</TT> is null.
+	 */
+	public Group ne
+		(Point thePoint)
+		{
+		doNe (thePoint.x, thePoint.y);
+		return this;
+		}
+
+	/**
+	 * Set the west middle point of this group's bounding box.
+	 *
+	 * @param  x  X coordinate of west middle point.
+	 * @param  y  Y coordinate of west middle point.
+	 *
+	 * @return  This group.
+	 */
+	public Group w
+		(double x,
+		 double y)
+		{
+		doW (x, y);
+		return this;
+		}
+
+	/**
+	 * Set the west middle point of this group's bounding box.
+	 *
+	 * @param  thePoint  West middle point.
+	 *
+	 * @return  This group.
+	 *
+	 * @exception  NullPointerException
+	 *     (unchecked exception) Thrown if <TT>thePoint</TT> is null.
+	 */
+	public Group w
+		(Point thePoint)
+		{
+		doW (thePoint.x, thePoint.y);
+		return this;
+		}
+
+	/**
+	 * Set the center point of this group's bounding box.
+	 *
+	 * @param  x  X coordinate of center point.
+	 * @param  y  Y coordinate of center point.
+	 *
+	 * @return  This group.
+	 */
+	public Group c
+		(double x,
+		 double y)
+		{
+		doC (x, y);
+		return this;
+		}
+
+	/**
+	 * Set the center point of this group's bounding box.
+	 *
+	 * @param  thePoint  Center point.
+	 *
+	 * @return  This group.
+	 *
+	 * @exception  NullPointerException
+	 *     (unchecked exception) Thrown if <TT>thePoint</TT> is null.
+	 */
+	public Group c
+		(Point thePoint)
+		{
+		doC (thePoint.x, thePoint.y);
+		return this;
+		}
+
+	/**
+	 * Set the east middle point of this group's bounding box.
+	 *
+	 * @param  x  X coordinate of east middle point.
+	 * @param  y  Y coordinate of east middle point.
+	 *
+	 * @return  This group.
+	 */
+	public Group e
+		(double x,
+		 double y)
+		{
+		doE (x, y);
+		return this;
+		}
+
+	/**
+	 * Set the east middle point of this group's bounding box.
+	 *
+	 * @param  thePoint  East middle point.
+	 *
+	 * @return  This group.
+	 *
+	 * @exception  NullPointerException
+	 *     (unchecked exception) Thrown if <TT>thePoint</TT> is null.
+	 */
+	public Group e
+		(Point thePoint)
+		{
+		doE (thePoint.x, thePoint.y);
+		return this;
+		}
+
+	/**
+	 * Set the southwest corner point of this group's bounding box.
+	 *
+	 * @param  x  X coordinate of southwest corner point.
+	 * @param  y  Y coordinate of southwest corner point.
+	 *
+	 * @return  This group.
+	 */
+	public Group sw
+		(double x,
+		 double y)
+		{
+		doSw (x, y);
+		return this;
+		}
+
+	/**
+	 * Set the southwest corner point of this group's bounding box.
+	 *
+	 * @param  thePoint  Southwest corner point.
+	 *
+	 * @return  This group.
+	 *
+	 * @exception  NullPointerException
+	 *     (unchecked exception) Thrown if <TT>thePoint</TT> is null.
+	 */
+	public Group sw
+		(Point thePoint)
+		{
+		doSw (thePoint.x, thePoint.y);
+		return this;
+		}
+
+	/**
+	 * Set the south middle point of this group's bounding box.
+	 *
+	 * @param  x  X coordinate of south middle point.
+	 * @param  y  Y coordinate of south middle point.
+	 *
+	 * @return  This group.
+	 */
+	public Group s
+		(double x,
+		 double y)
+		{
+		doS (x, y);
+		return this;
+		}
+
+	/**
+	 * Set the south middle point of this group's bounding box.
+	 *
+	 * @param  thePoint  South middle point.
+	 *
+	 * @return  This group.
+	 *
+	 * @exception  NullPointerException
+	 *     (unchecked exception) Thrown if <TT>thePoint</TT> is null.
+	 */
+	public Group s
+		(Point thePoint)
+		{
+		doS (thePoint.x, thePoint.y);
+		return this;
+		}
+
+	/**
+	 * Set the southeast corner point of this group's bounding box.
+	 *
+	 * @param  x  X coordinate of southeast corner point.
+	 * @param  y  Y coordinate of southeast corner point.
+	 *
+	 * @return  This group.
+	 */
+	public Group se
+		(double x,
+		 double y)
+		{
+		doSe (x, y);
+		return this;
+		}
+
+	/**
+	 * Set the southeast corner point of this group's bounding box.
+	 *
+	 * @param  thePoint  Southeast corner point.
+	 *
+	 * @return  This group.
+	 *
+	 * @exception  NullPointerException
+	 *     (unchecked exception) Thrown if <TT>thePoint</TT> is null.
+	 */
+	public Group se
+		(Point thePoint)
+		{
+		doSe (thePoint.x, thePoint.y);
+		return this;
+		}
+
+	/**
+	 * Add this group to the end of the default drawing's sequence of drawing
+	 * items.
+	 *
+	 * @return  This group.
+	 *
+	 * @exception  NullPointerException
+	 *     (unchecked exception) Thrown if there is no default drawing.
+	 *
+	 * @see  Drawing#defaultDrawing()
+	 */
+	public Group add()
+		{
+		doAdd (Drawing.defaultDrawing());
+		return this;
+		}
+
+	/**
+	 * Add this group to the end of the given drawing's sequence of drawing
+	 * items.
+	 *
+	 * @param  theDrawing  Drawing.
+	 *
+	 * @return  This group.
+	 *
+	 * @exception  NullPointerException
+	 *     (unchecked exception) Thrown if <TT>theDrawing</TT> is null.
+	 */
+	public Group add
+		(Drawing theDrawing)
+		{
+		doAdd (theDrawing);
+		return this;
+		}
+
+	/**
+	 * Add this group to the beginning of the default drawing's sequence of
+	 * drawing items.
+	 *
+	 * @return  This group.
+	 *
+	 * @exception  NullPointerException
+	 *     (unchecked exception) Thrown if there is no default drawing.
+	 *
+	 * @see  Drawing#defaultDrawing()
+	 */
+	public Group addFirst()
+		{
+		doAddFirst (Drawing.defaultDrawing());
+		return this;
+		}
+
+	/**
+	 * Add this group to the beginning of the given drawing's sequence of
+	 * drawing items.
+	 *
+	 * @param  theDrawing  Drawing.
+	 *
+	 * @return  This group.
+	 *
+	 * @exception  NullPointerException
+	 *     (unchecked exception) Thrown if <TT>theDrawing</TT> is null.
+	 */
+	public Group addFirst
+		(Drawing theDrawing)
+		{
+		doAddFirst (theDrawing);
+		return this;
+		}
+
+	/**
+	 * Write this group to the given object output stream.
+	 *
+	 * @param  out  Object output stream.
+	 *
+	 * @exception  IOException
+	 *     Thrown if an I/O error occurred.
+	 */
+	public void writeExternal
+		(ObjectOutput out)
+		throws IOException
+		{
+		super.writeExternal (out);
+		int n = myItemList.size();
+		out.writeInt (n);
+		for (DrawingItem item : myItemList)
+			{
+			out.writeObject (item);
+			}
+		out.writeDouble (x);
+		out.writeDouble (y);
+		out.writeDouble (xFactor);
+		out.writeDouble (yFactor);
+		out.writeDouble (myXScale);
+		out.writeDouble (myYScale);
+		out.writeDouble (myXShear);
+		out.writeDouble (myYShear);
+		out.writeObject (myRotationCenter);
+		out.writeDouble (myRotationAngle);
+		}
+
+	/**
+	 * Read this group from the given object input stream.
+	 *
+	 * @param  in  Object input stream.
+	 *
+	 * @exception  IOException
+	 *     Thrown if an I/O error occurred.
+	 * @exception  ClassNotFoundException
+	 *     Thrown if any class needed to deserialize this group cannot be found.
+	 */
+	public void readExternal
+		(ObjectInput in)
+		throws IOException, ClassNotFoundException
+		{
+		super.readExternal (in);
+		myItemList.clear();
+		int n = in.readInt();
+		for (int i = 0; i < n; ++ i)
+			{
+			myItemList.add ((DrawingItem) in.readObject());
+			}
+		x = in.readDouble();
+		y = in.readDouble();
+		xFactor = in.readDouble();
+		yFactor = in.readDouble();
+		mySize = null;
+		myXScale = in.readDouble();
+		myYScale = in.readDouble();
+		myXShear = in.readDouble();
+		myYShear = in.readDouble();
+		myRotationCenter = (Point) in.readObject();
+		myRotationAngle = in.readDouble();
+		myTransform = null;
+		}
+
+	/**
+	 * Draw this drawing item in the given graphics context. This method is
+	 * allowed to change the graphics context's paint, stroke, and transform,
+	 * and it doesn't have to change them back.
+	 *
+	 * @param  g2d  2-D graphics context.
+	 */
+	public void draw
+		(Graphics2D g2d)
+		{
+		super.draw (g2d);
+
+		// Translate the point (minX,minY) to the northwest corner location.
+		computeSize();
+		Point nw = nw();
+		g2d.translate (nw.x - minX, nw.y - minY);
+
+		// Apply the scaling, shearing, and rotation transforms.
+		g2d.transform (myTransform);
+
+		// Draw each item.
+		for (DrawingItem item : myItemList)
+			{
+			item.draw (g2d);
+			}
+		}
+
+	/**
+	 * Transform the given point by applying this group's scaling, shearing,
+	 * rotation, and translation transforms.
+	 *
+	 * @param  thePoint  Point before applying transforms.
+	 *
+	 * @return  Point after applying transforms.
+	 */
+	public Point transform
+		(Point thePoint)
+		{
+		AffineTransform t = new AffineTransform();
+		computeSize();
+		Point nw = nw();
+		t.translate (nw.x - minX, nw.y - minY);
+		t.concatenate (myTransform);
+		Point2D.Double p2d = new Point2D.Double (thePoint.x, thePoint.y);
+		t.transform (p2d, p2d);
+		return new Point (p2d.x, p2d.y);
+		}
+
+// Hidden operations.
+
+	/**
+	 * Compute the combined transform of this group. Store the result in the
+	 * myTransform field.
+	 */
+	private void computeTransform()
+		{
+		if (myTransform == null)
+			{
+			myTransform = new AffineTransform();
+			myTransform.rotate
+				(/*theta*/ myRotationAngle,
+				 /*x    */ myRotationCenter.x,
+				 /*y    */ myRotationCenter.y);
+			myTransform.shear
+				(/*shx*/ myXShear,
+				 /*shy*/ myYShear);
+			myTransform.scale
+				(/*sx*/ myXScale,
+				 /*sy*/ myYScale);
+			}
+		}
+
+	/**
+	 * Compute the size, width, height, minimum X coordinate, and minimum Y
+	 * coordinate of this group. Store the results in the corresponding fields.
+	 */
+	private void computeSize()
+		{
+		if (mySize != null)
+			{
+			}
+		else if (myItemList.isEmpty())
+			{
+			minX = 0.0;
+			minY = 0.0;
+			width = 0.0;
+			height = 0.0;
+			mySize = new Size (0.0, 0.0);
+			}
+		else
+			{
+			computeTransform();
+			minX = Double.MAX_VALUE;
+			minY = Double.MAX_VALUE;
+			double maxX = Double.MIN_VALUE;
+			double maxY = Double.MIN_VALUE;
+			Point p;
+			Point2D.Double p2d = new Point2D.Double();
+			for (DrawingItem item : myItemList)
+				{
+				p = item.nw(); p2d.x = p.x; p2d.y = p.y;
+				myTransform.transform (p2d, p2d);
+				minX = Math.min (minX, p2d.x);
+				minY = Math.min (minY, p2d.y);
+				maxX = Math.max (maxX, p2d.x);
+				maxY = Math.max (maxY, p2d.y);
+				p = item.ne(); p2d.x = p.x; p2d.y = p.y;
+				myTransform.transform (p2d, p2d);
+				minX = Math.min (minX, p2d.x);
+				minY = Math.min (minY, p2d.y);
+				maxX = Math.max (maxX, p2d.x);
+				maxY = Math.max (maxY, p2d.y);
+				p = item.sw(); p2d.x = p.x; p2d.y = p.y;
+				myTransform.transform (p2d, p2d);
+				minX = Math.min (minX, p2d.x);
+				minY = Math.min (minY, p2d.y);
+				maxX = Math.max (maxX, p2d.x);
+				maxY = Math.max (maxY, p2d.y);
+				p = item.se(); p2d.x = p.x; p2d.y = p.y;
+				myTransform.transform (p2d, p2d);
+				minX = Math.min (minX, p2d.x);
+				minY = Math.min (minY, p2d.y);
+				maxX = Math.max (maxX, p2d.x);
+				maxY = Math.max (maxY, p2d.y);
+				}
+			width = maxX - minX;
+			height = maxY - minY;
+			mySize = new Size (width, height);
+			}
+		}
+
+	/**
+	 * Set the northwest corner point of this group's bounding
+	 * box.
+	 *
+	 * @param  x  X coordinate of northwest corner point.
+	 * @param  y  Y coordinate of northwest corner point.
+	 */
+	void doNw
+		(double x,
+		 double y)
+		{
+		this.x = x;
+		this.y = y;
+		this.xFactor = 0.0;
+		this.yFactor = 0.0;
+		}
+
+	/**
+	 * Set the north middle point of this group's bounding box.
+	 *
+	 * @param  x  X coordinate of north middle point.
+	 * @param  y  Y coordinate of north middle point.
+	 */
+	void doN
+		(double x,
+		 double y)
+		{
+		this.x = x;
+		this.y = y;
+		this.xFactor = -0.5;
+		this.yFactor = 0.0;
+		}
+
+	/**
+	 * Set the northeast corner point of this group's bounding box.
+	 *
+	 * @param  x  X coordinate of northeast corner point.
+	 * @param  y  Y coordinate of northeast corner point.
+	 */
+	void doNe
+		(double x,
+		 double y)
+		{
+		this.x = x;
+		this.y = y;
+		this.xFactor = -1.0;
+		this.yFactor = 0.0;
+		}
+
+	/**
+	 * Set the west middle point of this group's bounding box.
+	 *
+	 * @param  x  X coordinate of west middle point.
+	 * @param  y  Y coordinate of west middle point.
+	 */
+	void doW
+		(double x,
+		 double y)
+		{
+		this.x = x;
+		this.y = y;
+		this.xFactor = 0.0;
+		this.yFactor = -0.5;
+		}
+
+	/**
+	 * Set the center point of this group's bounding box.
+	 *
+	 * @param  x  X coordinate of center point.
+	 * @param  y  Y coordinate of center point.
+	 */
+	void doC
+		(double x,
+		 double y)
+		{
+		this.x = x;
+		this.y = y;
+		this.xFactor = -0.5;
+		this.yFactor = -0.5;
+		}
+
+	/**
+	 * Set the east middle point of this group's bounding box.
+	 *
+	 * @param  x  X coordinate of east middle point.
+	 * @param  y  Y coordinate of east middle point.
+	 */
+	void doE
+		(double x,
+		 double y)
+		{
+		this.x = x;
+		this.y = y;
+		this.xFactor = -1.0;
+		this.yFactor = -0.5;
+		}
+
+	/**
+	 * Set the southwest corner point of this group's bounding box.
+	 *
+	 * @param  x  X coordinate of southwest corner point.
+	 * @param  y  Y coordinate of southwest corner point.
+	 */
+	void doSw
+		(double x,
+		 double y)
+		{
+		this.x = x;
+		this.y = y;
+		this.xFactor = 0.0;
+		this.yFactor = -1.0;
+		}
+
+	/**
+	 * Set the south middle point of this group's bounding box.
+	 *
+	 * @param  x  X coordinate of south middle point.
+	 * @param  y  Y coordinate of south middle point.
+	 */
+	void doS
+		(double x,
+		 double y)
+		{
+		this.x = x;
+		this.y = y;
+		this.xFactor = -0.5;
+		this.yFactor = -1.0;
+		}
+
+	/**
+	 * Set the southeast corner point of this group's bounding box.
+	 *
+	 * @param  x  X coordinate of southeast corner point.
+	 * @param  y  Y coordinate of southeast corner point.
+	 */
+	void doSe
+		(double x,
+		 double y)
+		{
+		this.x = x;
+		this.y = y;
+		this.xFactor = -1.0;
+		this.yFactor = -1.0;
+		}
+
+	}
