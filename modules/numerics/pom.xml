@@ -71,7 +71,7 @@
             <groupId>jcuda</groupId>
             <artifactId>jcuda-all</artifactId>
             <type>jar</type>
-            <version>3.1.1</version>
+            <version>4.0.0</version>
         </dependency>
         <dependency>
             <groupId>org.jogamp</groupId>
