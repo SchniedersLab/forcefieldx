@@ -41,13 +41,14 @@
                 <configuration>
                     <executable>java</executable>
                     <arguments>
-                        <!--argument>-d64</argument-->
+                        <argument>-d64</argument>
                         <argument>-ms4G</argument>
                         <argument>-mx4G</argument>
-                        <argument>-Djava.library.path=../../bin/${bit}-bit</argument>
+                        <argument>-verbose</argument>
+                        <argument>-Djava.library.path='/home/schnied/ffx/bin/64-bit'</argument>
                         <argument>-classpath</argument>
-                        <argument>target/numerics-${project.version}.jar:${settings.localRepository}/commons-io/commons-io/1.4.0/commons-io-1.4.0.jar:${settings.localRepository}/jcuda/jcuda-all/3.1.0/jcuda-all-3.1.0.jar:${settings.localRepository}/edu/rit/pj/pj/1.3/pj-1.3.jar</argument>
-                        <argument>ffx.numerics.fft.RowMajorComplex3DCuda</argument>
+                        <argument>target/numerics-${project.version}.jar:${settings.localRepository}/commons-io/commons-io/1.4.0/commons-io-1.4.0.jar:${settings.localRepository}/jcuda/jcuda-all/3.1.1/jcuda-all-3.1.1.jar:${settings.localRepository}/edu/rit/pj/pj/1.5/pj-1.5.jar</argument>
+                        <argument>ffx.numerics.fft.Complex3DCuda</argument>
                         <argument>128</argument>
                     </arguments>
                 </configuration>
