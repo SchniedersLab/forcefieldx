@@ -23,7 +23,7 @@
                 <version>1.0-beta-5</version>
                 <executions>
                     <execution>
-                        <id>add-algorithms-ext</id>
+                        <id>add-parallel-java</id>
                         <goals>
                             <goal>copy</goal>
                         </goals>
@@ -33,7 +33,7 @@
                                 <file>
                                     <source>${basedir}/target/${project.artifactId}-${project.version}.jar</source>
                                     <outputDirectory>${ffx.directory}/bin/ffx-all.jar</outputDirectory>                                        
-                                    <destName>${project.groupId}/${project.artifactId}.jar</destName>
+                                    <destName>edu.rit.pj/${project.artifactId}.jar</destName>
                                 </file>
                             </files>
                         </configuration>
