@@ -265,7 +265,7 @@ public class JobBackend
 		myMiddlewareChannelGroup =
 			new ChannelGroup (new InetSocketAddress (backendHost, 0));
 		myMiddlewareChannelGroup.startListening();
-
+                
 		// Set up job frontend proxy.
 		myJobFrontend =
 			new JobFrontendProxy
@@ -1159,11 +1159,15 @@ public class JobBackend
 
 		// Call the job's main() method, passing in the job's command line
 		// arguments.
-		Class<?> mainclass =
+                // Force Field X Modification. Load our Main class using the
+                // SystemClassLoader, which is an instance of the FFXClassLoader.
+                Class<?> mainclass =
 			Class.forName
 				(theJobBackend.getMainClassName(),
 				 true,
-				 theJobBackend.getClassLoader());
+                                 ClassLoader.getSystemClassLoader());
+                // Orig: theJobBackend.getClassLoader());
+                
 		Method mainmethod = mainclass.getMethod ("main", String[].class);
 		mainmethod.invoke (null, (Object) theJobBackend.getArgs());
 
