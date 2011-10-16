@@ -226,8 +226,8 @@ public class Complex3DCuda implements Runnable {
      * @param nX X-dimension.
      * @param nY Y-dimension.
      * @param nZ Z-dimension.
-     * @param data an array of float.
-     * @param recip an array of float.
+     * @param data an array of double.
+     * @param recip an array of double.
      */
     public Complex3DCuda(int nX, int nY, int nZ, double data[], double recip[]) {
         this.nX = nX;

@@ -20,27 +20,24 @@
  */
 package ffx.numerics.fft;
 
-import static java.lang.String.format;
-
-import static jcuda.driver.JCudaDriver.*;
-import static jcuda.jcufft.JCufft.*;
-
 import java.io.File;
 import java.net.URL;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import org.apache.commons.io.FileUtils;
-
-import edu.rit.pj.IntegerSchedule;
-import edu.rit.pj.ParallelTeam;
-
 import jcuda.*;
 import jcuda.driver.*;
 import jcuda.jcufft.*;
 import jcuda.runtime.dim3;
 import jcuda.utils.KernelLauncher;
+import static java.lang.String.format;
+import static jcuda.driver.JCudaDriver.*;
+import static jcuda.jcufft.JCufft.*;
+
+import org.apache.commons.io.FileUtils;
+
+import edu.rit.pj.IntegerSchedule;
+import edu.rit.pj.ParallelTeam;
 
 /**
  * Compute a 3D Convolution using Java wrappers to the CUDA Driver API.
@@ -53,7 +50,7 @@ public class RowMajorComplex3DCuda implements Runnable {
 
     private static final Logger logger = Logger.getLogger(RowMajorComplex3DCuda.class.getName());
     private final int nX, nY, nZ, len;
-    private float data[], recip[];
+    private double data[], recip[];
     private boolean doConvolution = false;
     private boolean free = false;
     private boolean dead = false;
@@ -64,10 +61,10 @@ public class RowMajorComplex3DCuda implements Runnable {
     /**
      * Blocking convolution method.
      *
-     * @param data an array of float.
+     * @param data an array of double.
      * @return A status flag (0 for success, -1 for failure).
      */
-    public int convolution(float data[]) {
+    public int convolution(double data[]) {
         // This would be a programming error.
         if (dead || doConvolution) {
             return -1;
@@ -152,19 +149,19 @@ public class RowMajorComplex3DCuda implements Runnable {
 
         // Copy the data array to the device.
         dataDevice = new CUdeviceptr();
-        cuMemAlloc(dataDevice, len * 2 * Sizeof.FLOAT);
+        cuMemAlloc(dataDevice, len * 2 * Sizeof.DOUBLE);
         dataPtr = Pointer.to(data);
-        cuMemcpyHtoD(dataDevice, dataPtr, len * 2 * Sizeof.FLOAT);
+        cuMemcpyHtoD(dataDevice, dataPtr, len * 2 * Sizeof.DOUBLE);
 
         // Copy the recip array to the device.
         recipDevice = new CUdeviceptr();
-        cuMemAlloc(recipDevice, len * Sizeof.FLOAT);
+        cuMemAlloc(recipDevice, len * Sizeof.DOUBLE);
         recipPtr = Pointer.to(recip);
-        cuMemcpyHtoD(recipDevice, recipPtr, len * Sizeof.FLOAT);
+        cuMemcpyHtoD(recipDevice, recipPtr, len * Sizeof.DOUBLE);
 
         // Create a CUFFT plan for the data
         plan = new cufftHandle();
-        cufftPlan3d(plan, nX, nY, nZ, cufftType.CUFFT_C2C);
+        cufftPlan3d(plan, nX, nY, nZ, cufftType.CUFFT_Z2Z);
 
         int threads = 512;
         int nBlocks = len / threads + (len % threads == 0 ? 0 : 1);
@@ -182,11 +179,11 @@ public class RowMajorComplex3DCuda implements Runnable {
         synchronized (this) {
             while (!free) {
                 if (doConvolution) {
-                    cuMemcpyHtoD(dataDevice, dataPtr, len * 2 * Sizeof.FLOAT);
+                    cuMemcpyHtoD(dataDevice, dataPtr, len * 2 * Sizeof.DOUBLE);
                     cufftExecC2C(plan, dataDevice, dataDevice, CUFFT_FORWARD);
                     kernelLauncher.call(dataDevice, recipDevice, len);
                     cufftExecC2C(plan, dataDevice, dataDevice, CUFFT_INVERSE);
-                    cuMemcpyDtoH(dataPtr, dataDevice, len * 2 * Sizeof.FLOAT);
+                    cuMemcpyDtoH(dataPtr, dataDevice, len * 2 * Sizeof.DOUBLE);
                     doConvolution = false;
                     notify();
                 }
@@ -211,10 +208,10 @@ public class RowMajorComplex3DCuda implements Runnable {
      * @param nX X-dimension.
      * @param nY Y-dimension.
      * @param nZ Z-dimension.
-     * @param data an array of float.
-     * @param recip an array of float.
+     * @param data an array of double.
+     * @param recip an array of double.
      */
-    public RowMajorComplex3DCuda(int nX, int nY, int nZ, float data[], float recip[]) {
+    public RowMajorComplex3DCuda(int nX, int nY, int nZ, double data[], double recip[]) {
         this.nX = nX;
         this.nY = nY;
         this.nZ = nZ;
@@ -260,8 +257,8 @@ public class RowMajorComplex3DCuda implements Runnable {
         final int dim = dimNotFinal;
 
         System.out.println(String.format(
-                "Initializing a %d cubed grid.\n"
-                + "The best timing out of %d repititions will be used.",
+                " Initializing a %d cubed grid.\n"
+                + " The best timing out of %d repititions will be used.",
                 dim, reps));
 
         final int dimCubed = dim * dim * dim;
@@ -276,23 +273,13 @@ public class RowMajorComplex3DCuda implements Runnable {
         double data[] = new double[dimCubed * 2];
         double recip[] = new double[dimCubed];
 
-        float dataf[] = new float[dimCubed * 2];
-        float recipf[] = new float[dimCubed];
-
         Random random = new Random(1);
         for (int x = 0; x < dim; x++) {
             for (int y = 0; y < dim; y++) {
                 for (int z = 0; z < dim; z++) {
                     int index = RowMajorComplex3D.iComplex3D(x, y, z, dim, dim);
-
-                    orig[index / 2] = random.nextFloat();
-                    data[index] = orig[index / 2];
-                    data[index + 1] = 0.0;
+                    orig[index / 2] = random.nextDouble();
                     recip[index / 2] = orig[index / 2];
-
-                    dataf[index] = (float) orig[index / 2];
-                    dataf[index + 1] = 0.0f;
-                    recipf[index / 2] = (float) orig[index / 2];
                 }
             }
         }
@@ -300,7 +287,7 @@ public class RowMajorComplex3DCuda implements Runnable {
         RowMajorComplex3D complex3D = new RowMajorComplex3D(dim, dim, dim);
         RowMajorComplex3DParallel complex3DParallel =
                                   new RowMajorComplex3DParallel(dim, dim, dim, new ParallelTeam(), IntegerSchedule.fixed());
-        RowMajorComplex3DCuda complex3DCUDA = new RowMajorComplex3DCuda(dim, dim, dim, dataf, recipf);
+        RowMajorComplex3DCuda complex3DCUDA = new RowMajorComplex3DCuda(dim, dim, dim, data, recip);
         Thread cudaThread = new Thread(complex3DCUDA);
 
         cudaThread.setPriority(Thread.MAX_PRIORITY);
@@ -320,7 +307,7 @@ public class RowMajorComplex3DCuda implements Runnable {
             long time = System.nanoTime();
             complex3D.convolution(data);
             time = (System.nanoTime() - time);
-            System.out.println(String.format("%2d Sequential: %8.3f", i + 1, toSeconds * time));
+            System.out.println(String.format(" %2d Sequential: %8.3f", i + 1, toSeconds * time));
             if (time < seqTime) {
                 seqTime = time;
             }
@@ -339,7 +326,7 @@ public class RowMajorComplex3DCuda implements Runnable {
             long time = System.nanoTime();
             complex3DParallel.convolution(data);
             time = (System.nanoTime() - time);
-            System.out.println(String.format("%2d Parallel:   %8.3f", i + 1, toSeconds * time));
+            System.out.println(String.format(" %2d Parallel:   %8.3f", i + 1, toSeconds * time));
             if (time < parTime) {
                 parTime = time;
             }
@@ -356,16 +343,16 @@ public class RowMajorComplex3DCuda implements Runnable {
         }
         rmse /= dimCubed;
         rmse = Math.sqrt(rmse);
-        logger.info(String.format("Parallel RMSE:   %12.10f, Max: %12.10f", rmse, maxError));
+        logger.info(String.format(" Parallel RMSE:   %12.10f, Max: %12.10f", rmse, maxError));
         for (int i = 0; i < reps; i++) {
             for (int j = 0; j < dimCubed; j++) {
-                dataf[j * 2] = (float) orig[j];
-                dataf[j * 2 + 1] = 0.0f;
+                data[j * 2] = orig[j];
+                data[j * 2 + 1] = 0.0;
             }
             long time = System.nanoTime();
-            complex3DCUDA.convolution(dataf);
+            complex3DCUDA.convolution(data);
             time = (System.nanoTime() - time);
-            System.out.println(String.format("%2d CUDA:     %8.3f", i + 1, toSeconds * time));
+            System.out.println(String.format(" %2d CUDA:     %8.3f", i + 1, toSeconds * time));
             if (time < clTime) {
                 clTime = time;
             }
@@ -375,7 +362,7 @@ public class RowMajorComplex3DCuda implements Runnable {
         double avg = 0.0;
         rmse = 0.0;
         for (int i = 0; i < dimCubed; i++) {
-            double error = Math.abs((answer[i] - dataf[2 * i]) / dimCubed);
+            double error = Math.abs((answer[i] - data[2 * i]) / dimCubed);
             avg += error;
             if (error > maxError) {
                 maxError = error;
@@ -385,20 +372,20 @@ public class RowMajorComplex3DCuda implements Runnable {
         rmse /= dimCubed;
         avg /= dimCubed;
         rmse = Math.sqrt(rmse);
-        logger.info(String.format("CUDA RMSE:   %12.10f, Max: %12.10f, Avg: %12.10f", rmse, maxError, avg));
+        logger.info(String.format(" CUDA RMSE:   %12.10f, Max: %12.10f, Avg: %12.10f", rmse, maxError, avg));
 
         complex3DCUDA.free();
         complex3DCUDA = null;
 
-        System.out.println(String.format("Best Sequential Time:  %8.3f",
+        System.out.println(String.format(" Best Sequential Time:  %8.3f",
                                          toSeconds * seqTime));
-        System.out.println(String.format("Best Parallel Time:    %8.3f",
+        System.out.println(String.format(" Best Parallel Time:    %8.3f",
                                          toSeconds * parTime));
-        System.out.println(String.format("Best CUDA Time:        %8.3f",
+        System.out.println(String.format(" Best CUDA Time:        %8.3f",
                                          toSeconds * clTime));
-        System.out.println(String.format("Parallel Speedup: %15.5f", (double) seqTime
-                                                                     / parTime));
-        System.out.println(String.format("CUDA Speedup:     %15.5f", (double) seqTime
-                                                                     / clTime));
+        System.out.println(String.format(" Parallel Speedup: %15.5f", (double) seqTime
+                                                                      / parTime));
+        System.out.println(String.format(" CUDA Speedup:     %15.5f", (double) seqTime
+                                                                      / clTime));
     }
 }
