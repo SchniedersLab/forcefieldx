@@ -184,7 +184,7 @@ public class Complex3DCuda implements Runnable {
             while (!free) {
                 if (doConvolution) {
                     cuMemcpyHtoD(dataDevice, dataPtr, len * 2 * Sizeof.DOUBLE);
-                    cufftExecC2C(plan, dataDevice, dataDevice, CUFFT_FORWARD);
+                    cufftExecZ2Z(plan, dataDevice, dataDevice, CUFFT_FORWARD);
                     // Set up the execution parameters for the kernel
                     cuFuncSetBlockShape(function, threads, 1, 1);
                     int offset = 0;
@@ -200,7 +200,7 @@ public class Complex3DCuda implements Runnable {
                     cuParamSetSize(function, offset);
                     // Call the kernel function.
                     cuLaunchGrid(function, gridSize, gridSize);
-                    cufftExecC2C(plan, dataDevice, dataDevice, CUFFT_INVERSE);
+                    cufftExecZ2Z(plan, dataDevice, dataDevice, CUFFT_INVERSE);
                     cuMemcpyDtoH(dataPtr, dataDevice, len * 2 * Sizeof.DOUBLE);
                     doConvolution = false;
                     notify();
