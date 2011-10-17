@@ -1,3 +1,5 @@
+import groovy.util.CliBuilder
+
 //POTENTIAL
 //Supply a choice (1 - 4)
 //1. Get QM Potential from a Gaussian CUBE File
@@ -8,12 +10,19 @@
 //if choice == 2 || choice == 3, then supply the xyz filename
 //if choice == 4, then supply the xyz filename and the eps
 
+def cli = new CliBuilder(usage:' ffxc potential <filename>');
+cli.h(longOpt:'help', 'Print this help message.');
+def options = cli.parse(args);
+List<String> arguments = options.arguments();
+if (options.h || arguments == null || arguments.size() != 1) {
+    return cli.usage();
+}
 
 //Get XYZ File
 Double eps = null;
-Integer choice = Integer.parseInt(args[0]);
-String filename = args[1];
+Integer choice = Integer.parseInt(arguments.get(0));
+String filename = arguments.get(1);
 if(choice == 4){
-	eps = Double.parseDouble(args[2]);
+	eps = Double.parseDouble(arguments.get(2));
 }
 potential(choice, filename, eps);
