@@ -143,7 +143,7 @@ public class Crystal {
      * @param sg The space group symbol.
      */
     public Crystal(double a, double b, double c, double alpha, double beta,
-            double gamma, String sg) {
+                   double gamma, String sg) {
         this.a = a;
         this.b = b;
         this.c = c;
@@ -156,7 +156,7 @@ public class Crystal {
 
         if (!SpaceGroup.checkRestrictions(crystalSystem, a, b, c, alpha, beta, gamma)) {
             String message = "The lattice parameters do not satisfy the " + crystalSystem
-                    + " crystal system restrictions:/n" + toString();
+                             + " crystal system restrictions:/n" + toString();
             logger.severe(message);
         }
 
@@ -209,25 +209,25 @@ public class Crystal {
 
                     index = 0;
                     if ((rot[1][1] * rot[1][2] == -1)
-                            || (rot[2][1] * rot[2][2] == -1)
-                            || (rot[1][1] * rot[1][2] == 1)
-                            || (rot[2][1] * rot[2][2] == 1)) {
+                        || (rot[2][1] * rot[2][2] == -1)
+                        || (rot[1][1] * rot[1][2] == 1)
+                        || (rot[2][1] * rot[2][2] == 1)) {
                         scale_b[0] = index++;
                         scale_b[1] = index++;
                         scale_b[2] = scale_b[1];
                         hexagonal = true;
                     } else if ((rot[0][0] * rot[0][2] == -1)
-                            || (rot[2][0] * rot[2][2] == -1)
-                            || (rot[0][0] * rot[0][2] == 1)
-                            || (rot[2][0] * rot[2][2] == 1)) {
+                               || (rot[2][0] * rot[2][2] == -1)
+                               || (rot[0][0] * rot[0][2] == 1)
+                               || (rot[2][0] * rot[2][2] == 1)) {
                         scale_b[0] = index++;
                         scale_b[1] = index++;
                         scale_b[2] = scale_b[0];
                         hexagonal = true;
                     } else if ((rot[0][0] * rot[0][1] == -1)
-                            || (rot[1][0] * rot[1][1] == -1)
-                            || (rot[0][0] * rot[0][1] == 1)
-                            || (rot[1][0] * rot[1][1] == 1)) {
+                               || (rot[1][0] * rot[1][1] == -1)
+                               || (rot[0][0] * rot[0][1] == 1)
+                               || (rot[1][0] * rot[1][1] == 1)) {
                         scale_b[0] = index++;
                         scale_b[1] = scale_b[0];
                         scale_b[2] = index++;
@@ -410,8 +410,8 @@ public class Crystal {
         sg = SpaceGroup.pdb2ShortName(sg);
 
         if (a < 0.0 || b < 0.0 || c < 0.0
-                || alpha < 0.0 || beta < 0.0 || gamma < 0.0
-                || sg == null) {
+            || alpha < 0.0 || beta < 0.0 || gamma < 0.0
+            || sg == null) {
             return null;
         }
 
@@ -619,7 +619,7 @@ public class Crystal {
      *            The symmetry operator.
      */
     public void applySymOp(int n, double x[], double y[], double z[],
-            double mateX[], double mateY[], double mateZ[], SymOp symOp) {
+                           double mateX[], double mateY[], double mateZ[], SymOp symOp) {
         if (x == null || y == null || z == null) {
             return;
         }
@@ -795,6 +795,40 @@ public class Crystal {
     }
 
     /**
+     * Multiply coordinates by the transpose of a matrix.
+     * @param in
+     * @param out
+     * @param matrix 
+     */
+    public void applyMatrixTranspose(double in[], double out[], double matrix[][]) {
+        double xc = in[0];
+        double yc = in[1];
+        double zc = in[2];
+        out[0] = xc * matrix[0][0] + yc * matrix[1][0] + zc * matrix[2][0];
+        out[1] = xc * matrix[0][1] + yc * matrix[1][1] + zc * matrix[2][1];
+        out[2] = xc * matrix[0][2] + yc * matrix[1][2] + zc * matrix[2][2];
+    }
+
+    /**
+     * Compute the total transformation operator R = ToCart * Rot * ToFrac.
+     * @param symOp Symmetry operator to apply.
+     * @param rotmat Resulting transformation operator R.
+     */
+    public void getTransformationOperator(SymOp symOp, double rotmat[][]) {
+        double rot[][] = symOp.rot;
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                rotmat[i][j] = 0.0;
+                for (int k = 0; k < 3; k++) {
+                    for (int l = 0; l < 3; l++) {
+                        rotmat[i][j] += Ai[k][i] * rot[k][l] * A[j][l];
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * Apply a symmetry operator to one set of coordinates.
      *
      * @param xyz
@@ -810,25 +844,12 @@ public class Crystal {
         /**
          * The transformation operator R = ToCart * Rot * ToFrac
          */
-        double rot[][] = symOp.rot;
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 3; j++) {
-                rotmat[i][j] = 0.0;
-                for (int k = 0; k < 3; k++) {
-                    for (int l = 0; l < 3; l++) {
-                        rotmat[i][j] += Ai[k][i] * rot[k][l] * A[j][l];
-                    }
-                }
-            }
-        }
+        getTransformationOperator(symOp, rotmat);
 
-        // Apply R^T (its transpose).
-        double xc = xyz[0];
-        double yc = xyz[1];
-        double zc = xyz[2];
-        mate[0] = xc * rotmat[0][0] + yc * rotmat[1][0] + zc * rotmat[2][0];
-        mate[1] = xc * rotmat[0][1] + yc * rotmat[1][1] + zc * rotmat[2][1];
-        mate[2] = xc * rotmat[0][2] + yc * rotmat[1][2] + zc * rotmat[2][2];
+        /**
+         * Apply R^T (its transpose).
+         */
+        applyMatrixTranspose(xyz, mate, rotmat);
     }
 
     /**
@@ -904,7 +925,7 @@ public class Crystal {
      *            The symmetry operator.
      */
     public void applySymRot(int n, double x[], double y[], double z[],
-            double mateX[], double mateY[], double mateZ[], SymOp symOp) {
+                            double mateX[], double mateY[], double mateZ[], SymOp symOp) {
         double rot[][] = symOp.rot;
         final double rot00 = rot[0][0];
         final double rot10 = rot[1][0];
@@ -960,8 +981,8 @@ public class Crystal {
      * @param rotmat an array of double.
      */
     public void applyTransSymRot(int n, double x[], double y[], double z[],
-            double mateX[], double mateY[], double mateZ[],
-            SymOp symOp, double rotmat[][]) {
+                                 double mateX[], double mateY[], double mateZ[],
+                                 SymOp symOp, double rotmat[][]) {
 
         if (x == null || y == null || z == null) {
             return;
@@ -982,17 +1003,8 @@ public class Crystal {
         /**
          * The transformation operator R = ToCart * Rot * ToFrac
          */
-        double rot[][] = symOp.rot;
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 3; j++) {
-                rotmat[i][j] = 0.0;
-                for (int k = 0; k < 3; k++) {
-                    for (int l = 0; l < 3; l++) {
-                        rotmat[i][j] += Ai[k][i] * rot[k][l] * A[j][l];
-                    }
-                }
-            }
-        }
+        getTransformationOperator(symOp, rotmat);
+        
         for (int i = 0; i < n; i++) {
             // Apply R^T (its transpose).
             double xc = x[i];
@@ -1016,7 +1028,7 @@ public class Crystal {
      * @param zf an array of double.
      */
     public void toFractionalCoordinates(int n, double x[], double y[],
-            double z[], double xf[], double yf[], double zf[]) {
+                                        double z[], double xf[], double yf[], double zf[]) {
         for (int i = 0; i < n; i++) {
             double xc = x[i];
             double yc = y[i];
@@ -1092,7 +1104,7 @@ public class Crystal {
      * @param z an array of double.
      */
     public void toCartesianCoordinates(int n, double xf[], double yf[],
-            double zf[], double x[], double y[], double z[]) {
+                                       double zf[], double x[], double y[], double z[]) {
         for (int i = 0; i < n; i++) {
             double xi = xf[i];
             double yi = yf[i];
@@ -1214,7 +1226,7 @@ public class Crystal {
         double trans[] = symOp.tr;
         // Apply translation
         return -2.0 * PI
-                * (hkl[0] * trans[0] + hkl[1] * trans[1] + hkl[2] * trans[2]);
+               * (hkl[0] * trans[0] + hkl[1] * trans[1] + hkl[2] * trans[2]);
     }
 
     /**
@@ -1228,7 +1240,7 @@ public class Crystal {
         double trans[] = symOp.tr;
         // Apply translation
         return -2.0 * PI
-                * (hkl.h() * trans[0] + hkl.k() * trans[1] + hkl.l() * trans[2]);
+               * (hkl.h() * trans[0] + hkl.k() * trans[1] + hkl.l() * trans[2]);
     }
 
     // this is here as its an atypical mod function used by xtal methods

@@ -1718,7 +1718,7 @@ public class ParticleMeshEwald implements LambdaInterface {
             private final double mask_local[];
             private final double maskp_local[];
             private final double dx_local[];
-            private final double rot_local[][];
+            private final double transOp[][];
             private double fX[], fY[], fZ[];
             private double fXCR[], fYCR[], fZCR[];
             private int count;
@@ -1728,7 +1728,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                 mask_local = new double[nAtoms];
                 maskp_local = new double[nAtoms];
                 dx_local = new double[3];
-                rot_local = new double[3][3];
+                transOp = new double[3][3];
                 for (int i = 0; i < nAtoms; i++) {
                     mask_local[i] = 1.0;
                     maskp_local[i] = 1.0;
@@ -1973,6 +1973,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                  */
                 for (int iSymm = 1; iSymm < nSymm; iSymm++) {
                     SymOp symOp = crystal.spaceGroup.getSymOp(iSymm);
+                    crystal.getTransformationOperator(symOp, transOp);
                     lists = neighborLists[iSymm];
                     ewalds = realSpaceLists[iSymm];
                     counts = ewaldCounts[iSymm];
@@ -2117,13 +2118,12 @@ public class ParticleMeshEwald implements LambdaInterface {
                                 fXCR[i] += fix;
                                 fYCR[i] += fiy;
                                 fZCR[i] += fiz;
-                                dx_local[0] = selfScale * (fkmx - fkdx);
-                                dx_local[1] = selfScale * (fkmy - fkdy);
-                                dx_local[2] = selfScale * (fkmz - fkdz);
-                                crystal.applyTransSymRot(dx_local, dx_local, symOp, rot_local);
-                                double fkx = dx_local[0];
-                                double fky = dx_local[1];
-                                double fkz = dx_local[2];
+                                final double xc = selfScale * (fkmx - fkdx);
+                                final double yc = selfScale * (fkmy - fkdy);
+                                final double zc = selfScale * (fkmz - fkdz);
+                                final double fkx = xc * transOp[0][0] + yc * transOp[1][0] + zc * transOp[2][0];
+                                final double fky = xc * transOp[0][1] + yc * transOp[1][1] + zc * transOp[2][1];
+                                final double fkz = xc * transOp[0][2] + yc * transOp[1][2] + zc * transOp[2][2];
                                 fX[k] += fkx;
                                 fY[k] += fky;
                                 fZ[k] += fkz;
@@ -2197,7 +2197,7 @@ public class ParticleMeshEwald implements LambdaInterface {
             private double xs[], ys[], zs[];
             private double inds[][], indCRs[][];
             private final double dx_local[];
-            private final double rot_local[][];
+            private final double transOp[][];
             private final double x[] = coordinates[0][0];
             private final double y[] = coordinates[0][1];
             private final double z[] = coordinates[0][2];
@@ -2208,7 +2208,7 @@ public class ParticleMeshEwald implements LambdaInterface {
 
             public PolarizationRealSpaceFieldLoop() {
                 dx_local = new double[3];
-                rot_local = new double[3][3];
+                transOp = new double[3][3];
             }
 
             @Override
@@ -2382,6 +2382,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                  */
                 for (iSymm = 1; iSymm < nSymm; iSymm++) {
                     SymOp symOp = crystal.spaceGroup.getSymOp(iSymm);
+                    crystal.getTransformationOperator(symOp, transOp);
                     lists = realSpaceLists[iSymm];
                     counts = ewaldCounts[iSymm];
                     xs = coordinates[iSymm][0];
@@ -2517,20 +2518,18 @@ public class ParticleMeshEwald implements LambdaInterface {
                             px += selfScale * (pimx - pidx);
                             py += selfScale * (pimy - pidy);
                             pz += selfScale * (pimz - pidz);
-                            dx_local[0] = selfScale * (fkmx - fkdx);
-                            dx_local[1] = selfScale * (fkmy - fkdy);
-                            dx_local[2] = selfScale * (fkmz - fkdz);
-                            crystal.applyTransSymRot(dx_local, dx_local, symOp, rot_local);
-                            fX[k] += dx_local[0];
-                            fY[k] += dx_local[1];
-                            fZ[k] += dx_local[2];
-                            dx_local[0] = selfScale * (pkmx - pkdx);
-                            dx_local[1] = selfScale * (pkmy - pkdy);
-                            dx_local[2] = selfScale * (pkmz - pkdz);
-                            crystal.applyTransSymRot(dx_local, dx_local, symOp, rot_local);
-                            fXCR[k] += dx_local[0];
-                            fYCR[k] += dx_local[1];
-                            fZCR[k] += dx_local[2];
+                            double xc = selfScale * (fkmx - fkdx);
+                            double yc = selfScale * (fkmy - fkdy);
+                            double zc = selfScale * (fkmz - fkdz);
+                            fX[k] += (xc * transOp[0][0] + yc * transOp[1][0] + zc * transOp[2][0]);
+                            fY[k] += (xc * transOp[0][1] + yc * transOp[1][1] + zc * transOp[2][1]);
+                            fZ[k] += (xc * transOp[0][2] + yc * transOp[1][2] + zc * transOp[2][2]);
+                            xc = selfScale * (pkmx - pkdx);
+                            yc = selfScale * (pkmy - pkdy);
+                            zc = selfScale * (pkmz - pkdz);
+                            fXCR[k] += (xc * transOp[0][0] + yc * transOp[1][0] + zc * transOp[2][0]);
+                            fYCR[k] += (xc * transOp[0][1] + yc * transOp[1][1] + zc * transOp[2][1]);
+                            fZCR[k] += (xc * transOp[0][2] + yc * transOp[1][2] + zc * transOp[2][2]);
                         }
                         fX[i] += fx;
                         fY[i] += fy;
