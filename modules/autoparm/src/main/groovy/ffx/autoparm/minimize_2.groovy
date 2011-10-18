@@ -1,7 +1,17 @@
-String xyzfilename = args[0];
-double eps = Double.parseDouble(args[1]);
-if(args.size() > 3 && args[2].equals("-k")){
-    String keyfname = args[3];
+import groovy.util.CliBuilder
+
+def cli = new CliBuilder(usage:' ffxc minimize_2 [options] <filename>');
+cli.h(longOpt:'help', 'Print this help message.');
+def options = cli.parse(args);
+List<String> arguments = options.arguments();
+if (options.h || arguments == null || arguments.size() != 1) {
+    return cli.usage();
+}
+
+String xyzfilename = arguments.get(0);
+double eps = Double.parseDouble(arguments.get(1));
+if(argumentss.size() > 3 && arguments.get(2).equals("-k")){
+    String keyfname = arguments.get(3);
     minimize_2(xyzfilename,eps,keyfname);
 }
 else{
