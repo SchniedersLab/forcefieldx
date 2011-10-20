@@ -71,7 +71,7 @@ if "%REPO%"=="" set REPO=%BASEDIR%
 
 set CLASSPATH="%BASEDIR%"\etc;"%BASEDIR%"\bin\ffx-all.jar
 
-set EXTRA_JVM_ARGUMENTS=-Xms512M -Xss4M -XX:MaxPermSize=1000M
+set EXTRA_JVM_ARGUMENTS=-Xms128M -Xmx2G -Xss2M -XX:MaxPermSize=1500M
 
 goto endInit
 
