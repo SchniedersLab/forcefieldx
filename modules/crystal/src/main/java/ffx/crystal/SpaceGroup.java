@@ -167,7 +167,10 @@ public class SpaceGroup {
         "P4332", "P4132", "I4132", "P-43m", "F-43m", "I-43m", "P-43n",
         "F-43c", "I-43d", "Pm-3m", "Pn-3n", "Pm-3n", "Pn-3m", "Fm-3m",
         "Fm-3c", "Fd-3m", "Fd-3c", "Im-3m", "Ia-3d"};
-    /** Constant <code>pdbSpaceGroupNames="{P 1, P -1, P 1 2 1,P 1 21 1, C 1 2 1, "{trunked}</code> */
+    
+    /**
+     * PDB space group names.
+     */
     public static String pdbSpaceGroupNames[] = {"P 1", "P -1", "P 1 2 1",
         "P 1 21 1", "C 1 2 1", "P 1 m 1", "P 1 c 1", "C 1 m 1", "C 1 c 1",
         "P 1 2/m 1", "P 1 21/m 1", "C 1 2/m 1", "P 1 2/c 1", "P 1 21/c 1",

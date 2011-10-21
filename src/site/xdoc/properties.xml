@@ -10,20 +10,133 @@
     </properties>
     <body>
         <section name="Properties">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Property</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Coming soon...</td>
-                        <td></td>
-                    </tr>
-                </tbody>
-            </table>
+            <subsection name="Unit Cell and Space Group Properties">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Property</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>  
+                    <tbody>
+                        <tr>
+                            <td>a-axis</td>
+                            <td>double</td>
+                            <td>Length of the a-axis of the unit cell in Angstroms.</td>
+                        </tr>
+                        <tr>
+                            <td>b-axis</td>
+                            <td>double</td>
+                            <td>Length of the b-axis of the unit cell in Angstroms.</td>
+                        </tr>
+                        <tr>
+                            <td>c-axis</td>
+                            <td>double</td>
+                            <td>Length of the c-axis of the unit cell in Angstroms.</td>
+                        </tr>
+                        <tr>
+                            <td>alpha</td>
+                            <td>double</td>
+                            <td>Angle between the b-axis and c-axis of the unit cell in degrees.</td>
+                        </tr>
+                        <tr>
+                            <td>beta</td>
+                            <td>double</td>
+                            <td>Angle between the a-axis and c-axis of the unit cell in degrees.</td>
+                        </tr>
+                        <tr>
+                            <td>gamma</td>
+                            <td>double</td>
+                            <td>Angle between the a-axis and b-axis of the unit cell in degrees.</td>
+                        </tr>
+                        <tr>
+                            <td>spacegroup</td>
+                            <td>string</td>
+                            <td>One of the 230 space groups. The defaut is "P1" if an a-axis is
+                            specified, but not the space group. Internal checks are performed
+                            to make certain the unit cell parameters are consistent with
+                            the symmetry of the space group.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </subsection>
+            <subsection name="AMOEBA Force Field Properties">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Property</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>mpoleterm</td>
+                            <td>boolean</td>
+                            <td>Controls use of the permanent multipole term for
+                            the AMOEBA potential. The default is true. Setting
+                            mpoleterm to false also turns off polarization, overriding
+                            the polarizeterm property below.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>polarizeterm</td>
+                            <td>boolean</td>
+                            <td>Controls use of the polarization term for the AMOEBA
+                            potential. The default is true. Setting polarizeterm to
+                            false overrides the polarization property below.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>polarization</td>
+                            <td>string</td>
+                            <td>[mutual/direct/none] The default is mutual, 
+                        which indicates the induced dipoles on each atom interact 
+                        self-consistently. Direct indicates that induced dipoles are
+                        influenced by the permanent multipoles, but not each other. None
+                        turns off polarization
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>polar-eps</td>
+                            <td>double</td>
+                            <td>This is the convergence criteria for the self-consistent field
+                        calculation in units of RMS Debye. The default is 1e-6, which is 
+                        appropriate for optimizations to tight tolerance. For optimization
+                        during X-rey refinement to an RMS gradient per atom of 0.1, then
+                        a looser polar-eps of 1e-3 is sufficient. For molecular dynamics
+                        with a thermostat, 1e-2 is resonable trade-off between accuracy
+                        and performance.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>polar-sor</td>
+                            <td>double</td>
+                            <td>Calculation of the self-consistent field is based on successive
+                        over-relaxtion (SOR). The polar-sor parameter controls the fractional
+                        change in the induced dipoles that is accepted prior to the beginning
+                        of the following iteration. The default value is 0.70, although
+                        in some cases a slightly more conservative value of 0.65 is necessary.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </subsection>
+            <subsection name="Particle-mesh Ewald Properties">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Property</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>  
+                    <tbody>
+                    </tbody>
+                </table>
+            </subsection>
         </section>
     </body>
 </document>
