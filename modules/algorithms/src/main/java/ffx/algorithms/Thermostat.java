@@ -23,6 +23,7 @@ package ffx.algorithms;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import static java.lang.Math.sqrt;
 
 import org.apache.commons.math.linear.Array2DRowRealMatrix;
 import org.apache.commons.math.linear.LUDecompositionImpl;
@@ -167,10 +168,10 @@ public abstract class Thermostat {
      * Reset velocities from a Maxwell-Boltzmann distribution of momenta.
      * The variance of each independent momentum component is kT * mass.
      */
-    public void maxwell() {
+    public void maxwell(double targetTemperature) {
         for (int i = 0; i < dof; i++) {
             double m = mass[i];
-            v[i] = random.nextGaussian() * Math.sqrt(kT / m);
+            v[i] = random.nextGaussian() * sqrt(kB * targetTemperature / m);
         }
         centerOfMassMotion(true, true);
         /**
@@ -192,6 +193,10 @@ public abstract class Thermostat {
          * Update the kinetic energy and current temperature.
          */
         kineticEnergy();
+    }
+
+    public void maxwell() {
+        maxwell(targetTemperature);
     }
 
     /**
