@@ -16,6 +16,7 @@
                         <tr>
                             <th>Property</th>
                             <th>Type</th>
+                            <th>Default</th>
                             <th>Description</th>
                         </tr>
                     </thead>  
@@ -23,40 +24,55 @@
                         <tr>
                             <td>a-axis</td>
                             <td>double</td>
-                            <td>Length of the a-axis of the unit cell in Angstroms.</td>
+                            <td>none</td>
+                            <td>Length of the <code>a-axis</code> of the unit cell in Angstroms. There is no 
+                            default for <code>a-axis</code>. If it is not specified, the calculation is 
+                            treated as aperiodic.</td>
                         </tr>
                         <tr>
                             <td>b-axis</td>
                             <td>double</td>
-                            <td>Length of the b-axis of the unit cell in Angstroms.</td>
+                            <td>a-axis</td>
+                            <td>Length of the <code>b-axis</code> of the unit cell in Angstroms.</td>
                         </tr>
                         <tr>
                             <td>c-axis</td>
                             <td>double</td>
-                            <td>Length of the c-axis of the unit cell in Angstroms.</td>
+                            <td>a-axis</td>
+                            <td>Length of the <code>c-axis</code> of the unit cell in Angstroms.</td>
                         </tr>
                         <tr>
                             <td>alpha</td>
                             <td>double</td>
-                            <td>Angle between the b-axis and c-axis of the unit cell in degrees.</td>
+                            <td>90.0</td>
+                            <td>Angle between the <code>b-axis</code> and <code>c-axis</code> 
+                            of the unit cell in degrees.</td>
                         </tr>
                         <tr>
                             <td>beta</td>
                             <td>double</td>
-                            <td>Angle between the a-axis and c-axis of the unit cell in degrees.</td>
+                            <td>90.0</td>
+                            <td>Angle between the <code>a-axis</code> and <code>c-axis</code> 
+                            of the unit cell in degrees.</td>
                         </tr>
                         <tr>
                             <td>gamma</td>
                             <td>double</td>
-                            <td>Angle between the a-axis and b-axis of the unit cell in degrees.</td>
+                            <td>90.0</td>
+                            <td>Angle between the <code>a-axis</code> and <code>b-axis</code> 
+                            of the unit cell in degrees.</td>
                         </tr>
                         <tr>
                             <td>spacegroup</td>
                             <td>string</td>
-                            <td>One of the 230 space groups. The defaut is "P1" if an a-axis is
-                            specified, but not the space group. Internal checks are performed
-                            to make certain the unit cell parameters are consistent with
-                            the symmetry of the space group.
+                            <td>P 1</td>
+                            <td>One of the 230 space groups using the convention followed by the
+                            PDB CRYST1 record, which is to use a Hermann-Mauguin symbol without 
+                            parenthesis, e.g., <code>P 21 21 2</code> and using the full symbol, 
+                            e.g., <code>C 1 2 1</code> instead of <code>C 2</code>.
+                            The defaut is <code>P 1</code> if an a-axis is specified, but not a space group. 
+                            Internal checks are performed to ensure unit cell parameters are 
+                            consistent with the symmetry of the space group.
                             </td>
                         </tr>
                     </tbody>
@@ -68,57 +84,132 @@
                         <tr>
                             <th>Property</th>
                             <th>Type</th>
+                            <th>Default</th>
                             <th>Description</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
+                            <td>bondterm</td>
+                            <td>boolean</td>
+                            <td>true</td>
+                            <td>Specifies use of the bonding term for the AMOEBA potentials.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>angleterm</td>
+                            <td>boolean</td>
+                            <td>true</td>
+                            <td>Specifies use of the angle bending term for the AMOEBA potentials.
+                            </td>
+                        </tr>                        
+                        <tr>
                             <td>mpoleterm</td>
                             <td>boolean</td>
-                            <td>Controls use of the permanent multipole term for
-                            the AMOEBA potential. The default is true. Setting
-                            mpoleterm to false also turns off polarization, overriding
-                            the polarizeterm property below.
+                            <td>true</td>
+                            <td>Controls use of the permanent multipole electrostatics term for
+                            the AMOEBA potential. Setting <code>mpoleterm</code> to false also turns 
+                            off polarization, overriding the polarizeterm property below.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>opbendterm</td>
+                            <td>boolean</td>
+                            <td>true</td>
+                            <td>Specifies use of the out-of-plane bending term for atoms at
+                            trigonal centers under the AMOEBA potentials.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>pitorsterm</td>
+                            <td>boolean</td>
+                            <td>true</td>
+                            <td>Specifies use of the pi-torsion term between atoms that have
+                            double bond character under the AMOEBA potentials.
                             </td>
                         </tr>
                         <tr>
                             <td>polarizeterm</td>
                             <td>boolean</td>
-                            <td>Controls use of the polarization term for the AMOEBA
-                            potential. The default is true. Setting polarizeterm to
-                            false overrides the polarization property below.
+                            <td>true</td>
+                            <td>Controls use of polarizable electrostatics for the AMOEBA
+                            potential. Setting <code>polarizeterm</code> to false overrides the polarization 
+                            property below.
                             </td>
                         </tr>
                         <tr>
                             <td>polarization</td>
                             <td>string</td>
-                            <td>[mutual/direct/none] The default is mutual, 
-                        which indicates the induced dipoles on each atom interact 
-                        self-consistently. Direct indicates that induced dipoles are
-                        influenced by the permanent multipoles, but not each other. None
-                        turns off polarization
+                            <td>mutual</td>
+                            <td>[mutual/direct/none] <code>Mutual</code> indicates the induced dipoles on each 
+                            atom interact self-consistently. <code>Direct</code> indicates that induced dipoles 
+                            are influenced by the permanent multipoles, but not each other. 
+                            <code>None</code> turns off polarization.
                             </td>
                         </tr>
                         <tr>
                             <td>polar-eps</td>
                             <td>double</td>
+                            <td>1.0e-6</td>
                             <td>This is the convergence criteria for the self-consistent field
-                        calculation in units of RMS Debye. The default is 1e-6, which is 
-                        appropriate for optimizations to tight tolerance. For optimization
-                        during X-rey refinement to an RMS gradient per atom of 0.1, then
-                        a looser polar-eps of 1e-3 is sufficient. For molecular dynamics
-                        with a thermostat, 1e-2 is resonable trade-off between accuracy
-                        and performance.
+                            calculation in units of RMS Debye. The default of 1e-6 is 
+                            necessary for optimizations to a tight tolerance. For optimization
+                            during X-rey refinement to an RMS gradient per atom of 0.1, then
+                            a looser <code>polar-eps</code> of 1e-3 is sufficient. For molecular dynamics
+                            with a thermostat, 1e-2 is resonable trade-off between accuracy
+                            and performance.
                             </td>
                         </tr>
                         <tr>
                             <td>polar-sor</td>
                             <td>double</td>
+                            <td>0.70</td>
                             <td>Calculation of the self-consistent field is based on successive
-                        over-relaxtion (SOR). The polar-sor parameter controls the fractional
-                        change in the induced dipoles that is accepted prior to the beginning
-                        of the following iteration. The default value is 0.70, although
-                        in some cases a slightly more conservative value of 0.65 is necessary.
+                            over-relaxtion (SOR). The <code>polar-sor</code> parameter controls the fractional
+                            change in the induced dipoles that is accepted prior to the beginning
+                            of the following iteration. The default value of 0.70 does not usually
+                            need to be changed, although in rare cases a slightly more conservative 
+                            value of 0.65 is necessary.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>strbndterm</td>
+                            <td>boolean</td>
+                            <td>true</td>
+                            <td>Specifies use of the stretch-bend bond-angle coupling term for the 
+                            AMOEBA potentials.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>torsionterm</td>
+                            <td>boolean</td>
+                            <td>true</td>
+                            <td>Specifies use of Fourier series torsional terms for AMOEBA potentials.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>tortorterm</td>
+                            <td>boolean</td>
+                            <td>true</td>
+                            <td>Specifies use of spline based torsion-torsion terms for AMOEBA 
+                            protein and nucleic acid force fields.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>ureyterm</td>
+                            <td>boolean</td>
+                            <td>true</td>
+                            <td>Specifies use of the Urey-Bradley restraint between water hydrogen
+                            atoms for the AMOEBA water model.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>vdwterm</td>
+                            <td>boolean</td>
+                            <td>true</td>
+                            <td>Specifies use of the Buffered-14-7 van der Waals potential for the
+                            AMOEBA force field. If set to <code>false</code>, all non-bonded terms 
+                            are turned off.
                             </td>
                         </tr>
                     </tbody>

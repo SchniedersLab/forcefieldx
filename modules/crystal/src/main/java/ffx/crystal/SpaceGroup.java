@@ -6335,8 +6335,9 @@ public class SpaceGroup {
         String n = name.trim();
         int num = spaceGroupNames.length;
         for (int i = 0; i < num; i++) {
-            String s = spaceGroupNames[i];
-            if (s.equalsIgnoreCase(n)) {
+            String s1 = spaceGroupNames[i];
+            String s2 = pdbSpaceGroupNames[i];
+            if (s1.equalsIgnoreCase(n) || s2.equalsIgnoreCase(n)) {
                 return i + 1;
             }
         }

@@ -151,9 +151,26 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         piOrbitalTorsionTerm = forceField.getBoolean(ForceFieldBoolean.PITORSTERM, true);
         torsionTorsionTerm = forceField.getBoolean(ForceFieldBoolean.TORTORTERM, true);
         vanderWaalsTerm = forceField.getBoolean(ForceFieldBoolean.VDWTERM, true);
-        multipoleTerm = forceField.getBoolean(ForceFieldBoolean.MPOLETERM, true);
-        polarizationTerm = forceField.getBoolean(ForceFieldBoolean.POLARIZETERM, true);
-        generalizedKirkwoodTerm = forceField.getBoolean(ForceFieldBoolean.GKTERM, false);
+        if (vanderWaalsTerm) {
+            multipoleTerm = forceField.getBoolean(ForceFieldBoolean.MPOLETERM, true);
+            if (multipoleTerm) {
+                polarizationTerm = forceField.getBoolean(ForceFieldBoolean.POLARIZETERM, true);
+                generalizedKirkwoodTerm = forceField.getBoolean(ForceFieldBoolean.GKTERM, false);
+            } else {
+                /**
+                 * If multipole electrostatics is turned off, turn off all electrostatics.
+                 */
+                polarizationTerm = false;
+                generalizedKirkwoodTerm = false;
+            }
+        } else {
+            /**
+             * If van der Waals is turned off, turn off all non-bonded terms.
+             */
+            multipoleTerm = false;
+            polarizationTerm = false;
+            generalizedKirkwoodTerm = false;
+        }
         restraintBondTerm = false;
 
 
@@ -175,7 +192,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             alpha = forceField.getDouble(ForceFieldDouble.ALPHA, 90.0);
             beta = forceField.getDouble(ForceFieldDouble.BETA, 90.0);
             gamma = forceField.getDouble(ForceFieldDouble.GAMMA, 90.0);
-            spacegroup = forceField.getString(ForceFieldString.SPACEGROUP, "P1");
+            spacegroup = forceField.getString(ForceFieldString.SPACEGROUP, "P 1");
         } catch (Exception e) {
             logger.info(" The system will be treated as aperiodic.");
             aperiodic = true;
