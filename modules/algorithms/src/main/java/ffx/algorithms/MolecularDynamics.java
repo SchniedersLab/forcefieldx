@@ -124,7 +124,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
         aPrevious = new double[dof];
         grad = new double[dof];
 
-        String integrate = properties.getString("integrate", "beeman");
+        String integrate = properties.getString("integrate", "beeman").trim();
         if (integrate.equalsIgnoreCase("stochastic")) {
             integrator = Integrator.STOCHASTIC;
             vfric = new double[dof];

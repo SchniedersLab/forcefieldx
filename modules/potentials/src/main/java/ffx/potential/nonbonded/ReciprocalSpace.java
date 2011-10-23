@@ -240,7 +240,7 @@ public class ReciprocalSpace {
     }
 
     private void init3DFFTSize(double density, ForceField forceField) {
-        int nX = forceField.getInteger(ForceFieldInteger.PME_GRIDX, -1);
+        int nX = forceField.getInteger(ForceFieldInteger.PME_GRID_X, -1);
         if (nX < 2) {
             nX = (int) Math.floor(crystal.a * density) + 1;
             if (nX % 2 != 0) {
@@ -250,7 +250,7 @@ public class ReciprocalSpace {
                 nX += 2;
             }
         }
-        int nY = forceField.getInteger(ForceFieldInteger.PME_GRIDY, -1);
+        int nY = forceField.getInteger(ForceFieldInteger.PME_GRID_Y, -1);
         if (nY < 2) {
             nY = (int) Math.floor(crystal.b * density) + 1;
             if (nY % 2 != 0) {
@@ -260,7 +260,7 @@ public class ReciprocalSpace {
                 nY += 2;
             }
         }
-        int nZ = forceField.getInteger(ForceFieldInteger.PME_GRIDZ, -1);
+        int nZ = forceField.getInteger(ForceFieldInteger.PME_GRID_Z, -1);
         if (nZ < 2) {
             nZ = (int) Math.floor(crystal.c * density) + 1;
             if (nZ % 2 != 0) {
