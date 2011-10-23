@@ -155,7 +155,7 @@ s and w are analagous to D and sum_wc - J. Appl. Cryst. (2005) 38, 193-198
                 </p>
                 <p>For example, to carry out simulated annealing followed by
                 coordinate and then B-factor refinement, the provided
-                <a href="http://kenai.com/projects/ffx/sources/source/content/modules/xray/src/main/groovy/ffx/xray/anneal.groovy">xray.anneal</a>
+                    <a href="http://kenai.com/projects/ffx/sources/source/content/modules/xray/src/main/groovy/ffx/xray/anneal.groovy">xray.anneal</a>
                 script should suffice. The job can be run
                 by providing the atomic coordinates and structure factors:
                 </p>
@@ -194,108 +194,33 @@ usage:  ffxc xray.anneal [options] &lt;pdbfilename&gt; [datafilename]
                 line, which can be used for joint neutron/X-ray refinement.
                 </p>
             </subsection>
-            <subsection name="Properties associated with Diffraction data">
-                <p>As mentioned above, the property file can contain several options
-                that are specific to the diffraction data.  The available options
-                are (with defaults given in parentheses):
-                </p>
-                <ol>
-                    <li>fostring (null): title of Fo column in input MTZ file
-                    (FFX has several default strings it will search for, such as
-                    F, FO, FP or FOBS)
-                    </li>
-                    <li>sigfostring (null): title of sigFo column in input MTZ
-                    file
-                    </li>
-                    <li>rfreestring (null): title of input RFree column in input
-                    MTZ file
-                    </li>
-                    <li>use_3g (true): uses 3 Gaussians in form factor equation
-                    rather than 6 (set to false for atomic resolution data
-                    sets)
-                    </li>
-                    <li>aradbuff (0.5): atom radius buffer for sampling grid
-                    density, added to dynamically determined radius
-                    </li>
-                    <li>splinefit (true): resolution dependent spline fit
-                    between Fo and Fc
-                    </li>
-                    <li>fsigfcutoff (-1.0): F/sigF cutoff</li>
-                    <li>resolution (-1.0): resolution cutoff of the data (by
-                    default, FFX will read in all data)
-                    </li>
-                    <li>rfreeflag (-1): integer flag for Rfree reflections (if
-                    -1, it will be automatically determined from the data
-                    </li>
-                    <li>nbins (10): number of bins to divide data for purposes
-                    of statistics
-                    </li>
-                    <li>gridsearch (false): grid bulk solvent parameters to
-                    determine optimal starting values
-                    </li>
-                    <li>xrayscaletol (1.0E-4): gradient rms tolerance during
-                    scaling
-                    </li>
-                    <li>sigmaatol (1.0): gradient rms tolerance during sigmaA
-                    fit
-                    </li>
-                    <li>xweight (1.0): weight for summed diffraction data
-                    (weights for individual data sets are provided at the
-                    script level)
-                    </li>
-                    <li>bsimweight (1.0): harmonic restraint B-factor weight
-                    between bonded atoms (increase to 5 or 10 for low resolution
-                    structures if need be)
-                    </li>
-                    <li>bnonzeroweight (1.0): statistical mechanics based weight
-                    to prevent nonzero B factors
-                    </li>
-                    <li>bmass (5.0): fictitious mass to assign to B factors
-                    for extended Lagrangian methods
-                    </li>
-                    <li>residuebfactor (false): refine a B factor for each
-                    residue
-                    </li>
-                    <li>nresiduebfactor (1): number of residues per B factor
-                    (requires residuebfactor to be true)
-                    </li>
-                    <li>addanisou (false): add ANISOU records to the PDB
-                    file based on B factors
-                    </li>
-                    <li>refinemolocc (false): refine occupancies of HETATMs,
-                    only performed if hetatms are in alternate conformers or
-                    occ &lt; 1.0
-                    </li>
-                    <li>occmass (10.0): fictitious mass to assign to occupancies
-                    for extended Lagrangian methods
-                    </li>
-                </ol>
-                <p>Other options are available, such as spacegroup and cell
-                settings, but these apply to the chemistry and diffraction terms
-                and are described elsewhere.
-                </p>
-            </subsection>
             <subsection name="Scripts relevant to diffraction data">
                 <p>As mentioned, several scripts are provided for use.  They
                 can be found here:
-                <a href="http://kenai.com/projects/ffx/sources/source/show/modules/xray/src/main/groovy/ffx">included diffraction data scripts</a>
-                And consists of:</p>
+                    <a href="http://kenai.com/projects/ffx/sources/source/show/modules/xray/src/main/groovy/ffx">included diffraction data scripts</a>
+                And consists of:
+                </p>
                 <ol>
                     <li>cif2mtz: converts a cif to an mtz file with symmetry
-                    information gathered from a PDB file</li>
+                    information gathered from a PDB file
+                    </li>
                     <li>deuterate: replaces hydrogen atoms with deuterium (only
                     if bonded to N, O or S) and water with deuterium water
-                    for the purposes of neutron refinement</li>
+                    for the purposes of neutron refinement
+                    </li>
                     <li>mtzInfo: print info regarding a MTZ file</li>
                     <li>xray.anneal: simulated annealing</li>
                     <li>xray.minimize: optimization of coordinates,
                     Bs and occupancies in any combination (or all three can be
-                    performed in order)</li>
+                    performed in order)
+                    </li>
                     <li>xray.scaleBulk: simply scale the model and data, then
-                    print statistics and write out a MTZ file</li>
+                    print statistics and write out a MTZ file
+                    </li>
                 </ol>
                 <p>Similar scripts are included for real space
-                refinement.</p>
+                refinement.
+                </p>
             </subsection>
         </section>
     </body>
