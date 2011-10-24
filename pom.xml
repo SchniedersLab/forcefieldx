@@ -583,6 +583,8 @@
         <!-- Setting the source encoding is required for builds
              that are platform independent. -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.build.timestamp.format>MM-dd-yyyy</maven.build.timestamp.format>
+        <timestamp>${maven.build.timestamp}</timestamp>
     </properties>
     <modules>
         <module>modules/algorithms</module>

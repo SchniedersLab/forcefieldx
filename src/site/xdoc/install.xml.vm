@@ -4,11 +4,12 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
     <properties>
-        <title>Install</title>
+        <title>Install Force Field X</title>
         <author email="michael.schnieders@gmail.com">Michael J. Schnieders</author>
     </properties>
     <body>
         <section name="Install">
+            <p>Please follow the link below that corresponds to your operating system:</p>
             <ul>
                 <li>
                     <a href="install.html#linux">Linux</a>
@@ -32,50 +33,50 @@
                         <td>
                             <ol>
                                 <li>
-                                    <p>Type "
-                                        <code>echo $JAVA_HOME</code>" in a shell.
-                                    </p>
+                                    <p>In a shell execute:</p>
+                                    <source>echo $JAVA_HOME</source>
                                     <p>If
-                                        <code>JAVA_HOME</code> is not set or the JRE version is less than 1.6.0,
-                                        then please follow Sun's
-                                        <a href="http://java.sun.com/javase/6/webnotes/install/system-configurations.html" target="_blank">
+                                        <code>JAVA_HOME</code> is not set or the JRE version is less than ${targetVersion},
+                                        then please follow Oracle's
+                                        <a href="http://www.oracle.com/technetwork/java/javase/system-configurations-135212.html" target="_blank">
                                         Java installation instructions
                                         </a> to install a JRE and/or set the
                                         <code>JAVA_HOME</code> environment variable.
                                     </p>
                                 </li>
                                 <li>
-                                    <p>Unpack the distribution (replace VERSION based on the downloaded file):</p>
-                                    <p>
-                                        <code>tar -xzf ffx-VERSION-bin.tar.gz</code>
-                                    </p>
-                                    <p>
-                                        <code>unzip ffx-VERSION-bin.zip</code>
-                                    </p>
+                                    <p>To unpack the distribution execute:</p>
+                                    <source>tar -xzf ffx-${project.version}-bin.tar.gz</source>
+                                    <p>or</p>
+                                    <source>unzip ffx-${project.version}-bin.zip</source>
                                 </li>
                                 <li>
-                                    <p>Add the directory ffx-VERSION/bin/linux to your path. For example,
-                                        if ffx is unpacked into /Users/shared/ffx-VERSION, then
+                                    <p>Add the directory
+                                        <code>ffx/bin</code> to your path. For example,
+                                        if ffx is unpacked into
+                                        <code>/Users/shared/ffx</code>, then
                                     </p>
                                     <ul>
                                         <li>
-                                            <p>BASH</p>
-                                            <p>export PATH="/Users/shared/ffx-VERSION/bin:$PATH"</p>
+                                            <p>Within a BASH shell:</p>
+                                            <source>export PATH="/Users/shared/ffx/bin:$PATH"</source>
                                         </li>
                                         <li>
-                                            <p>CSH</p>
-                                            <p>setenv PATH "/Users/shared/ffx-VERSION/bin:$PATH"</p>
+                                            <p>Within a CSH shell:</p>
+                                            <source>setenv PATH "/Users/shared/ffx/bin:$PATH"</source>
                                         </li>
                                     </ul>
-                                    <p>To check use "
-                                        <code>echo $PATH</code>" and "
-                                        <code>which ffxc</code>".
+                                    <p>To check please execute:</p>
+                                    <source>
+                                        echo $PATH
+                                        which ffxc
+                                    </source>
                                         <!--
                                         Both the graphical
                                         <code>ffx</code> and command line
                                         compiler
                                         <code>ffxc</code> versions should now be available. -->
-                                    </p>
+                                   
                                 </li>
                             </ol>
                         </td>
@@ -100,32 +101,32 @@
                                     <p>
                                         <code>/System/Library/Frameworks/JavaVM.framework/Versions/1.6.0/Home</code>
                                     </p>
-                                    <p>If the version is less than 1.6.0, simply open "/Applications/Utilities/Java Preferences"
-                                        and specify version 1.6.0 (or later) to be preferred for Applications
+                                    <p>If the version is less than ${targetVersion}, open "/Applications/Utilities/Java Preferences"
+                                        and specify version ${targetVersion} (or later) to be preferred for Applications
                                         (ie. drag it to the top of the list).
                                     </p>
                                 </li>
                                 <li>
-                                    <p>Unpack the distribution (replace VERSION based on the downloaded file):</p>
+                                    <p>Unpack the distribution:</p>
                                     <p>
-                                        <code>tar -xzf ffx-VERSION-bin.tar.gz</code>
+                                        <code>tar -xzf ffx-${project.version}-bin.tar.gz</code>
                                     </p>
                                     <p>
-                                        <code>unzip ffx-VERSION-bin.zip</code>
+                                        <code>unzip ffx-${project.version}-bin.zip</code>
                                     </p>
                                 </li>
                                 <li>
-                                    <p>Add the ffx-VERSION/bin directory to your path.
-                                        For example, if ffx is unpacked into /Users/shared/ffx-VERSION, then
+                                    <p>Add the ffx/bin directory to your path.
+                                        For example, if ffx is unpacked into /Users/shared/ffx, then
                                     </p>
                                     <ul>
                                         <li>
                                             <p>BASH</p>
-                                            <p>export PATH="/Users/shared/ffx-VERSION/bin:$PATH"</p>
+                                            <p>export PATH="/Users/shared/ffx/bin:$PATH"</p>
                                         </li>
                                         <li>
                                             <p>CSH</p>
-                                            <p>setenv PATH "/Users/shared/ffx-VERSION/bin:$PATH"</p>
+                                            <p>setenv PATH "/Users/shared/ffx/bin:$PATH"</p>
                                         </li>
                                     </ul>
                                     <p>To check use "
@@ -158,8 +159,9 @@
                                         <code>echo %JAVA_HOME%</code>" at a DOS prompt.
                                     </p>
                                     <p>If
-                                        <code>JAVA_HOME</code> is not set or the version is less than 1.6.0, then please follow Sun's
-                                        <a href="http://java.sun.com/javase/6/webnotes/install/system-configurations.html" target="_blank">
+                                        <code>JAVA_HOME</code> is not set or the version is less than ${targetVersion},
+                                        then please follow Oracle's
+                                        <a href="http://www.oracle.com/technetwork/java/javase/system-configurations-135212.html" target="_blank">
                             Java installation instructions
                                         </a> to install a JRE. The Windows installer will set the
                                         <code>JAVA_HOME</code> environment variable for you (please open a new DOS window after

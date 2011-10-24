@@ -172,7 +172,7 @@ public class Keyword {
      */
     public static CompositeConfiguration loadProperties(File file) {
         /**
-         * Command line options take precedences.
+         * Command line options take precedence.
          */
         CompositeConfiguration properties = new CompositeConfiguration();
         properties.addConfiguration(new SystemConfiguration());
@@ -190,7 +190,7 @@ public class Keyword {
                     properties.addConfiguration(new PropertiesConfiguration(structurePropFile));
                     properties.addProperty("propertyFile", structurePropFile.getCanonicalPath());
                 } catch (Exception e) {
-                    logger.info("Error loading " + filename + ".");
+                    logger.info(" Error loading " + filename + ".");
                 }
             } else {
                 propertyFilename = filename + ".key";
@@ -200,7 +200,7 @@ public class Keyword {
                         properties.addConfiguration(new PropertiesConfiguration(structurePropFile));
                         properties.addProperty("propertyFile", structurePropFile.getCanonicalPath());
                     } catch (Exception e) {
-                        logger.info("Error loading " + filename + ".");
+                        logger.info(" Error loading " + filename + ".");
                     }
                 }
             }
