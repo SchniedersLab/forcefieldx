@@ -64,8 +64,10 @@ public abstract class Thermostat {
     protected double targetTemperature;
     protected double currentTemperature;
     protected double kT;
-    protected double kineticEnergy;
+    protected double currentKineticEnergy;
+    protected int nVariables;
     protected int dof;
+    protected boolean removingCenterOfMassMotion;
     protected double x[];
     protected double v[];
     protected double mass[];
@@ -80,45 +82,81 @@ public abstract class Thermostat {
     /**
      * <p>Constructor for Thermostat.</p>
      *
-     * @param dof a int.
+     * @param nVariables a int.
      * @param x an array of double.
      * @param v an array of double.
      * @param mass an array of double.
      * @param t a double.
      */
-    public Thermostat(int dof, double x[], double v[], double mass[],
+    public Thermostat(int nVariables, double x[], double v[], double mass[],
                       VARIABLE_TYPE type[], double t) {
-        this.dof = dof;
+        assert (nVariables > 3);
+
+        this.nVariables = nVariables;
         this.x = x;
         this.v = v;
         this.mass = mass;
         this.type = type;
-        assert (x.length == dof);
-        assert (v.length == dof);
-        assert (mass.length == dof);
-        assert (type.length == dof);
+        assert (x.length == nVariables);
+        assert (v.length == nVariables);
+        assert (mass.length == nVariables);
+        assert (type.length == nVariables);
         random = new Random();
         setTargetTemperature(t);
+        /**
+         * Set the degrees of freedom to nVariables - 3 because we will
+         * remove center of mass motion.
+         */
+        removingCenterOfMassMotion = true;
+        dof = nVariables - 3;
     }
 
     /**
-     * <p>setRandomSeed</p>
+     * If center of mass motion is being removed, then the mean
+     * kinetic energy of the system will be 3 * kT/2 less than if
+     * center of mass motion is allowed.
      *
-     * @param seed a long.
+     * @param remove <code>true</code> if center of mass motion is being removed.
+     */
+    public void removingCenterOfMassMotion(boolean remove) {
+        removingCenterOfMassMotion = remove;
+        if (removingCenterOfMassMotion) {
+            dof = nVariables - 3;
+        } else {
+            dof = nVariables;
+        }
+    }
+
+    public boolean removingCOM() {
+        return removingCenterOfMassMotion;
+    }
+
+    /**
+     * <p>The setRandomSeed method is used to initialize the Random number
+     * generator to the same starting state, such that separate runs
+     * produce the same Maxwell-Boltzmann initial velocities.
+     * same </p>
+     *
+     * @param seed The seed.
      */
     public void setRandomSeed(long seed) {
         random.setSeed(seed);
     }
 
     /**
-     * <p>log</p>
+     * <p>Log the target temperature and current number of kT per
+     * degree of freedom (should be 0.5 kT at equilibrium).</p>
      *
      * @param level a {@link java.util.logging.Level} object.
      */
     protected void log(Level level) {
         if (logger.isLoggable(level)) {
-            logger.log(level, String.format("\nThermostat target temperature %6.2.", targetTemperature));
-            logger.log(level, String.format("\nkT per degree of freedom:  %7.3f\n", convert * kineticEnergy / (dof * kT)));
+            logger.log(level, "\n" + toString());
+            logger.log(level, String.format(" Target temperature:           %7.2f Kelvin", targetTemperature));
+            logger.log(level, String.format(" Current temperature:          %7.2f Kelvin", currentTemperature));
+            logger.log(level, String.format(" Number of variables:          %7d", nVariables));
+            logger.log(level, String.format(" Number of degrees of freedom: %7d", dof));
+            logger.log(level, String.format(" kT per degree of freedom:     %7.2f", convert * currentKineticEnergy / (dof * kT)));
         }
     }
 
@@ -137,7 +175,7 @@ public abstract class Thermostat {
      * @return a double.
      */
     public double getKineticEnergy() {
-        return kineticEnergy;
+        return currentKineticEnergy;
     }
 
     /**
@@ -169,30 +207,41 @@ public abstract class Thermostat {
      * The variance of each independent momentum component is kT * mass.
      */
     public void maxwell(double targetTemperature) {
-        for (int i = 0; i < dof; i++) {
+        for (int i = 0; i < nVariables; i++) {
             double m = mass[i];
             v[i] = random.nextGaussian() * sqrt(kB * targetTemperature / m);
         }
-        centerOfMassMotion(true, true);
+
+        /**
+         * Remove the center of mass motion.
+         */
+        if (removingCenterOfMassMotion) {
+            centerOfMassMotion(true, true);
+        }
+
         /**
          * Find the current kinetic energy and temperature.
          */
         kineticEnergy();
+
         /**
-         * The current temperature will deviate slightly from the target 
-         * temperature due to removing the center of mass motion and
-         * finite system size.
-         * 
+         * The current temperature will deviate slightly from the target
+         * temperature if the center of mass motion was removed and/or
+         * due to finite system size.
+         *
          * Scale the velocities to reach the target temperature.
          */
         double scale = Math.sqrt(targetTemperature / currentTemperature);
-        for (int i = 0; i < dof; i++) {
+        for (int i = 0; i < nVariables; i++) {
             v[i] *= scale;
         }
+
         /**
          * Update the kinetic energy and current temperature.
          */
         kineticEnergy();
+
+        log(Level.INFO);
     }
 
     public void maxwell() {
@@ -214,7 +263,7 @@ public abstract class Thermostat {
         }
 
         int index = 0;
-        while (index < dof) {
+        while (index < nVariables) {
             if (type[index] == VARIABLE_TYPE.OTHER) {
                 index++;
                 continue;
@@ -252,7 +301,7 @@ public abstract class Thermostat {
         linearMomentum[2] /= totalMass;
 
         if (print) {
-            logger.info(String.format(" Center of Mass   (%12.3f,%12.3f,%12.3f)", centerOfMass[0], centerOfMass[1], centerOfMass[2]));
+            logger.info(String.format("\n Center of Mass   (%12.3f,%12.3f,%12.3f)", centerOfMass[0], centerOfMass[1], centerOfMass[2]));
             logger.info(String.format(" Linear Momentum  (%12.3f,%12.3f,%12.3f)", linearMomentum[0], linearMomentum[1], linearMomentum[2]));
             logger.info(String.format(" Angular Momentum (%12.3f,%12.3f,%12.3f)", angularMomentum[0], angularMomentum[1], angularMomentum[2]));
         }
@@ -275,7 +324,7 @@ public abstract class Thermostat {
         double xz = 0.0;
         double yz = 0.0;
         int index = 0;
-        while (index < dof) {
+        while (index < nVariables) {
             if (type[index] == VARIABLE_TYPE.OTHER) {
                 index++;
                 continue;
@@ -319,7 +368,7 @@ public abstract class Thermostat {
          * Remove center of mass translational momentum.
          */
         index = 0;
-        while (index < dof) {
+        while (index < nVariables) {
             if (type[index] == VARIABLE_TYPE.OTHER) {
                 index++;
                 continue;
@@ -330,12 +379,12 @@ public abstract class Thermostat {
         }
 
         /**
-         * Only remove center of mass rotational momentum for 
+         * Only remove center of mass rotational momentum for
          * non-periodic systems.
          */
         if (false) {
             index = 0;
-            while (index < dof) {
+            while (index < nVariables) {
                 if (type[index] == VARIABLE_TYPE.OTHER) {
                     index++;
                     continue;
@@ -353,8 +402,7 @@ public abstract class Thermostat {
          * Update the degrees of freedom.
          */
         if (print) {
-            logger.info(String.format(" Center of mass motion removed.\n"
-                                      + " Total degrees of freedom %d - 3 = %d", dof, dof - 3));
+            logger.info(String.format(" Center of mass motion removed."));
         }
     }
 
@@ -363,14 +411,14 @@ public abstract class Thermostat {
      */
     protected void kineticEnergy() {
         double e = 0.0;
-        for (int i = 0; i < dof; i++) {
+        for (int i = 0; i < nVariables; i++) {
             double velocity = v[i];
             double v2 = velocity * velocity;
             e += mass[i] * v2;
         }
-        currentTemperature = e / (kB * (dof - 3));
+        currentTemperature = e / (kB * dof);
         e *= 0.5 / convert;
-        kineticEnergy = e;
+        currentKineticEnergy = e;
     }
 
     /**

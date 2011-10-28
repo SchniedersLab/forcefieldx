@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<document
+    xmlns="http://maven.apache.org/XDOC/2.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
+    <properties>
+        <title>Download Force Field X</title>
+        <author email="michael.schnieders@gmail.com">Michael J. Schnieders</author>
+    </properties>
+    <body>
+        <section name="Download">
+            <p>A single Force Field X distribution supports Linux, Mac OS X and Microsoft Windows
+            operating systems for both 32-Bit and 64-Bit hardware.
+            </p>
+            <p>The distribution includes:</p>
+            <ul>
+                <li>A launcher for the command line interface.</li>
+                <li>Examples structures and their property files.</li>
+                <li>A large variety of scripts that are easily modified.</li>
+            </ul>
+            <p>System requirement:</p>
+            <ul>
+                <li>A Java Runtime Environment (JRE) of version ${targetVersion} or later</li>
+            </ul>
+            <subsection name="Available Versions">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Version</th>
+                            <th>Build Date</th>
+                            <th>Download Link</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td>Force Field X ${project.version} (Binary tar.gz)</td>
+                        <td>${timestamp}</td>
+                        <td>
+                            <a href="ffx-${project.version}-bin.tar.gz">ffx-${project.version}-bin.tar.gz</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Force Field X ${project.version} (Binary tar.bz2)</td>
+                        <td>${timestamp}</td>
+                        <td>
+                            <a href="ffx-${project.version}-bin.tar.bz2">ffx-${project.version}-bin.tar.bz2</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Force Field X ${project.version} (Binary zip)</td>
+                        <td>${timestamp}</td>
+                        <td>
+                            <a href="ffx-${project.version}-bin.zip">ffx-${project.version}-bin.zip</a>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </subsection>
+            <p>After downloading a distribution from the table above please proceed to the
+                <a href="install.html">installation instructions</a>.
+            </p>
+        </section>
+    </body>
+</document>

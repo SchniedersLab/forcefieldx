@@ -49,27 +49,11 @@ import java.util.Arrays;
 public class MolecularDynamics implements Runnable, Terminatable {
 
     private static final Logger logger = Logger.getLogger(MolecularDynamics.class.getName());
-    private final int dof;
-    private final double[] x;
-    private final double[] v;
-    private final double[] a;
-    private final double[] aPrevious;
-    private final double[] grad;
-    private final double[] mass;
-    private final Random random;
-    private final double vfric[];
-    private final double vrand[];
-    private double currentTemp;
-    private double kinetic;
-    private double potential;
-    private double total;
-    private double dt;
     /**
      * Stochastic dynamics friction coefficient.
      */
-    private double friction = 91.0;
     private final MolecularAssembly molecularAssembly;
-    private final Potential potentialEnergy;
+    private final Potential potential;
     private final CompositeConfiguration properties;
     private AlgorithmListener algorithmListener;
     private Thermostat thermostat;
@@ -80,22 +64,28 @@ public class MolecularDynamics implements Runnable, Terminatable {
     private XYZFilter xyzFilter = null;
     private DYNFilter dynFilter = null;
     private PDBFilter pdbFilter = null;
-    private boolean done;
-    private boolean terminate;
-    private int nSteps = 1000;
     private int printFrequency = 100;
     private int saveFrequency = 1000;
     private int removeCOMMotionFrequency = 100;
-    
-    private double temperature = 298.15;
     private boolean initVelocities = true;
     private boolean loadRestart = false;
     private boolean initialized = false;
-
-    private enum Integrator {
-
-        BEEMAN, STOCHASTIC
-    };
+    private boolean done = true;
+    private boolean terminate = false;
+    private final int numberOfVariables;
+    private final double[] x;
+    private final double[] v;
+    private final double[] a;
+    private final double[] aPrevious;
+    private final double[] grad;
+    private final double[] mass;
+    private int nSteps = 1000;
+    private double targetTemperature = 298.15;
+    private double dt = 1.0;
+    private double currentTemperature;
+    private double currentKineticEnergy;
+    private double currentPotentialEnergy;
+    private double currentTotalEnergy;
 
     /**
      * <p>Constructor for MolecularDynamics.</p>
@@ -113,54 +103,68 @@ public class MolecularDynamics implements Runnable, Terminatable {
                              Thermostats requestedThermostat) {
         this.molecularAssembly = assembly;
         this.algorithmListener = listener;
-        this.potentialEnergy = potentialEnergy;
+        this.potential = potentialEnergy;
 
         this.properties = properties;
         mass = potentialEnergy.getMass();
-        dof = potentialEnergy.getNumberOfVariables();
-        x = new double[dof];
-        v = new double[dof];
-        a = new double[dof];
-        aPrevious = new double[dof];
-        grad = new double[dof];
+        numberOfVariables = potentialEnergy.getNumberOfVariables();
+        x = new double[numberOfVariables];
+        v = new double[numberOfVariables];
+        a = new double[numberOfVariables];
+        aPrevious = new double[numberOfVariables];
+        grad = new double[numberOfVariables];
 
-        String integrate = properties.getString("integrate", "beeman");
+        /**
+         * Define the integrator.
+         */
+        String integrate = properties.getString("integrate", "beeman").trim();
         if (integrate.equalsIgnoreCase("stochastic")) {
-            integrator = Integrator.STOCHASTIC;
-            vfric = new double[dof];
-            vrand = new double[dof];
-            random = new Random();
+            double friction = properties.getDouble("friction", 91.0);
+            Stochastic stochastic = new Stochastic(friction, numberOfVariables, x, v, a, mass);
             if (properties.containsKey("randomseed")) {
-                random.setSeed(properties.getInt("randomseed", 0));
+                stochastic.setRandomSeed(properties.getInt("randomseed", 0));
             }
-            friction = properties.getDouble("friction", 91.0);
+            integrator = stochastic;
         } else {
-            integrator = Integrator.BEEMAN;
-            random = null;
-            vfric = null;
-            vrand = null;
+            integrator = new BetterBeeman(numberOfVariables, x, v, a, aPrevious, mass);
         }
 
-        if (requestedThermostat == null || integrator == Integrator.STOCHASTIC) {
+        /**
+         * Define the thermostat.
+         *
+         * If no thermostat was requested or the StochasticDynamics
+         * integrator was chosen, then an Adiabatic thermostat will be used.
+         * The Adiabatic thermostat can initialize velocities and compute
+         * the current temperature and kinetic energy, but will not change
+         * atomic velocities during molecular dynamics.
+         */
+        if (requestedThermostat == null || integrator instanceof Stochastic) {
             requestedThermostat = Thermostats.ADIABATIC;
         }
 
         switch (requestedThermostat) {
             case BERENDSEN:
                 double tau = properties.getDouble("tau-temperature", 0.2);
-                thermostat = new Berendsen(dof, x, v, mass, potentialEnergy.getVariableTypes(), 300.0, tau);
+                thermostat = new Berendsen(numberOfVariables, x, v, mass, potentialEnergy.getVariableTypes(), 300.0, tau);
                 break;
             case BUSSI:
                 tau = properties.getDouble("tau-temperature", 0.2);
-                thermostat = new Bussi(dof, x, v, mass, potentialEnergy.getVariableTypes(), 300.0, tau);
+                thermostat = new Bussi(numberOfVariables, x, v, mass, potentialEnergy.getVariableTypes(), 300.0, tau);
                 break;
             case ADIABATIC:
             default:
-                thermostat = new Adiabatic(dof, x, v, mass, potentialEnergy.getVariableTypes());
+                thermostat = new Adiabatic(numberOfVariables, x, v, mass, potentialEnergy.getVariableTypes());
         }
 
         if (properties.containsKey("randomseed")) {
             thermostat.setRandomSeed(properties.getInt("randomseed", 0));
+        }
+
+        /**
+         * For StochasticDynamics, center of mass motion will not be removed.
+         */
+        if (integrator instanceof Stochastic) {
+            thermostat.removingCenterOfMassMotion(false);
         }
 
         done = true;
@@ -190,7 +194,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * @param x a double array to set the current parameters to.
      */
     public void setParameters(double x[]) {
-        System.arraycopy(x, 0, this.x, 0, dof);
+        System.arraycopy(x, 0, this.x, 0, numberOfVariables);
     }
 
     /**
@@ -239,7 +243,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
          * Return if already running.
          */
         if (!done) {
-            logger.warning("Programming error - attempt to modify parameters of a running MolecularDynamics instance.");
+            logger.warning(" Programming error - attempt to modify parameters of a running MolecularDynamics instance.");
             return;
         }
 
@@ -269,7 +273,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 archiveFile = new File(filename + ".arc");
                 archiveFile = XYZFilter.version(archiveFile);
             }
-            logger.info(" Snap shots will be written to " + archiveFile.getName());
 
             if (dyn == null) {
                 this.dynFile = new File(filename + ".dyn");
@@ -278,8 +281,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 this.dynFile = dyn;
                 loadRestart = true;
             }
-
-            logger.info(" Restart file will be written to " + this.dynFile.getName());
 
             if (xyzFilter == null) {
                 xyzFilter = new XYZFilter(file, molecularAssembly,
@@ -296,7 +297,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
             }
         }
 
-        this.temperature = temperature;
+        this.targetTemperature = temperature;
         this.initVelocities = initVelocities;
     }
 
@@ -315,37 +316,37 @@ public class MolecularDynamics implements Runnable, Terminatable {
                         final double saveInterval, final double temperature, final boolean initVelocities,
                         final File dyn) {
 
-        init(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);
-
         /**
          * Return if already running; Could happen if two threads call
          * dynamic on the same MolecularDynamics instance.
          */
         if (!done) {
-            logger.warning("Programming error - a thread invoked dynamic when it was already running.");
+            logger.warning(" Programming error - a thread invoked dynamic when it was already running.");
             return;
         }
-        done = false;
 
-        logger.info("\n Molecular dynamics starting up");
-        if (integrator == Integrator.STOCHASTIC) {
-            logger.info(format(" Sampling the NVT ensemble using stochastic dynamics"));
+        if (integrator instanceof Stochastic) {
+            logger.info(format("\n Stochastic dynamics in the NVT ensemble\n"));
         } else if (!(thermostat instanceof Adiabatic)) {
-            logger.info(format(" Sampling the NVT ensemble using a %s", thermostat.toString()));
+            logger.info(format("\n Molecular dynamics in the NVT ensemble\n"));
         } else {
-            logger.info(format(" Sampling the NVE ensemble"));
+            logger.info(format("\n Molecular dynamics in the NVE ensemble\n"));
         }
+
+        init(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);
+
+        done = false;
 
         if (dyn != null) {
             logger.info(format(" Continuing from " + dyn.getAbsolutePath()));
         }
-
-        logger.info(String.format(" Number of steps:     %8d", nSteps));
-        logger.info(String.format(" Time step:           %8.3f (fsec)", timeStep));
-        logger.info(String.format(" Print interval:      %8.3f (psec)", printInterval));
-        logger.info(String.format(" Save interval:       %8.3f (psec)", saveInterval));
-        logger.info(String.format(" Target temperature:  %8.3f Kelvin", temperature));
-
+        logger.info(String.format(" Number of steps: %8d", nSteps));
+        logger.info(String.format(" Time step:       %8.3f (fsec)", timeStep));
+        logger.info(String.format(" Print interval:  %8.3f (psec)", printInterval));
+        logger.info(String.format(" Save interval:   %8.3f (psec)", saveInterval));
+        logger.info(String.format(" Archive file: %s", archiveFile.getName()));
+        logger.info(String.format(" Restart file: %s", dynFile.getName()));
+        
         Thread dynamicThread = new Thread(this);
         dynamicThread.start();
         synchronized (this) {
@@ -373,7 +374,16 @@ public class MolecularDynamics implements Runnable, Terminatable {
         /**
          * Set the target temperature.
          */
-        thermostat.setTargetTemperature(temperature);
+        thermostat.setTargetTemperature(targetTemperature);
+        if (integrator instanceof Stochastic) {
+            Stochastic stochastic = (Stochastic) integrator;
+            stochastic.setTemperature(targetTemperature);
+        }
+
+        /**
+         * Set the step size.
+         */
+        integrator.setTimeStep(dt);
 
         if (!initialized) {
             /**
@@ -390,13 +400,13 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 /**
                  * Initialize from using current atomic coordinates.
                  */
-                potentialEnergy.getCoordinates(x);
+                potential.getCoordinates(x);
                 /**
                  * Initialize atomic velocities from a Maxwell-Boltzmann
                  * distribution or set to 0.
                  */
                 if (initVelocities) {
-                    thermostat.maxwell(temperature);
+                    thermostat.maxwell(targetTemperature);
                 } else {
                     Arrays.fill(v, 0.0);
                 }
@@ -407,41 +417,41 @@ public class MolecularDynamics implements Runnable, Terminatable {
              * initialize velocities if requested.
              */
             if (initVelocities) {
-                thermostat.maxwell(temperature);
+                thermostat.maxwell(targetTemperature);
             }
         }
 
         /**
          * Compute the current potential energy.
          */
-        potentialEnergy.setScaling(null);
-        potential = potentialEnergy.energyAndGradient(x, grad);
+        potential.setScaling(null);
+        currentPotentialEnergy = potential.energyAndGradient(x, grad);
 
         /**
          * Compute the current kinetic energy.
          */
         thermostat.kineticEnergy();
-        kinetic = thermostat.getKineticEnergy();
-        currentTemp = thermostat.getCurrentTemperture();
-        total = kinetic + potential;
+        currentKineticEnergy = thermostat.getKineticEnergy();
+        currentTemperature = thermostat.getCurrentTemperture();
+        currentTotalEnergy = currentKineticEnergy + currentPotentialEnergy;
 
         /**
          * Initialize current and previous accelerations.
          */
         if (!initialized) {
             if (!loadRestart) {
-                for (int i = 0; i < dof; i++) {
+                for (int i = 0; i < numberOfVariables; i++) {
                     a[i] = -Thermostat.convert * grad[i] / mass[i];
                 }
                 if (aPrevious != null) {
-                    System.arraycopy(a, 0, aPrevious, 0, dof);
+                    System.arraycopy(a, 0, aPrevious, 0, numberOfVariables);
                 }
             }
             initialized = true;
         }
 
         logger.info(String.format("\n   Step      Kinetic    Potential        Total     Temp     Time"));
-        logger.info(String.format("       %13.4f%13.4f%13.4f %8.2f ", kinetic, potential, total, currentTemp));
+        logger.info(String.format("       %13.4f%13.4f%13.4f %8.2f ", currentKineticEnergy, currentPotentialEnergy, currentTotalEnergy, currentTemperature));
 
         /**
          * Integrate Newton's equations of motion for the requested number of
@@ -450,19 +460,40 @@ public class MolecularDynamics implements Runnable, Terminatable {
         long time = System.nanoTime();
         for (int step = 1; step <= nSteps; step++) {
 
-            switch (integrator) {
-                case BEEMAN:
-                    beeman(dt);
-                    break;
-                case STOCHASTIC:
-                    stochastic(dt);
-                    break;
-            }
+            /**
+             * Do the half-step thermostat operation.
+             */
+            thermostat.halfStep(dt);
 
             /**
-             * Remove center of mass motion ever ~10-100 steps.
+             * Do the half-step integration operation.
              */
-            if (step % removeCOMMotionFrequency == 0) {
+            integrator.halfStep();
+
+            /**
+             * Compute the potential energy and gradients.
+             */
+            currentPotentialEnergy = potential.energyAndGradient(x, grad);
+
+            /**
+             * Do the full-step integration operation.
+             */
+            integrator.fullStep(grad);
+
+            /**
+             * Compute the full-step kinetic energy.
+             */
+            thermostat.kineticEnergy();
+
+            /**
+             * Do the full-step thermostat operation.
+             */
+            thermostat.fullStep(dt);
+
+            /**
+             * Remove center of mass motion ever ~100 steps.
+             */
+            if (thermostat.removingCOM() && step % removeCOMMotionFrequency == 0) {
                 thermostat.centerOfMassMotion(true, false);
             }
 
@@ -470,16 +501,16 @@ public class MolecularDynamics implements Runnable, Terminatable {
              * Collect current kinetic energy, temperature,
              * and total energy.
              */
-            kinetic = thermostat.getKineticEnergy();
-            currentTemp = thermostat.getCurrentTemperture();
-            total = kinetic + potential;
+            currentKineticEnergy = thermostat.getKineticEnergy();
+            currentTemperature = thermostat.getCurrentTemperture();
+            currentTotalEnergy = currentKineticEnergy + currentPotentialEnergy;
 
             /**
-             * Log the current state every printFrequency steps. 
+             * Log the current state every printFrequency steps.
              */
             if (step % printFrequency == 0) {
                 time = System.nanoTime() - time;
-                logger.info(String.format(" %6d%13.4f%13.4f%13.4f%9.2f%9.3f", step, kinetic, potential, total, currentTemp, time * 1.0e-9));
+                logger.info(String.format(" %6d%13.4f%13.4f%13.4f%9.2f%9.3f", step, currentKineticEnergy, currentPotentialEnergy, currentTotalEnergy, currentTemperature, time * 1.0e-9));
                 time = System.nanoTime();
             }
 
@@ -545,171 +576,5 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 }
             }
         }
-    }
-
-    /**
-     * Integrate Newton's equations of motion using a Beeman multistep recursion
-     * formula; the actual coefficients are Brooks' "Better Beeman" values.
-     *
-     * @since 1.0
-     */
-    private void beeman(final double dt) {
-        final double dt_8 = 0.125 * dt;
-        final double dt2_8 = dt * dt_8;
-        /**
-         * Do half-step thermostat operation.
-         */
-        thermostat.halfStep(dt);
-        /**
-         * Store the current atom positions, then find new atom positions
-         * and half-step velocities via Beeman recursion.
-         */
-        for (int i = 0; i < dof; i++) {
-            double temp = 5.0 * a[i] - aPrevious[i];
-            x[i] += v[i] * dt + temp * dt2_8;
-            v[i] += temp * dt_8;
-        }
-
-        /**
-         * Compute the potential energy and gradients.
-         */
-        potential = potentialEnergy.energyAndGradient(x, grad);
-
-        /**
-         * Use Newton's second law to get the next acceleration and find
-         * the full-step velocities using the Beeman recusion.
-         */
-        for (int i = 0; i < dof; i++) {
-            aPrevious[i] = a[i];
-            a[i] = -Thermostat.convert * grad[i] / mass[i];
-            v[i] += (3.0 * a[i] + aPrevious[i]) * dt_8;
-        }
-
-        /**
-         * Compute the full-step kinetic energy.
-         */
-        thermostat.kineticEnergy();
-        /**
-         * Do full-step thermostat operation.
-         */
-        thermostat.fullStep(dt);
-    }
-    
-    /**
-     * Apply a single stochastic dynamics time step
-     * via a velocity Verlet integration algorithm
-     * @param dt Time step length.
-     */
-    private void stochastic(final double dt) {
-        /**
-         * Set the frictional and random coefficients, store the current
-         * atom positions, then find new atom positions and half-step
-         * velocities via Verlet recursion.
-         */
-        double fdt = friction * dt;
-        for (int i = 0; i < dof; i++) {
-            double m = mass[i];
-            double pfric;
-            double afric;
-            double prand;
-            if (fdt <= 0.0) {
-                /**
-                 * In the limit of no friction, SD recovers normal
-                 * molecular dynamics.
-                 */
-                pfric = 1.0;
-                vfric[i] = dt;
-                afric = 0.5 * dt * dt;
-                prand = 0.0;
-                vrand[i] = 0.0;
-            } else {
-                double pterm = 0.0;
-                double vterm = 0.0;
-                double rho = 0.0;
-                if (fdt >= 0.05) {
-                    /**
-                     * Analytical expressions when the friction coefficient 
-                     * is large.
-                     */
-                    double efdt = exp(-fdt);
-                    pfric = efdt;
-                    vfric[i] = (1.0 - efdt) / friction;
-                    afric = (dt - vfric[i]) / friction;
-                    pterm = 2.0 * fdt - 3.0 + (4.0 - efdt) * efdt;
-                    vterm = 1.0 - efdt * efdt;
-                    rho = (1.0 - efdt) * (1.0 - efdt) / sqrt(pterm * vterm);
-                } else {
-                    /**
-                     * Use a series expansions when friction coefficient 
-                     * is small.
-                     */
-                    double fdt2 = fdt * fdt;
-                    double fdt3 = fdt * fdt2;
-                    double fdt4 = fdt2 * fdt2;
-                    double fdt5 = fdt2 * fdt3;
-                    double fdt6 = fdt3 * fdt3;
-                    double fdt7 = fdt3 * fdt4;
-                    double fdt8 = fdt4 * fdt4;
-                    double fdt9 = fdt4 * fdt5;
-                    afric = (fdt2 / 2.0 - fdt3 / 6.0 + fdt4 / 24.0
-                             - fdt5 / 120.0 + fdt6 / 720.0
-                             - fdt7 / 5040.0 + fdt8 / 40320.0
-                             - fdt9 / 362880.0) / (friction * friction);
-                    vfric[i] = dt - friction * afric;
-                    pfric = 1.0 - friction * vfric[i];
-                    pterm = 2.0 * fdt3 / 3.0 - fdt4 / 2.0
-                            + 7.0 * fdt5 / 30.0 - fdt6 / 12.0
-                            + 31.0 * fdt7 / 1260.0 - fdt8 / 160.0
-                            + 127.0 * fdt9 / 90720.0;
-                    vterm = 2.0 * fdt - 2.0 * fdt2 + 4.0 * fdt3 / 3.0
-                            - 2.0 * fdt4 / 3.0 + 4.0 * fdt5 / 15.0
-                            - 4.0 * fdt6 / 45.0 + 8.0 * fdt7 / 315.0
-                            - 2.0 * fdt8 / 315.0 + 4.0 * fdt9 / 2835.0;
-                    rho = sqrt(3.0) * (0.5 - fdt / 16.0
-                                       - 17.0 * fdt2 / 1280.0
-                                       + 17.0 * fdt3 / 6144.0
-                                       + 40967.0 * fdt4 / 34406400.0
-                                       - 57203.0 * fdt5 / 275251200.0
-                                       - 1429487.0 * fdt6 / 13212057600.0
-                                       + 1877509.0 * fdt7 / 105696460800.0);
-                }
-                /**
-                 * Compute random terms to thermostat the nonzero friction case.
-                 */
-                double ktm = Thermostat.kB * temperature / m;
-                double psig = sqrt(ktm * pterm) / friction;
-                double vsig = sqrt(ktm * vterm);
-                double rhoc = sqrt(1.0 - rho * rho);
-                double pnorm = random.nextGaussian();
-                double vnorm = random.nextGaussian();
-                prand = psig * pnorm;
-                vrand[i] = vsig * (rho * pnorm + rhoc * vnorm);
-            }
-
-            /**
-             * Store the current atom positions, then find new atom
-             * positions and half-step velocities via Verlet recursion.
-             */
-            x[i] += (v[i] * vfric[i] + a[i] * afric + prand);
-            v[i] = v[i] * pfric + 0.5 * a[i] * vfric[i];
-        }
-        /**
-         * Compute the potential energy and gradients.
-         */
-        potential = potentialEnergy.energyAndGradient(x, grad);
-
-        /**
-         * Use Newton's second law to get the next acceleration and find
-         * the full-step velocities using the Verlet recursion.
-         */
-        for (int i = 0; i < dof; i++) {
-            a[i] = -Thermostat.convert * grad[i] / mass[i];
-            v[i] += (0.5 * a[i] * vfric[i] + vrand[i]);
-        }
-
-        /**
-         * Compute the full-step kinetic energy.
-         */
-        thermostat.kineticEnergy();
     }
 }

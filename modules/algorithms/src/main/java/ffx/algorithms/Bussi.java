@@ -101,7 +101,7 @@ public class Bussi extends Thermostat {
     /** {@inheritDoc} */
     @Override
     public String toString() {
-        return String.format("%s thermostat (tau = %8.3f)", name, tau);
+        return String.format(" Bussi thermostat (tau = %8.3f)", tau);
     }
 
     /**
@@ -124,10 +124,10 @@ public class Bussi extends Thermostat {
     public void fullStep(double dt) {
         double exptau = exp(-dt / tau);
         double ratio = targetTemperature / currentTemperature;
-        double rate = (1.0 - exptau) * ratio / dof;
+        double rate = (1.0 - exptau) * ratio / nVariables;
         double r = random.nextGaussian();
         double s = 0.0;
-        for (int i = 0; i < dof - 1; i++) {
+        for (int i = 0; i < nVariables - 1; i++) {
             double si = random.nextGaussian();
             s += si * si;
         }
@@ -135,7 +135,7 @@ public class Bussi extends Thermostat {
         if (r + sqrt(exptau / rate) < 0.0) {
             scale = -scale;
         }
-        for (int i = 0; i < dof; i++) {
+        for (int i = 0; i < nVariables; i++) {
             v[i] *= scale;
         }
     }

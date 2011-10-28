@@ -76,7 +76,7 @@ public class ForceField {
 
     public enum ForceFieldInteger {
 
-        PME_ORDER, PME_REAL_THREADS, PME_GRIDX, PME_GRIDY, PME_GRIDZ,
+        PME_ORDER, PME_REAL_THREADS, PME_GRID_X, PME_GRID_Y, PME_GRID_Z,
         LIGAND_START, LIGAND_STOP
     }
 

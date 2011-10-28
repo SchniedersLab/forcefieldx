@@ -5,13 +5,13 @@
     xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
     http://maven.apache.org/xsd/xdoc-2.0.xsd">
     <properties>
-        <title>Home Page</title>
+        <title>Welcome to Force Field X</title>
         <author email="michael.schnieders@gmail.com">
-            Michael Schnieders
+          Michael Schnieders
         </author>
     </properties>
     <body>
-        <section name="Introduction">
+        <section name="Welcome to Force Field X">
             <p>Force Field X is a group of open source (GPL v. 3), platform independent
                (Java Runtime Environment) modules for molecular biophysics.
                Key methods include:

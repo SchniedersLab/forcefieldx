@@ -14,6 +14,7 @@
         <src>images/helixBanner.jpg</src>
         <href>http://ffx.kenai.com</href>
     </bannerLeft>
+    <googleAnalyticsAccountId>UA-12576019-1</googleAnalyticsAccountId>
     <body>
         <menu name="Automatic Parameterization">
             <item

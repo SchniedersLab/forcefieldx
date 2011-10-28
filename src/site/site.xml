@@ -1,12 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <project
     name="Force Field X"
-    xmlns="http://maven.apache.org/DECORATION/1.0.1"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/DECORATION/1.0.1
-    http://maven.apache.org/xsd/decoration-1.0.1.xsd">
-    <publishDate position="right" format="dd MMM yyyy" />
-    <version position="right" />
+    xmlns="http://maven.apache.org/DECORATION/1.1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/DECORATION/1.1.0 http://maven.apache.org/xsd/decoration-1.1.0.xsd">
+    <version position="navigation-bottom" />
+    <publishDate position="navigation-bottom" format="MMM dd yyyy" />
 
     <!-- There is a bug in Maven that causes it to use the wrong 
          image in the poweredBy logo?
@@ -30,6 +28,7 @@
         <src>/images/helixBanner.jpg</src>
         <href>http://ffx.kenai.com</href>
     </bannerLeft>
+    <googleAnalyticsAccountId>UA-12576019-1</googleAnalyticsAccountId>
     <skin>
         <groupId>site</groupId>
         <artifactId>theme</artifactId>
@@ -37,17 +36,6 @@
     </skin>
     <body>
         <head>
-            <script type="text/javascript">
-  var _gaq = _gaq || [];
-  _gaq.push(['_setAccount', 'UA-12576019-1']);
-  _gaq.push(['_trackPageview']);
-
-  (function() {
-    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-  })();
-            </script>
             <script type="text/javascript"
                 src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
             </script>
@@ -64,11 +52,11 @@
             <item name=" Wiki" href="http://kenai.com/projects/ffx/pages/Home"/>
         </links>
         <menu name="Overview" inherit="top">
-            <item name="Introduction" href="/index.html"/>
+            <item name="Welcome" href="/index.html"/>
             <!-- item name="Run Force Field X" href="/webstart.html"/ -->
-            <item name="Publications" href="/publications.html"/>
             <item name="Download" href="/download.html"/>
             <item name="Install" href="/install.html"/>
+            <item name="Publications" href="/publications.html"/>
         </menu>
         <menu name="Manual" inherit="top">
             <item name="Commands" href="/scripts.html"/>
