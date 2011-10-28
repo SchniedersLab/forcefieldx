@@ -119,8 +119,8 @@ public class FFXClassLoader extends ClassLoader {
                 }));
 
         String osName = System.getProperty("os.name").toUpperCase();
-        String osArch = System.getProperty("os.arch").toUpperCase();
-        boolean x86_64 = "64".equals(System.getProperty("sun.arch.data.model"));
+        String osArch = System.getProperty("sun.arch.data.model");
+        boolean x86_64 = "64".equals(osArch);
         if ("MAC OS X".equals(osName)) {
             // JOGL Universal Binaries
             ffxFiles.add("universal/libgluegen-rt.jnilib");

@@ -48,7 +48,7 @@ public class Adiabatic extends Thermostat {
     /** {@inheritDoc} */
     @Override
     public String toString() {
-        return String.format("%s thermostat", name);
+        return " Adiabatic thermostat";
     }
 
     /**

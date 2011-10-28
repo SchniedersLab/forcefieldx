@@ -92,6 +92,40 @@ public class Main extends JFrame {
 
         return args;
     }
+    private static final Logger logger = Logger.getLogger(Main.class.getName());
+    private static Level level;
+    private static LogHandler logHandler;
+
+    /**
+     * Replace the default console handler with our custom FFX handler.
+     */
+    private static void startLogging() {
+        try {
+            Logger defaultLogger = LogManager.getLogManager().getLogger("");
+            Handler defaultHandlers[] = defaultLogger.getHandlers();
+            for (Handler h : defaultHandlers) {
+                defaultLogger.removeHandler(h);
+            }
+        } catch (Exception e) {
+            System.err.println(e.toString());
+        }
+
+        String logLevel = System.getProperty("ffx.log", "info");
+        System.out.println("ffx.log = " + logLevel);
+        Level tempLevel;
+        try {
+            tempLevel = Level.parse(logLevel.toUpperCase());
+        } catch (Exception e) {
+            tempLevel = Level.INFO;
+        }
+
+        level = tempLevel;
+        logHandler = new LogHandler();
+        logHandler.setLevel(level);
+        Logger ffxLogger = Logger.getLogger("ffx");
+        ffxLogger.addHandler(logHandler);
+        ffxLogger.setLevel(level);
+    }
 
     /**
      * Print out credits.
@@ -130,7 +164,7 @@ public class Main extends JFrame {
         } catch (UnknownHostException e) {
             // Do nothing.
         }
-        
+
         String procString = System.getProperty("app.pid");
         if (procString != null) {
             procID = Integer.parseInt(procString);
@@ -219,6 +253,17 @@ public class Main extends JFrame {
      * @throws java.lang.Exception if any.
      */
     public static void main(String[] args) throws Exception {
+        
+        /**
+         * Process any "-D" command line flags.
+         */
+        args = processProperties(args);
+        
+        /**
+         * Configure our logging.
+         */
+        startLogging();
+        
         /**
          * Print out the header.
          */
@@ -230,11 +275,6 @@ public class Main extends JFrame {
         if (GraphicsEnvironment.isHeadless() && args.length < 2) {
             commandLineInteraceHelp();
         }
-
-        /**
-         * Process any "-D" command line flags.
-         */
-        args = processProperties(args);
 
         /**
          * Determine host name and process ID.
@@ -341,7 +381,7 @@ public class Main extends JFrame {
                             embeddedScript.openStream(), commandLineFile.getName(), ".ffx"));
                 } catch (Exception e) {
                     logger.warning("Exception extracting embedded script "
-                            + embeddedScript.toString() + "\n" + e.toString());
+                                   + embeddedScript.toString() + "\n" + e.toString());
                 }
             }
         }
@@ -379,9 +419,6 @@ public class Main extends JFrame {
                 "Up Time: " + stopWatch).append("Logger: " + logger.getName());
         return toStringBuilder.toString();
     }
-    private static final Logger logger = Logger.getLogger(Main.class.getName());
-    private static final Level level;
-    private static final LogHandler logHandler;
     /** Constant <code>stopWatch</code> */
     public static StopWatch stopWatch = new StopWatch();
     /**
@@ -408,34 +445,4 @@ public class Main extends JFrame {
      * Force Field X process ID.
      */
     private static int procID = -1;
-
-    /**
-     * Replace the default console handler with our custom FFX handler.
-     */
-    static {
-        try {
-            Logger defaultLogger = LogManager.getLogManager().getLogger("");
-            Handler defaultHandlers[] = defaultLogger.getHandlers();
-            for (Handler h : defaultHandlers) {
-                defaultLogger.removeHandler(h);
-            }
-        } catch (Exception e) {
-            System.err.println(e.toString());
-        }
-
-        String logLevel = System.getProperty("ffx.log", "info");
-        Level tempLevel;
-        try {
-            tempLevel = Level.parse(logLevel.toUpperCase());
-        } catch (Exception e) {
-            tempLevel = Level.INFO;
-        }
-
-        level = tempLevel;
-        logHandler = new LogHandler();
-        logHandler.setLevel(level);
-        Logger ffxLogger = Logger.getLogger("ffx");
-        ffxLogger.addHandler(logHandler);
-        ffxLogger.setLevel(level);
-    }
 }

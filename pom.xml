@@ -213,7 +213,6 @@
                 <configuration>
                     <optimize>true</optimize>
                     <debug>true</debug>
-                    
                     <source>${compileVersion}</source>
                     <target>${targetVersion}</target>
                 </configuration>

@@ -93,7 +93,7 @@ public class Berendsen extends Thermostat {
     /** {@inheritDoc} */
     @Override
     public String toString() {
-        return String.format("%s thermostat (tau = %8.3f)", name, tau);
+        return String.format(" Berendsen thermostat (tau = %8.3f)", tau);
     }
 
     /**
@@ -116,7 +116,7 @@ public class Berendsen extends Thermostat {
     public void fullStep(double dt) {
         double ratio = targetTemperature / currentTemperature;
         double scale = sqrt(1.0 + (dt / tau) * (ratio - 1.0));
-        for (int i = 0; i < dof; i++) {
+        for (int i = 0; i < nVariables; i++) {
             v[i] *= scale;
         }
     }
