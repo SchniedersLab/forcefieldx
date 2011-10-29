@@ -655,7 +655,7 @@ public class MTZFilter implements DiffractionFileFilter {
                     || label.equalsIgnoreCase("rfreeflag")
                     || label.equalsIgnoreCase("r-free-flags")
                     || label.equalsIgnoreCase("test")
-                    || StringUtils.startsWithIgnoreCase(label, rfreestring))
+                    || StringUtils.equalsIgnoreCase(label, rfreestring))
                     && c.type == 'I') {
                 sb.append(String.format("Reading R Free column: \"%s\"\n", c.label));
                 rfree = nc;
@@ -683,7 +683,7 @@ public class MTZFilter implements DiffractionFileFilter {
                     || label.equalsIgnoreCase("fp")
                     || label.equalsIgnoreCase("fo")
                     || label.equalsIgnoreCase("fobs")
-                    || StringUtils.startsWithIgnoreCase(label, fostring))
+                    || StringUtils.equalsIgnoreCase(label, fostring))
                     && c.type == 'F') {
                 sb.append(String.format("Reading Fo column: \"%s\"\n", c.label));
                 fo = nc;
@@ -703,7 +703,7 @@ public class MTZFilter implements DiffractionFileFilter {
                     || label.equalsIgnoreCase("sigfp")
                     || label.equalsIgnoreCase("sigfo")
                     || label.equalsIgnoreCase("sigfobs")
-                    || StringUtils.startsWithIgnoreCase(label, sigfostring))
+                    || StringUtils.equalsIgnoreCase(label, sigfostring))
                     && c.type == 'Q') {
                 sb.append(String.format("Reading sigFo column: \"%s\"\n", c.label));
                 sigfo = nc;
