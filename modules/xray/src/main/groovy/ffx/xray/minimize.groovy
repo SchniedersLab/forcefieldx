@@ -45,7 +45,7 @@ cli.e(longOpt:'eps', args:1, argName:'-1.0', 'RMS gradient convergence criteria 
 cli.f(longOpt:'threeeps', args:3, valueSeparator:',', argName:'-1.0,-1.0,-1.0', 'RMS gradient convergence criteria for three stage refinement (negative: automatically determine for each stage)');
 cli.m(longOpt:'maxiter', args:1, argName:'1000', 'maximum number of allowed refinement iterations');
 cli.r(longOpt:'mode', args:1, argName:'coordinates', 'type of refinement: [coordinates / bfactors / coordinates_and_bfactors / occupancies / bfactors_and_occupancies / coordinates_and_occupancies / coordinates_and_bfactors_and_occupancies]');
-cli.p(longOpt:'polarization', args:1, 'polarization model: [none / direct / mutual]');
+cli.p(longOpt:'polarization', args:1, argName:'mutual', 'polarization model: [none / direct / mutual]');
 cli.t(longOpt:'threestage', 'set to perform refinement in 3 stages: coordinates, bfactors, then occupancies - overrides mode setting if true');
 cli.s(longOpt:'suffix', args:1, argName:'_refine', 'output suffix');
 def options = cli.parse(args);
