@@ -389,7 +389,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         try {
             parallelTeam.execute(initializationRegion);
         } catch (Exception e) {
-            String message = "Fatal exception expanding coordinates.\n";
+            String message = " Fatal exception expanding coordinates.\n";
             logger.log(Level.SEVERE, message, e);
         }
 
@@ -923,7 +923,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                         double dz = in[2] - out[2];
                         double r2 = dx * dx + dy * dy + dz * dz;
                         if (r2 < sp2) {
-                            logger.severe(" Atom %d is at a special position: " + atoms[i].toString());
+                            logger.warning(" Atom %d may be at a special position: " + atoms[i].toString());
                         }
                     }
                 }

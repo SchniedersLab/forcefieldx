@@ -126,7 +126,7 @@ public class Crystal {
      * An atom and one of its symmetry copies within the specialPositionCutoff
      * should be flagged to be at a special position.
      */
-    public double specialPositionCutoff = 0.3;
+    public double specialPositionCutoff = 0.1;
     public double specialPositionCutoff2 = specialPositionCutoff * specialPositionCutoff;
 
     /**
@@ -155,7 +155,7 @@ public class Crystal {
         crystalSystem = spaceGroup.crystalSystem;
 
         if (!SpaceGroup.checkRestrictions(crystalSystem, a, b, c, alpha, beta, gamma)) {
-            String message = "The lattice parameters do not satisfy the " + crystalSystem
+            String message = " The lattice parameters do not satisfy the " + crystalSystem
                              + " crystal system restrictions:/n" + toString();
             logger.severe(message);
         }
