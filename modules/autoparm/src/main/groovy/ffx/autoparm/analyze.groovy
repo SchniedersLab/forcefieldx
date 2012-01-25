@@ -14,39 +14,39 @@ cli.h(longOpt:'help', 'Print this help message.');
 def options = cli.parse(args);
 
 List<String> arguments = options.arguments();
-if (options.h || arguments == null || arguments.size() != 1) {
+if (options.h || arguments == null) {
     return cli.usage();
 }
 
 
 String xyzfilename = arguments.get(0);
 String keyfname = null;
-String options = null;
+String options1 = null;
 
 
 
 if(arguments.size() == 5){
     if(arguments.get(1).equals("-k")){
         keyfname = arguments.get(2);
-        options = arguments.get(4);
-        analyze(xyzfilename,keyfname,options)
+        options1 = arguments.get(4);
+        analyze(xyzfilename,keyfname,options1)
     }
     else if(arguments.get(1).equals("-o")){
         keyfname = arguments.get(4);
-        options = arguments.get(2);
-        analyze(xyzfilename,keyfname,options)
+        options1 = arguments.get(2);
+        analyze(xyzfilename,keyfname,options1)
     }
 }
 else if(arguments.size() == 3){
     if(arguments.get(1).equals("-k")){
         keyfname = arguments.get(2);
-        analyze(xyzfilename,keyfname,options)
+        analyze(xyzfilename,keyfname,options1)
     }
     else if(arguments.get(1).equals("-o")){
-        options = arguments.get(2);
-        analyze(xyzfilename,keyfname,options)
+        options1 = arguments.get(2);
+        analyze(xyzfilename,keyfname,options1)
     }
 }
 else{
-    analyze(xyzfilename,keyfname,options);
+    analyze(xyzfilename,keyfname,options1);
 }
