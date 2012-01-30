@@ -58,6 +58,7 @@ public class Poledit {
     private ArrayList<Atom> atomslist = new ArrayList<Atom>();
     private ArrayList<Double> polaritylist = new ArrayList<Double>();
     private ArrayList<Double> pdamplist = new ArrayList<Double>();
+    private int out_type = 5;
     private int[] xaxis;
     private static final Logger logger = Logger.getLogger(Poledit.class.getName());
     private boolean remove_symmetry = false;
@@ -69,15 +70,17 @@ public class Poledit {
      * File location of multipole params output by GDMA
      * @param peditinfname
      * File location of molecular polarization group information
+     * @param out_type
+     * Tinker output format, either 5 or 4.
      */
-    public Poledit(String gdmaoutfname, String peditinfname) {
+    public Poledit(String gdmaoutfname, String peditinfname, int out_type) {
+        this.out_type = out_type;
         pedit = true;
         nSymm = 1;
         readGDMA(gdmaoutfname);
         int index = gdmaoutfname.lastIndexOf(".");
         String name = gdmaoutfname.substring(0, index);
         setup_print_xyz(name);
-
         parallelTeam = new ParallelTeam();
         maxThreads = parallelTeam.getThreadCount();
 
@@ -1082,7 +1085,12 @@ public class Poledit {
             }
             bw.write("\n");
             for (int i = 0; i < nAtoms; i++) {
-                output = String.format("polarize %5d %29s %7s", atoms[i].xyzIndex, myFormatter.format(polarizability[i]), myFormatter.format(thole[i]));
+            	if(out_type == 4){
+                    output = String.format("polarize %5d %29s", atoms[i].xyzIndex, myFormatter.format(polarizability[i]));
+            	}
+            	else{
+                    output = String.format("polarize %5d %29s %7s", atoms[i].xyzIndex, myFormatter.format(polarizability[i]), myFormatter.format(thole[i]));
+            	}
                 for (int k = 0; k < atoms[i].getPolarizeType().polarizationGroup.length; k++) {
                     if (atoms[i].getPolarizeType().polarizationGroup[k] != 0) {
                         output = output + "   " + atoms[i].getPolarizeType().polarizationGroup[k];
@@ -1106,7 +1114,7 @@ public class Poledit {
     public static void main(String args[]) {
         //Poledit p = new Poledit("/users/gchattree/Research/Compounds/test_compounds/12-ethanediol-test/12-ethanediol.gdmaout", "/users/gchattree/Research/Compounds/test_compounds/12-ethanediol-test/12-ethanediol-peditin.txt");
         //Poledit p2 = new Poledit("/users/gchattree/Research/Compounds/test_compounds/phenobarbital-tinker-goal/phenobarbital.gdmaout","/users/gchattree/Research/Compounds/test_compounds/phenobarbital-test/phenobarbital-peditin.txt");
-        Poledit p3 = new Poledit("/users/gchattree/Research/Compounds/poltypeffx-2/di-n-propyl_sulfide-test/di-n-propyl_sulfide.gdmaout", "/users/gchattree/Research/Compounds/poltypeffx-2/di-n-propyl_sulfide-test/di-n-propyl_sulfide-peditin.txt");
+        //Poledit p3 = new Poledit("/users/gchattree/Research/Compounds/poltypeffx-2/di-n-propyl_sulfide-test/di-n-propyl_sulfide.gdmaout", "/users/gchattree/Research/Compounds/poltypeffx-2/di-n-propyl_sulfide-test/di-n-propyl_sulfide-peditin.txt");
         //Poledit p4 = new Poledit("/users/gchattree/Research/Compounds/easycompounds/2-ethoxyethanol/2-ethoxyethanol.gdmaout","/users/gchattree/Research/Compounds/easycompounds/2-ethoxyethanol/2-ethoxyethanol-peditin.txt");
 
     }
