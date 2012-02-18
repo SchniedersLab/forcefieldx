@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <faqs xmlns="http://maven.apache.org/FML/1.0.1"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/FML/1.0.1 http://maven.apache.org/xsd/fml-1.0.1.xsd"
-  title="Publications"
-  toplink="true">
-    <part id="2011">
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://maven.apache.org/FML/1.0.1 http://maven.apache.org/xsd/fml-1.0.1.xsd"
+      title="Publications"
+      toplink="true">
+    <part id="2012">
         <title>2012</title>
         <faq id="12">
             <question>
@@ -19,24 +19,26 @@
             </question>
             <answer>
                 <p>
-                Due to their role in cellular signaling mitogen activated protein (MAP) kinases
-                represent targets of pharmaceutical interest. However, the majority of known MAP
-                kinase inhibitors compete with cellular ATP and target an ATP binding pocket that
-                is highly conserved in the 500 plus representatives of the human protein kinase
-                family. Here we review progress toward the development of non-ATP competitive MAP
-                kinase inhibitors for the extracellular signal regulated kinases (ERK1/2),
-                the c-jun N-terminal kinases (JNK1/2/3) and the p38 MAPKs (α, β, γ, and δ).
-                Special emphasis is placed on the role of computational methods in the drug
-                discovery process for MAP kinases. Topics include recent advances in X-ray 
-                crystallography theory that improve the MAP kinase structures essential to
-                structurebased drug discovery, the use of molecular dynamics to understand the
-                conformational heterogeneity of the activation loop and inhibitors discovered by
-                virtual screening. The impact of an advanced polarizable force field such as
-                AMOEBA used in conjunction with sophisticated kinetic and thermodynamic simulation
-                methods is also discussed. 
+                    Due to their role in cellular signaling mitogen activated protein (MAP) kinases
+                    represent targets of pharmaceutical interest. However, the majority of known MAP
+                    kinase inhibitors compete with cellular ATP and target an ATP binding pocket that
+                    is highly conserved in the 500 plus representatives of the human protein kinase
+                    family. Here we review progress toward the development of non-ATP competitive MAP
+                    kinase inhibitors for the extracellular signal regulated kinases (ERK1/2),
+                    the c-jun N-terminal kinases (JNK1/2/3) and the p38 MAPKs (α, β, γ, and δ).
+                    Special emphasis is placed on the role of computational methods in the drug
+                    discovery process for MAP kinases. Topics include recent advances in X-ray 
+                    crystallography theory that improve the MAP kinase structures essential to
+                    structurebased drug discovery, the use of molecular dynamics to understand the
+                    conformational heterogeneity of the activation loop and inhibitors discovered by
+                    virtual screening. The impact of an advanced polarizable force field such as
+                    AMOEBA used in conjunction with sophisticated kinetic and thermodynamic simulation
+                    methods is also discussed. 
                 </p>
             </answer>        
         </faq>
+    </part>
+    <part id="2011">
         <title>2011</title>
         <faq id="11">
             <question>
@@ -51,26 +53,26 @@
             </question>
             <answer>
                 <p>
-                In the past, weighting between the sum of chemical and data-based targets in
-                macromolecular crystallographic refinement was based on comparing the gradients or Hessian
-                diagonal terms of the two potential functions. Here we demonstrate limitations of
-                this scheme, especially in the context of a maximum likelihood target that is inherently
-                weighted by the model and data errors. In fact, the congruence between the maximum
-                likelihood target and a chemical potential based on polarizable atomic multipole
-                electrostatics evaluated with Ewald summation has opened the door to a transferable,
-                static weight. We derive from first principles an optimal static weight and demonstrate
-                that it is transferable across a broad range of data resolutions in the context
-                of our recent implementation of X-ray crystallographic refinement using the polarizable
-                AMOEBA force field and show the resulting models are balanced with respect
-                to optimizing both R
+                    In the past, weighting between the sum of chemical and data-based targets in
+                    macromolecular crystallographic refinement was based on comparing the gradients or Hessian
+                    diagonal terms of the two potential functions. Here we demonstrate limitations of
+                    this scheme, especially in the context of a maximum likelihood target that is inherently
+                    weighted by the model and data errors. In fact, the congruence between the maximum
+                    likelihood target and a chemical potential based on polarizable atomic multipole
+                    electrostatics evaluated with Ewald summation has opened the door to a transferable,
+                    static weight. We derive from first principles an optimal static weight and demonstrate
+                    that it is transferable across a broad range of data resolutions in the context
+                    of our recent implementation of X-ray crystallographic refinement using the polarizable
+                    AMOEBA force field and show the resulting models are balanced with respect
+                    to optimizing both R
                     <sub>free</sub> and Molprobity scores. Conversely, the classical automatic
-                weighting scheme is shown to lead to under or overfitting of the data and poor model geometry.
-                We also highlight the benefits of this approach for low resolution diffraction
-                data, where the need for prior chemical information is of particular importance. We
-                demonstrate that this method is transferable between low and high resolution maximum
-                likelihood based crystallographic refinement, which proves for the first time that
-                resolution dependent parameterization of either the weight or chemical potential is
-                unnecessary.
+                    weighting scheme is shown to lead to under or overfitting of the data and poor model geometry.
+                    We also highlight the benefits of this approach for low resolution diffraction
+                    data, where the need for prior chemical information is of particular importance. We
+                    demonstrate that this method is transferable between low and high resolution maximum
+                    likelihood based crystallographic refinement, which proves for the first time that
+                    resolution dependent parameterization of either the weight or chemical potential is
+                    unnecessary.
                 </p>
             </answer>
         </faq>
@@ -87,20 +89,20 @@
             </question>
             <answer>
                 <p>
-                Most current crystallographic structure refinements augment the diffraction data
-                with a priori information consisting of bond, angle, dihedral, planarity
-                restraints, and atomic repulsion based on the Pauli exclusion principle. Yet,
-                electrostatics and van der Waals attraction are physical forces that provide
-                additional a priori information. Here, we assess the inclusion of electrostatics
-                for the force field used for all-atom (including hydrogen) joint neutron/X-ray
-                refinement. Two DNA and a protein crystal structure were refined against joint
-                neutron/X-ray diffraction data sets using force fields without electrostatics or
-                with electrostatics. Hydrogen-bond orientation/geometry favors the inclusion of
-                electrostatics. Refinement of Z-DNA with electrostatics leads to a hypothesis
-                for the entropic stabilization of Z-DNA that may partly explain the
-                thermodynamics of converting the B form of DNA to its Z form. Thus, inclusion of
-                electrostatics assists joint neutron/X-ray refinements, especially for placing
-                and orienting hydrogen atoms.
+                    Most current crystallographic structure refinements augment the diffraction data
+                    with a priori information consisting of bond, angle, dihedral, planarity
+                    restraints, and atomic repulsion based on the Pauli exclusion principle. Yet,
+                    electrostatics and van der Waals attraction are physical forces that provide
+                    additional a priori information. Here, we assess the inclusion of electrostatics
+                    for the force field used for all-atom (including hydrogen) joint neutron/X-ray
+                    refinement. Two DNA and a protein crystal structure were refined against joint
+                    neutron/X-ray diffraction data sets using force fields without electrostatics or
+                    with electrostatics. Hydrogen-bond orientation/geometry favors the inclusion of
+                    electrostatics. Refinement of Z-DNA with electrostatics leads to a hypothesis
+                    for the entropic stabilization of Z-DNA that may partly explain the
+                    thermodynamics of converting the B form of DNA to its Z form. Thus, inclusion of
+                    electrostatics assists joint neutron/X-ray refinements, especially for placing
+                    and orienting hydrogen atoms.
                 </p>
             </answer>
         </faq>
@@ -117,41 +119,41 @@
             </question>
             <answer>
                 <p>
-                Refinement of macromolecular models from X-ray crystallography experiments
-                benefits from prior chemical knowledge at all resolutions. As the quality of
-                the prior chemical knowledge from quantum or classical molecular physics
-                improves, in principle so will resulting structural models. Due to limitations
-                in computer performance and electrostatic algorithms, commonly used
-                macromolecules X-ray crystallography refinement protocols have had limited
-                support for rigorous molecular physics in the past. For example, electrostatics
-                is often neglected in favor of nonbonded interactions based on a purely repulsive
-                van der Waals potential. In this work we present advanced algorithms for desktop
-                workstations that open the door to X-ray refinement of even the most challenging
-                macromolecular data sets using state-of-the-art classical molecular physics.
-                First we describe theory for particle mesh Ewald (PME) summation that
-                consistently handles the symmetry of all 230 space groups, replicates of the
-                unit cell such that the minimum image convention can be used with a real space
-                cutoff of any size and the combination of space group symmetry with replicates.
-                An implementation of symmetry accelerated PME for the polarizable atomic
-                multipole optimized energetics for biomolecular applications (AMOEBA) force
-                field is presented. Relative to a single CPU core performing calculations on a
-                P1 unit cell, our AMOEBA engine called Force Field X (FFX) accelerates energy
-                evaluations by more than a factor of 24 on an 8-core workstation with a Tesla
-                GPU coprocessor for 30 structures that contain 240000 atoms on average in the
-                unit cell. The benefit of AMOEBA electrostatics evaluated with PME for
-                macromolecular X-ray crystallography refinement is demonstrated via rerefinement
-                of 10 crystallographic data sets that range in resolution from 1.7 to 4.5 Å.
-                Beginning from structures obtained by local optimization without electrostatics,
-                further optimization using AMOEBA with PME electrostatics improved agreement of
-                the model with the data (R
+                    Refinement of macromolecular models from X-ray crystallography experiments
+                    benefits from prior chemical knowledge at all resolutions. As the quality of
+                    the prior chemical knowledge from quantum or classical molecular physics
+                    improves, in principle so will resulting structural models. Due to limitations
+                    in computer performance and electrostatic algorithms, commonly used
+                    macromolecules X-ray crystallography refinement protocols have had limited
+                    support for rigorous molecular physics in the past. For example, electrostatics
+                    is often neglected in favor of nonbonded interactions based on a purely repulsive
+                    van der Waals potential. In this work we present advanced algorithms for desktop
+                    workstations that open the door to X-ray refinement of even the most challenging
+                    macromolecular data sets using state-of-the-art classical molecular physics.
+                    First we describe theory for particle mesh Ewald (PME) summation that
+                    consistently handles the symmetry of all 230 space groups, replicates of the
+                    unit cell such that the minimum image convention can be used with a real space
+                    cutoff of any size and the combination of space group symmetry with replicates.
+                    An implementation of symmetry accelerated PME for the polarizable atomic
+                    multipole optimized energetics for biomolecular applications (AMOEBA) force
+                    field is presented. Relative to a single CPU core performing calculations on a
+                    P1 unit cell, our AMOEBA engine called Force Field X (FFX) accelerates energy
+                    evaluations by more than a factor of 24 on an 8-core workstation with a Tesla
+                    GPU coprocessor for 30 structures that contain 240000 atoms on average in the
+                    unit cell. The benefit of AMOEBA electrostatics evaluated with PME for
+                    macromolecular X-ray crystallography refinement is demonstrated via rerefinement
+                    of 10 crystallographic data sets that range in resolution from 1.7 to 4.5 Å.
+                    Beginning from structures obtained by local optimization without electrostatics,
+                    further optimization using AMOEBA with PME electrostatics improved agreement of
+                    the model with the data (R
                     <sub>free</sub> was lowered by 0.5%), improved geometric features
-                such as favorable (φ,ψ) backbone conformations, and lowered the average potential
-                energy per residue by over 10 kcal/mol. Furthermore, the MolProbity structure validation
-                tool indicates that the geometry of these rerefined structures is consistent with X-ray
-                crystallographic data collected up to 2.2 Å, which is 0.9 Å better than the actual mean
-                quality (3.1 Å). We conclude that polarizable AMOEBA-assisted X-ray refinement offers
-                advantages to methods that neglect electrostatics and is now efficient enough for routine
-                use.
+                    such as favorable (φ,ψ) backbone conformations, and lowered the average potential
+                    energy per residue by over 10 kcal/mol. Furthermore, the MolProbity structure validation
+                    tool indicates that the geometry of these rerefined structures is consistent with X-ray
+                    crystallographic data collected up to 2.2 Å, which is 0.9 Å better than the actual mean
+                    quality (3.1 Å). We conclude that polarizable AMOEBA-assisted X-ray refinement offers
+                    advantages to methods that neglect electrostatics and is now efficient enough for routine
+                    use.
                 </p>
             </answer>
         </faq>
@@ -171,23 +173,23 @@
             </question>
             <answer>
                 <p>
-                We recently developed a polarizable atomic multipole refinement method assisted
-                by the AMOEBA force field for macromolecular crystallography. Compared to
-                standard refinement procedures, the method uses a more rigorous treatment of
-                X-ray scattering and electrostatics that can significantly improve the resultant
-                information contained in an atomic model. We applied this method to
-                high-resolution lysozyme and trypsin data sets, and validated its utility for
-                precisely describing biomolecular electron density, as indicated by a 0.4–0.6%
-                decrease in the R- and R
+                    We recently developed a polarizable atomic multipole refinement method assisted
+                    by the AMOEBA force field for macromolecular crystallography. Compared to
+                    standard refinement procedures, the method uses a more rigorous treatment of
+                    X-ray scattering and electrostatics that can significantly improve the resultant
+                    information contained in an atomic model. We applied this method to
+                    high-resolution lysozyme and trypsin data sets, and validated its utility for
+                    precisely describing biomolecular electron density, as indicated by a 0.4–0.6%
+                    decrease in the R- and R
                     <sub>free</sub>-values, and a corresponding decrease in the
-                relative energy of 0.4–0.8 Kcal/mol/residue. The re-refinements illustrate the
-                ability of force field electrostatics to orient water networks and catalytically
-                relevant hydrogens, which can be used to make predictions regarding active site
-                function, activity, and protein-ligand interaction energies. Re-refinement of a
-                DNA crystal structure generates the zigzag spine pattern of hydrogen bonding in
-                the minor groove without manual intervention. The polarizable atomic multipole
-                electrostatics model implemented in the AMOEBA force field is applicable and
-                informative for crystal structures solved at any resolution.
+                    relative energy of 0.4–0.8 Kcal/mol/residue. The re-refinements illustrate the
+                    ability of force field electrostatics to orient water networks and catalytically
+                    relevant hydrogens, which can be used to make predictions regarding active site
+                    function, activity, and protein-ligand interaction energies. Re-refinement of a
+                    DNA crystal structure generates the zigzag spine pattern of hydrogen bonding in
+                    the minor groove without manual intervention. The polarizable atomic multipole
+                    electrostatics model implemented in the AMOEBA force field is applicable and
+                    informative for crystal structures solved at any resolution.
                 </p>
             </answer>
         </faq>
@@ -203,24 +205,24 @@
             </question>
             <answer>
                 <p>
-                Inclusion of low-resolution data in macromolecular crystallography requires a
-                model for the bulk solvent. Previous methods have used a binary mask to
-                accomplish this, which has proven to be very effective, but the mask is
-                discontinuous at the solute–solvent boundary (i.e. the mask value jumps from
-                zero to one) and is not differentiable with respect to atomic parameters.
-                Here, two algorithms are introduced for computing bulk-solvent models using
-                either a polynomial switch or a smoothly thresholded product of Gaussians,
-                and both models are shown to be efficient and differentiable with respect to
-                atomic coordinates. These alternative bulk-solvent models offer algorithmic
-                improvements, while showing similar agreement of the model with the observed
-                amplitudes relative to the binary model as monitored using R, R
+                    Inclusion of low-resolution data in macromolecular crystallography requires a
+                    model for the bulk solvent. Previous methods have used a binary mask to
+                    accomplish this, which has proven to be very effective, but the mask is
+                    discontinuous at the solute–solvent boundary (i.e. the mask value jumps from
+                    zero to one) and is not differentiable with respect to atomic parameters.
+                    Here, two algorithms are introduced for computing bulk-solvent models using
+                    either a polynomial switch or a smoothly thresholded product of Gaussians,
+                    and both models are shown to be efficient and differentiable with respect to
+                    atomic coordinates. These alternative bulk-solvent models offer algorithmic
+                    improvements, while showing similar agreement of the model with the observed
+                    amplitudes relative to the binary model as monitored using R, R
                     <sub>free</sub> and
-                differences between experimental and model phases. As with the standard solvent
-                models, the alternative models improve the agreement primarily with lower
-                resolution (>6 Å) data versus no bulk solvent. The models are easily implemented
-                into crystallographic software packages and can be used as a general method for
-                bulk-solvent correction in macromolecular crystallography.
-                \[\textbf{F}_{{t}}=\textbf{F}_{{c}}-k_{{s}}\textbf{F}_{{m}}{{\rm e}^{-1/4\,B_{{s}}\left|\textbf{s}\right|^{2}}}\]
+                    differences between experimental and model phases. As with the standard solvent
+                    models, the alternative models improve the agreement primarily with lower
+                    resolution (>6 Å) data versus no bulk solvent. The models are easily implemented
+                    into crystallographic software packages and can be used as a general method for
+                    bulk-solvent correction in macromolecular crystallography.
+                    \[\textbf{F}_{{t}}=\textbf{F}_{{c}}-k_{{s}}\textbf{F}_{{m}}{{\rm e}^{-1/4\,B_{{s}}\left|\textbf{s}\right|^{2}}}\]
                 </p>
             </answer>
         </faq>
@@ -238,23 +240,23 @@
             </question>
             <answer>
                 <p>
-                Molecular force fields have been approaching a generational transition over the
-                past several years, moving away from well-established and well-tuned, but
-                intrinsically limited, fixed point charge models toward more intricate and
-                expensive polarizable models that should allow more accurate description of
-                molecular properties. The recently introduced AMOEBA force field is a leading
-                publicly available example of this next generation of theoretical model, but to
-                date, it has only received relatively limited validation, which we address here.
-                We show that the AMOEBA force field is in fact a significant improvement over
-                fixed charge models for small molecule structural and thermodynamic observables
-                in particular, although further fine-tuning is necessary to describe solvation
-                free energies of drug-like small molecules, dynamical properties away from
-                ambient conditions, and possible improvements in aromatic interactions. State of
-                the art electronic structure calculations reveal generally very good agreement
-                with AMOEBA for demanding problems such as relative conformational energies of
-                the alanine tetrapeptide and isomers of water sulfate complexes. AMOEBA is shown
-                to be especially successful on protein−ligand binding and computational X-ray
-                crystallography where polarization and accurate electrostatics are critical.
+                    Molecular force fields have been approaching a generational transition over the
+                    past several years, moving away from well-established and well-tuned, but
+                    intrinsically limited, fixed point charge models toward more intricate and
+                    expensive polarizable models that should allow more accurate description of
+                    molecular properties. The recently introduced AMOEBA force field is a leading
+                    publicly available example of this next generation of theoretical model, but to
+                    date, it has only received relatively limited validation, which we address here.
+                    We show that the AMOEBA force field is in fact a significant improvement over
+                    fixed charge models for small molecule structural and thermodynamic observables
+                    in particular, although further fine-tuning is necessary to describe solvation
+                    free energies of drug-like small molecules, dynamical properties away from
+                    ambient conditions, and possible improvements in aromatic interactions. State of
+                    the art electronic structure calculations reveal generally very good agreement
+                    with AMOEBA for demanding problems such as relative conformational energies of
+                    the alanine tetrapeptide and isomers of water sulfate complexes. AMOEBA is shown
+                    to be especially successful on protein−ligand binding and computational X-ray
+                    crystallography where polarization and accurate electrostatics are critical.
                 </p>
             </answer>
         </faq>
@@ -263,9 +265,9 @@
         <title>2009</title>
         <faq id="5">
             <question>
-                 Schnieders, M. J., T. D. Fenn, V. S. Pande and A. T. Brunger,
-                 Polarizable atomic multipole X-ray refinement:
-                 Application to peptide crystals.
+                Schnieders, M. J., T. D. Fenn, V. S. Pande and A. T. Brunger,
+                Polarizable atomic multipole X-ray refinement:
+                Application to peptide crystals.
                 <i>Acta Crystallographica Section D</i>
                 <b>2009</b>, 65, (9), 952-65.
                 <a href="http://dx.doi.org/10.1107/S0907444909022707" target="_blank">
@@ -274,24 +276,24 @@
             </question>
             <answer>
                 <p>
-                Recent advances in computational chemistry have produced force fields based on a polarizable
-                atomic multipole description of biomolecular electrostatics. In this work, the Atomic
-                Multipole Optimized Energetics for Biomolecular Applications (AMOEBA) force field is applied
-                to restrained refinement of molecular models against X-ray diffraction data from peptide
-                crystals. A new formalism is also developed to compute anisotropic and aspherical structure
-                factors using fast Fourier transformation (FFT) of Cartesian Gaussian multipoles. Relative
-                to direct summation, the FFT approach can give a speedup of more than an order of magnitude
-                for aspherical refinement of ultrahigh-resolution data sets. Use of a sublattice formalism
-                makes the method highly parallelizable. Application of the Cartesian Gaussian multipole
-                scattering model to a series of four peptide crystals using multipole coefficients from the
-                AMOEBA force field demonstrates that AMOEBA systematically underestimates electron density
-                at bond centers. For the trigonal and tetrahedral bonding geometries common in organic
-                chemistry, an atomic multipole expansion through hexadecapole order is required to explain
-                bond electron density. Alternatively, the addition of interatomic scattering (IAS) sites to
-                the AMOEBA-based density captured bonding effects with fewer parameters. For a series of
-                four peptide crystals, the AMOEBA-IAS model lowered R
+                    Recent advances in computational chemistry have produced force fields based on a polarizable
+                    atomic multipole description of biomolecular electrostatics. In this work, the Atomic
+                    Multipole Optimized Energetics for Biomolecular Applications (AMOEBA) force field is applied
+                    to restrained refinement of molecular models against X-ray diffraction data from peptide
+                    crystals. A new formalism is also developed to compute anisotropic and aspherical structure
+                    factors using fast Fourier transformation (FFT) of Cartesian Gaussian multipoles. Relative
+                    to direct summation, the FFT approach can give a speedup of more than an order of magnitude
+                    for aspherical refinement of ultrahigh-resolution data sets. Use of a sublattice formalism
+                    makes the method highly parallelizable. Application of the Cartesian Gaussian multipole
+                    scattering model to a series of four peptide crystals using multipole coefficients from the
+                    AMOEBA force field demonstrates that AMOEBA systematically underestimates electron density
+                    at bond centers. For the trigonal and tetrahedral bonding geometries common in organic
+                    chemistry, an atomic multipole expansion through hexadecapole order is required to explain
+                    bond electron density. Alternatively, the addition of interatomic scattering (IAS) sites to
+                    the AMOEBA-based density captured bonding effects with fewer parameters. For a series of
+                    four peptide crystals, the AMOEBA-IAS model lowered R
                     <sub>free</sub> by 20-40% relative to the original
-                spherically symmetric scattering model.
+                    spherically symmetric scattering model.
                 </p>
             </answer>
         </faq>
@@ -309,13 +311,13 @@
             </question>
             <answer>
                 <p>
-                The binding free energies of several benzamidine-like inhibitors to trypsin were examined
-                using a polarizable molecular mechanics potential. All the computed binding free energies
-                are in good agreement with the experimental data. From free energy decomposition,
-                electrostatic interaction was indicated to be the driving force for the binding. MD
-                simulations show that the ligands form hydrogen bonds with trypsin and water molecules
-                nearby in a competitive fashion. While the binding free energy is independent of the ligand
-                dipole moment, it shows a strong correlation with the ligand molecular polarizability.
+                    The binding free energies of several benzamidine-like inhibitors to trypsin were examined
+                    using a polarizable molecular mechanics potential. All the computed binding free energies
+                    are in good agreement with the experimental data. From free energy decomposition,
+                    electrostatic interaction was indicated to be the driving force for the binding. MD
+                    simulations show that the ligands form hydrogen bonds with trypsin and water molecules
+                    nearby in a competitive fashion. While the binding free energy is independent of the ligand
+                    dipole moment, it shows a strong correlation with the ligand molecular polarizability.
                 </p>
             </answer>
         </faq>
@@ -332,24 +334,24 @@
             </question>
             <answer>
                 <p>
-                We have calculated the binding free energies of a series of benzamidine-like inhibitors to
-                trypsin with a polarizable force field using both explicit and implicit solvent approaches.
-                Free energy perturbation has been performed for the ligands in bulk water and in protein
-                complex with molecular dynamics simulations. The binding free energies calculated from
-                explicit solvent simulations are well within the accuracy of experimental measurement and
-                the direction of change is predicted correctly in all cases. We analyzed the molecular
-                dipole moments of the ligands in gas, water and protein environments. Neither binding
-                affinity nor ligand solvation free energy in bulk water shows much dependence on the
-                molecular dipole moments of the ligands. Substitution of the aromatic or the charged group
-                in the ligand results in considerable change in the solvation energy in bulk water and
-                protein whereas the binding affinity varies insignificantly due to cancellation. The effect
-                of chemical modification on ligand charge distribution is mostly local. Replacing benzene
-                with diazine has minimal impact on the atomic multipoles at the amidinium group. We have
-                also utilized an implicit solvent based end-state approach to evaluate the binding free
-                energies of these inhibitors. In this approach, the polarizable multipole model combined
-                with Poisson-Boltzmann/surface area (PMPB/SA) provides the electrostatic interaction energy
-                and the polar solvation free energy. Overall the relative binding free energies obtained
-                from the MM-PMPB/SA model are in good agreement with the experimental data.
+                    We have calculated the binding free energies of a series of benzamidine-like inhibitors to
+                    trypsin with a polarizable force field using both explicit and implicit solvent approaches.
+                    Free energy perturbation has been performed for the ligands in bulk water and in protein
+                    complex with molecular dynamics simulations. The binding free energies calculated from
+                    explicit solvent simulations are well within the accuracy of experimental measurement and
+                    the direction of change is predicted correctly in all cases. We analyzed the molecular
+                    dipole moments of the ligands in gas, water and protein environments. Neither binding
+                    affinity nor ligand solvation free energy in bulk water shows much dependence on the
+                    molecular dipole moments of the ligands. Substitution of the aromatic or the charged group
+                    in the ligand results in considerable change in the solvation energy in bulk water and
+                    protein whereas the binding affinity varies insignificantly due to cancellation. The effect
+                    of chemical modification on ligand charge distribution is mostly local. Replacing benzene
+                    with diazine has minimal impact on the atomic multipoles at the amidinium group. We have
+                    also utilized an implicit solvent based end-state approach to evaluate the binding free
+                    energies of these inhibitors. In this approach, the polarizable multipole model combined
+                    with Poisson-Boltzmann/surface area (PMPB/SA) provides the electrostatic interaction energy
+                    and the polar solvation free energy. Overall the relative binding free energies obtained
+                    from the MM-PMPB/SA model are in good agreement with the experimental data.
                 </p>
             </answer>
         </faq>
@@ -368,25 +370,25 @@
             </question>
             <answer>
                 <p>
-                The generalized Born (GB) model of continuum electrostatics is an analytic approximation to
-                the Poisson equation useful for predicting the electrostatic component of the solvation free
-                energy for solutes ranging in size from small organic molecules to large macromolecular
-                complexes. This work presents a new continuum electrostatics model based on Kirkwood's
-                analytic result for the electrostatic component of the solvation free energy for a solute
-                with arbitrary charge distribution. Unlike GB, which is limited to monopoles, our
-                generalized Kirkwood (GK) model can treat solute electrostatics represented by any
-                combination of permanent and induced atomic multipole moments of arbitrary degree.
-                Here we apply the GK model to the newly developed Atomic Multipole Optimized Energetics for
-                Biomolecular Applications (AMOEBA) force field, which includes permanent atomic multipoles
-                through the quadrupole and treats polarization via induced dipoles. A derivation of the GK
-                gradient is presented, which enables energy minimization or molecular dynamics of an AMOEBA
-                solute within a GK continuum. For a series of 55 proteins, GK electrostatic solvation free
-                energies are compared to the Polarizable Multipole Poisson−Boltzmann (PMPB) model and yield
-                a mean unsigned relative difference of 0.9%. Additionally, the reaction field of GK compares
-                well to that of the PMPB model, as shown by a mean unsigned relative difference of 2.7% in
-                predicting the total solvated dipole moment for each protein in this test set. The CPU time
-                needed for GK relative to vacuum AMOEBA calculations is approximately a factor of 3, making
-                it suitable for applications that require significant sampling of configuration space.
+                    The generalized Born (GB) model of continuum electrostatics is an analytic approximation to
+                    the Poisson equation useful for predicting the electrostatic component of the solvation free
+                    energy for solutes ranging in size from small organic molecules to large macromolecular
+                    complexes. This work presents a new continuum electrostatics model based on Kirkwood's
+                    analytic result for the electrostatic component of the solvation free energy for a solute
+                    with arbitrary charge distribution. Unlike GB, which is limited to monopoles, our
+                    generalized Kirkwood (GK) model can treat solute electrostatics represented by any
+                    combination of permanent and induced atomic multipole moments of arbitrary degree.
+                    Here we apply the GK model to the newly developed Atomic Multipole Optimized Energetics for
+                    Biomolecular Applications (AMOEBA) force field, which includes permanent atomic multipoles
+                    through the quadrupole and treats polarization via induced dipoles. A derivation of the GK
+                    gradient is presented, which enables energy minimization or molecular dynamics of an AMOEBA
+                    solute within a GK continuum. For a series of 55 proteins, GK electrostatic solvation free
+                    energies are compared to the Polarizable Multipole Poisson−Boltzmann (PMPB) model and yield
+                    a mean unsigned relative difference of 0.9%. Additionally, the reaction field of GK compares
+                    well to that of the PMPB model, as shown by a mean unsigned relative difference of 2.7% in
+                    predicting the total solvated dipole moment for each protein in this test set. The CPU time
+                    needed for GK relative to vacuum AMOEBA calculations is approximately a factor of 3, making
+                    it suitable for applications that require significant sampling of configuration space.
                 </p>
             </answer>
         </faq>
@@ -402,31 +404,31 @@
             </question>
             <answer>
                 <p>
-                Modeling the change in the electrostatics of organic molecules upon moving from vacuum into
-                solvent, due to polarization, has long been an interesting problem. In vacuum, experimental
-                values for the dipole moments and polarizabilities of small, rigid molecules are known to
-                high accuracy; however, it has generally been difficult to determine these quantities for a
-                polar molecule in water. A theoretical approach introduced by Onsager
-                [ J. Am. Chem. Soc. 58, 1486 (1936) ]
-                used vacuum properties of small molecules, including polarizability, dipole moment, and
-                size, to predict experimentally known permittivities of neat liquids via the Poisson
-                equation. Since this important advance in understanding the condensed phase, a large number
-                of computational methods have been developed to study solutes embedded in a continuum via
-                numerical solutions to the Poisson-Boltzmann equation. Only recently have the classical
-                force fields used for studying biomolecules begun to include explicit polarization in their
-                functional forms. Here the authors describe the theory underlying a newly developed
-                polarizable multipole Poisson-Boltzmann (PMPB) continuum electrostatics model, which builds
-                on the atomic multipole optimized energetics for biomolecular applications (AMOEBA) force
-                field. As an application of the PMPB methodology, results are presented for several small
-                folded proteins studied by molecular dynamics in explicit water as well as embedded in the
-                PMPB continuum. The dipole moment of each protein increased on average by a factor of 1.27
-                in explicit AMOEBA water and 1.26 in continuum solvent. The essentially identical
-                electrostatic response in both models suggests that PMPB electrostatics offers an efficient
-                alternative to sampling explicit solvent molecules for a variety of interesting
-                applications, including binding energies, conformational analysis, and pKa prediction.
-                Introduction of 150 mM salt lowered the electrostatic solvation energy between 2 and 13
-                kcal/mole, depending on the formal charge of the protein, but had only a small influence
-                on dipole moments.
+                    Modeling the change in the electrostatics of organic molecules upon moving from vacuum into
+                    solvent, due to polarization, has long been an interesting problem. In vacuum, experimental
+                    values for the dipole moments and polarizabilities of small, rigid molecules are known to
+                    high accuracy; however, it has generally been difficult to determine these quantities for a
+                    polar molecule in water. A theoretical approach introduced by Onsager
+                    [ J. Am. Chem. Soc. 58, 1486 (1936) ]
+                    used vacuum properties of small molecules, including polarizability, dipole moment, and
+                    size, to predict experimentally known permittivities of neat liquids via the Poisson
+                    equation. Since this important advance in understanding the condensed phase, a large number
+                    of computational methods have been developed to study solutes embedded in a continuum via
+                    numerical solutions to the Poisson-Boltzmann equation. Only recently have the classical
+                    force fields used for studying biomolecules begun to include explicit polarization in their
+                    functional forms. Here the authors describe the theory underlying a newly developed
+                    polarizable multipole Poisson-Boltzmann (PMPB) continuum electrostatics model, which builds
+                    on the atomic multipole optimized energetics for biomolecular applications (AMOEBA) force
+                    field. As an application of the PMPB methodology, results are presented for several small
+                    folded proteins studied by molecular dynamics in explicit water as well as embedded in the
+                    PMPB continuum. The dipole moment of each protein increased on average by a factor of 1.27
+                    in explicit AMOEBA water and 1.26 in continuum solvent. The essentially identical
+                    electrostatic response in both models suggests that PMPB electrostatics offers an efficient
+                    alternative to sampling explicit solvent molecules for a variety of interesting
+                    applications, including binding energies, conformational analysis, and pKa prediction.
+                    Introduction of 150 mM salt lowered the electrostatic solvation energy between 2 and 13
+                    kcal/mole, depending on the formal charge of the protein, but had only a small influence
+                    on dipole moments.
                 </p>
             </answer>
         </faq>
