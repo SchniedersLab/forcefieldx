@@ -88,7 +88,7 @@ fi
 
 CLASSPATH=$CLASSPATH_PREFIX:"$BASEDIR"/bin/ffx-all.jar
 
-EXTRA_JVM_ARGUMENTS="-Xms1G -Xmx4G -Xss4M -XX:MaxPermSize=1500M"
+EXTRA_JVM_ARGUMENTS="-Xms128M -Xmx4G -Xss2M -XX:MaxPermSize=3G"
 
 # For Cygwin, switch paths to Windows format before running java
 if $cygwin; then
@@ -104,7 +104,7 @@ exec "$JAVACMD" $JAVA_OPTS \
   -classpath "$CLASSPATH" \
   -Djava.system.class.loader="ffx.FFXClassLoader" \
   -Djava.awt.headless="true" \
-  -Dj3d.rend="ogl" \
+  -Dj3d.rend="jogl" \
   -Dapp.name=ffx \
   -Dapp.pid="$$" \
   -Dapp.repo="$REPO" \

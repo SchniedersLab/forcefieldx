@@ -235,7 +235,7 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
         this.nSteps = iter;
 
         if (iter == 0) {
-            logger.info("\n Limited Memory BFGS Quasi-Newton Optimization: \n\n");
+            logger.info("\n Limited Memory BFGS Quasi-Newton Optimization (sigmaA parameters): \n\n");
             logger.info(" Cycle       Energy      G RMS    Delta E   Delta X    Angle  Evals     Time\n");
         }
         if (info == null) {

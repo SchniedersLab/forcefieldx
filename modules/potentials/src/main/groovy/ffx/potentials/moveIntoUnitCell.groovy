@@ -49,22 +49,22 @@ for (int i=0; i<systems.length; i++) {
         // Find the center of mass
         for (polymer in polymers) {
             List<Atom> atoms = polymer.getAtomList();
-            nAtoms += atoms.size();
+            nAtoms = nAtoms + atoms.size();
             for (atom in atoms) {
-                com[0] += atom.getX();
-                com[1] += atom.getY();
-                com[2] += atom.getZ();
+                com[0] = com[0] + atom.getX();
+                com[1] = com[1] + atom.getY();
+                com[2] = com[2] + atom.getZ();
             }
         }
-        com[0] /= nAtoms;
-        com[1] /= nAtoms;
-        com[2] /= nAtoms;
+        com[0] = com[0] / nAtoms;
+        com[1] = com[1] / nAtoms;
+        com[2] = com[2] / nAtoms;
 
         // Calculate the translation vector for the center of mass
         crystal.toPrimaryCell(com, translate);
-        translate[0] -= com[0];
-        translate[1] -= com[1];
-        translate[2] -= com[2];
+        translate[0] = translate[0] - com[0];
+        translate[1] = translate[1] - com[1];
+        translate[2] = translate[2] - com[2];
 
         // Move each atom
         for (polymer in polymers) {
@@ -84,21 +84,21 @@ for (int i=0; i<systems.length; i++) {
         com[1] = 0.0;
         com[2] = 0.0;
         for (atom in atoms) {
-            com[0] += atom.getX();
-            com[1] += atom.getY();
-            com[2] += atom.getZ();
+            com[0] = com[0] + atom.getX();
+            com[1] = com[1] + atom.getY();
+            com[2] = com[2] + atom.getZ();
         }
 
         nAtoms = atoms.size();
-        com[0] /= nAtoms;
-        com[1] /= nAtoms;
-        com[2] /= nAtoms;
+        com[0] = com[0] / nAtoms;
+        com[1] = com[1] / nAtoms;
+        com[2] = com[2] / nAtoms;
 
         // Calculate the translation vector for the center of mass
         crystal.toPrimaryCell(com, translate);
-        translate[0] -= com[0];
-        translate[1] -= com[1];
-        translate[2] -= com[2];
+        translate[0] = translate[0] - com[0];
+        translate[1] = translate[1] - com[1];
+        translate[2] = translate[2] - com[2];
 
         // Move each atom
         for (atom in atoms) {
@@ -115,21 +115,21 @@ for (int i=0; i<systems.length; i++) {
         com[1] = 0.0;
         com[2] = 0.0;
         for (atom in atoms) {
-            com[0] += atom.getX();
-            com[1] += atom.getY();
-            com[2] += atom.getZ();
+            com[0] = com[0] + atom.getX();
+            com[1] = com[1] + atom.getY();
+            com[2] = com[2] + atom.getZ();
         }
 
         nAtoms = atoms.size();
-        com[0] /= nAtoms;
-        com[1] /= nAtoms;
-        com[2] /= nAtoms;
+        com[0] = com[0] / nAtoms;
+        com[1] = com[1] / nAtoms;
+        com[2] = com[2] / nAtoms;
 
         // Calculate the translation vector for the center of mass
         crystal.toPrimaryCell(com, translate);
-        translate[0] -= com[0];
-        translate[1] -= com[1];
-        translate[2] -= com[2];
+        translate[0] = translate[0] - com[0];
+        translate[1] = translate[1] - com[1];
+        translate[2] = translate[2] - com[2];
 
         // Move each atom
         for (atom in atoms) {
@@ -146,21 +146,21 @@ for (int i=0; i<systems.length; i++) {
         com[1] = 0.0;
         com[2] = 0.0;
         for (atom in atoms) {
-            com[0] += atom.getX();
-            com[1] += atom.getY();
-            com[2] += atom.getZ();
+            com[0] = com[0] + atom.getX();
+            com[1] = com[1] + atom.getY();
+            com[2] = com[2] + atom.getZ();
         }
 
         nAtoms = atoms.size();
-        com[0] /= nAtoms;
-        com[1] /= nAtoms;
-        com[2] /= nAtoms;
+        com[0] = com[0] / nAtoms;
+        com[1] = com[1] / nAtoms;
+        com[2] = com[2] / nAtoms;
 
         // Calculate the translation vector for the center of mass
         crystal.toPrimaryCell(com, translate);
-        translate[0] -= com[0];
-        translate[1] -= com[1];
-        translate[2] -= com[2];
+        translate[0] = translate[0] - com[0];
+        translate[1] = translate[1] - com[1];
+        translate[2] = translate[2] - com[2];
 
         // Move each atom
         for (atom in atoms) {

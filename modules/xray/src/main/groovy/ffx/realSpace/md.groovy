@@ -43,7 +43,7 @@ boolean initVelocities = true;
 def cli = new CliBuilder(usage:' ffxc realspace.md [options] <pdbfilename> [datafilename]');
 cli.h(longOpt:'help', 'Print this help message.');
 cli.d(longOpt:'data', args:2, valueSeparator:',', argName:'data.map,1.0', 'specify input data filename (or simply provide the datafilename argument after the PDB file) and weight to apply to the data (wA)');
-cli.p(longOpt:'polarization', args:1, 'polarization model: [none / direct / mutual]');
+cli.p(longOpt:'polarization', args:1, argName:'mutual', 'polarization model: [none / direct / mutual]');
 cli.n(longOpt:'steps', args:1, argName:'1000000', 'Number of molecular dynamics steps.');
 cli.f(longOpt:'dt', args:1, argName:'1.0', 'Time step in femtoseconds.');
 cli.i(longOpt:'print', args:1, argName:'0.01', 'Interval to print out thermodyanamics in picoseconds.');

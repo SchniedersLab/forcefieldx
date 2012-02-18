@@ -8,13 +8,13 @@ def cli = new CliBuilder(usage:' ffxc poledit <filename>');
 cli.h(longOpt:'help', 'Print this help message.');
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
-if (options.h || arguments == null || arguments.size() != 1) {
+if (options.h || arguments == null) {
     return cli.usage();
 }
 String gdmaoutfname = arguments.get(0);
 String peditinfname = arguments.get(1);
-
-poledit(gdmaoutfname,peditinfname);
+int out_type = arguments.get(2);
+poledit(gdmaoutfname,peditinfname,out_type);
 
 
 

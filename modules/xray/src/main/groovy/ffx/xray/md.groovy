@@ -48,7 +48,7 @@ def cli = new CliBuilder(usage:' ffxc xray.md [options] <pdbfilename> [datafilen
 cli.h(longOpt:'help', 'Print this help message.');
 cli.d(longOpt:'data', args:3, valueSeparator:',', argName:'data.mtz,1.0,false', 'specify input data filename (or simply provide the datafilename argument after the PDB file), weight applied to the data (wA) and if the data is from a neutron experiment');
 cli.r(longOpt:'mode', args:1, argName:'coordinates', 'type of refinement: [coordinates / bfactors / coordinates_and_bfactors / occupancies / bfactors_and_occupancies / coordinates_and_occupancies / coordinates_and_bfactors_and_occupancies]');
-cli.p(longOpt:'polarization', args:1, 'polarization model: [none / direct / mutual]');
+cli.p(longOpt:'polarization', args:1, argName:'mutual', 'polarization model: [none / direct / mutual]');
 cli.n(longOpt:'steps', args:1, argName:'1000000', 'Number of molecular dynamics steps.');
 cli.f(longOpt:'dt', args:1, argName:'1.0', 'Time step in femtoseconds.');
 cli.i(longOpt:'print', args:1, argName:'0.01', 'Interval to print out thermodyanamics in picoseconds.');

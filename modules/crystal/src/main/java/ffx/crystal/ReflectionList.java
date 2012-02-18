@@ -312,6 +312,7 @@ public class ReflectionList {
                 } else {
                     allowed = 0;
                     epsilon = 0;
+                    break;
                 }
             } else if (mate.equals(HKL.neg(hkl))) {
                 // centric reflection

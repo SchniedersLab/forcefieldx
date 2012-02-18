@@ -40,7 +40,7 @@ boolean initVelocities = true;
 def cli = new CliBuilder(usage:' ffxc realspace.anneal [options] <pdbfilename> [datafilename]');
 cli.h(longOpt:'help', 'Print this help message.');
 cli.d(longOpt:'data', args:2, valueSeparator:',', argName:'data.map,1.0', 'specify input data filename (or simply provide the datafilename argument after the PDB file) and weight to apply to the data (wA)');
-cli.p(longOpt:'polarization', args:1, 'polarization model: [none / direct / mutual]');
+cli.p(longOpt:'polarization', args:1, argName:'mutual', 'polarization model: [none / direct / mutual]');
 cli.s(longOpt:'suffix', args:1, argName:'_anneal', 'output suffix');
 cli.l(longOpt:'low', args:1, argName:'100.0', 'Low temperature limit in degrees Kelvin.');
 cli.t(longOpt:'high', args:1, argName:'1000.0', 'High temperature limit in degrees Kelvin.');
