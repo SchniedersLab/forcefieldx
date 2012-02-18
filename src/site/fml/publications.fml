@@ -5,6 +5,38 @@
   title="Publications"
   toplink="true">
     <part id="2011">
+        <title>2012</title>
+        <faq id="12">
+            <question>
+                Schnieders, M. J., T. S. Kaoud, Chunli Yan; Kevin N. Dalby and Pengyu Ren
+                Computational Insights for the Discovery of 
+                Non-ATP Competitive Inhibitors of MAP Kinases
+                <i>Current Pharmaceutical Design</i>
+                <b>2012</b>18, (9), 1173-85.
+                <a href="http://dx.doi.org/10.2174/138920012799362873">
+                    <img src="images/pdf.png" alt="PDF"/>
+                </a>
+            </question>
+            <answer>
+                <p>
+                Due to their role in cellular signaling mitogen activated protein (MAP) kinases
+                represent targets of pharmaceutical interest. However, the majority of known MAP
+                kinase inhibitors compete with cellular ATP and target an ATP binding pocket that
+                is highly conserved in the 500 plus representatives of the human protein kinase
+                family. Here we review progress toward the development of non-ATP competitive MAP
+                kinase inhibitors for the extracellular signal regulated kinases (ERK1/2),
+                the c-jun N-terminal kinases (JNK1/2/3) and the p38 MAPKs (α, β, γ, and δ).
+                Special emphasis is placed on the role of computational methods in the drug
+                discovery process for MAP kinases. Topics include recent advances in X-ray 
+                crystallography theory that improve the MAP kinase structures essential to
+                structurebased drug discovery, the use of molecular dynamics to understand the
+                conformational heterogeneity of the activation loop and inhibitors discovered by
+                virtual screening. The impact of an advanced polarizable force field such as
+                AMOEBA used in conjunction with sophisticated kinetic and thermodynamic simulation
+                methods is also discussed. 
+                </p>
+            </answer>        
+        </faq>
         <title>2011</title>
         <faq id="11">
             <question>

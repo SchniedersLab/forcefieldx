@@ -21,11 +21,9 @@
 package ffx.algorithms;
 
 import java.io.File;
-import java.util.Random;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import static java.lang.Math.exp;
-import static java.lang.Math.sqrt;
 import static java.lang.String.format;
 
 import org.apache.commons.configuration.CompositeConfiguration;
@@ -37,7 +35,6 @@ import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.parsers.DYNFilter;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.XYZFilter;
-import java.util.Arrays;
 
 /**
  * Run NVE or NVT molecular dynamics.
@@ -346,7 +343,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
         logger.info(String.format(" Save interval:   %8.3f (psec)", saveInterval));
         logger.info(String.format(" Archive file: %s", archiveFile.getName()));
         logger.info(String.format(" Restart file: %s", dynFile.getName()));
-        
+
         Thread dynamicThread = new Thread(this);
         dynamicThread.start();
         synchronized (this) {
@@ -361,8 +358,23 @@ public class MolecularDynamics implements Runnable, Terminatable {
         }
     }
 
+    /**
+     * Set the number of time steps between removal of center of mass
+     * kinetic energy.
+     *
+     * @param removeCOMMotionFrequency Number of time steps between center of
+     *        mass removal.
+     */
     public void setRemoveCOMMotionFrequency(int removeCOMMotionFrequency) {
+        if (removeCOMMotionFrequency < 0) {
+            removeCOMMotionFrequency = 0;
+        }
         this.removeCOMMotionFrequency = removeCOMMotionFrequency;
+        if (removeCOMMotionFrequency != 0) {
+            thermostat.removingCenterOfMassMotion(true);
+        } else {
+            thermostat.removingCenterOfMassMotion(false);
+        }
     }
 
     /** {@inheritDoc} */

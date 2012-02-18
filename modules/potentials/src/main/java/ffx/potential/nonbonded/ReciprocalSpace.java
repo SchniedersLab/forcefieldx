@@ -20,6 +20,7 @@
  */
 package ffx.potential.nonbonded;
 
+import java.nio.DoubleBuffer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.Math.*;
@@ -90,6 +91,7 @@ public class ReciprocalSpace {
      * Reciprocal space grid.
      */
     private final double splineGrid[];
+    private final DoubleBuffer splineBuffer;
     /**
      * Fractional multipole array.
      */
@@ -228,14 +230,18 @@ public class ReciprocalSpace {
         if (!cudaFFT) {
             complexFFT3D = new Complex3DParallel(fftX, fftY, fftZ, fftTeam, recipSchedule);
             complexFFT3D.setRecip(recip);
+            splineBuffer = DoubleBuffer.wrap(splineGrid);
             cudaFFT3D = null;
             cudaThread = null;
         } else {
             complexFFT3D = null;
-            cudaFFT3D = new Complex3DCuda(fftX, fftY, fftZ, splineGrid, recip);
+            cudaFFT3D = new Complex3DCuda(fftX, fftY, fftZ);
             cudaThread = new Thread(cudaFFT3D);
             cudaThread.setPriority(Thread.MAX_PRIORITY);
             cudaThread.start();
+            cudaFFT3D.setRecip(recip);
+            splineBuffer = cudaFFT3D.getDoubleBuffer();
+            spatialDensityRegion.setGridBuffer(splineBuffer);
         }
     }
 
@@ -765,7 +771,10 @@ public class ReciprocalSpace {
                         final int i = mod(++i0, fftX);
                         final int ii = iComplex3D(i, j, k, fftX, fftY);
                         final double splxi[] = splx[ith1];
-                        splineGrid[ii] += splxi[0] * term0 + splxi[1] * term1 + splxi[2] * term2;
+                        final double add = splxi[0] * term0 + splxi[1] * term1 + splxi[2] * term2;
+                        final double current = splineBuffer.get(ii);
+                        splineBuffer.put(ii, current + add);
+                        //splineGrid[ii] += add;
                     }
                 }
             }
@@ -880,8 +889,14 @@ public class ReciprocalSpace {
                         final int i = mod(++i0, fftX);
                         final int ii = iComplex3D(i, j, k, fftX, fftY);
                         final double splxi[] = splx[ith1];
-                        splineGrid[ii] += splxi[0] * term0 + splxi[1] * term1;
-                        splineGrid[ii + 1] += splxi[0] * termp0 + splxi[1] * termp1;
+                        final double add = splxi[0] * term0 + splxi[1] * term1;
+                        final double addi = splxi[0] * termp0 + splxi[1] * termp1;
+                        final double current = splineBuffer.get(ii);
+                        final double currenti = splineBuffer.get(ii + 1);
+                        splineBuffer.put(ii, current + add);
+                        splineBuffer.put(ii + 1, currenti + addi);
+                        //splineGrid[ii] += add;
+                        //splineGrid[ii + 1] += addi;
                     }
                 }
             }
@@ -982,7 +997,8 @@ public class ReciprocalSpace {
                             for (int ith1 = 0; ith1 < bSplineOrder; ith1++) {
                                 final int i = mod(++i0, fftX);
                                 final int ii = iComplex3D(i, j, k, fftX, fftY);
-                                final double tq = splineGrid[ii];
+                                //final double tq = splineGrid[ii];
+                                final double tq = splineBuffer.get(ii);
                                 final double splxi[] = splx[ith1];
                                 t0 += tq * splxi[0];
                                 t1 += tq * splxi[1];
@@ -1199,8 +1215,10 @@ public class ReciprocalSpace {
                             for (int ith1 = 0; ith1 < bSplineOrder; ith1++) {
                                 final int i = mod(++i0, fftX);
                                 final int ii = iComplex3D(i, j, k, fftX, fftY);
-                                final double tq = splineGrid[ii];
-                                final double tp = splineGrid[ii + 1];
+                                //final double tq = splineGrid[ii];
+                                //final double tp = splineGrid[ii + 1];
+                                final double tq = splineBuffer.get(ii);
+                                final double tp = splineBuffer.get(ii + 1);
                                 final double splxi[] = splx[ith1];
                                 t0 += tq * splxi[0];
                                 t1 += tq * splxi[1];

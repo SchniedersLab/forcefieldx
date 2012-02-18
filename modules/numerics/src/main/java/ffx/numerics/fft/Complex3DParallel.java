@@ -143,9 +143,8 @@ public class Complex3DParallel {
         try {
             parallelTeam.execute(parallelFFT);
         } catch (Exception e) {
-            String message = "Fatal exception evaluating the FFT.\n";
+            String message = " Fatal exception evaluating the FFT.\n";
             logger.log(Level.SEVERE, message, e);
-            System.exit(-1);
         }
     }
 
