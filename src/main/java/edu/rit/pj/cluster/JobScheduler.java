@@ -4,7 +4,7 @@
 // Package: edu.rit.pj.cluster
 // Unit:    Class edu.rit.pj.cluster.JobScheduler
 //
-// This Java source file is copyright (C) 2008 by Alan Kaminsky. All rights
+// This Java source file is copyright (C) 2012 by Alan Kaminsky. All rights
 // reserved. For further information, contact the author, Alan Kaminsky, at
 // ark@cs.rit.edu.
 //
@@ -78,7 +78,7 @@ import java.util.Scanner;
  * Configuration}.
  *
  * @author  Alan Kaminsky
- * @version 21-May-2008
+ * @version 24-Jan-2012
  */
 public class JobScheduler
 	implements JobSchedulerRef
@@ -414,6 +414,25 @@ public class JobScheduler
 		}
 
 	/**
+	 * Report a comment for a process.
+	 *
+	 * @param  theJobFrontend  Job frontend that is calling this method.
+	 * @param  rank            Process rank.
+	 * @param  comment         Comment string.
+	 *
+	 * @exception  IOException
+	 *     Thrown if an I/O error occurred.
+	 */
+	public synchronized void reportComment
+		(JobFrontendRef theJobFrontend,
+		 int rank,
+		 String comment)
+		{
+		JobInfo jobinfo = getJobInfo (theJobFrontend);
+		jobinfo.comment[rank] = comment;
+		}
+
+	/**
 	 * Request that a job be scheduled.
 	 *
 	 * @param  theJobFrontend  Job frontend that is calling this method.
@@ -447,6 +466,8 @@ public class JobScheduler
 		jobinfo.Nt = Nt;
 		jobinfo.backend = new BackendInfo [Np];
 		jobinfo.cpus = new int [Np];
+		jobinfo.comment = new String [Np];
+		for (int i = 0; i < Np; ++ i) jobinfo.comment[i] = "";
 
 		// If the cluster doesn't have enough resources, cancel the job.
 		if (! enoughResourcesForJob (jobinfo.Nn, jobinfo.Np, jobinfo.Nt))
@@ -976,16 +997,36 @@ public class JobScheduler
 			printStatusHtmlEnd (out);
 			}
 
+		// Print the detailed job status document.
+		else if (request.getUri().startsWith ("/job/"))
+			{
+			String jobString = request.getUri().substring (5);
+			try
+				{
+				int jobNum = Integer.parseInt (jobString);
+				PrintWriter out = response.getPrintWriter();
+				printJobDetailHtmlStart (out, now, jobNum);
+				printJobDetailHtmlBody (out, now, jobNum);
+				printStatusHtmlEnd (out);
+				}
+			catch (NumberFormatException exc)
+				{
+				PrintWriter out = response.getPrintWriter();
+				printErrorHtmlStart (out);
+				out.printf ("<P>Invalid job number \"%s\"</P>\n", jobString);
+				printErrorHtmlEnd (out);
+				}
+			}
+
 		// Reject all other URIs.
 		else
 			{
 			response.setStatusCode
 				(HttpResponse.Status.STATUS_404_NOT_FOUND);
 			PrintWriter out = response.getPrintWriter();
-			printStatusHtmlStart (out, now);
-			out.println ("<P>");
-			out.println ("404 Not Found");
-			printStatusHtmlEnd (out);
+			printErrorHtmlStart (out);
+			out.println ("<P>404 Not Found</P>");
+			printErrorHtmlEnd (out);
 			}
 
 		// Send the response.
@@ -1186,7 +1227,7 @@ public class JobScheduler
 		out.println ("<TABLE BORDER=0 CELLPADDING=0 CELLSPACING=0>");
 		out.println ("<TR>");
 		out.println ("<TD ALIGN=\"left\" VALIGN=\"top\">");
-		out.println ("Web interface:&nbsp;&nbsp;");
+		out.println ("Job queue web interface:&nbsp;&nbsp;");
 		out.println ("</TD>");
 		out.println ("<TD ALIGN=\"left\" VALIGN=\"top\">");
 		out.print   ("<A HREF=\"");
@@ -1225,11 +1266,34 @@ public class JobScheduler
 	private void printWebInterfaceURL
 		(PrintWriter out)
 		{
-		out.print ("http://");
-		out.print (myWebHost);
-		out.print (":");
-		out.print (myWebPort);
-		out.print ("/");
+		out.printf ("http://%s:%d/", myWebHost, myWebPort);
+		}
+
+	/**
+	 * Print the URL for the given job number on the given print writer.
+	 *
+	 * @param  out     Print writer.
+	 * @param  jobNum  Job number.
+	 */
+	private void printJobNumberURL
+		(PrintWriter out,
+		 int jobNum)
+		{
+		out.printf ("http://%s:%d/job/%d", myWebHost, myWebPort, jobNum);
+		}
+
+	/**
+	 * Print a link for the given job number on the given print writer.
+	 *
+	 * @param  out     Print writer.
+	 * @param  jobNum  Job number.
+	 */
+	private void printJobNumberLink
+		(PrintWriter out,
+		 int jobNum)
+		{
+		out.printf ("<A HREF=\"http://%s:%d/job/%d\">&nbsp;%d&nbsp;</A>",
+			myWebHost, myWebPort, jobNum, jobNum);
 		}
 
 	/**
@@ -1313,7 +1377,7 @@ public class JobScheduler
 		out.print   ("<TD ALIGN=\"left\" VALIGN=\"top\">");
 		if (backend.job != null)
 			{
-			out.print (backend.job.jobnum);
+			printJobNumberLink (out, backend.job.jobnum);
 			}
 		else
 			{
@@ -1394,7 +1458,7 @@ public class JobScheduler
 		out.print   (i%2==0 ? "FFFFFF" : "E8E8E8");
 		out.println ("\">");
 		out.print   ("<TD ALIGN=\"left\" VALIGN=\"top\">");
-		out.print   (job.jobnum);
+		printJobNumberLink (out, job.jobnum);
 		out.println ("</TD>");
 		out.print   ("<TD ALIGN=\"left\" VALIGN=\"top\">");
 		out.print   (job.username);
@@ -1538,6 +1602,268 @@ public class JobScheduler
 		out.println ("<P>");
 		out.println ("<HR/>");
 		out.println ("</P>");
+		}
+
+	/**
+	 * Print the start of the detailed job status HTML document on the given
+	 * print writer.
+	 *
+	 * @param  out     Print writer.
+	 * @param  now     Current time.
+	 * @param  jobNum  Job number.
+	 */
+	private void printJobDetailHtmlStart
+		(PrintWriter out,
+		 long now,
+		 int jobNum)
+		{
+		out.println ("<HTML>");
+		out.println ("<HEAD>");
+		out.print   ("<TITLE>");
+		out.print   (myClusterName);
+		out.println ("</TITLE>");
+		out.print   ("<META HTTP-EQUIV=\"refresh\" CONTENT=\"20;url=");
+		printJobNumberURL (out, jobNum);
+		out.println ("\">");
+		out.println ("<STYLE TYPE=\"text/css\">");
+		out.println ("<!--");
+		out.println ("* {font-family: Arial, Helvetica, Sans-Serif;}");
+		out.println ("body {font-size: small;}");
+		out.println ("h1 {font-size: 140%; font-weight: bold;}");
+		out.println ("table {font-size: 100%;}");
+		out.println ("-->");
+		out.println ("</STYLE>");
+		out.println ("</HEAD>");
+		out.println ("<BODY>");
+		out.print   ("<H1>");
+		out.print   (myClusterName);
+		out.println ("</H1>");
+		out.println ("<P>");
+		out.print   ("<FORM ACTION=\"");
+		printJobNumberURL (out, jobNum);
+		out.println ("\" METHOD=\"get\">");
+		out.println ("<TABLE BORDER=0 CELLPADDING=0 CELLSPACING=0>");
+		out.println ("<TR>");
+		out.print   ("<TD ALIGN=\"left\" VALIGN=\"center\">");
+		out.print   ("<INPUT TYPE=\"submit\" VALUE=\"Refresh\">");
+		out.println ("</TD>");
+		out.println ("<TD WIDTH=20> </TD>");
+		out.print   ("<TD ALIGN=\"left\" VALIGN=\"center\">");
+		out.print   (new Date (now));
+		out.print   (" -- ");
+		out.print   (Version.PJ_VERSION);
+		out.println ("</TD>");
+		out.println ("</TR>");
+		out.println ("</TABLE>");
+		out.println ("</FORM>");
+		}
+
+	/**
+	 * Print the body of the detailed job status HTML document on the given
+	 * print writer.
+	 *
+	 * @param  out     Print writer.
+	 * @param  now     Current time.
+	 * @param  jobNum  Job number.
+	 */
+	private synchronized void printJobDetailHtmlBody
+		(PrintWriter out,
+		 long now,
+		 int jobNum)
+		{
+		JobInfo jobInfo = null;
+
+		// Find job info.
+		for (JobInfo job : myRunningJobList)
+			{
+			if (job.jobnum == jobNum)
+				{
+				jobInfo = job;
+				break;
+				}
+			}
+		if (jobInfo == null)
+			{
+			for (JobInfo job : myWaitingJobList)
+				{
+				if (job.jobnum == jobNum)
+					{
+					jobInfo = job;
+					break;
+					}
+				}
+			}
+
+		out.println ("<P>");
+		out.println ("<TABLE BORDER=0 CELLPADDING=0 CELLSPACING=0>");
+		out.println ("<TR>");
+		out.println ("<TD ALIGN=\"left\" VALIGN=\"top\"><B>Job:</B></TD>");
+		out.println ("<TD WIDTH=10> </TD>");
+		out.printf  ("<TD ALIGN=\"left\" VALIGN=\"top\"><B>%d</B></TD>",
+			jobNum);
+		out.println ("</TR>");
+		out.println ("<TR>");
+		out.println ("<TD ALIGN=\"left\" VALIGN=\"top\">User:</TD>");
+		out.println ("<TD WIDTH=10> </TD>");
+		out.printf  ("<TD ALIGN=\"left\" VALIGN=\"top\">%s</TD>",
+			jobInfo == null ? " " : jobInfo.username);
+		out.println ("</TR>");
+		out.println ("<TR>");
+		out.println ("<TD ALIGN=\"left\" VALIGN=\"top\">Nodes (nn):</TD>");
+		out.println ("<TD WIDTH=10> </TD>");
+		out.printf  ("<TD ALIGN=\"left\" VALIGN=\"top\">%s</TD>",
+			jobInfo == null ? " " : ""+jobInfo.Nn);
+		out.println ("</TR>");
+		out.println ("<TR>");
+		out.println ("<TD ALIGN=\"left\" VALIGN=\"top\">Processes (np):</TD>");
+		out.println ("<TD WIDTH=10> </TD>");
+		out.printf  ("<TD ALIGN=\"left\" VALIGN=\"top\">%s</TD>",
+			jobInfo == null ? " " : ""+jobInfo.Np);
+		out.println ("</TR>");
+		out.println ("<TR>");
+		out.println ("<TD ALIGN=\"left\" VALIGN=\"top\">Threads (nt):</TD>");
+		out.println ("<TD WIDTH=10> </TD>");
+		out.printf  ("<TD ALIGN=\"left\" VALIGN=\"top\">%s</TD>",
+			jobInfo == null ? " " : jobInfo.Nt == 0 ? "All" : ""+jobInfo.Nt);
+		out.println ("</TR>");
+		out.println ("<TR>");
+		out.println ("<TD ALIGN=\"left\" VALIGN=\"top\">Status:</TD>");
+		out.println ("<TD WIDTH=10> </TD>");
+		out.printf  ("<TD ALIGN=\"left\" VALIGN=\"top\">%s</TD>",
+			jobInfo == null ? "Not in queue" : jobInfo.state);
+		out.println ("</TR>");
+		out.println ("<TR>");
+		out.println ("<TD ALIGN=\"left\" VALIGN=\"top\">Time:</TD>");
+		out.println ("<TD WIDTH=10> </TD>");
+		out.print   ("<TD ALIGN=\"left\" VALIGN=\"top\">");
+		if (jobInfo == null)
+			{
+			out.print (" ");
+			}
+		else
+			{
+			printDeltaTime (out, now, jobInfo.stateTime);
+			}
+		out.println ("</TD>");
+		out.println ("</TR>");
+		out.println ("</TABLE>");
+		out.println ("</P>");
+
+		if (jobInfo == null || jobInfo.count == 0) return;
+
+		out.println ("<P>");
+		out.println ("<TABLE BORDER=0 CELLPADDING=0 CELLSPACING=0>");
+		out.println ("<TR>");
+		out.println ("<TD ALIGN=\"center\" VALIGN=\"top\">");
+
+		out.println ("Processes");
+		out.println ("<TABLE BORDER=1 CELLPADDING=3 CELLSPACING=0>");
+		out.println ("<TR>");
+		out.println ("<TD ALIGN=\"left\" VALIGN=\"top\">");
+
+		out.println ("<TABLE BORDER=0 CELLPADDING=3 CELLSPACING=0>");
+		printJobDetailProcessLabels (out);
+		for (int i = 0; i < jobInfo.count; ++ i)
+			{
+			printJobDetailProcessInfo (out, jobInfo, i);
+			}
+		out.println ("</TABLE>");
+
+		out.println ("</TD>");
+		out.println ("</TR>");
+		out.println ("</TABLE>");
+
+		out.println ("</TD>");
+		out.println ("</TR>");
+		out.println ("</TABLE>");
+		out.println ("</P>");
+		}
+
+	/**
+	 * Print the detailed job status process labels on the given print writer.
+	 *
+	 * @param  out  Print writer.
+	 */
+	private void printJobDetailProcessLabels
+		(PrintWriter out)
+		{
+		out.println ("<TR BGCOLOR=\"#E8E8E8\">");
+		out.print   ("<TD ALIGN=\"left\" VALIGN=\"top\">");
+		out.print   ("<I>Rank</I>");
+		out.println ("</TD>");
+		out.print   ("<TD ALIGN=\"left\" VALIGN=\"top\">");
+		out.print   ("<I>Node</I>");
+		out.println ("</TD>");
+		out.print   ("<TD ALIGN=\"left\" VALIGN=\"top\">");
+		out.print   ("<I>CPUs</I>");
+		out.println ("</TD>");
+		out.print   ("<TD ALIGN=\"left\" VALIGN=\"top\">");
+		out.print   ("<I>Comment</I>");
+		out.println ("</TD>");
+		out.println ("</TR>");
+		}
+
+	/**
+	 * Print the detailed job status process information on the given print
+	 * writer.
+	 *
+	 * @param  out      Print writer.
+	 * @param  jobInfo  Job info.
+	 * @param  rank     Process rank.
+	 */
+	private void printJobDetailProcessInfo
+		(PrintWriter out,
+		 JobInfo jobInfo,
+		 int rank)
+		{
+		out.printf ("<TR BGCOLOR=\"#%s\">\n",
+			rank%2 == 0 ? "FFFFFF" : "E8E8E8");
+		out.printf ("<TD ALIGN=\"left\" VALIGN=\"top\">%d&nbsp;&nbsp;</TD>\n",
+			rank);
+		out.printf ("<TD ALIGN=\"left\" VALIGN=\"top\">%s&nbsp;&nbsp;</TD>\n",
+			jobInfo.backend[rank].name);
+		out.printf ("<TD ALIGN=\"left\" VALIGN=\"top\">%d&nbsp;&nbsp;</TD>\n",
+			jobInfo.cpus[rank]);
+		out.printf ("<TD ALIGN=\"left\" VALIGN=\"top\">%s</TD>\n",
+			jobInfo.comment[rank]);
+		out.println ("</TR>");
+		}
+
+	/**
+	 * Print the start of the error HTML document on the given print writer.
+	 *
+	 * @param  out  Print writer.
+	 */
+	private void printErrorHtmlStart
+		(PrintWriter out)
+		{
+		out.println ("<HTML>");
+		out.println ("<HEAD>");
+		out.print   ("<TITLE>");
+		out.print   (myClusterName);
+		out.println ("</TITLE>");
+		out.println ("<STYLE TYPE=\"text/css\">");
+		out.println ("<!--");
+		out.println ("* {font-family: Arial, Helvetica, Sans-Serif;}");
+		out.println ("body {font-size: small;}");
+		out.println ("h1 {font-size: 140%; font-weight: bold;}");
+		out.println ("table {font-size: 100%;}");
+		out.println ("-->");
+		out.println ("</STYLE>");
+		out.println ("</HEAD>");
+		out.println ("<BODY>");
+		}
+
+	/**
+	 * Print the end of the error HTML document on the given print writer.
+	 *
+	 * @param  out  Print writer.
+	 */
+	private void printErrorHtmlEnd
+		(PrintWriter out)
+		{
+		out.println ("</BODY>");
+		out.println ("</HTML>");
 		}
 
 	/**

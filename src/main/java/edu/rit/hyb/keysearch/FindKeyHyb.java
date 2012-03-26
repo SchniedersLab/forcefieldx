@@ -4,7 +4,7 @@
 // Package: edu.rit.hyb.keysearch
 // Unit:    Class edu.rit.hyb.keysearch.FindKeyHyb
 //
-// This Java source file is copyright (C) 2009 by Alan Kaminsky. All rights
+// This Java source file is copyright (C) 2012 by Alan Kaminsky. All rights
 // reserved. For further information, contact the author, Alan Kaminsky, at
 // ark@cs.rit.edu.
 //
@@ -28,12 +28,11 @@ package edu.rit.hyb.keysearch;
 import edu.rit.crypto.blockcipher.AES256CipherSmp;
 
 import edu.rit.pj.Comm;
-import edu.rit.pj.IntegerForLoop;
-import edu.rit.pj.ParallelRegion;
-import edu.rit.pj.ParallelTeam;
+import edu.rit.pj.HybridTeam;
+import edu.rit.pj.WorkerIntegerForLoop;
+import edu.rit.pj.WorkerRegion;
 
 import edu.rit.util.Hex;
-import edu.rit.util.Range;
 
 /**
  * Class FindKeyHyb is a hybrid SMP cluster parallel program that solves an AES
@@ -58,7 +57,7 @@ import edu.rit.util.Range;
  * <BR><I>n</I> = Number of key bits to search for
  *
  * @author  Alan Kaminsky
- * @version 16-Mar-2009
+ * @version 14-Mar-2012
  */
 public class FindKeyHyb
 	{
@@ -90,9 +89,6 @@ public class FindKeyHyb
 
 	// The complete key.
 	static byte[] foundkey;
-
-	// Chunk of the search space this process will do.
-	static Range chunk;
 
 // Main program.
 
@@ -139,15 +135,12 @@ public class FindKeyHyb
 			((partialkey[31] & 0xFF)      );
 		maxcounter = (1 << n) - 1;
 
-		// Determine which chunk of the search space this process will do.
-		chunk = new Range (0, maxcounter) .subrange (size, rank);
-
 		// Do trial encryptions in parallel threads.
-		new ParallelTeam().execute (new ParallelRegion()
+		new HybridTeam().execute (new WorkerRegion()
 			{
 			public void run() throws Exception
 				{
-				execute (chunk.lb(), chunk.ub(), new IntegerForLoop()
+				execute (0, maxcounter, new WorkerIntegerForLoop()
 					{
 					// Thread local variables.
 					byte[] trialkey;
@@ -230,8 +223,9 @@ public class FindKeyHyb
 	 */
 	private static void usage()
 		{
-		System.err.println ("Usage: java -Dpj.np=<K> edu.rit.hyb.keysearch.FindKeyHyb <plaintext> <ciphertext> <partialkey> <n>");
-		System.err.println ("<K> = Number of parallel processes");
+		System.err.println ("Usage: java -Dpj.np=<Kp> -Dpj.nt=<Kt> edu.rit.hyb.keysearch.FindKeyHyb <plaintext> <ciphertext> <partialkey> <n>");
+		System.err.println ("<Kp> = Number of parallel processes");
+		System.err.println ("<Kt> = Number of parallel threads per process");
 		System.err.println ("<plaintext> = Plaintext (128-bit hexadecimal number)");
 		System.err.println ("<ciphertext> = Ciphertext (128-bit hexadecimal number)");
 		System.err.println ("<partialkey> = Partial key (256-bit hexadecimal number)");

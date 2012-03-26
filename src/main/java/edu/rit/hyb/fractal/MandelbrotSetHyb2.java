@@ -4,7 +4,7 @@
 // Package: edu.rit.hyb.fractal
 // Unit:    Class edu.rit.hyb.fractal.MandelbrotSetHyb2
 //
-// This Java source file is copyright (C) 2008 by Alan Kaminsky. All rights
+// This Java source file is copyright (C) 2012 by Alan Kaminsky. All rights
 // reserved. For further information, contact the author, Alan Kaminsky, at
 // ark@cs.rit.edu.
 //
@@ -32,25 +32,20 @@ import edu.rit.image.PJGImage;
 
 import edu.rit.io.Files;
 
-import edu.rit.mp.IntegerBuf;
-import edu.rit.mp.ObjectBuf;
-
-import edu.rit.mp.buf.ObjectItemBuf;
-
 import edu.rit.pj.Comm;
-import edu.rit.pj.CommStatus;
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
-import edu.rit.pj.ParallelSection;
 import edu.rit.pj.ParallelTeam;
+import edu.rit.pj.WorkerIntegerForLoop;
+import edu.rit.pj.WorkerRegion;
+import edu.rit.pj.WorkerTeam;
 
 import edu.rit.util.Range;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 
 /**
  * Class MandelbrotSetHyb2 is a hybrid parallel program that calculates the
@@ -125,7 +120,7 @@ import java.io.IOException;
  * image file.
  *
  * @author  Alan Kaminsky
- * @version 26-May-2008
+ * @version 14-Mar-2012
  */
 public class MandelbrotSetHyb2
 	{
@@ -140,7 +135,6 @@ public class MandelbrotSetHyb2
 
 	// Communicator.
 	static Comm world;
-	static int size;
 	static int rank;
 
 	// Command line arguments.
@@ -169,6 +163,9 @@ public class MandelbrotSetHyb2
 	// Table of hues.
 	static int[] huetable;
 
+	// Parallel thread team per process.
+	static ParallelTeam team;
+
 // Main program.
 
 	/**
@@ -184,7 +181,6 @@ public class MandelbrotSetHyb2
 		// Initialize middleware.
 		Comm.init (args);
 		world = Comm.world();
-		size = world.size();
 		rank = world.rank();
 
 		// Validate command line arguments.
@@ -228,38 +224,98 @@ public class MandelbrotSetHyb2
 			}
 		huetable[maxiter] = HSB.pack (1.0f, 1.0f, 0.0f);
 
+		// Create parallel thread team per process.
+		team = new ParallelTeam();
+
 		long t2 = System.currentTimeMillis();
 
-		// In master process, run master section and worker section in parallel.
-		if (rank == 0)
+		// First level partitioning: divide pixel rows among the processes. Load
+		// balancing schedule controlled by -Dpj.schedule property.
+		new WorkerTeam().execute (new WorkerRegion()
 			{
-			new ParallelTeam(2).execute (new ParallelRegion()
+			public void run() throws Exception
 				{
-				public void run() throws Exception
+				execute (0, height - 1, new WorkerIntegerForLoop()
 					{
-					execute (new ParallelSection()
+					public void run (final int lb, final int ub)
+						throws Exception
 						{
-						public void run() throws Exception
+						// Allocate storage for matrix row slice if necessary.
+						Range range = new Range (lb, ub);
+						int len = range.length();
+						if (slice == null || slice.length < len)
 							{
-							masterSection();
+							slice = new int [len] [width];
 							}
-						},
-					new ParallelSection()
-						{
-						public void run() throws Exception
-							{
-							workerSection();
-							}
-						});
-					}
-				});
-			}
 
-		// In worker process, run only worker section.
-		else
-			{
-			workerSection();
-			}
+						// Second level scheduling: divide pixel rows among the
+						// threads per process.
+						team.execute (new ParallelRegion()
+							{
+							public void run() throws Exception
+								{
+								execute (lb, ub, new IntegerForLoop()
+									{
+									// Load balancing schedule controlled by
+									// final command line argument.
+									public IntegerSchedule schedule()
+										{
+										return thrschedule;
+										}
+
+									// Compute all rows and columns in slice.
+									public void run (int first, int last)
+										{
+										for (int r = first; r <= last; ++ r)
+											{
+											int[] slice_r = slice[r-lb];
+											double y =
+												ycenter + (yoffset - r) /
+												resolution;
+
+											for (int c = 0; c < width; ++ c)
+												{
+												double x =
+													xcenter + (xoffset + c) /
+													resolution;
+
+												// Iterate until convergence.
+												int i = 0;
+												double aold = 0.0;
+												double bold = 0.0;
+												double a = 0.0;
+												double b = 0.0;
+												double zmagsqr = 0.0;
+												while (i < maxiter &&
+														zmagsqr <= 4.0)
+													{
+													++ i;
+													a = aold*aold-bold*bold+x;
+													b = 2.0*aold*bold + y;
+													zmagsqr = a*a + b*b;
+													aold = a;
+													bold = b;
+													}
+
+												// Record number of iterations
+												// for pixel.
+												slice_r[c] = huetable[i];
+												}
+											}
+										}
+									});
+								}
+							});
+
+						// Set full pixel matrix rows to refer to slice rows.
+						System.arraycopy (slice, 0, matrix, lb, len);
+
+						// Write row slice of full pixel matrix to image file.
+						writer.writeRowSlice (range);
+						}
+					});
+				}
+			});
 
 		long t3 = System.currentTimeMillis();
 
@@ -275,140 +331,6 @@ public class MandelbrotSetHyb2
 		}
 
 // Hidden operations.
-
-	/**
-	 * Perform the master section.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	private static void masterSection()
-		throws IOException
-		{
-		int worker;
-		Range range;
-
-		// Set up a schedule object to divide the row range into chunks.
-		IntegerSchedule schedule = IntegerSchedule.runtime();
-		schedule.start (size, new Range (0, height-1));
-
-		// Send initial chunk range to each worker. If range is null, no more
-		// work for that worker. Keep count of active workers.
-		int activeWorkers = size;
-		for (worker = 0; worker < size; ++ worker)
-			{
-			range = schedule.next (worker);
-			world.send (worker, ObjectBuf.buffer (range));
-			if (range == null) -- activeWorkers;
-			}
-
-		// Repeat until all workers have finished.
-		while (activeWorkers > 0)
-			{
-			// Receive an empty message from any worker.
-			CommStatus status = world.receive (null, IntegerBuf.emptyBuffer());
-			worker = status.fromRank;
-
-			// Send next chunk range to that specific worker. If null, no more
-			// work.
-			range = schedule.next (worker);
-			world.send (worker, ObjectBuf.buffer (range));
-			if (range == null) -- activeWorkers;
-			}
-		}
-
-	/**
-	 * Perform the worker section.
-	 *
-	 * @exception  Exception
-	 *     Thrown if an I/O error occurred.
-	 */
-	private static void workerSection()
-		throws Exception
-		{
-		// Parallel team to calculate each slice in multiple threads.
-		ParallelTeam team = new ParallelTeam();
-
-		// Process chunks from master.
-		for (;;)
-			{
-			// Receive chunk range from master. If null, no more work.
-			ObjectItemBuf<Range> rangeBuf = ObjectBuf.buffer();
-			world.receive (0, rangeBuf);
-			Range range = rangeBuf.item;
-			if (range == null) break;
-			final int lb = range.lb();
-			final int ub = range.ub();
-			final int len = range.length();
-
-			// Allocate storage for matrix row slice if necessary.
-			if (slice == null || slice.length < len)
-				{
-				slice = new int [len] [width];
-				}
-
-			// Compute rows of slice in parallel threads.
-			team.execute (new ParallelRegion()
-				{
-				public void run() throws Exception
-					{
-					execute (lb, ub, new IntegerForLoop()
-						{
-						// Use the thread-level loop schedule.
-						public IntegerSchedule schedule()
-							{
-							return thrschedule;
-							}
-
-						// Compute all rows and columns in slice.
-						public void run (int first, int last)
-							{
-							for (int r = first; r <= last; ++ r)
-								{
-								int[] slice_r = slice[r-lb];
-								double y = ycenter + (yoffset - r) / resolution;
-
-								for (int c = 0; c < width; ++ c)
-									{
-									double x =
-										xcenter + (xoffset + c) / resolution;
-
-									// Iterate until convergence.
-									int i = 0;
-									double aold = 0.0;
-									double bold = 0.0;
-									double a = 0.0;
-									double b = 0.0;
-									double zmagsqr = 0.0;
-									while (i < maxiter && zmagsqr <= 4.0)
-										{
-										++ i;
-										a = aold*aold - bold*bold + x;
-										b = 2.0*aold*bold + y;
-										zmagsqr = a*a + b*b;
-										aold = a;
-										bold = b;
-										}
-
-									// Record number of iterations for pixel.
-									slice_r[c] = huetable[i];
-									}
-								}
-							}
-						});
-					}
-				});
-
-			// Report completion of slice to master.
-			world.send (0, IntegerBuf.emptyBuffer());
-
-			// Set full pixel matrix rows to refer to slice rows.
-			System.arraycopy (slice, 0, matrix, lb, len);
-
-			// Write row slice of full pixel matrix to image file.
-			writer.writeRowSlice (range);
-			}
-		};
 
 	/**
 	 * Print a usage message and exit.

@@ -4,7 +4,7 @@
 // Package: edu.rit.pj.cluster
 // Unit:    Class edu.rit.pj.cluster.JobFrontend
 //
-// This Java source file is copyright (C) 2008 by Alan Kaminsky. All rights
+// This Java source file is copyright (C) 2012 by Alan Kaminsky. All rights
 // reserved. For further information, contact the author, Alan Kaminsky, at
 // ark@cs.rit.edu.
 //
@@ -56,7 +56,7 @@ import java.util.Properties;
  * process.
  *
  * @author  Alan Kaminsky
- * @version 20-Jan-2009
+ * @version 24-Jan-2012
  */
 public class JobFrontend
 	implements Runnable, JobFrontendRef
@@ -962,6 +962,25 @@ public class JobFrontend
 		throws IOException
 		{
 		myFrontendFileReader.inputFileClose (theJobBackend, ffd);
+		}
+
+	/**
+	 * Report a comment for a process.
+	 *
+	 * @param  theJobBackend  Job backend that is calling this method.
+	 * @param  rank           Process rank.
+	 * @param  comment        Comment string.
+	 *
+	 * @exception  IOException
+	 *     Thrown if an I/O error occurred.
+	 */
+	public synchronized void reportComment
+		(JobBackendRef theJobBackend,
+		 int rank,
+		 String comment)
+		throws IOException
+		{
+		myJobScheduler.reportComment (this, rank, comment);
 		}
 
 	/**

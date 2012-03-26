@@ -4,7 +4,7 @@
 // Package: edu.rit.pj.cluster
 // Unit:    Interface edu.rit.pj.cluster.JobFrontendRef
 //
-// This Java source file is copyright (C) 2008 by Alan Kaminsky. All rights
+// This Java source file is copyright (C) 2012 by Alan Kaminsky. All rights
 // reserved. For further information, contact the author, Alan Kaminsky, at
 // ark@cs.rit.edu.
 //
@@ -35,7 +35,7 @@ import java.net.InetSocketAddress;
  * process.
  *
  * @author  Alan Kaminsky
- * @version 21-May-2008
+ * @version 24-Jan-2012
  */
 public interface JobFrontendRef
 	{
@@ -320,6 +320,22 @@ public interface JobFrontendRef
 	public void inputFileClose
 		(JobBackendRef theJobBackend,
 		 int ffd)
+		throws IOException;
+
+	/**
+	 * Report a comment for a process.
+	 *
+	 * @param  theJobBackend  Job backend that is calling this method.
+	 * @param  rank           Process rank.
+	 * @param  comment        Comment string.
+	 *
+	 * @exception  IOException
+	 *     Thrown if an I/O error occurred.
+	 */
+	public void reportComment
+		(JobBackendRef theJobBackend,
+		 int rank,
+		 String comment)
 		throws IOException;
 
 	/**

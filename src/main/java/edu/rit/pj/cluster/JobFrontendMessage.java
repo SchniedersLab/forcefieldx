@@ -4,7 +4,7 @@
 // Package: edu.rit.pj.cluster
 // Unit:    Class edu.rit.pj.cluster.JobFrontendMessage
 //
-// This Java source file is copyright (C) 2008 by Alan Kaminsky. All rights
+// This Java source file is copyright (C) 2012 by Alan Kaminsky. All rights
 // reserved. For further information, contact the author, Alan Kaminsky, at
 // ark@cs.rit.edu.
 //
@@ -38,7 +38,7 @@ import java.net.InetSocketAddress;
  * (interface {@linkplain JobFrontendRef}) in the PJ cluster middleware.
  *
  * @author  Alan Kaminsky
- * @version 21-May-2008
+ * @version 24-Jan-2012
  */
 public abstract class JobFrontendMessage
 	extends Message
@@ -361,6 +361,23 @@ public abstract class JobFrontendMessage
 		 int ffd)
 		{
 		return new InputFileCloseMessage (theJobBackend, ffd);
+		}
+
+	/**
+	 * Construct a new "report comment" message.
+	 *
+	 * @param  theJobBackend  Job backend that is calling this method.
+	 * @param  rank           Process rank.
+	 * @param  comment        Comment string.
+	 *
+	 * @return  "Report comment" message.
+	 */
+	public static JobFrontendMessage reportComment
+		(JobBackendRef theJobBackend,
+		 int rank,
+		 String comment)
+		{
+		return new ReportCommentMessage (theJobBackend, rank, comment);
 		}
 
 	/**
@@ -1248,6 +1265,60 @@ public abstract class JobFrontendMessage
 			throws IOException
 			{
 			ffd = in.readInt();
+			}
+		}
+
+	/**
+	 * Class ReportCommentMessage provides the Job Frontend "report comment"
+	 * message in the PJ cluster middleware.
+	 *
+	 * @author  Alan Kaminsky
+	 * @version 24-Jan-2012
+	 */
+	private static class ReportCommentMessage
+		extends JobFrontendMessage
+		{
+		private static final long serialVersionUID = 1092254806177598252L;
+
+		private int rank;
+		private String comment;
+
+		public ReportCommentMessage()
+			{
+			}
+
+		public ReportCommentMessage
+			(JobBackendRef theJobBackend,
+			 int rank,
+			 String comment)
+			{
+			super (Message.FROM_JOB_BACKEND);
+			this.rank = rank;
+			this.comment = comment == null ? "" : comment;
+			}
+
+		public void invoke
+			(JobFrontendRef theJobFrontend,
+			 JobBackendRef theJobBackend)
+			throws IOException
+			{
+			theJobFrontend.reportComment (theJobBackend, rank, comment);
+			}
+
+		public void writeExternal
+			(ObjectOutput out)
+			throws IOException
+			{
+			out.writeInt (rank);
+			out.writeUTF (comment);
+			}
+
+		public void readExternal
+			(ObjectInput in)
+			throws IOException
+			{
+			rank = in.readInt();
+			comment = in.readUTF();
 			}
 		}
 

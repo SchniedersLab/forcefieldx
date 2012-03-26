@@ -4,7 +4,7 @@
 // Package: edu.rit.clu.keysearch
 // Unit:    Class edu.rit.clu.keysearch.FindKeyClu2
 //
-// This Java source file is copyright (C) 2009 by Alan Kaminsky. All rights
+// This Java source file is copyright (C) 2012 by Alan Kaminsky. All rights
 // reserved. For further information, contact the author, Alan Kaminsky, at
 // ark@cs.rit.edu.
 //
@@ -27,13 +27,14 @@ package edu.rit.clu.keysearch;
 
 import edu.rit.crypto.blockcipher.AES256Cipher;
 
-import edu.rit.mp.IntegerBuf;
-
 import edu.rit.pj.Comm;
-import edu.rit.pj.CommRequest;
 import edu.rit.pj.WorkerLongForLoop;
 import edu.rit.pj.WorkerRegion;
 import edu.rit.pj.WorkerTeam;
+
+import edu.rit.pj.reduction.BooleanOp;
+
+import edu.rit.pj.replica.ReplicatedBoolean;
 
 import edu.rit.util.Hex;
 
@@ -61,7 +62,7 @@ import edu.rit.util.Hex;
  * FindKeyClu2 stops as soon as it finds the correct key.
  *
  * @author  Alan Kaminsky
- * @version 18-Nov-2009
+ * @version 18-Jan-2012
  */
 public class FindKeyClu2
 	{
@@ -94,7 +95,7 @@ public class FindKeyClu2
 	static AES256Cipher cipher;
 
 	// For early loop exit.
-	static CommRequest req;
+	static ReplicatedBoolean found;
 
 // Main program.
 
@@ -149,9 +150,8 @@ public class FindKeyClu2
 		trialciphertext = new byte [16];
 		cipher = new AES256Cipher (trialkey);
 
-		// Set up to receive a notification when any process finds the key.
-		req = new CommRequest();
-		world.floodReceive (IntegerBuf.emptyBuffer(), req);
+		// Set up found flag replicated in all processes.
+		found = new ReplicatedBoolean (BooleanOp.OR);
 
 		// Try every possible combination of low-order key bits in parallel.
 		new WorkerTeam().execute (new WorkerRegion()
@@ -180,16 +180,16 @@ public class FindKeyClu2
 							cipher.encrypt (plaintext, trialciphertext);
 
 							// If the result equals the ciphertext, we found the
-							// key. Send a notification to all processes.
+							// key. Set the found flag in all processes.
 							if (match (ciphertext, trialciphertext))
 								{
 								foundkey = new byte [32];
 								System.arraycopy (trialkey, 0, foundkey, 0, 32);
-								world.floodSend (IntegerBuf.emptyBuffer());
+								found.reduce (true);
 								}
 
 							// If key was found, exit loop.
-							if (req.isFinished()) break;
+							if (found.get()) break;
 							}
 						}
 					});

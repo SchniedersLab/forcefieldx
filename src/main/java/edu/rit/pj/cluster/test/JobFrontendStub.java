@@ -4,7 +4,7 @@
 // Package: edu.rit.pj.cluster.test
 // Unit:    Class edu.rit.pj.cluster.test.JobFrontendStub
 //
-// This Java source file is copyright (C) 2008 by Alan Kaminsky. All rights
+// This Java source file is copyright (C) 2012 by Alan Kaminsky. All rights
 // reserved. For further information, contact the author, Alan Kaminsky, at
 // ark@cs.rit.edu.
 //
@@ -47,7 +47,7 @@ import java.net.InetSocketAddress;
  * console.
  *
  * @author  Alan Kaminsky
- * @version 21-May-2008
+ * @version 24-Jan-2012
  */
 public class JobFrontendStub
 	extends Thread
@@ -494,6 +494,27 @@ public class JobFrontendStub
 		System.out.println
 			("inputFileClose (theJobBackend, " +
 			 ffd + ")");
+		}
+
+	/**
+	 * Report a comment for a process.
+	 *
+	 * @param  theJobBackend  Job backend that is calling this method.
+	 * @param  rank           Process rank.
+	 * @param  comment        Comment string.
+	 *
+	 * @exception  IOException
+	 *     Thrown if an I/O error occurred.
+	 */
+	public void reportComment
+		(JobBackendRef theJobBackend,
+		 int rank,
+		 String comment)
+		{
+		System.out.println
+			("reportComment (theJobBackend, " +
+			 rank + ", \"" +
+			 comment + "\")");
 		}
 
 	/**

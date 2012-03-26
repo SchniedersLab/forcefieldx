@@ -36,9 +36,8 @@ import java.util.NoSuchElementException;
  * <I>N</I>&minus;1 inclusive. The subset consists of integers chosen at random
  * without replacement from the original set; each member of the original set is
  * equally likely to be chosen. Class RandomSubset is an Iterator that visits
- * the elements of the subset; each <TT>next()</TT> method call returns another
- * element of the subset. The order in which elements are visited is not
- * specified.
+ * the elements of the original set in a random order; each <TT>next()</TT>
+ * method call returns another element of the subset.
  * <P>
  * Calling the <TT>remove(i)</TT> method one or more times removes the given
  * integers from the original set. Those integers will not be chosen for the
@@ -49,12 +48,20 @@ import java.util.NoSuchElementException;
  * time the <TT>next()</TT> method is called, one random number is consumed from
  * the underlying PRNG.
  * <P>
- * Class RandomSubset's implementation is optimized for the case where the size
- * of the random subset (the number of <TT>next()</TT> method calls) is much
- * less than <I>N</I>, the size of the original set.
+ * Class RandomSubset has two different implementations with different storage
+ * requirements. The implementation is specified with a constructor argument.
+ * <UL>
+ * <P><LI>
+ * The <I>sparse</I> implementation requires less storage when the size of the
+ * random subset (the number of <TT>next()</TT> method calls) is a small
+ * fraction of the size of the original set (<I>N</I>).
+ * <P><LI>
+ * The <I>dense</I> implementation requires less storage when the size of the
+ * random subset is a large fraction of the size of the original set.
+ * </UL>
  *
  * @author  Alan Kaminsky
- * @version 28-Jun-2011
+ * @version 22-Nov-2011
  */
 public class RandomSubset
 	implements Iterator<Integer>
@@ -71,73 +78,165 @@ public class RandomSubset
 	// The number of random subset elements returned so far.
 	private int M;
 
-	// A sparse array containing a permutation of the integers from 0 to N-1.
-	// Implemented as a mapping from array index to array element. If an array
-	// index is not in the map, the corresponding array element is the same as
-	// the array index.
-	private HashMap<Integer,Integer> permutation =
-		new HashMap<Integer,Integer>();
+	// Helper class.
+	private Helper helper;
 
-// Hidden operations.
+// Hidden helper classes.
 
-	/**
-	 * Returns the element in the permutation array at index i.
-	 */
-	private int getElement
-		(int i)
+	// Helper abstract base class.
+	private abstract class Helper
 		{
-		Integer element = permutation.get (i);
-		return element == null ? i : element;
+		// Returns the element in the permutation array at index i.
+		public abstract int getElement
+			(int i);
+
+		// Sets the element in the permutation array at index i to the given
+		// value.
+		public abstract void setElement
+			(int i,
+			 int value);
+
+		// Swaps the elements in the permutation array at indexes i and j.
+		public abstract void swapElements
+			(int i,
+			 int j);
+
+		// Returns the index in the permutation array at which the given value
+		// resides.
+		public abstract int indexOf
+			(int value);
+
+		// Restarts the iteration.
+		public abstract void restart();
 		}
 
-	/**
-	 * Sets the element in the permutation array at index i to the given value.
-	 */
-	private void setElement
-		(int i,
-		 int value)
+	// Sparse implementation helper class.
+	private class SparseHelper
+		extends Helper
 		{
-		if (value == i)
+		// A sparse array containing a permutation of the integers from 0 to
+		// N-1. Implemented as a mapping from array index to array element. If
+		// an array index is not in the map, the corresponding array element is
+		// the same as the array index.
+		private HashMap<Integer,Integer> permutation =
+			new HashMap<Integer,Integer>();
+
+		// Returns the element in the permutation array at index i.
+		public int getElement
+			(int i)
 			{
-			permutation.remove (i);
+			Integer element = permutation.get (i);
+			return element == null ? i : element;
 			}
-		else
+
+		// Sets the element in the permutation array at index i to the given
+		// value.
+		public void setElement
+			(int i,
+			 int value)
 			{
-			permutation.put (i, value);
+			if (value == i)
+				{
+				permutation.remove (i);
+				}
+			else
+				{
+				permutation.put (i, value);
+				}
+			}
+
+		// Swaps the elements in the permutation array at indexes i and j.
+		public void swapElements
+			(int i,
+			 int j)
+			{
+			int tmp = getElement (i);
+			setElement (i, getElement (j));
+			setElement (j, tmp);
+			}
+
+		// Returns the index in the permutation array at which the given value
+		// resides.
+		public int indexOf
+			(int value)
+			{
+			for (Map.Entry<Integer,Integer> entry : permutation.entrySet())
+				{
+				if (entry.getValue() == value) return entry.getKey();
+				}
+			return value;
+			}
+
+		// Restarts the iteration.
+		public void restart()
+			{
+			permutation.clear();
 			}
 		}
 
-	/**
-	 * Swaps the elements in the permutation array at indexes i and j.
-	 */
-	private void swapElements
-		(int i,
-		 int j)
+	// Dense implementation helper class.
+	private class DenseHelper
+		extends Helper
 		{
-		int tmp = getElement (i);
-		setElement (i, getElement (j));
-		setElement (j, tmp);
-		}
+		// A dense array containing a permutation of the integers from 0 to
+		// N-1.
+		private int[] permutation = new int [N];
 
-	/**
-	 * Returns the index in the permutation array at which the given value
-	 * resides.
-	 */
-	private int indexOf
-		(int value)
-		{
-		for (Map.Entry<Integer,Integer> entry : permutation.entrySet())
+		// Construct a new dense helper.
+		public DenseHelper()
 			{
-			if (entry.getValue() == value) return entry.getKey();
+			restart();
 			}
-		return value;
+
+		// Returns the element in the permutation array at index i.
+		public int getElement
+			(int i)
+			{
+			return permutation[i];
+			}
+
+		// Sets the element in the permutation array at index i to the given
+		// value.
+		public void setElement
+			(int i,
+			 int value)
+			{
+			permutation[i] = value;
+			}
+
+		// Swaps the elements in the permutation array at indexes i and j.
+		public void swapElements
+			(int i,
+			 int j)
+			{
+			int tmp = permutation[i];
+			permutation[i] = permutation[j];
+			permutation[j] = tmp;
+			}
+
+		// Returns the index in the permutation array at which the given value
+		// resides.
+		public int indexOf
+			(int value)
+			{
+			int i = 0;
+			while (permutation[i] != value) ++ i;
+			return i;
+			}
+
+		// Restarts the iteration.
+		public void restart()
+			{
+			for (int i = 0; i < N; ++ i) permutation[i] = i;
+			}
 		}
 
 // Exported constructors.
 
 	/**
 	 * Construct a new random subset object for the original set consisting of
-	 * the integers from 0 through <I>N</I>&minus;1 inclusive.
+	 * the integers from 0 through <I>N</I>&minus;1 inclusive. The sparse
+	 * implementation is used.
 	 *
 	 * @param  prng  Underlying PRNG.
 	 * @param  N     Size of original set.
@@ -151,6 +250,30 @@ public class RandomSubset
 		(Random prng,
 		 int N)
 		{
+		this (prng, N, false);
+		}
+
+	/**
+	 * Construct a new random subset object for the original set consisting of
+	 * the integers from 0 through <I>N</I>&minus;1 inclusive. If <TT>dense</TT>
+	 * is false, the sparse implementation is used. If <TT>dense</TT> is true,
+	 * the dense implementation is used.
+	 *
+	 * @param  prng   Underlying PRNG.
+	 * @param  N      Size of original set.
+	 * @param  dense  False to use the sparse implementation, true to use the
+	 *                dense implementation.
+	 *
+	 * @exception  NullPointerException
+	 *     (unchecked exception) Thrown if <TT>prng</TT> is null.
+	 * @exception  IllegalArgumentException
+	 *     (unchecked exception) Thrown if <I>N</I> &lt; 0.
+	 */
+	public RandomSubset
+		(Random prng,
+		 int N,
+		 boolean dense)
+		{
 		if (prng == null)
 			{
 			throw new NullPointerException
@@ -163,6 +286,7 @@ public class RandomSubset
 			}
 		this.prng = prng;
 		this.N = N;
+		this.helper = dense ? new DenseHelper() : new SparseHelper();
 		}
 
 // Exported operations.
@@ -194,9 +318,9 @@ public class RandomSubset
 			throw new NoSuchElementException
 				("RandomSubset.next(): No further elements");
 			}
-		swapElements (M, M + prng.nextInt (N - M));
+		helper.swapElements (M, M + prng.nextInt (N - M));
 		++ M;
-		return getElement (M - 1);
+		return helper.getElement (M - 1);
 		}
 
 	/**
@@ -233,13 +357,34 @@ public class RandomSubset
 			throw new IllegalArgumentException
 				("RandomSubset.remove(): i = "+i+" illegal");
 			}
-		int j = indexOf (i);
+		int j = helper.indexOf (i);
 		if (j >= M)
 			{
-			swapElements (M, j);
+			helper.swapElements (M, j);
 			++ M;
 			}
 		return this;
+		}
+
+	/**
+	 * Restart this random subset's iteration. The original set is reset to
+	 * contain all the integers from 0 through <I>N</I>&minus;1 inclusive. If
+	 * integers had been removed from the original set by calling the
+	 * <TT>remove(i)</TT> method, those integers must be removed again by
+	 * calling the <TT>remove(i)</TT> method again. The iteration is restarted,
+	 * and calling the <TT>next()</TT> method will yield a different random
+	 * subset.
+	 * <P>
+	 * The <TT>restart()</TT> method lets you generate multiple random subsets
+	 * from the same original set using the same RandomSubset object. This
+	 * avoids the multiple storage allocations that would take place when
+	 * creating multiple RandomSubset objects. This in turn can reduce the
+	 * running time, especially when <I>N</I> is large.
+	 */
+	public void restart()
+		{
+		M = 0;
+		helper.restart();
 		}
 
 // Unit test main program.
@@ -247,8 +392,9 @@ public class RandomSubset
 //	/**
 //	 * Unit test main program.
 //	 * <P>
-//	 * Usage: java edu.rit.util.RandomSubset <I>seed</I> <I>N</I> <I>M</I> [
-//	 * <I>i</I> ... ]
+//	 * Usage: java edu.rit.util.RandomSubset <I>impl</I> <I>seed</I> <I>N</I>
+//	 * <I>M</I> [ <I>i</I> ... ]
+//	 * <BR><I>impl</I> = "sparse" or "dense"
 //	 * <BR><I>seed</I> = Random seed
 //	 * <BR><I>N</I> = Size of original set
 //	 * <BR><I>M</I> = Size of random subset
@@ -258,24 +404,31 @@ public class RandomSubset
 //		(String[] args)
 //		{
 //		if (args.length < 3) usage();
-//		long seed = Long.parseLong (args[0]);
-//		int N = Integer.parseInt (args[1]);
-//		int M = Integer.parseInt (args[2]);
-//		RandomSubset rs = new RandomSubset (Random.getInstance (seed), N);
-//		for (int j = 3; j < args.length; ++ j)
+//		boolean dense = args[0].equals ("dense");
+//		long seed = Long.parseLong (args[1]);
+//		int N = Integer.parseInt (args[2]);
+//		int M = Integer.parseInt (args[3]);
+//		RandomSubset rs =
+//			new RandomSubset (Random.getInstance (seed), N, dense);
+//		for (int r = 0; r < 4; ++ r)
 //			{
-//			rs.remove (Integer.parseInt (args[j]));
+//			rs.restart();
+//			for (int j = 3; j < args.length; ++ j)
+//				{
+//				rs.remove (Integer.parseInt (args[j]));
+//				}
+//			for (int j = 0; j < M; ++ j)
+//				{
+//				System.out.printf ("%d  ", rs.next());
+//				}
+//			System.out.println();
 //			}
-//		for (int j = 0; j < M; ++ j)
-//			{
-//			System.out.printf ("%d  ", rs.next());
-//			}
-//		System.out.println();
 //		}
 //
 //	private static void usage()
 //		{
-//		System.err.println ("Usage: java edu.rit.util.RandomSubset <seed> <N> <M> [<i> ...]");
+//		System.err.println ("Usage: java edu.rit.util.RandomSubset <impl> <seed> <N> <M> [<i> ...]");
+//		System.err.println ("<impl> = \"sparse\" or \"dense\"");
 //		System.err.println ("<seed> = Random seed");
 //		System.err.println ("<N> = Size of original set");
 //		System.err.println ("<M> = Size of random subset");

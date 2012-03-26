@@ -4,7 +4,7 @@
 // Package: edu.rit.hyb.fractal
 // Unit:    Class edu.rit.hyb.fractal.MandelbrotSetHyb
 //
-// This Java source file is copyright (C) 2008 by Alan Kaminsky. All rights
+// This Java source file is copyright (C) 2012 by Alan Kaminsky. All rights
 // reserved. For further information, contact the author, Alan Kaminsky, at
 // ark@cs.rit.edu.
 //
@@ -32,24 +32,16 @@ import edu.rit.image.PJGImage;
 
 import edu.rit.io.Files;
 
-import edu.rit.mp.IntegerBuf;
-import edu.rit.mp.ObjectBuf;
-
-import edu.rit.mp.buf.ObjectItemBuf;
-
 import edu.rit.pj.Comm;
-import edu.rit.pj.CommStatus;
-import edu.rit.pj.IntegerSchedule;
-import edu.rit.pj.ParallelRegion;
-import edu.rit.pj.ParallelTeam;
-import edu.rit.pj.PJProperties;
+import edu.rit.pj.HybridTeam;
+import edu.rit.pj.WorkerIntegerForLoop;
+import edu.rit.pj.WorkerRegion;
 
 import edu.rit.util.Range;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 
 /**
  * Class MandelbrotSetHyb is a hybrid parallel program that calculates the
@@ -115,7 +107,7 @@ import java.io.IOException;
  * image file.
  *
  * @author  Alan Kaminsky
- * @version 26-May-2008
+ * @version 14-Mar-2012
  */
 public class MandelbrotSetHyb
 	{
@@ -130,10 +122,7 @@ public class MandelbrotSetHyb
 
 	// Communicator.
 	static Comm world;
-	static int Kp;
 	static int rank;
-	static int Kt;
-	static int K;
 
 	// Command line arguments.
 	static int width;
@@ -167,17 +156,9 @@ public class MandelbrotSetHyb
 		// Initialize middleware.
 		Comm.init (args);
 		world = Comm.world();
-		Kp = world.size();
 		rank = world.rank();
-		Kt = PJProperties.getPjNt();
-		if (Kt == 0)
-			{
-			System.err.println ("MandelbrotSetHyb: -Dpj.nt must be specified");
-			System.exit (1);
-			}
-		K = Kp * Kt;
 
-		// Validate command line arguments.
+		// Parse command line arguments.
 		if (args.length != 8) usage();
 		width = Integer.parseInt (args[0]);
 		height = Integer.parseInt (args[1]);
@@ -205,24 +186,92 @@ public class MandelbrotSetHyb
 
 		long t2 = System.currentTimeMillis();
 
-		// Set up parallel team: Kt+1 threads in process 0, Kt threads in
-		// processes 1 and up.
-		ParallelTeam team = new ParallelTeam (rank == 0 ? Kt+1 : Kt);
-
-		// Every parallel team thread runs the worker section, except thread Kt
-		// (which exists only in process 0) runs the master section.
-		team.execute (new ParallelRegion()
+		// Compute pixels in parallel.
+		new HybridTeam().execute (new WorkerRegion()
 			{
 			public void run() throws Exception
 				{
-				if (getThreadIndex() == Kt)
+				execute (0, height - 1, new WorkerIntegerForLoop()
 					{
-					masterSection();
-					}
-				else
-					{
-					workerSection (rank * Kt + getThreadIndex());
-					}
+					// Image matrix, and one row slice of it.
+					int[][] matrix;
+					int[][] slice;
+
+					// For writing per-worker PJG image file.
+					PJGColorImage image;
+					PJGImage.Writer writer;
+
+					public void start() throws Exception
+						{
+						// Allocate storage for pixel matrix row references
+						// only.
+						matrix = new int [height] [];
+
+						// Prepare to write image row slices to per-worker PJG
+						// image file.
+						image = new PJGColorImage (height, width, matrix);
+						writer = image.prepareToWrite
+							(new BufferedOutputStream
+								(new FileOutputStream
+									(Files.fileForRank
+										(filename, getThreadIndex()))));
+						}
+
+					public void run (int lb, int ub) throws Exception
+						{
+						// Allocate storage for matrix row slice if necessary.
+						Range range = new Range (lb, ub);
+						int len = range.length();
+						if (slice == null || slice.length < len)
+							{
+							slice = new int [len] [width];
+							}
+
+						// Compute all rows and columns in slice.
+						for (int r = lb; r <= ub; ++ r)
+							{
+							int[] slice_r = slice[r-lb];
+							double y = ycenter + (yoffset - r) / resolution;
+
+							for (int c = 0; c < width; ++ c)
+								{
+								double x = xcenter + (xoffset + c) / resolution;
+
+								// Iterate until convergence.
+								int i = 0;
+								double aold = 0.0;
+								double bold = 0.0;
+								double a = 0.0;
+								double b = 0.0;
+								double zmagsqr = 0.0;
+								while (i < maxiter && zmagsqr <= 4.0)
+									{
+									++ i;
+									a = aold*aold - bold*bold + x;
+									b = 2.0*aold*bold + y;
+									zmagsqr = a*a + b*b;
+									aold = a;
+									bold = b;
+									}
+
+								// Record number of iterations for pixel.
+								slice_r[c] = huetable[i];
+								}
+							}
+
+						// Set full pixel matrix rows to refer to slice rows.
+						System.arraycopy (slice, 0, matrix, lb, len);
+
+						// Write row slice of full pixel matrix to image file.
+						writer.writeRowSlice (range);
+						}
+
+					public void finish() throws Exception
+						{
+						// Close image file.
+						writer.close();
+						}
+					});
 				}
 			});
 
@@ -237,143 +286,6 @@ public class MandelbrotSetHyb
 		}
 
 // Hidden operations.
-
-	/**
-	 * Perform the master section.
-	 *
-	 * @exception  IOException
-	 *     Thrown if an I/O error occurred.
-	 */
-	private static void masterSection()
-		throws IOException
-		{
-		int process, thread, worker;
-		Range range;
-
-		// Set up a schedule object to divide the row range into chunks.
-		IntegerSchedule schedule = IntegerSchedule.runtime();
-		schedule.start (K, new Range (0, height-1));
-
-		// Send initial chunk range to each worker. If range is null, no more
-		// work for that worker. Keep count of active workers.
-		int activeWorkers = K;
-		for (process = 0; process < Kp; ++ process)
-			{
-			for (thread = 0; thread < Kt; ++ thread)
-				{
-				worker = process * Kt + thread;
-				range = schedule.next (worker);
-				world.send (process, worker, ObjectBuf.buffer (range));
-				if (range == null) -- activeWorkers;
-				}
-			}
-
-		// Repeat until all workers have finished.
-		while (activeWorkers > 0)
-			{
-			// Receive an empty message from any worker.
-			CommStatus status =
-				world.receive (null, null, IntegerBuf.emptyBuffer());
-			process = status.fromRank;
-			worker = status.tag;
-
-			// Send next chunk range to that specific worker. If null, no more
-			// work.
-			range = schedule.next (worker);
-			world.send (process, worker, ObjectBuf.buffer (range));
-			if (range == null) -- activeWorkers;
-			}
-		}
-
-	/**
-	 * Perform the worker section.
-	 *
-	 * @param  worker  Worker index.
-	 *
-	 * @exception  Exception
-	 *     Thrown if an I/O error occurred.
-	 */
-	private static void workerSection
-		(int worker)
-		throws IOException
-		{
-		// Image matrix. Allocate storage for pixel matrix row references only.
-		int[][] matrix = new int [height] [];
-
-		// Prepare to write image row slices to per-worker PJG image file.
-		PJGColorImage image = new PJGColorImage (height, width, matrix);
-		PJGImage.Writer writer =
-			image.prepareToWrite
-				(new BufferedOutputStream
-					(new FileOutputStream
-						(Files.fileForRank (filename, worker))));
-
-		// Storage for matrix row slice.
-		int[][] slice = null;
-
-		// Process chunks from master.
-		for (;;)
-			{
-			// Receive chunk range from master. If null, no more work.
-			ObjectItemBuf<Range> rangeBuf = ObjectBuf.buffer();
-			world.receive (0, worker, rangeBuf);
-			Range range = rangeBuf.item;
-			if (range == null) break;
-			int lb = range.lb();
-			int ub = range.ub();
-			int len = range.length();
-
-			// Allocate storage for matrix row slice if necessary.
-			if (slice == null || slice.length < len)
-				{
-				slice = new int [len] [width];
-				}
-
-			// Compute all rows and columns in slice.
-			for (int r = lb; r <= ub; ++ r)
-				{
-				int[] slice_r = slice[r-lb];
-				double y = ycenter + (yoffset - r) / resolution;
-
-				for (int c = 0; c < width; ++ c)
-					{
-					double x = xcenter + (xoffset + c) / resolution;
-
-					// Iterate until convergence.
-					int i = 0;
-					double aold = 0.0;
-					double bold = 0.0;
-					double a = 0.0;
-					double b = 0.0;
-					double zmagsqr = 0.0;
-					while (i < maxiter && zmagsqr <= 4.0)
-						{
-						++ i;
-						a = aold*aold - bold*bold + x;
-						b = 2.0*aold*bold + y;
-						zmagsqr = a*a + b*b;
-						aold = a;
-						bold = b;
-						}
-
-					// Record number of iterations for pixel.
-					slice_r[c] = huetable[i];
-					}
-				}
-
-			// Report completion of slice to master.
-			world.send (0, worker, IntegerBuf.emptyBuffer());
-
-			// Set full pixel matrix rows to refer to slice rows.
-			System.arraycopy (slice, 0, matrix, lb, len);
-
-			// Write row slice of full pixel matrix to image file.
-			writer.writeRowSlice (range);
-			}
-
-		// Close image file.
-		writer.close();
-		};
 
 	/**
 	 * Print a usage message and exit.

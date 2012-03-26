@@ -4,7 +4,7 @@
 // Package: edu.rit.hyb.prime
 // Unit:    Class edu.rit.hyb.prime.PrimeCountFunctionHyb
 //
-// This Java source file is copyright (C) 2008 by Alan Kaminsky. All rights
+// This Java source file is copyright (C) 2012 by Alan Kaminsky. All rights
 // reserved. For further information, contact the author, Alan Kaminsky, at
 // ark@cs.rit.edu.
 //
@@ -25,25 +25,21 @@
 
 package edu.rit.hyb.prime;
 
-import edu.rit.mp.IntegerBuf;
 import edu.rit.mp.LongBuf;
-import edu.rit.mp.ObjectBuf;
 
 import edu.rit.mp.buf.LongItemBuf;
-import edu.rit.mp.buf.ObjectItemBuf;
 
 import edu.rit.pj.Comm;
-import edu.rit.pj.CommStatus;
 import edu.rit.pj.LongForLoop;
 import edu.rit.pj.LongSchedule;
 import edu.rit.pj.ParallelRegion;
-import edu.rit.pj.ParallelSection;
 import edu.rit.pj.ParallelTeam;
+import edu.rit.pj.WorkerLongForLoop;
+import edu.rit.pj.WorkerRegion;
+import edu.rit.pj.WorkerTeam;
 
 import edu.rit.pj.reduction.LongOp;
 import edu.rit.pj.reduction.SharedLong;
-
-import edu.rit.util.LongRange;
 
 import java.io.File;
 
@@ -90,7 +86,7 @@ import java.io.File;
  * measures the total running time.
  *
  * @author  Alan Kaminsky
- * @version 05-Jun-2008
+ * @version 19-Mar-2012
  */
 public class PrimeCountFunctionHyb
 	{
@@ -108,13 +104,12 @@ public class PrimeCountFunctionHyb
 
 	// World communicator.
 	static Comm world;
-	static int size;
 	static int rank;
 
 	// Command line arguments.
 	static long x;
-	static File primefile;
-	static LongSchedule thrschedule;
+	static File primeFile;
+	static LongSchedule thrSchedule;
 
 	// Parallel team.
 	static ParallelTeam team;
@@ -125,7 +120,7 @@ public class PrimeCountFunctionHyb
 	// List of 32-bit primes.
 	static Prime32List primeList;
 
-	// For counting primes.
+	// Per-process prime counter.
 	static SharedLong primeCount = new SharedLong (0);
 
 // Main program.
@@ -143,15 +138,14 @@ public class PrimeCountFunctionHyb
 		// World communicator.
 		Comm.init (args);
 		world = Comm.world();
-		size = world.size();
 		rank = world.rank();
 
 		// Parse command line arguments.
 		if (args.length < 2 || args.length > 3) usage();
 		x = Long.parseLong (args[0]);
 		if (x < 0) usage();
-		primefile = new File (args[1]);
-		thrschedule =
+		primeFile = new File (args[1]);
+		thrSchedule =
 			args.length == 3 ?
 				LongSchedule.parse (args[2]) :
 				LongSchedule.fixed();
@@ -165,40 +159,90 @@ public class PrimeCountFunctionHyb
 			}
 
 		// Set up list of 32-bit primes.
-		primeList = new Prime32List (primefile);
+		primeList = new Prime32List (primeFile);
 
-		// In master process, run master section and worker section in parallel.
-		if (rank == 0)
+		// Compute sieves in parallel using a two-level schedule for load
+		// balancing. First-level schedule controlled by -Dpj.schedule.
+		new WorkerTeam().execute (new WorkerRegion()
 			{
-			new ParallelTeam(2).execute (new ParallelRegion()
+			public void run() throws Exception
 				{
-				public void run() throws Exception
+				// Determine number of sieves to calculate.
+				long ns = (x + CHUNK - 1)/CHUNK;
+				execute (0, ns - 1, new WorkerLongForLoop()
 					{
-					execute (new ParallelSection()
+					public void run (final long lb, final long ub)
+						throws Exception
 						{
-						public void run() throws Exception
+						team.execute (new ParallelRegion()
 							{
-							masterSection();
-							}
-						},
-					new ParallelSection()
-						{
-						public void run() throws Exception
-							{
-							workerSection();
-							}
-						});
-					}
-				});
-			}
+							public void run() throws Exception
+								{
+								execute (lb, ub, new LongForLoop()
+									{
+									// Per-thread variables plus extra padding.
+									Sieve thrSieve;
+									long thrPrimeCount;
+									long p0, p1, p2, p3, p4, p5, p6, p7;
+									long p8, p9, pa, pb, pc, pd, pe, pf;
 
-		// In worker process, run only worker section.
-		else
-			{
-			workerSection();
-			}
+									// Second-level schedule controlled by last
+									// command line argument.
+									public LongSchedule schedule()
+										{
+										return thrSchedule;
+										}
 
-		// Reduce prime counts into process 0.
+									// Initialize per-thread variables.
+									public void start()
+										{
+										thrSieve = sieves[getThreadIndex()];
+										thrPrimeCount = 0;
+										}
+
+									// Calculate all sieves.
+									public void run (long first, long last)
+										throws Exception
+										{
+										for (long lb = first; lb <= last; ++ lb)
+											{
+											// Get an iterator for the odd
+											// primes.
+											LongIterator iter =
+												primeList.iterator();
+
+											// Calculate the sieve.
+											thrSieve.lb (lb*CHUNK);
+											thrSieve.initialize();
+											thrSieve.sieveOut (iter);
+
+											// Count primes <= x left in the
+											// sieve.
+											iter = thrSieve.iterator();
+											long p;
+											while ((p = iter.next()) != 0 &&
+													p <= x)
+												{
+												++ thrPrimeCount;
+												}
+											}
+										}
+
+									// Reduce per-thread prime count into
+									// per-process prime count.
+									public void finish()
+										{
+										primeCount.addAndGet (thrPrimeCount);
+										}
+									});
+								}
+							});
+						}
+					});
+				}
+			});
+
+		// Reduce per-process prime counts into process 0.
 		LongItemBuf buf = LongBuf.buffer (primeCount.longValue());
 		world.reduce (0, buf, LongOp.SUM);
 
@@ -206,142 +250,11 @@ public class PrimeCountFunctionHyb
 		long t2 = System.currentTimeMillis();
 
 		// Print the answer. (Add 1 because 2 is a prime.)
-		if (rank == 0)
-			{
-			System.out.println ("pi("+x+") = "+(buf.item+1));
-			}
+		if (rank == 0) System.out.println ("pi("+x+") = "+(buf.item + 1));
 		System.out.println ((t2-t1)+" msec "+rank);
 		}
 
 // Hidden operations.
-
-	/**
-	 * Perform the master section.
-	 *
-	 * @exception  Exception
-	 *     Thrown if an I/O error occurred.
-	 */
-	private static void masterSection()
-		throws Exception
-		{
-		int worker;
-		LongRange range;
-
-		// Determine number of sieves to calculate.
-		long ns = (x + CHUNK - 1) / CHUNK;
-
-		// Set up a schedule object.
-		LongSchedule schedule = LongSchedule.runtime();
-		schedule.start (size, new LongRange (0, ns-1));
-
-		// Send initial sieve range to each worker. If range is null, no more
-		// work for that worker. Keep count of active workers.
-		int activeWorkers = size;
-		for (worker = 0; worker < size; ++ worker)
-			{
-			range = schedule.next (worker);
-			world.send (worker, ObjectBuf.buffer (range));
-			if (range == null) -- activeWorkers;
-			}
-
-		// Repeat until all workers have finished.
-		while (activeWorkers > 0)
-			{
-			// Receive an empty message from any worker.
-			CommStatus status = world.receive (null, IntegerBuf.emptyBuffer());
-			worker = status.fromRank;
-
-			// Send next chunk range to that specific worker. If null, no more
-			// work.
-			range = schedule.next (worker);
-			world.send (worker, ObjectBuf.buffer (range));
-			if (range == null) -- activeWorkers;
-			}
-		}
-
-	/**
-	 * Perform the worker section.
-	 *
-	 * @exception  Exception
-	 *     Thrown if an I/O error occurred.
-	 */
-	private static void workerSection()
-		throws Exception
-		{
-		// Process chunks from master.
-		for (;;)
-			{
-			// Receive sieve range from master. If null, no more work.
-			ObjectItemBuf<LongRange> rangeBuf = ObjectBuf.buffer();
-			world.receive (0, rangeBuf);
-			LongRange range = rangeBuf.item;
-			if (range == null) break;
-			final long lb = range.lb();
-			final long ub = range.ub();
-
-			// Calculate sieves in parallel threads.
-			team.execute (new ParallelRegion()
-				{
-				public void run() throws Exception
-					{
-					execute (lb, ub, new LongForLoop()
-						{
-						// Per-thread variables plus extra padding.
-						Sieve thrSieve;
-						long thrPrimeCount;
-						long p0, p1, p2, p3, p4, p5, p6, p7;
-						long p8, p9, pa, pb, pc, pd, pe, pf;
-
-						// Use the thread-level loop schedule.
-						public LongSchedule schedule()
-							{
-							return thrschedule;
-							}
-
-						// Initialize per-thread variables.
-						public void start()
-							{
-							thrSieve = sieves[getThreadIndex()];
-							thrPrimeCount = 0;
-							}
-
-						// Calculate all sieves.
-						public void run (long first, long last) throws Exception
-							{
-							for (long lb = first; lb <= last; ++ lb)
-								{
-								// Get an iterator for the odd primes.
-								LongIterator iter = primeList.iterator();
-
-								// Calculate the sieve.
-								thrSieve.lb (lb*CHUNK);
-								thrSieve.initialize();
-								thrSieve.sieveOut (iter);
-
-								// Count primes <= x left in the sieve.
-								iter = thrSieve.iterator();
-								long p;
-								while ((p = iter.next()) != 0 && p <= x)
-									{
-									++ thrPrimeCount;
-									}
-								}
-							}
-
-						// Reduce per-thread prime count into global prime
-						// count.
-						public void finish()
-							{
-							primeCount.addAndGet (thrPrimeCount);
-							}
-						});
-					}
-				});
-
-			// Report completion of sieve range to master.
-			world.send (0, IntegerBuf.emptyBuffer());
-			}
-		};
 
 	/**
 	 * Print a usage message and exit.

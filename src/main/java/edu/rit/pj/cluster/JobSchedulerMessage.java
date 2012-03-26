@@ -4,7 +4,7 @@
 // Package: edu.rit.pj.cluster
 // Unit:    Class edu.rit.pj.cluster.JobSchedulerMessage
 //
-// This Java source file is copyright (C) 2008 by Alan Kaminsky. All rights
+// This Java source file is copyright (C) 2012 by Alan Kaminsky. All rights
 // reserved. For further information, contact the author, Alan Kaminsky, at
 // ark@cs.rit.edu.
 //
@@ -35,7 +35,7 @@ import java.io.ObjectOutput;
  * (interface {@linkplain JobSchedulerRef}) in the PJ cluster middleware.
  *
  * @author  Alan Kaminsky
- * @version 21-May-2008
+ * @version 24-Jan-2012
  */
 public abstract class JobSchedulerMessage
 	extends Message
@@ -122,6 +122,23 @@ public abstract class JobSchedulerMessage
 		(JobFrontendRef theJobFrontend)
 		{
 		return new RenewLeaseMessage (theJobFrontend);
+		}
+
+	/**
+	 * Construct a new "report comment" message.
+	 *
+	 * @param  theJobFrontend  Job frontend that is calling this method.
+	 * @param  rank            Process rank.
+	 * @param  comment         Comment string.
+	 *
+	 * @return  "Report comment" message.
+	 */
+	public static JobSchedulerMessage reportComment
+		(JobFrontendRef theJobFrontend,
+		 int rank,
+		 String comment)
+		{
+		return new ReportCommentMessage (theJobFrontend, rank, comment);
 		}
 
 	/**
@@ -352,6 +369,60 @@ public abstract class JobSchedulerMessage
 			throws IOException
 			{
 			theJobScheduler.renewLease (theJobFrontend);
+			}
+		}
+
+	/**
+	 * Class ReportCommentMessage provides the Job Scheduler "report comment"
+	 * message in the PJ cluster middleware.
+	 *
+	 * @author  Alan Kaminsky
+	 * @version 24-Jan-2012
+	 */
+	private static class ReportCommentMessage
+		extends JobSchedulerMessage
+		{
+		private static final long serialVersionUID = -7431990305653172900L;
+
+		private int rank;
+		private String comment;
+
+		public ReportCommentMessage()
+			{
+			}
+
+		public ReportCommentMessage
+			(JobFrontendRef theJobFrontend,
+			 int rank,
+			 String comment)
+			{
+			super (Message.FROM_JOB_FRONTEND);
+			this.rank = rank;
+			this.comment = comment == null ? "" : comment;
+			}
+
+		public void invoke
+			(JobSchedulerRef theJobScheduler,
+			 JobFrontendRef theJobFrontend)
+			throws IOException
+			{
+			theJobScheduler.reportComment (theJobFrontend, rank, comment);
+			}
+
+		public void writeExternal
+			(ObjectOutput out)
+			throws IOException
+			{
+			out.writeInt (rank);
+			out.writeUTF (comment);
+			}
+
+		public void readExternal
+			(ObjectInput in)
+			throws IOException
+			{
+			rank = in.readInt();
+			comment = in.readUTF();
 			}
 		}
 

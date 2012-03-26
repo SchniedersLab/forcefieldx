@@ -4,7 +4,7 @@
 // Package: edu.rit.numeric
 // Unit:    Class edu.rit.numeric.Interpolation
 //
-// This Java source file is copyright (C) 2007 by Alan Kaminsky. All rights
+// This Java source file is copyright (C) 2011 by Alan Kaminsky. All rights
 // reserved. For further information, contact the author, Alan Kaminsky, at
 // ark@cs.rit.edu.
 //
@@ -25,16 +25,20 @@
 
 package edu.rit.numeric;
 
+import edu.rit.util.Sorting;
+
 /**
  * Class Interpolation provides an object for interpolating in an {@linkplain
  * XYSeries} of real values (type <TT>double</TT>). Linear interpolation is
- * used.
+ * used. The X-Y series must have at least two elements; the X values must be
+ * distinct; but the X values need not be in any particular order. When doing
+ * interpolations, the (X,Y) pairs are arranged in ascending order of X values.
  * <P>
  * Class Interpolation implements interface {@linkplain Function}. An instance
  * of class Interpolation can be used as a function object.
  *
  * @author  Alan Kaminsky
- * @version 22-Jul-2007
+ * @version 18-Aug-2011
  */
 public class Interpolation
 	implements Function
@@ -42,11 +46,12 @@ public class Interpolation
 
 // Hidden data members.
 
-	// Series of (x,y) pairs in which to interpolate.
-	private ListXYSeries mySeries;
+	// X and Y values in which to interpolate. X values in ascending order.
+	private double[] xData;
+	private double[] yData;
 
-	// Length of mySeries, minus 2.
-	private int myLengthMinus2;
+	// Number of data values, minus 2.
+	private int NM2;
 
 	// Index of the lower (x,y) pair of the interval in which the last
 	// interpolation occurred.
@@ -62,7 +67,9 @@ public class Interpolation
 
 	/**
 	 * Construct a new interpolation object that will interpolate between values
-	 * in the given X-Y series. The X-Y series must have at least two elements.
+	 * in the given X-Y series. The X-Y series must have at least two elements;
+	 * the X values must be distinct; but the X values need not be in any
+	 * particular order.
 	 * <P>
 	 * <I>Note:</I> A copy of the given series' elements is made. Changing
 	 * <TT>theSeries</TT> will not affect this interpolation object.
@@ -73,32 +80,58 @@ public class Interpolation
 	 *     (unchecked exception) Thrown if <TT>theSeries</TT> is null.
 	 * @exception  IllegalArgumentException
 	 *     (unchecked exception) Thrown if <TT>theSeries</TT> has fewer than two
-	 *     elements.
+	 *     elements. Thrown if the X values in <TT>theSeries</TT> are not
+	 *     distinct.
 	 */
 	public Interpolation
 		(XYSeries theSeries)
 		{
-		if (theSeries.length() < 2)
+		int N = theSeries.length();
+		if (N < 2)
 			{
 			throw new IllegalArgumentException
 				("Interpolation(): theSeries length < 2");
 			}
-		mySeries = new ListXYSeries().add (theSeries);
-		myLengthMinus2 = mySeries.length() - 2;
+		xData = new double [N];
+		yData = new double [N];
+		for (int i = 0; i < N; ++ i)
+			{
+			xData[i] = theSeries.x(i);
+			yData[i] = theSeries.y(i);
+			}
+		Sorting.sort (xData, new Sorting.Double()
+			{
+			public void swap (double[] x, int a, int b)
+				{
+				double tmp;
+				tmp = xData[a];
+				xData[a] = xData[b];
+				xData[b] = tmp;
+				tmp = yData[a];
+				yData[a] = yData[b];
+				yData[b] = tmp;
+				}
+			});
+		NM2 = N - 2;
+		for (int i = 0; i <= NM2; ++ i)
+			{
+			if (xData[i] == xData[i+1])
+				{
+				throw new IllegalArgumentException
+					("Interpolation(): Duplicate X value: "+xData[i]);
+				}
+			}
 		myIndex = 0;
-		x1 = mySeries.x(0);
-		y1 = mySeries.y(0);
-		x2 = mySeries.x(1);
-		y2 = mySeries.y(1);
+		x1 = xData[0];
+		y1 = yData[0];
+		x2 = xData[1];
+		y2 = yData[1];
 		}
 
 // Exported operations.
 
 	/**
-	 * Using linear interpolation, compute the Y value for the given X value. It
-	 * is assumed that the X values in the underlying X-Y series form a strictly
-	 * increasing sequence.
-	 * <P>
+	 * Using linear interpolation, compute the Y value for the given X value.
 	 * If <TT>x</TT> is less than the smallest X value in the underlying X-Y
 	 * series, the Y value is computed by extrapolating the first interval. If
 	 * <TT>x</TT> is greater than the largest X value in the underlying X-Y
@@ -112,13 +145,13 @@ public class Interpolation
 		(double x)
 		{
 		// Scan forward if necessary to find the correct interval for x.
-		while (myIndex < myLengthMinus2 && x >= x2)
+		while (myIndex < NM2 && x >= x2)
 			{
 			++ myIndex;
 			x1 = x2;
 			y1 = y2;
-			x2 = mySeries.x (myIndex + 1);
-			y2 = mySeries.y (myIndex + 1);
+			x2 = xData[myIndex + 1];
+			y2 = yData[myIndex + 1];
 			}
 
 		// Scan backward if necessary to find the correct interval for x.
@@ -127,55 +160,13 @@ public class Interpolation
 			-- myIndex;
 			x2 = x1;
 			y2 = y1;
-			x1 = mySeries.x (myIndex);
-			y1 = mySeries.y (myIndex);
+			x1 = xData[myIndex];
+			y1 = yData[myIndex];
 			}
 
 		// Interpolate on x.
-		double dx = (x - x1) / (x2 - x1);
-		return (1.0 - dx) * y1 + dx * y2;
-		}
-
-	/**
-	 * Using linear interpolation, compute the X value for the given Y value. It
-	 * is assumed that the Y values in the underlying X-Y series form a strictly
-	 * increasing sequence.
-	 * <P>
-	 * If <TT>y</TT> is less than the smallest Y value in the underlying X-Y
-	 * series, the X value is computed by extrapolating the first interval. If
-	 * <TT>y</TT> is greater than the largest Y value in the underlying X-Y
-	 * series, the X value is computed by extrapolating the last interval.
-	 *
-	 * @param  y  Y value.
-	 *
-	 * @return  Interpolated or extrapolated X value.
-	 */
-	public double fInv
-		(double y)
-		{
-		// Scan forward if necessary to find the correct interval for y.
-		while (myIndex < myLengthMinus2 && y >= y2)
-			{
-			++ myIndex;
-			x1 = x2;
-			y1 = y2;
-			x2 = mySeries.x (myIndex + 1);
-			y2 = mySeries.y (myIndex + 1);
-			}
-
-		// Scan backward if necessary to find the correct interval for y.
-		while (myIndex > 0 && y < y1)
-			{
-			-- myIndex;
-			x2 = x1;
-			y2 = y1;
-			x1 = mySeries.x (myIndex);
-			y1 = mySeries.y (myIndex);
-			}
-
-		// Interpolate on y.
-		double dy = (y - y1) / (y2 - y1);
-		return (1.0 - dy) * x1 + dy * x2;
+		double dx = (x - x1)/(x2 - x1);
+		return (1.0 - dx)*y1 + dx*y2;
 		}
 
 	}

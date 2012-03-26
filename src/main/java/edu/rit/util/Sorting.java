@@ -4,7 +4,7 @@
 // Package: edu.rit.util
 // Unit:    Class edu.rit.util.Sorting
 //
-// This Java source file is copyright (C) 2010 by Alan Kaminsky. All rights
+// This Java source file is copyright (C) 2011 by Alan Kaminsky. All rights
 // reserved. For further information, contact the author, Alan Kaminsky, at
 // ark@cs.rit.edu.
 //
@@ -32,7 +32,7 @@ package edu.rit.util;
  * <I>Note:</I> The operations in class Sorting are not multiple thread safe.
  *
  * @author  Alan Kaminsky
- * @version 20-Oct-2010
+ * @version 02-Nov-2011
  */
 public class Sorting
 	{
@@ -497,8 +497,10 @@ public class Sorting
 	 *
 	 * @param  x       Array to be sorted.
 	 * @param  helper  Helper object.
+	 *
+	 * @return  The array that was sorted (<TT>x</TT>).
 	 */
-	public static void sort
+	public static byte[] sort
 		(byte[] x,
 		 Sorting.Byte helper)
 		{
@@ -512,6 +514,7 @@ public class Sorting
 			helper.swap (x, 0, i-1);
 			siftDown (x, i - 1, helper);
 			}
+		return x;
 		}
 
 	private static void siftUp
@@ -582,8 +585,10 @@ public class Sorting
 	 *
 	 * @param  x       Array to be sorted.
 	 * @param  helper  Helper object.
+	 *
+	 * @return  The array that was sorted (<TT>x</TT>).
 	 */
-	public static void sort
+	public static char[] sort
 		(char[] x,
 		 Sorting.Character helper)
 		{
@@ -597,6 +602,7 @@ public class Sorting
 			helper.swap (x, 0, i-1);
 			siftDown (x, i - 1, helper);
 			}
+		return x;
 		}
 
 	private static void siftUp
@@ -667,8 +673,10 @@ public class Sorting
 	 *
 	 * @param  x       Array to be sorted.
 	 * @param  helper  Helper object.
+	 *
+	 * @return  The array that was sorted (<TT>x</TT>).
 	 */
-	public static void sort
+	public static short[] sort
 		(short[] x,
 		 Sorting.Short helper)
 		{
@@ -682,6 +690,7 @@ public class Sorting
 			helper.swap (x, 0, i-1);
 			siftDown (x, i - 1, helper);
 			}
+		return x;
 		}
 
 	private static void siftUp
@@ -752,8 +761,10 @@ public class Sorting
 	 *
 	 * @param  x       Array to be sorted.
 	 * @param  helper  Helper object.
+	 *
+	 * @return  The array that was sorted (<TT>x</TT>).
 	 */
-	public static void sort
+	public static int[] sort
 		(int[] x,
 		 Sorting.Integer helper)
 		{
@@ -767,6 +778,7 @@ public class Sorting
 			helper.swap (x, 0, i-1);
 			siftDown (x, i - 1, helper);
 			}
+		return x;
 		}
 
 	private static void siftUp
@@ -837,8 +849,10 @@ public class Sorting
 	 *
 	 * @param  x       Array to be sorted.
 	 * @param  helper  Helper object.
+	 *
+	 * @return  The array that was sorted (<TT>x</TT>).
 	 */
-	public static void sort
+	public static long[] sort
 		(long[] x,
 		 Sorting.Long helper)
 		{
@@ -852,6 +866,7 @@ public class Sorting
 			helper.swap (x, 0, i-1);
 			siftDown (x, i - 1, helper);
 			}
+		return x;
 		}
 
 	private static void siftUp
@@ -922,8 +937,10 @@ public class Sorting
 	 *
 	 * @param  x       Array to be sorted.
 	 * @param  helper  Helper object.
+	 *
+	 * @return  The array that was sorted (<TT>x</TT>).
 	 */
-	public static void sort
+	public static float[] sort
 		(float[] x,
 		 Sorting.Float helper)
 		{
@@ -937,6 +954,7 @@ public class Sorting
 			helper.swap (x, 0, i-1);
 			siftDown (x, i - 1, helper);
 			}
+		return x;
 		}
 
 	private static void siftUp
@@ -1007,8 +1025,10 @@ public class Sorting
 	 *
 	 * @param  x       Array to be sorted.
 	 * @param  helper  Helper object.
+	 *
+	 * @return  The array that was sorted (<TT>x</TT>).
 	 */
-	public static void sort
+	public static double[] sort
 		(double[] x,
 		 Sorting.Double helper)
 		{
@@ -1022,6 +1042,7 @@ public class Sorting
 			helper.swap (x, 0, i-1);
 			siftDown (x, i - 1, helper);
 			}
+		return x;
 		}
 
 	private static void siftUp
@@ -1093,8 +1114,10 @@ public class Sorting
 	 * @param  <T>     Data type of the array elements.
 	 * @param  x       Array to be sorted.
 	 * @param  helper  Helper object.
+	 *
+	 * @return  The array that was sorted (<TT>x</TT>).
 	 */
-	public static <T> void sort
+	public static <T> T[] sort
 		(T[] x,
 		 Sorting.Object<T> helper)
 		{
@@ -1108,6 +1131,7 @@ public class Sorting
 			helper.swap (x, 0, i-1);
 			siftDown (x, i - 1, helper);
 			}
+		return x;
 		}
 
 	private static <T> void siftUp

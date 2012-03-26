@@ -4,7 +4,7 @@
 // Package: edu.rit.pj.cluster
 // Unit:    Class edu.rit.pj.cluster.JobInfo
 //
-// This Java source file is copyright (C) 2008 by Alan Kaminsky. All rights
+// This Java source file is copyright (C) 2012 by Alan Kaminsky. All rights
 // reserved. For further information, contact the author, Alan Kaminsky, at
 // ark@cs.rit.edu.
 //
@@ -32,7 +32,7 @@ import edu.rit.util.Timer;
  * computer in the PJ cluster middleware.
  *
  * @author  Alan Kaminsky
- * @version 21-May-2008
+ * @version 24-Jan-2012
  */
 public class JobInfo
 	{
@@ -159,6 +159,14 @@ public class JobInfo
 	 * Maximum job time timer.
 	 */
 	public Timer jobTimer;
+
+	/**
+	 * Comment for each process in the job in rank order. The array has
+	 * <TT>Np</TT> total elements. Initially, these are empty strings. The
+	 * process comments appear in the detailed job status display in the Job
+	 * Scheduler web interface.
+	 */
+	public String[] comment;
 
 // Exported constructors.
 

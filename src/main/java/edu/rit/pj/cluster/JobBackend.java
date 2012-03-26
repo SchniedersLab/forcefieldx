@@ -4,7 +4,7 @@
 // Package: edu.rit.pj.cluster
 // Unit:    Class edu.rit.pj.cluster.JobBackend
 //
-// This Java source file is copyright (C) 2008 by Alan Kaminsky. All rights
+// This Java source file is copyright (C) 2012 by Alan Kaminsky. All rights
 // reserved. For further information, contact the author, Alan Kaminsky, at
 // ark@cs.rit.edu.
 //
@@ -71,7 +71,7 @@ import java.util.concurrent.CountDownLatch;
  * <BR><I>backendHost</I> = Job backend's middleware channel group host name
  *
  * @author  Alan Kaminsky
- * @version 19-Jul-2008
+ * @version 24-Jan-2012
  */
 public class JobBackend
 	implements Runnable, JobBackendRef
@@ -265,7 +265,7 @@ public class JobBackend
 		myMiddlewareChannelGroup =
 			new ChannelGroup (new InetSocketAddress (backendHost, 0));
 		myMiddlewareChannelGroup.startListening();
-                
+
 		// Set up job frontend proxy.
 		myJobFrontend =
 			new JobFrontendProxy
@@ -886,6 +886,35 @@ public class JobBackend
 		}
 
 	/**
+	 * Set the comment string for this job backend process. The comment string
+	 * appears in the detailed job status display in the Job Scheduler's web
+	 * interface. Each job backend process (rank) has its own comment string. If
+	 * <TT>setComment()</TT> is never called, the comment string is empty. The
+	 * comment string is typically used to display this job backend process's
+	 * progress. The comment string is rendered by a web browser and can contain
+	 * HTML tags.
+	 * <P>
+	 * Calling <TT>setComment()</TT> causes a message to be sent to the job
+	 * frontend process, which in turn causes a message to be sent to the Job
+	 * Scheduler. (Any I/O errors during message sending are ignored.)
+	 * Consequently, don't call <TT>setComment()</TT> too frequently, or the
+	 * program's performance will suffer.
+	 *
+	 * @param  comment  Comment string.
+	 */
+	public void setComment
+		(String comment)
+		{
+		try
+			{
+			myJobFrontend.reportComment (this, rank, comment);
+			}
+		catch (IOException exc)
+			{
+			}
+		}
+
+	/**
 	 * Obtain the Job Backend object. If the Job Backend main program is
 	 * running, the job backend object for the job is returned. If some other
 	 * main program is running, null is returned.
@@ -1159,15 +1188,14 @@ public class JobBackend
 
 		// Call the job's main() method, passing in the job's command line
 		// arguments.
-                // Force Field X Modification. Load our Main class using the
-                // SystemClassLoader, which is an instance of the FFXClassLoader.
-                Class<?> mainclass =
+		Class<?> mainclass =
 			Class.forName
 				(theJobBackend.getMainClassName(),
 				 true,
+                                 // Force Field X modification to use our SystemClassLoader.
                                  ClassLoader.getSystemClassLoader());
-                // Orig: theJobBackend.getClassLoader());
-                
+				 // Original: 
+                                 // theJobBackend.getClassLoader());
 		Method mainmethod = mainclass.getMethod ("main", String[].class);
 		mainmethod.invoke (null, (Object) theJobBackend.getArgs());
 

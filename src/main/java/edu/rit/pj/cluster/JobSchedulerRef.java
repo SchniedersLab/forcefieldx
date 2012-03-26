@@ -4,7 +4,7 @@
 // Package: edu.rit.pj.cluster
 // Unit:    Interface edu.rit.pj.cluster.JobSchedulerRef
 //
-// This Java source file is copyright (C) 2008 by Alan Kaminsky. All rights
+// This Java source file is copyright (C) 2012 by Alan Kaminsky. All rights
 // reserved. For further information, contact the author, Alan Kaminsky, at
 // ark@cs.rit.edu.
 //
@@ -32,7 +32,7 @@ import java.io.IOException;
  * Daemon process.
  *
  * @author  Alan Kaminsky
- * @version 21-May-2008
+ * @version 24-Jan-2012
  */
 public interface JobSchedulerRef
 	{
@@ -89,6 +89,22 @@ public interface JobSchedulerRef
 	 */
 	public void renewLease
 		(JobFrontendRef theJobFrontend)
+		throws IOException;
+
+	/**
+	 * Report a comment for a process.
+	 *
+	 * @param  theJobFrontend  Job frontend that is calling this method.
+	 * @param  rank            Process rank.
+	 * @param  comment         Comment string.
+	 *
+	 * @exception  IOException
+	 *     Thrown if an I/O error occurred.
+	 */
+	public void reportComment
+		(JobFrontendRef theJobFrontend,
+		 int rank,
+		 String comment)
 		throws IOException;
 
 	/**

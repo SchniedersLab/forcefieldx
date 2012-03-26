@@ -1,8 +1,8 @@
 //******************************************************************************
 //
-// File:    Version.java
-// Package: edu.rit.pj
-// Unit:    Class edu.rit.pj.Version
+// File:    Test05.java
+// Package: edu.rit.pj.cluster.test
+// Unit:    Class edu.rit.pj.cluster.test.Test05
 //
 // This Java source file is copyright (C) 2012 by Alan Kaminsky. All rights
 // reserved. For further information, contact the author, Alan Kaminsky, at
@@ -23,28 +23,51 @@
 //
 //******************************************************************************
 
-package edu.rit.pj;
+package edu.rit.pj.cluster.test;
+
+import edu.rit.pj.Comm;
+import edu.rit.pj.cluster.JobBackend;
 
 /**
- * Class Version defines version information for the Parallel Java Library.
+ * Class Test05 is a unit test main program for the <TT>reportComment()</TT>
+ * method in class {@linkplain edu.rit.pj.cluster.JobBackend}. Each process
+ * reports a comment once a second. The program runs until killed externally.
+ * <P>
+ * Usage: java -Dpj.np=<I>K</I> edu.rit.pj.cluster.test.Test05
  *
  * @author  Alan Kaminsky
- * @version 26-Mar-2012
+ * @version 24-Jan-2012
  */
-public class Version
+public class Test05
 	{
 
 // Prevent construction.
 
-	private Version()
+	private Test05()
 		{
 		}
 
-// Exported constants.
+// Main program.
 
 	/**
-	 * The Parallel Java Library version.
+	 * Main program.
 	 */
-	public static final String PJ_VERSION = "Parallel Java v20120326";
+	public static void main
+		(String[] args)
+		throws Exception
+		{
+		Comm.init (args);
+		Comm world = Comm.world();
+		int size = world.size();
+		int rank = world.rank();
+		int tick = 0;
+		for (;;)
+			{
+			JobBackend.getJobBackend().setComment
+				("Tick "+tick+" from process "+rank+" of "+size);
+			++ tick;
+			Thread.sleep (1000L);
+			}
+		}
 
 	}

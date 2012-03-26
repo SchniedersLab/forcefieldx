@@ -4,7 +4,7 @@
 // Package: edu.rit.numeric
 // Unit:    Class edu.rit.numeric.Statistics
 //
-// This Java source file is copyright (C) 2009 by Alan Kaminsky. All rights
+// This Java source file is copyright (C) 2012 by Alan Kaminsky. All rights
 // reserved. For further information, contact the author, Alan Kaminsky, at
 // ark@cs.rit.edu.
 //
@@ -40,7 +40,7 @@ import java.math.BigInteger;
  * hypothesis is true.
  *
  * @author  Alan Kaminsky
- * @version 28-Apr-2010
+ * @version 26-Mar-2012
  */
 public class Statistics
 	{
@@ -373,6 +373,41 @@ public class Statistics
 		return 1.0 - erfc (-INV_SQRT_2*(x - mean)/stddev);
 		}
 
+	/**
+	 * Do an unequal-variance <I>t</I>-test on the two given data series. The
+	 * null hypothesis is that the two data series have the same mean; however,
+	 * the two series are assumed to have different variances. An array of two
+	 * doubles is returned; element 0 gives the <I>t</I> statistic; element 1
+	 * gives the <I>p</I>-value (significance) of the <I>t</I> statistic.
+	 * Roughly speaking, the <I>p</I>-value is the probability that the
+	 * hypothesis is true. If the <I>p</I>-value falls below a significance
+	 * threshold, the hypothesis is not true, and the two data series have
+	 * different means.
+	 *
+	 * @param  data1  First data series.
+	 * @param  data2  Second data series.
+	 *
+	 * @return  <I>t</I> statistic and its <I>p</I>-value.
+	 */
+	public static double[] tTestUnequalVariance
+		(Series data1,
+		 Series data2)
+		{
+		int n1 = data1.length();
+		Series.Stats stats1 = data1.stats();
+		double mean1 = stats1.mean;
+		double var1 = stats1.var;
+		int n2 = data2.length();
+		Series.Stats stats2 = data2.stats();
+		double mean2 = stats2.mean;
+		double var2 = stats2.var;
+		double t = (mean1 - mean2)/Math.sqrt(var1/n1 + var2/n2);
+		double df = sqr(var1/n1 + var2/n2)/
+			(sqr(var1/n1)/(n1 - 1) + sqr(var2/n2)/(n2 - 1));
+		double p = betai (0.5*df, 0.5, df/(df + sqr(t)));
+		return new double[] { t, p };
+		}
+
 // Hidden operations.
 
 	private static final double INV_SQRT_2 = 1.0/Math.sqrt(2.0);
@@ -523,6 +558,90 @@ public class Statistics
 		(double x)
 		{
 		return gammq (0.5, x*x);
+		}
+
+	private static final int BETA_ITMAX = 10000;
+	private static final double BETA_EPS = 2.22e-16;
+	private static final double BETA_FPMIN = (2.23e-308/BETA_EPS);
+
+	/**
+	 * Returns the incomplete beta function I_x(a,b) evaluated by its continued
+	 * fraction representation.
+	 */
+	private static double betacf
+		(double a,
+		 double b,
+		 double x)
+		{
+		int m, m2;
+		double aa, c, d, del, h, qab, qam, qap;
+		qab = a + b;
+		qap = a + 1.0;
+		qam = a - 1.0;
+		c = 1.0;
+		d = 1.0 - qab*x/qap;
+		if (Math.abs(d) < BETA_FPMIN) d = BETA_FPMIN;
+		d = 1.0/d;
+		h = d;
+		for (m = 1; m < BETA_ITMAX; ++ m)
+			{
+			m2 = 2*m;
+			aa = m*(b - m)*x/((qam + m2)*(a + m2));
+			d = 1.0 + aa*d;
+			if (Math.abs(d) < BETA_FPMIN) d = BETA_FPMIN;
+			c = 1.0 + aa/c;
+			if (Math.abs(c) < BETA_FPMIN) c = BETA_FPMIN;
+			d = 1.0/d;
+			h *= d*c;
+			aa = -(a + m)*(qab + m)*x/((a + m2)*(qap + m2));
+			d = 1.0 + aa*d;
+			if (Math.abs(d) < BETA_FPMIN) d = BETA_FPMIN;
+			c = 1.0 + aa/c;
+			if (Math.abs(c) < BETA_FPMIN) c = BETA_FPMIN;
+			d = 1.0/d;
+			del = d*c;
+			h *= del;
+			if (Math.abs(del - 1.0) <= BETA_EPS) break;
+			}
+		return h;
+		}
+
+	/**
+	 * Returns the incomplete beta function I_x(a,b).
+	 */
+	private static double betai
+		(double a,
+		 double b,
+		 double x)
+		{
+		if (a <= 0.0)
+			{
+			throw new IllegalArgumentException ("betai(): a = "+a+" illegal");
+			}
+		if (b <= 0.0)
+			{
+			throw new IllegalArgumentException ("betai(): b = "+b+" illegal");
+			}
+		if (x < 0.0 || x > 1.0)
+			{
+			throw new IllegalArgumentException ("betai(): x = "+x+" illegal");
+			}
+		if (x == 0.0 || x == 1.0) return x;
+		double bt = Math.exp (lgamma(a+b) - lgamma(a) - lgamma(b) +
+			a*Math.log(x) + b*Math.log(1.0 - x));
+		if (x < (a + 1.0)/(a + b + 2.0))
+			return bt*betacf(a,b,x)/a;
+		else
+			return 1.0 - bt*betacf(b,a,1.0-x)/b;
+		}
+
+	/**
+	 * Returns the square of x.
+	 */
+	private static double sqr
+		(double x)
+		{
+		return x*x;
 		}
 
 // Unit test main program.
