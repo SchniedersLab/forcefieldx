@@ -501,6 +501,11 @@ public class MolecularDynamics implements Runnable, Terminatable {
              * Do the full-step thermostat operation.
              */
             thermostat.fullStep(dt);
+            
+            /**
+             * Recompute the kinetic energy after the full-step thermostat operation.
+             */
+            thermostat.kineticEnergy();
 
             /**
              * Remove center of mass motion ever ~100 steps.
