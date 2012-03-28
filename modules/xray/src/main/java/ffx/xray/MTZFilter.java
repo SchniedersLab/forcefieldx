@@ -227,11 +227,11 @@ public class MTZFilter implements DiffractionFileFilter {
 
     /** {@inheritDoc} */
     @Override
-    public double getResolution(File mtzFile, Crystal crystal){
+    public double getResolution(File mtzFile, Crystal crystal) {
         ReflectionList reflectionlist = getReflectionList(mtzFile, null);
         return reflectionlist.maxres;
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public boolean readFile(File mtzFile, ReflectionList reflectionlist,
@@ -457,7 +457,7 @@ public class MTZFilter implements DiffractionFileFilter {
                     nread++;
                 } else {
                     HKL tmp = new HKL(ih, ik, il);
-                    if (!reflectionlist.resolution.inInvresolutionRange(Crystal.invressq(reflectionlist.crystal, tmp))){
+                    if (!reflectionlist.resolution.inInvresolutionRange(Crystal.invressq(reflectionlist.crystal, tmp))) {
                         nres++;
                     } else {
                         nignore++;
@@ -666,7 +666,8 @@ public class MTZFilter implements DiffractionFileFilter {
                     || label.equalsIgnoreCase("rfree(+)")
                     || label.equalsIgnoreCase("rfreeflag(+)")
                     || label.equalsIgnoreCase("r-free-flags(+)")
-                    || label.equalsIgnoreCase("test(+)"))
+                    || label.equalsIgnoreCase("test(+)")
+                    || StringUtils.equalsIgnoreCase(label + "(+)", rfreestring))
                     && c.type == 'I') {
                 rfreeplus = nc;
             } else if ((label.equalsIgnoreCase("free(-)")
@@ -676,13 +677,15 @@ public class MTZFilter implements DiffractionFileFilter {
                     || label.equalsIgnoreCase("rfree(-)")
                     || label.equalsIgnoreCase("rfreeflag(-)")
                     || label.equalsIgnoreCase("r-free-flags(-)")
-                    || label.equalsIgnoreCase("test(-)"))
+                    || label.equalsIgnoreCase("test(-)")
+                    || StringUtils.equalsIgnoreCase(label + "(-)", rfreestring))
                     && c.type == 'I') {
                 rfreeminus = nc;
             } else if ((label.equalsIgnoreCase("f")
                     || label.equalsIgnoreCase("fp")
                     || label.equalsIgnoreCase("fo")
                     || label.equalsIgnoreCase("fobs")
+                    || label.equalsIgnoreCase("f-obs")
                     || StringUtils.equalsIgnoreCase(label, fostring))
                     && c.type == 'F') {
                 sb.append(String.format("Reading Fo column: \"%s\"\n", c.label));
@@ -690,13 +693,17 @@ public class MTZFilter implements DiffractionFileFilter {
             } else if ((label.equalsIgnoreCase("f(+)")
                     || label.equalsIgnoreCase("fp(+)")
                     || label.equalsIgnoreCase("fo(+)")
-                    || label.equalsIgnoreCase("fobs(+)"))
+                    || label.equalsIgnoreCase("fobs(+)")
+                    || label.equalsIgnoreCase("f-obs(+)")
+                    || StringUtils.equalsIgnoreCase(label + "(+)", fostring))
                     && c.type == 'G') {
                 fplus = nc;
             } else if ((label.equalsIgnoreCase("f(-)")
                     || label.equalsIgnoreCase("fp(-)")
                     || label.equalsIgnoreCase("fo(-)")
-                    || label.equalsIgnoreCase("fobs(-)"))
+                    || label.equalsIgnoreCase("fobs(-)")
+                    || label.equalsIgnoreCase("f-obs(-)")
+                    || StringUtils.equalsIgnoreCase(label + "(-)", fostring))
                     && c.type == 'G') {
                 fminus = nc;
             } else if ((label.equalsIgnoreCase("sigf")
@@ -710,13 +717,17 @@ public class MTZFilter implements DiffractionFileFilter {
             } else if ((label.equalsIgnoreCase("sigf(+)")
                     || label.equalsIgnoreCase("sigfp(+)")
                     || label.equalsIgnoreCase("sigfo(+)")
-                    || label.equalsIgnoreCase("sigfobs(+)"))
+                    || label.equalsIgnoreCase("sigfobs(+)")
+                    || label.equalsIgnoreCase("sigf-obs(+)")
+                    || StringUtils.equalsIgnoreCase(label + "(+)", sigfostring))
                     && c.type == 'L') {
                 sigfplus = nc;
             } else if ((label.equalsIgnoreCase("sigf(-)")
                     || label.equalsIgnoreCase("sigfp(-)")
                     || label.equalsIgnoreCase("sigfo(-)")
-                    || label.equalsIgnoreCase("sigfobs(-)"))
+                    || label.equalsIgnoreCase("sigfobs(-)")
+                    || label.equalsIgnoreCase("sigf-obs(-)")
+                    || StringUtils.equalsIgnoreCase(label + "(-)", sigfostring))
                     && c.type == 'L') {
                 sigfminus = nc;
             }
