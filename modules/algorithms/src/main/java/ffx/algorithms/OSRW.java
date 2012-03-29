@@ -193,7 +193,25 @@ public class OSRW implements Potential {
      * total system energy
      */
     private double totalEnergy;
-
+    
+    /**
+     * Are FAST varying energy terms being computed, SLOW varying energy terms,
+     * or BOTH. OSRW is not active when only FAST varying energy terms are
+     * being propogated.
+     */
+    private STATE state = STATE.BOTH;
+    
+    /**
+     * OSRW Constructor.
+     * 
+     * @param lambdaInterface
+     * @param potential
+     * @param restartFile
+     * @param properties
+     * @param temperature
+     * @param dt
+     * @param restartFrequency 
+     */
     public OSRW(LambdaInterface lambdaInterface, Potential potential,
             File restartFile, CompositeConfiguration properties,
             double temperature, double dt, double restartFrequency) {
@@ -287,6 +305,13 @@ public class OSRW implements Potential {
     @Override
     public double energyAndGradient(double[] x, double[] gradient) {
         double e = potential.energyAndGradient(x, gradient);
+        
+        /**
+         * OSRW is included with the slowly varying terms.
+         */
+        if (state == STATE.FAST) {
+            return e;
+        }
 
         if (propagateLambda) {
             energyCount++;
@@ -753,6 +778,12 @@ public class OSRW implements Potential {
     @Override
     public int getNumberOfVariables() {
         return potential.getNumberOfVariables();
+    }
+
+    @Override
+    public void setEnergyTermState(STATE state) {
+        this.state = state;
+        potential.setEnergyTermState(state);
     }
 
     private class OSRWRestartWriter extends PrintWriter {
