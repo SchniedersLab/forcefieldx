@@ -31,6 +31,7 @@ import edu.rit.pj.ParallelRegion;
 
 import ffx.crystal.Crystal;
 import ffx.potential.bonded.Atom;
+import java.nio.DoubleBuffer;
 
 /**
  * This class implements a spatial decomposition based on partitioning a
@@ -131,6 +132,7 @@ public class SpatialDensityRegion extends ParallelRegion {
     public final int nThreads;
     private final int gridSize;
     private double grid[] = null;
+    private DoubleBuffer gridBuffer;
     private double initValue = 0.0;
     protected SpatialDensityLoop spatialDensityLoop[];
     private GridInitLoop gridInitLoop;
@@ -156,6 +158,9 @@ public class SpatialDensityRegion extends ParallelRegion {
                                 Atom atoms[], double coordinates[][][]) {
         this(gX, gY, gZ, basisSize, nSymm, minWork, threadCount, crystal, atoms, coordinates);
         this.grid = grid;
+        if (grid != null) {
+            gridBuffer = DoubleBuffer.wrap(grid);            
+        }
     }
 
     private SpatialDensityRegion(int gX, int gY, int gZ,
@@ -281,6 +286,10 @@ public class SpatialDensityRegion extends ParallelRegion {
         return grid;
     }
 
+    public void setGridBuffer(DoubleBuffer grid) {
+        gridBuffer = grid;
+    }
+    
     /**
      * <p>getNsymm</p>
      *
@@ -313,9 +322,11 @@ public class SpatialDensityRegion extends ParallelRegion {
 
         @Override
         public void run(int lb, int ub) {
-            if (grid != null) {
+            if (gridBuffer != null) {
+            //if (grid != null) {
                 for (int i = lb; i <= ub; i++) {
-                    grid[i] = initValue;
+                    //grid[i] = initValue;
+                    gridBuffer.put(i, initValue);
                 }
             }
         }

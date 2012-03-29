@@ -22,6 +22,7 @@ package ffx.numerics.fft;
 
 import java.io.File;
 import java.net.URL;
+import java.nio.DoubleBuffer;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -36,6 +37,8 @@ import org.apache.commons.io.FileUtils;
 
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelTeam;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 /**
  * Compute a 3D Convolution using Java wrappers to the CUDA Driver API.
@@ -48,16 +51,83 @@ public class Complex3DCuda implements Runnable {
 
     private static final Logger logger = Logger.getLogger(Complex3DCuda.class.getName());
     private final int nX, nY, nZ, len;
-    private double data[], recip[];
-    private boolean doConvolution = false;
+    private MODE mode = null;
     private boolean free = false;
     private boolean dead = false;
     CUfunction function;
     CUmodule module;
     cufftHandle plan;
-    Pointer dataPtr, recipPtr;
+    Pointer pinnedMemory;
+    DoubleBuffer pinnedMemoryBuffer;
+    Pointer recipCPUPtr;
+    Pointer dataGPUPtr, recipGPUPtr;
     CUdeviceptr dataDevice, recipDevice;
-    Pointer dataDevicePtr, recipDevicePtr;
+
+    private enum MODE {
+
+        FFT, IFFT, CONVOLUTION, RECIP
+    };
+
+    
+    public DoubleBuffer getDoubleBuffer() {
+        return pinnedMemoryBuffer;
+    }
+    
+    /**
+     * Initialize the 3D FFT for complex 3D matrix.
+     *
+     * @param nX X-dimension.
+     * @param nY Y-dimension.
+     * @param nZ Z-dimension.
+     */
+    public Complex3DCuda(int nX, int nY, int nZ) {
+        this.nX = nX;
+        this.nY = nY;
+        this.nZ = nZ;
+        this.len = nX * nY * nZ;
+        mode = null;
+        free = false;
+    }
+
+    /**
+     * Compute the 3D FFT using CUDA.
+     *
+     * @param input
+     *            The input array must be of size 2 * nX * nY * nZ.
+     * @since 1.0
+     */
+    public void fft(final double data[]) {
+        // This would be a programming error.
+        if (dead || mode != null) {
+            return;
+        }
+        //pinnedMemoryBuffer.rewind();
+        //pinnedMemoryBuffer.put(data);
+        mode = MODE.FFT;
+        execute();
+        //pinnedMemoryBuffer.rewind();
+        //pinnedMemoryBuffer.get(data);
+    }
+
+    /**
+     * Compute the inverse 3D FFT using CUDA.
+     *
+     * @param input
+     *            The input array must be of size 2 * nX * nY * nZ.
+     * @since 1.0
+     */
+    public void ifft(final double data[]) {
+        // This would be a programming error.
+        if (dead || mode != null) {
+            return;
+        }
+        //pinnedMemoryBuffer.rewind();
+        //pinnedMemoryBuffer.put(data);
+        mode = MODE.IFFT;
+        execute();
+        //pinnedMemoryBuffer.rewind();
+        //pinnedMemoryBuffer.get(data);
+    }
 
     /**
      * Blocking convolution method.
@@ -65,19 +135,48 @@ public class Complex3DCuda implements Runnable {
      * @param data Input/output data array.
      * @return A status flag (0 for success, -1 for failure).
      */
-    public int convolution(double data[]) {
+    public void convolution(double data[]) {
         // This would be a programming error.
-        if (dead || doConvolution) {
-            return -1;
+        if (dead || mode != null) {
+            return;
         }
+        // Copy input into pinned memory.
+        //pinnedMemoryBuffer.rewind();
+        //pinnedMemoryBuffer.put(data);
+        // Do the CUDA computation.
+        mode = MODE.CONVOLUTION;
+        execute();
+        // Copy output from pinned memory.
+        //pinnedMemoryBuffer.rewind();
+        //pinnedMemoryBuffer.get(data);
+    }
 
-        this.data = data;
-        doConvolution = true;
+    /**
+     * <p>Setter for the field <code>recip</code>.</p>
+     *
+     * @param recip an array of double.
+     */
+    public void setRecip(double recip[]) {
+        // This would be a programming error.
+        if (dead || mode != null) {
+            return;
+        }
+        recipCPUPtr = Pointer.to(recip);
+        mode = MODE.RECIP;
+        execute();
+    }
 
-        // Notify the CUDA thread and then block until it notifies us back.
+    /**
+     * Notify the CUDA thread and then wait until the requested
+     * operation completes.
+     *
+     * @return Returns 0 upon success.
+     */
+    private int execute() {
+        // Notify the CUDA thread and then wait until it notifies us back.
         synchronized (this) {
             notify();
-            while (doConvolution) {
+            while (mode != null) {
                 try {
                     wait();
                 } catch (InterruptedException e) {
@@ -85,7 +184,6 @@ public class Complex3DCuda implements Runnable {
                 }
             }
         }
-
         return 0;
     }
 
@@ -95,7 +193,7 @@ public class Complex3DCuda implements Runnable {
      * @return A status flag (0 for success, -1 for failure).
      */
     public int free() {
-        if (dead || doConvolution) {
+        if (dead || mode != null) {
             return -1;
         }
 
@@ -131,10 +229,12 @@ public class Complex3DCuda implements Runnable {
         CUdevice dev = new CUdevice();
         CUdevprop prop = new CUdevprop();
         cuDeviceGetProperties(prop, dev);
-
         logger.info(" CUDA " + prop.toFormattedString());
-
         cuDeviceGet(dev, 0);
+        // Create a context that allows the GPU to map pinned host memory.
+        // cuCtxCreate(pctx, CUctx_flags.CU_CTX_MAP_HOST, dev);
+        
+        // Create a context that does not allows the GPU to map pinned host memory.
         cuCtxCreate(pctx, 0, dev);
 
         // Load the CUBIN file and obtain the "recipSummation" function.
@@ -152,59 +252,103 @@ public class Complex3DCuda implements Runnable {
             logger.log(Level.SEVERE, message, e);
         }
 
-        // Copy the data array to the device.
+        // Allocate pinned Host memory and get a DoubleBuffer reference to it.
+        pinnedMemory = new Pointer();
+        
+        // Allocate pinned memory mapped into the GPU address space. 
+        // cuMemHostAlloc(pinnedMemory, len * 2 * Sizeof.DOUBLE, CU_MEMHOSTALLOC_DEVICEMAP);
+        
+        // Allocate pinned memory
+        cuMemHostAlloc(pinnedMemory, len * 2 * Sizeof.DOUBLE, 0);
+        ByteBuffer byteBuffer = pinnedMemory.getByteBuffer(0, len * 2 * Sizeof.DOUBLE);
+        byteBuffer.order(ByteOrder.nativeOrder());
+        pinnedMemoryBuffer = byteBuffer.asDoubleBuffer();
+        
+        // Allocate a work array on the device.
         dataDevice = new CUdeviceptr();
         cuMemAlloc(dataDevice, len * 2 * Sizeof.DOUBLE);
-        dataPtr = Pointer.to(data);
-        cuMemcpyHtoD(dataDevice, dataPtr, len * 2 * Sizeof.DOUBLE);
 
-        // Copy the recip array to the device.
+        // Allocate memory on the device for the reciprocal space array.
         recipDevice = new CUdeviceptr();
         cuMemAlloc(recipDevice, len * Sizeof.DOUBLE);
-        recipPtr = Pointer.to(recip);
-        cuMemcpyHtoD(recipDevice, recipPtr, len * Sizeof.DOUBLE);
 
         // Create and execute a JCufft plan for the data
         plan = new cufftHandle();
         cufftPlan3d(plan, nZ, nY, nX, cufftType.CUFFT_Z2Z);
 
-        dataDevicePtr = Pointer.to(dataDevice);
-        recipDevicePtr = Pointer.to(recipDevice);
+        dataGPUPtr = Pointer.to(dataDevice);
+        recipGPUPtr = Pointer.to(recipDevice);
 
-        int threads = 512;
+        int threads = prop.maxThreadsPerBlock;
         int nBlocks = len / threads + (len % threads == 0 ? 0 : 1);
         int gridSize = (int) Math.floor(Math.sqrt(nBlocks)) + 1;
 
         logger.info(format(" CUDA thread initialized with %d threads per block", threads));
-        logger.info(format(" Grid Size: (%d x %d x 1).", gridSize, gridSize));
+        logger.info(format(" Grid Size: (%d x %d x 1)", gridSize, gridSize));
 
         assert (gridSize * gridSize * threads >= len);
 
         synchronized (this) {
             while (!free) {
-                if (doConvolution) {
-                    cuMemcpyHtoD(dataDevice, dataPtr, len * 2 * Sizeof.DOUBLE);
-                    cufftExecZ2Z(plan, dataDevice, dataDevice, CUFFT_FORWARD);
-                    // Set up the execution parameters for the kernel
-                    cuFuncSetBlockShape(function, threads, 1, 1);
-                    int offset = 0;
-                    offset = align(offset, Sizeof.POINTER);
-                    cuParamSetv(function, offset, dataDevicePtr, Sizeof.POINTER);
-                    offset += Sizeof.POINTER;
-                    offset = align(offset, Sizeof.POINTER);
-                    cuParamSetv(function, offset, recipDevicePtr, Sizeof.POINTER);
-                    offset += Sizeof.POINTER;
-                    offset = align(offset, Sizeof.INT);
-                    cuParamSeti(function, offset, len);
-                    offset += Sizeof.INT;
-                    cuParamSetSize(function, offset);
-                    // Call the kernel function.
-                    cuLaunchGrid(function, gridSize, gridSize);
-                    cufftExecZ2Z(plan, dataDevice, dataDevice, CUFFT_INVERSE);
-                    cuMemcpyDtoH(dataPtr, dataDevice, len * 2 * Sizeof.DOUBLE);
-                    doConvolution = false;
+                if (mode != null) {
+                    switch (mode) {
+
+                        case RECIP:
+                            cuMemcpyHtoD(recipDevice, recipCPUPtr, len * Sizeof.DOUBLE);
+                            break;
+
+                        case FFT:
+                            cuMemcpyHtoD(dataDevice, pinnedMemory, 2 * len * Sizeof.DOUBLE);
+                            cufftExecZ2Z(plan, dataDevice, dataDevice, CUFFT_FORWARD);
+                            cuMemcpyDtoH(pinnedMemory, dataDevice, 2 * len * Sizeof.DOUBLE);
+                            break;
+
+                        case CONVOLUTION:
+                            cuMemcpyHtoD(dataDevice, pinnedMemory, 2 * len * Sizeof.DOUBLE);
+                            cufftExecZ2Z(plan, dataDevice, dataDevice, CUFFT_FORWARD);
+                            
+                            // Zero Copy
+                            // cufftExecZ2Z(plan, pinnedMemory, dataDevice, CUFFT_FORWARD);
+                            
+                            // Set up the execution parameters for the kernel
+                            cuFuncSetBlockShape(function, threads, 1, 1);
+                            int offset = 0;
+                            offset = align(offset, Sizeof.POINTER);
+                            cuParamSetv(function, offset, dataGPUPtr, Sizeof.POINTER);
+                            offset += Sizeof.POINTER;
+                            offset = align(offset, Sizeof.POINTER);
+                            cuParamSetv(function, offset, recipGPUPtr, Sizeof.POINTER);
+                            offset += Sizeof.POINTER;
+                            offset = align(offset, Sizeof.INT);
+                            cuParamSeti(function, offset, len);
+                            offset += Sizeof.INT;
+                            cuParamSetSize(function, offset);
+                            // Call the kernel function.
+                            cuLaunchGrid(function, gridSize, gridSize);
+                            
+                            // Zero Copy
+                            // cufftExecZ2Z(plan, dataDevice, pinnedMemory, CUFFT_INVERSE);
+                            
+                            cufftExecZ2Z(plan, dataDevice, dataDevice, CUFFT_INVERSE);
+                            cuMemcpyDtoH(pinnedMemory, dataDevice, 2 * len * Sizeof.DOUBLE);
+                            break;
+
+                        case IFFT:
+                            cuMemcpyHtoD(dataDevice, pinnedMemory, 2 * len * Sizeof.DOUBLE);
+                            cufftExecZ2Z(plan, dataDevice, dataDevice, CUFFT_INVERSE);
+                            cuMemcpyDtoH(pinnedMemory, dataDevice, 2 * len * Sizeof.DOUBLE);
+                            break;
+
+                    }
+                    
+                    // Block for the context's tasks to complete. 
+                    cuCtxSynchronize();
+                    
+                    // Reset the mode to null and notify the calling thread.
+                    mode = null;
                     notify();
                 }
+                // The CUDA thread will wait until it's notified again.
                 try {
                     wait();
                 } catch (InterruptedException e) {
@@ -214,30 +358,11 @@ public class Complex3DCuda implements Runnable {
             cufftDestroy(plan);
             cuMemFree(dataDevice);
             cuMemFree(recipDevice);
+            cuMemFreeHost(pinnedMemory);
             dead = true;
             notify();
         }
         logger.info(" CUDA Thread Done!");
-    }
-
-    /**
-     * Initialize the 3D FFT for complex 3D matrix.
-     *
-     * @param nX X-dimension.
-     * @param nY Y-dimension.
-     * @param nZ Z-dimension.
-     * @param data an array of double.
-     * @param recip an array of double.
-     */
-    public Complex3DCuda(int nX, int nY, int nZ, double data[], double recip[]) {
-        this.nX = nX;
-        this.nY = nY;
-        this.nZ = nZ;
-        this.len = nX * nY * nZ;
-        this.data = data;
-        this.recip = recip;
-        doConvolution = false;
-        free = false;
     }
 
     /** {@inheritDoc} */
@@ -305,10 +430,13 @@ public class Complex3DCuda implements Runnable {
         Complex3D complex3D = new Complex3D(dim, dim, dim);
         Complex3DParallel complex3DParallel =
                           new Complex3DParallel(dim, dim, dim, new ParallelTeam(), IntegerSchedule.fixed());
-        Complex3DCuda complex3DCUDA = new Complex3DCuda(dim, dim, dim, data, recip);
+        complex3DParallel.setRecip(recip);
+
+        Complex3DCuda complex3DCUDA = new Complex3DCuda(dim, dim, dim);
         Thread cudaThread = new Thread(complex3DCUDA);
         cudaThread.setPriority(Thread.MAX_PRIORITY);
         cudaThread.start();
+        complex3DCUDA.setRecip(recip);
 
         double toSeconds = 0.000000001;
         long parTime = Long.MAX_VALUE;
@@ -334,7 +462,6 @@ public class Complex3DCuda implements Runnable {
             answer[j] = data[j * 2];
         }
 
-        complex3DParallel.setRecip(recip);
         for (int i = 0; i < reps; i++) {
             for (int j = 0; j < dimCubed; j++) {
                 data[j * 2] = orig[j];

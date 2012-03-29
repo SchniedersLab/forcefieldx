@@ -13,7 +13,7 @@
     <url>http://ffx.kenai.com</url>
     <prerequisites>
         <maven>3.0.2</maven>
-        <!-- 3.0.3 also works -->
+        <!-- 3.0.3 and 3.0.4 also work -->
     </prerequisites>
     <issueManagement>
         <system>Jira</system>
@@ -71,8 +71,8 @@
         <developer>
             <id>fenn</id>
             <name>Timothy D. Fenn</name>
-            <email>fenn@stanford.edu</email>
-            <organization>Postdoc, Stanford University</organization>
+            <email>tim.fenn@gmail.com</email>
+            <organization>Scientist at Merck</organization>
             <organizationUrl>http://ffx.kenai.com</organizationUrl>
             <roles>
                 <role>Chief Crystallograper</role>
@@ -122,7 +122,7 @@
             <id>wuch</id>
             <name>Johnny Wu</name>
             <email>jwu@mail.utexas.edu</email>
-            <organization>Graduate Student, Ren Lab, U. of Texas, Austin</organization>
+            <organization>Scientist at Genentech</organization>
             <organizationUrl>http://biomol.bme.utexas.edu/lab/</organizationUrl>
             <roles>
                 <role>Architect of Automatic AMOEBA Parameterization</role>
@@ -145,7 +145,7 @@
             <id>cjwu</id>
             <name>Chuanjie Wu</name>
             <email>chuanjiewu@gmail.com</email>
-            <organization>Washington University in St. Louis</organization>
+            <organization>Scientist at Schrodinger</organization>
             <roles>
                 <role>AMOEBA force field</role>
                 <role>Nucleic Acids Module</role>
@@ -186,6 +186,109 @@
                 </dependencies>
                 <configuration>
                     <generateSitemap>true</generateSitemap>
+                    <reportPlugins>
+                        <plugin>
+                            <artifactId>maven-project-info-reports-plugin</artifactId>
+                            <version>2.4</version>
+                            <reportSets>
+                                <reportSet>
+                                    <reports>
+                                        <report>cim</report>
+                                        <report>dependencies</report>
+                                        <report>dependency-convergence</report>
+                                        <report>dependency-management</report>
+                                        <report>distribution-management</report>
+                                        <report>issue-tracking</report>
+                                        <report>license</report>
+                                        <report>mailing-list</report>
+                                        <report>modules</report>
+                                        <report>plugin-management</report>
+                                        <report>plugins</report>
+                                        <report>project-team</report>
+                                        <report>scm</report>
+                                        <report>summary</report>
+                                    </reports>
+                                </reportSet>
+                            </reportSets>
+                            <configuration>
+                                <dependencyDetailsEnabled>false</dependencyDetailsEnabled>
+                                <dependencyLocationsEnabled>false</dependencyLocationsEnabled>
+                            </configuration>
+                        </plugin>
+                        <plugin>
+                            <artifactId>maven-javadoc-plugin</artifactId>
+                            <version>2.8</version>
+                            <configuration>
+                                <quiet>true</quiet>
+                                <header><![CDATA[
+                    <script type=\"text/javascript\" src=\"http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML\"></script>
+                    ]]>
+                                </header>
+                            </configuration>
+                            <reportSets>
+                                <reportSet>
+                                    <id>aggregate</id>
+                                    <reports>
+                                        <report>aggregate</report>
+                                    </reports>
+                                </reportSet>
+                            </reportSets>
+                        </plugin>
+                        <plugin>
+                            <artifactId>maven-jxr-plugin</artifactId>
+                            <version>2.3</version>
+                            <configuration>
+                                <goal>aggregate</goal>
+                            </configuration>
+                        </plugin>
+                        <plugin>
+                            <artifactId>maven-surefire-report-plugin</artifactId>
+                            <version>2.11</version>
+                            <configuration>
+                                <aggregate>true</aggregate>
+                            </configuration>
+                        </plugin>
+                        <plugin>
+                            <artifactId>maven-changes-plugin</artifactId>
+                            <version>2.6</version>
+                            <configuration>
+                                <webUser>${kenai.user.name}</webUser>
+                                <webPassword>${kenai.password}</webPassword>
+                                <statusIds>Open, In Progress, Reopened, Resolved, Closed</statusIds>
+                                <resolutionIds>Unresolved, Fixed, Won't Fix, Duplicate, Incomplete, Cannot Reproduce</resolutionIds>
+                            </configuration>
+                            <reportSets>
+                                <reportSet>
+                                    <reports>
+                                        <!-- report>jira-report</report -->
+                                        <report>changes-report</report>
+                                    </reports>
+                                </reportSet>
+                            </reportSets>
+                        </plugin>
+                        <!-- plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-changelog-plugin</artifactId>
+                            <version>2.2</version>
+                        </plugin -->
+                        <!-- plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-linkcheck-plugin</artifactId>
+                            <version>1.1</version>
+                        </plugin -->
+                        <!-- plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-pmd-plugin</artifactId>
+                            <version>2.5</version>
+                            <configuration>
+                                <linkXref>true</linkXref>
+                                <minimumTokens>500</minimumTokens>
+                                <aggregate>true</aggregate>
+                                <targetJdk>1.6</targetJdk>
+                                <minimumPriority>2</minimumPriority>
+                            </configuration>
+                        </plugin -->
+                    </reportPlugins>
                 </configuration>
             </plugin>
             <plugin>
@@ -250,7 +353,7 @@
             </plugin -->
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
-                <version>2.2.1</version>
+                <version>2.2.2</version>
                 <inherited>false</inherited>
                 <configuration>
                     <descriptors>
@@ -312,7 +415,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.9</version>
+                <version>2.11</version>
                 <configuration>
                     <!-- This prevents Mac OS X from using its old Java3D verion.  -->
                     <useSystemClassLoader>false</useSystemClassLoader>
@@ -435,119 +538,6 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-    <reporting>
-        <excludeDefaults>true</excludeDefaults>
-        <plugins>
-            <plugin>
-                <artifactId>maven-project-info-reports-plugin</artifactId>
-                <version>2.4</version>
-                <inherited>false</inherited>
-                <reportSets>
-                    <reportSet>
-                        <reports>
-                            <report>cim</report>
-                            <report>dependencies</report>
-                            <report>dependency-convergence</report>
-                            <report>dependency-management</report>
-                            <report>distribution-management</report>
-                            <report>issue-tracking</report>
-                            <report>license</report>
-                            <report>mailing-list</report>
-                            <report>modules</report>
-                            <report>plugin-management</report>
-                            <report>plugins</report>
-                            <report>project-team</report>
-                            <report>scm</report>
-                            <report>summary</report>
-                        </reports>
-                    </reportSet>
-                </reportSets>
-                <configuration>
-                    <dependencyDetailsEnabled>false</dependencyDetailsEnabled>
-                    <dependencyLocationsEnabled>false</dependencyLocationsEnabled>
-                </configuration>
-            </plugin>
-            <plugin>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.8</version>
-                <inherited>false</inherited>
-                <configuration>
-                    <quiet>true</quiet>
-                    <header><![CDATA[
-                    <script type=\"text/javascript\" src=\"http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML\"></script>
-                    ]]>
-                    </header>
-                </configuration>
-                <reportSets>
-                    <reportSet>
-                        <id>aggregate</id>
-                        <reports>
-                            <report>aggregate</report>
-                        </reports>
-                    </reportSet>
-                </reportSets>
-            </plugin>
-            <plugin>
-                <artifactId>maven-jxr-plugin</artifactId>
-                <version>2.3</version>
-                <inherited>false</inherited>
-                <configuration>
-                    <goal>aggregate</goal>
-                </configuration>
-            </plugin>
-            <plugin>
-                <artifactId>maven-surefire-report-plugin</artifactId>
-                <version>2.9</version>
-                <inherited>false</inherited>
-                <configuration>
-                    <aggregate>true</aggregate>
-                </configuration>
-            </plugin>
-            <plugin>
-                <artifactId>maven-changes-plugin</artifactId>
-                <version>2.6</version>
-                <inherited>false</inherited>
-                <configuration>
-                    <webUser>${kenai.user.name}</webUser>
-                    <webPassword>${kenai.password}</webPassword>
-                    <statusIds>Open, In Progress, Reopened, Resolved, Closed</statusIds>
-                    <resolutionIds>Unresolved, Fixed, Won't Fix, Duplicate, Incomplete, Cannot Reproduce</resolutionIds>
-                </configuration>
-                <reportSets>
-                    <reportSet>
-                        <reports>
-                            <!-- report>jira-report</report -->
-                            <report>changes-report</report>
-                        </reports>
-                    </reportSet>
-                </reportSets>
-            </plugin>
-            <!-- plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-changelog-plugin</artifactId>
-                <version>2.2</version>
-                <inherited>false</inherited>
-            </plugin -->
-            <!-- plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-linkcheck-plugin</artifactId>
-                <version>1.1</version>
-            </plugin -->
-            <!-- plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-pmd-plugin</artifactId>
-                <version>2.5</version>
-                <inherited>false</inherited>
-                <configuration>
-                    <linkXref>true</linkXref>
-                    <minimumTokens>500</minimumTokens>
-                    <aggregate>true</aggregate>
-                    <targetJdk>1.6</targetJdk>
-                    <minimumPriority>2</minimumPriority>
-                </configuration>
-            </plugin -->
-        </plugins>
-    </reporting>
     <distributionManagement>
         <downloadUrl>http://ffx.kenai.com</downloadUrl>
         <site>

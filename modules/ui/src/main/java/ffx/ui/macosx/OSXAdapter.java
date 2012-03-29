@@ -1,22 +1,21 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Title: Force Field X Description: Force Field X - Software for Molecular
+ * Biophysics. Copyright: Copyright (c) Michael J. Schnieders 2001-2011
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.ui.macosx;
 
@@ -26,11 +25,11 @@ import java.util.logging.Logger;
 
 import javax.swing.ImageIcon;
 
-import org.apache.commons.lang.builder.ToStringBuilder;
-
 import com.apple.eawt.Application;
 import com.apple.eawt.ApplicationAdapter;
 import com.apple.eawt.ApplicationEvent;
+
+import org.apache.commons.lang.builder.ToStringBuilder;
 
 import ffx.ui.MainPanel;
 
@@ -86,12 +85,12 @@ public class OSXAdapter extends ApplicationAdapter {
             }
         } catch (NoClassDefFoundError e) {
             logger.log(Level.WARNING, "\nThis version of Mac OS X does not support "
-                    + "the Apple EAWT.  Application Menu handling "
-                    + "has been disabled\n", e);
+                                      + "the Apple EAWT.  Application Menu handling "
+                                      + "has been disabled\n", e);
         } catch (ClassNotFoundException e) {
             logger.log(Level.WARNING, "\nThis version of Mac OS X does not support "
-                    + "the Apple EAWT.  Application Menu handling "
-                    + "has been disabled\n", e);
+                                      + "the Apple EAWT.  Application Menu handling "
+                                      + "has been disabled\n", e);
         } catch (Exception e) {
             logger.log(Level.WARNING, "\nException while loading the OSXAdapter", e);
         }
@@ -102,15 +101,15 @@ public class OSXAdapter extends ApplicationAdapter {
      * do these need to be set to be recognized?
      */
     public static void setOSXProperties() {
-        
-        System.setProperty("apple.mrj.application.apple.menu.about.name","Force Field X");
+
+        System.setProperty("apple.mrj.application.apple.menu.about.name", "Force Field X");
         System.setProperty("apple.laf.useScreenMenuBar", "true");
         System.setProperty("apple.awt.showGrowBox", "true");
         System.setProperty("apple.mrj.application.growbox.intrudes", "false");
         System.setProperty("apple.awt.brushMetalLook", "true");
         System.setProperty("apple.mrj.application.live-resize", "true");
         System.setProperty("apple.macos.smallTabs", "true");
-        
+
         // -Xdock:name="Force Field X"
     }
 
@@ -118,7 +117,9 @@ public class OSXAdapter extends ApplicationAdapter {
         mainPanel = m;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void handleAbout(ApplicationEvent ae) {
         if (mainPanel != null) {
@@ -129,7 +130,9 @@ public class OSXAdapter extends ApplicationAdapter {
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void handleOpenFile(ApplicationEvent ae) {
         if (mainPanel != null) {
@@ -140,7 +143,9 @@ public class OSXAdapter extends ApplicationAdapter {
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void handlePreferences(ApplicationEvent ae) {
         if (mainPanel != null) {
@@ -151,7 +156,9 @@ public class OSXAdapter extends ApplicationAdapter {
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void handleQuit(ApplicationEvent ae) {
         if (mainPanel != null) {
@@ -162,7 +169,9 @@ public class OSXAdapter extends ApplicationAdapter {
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String toString() {
         return new ToStringBuilder(this).append(application).toString();
