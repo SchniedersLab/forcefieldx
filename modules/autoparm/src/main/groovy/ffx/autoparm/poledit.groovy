@@ -13,8 +13,7 @@ if (options.h || arguments == null) {
 }
 String gdmaoutfname = arguments.get(0);
 String peditinfname = arguments.get(1);
-int out_type = arguments.get(2);
-poledit(gdmaoutfname,peditinfname,out_type);
+poledit(gdmaoutfname,peditinfname);
 
 
 

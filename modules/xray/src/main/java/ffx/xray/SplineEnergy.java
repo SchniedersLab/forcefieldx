@@ -301,4 +301,8 @@ public class SplineEnergy implements Potential {
     public VARIABLE_TYPE[] getVariableTypes() {
         return null;
     }
+
+	@Override
+	public void turnFastOnSlowOff(int b) {
+	}
 }

@@ -94,4 +94,12 @@ public interface Potential {
     
     public abstract VARIABLE_TYPE[] getVariableTypes();
     
+    /**
+     * For respa integrator. Turns on fast terms and turns off slow terms if b == 1. 
+     * If b == 0, fast terms are turned off and slow terms are turned on.
+     * If b == 3, all terms are reset back to original
+     * @param b
+     */
+    public abstract void turnFastOnSlowOff(int b);
+    
 }
