@@ -1,22 +1,21 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Title: Force Field X Description: Force Field X - Software for Molecular
+ * Biophysics. Copyright: Copyright (c) Michael J. Schnieders 2001-2011
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.algorithms;
 
@@ -24,6 +23,7 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import static java.lang.String.format;
 
 import org.apache.commons.configuration.CompositeConfiguration;
@@ -89,15 +89,17 @@ public class MolecularDynamics implements Runnable, Terminatable {
      *
      * @param assembly a {@link ffx.potential.bonded.MolecularAssembly} object.
      * @param potentialEnergy a {@link ffx.numerics.Potential} object.
-     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration}
+     * object.
      * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
-     * @param requestedThermostat a {@link ffx.algorithms.Thermostat.Thermostats} object.
+     * @param requestedThermostat a {@link ffx.algorithms.Thermostat.Thermostats}
+     * object.
      */
     public MolecularDynamics(MolecularAssembly assembly,
-                             Potential potentialEnergy,
-                             CompositeConfiguration properties,
-                             AlgorithmListener listener,
-                             Thermostats requestedThermostat) {
+            Potential potentialEnergy,
+            CompositeConfiguration properties,
+            AlgorithmListener listener,
+            Thermostats requestedThermostat) {
         this.molecularAssembly = assembly;
         this.algorithmListener = listener;
         this.potential = potentialEnergy;
@@ -122,21 +124,21 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 stochastic.setRandomSeed(properties.getInt("randomseed", 0));
             }
             integrator = stochastic;
-        } else if (integrate.equalsIgnoreCase("beeman")){
-            integrator = new BetterBeeman(numberOfVariables, x, v, a, aPrevious, mass);
-        } else{
+        } else if (integrate.equalsIgnoreCase("respa")) {
             logger.info(format("\n Molecular dynamics with Respa Integrator\n"));
-        	integrator = new Respa(numberOfVariables,x,v,a,aPrevious,mass);
+            integrator = new Respa(numberOfVariables, x, v, a, aPrevious, mass);
+        } else {
+            integrator = new BetterBeeman(numberOfVariables, x, v, a, aPrevious, mass);
         }
 
         /**
          * Define the thermostat.
          *
-         * If no thermostat was requested or the StochasticDynamics
-         * integrator was chosen, then an Adiabatic thermostat will be used.
-         * The Adiabatic thermostat can initialize velocities and compute
-         * the current temperature and kinetic energy, but will not change
-         * atomic velocities during molecular dynamics.
+         * If no thermostat was requested or the StochasticDynamics integrator
+         * was chosen, then an Adiabatic thermostat will be used. The Adiabatic
+         * thermostat can initialize velocities and compute the current
+         * temperature and kinetic energy, but will not change atomic velocities
+         * during molecular dynamics.
          */
         if (requestedThermostat == null || integrator instanceof Stochastic) {
             requestedThermostat = Thermostats.ADIABATIC;
@@ -171,7 +173,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     /**
-     * <p>Setter for the field <code>thermostat</code>.</p>
+     * <p>Setter for the field
+     * <code>thermostat</code>.</p>
      *
      * @param thermostat a {@link ffx.algorithms.Thermostat} object.
      */
@@ -180,7 +183,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     /**
-     * <p>Getter for the field <code>thermostat</code>.</p>
+     * <p>Getter for the field
+     * <code>thermostat</code>.</p>
      *
      * @return a {@link ffx.algorithms.Thermostat} object.
      */
@@ -189,7 +193,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     /**
-     * <p>Setter for the field <code>x</code>.</p>
+     * <p>Setter for the field
+     * <code>x</code>.</p>
      *
      * @param x a double array to set the current parameters to.
      */
@@ -198,7 +203,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     /**
-     * <p>Getter for the field <code>x</code>.</p>
+     * <p>Getter for the field
+     * <code>x</code>.</p>
      *
      * @return a double array with the current parameters
      */
@@ -207,7 +213,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     /**
-     * <p>Setter for the field <code>archiveFile</code>.</p>
+     * <p>Setter for the field
+     * <code>archiveFile</code>.</p>
      *
      * @param archive a {@link java.io.File} object.
      */
@@ -216,7 +223,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     /**
-     * <p>Getter for the field <code>archiveFile</code>.</p>
+     * <p>Getter for the field
+     * <code>archiveFile</code>.</p>
      *
      * @return a {@link java.io.File} object.
      */
@@ -236,8 +244,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * @param dyn a {@link java.io.File} object.
      */
     public void init(final int nSteps, final double timeStep, final double printInterval,
-                     final double saveInterval, final double temperature, final boolean initVelocities,
-                     final File dyn) {
+            final double saveInterval, final double temperature, final boolean initVelocities,
+            final File dyn) {
 
         /**
          * Return if already running.
@@ -284,7 +292,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
             if (xyzFilter == null) {
                 xyzFilter = new XYZFilter(file, molecularAssembly,
-                                          molecularAssembly.getForceField(), properties);
+                        molecularAssembly.getForceField(), properties);
             }
 
             if (dynFilter == null) {
@@ -302,7 +310,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     /**
-     * Blocking molecular dynamics. When this method returns, the MD run is done.
+     * Blocking molecular dynamics. When this method returns, the MD run is
+     * done.
      *
      * @param nSteps a int.
      * @param timeStep a double.
@@ -313,12 +322,12 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * @param dyn a {@link java.io.File} object.
      */
     public void dynamic(final int nSteps, final double timeStep, final double printInterval,
-                        final double saveInterval, final double temperature, final boolean initVelocities,
-                        final File dyn) {
+            final double saveInterval, final double temperature, final boolean initVelocities,
+            final File dyn) {
 
         /**
-         * Return if already running; Could happen if two threads call
-         * dynamic on the same MolecularDynamics instance.
+         * Return if already running; Could happen if two threads call dynamic
+         * on the same MolecularDynamics instance.
          */
         if (!done) {
             logger.warning(" Programming error - a thread invoked dynamic when it was already running.");
@@ -362,11 +371,11 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     /**
-     * Set the number of time steps between removal of center of mass
-     * kinetic energy.
+     * Set the number of time steps between removal of center of mass kinetic
+     * energy.
      *
      * @param removeCOMMotionFrequency Number of time steps between center of
-     *        mass removal.
+     * mass removal.
      */
     public void setRemoveCOMMotionFrequency(int removeCOMMotionFrequency) {
         if (removeCOMMotionFrequency < 0) {
@@ -380,7 +389,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void run() {
         done = false;
@@ -489,16 +500,20 @@ public class MolecularDynamics implements Runnable, Terminatable {
              * Compute the potential energy and gradients.
              */
             currentPotentialEnergy = potential.energyAndGradient(x, grad);
-            
-            if(integrator instanceof Respa){
-            	Respa r = (Respa) integrator;
-            	currentPotentialEnergy += r.halfStepEnergy;
+
+            /**
+             * Add the potential energy of the slow degrees of freedom.
+             */
+            if (integrator instanceof Respa) {
+                Respa r = (Respa) integrator;
+                currentPotentialEnergy += r.getHalfStepEnergy();
             }
+            
             /**
              * Do the full-step integration operation.
              */
             integrator.fullStep(grad);
-            
+
             /**
              * Compute the full-step kinetic energy.
              */
@@ -508,9 +523,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
              * Do the full-step thermostat operation.
              */
             thermostat.fullStep(dt);
-            
+
             /**
-             * Recompute the kinetic energy after the full-step thermostat operation.
+             * Recompute the kinetic energy after the full-step thermostat
+             * operation.
              */
             thermostat.kineticEnergy();
 
@@ -522,8 +538,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
             }
 
             /**
-             * Collect current kinetic energy, temperature,
-             * and total energy.
+             * Collect current kinetic energy, temperature, and total energy.
              */
             currentKineticEnergy = thermostat.getKineticEnergy();
             currentTemperature = thermostat.getCurrentTemperture();
@@ -587,7 +602,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
         terminate = false;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void terminate() {
         terminate = true;

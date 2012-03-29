@@ -630,6 +630,6 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
     }
 
 	@Override
-	public void turnFastOnSlowOff(int b) {		
+	public void setEnergyTermState(STATE state) {		
 	}
 }

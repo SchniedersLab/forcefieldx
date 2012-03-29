@@ -1,22 +1,21 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2009
+ * Title: Force Field X Description: Force Field X - Software for Molecular
+ * Biophysics. Copyright: Copyright (c) Michael J. Schnieders 2001-2009
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.xray;
 
@@ -50,9 +49,8 @@ import ffx.xray.CrystalReciprocalSpace.SolventModel;
 
 /**
  *
- * Optimize sigmaA coefficients (using spline coefficients)
- * and structure factor derivatives
- * using a likelihood target function
+ * Optimize sigmaA coefficients (using spline coefficients) and structure factor
+ * derivatives using a likelihood target function
  *
  * this target can also be used for structure refinement
  *
@@ -64,8 +62,8 @@ import ffx.xray.CrystalReciprocalSpace.SolventModel;
  * A. T. Brunger, Acta Cryst. (1993). D49, 24-36</a>
  *
  * @see <a href="http://dx.doi.org/10.1107/S0907444996012255" target="_blank">
- * G. N. Murshudov, A. A. Vagin and E. J. Dodson,
- * Acta Cryst. (1997). D53, 240-255</a>
+ * G. N. Murshudov, A. A. Vagin and E. J. Dodson, Acta Cryst. (1997). D53,
+ * 240-255</a>
  *
  * @see <a href="http://dx.doi.org/10.1107/S0108767388009183" target="_blank">
  * A. T. Brunger, Acta Cryst. (1989). A45, 42-50.</a>
@@ -82,8 +80,8 @@ import ffx.xray.CrystalReciprocalSpace.SolventModel;
  * A. T. Brunger, Acta Cryst. (1993). D49, 24-36</a>
  *
  * @see <a href="http://dx.doi.org/10.1107/S0907444996012255" target="_blank">
- * G. N. Murshudov, A. A. Vagin and E. J. Dodson,
- * Acta Cryst. (1997). D53, 240-255</a>
+ * G. N. Murshudov, A. A. Vagin and E. J. Dodson, Acta Cryst. (1997). D53,
+ * 240-255</a>
  *
  * @see <a href="http://dx.doi.org/10.1107/S0108767388009183" target="_blank">
  * A. T. Brunger, Acta Cryst. (1989). A45, 42-50.</a>
@@ -100,8 +98,8 @@ import ffx.xray.CrystalReciprocalSpace.SolventModel;
  * A. T. Brunger, Acta Cryst. (1993). D49, 24-36</a>
  *
  * @see <a href="http://dx.doi.org/10.1107/S0907444996012255" target="_blank">
- * G. N. Murshudov, A. A. Vagin and E. J. Dodson,
- * Acta Cryst. (1997). D53, 240-255</a>
+ * G. N. Murshudov, A. A. Vagin and E. J. Dodson, Acta Cryst. (1997). D53,
+ * 240-255</a>
  *
  * @see <a href="http://dx.doi.org/10.1107/S0108767388009183" target="_blank">
  * A. T. Brunger, Acta Cryst. (1989). A45, 42-50.</a>
@@ -118,8 +116,8 @@ import ffx.xray.CrystalReciprocalSpace.SolventModel;
  * A. T. Brunger, Acta Cryst. (1993). D49, 24-36</a>
  *
  * @see <a href="http://dx.doi.org/10.1107/S0907444996012255" target="_blank">
- * G. N. Murshudov, A. A. Vagin and E. J. Dodson,
- * Acta Cryst. (1997). D53, 240-255</a>
+ * G. N. Murshudov, A. A. Vagin and E. J. Dodson, Acta Cryst. (1997). D53,
+ * 240-255</a>
  *
  * @see <a href="http://dx.doi.org/10.1107/S0108767388009183" target="_blank">
  * A. T. Brunger, Acta Cryst. (1989). A45, 42-50.</a>
@@ -136,8 +134,8 @@ import ffx.xray.CrystalReciprocalSpace.SolventModel;
  * A. T. Brunger, Acta Cryst. (1993). D49, 24-36</a>
  *
  * @see <a href="http://dx.doi.org/10.1107/S0907444996012255" target="_blank">
- * G. N. Murshudov, A. A. Vagin and E. J. Dodson,
- * Acta Cryst. (1997). D53, 240-255</a>
+ * G. N. Murshudov, A. A. Vagin and E. J. Dodson, Acta Cryst. (1997). D53,
+ * 240-255</a>
  *
  * @see <a href="http://dx.doi.org/10.1107/S0108767388009183" target="_blank">
  * A. T. Brunger, Acta Cryst. (1989). A45, 42-50.</a>
@@ -154,8 +152,8 @@ import ffx.xray.CrystalReciprocalSpace.SolventModel;
  * A. T. Brunger, Acta Cryst. (1993). D49, 24-36</a>
  *
  * @see <a href="http://dx.doi.org/10.1107/S0907444996012255" target="_blank">
- * G. N. Murshudov, A. A. Vagin and E. J. Dodson,
- * Acta Cryst. (1997). D53, 240-255</a>
+ * G. N. Murshudov, A. A. Vagin and E. J. Dodson, Acta Cryst. (1997). D53,
+ * 240-255</a>
  *
  * @see <a href="http://dx.doi.org/10.1107/S0108767388009183" target="_blank">
  * A. T. Brunger, Acta Cryst. (1989). A45, 42-50.</a>
@@ -225,7 +223,8 @@ public class SigmaAEnergy implements Potential {
      * <p>Constructor for SigmaAEnergy.</p>
      *
      * @param reflectionlist a {@link ffx.crystal.ReflectionList} object.
-     * @param refinementdata a {@link ffx.xray.DiffractionRefinementData} object.
+     * @param refinementdata a {@link ffx.xray.DiffractionRefinementData}
+     * object.
      */
     public SigmaAEnergy(ReflectionList reflectionlist,
             DiffractionRefinementData refinementdata) {
@@ -486,7 +485,9 @@ public class SigmaAEnergy implements Potential {
         return sum;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double energyAndGradient(double x[], double g[]) {
         if (optimizationScaling != null) {
@@ -509,7 +510,9 @@ public class SigmaAEnergy implements Potential {
         return sum;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setScaling(double[] scaling) {
         if (scaling != null && scaling.length == n * 2) {
@@ -519,7 +522,9 @@ public class SigmaAEnergy implements Potential {
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getScaling() {
         return optimizationScaling;
@@ -527,9 +532,8 @@ public class SigmaAEnergy implements Potential {
 
     /*
      * from sim and sim_integ functions in clipper utils:
-     * http://www.ysbl.york.ac.uk/~cowtan/clipper/clipper.html
-     * and from ln_of_i0 and i1_over_i0 functions in bessel.h
-     * in scitbx module of cctbx:
+     * http://www.ysbl.york.ac.uk/~cowtan/clipper/clipper.html and from ln_of_i0
+     * and i1_over_i0 functions in bessel.h in scitbx module of cctbx:
      * http://cci.lbl.gov/cctbx_sources/scitbx/math/bessel.h
      */
     /**
@@ -564,25 +568,33 @@ public class SigmaAEnergy implements Potential {
                 + x + 1.0;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getMass() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
-    
-    /** {@inheritDoc} */
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getTotal() {
         return totalEnergy;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int getNumberOfVariables() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getCoordinates(double[] parameters) {
         throw new UnsupportedOperationException("Not supported yet.");
@@ -590,14 +602,15 @@ public class SigmaAEnergy implements Potential {
 
     /**
      * Return a reference to each variables type.
-     * @return the type of each variable. 
+     *
+     * @return the type of each variable.
      */
     @Override
     public VARIABLE_TYPE[] getVariableTypes() {
         return null;
     }
 
-	@Override
-	public void turnFastOnSlowOff(int b) {
-	}
+    @Override
+    public void setEnergyTermState(STATE state) {
+    }
 }

@@ -917,6 +917,6 @@ public class XRayEnergy implements LambdaInterface, Potential {
     }
 
 	@Override
-	public void turnFastOnSlowOff(int b) {
+	public void setEnergyTermState(STATE state) {
 	}
 }

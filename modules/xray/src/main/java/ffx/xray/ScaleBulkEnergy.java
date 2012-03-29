@@ -420,6 +420,6 @@ public class ScaleBulkEnergy implements Potential {
     }
 
 	@Override
-	public void turnFastOnSlowOff(int b) {
+	public void setEnergyTermState(STATE state) {
 	}
 }

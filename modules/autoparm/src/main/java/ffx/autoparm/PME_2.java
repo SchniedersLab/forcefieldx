@@ -6500,6 +6500,7 @@ public class PME_2 implements Potential {
     private final double sPhi[] = new double[tensorCount];
 
     
-    public void turnFastOnSlowOff(int b){
+    public void setEnergyTermState(STATE state){
+        
     }
 }

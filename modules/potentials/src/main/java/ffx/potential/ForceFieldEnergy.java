@@ -1,28 +1,28 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Title: Force Field X Description: Force Field X - Software for Molecular
+ * Biophysics. Copyright: Copyright (c) Michael J. Schnieders 2001-2011
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.potential;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.logging.Logger;
+
 import static java.lang.Math.max;
 import static java.lang.Math.sqrt;
 import static java.lang.String.format;
@@ -32,18 +32,7 @@ import edu.rit.pj.ParallelTeam;
 import ffx.crystal.Crystal;
 import ffx.crystal.ReplicatesCrystal;
 import ffx.numerics.Potential;
-import ffx.potential.bonded.Angle;
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.Bond;
-import ffx.potential.bonded.MolecularAssembly;
-import ffx.potential.bonded.OutOfPlaneBend;
-import ffx.potential.bonded.PiOrbitalTorsion;
-import ffx.potential.bonded.ROLS;
-import ffx.potential.bonded.RestraintBond;
-import ffx.potential.bonded.StretchBend;
-import ffx.potential.bonded.Torsion;
-import ffx.potential.bonded.TorsionTorsion;
-import ffx.potential.bonded.UreyBradley;
+import ffx.potential.bonded.*;
 import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.VanDerWaals;
 import ffx.potential.parameters.BondType;
@@ -100,19 +89,19 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     protected boolean multipoleTerm;
     protected boolean polarizationTerm;
     protected boolean generalizedKirkwoodTerm;
-    protected boolean bondTerm_orig;
-    protected boolean angleTerm_orig;
-    protected boolean stretchBendTerm_orig;
-    protected boolean ureyBradleyTerm_orig;
-    protected boolean outOfPlaneBendTerm_orig;
-    protected boolean torsionTerm_orig;
-    protected boolean piOrbitalTorsionTerm_orig;
-    protected boolean torsionTorsionTerm_orig;
-    protected boolean restraintBondTerm_orig;
-    protected boolean vanderWaalsTerm_orig;
-    protected boolean multipoleTerm_orig;
-    protected boolean polarizationTerm_orig;
-    protected boolean generalizedKirkwoodTerm_orig;
+    protected boolean bondTermOrig;
+    protected boolean angleTermOrig;
+    protected boolean stretchBendTermOrig;
+    protected boolean ureyBradleyTermOrig;
+    protected boolean outOfPlaneBendTermOrig;
+    protected boolean torsionTermOrig;
+    protected boolean piOrbitalTorsionTermOrig;
+    protected boolean torsionTorsionTermOrig;
+    protected boolean restraintBondTermOrig;
+    protected boolean vanderWaalsTermOrig;
+    protected boolean multipoleTermOrig;
+    protected boolean polarizationTermOrig;
+    protected boolean generalizedKirkwoodTermOrig;
     protected double bondEnergy, bondRMSD;
     protected double angleEnergy, angleRMSD;
     protected double stretchBendEnergy;
@@ -143,7 +132,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     /**
      * <p>Constructor for ForceFieldEnergy.</p>
      *
-     * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly} object.
+     * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly}
+     * object.
      */
     public ForceFieldEnergy(MolecularAssembly molecularAssembly) {
         parallelTeam = new ParallelTeam();
@@ -171,7 +161,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 generalizedKirkwoodTerm = forceField.getBoolean(ForceFieldBoolean.GKTERM, false);
             } else {
                 /**
-                 * If multipole electrostatics is turned off, turn off all electrostatics.
+                 * If multipole electrostatics is turned off, turn off all
+                 * electrostatics.
                  */
                 polarizationTerm = false;
                 generalizedKirkwoodTerm = false;
@@ -185,22 +176,22 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             generalizedKirkwoodTerm = false;
         }
         restraintBondTerm = false;
-        
+
         //For respa
-        bondTerm_orig = bondTerm;
-        angleTerm_orig = angleTerm;
-        stretchBendTerm_orig = stretchBendTerm;
-        ureyBradleyTerm_orig = ureyBradleyTerm;
-        outOfPlaneBendTerm_orig = outOfPlaneBendTerm;
-        torsionTerm_orig = torsionTerm;
-        piOrbitalTorsionTerm_orig = piOrbitalTorsionTerm;
-        torsionTorsionTerm_orig = torsionTorsionTerm;
-        restraintBondTerm_orig = restraintBondTerm;
-        vanderWaalsTerm_orig = vanderWaalsTerm;
-        multipoleTerm_orig = multipoleTerm;
-        polarizationTerm_orig = polarizationTerm;
-        generalizedKirkwoodTerm_orig = generalizedKirkwoodTerm;
-        
+        bondTermOrig = bondTerm;
+        angleTermOrig = angleTerm;
+        stretchBendTermOrig = stretchBendTerm;
+        ureyBradleyTermOrig = ureyBradleyTerm;
+        outOfPlaneBendTermOrig = outOfPlaneBendTerm;
+        torsionTermOrig = torsionTerm;
+        piOrbitalTorsionTermOrig = piOrbitalTorsionTerm;
+        torsionTorsionTermOrig = torsionTorsionTerm;
+        restraintBondTermOrig = restraintBondTerm;
+        vanderWaalsTermOrig = vanderWaalsTerm;
+        multipoleTermOrig = multipoleTerm;
+        polarizationTermOrig = polarizationTerm;
+        generalizedKirkwoodTermOrig = generalizedKirkwoodTerm;
+
         // Define the cutoff lengths.
         double vdwOff = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, 9.0);
         double ewaldOff = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, 7.0);
@@ -431,7 +422,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
         if (multipoleTerm) {
             particleMeshEwald = new ParticleMeshEwald(forceField, atoms, crystal, parallelTeam,
-                                                      vanderWaals.getNeighborLists(), vanderWaals.getPairwiseSchedule());
+                    vanderWaals.getNeighborLists(), vanderWaals.getPairwiseSchedule());
         } else {
             particleMeshEwald = null;
         }
@@ -614,7 +605,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         return totalEnergy;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getTotal() {
         return totalEnergy;
@@ -631,165 +624,168 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         sb.append("REMARK   3  CALCULATED POTENTIAL ENERGY\n");
         if (bondTerm) {
             sb.append(String.format("REMARK   3   %s %g (%d)\n",
-                                    "BOND STRETCHING            : ", bondEnergy, bonds.length));
+                    "BOND STRETCHING            : ", bondEnergy, bonds.length));
             sb.append(String.format("REMARK   3   %s %g\n",
-                                    "BOND RMSD                  : ", bondRMSD));
+                    "BOND RMSD                  : ", bondRMSD));
         }
         if (angleTerm) {
             sb.append(String.format("REMARK   3   %s %g (%d)\n",
-                                    "ANGLE BENDING              : ", angleEnergy, angles.length));
+                    "ANGLE BENDING              : ", angleEnergy, angles.length));
             sb.append(String.format("REMARK   3   %s %g\n",
-                                    "ANGLE RMSD                 : ", angleRMSD));
+                    "ANGLE RMSD                 : ", angleRMSD));
         }
         if (stretchBendTerm) {
             sb.append(String.format("REMARK   3   %s %g (%d)\n",
-                                    "STRETCH-BEND               : ", stretchBendEnergy, stretchBends.length));
+                    "STRETCH-BEND               : ", stretchBendEnergy, stretchBends.length));
         }
         if (ureyBradleyTerm) {
             sb.append(String.format("REMARK   3   %s %g (%d)\n",
-                                    "UREY-BRADLEY               : ", ureyBradleyEnergy, ureyBradleys.length));
+                    "UREY-BRADLEY               : ", ureyBradleyEnergy, ureyBradleys.length));
         }
         if (outOfPlaneBendTerm) {
             sb.append(String.format("REMARK   3   %s %g (%d)\n",
-                                    "OUT-OF-PLANE BEND          : ", outOfPlaneBendEnergy, outOfPlaneBends.length));
+                    "OUT-OF-PLANE BEND          : ", outOfPlaneBendEnergy, outOfPlaneBends.length));
         }
         if (torsionTerm) {
             sb.append(String.format("REMARK   3   %s %g (%d)\n",
-                                    "TORSIONAL ANGLE            : ", torsionEnergy, torsions.length));
+                    "TORSIONAL ANGLE            : ", torsionEnergy, torsions.length));
         }
         if (piOrbitalTorsionTerm) {
             sb.append(String.format("REMARK   3   %s %g (%d)\n",
-                                    "PI-ORBITAL TORSION         : ", piOrbitalTorsionEnergy, piOrbitalTorsions.length));
+                    "PI-ORBITAL TORSION         : ", piOrbitalTorsionEnergy, piOrbitalTorsions.length));
         }
         if (torsionTorsionTerm) {
             sb.append(String.format("REMARK   3   %s %g (%d)\n",
-                                    "TORSION-TORSION            : ", torsionTorsionEnergy, torsionTorsions.length));
+                    "TORSION-TORSION            : ", torsionTorsionEnergy, torsionTorsions.length));
         }
         if (restraintBondTerm) {
             sb.append(String.format("REMARK   3   %s %g (%d)\n",
-                                    "RESTRAINT BOND STRETCHING            : ", restraintBondEnergy, restraintBonds.length));
+                    "RESTRAINT BOND STRETCHING            : ", restraintBondEnergy, restraintBonds.length));
         }
         if (vanderWaalsTerm) {
             sb.append(String.format("REMARK   3   %s %g (%d)\n",
-                                    "VAN DER WAALS              : ", vanDerWaalsEnergy, nVanDerWaals));
+                    "VAN DER WAALS              : ", vanDerWaalsEnergy, nVanDerWaals));
         }
         if (multipoleTerm) {
             sb.append(String.format("REMARK   3   %s %g (%d)\n",
-                                    "ATOMIC MULTIPOLES          : ", permanentMultipoleEnergy, nPME));
+                    "ATOMIC MULTIPOLES          : ", permanentMultipoleEnergy, nPME));
         }
         if (polarizationTerm) {
             sb.append(String.format("REMARK   3   %s %g (%d)\n",
-                                    "POLARIZATION               : ", polarizationEnergy, nPME));
+                    "POLARIZATION               : ", polarizationEnergy, nPME));
         }
         sb.append(String.format("REMARK   3   %s %g\n",
-                                "TOTAL POTENTIAL (KCAL/MOL) : ", totalEnergy));
+                "TOTAL POTENTIAL (KCAL/MOL) : ", totalEnergy));
         int nsymm = crystal.getUnitCell().spaceGroup.getNumberOfSymOps();
         if (nsymm > 1) {
             sb.append(String.format("REMARK   3   %s %g\n",
-                                    "UNIT CELL POTENTIAL        : ", totalEnergy * nsymm));
+                    "UNIT CELL POTENTIAL        : ", totalEnergy * nsymm));
         }
         if (crystal.getUnitCell() != crystal) {
             nsymm = crystal.spaceGroup.getNumberOfSymOps();
             sb.append(String.format("REMARK   3   %s %g\n",
-                                    "REPLICATES CELL POTENTIAL  : ", totalEnergy * nsymm));
+                    "REPLICATES CELL POTENTIAL  : ", totalEnergy * nsymm));
         }
         sb.append("REMARK   3\n");
 
         return sb.toString();
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("\n");
         if (bondTerm && nBonds > 0) {
             sb.append(String.format(" %s %16.8f %12d %12.3f (%8.5f)\n",
-                                    "Bond Streching    ", bondEnergy, nBonds,
-                                    bondTime * toSeconds, bondRMSD));
+                    "Bond Streching    ", bondEnergy, nBonds,
+                    bondTime * toSeconds, bondRMSD));
         }
         if (angleTerm && nAngles > 0) {
             sb.append(String.format(" %s %16.8f %12d %12.3f (%8.5f)\n",
-                                    "Angle Bending     ", angleEnergy, nAngles,
-                                    angleTime * toSeconds, angleRMSD));
+                    "Angle Bending     ", angleEnergy, nAngles,
+                    angleTime * toSeconds, angleRMSD));
         }
         if (stretchBendTerm && nStretchBends > 0) {
             sb.append(String.format(" %s %16.8f %12d %12.3f\n",
-                                    "Stretch-Bend      ", stretchBendEnergy,
-                                    nStretchBends, stretchBendTime * toSeconds));
+                    "Stretch-Bend      ", stretchBendEnergy,
+                    nStretchBends, stretchBendTime * toSeconds));
         }
         if (ureyBradleyTerm && nUreyBradleys > 0) {
             sb.append(String.format(" %s %16.8f %12d %12.3f\n",
-                                    "Urey-Bradley      ", ureyBradleyEnergy,
-                                    nUreyBradleys, ureyBradleyTime * toSeconds));
+                    "Urey-Bradley      ", ureyBradleyEnergy,
+                    nUreyBradleys, ureyBradleyTime * toSeconds));
         }
         if (outOfPlaneBendTerm && nOutOfPlaneBends > 0) {
             sb.append(String.format(" %s %16.8f %12d %12.3f\n",
-                                    "Out-of-Plane Bend ", outOfPlaneBendEnergy,
-                                    nOutOfPlaneBends, outOfPlaneBendTime * toSeconds));
+                    "Out-of-Plane Bend ", outOfPlaneBendEnergy,
+                    nOutOfPlaneBends, outOfPlaneBendTime * toSeconds));
         }
         if (torsionTerm && nTorsions > 0) {
             sb.append(String.format(" %s %16.8f %12d %12.3f\n",
-                                    "Torsional Angle   ", torsionEnergy, nTorsions,
-                                    torsionTime * toSeconds));
+                    "Torsional Angle   ", torsionEnergy, nTorsions,
+                    torsionTime * toSeconds));
         }
         if (piOrbitalTorsionTerm && nPiOrbitalTorsions > 0) {
             sb.append(String.format(" %s %16.8f %12d %12.3f\n",
-                                    "Pi-Orbital Torsion", piOrbitalTorsionEnergy,
-                                    nPiOrbitalTorsions, piOrbitalTorsionTime * toSeconds));
+                    "Pi-Orbital Torsion", piOrbitalTorsionEnergy,
+                    nPiOrbitalTorsions, piOrbitalTorsionTime * toSeconds));
         }
         if (torsionTorsionTerm && nTorsionTorsions > 0) {
             sb.append(String.format(" %s %16.8f %12d %12.3f\n",
-                                    "Torsion-Torsion   ", torsionTorsionEnergy,
-                                    nTorsionTorsions, torsionTorsionTime * toSeconds));
+                    "Torsion-Torsion   ", torsionTorsionEnergy,
+                    nTorsionTorsions, torsionTorsionTime * toSeconds));
         }
         if (restraintBondTerm && nRestraintBonds > 0) {
             sb.append(String.format(" %s %16.8f %12d %12.3f\n",
-                                    "Bond Restraint    ", restraintBondEnergy, nRestraintBonds,
-                                    restraintBondTime * toSeconds));
+                    "Bond Restraint    ", restraintBondEnergy, nRestraintBonds,
+                    restraintBondTime * toSeconds));
         }
         if (vanderWaalsTerm && nVanDerWaals > 0) {
             sb.append(String.format(" %s %16.8f %12d %12.3f\n",
-                                    "Van der Waals     ", vanDerWaalsEnergy,
-                                    nVanDerWaals, vanDerWaalsTime * toSeconds));
+                    "Van der Waals     ", vanDerWaalsEnergy,
+                    nVanDerWaals, vanDerWaalsTime * toSeconds));
         }
         if (multipoleTerm && nPME > 0) {
             if (polarizationTerm) {
                 sb.append(String.format(" %s %16.8f %12d\n",
-                                        "Atomic Multipoles ", permanentMultipoleEnergy, nPME));
+                        "Atomic Multipoles ", permanentMultipoleEnergy, nPME));
             } else {
                 sb.append(String.format(" %s %16.8f %12d %12.3f\n",
-                                        "Atomic Multipoles ", permanentMultipoleEnergy, nPME, electrostaticTime * toSeconds));
+                        "Atomic Multipoles ", permanentMultipoleEnergy, nPME, electrostaticTime * toSeconds));
             }
         }
         if (polarizationTerm && nPME > 0) {
             sb.append(String.format(" %s %16.8f %12d %12.3f\n",
-                                    "Polarization      ", polarizationEnergy,
-                                    nPME, electrostaticTime * toSeconds));
+                    "Polarization      ", polarizationEnergy,
+                    nPME, electrostaticTime * toSeconds));
         }
         if (generalizedKirkwoodTerm && nGK > 0) {
             sb.append(String.format(" %s %16.8f %12d\n",
-                                    "Solvation         ", solvationEnergy, nGK));
+                    "Solvation         ", solvationEnergy, nGK));
         }
 
         sb.append(String.format("\n %s %16.8f  %s %12.3f (sec)\n",
-                                "Total Potential   ", totalEnergy, "(Kcal/mole)", totalTime * toSeconds));
+                "Total Potential   ", totalEnergy, "(Kcal/mole)", totalTime * toSeconds));
 
         int nsymm = crystal.getUnitCell().spaceGroup.getNumberOfSymOps();
         if (nsymm > 1) {
             sb.append(String.format(" %s %16.8f\n", "Unit Cell         ",
-                                    totalEnergy * nsymm));
+                    totalEnergy * nsymm));
         }
         if (crystal.getUnitCell() != crystal) {
             nsymm = crystal.spaceGroup.getNumberOfSymOps();
             sb.append(String.format(" %s %16.8f\n", "Replicates Cell   ",
-                                    totalEnergy * nsymm));
+                    totalEnergy * nsymm));
         }
 
         return sb.toString();
     }
 
     /**
-     * <p>Getter for the field <code>crystal</code>.</p>
+     * <p>Getter for the field
+     * <code>crystal</code>.</p>
      *
      * @return a {@link ffx.crystal.Crystal} object.
      */
@@ -797,7 +793,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         return crystal;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setLambda(double lambda) {
         if (lambda <= 1.0 && lambda >= 0.0) {
@@ -814,7 +812,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setScaling(double scaling[]) {
         if (scaling != null) {
@@ -824,7 +824,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getScaling() {
         return optimizationScaling;
@@ -832,7 +834,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
     /**
      * Return a reference to each variables type.
-     * @return the type of each variable. 
+     *
+     * @return the type of each variable.
      */
     @Override
     public VARIABLE_TYPE[] getVariableTypes() {
@@ -847,7 +850,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         return type;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double energyAndGradient(double x[], double g[]) {
         /**
@@ -890,10 +895,10 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             double gy = grad[1];
             double gz = grad[2];
             if (Double.isNaN(gx) || Double.isInfinite(gx)
-                || Double.isNaN(gy) || Double.isInfinite(gy)
-                || Double.isNaN(gz) || Double.isInfinite(gz)) {
+                    || Double.isNaN(gy) || Double.isInfinite(gy)
+                    || Double.isNaN(gz) || Double.isInfinite(gz)) {
                 String message = format("The gradient of atom %s is (%8.3f,%8.3f,%8.3f).",
-                                        a.toString(), gx, gy, gz);
+                        a.toString(), gx, gy, gz);
                 logger.warning(message);
             }
             g[index++] = gx;
@@ -913,7 +918,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getCoordinates(double x[]) {
         int n = getNumberOfVariables();
@@ -931,7 +938,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         return x;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getMass() {
         int n = getNumberOfVariables();
@@ -946,13 +955,17 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         return mass;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int getNumberOfVariables() {
         return nAtoms * 3;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getdEdL() {
         double dEdLambda = 0.0;
@@ -965,7 +978,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         return dEdLambda;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void getdEdXdL(double gradients[]) {
         if (vanderWaalsTerm) {
@@ -976,13 +991,17 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getLambda() {
         return lambda;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getd2EdL2() {
         double d2EdLambda2 = 0.0;
@@ -1014,55 +1033,63 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         rb.energy(false);
         rb.log();
     }
-    //This method is for Respa integrator only. If b == 1, fast terms are turned on (reset back to original), and slow are turned off
-    //If b == 0, slow terms are turned on (set back to original) and fast terms are turned off
-    //give b==3 to reset.
-    public void turnFastOnSlowOff(int b){
-        if(b == 1){
-            bondTerm = bondTerm_orig;
-            angleTerm = angleTerm_orig;
-            stretchBendTerm = stretchBendTerm_orig;
-            ureyBradleyTerm = ureyBradleyTerm_orig;
-            outOfPlaneBendTerm = outOfPlaneBendTerm_orig;
-            torsionTerm = torsionTerm_orig;
-            piOrbitalTorsionTerm = piOrbitalTorsionTerm_orig;
-            torsionTorsionTerm = torsionTorsionTerm_orig;
-            restraintBondTerm = restraintBondTerm_orig;
-            vanderWaalsTerm = false;
-            multipoleTerm = false;
-            polarizationTerm = false;
-            generalizedKirkwoodTerm = false;
-          
-        }
-        else if(b == 0){
-            vanderWaalsTerm = vanderWaalsTerm_orig;
-            multipoleTerm = multipoleTerm_orig;
-            polarizationTerm = polarizationTerm_orig;
-            generalizedKirkwoodTerm = generalizedKirkwoodTerm_orig;
-            bondTerm = false;
-            angleTerm = false;
-            stretchBendTerm = false;
-            ureyBradleyTerm = false;
-            outOfPlaneBendTerm = false;
-            torsionTerm = false;
-            piOrbitalTorsionTerm = false;
-            torsionTorsionTerm = false;
-            restraintBondTerm = false;
-        }
-        else if(b == 3){
-            bondTerm = bondTerm_orig;
-            angleTerm = angleTerm_orig;
-            stretchBendTerm = stretchBendTerm_orig;
-            ureyBradleyTerm = ureyBradleyTerm_orig;
-            outOfPlaneBendTerm = outOfPlaneBendTerm_orig;
-            torsionTerm = torsionTerm_orig;
-            piOrbitalTorsionTerm = piOrbitalTorsionTerm_orig;
-            torsionTorsionTerm = torsionTorsionTerm_orig;
-            restraintBondTerm = restraintBondTerm_orig;
-            vanderWaalsTerm = vanderWaalsTerm_orig;
-            multipoleTerm = multipoleTerm_orig;
-            polarizationTerm = polarizationTerm_orig;
-            generalizedKirkwoodTerm = generalizedKirkwoodTerm_orig;
+
+    /**
+     * This method is for Respa integrator only. If b == 1, fast terms are
+     * turned on (reset back to original), and slow are turned off If b == 0,
+     * slow terms are turned on (set back to original) and fast terms are turned
+     * off give b==3 to reset.
+     *
+     * @param b
+     */
+    public void setEnergyTermState(STATE state) {
+        switch (state) {
+            case FAST:
+                bondTerm = bondTermOrig;
+                angleTerm = angleTermOrig;
+                stretchBendTerm = stretchBendTermOrig;
+                ureyBradleyTerm = ureyBradleyTermOrig;
+                outOfPlaneBendTerm = outOfPlaneBendTermOrig;
+                torsionTerm = torsionTermOrig;
+                piOrbitalTorsionTerm = piOrbitalTorsionTermOrig;
+                torsionTorsionTerm = torsionTorsionTermOrig;
+                restraintBondTerm = restraintBondTermOrig;
+                vanderWaalsTerm = false;
+                multipoleTerm = false;
+                polarizationTerm = false;
+                generalizedKirkwoodTerm = false;
+                break;
+
+            case SLOW:
+                vanderWaalsTerm = vanderWaalsTermOrig;
+                multipoleTerm = multipoleTermOrig;
+                polarizationTerm = polarizationTermOrig;
+                generalizedKirkwoodTerm = generalizedKirkwoodTermOrig;
+                bondTerm = false;
+                angleTerm = false;
+                stretchBendTerm = false;
+                ureyBradleyTerm = false;
+                outOfPlaneBendTerm = false;
+                torsionTerm = false;
+                piOrbitalTorsionTerm = false;
+                torsionTorsionTerm = false;
+                restraintBondTerm = false;
+                break;
+
+            default:
+                bondTerm = bondTermOrig;
+                angleTerm = angleTermOrig;
+                stretchBendTerm = stretchBendTermOrig;
+                ureyBradleyTerm = ureyBradleyTermOrig;
+                outOfPlaneBendTerm = outOfPlaneBendTermOrig;
+                torsionTerm = torsionTermOrig;
+                piOrbitalTorsionTerm = piOrbitalTorsionTermOrig;
+                torsionTorsionTerm = torsionTorsionTermOrig;
+                restraintBondTerm = restraintBondTermOrig;
+                vanderWaalsTerm = vanderWaalsTermOrig;
+                multipoleTerm = multipoleTermOrig;
+                polarizationTerm = polarizationTermOrig;
+                generalizedKirkwoodTerm = generalizedKirkwoodTermOrig;
         }
     }
 }
