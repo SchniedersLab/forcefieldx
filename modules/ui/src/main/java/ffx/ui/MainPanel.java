@@ -81,7 +81,7 @@ import javax.vecmath.Vector3d;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang.SystemUtils;
+import org.apache.commons.lang3.SystemUtils;
 
 import ffx.crystal.Crystal;
 import ffx.potential.bonded.Atom;

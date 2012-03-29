@@ -19,7 +19,7 @@
             <!-- Make an assembly for Webstart -->
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
-                <version>2.2</version>
+                <version>2.3</version>
                 <configuration>
                     <attach>false</attach>
                     <finalName>ffx</finalName>
@@ -40,7 +40,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-resources-plugin</artifactId>
-                <version>2.4.3</version>
+                <version>2.5</version>
                 <executions>
                     <execution>
                         <id>copy-jar</id>
@@ -192,13 +192,13 @@
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
             <type>jar</type>
-            <version>1.4.0</version>
+            <version>2.1.0</version>
         </dependency>
         <dependency>
             <groupId>commons-lang</groupId>
-            <artifactId>commons-lang</artifactId>
+            <artifactId>commons-lang3</artifactId>
             <type>jar</type>
-            <version>2.5</version>
+            <version>3.1</version>
         </dependency>
         <dependency>
             <groupId>commons-configuration</groupId>

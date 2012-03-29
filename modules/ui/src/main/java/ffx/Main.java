@@ -42,9 +42,9 @@ import javax.swing.JFrame;
 import javax.swing.UIManager;
 
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang.SystemUtils;
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.commons.lang.time.StopWatch;
+import org.apache.commons.lang3.SystemUtils;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.time.StopWatch;
 
 import edu.rit.pj.Comm;
 

@@ -21,7 +21,7 @@
 package ffx.xray;
 
 import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
 import java.io.DataInputStream;

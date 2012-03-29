@@ -26,8 +26,8 @@ import java.util.List;
 import java.util.logging.Logger;
 import static java.lang.String.format;
 
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.commons.lang.time.StopWatch;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.time.StopWatch;
 
 import ffx.ui.LogHandler;
 import ffx.ui.MainPanel;
