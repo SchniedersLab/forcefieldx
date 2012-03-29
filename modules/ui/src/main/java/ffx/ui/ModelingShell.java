@@ -373,8 +373,8 @@ public class ModelingShell extends Console implements AlgorithmListener {
      * @param gdmaoutfname a {@link java.lang.String} object.
      * @param peditinfname a {@link java.lang.String} object.
      */
-    public void poledit(String gdmaoutfname, String peditinfname, int out_type) {
-        Poledit p = new Poledit(gdmaoutfname, peditinfname, out_type);
+    public void poledit(String gdmaoutfname, String peditinfname) {
+        Poledit p = new Poledit(gdmaoutfname, peditinfname);
     }
 
     /**

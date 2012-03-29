@@ -310,4 +310,8 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
         return null;
     }
 
+	@Override
+	public void turnFastOnSlowOff(int b) {
+	}
+
 }

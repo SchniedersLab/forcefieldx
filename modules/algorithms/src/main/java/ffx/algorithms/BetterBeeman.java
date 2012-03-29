@@ -20,6 +20,8 @@
  */
 package ffx.algorithms;
 
+import ffx.numerics.Potential;
+
 /**
  * Integrate Newton's equations of motion using a Beeman multistep recursion
  * formula; the actual coefficients are Brooks' "Better Beeman" values.
@@ -70,7 +72,7 @@ public class BetterBeeman extends Integrator {
      * and half-step velocities via Beeman recursion.
      */
     @Override
-    public void halfStep() {
+    public void halfStep(Potential potential) {
         for (int i = 0; i < nVariables; i++) {
             double temp = 5.0 * a[i] - aPrevious[i];
             x[i] += v[i] * dt + temp * dt2_8;

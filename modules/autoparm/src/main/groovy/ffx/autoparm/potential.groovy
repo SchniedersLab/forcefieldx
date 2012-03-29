@@ -22,6 +22,7 @@ if (options.h || arguments == null) {
 Double eps = null;
 Integer choice = Integer.parseInt(arguments.get(0));
 String filename = arguments.get(1);
+int out_type = 5;
 if(choice == 4){
 	eps = Double.parseDouble(arguments.get(2));
 }

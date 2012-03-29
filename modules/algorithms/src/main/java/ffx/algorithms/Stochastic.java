@@ -21,6 +21,8 @@
 package ffx.algorithms;
 
 import java.util.Random;
+
+import ffx.numerics.Potential;
 import static java.lang.Math.exp;
 import static java.lang.Math.sqrt;
 
@@ -116,7 +118,7 @@ public class Stochastic extends Integrator {
      * velocities via Verlet recursion.
      */
     @Override
-    public void halfStep() {
+    public void halfStep(Potential potential) {
         for (int i = 0; i < numberOfVariables; i++) {
             double m = mass[i];
             double pfric;

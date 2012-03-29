@@ -628,4 +628,8 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
     public VARIABLE_TYPE[] getVariableTypes() {
         return dataEnergy.getVariableTypes();
     }
+
+	@Override
+	public void turnFastOnSlowOff(int b) {		
+	}
 }

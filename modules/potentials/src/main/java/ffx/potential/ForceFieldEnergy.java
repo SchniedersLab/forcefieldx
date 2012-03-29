@@ -87,19 +87,32 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     protected final int nTorsionTorsions;
     protected int nRestraintBonds;
     protected int nVanDerWaals, nPME, nGK;
-    protected final boolean bondTerm;
-    protected final boolean angleTerm;
-    protected final boolean stretchBendTerm;
-    protected final boolean ureyBradleyTerm;
-    protected final boolean outOfPlaneBendTerm;
-    protected final boolean torsionTerm;
-    protected final boolean piOrbitalTorsionTerm;
-    protected final boolean torsionTorsionTerm;
+    protected boolean bondTerm;
+    protected boolean angleTerm;
+    protected boolean stretchBendTerm;
+    protected boolean ureyBradleyTerm;
+    protected boolean outOfPlaneBendTerm;
+    protected boolean torsionTerm;
+    protected boolean piOrbitalTorsionTerm;
+    protected boolean torsionTorsionTerm;
     protected boolean restraintBondTerm;
-    protected final boolean vanderWaalsTerm;
-    protected final boolean multipoleTerm;
-    protected final boolean polarizationTerm;
-    protected final boolean generalizedKirkwoodTerm;
+    protected boolean vanderWaalsTerm;
+    protected boolean multipoleTerm;
+    protected boolean polarizationTerm;
+    protected boolean generalizedKirkwoodTerm;
+    protected boolean bondTerm_orig;
+    protected boolean angleTerm_orig;
+    protected boolean stretchBendTerm_orig;
+    protected boolean ureyBradleyTerm_orig;
+    protected boolean outOfPlaneBendTerm_orig;
+    protected boolean torsionTerm_orig;
+    protected boolean piOrbitalTorsionTerm_orig;
+    protected boolean torsionTorsionTerm_orig;
+    protected boolean restraintBondTerm_orig;
+    protected boolean vanderWaalsTerm_orig;
+    protected boolean multipoleTerm_orig;
+    protected boolean polarizationTerm_orig;
+    protected boolean generalizedKirkwoodTerm_orig;
     protected double bondEnergy, bondRMSD;
     protected double angleEnergy, angleRMSD;
     protected double stretchBendEnergy;
@@ -172,8 +185,22 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             generalizedKirkwoodTerm = false;
         }
         restraintBondTerm = false;
-
-
+        
+        //For respa
+        bondTerm_orig = bondTerm;
+        angleTerm_orig = angleTerm;
+        stretchBendTerm_orig = stretchBendTerm;
+        ureyBradleyTerm_orig = ureyBradleyTerm;
+        outOfPlaneBendTerm_orig = outOfPlaneBendTerm;
+        torsionTerm_orig = torsionTerm;
+        piOrbitalTorsionTerm_orig = piOrbitalTorsionTerm;
+        torsionTorsionTerm_orig = torsionTorsionTerm;
+        restraintBondTerm_orig = restraintBondTerm;
+        vanderWaalsTerm_orig = vanderWaalsTerm;
+        multipoleTerm_orig = multipoleTerm;
+        polarizationTerm_orig = polarizationTerm;
+        generalizedKirkwoodTerm_orig = generalizedKirkwoodTerm;
+        
         // Define the cutoff lengths.
         double vdwOff = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, 9.0);
         double ewaldOff = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, 7.0);
@@ -986,5 +1013,56 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         restraintBonds[0] = rb;
         rb.energy(false);
         rb.log();
+    }
+    //This method is for Respa integrator only. If b == 1, fast terms are turned on (reset back to original), and slow are turned off
+    //If b == 0, slow terms are turned on (set back to original) and fast terms are turned off
+    //give b==3 to reset.
+    public void turnFastOnSlowOff(int b){
+        if(b == 1){
+            bondTerm = bondTerm_orig;
+            angleTerm = angleTerm_orig;
+            stretchBendTerm = stretchBendTerm_orig;
+            ureyBradleyTerm = ureyBradleyTerm_orig;
+            outOfPlaneBendTerm = outOfPlaneBendTerm_orig;
+            torsionTerm = torsionTerm_orig;
+            piOrbitalTorsionTerm = piOrbitalTorsionTerm_orig;
+            torsionTorsionTerm = torsionTorsionTerm_orig;
+            restraintBondTerm = restraintBondTerm_orig;
+            vanderWaalsTerm = false;
+            multipoleTerm = false;
+            polarizationTerm = false;
+            generalizedKirkwoodTerm = false;
+          
+        }
+        else if(b == 0){
+            vanderWaalsTerm = vanderWaalsTerm_orig;
+            multipoleTerm = multipoleTerm_orig;
+            polarizationTerm = polarizationTerm_orig;
+            generalizedKirkwoodTerm = generalizedKirkwoodTerm_orig;
+            bondTerm = false;
+            angleTerm = false;
+            stretchBendTerm = false;
+            ureyBradleyTerm = false;
+            outOfPlaneBendTerm = false;
+            torsionTerm = false;
+            piOrbitalTorsionTerm = false;
+            torsionTorsionTerm = false;
+            restraintBondTerm = false;
+        }
+        else if(b == 3){
+            bondTerm = bondTerm_orig;
+            angleTerm = angleTerm_orig;
+            stretchBendTerm = stretchBendTerm_orig;
+            ureyBradleyTerm = ureyBradleyTerm_orig;
+            outOfPlaneBendTerm = outOfPlaneBendTerm_orig;
+            torsionTerm = torsionTerm_orig;
+            piOrbitalTorsionTerm = piOrbitalTorsionTerm_orig;
+            torsionTorsionTerm = torsionTorsionTerm_orig;
+            restraintBondTerm = restraintBondTerm_orig;
+            vanderWaalsTerm = vanderWaalsTerm_orig;
+            multipoleTerm = multipoleTerm_orig;
+            polarizationTerm = polarizationTerm_orig;
+            generalizedKirkwoodTerm = generalizedKirkwoodTerm_orig;
+        }
     }
 }

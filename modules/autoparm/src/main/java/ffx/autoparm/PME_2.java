@@ -6499,4 +6499,7 @@ public class PME_2 implements Potential {
     private final double sfPhi[] = new double[tensorCount];
     private final double sPhi[] = new double[tensorCount];
 
+    
+    public void turnFastOnSlowOff(int b){
+    }
 }

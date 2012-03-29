@@ -58,7 +58,6 @@ public class Poledit {
     private ArrayList<Atom> atomslist = new ArrayList<Atom>();
     private ArrayList<Double> polaritylist = new ArrayList<Double>();
     private ArrayList<Double> pdamplist = new ArrayList<Double>();
-    private int out_type = 5;
     private int[] xaxis;
     private static final Logger logger = Logger.getLogger(Poledit.class.getName());
     private boolean remove_symmetry = false;
@@ -73,8 +72,7 @@ public class Poledit {
      * @param out_type
      * Tinker output format, either 5 or 4.
      */
-    public Poledit(String gdmaoutfname, String peditinfname, int out_type) {
-        this.out_type = out_type;
+    public Poledit(String gdmaoutfname, String peditinfname) {
         pedit = true;
         nSymm = 1;
         readGDMA(gdmaoutfname);
@@ -1085,12 +1083,7 @@ public class Poledit {
             }
             bw.write("\n");
             for (int i = 0; i < nAtoms; i++) {
-            	if(out_type == 4){
-                    output = String.format("polarize %5d %29s", atoms[i].xyzIndex, myFormatter.format(polarizability[i]));
-            	}
-            	else{
-                    output = String.format("polarize %5d %29s %7s", atoms[i].xyzIndex, myFormatter.format(polarizability[i]), myFormatter.format(thole[i]));
-            	}
+                output = String.format("polarize %5d %29s %7s", atoms[i].xyzIndex, myFormatter.format(polarizability[i]), myFormatter.format(thole[i]));
                 for (int k = 0; k < atoms[i].getPolarizeType().polarizationGroup.length; k++) {
                     if (atoms[i].getPolarizeType().polarizationGroup[k] != 0) {
                         output = output + "   " + atoms[i].getPolarizeType().polarizationGroup[k];

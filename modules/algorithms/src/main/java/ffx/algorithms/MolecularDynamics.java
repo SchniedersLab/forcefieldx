@@ -122,8 +122,11 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 stochastic.setRandomSeed(properties.getInt("randomseed", 0));
             }
             integrator = stochastic;
-        } else {
+        } else if (integrate.equalsIgnoreCase("beeman")){
             integrator = new BetterBeeman(numberOfVariables, x, v, a, aPrevious, mass);
+        } else{
+            logger.info(format("\n Molecular dynamics with Respa Integrator\n"));
+        	integrator = new Respa(numberOfVariables,x,v,a,aPrevious,mass);
         }
 
         /**
@@ -480,18 +483,22 @@ public class MolecularDynamics implements Runnable, Terminatable {
             /**
              * Do the half-step integration operation.
              */
-            integrator.halfStep();
+            integrator.halfStep(potential);
 
             /**
              * Compute the potential energy and gradients.
              */
             currentPotentialEnergy = potential.energyAndGradient(x, grad);
-
+            
+            if(integrator instanceof Respa){
+            	Respa r = (Respa) integrator;
+            	currentPotentialEnergy += r.halfStepEnergy;
+            }
             /**
              * Do the full-step integration operation.
              */
             integrator.fullStep(grad);
-
+            
             /**
              * Compute the full-step kinetic energy.
              */

@@ -20,6 +20,8 @@
  */
 package ffx.algorithms;
 
+import ffx.numerics.Potential;
+
 /**
  * The Integrator class is responsible for propagation of degrees of freedom
  * through time. Implementations must define their behavior at half-step and
@@ -32,8 +34,7 @@ package ffx.algorithms;
 public abstract class Integrator {
     
     public enum Integrators {
-
-        BEEMAN, STOCHASTIC
+        BEEMAN, STOCHASTIC, RESPA
     };
     
 
@@ -42,7 +43,7 @@ public abstract class Integrator {
     /**
      * Integrator halfStep operation.
      */
-    abstract public void halfStep();
+    abstract public void halfStep(Potential potential);
 
     /**
      * Integrator fullStep operation.
