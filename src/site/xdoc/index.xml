@@ -15,7 +15,7 @@
             <p>Force Field X is a group of open source (GPL v. 3), platform independent
                (Java Runtime Environment) modules for molecular biophysics.
                Key methods include:
-            </p>
+            </p>            
             <ul>
                 <li>Polarizable AMOEBA force fields</li>
                 <li>Particle-mesh Ewald electrostatics</li>

@@ -119,7 +119,12 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
      */
     public void incrementType(int increment) {
         for (int i = 0; i < frameAtomTypes.length; i++) {
-            frameAtomTypes[i] += increment;
+            // Frame atom types of 0 are unchanged.
+            if (frameAtomTypes[i] > 0) {
+                frameAtomTypes[i] += increment;
+            } else if (frameAtomTypes[i] < 0) {
+                frameAtomTypes[i] -= increment;
+            }
         }
         setKey(frameAtomTypes);
     }

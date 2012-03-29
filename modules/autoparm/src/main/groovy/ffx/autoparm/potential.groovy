@@ -14,7 +14,7 @@ def cli = new CliBuilder(usage:' ffxc potential <filename>');
 cli.h(longOpt:'help', 'Print this help message.');
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
-if (options.h || arguments == null || arguments.size() != 1) {
+if (options.h || arguments == null) {
     return cli.usage();
 }
 
