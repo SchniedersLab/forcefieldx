@@ -23,8 +23,8 @@ package ffx.ui;
 import java.io.File;
 import java.util.logging.Logger;
 
-import org.apache.commons.lang.SystemUtils;
-import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang3.SystemUtils;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
  * FFXExec encapsulates a native replacement for the JDK System.exec() method.
