@@ -94,6 +94,39 @@
         </resources>
     </build>
     <profiles>
+        <profile>
+            <id>build.extensions</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>1.2.1</version>
+                        <inherited>false</inherited>
+                        <executions>
+                            <execution>
+                                <id>Run Maven</id>
+                                <phase>deploy</phase>
+                                <configuration>
+                                    <executable>bash</executable>
+                                    <arguments>
+                                        <argument>-c</argument>
+                                        <argument>cd ${project.parent.basedir}/../ffx-ext; mvn -DskipTests=${skipTests} deploy; cd ${project.basedir};</argument>
+                                    </arguments>
+                                    <skip>false</skip>
+                                </configuration>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
         <!-- This profile should only be activated by commiters who can sign
         the artifacts. -->
         <profile>

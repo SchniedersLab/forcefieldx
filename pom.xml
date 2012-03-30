@@ -386,6 +386,7 @@
                 <inherited>false</inherited>
                 <executions>
                     <execution>
+                        <id>Run Force Field X</id>
                         <goals>
                             <goal>exec</goal>
                         </goals>
@@ -394,22 +395,15 @@
                 <configuration>
                     <executable>java</executable>
                     <arguments>
-                        <argument>-ms2G</argument>
-                        <argument>-mx2G</argument>
+                        <argument>-ms1G</argument>
+                        <argument>-mx1G</argument>
                         <argument>-Djava.system.class.loader=ffx.FFXClassLoader</argument>
                         <argument>-Djava.awt.headless=true</argument>
-                        <argument>-Dj3d.rend=jogl</argument>
                         <argument>-classpath</argument>
                         <argument>bin/ffx-all.jar</argument>
                         <argument>ffx.Main</argument>
-                        <argument>md</argument>
-                        <!-- argument>-s</argument>
-                        <argument>1</argument>
-                        <argument>-f</argument>
-                        <argument>3</argument>
-                        <argument>-l</argument>
-                        <argument>0.99</argument -->
-                        <argument>/Volumes/schnied/binding/trypsin/trypsin.pdb</argument>
+                        <argument>energy</argument>
+                        <argument>examples/watersmall.xyz</argument>
                     </arguments>
                 </configuration>
             </plugin>
