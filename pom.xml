@@ -32,7 +32,7 @@
                             <files>
                                 <file>
                                     <source>${basedir}/target/${project.artifactId}-${project.version}.jar</source>
-                                    <outputDirectory>${ffx.directory}/bin/ffx-all.jar</outputDirectory>                                        
+                                    <outputDirectory>${project.parent.basedir}/../ffx/bin/ffx-all.jar</outputDirectory>                                        
                                     <destName>edu.rit.pj/${project.artifactId}.jar</destName>
                                 </file>
                             </files>
