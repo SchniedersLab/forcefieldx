@@ -20,7 +20,7 @@
  */
 package ffx.xray;
 
-import static java.lang.Math.exp;
+import static org.apache.commons.math.util.FastMath.exp;
 import static ffx.numerics.fft.Complex3D.iComplex3D;
 
 import edu.rit.pj.IntegerForLoop;

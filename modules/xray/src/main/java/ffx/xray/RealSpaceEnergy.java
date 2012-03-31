@@ -310,9 +310,14 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
         return null;
     }
 
-	@Override
-	public void setEnergyTermState(STATE state) {
-            
-	}
-
+    @Override
+    public void setEnergyTermState(STATE state) {
+        switch (state) {
+            case FAST:
+                break;
+            case SLOW:
+                break;
+            default:
+        }
+    }
 }
