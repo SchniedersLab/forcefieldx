@@ -29,6 +29,8 @@ import ffx.numerics.Potential;
  * The inner RESPA loop is position Verlet.
  *
  * @author Gaurav Chattree
+ * 
+ * @since 1.0
  */
 public class Respa extends Integrator {
 

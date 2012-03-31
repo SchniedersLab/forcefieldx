@@ -1,22 +1,21 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Title: Force Field X Description: Force Field X - Software for Molecular
+ * Biophysics. Copyright: Copyright (c) Michael J. Schnieders 2001-2011
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.algorithms;
 
@@ -25,10 +24,10 @@ import java.util.logging.Logger;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 
+import ffx.algorithms.Integrator.Integrators;
 import ffx.algorithms.Thermostat.Thermostats;
 import ffx.numerics.Potential;
 import ffx.potential.bonded.MolecularAssembly;
-
 
 /**
  * Run NVT molecular dynamics at a series of temperatures.
@@ -52,18 +51,20 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
      *
      * @param assembly a {@link ffx.potential.bonded.MolecularAssembly} object.
      * @param potentialEnergy a {@link ffx.numerics.Potential} object.
-     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration}
+     * object.
      * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
      */
     public SimulatedAnnealing(MolecularAssembly assembly,
-                              Potential potentialEnergy,
-                              CompositeConfiguration properties,
-                              AlgorithmListener listener) {
+            Potential potentialEnergy,
+            CompositeConfiguration properties,
+            AlgorithmListener listener) {
 
         molecularDynamics = new MolecularDynamics(assembly,
-                                                  potentialEnergy, properties,
-                                                  listener,
-                                                  Thermostats.BERENDSEN);
+                potentialEnergy, properties,
+                listener,
+                Thermostats.BERENDSEN,
+                Integrators.BEEMAN);
         done = true;
     }
 
@@ -76,13 +77,13 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
      * @param mdSteps a int.
      */
     public void anneal(double highTemperature,
-                       double lowTemperature,
-                       int annealingSteps,
-                       int mdSteps) {
+            double lowTemperature,
+            int annealingSteps,
+            int mdSteps) {
 
         /**
-         * Return if already running; Could happen if two threads call
-         * dynamic on the same SimulatedAnnealing instance.
+         * Return if already running; Could happen if two threads call dynamic
+         * on the same SimulatedAnnealing instance.
          */
         if (!done) {
             logger.warning(" Programming error - a thread invoked anneal when it was already running.");
@@ -135,15 +136,15 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
     /**
      * {@inheritDoc}
      *
-     * This method should only be invoked within the
-     * SimulatedAnnealing instance.
+     * This method should only be invoked within the SimulatedAnnealing
+     * instance.
      */
     @Override
     public void run() {
         done = false;
         terminate = false;
 
-        double dt = (highTemperature - lowTemperature) / (annealingSteps-1);
+        double dt = (highTemperature - lowTemperature) / (annealingSteps - 1);
         for (int i = 0; i < annealingSteps; i++) {
             double temperature = highTemperature - dt * i;
             molecularDynamics.dynamic(mdSteps, 1.0, 0.001, 0.002, temperature, true, null);
@@ -161,7 +162,9 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
         terminate = false;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void terminate() {
         terminate = true;

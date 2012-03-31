@@ -29,6 +29,7 @@ import static java.lang.String.format;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 
+import ffx.algorithms.Integrator.Integrators;
 import ffx.algorithms.Thermostat.Thermostats;
 import ffx.numerics.Potential;
 import ffx.potential.bonded.MolecularAssembly;
@@ -99,7 +100,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
             Potential potentialEnergy,
             CompositeConfiguration properties,
             AlgorithmListener listener,
-            Thermostats requestedThermostat) {
+            Thermostats requestedThermostat,
+            Integrators requestedIntegrator) {
         this.molecularAssembly = assembly;
         this.algorithmListener = listener;
         this.potential = potentialEnergy;
@@ -114,34 +116,53 @@ public class MolecularDynamics implements Runnable, Terminatable {
         grad = new double[numberOfVariables];
 
         /**
-         * Define the integrator.
+         * If an Integrator wasn't passed to the MD constructor, check for
+         * one specified as a property.
          */
-        String integrate = properties.getString("integrate", "beeman").trim();
-        if (integrate.equalsIgnoreCase("stochastic")) {
-            double friction = properties.getDouble("friction", 91.0);
-            Stochastic stochastic = new Stochastic(friction, numberOfVariables, x, v, a, mass);
-            if (properties.containsKey("randomseed")) {
-                stochastic.setRandomSeed(properties.getInt("randomseed", 0));
+        if (requestedIntegrator == null) {
+            String integrate = properties.getString("integrate", "beeman").trim();
+            try {
+                requestedIntegrator = Integrators.valueOf(integrate);
+            } catch (Exception e) {
+                requestedIntegrator = Integrators.BEEMAN;
             }
-            integrator = stochastic;
-        } else if (integrate.equalsIgnoreCase("respa")) {
-            logger.info(format("\n Molecular dynamics with Respa Integrator\n"));
-            integrator = new Respa(numberOfVariables, x, v, a, aPrevious, mass);
-        } else {
-            integrator = new BetterBeeman(numberOfVariables, x, v, a, aPrevious, mass);
+
+        }
+        switch (requestedIntegrator) {
+            case RESPA:
+                integrator = new Respa(numberOfVariables, x, v, a, aPrevious, mass);
+                break;
+            case STOCHASTIC:
+                double friction = properties.getDouble("friction", 91.0);
+                Stochastic stochastic = new Stochastic(friction, numberOfVariables, x, v, a, mass);
+                if (properties.containsKey("randomseed")) {
+                    stochastic.setRandomSeed(properties.getInt("randomseed", 0));
+                }
+                integrator = stochastic;
+                /**
+                 * The stochastic dynamics integration procedure will thermostat
+                 * the system. The ADIABTIC thermostat just serves to report
+                 * the temperature and initialize velocities if necessary.
+                 */
+                requestedThermostat = Thermostats.ADIABATIC;
+                break;
+            case BEEMAN:
+            default:
+                integrator = new BetterBeeman(numberOfVariables, x, v, a, aPrevious, mass);
         }
 
+
         /**
-         * Define the thermostat.
-         *
-         * If no thermostat was requested or the StochasticDynamics integrator
-         * was chosen, then an Adiabatic thermostat will be used. The Adiabatic
-         * thermostat can initialize velocities and compute the current
-         * temperature and kinetic energy, but will not change atomic velocities
-         * during molecular dynamics.
+         * If a Thermostat wasn't passed to the MD constructor, check for one
+         * specified as a property.
          */
-        if (requestedThermostat == null || integrator instanceof Stochastic) {
-            requestedThermostat = Thermostats.ADIABATIC;
+        if (requestedThermostat == null) {
+            String thermo = properties.getString("thermostat","Berendsen").trim();
+            try {
+                requestedThermostat = Thermostats.valueOf(thermo);
+            } catch (Exception e) {
+                requestedThermostat = Thermostats.BERENDSEN;
+            }
         }
 
         switch (requestedThermostat) {
@@ -476,8 +497,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
             initialized = true;
         }
 
-        logger.info(String.format("\n   Step      Kinetic    Potential        Total     Temp     Time"));
-        logger.info(String.format("       %13.4f%13.4f%13.4f %8.2f ", currentKineticEnergy, currentPotentialEnergy, currentTotalEnergy, currentTemperature));
+        logger.info(String.format("\n      Time      Kinetic    Potential        Total     Temp      CPU"));
+        logger.info(String.format("      psec     kcal/mol     kcal/mol     kcal/mol        K      sec\n"));
+        logger.info(String.format("          %13.4f%13.4f%13.4f %8.2f ", currentKineticEnergy, currentPotentialEnergy, currentTotalEnergy, currentTemperature));
 
         /**
          * Integrate Newton's equations of motion for the requested number of
@@ -508,7 +530,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 Respa r = (Respa) integrator;
                 currentPotentialEnergy += r.getHalfStepEnergy();
             }
-            
+
             /**
              * Do the full-step integration operation.
              */
@@ -548,8 +570,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
              * Log the current state every printFrequency steps.
              */
             if (step % printFrequency == 0) {
+                double simTime = step * dt;
                 time = System.nanoTime() - time;
-                logger.info(String.format(" %6d%13.4f%13.4f%13.4f%9.2f%9.3f", step, currentKineticEnergy, currentPotentialEnergy, currentTotalEnergy, currentTemperature, time * 1.0e-9));
+                logger.info(String.format(" %7.3e%13.4f%13.4f%13.4f%9.2f%9.3f", simTime, currentKineticEnergy, currentPotentialEnergy,
+                        currentTotalEnergy, currentTemperature, time * 1.0e-9));
                 time = System.nanoTime();
             }
 

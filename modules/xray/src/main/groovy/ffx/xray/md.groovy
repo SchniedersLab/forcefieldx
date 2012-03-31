@@ -147,7 +147,7 @@ File dyn = new File(FilenameUtils.removeExtension(modelfilename) + ".dyn");
 if (!dyn.exists()) {
     dyn = null;
 }
-MolecularDynamics molDyn = new MolecularDynamics(active, refinementEnergy, active.getProperties(), refinementEnergy, thermostat);
+MolecularDynamics molDyn = new MolecularDynamics(active, refinementEnergy, active.getProperties(), refinementEnergy, thermostat, null);
 refinementEnergy.setThermostat(molDyn.getThermostat());
 
 molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);

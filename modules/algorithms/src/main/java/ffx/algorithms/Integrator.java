@@ -34,7 +34,7 @@ import ffx.numerics.Potential;
 public abstract class Integrator {
     
     public enum Integrators {
-        BEEMAN, STOCHASTIC, RESPA
+        BEEMAN, RESPA, STOCHASTIC 
     };
     
 

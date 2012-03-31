@@ -20,23 +20,11 @@
  */
 package ffx;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.ProtectionDomain;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -44,7 +32,7 @@ import java.util.jar.JarFile;
  * Class loader able to load classes and DLLs with a higher priority from a given set of JARs.
  * Its bytecode is Java 1.1 compatible to be loadable by old JVMs.
  *
- * @author Emmanuel Puybaret
+ * @author Michael J. Schnieders; derived from work by Emmanuel Puybaret
  * @version $Id: $
  */
 public class FFXClassLoader extends ClassLoader {

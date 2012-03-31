@@ -402,7 +402,17 @@
                         <argument>-classpath</argument>
                         <argument>bin/ffx-all.jar</argument>
                         <argument>ffx.Main</argument>
-                        <argument>energy</argument>
+                        <argument>md</argument>
+                        <argument>-d</argument>
+                        <argument>3.0</argument>
+                        <argument>-w</argument>
+                        <argument>1000.0</argument>
+                        <argument>-n</argument>
+                        <argument>100000</argument>
+                        <argument>-l</argument>
+                        <argument>0.001</argument>
+                        <argument>-i</argument>
+                        <argument>respa</argument>
                         <argument>examples/watersmall.xyz</argument>
                     </arguments>
                 </configuration>
