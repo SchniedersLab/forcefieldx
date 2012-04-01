@@ -8,6 +8,7 @@ import groovy.util.CliBuilder;
 
 // Force Field X Imports
 import ffx.algorithms.MolecularDynamics;
+import ffx.algorithms.Integrator.Integrators;
 import ffx.algorithms.Thermostat.Thermostats;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
 import ffx.xray.DiffractionData;
@@ -37,6 +38,9 @@ double temperature = 100.0;
 // Thermostats [ ADIABATIC, BERENDSEN, BUSSI ]
 Thermostats thermostat = Thermostats.BERENDSEN;
 
+// Integrators [ BEEMAN, RESPA, STOCHASTIC]
+Integrators integrator = null;
+
 // Reset velocities (ignored if a restart file is given)
 boolean initVelocities = true;
 
@@ -51,10 +55,11 @@ cli.r(longOpt:'mode', args:1, argName:'coordinates', 'type of refinement: [coord
 cli.p(longOpt:'polarization', args:1, argName:'mutual', 'polarization model: [none / direct / mutual]');
 cli.n(longOpt:'steps', args:1, argName:'1000000', 'Number of molecular dynamics steps.');
 cli.f(longOpt:'dt', args:1, argName:'1.0', 'Time step in femtoseconds.');
-cli.i(longOpt:'print', args:1, argName:'0.01', 'Interval to print out thermodyanamics in picoseconds.');
+cli.i(longOpt:'integrate', args:1, argName:'Beeman', 'Integrator: [Beeman / RESPA / Stochastic]');
+cli.l(longOpt:'log', args:1, argName:'0.01', 'Interval to log thermodyanamic information (picoseconds).');
 cli.w(longOpt:'save', args:1, argName:'0.1', 'Interval to write out coordinates in picoseconds.');
 cli.t(longOpt:'temperature', args:1, argName:'100.0', 'Temperature in degrees Kelvin.');
-cli.b(longOpt:'thermostat', args:1, argName:'Berendsen', 'Thermostat: [Adiabatic/Berendsen/Bussi]')
+cli.b(longOpt:'thermostat', args:1, argName:'Bussi', 'Thermostat: [Adiabatic/Berendsen/Bussi]');
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
 if (options.h || arguments == null || arguments.size() < 1) {
@@ -121,10 +126,18 @@ if (options.b) {
     try {
         thermostat = Thermostats.valueOf(options.b.toUpperCase());
     } catch (Exception e) {
-        thermostat = Thermostats.BERENDSEN;
+        thermostat = Thermostats.BUSSI;
     }
 }
 
+// Integrator.
+if (options.i) {
+    try {
+        integrator = Integrators.valueOf(options.i.toUpperCase());
+    } catch (Exception e) {
+        integrator = null;
+    }
+}
 
 logger.info("\n Running molecular dynmaics on " + modelfilename);
 open(modelfilename);
@@ -147,7 +160,7 @@ File dyn = new File(FilenameUtils.removeExtension(modelfilename) + ".dyn");
 if (!dyn.exists()) {
     dyn = null;
 }
-MolecularDynamics molDyn = new MolecularDynamics(active, refinementEnergy, active.getProperties(), refinementEnergy, thermostat, null);
+MolecularDynamics molDyn = new MolecularDynamics(active, refinementEnergy, active.getProperties(), refinementEnergy, thermostat, integrator);
 refinementEnergy.setThermostat(molDyn.getThermostat());
 
 molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);
