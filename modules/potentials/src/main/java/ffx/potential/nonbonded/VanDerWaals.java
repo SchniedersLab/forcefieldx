@@ -1,22 +1,21 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Title: Force Field X Description: Force Field X - Software for Molecular
+ * Biophysics. Copyright: Copyright (c) Michael J. Schnieders 2001-2011
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.potential.nonbonded;
 
@@ -51,7 +50,8 @@ import ffx.potential.parameters.VDWType;
 
 /**
  * The van der Waals class computes the buffered 14-7 van der Waals interaction
- * used by the AMOEBA force field in parallel using a {@link NeighborList} for any
+ * used by the AMOEBA force field in parallel using a {@link NeighborList} for
+ * any
  * {@link Crystal}.
  *
  * @author Michael J. Schnieders
@@ -59,7 +59,7 @@ import ffx.potential.parameters.VDWType;
  * @version $Id: $
  */
 public class VanDerWaals extends ParallelRegion implements MaskingInterface,
-        LambdaInterface {
+                                                           LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(VanDerWaals.class.getName());
     /**
@@ -75,7 +75,8 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
      */
     private final int nAtoms;
     private final int nSymm;
-    /***************************************************************************
+    /**
+     * *************************************************************************
      * Lambda variables.
      */
     private boolean lambdaTerm;
@@ -84,19 +85,15 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
     /**
      * There are 2 softCore arrays of length nAtoms.
      *
-     * The first is used for atoms in the outer loop that are hard.
-     * This mask equals:
-     * false    for inner loop hard atoms
-     * true     for inner loop soft atoms
+     * The first is used for atoms in the outer loop that are hard. This mask
+     * equals: false for inner loop hard atoms true for inner loop soft atoms
      *
-     * The second is used for atoms in the outer loop that are soft.
-     * This mask equals:
-     * true     for inner loop hard atoms
-     * false    for inner loop soft atoms
+     * The second is used for atoms in the outer loop that are soft. This mask
+     * equals: true for inner loop hard atoms false for inner loop soft atoms
      */
     private final boolean softCore[][];
-    private static final int HARD = 0;
-    private static final int SOFT = 1;
+    private static final byte HARD = 0;
+    private static final byte SOFT = 1;
     private double lambda = 1.0;
     private double vdwLambdaExponent = 1.0;
     private double vdwLambdaAlpha = 0.05;
@@ -106,7 +103,8 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
     private double dsc2dL = 0.0;
     private double d2sc1dL2 = 0.0;
     private double d2sc2dL2 = 0.0;
-    /***************************************************************************
+    /**
+     * *************************************************************************
      * Coordinate arrays.
      */
     /**
@@ -117,10 +115,11 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
     private final double reduced[][];
     private final double reducedXYZ[];
     private final int[][][] neighborLists;
-    private static final int XX = 0;
-    private static final int YY = 1;
-    private static final int ZZ = 2;
-    /***************************************************************************
+    private static final byte XX = 0;
+    private static final byte YY = 1;
+    private static final byte ZZ = 2;
+    /**
+     * *************************************************************************
      * Force field parameters and constants for the Buffered-14-7 potential.
      */
     /**
@@ -144,9 +143,10 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
     private double longRangeCorrection;
     private final boolean doLongRangeCorrection;
     private int maxClass;
-    private static final int RADMIN = 0;
-    private static final int EPS = 1;
-    /***************************************************************************
+    private static final byte RADMIN = 0;
+    private static final byte EPS = 1;
+    /**
+     * *************************************************************************
      * Parallel variables.
      */
     /**
@@ -159,7 +159,6 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
     private final SharedDouble sharedEnergy;
     private final SharedDouble shareddEdL;
     private final SharedDouble sharedd2EdL2;
-    private final SharedDoubleArray shareddEdLdX[];
     private final double gradX[][];
     private final double gradY[][];
     private final double gradZ[][];
@@ -178,14 +177,15 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
     /**
      * The VanDerWaals class constructor.
      *
-     * @param forceField The ForceField instance contains {@link VDWType} parameters.
+     * @param forceField The ForceField instance contains {@link VDWType}
+     * parameters.
      * @param atoms An ordered (by xyzIndex) atom array.
      * @param crystal A valid Crystal is required.
      * @param parallelTeam The parallel environment.
      * @since 1.0
      */
     public VanDerWaals(ForceField forceField, Atom[] atoms,
-            Crystal crystal, ParallelTeam parallelTeam) {
+                       Crystal crystal, ParallelTeam parallelTeam) {
         this.atoms = atoms;
         this.parallelTeam = parallelTeam;
         this.crystal = crystal;
@@ -347,17 +347,12 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         if (lambdaTerm) {
             shareddEdL = new SharedDouble();
             sharedd2EdL2 = new SharedDouble();
-            shareddEdLdX = new SharedDoubleArray[3];
-            shareddEdLdX[0] = new SharedDoubleArray(nAtoms);
-            shareddEdLdX[1] = new SharedDoubleArray(nAtoms);
-            shareddEdLdX[2] = new SharedDoubleArray(nAtoms);
             lambdaGradX = new double[threadCount][nAtoms];
             lambdaGradY = new double[threadCount][nAtoms];
             lambdaGradZ = new double[threadCount][nAtoms];
         } else {
             shareddEdL = null;
             sharedd2EdL2 = null;
-            shareddEdLdX = null;
             lambdaGradX = null;
             lambdaGradY = null;
             lambdaGradZ = null;
@@ -412,7 +407,8 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
     }
 
     /**
-     * <p>Getter for the field <code>pairwiseSchedule</code>.</p>
+     * <p>Getter for the field
+     * <code>pairwiseSchedule</code>.</p>
      *
      * @return a {@link edu.rit.pj.IntegerSchedule} object.
      */
@@ -439,16 +435,16 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         }
 
         /**
-         * Integrate to maxR = 60 Angstroms or ~20 sigma.
-         * Integration step size of delR to be 0.01 Angstroms.
+         * Integrate to maxR = 60 Angstroms or ~20 sigma. Integration step size
+         * of delR to be 0.01 Angstroms.
          */
         double maxR = 60.0;
         int n = (int) (100.0 * (maxR - cut));
         double delR = (maxR - cut) / n;
         double total = 0.0;
         /*
-        logger.info(String.format(" Long range correction integral: Steps %d, Step Size %8.3f, Window %8.3f-%8.3f",
-        n, delR, cut, cut + delR * n));
+         * logger.info(String.format(" Long range correction integral: Steps %d,
+         * Step Size %8.3f, Window %8.3f-%8.3f", n, delR, cut, cut + delR * n));
          */
         /**
          * Loop over vdW types.
@@ -472,8 +468,9 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                     final double t2 = t2n / rho7 + ZERO_12;
                     final double eij = ev * t1 * (t2 - 2.0);
                     /**
-                     * Apply one minus the multiplicative switch if the interaction
-                     * distance is less than the end of the switching window.
+                     * Apply one minus the multiplicative switch if the
+                     * interaction distance is less than the end of the
+                     * switching window.
                      */
                     double taper = 1.0;
                     if (r2 < off2) {
@@ -497,8 +494,8 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                 // Correct for softCore vdW that are being turned off.
                 if (lambda < 1.0) {
                     total -= (softRadCount[i] * radCount[j]
-                            + (radCount[i] - softRadCount[i]) * softRadCount[j])
-                            * (1.0 - lambda) * trapezoid;
+                              + (radCount[i] - softRadCount[i]) * softRadCount[j])
+                             * (1.0 - lambda) * trapezoid;
                 }
             }
         }
@@ -542,7 +539,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
      * The energy routine may be called repeatedly.
      *
      * @param gradient If true, gradients with respect to atomic coordinates are
-     *  computed.
+     * computed.
      * @param print If true, there is verbose printing.
      * @return The energy.
      * @since 1.0
@@ -590,16 +587,16 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
      * Apply masking rules for 1-2 and 1-3 interactions.
      */
     @Override
-    public void applyMask(final double mask[], final int i) {
+    public void applyMask(final byte mask[], final int i) {
         final int[] bondMaski = bondMask[i];
         final int n12 = bondMaski.length;
         for (int m = 0; m < n12; m++) {
-            mask[bondMaski[m]] = 0.0;
+            mask[bondMaski[m]] = 0;
         }
         final int[] angleMaski = angleMask[i];
         final int n13 = angleMaski.length;
         for (int m = 0; m < n13; m++) {
-            mask[angleMaski[m]] = 0.0;
+            mask[angleMaski[m]] = 0;
         }
     }
 
@@ -609,21 +606,22 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
      * Remove the masking rules for 1-2 and 1-3 interactions.
      */
     @Override
-    public void removeMask(final double mask[], final int i) {
+    public void removeMask(final byte mask[], final int i) {
         final int[] bondMaski = bondMask[i];
         final int n12 = bondMaski.length;
         for (int m = 0; m < n12; m++) {
-            mask[bondMaski[m]] = 1.0;
+            mask[bondMaski[m]] = 1;
         }
         final int[] angleMaski = angleMask[i];
         final int n13 = angleMaski.length;
         for (int m = 0; m < n13; m++) {
-            mask[angleMaski[m]] = 1.0;
+            mask[angleMaski[m]] = 1;
         }
     }
 
     /**
-     * <p>Getter for the field <code>neighborLists</code>.</p>
+     * <p>Getter for the field
+     * <code>neighborLists</code>.</p>
      *
      * @return an array of int.
      */
@@ -635,6 +633,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
      * {@inheritDoc}
      *
      * This is method should not be called; it is invoked by Parallel Java.
+     *
      * @since 0.l
      */
     @Override
@@ -658,6 +657,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
      * {@inheritDoc}
      *
      * This is method should not be called; it is invoked by Parallel Java.
+     *
      * @since 0.l
      */
     @Override
@@ -683,12 +683,14 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         int classi = atoms[i].getAtomType().atomClass;
         int classk = atoms[k].getAtomType().atomClass;
         logger.info(String.format("%s %6d-%s %6d-%s %10.4f  %10.4f  %10.4f",
-                "VDW", atoms[i].xyzIndex, atoms[i].getAtomType().name,
-                atoms[k].xyzIndex, atoms[k].getAtomType().name,
-                radEps[classi][classk * 2 + RADMIN] / ZERO_07, r, eij));
+                                  "VDW", atoms[i].xyzIndex, atoms[i].getAtomType().name,
+                                  atoms[k].xyzIndex, atoms[k].getAtomType().name,
+                                  radEps[classi][classk * 2 + RADMIN] / ZERO_07, r, eij));
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setLambda(double lambda) {
         assert (lambda >= 0.0 && lambda <= 1.0);
@@ -726,46 +728,57 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         if (doLongRangeCorrection) {
             longRangeCorrection = getLongRangeCorrection();
             logger.info(String.format(" Long-range vdW correction %12.8f (kcal/mole).",
-                    longRangeCorrection));
+                                      longRangeCorrection));
         } else {
             longRangeCorrection = 0.0;
         }
 
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getLambda() {
         return lambda;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getdEdL() {
         return shareddEdL.get();
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public void getdEdXdL(double[] gradient) {
+    public void getdEdXdL(double[] lambdaGradient) {
         int index = 0;
+        double lgx[] = lambdaGradX[0];
+        double lgy[] = lambdaGradY[0];
+        double lgz[] = lambdaGradZ[0];
         for (int i = 0; i < nAtoms; i++) {
-            gradient[index++] += shareddEdLdX[0].get(i);
-            gradient[index++] += shareddEdLdX[1].get(i);
-            gradient[index++] += shareddEdLdX[2].get(i);
+            lambdaGradient[index++] += lgx[i];
+            lambdaGradient[index++] += lgy[i];
+            lambdaGradient[index++] += lgz[i];
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getd2EdL2() {
         return sharedd2EdL2.get();
     }
 
     /**
-     * 1.) Initialize the local coordinate array.
-     * 2.) Initialize reduction variables.
-     * 3.) Apply hydrogen reductions and then expand the coordinates to P1.
+     * 1.) Initialize the local coordinate array. 2.) Initialize reduction
+     * variables. 3.) Apply hydrogen reductions and then expand the coordinates
+     * to P1.
      *
      * @author Michael J. Schnieders
      * @since 1.0
@@ -808,12 +821,11 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
 
             @Override
             public void run(int lb, int ub) {
-                for (int i = lb; i <= ub; i++) {
+                for (int i = lb, i3 = 3*lb; i <= ub; i++, i3+=3) {
                     final double xyz[] = atoms[i].getXYZ();
-                    int i3 = i * 3;
-                    coordinates[i3++] = xyz[XX];
-                    coordinates[i3++] = xyz[YY];
-                    coordinates[i3] = xyz[ZZ];
+                    coordinates[i3 + XX] = xyz[XX];
+                    coordinates[i3 + YY] = xyz[YY];
+                    coordinates[i3 + ZZ] = xyz[ZZ];
                 }
 
                 if (gradient) {
@@ -825,6 +837,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                         }
                     }
                 }
+                
                 if (lambdaTerm) {
                     for (int j = 0; j < threadCount; j++) {
                         for (int i = lb; i <= ub; i++) {
@@ -832,11 +845,6 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                             lambdaGradY[j][i] = 0.0;
                             lambdaGradZ[j][i] = 0.0;
                         }
-                    }
-                    for (int i = lb; i <= ub; i++) {
-                        shareddEdLdX[0].set(i, 0.0);
-                        shareddEdLdX[1].set(i, 0.0);
-                        shareddEdLdX[2].set(i, 0.0);
                     }
                 }
             }
@@ -885,15 +893,14 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                         reducedXYZ[iZ] = z;
                     }
                     /*
-                    if (i == 0) {
-                    in[0] = reducedXYZ[iX];
-                    in[1] = reducedXYZ[iY];
-                    in[2] = reducedXYZ[iZ];
-                    crystal.toFractionalCoordinates(in, out);
-                    atoms[i].print();
-                    logger.info(format("%5d %d CART %10.8f %10.8f %10.8f", i, 0, in[0], in[1], in[2]));
-                    logger.info(format("%5d %d FRAC %10.8f %10.8f %10.8f", i, 0, out[0], out[1], out[2]));
-                    } */
+                     * if (i == 0) { in[0] = reducedXYZ[iX]; in[1] =
+                     * reducedXYZ[iY]; in[2] = reducedXYZ[iZ];
+                     * crystal.toFractionalCoordinates(in, out);
+                     * atoms[i].print(); logger.info(format("%5d %d CART %10.8f
+                     * %10.8f %10.8f", i, 0, in[0], in[1], in[2]));
+                     * logger.info(format("%5d %d FRAC %10.8f %10.8f %10.8f", i,
+                     * 0, out[0], out[1], out[2])); }
+                     */
                 }
 
                 List<SymOp> symOps = crystal.spaceGroup.symOps;
@@ -954,7 +961,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         private final double lzi_local[];
         private final double dx_local[];
         private final double rotmat[][];
-        private final double mask[];
+        private final byte mask[];
         // Extra padding to avert cache interference.
         private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
         private long pad8, pad9, pada, padb, padc, padd, pade, padf;
@@ -973,11 +980,11 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                 lyi_local = null;
                 lzi_local = null;
             }
-            mask = new double[nAtoms];
+            mask = new byte[nAtoms];
             dx_local = new double[3];
             rotmat = new double[3][3];
             for (int i = 0; i < nAtoms; i++) {
-                mask[i] = 1.0;
+                mask[i] = 1;
             }
         }
 
@@ -1067,7 +1074,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                         dx_local[1] = yi - yk;
                         dx_local[2] = zi - zk;
                         final double r2 = crystal.image(dx_local);
-                        if (r2 <= off2 && mask[k] > 0.0) {
+                        if (r2 <= off2 && mask[k] > 0) {
                             // This will only happen for iSymm > 0.
                             double selfScale = 1.0;
                             if (i == k) {
@@ -1169,22 +1176,22 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                                 double t1d2 = -dsc1dL * t1d * t1d;
                                 double t2d2 = -dsc1dL * t2d * t2d;
                                 double d2t1 = -dt1 * t1d * dsc1dL
-                                        - t1 * t1d * d2sc1dL2
-                                        - t1 * t1d2 * dsc1dL;
+                                              - t1 * t1d * d2sc1dL2
+                                              - t1 * t1d2 * dsc1dL;
 
                                 double d2t2 = -dt2 * t2d * dsc1dL
-                                        - t2a * t2d * d2sc1dL2
-                                        - t2a * t2d2 * dsc1dL;
+                                              - t2a * t2d * d2sc1dL2
+                                              - t2a * t2d2 * dsc1dL;
 
                                 double df1 = d2sc2dL2 * t1 * t2
-                                        + dsc2dL * dt1 * t2
-                                        + dsc2dL * t1 * dt2;
+                                             + dsc2dL * dt1 * t2
+                                             + dsc2dL * t1 * dt2;
                                 double df2 = dsc2dL * dt1 * t2
-                                        + sc2 * d2t1 * t2
-                                        + sc2 * dt1 * dt2;
+                                             + sc2 * d2t1 * t2
+                                             + sc2 * dt1 * dt2;
                                 double df3 = dsc2dL * t1 * dt2
-                                        + sc2 * dt1 * dt2
-                                        + sc2 * t1 * d2t2;
+                                             + sc2 * dt1 * dt2
+                                             + sc2 * t1 * d2t2;
                                 double de2dl2 = ev * (df1 + df2 + df3);
                                 d2EdL2 += selfScale * de2dl2 * taper;
                                 double t11 = -dsc2dL * t2 * dt1_dr;
@@ -1258,9 +1265,11 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                 sharedd2EdL2.addAndGet(d2EdL2);
             }
 
-            /* 
-            logger.info(String.format(" Thread %d computed %10d interactions in %8.3f sec.", 
-            getThreadIndex(), count, computeTime * toSeconds)); */
+            /*
+             * logger.info(String.format(" Thread %d computed %10d interactions
+             * in %8.3f sec.", getThreadIndex(), count, computeTime *
+             * toSeconds));
+             */
 
         }
     }
@@ -1317,24 +1326,25 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                 }
 
                 if (lambdaTerm) {
-                    for (int i = lb; i <= ub; i++) {
-                        double lx = 0.0;
-                        double ly = 0.0;
-                        double lz = 0.0;
-                        for (int t = 0; t < threadCount; t++) {
-                            lx += lambdaGradX[t][i];
-                            ly += lambdaGradY[t][i];
-                            lz += lambdaGradZ[t][i];
+                    double lx[] = lambdaGradX[0];
+                    double ly[] = lambdaGradY[0];
+                    double lz[] = lambdaGradZ[0];
+                    for (int t = 1; t < threadCount; t++) {
+                        double lxt[] = lambdaGradX[t];
+                        double lyt[] = lambdaGradY[t];
+                        double lzt[] = lambdaGradZ[t];
+                        for (int i = lb; i <= ub; i++) {
+                            lx[i] += lxt[i];
+                            ly[i] += lyt[i];
+                            lz[i] += lzt[i];
                         }
-                        shareddEdLdX[0].set(i, lx);
-                        shareddEdLdX[1].set(i, ly);
-                        shareddEdLdX[2].set(i, lz);
                     }
                 }
             }
         }
     }
-    /***************************************************************************
+    /**
+     * *************************************************************************
      * Cutoff and switching constants.
      */
     /**
@@ -1370,18 +1380,17 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
     private final double threeC3;
     private final double fourC4;
     private final double fiveC5;
-    /***************************************************************************
+    /**
+     * *************************************************************************
      * Buffered-14-7 constants.
      */
     /**
-     * First constant suggested by Halgren for the Buffered-14-7
-     * potential.
+     * First constant suggested by Halgren for the Buffered-14-7 potential.
      */
     private static final double ZERO_12 = 0.12;
     private static final double t2n = 1.12;
     /**
-     * Second constant suggested by Halgren for the Buffered-14-7
-     * potential.
+     * Second constant suggested by Halgren for the Buffered-14-7 potential.
      */
     private static final double ZERO_07 = 0.07;
     private static final double ONE_07 = 1.07;
