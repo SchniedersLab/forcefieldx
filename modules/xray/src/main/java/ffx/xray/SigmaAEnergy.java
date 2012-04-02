@@ -23,7 +23,7 @@ import static java.lang.Math.abs;
 import static java.lang.Math.atan;
 import static java.lang.Math.cos;
 import static java.lang.Math.cosh;
-import static java.lang.Math.exp;
+import static org.apache.commons.math.util.FastMath.exp;
 import static java.lang.Math.log;
 import static java.lang.Math.PI;
 import static java.lang.Math.pow;

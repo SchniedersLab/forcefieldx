@@ -188,7 +188,7 @@ public class MTZFilter implements DiffractionFileFilter {
         fplus = sigfplus = fminus = sigfminus = rfreeplus = rfreeminus = -1;
         parse_columns();
 
-        if (fo < 0 && fplus < 0) {
+        if (fo < 0 && fplus < 0 && sigfo < 0 && sigfplus < 0) {
             logger.info("insufficient information in MTZ header to generate Reflection List - non-default column label?  Try setting fostring/sigfostring in the .properties file.");
             return null;
         }
@@ -710,6 +710,7 @@ public class MTZFilter implements DiffractionFileFilter {
                     || label.equalsIgnoreCase("sigfp")
                     || label.equalsIgnoreCase("sigfo")
                     || label.equalsIgnoreCase("sigfobs")
+                    || label.equalsIgnoreCase("sigf-obs")
                     || StringUtils.equalsIgnoreCase(label, sigfostring))
                     && c.type == 'Q') {
                 sb.append(String.format("Reading sigFo column: \"%s\"\n", c.label));

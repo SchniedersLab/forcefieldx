@@ -60,11 +60,33 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
             CompositeConfiguration properties,
             AlgorithmListener listener) {
 
+        this(assembly, potentialEnergy, properties, listener,
+                Thermostats.BERENDSEN, Integrators.BEEMAN);
+    }
+
+    /**
+     * <p>Constructor for SimulatedAnnealing.</p>
+     *
+     * @param assembly a {@link ffx.potential.bonded.MolecularAssembly} object.
+     * @param potentialEnergy a {@link ffx.numerics.Potential} object.
+     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration}
+     * object.
+     * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
+     * @param requestedThermostat a {@link ffx.algorithms.Thermostat.Thermostats}
+     * @param requestedIntegrator a {@link ffx.algorithms.Thermostat.Integrators}
+     */
+    public SimulatedAnnealing(MolecularAssembly assembly,
+            Potential potentialEnergy,
+            CompositeConfiguration properties,
+            AlgorithmListener listener,
+            Thermostats requestedThermostat,
+            Integrators requestedIntegrator) {
+
         molecularDynamics = new MolecularDynamics(assembly,
                 potentialEnergy, properties,
                 listener,
-                Thermostats.BERENDSEN,
-                Integrators.BEEMAN);
+                requestedThermostat,
+                requestedIntegrator);
         done = true;
     }
 

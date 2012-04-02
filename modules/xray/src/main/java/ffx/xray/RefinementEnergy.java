@@ -629,7 +629,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
         return dataEnergy.getVariableTypes();
     }
 
-	@Override
-	public void setEnergyTermState(STATE state) {		
-	}
+    @Override
+    public void setEnergyTermState(STATE state) {
+    }
 }

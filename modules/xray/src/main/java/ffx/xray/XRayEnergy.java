@@ -58,6 +58,8 @@ public class XRayEnergy implements LambdaInterface, Potential {
     private boolean refinexyz = false;
     private boolean refineocc = false;
     private boolean refineb = false;
+    private boolean xrayterms = true;
+    private boolean restraintterms = true;
     protected double[] optimizationScaling = null;
     private double bmass;
     private double kTbnonzero;
@@ -157,31 +159,35 @@ public class XRayEnergy implements LambdaInterface, Potential {
             setOccupancies(x);
         }
 
-        // compute new structure factors
-        diffractiondata.computeAtomicDensity();
+        if (xrayterms) {
+            // compute new structure factors
+            diffractiondata.computeAtomicDensity();
 
-        // compute crystal likelihood
-        e = diffractiondata.computeLikelihood();
+            // compute crystal likelihood
+            e = diffractiondata.computeLikelihood();
 
-        // compute the crystal gradients
-        diffractiondata.computeAtomicGradients(refinementMode);
+            // compute the crystal gradients
+            diffractiondata.computeAtomicGradients(refinementMode);
 
-        if (refinexyz) {
-            // pack gradients into gradient array
-            getXYZGradients(g);
+            if (refinexyz) {
+                // pack gradients into gradient array
+                getXYZGradients(g);
+            }
         }
 
-        if (refineb) {
-            // add B restraints
-            e += getBFactorRestraints();
+        if (restraintterms) {
+            if (refineb) {
+                // add B restraints
+                e += getBFactorRestraints();
 
-            // pack gradients into gradient array
-            getBFactorGradients(g);
-        }
+                // pack gradients into gradient array
+                getBFactorGradients(g);
+            }
 
-        if (refineocc) {
-            // pack gradients into gradient array
-            getOccupancyGradients(g);
+            if (refineocc) {
+                // pack gradients into gradient array
+                getOccupancyGradients(g);
+            }
         }
 
         /**
@@ -916,7 +922,23 @@ public class XRayEnergy implements LambdaInterface, Potential {
         return vtypes;
     }
 
-	@Override
-	public void setEnergyTermState(STATE state) {
-	}
+    /*
+     * RESPA setup
+     */
+    @Override
+    public void setEnergyTermState(STATE state) {
+        switch (state) {
+            case FAST:
+                xrayterms = false;
+                restraintterms = true;
+                break;
+            case SLOW:
+                xrayterms = true;
+                restraintterms = false;
+                break;
+            default:
+                xrayterms = true;
+                restraintterms = true;
+        }
+    }
 }

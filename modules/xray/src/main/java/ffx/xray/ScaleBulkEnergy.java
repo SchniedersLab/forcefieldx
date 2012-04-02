@@ -21,7 +21,7 @@
 package ffx.xray;
 
 import static java.lang.Math.abs;
-import static java.lang.Math.exp;
+import static org.apache.commons.math.util.FastMath.exp;
 import static java.lang.Math.PI;
 import static java.lang.Math.pow;
 
@@ -244,7 +244,7 @@ public class ScaleBulkEnergy implements Potential {
             double d = f1 - f2;
             double d2 = d * d;
             double dr = -2.0 * d;
-
+            
             sum += d2;
             sumfo += f1 * f1;
 
