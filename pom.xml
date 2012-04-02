@@ -399,21 +399,16 @@
                         <argument>-mx1G</argument>
                         <argument>-Djava.system.class.loader=ffx.FFXClassLoader</argument>
                         <argument>-Djava.awt.headless=true</argument>
+                        <argument>-agentpath:/var/folders/0X/0X4T2G99FQeIjz6vjul5zE+++TM/-Tmp-/NBProfiler8162447009688957002.link/deployed/jdk16/mac/libprofilerinterface.jnilib=/var/folders/0X/0X4T2G99FQeIjz6vjul5zE+++TM/-Tmp-/NBProfiler8162447009688957002.link,5140</argument>
                         <argument>-classpath</argument>
                         <argument>bin/ffx-all.jar</argument>
                         <argument>ffx.Main</argument>
-                        <argument>md</argument>
-                        <argument>-d</argument>
-                        <argument>3.0</argument>
-                        <argument>-w</argument>
-                        <argument>1000.0</argument>
+                        <argument>timer</argument>
                         <argument>-n</argument>
-                        <argument>100000</argument>
-                        <argument>-l</argument>
-                        <argument>0.001</argument>
-                        <argument>-i</argument>
-                        <argument>respa</argument>
-                        <argument>examples/watersmall.xyz</argument>
+                        <argument>10000</argument>
+                        <argument>-c</argument>
+                        <argument>8</argument>
+                        <argument>examples/ubiquitin.xyz</argument>
                     </arguments>
                 </configuration>
             </plugin>

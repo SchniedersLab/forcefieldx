@@ -25,9 +25,8 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import static java.lang.Math.PI;
-import static java.lang.Math.pow;
-import static java.lang.Math.sqrt;
+
+import static java.lang.Math.*;
 import static java.lang.String.format;
 
 import edu.rit.pj.IntegerForLoop;
@@ -35,7 +34,6 @@ import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
 import edu.rit.pj.reduction.SharedDouble;
-import edu.rit.pj.reduction.SharedDoubleArray;
 import edu.rit.pj.reduction.SharedInteger;
 
 import ffx.crystal.Crystal;
@@ -960,7 +958,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         private final double lyi_local[];
         private final double lzi_local[];
         private final double dx_local[];
-        private final double rotmat[][];
+        private final double transOp[][];
         private final byte mask[];
         // Extra padding to avert cache interference.
         private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
@@ -982,7 +980,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
             }
             mask = new byte[nAtoms];
             dx_local = new double[3];
-            rotmat = new double[3][3];
+            transOp = new double[3][3];
             for (int i = 0; i < nAtoms; i++) {
                 mask[i] = 1;
             }
@@ -1018,6 +1016,11 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
             for (int iSymOp = 0; iSymOp < nSymm; iSymOp++) {
                 double e = 0.0;
                 SymOp symOp = symOps.get(iSymOp);
+                /**
+                 * Compute the total transformation operator:
+                 * R = ToCart * Rot * ToFrac.
+                 */
+                crystal.getTransformationOperator(symOp, transOp);
                 double xyzS[] = reduced[iSymOp];
                 int list[][] = neighborLists[iSymOp];
                 for (int i = lb; i <= ub; i++) {
@@ -1150,20 +1153,19 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                                 gzi += dedz * redv;
                                 gxredi += dedx * rediv;
                                 gyredi += dedy * rediv;
-                                gzredi += dedz * rediv;
-                                dx_local[0] = dedx;
-                                dx_local[1] = dedy;
-                                dx_local[2] = dedz;
-                                crystal.applyTransSymRot(dx_local, dx_local, symOp, rotmat);
-                                dedx = dx_local[0];
-                                dedy = dx_local[1];
-                                dedz = dx_local[2];
-                                gxi_local[k] -= red * dedx;
-                                gyi_local[k] -= red * dedy;
-                                gzi_local[k] -= red * dedz;
-                                gxi_local[redk] -= redkv * dedx;
-                                gyi_local[redk] -= redkv * dedy;
-                                gzi_local[redk] -= redkv * dedz;
+                                gzredi += dedz * rediv;                                
+                                /**
+                                 * Apply the transpose of the transformation operator.
+                                 */
+                                final double dedxk = dedx * transOp[0][0] + dedy * transOp[1][0] + dedz * transOp[2][0];
+                                final double dedyk = dedx * transOp[0][1] + dedy * transOp[1][1] + dedz * transOp[2][1];
+                                final double dedzk = dedx * transOp[0][2] + dedy * transOp[1][2] + dedz * transOp[2][2];                                
+                                gxi_local[k] -= red * dedxk;
+                                gyi_local[k] -= red * dedyk;
+                                gzi_local[k] -= red * dedzk;
+                                gxi_local[redk] -= redkv * dedxk;
+                                gyi_local[redk] -= redkv * dedyk;
+                                gzi_local[redk] -= redkv * dedzk;
                             }
                             if (lambdaTerm && soft) {
                                 double dt1 = -t1 * t1d * dsc1dL;
@@ -1211,19 +1213,18 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                                 lxredi += dedldx * rediv;
                                 lyredi += dedldy * rediv;
                                 lzredi += dedldz * rediv;
-                                dx_local[0] = dedldx;
-                                dx_local[1] = dedldy;
-                                dx_local[2] = dedldz;
-                                crystal.applyTransSymRot(dx_local, dx_local, symOp, rotmat);
-                                dedldx = dx_local[0];
-                                dedldy = dx_local[1];
-                                dedldz = dx_local[2];
-                                lxi_local[k] -= red * dedldx;
-                                lyi_local[k] -= red * dedldy;
-                                lzi_local[k] -= red * dedldz;
-                                lxi_local[redk] -= redkv * dedldx;
-                                lyi_local[redk] -= redkv * dedldy;
-                                lzi_local[redk] -= redkv * dedldz;
+                                /**
+                                 * Apply the transpose of the transformation operator.
+                                 */
+                                final double dedldxk = dedldx * transOp[0][0] + dedldy * transOp[1][0] + dedldz * transOp[2][0];
+                                final double dedldyk = dedldx * transOp[0][1] + dedldy * transOp[1][1] + dedldz * transOp[2][1];
+                                final double dedldzk = dedldx * transOp[0][2] + dedldy * transOp[1][2] + dedldz * transOp[2][2];
+                                lxi_local[k] -= red * dedldxk;
+                                lyi_local[k] -= red * dedldyk;
+                                lzi_local[k] -= red * dedldzk;
+                                lxi_local[redk] -= redkv * dedldxk;
+                                lyi_local[redk] -= redkv * dedldyk;
+                                lzi_local[redk] -= redkv * dedldzk;
                             }
                         }
                     }
