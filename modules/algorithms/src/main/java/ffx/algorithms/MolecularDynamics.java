@@ -47,9 +47,6 @@ import ffx.potential.parsers.XYZFilter;
 public class MolecularDynamics implements Runnable, Terminatable {
 
     private static final Logger logger = Logger.getLogger(MolecularDynamics.class.getName());
-    /**
-     * Stochastic dynamics friction coefficient.
-     */
     private final MolecularAssembly molecularAssembly;
     private final Potential potential;
     private final CompositeConfiguration properties;
@@ -57,7 +54,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     private Thermostat thermostat;
     private Integrator integrator;
     private File archiveFile = null;
-    private File dynFile = null;
+    private File restartFile = null;
     private File pdbFile = null;
     private XYZFilter xyzFilter = null;
     private DYNFilter dynFilter = null;
@@ -116,8 +113,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
         grad = new double[numberOfVariables];
 
         /**
-         * If an Integrator wasn't passed to the MD constructor, check for
-         * one specified as a property.
+         * If an Integrator wasn't passed to the MD constructor, check for one
+         * specified as a property.
          */
         if (requestedIntegrator == null) {
             String integrate = properties.getString("integrate", "beeman").trim();
@@ -141,8 +138,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 integrator = stochastic;
                 /**
                  * The stochastic dynamics integration procedure will thermostat
-                 * the system. The ADIABTIC thermostat just serves to report
-                 * the temperature and initialize velocities if necessary.
+                 * the system. The ADIABTIC thermostat just serves to report the
+                 * temperature and initialize velocities if necessary.
                  */
                 requestedThermostat = Thermostats.ADIABATIC;
                 break;
@@ -157,7 +154,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
          * specified as a property.
          */
         if (requestedThermostat == null) {
-            String thermo = properties.getString("thermostat","Berendsen").trim();
+            String thermo = properties.getString("thermostat", "Berendsen").trim();
             try {
                 requestedThermostat = Thermostats.valueOf(thermo);
             } catch (Exception e) {
@@ -293,37 +290,38 @@ public class MolecularDynamics implements Runnable, Terminatable {
         /**
          * Convert the save interval to a save frequency.
          */
-        saveFrequency = -1;
-        if (saveInterval > dt) {
-            saveFrequency = (int) (saveInterval / dt);
-            File file = molecularAssembly.getFile();
-            String filename = FilenameUtils.removeExtension(file.getAbsolutePath());
-            if (archiveFile == null) {
-                archiveFile = new File(filename + ".arc");
-                archiveFile = XYZFilter.version(archiveFile);
-            }
+        saveFrequency = (int) (saveInterval / dt);
+        if (saveFrequency <= 0) {
+            saveFrequency = 1;
+        }
 
-            if (dyn == null) {
-                this.dynFile = new File(filename + ".dyn");
-                loadRestart = false;
-            } else {
-                this.dynFile = dyn;
-                loadRestart = true;
-            }
+        File file = molecularAssembly.getFile();
+        String filename = FilenameUtils.removeExtension(file.getAbsolutePath());
+        if (archiveFile == null) {
+            archiveFile = new File(filename + ".arc");
+            archiveFile = XYZFilter.version(archiveFile);
+        }
 
-            if (xyzFilter == null) {
-                xyzFilter = new XYZFilter(file, molecularAssembly,
-                        molecularAssembly.getForceField(), properties);
-            }
+        if (dyn == null) {
+            this.restartFile = new File(filename + ".dyn");
+            loadRestart = false;
+        } else {
+            this.restartFile = dyn;
+            loadRestart = true;
+        }
 
-            if (dynFilter == null) {
-                dynFilter = new DYNFilter(molecularAssembly);
-            }
+        if (xyzFilter == null) {
+            xyzFilter = new XYZFilter(file, molecularAssembly,
+                    molecularAssembly.getForceField(), properties);
+        }
 
-            if (pdbFilter == null) {
-                pdbFile = new File(filename + "_dyn.pdb");
-                pdbFilter = new PDBFilter(new File(filename + "_dyn.pdb"), molecularAssembly, null, null);
-            }
+        if (dynFilter == null) {
+            dynFilter = new DYNFilter(molecularAssembly);
+        }
+
+        if (pdbFilter == null) {
+            pdbFile = new File(filename + "_dyn.pdb");
+            pdbFilter = new PDBFilter(new File(filename + "_dyn.pdb"), molecularAssembly, null, null);
         }
 
         this.targetTemperature = temperature;
@@ -375,7 +373,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
         logger.info(String.format(" Print interval:  %8.3f (psec)", printInterval));
         logger.info(String.format(" Save interval:   %8.3f (psec)", saveInterval));
         logger.info(String.format(" Archive file: %s", archiveFile.getName()));
-        logger.info(String.format(" Restart file: %s", dynFile.getName()));
+        logger.info(String.format(" Restart file: %s", restartFile.getName()));
 
         Thread dynamicThread = new Thread(this);
         dynamicThread.start();
@@ -437,7 +435,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
              * Initialize from a restart file.
              */
             if (loadRestart) {
-                if (!dynFilter.readDYN(dynFile, x, v, a, aPrevious)) {
+                if (!dynFilter.readDYN(restartFile, x, v, a, aPrevious)) {
                     String message = " Could not load the restart file - dynamics terminated.";
                     logger.log(Level.WARNING, message);
                     done = true;
@@ -586,10 +584,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 } else {
                     logger.warning(String.format(" Appending snap shot to " + archiveFile.getName() + " failed"));
                 }
-                if (dynFilter.writeDYN(dynFile, molecularAssembly.getCrystal(), x, v, a, aPrevious)) {
-                    logger.info(String.format(" Wrote dynamics restart file to " + dynFile.getName()));
+                if (dynFilter.writeDYN(restartFile, molecularAssembly.getCrystal(), x, v, a, aPrevious)) {
+                    logger.info(String.format(" Wrote dynamics restart file to " + restartFile.getName()));
                 } else {
-                    logger.info(String.format(" Writing dynamics restart file to " + dynFile.getName() + " failed"));
+                    logger.info(String.format(" Writing dynamics restart file to " + restartFile.getName() + " failed"));
                 }
                 if (pdbFilter.writeFile(pdbFile, false)) {
                     logger.info(String.format(" Wrote PDB file to " + pdbFile.getName()));

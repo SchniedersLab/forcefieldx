@@ -107,8 +107,8 @@ if (options.f) {
 }
 
 // Print interval in picoseconds.
-if (options.i) {
-    printInterval = Double.parseDouble(options.i);
+if (options.l) {
+    printInterval = Double.parseDouble(options.l);
 }
 
 // Write interval in picoseconds.
