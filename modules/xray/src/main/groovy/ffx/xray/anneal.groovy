@@ -35,6 +35,9 @@ int windows = 10;
 // Number of molecular dynamics steps at each temperature.
 int steps = 1000;
 
+// Time step in femtoseconds.
+double timeStep = 1.0;
+
 // Thermostats [ ADIABATIC, BERENDSEN, BUSSI ]
 Thermostats thermostat = Thermostats.BERENDSEN;
 
@@ -59,6 +62,7 @@ cli.l(longOpt:'low', args:1, argName:'100.0', 'Low temperature limit in degrees 
 cli.t(longOpt:'high', args:1, argName:'1000.0', 'High temperature limit in degrees Kelvin.');
 cli.w(longOpt:'windows', args:1, argName:'10', 'Number of annealing windows.');
 cli.n(longOpt:'steps', args:1, argName:'1000', 'Number of molecular dynamics steps at each temperature.');
+cli.f(longOpt:'dt', args:1, argName:'1.0', 'Time step in femtoseconds.');
 cli.i(longOpt:'integrate', args:1, argName:'Beeman', 'Integrator: [Beeman / RESPA / Stochastic]');
 cli.b(longOpt:'thermostat', args:1, argName:'Bussi', 'Thermostat: [Adiabatic/Berendsen/Bussi]');
 def options = cli.parse(args);
@@ -117,6 +121,11 @@ if (options.n) {
     steps = Integer.parseInteger(options.n);
 }
 
+// Load the time steps in femtoseconds.
+if (options.f) {
+    timeStep = Double.parseDouble(options.f);
+}
+
 // Thermostat.
 if (options.b) {
     try {
@@ -151,7 +160,7 @@ energy();
 
 RefinementEnergy refinementEnergy = new RefinementEnergy(diffractiondata, refinementmode);
 SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(active, refinementEnergy, active.getProperties(), refinementEnergy, thermostat, integrator);
-simulatedAnnealing.anneal(high, low, windows, steps);
+simulatedAnnealing.anneal(high, low, windows, steps, timeStep);
 diffractiondata.scaleBulkFit();
 diffractiondata.printStats();
 energy();

@@ -20,6 +20,9 @@ int windows = 10;
 // Number of molecular dynamics steps at each temperature.
 int steps = 1000;
 
+// Time step in femtoseconds.
+double timeStep = 1.0;
+
 // Thermostats [ ADIABATIC, BERENDSEN, BUSSI ]
 Thermostats thermostat = Thermostats.BERENDSEN;
 
@@ -34,6 +37,7 @@ def cli = new CliBuilder(usage:' ffxc anneal [options] <filename>');
 cli.h(longOpt:'help', 'Print this help message.');
 cli.p(longOpt:'polarization', args:1, 'polarization model: [none / direct / mutual]');
 cli.n(longOpt:'steps', args:1, argName:'1000', 'Number of molecular dynamics steps per annealing window.');
+cli.f(longOpt:'dt', args:1, argName:'1.0', 'Time step in femtoseconds.');
 cli.w(longOpt:'windows', args:1, argName:'10', 'Number of annealing windows.');
 cli.l(longOpt:'low', args:1, argName:'10.0', 'Low temperature limit in degrees Kelvin.');
 cli.t(longOpt:'high', args:1, argName:'1000.0', 'High temperature limit in degrees Kelvin.');
@@ -74,6 +78,11 @@ if (options.t) {
     high =  Double.parseDouble(options.t);
 }
 
+// Load the time steps in femtoseconds.
+if (options.f) {
+    timeStep = Double.parseDouble(options.f);
+}
+
 // Thermostat.
 if (options.b) {
     try {
@@ -96,7 +105,7 @@ logger.info("\n Running simulated annealing on " + filename);
 systems = open(filename);
 SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(active, active.getPotentialEnergy(),
     active.getProperties(), null, thermostat, integrator);
-simulatedAnnealing.anneal(high, low, windows, steps);
+simulatedAnnealing.anneal(high, low, windows, steps, timeStep);
 
 String ext = FilenameUtils.getExtension(filename);
 filename = FilenameUtils.removeExtension(filename);

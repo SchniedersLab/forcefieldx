@@ -44,6 +44,7 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
     private double lowTemperature;
     private int annealingSteps;
     private int mdSteps;
+    private double timeStep;
     private boolean done, terminate;
 
     /**
@@ -102,6 +103,23 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
             double lowTemperature,
             int annealingSteps,
             int mdSteps) {
+        anneal(highTemperature, lowTemperature, annealingSteps, mdSteps, 1.0);
+    }
+
+    /**
+     * <p>anneal</p>
+     *
+     * @param highTemperature a double.
+     * @param lowTemperature a double.
+     * @param annealingSteps a int.
+     * @param mdSteps a int.
+     * @param timeStep a double
+     */
+    public void anneal(double highTemperature,
+            double lowTemperature,
+            int annealingSteps,
+            int mdSteps,
+            double timeStep) {
 
         /**
          * Return if already running; Could happen if two threads call dynamic
@@ -134,11 +152,16 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
         }
         this.mdSteps = mdSteps;
 
+        if (timeStep <= 0) {
+            timeStep = 1.0;
+        }
+        this.timeStep = timeStep;
 
         logger.info(String.format(" Initial temperature:    %8.3f (Kelvin)", highTemperature));
         logger.info(String.format(" Final temperature:      %8.3f (Kelvin)", lowTemperature));
         logger.info(String.format(" Annealing steps:        %8d", annealingSteps));
         logger.info(String.format(" MD steps/temperature:   %8d", mdSteps));
+        logger.info(String.format(" MD time step:           %8.3f (fs)", timeStep));
 
         Thread annealingThread = new Thread(this);
         annealingThread.start();
@@ -169,7 +192,7 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
         double dt = (highTemperature - lowTemperature) / (annealingSteps - 1);
         for (int i = 0; i < annealingSteps; i++) {
             double temperature = highTemperature - dt * i;
-            molecularDynamics.dynamic(mdSteps, 1.0, 0.001, 0.002, temperature, true, null);
+            molecularDynamics.dynamic(mdSteps, timeStep, 0.001, 0.002, temperature, true, null);
             if (terminate) {
                 logger.info(String.format("\n Terminating at temperature %8.3f.\n", temperature));
                 break;
