@@ -35,6 +35,7 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
+
 import static java.lang.String.format;
 
 import javax.swing.ImageIcon;
@@ -111,7 +112,6 @@ public class Main extends JFrame {
         }
 
         String logLevel = System.getProperty("ffx.log", "info");
-        System.out.println("ffx.log = " + logLevel);
         Level tempLevel;
         try {
             tempLevel = Level.parse(logLevel.toUpperCase());
