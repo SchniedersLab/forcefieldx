@@ -1,22 +1,21 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2009
+ * Title: Force Field X Description: Force Field X - Software for Molecular
+ * Biophysics. Copyright: Copyright (c) Michael J. Schnieders 2001-2009
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.xray;
 
@@ -74,7 +73,8 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
      * constructor for energy
      *
      * @param data input {@link DiffractionData data} for refinement
-     * @param refinementmode {@link RefinementMinimize.RefinementMode} for refinement
+     * @param refinementmode {@link RefinementMinimize.RefinementMode} for
+     * refinement
      */
     public RefinementEnergy(DataContainer data, RefinementMode refinementmode) {
         this(data, refinementmode, null);
@@ -84,7 +84,8 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
      * constructor for energy
      *
      * @param data input {@link DiffractionData data} for refinement
-     * @param refinementmode {@link RefinementMinimize.RefinementMode} for refinement
+     * @param refinementmode {@link RefinementMinimize.RefinementMode} for
+     * refinement
      * @param scaling scaling of refinement parameters
      */
     public RefinementEnergy(DataContainer data,
@@ -219,7 +220,8 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
     /**
      * {@inheritDoc}
      *
-     * Implementation of the {@link Potential} interface for the RefinementEnergy.
+     * Implementation of the {@link Potential} interface for the
+     * RefinementEnergy.
      */
     @Override
     public double energyAndGradient(double[] x, double[] g) {
@@ -266,17 +268,13 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
                 e += weight * dataEnergy.energyAndGradient(x, gXray);
 
                 /*
-                double normchem = 0.0;
-                for (int i = 0; i < nxyz; i++) {
-                normchem += g[i] * g[i];
-                }
-                normchem = Math.sqrt(normchem) / nxyz;
-                double normxray = 0.0;
-                for (int i = 0; i < nxyz; i++) {
-                normxray += gXray[i] * gXray[i];
-                }
-                normxray = Math.sqrt(normxray) / nxyz;
-                System.out.println("chem: " + normchem + " xray: " + normxray + " weight wa: " + normchem / normxray);
+                 * double normchem = 0.0; for (int i = 0; i < nxyz; i++) {
+                 * normchem += g[i] * g[i]; } normchem = Math.sqrt(normchem) /
+                 * nxyz; double normxray = 0.0; for (int i = 0; i < nxyz; i++) {
+                 * normxray += gXray[i] * gXray[i]; } normxray =
+                 * Math.sqrt(normxray) / nxyz; System.out.println("chem: " +
+                 * normchem + " xray: " + normxray + " weight wa: " + normchem /
+                 * normxray);
                  */
 
                 // Add the chemical and X-ray gradients.
@@ -400,7 +398,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
 
     /**
      * get the current kT scaling weight
-     * 
+     *
      * @return kT scale
      */
     public double getKTScale() {
@@ -416,43 +414,57 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
         this.ktscale = ktscale;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setScaling(double[] scaling) {
         optimizationScaling = scaling;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getScaling() {
         return optimizationScaling;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getMass() {
         return dataEnergy.getMass();
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getTotal() {
         return totalEnergy;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int getNumberOfVariables() {
         return dataEnergy.getNumberOfVariables();
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getCoordinates(double[] parameters) {
         return dataEnergy.getCoordinates(parameters);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean algorithmUpdate(MolecularAssembly active) {
         if (thermostat != null) {
@@ -466,7 +478,8 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
 
     // this should probably be part of the potential class
     /**
-     * <p>Setter for the field <code>thermostat</code>.</p>
+     * <p>Setter for the field
+     * <code>thermostat</code>.</p>
      *
      * @param thermostat a {@link ffx.algorithms.Thermostat} object.
      */
@@ -476,7 +489,8 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
 
     // this should probably be part of the potential class
     /**
-     * <p>Getter for the field <code>thermostat</code>.</p>
+     * <p>Getter for the field
+     * <code>thermostat</code>.</p>
      *
      * @return a {@link ffx.algorithms.Thermostat} object.
      */
@@ -484,7 +498,9 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
         return thermostat;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setLambda(double lambda) {
         for (MolecularAssembly ma : molecularAssembly) {
@@ -501,7 +517,9 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getLambda() {
         double l = 1.0;
@@ -516,7 +534,9 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
         return l;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getdEdL() {
         double e = 0.0;
@@ -545,7 +565,9 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
         return e;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getd2EdL2() {
         double e = 0.0;
@@ -569,7 +591,9 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
     /*
      * FIXME: needs to handle multiple conformations
      */
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void getdEdXdL(double[] gradient) {
         if (thermostat != null) {
@@ -622,7 +646,8 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
 
     /**
      * Return a reference to each variables type.
-     * @return the type of each variable. 
+     *
+     * @return the type of each variable.
      */
     @Override
     public VARIABLE_TYPE[] getVariableTypes() {
@@ -631,5 +656,11 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
 
     @Override
     public void setEnergyTermState(STATE state) {
+        int assemblysize = molecularAssembly.length;
+        for (int i = 0; i < assemblysize; i++) {
+            ForceFieldEnergy fe = molecularAssembly[i].getPotentialEnergy();
+            fe.setEnergyTermState(state);
+        }
+        dataEnergy.setEnergyTermState(state);
     }
 }
