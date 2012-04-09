@@ -229,7 +229,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
         Arrays.fill(g, 0.0);
 
         if (thermostat != null) {
-            ktscale = Thermostat.convert / (thermostat.getCurrentTemperture() * Thermostat.kB);
+            ktscale = Thermostat.convert / (thermostat.getTargetTemperature() * Thermostat.kB);
         }
 
         if (optimizationScaling != null) {
@@ -468,7 +468,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
     @Override
     public boolean algorithmUpdate(MolecularAssembly active) {
         if (thermostat != null) {
-            ktscale = Thermostat.convert / (thermostat.getCurrentTemperture() * Thermostat.kB);
+            ktscale = Thermostat.convert / (thermostat.getTargetTemperature() * Thermostat.kB);
         }
         logger.info("kTscale: " + ktscale);
         logger.info(data.printEnergyUpdate());
@@ -542,7 +542,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
         double e = 0.0;
 
         if (thermostat != null) {
-            ktscale = Thermostat.convert / (thermostat.getCurrentTemperture() * Thermostat.kB);
+            ktscale = Thermostat.convert / (thermostat.getTargetTemperature() * Thermostat.kB);
         }
 
         int assemblysize = molecularAssembly.length;
@@ -573,7 +573,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
         double e = 0.0;
 
         if (thermostat != null) {
-            ktscale = Thermostat.convert / (thermostat.getCurrentTemperture() * Thermostat.kB);
+            ktscale = Thermostat.convert / (thermostat.getTargetTemperature() * Thermostat.kB);
         }
 
         int assemblysize = molecularAssembly.length;
@@ -597,7 +597,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
     @Override
     public void getdEdXdL(double[] gradient) {
         if (thermostat != null) {
-            ktscale = Thermostat.convert / (thermostat.getCurrentTemperture() * Thermostat.kB);
+            ktscale = Thermostat.convert / (thermostat.getTargetTemperature() * Thermostat.kB);
         }
 
         int assemblysize = molecularAssembly.length;

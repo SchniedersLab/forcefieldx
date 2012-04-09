@@ -477,7 +477,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
          */
         thermostat.kineticEnergy();
         currentKineticEnergy = thermostat.getKineticEnergy();
-        currentTemperature = thermostat.getCurrentTemperture();
+        currentTemperature = thermostat.getCurrentTemperature();
         currentTotalEnergy = currentKineticEnergy + currentPotentialEnergy;
 
         /**
@@ -561,7 +561,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
              * Collect current kinetic energy, temperature, and total energy.
              */
             currentKineticEnergy = thermostat.getKineticEnergy();
-            currentTemperature = thermostat.getCurrentTemperture();
+            currentTemperature = thermostat.getCurrentTemperature();
             currentTotalEnergy = currentKineticEnergy + currentPotentialEnergy;
 
             /**

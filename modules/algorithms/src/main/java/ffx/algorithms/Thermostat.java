@@ -161,11 +161,11 @@ public abstract class Thermostat {
     }
 
     /**
-     * <p>getCurrentTemperture</p>
+     * <p>getCurrentTemperature</p>
      *
      * @return a double.
      */
-    public double getCurrentTemperture() {
+    public double getCurrentTemperature() {
         return currentTemperature;
     }
 
