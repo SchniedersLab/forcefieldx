@@ -564,9 +564,9 @@ public class RestraintBond extends BondedTerm {
         value = r(v10);
         double dv = value - bondType.distance;
         double dv2 = dv * dv;
-        energy = units * rigidScale * bondType.forceConstant * dv2 * (1.0 + cubic * dv + quartic * dv2);
+        energy = units * bondType.forceConstant * dv2;
         if (gradient) {
-            double deddt = 2.0 * units * rigidScale * bondType.forceConstant * dv * (1.0 + 1.5 * cubic * dv + 2.0 * quartic * dv2);
+            double deddt = 2.0 * units * bondType.forceConstant * dv;
             double de = 0.0;
             if (value > 0.0) {
                 de = deddt / value;
