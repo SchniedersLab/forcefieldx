@@ -203,17 +203,17 @@ public class OSRW implements Potential {
     /**
      * Interval between printing information on the lambda particle in steps.
      */
-    private int lambdaPrintInterval = 1000;
+    private int printFrequency = 100;
     /**
      * Interval between how often the free energy is updated from the count
      * matrix.
      */
-    private int fLambdaPrintInterval = 100;
+    private int fLambdaPrintInterval = 10;
     private int fLambdaUpdates = 0;
     /**
      * Interval between writing an OSRW restart file in steps.
      */
-    private int osrwRestartInterval = 10000;
+    private int saveFrequency = 1000;
     /**
      * Print detailed energy information.
      */
@@ -251,11 +251,14 @@ public class OSRW implements Potential {
      * @param properties
      * @param temperature
      * @param dt
-     * @param restartFrequency
+     * @param printInterval
+     * @param saveInterval
+     * @param asynchronous
      */
     public OSRW(LambdaInterface lambdaInterface, Potential potential,
             File lambdaFile, File histogramFile, CompositeConfiguration properties,
-            double temperature, double dt, double restartFrequency, boolean asynchronous) {
+            double temperature, double dt, double printInterval, 
+            double saveInterval, boolean asynchronous) {
         this.lambdaInterface = lambdaInterface;
         this.potential = potential;
         this.lambdaFile = lambdaFile;
@@ -268,7 +271,22 @@ public class OSRW implements Potential {
          * Convert the time step to picoseconds.
          */
         this.dt = dt * 0.001;
-        osrwRestartInterval = (int) (restartFrequency / this.dt);
+        
+        /**
+         * Convert the print interval to a print frequency.
+         */
+        printFrequency = 100;
+        if (printInterval >= this.dt) {
+            printFrequency = (int) (printInterval / this.dt);
+        }
+
+        /**
+         * Convert the save interval to a save frequency.
+         */
+        saveFrequency = 1000;
+        if (saveInterval >= this.dt) {
+           saveFrequency = (int) (saveInterval / this.dt);            
+        }
 
         biasCutoff = properties.getInt("lambda-bias-cutoff", 5);
         biasMag = properties.getDouble("bias-gaussian-mag", 0.005);
@@ -511,7 +529,7 @@ public class OSRW implements Potential {
             updateFLambda(printFLambda);
         }
 
-        if (energyCount > 0 && energyCount % osrwRestartInterval == 0) {
+        if (energyCount > 0 && energyCount % saveFrequency == 0) {
             /**
              * Only the rank 0 process writes the histogram restart file.
              */
@@ -557,7 +575,7 @@ public class OSRW implements Potential {
         /**
          * Log the current Lambda state.
          */
-        if (energyCount > 0 && energyCount % lambdaPrintInterval == 0 && propagateLambda) {
+        if (energyCount > 0 && energyCount % printFrequency == 0 && propagateLambda) {
             if (lambdaBins < 1000) {
                 logger.info(String.format(" L=%6.4f (%3d) F_LU=%10.4f F_LB=%10.4f F_L=%10.4f",
                         lambda, lambdaBin, dEdU, dEdLambda - dEdU, dEdLambda));
