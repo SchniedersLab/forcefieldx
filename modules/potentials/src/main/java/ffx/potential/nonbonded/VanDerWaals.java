@@ -28,6 +28,7 @@ import java.util.logging.Logger;
 
 import static java.lang.Math.*;
 import static java.lang.String.format;
+import static java.util.Arrays.fill;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
@@ -345,9 +346,9 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         if (lambdaTerm) {
             shareddEdL = new SharedDouble();
             sharedd2EdL2 = new SharedDouble();
-            lambdaGradX = new double[threadCount][nAtoms];
-            lambdaGradY = new double[threadCount][nAtoms];
-            lambdaGradZ = new double[threadCount][nAtoms];
+            lambdaGradX = new double[threadCount][];
+            lambdaGradY = new double[threadCount][];
+            lambdaGradZ = new double[threadCount][];
         } else {
             shareddEdL = null;
             sharedd2EdL2 = null;
@@ -359,9 +360,9 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
 
         sharedInteractions = new SharedInteger();
         sharedEnergy = new SharedDouble();
-        gradX = new double[threadCount][nAtoms];
-        gradY = new double[threadCount][nAtoms];
-        gradZ = new double[threadCount][nAtoms];
+        gradX = new double[threadCount][];
+        gradY = new double[threadCount][];
+        gradZ = new double[threadCount][];
 
         initializationRegion = new InitializationRegion();
         reductionRegion = new ReductionRegion();
@@ -568,7 +569,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
             /**
              * Reduce the gradient array.
              */
-            if (gradient) {
+            if (gradient || lambdaTerm) {
                 parallelTeam.execute(reductionRegion);
             }
 
@@ -819,31 +820,35 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
 
             @Override
             public void run(int lb, int ub) {
-                for (int i = lb, i3 = 3*lb; i <= ub; i++, i3+=3) {
+                for (int i = lb, i3 = 3 * lb; i <= ub; i++, i3 += 3) {
                     final double xyz[] = atoms[i].getXYZ();
                     coordinates[i3 + XX] = xyz[XX];
                     coordinates[i3 + YY] = xyz[YY];
                     coordinates[i3 + ZZ] = xyz[ZZ];
                 }
 
+                int rank = getThreadIndex();
+
                 if (gradient) {
-                    for (int j = 0; j < threadCount; j++) {
-                        for (int i = lb; i <= ub; i++) {
-                            gradX[j][i] = 0.0;
-                            gradY[j][i] = 0.0;
-                            gradZ[j][i] = 0.0;
-                        }
+                    if (gradX[rank] == null) {
+                        gradX[rank] = new double[nAtoms];
+                        gradY[rank] = new double[nAtoms];
+                        gradZ[rank] = new double[nAtoms];
                     }
+                    fill(gradX[rank], 0.0);
+                    fill(gradY[rank], 0.0);
+                    fill(gradZ[rank], 0.0);
                 }
-                
+
                 if (lambdaTerm) {
-                    for (int j = 0; j < threadCount; j++) {
-                        for (int i = lb; i <= ub; i++) {
-                            lambdaGradX[j][i] = 0.0;
-                            lambdaGradY[j][i] = 0.0;
-                            lambdaGradZ[j][i] = 0.0;
-                        }
+                    if (lambdaGradX[rank] == null) {
+                        lambdaGradX[rank] = new double[nAtoms];
+                        lambdaGradY[rank] = new double[nAtoms];
+                        lambdaGradZ[rank] = new double[nAtoms];
                     }
+                    fill(lambdaGradX[rank], 0.0);
+                    fill(lambdaGradY[rank], 0.0);
+                    fill(lambdaGradZ[rank], 0.0);
                 }
             }
         }
@@ -949,16 +954,16 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         private int count;
         private double energy;
         private long computeTime;
-        private final double gxi_local[];
-        private final double gyi_local[];
-        private final double gzi_local[];
+        private double gxi_local[];
+        private double gyi_local[];
+        private double gzi_local[];
         private double dEdL;
         private double d2EdL2;
-        private final double lxi_local[];
-        private final double lyi_local[];
-        private final double lzi_local[];
-        private final double dx_local[];
-        private final double transOp[][];
+        private double lxi_local[];
+        private double lyi_local[];
+        private double lzi_local[];
+        private double dx_local[];
+        private double transOp[][];
         private final byte mask[];
         // Extra padding to avert cache interference.
         private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
@@ -966,24 +971,10 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
 
         public VanDerWaalsLoop(int threadId) {
             super();
-            gxi_local = gradX[threadId];
-            gyi_local = gradY[threadId];
-            gzi_local = gradZ[threadId];
-            if (lambdaTerm) {
-                lxi_local = lambdaGradX[threadId];
-                lyi_local = lambdaGradY[threadId];
-                lzi_local = lambdaGradZ[threadId];
-            } else {
-                lxi_local = null;
-                lyi_local = null;
-                lzi_local = null;
-            }
             mask = new byte[nAtoms];
             dx_local = new double[3];
             transOp = new double[3][3];
-            for (int i = 0; i < nAtoms; i++) {
-                mask[i] = 1;
-            }
+            fill(mask, (byte) 1);
         }
 
         public long getComputeTime() {
@@ -997,13 +988,24 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
 
         @Override
         public void start() {
+            int threadId = getThreadIndex();
+            gxi_local = gradX[threadId];
+            gyi_local = gradY[threadId];
+            gzi_local = gradZ[threadId];
             energy = 0.0;
             count = 0;
+            computeTime = 0;
             if (lambdaTerm) {
                 dEdL = 0.0;
                 d2EdL2 = 0.0;
+                lxi_local = lambdaGradX[threadId];
+                lyi_local = lambdaGradY[threadId];
+                lzi_local = lambdaGradZ[threadId];
+            } else {
+                lxi_local = null;
+                lyi_local = null;
+                lzi_local = null;
             }
-            computeTime = 0;
         }
 
         @Override
@@ -1017,8 +1019,8 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                 double e = 0.0;
                 SymOp symOp = symOps.get(iSymOp);
                 /**
-                 * Compute the total transformation operator:
-                 * R = ToCart * Rot * ToFrac.
+                 * Compute the total transformation operator: R = ToCart * Rot *
+                 * ToFrac.
                  */
                 crystal.getTransformationOperator(symOp, transOp);
                 double xyzS[] = reduced[iSymOp];
@@ -1153,13 +1155,14 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                                 gzi += dedz * redv;
                                 gxredi += dedx * rediv;
                                 gyredi += dedy * rediv;
-                                gzredi += dedz * rediv;                                
+                                gzredi += dedz * rediv;
                                 /**
-                                 * Apply the transpose of the transformation operator.
+                                 * Apply the transpose of the transformation
+                                 * operator.
                                  */
                                 final double dedxk = dedx * transOp[0][0] + dedy * transOp[1][0] + dedz * transOp[2][0];
                                 final double dedyk = dedx * transOp[0][1] + dedy * transOp[1][1] + dedz * transOp[2][1];
-                                final double dedzk = dedx * transOp[0][2] + dedy * transOp[1][2] + dedz * transOp[2][2];                                
+                                final double dedzk = dedx * transOp[0][2] + dedy * transOp[1][2] + dedz * transOp[2][2];
                                 gxi_local[k] -= red * dedxk;
                                 gyi_local[k] -= red * dedyk;
                                 gzi_local[k] -= red * dedzk;
@@ -1214,7 +1217,8 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                                 lyredi += dedldy * rediv;
                                 lzredi += dedldz * rediv;
                                 /**
-                                 * Apply the transpose of the transformation operator.
+                                 * Apply the transpose of the transformation
+                                 * operator.
                                  */
                                 final double dedldxk = dedldx * transOp[0][0] + dedldy * transOp[1][0] + dedldz * transOp[2][0];
                                 final double dedldyk = dedldx * transOp[0][1] + dedldy * transOp[1][1] + dedldz * transOp[2][1];
@@ -1307,25 +1311,26 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
 
             @Override
             public void run(int lb, int ub) {
-                double gx[] = gradX[0];
-                double gy[] = gradY[0];
-                double gz[] = gradZ[0];
-                for (int t = 1; t < threadCount; t++) {
-                    double gxt[] = gradX[t];
-                    double gyt[] = gradY[t];
-                    double gzt[] = gradZ[t];
+                if (gradient) {
+                    double gx[] = gradX[0];
+                    double gy[] = gradY[0];
+                    double gz[] = gradZ[0];
+                    for (int t = 1; t < threadCount; t++) {
+                        double gxt[] = gradX[t];
+                        double gyt[] = gradY[t];
+                        double gzt[] = gradZ[t];
+                        for (int i = lb; i <= ub; i++) {
+                            gx[i] += gxt[i];
+                            gy[i] += gyt[i];
+                            gz[i] += gzt[i];
+                        }
+                    }
+
                     for (int i = lb; i <= ub; i++) {
-                        gx[i] += gxt[i];
-                        gy[i] += gyt[i];
-                        gz[i] += gzt[i];
+                        Atom ai = atoms[i];
+                        ai.addToXYZGradient(gradX[0][i], gradY[0][i], gradZ[0][i]);
                     }
                 }
-
-                for (int i = lb; i <= ub; i++) {
-                    Atom ai = atoms[i];
-                    ai.addToXYZGradient(gradX[0][i], gradY[0][i], gradZ[0][i]);
-                }
-
                 if (lambdaTerm) {
                     double lx[] = lambdaGradX[0];
                     double ly[] = lambdaGradY[0];
