@@ -282,17 +282,17 @@ public class MolecularDynamics implements Runnable, Terminatable {
         /**
          * Convert the print interval to a print frequency.
          */
-        printFrequency = 1;
-        if (printInterval > dt) {
-            printFrequency = (int) (printInterval / dt);
+        printFrequency = 100;
+        if (printInterval >= this.dt) {
+            printFrequency = (int) (printInterval / this.dt);
         }
 
         /**
          * Convert the save interval to a save frequency.
          */
-        saveFrequency = (int) (saveInterval / dt);
-        if (saveFrequency <= 0) {
-            saveFrequency = 1;
+        saveFrequency = 1000;
+        if (saveInterval >= this.dt) {
+           saveFrequency = (int) (saveInterval / this.dt);            
         }
 
         File file = molecularAssembly.getFile();
