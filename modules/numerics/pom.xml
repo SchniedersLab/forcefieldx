@@ -57,6 +57,12 @@
     </build>
     <dependencies>
         <dependency>
+            <groupId>commons-math</groupId>
+            <artifactId>commons-math</artifactId>
+            <type>jar</type>
+            <version>2.2</version>
+        </dependency>
+        <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
             <type>jar</type>
@@ -81,67 +87,4 @@
             <version>0.9.0</version>
         </dependency>
     </dependencies>
-    <profiles>
-        <profile>
-            <id>Mac OS X</id>
-            <activation>
-                <os>
-                    <family>mac</family>
-                </os>
-            </activation>
-            <properties>
-                <platform>macosx</platform>
-                <bit>64</bit>
-            </properties>
-        </profile>
-        <profile>
-            <id>Linux-32</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-            <properties>
-                <platform>linux</platform>
-                <bit>32</bit>
-            </properties>
-        </profile>
-        <profile>
-            <id>Linux-64</id>
-            <activation>
-                <os>
-                    <family>Linux</family>
-                    <arch>amd64</arch>
-                </os>
-            </activation>
-            <properties>
-                <platform>linux</platform>
-                <bit>64</bit>
-            </properties>
-        </profile>
-        <profile>
-            <id>Windows-32</id>
-            <activation>
-                <os>
-                    <family>windows</family>
-                    <arch>x86</arch>
-                </os>
-            </activation>
-            <properties>
-                <platform>windows</platform>
-                <bit>32</bit>
-            </properties>
-        </profile>
-        <profile>
-            <id>Windows-64</id>
-            <activation>
-                <os>
-                    <family>windows</family>
-                    <arch>x86_64</arch>
-                </os>
-            </activation>
-            <properties>
-                <platform>windows</platform>
-                <bit>64</bit>
-            </properties>
-        </profile>
-    </profiles>
 </project>

@@ -889,7 +889,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         assert (g != null);
         double grad[] = new double[3];
         int index = 0;
-        for (Atom a : atoms) {
+        int len = atoms.length;
+        for (int i = 0; i < len; i++) {
+            Atom a = atoms[i];
             a.getXYZGradient(grad);
             double gx = grad[0];
             double gy = grad[1];
@@ -910,7 +912,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     private void setCoordinates(double coords[]) {
         assert (coords != null);
         int index = 0;
-        for (Atom a : atoms) {
+        int len = atoms.length;
+        for (int i = 0; i < len; i++) {
+            Atom a = atoms[i];
             double x = coords[index++];
             double y = coords[index++];
             double z = coords[index++];
@@ -929,7 +933,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
         double xyz[] = new double[3];
         int index = 0;
-        for (Atom a : atoms) {
+        int len = atoms.length;
+        for (int i = 0; i < len; i++) {
+            Atom a = atoms[i];
             a.getXYZ(xyz);
             x[index++] = xyz[0];
             x[index++] = xyz[1];
@@ -1042,6 +1048,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
      *
      * @param b
      */
+    @Override
     public void setEnergyTermState(STATE state) {
         switch (state) {
             case FAST:
