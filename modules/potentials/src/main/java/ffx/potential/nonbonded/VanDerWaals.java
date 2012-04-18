@@ -57,8 +57,8 @@ import ffx.potential.parameters.VDWType;
  * @since 1.0
  * @version $Id: $
  */
-public class VanDerWaals extends ParallelRegion implements MaskingInterface,
-                                                           LambdaInterface {
+public class VanDerWaals implements MaskingInterface,
+                                    LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(VanDerWaals.class.getName());
     /**
@@ -152,8 +152,8 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
      * The Parallel Team.
      */
     private final ParallelTeam parallelTeam;
-    private final IntegerSchedule pairwiseSchedule;
     private final int threadCount;
+    private final IntegerSchedule pairwiseSchedule;
     private final SharedInteger sharedInteractions;
     private final SharedDouble sharedEnergy;
     private final SharedDouble shareddEdL;
@@ -168,10 +168,8 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
      * The neighbor-list includes 1-2 or 1-3 interactions, but the interactions
      * are masked out. The AMOEBA force field includes 1-4 interactions fully.
      */
-    private final InitializationRegion initializationRegion;
+    private final VanDerWaalsRegion vanDerWaalsRegion;
     private final NeighborList neighborListBuilder;
-    private final VanDerWaalsLoop vanDerWaalsLoop[];
-    private final ReductionRegion reductionRegion;
 
     /**
      * The VanDerWaals class constructor.
@@ -294,7 +292,7 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         /**
          * Set up the cutoff and polynomial switch.
          */
-        double vdwcut = 0.0;
+        double vdwcut;
         if (!crystal.aperiodic()) {
             vdwcut = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, 9.0);
         } else {
@@ -343,6 +341,11 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
          * Parallel constructs.
          */
         threadCount = parallelTeam.getThreadCount();
+        sharedInteractions = new SharedInteger();
+        sharedEnergy = new SharedDouble();
+        gradX = new double[threadCount][];
+        gradY = new double[threadCount][];
+        gradZ = new double[threadCount][];
         if (lambdaTerm) {
             shareddEdL = new SharedDouble();
             sharedd2EdL2 = new SharedDouble();
@@ -357,41 +360,25 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
             lambdaGradZ = null;
         }
         doLongRangeCorrection = forceField.getBoolean(ForceField.ForceFieldBoolean.VDWLRTERM, false);
-
-        sharedInteractions = new SharedInteger();
-        sharedEnergy = new SharedDouble();
-        gradX = new double[threadCount][];
-        gradY = new double[threadCount][];
-        gradZ = new double[threadCount][];
-
-        initializationRegion = new InitializationRegion();
-        reductionRegion = new ReductionRegion();
-        vanDerWaalsLoop = new VanDerWaalsLoop[threadCount];
-        for (int i = 0; i < threadCount; i++) {
-            vanDerWaalsLoop[i] = new VanDerWaalsLoop(i);
-        }
+        vanDerWaalsRegion = new VanDerWaalsRegion();
 
         /**
          * Parallel neighbor list builder.
          */
         neighborListBuilder = new NeighborList(null, this.crystal, atoms, off, buff, parallelTeam);
+        pairwiseSchedule = neighborListBuilder.getPairwiseSchedule();
         neighborLists = new int[nSymm][][];
 
         /**
-         * Reduce and expand the coordinates of the asymmetric unit.
+         * Reduce and expand the coordinates of the asymmetric unit. Then build
+         * the first neighborlist.
          */
         try {
-            parallelTeam.execute(initializationRegion);
+            parallelTeam.execute(vanDerWaalsRegion);
         } catch (Exception e) {
-            String message = " Fatal exception expanding coordinates.\n";
+            String message = " Fatal exception executing van Der Waals Region.\n";
             logger.log(Level.SEVERE, message, e);
         }
-
-        /**
-         * Build the neighbor-list using the reduced coordinates.
-         */
-        neighborListBuilder.buildList(reduced, neighborLists, null, true, true);
-        pairwiseSchedule = neighborListBuilder.getPairwiseSchedule();
 
         logger.info(" Van der Waals");
         logger.info(format(" Switch Start:                            %5.2f (A)", cut));
@@ -546,37 +533,13 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
     public double energy(boolean gradient, boolean print) {
         this.gradient = gradient;
 
-        /**
-         * Reduced and expand the coordinates of the asymmetric unit.
-         */
         try {
-            parallelTeam.execute(initializationRegion);
+            parallelTeam.execute(vanDerWaalsRegion);
         } catch (Exception e) {
             String message = " Fatal exception expanding coordinates.\n";
             logger.log(Level.SEVERE, message, e);
         }
 
-        /**
-         * Build the neighbor-list (if necessary) using reduced coordinates.
-         */
-        neighborListBuilder.buildList(reduced, neighborLists, null, false, false);
-
-        /**
-         * Calculate the van der Waals energy.
-         */
-        try {
-            parallelTeam.execute(this);
-            /**
-             * Reduce the gradient array.
-             */
-            if (gradient || lambdaTerm) {
-                parallelTeam.execute(reductionRegion);
-            }
-
-        } catch (Exception e) {
-            String message = " Fatal exception evaluating van der Waals energy.\n";
-            logger.log(Level.SEVERE, message, e);
-        }
         return sharedEnergy.get();
     }
 
@@ -626,47 +589,6 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
      */
     public int[][][] getNeighborLists() {
         return neighborLists;
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * This is method should not be called; it is invoked by Parallel Java.
-     *
-     * @since 0.l
-     */
-    @Override
-    public void start() {
-        /**
-         * Initialize the shared variables.
-         */
-        if (doLongRangeCorrection) {
-            sharedEnergy.set(longRangeCorrection);
-        } else {
-            sharedEnergy.set(0.0);
-        }
-        sharedInteractions.set(0);
-        if (lambdaTerm) {
-            shareddEdL.set(0.0);
-            sharedd2EdL2.set(0.0);
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * This is method should not be called; it is invoked by Parallel Java.
-     *
-     * @since 0.l
-     */
-    @Override
-    public void run() {
-        try {
-            execute(0, nAtoms - 1, vanDerWaalsLoop[getThreadIndex()]);
-        } catch (Exception e) {
-            String message = "Fatal exception evaluating van der Waals energy in thread: " + getThreadIndex() + "\n";
-            logger.log(Level.SEVERE, message, e);
-        }
     }
 
     /**
@@ -774,37 +696,110 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
         return sharedd2EdL2.get();
     }
 
-    /**
-     * 1.) Initialize the local coordinate array. 2.) Initialize reduction
-     * variables. 3.) Apply hydrogen reductions and then expand the coordinates
-     * to P1.
-     *
-     * @author Michael J. Schnieders
-     * @since 1.0
-     */
-    private class InitializationRegion extends ParallelRegion {
+    private class VanDerWaalsRegion extends ParallelRegion {
 
         private final InitializationLoop initializationLoop[];
         private final ExpandLoop expandLoop[];
+        private final VanDerWaalsLoop vanDerWaalsLoop[];
+        private final ReductionLoop reductionLoop[];
+        private boolean constructVanDerWaals = true;
 
-        public InitializationRegion() {
+        public VanDerWaalsRegion() {
             initializationLoop = new InitializationLoop[threadCount];
             expandLoop = new ExpandLoop[threadCount];
-            for (int i = 0; i < threadCount; i++) {
-                initializationLoop[i] = new InitializationLoop();
-                expandLoop[i] = new ExpandLoop();
+            vanDerWaalsLoop = new VanDerWaalsLoop[threadCount];
+            reductionLoop = new ReductionLoop[threadCount];
+        }
+
+        /**
+         * {@inheritDoc}
+         *
+         * This is method should not be called; it is invoked by Parallel Java.
+         *
+         * @since 0.l
+         */
+        @Override
+        public void start() {
+            /**
+             * Initialize the shared variables.
+             */
+            if (doLongRangeCorrection) {
+                sharedEnergy.set(longRangeCorrection);
+            } else {
+                sharedEnergy.set(0.0);
+            }
+            sharedInteractions.set(0);
+            if (lambdaTerm) {
+                shareddEdL.set(0.0);
+                sharedd2EdL2.set(0.0);
             }
         }
 
         @Override
-        public void run() {
+        public void finish() {
+            constructVanDerWaals = false;
+        }
+
+        @Override
+        public void run() throws Exception {
+            int threadIndex = getThreadIndex();
+
+            /**
+             * Locally initialize the Loops.
+             */
+            if (initializationLoop[threadIndex] == null) {
+                initializationLoop[threadIndex] = new InitializationLoop();
+                expandLoop[threadIndex] = new ExpandLoop();
+                vanDerWaalsLoop[threadIndex] = new VanDerWaalsLoop(threadCount);
+                reductionLoop[threadIndex] = new ReductionLoop();
+            }
+
+            /**
+             * Expand coordinates.
+             */
             try {
-                int ti = getThreadIndex();
-                execute(0, nAtoms - 1, initializationLoop[ti]);
-                execute(0, nAtoms - 1, expandLoop[ti]);
+                execute(0, nAtoms - 1, initializationLoop[threadIndex]);
+                execute(0, nAtoms - 1, expandLoop[threadIndex]);
             } catch (Exception e) {
-                String message = "Fatal exception expanding coordinates in thread: " + getThreadIndex() + "\n";
+                String message = "Fatal exception expanding coordinates in thread: " + threadIndex + "\n";
                 logger.log(Level.SEVERE, message, e);
+            }
+
+            /**
+             * Build the neighbor-list (if necessary) using reduced coordinates.
+             */
+            if (threadIndex == 0) {
+                if (constructVanDerWaals) {
+                    neighborListBuilder.buildList(reduced, neighborLists, null, true, true);
+                } else {
+                    neighborListBuilder.buildList(reduced, neighborLists, null, false, false);
+                }
+            }
+            if (constructVanDerWaals) {
+                return;
+            }
+            barrier();
+
+            /**
+             * Compute van der Waals energy and gradient.
+             */
+            try {
+                execute(0, nAtoms - 1, vanDerWaalsLoop[threadIndex]);
+            } catch (Exception e) {
+                String message = "Fatal exception evaluating van der Waals energy in thread: " + threadIndex + "\n";
+                logger.log(Level.SEVERE, message, e);
+            }
+
+            /**
+             * Reduce derivatives.
+             */
+            if (gradient || lambdaTerm) {
+                try {
+                    execute(0, nAtoms - 1, reductionLoop[threadIndex]);
+                } catch (Exception e) {
+                    String message = "Fatal exception reducing van der Waals gradient in thread: " + threadIndex + "\n";
+                    logger.log(Level.SEVERE, message, e);
+                }
             }
         }
 
@@ -939,368 +934,342 @@ public class VanDerWaals extends ParallelRegion implements MaskingInterface,
                 }
             }
         }
-    }
 
-    /**
-     * The van der Waals loop class contains methods and thread local variables
-     * used to evaluate the van der Waals energy and gradients with respect to
-     * atomic coordinates.
-     *
-     * @author Michael J. Schnieders
-     * @since 1.0
-     */
-    private class VanDerWaalsLoop extends IntegerForLoop {
+        /**
+         * The van der Waals loop class contains methods and thread local
+         * variables used to evaluate the van der Waals energy and gradients
+         * with respect to atomic coordinates.
+         *
+         * @author Michael J. Schnieders
+         * @since 1.0
+         */
+        private class VanDerWaalsLoop extends IntegerForLoop {
 
-        private int count;
-        private double energy;
-        private long computeTime;
-        private double gxi_local[];
-        private double gyi_local[];
-        private double gzi_local[];
-        private double dEdL;
-        private double d2EdL2;
-        private double lxi_local[];
-        private double lyi_local[];
-        private double lzi_local[];
-        private double dx_local[];
-        private double transOp[][];
-        private final byte mask[];
-        // Extra padding to avert cache interference.
-        private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
-        private long pad8, pad9, pada, padb, padc, padd, pade, padf;
+            private int count;
+            private double energy;
+            private long computeTime;
+            private double gxi_local[];
+            private double gyi_local[];
+            private double gzi_local[];
+            private double dEdL;
+            private double d2EdL2;
+            private double lxi_local[];
+            private double lyi_local[];
+            private double lzi_local[];
+            private double dx_local[];
+            private double transOp[][];
+            private final byte mask[];
+            // Extra padding to avert cache interference.
+            private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
+            private long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
-        public VanDerWaalsLoop(int threadId) {
-            super();
-            mask = new byte[nAtoms];
-            dx_local = new double[3];
-            transOp = new double[3][3];
-            fill(mask, (byte) 1);
-        }
-
-        public long getComputeTime() {
-            return computeTime;
-        }
-
-        @Override
-        public IntegerSchedule schedule() {
-            return pairwiseSchedule;
-        }
-
-        @Override
-        public void start() {
-            int threadId = getThreadIndex();
-            gxi_local = gradX[threadId];
-            gyi_local = gradY[threadId];
-            gzi_local = gradZ[threadId];
-            energy = 0.0;
-            count = 0;
-            computeTime = 0;
-            if (lambdaTerm) {
-                dEdL = 0.0;
-                d2EdL2 = 0.0;
-                lxi_local = lambdaGradX[threadId];
-                lyi_local = lambdaGradY[threadId];
-                lzi_local = lambdaGradZ[threadId];
-            } else {
-                lxi_local = null;
-                lyi_local = null;
-                lzi_local = null;
+            public VanDerWaalsLoop(int threadId) {
+                super();
+                mask = new byte[nAtoms];
+                dx_local = new double[3];
+                transOp = new double[3][3];
+                fill(mask, (byte) 1);
             }
-        }
 
-        @Override
-        public void run(int lb, int ub) {
-            long startTime = System.nanoTime();
-            /**
-             * Loop over symmetry operators.
-             */
-            List<SymOp> symOps = crystal.spaceGroup.symOps;
-            for (int iSymOp = 0; iSymOp < nSymm; iSymOp++) {
-                double e = 0.0;
-                SymOp symOp = symOps.get(iSymOp);
-                /**
-                 * Compute the total transformation operator: R = ToCart * Rot *
-                 * ToFrac.
-                 */
-                crystal.getTransformationOperator(symOp, transOp);
-                double xyzS[] = reduced[iSymOp];
-                int list[][] = neighborLists[iSymOp];
-                for (int i = lb; i <= ub; i++) {
-                    int i3 = i * 3;
-                    final double xi = reducedXYZ[i3++];
-                    final double yi = reducedXYZ[i3++];
-                    final double zi = reducedXYZ[i3];
-                    final int redi = reductionIndex[i];
-                    final double redv = reductionValue[i];
-                    final double rediv = 1.0 - redv;
-                    final int classi = atomClass[i];
-                    final double radEpsi[] = radEps[classi];
-                    double gxi = 0.0;
-                    double gyi = 0.0;
-                    double gzi = 0.0;
-                    double gxredi = 0.0;
-                    double gyredi = 0.0;
-                    double gzredi = 0.0;
-                    double lxi = 0.0;
-                    double lyi = 0.0;
-                    double lzi = 0.0;
-                    double lxredi = 0.0;
-                    double lyredi = 0.0;
-                    double lzredi = 0.0;
-                    if (iSymOp == 0) {
-                        applyMask(mask, i);
-                    }
-                    // Default is that the outer loop atom is hard.
-                    boolean softCorei[] = softCore[HARD];
-                    boolean softSymmetry = false;
-                    if (isSoft[i]) {
-                        softCorei = softCore[SOFT];
-                        /**
-                         * All interactions between a soft atom and a symmetry
-                         * mate atom are turned off.
-                         */
-                        if (iSymOp > 0) {
-                            softSymmetry = true;
-                        }
-                    }
+            public long getComputeTime() {
+                return computeTime;
+            }
 
-                    /**
-                     * Loop over the neighbor list.
-                     */
-                    final int neighbors[] = list[i];
-                    final int npair = neighbors.length;
-                    for (int j = 0; j < npair; j++) {
-                        final int k = neighbors[j];
-                        int k3 = k * 3;
-                        final double xk = xyzS[k3++];
-                        final double yk = xyzS[k3++];
-                        final double zk = xyzS[k3];
-                        dx_local[0] = xi - xk;
-                        dx_local[1] = yi - yk;
-                        dx_local[2] = zi - zk;
-                        final double r2 = crystal.image(dx_local);
-                        if (r2 <= off2 && mask[k] > 0) {
-                            // This will only happen for iSymm > 0.
-                            double selfScale = 1.0;
-                            if (i == k) {
-                                selfScale = 0.5;
-                            }
-                            final double r = sqrt(r2);
-                            final double r3 = r2 * r;
-                            final double r4 = r2 * r2;
-                            int a2 = atomClass[k] * 2;
-                            double alpha = 0.0;
-                            double lambda5 = 1.0;
-                            boolean soft = (softCorei[k] || softSymmetry);
-                            if (soft) {
-                                alpha = sc1;
-                                lambda5 = sc2;
-                            }
-                            final double rv = radEpsi[a2 + RADMIN];
-                            final double ev = radEpsi[a2 + EPS];
-                            final double eps_lambda = ev * lambda5;
-                            final double rho = r / rv;
-                            final double rho3 = rho * rho * rho;
-                            final double rho6 = rho3 * rho3;
-                            final double rho7 = rho6 * rho;
-                            final double rho_07 = rho + ZERO_07;
-                            final double rho_07_pow3 = rho_07 * rho_07 * rho_07;
-                            final double rho_07_pow7 = rho_07_pow3 * rho_07_pow3 * rho_07;
-                            final double a_rho_07_pow7 = alpha + rho_07_pow7;
-                            final double a_rho7_ZERO_12 = alpha + rho7 + ZERO_12;
-                            final double t1d = 1.0 / a_rho_07_pow7;
-                            final double t2d = 1.0 / a_rho7_ZERO_12;
-                            final double t1 = t1n * t1d;
-                            final double t2a = t2n * t2d;
-                            final double t2 = t2a - 2.0;
-                            double eij = eps_lambda * t1 * t2;
-                            /**
-                             * Apply a multiplicative switch if the interaction
-                             * distance is greater than the beginning of the
-                             * taper.
-                             */
-                            double taper = 1.0;
-                            double dtaper = 0.0;
-                            if (r2 > cut2) {
-                                final double r5 = r2 * r3;
-                                taper = c5 * r5 + c4 * r4 + c3 * r3 + c2 * r2 + c1 * r + c0;
-                                dtaper = fiveC5 * r4 + fourC4 * r3 + threeC3 * r2 + twoC2 * r + c1;
-                            }
-                            e += selfScale * eij * taper;
-                            count++;
-                            if (!(gradient || (lambdaTerm && soft))) {
-                                continue;
-                            }
-                            final int redk = reductionIndex[k];
-                            final double red = reductionValue[k];
-                            final double redkv = 1.0 - red;
-                            final double rho_07_pow6 = rho_07_pow3 * rho_07_pow3;
-                            final double drho_dr = 1.0 / rv;
-                            final double dt1d_dr = 7.0 * rho_07_pow6 * drho_dr;
-                            final double dt2d_dr = 7.0 * rho6 * drho_dr;
-                            final double dt1_dr = t1 * dt1d_dr * t1d;
-                            final double dt2_dr = t2a * dt2d_dr * t2d;
-                            double dedr = -eps_lambda * (dt1_dr * t2 + t1 * dt2_dr);
-                            double ir = 1.0 / r;
-                            double drdx = dx_local[0] * ir;
-                            double drdy = dx_local[1] * ir;
-                            double drdz = dx_local[2] * ir;
-                            dedr = (eij * dtaper + dedr * taper);
-                            if (gradient) {
-                                double dedx = selfScale * dedr * drdx;
-                                double dedy = selfScale * dedr * drdy;
-                                double dedz = selfScale * dedr * drdz;
-                                gxi += dedx * redv;
-                                gyi += dedy * redv;
-                                gzi += dedz * redv;
-                                gxredi += dedx * rediv;
-                                gyredi += dedy * rediv;
-                                gzredi += dedz * rediv;
-                                /**
-                                 * Apply the transpose of the transformation
-                                 * operator.
-                                 */
-                                final double dedxk = dedx * transOp[0][0] + dedy * transOp[1][0] + dedz * transOp[2][0];
-                                final double dedyk = dedx * transOp[0][1] + dedy * transOp[1][1] + dedz * transOp[2][1];
-                                final double dedzk = dedx * transOp[0][2] + dedy * transOp[1][2] + dedz * transOp[2][2];
-                                gxi_local[k] -= red * dedxk;
-                                gyi_local[k] -= red * dedyk;
-                                gzi_local[k] -= red * dedzk;
-                                gxi_local[redk] -= redkv * dedxk;
-                                gyi_local[redk] -= redkv * dedyk;
-                                gzi_local[redk] -= redkv * dedzk;
-                            }
-                            if (lambdaTerm && soft) {
-                                double dt1 = -t1 * t1d * dsc1dL;
-                                double dt2 = -t2a * t2d * dsc1dL;
-                                double f1 = dsc2dL * t1 * t2;
-                                double f2 = sc2 * dt1 * t2;
-                                double f3 = sc2 * t1 * dt2;
-                                double dedl = ev * (f1 + f2 + f3);
-                                dEdL += selfScale * dedl * taper;
-                                double t1d2 = -dsc1dL * t1d * t1d;
-                                double t2d2 = -dsc1dL * t2d * t2d;
-                                double d2t1 = -dt1 * t1d * dsc1dL
-                                              - t1 * t1d * d2sc1dL2
-                                              - t1 * t1d2 * dsc1dL;
+            @Override
+            public IntegerSchedule schedule() {
+                return pairwiseSchedule;
+            }
 
-                                double d2t2 = -dt2 * t2d * dsc1dL
-                                              - t2a * t2d * d2sc1dL2
-                                              - t2a * t2d2 * dsc1dL;
-
-                                double df1 = d2sc2dL2 * t1 * t2
-                                             + dsc2dL * dt1 * t2
-                                             + dsc2dL * t1 * dt2;
-                                double df2 = dsc2dL * dt1 * t2
-                                             + sc2 * d2t1 * t2
-                                             + sc2 * dt1 * dt2;
-                                double df3 = dsc2dL * t1 * dt2
-                                             + sc2 * dt1 * dt2
-                                             + sc2 * t1 * d2t2;
-                                double de2dl2 = ev * (df1 + df2 + df3);
-                                d2EdL2 += selfScale * de2dl2 * taper;
-                                double t11 = -dsc2dL * t2 * dt1_dr;
-                                double t12 = -sc2 * dt2 * dt1_dr;
-                                double t13 = 2.0 * sc2 * t2 * dt1_dr * dsc1dL * t1d;
-                                double t21 = -dsc2dL * t1 * dt2_dr;
-                                double t22 = -sc2 * dt1 * dt2_dr;
-                                double t23 = 2.0 * sc2 * t1 * dt2_dr * dsc1dL * t2d;
-                                double dedldr = ev * (t11 + t12 + t13 + t21 + t22 + t23);
-                                dedldr = dedl * dtaper + dedldr * taper;
-                                double dedldx = selfScale * dedldr * drdx;
-                                double dedldy = selfScale * dedldr * drdy;
-                                double dedldz = selfScale * dedldr * drdz;
-                                lxi += dedldx * redv;
-                                lyi += dedldy * redv;
-                                lzi += dedldz * redv;
-                                lxredi += dedldx * rediv;
-                                lyredi += dedldy * rediv;
-                                lzredi += dedldz * rediv;
-                                /**
-                                 * Apply the transpose of the transformation
-                                 * operator.
-                                 */
-                                final double dedldxk = dedldx * transOp[0][0] + dedldy * transOp[1][0] + dedldz * transOp[2][0];
-                                final double dedldyk = dedldx * transOp[0][1] + dedldy * transOp[1][1] + dedldz * transOp[2][1];
-                                final double dedldzk = dedldx * transOp[0][2] + dedldy * transOp[1][2] + dedldz * transOp[2][2];
-                                lxi_local[k] -= red * dedldxk;
-                                lyi_local[k] -= red * dedldyk;
-                                lzi_local[k] -= red * dedldzk;
-                                lxi_local[redk] -= redkv * dedldxk;
-                                lyi_local[redk] -= redkv * dedldyk;
-                                lzi_local[redk] -= redkv * dedldzk;
-                            }
-                        }
-                    }
-                    if (gradient) {
-                        gxi_local[i] += gxi;
-                        gyi_local[i] += gyi;
-                        gzi_local[i] += gzi;
-                        gxi_local[redi] += gxredi;
-                        gyi_local[redi] += gyredi;
-                        gzi_local[redi] += gzredi;
-                    }
-                    if (lambdaTerm) {
-                        lxi_local[i] += lxi;
-                        lyi_local[i] += lyi;
-                        lzi_local[i] += lzi;
-                        lxi_local[redi] += lxredi;
-                        lyi_local[redi] += lyredi;
-                        lzi_local[redi] += lzredi;
-                    }
-                    if (iSymOp == 0) {
-                        removeMask(mask, i);
-                    }
+            @Override
+            public void start() {
+                int threadId = getThreadIndex();
+                gxi_local = gradX[threadId];
+                gyi_local = gradY[threadId];
+                gzi_local = gradZ[threadId];
+                energy = 0.0;
+                count = 0;
+                computeTime = 0;
+                if (lambdaTerm) {
+                    dEdL = 0.0;
+                    d2EdL2 = 0.0;
+                    lxi_local = lambdaGradX[threadId];
+                    lyi_local = lambdaGradY[threadId];
+                    lzi_local = lambdaGradZ[threadId];
+                } else {
+                    lxi_local = null;
+                    lyi_local = null;
+                    lzi_local = null;
                 }
-                energy += e;
-            }
-            computeTime += System.nanoTime() - startTime;
-        }
-
-        @Override
-        public void finish() {
-            /**
-             * Reduce the energy, interaction count and gradients from this
-             * thread into the shared variables.
-             */
-            sharedEnergy.addAndGet(energy);
-            sharedInteractions.addAndGet(count);
-            if (lambdaTerm) {
-                shareddEdL.addAndGet(dEdL);
-                sharedd2EdL2.addAndGet(d2EdL2);
             }
 
-            /*
-             * logger.info(String.format(" Thread %d computed %10d interactions
-             * in %8.3f sec.", getThreadIndex(), count, computeTime *
-             * toSeconds));
-             */
+            @Override
+            public void run(int lb, int ub) {
+                long startTime = System.nanoTime();
+                /**
+                 * Loop over symmetry operators.
+                 */
+                List<SymOp> symOps = crystal.spaceGroup.symOps;
+                for (int iSymOp = 0; iSymOp < nSymm; iSymOp++) {
+                    double e = 0.0;
+                    SymOp symOp = symOps.get(iSymOp);
+                    /**
+                     * Compute the total transformation operator: R = ToCart *
+                     * Rot * ToFrac.
+                     */
+                    crystal.getTransformationOperator(symOp, transOp);
+                    double xyzS[] = reduced[iSymOp];
+                    int list[][] = neighborLists[iSymOp];
+                    for (int i = lb; i <= ub; i++) {
+                        int i3 = i * 3;
+                        final double xi = reducedXYZ[i3++];
+                        final double yi = reducedXYZ[i3++];
+                        final double zi = reducedXYZ[i3];
+                        final int redi = reductionIndex[i];
+                        final double redv = reductionValue[i];
+                        final double rediv = 1.0 - redv;
+                        final int classi = atomClass[i];
+                        final double radEpsi[] = radEps[classi];
+                        double gxi = 0.0;
+                        double gyi = 0.0;
+                        double gzi = 0.0;
+                        double gxredi = 0.0;
+                        double gyredi = 0.0;
+                        double gzredi = 0.0;
+                        double lxi = 0.0;
+                        double lyi = 0.0;
+                        double lzi = 0.0;
+                        double lxredi = 0.0;
+                        double lyredi = 0.0;
+                        double lzredi = 0.0;
+                        if (iSymOp == 0) {
+                            applyMask(mask, i);
+                        }
+                        // Default is that the outer loop atom is hard.
+                        boolean softCorei[] = softCore[HARD];
+                        boolean softSymmetry = false;
+                        if (isSoft[i]) {
+                            softCorei = softCore[SOFT];
+                            /**
+                             * All interactions between a soft atom and a
+                             * symmetry mate atom are turned off.
+                             */
+                            if (iSymOp > 0) {
+                                softSymmetry = true;
+                            }
+                        }
 
-        }
-    }
+                        /**
+                         * Loop over the neighbor list.
+                         */
+                        final int neighbors[] = list[i];
+                        final int npair = neighbors.length;
+                        for (int j = 0; j < npair; j++) {
+                            final int k = neighbors[j];
+                            int k3 = k * 3;
+                            final double xk = xyzS[k3++];
+                            final double yk = xyzS[k3++];
+                            final double zk = xyzS[k3];
+                            dx_local[0] = xi - xk;
+                            dx_local[1] = yi - yk;
+                            dx_local[2] = zi - zk;
+                            final double r2 = crystal.image(dx_local);
+                            if (r2 <= off2 && mask[k] > 0) {
+                                // This will only happen for iSymm > 0.
+                                double selfScale = 1.0;
+                                if (i == k) {
+                                    selfScale = 0.5;
+                                }
+                                final double r = sqrt(r2);
+                                final double r3 = r2 * r;
+                                final double r4 = r2 * r2;
+                                int a2 = atomClass[k] * 2;
+                                double alpha = 0.0;
+                                double lambda5 = 1.0;
+                                boolean soft = (softCorei[k] || softSymmetry);
+                                if (soft) {
+                                    alpha = sc1;
+                                    lambda5 = sc2;
+                                }
+                                final double rv = radEpsi[a2 + RADMIN];
+                                final double ev = radEpsi[a2 + EPS];
+                                final double eps_lambda = ev * lambda5;
+                                final double rho = r / rv;
+                                final double rho3 = rho * rho * rho;
+                                final double rho6 = rho3 * rho3;
+                                final double rho7 = rho6 * rho;
+                                final double rho_07 = rho + ZERO_07;
+                                final double rho_07_pow3 = rho_07 * rho_07 * rho_07;
+                                final double rho_07_pow7 = rho_07_pow3 * rho_07_pow3 * rho_07;
+                                final double a_rho_07_pow7 = alpha + rho_07_pow7;
+                                final double a_rho7_ZERO_12 = alpha + rho7 + ZERO_12;
+                                final double t1d = 1.0 / a_rho_07_pow7;
+                                final double t2d = 1.0 / a_rho7_ZERO_12;
+                                final double t1 = t1n * t1d;
+                                final double t2a = t2n * t2d;
+                                final double t2 = t2a - 2.0;
+                                double eij = eps_lambda * t1 * t2;
+                                /**
+                                 * Apply a multiplicative switch if the
+                                 * interaction distance is greater than the
+                                 * beginning of the taper.
+                                 */
+                                double taper = 1.0;
+                                double dtaper = 0.0;
+                                if (r2 > cut2) {
+                                    final double r5 = r2 * r3;
+                                    taper = c5 * r5 + c4 * r4 + c3 * r3 + c2 * r2 + c1 * r + c0;
+                                    dtaper = fiveC5 * r4 + fourC4 * r3 + threeC3 * r2 + twoC2 * r + c1;
+                                }
+                                e += selfScale * eij * taper;
+                                count++;
+                                if (!(gradient || (lambdaTerm && soft))) {
+                                    continue;
+                                }
+                                final int redk = reductionIndex[k];
+                                final double red = reductionValue[k];
+                                final double redkv = 1.0 - red;
+                                final double rho_07_pow6 = rho_07_pow3 * rho_07_pow3;
+                                final double drho_dr = 1.0 / rv;
+                                final double dt1d_dr = 7.0 * rho_07_pow6 * drho_dr;
+                                final double dt2d_dr = 7.0 * rho6 * drho_dr;
+                                final double dt1_dr = t1 * dt1d_dr * t1d;
+                                final double dt2_dr = t2a * dt2d_dr * t2d;
+                                double dedr = -eps_lambda * (dt1_dr * t2 + t1 * dt2_dr);
+                                double ir = 1.0 / r;
+                                double drdx = dx_local[0] * ir;
+                                double drdy = dx_local[1] * ir;
+                                double drdz = dx_local[2] * ir;
+                                dedr = (eij * dtaper + dedr * taper);
+                                if (gradient) {
+                                    double dedx = selfScale * dedr * drdx;
+                                    double dedy = selfScale * dedr * drdy;
+                                    double dedz = selfScale * dedr * drdz;
+                                    gxi += dedx * redv;
+                                    gyi += dedy * redv;
+                                    gzi += dedz * redv;
+                                    gxredi += dedx * rediv;
+                                    gyredi += dedy * rediv;
+                                    gzredi += dedz * rediv;
+                                    /**
+                                     * Apply the transpose of the transformation
+                                     * operator.
+                                     */
+                                    final double dedxk = dedx * transOp[0][0] + dedy * transOp[1][0] + dedz * transOp[2][0];
+                                    final double dedyk = dedx * transOp[0][1] + dedy * transOp[1][1] + dedz * transOp[2][1];
+                                    final double dedzk = dedx * transOp[0][2] + dedy * transOp[1][2] + dedz * transOp[2][2];
+                                    gxi_local[k] -= red * dedxk;
+                                    gyi_local[k] -= red * dedyk;
+                                    gzi_local[k] -= red * dedzk;
+                                    gxi_local[redk] -= redkv * dedxk;
+                                    gyi_local[redk] -= redkv * dedyk;
+                                    gzi_local[redk] -= redkv * dedzk;
+                                }
+                                if (lambdaTerm && soft) {
+                                    double dt1 = -t1 * t1d * dsc1dL;
+                                    double dt2 = -t2a * t2d * dsc1dL;
+                                    double f1 = dsc2dL * t1 * t2;
+                                    double f2 = sc2 * dt1 * t2;
+                                    double f3 = sc2 * t1 * dt2;
+                                    double dedl = ev * (f1 + f2 + f3);
+                                    dEdL += selfScale * dedl * taper;
+                                    double t1d2 = -dsc1dL * t1d * t1d;
+                                    double t2d2 = -dsc1dL * t2d * t2d;
+                                    double d2t1 = -dt1 * t1d * dsc1dL
+                                                  - t1 * t1d * d2sc1dL2
+                                                  - t1 * t1d2 * dsc1dL;
 
-    /**
-     * Reduce the van der Waals gradient.
-     */
-    private class ReductionRegion extends ParallelRegion {
+                                    double d2t2 = -dt2 * t2d * dsc1dL
+                                                  - t2a * t2d * d2sc1dL2
+                                                  - t2a * t2d2 * dsc1dL;
 
-        private final ReductionLoop reductionLoop[];
-
-        public ReductionRegion() {
-            reductionLoop = new ReductionLoop[threadCount];
-            for (int i = 0; i < threadCount; i++) {
-                reductionLoop[i] = new ReductionLoop();
+                                    double df1 = d2sc2dL2 * t1 * t2
+                                                 + dsc2dL * dt1 * t2
+                                                 + dsc2dL * t1 * dt2;
+                                    double df2 = dsc2dL * dt1 * t2
+                                                 + sc2 * d2t1 * t2
+                                                 + sc2 * dt1 * dt2;
+                                    double df3 = dsc2dL * t1 * dt2
+                                                 + sc2 * dt1 * dt2
+                                                 + sc2 * t1 * d2t2;
+                                    double de2dl2 = ev * (df1 + df2 + df3);
+                                    d2EdL2 += selfScale * de2dl2 * taper;
+                                    double t11 = -dsc2dL * t2 * dt1_dr;
+                                    double t12 = -sc2 * dt2 * dt1_dr;
+                                    double t13 = 2.0 * sc2 * t2 * dt1_dr * dsc1dL * t1d;
+                                    double t21 = -dsc2dL * t1 * dt2_dr;
+                                    double t22 = -sc2 * dt1 * dt2_dr;
+                                    double t23 = 2.0 * sc2 * t1 * dt2_dr * dsc1dL * t2d;
+                                    double dedldr = ev * (t11 + t12 + t13 + t21 + t22 + t23);
+                                    dedldr = dedl * dtaper + dedldr * taper;
+                                    double dedldx = selfScale * dedldr * drdx;
+                                    double dedldy = selfScale * dedldr * drdy;
+                                    double dedldz = selfScale * dedldr * drdz;
+                                    lxi += dedldx * redv;
+                                    lyi += dedldy * redv;
+                                    lzi += dedldz * redv;
+                                    lxredi += dedldx * rediv;
+                                    lyredi += dedldy * rediv;
+                                    lzredi += dedldz * rediv;
+                                    /**
+                                     * Apply the transpose of the transformation
+                                     * operator.
+                                     */
+                                    final double dedldxk = dedldx * transOp[0][0] + dedldy * transOp[1][0] + dedldz * transOp[2][0];
+                                    final double dedldyk = dedldx * transOp[0][1] + dedldy * transOp[1][1] + dedldz * transOp[2][1];
+                                    final double dedldzk = dedldx * transOp[0][2] + dedldy * transOp[1][2] + dedldz * transOp[2][2];
+                                    lxi_local[k] -= red * dedldxk;
+                                    lyi_local[k] -= red * dedldyk;
+                                    lzi_local[k] -= red * dedldzk;
+                                    lxi_local[redk] -= redkv * dedldxk;
+                                    lyi_local[redk] -= redkv * dedldyk;
+                                    lzi_local[redk] -= redkv * dedldzk;
+                                }
+                            }
+                        }
+                        if (gradient) {
+                            gxi_local[i] += gxi;
+                            gyi_local[i] += gyi;
+                            gzi_local[i] += gzi;
+                            gxi_local[redi] += gxredi;
+                            gyi_local[redi] += gyredi;
+                            gzi_local[redi] += gzredi;
+                        }
+                        if (lambdaTerm) {
+                            lxi_local[i] += lxi;
+                            lyi_local[i] += lyi;
+                            lzi_local[i] += lzi;
+                            lxi_local[redi] += lxredi;
+                            lyi_local[redi] += lyredi;
+                            lzi_local[redi] += lzredi;
+                        }
+                        if (iSymOp == 0) {
+                            removeMask(mask, i);
+                        }
+                    }
+                    energy += e;
+                }
+                computeTime += System.nanoTime() - startTime;
             }
-        }
 
-        @Override
-        public void run() {
-            try {
-                int ti = getThreadIndex();
-                execute(0, nAtoms - 1, reductionLoop[ti]);
-            } catch (Exception e) {
-                String message = "Fatal exception reducing van der Waals gradient in thread: " + getThreadIndex() + "\n";
-                logger.log(Level.SEVERE, message, e);
+            @Override
+            public void finish() {
+                /**
+                 * Reduce the energy, interaction count and gradients from this
+                 * thread into the shared variables.
+                 */
+                sharedEnergy.addAndGet(energy);
+                sharedInteractions.addAndGet(count);
+                if (lambdaTerm) {
+                    shareddEdL.addAndGet(dEdL);
+                    sharedd2EdL2.addAndGet(d2EdL2);
+                }
+
+                /*
+                 * logger.info(String.format(" Thread %d computed %10d
+                 * interactions in %8.3f sec.", getThreadIndex(), count,
+                 * computeTime * toSeconds));
+                 */
+
             }
         }
 

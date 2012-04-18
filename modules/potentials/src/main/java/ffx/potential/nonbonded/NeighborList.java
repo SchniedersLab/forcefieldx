@@ -254,7 +254,7 @@ public class NeighborList extends ParallelRegion {
         this.crystal = crystal;
         this.cutoff = cutoff;
         this.buffer = buffer;
-        this.parallelTeam = parallelTeam;
+        this.parallelTeam = new ParallelTeam(parallelTeam.getThreadCount());
         nAtoms = atoms.length;
         nSymm = crystal.spaceGroup.symOps.size();
         total = cutoff + buffer;
