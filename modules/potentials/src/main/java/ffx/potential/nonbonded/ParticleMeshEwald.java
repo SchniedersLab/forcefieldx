@@ -27,6 +27,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.Math.*;
 import static java.lang.String.format;
+import static java.util.Arrays.fill;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
@@ -428,6 +429,7 @@ public class ParticleMeshEwald implements LambdaInterface {
     private final ReduceRegion reduceRegion;
     private final ReciprocalSpace reciprocalSpace;
     private final GeneralizedKirkwood generalizedKirkwood;
+    
     /**
      * Timing variables.
      */
@@ -1646,14 +1648,12 @@ public class ParticleMeshEwald implements LambdaInterface {
                 double fXCR[] = fieldCR[threadID][0];
                 double fYCR[] = fieldCR[threadID][1];
                 double fZCR[] = fieldCR[threadID][2];
-                for (int i = 0; i < nAtoms; i++) {
-                    fX[i] = 0.0;
-                    fY[i] = 0.0;
-                    fZ[i] = 0.0;
-                    fXCR[i] = 0.0;
-                    fYCR[i] = 0.0;
-                    fZCR[i] = 0.0;
-                }
+                fill(fX, 0.0);
+                fill(fY, 0.0);
+                fill(fZ, 0.0);
+                fill(fXCR, 0.0);
+                fill(fYCR, 0.0);
+                fill(fZCR, 0.0);
             }
 
             @Override
@@ -1662,12 +1662,14 @@ public class ParticleMeshEwald implements LambdaInterface {
                  * Initialize the induced dipole arrays.
                  */
                 for (int i = lb; i <= ub; i++) {
-                    inducedDipole[0][i][0] = 0.0;
-                    inducedDipole[0][i][1] = 0.0;
-                    inducedDipole[0][i][2] = 0.0;
-                    inducedDipoleCR[0][i][0] = 0.0;
-                    inducedDipoleCR[0][i][1] = 0.0;
-                    inducedDipoleCR[0][i][2] = 0.0;
+                    double ind[] = inducedDipole[0][i];
+                    ind[0] = 0.0;
+                    ind[1] = 0.0;
+                    ind[2] = 0.0;
+                    ind = inducedDipoleCR[0][i];
+                    ind[0] = 0.0;
+                    ind[1] = 0.0;
+                    ind[2] = 0.0;
                 }
 
                 /**
@@ -1675,12 +1677,14 @@ public class ParticleMeshEwald implements LambdaInterface {
                  */
                 for (int iSymm = 1; iSymm < nSymm; iSymm++) {
                     for (int i = lb; i <= ub; i++) {
-                        inducedDipole[iSymm][i][0] = 0.0;
-                        inducedDipole[iSymm][i][1] = 0.0;
-                        inducedDipole[iSymm][i][2] = 0.0;
-                        inducedDipoleCR[iSymm][i][0] = 0.0;
-                        inducedDipoleCR[iSymm][i][1] = 0.0;
-                        inducedDipoleCR[iSymm][i][2] = 0.0;
+                        double ind[] = inducedDipole[iSymm][i];
+                        ind[0] = 0.0;
+                        ind[1] = 0.0;
+                        ind[2] = 0.0;
+                        ind = inducedDipoleCR[iSymm][i];
+                        ind[0] = 0.0;
+                        ind[1] = 0.0;
+                        ind[2] = 0.0;
                     }
                 }
             }
@@ -1847,14 +1851,13 @@ public class ParticleMeshEwald implements LambdaInterface {
                             double scale5 = 1.0;
                             double scale7 = 1.0;
                             double damp = pdi * pdk;
-                            double expdamp = 0.0;
                             if (damp != 0.0) {
                                 r = sqrt(r2);
                                 final double pgamma = min(pti, ptk);
                                 final double rdamp = r / damp;
                                 damp = -pgamma * rdamp * rdamp * rdamp;
                                 if (damp > -50.0) {
-                                    expdamp = exp(damp);
+                                    double expdamp = exp(damp);
                                     scale3 = 1.0 - expdamp;
                                     scale5 = 1.0 - expdamp * (1.0 - damp);
                                     scale7 = 1.0 - expdamp * (1.0 - damp + 0.6 * damp * damp);
@@ -2039,13 +2042,12 @@ public class ParticleMeshEwald implements LambdaInterface {
                                 double scale5 = 1.0;
                                 double scale7 = 1.0;
                                 double damp = pdi * pdk;
-                                double expdamp = 0.0;
                                 if (damp != 0.0) {
                                     final double pgamma = min(pti, ptk);
                                     final double rdamp = r / damp;
                                     damp = -pgamma * rdamp * rdamp * rdamp;
                                     if (damp > -50.0) {
-                                        expdamp = exp(damp);
+                                        double expdamp = exp(damp);
                                         scale3 = 1.0 - expdamp;
                                         scale5 = 1.0 - expdamp * (1.0 - damp);
                                         scale7 = 1.0 - expdamp * (1.0 - damp + 0.6 * damp * damp);
@@ -2198,14 +2200,12 @@ public class ParticleMeshEwald implements LambdaInterface {
                 fXCR = fieldCR[threadID][0];
                 fYCR = fieldCR[threadID][1];
                 fZCR = fieldCR[threadID][2];
-                for (int ai = 0; ai < nAtoms; ai++) {
-                    fX[ai] = 0.0;
-                    fY[ai] = 0.0;
-                    fZ[ai] = 0.0;
-                    fXCR[ai] = 0.0;
-                    fYCR[ai] = 0.0;
-                    fZCR[ai] = 0.0;
-                }
+                fill(fX,0.0);
+                fill(fY,0.0);
+                fill(fZ,0.0);
+                fill(fXCR, 0.0);
+                fill(fYCR, 0.0);
+                fill(fZCR, 0.0);
             }
 
             @Override
@@ -2805,7 +2805,6 @@ public class ParticleMeshEwald implements LambdaInterface {
         private double polarizationEnergy;
         private final SharedInteger sharedInteractions;
         private final RealSpaceEnergyLoop realSpaceEnergyLoop[];
-        private long overheadTime;
 
         public RealSpaceEnergyRegion(int nt) {
             sharedInteractions = new SharedInteger();
@@ -2829,44 +2828,37 @@ public class ParticleMeshEwald implements LambdaInterface {
 
         @Override
         public void start() {
-            overheadTime = System.nanoTime();
             sharedInteractions.set(0);
         }
 
         @Override
         public void run() {
+            
+            int threadIndex = getThreadIndex();
+            
             try {
-                execute(0, nAtoms - 1, realSpaceEnergyLoop[getThreadIndex()]);
+                execute(0, nAtoms - 1, realSpaceEnergyLoop[threadIndex]);
             } catch (Exception e) {
                 String message = "Fatal exception computing the real space energy in thread " + getThreadIndex() + "\n";
                 logger.log(Level.SEVERE, message, e);
             }
+            
+            if (threadIndex == 0) {
+                
+            }
+            
         }
 
         @Override
         public void finish() {
-            long computeTime = 0;
             permanentEnergy = 0.0;
             polarizationEnergy = 0.0;
             for (int i = 0; i < maxThreads; i++) {
                 permanentEnergy += realSpaceEnergyLoop[i].permanentEnergy;
                 polarizationEnergy += realSpaceEnergyLoop[i].inducedEnergy;
-                computeTime += realSpaceEnergyLoop[i].getComputeTime();
             }
             permanentEnergy *= ELECTRIC;
             polarizationEnergy *= ELECTRIC;
-
-            overheadTime = System.nanoTime() - overheadTime;
-            overheadTime = overheadTime - computeTime / maxThreads;
-            //double compute = (double) computeTime / threadCount * toSeconds;
-            //double overhead = (double) overheadTime * toSeconds;
-            //double efficiency = compute / (compute + overhead) * 100;
-            /*
-             * logger.info(format("Real Space Energy Parallel Performance\n"
-             * + "Avg. Compute Time  %10.3f (sec)\n" +
-             * "Overhead Time      %10.3f (sec)\n" +
-             * "Efficiency         %10.3f\n", compute, overhead, efficiency));
-             */
         }
 
         /**
@@ -2876,7 +2868,6 @@ public class ParticleMeshEwald implements LambdaInterface {
          */
         private class RealSpaceEnergyLoop extends IntegerForLoop {
 
-            private long computeTime;
             private double ci;
             private double dix, diy, diz;
             private double qixx, qiyy, qizz, qixy, qixz, qiyz;
@@ -2932,11 +2923,10 @@ public class ParticleMeshEwald implements LambdaInterface {
                 maskingd_local = new double[nAtoms];
                 dx_local = new double[3];
                 work = new double[15][3];
-                rot_local = new double[3][3];
-            }
-
-            public long getComputeTime() {
-                return computeTime;
+                rot_local = new double[3][3];                
+                fill(masking_local, 1.0);
+                fill(maskingp_local, 1.0);
+                fill(maskingd_local, 1.0);
             }
 
             @Override
@@ -2946,27 +2936,20 @@ public class ParticleMeshEwald implements LambdaInterface {
 
             @Override
             public void start() {
+                int threadIndex = getThreadIndex();
                 permanentEnergy = 0.0;
                 inducedEnergy = 0.0;
                 count = 0;
-                for (int j = 0; j < nAtoms; j++) {
-                    masking_local[j] = 1.0;
-                    maskingp_local[j] = 1.0;
-                    maskingd_local[j] = 1.0;
-                }
-                int threadID = getThreadIndex();
-                gX = grad[threadID][0];
-                gY = grad[threadID][1];
-                gZ = grad[threadID][2];
-                tX = torque[threadID][0];
-                tY = torque[threadID][1];
-                tZ = torque[threadID][2];
-                computeTime = 0;
+                gX = grad[threadIndex][0];
+                gY = grad[threadIndex][1];
+                gZ = grad[threadIndex][2];
+                tX = torque[threadIndex][0];
+                tY = torque[threadIndex][1];
+                tZ = torque[threadIndex][2];
             }
 
             @Override
             public void run(int lb, int ub) {
-                long startTime = System.nanoTime();
                 List<SymOp> symOps = crystal.spaceGroup.symOps;
                 for (iSymm = 0; iSymm < nSymm; iSymm++) {
                     symOp = symOps.get(iSymm);
@@ -2999,16 +2982,11 @@ public class ParticleMeshEwald implements LambdaInterface {
                         }
                     }
                 }
-                computeTime += System.nanoTime() - startTime;
             }
 
             @Override
             public void finish() {
                 sharedInteractions.addAndGet(count);
-                if (logger.isLoggable(Level.FINE)) {
-                    logger.fine(String.format(" Thread %d computed %10d interactions in %8.3f sec.",
-                                              getThreadIndex(), count, computeTime * toSeconds));
-                }
             }
 
             /**

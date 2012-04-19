@@ -1243,8 +1243,9 @@ public class Crystal {
                * (hkl.h() * trans[0] + hkl.k() * trans[1] + hkl.l() * trans[2]);
     }
 
-    // this is here as its an atypical mod function used by xtal methods
     /**
+     * This is an atypical mod function used by crystallography methods.
+     * 
      * <p>mod</p>
      *
      * @param a a double.
@@ -1260,6 +1261,8 @@ public class Crystal {
     }
 
     /**
+     * This is an atypical mod function used by crystallography methods.
+     * 
      * <p>mod</p>
      *
      * @param a a int.
