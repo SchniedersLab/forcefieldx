@@ -33,6 +33,7 @@ import javax.media.j3d.TransformGroup;
 import javax.vecmath.AxisAngle4d;
 import javax.vecmath.Vector3d;
 
+import ffx.crystal.Crystal;
 import ffx.potential.bonded.RendererCache.ViewModel;
 import ffx.potential.parameters.BondType;
 import static ffx.numerics.VectorMath.*;
@@ -102,6 +103,8 @@ public class RestraintBond extends BondedTerm {
     private int lineIndex;
     private boolean wireVisible = true;
 
+    private Crystal crystal;
+    
     /**
      * Bond constructor.
      *
@@ -110,8 +113,11 @@ public class RestraintBond extends BondedTerm {
      * @param a2
      *            Atom number 2.
      */
-    public RestraintBond(Atom a1, Atom a2) {
+    public RestraintBond(Atom a1, Atom a2, Crystal crystal) {
         atoms = new Atom[2];
+        
+        this.crystal = crystal;
+        
         int i1 = a1.getXYZIndex();
         int i2 = a2.getXYZIndex();
         if (i1 < i2) {
@@ -561,6 +567,11 @@ public class RestraintBond extends BondedTerm {
      */
     public double energy(boolean gradient) {
         diff(atoms[0].getXYZ(), atoms[1].getXYZ(), v10);
+        
+        if (crystal != null) {    
+            crystal.image(v10);
+        }
+        
         value = r(v10);
         double dv = value - bondType.distance;
         double dv2 = dv * dv;

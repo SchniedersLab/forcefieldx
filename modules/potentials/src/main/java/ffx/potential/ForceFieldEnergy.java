@@ -1030,7 +1030,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
      */
     public void setRestraintBond(Atom a1, Atom a2, double distance, double forceConstant) {
         restraintBondTerm = true;
-        RestraintBond rb = new RestraintBond(a1, a2);
+        RestraintBond rb = new RestraintBond(a1, a2, crystal);
         int classes[] = {a1.getAtomType().atomClass, a2.getAtomType().atomClass};
         rb.setBondType((new BondType(classes, forceConstant, distance)));
         nRestraintBonds = 1;
