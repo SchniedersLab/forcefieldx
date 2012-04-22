@@ -52,7 +52,7 @@ public abstract class SpatialDensityLoop extends IntegerForLoop {
         this.region = region;
         this.nSymm = nSymm;
         this.spatialDensitySchedule = new SpatialDensitySchedule(region.nThreads,
-                                                                 region.nAtoms, atomsPerChunk, 0.5);
+                                                                 region.nAtoms, atomsPerChunk, 0.95);
         assert (nSymm <= region.nSymm);
     }
 

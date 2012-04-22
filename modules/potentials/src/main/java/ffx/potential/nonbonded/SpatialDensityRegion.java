@@ -20,9 +20,11 @@
  */
 package ffx.potential.nonbonded;
 
+import java.nio.DoubleBuffer;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import static java.lang.Math.floor;
 
 import edu.rit.pj.IntegerForLoop;
@@ -31,7 +33,6 @@ import edu.rit.pj.ParallelRegion;
 
 import ffx.crystal.Crystal;
 import ffx.potential.bonded.Atom;
-import java.nio.DoubleBuffer;
 
 /**
  * This class implements a spatial decomposition based on partitioning a
@@ -199,11 +200,11 @@ public class SpatialDensityRegion extends ParallelRegion {
             div = 2;
             currentWork = nC / div / threadCount;
             // If we have enough work per thread, stop dividing the domain.
-            if (currentWork > minWork || nY < 2) {
+            if (currentWork >= minWork || nY < 2) {
                 nA = 1;
                 nB = 1;
                 // Reduce the number of divisions along the Z-axis if possible
-                while (currentWork > 2 * minWork) {
+                while (currentWork >= 2 * minWork) {
                     nC -= 2;
                     currentWork = nC / div / threadCount;
                 }
@@ -216,9 +217,9 @@ public class SpatialDensityRegion extends ParallelRegion {
                 div = 4;
                 currentWork = nB * nC / div / threadCount;
                 // If we have 4 * threadCount * minWork chunks, stop dividing the domain.
-                if (currentWork > minWork || nX < 2) {
+                if (currentWork >= minWork || nX < 2) {
                     nA = 1;
-                    while (currentWork > 2 * minWork) {
+                    while (currentWork >= 2 * minWork) {
                         nB -= 2;
                         currentWork = nB * nC / div / threadCount;
                     }
@@ -229,7 +230,7 @@ public class SpatialDensityRegion extends ParallelRegion {
                     nA = nX;
                     div = 8;
                     currentWork = nA * nB * nC / div / threadCount;
-                    while (currentWork > 2 * minWork) {
+                    while (currentWork >= 2 * minWork) {
                         nA -= 2;
                         currentWork = nA * nB * nC / div / threadCount;
                     }
@@ -247,7 +248,7 @@ public class SpatialDensityRegion extends ParallelRegion {
             nWork = 1;
         }
 
-        //logger.info(String.format(" nA %d nB %d nC %d nWork %d", nA, nB, nC, nWork));
+        logger.info(String.format(" nA %d nB %d nC %d nWork %d", nA, nB, nC, nWork));
 
         workA = new int[nWork];
         workB = new int[nWork];
@@ -384,7 +385,6 @@ public class SpatialDensityRegion extends ParallelRegion {
      * should be over-ridden by subclasses that want finer control.
      */
     public void selectAtoms() {
-        return;
     }
 
     /**
