@@ -8,6 +8,9 @@ import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
 
+// First atom to test.
+int atomID = 0;
+
 // Finite-difference step size in Angstroms.
 double step = 1.0e-5;
 
@@ -20,6 +23,7 @@ boolean print = false;
 // Create the command line parser.
 def cli = new CliBuilder(usage:' ffxc testGradient [options] <filename>');
 cli.h(longOpt:'help', 'Print this help message.');
+cli.a(longOpt:'atomID', args:1, argName:'1', 'Number of the first atom to test')
 cli.d(longOpt:'dx', args:1, argName:'1.0e-5', 'Finite-difference step size (Angstroms)');
 cli.v(longOpt:'verbose', args:1, argName:'false', 'Print out the energy for each step');
 def options = cli.parse(args);
@@ -32,9 +36,14 @@ if (options.h || arguments == null || arguments.size() != 1) {
 // Read in command line.
 String filename = arguments.get(0);
 
+// First atom to test. Subtract 1 for Java array indexing.
+if (options.a) {
+    atomID = Integer.parseInt(options.a) - 1;
+}
+
 // Load the finite-difference step size in Angstroms.
 if (options.d) {
-    step =  Double.parseDouble(options.d);
+    step = Double.parseDouble(options.d);
 }
 
 // Print the energy for each step.
@@ -50,6 +59,10 @@ ForceFieldEnergy energy = active.getPotentialEnergy();
 Atom[] atoms = active.getAtomArray();
 int n = atoms.length;
 
+if (atomID >= n) {
+    atomID = 0;
+}
+
 double gradientTolerance = 1.0e-3;
 double width = 2.0 * step;
 double[] x = new double[n*3];
@@ -59,7 +72,7 @@ double[] numeric = new double[3];
 energy.getCoordinates(x);
 energy.energyAndGradient(x,analytic);
 
-for (int i=0; i<n; i++) {
+for (int i=atomID; i<n; i++) {
     Atom a0 = atoms[i];
     int i3 = i*3;
     int i0 = i3 + 0;
