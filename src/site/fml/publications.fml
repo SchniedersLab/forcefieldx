@@ -6,9 +6,46 @@
       toplink="true">
     <part id="2012">
         <title>2012</title>
+        <faq id="13">
+            <question>
+                Schnieders, M. J., J. Baltrusaitis, Y. Shi, G. Chattree, L. Zheng, W. Yang and P. Ren
+                The Structure, Thermodynamics, and Solubility of Organic Crystals from Simulation with a Polarizable Force Field
+                <i>Journal of Chemical Theory and Computation</i>
+                <b>2012</b> 8, (X), XXX-XXX.
+                <a href="http://dx.doi.org/10.1021/ct300035u">
+                    <img src="images/pdf.png" alt="PDF"/>
+                </a>
+            </question>
+            <answer>
+                <p>
+                An important unsolved problem in materials science is prediction of the thermodynamic 
+                stability of organic crystals and their solubility from first principles. Solubility can 
+                be defined as the saturating concentration of a molecule within a liquid solvent, where 
+                the physical picture is of solvated molecules in equilibrium with their solid phase. Despite 
+                the importance of solubility in determining the oral bioavailability of pharmaceuticals, 
+                prediction tools are currently limited to quantitative structure–property relationships that 
+                are fit to experimental solubility measurements. For the first time, we describe a consistent 
+                procedure for the prediction of the structure, thermodynamic stability, and solubility of 
+                organic crystals from molecular dynamics simulations using the polarizable multipole AMOEBA 
+                force field. Our approach is based on a thermodynamic cycle that decomposes standard state 
+                solubility into the sum of solid–vapor sublimation and vapor–liquid solvation free energies 
+                ΔG°<sub>solubility</sub> = ΔG°<sub>sub</sub> + ΔG°<sub>solv</sub>, which are computed via the 
+                orthogonal space random walk (OSRW) sampling strategy. Application to the n-alkylamides series 
+                from acetamide through octanamide was selected due to the dependence of their solubility on both 
+                amide hydrogen bonding and the hydrophobic effect, which are each fundamental to protein structure 
+                and solubility. On average, the calculated absolute standard state solubility free energies are 
+                accurate to within 1.1 kcal/mol. The experimental trend of decreasing solubility as a function 
+                of n-alkylamide chain length is recapitulated by the increasing stability of the crystalline 
+                state and to a lesser degree by decreasing favorability of solvation (i.e., the hydrophobic effect).
+                Our results suggest that coupling the polarizable AMOEBA force field with an orthogonal space 
+                based free energy algorithm, as implemented in the program <b><i>Force Field X</i></b>, is a consistent procedure 
+                for predicting the structure, thermodynamic stability, and solubility of organic crystals.
+                </p>
+            </answer>        
+        </faq>
         <faq id="12">
             <question>
-                Schnieders, M. J., T. S. Kaoud, Chunli Yan; Kevin N. Dalby and Pengyu Ren
+                Schnieders, M. J., T. S. Kaoud, C. Yan; K. N. Dalby and P. Ren
                 Computational Insights for the Discovery of 
                 Non-ATP Competitive Inhibitors of MAP Kinases
                 <i>Current Pharmaceutical Design</i>
@@ -137,7 +174,7 @@
                     An implementation of symmetry accelerated PME for the polarizable atomic
                     multipole optimized energetics for biomolecular applications (AMOEBA) force
                     field is presented. Relative to a single CPU core performing calculations on a
-                    P1 unit cell, our AMOEBA engine called Force Field X (FFX) accelerates energy
+                    P1 unit cell, our AMOEBA engine called <b><i>Force Field X</i></b> (FFX) accelerates energy
                     evaluations by more than a factor of 24 on an 8-core workstation with a Tesla
                     GPU coprocessor for 30 structures that contain 240000 atoms on average in the
                     unit cell. The benefit of AMOEBA electrostatics evaluated with PME for

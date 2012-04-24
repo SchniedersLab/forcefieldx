@@ -459,6 +459,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         torsionEnergy = 0.0;
         piOrbitalTorsionEnergy = 0.0;
         torsionTorsionEnergy = 0.0;
+        restraintBondEnergy = 0.0;
         totalBondedEnergy = 0.0;
 
         // Zero out bond and angle RMSDs.
