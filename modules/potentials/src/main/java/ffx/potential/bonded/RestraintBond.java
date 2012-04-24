@@ -24,20 +24,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
-import javax.media.j3d.BranchGroup;
-import javax.media.j3d.Geometry;
-import javax.media.j3d.LineArray;
-import javax.media.j3d.Shape3D;
-import javax.media.j3d.Transform3D;
-import javax.media.j3d.TransformGroup;
+import javax.media.j3d.*;
 import javax.vecmath.AxisAngle4d;
 import javax.vecmath.Vector3d;
 
 import ffx.crystal.Crystal;
 import ffx.potential.bonded.RendererCache.ViewModel;
 import ffx.potential.parameters.BondType;
+
 import static ffx.numerics.VectorMath.*;
-import static ffx.potential.parameters.BondType.*;
+import static ffx.potential.parameters.BondType.units;
 
 /**
  * <p>RestraintBond class.</p>
@@ -129,8 +125,6 @@ public class RestraintBond extends BondedTerm {
         }
         setID_Key(false);
         viewModel = RendererCache.ViewModel.WIREFRAME;
-//        a1.setBond(this);
-//        a2.setBond(this);
     }
 
     /**
