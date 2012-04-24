@@ -108,7 +108,7 @@ public class ReciprocalSpace {
     private final long splinePermanentTime[];
     private final long permanentPhiTime[];
     private final long splineInducedTime[];
-    private final int splineInducedCount[];
+    private final int splineCount[];
     private final long inducedPhiTime[];
     /**
      * CUDA convolution variables.
@@ -243,9 +243,9 @@ public class ReciprocalSpace {
         }
         bSplineTime = new long[threadCount];
         splinePermanentTime = new long[threadCount];
-        permanentPhiTime = new long[threadCount];
         splineInducedTime = new long[threadCount];
-        splineInducedCount = new int[threadCount];
+        splineCount = new int[threadCount];
+        permanentPhiTime = new long[threadCount];
         inducedPhiTime = new long[threadCount];
     }
 
@@ -287,10 +287,46 @@ public class ReciprocalSpace {
         complexFFT3DSpace = fftX * fftY * fftZ * 2;
     }
 
+    public void printTimings() {
+        if (logger.isLoggable(Level.FINE)) {
+            logger.info("\n Reciprocal Space Timings");
+            if (complexFFT3D != null) {
+                
+                long convTime[] = complexFFT3D.getTimings();
+                
+                logger.info("                           Perm Multipoles Induced Dipoles");
+                logger.info(" Thread  B-Spline  3DConv  Spline  Phi     Spline  Phi      Count");
+                for (int i = 0; i < threadCount; i++) {
+                    logger.info(String.format("    %3d   %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f  %6d", i,
+                            bSplineTime[i] * toSeconds, convTime[i] * toSeconds, splinePermanentTime[i] * toSeconds,
+                            permanentPhiTime[i] * toSeconds, splineInducedTime[i] * toSeconds,
+                            inducedPhiTime[i] * toSeconds, splineCount[i]));
+                }
+            }
+        }
+    }
+
     /**
      * <p>computeBSplines</p>
      */
     public void computeBSplines() {
+
+        /**
+         * Zero out timing arrays.
+         */
+        for (int i = 0; i < threadCount; i++) {
+            bSplineTime[i] = 0;
+            splinePermanentTime[i] = 0;
+            splineInducedTime[i] = 0;
+            permanentPhiTime[i] = 0;
+            inducedPhiTime[i] = 0;
+            splineCount[i] = 0;
+        }
+
+        if (complexFFT3D != null) {
+            complexFFT3D.initTiming();
+        }
+
         try {
             long time = -System.nanoTime();
             parallelTeam.execute(bSplineRegion);
@@ -391,19 +427,9 @@ public class ReciprocalSpace {
         for (int i = 0; i < threadCount; i++) {
             splineInducedLoops[i].setInducedDipoles(inducedDipole, inducedDipoleCR);
             splineInducedLoops[i].setUse(use);
-            splineInducedTime[i] = 0;
-            splineInducedCount[i] = 0;
         }
         try {
             parallelTeam.execute(spatialDensityRegion);
-            if (logger.isLoggable(Level.FINE)) {
-                logger.info("\n Spline Induced Dipoles");
-                logger.info(" Thread  Time (sec)  Atom Count");
-                for (int i = 0; i < threadCount; i++) {
-                    logger.info(String.format("    %3d %8.4f %5d", i,
-                            splineInducedTime[i] * toSeconds, splineInducedCount[i]));
-                }
-            }
         } catch (Exception e) {
             String message = " Fatal exception evaluating induced density.\n";
             logger.log(Level.SEVERE, message, e);
@@ -428,9 +454,6 @@ public class ReciprocalSpace {
                 long time = -System.nanoTime();
                 complexFFT3D.convolution(splineGrid);
                 time += System.nanoTime();
-                if (logger.isLoggable(Level.FINE)) {
-                    logger.fine(format(" Java Convolution:       %8.3f", time * toSeconds));
-                }
             }
         } catch (Exception e) {
             String message = "Fatal exception evaluating induced convolution.";
@@ -452,9 +475,6 @@ public class ReciprocalSpace {
                     cartInducedDipoleCRPhi);
             parallelTeam.execute(polarizationPhiRegion);
             time += System.nanoTime();
-            if (logger.isLoggable(Level.FINE)) {
-                logger.fine(format(" Compute Induced Phi:    %8.3f (sec)", time * toSeconds));
-            }
         } catch (Exception e) {
             String message = "Fatal exception evaluating induced reciprocal space potential.";
             logger.log(Level.SEVERE, message, e);
@@ -598,14 +618,6 @@ public class ReciprocalSpace {
             } catch (Exception e) {
                 logger.severe(e.toString());
             }
-
-            if (threadIndex == 0 && logger.isLoggable(Level.FINE)) {
-                logger.info("\n Fill b-Spline Timings (sec)");
-                logger.info(" Thread");
-                for (int i = 0; i < threadCount; i++) {
-                    logger.info(String.format("    %3d %8.4f", i, bSplineTime[i] * toSeconds));
-                }
-            }
         }
 
         private class BSplineFillLoop extends IntegerForLoop {
@@ -647,7 +659,7 @@ public class ReciprocalSpace {
             @Override
             public void start() {
                 int threadIndex = getThreadIndex();
-                bSplineTime[threadIndex] = -System.nanoTime();
+                bSplineTime[threadIndex] -= System.nanoTime();
             }
 
             @Override
@@ -713,6 +725,7 @@ public class ReciprocalSpace {
 
         private double globalMultipoles[][][] = null;
         private boolean use[] = null;
+        private int threadIndex;
         private final BSplineRegion bSplines;
 
         public SplinePermanentLoop(SpatialDensityRegion region, BSplineRegion splines) {
@@ -729,8 +742,19 @@ public class ReciprocalSpace {
         }
 
         @Override
-        public void gridDensity(int iSymm, int n) {
+        public void start() {
+            threadIndex = getThreadIndex();
+            splinePermanentTime[threadIndex] -= System.nanoTime();
+        }
 
+        @Override
+        public void finish() {
+            splinePermanentTime[threadIndex] += System.nanoTime();
+        }
+
+        @Override
+        public void gridDensity(int iSymm, int n) {
+            splineCount[threadIndex]++;
             /**
              * Convert Cartesian multipoles in the global frame to fractional
              * multipoles.
@@ -888,8 +912,6 @@ public class ReciprocalSpace {
 
         @Override
         public void gridDensity(int iSymm, int n) {
-            int threadIndex = getThreadIndex();
-            splineInducedCount[threadIndex]++;
             /**
              * Convert Cartesian induced dipole to fractional induced dipole.
              */
@@ -983,9 +1005,6 @@ public class ReciprocalSpace {
             this.splineY = bSplineRegion.splineY;
             this.splineZ = bSplineRegion.splineZ;
             fractionalPhiLoop = new FractionalPhiLoop[threadCount];
-            for (int i = 0; i < threadCount; i++) {
-                fractionalPhiLoop[i] = new FractionalPhiLoop();
-            }
         }
 
         public void setCartPermanentPhi(double cartPermanentPhi[][]) {
@@ -994,9 +1013,15 @@ public class ReciprocalSpace {
 
         @Override
         public void run() {
+
+            int threadIndex = getThreadIndex();
+
+            if (fractionalPhiLoop[threadIndex] == null) {
+                fractionalPhiLoop[threadIndex] = new FractionalPhiLoop();
+            }
+
             try {
-                int ti = getThreadIndex();
-                execute(0, nAtoms - 1, fractionalPhiLoop[ti]);
+                execute(0, nAtoms - 1, fractionalPhiLoop[threadIndex]);
             } catch (Exception e) {
                 logger.severe(e.toString());
             }
@@ -1007,6 +1032,18 @@ public class ReciprocalSpace {
             @Override
             public IntegerSchedule schedule() {
                 return IntegerSchedule.fixed();
+            }
+
+            @Override
+            public void start() {
+                int threadIndex = getThreadIndex();
+                permanentPhiTime[threadIndex] -= System.nanoTime();
+            }
+
+            @Override
+            public void finish() {
+                int threadIndex = getThreadIndex();
+                permanentPhiTime[threadIndex] += System.nanoTime();
             }
 
             @Override
@@ -1192,13 +1229,6 @@ public class ReciprocalSpace {
                 logger.severe(e.toString());
             }
 
-            if (threadIndex == 0 && logger.isLoggable(Level.FINE)) {
-                logger.info("\n Induced Phi Timings (sec)");
-                logger.info(" Thread");
-                for (int i = 0; i < threadCount; i++) {
-                    logger.info(String.format("    %3d %8.4f", i, inducedPhiTime[i] * toSeconds));
-                }
-            }
         }
 
         private class PolarizationPhiInducedLoop extends IntegerForLoop {
@@ -1211,7 +1241,7 @@ public class ReciprocalSpace {
             @Override
             public void start() {
                 int threadIndex = getThreadIndex();
-                inducedPhiTime[threadIndex] = -System.nanoTime();
+                inducedPhiTime[threadIndex] -= System.nanoTime();
             }
 
             @Override

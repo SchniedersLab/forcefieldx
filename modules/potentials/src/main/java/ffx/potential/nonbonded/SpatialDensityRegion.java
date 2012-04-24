@@ -1,22 +1,21 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Title: Force Field X Description: Force Field X - Software for Molecular
+ * Biophysics. Copyright: Copyright (c) Michael J. Schnieders 2001-2011
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.potential.nonbonded;
 
@@ -35,8 +34,8 @@ import ffx.crystal.Crystal;
 import ffx.potential.bonded.Atom;
 
 /**
- * This class implements a spatial decomposition based on partitioning a
- * grid into octants.
+ * This class implements a spatial decomposition based on partitioning a grid
+ * into octants.
  *
  * @author Michael J. Schnieders
  * @since 1.0
@@ -44,7 +43,10 @@ import ffx.potential.bonded.Atom;
  */
 public class SpatialDensityRegion extends ParallelRegion {
 
-    /** Constant <code>logger</code> */
+    /**
+     * Constant
+     * <code>logger</code>
+     */
     protected static final Logger logger = Logger.getLogger(SpatialDensityRegion.class.getName());
     /**
      * The number of divisions along the A-axis.
@@ -71,8 +73,8 @@ public class SpatialDensityRegion extends ParallelRegion {
      */
     private final int nWork;
     /**
-     * Number of octant work cells with at least one atom
-     * (actualWork is less than or equal to nWork).
+     * Number of octant work cells with at least one atom (actualWork is less
+     * than or equal to nWork).
      */
     protected int actualWork;
     public int actualCount[];
@@ -154,25 +156,25 @@ public class SpatialDensityRegion extends ParallelRegion {
      * @param coordinates an array of double.
      */
     public SpatialDensityRegion(int gX, int gY, int gZ, double grid[],
-                                int basisSize, int nSymm, int minWork,
-                                int threadCount, Crystal crystal,
-                                Atom atoms[], double coordinates[][][]) {
+            int basisSize, int nSymm, int minWork,
+            int threadCount, Crystal crystal,
+            Atom atoms[], double coordinates[][][]) {
         this(gX, gY, gZ, basisSize, nSymm, minWork, threadCount, crystal, atoms, coordinates);
         this.grid = grid;
         if (grid != null) {
-            gridBuffer = DoubleBuffer.wrap(grid);            
+            gridBuffer = DoubleBuffer.wrap(grid);
         }
     }
 
     private SpatialDensityRegion(int gX, int gY, int gZ,
-                                 int basisSize, int nSymm, int minWork,
-                                 int threadCount, Crystal crystal,
-                                 Atom atoms[], double coordinates[][][]) {
+            int basisSize, int nSymm, int minWork,
+            int threadCount, Crystal crystal,
+            Atom atoms[], double coordinates[][][]) {
         /**
          * Chop up the 3D unit cell domain into fractional coordinate chunks to
          * allow multiple threads to put charge density onto the grid without
-         * needing the same grid point. First, we partition the X-axis, then
-         * the Y-axis, and finally the Z-axis if necessary.
+         * needing the same grid point. First, we partition the X-axis, then the
+         * Y-axis, and finally the Z-axis if necessary.
          */
         this.crystal = crystal;
         this.coordinates = coordinates;
@@ -279,7 +281,8 @@ public class SpatialDensityRegion extends ParallelRegion {
     }
 
     /**
-     * <p>Getter for the field <code>grid</code>.</p>
+     * <p>Getter for the field
+     * <code>grid</code>.</p>
      *
      * @return an array of double.
      */
@@ -290,7 +293,7 @@ public class SpatialDensityRegion extends ParallelRegion {
     public void setGridBuffer(DoubleBuffer grid) {
         gridBuffer = grid;
     }
-    
+
     /**
      * <p>getNsymm</p>
      *
@@ -303,7 +306,8 @@ public class SpatialDensityRegion extends ParallelRegion {
     /**
      * <p>setDensityLoop</p>
      *
-     * @param loops an array of {@link ffx.potential.nonbonded.SpatialDensityLoop} objects.
+     * @param loops an array of {@link ffx.potential.nonbonded.SpatialDensityLoop}
+     * objects.
      */
     public void setDensityLoop(SpatialDensityLoop loops[]) {
         spatialDensityLoop = loops;
@@ -324,7 +328,7 @@ public class SpatialDensityRegion extends ParallelRegion {
         @Override
         public void run(int lb, int ub) {
             if (gridBuffer != null) {
-            //if (grid != null) {
+                //if (grid != null) {
                 for (int i = lb; i <= ub; i++) {
                     //grid[i] = initValue;
                     gridBuffer.put(i, initValue);
@@ -334,7 +338,8 @@ public class SpatialDensityRegion extends ParallelRegion {
     }
 
     /**
-     * <p>Setter for the field <code>initValue</code>.</p>
+     * <p>Setter for the field
+     * <code>initValue</code>.</p>
      *
      * @param initValue a double.
      */
@@ -342,7 +347,9 @@ public class SpatialDensityRegion extends ParallelRegion {
         this.initValue = initValue;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void run() {
         int ti = getThreadIndex();
@@ -380,9 +387,9 @@ public class SpatialDensityRegion extends ParallelRegion {
     }
 
     /**
-     * Select atoms that should be assigned to cells. The default is to
-     * include all atoms, which is set up in the constructor. This function
-     * should be over-ridden by subclasses that want finer control.
+     * Select atoms that should be assigned to cells. The default is to include
+     * all atoms, which is set up in the constructor. This function should be
+     * over-ridden by subclasses that want finer control.
      */
     public void selectAtoms() {
     }
@@ -445,9 +452,20 @@ public class SpatialDensityRegion extends ParallelRegion {
                 }
 
                 // The cell indices of this atom.
-                final int a = (int) floor(xu * nA);
-                final int b = (int) floor(yu * nB);
-                final int c = (int) floor(zu * nC);
+                int a = (int) floor(xu * nA);
+                int b = (int) floor(yu * nB);
+                int c = (int) floor(zu * nC);
+
+                // Check to make sure a, b and c are less than nA, nB and nC, respectively.
+                if (a >= nA) {
+                    a = nA - 1;
+                }
+                if (b >= nB) {
+                    b = nB - 1;
+                }
+                if (c >= nC) {
+                    c = nC - 1;
+                }
 
                 // The cell index of this atom.
                 final int index = a + b * nA + c * nAB;
@@ -515,7 +533,7 @@ public class SpatialDensityRegion extends ParallelRegion {
 
             if (logger.isLoggable(Level.FINE)) {
                 logger.fine(String.format(" Empty chunks: %d out of %d.",
-                                          nWork - actualWork, nWork));
+                        nWork - actualWork, nWork));
             }
         }
     }

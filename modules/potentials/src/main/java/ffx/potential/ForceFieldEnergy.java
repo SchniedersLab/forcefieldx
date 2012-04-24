@@ -459,6 +459,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         torsionEnergy = 0.0;
         piOrbitalTorsionEnergy = 0.0;
         torsionTorsionEnergy = 0.0;
+        restraintBondEnergy = 0.0;
         totalBondedEnergy = 0.0;
 
         // Zero out bond and angle RMSDs.
@@ -588,7 +589,10 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
         totalTime = System.nanoTime() - totalTime;
 
-        totalBondedEnergy = bondEnergy + restraintBondEnergy + angleEnergy + stretchBendEnergy + ureyBradleyEnergy + outOfPlaneBendEnergy + torsionEnergy + piOrbitalTorsionEnergy + torsionTorsionEnergy;
+        totalBondedEnergy = bondEnergy + restraintBondEnergy + angleEnergy 
+                + stretchBendEnergy + ureyBradleyEnergy + outOfPlaneBendEnergy 
+                + torsionEnergy + piOrbitalTorsionEnergy 
+                + torsionTorsionEnergy;
         totalNonBondedEnergy = vanDerWaalsEnergy + totalElectrostaticEnergy;
         totalEnergy = totalBondedEnergy + totalNonBondedEnergy + solvationEnergy;
 

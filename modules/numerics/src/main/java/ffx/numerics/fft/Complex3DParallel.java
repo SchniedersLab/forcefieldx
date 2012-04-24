@@ -1,22 +1,21 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Title: Force Field X Description: Force Field X - Software for Molecular
+ * Biophysics. Copyright: Copyright (c) Michael J. Schnieders 2001-2011
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.numerics.fft;
 
@@ -31,18 +30,11 @@ import edu.rit.pj.ParallelTeam;
 
 /**
  * Compute the 3D FFT of complex, double precision input of arbitrary dimensions
- * via 1D Mixed Radix FFTs in parallel.
- * <p>
- * The location of the input point [i, j, k] within the input array must be:<br>
- * <br>
- * double real = input[x*nextX + y*nextY + z*nextZ]<br>
- * double imag = input[x*nextX + y*nextY + z*nextZ + 1]<br>
- * <br>
- * where<br>
- * int nextX = 2<br>
- * int nextY = 2*nX<br>
- * int nextZ = 2*nX*nY<br>
- * <p>
+ * via 1D Mixed Radix FFTs in parallel. <p> The location of the input point [i,
+ * j, k] within the input array must be:<br> <br> double real = input[x*nextX +
+ * y*nextY + z*nextZ]<br> double imag = input[x*nextX + y*nextY + z*nextZ +
+ * 1]<br> <br> where<br> int nextX = 2<br> int nextY = 2*nX<br> int nextZ =
+ * 2*nX*nY<br> <p>
  *
  * @author Michal J. Schnieders
  * @since 1.0
@@ -59,20 +51,17 @@ public class Complex3DParallel {
     private final ParallelIFFT parallelIFFT;
     private final Convolution convolution;
     private final double[] recip;
+    private final long convolutionTime[];
     private final IntegerSchedule schedule;
     private static final Logger logger = Logger.getLogger(Complex3DParallel.class.getName());
 
     /**
      * Initialize the 3D FFT for complex 3D matrix.
      *
-     * @param nX
-     *            X-dimension.
-     * @param nY
-     *            Y-dimension.
-     * @param nZ
-     *            Z-dimension.
-     * @param parallelTeam
-     *            A ParallelTeam instance.
+     * @param nX X-dimension.
+     * @param nY Y-dimension.
+     * @param nZ Z-dimension.
+     * @param parallelTeam A ParallelTeam instance.
      * @since 1.0
      */
     public Complex3DParallel(int nX, int nY, int nZ, ParallelTeam parallelTeam) {
@@ -91,25 +80,21 @@ public class Complex3DParallel {
         parallelFFT = new ParallelFFT();
         parallelIFFT = new ParallelIFFT();
         convolution = new Convolution();
+        convolutionTime = new long[threadCount];
     }
 
     /**
      * Initialize the 3D FFT for complex 3D matrix.
      *
-     * @param nX
-     *            X-dimension.
-     * @param nY
-     *            Y-dimension.
-     * @param nZ
-     *            Z-dimension.
-     * @param parallelTeam
-     *            A ParallelTeam instance.
-     * @param integerSchedule
-     *            The IntegerSchedule to use.
+     * @param nX X-dimension.
+     * @param nY Y-dimension.
+     * @param nZ Z-dimension.
+     * @param parallelTeam A ParallelTeam instance.
+     * @param integerSchedule The IntegerSchedule to use.
      * @since 1.0
      */
     public Complex3DParallel(int nX, int nY, int nZ, ParallelTeam parallelTeam,
-                             IntegerSchedule integerSchedule) {
+            IntegerSchedule integerSchedule) {
         this.nX = nX;
         this.nY = nY;
         this.nZ = nZ;
@@ -129,13 +114,23 @@ public class Complex3DParallel {
         parallelFFT = new ParallelFFT();
         parallelIFFT = new ParallelIFFT();
         convolution = new Convolution();
+        convolutionTime = new long[threadCount];
+    }
+
+    public void initTiming() {
+        for (int i = 0; i < threadCount; i++) {
+            convolutionTime[i] = 0;
+        }
+    }
+    
+    public long[] getTimings(){
+        return convolutionTime;
     }
 
     /**
      * Compute the 3D FFT in pararallel.
      *
-     * @param input
-     *            The input array must be of size 2 * nX * nY * nZ.
+     * @param input The input array must be of size 2 * nX * nY * nZ.
      * @since 1.0
      */
     public void fft(final double input[]) {
@@ -151,8 +146,7 @@ public class Complex3DParallel {
     /**
      * Compute the inverse 3D FFT in parallel.
      *
-     * @param input
-     *            The input array must be of size 2 * nX * nY * nZ.
+     * @param input The input array must be of size 2 * nX * nY * nZ.
      * @since 1.0
      */
     public void ifft(final double input[]) {
@@ -170,8 +164,7 @@ public class Complex3DParallel {
      * Compute the 3D FFT, perfrom a multiplication in reciprocal space, and the
      * inverese 3D FFT all in parallel.
      *
-     * @param input
-     *            The input array must be of size 2 * nX * nY * nZ.
+     * @param input The input array must be of size 2 * nX * nY * nZ.
      * @since 1.0
      */
     public void convolution(final double input[]) {
@@ -185,7 +178,8 @@ public class Complex3DParallel {
     }
 
     /**
-     * <p>Setter for the field <code>recip</code>.</p>
+     * <p>Setter for the field
+     * <code>recip</code>.</p>
      *
      * @param recip an array of double.
      */
@@ -193,8 +187,8 @@ public class Complex3DParallel {
         int offset, y, x, z, i;
 
         /**
-         * Reorder the reciprocal space data into the order it is needed
-         * by the convolution routine.
+         * Reorder the reciprocal space data into the order it is needed by the
+         * convolution routine.
          */
         int index = 0;
         for (offset = 0, y = 0; y < nY; y++) {
@@ -219,15 +213,15 @@ public class Complex3DParallel {
             nZm1 = nZ - 1;
             fftXYLoop = new FFTXYLoop[threadCount];
             fftZLoop = new FFTZLoop[threadCount];
-            for (int i = 0; i < threadCount; i++) {
-                fftXYLoop[i] = new FFTXYLoop();
-                fftZLoop[i] = new FFTZLoop();
-            }
         }
 
         @Override
         public void run() {
             int threadIndex = getThreadIndex();
+            if (fftXYLoop[threadIndex] == null) {
+                fftXYLoop[threadIndex] = new FFTXYLoop();
+                fftZLoop[threadIndex] = new FFTZLoop();
+            }
             fftXYLoop[threadIndex].input = input;
             fftZLoop[threadIndex].input = input;
             try {
@@ -307,23 +301,25 @@ public class Complex3DParallel {
             nZm1 = nZ - 1;
             ifftXYLoop = new IFFTXYLoop[threadCount];
             ifftZLoop = new IFFTZLoop[threadCount];
-            for (int i = 0; i < threadCount; i++) {
-                ifftXYLoop[i] = new IFFTXYLoop();
-                ifftZLoop[i] = new IFFTZLoop();
-            }
         }
 
         @Override
         public void run() {
             int threadIndex = getThreadIndex();
+
+            if (ifftZLoop[threadIndex] == null) {
+                ifftXYLoop[threadIndex] = new IFFTXYLoop();
+                ifftZLoop[threadIndex] = new IFFTZLoop();
+            }
+
             ifftZLoop[threadIndex].input = input;
             ifftXYLoop[threadIndex].input = input;
+
             try {
                 execute(0, nXm1, ifftZLoop[threadIndex]);
                 execute(0, nZm1, ifftXYLoop[threadIndex]);
             } catch (Exception e) {
                 logger.severe(e.toString());
-                e.printStackTrace();
             }
         }
 
@@ -398,19 +394,21 @@ public class Complex3DParallel {
             fftXYLoop = new FFTXYLoop[threadCount];
             fftZ_Multiply_IFFTZLoop = new FFTZ_Multiply_IFFTZLoop[threadCount];
             ifftXYLoop = new IFFTXYLoop[threadCount];
-            for (int i = 0; i < threadCount; i++) {
-                fftXYLoop[i] = new FFTXYLoop();
-                fftZ_Multiply_IFFTZLoop[i] = new FFTZ_Multiply_IFFTZLoop();
-                ifftXYLoop[i] = new IFFTXYLoop();
-            }
         }
 
         @Override
         public void run() {
             int threadIndex = getThreadIndex();
+            if (fftXYLoop[threadIndex] == null) {
+                fftXYLoop[threadIndex] = new FFTXYLoop();
+                fftZ_Multiply_IFFTZLoop[threadIndex] = new FFTZ_Multiply_IFFTZLoop();
+                ifftXYLoop[threadIndex] = new IFFTXYLoop();
+            }
+
             fftXYLoop[threadIndex].input = input;
             fftZ_Multiply_IFFTZLoop[threadIndex].input = input;
             ifftXYLoop[threadIndex].input = input;
+
             try {
                 execute(0, nZm1, fftXYLoop[threadIndex]);
                 execute(0, nYm1, fftZ_Multiply_IFFTZLoop[threadIndex]);
@@ -429,6 +427,18 @@ public class Complex3DParallel {
             @Override
             public IntegerSchedule schedule() {
                 return schedule;
+            }
+
+            @Override
+            public void start() {
+                int threadIndex = getThreadIndex();
+                convolutionTime[threadIndex] -= System.nanoTime();
+            }
+
+            @Override
+            public void finish() {
+                int threadIndex = getThreadIndex();
+                convolutionTime[threadIndex] += System.nanoTime();
             }
 
             @Override
@@ -595,7 +605,7 @@ public class Complex3DParallel {
             complexDoubleFFT3D.ifft(data);
             time = (System.nanoTime() - time);
             System.out.println(String.format("Sequential: %8.3f", toSeconds
-                                                                  * time));
+                    * time));
             if (time < seqTime) {
                 seqTime = time;
             }
@@ -603,7 +613,7 @@ public class Complex3DParallel {
             complexDoubleFFT3D.convolution(data);
             time = (System.nanoTime() - time);
             System.out.println(String.format("Sequential: %8.3f (Convolution)",
-                                             toSeconds * time));
+                    toSeconds * time));
             if (time < seqTime) {
                 seqTime = time;
             }
@@ -612,7 +622,7 @@ public class Complex3DParallel {
             parallelComplexDoubleFFT3D.ifft(data);
             time = (System.nanoTime() - time);
             System.out.println(String.format("Parallel:   %8.3f", toSeconds
-                                                                  * time));
+                    * time));
             if (time < parTime) {
                 parTime = time;
             }
@@ -626,10 +636,10 @@ public class Complex3DParallel {
             }
         }
         System.out.println(String.format("Best Sequential Time:  %8.3f",
-                                         toSeconds * seqTime));
+                toSeconds * seqTime));
         System.out.println(String.format("Best Parallel Time:    %8.3f",
-                                         toSeconds * parTime));
+                toSeconds * parTime));
         System.out.println(String.format("Speedup: %15.5f", (double) seqTime
-                                                            / parTime));
+                / parTime));
     }
 }
