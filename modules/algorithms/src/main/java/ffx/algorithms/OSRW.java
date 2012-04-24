@@ -811,6 +811,8 @@ public class OSRW implements Potential {
                         FLambda[iL], deltaFreeEnergy, freeEnergy));
             }
         }
+        logger.info(String.format(" Free Energy: %12.4f kcal/mol", freeEnergy));
+        
         return freeEnergy;
     }
 
