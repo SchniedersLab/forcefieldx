@@ -531,7 +531,7 @@ public class SpatialDensityRegion extends ParallelRegion {
                 }
             }
 
-            if (logger.isLoggable(Level.FINE)) {
+            if (logger.isLoggable(Level.FINEST)) {
                 logger.fine(String.format(" Empty chunks: %d out of %d.",
                         nWork - actualWork, nWork));
             }

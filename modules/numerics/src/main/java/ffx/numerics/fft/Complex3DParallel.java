@@ -122,8 +122,8 @@ public class Complex3DParallel {
             convolutionTime[i] = 0;
         }
     }
-    
-    public long[] getTimings(){
+
+    public long[] getTimings() {
         return convolutionTime;
     }
 
@@ -399,6 +399,9 @@ public class Complex3DParallel {
         @Override
         public void run() {
             int threadIndex = getThreadIndex();
+
+            convolutionTime[threadIndex] -= System.nanoTime();
+
             if (fftXYLoop[threadIndex] == null) {
                 fftXYLoop[threadIndex] = new FFTXYLoop();
                 fftZ_Multiply_IFFTZLoop[threadIndex] = new FFTZ_Multiply_IFFTZLoop();
@@ -416,6 +419,8 @@ public class Complex3DParallel {
             } catch (Exception e) {
                 logger.severe(e.toString());
             }
+
+            convolutionTime[threadIndex] += System.nanoTime();
         }
 
         private class FFTXYLoop extends IntegerForLoop {
@@ -427,18 +432,6 @@ public class Complex3DParallel {
             @Override
             public IntegerSchedule schedule() {
                 return schedule;
-            }
-
-            @Override
-            public void start() {
-                int threadIndex = getThreadIndex();
-                convolutionTime[threadIndex] -= System.nanoTime();
-            }
-
-            @Override
-            public void finish() {
-                int threadIndex = getThreadIndex();
-                convolutionTime[threadIndex] += System.nanoTime();
             }
 
             @Override

@@ -164,7 +164,7 @@ public class Complex {
             logger.severe(sb.toString());
             System.exit(-1);
         } else {
-            if (logger.isLoggable(Level.FINE)) {
+            if (logger.isLoggable(Level.FINEST)) {
                 StringBuilder sb = new StringBuilder("FFT factorization for n = "
                         + n + " = ");
                 for (int i = 0; i < nf - 1; i++) {

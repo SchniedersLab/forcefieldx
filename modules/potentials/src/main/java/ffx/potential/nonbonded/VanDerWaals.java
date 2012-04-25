@@ -30,7 +30,10 @@ import static java.lang.Math.*;
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
 
-import edu.rit.pj.*;
+import edu.rit.pj.IntegerForLoop;
+import edu.rit.pj.IntegerSchedule;
+import edu.rit.pj.ParallelRegion;
+import edu.rit.pj.ParallelTeam;
 import edu.rit.pj.reduction.SharedDouble;
 import edu.rit.pj.reduction.SharedInteger;
 
@@ -171,6 +174,7 @@ public class VanDerWaals implements MaskingInterface,
     private final long initializationTime[];
     private final long vdwTime[];
     private final long reductionTime[];
+    private long initializationTotal, vdwTotal, reductionTotal;
 
     /**
      * The VanDerWaals class constructor.
@@ -760,11 +764,17 @@ public class VanDerWaals implements MaskingInterface,
             }
 
             /**
-             * Expand coordinates.
+             * Initialize and expand coordinates.
              */
             try {
+                if (threadIndex == 0) {
+                    initializationTotal = -System.nanoTime();
+                }
                 execute(0, nAtoms - 1, initializationLoop[threadIndex]);
                 execute(0, nAtoms - 1, expandLoop[threadIndex]);
+                if (threadIndex == 0) {
+                    initializationTotal += System.nanoTime();
+                }
             } catch (Exception e) {
                 String message = "Fatal exception expanding coordinates in thread: " + threadIndex + "\n";
                 logger.log(Level.SEVERE, message, e);
@@ -789,7 +799,13 @@ public class VanDerWaals implements MaskingInterface,
              * Compute van der Waals energy and gradient.
              */
             try {
+                if (threadIndex == 0) {
+                    vdwTotal = -System.nanoTime();
+                }
                 execute(0, nAtoms - 1, vanDerWaalsLoop[threadIndex]);
+                if (threadIndex == 0) {
+                    vdwTotal += System.nanoTime();
+                }
             } catch (Exception e) {
                 String message = "Fatal exception evaluating van der Waals energy in thread: " + threadIndex + "\n";
                 logger.log(Level.SEVERE, message, e);
@@ -800,7 +816,13 @@ public class VanDerWaals implements MaskingInterface,
              */
             if (gradient || lambdaTerm) {
                 try {
+                    if (threadIndex == 0) {
+                        reductionTotal = -System.nanoTime();
+                    }
                     execute(0, nAtoms - 1, reductionLoop[threadIndex]);
+                    if (threadIndex == 0) {
+                        reductionTotal += System.nanoTime();
+                    }
                 } catch (Exception e) {
                     String message = "Fatal exception reducing van der Waals gradient in thread: " + threadIndex + "\n";
                     logger.log(Level.SEVERE, message, e);
@@ -811,11 +833,15 @@ public class VanDerWaals implements MaskingInterface,
              * Log timings.
              */
             if (threadIndex == 0 && logger.isLoggable(Level.FINE)) {
-                logger.info("\n van der Waals Timings (sec)");
-                logger.info(" Thread     Init   Energy   Reduce");
+
+                double total = (initializationTotal + vdwTotal + reductionTotal) * 1e-9;
+
+                logger.info(String.format("\n van der Waals: %7.4f (sec)", total));
+                logger.info(" Thread    Init    Energy  Reduce");
                 for (int i = 0; i < threadCount; i++) {
-                    logger.info(String.format("    %3d %8.4f %8.4f %8.4f", i, initializationTime[i] * 1e-9, vdwTime[i] * 1e-9, reductionTime[i] * 1e-9));
+                    logger.info(String.format("    %3d   %7.4f %7.4f %7.4f", i, initializationTime[i] * 1e-9, vdwTime[i] * 1e-9, reductionTime[i] * 1e-9));
                 }
+                logger.info(String.format(" Actual   %7.4f %7.4f %7.4f", initializationTotal * 1e-9, vdwTotal * 1e-9, reductionTotal * 1e-9));
             }
         }
 
@@ -843,28 +869,28 @@ public class VanDerWaals implements MaskingInterface,
                     coordinates[i3 + ZZ] = xyz[ZZ];
                 }
 
-                int rank = getThreadIndex();
+                int threadIndex = getThreadIndex();
 
                 if (gradient) {
-                    if (gradX[rank] == null) {
-                        gradX[rank] = new double[nAtoms];
-                        gradY[rank] = new double[nAtoms];
-                        gradZ[rank] = new double[nAtoms];
+                    if (gradX[threadIndex] == null) {
+                        gradX[threadIndex] = new double[nAtoms];
+                        gradY[threadIndex] = new double[nAtoms];
+                        gradZ[threadIndex] = new double[nAtoms];
                     }
-                    fill(gradX[rank], 0.0);
-                    fill(gradY[rank], 0.0);
-                    fill(gradZ[rank], 0.0);
+                    fill(gradX[threadIndex], 0.0);
+                    fill(gradY[threadIndex], 0.0);
+                    fill(gradZ[threadIndex], 0.0);
                 }
 
                 if (lambdaTerm) {
-                    if (lambdaGradX[rank] == null) {
-                        lambdaGradX[rank] = new double[nAtoms];
-                        lambdaGradY[rank] = new double[nAtoms];
-                        lambdaGradZ[rank] = new double[nAtoms];
+                    if (lambdaGradX[threadIndex] == null) {
+                        lambdaGradX[threadIndex] = new double[nAtoms];
+                        lambdaGradY[threadIndex] = new double[nAtoms];
+                        lambdaGradZ[threadIndex] = new double[nAtoms];
                     }
-                    fill(lambdaGradX[rank], 0.0);
-                    fill(lambdaGradY[rank], 0.0);
-                    fill(lambdaGradZ[rank], 0.0);
+                    fill(lambdaGradX[threadIndex], 0.0);
+                    fill(lambdaGradY[threadIndex], 0.0);
+                    fill(lambdaGradZ[threadIndex], 0.0);
                 }
             }
         }

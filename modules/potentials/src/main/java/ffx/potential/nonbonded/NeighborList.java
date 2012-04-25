@@ -22,6 +22,7 @@ package ffx.potential.nonbonded;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import static java.lang.Math.floor;
 import static java.lang.Math.min;
 import static java.lang.String.format;
@@ -541,7 +542,7 @@ public class NeighborList extends ParallelRegion {
     @Override
     public void finish() {
         if (logger.isLoggable(Level.FINE)) {
-            logger.fine(String.format("Parallel Neighbor List: %10.3f seconds",
+            logger.fine(String.format(" Parallel Neighbor List: %10.3f seconds",
                     (System.nanoTime() - time) * 1e-9));
         }
     }

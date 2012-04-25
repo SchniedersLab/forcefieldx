@@ -176,7 +176,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             generalizedKirkwoodTerm = false;
         }
         restraintBondTerm = false;
-
+        
         //For respa
         bondTermOrig = bondTerm;
         angleTermOrig = angleTerm;
@@ -589,9 +589,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
         totalTime = System.nanoTime() - totalTime;
 
-        totalBondedEnergy = bondEnergy + restraintBondEnergy + angleEnergy 
-                + stretchBendEnergy + ureyBradleyEnergy + outOfPlaneBendEnergy 
-                + torsionEnergy + piOrbitalTorsionEnergy 
+        totalBondedEnergy = bondEnergy + restraintBondEnergy + angleEnergy
+                + stretchBendEnergy + ureyBradleyEnergy + outOfPlaneBendEnergy
+                + torsionEnergy + piOrbitalTorsionEnergy
                 + torsionTorsionEnergy;
         totalNonBondedEnergy = vanDerWaalsEnergy + totalElectrostaticEnergy;
         totalEnergy = totalBondedEnergy + totalNonBondedEnergy + solvationEnergy;
@@ -810,6 +810,11 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             if (multipoleTerm) {
                 particleMeshEwald.setLambda(lambda);
             }
+            if (restraintBondTerm && restraintBonds != null) {
+                for (int i = 0; i < restraintBonds.length; i++) {
+                    restraintBonds[i].setLambda(lambda);
+                }
+            }
         } else {
             String message = String.format("Lambda value %8.3f is not in the range [0..1].", lambda);
             logger.warning(message);
@@ -985,6 +990,11 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         if (multipoleTerm) {
             dEdLambda += particleMeshEwald.getdEdL();
         }
+        if (restraintBondTerm) {
+            for (int i = 0; i < nRestraintBonds; i++) {
+                dEdLambda += restraintBonds[i].getdEdL();
+            }
+        }
         return dEdLambda;
     }
 
@@ -998,6 +1008,11 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
         if (multipoleTerm) {
             particleMeshEwald.getdEdXdL(gradients);
+        }
+        if (restraintBondTerm) {
+            for (int i = 0; i < nRestraintBonds; i++) {
+                restraintBonds[i].getdEdXdL(gradients);
+            }
         }
     }
 
@@ -1021,6 +1036,11 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         if (multipoleTerm) {
             d2EdLambda2 += particleMeshEwald.getd2EdL2();
         }
+        if (restraintBondTerm) {
+            for (int i = 0; i < nRestraintBonds; i++) {
+                d2EdLambda2 += restraintBonds[i].getd2EdL2();
+            }
+        }
         return d2EdLambda2;
     }
 
@@ -1033,6 +1053,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
      * @param forceConstant the force constant in kcal/mole
      */
     public void setRestraintBond(Atom a1, Atom a2, double distance, double forceConstant) {
+        
+        
+        
         restraintBondTerm = true;
         RestraintBond rb = new RestraintBond(a1, a2, crystal);
         int classes[] = {a1.getAtomType().atomClass, a2.getAtomType().atomClass};
