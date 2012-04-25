@@ -521,9 +521,9 @@ public class OSRW implements Potential {
         }
 
         /**
-         * Update free energy F(L) every ~100 steps.
+         * Update free energy F(L) every ~10 steps.
          */
-        if (energyCount > 0 && energyCount % 100 == 0 && propagateLambda) {
+        if (energyCount > 0 && energyCount % 10 == 0 && propagateLambda) {
             fLambdaUpdates++;
             boolean printFLambda = fLambdaUpdates % fLambdaPrintInterval == 0;
             updateFLambda(printFLambda);
