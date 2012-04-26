@@ -257,7 +257,7 @@ public class OSRW implements Potential {
      */
     public OSRW(LambdaInterface lambdaInterface, Potential potential,
             File lambdaFile, File histogramFile, CompositeConfiguration properties,
-            double temperature, double dt, double printInterval, 
+            double temperature, double dt, double printInterval,
             double saveInterval, boolean asynchronous) {
         this.lambdaInterface = lambdaInterface;
         this.potential = potential;
@@ -271,7 +271,7 @@ public class OSRW implements Potential {
          * Convert the time step to picoseconds.
          */
         this.dt = dt * 0.001;
-        
+
         /**
          * Convert the print interval to a print frequency.
          */
@@ -285,7 +285,7 @@ public class OSRW implements Potential {
          */
         saveFrequency = 1000;
         if (saveInterval >= this.dt) {
-           saveFrequency = (int) (saveInterval / this.dt);            
+            saveFrequency = (int) (saveInterval / this.dt);
         }
 
         biasCutoff = properties.getInt("lambda-bias-cutoff", 5);
@@ -438,19 +438,31 @@ public class OSRW implements Potential {
 
     @Override
     public double energyAndGradient(double[] x, double[] gradient) {
-        double e = potential.energyAndGradient(x, gradient);
 
         /**
-         * OSRW is included with the slowly varying terms.
+         * OSRW is propogated with the slowly varying terms.
          */
         if (state == STATE.FAST) {
-            return e;
+            return potential.energyAndGradient(x, gradient);
         }
 
         if (propagateLambda) {
             energyCount++;
         }
 
+        if (propagateLambda && energyCount > 0) {
+            /**
+             * Metadynamics grid counts (every 'countInterval' steps).
+             */
+            if (energyCount % countInterval == 0) {
+                System.setProperty("use-precise-polar-eps", "true");
+            } else {
+                System.setProperty("use-precise-polar-eps", "false");
+            }
+        }
+        
+        double e = potential.energyAndGradient(x, gradient);
+        
         double biasEnergy = 0.0;
         dEdLambda = lambdaInterface.getdEdL();
         d2EdLambda2 = lambdaInterface.getd2EdL2();
@@ -459,7 +471,8 @@ public class OSRW implements Potential {
         int FLambdaBin = binForFLambda(dEdLambda);
 
         /**
-         * Calculate recursion kernel G(L, FL) and its gradient.
+         * Calculate recursion kernel G(L, F_L) and its derivatives with respect
+         * to L and F_L.
          */
         double dGdLambda = 0.0;
         double dGdFLambda = 0.0;
@@ -504,13 +517,13 @@ public class OSRW implements Potential {
         }
 
         /**
-         * Lambda gradient due to recursion kernel G(L, F(L)).
+         * Lambda gradient due to recursion kernel G(L, F_L).
          */
         double dEdU = dEdLambda;
         dEdLambda += dGdLambda + dGdFLambda * d2EdLambda2;
 
         /**
-         * Gradient due to recursion kernel G(L, F(L)).
+         * Cartesian coordinate gradient due to recursion kernel G(L, F_L).
          */
         for (int i = 0; i < nVariables; i++) {
             dUdXdL[i] = 0.0;
@@ -520,43 +533,45 @@ public class OSRW implements Potential {
             gradient[i] += dGdFLambda * dUdXdL[i];
         }
 
-        /**
-         * Update free energy F(L) every ~10 steps.
-         */
-        if (energyCount > 0 && energyCount % 10 == 0 && propagateLambda) {
-            fLambdaUpdates++;
-            boolean printFLambda = fLambdaUpdates % fLambdaPrintInterval == 0;
-            updateFLambda(printFLambda);
-        }
 
-        if (energyCount > 0 && energyCount % saveFrequency == 0) {
+        if (propagateLambda && energyCount > 0) {
             /**
-             * Only the rank 0 process writes the histogram restart file.
+             * Update free energy F(L) every ~10 steps.
              */
-            if (rank == 0) {
+            if (energyCount % 10 == 0) {
+                fLambdaUpdates++;
+                boolean printFLambda = fLambdaUpdates % fLambdaPrintInterval == 0;
+                updateFLambda(printFLambda);
+            }
+            if (energyCount % saveFrequency == 0) {
+                /**
+                 * Only the rank 0 process writes the histogram restart file.
+                 */
+                if (rank == 0) {
+                    try {
+                        OSRWHistogramWriter osrwHistogramRestart = new OSRWHistogramWriter(new BufferedWriter(new FileWriter(histogramFile)));
+                        osrwHistogramRestart.writeHistogramFile();
+                        osrwHistogramRestart.flush();
+                        osrwHistogramRestart.close();
+                        logger.info(String.format(" Wrote OSRW histogram restart file to %s.", histogramFile.getName()));
+                    } catch (IOException ex) {
+                        String message = " Exception writing OSRW histogram restart file.";
+                        logger.log(Level.INFO, message, ex);
+                    }
+                }
+                /**
+                 * All ranks write a lambda restart file.
+                 */
                 try {
-                    OSRWHistogramWriter osrwHistogramRestart = new OSRWHistogramWriter(new BufferedWriter(new FileWriter(histogramFile)));
-                    osrwHistogramRestart.writeHistogramFile();
-                    osrwHistogramRestart.flush();
-                    osrwHistogramRestart.close();
-                    logger.info(String.format(" Wrote OSRW histogram restart file to %s.", histogramFile.getName()));
+                    OSRWLambdaWriter osrwLambdaRestart = new OSRWLambdaWriter(new BufferedWriter(new FileWriter(lambdaFile)));
+                    osrwLambdaRestart.writeLambdaFile();
+                    osrwLambdaRestart.flush();
+                    osrwLambdaRestart.close();
+                    logger.info(String.format(" Wrote OSRW lambda restart file to %s.", lambdaFile.getName()));
                 } catch (IOException ex) {
-                    String message = " Exception writing OSRW histogram restart file.";
+                    String message = " Exception writing OSRW lambda restart file.";
                     logger.log(Level.INFO, message, ex);
                 }
-            }
-            /**
-             * All ranks write a lambda restart file.
-             */
-            try {
-                OSRWLambdaWriter osrwLambdaRestart = new OSRWLambdaWriter(new BufferedWriter(new FileWriter(lambdaFile)));
-                osrwLambdaRestart.writeLambdaFile();
-                osrwLambdaRestart.flush();
-                osrwLambdaRestart.close();
-                logger.info(String.format(" Wrote OSRW lambda restart file to %s.", lambdaFile.getName()));
-            } catch (IOException ex) {
-                String message = " Exception writing OSRW lambda restart file.";
-                logger.log(Level.INFO, message, ex);
             }
         }
 
@@ -572,30 +587,30 @@ public class OSRW implements Potential {
                     "OSRW Potential    ", e + biasEnergy, "(Kcal/mole)"));
         }
 
-        /**
-         * Log the current Lambda state.
-         */
-        if (energyCount > 0 && energyCount % printFrequency == 0 && propagateLambda) {
-            if (lambdaBins < 1000) {
-                logger.info(String.format(" L=%6.4f (%3d) F_LU=%10.4f F_LB=%10.4f F_L=%10.4f",
-                        lambda, lambdaBin, dEdU, dEdLambda - dEdU, dEdLambda));
-            } else {
-                logger.info(String.format(" L=%6.4f (%4d) F_LU=%10.4f F_LB=%10.4f F_L=%10.4f",
-                        lambda, lambdaBin, dEdU, dEdLambda - dEdU, dEdLambda));
+        if (propagateLambda && energyCount > 0) {
+            /**
+             * Log the current Lambda state.
+             */
+            if (energyCount % printFrequency == 0) {
+                if (lambdaBins < 1000) {
+                    logger.info(String.format(" L=%6.4f (%3d) F_LU=%10.4f F_LB=%10.4f F_L=%10.4f",
+                            lambda, lambdaBin, dEdU, dEdLambda - dEdU, dEdLambda));
+                } else {
+                    logger.info(String.format(" L=%6.4f (%4d) F_LU=%10.4f F_LB=%10.4f F_L=%10.4f",
+                            lambda, lambdaBin, dEdU, dEdLambda - dEdU, dEdLambda));
+                }
+            }
+            /**
+             * Metadynamics grid counts (every 'countInterval' steps).
+             */
+            if (energyCount % countInterval == 0) {
+                if (asynchronous) {
+                    asynchronousSend(lambda, dEdU);
+                } else {
+                    synchronousSend(lambda, dEdU);
+                }
             }
         }
-
-        /**
-         * Metadynamics grid counts (every 'countInterval' steps).
-         */
-        if (propagateLambda && energyCount % countInterval == 0 && energyCount > 0) {
-            if (asynchronous) {
-                asynchronousSend(lambda, dEdU);
-            } else {
-                synchronousSend(lambda, dEdU);
-            }
-        }
-
         /**
          * Propagate the Lambda particle.
          */
@@ -604,7 +619,8 @@ public class OSRW implements Potential {
         }
 
         totalEnergy = e + biasEnergy;
-        return e + biasEnergy;
+
+        return totalEnergy;
     }
 
     /**
@@ -743,6 +759,7 @@ public class OSRW implements Potential {
 
     private double updateFLambda(boolean print) {
         double freeEnergy = 0.0;
+        int totalCounts = 0;
         if (print) {
             logger.info(" Count   Lambda Bins    F_Lambda Bins   <   F_L  >       dG        G");
         }
@@ -796,6 +813,7 @@ public class OSRW implements Potential {
             }
             double deltaFreeEnergy = FLambda[iL] * delta;
             freeEnergy += deltaFreeEnergy;
+            totalCounts += lambdaCount;
 
             if (print) {
                 double llL = iL * dL - dL_2;
@@ -811,8 +829,8 @@ public class OSRW implements Potential {
                         FLambda[iL], deltaFreeEnergy, freeEnergy));
             }
         }
-        logger.info(String.format(" Free Energy: %12.4f kcal/mol", freeEnergy));
-        
+        logger.info(String.format(" The free energy is %12.4f kcal/mol from %d counts.", freeEnergy, totalCounts));
+
         return freeEnergy;
     }
 
