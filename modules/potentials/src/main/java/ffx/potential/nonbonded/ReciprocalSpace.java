@@ -197,7 +197,7 @@ public class ReciprocalSpace {
          */
         bSplineRegion = new BSplineRegion();
         spatialDensityRegion = new SpatialDensityRegion(fftX, fftY, fftZ, splineGrid, bSplineOrder, nSymm,
-                1, threadCount, crystal, atoms, coordinates);
+                10, threadCount, crystal, atoms, coordinates);
         splinePermanentLoops = new SplinePermanentLoop[threadCount];
         splineInducedLoops = new SplineInducedLoop[threadCount];
         for (int i = 0; i < threadCount; i++) {

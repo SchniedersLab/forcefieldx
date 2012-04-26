@@ -90,6 +90,7 @@ public class VanDerWaals implements MaskingInterface,
      * equals: true for inner loop hard atoms false for inner loop soft atoms
      */
     private final boolean softCore[][];
+    private boolean softCoreInit;
     private static final byte HARD = 0;
     private static final byte SOFT = 1;
     private double lambda = 1.0;
@@ -330,6 +331,7 @@ public class VanDerWaals implements MaskingInterface,
             isSoft[i] = false;
             softCore[HARD][i] = false;
             softCore[SOFT][i] = false;
+            softCoreInit = false;
         }
         lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
         if (lambdaTerm) {
@@ -639,19 +641,22 @@ public class VanDerWaals implements MaskingInterface,
         /**
          * Initialize the softcore atom masks.
          */
-        for (int i = 0; i < nAtoms; i++) {
-            isSoft[i] = atoms[i].applyLambda();
-            if (isSoft[i]) {
-                // Outer loop atom hard, inner loop atom soft.
-                softCore[HARD][i] = true;
-                // Both soft - full interaction.
-                softCore[SOFT][i] = false;
-            } else {
-                // Both hard - full interaction.
-                softCore[HARD][i] = false;
-                // Outer loop atom soft, inner loop atom hard.
-                softCore[SOFT][i] = true;
+        if (!softCoreInit) {
+            for (int i = 0; i < nAtoms; i++) {
+                isSoft[i] = atoms[i].applyLambda();
+                if (isSoft[i]) {
+                    // Outer loop atom hard, inner loop atom soft.
+                    softCore[HARD][i] = true;
+                    // Both soft: full intramolecular ligand interactions.
+                    softCore[SOFT][i] = false;
+                } else {
+                    // Both hard: full interaction between condensed phase atoms.
+                    softCore[HARD][i] = false;
+                    // Outer loop atom soft, inner loop atom hard.
+                    softCore[SOFT][i] = true;
+                }
             }
+            softCoreInit = true;
         }
 
         // Redo the long range correction.
@@ -1288,11 +1293,11 @@ public class VanDerWaals implements MaskingInterface,
                         double lxredi = 0.0;
                         double lyredi = 0.0;
                         double lzredi = 0.0;
-                        /**
-                         * All interactions between a soft atom and a symmetry
-                         * mate atom are turned off.
-                         */
-                        boolean soft = isSoft[i];
+                        // Default is that the outer loop atom is hard.
+                        boolean softCorei[] = softCore[HARD];
+                        if (isSoft[i]) {
+                            softCorei = softCore[SOFT];
+                        }
                         /**
                          * Loop over the neighbor list.
                          */
@@ -1308,8 +1313,7 @@ public class VanDerWaals implements MaskingInterface,
                             dx_local[1] = yi - yk;
                             dx_local[2] = zi - zk;
                             final double r2 = crystal.image(dx_local);
-                            if (r2 <= off2 && mask[k] > 0) {
-                                // This will only happen for iSymm > 0.
+                            if (r2 <= off2) {
                                 double selfScale = 1.0;
                                 if (i == k) {
                                     selfScale = 0.5;
@@ -1320,6 +1324,7 @@ public class VanDerWaals implements MaskingInterface,
                                 int a2 = atomClass[k] * 2;
                                 double alpha = 0.0;
                                 double lambda5 = 1.0;
+                                boolean soft = (isSoft[i] || softCorei[k]);
                                 if (soft) {
                                     alpha = sc1;
                                     lambda5 = sc2;
