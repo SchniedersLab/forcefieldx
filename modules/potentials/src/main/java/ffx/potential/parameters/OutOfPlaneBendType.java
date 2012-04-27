@@ -66,7 +66,9 @@ public final class OutOfPlaneBendType extends BaseType implements Comparator<Str
      */
     public void incrementClasses(int increment) {
         for (int i = 0; i < atomClasses.length; i++) {
-            atomClasses[i] += increment;
+            if (atomClasses[i] > 0) {
+                atomClasses[i] += increment;
+            }
         }
         setKey(sortKey(atomClasses));
     }
