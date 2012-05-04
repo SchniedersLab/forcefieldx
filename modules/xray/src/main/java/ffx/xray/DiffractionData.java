@@ -216,7 +216,8 @@ public class DiffractionData implements DataContainer {
         gridsearch = properties.getBoolean("gridsearch", false);
         splinefit = properties.getBoolean("splinefit", true);
         use_3g = properties.getBoolean("use_3g", true);
-        aradbuff = properties.getDouble("aradbuff", 0.5);
+        aradbuff = properties.getDouble("aradbuff", 0.75);
+        double sampling = properties.getDouble("sampling", 0.6);
         xrayscaletol = properties.getDouble("xrayscaletol", 1e-4);
         sigmaatol = properties.getDouble("sigmaatol", 1.0);
         xweight = properties.getDouble("xweight", 1.0);
@@ -255,7 +256,7 @@ public class DiffractionData implements DataContainer {
                     if (res < 0.0) {
                         logger.severe("MTZ/CIF/CNS file does not contain full crystal information!");
                     } else {
-                        resolutioninit = new Resolution(res);
+                        resolutioninit = new Resolution(res, sampling);
                         reflectionlist[i] = new ReflectionList(crystalinit, resolutioninit, properties);
                     }
                 }
@@ -285,6 +286,7 @@ public class DiffractionData implements DataContainer {
             sb.append("\nRefinement data settings:\n");
             sb.append("  using cctbx 3 Gaussians (use_3g): " + use_3g + "\n");
             sb.append("  atomic form factor radius buffer (aradbuff): " + aradbuff + "\n");
+            sb.append("  reciprocal space sampling rate (sampling): " + sampling + "\n");
             sb.append("  resolution dependent spline scale (splinefit): " + splinefit + "\n");
             sb.append("  F/sigF cutoff (fsigfcutoff): " + fsigfcutoff + "\n");
             sb.append("  R Free flag (rfreeflag) (if -1, value will be updated when data is read in): " + rflag + "\n");

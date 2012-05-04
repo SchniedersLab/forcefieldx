@@ -171,7 +171,7 @@ public class FiniteDifferenceTest {
                 } else if (rho > 0.001) {
                     arad += 0.1;
                 } else {
-                    arad += 0.2;
+                    arad += 0.75;
                     atomarray[i].setFormFactorWidth(arad);
                     break;
                 }
