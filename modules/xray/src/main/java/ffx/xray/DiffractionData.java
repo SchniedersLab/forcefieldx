@@ -81,7 +81,7 @@ public class DiffractionData implements DataContainer {
     public final double aradbuff;
     public final double xrayscaletol;
     public final double sigmaatol;
-    public final double xweight;
+    public double xweight;
     public final double bsimweight;
     public final double bnonzeroweight;
     public final double bmass;
@@ -470,6 +470,12 @@ public class DiffractionData implements DataContainer {
     @Override
     public double getWeight() {
         return xweight;
+    }
+    
+    /** {@inheritDoc} */
+    @Override
+    public void setWeight(double weight) {
+        this.xweight = weight;
     }
 
     /** {@inheritDoc} */

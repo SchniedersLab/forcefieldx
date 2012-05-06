@@ -61,7 +61,6 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
     protected int nb;
     protected int nocc;
     private int n;
-    private double weight;
     private double ktscale;
     private double xChemical[][];
     private double gChemical[][];
@@ -96,7 +95,6 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
         this.atomarray = data.getAtomArray();
         this.nAtoms = atomarray.length;
         this.xindex = refinementmodel.xindex;
-        this.weight = data.getWeight();
         this.refinementMode = refinementmode;
         this.optimizationScaling = scaling;
         this.thermostat = null;
@@ -225,6 +223,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
      */
     @Override
     public double energyAndGradient(double[] x, double[] g) {
+        double weight = data.getWeight();
         double e = 0.0;
         Arrays.fill(g, 0.0);
 
@@ -384,16 +383,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
      * @return weight wA
      */
     public double getXWeight() {
-        return this.weight;
-    }
-
-    /**
-     * set the current dataset weight
-     *
-     * @param weight requested weight wA
-     */
-    public void setXWeight(double weight) {
-        this.weight = weight;
+        return data.getWeight();
     }
 
     /**
@@ -596,6 +586,8 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
      */
     @Override
     public void getdEdXdL(double[] gradient) {
+        double weight = data.getWeight();
+        
         if (thermostat != null) {
             ktscale = Thermostat.convert / (thermostat.getTargetTemperature() * Thermostat.kB);
         }
