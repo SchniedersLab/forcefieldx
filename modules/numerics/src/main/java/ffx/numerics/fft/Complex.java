@@ -155,22 +155,22 @@ public class Complex {
          */
         if (product != n) {
             StringBuilder sb = new StringBuilder(
-                    "FFT factorization failed for n = " + n + "\n");
+                    " FFT factorization failed for " + n + "\n");
             for (int i = 0; i < nf; i++) {
                 sb.append(" " + ret[i]);
             }
             sb.append("\n");
-            sb.append("Factor product = " + product + "\n");
+            sb.append(" Factor product = " + product + "\n");
             logger.severe(sb.toString());
             System.exit(-1);
         } else {
             if (logger.isLoggable(Level.FINEST)) {
-                StringBuilder sb = new StringBuilder("FFT factorization for n = "
+                StringBuilder sb = new StringBuilder(" FFT factorization for "
                         + n + " = ");
                 for (int i = 0; i < nf - 1; i++) {
                     sb.append(ret[i] + " * ");
                 }
-                sb.append(ret[nf - 1] + "\n");
+                sb.append(ret[nf - 1]);
                 logger.fine(sb.toString());
             }
         }

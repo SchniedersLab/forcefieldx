@@ -396,7 +396,7 @@ public final class Utilities {
                 for (Atom a : c.getAtomList()) {
                     atoms.remove(a);
                 }
-                logger.fine("Sequenced chain: " + c.getName());
+                logger.fine(" Sequenced chain: " + c.getName());
                 m.addMSNode(c);
                 num++;
             } else {

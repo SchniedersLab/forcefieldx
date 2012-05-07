@@ -542,7 +542,7 @@ public class NeighborList extends ParallelRegion {
     @Override
     public void finish() {
         if (logger.isLoggable(Level.FINE)) {
-            logger.fine(String.format(" Parallel Neighbor List: %10.3f seconds",
+            logger.fine(String.format(" Parallel Neighbor List:             %10.3f sec",
                     (System.nanoTime() - time) * 1e-9));
         }
     }

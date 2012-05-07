@@ -1,52 +1,31 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Title: Force Field X Description: Force Field X - Software for Molecular
+ * Biophysics. Copyright: Copyright (c) Michael J. Schnieders 2001-2011
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.potential.bonded;
 
 import java.io.File;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.ListIterator;
+import java.util.*;
 import java.util.logging.Level;
-import java.util.Vector;
 import java.util.logging.Logger;
 
-import javax.media.j3d.Appearance;
-import javax.media.j3d.BoundingSphere;
-import javax.media.j3d.BranchGroup;
-import javax.media.j3d.ColoringAttributes;
-import javax.media.j3d.GeometryArray;
-import javax.media.j3d.Group;
-import javax.media.j3d.LineArray;
-import javax.media.j3d.LineAttributes;
-import javax.media.j3d.Link;
-import javax.media.j3d.Material;
-import javax.media.j3d.Node;
-import javax.media.j3d.RenderingAttributes;
-import javax.media.j3d.Shape3D;
-import javax.media.j3d.SharedGroup;
-import javax.media.j3d.Switch;
-import javax.media.j3d.Transform3D;
-import javax.media.j3d.TransformGroup;
+import javax.media.j3d.*;
 import javax.vecmath.Color3f;
 import javax.vecmath.Matrix3d;
 import javax.vecmath.Point3d;
@@ -55,13 +34,12 @@ import javax.vecmath.Vector3d;
 import org.jdesktop.j3d.loaders.vrml97.VrmlLoader;
 import org.jdesktop.j3d.loaders.vrml97.VrmlScene;
 
-import com.sun.j3d.utils.picking.PickTool;
 import ffx.crystal.Crystal;
-
-import ffx.potential.parameters.ForceField;
 import ffx.numerics.VectorMath;
 import ffx.potential.ForceFieldEnergy;
-import java.util.Arrays;
+import ffx.potential.parameters.ForceField;
+
+import com.sun.j3d.utils.picking.PickTool;
 
 /**
  * The MolecularAssembly class is a collection of Polymers, Hetero Molecules,
@@ -74,9 +52,15 @@ public class MolecularAssembly extends MSGroup {
 
     private static final Logger logger = Logger.getLogger(MolecularAssembly.class.getName());
     private static final long serialVersionUID = 1L;
-    /** Constant <code>MultiScaleLevel=4</code> */
+    /**
+     * Constant
+     * <code>MultiScaleLevel=4</code>
+     */
     public static final int MultiScaleLevel = 4;
-    /** Constant <code>KCAL_TO_KJ=4.184</code> */
+    /**
+     * Constant
+     * <code>KCAL_TO_KJ=4.184</code>
+     */
     public static final double KCAL_TO_KJ = 4.184;
     private static double[] a = new double[3];
     // MolecularSystem member variables
@@ -140,7 +124,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>Setter for the field <code>forceField</code>.</p>
+     * <p>Setter for the field
+     * <code>forceField</code>.</p>
      *
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
      */
@@ -158,7 +143,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>Getter for the field <code>potentialEnergy</code>.</p>
+     * <p>Getter for the field
+     * <code>potentialEnergy</code>.</p>
      *
      * @return a {@link ffx.potential.ForceFieldEnergy} object.
      */
@@ -179,7 +165,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>Getter for the field <code>forceField</code>.</p>
+     * <p>Getter for the field
+     * <code>forceField</code>.</p>
      *
      * @return a {@link ffx.potential.parameters.ForceField} object.
      */
@@ -201,7 +188,9 @@ public class MolecularAssembly extends MSGroup {
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public MSNode addMSNode(MSNode o) {
         ArrayList Polymers = getAtomNodeList();
@@ -385,8 +374,7 @@ public class MolecularAssembly extends MSGroup {
      * or group of atoms within the system, then the RotToCOM transformation
      * will be a translation from that point to the COM.
      *
-     * @param zero
-     *            boolean
+     * @param zero boolean
      * @return BranchGroup
      */
     public BranchGroup createScene(boolean zero) {
@@ -442,7 +430,9 @@ public class MolecularAssembly extends MSGroup {
         return branchGroup;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean destroy() {
         detach();
@@ -460,7 +450,9 @@ public class MolecularAssembly extends MSGroup {
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void finalize(boolean finalizeGroups) {
         setFinalized(false);
@@ -477,7 +469,7 @@ public class MolecularAssembly extends MSGroup {
             for (ListIterator li = Polymers.listIterator(); li.hasNext();) {
                 MSGroup group = (MSGroup) li.next();
                 if (logger.isLoggable(Level.FINE)) {
-                    logger.fine("Finalizing bonded terms for polymer " + group.toString());
+                    logger.fine(" Finalizing bonded terms for polymer " + group.toString());
                 }
                 try {
                     group.finalize(true);
@@ -490,9 +482,9 @@ public class MolecularAssembly extends MSGroup {
                     Runtime runtime = Runtime.getRuntime();
                     long occupiedMemory = runtime.totalMemory() - runtime.freeMemory();
                     long MB = 1024 * 1024;
-                    logger.fine("\nIn-Use Memory   (Mb): " + occupiedMemory / MB
-                            + "\nFree Memory     (Mb): " + runtime.freeMemory() / MB
-                            + "\nTotal Memory    (Mb): " + runtime.totalMemory() / MB);
+                    logger.fine("\n In-Use Memory   (Mb): " + occupiedMemory / MB
+                            + "\n Free Memory     (Mb): " + runtime.freeMemory() / MB
+                            + "\n Total Memory    (Mb): " + runtime.totalMemory() / MB);
                 }
             }
             for (MSNode m : molecules.getChildList()) {
@@ -508,15 +500,15 @@ public class MolecularAssembly extends MSGroup {
                 molecule.finalize(true);
             }
             if (logger.isLoggable(Level.FINE)) {
-                StringBuilder sb = new StringBuilder("\nTime to create bonded energy terms\n\n");
-                sb.append(String.format("Bond Streching     %10.3f\n", bondTime * 1.0e-9));
-                sb.append(String.format("Angle Bending      %10.3f\n", angleTime * 1.0e-9));
-                sb.append(String.format("Stretch-Bend       %10.3f\n", stretchBendTime * 1.0e-9));
-                sb.append(String.format("Urey-Bradley       %10.3f\n", ureyBradleyTime * 1.0e-9));
-                sb.append(String.format("Out-of-Plane Bend  %10.3f\n", outOfPlaneBendTime * 1.0e-9));
-                sb.append(String.format("Torsionanl Angle   %10.3f\n", torsionTime * 1.0e-9));
-                sb.append(String.format("Pi-Orbital Torsion %10.3f\n", piOrbitalTorsionTime * 1.0e-9));
-                sb.append(String.format("Torsion-Torsion    %10.3f\n", torsionTorsionTime * 1.0e-9));
+                StringBuilder sb = new StringBuilder("\n Time to create bonded energy terms\n\n");
+                sb.append(String.format(" Bond Streching     %10.3f\n", bondTime * 1.0e-9));
+                sb.append(String.format(" Angle Bending      %10.3f\n", angleTime * 1.0e-9));
+                sb.append(String.format(" Stretch-Bend       %10.3f\n", stretchBendTime * 1.0e-9));
+                sb.append(String.format(" Urey-Bradley       %10.3f\n", ureyBradleyTime * 1.0e-9));
+                sb.append(String.format(" Out-of-Plane Bend  %10.3f\n", outOfPlaneBendTime * 1.0e-9));
+                sb.append(String.format(" Torsionanl Angle   %10.3f\n", torsionTime * 1.0e-9));
+                sb.append(String.format(" Pi-Orbital Torsion %10.3f\n", piOrbitalTorsionTime * 1.0e-9));
+                sb.append(String.format(" Torsion-Torsion    %10.3f\n", torsionTorsionTime * 1.0e-9));
                 logger.fine(sb.toString());
             }
         }
@@ -647,7 +639,9 @@ public class MolecularAssembly extends MSGroup {
         return backbone;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ArrayList<ROLS> getBondList() {
         if (bondList != null) {
@@ -659,7 +653,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>Getter for the field <code>branchGroup</code>.</p>
+     * <p>Getter for the field
+     * <code>branchGroup</code>.</p>
      *
      * @return a {@link javax.media.j3d.BranchGroup} object.
      */
@@ -732,7 +727,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>Getter for the field <code>currentCycle</code>.</p>
+     * <p>Getter for the field
+     * <code>currentCycle</code>.</p>
      *
      * @return a int.
      */
@@ -741,7 +737,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>Getter for the field <code>cycles</code>.</p>
+     * <p>Getter for the field
+     * <code>cycles</code>.</p>
      *
      * @return a int.
      */
@@ -749,7 +746,9 @@ public class MolecularAssembly extends MSGroup {
         return cycles;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getExtent() {
         double[] Rc = {0, 0, 0};
@@ -782,7 +781,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>Getter for the field <code>file</code>.</p>
+     * <p>Getter for the field
+     * <code>file</code>.</p>
      *
      * @return a {@link java.io.File} object.
      */
@@ -791,7 +791,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>Getter for the field <code>offset</code>.</p>
+     * <p>Getter for the field
+     * <code>offset</code>.</p>
      *
      * @return a {@link javax.vecmath.Vector3d} object.
      */
@@ -804,7 +805,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>Getter for the field <code>originToRot</code>.</p>
+     * <p>Getter for the field
+     * <code>originToRot</code>.</p>
      *
      * @return a {@link javax.media.j3d.TransformGroup} object.
      */
@@ -858,7 +860,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>Getter for the field <code>ions</code>.</p>
+     * <p>Getter for the field
+     * <code>ions</code>.</p>
      *
      * @return a {@link java.util.ArrayList} object.
      */
@@ -867,7 +870,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>Getter for the field <code>molecules</code>.</p>
+     * <p>Getter for the field
+     * <code>molecules</code>.</p>
      *
      * @return a {@link java.util.ArrayList} object.
      */
@@ -1155,7 +1159,9 @@ public class MolecularAssembly extends MSGroup {
 
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void removeLeaves() {
         super.removeLeaves();
@@ -1303,8 +1309,7 @@ public class MolecularAssembly extends MSGroup {
     /**
      * Rotate about a point in given in the System's Local Coordinates
      *
-     * @param v
-     *            Vector3d
+     * @param v Vector3d
      */
     public void rotateAbout(Vector3d v) {
         Vector3d newRotPoint = new Vector3d(v);
@@ -1382,7 +1387,9 @@ public class MolecularAssembly extends MSGroup {
 
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setColor(RendererCache.ColorModel newColorModel, Color3f color,
             Material mat) {
@@ -1406,7 +1413,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>Setter for the field <code>currentCycle</code>.</p>
+     * <p>Setter for the field
+     * <code>currentCycle</code>.</p>
      *
      * @param c a int.
      */
@@ -1421,7 +1429,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>Setter for the field <code>cycles</code>.</p>
+     * <p>Setter for the field
+     * <code>cycles</code>.</p>
      *
      * @param c a int.
      */
@@ -1430,7 +1439,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>Setter for the field <code>file</code>.</p>
+     * <p>Setter for the field
+     * <code>file</code>.</p>
      *
      * @param f a {@link java.io.File} object.
      */
@@ -1442,7 +1452,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>Setter for the field <code>offset</code>.</p>
+     * <p>Setter for the field
+     * <code>offset</code>.</p>
      *
      * @param o a {@link javax.vecmath.Vector3d} object.
      */
@@ -1450,15 +1461,18 @@ public class MolecularAssembly extends MSGroup {
         offset = o;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setView(RendererCache.ViewModel newViewModel,
             List<BranchGroup> newShapes) {
         // Just Detach the whole system branch group
         if (newViewModel == RendererCache.ViewModel.DESTROY) {
-            switchGroup.setWhichChild(Switch.CHILD_NONE);
-            visible =
-                    false;
+            if (switchGroup != null) {
+                switchGroup.setWhichChild(Switch.CHILD_NONE);
+            }
+            visible = false;
         } else if (newViewModel == RendererCache.ViewModel.SHOWVRML) {
             switchGroup.setWhichChild(Switch.CHILD_ALL);
         } else if (newViewModel == RendererCache.ViewModel.HIDEVRML) {
@@ -1468,56 +1482,27 @@ public class MolecularAssembly extends MSGroup {
             if (newViewModel == RendererCache.ViewModel.DETAIL && childNodes.isLive()) {
                 childNodes.detach();
             }
-// We'll collect new Scenegraph Shapes in our newShapeNode
-// This is to avoid the case where setView is called from the root
-// node and all new shapes for every MolecularAssembly would then be
-// put into the same ArrayList.
-
+            /**
+             * We'll collect new Scenegraph Shapes in our newShapeNode This is
+             * to avoid the case where setView is called from the root node and
+             * all new shapes for every MolecularAssembly would then be put into
+             * the same ArrayList.
+             */
             super.setView(newViewModel, myNewShapes);
             ArrayList<ROLS> moleculeList = getList(Molecule.class,
                     new ArrayList<ROLS>());
-
-
-
-
-
-
-
             for (ROLS m : moleculeList) {
                 m.setView(newViewModel, myNewShapes);
             }
-
-
-
-
-
-
             for (MSNode m : molecules.getChildList()) {
                 m.setView(newViewModel, myNewShapes);
             }
-
-
-
-
-
-
             for (MSNode m : water.getChildList()) {
                 m.setView(newViewModel, myNewShapes);
             }
-
-
-
-
-
-
             for (MSNode m : ions.getChildList()) {
                 m.setView(newViewModel, myNewShapes);
             }
-
-
-
-
-
             if (newViewModel == RendererCache.ViewModel.INVISIBLE) {
                 switchGroup.setWhichChild(0);
             }
@@ -1535,10 +1520,8 @@ public class MolecularAssembly extends MSGroup {
      */
     public void setVRML(BranchGroup v) {
         vrmlURL = null;
-        vrmlFile =
-                null;
-        vrml =
-                v;
+        vrmlFile = null;
+        vrml = v;
     }
 
     /**

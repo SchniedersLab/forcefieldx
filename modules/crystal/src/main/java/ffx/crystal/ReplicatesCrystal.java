@@ -97,9 +97,9 @@ public class ReplicatesCrystal extends Crystal {
                         repTrans[2] = (symOp.tr[2] + k) * dZ;
                         SymOp repSymOp = new SymOp(symOp.rot, repTrans);
                         symOps.add(repSymOp);
-                        if (logger.isLoggable(Level.FINE)) {
-                            logger.fine(String.format(" SymOp (%2d,%2d,%2d): %d\n", i, j, k, ii));
-                            logger.fine(repSymOp.toString());
+                        if (logger.isLoggable(Level.FINEST)) {
+                            logger.finest(String.format("\n SymOp (%2d,%2d,%2d): %d", i, j, k, ii));
+                            logger.finest(repSymOp.toString());
                         }
                         ii++;
                     }

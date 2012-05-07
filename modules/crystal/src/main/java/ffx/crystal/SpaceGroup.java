@@ -20,26 +20,10 @@
  */
 package ffx.crystal;
 
-import static ffx.crystal.SpaceGroup.CrystalSystem.CUBIC;
-import static ffx.crystal.SpaceGroup.CrystalSystem.HEXAGONAL;
-import static ffx.crystal.SpaceGroup.CrystalSystem.MONOCLINIC;
-import static ffx.crystal.SpaceGroup.CrystalSystem.ORTHORHOMBIC;
-import static ffx.crystal.SpaceGroup.CrystalSystem.TETRAGONAL;
-import static ffx.crystal.SpaceGroup.CrystalSystem.TRICLINIC;
-import static ffx.crystal.SpaceGroup.CrystalSystem.TRIGONAL;
-
-import static ffx.crystal.SpaceGroup.LaueSystem.L111;
-import static ffx.crystal.SpaceGroup.LaueSystem.L121;
-import static ffx.crystal.SpaceGroup.LaueSystem.L222;
-import static ffx.crystal.SpaceGroup.LaueSystem.L114;
-import static ffx.crystal.SpaceGroup.LaueSystem.L224;
-import static ffx.crystal.SpaceGroup.LaueSystem.L113;
-import static ffx.crystal.SpaceGroup.LaueSystem.L223;
-import static ffx.crystal.SpaceGroup.LaueSystem.L32U;
-import static ffx.crystal.SpaceGroup.LaueSystem.LM3B;
-import static ffx.crystal.SpaceGroup.LaueSystem.LM3M;
-
 import java.util.Vector;
+
+import static ffx.crystal.SpaceGroup.CrystalSystem.*;
+import static ffx.crystal.SpaceGroup.LaueSystem.*;
 
 /**
  * The Spacegroup class defines the symmetry of a crystal. There are 230
