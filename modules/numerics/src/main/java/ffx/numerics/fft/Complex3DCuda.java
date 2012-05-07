@@ -22,23 +22,30 @@ package ffx.numerics.fft;
 
 import java.io.File;
 import java.net.URL;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.DoubleBuffer;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import jcuda.*;
-import jcuda.driver.*;
-import jcuda.jcufft.*;
+
 import static java.lang.String.format;
-import static jcuda.driver.JCudaDriver.*;
-import static jcuda.jcufft.JCufft.*;
 
 import org.apache.commons.io.FileUtils;
 
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelTeam;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
+
+import jcuda.LogLevel;
+import jcuda.Pointer;
+import jcuda.Sizeof;
+import jcuda.driver.*;
+import jcuda.jcufft.JCufft;
+import jcuda.jcufft.cufftHandle;
+import jcuda.jcufft.cufftType;
+
+import static jcuda.driver.JCudaDriver.*;
+import static jcuda.jcufft.JCufft.*;
 
 /**
  * Compute a 3D Convolution using Java wrappers to the CUDA Driver API.
