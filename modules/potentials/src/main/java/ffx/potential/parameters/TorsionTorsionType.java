@@ -276,8 +276,8 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
         double eps = 0.0001;
         if (abs(tx[0] - tx[nx - 1]) - 360.0 > eps) {
             isCyclic = false;
-            if (logger.isLoggable(Level.FINE)) {
-                logger.fine("TORTOR is aperiodic: " + tx[0] + ", " + tx[nx - 1]);
+            if (logger.isLoggable(Level.FINEST)) {
+                logger.finest(" tortor is aperiodic: " + tx[0] + ", " + tx[nx - 1]);
             }
         }
         if (isCyclic) {
@@ -285,8 +285,8 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
                 int k = i * nx;
                 if (abs(energy[k] - energy[k + nx - 1]) > eps) {
                     isCyclic = false;
-                    if (logger.isLoggable(Level.FINE)) {
-                        logger.fine("TORTOR is apreriodic: " + k + ", " + (k + nx - 1) + ": " + abs(energy[k] - energy[k + nx - 1]));
+                    if (logger.isLoggable(Level.FINEST)) {
+                        logger.finest(" tortor is apreriodic: " + k + ", " + (k + nx - 1) + ": " + abs(energy[k] - energy[k + nx - 1]));
                     }
                     break;
                 }
@@ -296,8 +296,8 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
             int k = (ny - 1) * nx;
             for (int i = 0; i < nx; i++) {
                 if (abs(energy[i] - energy[i + k]) > eps) {
-                    if (logger.isLoggable(Level.FINE)) {
-                        logger.fine("TORTOR is aperiodic: " + i + ", " + i + k + ": " + abs(energy[i] - energy[i + k]));
+                    if (logger.isLoggable(Level.FINEST)) {
+                        logger.fine(" tortor is aperiodic: " + i + ", " + i + k + ": " + abs(energy[i] - energy[i + k]));
                     }
                     isCyclic = false;
                     break;

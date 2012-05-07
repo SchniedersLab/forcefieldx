@@ -1,42 +1,33 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Title: Force Field X Description: Force Field X - Software for Molecular
+ * Biophysics. Copyright: Copyright (c) Michael J. Schnieders 2001-2011
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.potential.bonded;
 
-import static ffx.utilities.HashCodeUtil.hash;
-import static ffx.utilities.HashCodeUtil.SEED;
+import java.util.*;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.ListIterator;
-
-import javax.media.j3d.BranchGroup;
-import javax.media.j3d.Canvas3D;
-import javax.media.j3d.J3DGraphics2D;
-import javax.media.j3d.Material;
-import javax.media.j3d.Node;
+import javax.media.j3d.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeNode;
 import javax.vecmath.Color3f;
+
+import static ffx.utilities.HashCodeUtil.SEED;
+import static ffx.utilities.HashCodeUtil.hash;
 
 /**
  * The MSNode class forms the basic unit that all data classes extend.
@@ -47,13 +38,15 @@ import javax.vecmath.Color3f;
 public class MSNode extends DefaultMutableTreeNode implements ROLS {
 
     private static final long serialVersionUID = 1L;
-    // UNIT TESTING FLAG
-    /** Constant <code>UNIT_TESTING=false</code> */
+    /**
+     * Constant
+     * <code>UNIT_TESTING=false</code>
+     */
     public static boolean UNIT_TESTING = false;
 
     static {
         try {
-            boolean b = Boolean.parseBoolean(System.getProperty("ffe.junit", "false"));
+            boolean b = Boolean.parseBoolean(System.getProperty("ffx.junit", "false"));
             UNIT_TESTING = b;
         } catch (Exception e) {
             UNIT_TESTING = false;
@@ -67,7 +60,7 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
      * Default MSNode Constructor
      */
     public MSNode() {
-        name = null;
+        name = "";
         MultiScaleLevel = ROLS.MaxLengthScale;
     }
 
@@ -95,8 +88,7 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
     /**
      * Returns true if Class c can be below this Class in the Hierarchy
      *
-     * @param c
-     *            Class
+     * @param c Class
      * @return boolean
      */
     public boolean canBeChild(Class c) {
@@ -126,7 +118,9 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
         return true;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void drawLabel(Canvas3D graphics, J3DGraphics2D g2d, Node node) {
         if (!isSelected()) {
@@ -153,7 +147,13 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
             return false;
         }
         MSNode other = (MSNode) object;
-        return name.equals(other.getName());
+        if (name == null && other.getName() == null) {
+            return true;
+        } else if (name != null && other.getName() != null) {
+            return name.equals(other.getName());            
+        } else {
+            return false;
+        }
     }
 
     /**
@@ -174,8 +174,9 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
     }
 
     /**
-     * If <code>this</code> MSNode or any MSNode below it <code>equals</code>
-     * the argument, that MSNode is returned.
+     * If
+     * <code>this</code> MSNode or any MSNode below it
+     * <code>equals</code> the argument, that MSNode is returned.
      *
      * @param msNode a {@link ffx.potential.bonded.MSNode} object.
      * @return a {@link ffx.potential.bonded.MSNode} object.
@@ -270,7 +271,9 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
         return getList(TorsionTorsion.class, arrayList);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getCenter(boolean w) {
         double[] Rc = {0, 0, 0};
@@ -335,7 +338,9 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
         return extent;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ArrayList<ROLS> getList(Class c, ArrayList<ROLS> nodes) {
         if (c.isInstance(this)) {
@@ -351,7 +356,9 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
         return nodes;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public long getMSCount(Class c, long count) {
         if (c.isInstance(this)) {
@@ -367,7 +374,9 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
         return count;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ROLS getMSNode(Class c) {
         TreeNode[] nodes = getPath();
@@ -389,7 +398,9 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
         return MultiScaleLevel;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getMW() {
         double weight = 0.0;
@@ -408,10 +419,16 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
         return name;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int hashCode() {
-        return hash(SEED, name.hashCode());
+        if (name != null) {
+            return hash(SEED, name.hashCode());
+        } else {
+            return SEED;
+        }
     }
 
     /**
@@ -430,10 +447,12 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
         System.out.println(name);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setColor(RendererCache.ColorModel colorModel, Color3f color,
-                         Material mat) {
+            Material mat) {
         for (Enumeration e = children(); e.hasMoreElements();) {
             MSNode node = (MSNode) e.nextElement();
             node.setColor(colorModel, color, mat);
@@ -450,7 +469,8 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
     }
 
     /**
-     * <p>Setter for the field <code>selected</code>.</p>
+     * <p>Setter for the field
+     * <code>selected</code>.</p>
      *
      * @param b a boolean.
      */
@@ -462,10 +482,12 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setView(RendererCache.ViewModel viewModel,
-                        List<BranchGroup> newShapes) {
+            List<BranchGroup> newShapes) {
         for (Enumeration e = children(); e.hasMoreElements();) {
             MSNode node = (MSNode) e.nextElement();
             node.setView(viewModel, newShapes);
@@ -482,7 +504,9 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
         return name;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void update() {
         for (Enumeration e = children(); e.hasMoreElements();) {

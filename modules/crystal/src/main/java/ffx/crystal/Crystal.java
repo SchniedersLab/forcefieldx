@@ -22,6 +22,7 @@ package ffx.crystal;
 
 import java.util.Vector;
 import java.util.logging.Logger;
+
 import static java.lang.Math.*;
 
 import org.apache.commons.configuration.CompositeConfiguration;
@@ -31,9 +32,8 @@ import org.apache.commons.math.linear.RealMatrix;
 import org.apache.commons.math.util.MathUtils;
 
 import ffx.utilities.HashCodeUtil;
-import static ffx.numerics.VectorMath.mat3mat3;
-import static ffx.numerics.VectorMath.mat3symvec6;
-import static ffx.numerics.VectorMath.transpose3;
+
+import static ffx.numerics.VectorMath.*;
 
 /**
  * The Crystal class encapsulates the lattice parameters and space group that

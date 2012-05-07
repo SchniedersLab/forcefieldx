@@ -121,10 +121,8 @@ public class SymOp {
             }
             if (rot[i][2] < 0.0) {
                 sb.append("-Z");
-                s = true;
             } else if (rot[i][2] > 0.0) {
                 sb.append(s ? "+Z" : "Z");
-                s = true;
             }
 
             if (tr[i] > 0.0) {

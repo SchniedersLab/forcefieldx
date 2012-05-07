@@ -1,43 +1,28 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Title: Force Field X Description: Force Field X - Software for Molecular
+ * Biophysics. Copyright: Copyright (c) Michael J. Schnieders 2001-2011
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.ui;
 
-import java.awt.BorderLayout;
-import java.awt.Container;
-import java.awt.Cursor;
-import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.Frame;
-import java.awt.GraphicsConfigTemplate;
-import java.awt.GraphicsConfiguration;
-import java.awt.GraphicsEnvironment;
-import java.awt.GridLayout;
-import java.awt.Toolkit;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URL;
@@ -55,23 +40,7 @@ import javax.help.JHelp;
 import javax.media.j3d.GraphicsConfigTemplate3D;
 import javax.media.j3d.Transform3D;
 import javax.media.j3d.TransformGroup;
-import javax.swing.BorderFactory;
-import javax.swing.ImageIcon;
-import javax.swing.JCheckBoxMenuItem;
-import javax.swing.JDialog;
-import javax.swing.JFileChooser;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
-import javax.swing.JScrollPane;
-import javax.swing.JSplitPane;
-import javax.swing.JTabbedPane;
-import javax.swing.JTextArea;
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
-import javax.swing.WindowConstants;
+import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
 import javax.swing.event.ChangeEvent;
@@ -84,40 +53,17 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.SystemUtils;
 
 import ffx.crystal.Crystal;
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.Bond;
-import ffx.potential.bonded.MSNode;
-import ffx.potential.bonded.MSRoot;
-import ffx.potential.bonded.MolecularAssembly;
-import ffx.potential.bonded.ROLS;
-import ffx.potential.bonded.RendererCache;
+import ffx.potential.bonded.*;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.ForceField.ForceFieldString;
-import ffx.potential.parsers.ARCFileFilter;
-import ffx.potential.parsers.DYNFileFilter;
-import ffx.potential.parsers.FFXFileFilter;
-import ffx.potential.parsers.ForceFieldFileFilter;
-import ffx.potential.parsers.ForceFieldFilter;
-import ffx.potential.parsers.INTFileFilter;
-import ffx.potential.parsers.INTFilter;
-import ffx.potential.parsers.InducedFileFilter;
-import ffx.potential.parsers.InducedFilter;
-import ffx.potential.parsers.KeyFileFilter;
-import ffx.potential.parsers.KeyFilter;
-import ffx.potential.parsers.MergeFilter;
-import ffx.potential.parsers.PDBFileFilter;
-import ffx.potential.parsers.PDBFilter;
-import ffx.potential.parsers.SystemFilter;
-import ffx.potential.parsers.XYZFileFilter;
-import ffx.potential.parsers.XYZFilter;
+import ffx.potential.parsers.*;
 import ffx.ui.properties.FFXLocale;
 import ffx.utilities.Keyword;
 
 /**
- * The MainPanel class is the main container for Force Field X, handles
- * file input/output and is used to pass references among the various
- * sub-Panels.
+ * The MainPanel class is the main container for Force Field X, handles file
+ * input/output and is used to pass references among the various sub-Panels.
  *
  * @author schnied
  * @version $Id: $
@@ -128,49 +74,88 @@ public final class MainPanel extends JPanel implements ActionListener,
     // Static Variables
     private static final Logger logger = Logger.getLogger(MainPanel.class.getName());
     // Panel Order in the TabbedPane
-    /** Constant <code>GRAPHICS=0</code> */
+    /**
+     * Constant
+     * <code>GRAPHICS=0</code>
+     */
     public static final int GRAPHICS = 0;
-    /** Constant <code>KEYWORDS=1</code> */
+    /**
+     * Constant
+     * <code>KEYWORDS=1</code>
+     */
     public static final int KEYWORDS = 1;
-    /** Constant <code>MODELING=2</code> */
+    /**
+     * Constant
+     * <code>MODELING=2</code>
+     */
     public static final int MODELING = 2;
-    /** Constant <code>classpath=""</code> */
+    /**
+     * Constant
+     * <code>classpath=""</code>
+     */
     public static String classpath;
-    /** Constant <code>ffxDir</code> */
+    /**
+     * Constant
+     * <code>ffxDir</code>
+     */
     public static File ffxDir;
     private static File pwd;
     // FileFilters for filtering file selection in the JFileChooser
     private static JFileChooser fileChooser = null;
-    /** Constant <code>xyzFileFilter</code> */
+    /**
+     * Constant
+     * <code>xyzFileFilter</code>
+     */
     public static final XYZFileFilter xyzFileFilter = new XYZFileFilter();
-    /** Constant <code>arcFileFilter</code> */
+    /**
+     * Constant
+     * <code>arcFileFilter</code>
+     */
     public static final ARCFileFilter arcFileFilter = new ARCFileFilter();
-    /** Constant <code>intFileFilter</code> */
+    /**
+     * Constant
+     * <code>intFileFilter</code>
+     */
     public static final INTFileFilter intFileFilter = new INTFileFilter();
-    /** Constant <code>dynFileFilter</code> */
+    /**
+     * Constant
+     * <code>dynFileFilter</code>
+     */
     public static final DYNFileFilter dynFileFilter = new DYNFileFilter();
-    /** Constant <code>indFileFilter</code> */
+    /**
+     * Constant
+     * <code>indFileFilter</code>
+     */
     public static final InducedFileFilter indFileFilter = new InducedFileFilter();
-    /** Constant <code>forceFieldFileFilter</code> */
+    /**
+     * Constant
+     * <code>forceFieldFileFilter</code>
+     */
     public static final ForceFieldFileFilter forceFieldFileFilter = new ForceFieldFileFilter();
-    /** Constant <code>pdbFileFilter</code> */
+    /**
+     * Constant
+     * <code>pdbFileFilter</code>
+     */
     public static final PDBFileFilter pdbFileFilter = new PDBFileFilter();
-    /** Constant <code>keyFileFilter</code> */
+    /**
+     * Constant
+     * <code>keyFileFilter</code>
+     */
     public static final KeyFileFilter keyFileFilter = new KeyFileFilter();
-    /** Constant <code>ffxFileFilter</code> */
+    /**
+     * Constant
+     * <code>ffxFileFilter</code>
+     */
     public static final FFXFileFilter ffxFileFilter = new FFXFileFilter();
 
     static {
         try {
-            // FFX HOME
             String ffxString = System.getProperty("ffx.dir", ".");
             ffxDir = new File(ffxString);
             classpath = System.getProperty("java.class.path");
             pwd = MainPanel.getPWD();
-            String ld_library_path = System.getProperty("java.library.path");
-            logger.fine("\njava.library.path: " + ld_library_path + "\nclasspath: " + classpath + "\nFFX: " + ffxDir.getAbsolutePath() + "\nCWD: " + pwd + "\n");
         } catch (Exception e) {
-            logger.severe("FFX directory could not be found.\n" + e);
+            logger.severe(" FFX directory could not be found.\n" + e);
         }
     }
 
@@ -243,8 +228,7 @@ public final class MainPanel extends JPanel implements ActionListener,
     /**
      * MainPanel Constructor
      *
-     * @param f
-     *            Application Frame
+     * @param f Application Frame
      */
     public MainPanel(JFrame f) {
         frame = f;
@@ -473,7 +457,7 @@ public final class MainPanel extends JPanel implements ActionListener,
     /**
      * <p>closeWait</p>
      */
-    public void closeWait() {
+    public synchronized void closeWait() {
         FFXSystem active = hierarchy.getActive();
         Thread thread = close(active);
         while (thread != null && thread.isAlive()) {
@@ -670,7 +654,8 @@ public final class MainPanel extends JPanel implements ActionListener,
     }
 
     /**
-     * <p>Getter for the field <code>dataRoot</code>.</p>
+     * <p>Getter for the field
+     * <code>dataRoot</code>.</p>
      *
      * @return a {@link ffx.potential.bonded.MSRoot} object.
      */
@@ -697,7 +682,8 @@ public final class MainPanel extends JPanel implements ActionListener,
     }
 
     /**
-     * <p>Getter for the field <code>hierarchy</code>.</p>
+     * <p>Getter for the field
+     * <code>hierarchy</code>.</p>
      *
      * @return a {@link ffx.ui.Hierarchy} object.
      */
@@ -706,7 +692,8 @@ public final class MainPanel extends JPanel implements ActionListener,
     }
 
     /**
-     * <p>Getter for the field <code>keywordPanel</code>.</p>
+     * <p>Getter for the field
+     * <code>keywordPanel</code>.</p>
      *
      * @return a {@link ffx.ui.KeywordPanel} object.
      */
@@ -715,7 +702,8 @@ public final class MainPanel extends JPanel implements ActionListener,
     }
 
     /**
-     * <p>Getter for the field <code>mainMenu</code>.</p>
+     * <p>Getter for the field
+     * <code>mainMenu</code>.</p>
      *
      * @return a {@link ffx.ui.MainMenu} object.
      */
@@ -724,7 +712,8 @@ public final class MainPanel extends JPanel implements ActionListener,
     }
 
     /**
-     * <p>Getter for the field <code>frame</code>.</p>
+     * <p>Getter for the field
+     * <code>frame</code>.</p>
      *
      * @return a {@link java.awt.Frame} object.
      */
@@ -733,11 +722,11 @@ public final class MainPanel extends JPanel implements ActionListener,
     }
 
     /*
-    public ModelingPanel getModelingPanel() {
-    return modelingPanel;
-    } */
+     * public ModelingPanel getModelingPanel() { return modelingPanel; }
+     */
     /**
-     * <p>Getter for the field <code>modelingShell</code>.</p>
+     * <p>Getter for the field
+     * <code>modelingShell</code>.</p>
      *
      * @return a {@link ffx.ui.ModelingShell} object.
      */
@@ -748,9 +737,8 @@ public final class MainPanel extends JPanel implements ActionListener,
         }
         return modelingShell;
         /*
-        } else {
-        return null;
-        } */
+         * } else { return null; }
+         */
     }
 
     /**
@@ -806,17 +794,32 @@ public final class MainPanel extends JPanel implements ActionListener,
             }
         }
     }
-    /** Constant <code>version="Version 1.0.0-ALPHA"</code> */
+    /**
+     * Constant
+     * <code>version="Version 1.0.0-ALPHA"</code>
+     */
     public static final String version = "Version 1.0.0-ALPHA";
-    /** Constant <code>date="March 2011"</code> */
+    /**
+     * Constant
+     * <code>date="March 2011"</code>
+     */
     public static final String date = "March 2011";
-    /** Constant <code>border=" ______________________________________"{trunked}</code> */
+    /**
+     * Constant
+     * <code>border=" ______________________________________"{trunked}</code>
+     */
     public static final String border =
             " ______________________________________________________________________________\n";
-    /** Constant <code>title="        FORCE FIELD X - Software for Mo"{trunked}</code> */
+    /**
+     * Constant
+     * <code>title="        FORCE FIELD X - Software for Mo"{trunked}</code>
+     */
     public static final String title =
             "        FORCE FIELD X - Software for Molecular Biophysics \n";
-    /** Constant <code>aboutString="         + version +    + date +  \n   "{trunked}</code> */
+    /**
+     * Constant
+     * <code>aboutString="         + version +    + date +  \n   "{trunked}</code>
+     */
     public static final String aboutString =
             "        " + version + "  " + date + " \n"
             + "        Copyright (c)  Michael J. Schnieders  2001-2011 \n"
@@ -920,8 +923,9 @@ public final class MainPanel extends JPanel implements ActionListener,
         tabbedPane.addTab(locale.getValue("KeywordEditor"), keywordIcon,
                 keywordPanel);
         /*
-        tabbedPane.addTab(locale.getValue("ModelingCommands"), modelingIcon,
-        modelingPanel); */
+         * tabbedPane.addTab(locale.getValue("ModelingCommands"), modelingIcon,
+         * modelingPanel);
+         */
         tabbedPane.addChangeListener(this);
         splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, false,
                 treePane, tabbedPane);
@@ -1097,7 +1101,8 @@ public final class MainPanel extends JPanel implements ActionListener,
     /**
      * <p>merge</p>
      *
-     * @param nodesToMerge an array of {@link ffx.potential.bonded.MSNode} objects.
+     * @param nodesToMerge an array of {@link ffx.potential.bonded.MSNode}
+     * objects.
      */
     public void merge(MSNode[] nodesToMerge) {
         ArrayList<MSNode> activeNodes = new ArrayList<MSNode>();
@@ -1149,10 +1154,9 @@ public final class MainPanel extends JPanel implements ActionListener,
     /**
      * Attempts to load the supplied file
      *
-     * @param file
-     *            File to open
-     * @param commandDescription
-     *            Description of the command that created this file.
+     * @param file File to open
+     * @param commandDescription Description of the command that created this
+     * file.
      * @return a {@link java.lang.Thread} object.
      */
     public Thread open(File file, String commandDescription) {
@@ -1224,10 +1228,9 @@ public final class MainPanel extends JPanel implements ActionListener,
     /**
      * Attempts to load the supplied file
      *
-     * @param files
-     *            Files to open
-     * @param commandDescription
-     *            Description of the command that created this file.
+     * @param files Files to open
+     * @param commandDescription Description of the command that created this
+     * file.
      * @return a {@link java.lang.Thread} object.
      */
     public Thread open(List<File> files, String commandDescription) {
@@ -1258,7 +1261,7 @@ public final class MainPanel extends JPanel implements ActionListener,
             ForceField patchForceField = forceFieldFilter.parse();
             forceField.append(patchForceField);
         }
-        newSystem.setForceField(forceField);        
+        newSystem.setForceField(forceField);
         // Decide what parser to use.
         SystemFilter systemFilter = null;
         if (xyzFileFilter.acceptDeep(file)) {
@@ -1288,18 +1291,17 @@ public final class MainPanel extends JPanel implements ActionListener,
      * @param file a {@link java.lang.String} object.
      * @return an array of {@link ffx.ui.FFXSystem} objects.
      */
-    public FFXSystem[] openWait(String file) {
+    public synchronized FFXSystem[] openWait(String file) {
         Thread thread = open(file);
         while (thread != null && thread.isAlive()) {
-            synchronized (this) {
-                try {
-                    wait(1);
-                } catch (Exception e) {
-                    String message = "Exception waiting for " + file + " to open.";
-                    logger.log(Level.WARNING, message, e);
-                    return null;
-                }
+            try {
+                wait(1);
+            } catch (Exception e) {
+                String message = "Exception waiting for " + file + " to open.";
+                logger.log(Level.WARNING, message, e);
+                return null;
             }
+
         }
 
         MolecularAssembly systems[] = activeFilter.getMolecularAssemblys();
@@ -1323,17 +1325,15 @@ public final class MainPanel extends JPanel implements ActionListener,
      * @param files an array of {@link java.lang.String} objects.
      * @return an array of {@link ffx.ui.FFXSystem} objects.
      */
-    public FFXSystem[] openWait(String files[]) {
+    public synchronized FFXSystem[] openWait(String files[]) {
         Thread thread = open(files);
         while (thread != null && thread.isAlive()) {
-            synchronized (this) {
-                try {
-                    wait(1);
-                } catch (Exception e) {
-                    String message = "Exception waiting for " + files[0] + " to open.";
-                    logger.log(Level.WARNING, message, e);
-                    return null;
-                }
+            try {
+                wait(1);
+            } catch (Exception e) {
+                String message = "Exception waiting for " + files[0] + " to open.";
+                logger.log(Level.WARNING, message, e);
+                return null;
             }
         }
 
@@ -1508,10 +1508,8 @@ public final class MainPanel extends JPanel implements ActionListener,
     /**
      * Attempt to open a TINKER *.key file
      *
-     * @param newSystem
-     *            FFXSystem that needs an associated Key File
-     * @param createKey
-     *            flag to create a key file be created
+     * @param newSystem FFXSystem that needs an associated Key File
+     * @param createKey flag to create a key file be created
      * @return Key file that was found, or null if nothing could be found
      */
     public boolean openKey(FFXSystem newSystem, boolean createKey) {
@@ -1784,7 +1782,8 @@ public final class MainPanel extends JPanel implements ActionListener,
     /**
      * <p>saveAsPDB</p>
      *
-     * @param activeSystems an array of {@link ffx.potential.bonded.MolecularAssembly} objects.
+     * @param activeSystems an array of {@link ffx.potential.bonded.MolecularAssembly}
+     * objects.
      * @param file a {@link java.io.File} object.
      */
     public void saveAsPDB(MolecularAssembly activeSystems[], File file) {
@@ -1835,9 +1834,8 @@ public final class MainPanel extends JPanel implements ActionListener,
         }
         preferences.put(c + ".cwd", pwd.toString());
         /*
-        if (modelingPanel != null) {
-        modelingPanel.savePrefs();
-        } */
+         * if (modelingPanel != null) { modelingPanel.savePrefs(); }
+         */
         if (keywordPanel != null) {
             keywordPanel.savePrefs();
         }
@@ -1881,7 +1879,8 @@ public final class MainPanel extends JPanel implements ActionListener,
     }
 
     /**
-     * <p>Setter for the field <code>port</code>.</p>
+     * <p>Setter for the field
+     * <code>port</code>.</p>
      */
     public void setPort() {
         String s = new String("" + port);
@@ -2016,7 +2015,9 @@ public final class MainPanel extends JPanel implements ActionListener,
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void stateChanged(ChangeEvent evt) {
         JTabbedPane jtp = (JTabbedPane) evt.getSource();
@@ -2026,9 +2027,9 @@ public final class MainPanel extends JPanel implements ActionListener,
         } else if (index == 1) {
             keywordPanel.selected();
         }
-        /* else if (index == 2) {
-        modelingPanel.selected();
-        } */
+        /*
+         * else if (index == 2) { modelingPanel.selected(); }
+         */
     }
 
     /**
@@ -2066,7 +2067,9 @@ public final class MainPanel extends JPanel implements ActionListener,
         trajectory.stop();
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String toString() {
         return "Program Control";

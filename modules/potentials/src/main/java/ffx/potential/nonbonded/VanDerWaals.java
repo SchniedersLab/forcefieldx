@@ -30,7 +30,10 @@ import static java.lang.Math.*;
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
 
-import edu.rit.pj.*;
+import edu.rit.pj.IntegerForLoop;
+import edu.rit.pj.IntegerSchedule;
+import edu.rit.pj.ParallelRegion;
+import edu.rit.pj.ParallelTeam;
 import edu.rit.pj.reduction.SharedDouble;
 import edu.rit.pj.reduction.SharedInteger;
 
@@ -87,6 +90,7 @@ public class VanDerWaals implements MaskingInterface,
      * equals: true for inner loop hard atoms false for inner loop soft atoms
      */
     private final boolean softCore[][];
+    private boolean softCoreInit;
     private static final byte HARD = 0;
     private static final byte SOFT = 1;
     private double lambda = 1.0;
@@ -171,6 +175,7 @@ public class VanDerWaals implements MaskingInterface,
     private final long initializationTime[];
     private final long vdwTime[];
     private final long reductionTime[];
+    private long initializationTotal, vdwTotal, reductionTotal;
 
     /**
      * The VanDerWaals class constructor.
@@ -326,6 +331,7 @@ public class VanDerWaals implements MaskingInterface,
             isSoft[i] = false;
             softCore[HARD][i] = false;
             softCore[SOFT][i] = false;
+            softCoreInit = false;
         }
         lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
         if (lambdaTerm) {
@@ -635,19 +641,22 @@ public class VanDerWaals implements MaskingInterface,
         /**
          * Initialize the softcore atom masks.
          */
-        for (int i = 0; i < nAtoms; i++) {
-            isSoft[i] = atoms[i].applyLambda();
-            if (isSoft[i]) {
-                // Outer loop atom hard, inner loop atom soft.
-                softCore[HARD][i] = true;
-                // Both soft - full interaction.
-                softCore[SOFT][i] = false;
-            } else {
-                // Both hard - full interaction.
-                softCore[HARD][i] = false;
-                // Outer loop atom soft, inner loop atom hard.
-                softCore[SOFT][i] = true;
+        if (!softCoreInit) {
+            for (int i = 0; i < nAtoms; i++) {
+                isSoft[i] = atoms[i].applyLambda();
+                if (isSoft[i]) {
+                    // Outer loop atom hard, inner loop atom soft.
+                    softCore[HARD][i] = true;
+                    // Both soft: full intramolecular ligand interactions.
+                    softCore[SOFT][i] = false;
+                } else {
+                    // Both hard: full interaction between condensed phase atoms.
+                    softCore[HARD][i] = false;
+                    // Outer loop atom soft, inner loop atom hard.
+                    softCore[SOFT][i] = true;
+                }
             }
+            softCoreInit = true;
         }
 
         // Redo the long range correction.
@@ -760,11 +769,17 @@ public class VanDerWaals implements MaskingInterface,
             }
 
             /**
-             * Expand coordinates.
+             * Initialize and expand coordinates.
              */
             try {
+                if (threadIndex == 0) {
+                    initializationTotal = -System.nanoTime();
+                }
                 execute(0, nAtoms - 1, initializationLoop[threadIndex]);
                 execute(0, nAtoms - 1, expandLoop[threadIndex]);
+                if (threadIndex == 0) {
+                    initializationTotal += System.nanoTime();
+                }
             } catch (Exception e) {
                 String message = "Fatal exception expanding coordinates in thread: " + threadIndex + "\n";
                 logger.log(Level.SEVERE, message, e);
@@ -789,7 +804,13 @@ public class VanDerWaals implements MaskingInterface,
              * Compute van der Waals energy and gradient.
              */
             try {
+                if (threadIndex == 0) {
+                    vdwTotal = -System.nanoTime();
+                }
                 execute(0, nAtoms - 1, vanDerWaalsLoop[threadIndex]);
+                if (threadIndex == 0) {
+                    vdwTotal += System.nanoTime();
+                }
             } catch (Exception e) {
                 String message = "Fatal exception evaluating van der Waals energy in thread: " + threadIndex + "\n";
                 logger.log(Level.SEVERE, message, e);
@@ -800,7 +821,13 @@ public class VanDerWaals implements MaskingInterface,
              */
             if (gradient || lambdaTerm) {
                 try {
+                    if (threadIndex == 0) {
+                        reductionTotal = -System.nanoTime();
+                    }
                     execute(0, nAtoms - 1, reductionLoop[threadIndex]);
+                    if (threadIndex == 0) {
+                        reductionTotal += System.nanoTime();
+                    }
                 } catch (Exception e) {
                     String message = "Fatal exception reducing van der Waals gradient in thread: " + threadIndex + "\n";
                     logger.log(Level.SEVERE, message, e);
@@ -811,11 +838,15 @@ public class VanDerWaals implements MaskingInterface,
              * Log timings.
              */
             if (threadIndex == 0 && logger.isLoggable(Level.FINE)) {
-                logger.info("\n van der Waals Timings (sec)");
-                logger.info(" Thread     Init   Energy   Reduce");
+
+                double total = (initializationTotal + vdwTotal + reductionTotal) * 1e-9;
+
+                logger.info(String.format("\n van der Waals: %7.4f (sec)", total));
+                logger.info(" Thread    Init    Energy  Reduce");
                 for (int i = 0; i < threadCount; i++) {
-                    logger.info(String.format("    %3d %8.4f %8.4f %8.4f", i, initializationTime[i] * 1e-9, vdwTime[i] * 1e-9, reductionTime[i] * 1e-9));
+                    logger.info(String.format("    %3d   %7.4f %7.4f %7.4f", i, initializationTime[i] * 1e-9, vdwTime[i] * 1e-9, reductionTime[i] * 1e-9));
                 }
+                logger.info(String.format(" Actual   %7.4f %7.4f %7.4f", initializationTotal * 1e-9, vdwTotal * 1e-9, reductionTotal * 1e-9));
             }
         }
 
@@ -843,28 +874,28 @@ public class VanDerWaals implements MaskingInterface,
                     coordinates[i3 + ZZ] = xyz[ZZ];
                 }
 
-                int rank = getThreadIndex();
+                int threadIndex = getThreadIndex();
 
                 if (gradient) {
-                    if (gradX[rank] == null) {
-                        gradX[rank] = new double[nAtoms];
-                        gradY[rank] = new double[nAtoms];
-                        gradZ[rank] = new double[nAtoms];
+                    if (gradX[threadIndex] == null) {
+                        gradX[threadIndex] = new double[nAtoms];
+                        gradY[threadIndex] = new double[nAtoms];
+                        gradZ[threadIndex] = new double[nAtoms];
                     }
-                    fill(gradX[rank], 0.0);
-                    fill(gradY[rank], 0.0);
-                    fill(gradZ[rank], 0.0);
+                    fill(gradX[threadIndex], 0.0);
+                    fill(gradY[threadIndex], 0.0);
+                    fill(gradZ[threadIndex], 0.0);
                 }
 
                 if (lambdaTerm) {
-                    if (lambdaGradX[rank] == null) {
-                        lambdaGradX[rank] = new double[nAtoms];
-                        lambdaGradY[rank] = new double[nAtoms];
-                        lambdaGradZ[rank] = new double[nAtoms];
+                    if (lambdaGradX[threadIndex] == null) {
+                        lambdaGradX[threadIndex] = new double[nAtoms];
+                        lambdaGradY[threadIndex] = new double[nAtoms];
+                        lambdaGradZ[threadIndex] = new double[nAtoms];
                     }
-                    fill(lambdaGradX[rank], 0.0);
-                    fill(lambdaGradY[rank], 0.0);
-                    fill(lambdaGradZ[rank], 0.0);
+                    fill(lambdaGradX[threadIndex], 0.0);
+                    fill(lambdaGradY[threadIndex], 0.0);
+                    fill(lambdaGradZ[threadIndex], 0.0);
                 }
             }
         }
@@ -1262,11 +1293,11 @@ public class VanDerWaals implements MaskingInterface,
                         double lxredi = 0.0;
                         double lyredi = 0.0;
                         double lzredi = 0.0;
-                        /**
-                         * All interactions between a soft atom and a symmetry
-                         * mate atom are turned off.
-                         */
-                        boolean soft = isSoft[i];
+                        // Default is that the outer loop atom is hard.
+                        boolean softCorei[] = softCore[HARD];
+                        if (isSoft[i]) {
+                            softCorei = softCore[SOFT];
+                        }
                         /**
                          * Loop over the neighbor list.
                          */
@@ -1282,8 +1313,7 @@ public class VanDerWaals implements MaskingInterface,
                             dx_local[1] = yi - yk;
                             dx_local[2] = zi - zk;
                             final double r2 = crystal.image(dx_local);
-                            if (r2 <= off2 && mask[k] > 0) {
-                                // This will only happen for iSymm > 0.
+                            if (r2 <= off2) {
                                 double selfScale = 1.0;
                                 if (i == k) {
                                     selfScale = 0.5;
@@ -1294,6 +1324,7 @@ public class VanDerWaals implements MaskingInterface,
                                 int a2 = atomClass[k] * 2;
                                 double alpha = 0.0;
                                 double lambda5 = 1.0;
+                                boolean soft = (isSoft[i] || softCorei[k]);
                                 if (soft) {
                                     alpha = sc1;
                                     lambda5 = sc2;

@@ -1303,7 +1303,9 @@ public class ParticleMeshEwald implements LambdaInterface {
                 logger.fine(String.format(" Computed GK permanent field %8.3f (sec)", gkTime * 1.0e-9));
             }
             parallelTeam.execute(directRegion);
-            parallelTeam.execute(expandInducedDipolesRegion);
+            if (nSymm > 1) {
+                parallelTeam.execute(expandInducedDipolesRegion);                
+            }
         } catch (Exception e) {
             String message = "Exception computing direct induced dipoles.";
             logger.log(Level.SEVERE, message, e);
@@ -1352,7 +1354,9 @@ public class ParticleMeshEwald implements LambdaInterface {
                         logger.fine(String.format(" Computed GK induced field %8.3f (sec)", gkTime * 1.0e-9));
                     }
                     parallelTeam.execute(mutualRegion);
-                    parallelTeam.execute(expandInducedDipolesRegion);
+                    if (nSymm > 1) {
+                        parallelTeam.execute(expandInducedDipolesRegion);                        
+                    }
                 } catch (Exception e) {
                     String message = "Exception computing mutual induced dipoles.";
                     logger.log(Level.SEVERE, message, e);
@@ -1386,7 +1390,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                 }
             }
             if (print) {
-                sb.append(format("\n Direct:                    %8.3f\n",
+                sb.append(format(" Direct:                    %8.3f\n",
                                  toSeconds * directTime));
                 startTime = System.nanoTime() - startTime;
                 sb.append(format(" SCF Total:                 %8.3f\n",

@@ -1,22 +1,21 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Title: Force Field X Description: Force Field X - Software for Molecular
+ * Biophysics. Copyright: Copyright (c) Michael J. Schnieders 2001-2011
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.potential.bonded;
 
@@ -24,11 +23,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
+import static java.lang.Math.pow;
+
 import javax.media.j3d.*;
 import javax.vecmath.AxisAngle4d;
 import javax.vecmath.Vector3d;
 
 import ffx.crystal.Crystal;
+import ffx.potential.LambdaInterface;
 import ffx.potential.bonded.RendererCache.ViewModel;
 import ffx.potential.parameters.BondType;
 
@@ -41,9 +43,68 @@ import static ffx.potential.parameters.BondType.units;
  * @author schnied
  * @version $Id: $
  */
-public class RestraintBond extends BondedTerm {
+public class RestraintBond extends BondedTerm implements LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(RestraintBond.class.getName());
+    private double lambda = 1.0;
+    private double restraintLambda = 1.0;
+    private double rL3 = 1.0;
+    private double rL2 = 1.0;
+    private double rL1 = 1.0;
+    private double restraintLambdaStart = 0.75;
+    private final double restraintLambdaStop = 1.00;
+    private double restraintLambdaWindow = (restraintLambdaStop - restraintLambdaStart);
+    private double dEdL = 0.0;
+    private double d2EdL2 = 0.0;
+    private double dEdXdL[][] = new double[2][3];
+
+    @Override
+    public void setLambda(double lambda) {
+        this.lambda = lambda;
+
+        if (lambda < restraintLambdaStart) {
+            restraintLambda = 1.0;
+            rL3 = 1.0;
+            rL2 = 0.0;
+            rL1 = 0.0;
+        } else {
+            restraintLambda = 1.0 - (lambda - restraintLambdaStart) / restraintLambdaWindow;
+            rL3 = pow(restraintLambda, 3.0);
+            rL2 = -3.0 * pow(restraintLambda, 2.0) / restraintLambdaWindow;
+            rL1 = 6.0 * restraintLambda / (restraintLambdaWindow * restraintLambdaWindow);
+        }
+
+
+    }
+
+    @Override
+    public double getLambda() {
+        return lambda;
+    }
+
+    @Override
+    public double getdEdL() {
+        return dEdL;
+    }
+
+    @Override
+    public double getd2EdL2() {
+        return d2EdL2;
+    }
+
+    @Override
+    public void getdEdXdL(double[] gradient) {
+        int i1 = atoms[0].getXYZIndex() - 1;
+        int index = i1 * 3;
+        gradient[index++] += dEdXdL[0][0];
+        gradient[index++] += dEdXdL[0][1];
+        gradient[index] += dEdXdL[0][2];
+        int i2 = atoms[1].getXYZIndex() - 1;
+        index = i2 * 3;
+        gradient[index++] += dEdXdL[1][0];
+        gradient[index++] += dEdXdL[1][1];
+        gradient[index] += dEdXdL[1][2];
+    }
 
     /**
      * Bonding Character
@@ -98,22 +159,19 @@ public class RestraintBond extends BondedTerm {
     private LineArray la;
     private int lineIndex;
     private boolean wireVisible = true;
-
     private Crystal crystal;
-    
+
     /**
      * Bond constructor.
      *
-     * @param a1
-     *            Atom number 1.
-     * @param a2
-     *            Atom number 2.
+     * @param a1 Atom number 1.
+     * @param a2 Atom number 2.
      */
     public RestraintBond(Atom a1, Atom a2, Crystal crystal) {
         atoms = new Atom[2];
-        
+
         this.crystal = crystal;
-        
+
         int i1 = a1.getXYZIndex();
         int i2 = a2.getXYZIndex();
         if (i1 < i2) {
@@ -128,16 +186,6 @@ public class RestraintBond extends BondedTerm {
     }
 
     /**
-     * Simple Bond constructor that is intended to be used with the equals
-     * method.
-     *
-     * @param n
-     *            Bond id
-     */
-//    public Bond(String n) {
-//        super(n);
-//    }
-    /**
      * Set a reference to the force field parameters.
      *
      * @param bondType a {@link ffx.potential.parameters.BondType} object.
@@ -147,7 +195,8 @@ public class RestraintBond extends BondedTerm {
     }
 
     /**
-     * <p>Setter for the field <code>rigidScale</code>.</p>
+     * <p>Setter for the field
+     * <code>rigidScale</code>.</p>
      *
      * @param rigidScale a double.
      */
@@ -159,10 +208,9 @@ public class RestraintBond extends BondedTerm {
      * Find the other Atom in <b>this</b> Bond. These two atoms are said to be
      * 1-2.
      *
-     * @param a
-     *            The known Atom.
+     * @param a The known Atom.
      * @return The other Atom that makes up <b>this</b> Bond, or Null if Atom a
-     *         is not part of <b>this</b> Bond.
+     * is not part of <b>this</b> Bond.
      */
     public Atom get1_2(Atom a) {
         if (a == atoms[0]) {
@@ -177,10 +225,9 @@ public class RestraintBond extends BondedTerm {
     /**
      * Finds the common Atom between <b>this</b> Bond and Bond b.
      *
-     * @param b
-     *            Bond to compare with.
+     * @param b Bond to compare with.
      * @return The Atom the Bonds have in common or Null if they are the same
-     *         Bond or have no atom in common
+     * Bond or have no atom in common
      */
     public Atom getCommonAtom(RestraintBond b) {
         if (b == this || b == null) {
@@ -204,10 +251,9 @@ public class RestraintBond extends BondedTerm {
     /**
      * Find the Atom that <b>this</b> Bond and Bond b do not have in common.
      *
-     * @param b
-     *            Bond to compare with
+     * @param b Bond to compare with
      * @return The Atom that Bond b and <b>this</b> Bond do not have in common,
-     *         or Null if they have no Atom in common
+     * or Null if they have no Atom in common
      */
     public Atom getOtherAtom(RestraintBond b) {
         if (b == this || b == null) {
@@ -231,8 +277,7 @@ public class RestraintBond extends BondedTerm {
     /**
      * Create the Bond Scenegraph Objects.
      *
-     * @param newShapes
-     *            List
+     * @param newShapes List
      */
     private void initJ3D(List<BranchGroup> newShapes) {
         detail = RendererCache.detail;
@@ -248,7 +293,9 @@ public class RestraintBond extends BondedTerm {
         update();
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void removeFromParent() {
         super.removeFromParent();
@@ -313,8 +360,7 @@ public class RestraintBond extends BondedTerm {
     /**
      * Set the color of this Bond's Java3D shapes based on the passed Atom.
      *
-     * @param a
-     *            Atom
+     * @param a Atom
      */
     public void setColor(Atom a) {
         if (viewModel != ViewModel.INVISIBLE && viewModel != ViewModel.WIREFRAME && branchGroup != null) {
@@ -330,10 +376,8 @@ public class RestraintBond extends BondedTerm {
     /**
      * Manage cylinder visibility.
      *
-     * @param visible
-     *            boolean
-     * @param newShapes
-     *            List
+     * @param visible boolean
+     * @param newShapes List
      */
     public void setCylinderVisible(boolean visible, List<BranchGroup> newShapes) {
         if (!visible) {
@@ -555,32 +599,48 @@ public class RestraintBond extends BondedTerm {
     /**
      * Evaluate this Bond energy.
      *
-     * @param gradient
-     *            Evaluate the gradient.
+     * @param gradient Evaluate the gradient.
      * @return Returns the energy.
      */
     public double energy(boolean gradient) {
         diff(atoms[0].getXYZ(), atoms[1].getXYZ(), v10);
-        
-        if (crystal != null) {    
+
+        if (crystal != null) {
             crystal.image(v10);
         }
-        
+
         value = r(v10);
         double dv = value - bondType.distance;
         double dv2 = dv * dv;
-        energy = units * bondType.forceConstant * dv2;
+        double kx2 = units * bondType.forceConstant * dv2;
+        energy = rL3 * kx2;
+        dEdL = rL2 * kx2;
+        d2EdL2 = rL1 * kx2;
+        double deddt = 2.0 * units * bondType.forceConstant * dv;
+        double de = 0.0;
+
+        if (value > 0.0) {
+            de = deddt / value;
+        }
+
+        scalar(v10, rL3 * de, g0);
+        scalar(v10, -rL3 * de, g1);
         if (gradient) {
-            double deddt = 2.0 * units * bondType.forceConstant * dv;
-            double de = 0.0;
-            if (value > 0.0) {
-                de = deddt / value;
-            }
-            scalar(v10, de, g0);
-            scalar(v10, -de, g1);
             atoms[0].addToXYZGradient(g0[0], g0[1], g0[2]);
             atoms[1].addToXYZGradient(g1[0], g1[1], g1[2]);
         }
+        /**
+         * Remove the factor of rL3
+         */
+        scalar(v10, rL2 * de, g0);
+        scalar(v10, -rL2 * de, g1);
+        dEdXdL[0][0] = g0[0];
+        dEdXdL[0][1] = g0[1];
+        dEdXdL[0][2] = g0[2];
+        dEdXdL[1][0] = g1[0];
+        dEdXdL[1][1] = g1[1];
+        dEdXdL[1][2] = g1[2];
+
         value = dv;
         return energy;
     }

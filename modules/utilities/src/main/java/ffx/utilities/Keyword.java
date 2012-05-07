@@ -215,7 +215,7 @@ public class Keyword {
             try {
                 properties.addConfiguration(new PropertiesConfiguration(userPropFile));
             } catch (Exception e) {
-                logger.info("Error loading " + filename + ".");
+                logger.info(" Error loading " + filename + ".");
             }
         }
 
@@ -229,7 +229,7 @@ public class Keyword {
                 try {
                     properties.addConfiguration(new PropertiesConfiguration(systemPropFile));
                 } catch (Exception e) {
-                    logger.info("Error loading " + filename + ".");
+                    logger.info(" Error loading " + filename + ".");
                 }
             }
         }
@@ -240,10 +240,13 @@ public class Keyword {
         if (logger.isLoggable(Level.FINE)) {
             Configuration config = properties.interpolatedConfiguration();
             Iterator<String> i = config.getKeys();
+            StringBuilder sb = new StringBuilder();
+            sb.append(String.format("\n %-30s %s\n", "Property", "Value"));
             while (i.hasNext()) {
                 String s = i.next();
-                logger.fine("Key: " + s + ", Value: " + Arrays.toString(config.getList(s).toArray()));
+                sb.append(String.format(" %-30s %s\n", s, Arrays.toString(config.getList(s).toArray())));
             }
+            logger.fine(sb.toString());
         }
 
         return properties;
