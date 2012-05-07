@@ -51,7 +51,7 @@ public class RealSpaceData implements DataContainer {
     protected final RefinementModel refinementmodel;
     protected double lambda = 1.0;
     // settings
-    public final double xweight;
+    public double xweight;
 
     /**
      * construct a real space data assembly, assumes a real space map with a
@@ -359,6 +359,12 @@ public class RealSpaceData implements DataContainer {
     @Override
     public double getWeight() {
         return xweight;
+    }
+    
+    /** {@inheritDoc} */
+    @Override
+    public void setWeight(double weight) {
+        this.xweight = weight;
     }
 
     /** {@inheritDoc} */

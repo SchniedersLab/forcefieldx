@@ -66,7 +66,7 @@ public class Resolution {
      */
     public static Resolution checkProperties(CompositeConfiguration properties) {
         double res = properties.getDouble("resolution", -1.0);
-        double sampling = properties.getDouble("sampling", 1.0 / 1.5);
+        double sampling = properties.getDouble("sampling", 0.6);
 
         if (res < 0.0) {
             return null;

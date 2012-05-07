@@ -254,7 +254,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
 
         switch (refinementMode) {
             case COORDINATES:
-                eps = 0.1;
+                eps = 0.4;
                 break;
             case BFACTORS:
                 if (hasaniso) {
@@ -267,14 +267,14 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
                 if (hasaniso) {
                     eps = 20.0;
                 } else {
-                    eps = 0.1;
+                    eps = 0.2;
                 }
                 break;
             case OCCUPANCIES:
                 eps = 0.1;
                 break;
             case COORDINATES_AND_OCCUPANCIES:
-                eps = 0.1;
+                eps = 0.2;
                 break;
             case BFACTORS_AND_OCCUPANCIES:
                 if (hasaniso) {
@@ -287,7 +287,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
                 if (hasaniso) {
                     eps = 20.0;
                 } else {
-                    eps = 0.1;
+                    eps = 0.2;
                 }
                 break;
         }

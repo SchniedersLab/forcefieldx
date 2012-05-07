@@ -216,9 +216,9 @@ public class MTZFilter implements DiffractionFileFilter {
         Crystal crystal = new Crystal(d.cell[0], d.cell[1], d.cell[2],
                 d.cell[3], d.cell[4], d.cell[5], SpaceGroup.spaceGroupNames[sgnum - 1]);
 
-        double sampling = 1.0 / 1.5;
+        double sampling = 0.6;
         if (properties != null) {
-            sampling = properties.getDouble("sampling", 1.0 / 1.5);
+            sampling = properties.getDouble("sampling", 0.6);
         }
         Resolution resolution = new Resolution(0.999999 * reshigh, sampling);
 
