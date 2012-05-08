@@ -249,7 +249,10 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
                     e += (curE - e) / (i + 1);
                     setAssemblyi(i, g, gChemical[i]);
                 }
-                e *= ktscale;
+                double chemE = e;
+                System.out.println("chem E: " + e + " scaled chem E: " + ktscale * e);
+                
+                e = chemE * ktscale;
                 // normalize gradients for multiple-counted atoms
                 if (assemblysize > 1) {
                     for (int i = 0; i < nxyz; i++) {
@@ -264,7 +267,9 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
                 if (gXray == null || gXray.length != nxyz) {
                     gXray = new double[nxyz];
                 }
-                e += weight * dataEnergy.energyAndGradient(x, gXray);
+                double xE = dataEnergy.energyAndGradient(x, gXray);
+                System.out.println("Xray E: " + xE + " scaled Xray E: " + weight * xE);
+                e += weight * xE;
 
                 /*
                  * double normchem = 0.0; for (int i = 0; i < nxyz; i++) {
