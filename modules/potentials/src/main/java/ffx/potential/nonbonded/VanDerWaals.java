@@ -333,6 +333,7 @@ public class VanDerWaals implements MaskingInterface,
             softCore[SOFT][i] = false;
             softCoreInit = false;
         }
+        
         lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
         if (lambdaTerm) {
             vdwLambdaAlpha = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_ALPHA, 0.05);
@@ -344,6 +345,7 @@ public class VanDerWaals implements MaskingInterface,
                 vdwLambdaExponent = 1.0;
             }
         }
+        
         /**
          * Parallel constructs.
          */

@@ -176,7 +176,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             generalizedKirkwoodTerm = false;
         }
         restraintBondTerm = false;
-        
+
         //For respa
         bondTermOrig = bondTerm;
         angleTermOrig = angleTerm;
@@ -826,11 +826,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
      */
     @Override
     public void setScaling(double scaling[]) {
-        if (scaling != null) {
-            optimizationScaling = scaling;
-        } else {
-            optimizationScaling = null;
-        }
+        optimizationScaling = scaling;
     }
 
     /**
@@ -910,7 +906,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     || Double.isNaN(gz) || Double.isInfinite(gz)) {
                 String message = format("The gradient of atom %s is (%8.3f,%8.3f,%8.3f).",
                         a.toString(), gx, gy, gz);
-                logger.warning(message);
+                logger.severe(message);
             }
             g[index++] = gx;
             g[index++] = gy;
@@ -1053,9 +1049,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
      * @param forceConstant the force constant in kcal/mole
      */
     public void setRestraintBond(Atom a1, Atom a2, double distance, double forceConstant) {
-        
-        
-        
+
+
+
         restraintBondTerm = true;
         RestraintBond rb = new RestraintBond(a1, a2, crystal);
         int classes[] = {a1.getAtomType().atomClass, a2.getAtomType().atomClass};
