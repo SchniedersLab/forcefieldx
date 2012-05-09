@@ -1,24 +1,21 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <project
     name="Force Field X"
-    xmlns="http://maven.apache.org/DECORATION/1.1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/DECORATION/1.1.0 http://maven.apache.org/xsd/decoration-1.1.0.xsd">
-    <version position="navigation-bottom" />
-    <publishDate position="navigation-bottom" format="MMM dd yyyy" />
-
-    <!-- There is a bug in Maven that causes it to use the wrong 
-         image in the poweredBy logo?
-    -->
+    xmlns="http://maven.apache.org/DECORATION/1.3.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/DECORATION/1.3.0 http://maven.apache.org/xsd/decoration-1.3.0.xsd">
+    <version position="right" />
+    <publishDate position="right" format="MMM dd yyyy" />
     
-    <!-- poweredBy>
+    <poweredBy>
         <logo
+            target="_blank"
             name="Force Field X Development"
             href="http://kenai.com/projects/ffx/"
             img="/images/icon90.png"
             />
-    </poweredBy -->
+    </poweredBy>
 
-    <bannerRight>
+    <!-- bannerRight>
         <name>Force Field X</name>
         <src>/images/forcefieldx.png</src>
         <href>http://ffx.kenai.com</href>
@@ -27,20 +24,32 @@
         <name>Force Field X</name>
         <src>/images/helixBanner.jpg</src>
         <href>http://ffx.kenai.com</href>
-    </bannerLeft>
+    </bannerLeft -->
+    
     <googleAnalyticsAccountId>UA-12576019-1</googleAnalyticsAccountId>
     <skin>
-        <!-- groupId>org.apache.maven.skins</groupId>
+        <groupId>org.apache.maven.skins</groupId>
         <artifactId>maven-fluido-skin</artifactId>
-        <version>1.2.1</version -->
-        <groupId>site</groupId>
-        <artifactId>theme</artifactId>
-        <version>1.0</version>
+        <version>1.2.1</version>
     </skin>
+    <custom>
+        <fluidoSkin>
+            <topBarEnabled>true</topBarEnabled>
+            <sideBarEnabled>false</sideBarEnabled>
+            <googleSearch/>
+            <sourceLineNumbersEnabled>false</sourceLineNumbersEnabled>
+            <!-- ohloh>
+                <projectId>487436</projectId>
+                <widget>thin-badge</widget>
+            </ohloh -->
+            <!-- facebookLike/ -->
+            <!-- googlePlusOne/ -->
+        </fluidoSkin>
+    </custom>
     <body>
         <head>
             <script type="text/javascript"
-                src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+                    src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
             </script>
         </head>
         <breadcrumbs>

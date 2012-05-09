@@ -1,20 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <project
     name="User Interfaces"
-    xmlns="http://maven.apache.org/DECORATION/1.0.0"
+    xmlns="http://maven.apache.org/DECORATION/1.3.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/DECORATION/1.0.0 http://maven.apache.org/xsd/decoration-1.0.0.xsd">
-    <bannerRight>
-        <name>Force Field X</name>
-        <src>images/forcefieldx.png</src>
-        <href>http://ffx.kenai.com</href>
-    </bannerRight>
-    <bannerLeft>
-        <name>Force Field X</name>
-        <src>images/helixBanner.jpg</src>
-        <href>http://ffx.kenai.com</href>
-    </bannerLeft>
-    <googleAnalyticsAccountId>UA-12576019-1</googleAnalyticsAccountId>
+    xsi:schemaLocation="http://maven.apache.org/DECORATION/1.3.0 http://maven.apache.org/xsd/decoration-1.3.0.xsd">
     <body>
         <menu name="User Interfaces">
             <item
