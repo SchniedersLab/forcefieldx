@@ -650,7 +650,7 @@ public class RestraintBond extends BondedTerm implements LambdaInterface {
      */
     public void log() {
         logger.info(String.format(" %s %6d-%s %6d-%s %6.4f  %6.4f  %10.4f",
-                "Bond", atoms[0].getXYZIndex(), atoms[0].getAtomType().name,
+                "Restraint-Bond", atoms[0].getXYZIndex(), atoms[0].getAtomType().name,
                 atoms[1].getXYZIndex(), atoms[1].getAtomType().name,
                 bondType.distance, value, energy));
     }

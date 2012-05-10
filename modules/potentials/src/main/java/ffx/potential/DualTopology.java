@@ -21,6 +21,8 @@ package ffx.potential;
 
 import java.util.logging.Logger;
 
+import static java.util.Arrays.fill;
+
 import ffx.numerics.Potential;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
@@ -273,7 +275,6 @@ public class DualTopology implements Potential, LambdaInterface {
                 x[indexUnique++] = a.getX();
                 x[indexUnique++] = a.getY();
                 x[indexUnique++] = a.getZ();
-                a.print();
             }
         }
         for (int i = 0; i < nAtoms2; i++) {
@@ -282,7 +283,6 @@ public class DualTopology implements Potential, LambdaInterface {
                 x[indexUnique++] = a.getX();
                 x[indexUnique++] = a.getY();
                 x[indexUnique++] = a.getZ();
-                a.print();
             }
         }
         return x;
@@ -335,14 +335,14 @@ public class DualTopology implements Potential, LambdaInterface {
     @Override
     public double getdEdL() {
         double dEdL1 = lambda * forceFieldEnergy1.getdEdL() + energy1;
-        double dEdL2 = oneMinusLambda * forceFieldEnergy2.getdEdL() - energy2;
+        double dEdL2 = -(oneMinusLambda * forceFieldEnergy2.getdEdL() + energy2);
         return dEdL1 + dEdL2;
     }
 
     @Override
     public double getd2EdL2() {
-        double d2EdL2_1 = lambda * forceFieldEnergy1.getd2EdL2() + forceFieldEnergy1.getdEdL();
-        double d2EdL2_2 = oneMinusLambda * forceFieldEnergy2.getd2EdL2() - forceFieldEnergy2.getdEdL();
+        double d2EdL2_1 = lambda * forceFieldEnergy1.getd2EdL2() + 2.0 * forceFieldEnergy1.getdEdL();
+        double d2EdL2_2 = oneMinusLambda * forceFieldEnergy2.getd2EdL2() + 2.0 * forceFieldEnergy2.getdEdL();
         return d2EdL2_1 + d2EdL2_2;
     }
 
@@ -352,6 +352,9 @@ public class DualTopology implements Potential, LambdaInterface {
             g = new double[nVariables];
         }
 
+        fill(gl1, 0.0);
+        fill(gl2, 0.0);
+        
         forceFieldEnergy1.getdEdXdL(gl1);
         forceFieldEnergy2.getdEdXdL(gl2);
 
@@ -385,13 +388,13 @@ public class DualTopology implements Potential, LambdaInterface {
             Atom a = atoms2[i];
             a.getXYZGradient(grad);
             if (!a.applyLambda()) {
-                g[indexCommon++] += (oneMinusLambda * gl2[index++] - grad[0]);
-                g[indexCommon++] += (oneMinusLambda * gl2[index++] - grad[1]);
-                g[indexCommon++] += (oneMinusLambda * gl2[index++] - grad[2]);
+                g[indexCommon++] -= (oneMinusLambda * gl2[index++] + grad[0]);
+                g[indexCommon++] -= (oneMinusLambda * gl2[index++] + grad[1]);
+                g[indexCommon++] -= (oneMinusLambda * gl2[index++] + grad[2]);
             } else {
-                g[indexUnique++] = oneMinusLambda * gl2[index++] - grad[0];
-                g[indexUnique++] = oneMinusLambda * gl2[index++] - grad[1];
-                g[indexUnique++] = oneMinusLambda * gl2[index++] - grad[2];
+                g[indexUnique++] = -(oneMinusLambda * gl2[index++] + grad[0]);
+                g[indexUnique++] = -(oneMinusLambda * gl2[index++] + grad[1]);
+                g[indexUnique++] = -(oneMinusLambda * gl2[index++] + grad[2]);
             }
         }
     }
