@@ -25,6 +25,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static java.lang.Math.*;
+import static java.util.Arrays.fill;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 
@@ -460,9 +461,9 @@ public class OSRW implements Potential {
                 System.setProperty("use-precise-polar-eps", "false");
             }
         }
-        
+
         double e = potential.energyAndGradient(x, gradient);
-        
+
         double biasEnergy = 0.0;
         dEdLambda = lambdaInterface.getdEdL();
         d2EdLambda2 = lambdaInterface.getd2EdL2();
@@ -525,9 +526,7 @@ public class OSRW implements Potential {
         /**
          * Cartesian coordinate gradient due to recursion kernel G(L, F_L).
          */
-        for (int i = 0; i < nVariables; i++) {
-            dUdXdL[i] = 0.0;
-        }
+        fill(dUdXdL, 0.0);
         lambdaInterface.getdEdXdL(dUdXdL);
         for (int i = 0; i < nVariables; i++) {
             gradient[i] += dGdFLambda * dUdXdL[i];
