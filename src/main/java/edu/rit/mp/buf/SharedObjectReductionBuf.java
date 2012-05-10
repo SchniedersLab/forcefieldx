@@ -4,7 +4,7 @@
 // Package: edu.rit.mp.buf
 // Unit:    Class edu.rit.mp.buf.SharedObjectReductionBuf
 //
-// This Java source file is copyright (C) 2007 by Alan Kaminsky. All rights
+// This Java source file is copyright (C) 2012 by Alan Kaminsky. All rights
 // reserved. For further information, contact the author, Alan Kaminsky, at
 // ark@cs.rit.edu.
 //
@@ -39,7 +39,7 @@ import edu.rit.pj.reduction.SharedObject;
  * @param  <T>  Data type of the objects in the buffer.
  *
  * @author  Alan Kaminsky
- * @version 26-Oct-2007
+ * @version 01-Apr-2012
  */
 class SharedObjectReductionBuf<T>
 	extends SharedObjectBuf<T>
@@ -48,21 +48,24 @@ class SharedObjectReductionBuf<T>
 // Hidden data members.
 
 	ObjectOp<T> myOp;
+	SharedObjectBuf<T> myBuf;
 
 // Exported constructors.
 
 	/**
 	 * Construct a new shared object reduction buffer.
 	 *
-	 * @param  item  SharedObject object that wraps the item.
-	 * @param  op    Binary operation.
+	 * @param  item    SharedObject object that wraps the item.
+	 * @param  op      Binary operation.
+	 * @param  theBuf  Underlying object buffer.
 	 *
 	 * @exception  NullPointerException
 	 *     (unchecked exception) Thrown if <TT>op</TT> is null.
 	 */
 	public SharedObjectReductionBuf
 		(SharedObject<T> item,
-		 ObjectOp<T> op)
+		 ObjectOp<T> op,
+		 SharedObjectBuf<T> theBuf)
 		{
 		super (item);
 		if (op == null)
@@ -71,6 +74,7 @@ class SharedObjectReductionBuf<T>
 				("SharedObjectReductionBuf(): op is null");
 			}
 		myOp = op;
+		myBuf = theBuf;
 		}
 
 // Exported operations.
@@ -89,7 +93,8 @@ class SharedObjectReductionBuf<T>
 		 T item)
 		{
 		myItem.reduce (item, myOp);
-		mySerializedItems = null;
+		reset();
+		myBuf.reset();
 		}
 
 	/**

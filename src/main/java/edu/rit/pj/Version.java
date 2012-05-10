@@ -29,7 +29,7 @@ package edu.rit.pj;
  * Class Version defines version information for the Parallel Java Library.
  *
  * @author  Alan Kaminsky
- * @version 26-Mar-2012
+ * @version 01-Apr-2012
  */
 public class Version
 	{
@@ -45,6 +45,6 @@ public class Version
 	/**
 	 * The Parallel Java Library version.
 	 */
-	public static final String PJ_VERSION = "Parallel Java v20120326";
+	public static final String PJ_VERSION = "Parallel Java v20120401";
 
 	}

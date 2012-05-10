@@ -4,7 +4,7 @@
 // Package: edu.rit.mp.buf
 // Unit:    Class edu.rit.mp.buf.SharedObjectArrayBuf_1
 //
-// This Java source file is copyright (C) 2007 by Alan Kaminsky. All rights
+// This Java source file is copyright (C) 2012 by Alan Kaminsky. All rights
 // reserved. For further information, contact the author, Alan Kaminsky, at
 // ark@cs.rit.edu.
 //
@@ -45,7 +45,7 @@ import edu.rit.util.Range;
  * @param  <T>  Data type of the objects in the buffer.
  *
  * @author  Alan Kaminsky
- * @version 26-Oct-2007
+ * @version 01-Apr-2012
  */
 public class SharedObjectArrayBuf_1<T>
 	extends SharedObjectArrayBuf<T>
@@ -116,7 +116,7 @@ public class SharedObjectArrayBuf_1<T>
 		(Op op)
 		{
 		return new SharedObjectArrayReductionBuf_1<T>
-			(myArray, myRange, (ObjectOp<T>) op);
+			(myArray, myRange, (ObjectOp<T>) op, this);
 		}
 
 	}

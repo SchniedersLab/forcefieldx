@@ -4,7 +4,7 @@
 // Package: edu.rit.mp.buf
 // Unit:    Class edu.rit.mp.buf.SharedObjectArrayReductionBuf_1
 //
-// This Java source file is copyright (C) 2007 by Alan Kaminsky. All rights
+// This Java source file is copyright (C) 2012 by Alan Kaminsky. All rights
 // reserved. For further information, contact the author, Alan Kaminsky, at
 // ark@cs.rit.edu.
 //
@@ -41,7 +41,7 @@ import edu.rit.util.Range;
  * @param  <T>  Data type of the objects in the buffer.
  *
  * @author  Alan Kaminsky
- * @version 26-Oct-2007
+ * @version 01-Apr-2012
  */
 class SharedObjectArrayReductionBuf_1<T>
 	extends SharedObjectArrayBuf_1<T>
@@ -50,6 +50,7 @@ class SharedObjectArrayReductionBuf_1<T>
 // Hidden data members.
 
 	ObjectOp<T> myOp;
+	SharedObjectArrayBuf<T> myBuf;
 
 // Exported constructors.
 
@@ -60,6 +61,7 @@ class SharedObjectArrayReductionBuf_1<T>
 	 * @param  theRange  Range of array elements to include in the buffer. The
 	 *                   stride is assumed to be 1.
 	 * @param  op        Binary operation.
+	 * @param  theBuf    Underlying shared object array buffer.
 	 *
 	 * @exception  NullPointerException
 	 *     (unchecked exception) Thrown if <TT>op</TT> is null.
@@ -67,7 +69,8 @@ class SharedObjectArrayReductionBuf_1<T>
 	public SharedObjectArrayReductionBuf_1
 		(SharedObjectArray<T> theArray,
 		 Range theRange,
-		 ObjectOp<T> op)
+		 ObjectOp<T> op,
+		 SharedObjectArrayBuf<T> theBuf)
 		{
 		super (theArray, theRange);
 		if (op == null)
@@ -76,6 +79,7 @@ class SharedObjectArrayReductionBuf_1<T>
 				("SharedObjectArrayReductionBuf_1(): op is null");
 			}
 		myOp = op;
+		myBuf = theBuf;
 		}
 
 // Exported operations.
@@ -94,7 +98,8 @@ class SharedObjectArrayReductionBuf_1<T>
 		 T item)
 		{
 		myArray.reduce (myArrayOffset+i, item, myOp);
-		mySerializedItems = null;
+		reset();
+		myBuf.reset();
 		}
 
 	/**

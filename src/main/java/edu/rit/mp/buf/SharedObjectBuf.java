@@ -4,7 +4,7 @@
 // Package: edu.rit.mp.buf
 // Unit:    Class edu.rit.mp.buf.SharedObjectBuf
 //
-// This Java source file is copyright (C) 2007 by Alan Kaminsky. All rights
+// This Java source file is copyright (C) 2012 by Alan Kaminsky. All rights
 // reserved. For further information, contact the author, Alan Kaminsky, at
 // ark@cs.rit.edu.
 //
@@ -42,7 +42,7 @@ import edu.rit.pj.reduction.SharedObject;
  * @param  <T>  Data type of the objects in the buffer.
  *
  * @author  Alan Kaminsky
- * @version 26-Oct-2007
+ * @version 01-Apr-2012
  */
 public class SharedObjectBuf<T>
 	extends ObjectBuf<T>
@@ -114,7 +114,7 @@ public class SharedObjectBuf<T>
 	public Buf getReductionBuf
 		(Op op)
 		{
-		return new SharedObjectReductionBuf<T> (myItem, (ObjectOp<T>) op);
+		return new SharedObjectReductionBuf<T> (myItem, (ObjectOp<T>) op, this);
 		}
 
 	}
