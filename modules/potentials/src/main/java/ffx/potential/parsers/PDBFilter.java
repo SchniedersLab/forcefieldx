@@ -746,12 +746,14 @@ public final class PDBFilter extends SystemFilter {
                 logger.log(Level.WARNING, message, e);
             }
         }
+        
+        int pdbAtoms = activeMolecularAssembly.getAtomArray().length;
         assignAtomTypes();
+        
         StringBuilder sb = new StringBuilder(" Disulfide Bonds:");
         for (Bond bond : ssBondList) {
             Atom a1 = bond.getAtom(0);
             Atom a2 = bond.getAtom(1);
-
             int c[] = new int[2];
             c[0] = a1.getAtomType().atomClass;
             c[1] = a2.getAtomType().atomClass;
@@ -775,9 +777,11 @@ public final class PDBFilter extends SystemFilter {
         }
 
         /**
-         * Finally, re-number the atoms, since missing atoms may have been created.
+         * Finally, re-number the atoms if missing atoms were created.
          */
-        numberAtoms();
+        if (pdbAtoms != activeMolecularAssembly.getAtomArray().length) {
+            numberAtoms();
+        }
 
         return true;
     }
