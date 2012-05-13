@@ -31,6 +31,7 @@ import org.apache.commons.configuration.CompositeConfiguration;
 
 import edu.rit.mp.DoubleBuf;
 import edu.rit.pj.Comm;
+import edu.rit.pj.cluster.JobBackend;
 
 import ffx.numerics.Potential;
 import ffx.potential.LambdaInterface;
@@ -122,6 +123,10 @@ public class OSRW implements Potential {
      * Rank of this process.
      */
     private final int rank;
+    /**
+     * A reference to the JobBackend to log messages for the Webserver.
+     */
+    private final JobBackend jobBackend;
     /**
      * When evaluating the biasing potential, contributions from Gaussians
      * centered more the "biasCutoff" away will be neglected.
@@ -371,6 +376,7 @@ public class OSRW implements Potential {
         world = Comm.world();
         numProc = world.size();
         rank = world.rank();
+        jobBackend = JobBackend.getJobBackend();
 
         if (asynchronous) {
             /**
@@ -603,6 +609,7 @@ public class OSRW implements Potential {
              * Metadynamics grid counts (every 'countInterval' steps).
              */
             if (energyCount % countInterval == 0) {
+                jobBackend.setComment(String.format("[L=%6.4f, F_L=%10.4f] at %7.3e psec", lambda, dEdU, energyCount * dt));
                 if (asynchronous) {
                     asynchronousSend(lambda, dEdU);
                 } else {
