@@ -72,7 +72,7 @@
             <groupId>edu.rit.pj</groupId>
             <artifactId>pj</artifactId>
             <type>jar</type>
-            <version>1.5</version>
+            <version>1.6</version>
         </dependency>
         <dependency>
             <groupId>jcuda</groupId>
