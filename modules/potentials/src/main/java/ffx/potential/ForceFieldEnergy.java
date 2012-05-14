@@ -76,6 +76,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     protected final int nTorsionTorsions;
     protected int nRestraintBonds;
     protected int nVanDerWaals, nPME, nGK;
+    
     protected boolean bondTerm;
     protected boolean angleTerm;
     protected boolean stretchBendTerm;
@@ -89,6 +90,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     protected boolean multipoleTerm;
     protected boolean polarizationTerm;
     protected boolean generalizedKirkwoodTerm;
+    protected boolean lambdaBondedTerms = false;
+    
     protected boolean bondTermOrig;
     protected boolean angleTermOrig;
     protected boolean stretchBendTermOrig;
@@ -102,6 +105,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     protected boolean multipoleTermOrig;
     protected boolean polarizationTermOrig;
     protected boolean generalizedKirkwoodTermOrig;
+    
     protected double bondEnergy, bondRMSD;
     protected double angleEnergy, angleRMSD;
     protected double stretchBendEnergy;
@@ -430,6 +434,10 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         molecularAssembly.setPotential(this);
     }
 
+    public void setLambdaBondedTerms(boolean lambdaBondedTerms) {
+        this.lambdaBondedTerms = lambdaBondedTerms;
+    }
+    
     /**
      * <p>energy</p>
      *
@@ -491,6 +499,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             bondTime = System.nanoTime();
             for (int i = 0; i < nBonds; i++) {
                 Bond b = bonds[i];
+                if (lambdaBondedTerms && !b.applyLambda()) {
+                    continue;
+                }
                 bondEnergy += b.energy(gradient);
                 double value = b.getValue();
                 bondRMSD += value * value;
@@ -503,6 +514,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             angleTime = System.nanoTime();
             for (int i = 0; i < nAngles; i++) {
                 Angle a = angles[i];
+                if (lambdaBondedTerms && !a.applyLambda()) {
+                    continue;
+                }
                 angleEnergy += a.energy(gradient);
                 double value = a.getValue();
                 angleRMSD += value * value;
@@ -514,6 +528,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         if (stretchBendTerm) {
             stretchBendTime = System.nanoTime();
             for (int i = 0; i < nStretchBends; i++) {
+                if (lambdaBondedTerms && !stretchBends[i].applyLambda()) {
+                    continue;
+                }
                 stretchBendEnergy += stretchBends[i].energy(gradient);
             }
             stretchBendTime = System.nanoTime() - stretchBendTime;
@@ -522,6 +539,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         if (ureyBradleyTerm) {
             ureyBradleyTime = System.nanoTime();
             for (int i = 0; i < nUreyBradleys; i++) {
+                if (lambdaBondedTerms && !ureyBradleys[i].applyLambda()) {
+                    continue;
+                }
                 ureyBradleyEnergy += ureyBradleys[i].energy(gradient);
             }
             ureyBradleyTime = System.nanoTime() - ureyBradleyTime;
@@ -530,6 +550,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         if (outOfPlaneBendTerm) {
             outOfPlaneBendTime = System.nanoTime();
             for (int i = 0; i < nOutOfPlaneBends; i++) {
+                if (lambdaBondedTerms && !outOfPlaneBends[i].applyLambda()) {
+                    continue;
+                }
                 outOfPlaneBendEnergy += outOfPlaneBends[i].energy(gradient);
             }
             outOfPlaneBendTime = System.nanoTime() - outOfPlaneBendTime;
@@ -538,6 +561,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         if (torsionTerm) {
             torsionTime = System.nanoTime();
             for (int i = 0; i < nTorsions; i++) {
+                if (lambdaBondedTerms && !torsions[i].applyLambda()) {
+                    continue;
+                }
                 torsionEnergy += torsions[i].energy(gradient);
             }
             torsionTime = System.nanoTime() - torsionTime;
@@ -546,6 +572,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         if (piOrbitalTorsionTerm) {
             piOrbitalTorsionTime = System.nanoTime();
             for (int i = 0; i < nPiOrbitalTorsions; i++) {
+                if (lambdaBondedTerms && !piOrbitalTorsions[i].applyLambda()) {
+                    continue;
+                }
                 piOrbitalTorsionEnergy += piOrbitalTorsions[i].energy(gradient);
             }
             piOrbitalTorsionTime = System.nanoTime() - piOrbitalTorsionTime;
@@ -554,12 +583,15 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
         if (torsionTorsionTerm) {
             for (int i = 0; i < nTorsionTorsions; i++) {
+                if (lambdaBondedTerms && !torsionTorsions[i].applyLambda()) {
+                    continue;
+                }
                 torsionTorsionEnergy += torsionTorsions[i].energy(gradient);
             }
             torsionTorsionTime = System.nanoTime() - torsionTorsionTime;
         }
 
-        if (restraintBondTerm) {
+        if (restraintBondTerm && !lambdaBondedTerms) {
             restraintBondTime = System.nanoTime();
             for (int i = 0; i < nRestraintBonds; i++) {
                 restraintBondEnergy += restraintBonds[i].energy(gradient);
@@ -567,14 +599,14 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             restraintBondTime = System.nanoTime() - restraintBondTime;
         }
 
-        if (vanderWaalsTerm) {
+        if (vanderWaalsTerm && !lambdaBondedTerms) {
             vanDerWaalsTime = System.nanoTime();
             vanDerWaalsEnergy = vanderWaals.energy(gradient, print);
             nVanDerWaals = this.vanderWaals.getInteractions();
             vanDerWaalsTime = System.nanoTime() - vanDerWaalsTime;
         }
 
-        if (multipoleTerm) {
+        if (multipoleTerm && !lambdaBondedTerms) {
             electrostaticTime = System.nanoTime();
             totalElectrostaticEnergy = particleMeshEwald.energy(gradient, print);
             permanentMultipoleEnergy = particleMeshEwald.getPermanentEnergy();
