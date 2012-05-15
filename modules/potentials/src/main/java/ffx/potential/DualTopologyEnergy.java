@@ -19,6 +19,7 @@
  */
 package ffx.potential;
 
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static java.lang.Math.pow;
@@ -27,6 +28,7 @@ import static java.util.Arrays.fill;
 import ffx.numerics.Potential;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.parameters.ForceField.ForceFieldDouble;
 
 /**
  * Compute the potential energy and derivatives for a dual-topology AMOEBA
@@ -38,31 +40,156 @@ import ffx.potential.bonded.MolecularAssembly;
  */
 public class DualTopologyEnergy implements Potential, LambdaInterface {
 
-    private static final Logger logger = Logger.getLogger(DualTopologyEnergy.class.getName());
-    private final ForceFieldEnergy forceFieldEnergy1;
-    private final ForceFieldEnergy forceFieldEnergy2;
+    /**
+     * Topology 1 number of atoms.
+     */
+    private final int nAtoms1;
+    /**
+     * Topology 2 number of atoms.
+     */
+    private final int nAtoms2;
+    /**
+     * Topology 1 number of softcore atoms.
+     */
+    private final int nSoftCore1;
+    /**
+     * Topology 2 number of softcore atoms.
+     */
+    private final int nSoftCore2;
+    /**
+     * Shared atoms between topologies 1 and 2.
+     */
+    private final int nShared;
+    /**
+     * Total number of softcore and shared atoms: nTotal = nShared + nSoftcore1
+     * + nSoftcore2
+     */
+    private final int nTotal;
+    /**
+     * Total number of variables: nVariables = nTotal * 3;
+     */
+    private final int nVariables;
+    /**
+     * Current potential energy of topology 1 (kcal/mol).
+     */
     private double energy1 = 0;
+    /**
+     * Current potential energy of topology 2 (kcal/mol).
+     */
     private double energy2 = 0;
+    /**
+     * Softcore restraint energy of topology 1 (kcal/mol).
+     */
     private double restraintEnergy1 = 0;
+    /**
+     * Softcore restraint energy of topology 1 (kcal/mol).
+     */
     private double restraintEnergy2 = 0;
+    /**
+     * Total energy of the dual topology, including lambda scaling.
+     */
     private double totalEnergy = 0;
-    private final Atom[] atoms1;
-    private final Atom[] atoms2;
-    private final int nAtoms1, nAtoms2;
-    private final int nUnique1, nUnique2, nCommon, nTotal, nVariables;
-    private final VARIABLE_TYPE variableTypes[];
-    private final double mass[];
-    private final double x1[], x2[], g1[], g2[], rg1[], rg2[], gl1[], gl2[];
-    private double scaling[] = null;
+    /**
+     * Current lambda value.
+     */
     private double lambda = 1.0;
+    /**
+     * Current lambda value minus one.
+     */
     private double oneMinusLambda = 0.0;
+    /**
+     * Lambda raised to the power of lambdaExponent: lambda^n
+     */
     private double lambdaPow = 1.0;
+    /**
+     * One minus Lambda raised to the power of lambdaExponent. (1-lambda)^n
+     */
     private double oneMinusLambdaPow = 0.0;
+    /**
+     * First derivative with respect to lambda. n*lambda^(n-1)
+     */
     private double dLambdaPow = 0.0;
+    /**
+     * First derivative with respect to lambda: -n*(one-lambda)^(n-1)
+     */
     private double dOneMinusLambdaPow = 0.0;
+    /**
+     * Second derivative with respect to lambda: n*(n-1)*lambda^(n-2)
+     */
     private double d2LambdaPow = 0.0;
+    /**
+     * First derivative of lambdaPow with respect to lambda.
+     * n*(n-1)*(one-lambda)^(n-2)
+     */
     private double d2OneMinusLambdaPow = 0.0;
+    /**
+     * Lambda exponent that controls the thermodynamic path between topologies.
+     */
     private final double lambdaExponent = 1.0;
+    /**
+     * Atom array for topology 1.
+     */
+    private final Atom[] atoms1;
+    /**
+     * Atom array for topology 2.
+     */
+    private final Atom[] atoms2;
+    /**
+     * Mass array for shared and softcore atoms.
+     */
+    private final double mass[];
+    /**
+     * VARIABLE_TYPE array for shared and softcore atoms.
+     */
+    private final VARIABLE_TYPE variableTypes[];
+    /**
+     * Scaling array for shared and softcore atoms.
+     */
+    private double scaling[] = null;
+    /**
+     * Topology 1 coordinates.
+     */
+    private final double x1[];
+    /**
+     * Topology 2 coordinates.
+     */
+    private final double x2[];
+    /**
+     * Topology 1 coordinate gradient.
+     */
+    private final double g1[];
+    /**
+     * Topology 2 coordinate gradient.
+     */
+    private final double g2[];
+    /**
+     * Topology 1 restraint gradient (just bonded terms of softcore atoms).
+     */
+    private final double rg1[];
+    /**
+     * Topology 2 restraint gradient (just bonded terms of softcore atoms).
+     */
+    private final double rg2[];
+    /**
+     * Topology 1 derivative of the coordinate gradient with respect to lambda.
+     */
+    private final double gl1[];
+    /**
+     * Topology 2 derivative of the coordinate gradient with respect to lambda.
+     */
+    private final double gl2[];
+    /**
+     * Topology 1 ForceFieldEnergy.
+     */
+    private final ForceFieldEnergy forceFieldEnergy1;
+    /**
+     * Topology 1 ForceFieldEnergy.
+     */
+    private final ForceFieldEnergy forceFieldEnergy2;
+    /**
+     * Logger for the DualTopologyEnergy class.
+     */
+    private static final Logger logger = Logger.getLogger(DualTopologyEnergy.class.getName());
 
     public DualTopologyEnergy(MolecularAssembly topology1, MolecularAssembly topology2) {
         forceFieldEnergy1 = topology1.getPotentialEnergy();
@@ -80,13 +207,16 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
         gl1 = new double[nAtoms1 * 3];
         gl2 = new double[nAtoms2 * 3];
 
+
         /**
+         *
          * lambdaExponent =
          * topology1.getForceField().getDouble(ForceFieldDouble.DUAL_TOPOLOGY_LAMBDA_EXPONENT,
-         * 3.0); if (lambdaExponent < 1.0) { lambdaExponent = 1.0; }
+         * 1.0); if (lambdaExponent < 1.0) { lambdaExponent = 1.0; }
          *
          * logger.info(String.format(" Dual Topology Lambda Exponent: %5.3f\n",
          * lambdaExponent));
+         *
          */
         /**
          * Check that all atoms that are not undergoing alchemy are common to
@@ -108,10 +238,10 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
         }
 
         assert (atomCount1 == atomCount2);
-        nCommon = atomCount1;
-        nUnique1 = nAtoms1 - nCommon;
-        nUnique2 = nAtoms2 - nCommon;
-        nTotal = nCommon + nUnique1 + nUnique2;
+        nShared = atomCount1;
+        nSoftCore1 = nAtoms1 - nShared;
+        nSoftCore2 = nAtoms2 - nShared;
+        nTotal = nShared + nSoftCore1 + nSoftCore2;
         nVariables = 3 * nTotal;
 
         /**
@@ -119,7 +249,7 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
          */
         int i1 = 0;
         int i2 = 0;
-        for (int i = 0; i < nCommon; i++) {
+        for (int i = 0; i < nShared; i++) {
             Atom a1 = atoms1[i1++];
             while (a1.applyLambda()) {
                 a1 = atoms1[i1++];
@@ -148,7 +278,7 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
          * Fill the mass array.
          */
         int commonIndex = 0;
-        int uniqueIndex = 3 * nCommon;
+        int softcoreIndex = 3 * nShared;
         mass = new double[nVariables];
         for (int i = 0; i < nAtoms1; i++) {
             Atom a = atoms1[i];
@@ -158,18 +288,18 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
                 mass[commonIndex++] = m;
                 mass[commonIndex++] = m;
             } else {
-                mass[uniqueIndex++] = m;
-                mass[uniqueIndex++] = m;
-                mass[uniqueIndex++] = m;
+                mass[softcoreIndex++] = m;
+                mass[softcoreIndex++] = m;
+                mass[softcoreIndex++] = m;
             }
         }
         for (int i = 0; i < nAtoms2; i++) {
             Atom a = atoms2[i];
             if (a.applyLambda()) {
                 double m = a.getMass();
-                mass[uniqueIndex++] = m;
-                mass[uniqueIndex++] = m;
-                mass[uniqueIndex++] = m;
+                mass[softcoreIndex++] = m;
+                mass[softcoreIndex++] = m;
+                mass[softcoreIndex++] = m;
             }
         }
     }
@@ -209,11 +339,13 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
         /**
          * Apply the dual-topology scaling for the total energy.
          */
-        double referenceEnergy = (energy1 + energy2) / 2.0;
-        energy1 = energy1 - referenceEnergy;
-        energy2 = energy2 - referenceEnergy;
-        totalEnergy = referenceEnergy + lambdaPow * energy1 + oneMinusLambdaPow * restraintEnergy1
-                      + oneMinusLambdaPow * energy2 + lambdaPow * restraintEnergy2;
+        totalEnergy = lambdaPow * energy1 + oneMinusLambdaPow * restraintEnergy1
+                + oneMinusLambdaPow * energy2 + lambdaPow * restraintEnergy2;
+
+        if (logger.isLoggable(Level.FINEST)) {
+            logger.finest(String.format(" Topology 1 Energy & Restraints: %15.8f %15.8f\n", lambdaPow * energy1, oneMinusLambdaPow * restraintEnergy1));
+            logger.finest(String.format(" Topology 2 Energy & Restraints: %15.8f %15.8f\n", oneMinusLambdaPow * energy2, lambdaPow * restraintEnergy2));
+        }
 
         /**
          * Scale and pack the gradient.
@@ -238,7 +370,7 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
             g = new double[nVariables];
         }
         int indexCommon = 0;
-        int indexUnique = nCommon * 3;
+        int indexUnique = nShared * 3;
         /**
          * Coordinate Gradient from Topology 1.
          */
@@ -277,7 +409,7 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
     private void unpackCoordinates(double x[]) {
         int index = 0;
         int indexCommon = 0;
-        int indexUnique = 3 * nCommon;
+        int indexUnique = 3 * nShared;
         for (int i = 0; i < nAtoms1; i++) {
             Atom a = atoms1[i];
             if (!a.applyLambda()) {
@@ -313,7 +445,7 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
             x = new double[nVariables];
         }
         int indexCommon = 0;
-        int indexUnique = nCommon * 3;
+        int indexUnique = nShared * 3;
         for (int i = 0; i < nAtoms1; i++) {
             Atom a = atoms1[i];
             if (!a.applyLambda()) {
@@ -400,18 +532,18 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
     @Override
     public double getdEdL() {
         double dEdL1 = lambdaPow * forceFieldEnergy1.getdEdL()
-                       + dLambdaPow * energy1 + dOneMinusLambdaPow * restraintEnergy1;
+                + dLambdaPow * energy1 + dOneMinusLambdaPow * restraintEnergy1;
         double dEdL2 = -oneMinusLambdaPow * forceFieldEnergy2.getdEdL()
-                       + dOneMinusLambdaPow * energy2 + dLambdaPow * restraintEnergy2;
+                + dOneMinusLambdaPow * energy2 + dLambdaPow * restraintEnergy2;
         return dEdL1 + dEdL2;
     }
 
     @Override
     public double getd2EdL2() {
         double d2EdL2_1 = lambdaPow * forceFieldEnergy1.getd2EdL2() + 2.0 * dLambdaPow * forceFieldEnergy1.getdEdL()
-                          + d2LambdaPow * energy1 + d2OneMinusLambdaPow * restraintEnergy1;
+                + d2LambdaPow * energy1 + d2OneMinusLambdaPow * restraintEnergy1;
         double d2EdL2_2 = oneMinusLambdaPow * forceFieldEnergy2.getd2EdL2() - 2.0 * dOneMinusLambdaPow * forceFieldEnergy2.getdEdL()
-                          + d2OneMinusLambdaPow * energy2 + d2LambdaPow * restraintEnergy2;
+                + d2OneMinusLambdaPow * energy2 + d2LambdaPow * restraintEnergy2;
         return d2EdL2_1 + d2EdL2_2;
     }
 
@@ -429,7 +561,7 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
 
         int index = 0;
         int indexCommon = 0;
-        int indexUnique = nCommon * 3;
+        int indexUnique = nShared * 3;
         /**
          * Coordinate Gradient from Topology 1.
          */
@@ -437,18 +569,18 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
             Atom a = atoms1[i];
             if (!a.applyLambda()) {
                 g[indexCommon++] = lambdaPow * gl1[index] + dLambdaPow * g1[index]
-                                   + dOneMinusLambdaPow * rg1[index++];
+                        + dOneMinusLambdaPow * rg1[index++];
                 g[indexCommon++] = lambdaPow * gl1[index] + dLambdaPow * g1[index]
-                                   + dOneMinusLambdaPow * rg1[index++];
+                        + dOneMinusLambdaPow * rg1[index++];
                 g[indexCommon++] = lambdaPow * gl1[index] + dLambdaPow * g1[index]
-                                   + dOneMinusLambdaPow * rg1[index++];
+                        + dOneMinusLambdaPow * rg1[index++];
             } else {
                 g[indexUnique++] = lambdaPow * gl1[index] + dLambdaPow * g1[index]
-                                   + dOneMinusLambdaPow * rg1[index++];
+                        + dOneMinusLambdaPow * rg1[index++];
                 g[indexUnique++] = lambdaPow * gl1[index] + dLambdaPow * g1[index]
-                                   + dOneMinusLambdaPow * rg1[index++];
+                        + dOneMinusLambdaPow * rg1[index++];
                 g[indexUnique++] = lambdaPow * gl1[index] + dLambdaPow * g1[index]
-                                   + dOneMinusLambdaPow * rg1[index++];
+                        + dOneMinusLambdaPow * rg1[index++];
             }
         }
 
@@ -461,18 +593,18 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
             Atom a = atoms2[i];
             if (!a.applyLambda()) {
                 g[indexCommon++] += (-oneMinusLambdaPow * gl2[index]
-                                     + dOneMinusLambdaPow * g2[index] + dLambdaPow * rg2[index++]);
+                        + dOneMinusLambdaPow * g2[index] + dLambdaPow * rg2[index++]);
                 g[indexCommon++] += (-oneMinusLambdaPow * gl2[index]
-                                     + dOneMinusLambdaPow * g2[index] + dLambdaPow * rg2[index++]);
+                        + dOneMinusLambdaPow * g2[index] + dLambdaPow * rg2[index++]);
                 g[indexCommon++] += (-oneMinusLambdaPow * gl2[index]
-                                     + dOneMinusLambdaPow * g2[index] + dLambdaPow * rg2[index++]);
+                        + dOneMinusLambdaPow * g2[index] + dLambdaPow * rg2[index++]);
             } else {
                 g[indexUnique++] = -oneMinusLambdaPow * gl2[index]
-                                   + dOneMinusLambdaPow * g2[index] + dLambdaPow * rg2[index++];
+                        + dOneMinusLambdaPow * g2[index] + dLambdaPow * rg2[index++];
                 g[indexUnique++] = -oneMinusLambdaPow * gl2[index]
-                                   + dOneMinusLambdaPow * g2[index] + dLambdaPow * rg2[index++];
+                        + dOneMinusLambdaPow * g2[index] + dLambdaPow * rg2[index++];
                 g[indexUnique++] = -oneMinusLambdaPow * gl2[index]
-                                   + dOneMinusLambdaPow * g2[index] + dLambdaPow * rg2[index++];
+                        + dOneMinusLambdaPow * g2[index] + dLambdaPow * rg2[index++];
             }
         }
     }
