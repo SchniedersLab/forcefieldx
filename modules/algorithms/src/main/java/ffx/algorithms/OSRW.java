@@ -609,7 +609,9 @@ public class OSRW implements Potential {
              * Metadynamics grid counts (every 'countInterval' steps).
              */
             if (energyCount % countInterval == 0) {
-                jobBackend.setComment(String.format("[L=%6.4f, F_L=%10.4f] at %7.3e psec", lambda, dEdU, energyCount * dt));
+                if (jobBackend != null) {
+                    jobBackend.setComment(String.format("[L=%6.4f, F_L=%10.4f] at %7.3e psec", lambda, dEdU, energyCount * dt));
+                }
                 if (asynchronous) {
                     asynchronousSend(lambda, dEdU);
                 } else {
