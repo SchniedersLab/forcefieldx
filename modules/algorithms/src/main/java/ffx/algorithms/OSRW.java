@@ -225,9 +225,21 @@ public class OSRW implements Potential {
      */
     private boolean print = false;
     /**
-     * total system energy
+     * Total system energy.
      */
     private double totalEnergy;
+    /**
+     * Free energy at Lambda=1.
+     */
+    private double totalFreeEnergy;
+    /**
+     * Total histogram counts.
+     */
+    private int totalCounts;
+    /**
+     * Equilibration counts
+     */
+    private int equilibrationCounts = 0;
     /**
      * Are FAST varying energy terms being computed, SLOW varying energy terms,
      * or BOTH. OSRW is not active when only FAST varying energy terms are being
@@ -538,7 +550,6 @@ public class OSRW implements Potential {
             gradient[i] += dGdFLambda * dUdXdL[i];
         }
 
-
         if (propagateLambda && energyCount > 0) {
             /**
              * Update free energy F(L) every ~10 steps.
@@ -546,7 +557,7 @@ public class OSRW implements Potential {
             if (energyCount % 10 == 0) {
                 fLambdaUpdates++;
                 boolean printFLambda = fLambdaUpdates % fLambdaPrintInterval == 0;
-                updateFLambda(printFLambda);
+                totalFreeEnergy = updateFLambda(printFLambda);
             }
             if (energyCount % saveFrequency == 0) {
                 /**
@@ -584,7 +595,8 @@ public class OSRW implements Potential {
          * Compute the energy and gradient for the recursion slave at F(L) using
          * interpolation.
          */
-        biasEnergy += computeFreeEnergy();
+        double freeEnergy = currentFreeEnergy();
+        biasEnergy += freeEnergy;
 
         if (print) {
             logger.info(String.format(" %s %16.8f", "Bias Energy       ", biasEnergy));
@@ -605,12 +617,19 @@ public class OSRW implements Potential {
                             lambda, lambdaBin, dEdU, dEdLambda - dEdU, dEdLambda));
                 }
             }
+
             /**
              * Metadynamics grid counts (every 'countInterval' steps).
              */
             if (energyCount % countInterval == 0) {
                 if (jobBackend != null) {
-                    jobBackend.setComment(String.format("[L=%6.4f, F_L=%10.4f] at %7.3e psec", lambda, dEdU, energyCount * dt));
+                    if (world.size() > 1) {
+                        jobBackend.setComment(String.format("Overall dG=%10.4f at %7.3e psec, Current: [L=%6.4f, F_L=%10.4f, dG=%10.4f] at %7.3e psec",
+                                totalFreeEnergy, totalCounts * dt * countInterval, lambda, dEdU, -freeEnergy, energyCount * dt));
+                    } else {
+                        jobBackend.setComment(String.format("Overall dG=%10.4f at %7.3e psec, Current: [L=%6.4f, F_L=%10.4f, dG=%10.4f]",
+                                totalFreeEnergy, totalCounts * dt * countInterval, lambda, dEdU, -freeEnergy));
+                    }
                 }
                 if (asynchronous) {
                     asynchronousSend(lambda, dEdU);
@@ -619,11 +638,20 @@ public class OSRW implements Potential {
                 }
             }
         }
+
         /**
          * Propagate the Lambda particle.
          */
         if (propagateLambda) {
             langevin();
+        } else {
+            equilibrationCounts++;
+            if (jobBackend != null) {
+                jobBackend.setComment(String.format("Equilibration [L=%6.4f, F_L=%10.4f]", lambda, dEdU));
+            }
+            if (equilibrationCounts % 10 == 0) {
+                logger.info(String.format(" L=%6.4f, F_L=%10.4f", lambda, dEdU));
+            }
         }
 
         totalEnergy = e + biasEnergy;
@@ -721,9 +749,7 @@ public class OSRW implements Potential {
              * copy them into the new array.
              */
             for (int i = 0; i < lambdaBins; i++) {
-                for (int j = 0; j < FLambdaBins; j++) {
-                    newRecursionKernel[i][j] = recursionKernel[i][j];
-                }
+                System.arraycopy(recursionKernel[i], 0, newRecursionKernel[i], 0, FLambdaBins);
             }
             recursionKernel = newRecursionKernel;
             FLambdaBins = newFLambdaBins;
@@ -751,9 +777,7 @@ public class OSRW implements Potential {
              * must be increased by: offset = newFLBins - FLBins
              */
             for (int i = 0; i < lambdaBins; i++) {
-                for (int j = 0; j < FLambdaBins; j++) {
-                    newRecursionKernel[i][j + offset] = recursionKernel[i][j];
-                }
+                System.arraycopy(recursionKernel[i], 0, newRecursionKernel[i], offset, FLambdaBins);
             }
             recursionKernel = newRecursionKernel;
             minFLambda = minFLambda - offset * dFL;
@@ -767,7 +791,7 @@ public class OSRW implements Potential {
 
     private double updateFLambda(boolean print) {
         double freeEnergy = 0.0;
-        int totalCounts = 0;
+        totalCounts = 0;
         if (print) {
             logger.info(" Count   Lambda Bins    F_Lambda Bins   <   F_L  >       dG        G");
         }
@@ -842,7 +866,7 @@ public class OSRW implements Potential {
         return freeEnergy;
     }
 
-    private double computeFreeEnergy() {
+    private double currentFreeEnergy() {
         double biasEnergy = 0.0;
         for (int iL0 = 0; iL0 < lambdaBins - 1; iL0++) {
             int iL1 = iL0 + 1;
