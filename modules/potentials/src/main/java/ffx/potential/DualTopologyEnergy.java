@@ -28,7 +28,6 @@ import static java.util.Arrays.fill;
 import ffx.numerics.Potential;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
-import ffx.potential.parameters.ForceField.ForceFieldDouble;
 
 /**
  * Compute the potential energy and derivatives for a dual-topology AMOEBA
