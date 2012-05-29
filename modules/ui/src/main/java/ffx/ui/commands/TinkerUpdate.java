@@ -29,7 +29,7 @@ import java.io.Serializable;
  * The TinkerUpdate class is a serializable wrapper for TINKER simulation data
  * that changes during a simulation.
  *
- * @author schnied
+ * @author Michael J. Schnieders
  * @version $Id: $
  */
 public class TinkerUpdate implements Serializable {

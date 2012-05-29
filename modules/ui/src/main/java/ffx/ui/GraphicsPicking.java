@@ -1,7 +1,7 @@
 /**
  * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Description: Force Field X - Software for Molecular Biophysics
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -25,12 +25,7 @@ import java.util.Hashtable;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import javax.media.j3d.Bounds;
-import javax.media.j3d.BranchGroup;
-import javax.media.j3d.Node;
-import javax.media.j3d.SceneGraphPath;
-import javax.media.j3d.Shape3D;
-import javax.media.j3d.Transform3D;
+import javax.media.j3d.*;
 import javax.swing.tree.TreePath;
 import javax.vecmath.Vector3d;
 
@@ -38,20 +33,13 @@ import com.sun.j3d.utils.picking.PickCanvas;
 import com.sun.j3d.utils.picking.PickIntersection;
 import com.sun.j3d.utils.picking.PickResult;
 
+import ffx.potential.bonded.*;
 import ffx.ui.behaviors.PickMouseBehavior;
-import ffx.potential.bonded.MSNode;
-import ffx.potential.bonded.MolecularAssembly;
-import ffx.potential.bonded.Molecule;
-import ffx.potential.bonded.Polymer;
-import ffx.potential.bonded.RendererCache;
-import ffx.potential.bonded.Residue;
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.BondedTerm;
 
 /**
  * The GraphicsPicking class is used to make selections and measurements.
  *
- * @author schnied
+ * @author Michael J. Schnieders
  * @version $Id: $
  */
 public class GraphicsPicking extends PickMouseBehavior {

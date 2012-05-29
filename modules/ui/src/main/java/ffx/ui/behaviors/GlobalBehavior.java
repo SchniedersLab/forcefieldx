@@ -34,7 +34,7 @@ import com.sun.j3d.utils.behaviors.vp.OrbitBehavior;
  * The GlobalBehavior class allows mouse control over camera position, adding a
  * few functions to the OrbitBehavior class.
  *
- * @author schnied
+ * @author Michael J. Schnieders
  * @version $Id: $
  */
 public class GlobalBehavior extends OrbitBehavior {

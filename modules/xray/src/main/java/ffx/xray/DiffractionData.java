@@ -1,6 +1,6 @@
 /**
  * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
+ * Description: Force Field X - Software for Molecular Biophysics
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2009
  *
  * This file is part of Force Field X.
@@ -20,26 +20,23 @@
  */
 package ffx.xray;
 
-import ffx.crystal.CCP4MapWriter;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import edu.rit.pj.ParallelTeam;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 
-import ffx.crystal.Crystal;
-import ffx.crystal.HKL;
-import ffx.crystal.ReflectionList;
-import ffx.crystal.Resolution;
+import edu.rit.pj.ParallelTeam;
+
+import ffx.crystal.*;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.Molecule;

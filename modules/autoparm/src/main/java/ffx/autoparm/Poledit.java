@@ -1,7 +1,7 @@
 /**
  * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Description: Force Field X - Software for Molecular Biophysics
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -20,15 +20,7 @@
  */
 package ffx.autoparm;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
+import java.io.*;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.logging.Level;
@@ -36,13 +28,16 @@ import java.util.logging.Logger;
 
 import edu.rit.pj.ParallelTeam;
 
+import ffx.autoparm.PME_2.Polarization;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.MultipoleType;
+import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
 import ffx.potential.parameters.PolarizeType;
+
 import static ffx.autoparm.PME_2.*;
-import static ffx.potential.parameters.MultipoleType.*;
+import static ffx.potential.parameters.MultipoleType.BOHR;
 
 /**
  * Poledit Provides Multipole Parameters from GDMA Output.
@@ -69,8 +64,6 @@ public class Poledit {
      * File location of multipole params output by GDMA
      * @param peditinfname
      * File location of molecular polarization group information
-     * @param out_type
-     * Tinker output format, either 5 or 4.
      */
     public Poledit(String gdmaoutfname, String peditinfname) {
         pedit = true;

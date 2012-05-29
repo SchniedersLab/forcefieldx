@@ -1,7 +1,7 @@
 /**
  * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Description: Force Field X - Software for Molecular Biophysics
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -20,7 +20,8 @@
  */
 package ffx.crystal;
 
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 
 import static java.lang.Math.*;
@@ -82,7 +83,7 @@ public class Crystal {
     /**
      * Copy of symmetry operators in Cartesian coordinates.
      */
-    private final Vector<SymOp> symOpsCartesian;
+    private final List<SymOp> symOpsCartesian;
     /**
      * The crystal unit cell volume.
      */
@@ -343,8 +344,8 @@ public class Crystal {
         m = new LUDecompositionImpl(m).getSolver().getInverse();
         Gstar = m.getData();
 
-        symOpsCartesian = new Vector<SymOp>();
-        Vector<SymOp> symOps = spaceGroup.symOps;
+        symOpsCartesian = new ArrayList<SymOp>();
+        List<SymOp> symOps = spaceGroup.symOps;
         int nSymm = symOps.size();
         RealMatrix toFrac = new Array2DRowRealMatrix(A);
         RealMatrix toCart = new Array2DRowRealMatrix(Ai);

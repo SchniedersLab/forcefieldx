@@ -1,7 +1,7 @@
 /**
  * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Description: Force Field X - Software for Molecular Biophysics
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -99,8 +99,8 @@ public class Complex3DCuda implements Runnable {
     /**
      * Compute the 3D FFT using CUDA.
      *
-     * @param input
-     *            The input array must be of size 2 * nX * nY * nZ.
+     * @param data
+     *            The input data array must be of size 2 * nX * nY * nZ.
      * @since 1.0
      */
     public void fft(final double data[]) {
@@ -119,8 +119,8 @@ public class Complex3DCuda implements Runnable {
     /**
      * Compute the inverse 3D FFT using CUDA.
      *
-     * @param input
-     *            The input array must be of size 2 * nX * nY * nZ.
+     * @param data
+     *            The input data array must be of size 2 * nX * nY * nZ.
      * @since 1.0
      */
     public void ifft(final double data[]) {
@@ -140,7 +140,6 @@ public class Complex3DCuda implements Runnable {
      * Blocking convolution method.
      *
      * @param data Input/output data array.
-     * @return A status flag (0 for success, -1 for failure).
      */
     public void convolution(double data[]) {
         // This would be a programming error.

@@ -23,23 +23,23 @@
  */
 package ffx.numerics.fft;
 
-import edu.rit.pj.ParallelTeam;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Random;
-import org.junit.After;
-import org.junit.AfterClass;
+
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
-import static org.junit.Assert.*;
+
+import static org.junit.Assert.assertEquals;
+
+import edu.rit.pj.ParallelTeam;
 
 /**
  *
- * @author schnied
+ * @author Michael J. Schnieders
  */
 @RunWith(Parameterized.class)
 public class Complex3DParallelTest {

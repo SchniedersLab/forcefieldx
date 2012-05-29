@@ -1,6 +1,6 @@
 /**
  * Title: Force Field X Description: Force Field X - Software for Molecular
- * Biophysics. Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Biophysics. Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -31,6 +31,8 @@ import javax.vecmath.Matrix3d;
 import javax.vecmath.Point3d;
 import javax.vecmath.Vector3d;
 
+import com.sun.j3d.utils.picking.PickTool;
+
 import org.jdesktop.j3d.loaders.vrml97.VrmlLoader;
 import org.jdesktop.j3d.loaders.vrml97.VrmlScene;
 
@@ -39,13 +41,11 @@ import ffx.numerics.VectorMath;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.parameters.ForceField;
 
-import com.sun.j3d.utils.picking.PickTool;
-
 /**
  * The MolecularAssembly class is a collection of Polymers, Hetero Molecules,
  * Ions and Water
  *
- * @author schnied
+ * @author Michael J. Schnieders
  * @version $Id: $
  */
 public class MolecularAssembly extends MSGroup {

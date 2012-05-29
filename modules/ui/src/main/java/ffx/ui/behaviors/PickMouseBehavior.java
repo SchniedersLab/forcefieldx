@@ -28,21 +28,14 @@ import java.awt.Event;
 import java.awt.event.MouseEvent;
 import java.util.Enumeration;
 
-import javax.media.j3d.Behavior;
-import javax.media.j3d.Bounds;
-import javax.media.j3d.BranchGroup;
-import javax.media.j3d.Canvas3D;
-import javax.media.j3d.TransformGroup;
-import javax.media.j3d.WakeupCriterion;
-import javax.media.j3d.WakeupOnAWTEvent;
-import javax.media.j3d.WakeupOr;
+import javax.media.j3d.*;
 
 import com.sun.j3d.utils.picking.PickCanvas;
 
 /**
  * The PickMouseBehavior class is the base class for mouse picking behaviors.
  *
- * @author schnied
+ * @author Michael J. Schnieders
  * @version $Id: $
  */
 public abstract class PickMouseBehavior extends Behavior {

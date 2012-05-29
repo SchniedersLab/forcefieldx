@@ -1,7 +1,7 @@
 /**
  * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Description: Force Field X - Software for Molecular Biophysics
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -20,14 +20,7 @@
  */
 package ffx.xray;
 
-import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.lang3.StringUtils;
-
-import java.io.File;
-import java.io.DataInputStream;
-import java.io.FileInputStream;
-import java.io.EOFException;
-import java.io.IOException;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -35,11 +28,10 @@ import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import ffx.crystal.Crystal;
-import ffx.crystal.HKL;
-import ffx.crystal.ReflectionList;
-import ffx.crystal.Resolution;
-import ffx.crystal.SpaceGroup;
+import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.lang3.StringUtils;
+
+import ffx.crystal.*;
 
 /**
  * This class parses CCP4 MTZ files.<br>

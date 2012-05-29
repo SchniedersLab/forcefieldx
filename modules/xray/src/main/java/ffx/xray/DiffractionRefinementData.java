@@ -1,7 +1,7 @@
 /**
  * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Description: Force Field X - Software for Molecular Biophysics
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -20,14 +20,14 @@
  */
 package ffx.xray;
 
-import org.apache.commons.configuration.CompositeConfiguration;
-
+import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.commons.configuration.CompositeConfiguration;
+
 import ffx.crystal.ReflectionList;
 import ffx.numerics.ComplexNumber;
-import java.util.Random;
 
 /**
  * <p>DiffractionRefinementData class.</p>

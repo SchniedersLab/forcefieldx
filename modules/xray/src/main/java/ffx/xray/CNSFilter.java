@@ -4,18 +4,16 @@
  */
 package ffx.xray;
 
-import ffx.crystal.Crystal;
-import ffx.crystal.HKL;
-import ffx.crystal.ReflectionList;
-import ffx.crystal.Resolution;
-import ffx.crystal.SpaceGroup;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import org.apache.commons.configuration.CompositeConfiguration;
+
+import ffx.crystal.*;
 
 /**
  * <p>CNSFilter class.</p>

@@ -1,6 +1,6 @@
 /**
  * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
+ * Description: Force Field X - Software for Molecular Biophysics
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2009
  *
  * This file is part of Force Field X.
@@ -20,6 +20,7 @@
  */
 package ffx.xray;
 
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -30,7 +31,6 @@ import ffx.numerics.OptimizationListener;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Residue;
-import java.util.ArrayList;
 
 /**
  * Refinement minimization class using {@link OptimizationListener} interface,

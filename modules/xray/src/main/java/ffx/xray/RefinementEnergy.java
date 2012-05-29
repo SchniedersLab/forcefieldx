@@ -19,7 +19,11 @@
  */
 package ffx.xray;
 
-import static ffx.numerics.VectorMath.b2u;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.Thermostat;
@@ -31,11 +35,8 @@ import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Residue;
 import ffx.xray.RefinementMinimize.RefinementMode;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import static ffx.numerics.VectorMath.b2u;
 
 /**
  * Combine the X-ray target and chemical potential energy using the

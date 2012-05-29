@@ -1,7 +1,7 @@
 /**
  * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Description: Force Field X - Software for Molecular Biophysics
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -25,17 +25,12 @@ import java.io.FileOutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.text.SimpleDateFormat;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.Date;
 import java.util.Vector;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import ffx.crystal.Crystal;
-import ffx.crystal.HKL;
-import ffx.crystal.ReflectionList;
-import ffx.crystal.ReflectionSpline;
-import ffx.crystal.SpaceGroup;
-import ffx.crystal.SymOp;
+import ffx.crystal.*;
 
 /**
  * <p>MTZWriter class.</p>

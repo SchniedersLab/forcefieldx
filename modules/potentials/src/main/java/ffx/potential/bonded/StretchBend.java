@@ -1,7 +1,7 @@
 /**
  * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Description: Force Field X - Software for Molecular Biophysics
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -20,14 +20,14 @@
  */
 package ffx.potential.bonded;
 
+import java.util.logging.Logger;
+
 import static java.lang.Math.*;
+
+import ffx.potential.parameters.StretchBendType;
 
 import static ffx.numerics.VectorMath.*;
 import static ffx.potential.parameters.StretchBendType.units;
-
-import java.util.logging.Logger;
-
-import ffx.potential.parameters.StretchBendType;
 
 /**
  * The StretchBend class represents a Stretch-Bend formed between three linearly

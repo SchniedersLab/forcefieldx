@@ -1,7 +1,7 @@
 /**
  * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Description: Force Field X - Software for Molecular Biophysics
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -30,7 +30,7 @@ import org.xml.sax.InputSource;
  * The DTDResolver class just points the DOM DocumentBuilder to the XML Document
  * Type Definition files.
  *
- * @author schnied
+ * @author Michael J. Schnieders
  * @version $Id: $
  */
 public class DTDResolver implements EntityResolver {

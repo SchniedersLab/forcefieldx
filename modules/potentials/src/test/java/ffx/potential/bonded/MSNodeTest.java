@@ -24,20 +24,13 @@
 
 package ffx.potential.bonded;
 
-import ffx.potential.bonded.ROLS;
-import ffx.potential.bonded.MSNode;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
 import java.util.ArrayList;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import ffx.potential.bonded.BondedTerm;
+import static org.junit.Assert.*;
 
 
 /**

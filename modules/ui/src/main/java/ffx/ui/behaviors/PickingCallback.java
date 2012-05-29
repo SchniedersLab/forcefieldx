@@ -29,7 +29,7 @@ import javax.media.j3d.TransformGroup;
  * The PickingCallback interface is implemented by classes wishing to recieve
  * notification that a picked object has moved.
  *
- * @author schnied
+ * @author Michael J. Schnieders
  * @version $Id: $
  */
 public interface PickingCallback {

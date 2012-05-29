@@ -1,7 +1,7 @@
 /**
  * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Description: Force Field X - Software for Molecular Biophysics
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -20,23 +20,17 @@
  */
 package ffx.xray;
 
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import static org.apache.commons.math.util.FastMath.exp;
-import static ffx.numerics.fft.Complex3D.iComplex3D;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.Vector;
-
-import ffx.crystal.CCP4MapWriter;
-import ffx.crystal.Crystal;
-import ffx.crystal.HKL;
-import ffx.crystal.ReflectionList;
-import ffx.crystal.Resolution;
-import ffx.crystal.SymOp;
+import ffx.crystal.*;
 import ffx.numerics.ComplexNumber;
 import ffx.numerics.fft.Complex;
 import ffx.numerics.fft.Complex3DParallel;
@@ -44,6 +38,8 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.SpatialDensityLoop;
 import ffx.potential.nonbonded.SpatialDensityRegion;
 import ffx.xray.RefinementMinimize.RefinementMode;
+
+import static ffx.numerics.fft.Complex3D.iComplex3D;
 
 /**
  * Structure factor calculation (including bulk solvent structure factors)
@@ -232,7 +228,7 @@ import ffx.xray.RefinementMinimize.RefinementMode;
  *
  * @see <a href="http://dx.doi.org/10.1107/S0907444910031045" target="_blank">
  * T.D. Fenn, M. J. Schnieders, A. T. Brunger, Acta Cryst. (2010). D66, 1024-1031.</a>
- * @author schnied
+ * @author Michael J. Schnieders
  * @version $Id: $
  */
 public class CrystalReciprocalSpace {
@@ -501,7 +497,7 @@ public class CrystalReciprocalSpace {
 
         // local copy of coordinates - note use of bulknsym
         coordinates = new double[bulknsym][3][nAtoms];
-        Vector<SymOp> symops = crystal.spaceGroup.symOps;
+        List<SymOp> symops = crystal.spaceGroup.symOps;
         double xyz[] = new double[3];
         for (int i = 0; i < bulknsym; i++) {
             double x[] = coordinates[i][0];
@@ -690,7 +686,7 @@ public class CrystalReciprocalSpace {
      * @param delta amount to shift atom by
      */
     public void deltaX(int n, double delta) {
-        Vector<SymOp> symops = crystal.spaceGroup.symOps;
+        List<SymOp> symops = crystal.spaceGroup.symOps;
         double xyz[] = new double[3];
         double symxyz[] = new double[3];
         atoms[n].getXYZ(xyz);
@@ -708,7 +704,7 @@ public class CrystalReciprocalSpace {
      * @param delta amount to shift atom by
      */
     public void deltaY(int n, double delta) {
-        Vector<SymOp> symops = crystal.spaceGroup.symOps;
+        List<SymOp> symops = crystal.spaceGroup.symOps;
         double xyz[] = new double[3];
         double symxyz[] = new double[3];
         atoms[n].getXYZ(xyz);
@@ -726,7 +722,7 @@ public class CrystalReciprocalSpace {
      * @param delta amount to shift atom by
      */
     public void deltaZ(int n, double delta) {
-        Vector<SymOp> symops = crystal.spaceGroup.symOps;
+        List<SymOp> symops = crystal.spaceGroup.symOps;
         double xyz[] = new double[3];
         double symxyz[] = new double[3];
         atoms[n].getXYZ(xyz);
@@ -744,7 +740,7 @@ public class CrystalReciprocalSpace {
      */
     public void setCoordinates(double coords[]) {
         assert (coords != null);
-        Vector<SymOp> symops = crystal.spaceGroup.symOps;
+        List<SymOp> symops = crystal.spaceGroup.symOps;
         double xyz[] = new double[3];
         double symxyz[] = new double[3];
 
@@ -833,7 +829,7 @@ public class CrystalReciprocalSpace {
         long symtime = -System.nanoTime();
         int nsym = crystal.spaceGroup.symOps.size();
         // int nsym = 1;
-        Vector<SymOp> symops = crystal.spaceGroup.symOps;
+        List<SymOp> symops = crystal.spaceGroup.symOps;
         ComplexNumber c = new ComplexNumber();
         ComplexNumber cj = new ComplexNumber();
         HKL ij = new HKL();
@@ -973,7 +969,7 @@ public class CrystalReciprocalSpace {
         // extract structure factors
         long symtime = -System.nanoTime();
         int nsym = crystal.spaceGroup.symOps.size();
-        Vector<SymOp> symops = crystal.spaceGroup.symOps;
+        List<SymOp> symops = crystal.spaceGroup.symOps;
         ComplexNumber c = new ComplexNumber();
         HKL ij = new HKL();
         for (HKL ih : reflectionlist.hkllist) {
@@ -1153,7 +1149,7 @@ public class CrystalReciprocalSpace {
         // extract structure factors
         long symtime = -System.nanoTime();
         int nsym = crystal.spaceGroup.symOps.size();
-        Vector<SymOp> symops = crystal.spaceGroup.symOps;
+        List<SymOp> symops = crystal.spaceGroup.symOps;
         ComplexNumber c = new ComplexNumber();
         HKL ij = new HKL();
         for (HKL ih : reflectionlist.hkllist) {

@@ -1,7 +1,7 @@
 /**
  * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Description: Force Field X - Software for Molecular Biophysics
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -20,10 +20,10 @@
  */
 package ffx.potential.parameters;
 
-import static java.lang.Math.PI;
-
 import java.util.Arrays;
 import java.util.Comparator;
+
+import static java.lang.Math.PI;
 
 /**
  * The StretchBendType class defines one out-of-plane angle bending energy type.

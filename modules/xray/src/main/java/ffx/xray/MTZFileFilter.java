@@ -1,7 +1,7 @@
 /**
  * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Description: Force Field X - Software for Molecular Biophysics
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -20,15 +20,16 @@
  */
 package ffx.xray;
 
-import java.io.File;
 import java.io.DataInputStream;
+import java.io.File;
 import java.io.FileInputStream;
+
 import javax.swing.filechooser.FileFilter;
 
 /**
  * The MTZFileFilter class is used to choose CCP4 MTZ files
  *
- * @author schnied
+ * @author Michael J. Schnieders
  * @version $Id: $
  */
 public final class MTZFileFilter extends FileFilter {

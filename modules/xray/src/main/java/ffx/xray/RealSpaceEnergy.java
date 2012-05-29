@@ -1,6 +1,6 @@
 /**
  * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
+ * Description: Force Field X - Software for Molecular Biophysics
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2009
  *
  * This file is part of Force Field X.
@@ -20,12 +20,13 @@
  */
 package ffx.xray;
 
+import java.util.Arrays;
+import java.util.logging.Logger;
+
 import ffx.numerics.Potential;
 import ffx.potential.LambdaInterface;
 import ffx.potential.bonded.Atom;
 import ffx.xray.RefinementMinimize.RefinementMode;
-import java.util.Arrays;
-import java.util.logging.Logger;
 
 /**
  * Combine the Real Space target and chemical potential energy.

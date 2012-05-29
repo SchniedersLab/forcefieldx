@@ -35,7 +35,7 @@ import javax.media.j3d.WakeupOnAWTEvent;
 /**
  * The MouseProperties class is simple extension of MouseBehavior.
  *
- * @author schnied
+ * @author Michael J. Schnieders
  * @version $Id: $
  */
 public class MouseProperties extends MouseBehavior {

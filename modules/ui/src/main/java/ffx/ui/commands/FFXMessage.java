@@ -29,7 +29,7 @@ import java.io.Serializable;
  * The FFXMessage class is used to pass simple messages between a TinkerServer
  * and its FFXClient(s).
  *
- * @author schnied
+ * @author Michael J. Schnieders
  * @version $Id: $
  */
 public class FFXMessage implements Serializable {

@@ -1,7 +1,7 @@
 /**
  * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Description: Force Field X - Software for Molecular Biophysics
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -35,7 +35,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
  * shut down the JVM after launching a dynamics run, for example. In this case
  * the thread should not be dependent on a JVM instance.
  *
- * @author schnied
+ * @author Michael J. Schnieders
  * @version $Id: $
  */
 public class FFXExec implements Runnable {

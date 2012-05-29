@@ -1,6 +1,6 @@
 /**
  * Title: Force Field X Description: Force Field X - Software for Molecular
- * Biophysics. Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Biophysics. Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -65,7 +65,7 @@ import ffx.utilities.Keyword;
  * The MainPanel class is the main container for Force Field X, handles file
  * input/output and is used to pass references among the various sub-Panels.
  *
- * @author schnied
+ * @author Michael J. Schnieders
  * @version $Id: $
  */
 public final class MainPanel extends JPanel implements ActionListener,

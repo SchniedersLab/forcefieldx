@@ -1,7 +1,7 @@
 /**
  * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Description: Force Field X - Software for Molecular Biophysics
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -20,13 +20,13 @@
  */
 package ffx.numerics;
 
+import java.util.Arrays;
+import java.util.logging.Logger;
+
 import static java.lang.Math.*;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
-
-import java.util.Arrays;
-import java.util.logging.Logger;
 
 import ffx.numerics.LineSearch.LineSearchResult;
 

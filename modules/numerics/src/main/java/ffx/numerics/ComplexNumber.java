@@ -1,7 +1,7 @@
 /**
  * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Description: Force Field X - Software for Molecular Biophysics
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -20,10 +20,7 @@
  */
 package ffx.numerics;
 
-import static java.lang.Math.atan2;
-import static java.lang.Math.cosh;
-import static java.lang.Math.hypot;
-import static java.lang.Math.sinh;
+import static java.lang.Math.*;
 
 /**
  * <p>ComplexNumber class.</p>

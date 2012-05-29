@@ -1,6 +1,6 @@
 /**
  * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
+ * Description: Force Field X - Software for Molecular Biophysics
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2009
  *
  * This file is part of Force Field X.
@@ -20,15 +20,21 @@
  */
 package ffx.xray;
 
-import static ffx.numerics.VectorMath.b2u;
-
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-import edu.rit.pj.ParallelTeam;
 import org.apache.commons.configuration.CompositeConfiguration;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import edu.rit.pj.ParallelTeam;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.ReflectionList;
@@ -43,11 +49,7 @@ import ffx.utilities.Keyword;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
 import ffx.xray.RefinementMinimize.RefinementMode;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
-import static org.junit.Assert.*;
+import static ffx.numerics.VectorMath.b2u;
 
 /**
  *

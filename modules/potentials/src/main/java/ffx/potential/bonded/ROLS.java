@@ -1,7 +1,7 @@
 /**
  * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Description: Force Field X - Software for Molecular Biophysics
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -23,11 +23,7 @@ package ffx.potential.bonded;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.media.j3d.BranchGroup;
-import javax.media.j3d.Canvas3D;
-import javax.media.j3d.J3DGraphics2D;
-import javax.media.j3d.Material;
-import javax.media.j3d.Node;
+import javax.media.j3d.*;
 import javax.vecmath.Color3f;
 
 import ffx.potential.bonded.RendererCache.ColorModel;
@@ -36,7 +32,7 @@ import ffx.potential.bonded.RendererCache.ViewModel;
 /**
  * The ROLS Interace defines "Recursive Over Length Scales" (ROLS) Methods.
  *
- * @author schnied
+ * @author Michael J. Schnieders
  * @version $Id: $
  */
 public interface ROLS {

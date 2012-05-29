@@ -5,7 +5,6 @@
 package ffx.potential.parsers;
 
 import org.apache.commons.configuration.CompositeConfiguration;
-
 import org.junit.Test;
 
 import ffx.potential.parameters.ForceField;

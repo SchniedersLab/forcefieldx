@@ -1,6 +1,6 @@
 /**
  * Title: Force Field X Description: Force Field X - Software for Molecular
- * Biophysics. Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Biophysics. Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -79,7 +79,7 @@ public class Respa extends Integrator {
     /**
      * Get the potential energy of the fast degrees of freedom.
      *
-     * @return
+     * @return The potential energy of the fast degrees of freedom.
      */
     public double getHalfStepEnergy() {
         return halfStepEnergy;

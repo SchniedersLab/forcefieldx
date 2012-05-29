@@ -1,7 +1,7 @@
 /**
  * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Description: Force Field X - Software for Molecular Biophysics
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -20,7 +20,8 @@
  */
 package ffx.crystal;
 
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.List;
 
 import static ffx.crystal.SpaceGroup.CrystalSystem.*;
 import static ffx.crystal.SpaceGroup.LaueSystem.*;
@@ -115,7 +116,7 @@ public class SpaceGroup {
     /**
      * A Vector of SymOp instances.
      */
-    public final Vector<SymOp> symOps;
+    public final List<SymOp> symOps;
     /**
      * Names of the 230 three dimensional space groups.
      * @since 1.0
@@ -235,7 +236,7 @@ public class SpaceGroup {
         this.limit = limit;
         this.asulim = asulim;
         this.pdbName = pdbName;
-        this.symOps = new Vector<SymOp>(symOps.length);
+        this.symOps = new ArrayList<SymOp>(symOps.length);
         for (SymOp op : symOps) {
             this.symOps.add(op);
         }

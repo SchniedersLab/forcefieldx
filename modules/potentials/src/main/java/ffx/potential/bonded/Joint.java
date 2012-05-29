@@ -32,7 +32,7 @@ import javax.swing.tree.TreeNode;
 /**
  * The Joint class contains the geometry produced by the FGroup Joiner method.
  *
- * @author schnied
+ * @author Michael J. Schnieders
  * @version $Id: $
  */
 public class Joint extends MSNode {

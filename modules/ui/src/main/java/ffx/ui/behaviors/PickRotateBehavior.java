@@ -25,17 +25,13 @@ package ffx.ui.behaviors;
 
 import java.awt.event.MouseEvent;
 
-import javax.media.j3d.Bounds;
-import javax.media.j3d.BranchGroup;
-import javax.media.j3d.Canvas3D;
-import javax.media.j3d.Transform3D;
-import javax.media.j3d.TransformGroup;
+import javax.media.j3d.*;
 
 /**
  * The PickRotateBehavior class implements a mouse rotate behavior on a picked
  * object.
  *
- * @author schnied
+ * @author Michael J. Schnieders
  * @version $Id: $
  */
 public class PickRotateBehavior extends PickMouseBehavior implements

@@ -1,7 +1,7 @@
 /**
  * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Description: Force Field X - Software for Molecular Biophysics
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -20,9 +20,6 @@
  */
 package ffx.potential.bonded;
 
-import static ffx.utilities.HashCodeUtil.hash;
-import static ffx.utilities.HashCodeUtil.SEED;
-
 import java.util.EnumSet;
 import java.util.Hashtable;
 import java.util.ListIterator;
@@ -37,10 +34,13 @@ import javax.vecmath.Point2d;
 import javax.vecmath.Point3d;
 import javax.vecmath.Vector3d;
 
+import static ffx.utilities.HashCodeUtil.SEED;
+import static ffx.utilities.HashCodeUtil.hash;
+
 /**
  * The Residue class represents individual amino acids or nucleic acid bases.
  *
- * @author schnied
+ * @author Michael J. Schnieders
  * @version $Id: $
  */
 public class Residue extends MSGroup {

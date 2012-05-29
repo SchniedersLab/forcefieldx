@@ -35,7 +35,7 @@ import javax.media.j3d.WakeupOnAWTEvent;
 /**
  * The MouseSelection class implements a mouse selection behavior.
  *
- * @author schnied
+ * @author Michael J. Schnieders
  * @version $Id: $
  */
 public class MouseSelection extends MouseBehavior {

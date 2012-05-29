@@ -1,7 +1,7 @@
 /**
  * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Description: Force Field X - Software for Molecular Biophysics
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -20,15 +20,15 @@
  */
 package ffx.potential.bonded;
 
-import static ffx.utilities.HashCodeUtil.hash;
-import static ffx.utilities.HashCodeUtil.SEED;
-
 import java.util.List;
 import java.util.logging.Logger;
 
 import javax.media.j3d.BranchGroup;
 import javax.media.j3d.Material;
 import javax.vecmath.Color3f;
+
+import static ffx.utilities.HashCodeUtil.SEED;
+import static ffx.utilities.HashCodeUtil.hash;
 
 /**
  * The BondedTerm class is extended by all Valence Geometry classes (bond,

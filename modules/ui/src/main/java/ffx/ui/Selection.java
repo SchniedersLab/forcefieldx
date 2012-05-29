@@ -33,7 +33,7 @@ import ffx.potential.bonded.MSNode;
  * The Selection class will be used to make recursive multiscale selections,
  * however its implementation is not yet complete.
  *
- * @author schnied
+ * @author Michael J. Schnieders
  * @version $Id: $
  */
 public class Selection {

@@ -31,7 +31,7 @@ import java.awt.event.KeyListener;
 /**
  * The FullScreenWindow class controls full screen graphics.
  *
- * @author schnied
+ * @author Michael J. Schnieders
  * @version $Id: $
  */
 public class GraphicsFullScreen extends Window implements KeyListener {

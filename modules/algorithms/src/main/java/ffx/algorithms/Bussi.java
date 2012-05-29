@@ -1,7 +1,7 @@
 /**
  * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Description: Force Field X - Software for Molecular Biophysics
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -20,11 +20,12 @@
  */
 package ffx.algorithms;
 
-import ffx.numerics.Potential.VARIABLE_TYPE;
+import java.util.Random;
+
 import static java.lang.Math.exp;
 import static java.lang.Math.sqrt;
 
-import java.util.Random;
+import ffx.numerics.Potential.VARIABLE_TYPE;
 
 /**
  * Thermostat a molecular dynamics trajectory to an external bath

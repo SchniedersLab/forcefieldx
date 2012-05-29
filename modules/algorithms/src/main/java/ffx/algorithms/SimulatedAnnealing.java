@@ -1,6 +1,6 @@
 /**
  * Title: Force Field X Description: Force Field X - Software for Molecular
- * Biophysics. Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Biophysics. Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -74,7 +74,7 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
      * object.
      * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
      * @param requestedThermostat a {@link ffx.algorithms.Thermostat.Thermostats}
-     * @param requestedIntegrator a {@link ffx.algorithms.Thermostat.Integrators}
+     * @param requestedIntegrator a {@link ffx.algorithms.Integrator.Integrators}
      */
     public SimulatedAnnealing(MolecularAssembly assembly,
             Potential potentialEnergy,

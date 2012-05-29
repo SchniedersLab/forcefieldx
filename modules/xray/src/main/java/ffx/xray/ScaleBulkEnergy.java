@@ -1,6 +1,6 @@
 /**
  * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
+ * Description: Force Field X - Software for Molecular Biophysics
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2009
  *
  * This file is part of Force Field X.
@@ -20,18 +20,11 @@
  */
 package ffx.xray;
 
-import static java.lang.Math.abs;
-import static org.apache.commons.math.util.FastMath.exp;
-import static java.lang.Math.PI;
-import static java.lang.Math.pow;
-
-import static ffx.numerics.VectorMath.dot;
-import static ffx.numerics.VectorMath.mat3mat3;
-import static ffx.numerics.VectorMath.mat3symvec6;
-import static ffx.numerics.VectorMath.transpose3;
-import static ffx.numerics.VectorMath.vec3mat3;
-
 import java.util.logging.Logger;
+
+import static java.lang.Math.*;
+
+import static org.apache.commons.math.util.FastMath.exp;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
@@ -39,6 +32,8 @@ import ffx.crystal.ReflectionList;
 import ffx.numerics.ComplexNumber;
 import ffx.numerics.Potential;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
+
+import static ffx.numerics.VectorMath.*;
 
 /**
  *

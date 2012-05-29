@@ -1,7 +1,7 @@
 /**
  * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Description: Force Field X - Software for Molecular Biophysics
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -20,30 +20,21 @@
  */
 package ffx.xray;
 
-import static java.lang.Math.PI;
-import static org.apache.commons.math.util.FastMath.exp;
-import static java.lang.Math.pow;
-import static java.lang.Math.sqrt;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.logging.Logger;
 
-import ffx.numerics.VectorMath;
-import static ffx.numerics.VectorMath.determinant3;
-import static ffx.numerics.VectorMath.diff;
-import static ffx.numerics.VectorMath.dot;
-import static ffx.numerics.VectorMath.mat3inverse;
-import static ffx.numerics.VectorMath.mat3mat3;
-import static ffx.numerics.VectorMath.scalarmat3mat3;
-import static ffx.numerics.VectorMath.vec3mat3;
-import static ffx.numerics.VectorMath.b2u;
-import static ffx.numerics.VectorMath.u2b;
+import static java.lang.Math.*;
+
+import static org.apache.commons.math.util.FastMath.exp;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
+import ffx.numerics.VectorMath;
 import ffx.potential.bonded.Atom;
 import ffx.xray.RefinementMinimize.RefinementMode;
-import java.util.Arrays;
 
-import java.util.HashMap;
-import java.util.logging.Logger;
+import static ffx.numerics.VectorMath.*;
 
 /**
  * This implementation uses the coefficients from Su and Coppens and

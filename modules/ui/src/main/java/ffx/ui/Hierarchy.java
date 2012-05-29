@@ -31,12 +31,7 @@ import javax.swing.JLabel;
 import javax.swing.JTree;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
-import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.DefaultTreeCellRenderer;
-import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.DefaultTreeSelectionModel;
-import javax.swing.tree.RowMapper;
-import javax.swing.tree.TreePath;
+import javax.swing.tree.*;
 
 import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.MSRoot;
@@ -48,7 +43,7 @@ import ffx.potential.bonded.RendererCache;
  * It is used for synchronization, handles the selection mechanism, and sets the
  * active system and nodes.
  *
- * @author schnied
+ * @author Michael J. Schnieders
  * @version $Id: $
  */
 public final class Hierarchy extends JTree implements TreeSelectionListener {

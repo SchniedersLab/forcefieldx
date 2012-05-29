@@ -1,7 +1,7 @@
 /**
  * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Description: Force Field X - Software for Molecular Biophysics
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -20,12 +20,12 @@
  */
 package ffx.potential.bonded;
 
-import static java.lang.String.format;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.logging.Logger;
+
+import static java.lang.String.format;
 
 import javax.media.j3d.BranchGroup;
 import javax.media.j3d.Material;
@@ -33,14 +33,7 @@ import javax.vecmath.Color3f;
 
 import ffx.numerics.VectorMath;
 import ffx.potential.bonded.Angle.AngleMode;
-import ffx.potential.parameters.AngleType;
-import ffx.potential.parameters.ForceField;
-import ffx.potential.parameters.OutOfPlaneBendType;
-import ffx.potential.parameters.PiTorsionType;
-import ffx.potential.parameters.StretchBendType;
-import ffx.potential.parameters.TorsionTorsionType;
-import ffx.potential.parameters.TorsionType;
-import ffx.potential.parameters.UreyBradleyType;
+import ffx.potential.parameters.*;
 
 /**
  * The MSGroup class has one subnode containing atoms, and one that contains

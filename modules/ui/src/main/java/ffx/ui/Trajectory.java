@@ -33,7 +33,7 @@ import ffx.potential.bonded.MolecularAssembly;
 /**
  * The Trajectory class controls playback of a TINKER trajectory.
  *
- * @author schnied
+ * @author Michael J. Schnieders
  * @version $Id: $
  */
 public class Trajectory implements ActionListener {

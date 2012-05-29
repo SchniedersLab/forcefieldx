@@ -1,7 +1,7 @@
 /**
  * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Description: Force Field X - Software for Molecular Biophysics
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -80,7 +80,7 @@ public class ForceField {
         TORSIONTERM, PITORSTERM, TORTORTERM, VDWLRTERM, VDWTERM,
         MPOLETERM, POLARIZETERM, GKTERM, SCFCACHE, APERIODIC, CUDAFFT,
         RIGID_HYDROGENS, LAMBDATERM, USE_CHARGES, USE_DIPOLES, USE_QUADRUPOLES,
-        ROTATE_MULTIPOLES, LAMBDA_VAPOR_ELEC;
+        ROTATE_MULTIPOLES, LIGAND_VAPOR_ELEC, NO_LIGAND_CONDENSED_SCF
     }
 
     public enum ForceFieldType {

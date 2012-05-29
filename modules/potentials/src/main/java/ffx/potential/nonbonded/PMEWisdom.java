@@ -1,7 +1,7 @@
 /**
  * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Description: Force Field X - Software for Molecular Biophysics
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -20,9 +20,16 @@
  */
 package ffx.potential.nonbonded;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import static java.lang.Math.min;
 
 import edu.rit.pj.ParallelTeam;
+
 import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
 import ffx.potential.bonded.Atom;
@@ -31,11 +38,6 @@ import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.ForceField.ForceFieldInteger;
 import ffx.potential.parameters.ForceField.ForceFieldString;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Vector;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * The PMEWisdom class searches through Ewald coefficients and
@@ -124,7 +126,7 @@ public class PMEWisdom {
             coordinates[0][i3++] = xyz[1];
             coordinates[0][i3] = xyz[2];
         }
-        Vector<SymOp> symOps = crystal.spaceGroup.symOps;
+        List<SymOp> symOps = crystal.spaceGroup.symOps;
         double in[] = new double[3];
         double out[] = new double[3];
         for (int iSymOp = 1; iSymOp < nSymm; iSymOp++) {

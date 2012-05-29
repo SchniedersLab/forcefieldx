@@ -1,7 +1,7 @@
 /**
  * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Description: Force Field X - Software for Molecular Biophysics
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -20,13 +20,7 @@
  */
 package ffx.potential.parsers;
 
-import static java.lang.Math.abs;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -34,31 +28,19 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static java.lang.Math.abs;
+
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.PropertiesConfiguration;
 
-import ffx.potential.parameters.AngleType;
-import ffx.potential.parameters.AtomType;
-import ffx.potential.parameters.BioType;
-import ffx.potential.parameters.BondType;
-import ffx.potential.parameters.ChargeType;
-import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldBoolean;
-import ffx.potential.parameters.MultipoleType;
-import ffx.potential.parameters.OutOfPlaneBendType;
-import ffx.potential.parameters.PiTorsionType;
-import ffx.potential.parameters.PolarizeType;
-import ffx.potential.parameters.StretchBendType;
-import ffx.potential.parameters.TorsionTorsionType;
-import ffx.potential.parameters.TorsionType;
-import ffx.potential.parameters.UreyBradleyType;
-import ffx.potential.parameters.VDWType;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.ForceField.ForceFieldInteger;
 import ffx.potential.parameters.ForceField.ForceFieldString;
 import ffx.potential.parameters.ForceField.ForceFieldType;
 import ffx.potential.parameters.ForceField.Force_Field;
+import ffx.potential.parameters.*;
 import ffx.utilities.Keyword;
 
 /**

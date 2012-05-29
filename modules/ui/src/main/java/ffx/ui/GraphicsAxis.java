@@ -27,19 +27,7 @@ import java.awt.Color;
 import java.awt.Font;
 import java.util.Enumeration;
 
-import javax.media.j3d.Appearance;
-import javax.media.j3d.Bounds;
-import javax.media.j3d.BranchGroup;
-import javax.media.j3d.Canvas3D;
-import javax.media.j3d.Font3D;
-import javax.media.j3d.FontExtrusion;
-import javax.media.j3d.Geometry;
-import javax.media.j3d.Group;
-import javax.media.j3d.Material;
-import javax.media.j3d.Shape3D;
-import javax.media.j3d.Text3D;
-import javax.media.j3d.Transform3D;
-import javax.media.j3d.TransformGroup;
+import javax.media.j3d.*;
 import javax.vecmath.AxisAngle4f;
 import javax.vecmath.Color3f;
 import javax.vecmath.Matrix3d;
@@ -57,7 +45,7 @@ import ffx.ui.behaviors.MouseBehaviorCallback;
  * The GraphicsAxis class encapsulates the 3D Axis that is used to display and
  * control rotation/translation in the global frame.
  *
- * @author schnied
+ * @author Michael J. Schnieders
  * @version $Id: $
  */
 public final class GraphicsAxis extends Group implements MouseBehaviorCallback {

@@ -33,7 +33,7 @@ import javax.swing.SwingUtilities;
  * the API changed slightly in the 3rd version: You must now invoke start() on
  * the SwingWorker after creating it.
  *
- * @author schnied
+ * @author Michael J. Schnieders
  * @version $Id: $
  */
 public abstract class SwingWorker {

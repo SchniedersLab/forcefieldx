@@ -1,18 +1,9 @@
 package ffx.autoparm;
 
-import edu.rit.pj.ParallelTeam;
-import ffx.crystal.Crystal;
-import ffx.numerics.LBFGS;
 import java.io.IOException;
-import java.util.logging.Level;
-import static org.junit.Assert.*;
-
-import java.io.File;
-
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Random;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.junit.Test;
@@ -20,18 +11,10 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import org.apache.commons.configuration.CompositeConfiguration;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.MolecularAssembly;
-import ffx.potential.bonded.Utilities;
-import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
-import ffx.potential.nonbonded.VanDerWaals;
-import ffx.potential.parsers.ForceFieldFilter;
-import ffx.potential.parsers.XYZFilter;
-import ffx.potential.parameters.ForceField;
-import ffx.potential.parameters.ForceField.ForceFieldString;
-import ffx.utilities.Keyword;
+import ffx.numerics.LBFGS;
 
 /**
  * Test the Potential2 class.

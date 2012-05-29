@@ -1,7 +1,7 @@
 /**
  * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Description: Force Field X - Software for Molecular Biophysics
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -20,49 +20,34 @@
  */
 package ffx.potential.parsers;
 
-import static java.lang.String.format;
-
-import static ffx.numerics.VectorMath.diff;
-import static ffx.numerics.VectorMath.r;
-
-import static ffx.potential.parsers.INTFilter.intxyz;
-import static ffx.potential.parsers.PDBFilter.ResiduePosition.FIRST_RESIDUE;
-import static ffx.potential.parsers.PDBFilter.ResiduePosition.MIDDLE_RESIDUE;
-import static ffx.potential.parsers.PDBFilter.ResiduePosition.LAST_RESIDUE;
-
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.Arrays;
+import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.lang.String.format;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.SpaceGroup;
 import ffx.numerics.VectorMath;
-import ffx.potential.bonded.MolecularAssembly;
-import ffx.potential.bonded.Polymer;
-import ffx.potential.bonded.Residue;
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.Bond;
-import ffx.potential.bonded.MSGroup;
-import ffx.potential.bonded.MSNode;
-import ffx.potential.bonded.Molecule;
+import ffx.potential.bonded.*;
 import ffx.potential.bonded.Utilities.FileType;
 import ffx.potential.parameters.AtomType;
-import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.BioType;
+import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.PDBFilter.ResiduePosition;
 import ffx.utilities.Hybrid36;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
+import static ffx.potential.parsers.INTFilter.intxyz;
+import static ffx.potential.parsers.PDBFilter.ResiduePosition.*;
 
 /**
  * The PDBFilter class parses data from a Protein DataBank (*.PDB) file. The

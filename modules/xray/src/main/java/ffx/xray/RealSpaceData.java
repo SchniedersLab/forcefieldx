@@ -1,7 +1,7 @@
 /**
  * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Description: Force Field X - Software for Molecular Biophysics
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -20,7 +20,12 @@
  */
 package ffx.xray;
 
-import ffx.crystal.CCP4MapWriter;
+import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import org.apache.commons.configuration.CompositeConfiguration;
+
 import ffx.crystal.Crystal;
 import ffx.numerics.TriCubicSpline;
 import ffx.potential.bonded.Atom;
@@ -28,10 +33,6 @@ import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Residue;
 import ffx.xray.RefinementMinimize.RefinementMode;
-import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.apache.commons.configuration.CompositeConfiguration;
 
 /**
  * <p>RealSpaceData class.</p>

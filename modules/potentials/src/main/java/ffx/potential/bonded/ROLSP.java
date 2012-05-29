@@ -1,7 +1,7 @@
 /**
  * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Description: Force Field X - Software for Molecular Biophysics
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -20,14 +20,14 @@
  */
 package ffx.potential.bonded;
 
-import static ffx.utilities.HashCodeUtil.hash;
-import static ffx.utilities.HashCodeUtil.SEED;
-
 import java.util.Enumeration;
 import java.util.List;
 import java.util.logging.Logger;
 
 import javax.media.j3d.BranchGroup;
+
+import static ffx.utilities.HashCodeUtil.SEED;
+import static ffx.utilities.HashCodeUtil.hash;
 
 /**
  * The ROLSP class is used for Proof-Of-Concept Parallel Recusive Over Length
@@ -37,7 +37,7 @@ import javax.media.j3d.BranchGroup;
  * node. This is very preliminary code, but a useful concept for parallelizing
  * ROLS in ffe.lang.
  *
- * @author schnied
+ * @author Michael J. Schnieders
  * @version $Id: $
  */
 public class ROLSP extends MSNode implements ROLS, Runnable {

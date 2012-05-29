@@ -1,7 +1,7 @@
 /**
  * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Description: Force Field X - Software for Molecular Biophysics
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -20,34 +20,28 @@
  */
 package ffx.potential.parsers;
 
-import static java.lang.String.format;
-
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Hashtable;
-import java.util.Vector;
+import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.lang.String.format;
 
 import javax.vecmath.Vector3d;
 
+import org.apache.commons.configuration.CompositeConfiguration;
+
 import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
-import ffx.potential.bonded.MolecularAssembly;
-import ffx.potential.bonded.Utilities.FileType;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
+import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.bonded.Utilities.FileType;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
-import java.util.List;
-import java.util.logging.Level;
-import org.apache.commons.configuration.CompositeConfiguration;
 
 /**
  * The XYZFilter class parses TINKER Cartesian coordinate (*.XYZ) files.
@@ -589,7 +583,7 @@ public class XYZFilter extends SystemFilter {
             ArrayList<Atom> atoms = activeMolecularAssembly.getAtomList();
             Vector3d offset = activeMolecularAssembly.getOffset();
             double xyz[] = new double[3];
-            Vector<SymOp> symOps = crystal.spaceGroup.symOps;
+            List<SymOp> symOps = crystal.spaceGroup.symOps;
             int ii = 0;
             for (SymOp symOp : symOps) {
                 int indexOffset = ii * atoms.size();

@@ -1,7 +1,7 @@
 /**
  * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Description: Force Field X - Software for Molecular Biophysics
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -20,12 +20,7 @@
  */
 package ffx.ui;
 
-import groovy.ui.Console;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.EventQueue;
-import java.awt.Rectangle;
+import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -34,11 +29,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 
-import javax.swing.ImageIcon;
-import javax.swing.JFrame;
-import javax.swing.JOptionPane;
-import javax.swing.JTextPane;
-import javax.swing.SwingUtilities;
+import javax.swing.*;
 import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
@@ -46,14 +37,15 @@ import javax.swing.text.StyledDocument;
 
 import org.codehaus.groovy.runtime.MethodClosure;
 
-import ffx.algorithms.*;
+import groovy.ui.Console;
+
+import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.Integrator.Integrators;
+import ffx.algorithms.Minimize;
+import ffx.algorithms.MolecularDynamics;
+import ffx.algorithms.Terminatable;
 import ffx.algorithms.Thermostat.Thermostats;
-import ffx.autoparm.Energy;
-import ffx.autoparm.Minimize_2;
-import ffx.autoparm.Poledit;
-import ffx.autoparm.Potential2;
-import ffx.autoparm.Superpose;
+import ffx.autoparm.*;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.MSNode;
@@ -66,7 +58,7 @@ import ffx.potential.bonded.RendererCache.ViewModel;
  * Groovy scripting language. Functionality available through the modeling shell
  * includes the Force Field X API, Java API and Groovy extensions.
  *
- * @author schnied
+ * @author Michael J. Schnieders
  * @version $Id: $
  */
 public class ModelingShell extends Console implements AlgorithmListener {

@@ -1,7 +1,7 @@
 /**
  * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Description: Force Field X - Software for Molecular Biophysics
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -20,9 +20,10 @@
  */
 package ffx.crystal;
 
-import java.util.logging.Logger;
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The ReplicatesCrystal class extends Crystal to generate additional symmetry
@@ -73,11 +74,12 @@ public class ReplicatesCrystal extends Crystal {
          * are inconsistent. We need to generate symmetry operators that fill
          * up the ReplicatesCrystal based on the asymmetric unit.
          */
-        Vector<SymOp> symOps = spaceGroup.symOps;
+        List<SymOp> symOps = spaceGroup.symOps;
         /**
          * First, we remove the existing symmetry operators.
          */
-        symOps.removeAllElements();
+        symOps.clear();
+        
         /**
          * Now create symmetry operators for each replicate. Note that
          * the first symOp is still equivalent to the asymmetric unit and the

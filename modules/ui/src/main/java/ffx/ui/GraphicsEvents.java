@@ -28,17 +28,7 @@ import java.awt.Event;
 import java.awt.event.MouseEvent;
 import java.util.Enumeration;
 
-import javax.media.j3d.Behavior;
-import javax.media.j3d.Bounds;
-import javax.media.j3d.BranchGroup;
-import javax.media.j3d.Node;
-import javax.media.j3d.SceneGraphPath;
-import javax.media.j3d.Shape3D;
-import javax.media.j3d.TransformGroup;
-import javax.media.j3d.WakeupCriterion;
-import javax.media.j3d.WakeupOnAWTEvent;
-import javax.media.j3d.WakeupOnBehaviorPost;
-import javax.media.j3d.WakeupOr;
+import javax.media.j3d.*;
 import javax.vecmath.Point3d;
 
 import com.sun.j3d.utils.picking.PickCanvas;
@@ -46,20 +36,20 @@ import com.sun.j3d.utils.picking.PickIntersection;
 import com.sun.j3d.utils.picking.PickResult;
 import com.sun.j3d.utils.universe.SimpleUniverse;
 
+import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.MolecularAssembly;
 import ffx.ui.GraphicsCanvas.LeftButtonMode;
 import ffx.ui.behaviors.GlobalBehavior;
 import ffx.ui.behaviors.MouseRotate;
 import ffx.ui.behaviors.MouseTranslate;
 import ffx.ui.behaviors.MouseZoom;
-import ffx.potential.bonded.MolecularAssembly;
-import ffx.potential.bonded.Atom;
 
 /**
  * The GraphicsEvents class listens for mouse events over the Java3D
  * GraphicsCanvas, dispatching work to more specialized System Rotation &
  * Translation Behaviors or to the GlobalOrbitBehavior.
  *
- * @author schnied
+ * @author Michael J. Schnieders
  * @version $Id: $
  */
 public class GraphicsEvents extends Behavior {

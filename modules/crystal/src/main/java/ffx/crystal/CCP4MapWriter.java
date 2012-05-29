@@ -1,7 +1,7 @@
 /**
  * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Description: Force Field X - Software for Molecular Biophysics
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -20,15 +20,15 @@
  */
 package ffx.crystal;
 
-import static java.lang.Math.pow;
-import static java.lang.Math.sqrt;
-
 import java.io.DataOutputStream;
 import java.io.FileOutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.lang.Math.pow;
+import static java.lang.Math.sqrt;
 
 /**
  * <p>CCP4MapWriter class.</p>
@@ -119,8 +119,7 @@ public class CCP4MapWriter {
     /**
      * write data to file, does not normalize
      *
-     * @param data map data to write out - data typically derived from
-     * {@link ffx.xray.CrystalReciprocalSpace#computeSolventDensity(double[][], boolean) }
+     * @param data map data to write out
      */
     public void write(double data[]) {
         write(data, false);
@@ -129,8 +128,7 @@ public class CCP4MapWriter {
     /**
      * write data to file, does not normalize
      *
-     * @param data map data to write out - data typically derived from
-     * {@link ffx.xray.CrystalReciprocalSpace#computeSolventDensity(double[][], boolean) }
+     * @param data map data to write out
      * @param norm should the data be normalized by mean/sd?
      */
     public void write(double data[], boolean norm) {

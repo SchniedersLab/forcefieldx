@@ -38,7 +38,7 @@ import javax.vecmath.Vector3f;
 /**
  * The MouseOrbit class implements a mouse orbit behavior.
  *
- * @author schnied
+ * @author Michael J. Schnieders
  * @version $Id: $
  */
 public class MouseOrbit extends MouseBehavior {

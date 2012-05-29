@@ -27,17 +27,13 @@ import java.awt.AWTEvent;
 import java.awt.event.MouseEvent;
 import java.util.Enumeration;
 
-import javax.media.j3d.Behavior;
-import javax.media.j3d.Transform3D;
-import javax.media.j3d.TransformGroup;
-import javax.media.j3d.WakeupCriterion;
-import javax.media.j3d.WakeupOnAWTEvent;
+import javax.media.j3d.*;
 import javax.vecmath.Vector3d;
 
 /**
  * The MouseZoom class implements a Mouse Zoom behavior.
  *
- * @author schnied
+ * @author Michael J. Schnieders
  * @version $Id: $
  */
 public class MouseZoom extends MouseBehavior {

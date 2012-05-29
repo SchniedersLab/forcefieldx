@@ -1,6 +1,6 @@
 /**
  * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
+ * Description: Force Field X - Software for Molecular Biophysics
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2009
  *
  * This file is part of Force Field X.
@@ -23,27 +23,25 @@ package ffx.xray;
 import java.io.File;
 import java.util.List;
 
+import org.apache.commons.configuration.CompositeConfiguration;
+import org.junit.*;
+
+import static org.junit.Assert.assertEquals;
+
+import edu.rit.pj.ParallelTeam;
+
 import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
 import ffx.crystal.Resolution;
 import ffx.numerics.ComplexNumber;
+import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.ForceFieldFilter;
 import ffx.potential.parsers.PDBFilter;
-import ffx.potential.ForceFieldEnergy;
 import ffx.utilities.Keyword;
-
-import edu.rit.pj.ParallelTeam;
-import org.apache.commons.configuration.CompositeConfiguration;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import static org.junit.Assert.*;
 
 /**
  *

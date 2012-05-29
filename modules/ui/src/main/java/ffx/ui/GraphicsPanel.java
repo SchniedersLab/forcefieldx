@@ -32,7 +32,7 @@ import javax.swing.JPanel;
 /**
  * The GraphicsPanel class contains the 3D Canvas and its status box.
  *
- * @author schnied
+ * @author Michael J. Schnieders
  * @version $Id: $
  */
 public class GraphicsPanel extends JPanel {

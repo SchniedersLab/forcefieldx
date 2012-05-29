@@ -1,6 +1,6 @@
 /**
  * Title: Force Field X Description: Force Field X - Software for Molecular
- * Biophysics. Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Biophysics. Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -32,7 +32,7 @@ import static ffx.utilities.HashCodeUtil.hash;
 /**
  * The MSNode class forms the basic unit that all data classes extend.
  *
- * @author schnied
+ * @author Michael J. Schnieders
  * @version $Id: $
  */
 public class MSNode extends DefaultMutableTreeNode implements ROLS {

@@ -1,7 +1,7 @@
 /**
  * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Description: Force Field X - Software for Molecular Biophysics
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -20,17 +20,16 @@
  */
 package ffx.ui;
 
-import static java.lang.String.format;
-
 import java.awt.Cursor;
-
 import java.util.List;
 import java.util.logging.Logger;
 
+import static java.lang.String.format;
+
 import org.apache.commons.io.FilenameUtils;
 
-import ffx.potential.bonded.Utilities;
 import ffx.potential.ForceFieldEnergy;
+import ffx.potential.bonded.Utilities;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.SystemFilter;
 
@@ -39,7 +38,7 @@ import ffx.potential.parsers.SystemFilter;
  * from the ffe.parsers package. The OpenFile class implements the Runnable
  * interface so that opening a file does not freeze FFX.
  *
- * @author schnied
+ * @author Michael J. Schnieders
  * @version $Id: $
  */
 public class FileOpener

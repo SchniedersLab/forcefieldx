@@ -1,6 +1,6 @@
 /**
  * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
+ * Description: Force Field X - Software for Molecular Biophysics
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2009
  *
  * This file is part of Force Field X.
@@ -20,12 +20,13 @@
  */
 package ffx.xray;
 
+import java.io.File;
+import java.util.logging.Logger;
+
 import static org.apache.commons.io.FilenameUtils.isExtension;
 import static org.apache.commons.io.FilenameUtils.removeExtension;
 
 import ffx.potential.bonded.MolecularAssembly;
-import java.io.File;
-import java.util.logging.Logger;
 
 /**
  * <p>RealSpaceFile class.</p>

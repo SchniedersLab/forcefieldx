@@ -1,7 +1,7 @@
 /**
  * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Description: Force Field X - Software for Molecular Biophysics
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -20,13 +20,14 @@
  */
 package ffx.potential.bonded;
 
-import static java.lang.Math.*;
-import static ffx.numerics.VectorMath.*;
-import static ffx.potential.parameters.PiTorsionType.units;
-
 import java.util.logging.Logger;
 
+import static java.lang.Math.*;
+
 import ffx.potential.parameters.PiTorsionType;
+
+import static ffx.numerics.VectorMath.*;
+import static ffx.potential.parameters.PiTorsionType.units;
 
 /**
  * The Pi-Orbital Torsion class.

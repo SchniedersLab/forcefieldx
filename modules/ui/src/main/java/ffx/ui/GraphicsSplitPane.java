@@ -35,7 +35,7 @@ import javax.swing.JSplitPane;
  * the heavyweight Canvas3D inside a lightweight Swing SplitPane. Specifically,
  * users cannot drag the slider toward the heavyweight Canvas3D.
  *
- * @author schnied
+ * @author Michael J. Schnieders
  * @version $Id: $
  */
 public class GraphicsSplitPane extends JSplitPane implements MouseListener,

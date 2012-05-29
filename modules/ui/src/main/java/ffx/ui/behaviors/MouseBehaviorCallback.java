@@ -29,7 +29,7 @@ import javax.media.j3d.Transform3D;
  * The MouseBehaviorCallback interface is implemented by classes that want to
  * receive callbacks when transforms are updated.
  *
- * @author schnied
+ * @author Michael J. Schnieders
  * @version $Id: $
  */
 public interface MouseBehaviorCallback {

@@ -4,9 +4,6 @@
  */
 package ffx.xray;
 
-import ffx.crystal.Crystal;
-import ffx.crystal.SpaceGroup;
-
 import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.nio.ByteBuffer;
@@ -15,6 +12,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.configuration.CompositeConfiguration;
+
+import ffx.crystal.Crystal;
+import ffx.crystal.SpaceGroup;
 
 /**
  * <p>CCP4MapFilter class.</p>

@@ -1,7 +1,7 @@
 /**
  * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Description: Force Field X - Software for Molecular Biophysics
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -20,31 +20,27 @@
  */
 package ffx.potential;
 
-import static org.junit.Assert.*;
-
 import java.io.File;
-
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Random;
 import java.util.logging.Logger;
 
+import org.apache.commons.configuration.CompositeConfiguration;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import org.apache.commons.configuration.CompositeConfiguration;
+import static org.junit.Assert.*;
 
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.Utilities;
 import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
+import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.ForceFieldFilter;
 import ffx.potential.parsers.XYZFilter;
-import ffx.potential.parameters.ForceField;
-import ffx.potential.parameters.ForceField.ForceFieldString;
 import ffx.utilities.Keyword;
 
 /**

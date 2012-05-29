@@ -29,7 +29,7 @@ import java.io.Serializable;
  * The TinkerSystem class is a serializable wrapper that specifies a TINKER
  * system.
  *
- * @author schnied
+ * @author Michael J. Schnieders
  * @version $Id: $
  */
 public class TinkerSystem implements Serializable {

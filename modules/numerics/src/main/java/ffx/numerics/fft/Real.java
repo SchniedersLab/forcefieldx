@@ -1,7 +1,7 @@
 /**
  * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Description: Force Field X - Software for Molecular Biophysics
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -20,9 +20,7 @@
  */
 package ffx.numerics.fft;
 
-import static java.lang.Math.PI;
-import static java.lang.Math.sin;
-import static java.lang.Math.cos;
+import static java.lang.Math.*;
 
 /**
  * Compute the FFT of real, double precision data of arbitrary length n using

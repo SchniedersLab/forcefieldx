@@ -23,24 +23,23 @@
  */
 package ffx.ui.commands;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Vector;
 
-import java.io.File;
-
-import ffx.potential.bonded.MolecularAssembly;
-import ffx.potential.bonded.Utilities.FileType;
-import ffx.potential.parsers.SystemFilter;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
+import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.bonded.Utilities.FileType;
 import ffx.potential.parameters.AtomType;
+import ffx.potential.parsers.SystemFilter;
 
 /**
  * The SimulationFilter class parses system data sent by TINKER to Force Field
  * Xplor.
  *
- * @author schnied
+ * @author Michael J. Schnieders
  * @version $Id: $
  */
 public final class SimulationFilter extends SystemFilter {

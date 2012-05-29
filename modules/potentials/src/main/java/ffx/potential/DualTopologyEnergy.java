@@ -1,6 +1,6 @@
 /**
  * Title: Force Field X Description: Force Field X - Software for Molecular
- * Biophysics. Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Biophysics. Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -304,12 +304,12 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
     }
 
     /**
-     * The coordinates and gradient arrays are unpacked/packed based on the dual
+     * The coordinate and gradient arrays are unpacked/packed based on the dual
      * topology.
      *
      * @param x
      * @param g
-     * @return
+     * @return The DualTopologyEnergy total energy.
      */
     @Override
     public double energyAndGradient(double[] x, double[] g) {

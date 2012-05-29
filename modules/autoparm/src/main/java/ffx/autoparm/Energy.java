@@ -1,7 +1,7 @@
 /**
  * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Description: Force Field X - Software for Molecular Biophysics
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -27,11 +27,14 @@ import java.io.InputStreamReader;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.logging.Logger;
+
 import static java.lang.Math.max;
 import static java.lang.String.format;
 
 import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.math.linear.*;
+import org.apache.commons.math.linear.Array2DRowRealMatrix;
+import org.apache.commons.math.linear.EigenDecompositionImpl;
+import org.apache.commons.math.linear.RealMatrix;
 
 import edu.rit.pj.ParallelTeam;
 
@@ -47,7 +50,9 @@ import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.ForceField.ForceFieldString;
 import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parsers.XYZFilter;
-import static ffx.numerics.VectorMath.*;
+
+import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.r;
 
 /**
  * Compute the potential energy and derivatives of an AMOEBA system.

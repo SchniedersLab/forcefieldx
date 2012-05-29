@@ -1,7 +1,7 @@
 /**
  * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Description: Force Field X - Software for Molecular Biophysics
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -20,17 +20,16 @@
  */
 package ffx.potential.parsers;
 
-import static java.lang.Math.*;
-
-import static ffx.numerics.VectorMath.*;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Vector;
 import java.util.logging.Logger;
+
+import static java.lang.Math.*;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 
@@ -40,7 +39,8 @@ import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.Utilities.FileType;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
-import java.util.List;
+
+import static ffx.numerics.VectorMath.*;
 
 /**
  * The INTFilter class parses TINKER internal coordinate (*.INT) files.

@@ -1,7 +1,7 @@
 /**
  * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Description: Force Field X - Software for Molecular Biophysics
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -20,9 +20,9 @@
  */
 package ffx.numerics;
 
-import static java.lang.Math.*;
-
 import java.util.logging.Logger;
+
+import static java.lang.Math.*;
 
 /**
  * The VectorMath class is a simple math library that operates on 3-coordinate
@@ -690,11 +690,12 @@ public final class VectorMath {
      * @param v an array of double.
      */
     public static void printVector(double v[]) {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder("Vector ( ");
         for (int i = 0; i < v.length; i++) {
             sb.append(String.format("%g ", v[i]));
         }
-        logger.info("Vector ( " + sb.toString() + ")");
+        sb.append(")");
+        logger.info(sb.toString());
     }
 
     /**

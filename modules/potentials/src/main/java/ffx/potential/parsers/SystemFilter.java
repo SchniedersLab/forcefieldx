@@ -1,7 +1,7 @@
 /**
  * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Description: Force Field X - Software for Molecular Biophysics
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -22,6 +22,7 @@ package ffx.potential.parsers;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Vector;
 
 import org.apache.commons.configuration.CompositeConfiguration;
@@ -31,7 +32,6 @@ import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.Utilities.FileType;
 import ffx.potential.parameters.ForceField;
-import java.util.List;
 
 /**
  * The SystemFilter class is the base class for most Force Field X file parsers.

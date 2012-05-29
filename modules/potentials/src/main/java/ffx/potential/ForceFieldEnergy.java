@@ -1,6 +1,6 @@
 /**
  * Title: Force Field X Description: Force Field X - Software for Molecular
- * Biophysics. Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Biophysics. Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -1096,12 +1096,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
 
     /**
-     * This method is for Respa integrator only. If b == 1, fast terms are
-     * turned on (reset back to original), and slow are turned off If b == 0,
-     * slow terms are turned on (set back to original) and fast terms are turned
-     * off give b==3 to reset.
+     * This method is for Respa integrator only.
      *
-     * @param b
+     * @param state The STATE is FAST, SLOW or BOTH.
      */
     @Override
     public void setEnergyTermState(STATE state) {

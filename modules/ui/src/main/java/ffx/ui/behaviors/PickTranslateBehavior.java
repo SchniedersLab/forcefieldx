@@ -25,11 +25,7 @@ package ffx.ui.behaviors;
 
 import java.awt.event.MouseEvent;
 
-import javax.media.j3d.Bounds;
-import javax.media.j3d.BranchGroup;
-import javax.media.j3d.Canvas3D;
-import javax.media.j3d.Transform3D;
-import javax.media.j3d.TransformGroup;
+import javax.media.j3d.*;
 
 import com.sun.j3d.utils.picking.PickResult;
 
@@ -37,7 +33,7 @@ import com.sun.j3d.utils.picking.PickResult;
  * The PickTranslateBehavior class implements a translation behavior on a picked
  * scenegraph object.
  *
- * @author schnied
+ * @author Michael J. Schnieders
  * @version $Id: $
  */
 public class PickTranslateBehavior extends PickMouseBehavior implements

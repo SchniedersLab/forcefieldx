@@ -1,7 +1,7 @@
 /**
  * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics.
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2011
+ * Description: Force Field X - Software for Molecular Biophysics
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -20,27 +20,27 @@
  */
 package ffx.numerics.fft;
 
-import edu.rit.pj.IntegerForLoop;
-import static java.lang.String.format;
-
-import static jcuda.driver.JCudaDriver.*;
-import static jcuda.jcufft.JCufft.*;
-
 import java.io.File;
 import java.net.URL;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static java.lang.String.format;
+
 import org.apache.commons.io.FileUtils;
 
 import edu.rit.pj.IntegerSchedule;
-import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
 
-import jcuda.*;
+import jcuda.LogLevel;
+import jcuda.Pointer;
+import jcuda.Sizeof;
 import jcuda.driver.*;
 import jcuda.jcufft.*;
+
+import static jcuda.driver.JCudaDriver.*;
+import static jcuda.jcufft.JCufft.*;
 
 /**
  * Compute a 3D Convolution using Java wrappers to the CUDA Driver API.
