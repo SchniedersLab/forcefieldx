@@ -30,7 +30,7 @@ import ffx.potential.parameters.AtomType;
 
 /**
  *
- * @author fennt
+ * @author Timothy Fenn
  */
 public class FormFactorTest {
 

@@ -27,7 +27,7 @@ import org.apache.commons.math.util.MathUtils;
  * The Resolution class encapsulates the sampling limits and resolution limits
  * for a given crystal and/or data set.
  *
- * @author fennt
+ * @author Timothy Fenn
  * @since 1.0
  * @version $Id: $
  */

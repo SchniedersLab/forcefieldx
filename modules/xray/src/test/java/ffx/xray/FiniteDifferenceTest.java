@@ -53,7 +53,7 @@ import static ffx.numerics.VectorMath.b2u;
 
 /**
  *
- * @author fennt
+ * @author Timothy Fenn
  */
 @RunWith(Parameterized.class)
 public class FiniteDifferenceTest {

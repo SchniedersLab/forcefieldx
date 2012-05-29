@@ -35,7 +35,7 @@ import ffx.xray.CrystalReciprocalSpace.SolventModel;
 /**
  * <p>ScaleBulkMinimize class.</p>
  *
- * @author fennt
+ * @author Timothy Fenn
  * @version $Id: $
  */
 public class ScaleBulkMinimize implements OptimizationListener, Terminatable {

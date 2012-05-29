@@ -49,7 +49,7 @@ import ffx.utilities.Keyword;
 
 /**
  *
- * @author fennt
+ * @author Timothy Fenn
  */
 @RunWith(Parameterized.class)
 public class ScaleBulkMinimizeTest {

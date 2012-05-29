@@ -32,7 +32,7 @@ import static org.junit.Assert.*;
 
 /**
  *
- * @author fennt
+ * @author Timothy Fenn
  */
 @RunWith(Parameterized.class)
 public class ReflectionListTest {

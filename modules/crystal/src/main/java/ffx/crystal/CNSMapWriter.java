@@ -34,7 +34,7 @@ import static java.lang.Math.sqrt;
  * - output map covers unit cell (NOT ASU!)
  * - map is set up for passage into FFTs (so X axis has +2 offset)
  *
- * @author fennt
+ * @author Timothy Fenn
  * @version $Id: $
  */
 public class CNSMapWriter {

@@ -1,22 +1,21 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X Description: Force Field X - Software for Molecular
+ * Biophysics Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.crystal;
 
@@ -32,11 +31,11 @@ import static ffx.crystal.SpaceGroup.LaueSystem.*;
  *
  * @author Michael J. Schnieders
  * @see <a href="http://it.iucr.org/Ab/">International Tables for
- *      Crystallography Volume A: Space-group symmetry</a>
+ * Crystallography Volume A: Space-group symmetry</a>
  *
  * @see <a href="http://www.ccp4.ac.uk/html/symlib.html">CCP4 symlib</a>
  * @see <a href="http://it.iucr.org/Ab/">International Tables for
- *      Crystallography Volume A: Space-group symmetry</a>
+ * Crystallography Volume A: Space-group symmetry</a>
  *
  * @see <a href="http://www.ccp4.ac.uk/html/symlib.html">CCP4 symlib</a>
  * @since 1.0
@@ -57,8 +56,8 @@ public class SpaceGroup {
     }
 
     /**
-     * Enumeration of the different ASU limits.
-     * Some are only used for nonstandard cells.
+     * Enumeration of the different ASU limits. Some are only used for
+     * nonstandard cells.
      */
     public enum LaueSystem {
 
@@ -119,6 +118,7 @@ public class SpaceGroup {
     public final List<SymOp> symOps;
     /**
      * Names of the 230 three dimensional space groups.
+     *
      * @since 1.0
      */
     public static String[] spaceGroupNames = {"P1", "P-1", "P2", "P21", "C2",
@@ -152,7 +152,6 @@ public class SpaceGroup {
         "P4332", "P4132", "I4132", "P-43m", "F-43m", "I-43m", "P-43n",
         "F-43c", "I-43d", "Pm-3m", "Pn-3n", "Pm-3n", "Pn-3m", "Fm-3m",
         "Fm-3c", "Fd-3m", "Fd-3c", "Im-3m", "Ia-3d"};
-    
     /**
      * PDB space group names.
      */
@@ -378,10 +377,11 @@ public class SpaceGroup {
     }
 
     /**
-     * Check that the lattice parameters satisfy the restrictions of the
-     * crystal systems.
+     * Check that the lattice parameters satisfy the restrictions of the crystal
+     * systems.
      *
-     * @param crystalSystem a {@link ffx.crystal.SpaceGroup.CrystalSystem} object.
+     * @param crystalSystem a {@link ffx.crystal.SpaceGroup.CrystalSystem}
+     * object.
      * @param a
      * @param b
      * @param c a double.
@@ -440,8 +440,8 @@ public class SpaceGroup {
     }
 
     /**
-     * Returns a SpaceGroup instance corresponding to the number parameter.
-     * If number is not between 1-230 inclusive then null is returned.
+     * Returns a SpaceGroup instance corresponding to the number parameter. If
+     * number is not between 1-230 inclusive then null is returned.
      *
      * @param number All 230 3D spacegroups are available.
      * @return The space group corresponding to the given number.
@@ -461,8 +461,8 @@ public class SpaceGroup {
     /**
      * Return a SpaceGroup based on its name.
      *
-     * @param name Available SpaceGroup names are given in
-     *              the "spaceGroupName" array.
+     * @param name Available SpaceGroup names are given in the "spaceGroupName"
+     * array.
      * @return The space group corresponding to the given number.
      * @since 1.0
      */

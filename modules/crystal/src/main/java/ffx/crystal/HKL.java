@@ -27,7 +27,7 @@ import ffx.utilities.HashCodeUtil;
 /**
  * <p>HKL class.</p>
  *
- * @author fennt
+ * @author Timothy Fenn
  * @version $Id: $
  */
 public class HKL {

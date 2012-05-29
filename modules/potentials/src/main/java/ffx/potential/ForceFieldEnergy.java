@@ -525,67 +525,49 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             angleTime = System.nanoTime() - angleTime;
         }
 
-        if (stretchBendTerm) {
+        if (stretchBendTerm && !lambdaBondedTerms) {
             stretchBendTime = System.nanoTime();
             for (int i = 0; i < nStretchBends; i++) {
-                if (lambdaBondedTerms && !stretchBends[i].applyLambda()) {
-                    continue;
-                }
                 stretchBendEnergy += stretchBends[i].energy(gradient);
             }
             stretchBendTime = System.nanoTime() - stretchBendTime;
         }
 
-        if (ureyBradleyTerm) {
+        if (ureyBradleyTerm && !lambdaBondedTerms) {
             ureyBradleyTime = System.nanoTime();
             for (int i = 0; i < nUreyBradleys; i++) {
-                if (lambdaBondedTerms && !ureyBradleys[i].applyLambda()) {
-                    continue;
-                }
                 ureyBradleyEnergy += ureyBradleys[i].energy(gradient);
             }
             ureyBradleyTime = System.nanoTime() - ureyBradleyTime;
         }
 
-        if (outOfPlaneBendTerm) {
+        if (outOfPlaneBendTerm && !lambdaBondedTerms) {
             outOfPlaneBendTime = System.nanoTime();
             for (int i = 0; i < nOutOfPlaneBends; i++) {
-                if (lambdaBondedTerms && !outOfPlaneBends[i].applyLambda()) {
-                    continue;
-                }
                 outOfPlaneBendEnergy += outOfPlaneBends[i].energy(gradient);
             }
             outOfPlaneBendTime = System.nanoTime() - outOfPlaneBendTime;
         }
 
-        if (torsionTerm) {
+        if (torsionTerm && !lambdaBondedTerms) {
             torsionTime = System.nanoTime();
             for (int i = 0; i < nTorsions; i++) {
-                if (lambdaBondedTerms && !torsions[i].applyLambda()) {
-                    continue;
-                }
                 torsionEnergy += torsions[i].energy(gradient);
             }
             torsionTime = System.nanoTime() - torsionTime;
         }
 
-        if (piOrbitalTorsionTerm) {
+        if (piOrbitalTorsionTerm && !lambdaBondedTerms) {
             piOrbitalTorsionTime = System.nanoTime();
             for (int i = 0; i < nPiOrbitalTorsions; i++) {
-                if (lambdaBondedTerms && !piOrbitalTorsions[i].applyLambda()) {
-                    continue;
-                }
                 piOrbitalTorsionEnergy += piOrbitalTorsions[i].energy(gradient);
             }
             piOrbitalTorsionTime = System.nanoTime() - piOrbitalTorsionTime;
             torsionTorsionTime = System.nanoTime();
         }
 
-        if (torsionTorsionTerm) {
+        if (torsionTorsionTerm && !lambdaBondedTerms) {
             for (int i = 0; i < nTorsionTorsions; i++) {
-                if (lambdaBondedTerms && !torsionTorsions[i].applyLambda()) {
-                    continue;
-                }
                 torsionTorsionEnergy += torsionTorsions[i].energy(gradient);
             }
             torsionTorsionTime = System.nanoTime() - torsionTorsionTime;

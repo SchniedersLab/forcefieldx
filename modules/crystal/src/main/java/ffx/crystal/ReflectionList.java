@@ -34,7 +34,7 @@ import org.apache.commons.configuration.CompositeConfiguration;
  * Cowtan, K. 2002. Generic representation and evaluation of properties as a
  * function of position in reciprocal space. J. Appl. Cryst. 35:655-663.
  *
- * @author fennt
+ * @author Timothy Fenn
  * @version $Id: $
  */
 public class ReflectionList {

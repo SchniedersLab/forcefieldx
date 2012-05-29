@@ -32,7 +32,7 @@ import ffx.numerics.ComplexNumber;
 /**
  * <p>DiffractionRefinementData class.</p>
  *
- * @author fennt
+ * @author Timothy Fenn
  * @version $Id: $
  */
 public class DiffractionRefinementData {

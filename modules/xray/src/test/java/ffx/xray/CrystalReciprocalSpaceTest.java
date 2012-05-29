@@ -45,7 +45,7 @@ import ffx.utilities.Keyword;
 
 /**
  *
- * @author fennt
+ * @author Timothy Fenn
  */
 public class CrystalReciprocalSpaceTest {
 

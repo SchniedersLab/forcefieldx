@@ -25,7 +25,7 @@ import static java.lang.Math.*;
 /**
  * <p>ComplexNumber class.</p>
  *
- * @author fennt
+ * @author Timothy Fenn
  * @version $Id: $
  */
 public class ComplexNumber {

@@ -24,7 +24,7 @@ import java.lang.reflect.Array;
 
 /**
  *
- * @author fennt
+ * @author Timothy Fenn
  */
 /**
  * Collected methods which allow easy implementation of <code>hashCode</code>.

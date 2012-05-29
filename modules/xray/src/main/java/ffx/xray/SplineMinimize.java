@@ -34,7 +34,7 @@ import ffx.xray.SplineEnergy.Type;
 /**
  * <p>SplineMinimize class.</p>
  *
- * @author fennt
+ * @author Timothy Fenn
  * @version $Id: $
  */
 public class SplineMinimize implements OptimizationListener, Terminatable {
