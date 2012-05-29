@@ -25,17 +25,15 @@
 
 package edu.rit.pj.cluster;
 
-import edu.rit.mp.ByteBuf;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-
 import java.util.HashMap;
 import java.util.Map;
-
 import java.util.concurrent.LinkedBlockingQueue;
+
+import edu.rit.mp.ByteBuf;
 
 /**
  * Class FrontendFileWriter provides an object that writes sequential files in

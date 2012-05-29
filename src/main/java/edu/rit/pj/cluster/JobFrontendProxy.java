@@ -25,17 +25,14 @@
 
 package edu.rit.pj.cluster;
 
-import edu.rit.mp.Channel;
-import edu.rit.mp.ChannelGroup;
-
-import edu.rit.mp.ByteBuf;
-
-import edu.rit.util.Range;
-
 import java.io.File;
 import java.io.IOException;
-
 import java.net.InetSocketAddress;
+
+import edu.rit.mp.ByteBuf;
+import edu.rit.mp.Channel;
+import edu.rit.mp.ChannelGroup;
+import edu.rit.util.Range;
 
 /**
  * Class JobFrontendProxy provides a proxy object for sending messages to a PJ

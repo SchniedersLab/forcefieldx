@@ -25,17 +25,13 @@
 
 package edu.rit.pj.replica;
 
-import edu.rit.mp.BooleanBuf;
-
-import edu.rit.mp.buf.BooleanItemBuf;
-
-import edu.rit.pj.Comm;
-
-import edu.rit.pj.reduction.BooleanOp;
-
 import java.io.IOException;
-
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import edu.rit.mp.BooleanBuf;
+import edu.rit.mp.buf.BooleanItemBuf;
+import edu.rit.pj.Comm;
+import edu.rit.pj.reduction.BooleanOp;
 
 /**
  * Class ReplicatedBoolean provides a replicated, shared reduction variable for

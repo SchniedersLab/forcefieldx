@@ -25,11 +25,10 @@
 
 package edu.rit.pj;
 
-import edu.rit.mp.IntegerBuf;
-
-import edu.rit.util.Range;
-
 import java.io.IOException;
+
+import edu.rit.mp.IntegerBuf;
+import edu.rit.util.Range;
 
 /**
  * Class HybridTeam provides a team of threads, distributed across the processes

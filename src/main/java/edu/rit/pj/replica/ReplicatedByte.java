@@ -25,17 +25,13 @@
 
 package edu.rit.pj.replica;
 
-import edu.rit.mp.ByteBuf;
-
-import edu.rit.mp.buf.ByteItemBuf;
-
-import edu.rit.pj.Comm;
-
-import edu.rit.pj.reduction.ByteOp;
-
 import java.io.IOException;
-
 import java.util.concurrent.atomic.AtomicInteger;
+
+import edu.rit.mp.ByteBuf;
+import edu.rit.mp.buf.ByteItemBuf;
+import edu.rit.pj.Comm;
+import edu.rit.pj.reduction.ByteOp;
 
 /**
  * Class ReplicatedByte provides a replicated, shared reduction variable for

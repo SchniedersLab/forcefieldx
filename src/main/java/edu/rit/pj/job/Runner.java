@@ -25,24 +25,20 @@
 
 package edu.rit.pj.job;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Scanner;
+
 import edu.rit.mp.BooleanBuf;
-
 import edu.rit.mp.buf.BooleanItemBuf;
-
 import edu.rit.pj.Comm;
 import edu.rit.pj.WorkerIteration;
 import edu.rit.pj.WorkerRegion;
 import edu.rit.pj.WorkerTeam;
-
 import edu.rit.util.Instance;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintStream;
-
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Scanner;
 
 /**
  * Class Runner is a parallel program that runs, in parallel, a group of

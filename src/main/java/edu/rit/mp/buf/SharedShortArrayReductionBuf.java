@@ -25,16 +25,13 @@
 
 package edu.rit.mp.buf;
 
-import edu.rit.mp.Buf;
-import edu.rit.mp.ShortBuf;
+import java.nio.ByteBuffer;
 
-import edu.rit.pj.reduction.ShortOp;
+import edu.rit.mp.Buf;
 import edu.rit.pj.reduction.Op;
 import edu.rit.pj.reduction.SharedShortArray;
-
+import edu.rit.pj.reduction.ShortOp;
 import edu.rit.util.Range;
-
-import java.nio.ByteBuffer;
 
 /**
  * Class SharedShortArrayReductionBuf provides a reduction buffer for class

@@ -25,13 +25,12 @@
 
 package edu.rit.mp.buf;
 
+import java.nio.ByteBuffer;
+
 import edu.rit.mp.Buf;
 import edu.rit.mp.CharacterBuf;
-
 import edu.rit.pj.reduction.CharacterOp;
 import edu.rit.pj.reduction.Op;
-
-import java.nio.ByteBuffer;
 
 /**
  * Class EmptyCharacterBuf provides a character buffer that contains no items

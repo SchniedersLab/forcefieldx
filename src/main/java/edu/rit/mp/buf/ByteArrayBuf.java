@@ -25,16 +25,14 @@
 
 package edu.rit.mp.buf;
 
+import java.nio.ByteBuffer;
+
 import edu.rit.mp.Buf;
 import edu.rit.mp.ByteBuf;
-
 import edu.rit.pj.reduction.ByteOp;
 import edu.rit.pj.reduction.Op;
-
 import edu.rit.util.Arrays;
 import edu.rit.util.Range;
-
-import java.nio.ByteBuffer;
 
 /**
  * Class ByteArrayBuf provides a buffer for an array of byte items sent

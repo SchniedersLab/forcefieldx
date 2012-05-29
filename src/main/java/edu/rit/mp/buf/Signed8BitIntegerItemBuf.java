@@ -25,13 +25,12 @@
 
 package edu.rit.mp.buf;
 
+import java.nio.ByteBuffer;
+
 import edu.rit.mp.Buf;
 import edu.rit.mp.Signed8BitIntegerBuf;
-
 import edu.rit.pj.reduction.IntegerOp;
 import edu.rit.pj.reduction.Op;
-
-import java.nio.ByteBuffer;
 
 /**
  * Class Signed8BitIntegerItemBuf provides a buffer for a single signed 8-bit

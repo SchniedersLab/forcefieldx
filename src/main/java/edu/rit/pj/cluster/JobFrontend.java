@@ -25,31 +25,25 @@
 
 package edu.rit.pj.cluster;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.InetSocketAddress;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
+
 import edu.rit.mp.Channel;
 import edu.rit.mp.ChannelGroup;
 import edu.rit.mp.ChannelGroupClosedException;
-import edu.rit.mp.Status;
-
 import edu.rit.mp.ObjectBuf;
-
+import edu.rit.mp.Status;
 import edu.rit.mp.buf.ObjectItemBuf;
-
 import edu.rit.pj.PJProperties;
-
 import edu.rit.util.ByteSequence;
 import edu.rit.util.Timer;
 import edu.rit.util.TimerTask;
 import edu.rit.util.TimerThread;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-
-import java.net.InetSocketAddress;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
 
 /**
  * Class JobFrontend provides the message handler for the PJ job frontend

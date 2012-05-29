@@ -25,9 +25,9 @@
 
 package edu.rit.pj;
 
-import edu.rit.util.Range;
-
 import java.util.concurrent.atomic.AtomicInteger;
+
+import edu.rit.util.Range;
 
 /**
  * Class GuidedIntegerSchedule provides a self-guided schedule object. The loop

@@ -25,17 +25,13 @@
 
 package edu.rit.pj.replica;
 
-import edu.rit.mp.IntegerBuf;
-
-import edu.rit.mp.buf.IntegerItemBuf;
-
-import edu.rit.pj.Comm;
-
-import edu.rit.pj.reduction.IntegerOp;
-
 import java.io.IOException;
-
 import java.util.concurrent.atomic.AtomicInteger;
+
+import edu.rit.mp.IntegerBuf;
+import edu.rit.mp.buf.IntegerItemBuf;
+import edu.rit.pj.Comm;
+import edu.rit.pj.reduction.IntegerOp;
 
 /**
  * Class ReplicatedInteger provides a replicated, shared reduction variable for

@@ -25,27 +25,21 @@
 
 package edu.rit.mp;
 
+import java.nio.ByteBuffer;
+
 import edu.rit.mp.buf.EmptyShortBuf;
+import edu.rit.mp.buf.SharedShortArrayBuf;
+import edu.rit.mp.buf.SharedShortArrayBuf_1;
+import edu.rit.mp.buf.SharedShortBuf;
 import edu.rit.mp.buf.ShortArrayBuf;
 import edu.rit.mp.buf.ShortArrayBuf_1;
 import edu.rit.mp.buf.ShortItemBuf;
 import edu.rit.mp.buf.ShortMatrixBuf;
 import edu.rit.mp.buf.ShortMatrixBuf_1;
-import edu.rit.mp.buf.SharedShortBuf;
-import edu.rit.mp.buf.SharedShortArrayBuf;
-import edu.rit.mp.buf.SharedShortArrayBuf_1;
-
-import edu.rit.pj.reduction.ShortOp;
-import edu.rit.pj.reduction.Op;
 import edu.rit.pj.reduction.SharedShort;
 import edu.rit.pj.reduction.SharedShortArray;
-
 import edu.rit.util.Arrays;
 import edu.rit.util.Range;
-
-import java.io.IOException;
-
-import java.nio.ByteBuffer;
 
 /**
  * Class ShortBuf is the abstract base class for a buffer of short items sent or

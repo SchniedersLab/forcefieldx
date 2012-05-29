@@ -25,17 +25,14 @@
 
 package edu.rit.mp.buf;
 
-import edu.rit.mp.Buf;
-import edu.rit.mp.LongBuf;
-
-import edu.rit.pj.reduction.LongOp;
-import edu.rit.pj.reduction.Op;
-
-import edu.rit.util.Arrays;
-import edu.rit.util.Range;
-
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
+
+import edu.rit.mp.Buf;
+import edu.rit.mp.LongBuf;
+import edu.rit.pj.reduction.LongOp;
+import edu.rit.pj.reduction.Op;
+import edu.rit.util.Range;
 
 /**
  * Class LongMatrixBuf_1 provides a buffer for a matrix of long items

@@ -28,11 +28,8 @@ package edu.rit.http;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-
 import java.net.Socket;
-
 import java.nio.charset.Charset;
-
 import java.util.HashMap;
 import java.util.Map;
 

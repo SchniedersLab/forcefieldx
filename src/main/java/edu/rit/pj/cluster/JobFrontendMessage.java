@@ -25,12 +25,11 @@
 
 package edu.rit.pj.cluster;
 
+import java.io.Externalizable;
 import java.io.File;
 import java.io.IOException;
-import java.io.Externalizable;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-
 import java.net.InetSocketAddress;
 
 /**

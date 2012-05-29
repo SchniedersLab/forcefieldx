@@ -25,8 +25,6 @@
 
 package edu.rit.pj;
 
-import edu.rit.pj.reduction.*;
-
 /**
  * Class WorkerConstruct is the common base class for all worker constructs that
  * are executed by a {@linkplain WorkerTeam}.

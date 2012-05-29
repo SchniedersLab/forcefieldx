@@ -25,21 +25,17 @@
 
 package edu.rit.pj.cluster.test;
 
+import java.io.File;
+import java.net.InetSocketAddress;
+
 import edu.rit.mp.ChannelGroup;
 import edu.rit.mp.Status;
-
 import edu.rit.mp.buf.ObjectItemBuf;
-
 import edu.rit.pj.cluster.JobBackendRef;
 import edu.rit.pj.cluster.JobFrontendMessage;
 import edu.rit.pj.cluster.JobFrontendRef;
 import edu.rit.pj.cluster.JobSchedulerRef;
 import edu.rit.pj.cluster.Message;
-
-import java.io.File;
-import java.io.IOException;
-
-import java.net.InetSocketAddress;
 
 /**
  * Class JobFrontendStub provides a stub for the PJ job frontend process. It

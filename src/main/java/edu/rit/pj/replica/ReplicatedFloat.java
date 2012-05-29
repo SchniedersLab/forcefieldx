@@ -25,17 +25,13 @@
 
 package edu.rit.pj.replica;
 
-import edu.rit.mp.FloatBuf;
-
-import edu.rit.mp.buf.FloatItemBuf;
-
-import edu.rit.pj.Comm;
-
-import edu.rit.pj.reduction.FloatOp;
-
 import java.io.IOException;
-
 import java.util.concurrent.atomic.AtomicInteger;
+
+import edu.rit.mp.FloatBuf;
+import edu.rit.mp.buf.FloatItemBuf;
+import edu.rit.pj.Comm;
+import edu.rit.pj.reduction.FloatOp;
 
 /**
  * Class ReplicatedFloat provides a replicated, shared reduction variable for

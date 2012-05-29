@@ -25,9 +25,9 @@
 
 package edu.rit.pj;
 
-import edu.rit.util.LongRange;
-
 import java.util.concurrent.atomic.AtomicLong;
+
+import edu.rit.util.LongRange;
 
 /**
  * Class GuidedLongSchedule provides a self-guided schedule object. The loop

@@ -26,7 +26,6 @@
 package edu.rit.pj.cluster.test;
 
 import edu.rit.pj.Comm;
-
 import edu.rit.util.Random;
 
 /**

@@ -25,28 +25,23 @@
 
 package edu.rit.mp;
 
+import java.io.IOException;
+import java.io.PrintStream;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
+import java.util.LinkedList;
+import java.util.List;
+
 import edu.rit.util.Logger;
 import edu.rit.util.PrintStreamLogger;
 import edu.rit.util.Range;
 import edu.rit.util.Timer;
 import edu.rit.util.TimerTask;
 import edu.rit.util.TimerThread;
-
-import java.io.IOException;
-import java.io.PrintStream;
-
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-
-import java.nio.ByteBuffer;
-
-import java.nio.channels.ClosedChannelException;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
-
-import java.util.LinkedList;
-import java.util.List;
 
 /**
  * Class ChannelGroup provides a group of {@linkplain Channel}s for sending and

@@ -25,13 +25,12 @@
 
 package edu.rit.mp.buf;
 
+import java.nio.ByteBuffer;
+
 import edu.rit.mp.BooleanBuf;
 import edu.rit.mp.Buf;
-
 import edu.rit.pj.reduction.BooleanOp;
 import edu.rit.pj.reduction.Op;
-
-import java.nio.ByteBuffer;
 
 /**
  * Class BooleanItemReductionBuf provides a reduction buffer for class

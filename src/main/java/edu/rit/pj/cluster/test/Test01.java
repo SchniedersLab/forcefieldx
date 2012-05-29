@@ -26,7 +26,6 @@
 package edu.rit.pj.cluster.test;
 
 import edu.rit.pj.PJProperties;
-
 import edu.rit.pj.cluster.JobBackend;
 
 /**

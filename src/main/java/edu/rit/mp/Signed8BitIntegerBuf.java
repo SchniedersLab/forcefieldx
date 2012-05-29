@@ -25,27 +25,21 @@
 
 package edu.rit.mp;
 
+import java.nio.ByteBuffer;
+
 import edu.rit.mp.buf.EmptySigned8BitIntegerBuf;
+import edu.rit.mp.buf.SharedSigned8BitIntegerArrayBuf;
+import edu.rit.mp.buf.SharedSigned8BitIntegerArrayBuf_1;
+import edu.rit.mp.buf.SharedSigned8BitIntegerBuf;
 import edu.rit.mp.buf.Signed8BitIntegerArrayBuf;
 import edu.rit.mp.buf.Signed8BitIntegerArrayBuf_1;
 import edu.rit.mp.buf.Signed8BitIntegerItemBuf;
 import edu.rit.mp.buf.Signed8BitIntegerMatrixBuf;
 import edu.rit.mp.buf.Signed8BitIntegerMatrixBuf_1;
-import edu.rit.mp.buf.SharedSigned8BitIntegerBuf;
-import edu.rit.mp.buf.SharedSigned8BitIntegerArrayBuf;
-import edu.rit.mp.buf.SharedSigned8BitIntegerArrayBuf_1;
-
-import edu.rit.pj.reduction.IntegerOp;
-import edu.rit.pj.reduction.Op;
 import edu.rit.pj.reduction.SharedInteger;
 import edu.rit.pj.reduction.SharedIntegerArray;
-
 import edu.rit.util.Arrays;
 import edu.rit.util.Range;
-
-import java.io.IOException;
-
-import java.nio.ByteBuffer;
 
 /**
  * Class Signed8BitIntegerBuf is the abstract base class for a buffer of signed

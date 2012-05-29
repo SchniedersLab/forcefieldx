@@ -25,12 +25,11 @@
 
 package edu.rit.pj.job.test;
 
-import edu.rit.io.Stdio;
+import java.io.File;
 
+import edu.rit.io.Stdio;
 import edu.rit.pj.job.Job;
 import edu.rit.pj.job.JobGenerator;
-
-import java.io.File;
 
 /**
  * Class Test01 is a {@linkplain edu.rit.pj.job.JobGenerator JobGenerator} for

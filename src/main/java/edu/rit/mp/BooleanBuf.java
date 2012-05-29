@@ -25,27 +25,21 @@
 
 package edu.rit.mp;
 
+import java.nio.ByteBuffer;
+
 import edu.rit.mp.buf.BooleanArrayBuf;
 import edu.rit.mp.buf.BooleanArrayBuf_1;
 import edu.rit.mp.buf.BooleanItemBuf;
 import edu.rit.mp.buf.BooleanMatrixBuf;
 import edu.rit.mp.buf.BooleanMatrixBuf_1;
 import edu.rit.mp.buf.EmptyBooleanBuf;
-import edu.rit.mp.buf.SharedBooleanBuf;
 import edu.rit.mp.buf.SharedBooleanArrayBuf;
 import edu.rit.mp.buf.SharedBooleanArrayBuf_1;
-
-import edu.rit.pj.reduction.BooleanOp;
-import edu.rit.pj.reduction.Op;
+import edu.rit.mp.buf.SharedBooleanBuf;
 import edu.rit.pj.reduction.SharedBoolean;
 import edu.rit.pj.reduction.SharedBooleanArray;
-
 import edu.rit.util.Arrays;
 import edu.rit.util.Range;
-
-import java.io.IOException;
-
-import java.nio.ByteBuffer;
 
 /**
  * Class BooleanBuf is the abstract base class for a buffer of Boolean items

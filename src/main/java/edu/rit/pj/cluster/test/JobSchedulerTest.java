@@ -25,15 +25,13 @@
 
 package edu.rit.pj.cluster.test;
 
+import java.net.InetSocketAddress;
+import java.util.Scanner;
+
 import edu.rit.mp.Channel;
 import edu.rit.mp.ChannelGroup;
-
 import edu.rit.pj.cluster.JobSchedulerProxy;
 import edu.rit.pj.cluster.JobSchedulerRef;
-
-import java.net.InetSocketAddress;
-
-import java.util.Scanner;
 
 /**
  * Class JobSchedulerTest is a unit test main program for class {@linkplain

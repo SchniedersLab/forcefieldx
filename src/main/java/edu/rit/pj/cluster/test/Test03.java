@@ -25,13 +25,11 @@
 
 package edu.rit.pj.cluster.test;
 
-import edu.rit.pj.Comm;
-
-import edu.rit.pj.io.StreamFile;
-
-import edu.rit.util.ByteSequence;
-
 import java.io.File;
+
+import edu.rit.pj.Comm;
+import edu.rit.pj.io.StreamFile;
+import edu.rit.util.ByteSequence;
 
 /**
  * Class Test03 is a unit test main program for class {@linkplain

@@ -25,16 +25,14 @@
 
 package edu.rit.mp.buf;
 
+import java.nio.ByteBuffer;
+
 import edu.rit.mp.Buf;
 import edu.rit.mp.LongBuf;
-
 import edu.rit.pj.reduction.LongOp;
 import edu.rit.pj.reduction.Op;
 import edu.rit.pj.reduction.ReduceArrays;
-
 import edu.rit.util.Range;
-
-import java.nio.ByteBuffer;
 
 /**
  * Class LongArrayReductionBuf provides a reduction buffer for class

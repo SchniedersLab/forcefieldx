@@ -25,14 +25,13 @@
 
 package edu.rit.pj.cluster;
 
+import java.io.IOException;
+
 import edu.rit.mp.Buf;
 import edu.rit.mp.Channel;
 import edu.rit.mp.ChannelGroup;
-import edu.rit.mp.Status;
-
 import edu.rit.mp.ObjectBuf;
-
-import java.io.IOException;
+import edu.rit.mp.Status;
 
 /**
  * Class Proxy is the abstract base class for a proxy object for sending

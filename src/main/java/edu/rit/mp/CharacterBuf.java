@@ -25,27 +25,21 @@
 
 package edu.rit.mp;
 
+import java.nio.ByteBuffer;
+
 import edu.rit.mp.buf.CharacterArrayBuf;
 import edu.rit.mp.buf.CharacterArrayBuf_1;
 import edu.rit.mp.buf.CharacterItemBuf;
 import edu.rit.mp.buf.CharacterMatrixBuf;
 import edu.rit.mp.buf.CharacterMatrixBuf_1;
 import edu.rit.mp.buf.EmptyCharacterBuf;
-import edu.rit.mp.buf.SharedCharacterBuf;
 import edu.rit.mp.buf.SharedCharacterArrayBuf;
 import edu.rit.mp.buf.SharedCharacterArrayBuf_1;
-
-import edu.rit.pj.reduction.CharacterOp;
-import edu.rit.pj.reduction.Op;
+import edu.rit.mp.buf.SharedCharacterBuf;
 import edu.rit.pj.reduction.SharedCharacter;
 import edu.rit.pj.reduction.SharedCharacterArray;
-
 import edu.rit.util.Arrays;
 import edu.rit.util.Range;
-
-import java.io.IOException;
-
-import java.nio.ByteBuffer;
 
 /**
  * Class CharacterBuf is the abstract base class for a buffer of character items

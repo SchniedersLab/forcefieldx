@@ -25,17 +25,13 @@
 
 package edu.rit.pj.replica;
 
-import edu.rit.mp.ObjectBuf;
-
-import edu.rit.mp.buf.ObjectItemBuf;
-
-import edu.rit.pj.Comm;
-
-import edu.rit.pj.reduction.ObjectOp;
-
 import java.io.IOException;
-
 import java.util.concurrent.atomic.AtomicReference;
+
+import edu.rit.mp.ObjectBuf;
+import edu.rit.mp.buf.ObjectItemBuf;
+import edu.rit.pj.Comm;
+import edu.rit.pj.reduction.ObjectOp;
 
 /**
  * Class ReplicatedObject provides a replicated, shared reduction variable for

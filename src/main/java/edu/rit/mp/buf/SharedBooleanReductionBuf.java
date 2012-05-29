@@ -25,14 +25,12 @@
 
 package edu.rit.mp.buf;
 
-import edu.rit.mp.BooleanBuf;
-import edu.rit.mp.Buf;
+import java.nio.ByteBuffer;
 
+import edu.rit.mp.Buf;
 import edu.rit.pj.reduction.BooleanOp;
 import edu.rit.pj.reduction.Op;
 import edu.rit.pj.reduction.SharedBoolean;
-
-import java.nio.ByteBuffer;
 
 /**
  * Class SharedBooleanReductionBuf provides a reduction buffer for class

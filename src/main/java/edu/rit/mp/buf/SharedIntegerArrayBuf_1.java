@@ -25,16 +25,14 @@
 
 package edu.rit.mp.buf;
 
+import java.nio.ByteBuffer;
+
 import edu.rit.mp.Buf;
 import edu.rit.mp.IntegerBuf;
-
 import edu.rit.pj.reduction.IntegerOp;
 import edu.rit.pj.reduction.Op;
 import edu.rit.pj.reduction.SharedIntegerArray;
-
 import edu.rit.util.Range;
-
-import java.nio.ByteBuffer;
 
 /**
  * Class SharedIntegerArrayBuf_1 provides a buffer for a multiple thread safe

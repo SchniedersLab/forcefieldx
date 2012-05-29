@@ -25,13 +25,11 @@
 
 package edu.rit.pj.cluster;
 
-import edu.rit.util.ByteSequence;
-
 import java.io.IOException;
-
 import java.net.InetSocketAddress;
-
 import java.util.Properties;
+
+import edu.rit.util.ByteSequence;
 
 /**
  * Interface JobBackendRef specifies the interface for the PJ job backend
