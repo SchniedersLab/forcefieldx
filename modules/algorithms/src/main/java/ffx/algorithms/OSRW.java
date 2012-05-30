@@ -1056,7 +1056,7 @@ public class OSRW implements Potential {
     }
 
     @Override
-    public double getTotal() {
+    public double getTotalEnergy() {
         return totalEnergy;
     }
 
