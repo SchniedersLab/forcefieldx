@@ -335,8 +335,8 @@ public class Crystal {
                 dVdA = sin_gamma * gamma_term * b * c;
                 dVdB = sin_gamma * gamma_term * a * c;
                 dVdC = sin_gamma * gamma_term * a * b;
-                
-                double dbeta = 2.0 * sin_beta * cos_beta 
+
+                double dbeta = 2.0 * sin_beta * cos_beta
                         - (2.0 * (cos_alpha - cos_beta * cos_gamma) * sin_beta * cos_gamma) / (sin_gamma * sin_gamma);
                 double dgamma1 = -2.0 * (cos_alpha - cos_beta * cos_gamma) * cos_beta / sin_gamma;
                 double dgamma2 = cos_alpha - cos_beta * cos_gamma;
@@ -471,8 +471,8 @@ public class Crystal {
     /**
      * <p>checkProperties</p>
      *
-     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration}
-     * object.
+     * @param properties a
+     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
      * @return a {@link ffx.crystal.Crystal} object.
      */
     public static Crystal checkProperties(CompositeConfiguration properties) {
@@ -506,6 +506,8 @@ public class Crystal {
     }
 
     /**
+     * Two crystals are equal if all unit cell parameters are within 0.01.
+     * 
      * {@inheritDoc}
      */
     @Override
@@ -519,17 +521,45 @@ public class Crystal {
         if (this == obj) {
             return true;
         }
-        return (MathUtils.equals(this.a, ((Crystal) obj).a, 0.01)
-                && MathUtils.equals(this.b, ((Crystal) obj).b, 0.01)
-                && MathUtils.equals(this.c, ((Crystal) obj).c, 0.01)
-                && MathUtils.equals(this.alpha, ((Crystal) obj).alpha, 0.01)
-                && MathUtils.equals(this.beta, ((Crystal) obj).beta, 0.01)
-                && MathUtils.equals(this.gamma, ((Crystal) obj).gamma, 0.01)
-                && this.spaceGroup.number == ((Crystal) obj).spaceGroup.number);
+
+        Crystal other = (Crystal) obj;
+
+        return (MathUtils.equals(a, other.a, 0.01)
+                && MathUtils.equals(b, other.b, 0.01)
+                && MathUtils.equals(c, other.c, 0.01)
+                && MathUtils.equals(alpha, other.alpha, 0.01)
+                && MathUtils.equals(beta, other.beta, 0.01)
+                && MathUtils.equals(gamma, other.gamma, 0.01)
+                && spaceGroup.number == other.spaceGroup.number);
     }
 
     /**
-     * {@inheritDoc}
+     * Two crystals are equal only if all unit cell parameters are exactly the
+     * same.
+     */
+    public boolean strictEquals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (!(obj instanceof Crystal)) {
+            return false;
+        }
+        if (this == obj) {
+            return true;
+        }
+
+        Crystal other = (Crystal) obj;
+
+        return (a == other.a && b == other.b && c == other.c
+                && alpha == other.alpha && beta == other.beta && gamma == other.gamma
+                && spaceGroup.number == other.spaceGroup.number
+                && spaceGroup.symOps.size() == other.spaceGroup.symOps.size());
+    }
+
+    /**
+     * {
+     *
+     * @inheritDoc}
      */
     @Override
     public int hashCode() {
@@ -1325,7 +1355,9 @@ public class Crystal {
     }
 
     /**
-     * {@inheritDoc}
+     * {
+     *
+     * @inheritDoc}
      */
     @Override
     public String toString() {

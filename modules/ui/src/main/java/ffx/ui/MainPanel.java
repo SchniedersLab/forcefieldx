@@ -1192,7 +1192,7 @@ public final class MainPanel extends JPanel implements ActionListener,
         // Create a Force Field.
         forceFieldFilter = new ForceFieldFilter(properties);
         ForceField forceField = forceFieldFilter.parse();
-        List<String> patches = properties.getList("patch");
+        String patches[] = properties.getStringArray("patch");
         for (String patch : patches) {
             logger.info(" Attempting to read force field patch from " + patch + ".");
             CompositeConfiguration patchConfiguration = new CompositeConfiguration();
@@ -1252,7 +1252,7 @@ public final class MainPanel extends JPanel implements ActionListener,
 
         // Create an FFXSystem for this file.
         FFXSystem newSystem = new FFXSystem(file, commandDescription, properties);
-        List<String> patches = properties.getList("patch");
+        String patches[] = properties.getStringArray("patch");
         for (String patch : patches) {
             logger.info(" Attempting to read force field patch from " + patch + ".");
             CompositeConfiguration patchConfiguration = new CompositeConfiguration();

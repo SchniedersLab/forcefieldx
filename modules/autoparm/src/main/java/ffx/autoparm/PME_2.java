@@ -1062,7 +1062,7 @@ public class PME_2 implements Potential {
 
     /** {@inheritDoc} */
     @Override
-    public double getTotal() {
+    public double getTotalEnergy() {
         return totalEnergy;
     }
 

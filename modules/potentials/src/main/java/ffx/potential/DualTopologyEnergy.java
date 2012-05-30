@@ -474,7 +474,7 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
     }
 
     @Override
-    public double getTotal() {
+    public double getTotalEnergy() {
         return totalEnergy;
     }
 

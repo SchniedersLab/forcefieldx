@@ -389,7 +389,7 @@ public class ScaleBulkEnergy implements Potential {
     
     /** {@inheritDoc} */
     @Override
-    public double getTotal() {
+    public double getTotalEnergy() {
         return totalEnergy;
     }
 

@@ -29,7 +29,6 @@ import java.util.logging.Logger;
 import static java.lang.Math.*;
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
-import static java.util.Arrays.fill;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
@@ -51,8 +50,7 @@ import ffx.potential.parameters.VDWType;
 /**
  * The van der Waals class computes the buffered 14-7 van der Waals interaction
  * used by the AMOEBA force field in parallel using a {@link NeighborList} for
- * any
- * {@link Crystal}.
+ * any {@link Crystal}.
  *
  * @author Michael J. Schnieders
  * @since 1.0
@@ -65,7 +63,7 @@ public class VanDerWaals implements MaskingInterface,
     /**
      * Crystal parameters.
      */
-    private final Crystal crystal;
+    private Crystal crystal;
     /**
      * An array of all atoms in the system.
      */
@@ -74,7 +72,11 @@ public class VanDerWaals implements MaskingInterface,
      * A local convenience variable equal to atoms.length.
      */
     private final int nAtoms;
-    private final int nSymm;
+    /**
+     * A local convenience variable equal to the number of crystal symmetry
+     * operators.
+     */
+    private int nSymm;
     /**
      * *************************************************************************
      * Lambda variables.
@@ -112,9 +114,15 @@ public class VanDerWaals implements MaskingInterface,
      * atoms.
      */
     private final double coordinates[];
-    private final double reduced[][];
+    /**
+     * Reduced coordinates of size: [nSymm][nAtoms * 3]
+     */
+    private double reduced[][];
     private final double reducedXYZ[];
-    private final int[][][] neighborLists;
+    /**
+     * Neighbor lists for each atom. Size: [nSymm][nAtoms][nNeighbors]
+     */
+    private int[][][] neighborLists;
     private static final byte XX = 0;
     private static final byte YY = 1;
     private static final byte ZZ = 2;
@@ -157,15 +165,40 @@ public class VanDerWaals implements MaskingInterface,
     private final SharedDouble shareddEdL;
     private final SharedDouble sharedd2EdL2;
     private boolean gradient;
+    /**
+     * X-component of the Cartesian coordinate gradient. Size:
+     * [threadCount][nAtoms]
+     */
     private final double gradX[][];
+    /**
+     * Y-component of the Cartesian coordinate gradient. Size:
+     * [threadCount][nAtoms]
+     */
     private final double gradY[][];
+    /**
+     * Z-component of the Cartesian coordinate gradient. Size:
+     * [threadCount][nAtoms]
+     */
     private final double gradZ[][];
+    /**
+     * X-component of the lambda derivative of the Cartesian coordinate
+     * gradient. Size: [threadCount][nAtoms]
+     */
     private final double lambdaGradX[][];
+    /**
+     * Y-component of the lambda derivative of the Cartesian coordinate
+     * gradient. Size: [threadCount][nAtoms]
+     */
     private final double lambdaGradY[][];
+    /**
+     * Z-component of the lambda derivative of the Cartesian coordinate
+     * gradient. Size: [threadCount][nAtoms]
+     */
     private final double lambdaGradZ[][];
     /**
-     * The neighbor-list includes 1-2 or 1-3 interactions, but the interactions
-     * are masked out. The AMOEBA force field includes 1-4 interactions fully.
+     * The neighbor-list includes 1-2 and 1-3 interactions, which are masked out
+     * in the van der Waals energy code. The AMOEBA force field includes 1-4
+     * interactions fully.
      */
     private final NeighborList neighborListBuilder;
     private final VanDerWaalsRegion vanDerWaalsRegion;
@@ -334,7 +367,7 @@ public class VanDerWaals implements MaskingInterface,
             softCore[SOFT][i] = false;
             softCoreInit = false;
         }
-        
+
         lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
         if (lambdaTerm) {
             vdwLambdaAlpha = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_ALPHA, 0.05);
@@ -346,7 +379,7 @@ public class VanDerWaals implements MaskingInterface,
                 vdwLambdaExponent = 1.0;
             }
         }
-        
+
         /**
          * Parallel constructs.
          */
@@ -558,7 +591,9 @@ public class VanDerWaals implements MaskingInterface,
     }
 
     /**
-     * {@inheritDoc}
+     * {
+     *
+     * @inheritDoc}
      *
      * Apply masking rules for 1-2 and 1-3 interactions.
      */
@@ -577,7 +612,9 @@ public class VanDerWaals implements MaskingInterface,
     }
 
     /**
-     * {@inheritDoc}
+     * {
+     *
+     * @inheritDoc}
      *
      * Remove the masking rules for 1-2 and 1-3 interactions.
      */
@@ -624,7 +661,9 @@ public class VanDerWaals implements MaskingInterface,
     }
 
     /**
-     * {@inheritDoc}
+     * {
+     *
+     * @inheritDoc}
      */
     @Override
     public void setLambda(double lambda) {
@@ -674,7 +713,9 @@ public class VanDerWaals implements MaskingInterface,
     }
 
     /**
-     * {@inheritDoc}
+     * {
+     *
+     * @inheritDoc}
      */
     @Override
     public double getLambda() {
@@ -682,7 +723,9 @@ public class VanDerWaals implements MaskingInterface,
     }
 
     /**
-     * {@inheritDoc}
+     * {
+     *
+     * @inheritDoc}
      */
     @Override
     public double getdEdL() {
@@ -690,7 +733,9 @@ public class VanDerWaals implements MaskingInterface,
     }
 
     /**
-     * {@inheritDoc}
+     * {
+     *
+     * @inheritDoc}
      */
     @Override
     public void getdEdXdL(double[] lambdaGradient) {
@@ -706,11 +751,36 @@ public class VanDerWaals implements MaskingInterface,
     }
 
     /**
-     * {@inheritDoc}
+     * {
+     *
+     * @inheritDoc}
      */
     @Override
     public double getd2EdL2() {
         return sharedd2EdL2.get();
+    }
+
+    /**
+     * If the crystal being passed in is not equal to the current crystal, then
+     * some van der Waals data structures may need to updated. If
+     * <code>nSymm</code> has changed, update arrays dimensioned by nSymm.
+     * Finally, rebuild the neighbor-lists.
+     * @param crystal The new crystal instance defining the
+     * symmetry and boundary conditions.
+     */
+    public void setCrystal(Crystal crystal) {
+        if (!this.crystal.strictEquals(crystal)) {
+            this.crystal = crystal;
+            if (nSymm != crystal.spaceGroup.symOps.size()) {
+                nSymm = crystal.spaceGroup.symOps.size();
+                reduced = new double[nSymm][nAtoms * 3];
+                neighborLists = new int[nSymm][][];
+            }
+            // neighborListBuilder.setCrystal(crystal);
+            // TODO reduce, expand and rebuild list. 
+        } else {
+            this.crystal = crystal;
+        }
     }
 
     private class VanDerWaalsRegion extends ParallelRegion {
@@ -729,7 +799,9 @@ public class VanDerWaals implements MaskingInterface,
         }
 
         /**
-         * {@inheritDoc}
+         * {
+         *
+         * @inheritDoc}
          *
          * This is method should not be called; it is invoked by Parallel Java.
          *

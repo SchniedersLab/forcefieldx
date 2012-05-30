@@ -89,7 +89,7 @@ public interface Potential {
      *
      * @return the total energy
      */
-    public abstract double getTotal();
+    public abstract double getTotalEnergy();
 
     /**
      * Get the number of variables being operated on.

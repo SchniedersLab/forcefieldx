@@ -20,6 +20,7 @@
 package ffx.crystal;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static ffx.crystal.SpaceGroup.CrystalSystem.*;
@@ -113,7 +114,7 @@ public class SpaceGroup {
      */
     public final String pdbName;
     /**
-     * A Vector of SymOp instances.
+     * A List of SymOp instances.
      */
     public final List<SymOp> symOps;
     /**
@@ -235,10 +236,7 @@ public class SpaceGroup {
         this.limit = limit;
         this.asulim = asulim;
         this.pdbName = pdbName;
-        this.symOps = new ArrayList<SymOp>(symOps.length);
-        for (SymOp op : symOps) {
-            this.symOps.add(op);
-        }
+        this.symOps = new ArrayList<SymOp>(Arrays.asList(symOps));
     }
 
     /**

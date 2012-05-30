@@ -47,7 +47,7 @@
                         <argument>-verbose</argument>
                         <argument>-Djava.library.path='/home/schnied/ffx/bin/64-bit'</argument>
                         <argument>-classpath</argument>
-                        <argument>target/numerics-${project.version}.jar:${settings.localRepository}/commons-io/commons-io/2.1.0/commons-io-2.1.0.jar:${settings.localRepository}/jcuda/jcuda-all/4.0.0/jcuda-all-4.0.0.jar:${settings.localRepository}/edu/rit/pj/pj/1.5/pj-1.5.jar</argument>
+                        <argument>target/numerics-${project.version}.jar:${settings.localRepository}/commons-io/commons-io/2.3/commons-io-2.3.jar:${settings.localRepository}/jcuda/jcuda-all/4.0.0/jcuda-all-4.0.0.jar:${settings.localRepository}/edu/rit/pj/pj/1.5/pj-1.5.jar</argument>
                         <argument>ffx.numerics.fft.Complex3DCuda</argument>
                         <argument>128</argument>
                     </arguments>
@@ -66,7 +66,7 @@
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
             <type>jar</type>
-            <version>2.1.0</version>
+            <version>2.3</version>
         </dependency>
         <dependency>
             <groupId>edu.rit.pj</groupId>

@@ -845,7 +845,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
      * {@inheritDoc}
      */
     @Override
-    public double getTotal() {
+    public double getTotalEnergy() {
         return totalEnergy;
     }
 

@@ -568,7 +568,7 @@ public class SigmaAEnergy implements Potential {
      * {@inheritDoc}
      */
     @Override
-    public double getTotal() {
+    public double getTotalEnergy() {
         return totalEnergy;
     }
 

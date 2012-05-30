@@ -504,7 +504,7 @@ public class DiffractionData implements DataContainer {
                     dataname[i].weight,
                     crystalstats[i].getR(),
                     crystalstats[i].getRFree(),
-                    assembly[0].getPotentialEnergy().getTotal(),
+                    assembly[0].getPotentialEnergy().getTotalEnergy(),
                     dataname[i].weight * sigmaaminimize[i].calculateLikelihood(),
                     dataname[i].weight * refinementdata[i].llkf));
         }

@@ -392,7 +392,7 @@ public class RealSpaceData implements DataContainer {
             sb.append(String.format("     dataset %d (weight: %5.1f): chemical energy: %8.2f density score: %8.2f\n",
                     i + 1,
                     dataname[i].weight,
-                    assembly[0].getPotentialEnergy().getTotal(),
+                    assembly[0].getPotentialEnergy().getTotalEnergy(),
                     dataname[i].weight * refinementdata[i].densityscore));
         }
         return sb.toString();

@@ -438,7 +438,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
      * {@inheritDoc}
      */
     @Override
-    public double getTotal() {
+    public double getTotalEnergy() {
         return totalEnergy;
     }
 

@@ -92,11 +92,11 @@ public class NeighborList extends ParallelRegion {
      */
     private final int nAtoms;
     /**
-     * The maksing rules to apply when building the neighbor list.
+     * The masking rules to apply when building the neighbor list.
      */
     private final MaskingInterface maskingRules;
     /**
-     * Reduced coordinates for each symmetry copy. [nsymm][3][natom]
+     * Reduced coordinates for each symmetry copy. [nSymm][3*nAtoms]
      */
     private double coordinates[][];
     /**
@@ -105,7 +105,7 @@ public class NeighborList extends ParallelRegion {
      */
     private final double previous[];
     /**
-     * The Verlet lists. [nsymm][natom][ neighbors... ]
+     * The Verlet lists. [nSymm][nAtoms][nNeighbors]
      */
     private int lists[][][];
     /**
@@ -172,20 +172,20 @@ public class NeighborList extends ParallelRegion {
      */
     private final int cellC[];
     /**
-     * The list of atoms in each cell. [nsymm][natom] = atom index
+     * The list of atoms in each cell. [nSymm][nAtoms] = atom index
      */
     private final int cellList[][];
     /**
      * The offset of each atom from the start of the cell. The first atom atom
-     * in the cell has 0 offset. [nsymm][natom] = offset of the atom
+     * in the cell has 0 offset. [nSymm][nAtom] = offset of the atom
      */
     private final int cellOffset[][];
     /**
-     * The number of atoms in each cell. [nsymm][ncell]
+     * The number of atoms in each cell. [nSymm][nCell]
      */
     private final int cellCount[][];
     /**
-     * The index of the first atom in each cell. [nsymm][ncell]
+     * The index of the first atom in each cell. [nSymm][nCell]
      */
     private final int cellStart[][];
     /**

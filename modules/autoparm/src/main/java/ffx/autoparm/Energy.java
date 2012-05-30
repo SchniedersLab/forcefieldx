@@ -1,22 +1,21 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X Description: Force Field X - Software for Molecular
+ * Biophysics Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.autoparm;
 
@@ -89,8 +88,8 @@ public class Energy {
      * @param options a {@link java.lang.String} object.
      * @throws java.io.IOException if any.
      */
-    public Energy(String xyz_filename, String keyfname, String options) throws IOException{
-        
+    public Energy(String xyz_filename, String keyfname, String options) throws IOException {
+
         parallelTeam = new ParallelTeam();
         logger.info(format(" Constructing Force Field"));
         logger.info(format("\n SMP threads:                        %10d", parallelTeam.getThreadCount()));
@@ -113,15 +112,14 @@ public class Energy {
         structure_xyz = new File(oxyzfname);
         int index = oxyzfname.lastIndexOf(".");
         String name = oxyzfname.substring(0, index);
-        
-        if(keyfname != null){
+
+        if (keyfname != null) {
             structure_key = new File(keyfname);
             if (!(structure_key != null && structure_key.exists() && structure_key.canRead())) {
                 System.out.println("Couldn't find key file");
                 System.exit(1);
             }
-        }
-        else{
+        } else {
             keyfname = name + ".key";
             structure_key = new File(keyfname);
             if (!(structure_key != null && structure_key.exists() && structure_key.canRead())) {
@@ -152,17 +150,17 @@ public class Energy {
         Utilities.biochemistry(molecularAssembly, xyzFilter.getAtomList());
         molecularAssembly.finalize(true);
 
-        
+
         //Read options
-        if(options != null){
-            if(options.toLowerCase().contains("p")){
-            	do_propyze = true;
+        if (options != null) {
+            if (options.toLowerCase().contains("p")) {
+                do_propyze = true;
             }
 //            if(options.toLowerCase().contains("d")){
 //            	do_detail = true;
 //            }
         }
-        if(do_propyze){
+        if (do_propyze) {
             // Get a reference to the sorted atom array.
             atoms = molecularAssembly.getAtomArray();
             nAtoms = atoms.length;
@@ -218,89 +216,73 @@ public class Energy {
             unitCell.setAperiodic(aperiodic);
 
             /**
-             * Do we need a ReplicatesCrystal?
+             * If necessary, create a ReplicatesCrystal.
              */
-            int l = 1;
-            int m = 1;
-            n = 1;
-            while (unitCell.a * l < cutOff2) {
-                l++;
-            }
-            while (unitCell.b * m < cutOff2) {
-                m++;
-            }
-            while (unitCell.c * n < cutOff2) {
-                n++;
-            }
-
-            if (l * m * n > 1 && !aperiodic) {
-                this.crystal = new ReplicatesCrystal(unitCell, l, m, n);
+            if (!aperiodic) {
+                this.crystal = ReplicatesCrystal.replicatesCrystalFactory(unitCell, cutOff2);
             } else {
                 this.crystal = unitCell;
             }
 
-    		//logger.info(crystal.toString());
-    		vanderWaals = new VanDerWaals(forceField, atoms, crystal, parallelTeam);
-
-    		pme2 = new PME_2(forceField, atoms, crystal, parallelTeam, vanderWaals.getNeighborLists(), key);
-    		pme2.propyze = true;
-    		pme2.init_prms();
+            vanderWaals = new VanDerWaals(forceField, atoms, crystal, parallelTeam);
+            pme2 = new PME_2(forceField, atoms, crystal, parallelTeam, vanderWaals.getNeighborLists(), key);
+            pme2.propyze = true;
+            pme2.init_prms();
         }
     }
-    
+
     /**
      * <p>energy</p>
      *
      * @param gradient a boolean.
      * @param print a boolean.
      */
-    public void energy(boolean gradient, boolean print){
+    public void energy(boolean gradient, boolean print) {
         ForceFieldEnergy energy = new ForceFieldEnergy(molecularAssembly);
         molecularAssembly.setPotential(energy);
 //        if(do_detail){
 //        	energy.tor_verbose = true;
 //        }
         energy.energy(gradient, print);
-        if(do_propyze){
-            system_mpoles();	
+        if (do_propyze) {
+            system_mpoles();
         }
     }
-    
+
     /**
      * <p>torsional_angles</p>
      */
-    public void torsional_angles(){
-    	
+    public void torsional_angles() {
     }
-    
+
     /**
      * <p>system_mpoles</p>
      */
-    public void system_mpoles(){
+    public void system_mpoles() {
         //Find center of mass.
         double weigh = 0;
-        double xyzmid[] = {0,0,0};
+        double xyzmid[] = {0, 0, 0};
         double xyzcm[][] = new double[nAtoms][3];
-        for(int i = 0; i < nAtoms; i++){
+        for (int i = 0; i < nAtoms; i++) {
             weigh = weigh + atoms[i].getMass();
-            for (int j = 0; j < 3; j++){
+            for (int j = 0; j < 3; j++) {
                 xyzmid[j] = xyzmid[j] + atoms[i].getXYZ()[j] * atoms[i].getMass();
             }
         }
-        if(weigh != 0){
-            for(int j = 0; j<3; j++){
-                xyzmid[j] = xyzmid[j]/weigh;
+        if (weigh != 0) {
+            for (int j = 0; j < 3; j++) {
+                xyzmid[j] = xyzmid[j] / weigh;
             }
         }
-        
-        for(int i = 0; i < nAtoms; i++){
-            for(int j = 0; j < 3; j++){
+
+        for (int i = 0; i < nAtoms; i++) {
+            for (int j = 0; j < 3; j++) {
                 xyzcm[i][j] = atoms[i].getXYZ()[j] - xyzmid[j];
             }
         }
         addInducedToGlobal();
         double netchg = 0, xdpl = 0, ydpl = 0, zdpl = 0, xxqdp = 0, xyqdp = 0, xzqdp = 0, yxqdp = 0, yyqdp = 0, yzqdp = 0, zxqdp = 0, zyqdp = 0, zzqdp = 0;
-        for(int i = 0; i < nAtoms; i++){
+        for (int i = 0; i < nAtoms; i++) {
             double charge = atoms[i].getMultipoleType().charge;
             double[] dipole = {pme2.globalMultipole[0][i][1], pme2.globalMultipole[0][i][2], pme2.globalMultipole[0][i][3]};
             //double[] dipole = atoms[i].getMultipoleType().dipole;
@@ -311,21 +293,21 @@ public class Energy {
             xxqdp = xxqdp + xyzcm[i][0] * xyzcm[i][0] * charge + 2 * xyzcm[i][0] * dipole[0];
             xyqdp = xyqdp + xyzcm[i][0] * xyzcm[i][1] * charge + xyzcm[i][0] * dipole[1] + xyzcm[i][1] * dipole[0];
             xzqdp = xzqdp + xyzcm[i][0] * xyzcm[i][2] * charge + xyzcm[i][0] * dipole[2] + xyzcm[i][2] * dipole[0];
-            
+
             yxqdp = yxqdp + xyzcm[i][0] * xyzcm[i][1] * charge + xyzcm[i][0] * dipole[1] + xyzcm[i][1] * dipole[0];
             yyqdp = yyqdp + xyzcm[i][1] * xyzcm[i][1] * charge + 2 * xyzcm[i][1] * dipole[1];
-            yzqdp = yzqdp + xyzcm[i][1] * xyzcm[i][2] * charge + xyzcm[i][1]*dipole[2] + xyzcm[i][2] * dipole[1];
-            
+            yzqdp = yzqdp + xyzcm[i][1] * xyzcm[i][2] * charge + xyzcm[i][1] * dipole[2] + xyzcm[i][2] * dipole[1];
+
             //zxqdp = zxqdp + xyzcm[i][2] * xyzcm[i][0] * charge + xyzcm[i][2] * dipole[0] + xyzcm[i][0] * dipole[2];
             zxqdp = zxqdp + xyzcm[i][0] * xyzcm[i][2] * charge + xyzcm[i][0] * dipole[2] + xyzcm[i][2] * dipole[0];
             //zyqdp = zyqdp + xyzcm[i][2] * xyzcm[i][1] * charge + xyzcm[i][2] * dipole[1] + xyzcm[i][1] * dipole[2];
-            zyqdp = zyqdp + xyzcm[i][1] * xyzcm[i][2] * charge + xyzcm[i][1]*dipole[2] + xyzcm[i][2] * dipole[1];
+            zyqdp = zyqdp + xyzcm[i][1] * xyzcm[i][2] * charge + xyzcm[i][1] * dipole[2] + xyzcm[i][2] * dipole[1];
             zzqdp = zzqdp + xyzcm[i][2] * xyzcm[i][2] * charge + 2 * xyzcm[i][2] * dipole[2];
         }
-        
 
-        
-        double qave = (xxqdp + yyqdp + zzqdp)/3;
+
+
+        double qave = (xxqdp + yyqdp + zzqdp) / 3;
         xxqdp = 1.5 * (xxqdp - qave);
         xyqdp = 1.5 * xyqdp;
         xzqdp = 1.5 * xzqdp;
@@ -335,9 +317,9 @@ public class Energy {
         zxqdp = 1.5 * zxqdp;
         zyqdp = 1.5 * zyqdp;
         zzqdp = 1.5 * (zzqdp - qave);
-        
-        for(int i = 0; i < nAtoms; i++){
-            double[][] quadrupole = {{pme2.globalMultipole[0][i][4], pme2.globalMultipole[0][i][7], pme2.globalMultipole[0][i][8]},{pme2.globalMultipole[0][i][7], pme2.globalMultipole[0][i][5], pme2.globalMultipole[0][i][9]},{pme2.globalMultipole[0][i][8], pme2.globalMultipole[0][i][9], pme2.globalMultipole[0][i][6]}};
+
+        for (int i = 0; i < nAtoms; i++) {
+            double[][] quadrupole = {{pme2.globalMultipole[0][i][4], pme2.globalMultipole[0][i][7], pme2.globalMultipole[0][i][8]}, {pme2.globalMultipole[0][i][7], pme2.globalMultipole[0][i][5], pme2.globalMultipole[0][i][9]}, {pme2.globalMultipole[0][i][8], pme2.globalMultipole[0][i][9], pme2.globalMultipole[0][i][6]}};
             //double[][] quadrupole = atoms[i].getMultipoleType().quadrupole;
             xxqdp = xxqdp + 3 * quadrupole[0][0];
             xyqdp = xyqdp + 3 * quadrupole[0][1];
@@ -349,7 +331,7 @@ public class Energy {
             zyqdp = zyqdp + 3 * quadrupole[2][1];
             zzqdp = zzqdp + 3 * quadrupole[2][2];
         }
-        
+
         xdpl = MultipoleType.DEBYE * xdpl;
         ydpl = MultipoleType.DEBYE * ydpl;
         zdpl = MultipoleType.DEBYE * zdpl;
@@ -363,54 +345,53 @@ public class Energy {
         zxqdp = MultipoleType.DEBYE * zxqdp;
         zyqdp = MultipoleType.DEBYE * zyqdp;
         zzqdp = MultipoleType.DEBYE * zzqdp;
-        
-        double netdpl = Math.sqrt(xdpl*xdpl + ydpl*ydpl + zdpl*zdpl);
-        
-        RealMatrix a = new Array2DRowRealMatrix(new double[][] {{xxqdp,xyqdp,xzqdp},{yxqdp,yyqdp,yzqdp},{zxqdp,zyqdp,zzqdp}});
 
-        EigenDecompositionImpl e = new EigenDecompositionImpl(a,1);
+        double netdpl = Math.sqrt(xdpl * xdpl + ydpl * ydpl + zdpl * zdpl);
+
+        RealMatrix a = new Array2DRowRealMatrix(new double[][]{{xxqdp, xyqdp, xzqdp}, {yxqdp, yyqdp, yzqdp}, {zxqdp, zyqdp, zzqdp}});
+
+        EigenDecompositionImpl e = new EigenDecompositionImpl(a, 1);
         a = e.getD();
-        double[] netqdp = {a.getColumn(0)[0],a.getColumn(1)[1],a.getColumn(2)[2]};
-        
+        double[] netqdp = {a.getColumn(0)[0], a.getColumn(1)[1], a.getColumn(2)[2]};
+
         DecimalFormat myFormatter = new DecimalFormat(" ##########0.00000;-##########0.00000");
         String output;
-        output = String.format(" Total Electric Charge:   %13s %s Electrons\n"," ",myFormatter.format(netchg));
+        output = String.format(" Total Electric Charge:   %13s %s Electrons\n", " ", myFormatter.format(netchg));
         System.out.println(output);
-        output = String.format(" Dipole Moment Magnitude: %13s %s Debyes\n"," ",myFormatter.format(netdpl));
+        output = String.format(" Dipole Moment Magnitude: %13s %s Debyes\n", " ", myFormatter.format(netdpl));
         System.out.println(output);
-        output = String.format(" Dipole X,Y,Z-Components: %13s %s %s %s\n"," ",myFormatter.format(xdpl),myFormatter.format(ydpl),myFormatter.format(zdpl));
+        output = String.format(" Dipole X,Y,Z-Components: %13s %s %s %s\n", " ", myFormatter.format(xdpl), myFormatter.format(ydpl), myFormatter.format(zdpl));
         System.out.println(output);
-        output = String.format(" Quadrupole Moment Tensor:%13s %s %s %s"," ",myFormatter.format(xxqdp),myFormatter.format(xyqdp),myFormatter.format(xzqdp));
+        output = String.format(" Quadrupole Moment Tensor:%13s %s %s %s", " ", myFormatter.format(xxqdp), myFormatter.format(xyqdp), myFormatter.format(xzqdp));
         System.out.println(output);
-        output = String.format("      (Buckinghams)       %13s %s %s %s"," ",myFormatter.format(yxqdp),myFormatter.format(yyqdp),myFormatter.format(yzqdp));
+        output = String.format("      (Buckinghams)       %13s %s %s %s", " ", myFormatter.format(yxqdp), myFormatter.format(yyqdp), myFormatter.format(yzqdp));
         System.out.println(output);
-        output = String.format("                          %13s %s %s %s\n"," ",myFormatter.format(zxqdp),myFormatter.format(zyqdp),myFormatter.format(zzqdp));
+        output = String.format("                          %13s %s %s %s\n", " ", myFormatter.format(zxqdp), myFormatter.format(zyqdp), myFormatter.format(zzqdp));
         System.out.println(output);
-        output = String.format("Principle Axes Quadrupole:%13s %s %s %s"," ",myFormatter.format(netqdp[2]),myFormatter.format(netqdp[1]),myFormatter.format(netqdp[0]));
+        output = String.format("Principle Axes Quadrupole:%13s %s %s %s", " ", myFormatter.format(netqdp[2]), myFormatter.format(netqdp[1]), myFormatter.format(netqdp[0]));
         System.out.println(output);
 
     }
-    
+
     /**
      * <p>addInducedToGlobal</p>
      */
-    public void addInducedToGlobal(){
-        for(int i = 0; i < nAtoms; i++){
-            for(int j = 0; j < 3;j++){
-                pme2.globalMultipole[0][i][j+1] = pme2.globalMultipole[0][i][j+1] + pme2.inducedDipole[0][i][j];
+    public void addInducedToGlobal() {
+        for (int i = 0; i < nAtoms; i++) {
+            for (int j = 0; j < 3; j++) {
+                pme2.globalMultipole[0][i][j + 1] = pme2.globalMultipole[0][i][j + 1] + pme2.inducedDipole[0][i][j];
             }
         }
     }
-    
+
     /**
      * <p>main</p>
      *
      * @param args an array of {@link java.lang.String} objects.
      * @throws java.io.IOException if any.
      */
-    public static void main(String args[]) throws IOException{
-        Energy e = new Energy("/users/gchattree/Research/Compounds/s_test3_compounds/famotidine/ttt.xyz",null,"d");
-        e.energy(false,true);
+    public static void main(String args[]) throws IOException {
+        Energy e = new Energy("/users/gchattree/Research/Compounds/s_test3_compounds/famotidine/ttt.xyz", null, "d");
+        e.energy(false, true);
     }
 }
-

@@ -52,7 +52,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(ForceFieldEnergy.class.getName());
     private final Atom[] atoms;
-    private final Crystal crystal;
+    private Crystal crystal;
     private final ParallelTeam parallelTeam;
     private final Bond bonds[];
     private final Angle angles[];
@@ -249,31 +249,13 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         unitCell.setAperiodic(aperiodic);
 
         /**
-         * Do we need a ReplicatesCrystal?
+         * If necessary, create a ReplicatesCrystal.
          */
-        int l = 1;
-        int m = 1;
-        int n = 1;
         if (!aperiodic) {
-            while (unitCell.a * l < cutOff2) {
-                l++;
-            }
-            while (unitCell.b * m < cutOff2) {
-                m++;
-            }
-            while (unitCell.c * n < cutOff2) {
-                n++;
-            }
-        }
-
-        if (l * m * n > 1) {
-            this.crystal = new ReplicatesCrystal(unitCell, l, m, n);
+            this.crystal = ReplicatesCrystal.replicatesCrystalFactory(unitCell, cutOff2);
+            logger.info(crystal.toString());
         } else {
             this.crystal = unitCell;
-        }
-
-        if (!aperiodic) {
-            logger.info(crystal.toString());
         }
 
         boolean rigidHydrogens = forceField.getBoolean(ForceFieldBoolean.RIGID_HYDROGENS, false);
@@ -627,7 +609,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
      * {@inheritDoc}
      */
     @Override
-    public double getTotal() {
+    public double getTotalEnergy() {
         return totalEnergy;
     }
 
@@ -1063,9 +1045,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
      * @param forceConstant the force constant in kcal/mole
      */
     public void setRestraintBond(Atom a1, Atom a2, double distance, double forceConstant) {
-
-
-
         restraintBondTerm = true;
         RestraintBond rb = new RestraintBond(a1, a2, crystal);
         int classes[] = {a1.getAtomType().atomClass, a2.getAtomType().atomClass};
@@ -1133,4 +1112,16 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 generalizedKirkwoodTerm = generalizedKirkwoodTermOrig;
         }
     }
+    
+    public void setCrystal(Crystal crystal) {
+        if (this.crystal.strictEquals(crystal)) {
+            this.crystal = crystal;
+        } else {
+            // Update vdW and PME
+            this.crystal = crystal;
+            vanderWaals.setCrystal(crystal);
+            //particleMeshEwald.setCrystal(crystal);
+        }
+    }
+    
 }
