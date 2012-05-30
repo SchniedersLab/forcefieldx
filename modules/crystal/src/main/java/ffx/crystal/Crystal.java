@@ -336,7 +336,6 @@ public class Crystal {
                 dVdB = sin_gamma * gamma_term * a * c;
                 dVdC = sin_gamma * gamma_term * a * b;
                 
-
                 double dbeta = 2.0 * sin_beta * cos_beta 
                         - (2.0 * (cos_alpha - cos_beta * cos_gamma) * sin_beta * cos_gamma) / (sin_gamma * sin_gamma);
                 double dgamma1 = -2.0 * (cos_alpha - cos_beta * cos_gamma) * cos_beta / sin_gamma;
@@ -345,39 +344,6 @@ public class Crystal {
                 dVdAlpha = (cos_alpha - cos_beta * cos_gamma) * sin_alpha / (sin_gamma * gamma_term) * a * b * c;
                 dVdBeta = 0.5 * sin_gamma * dbeta / gamma_term * a * b * c;
                 dVdGamma = (cos_gamma * gamma_term + 0.5 * sin_gamma * (dgamma1 + dgamma2) / gamma_term) * a * b * c;
-                break;
-        }
-
-        // Adjust derivatives to reflect that some parameters are not independent
-        switch (crystalSystem) {
-            case TRICLINIC:
-            case ORTHORHOMBIC:
-                break;
-            case CUBIC:
-                dVdA = dVdB = dVdC = dVdA + dVdB + dVdC;
-                break;
-            case TETRAGONAL:
-                dVdA = dVdB = dVdA + dVdB;
-                break;
-            case HEXAGONAL:
-                dVdA = dVdB = dVdA + dVdB;
-                break;
-            case MONOCLINIC:
-                if (alpha == beta) {
-                    dVdAlpha = dVdBeta = dVdAlpha + dVdBeta;
-                } else if (alpha == gamma) {
-                    dVdAlpha = dVdGamma = dVdAlpha + dVdGamma;
-                }
-                break;
-            case TRIGONAL:
-                // Rombohedral axes, primitive cell.
-                if (a == b && b == c && alpha == beta && beta == gamma) {
-                    dVdA = dVdB = dVdC = dVdA + dVdB + dVdC;
-                    dVdAlpha = dVdBeta = dVdGamma = dVdAlpha + dVdBeta + dVdGamma;
-                    // Hexagonal axes, triple obverse cell.    
-                } else if (a == b && alpha == 90.0 && beta == 90.0 && gamma == 120.0) {
-                    dVdA = dVdB = dVdA + dVdB;
-                }
                 break;
         }
 

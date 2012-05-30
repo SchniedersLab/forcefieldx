@@ -38,12 +38,20 @@ public class CrystalVolumeDerivativeTest {
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
-                    {"Cubic",
-                        12.0, 12.0, 12.0, 90.0, 90.0, 90.0, "P1"},
-                    {"Monoclinic",
-                        50.85, 38.60, 89.83, 90.0, 103.99, 90.0, "P2"},
-                    {"Hexagonal",
-                        63.67, 63.67, 40.40, 90.0, 90.0, 120.0, "P6"}
+                    {"Triclinic (3TRW)",
+                     28.38, 31.73, 36.75, 90.12, 99.61, 96.52, "P-1"},
+                    {"Cubic (3RN4)",
+                     92.69, 92.69, 92.69, 90.0, 90.0, 90.0, "P23"},
+                    {"Orthorhombic (2WLD)",
+                     79.09, 94.81, 100.85, 90.0, 90.0, 90.0, "P222"},
+                    {"Monoclinic (3V0E)",
+                     50.85, 38.60, 89.83, 90.0, 103.99, 90.0, "P2"},
+                    {"Hexagonal (4DAC)",
+                     63.67, 63.67, 40.40, 90.0, 90.0, 120.0, "P6"},
+                    {"Tetragonal (3TI8)",
+                     112.56, 112.56, 66.81, 90.0, 90.0, 90.0, "P4"},
+                    {"Trigonal (3TNZ)",
+                     108.99, 108.99, 49.40, 90.0, 90.0, 120.0, "P3"}
                 });
     }
     private final String info;
@@ -55,18 +63,17 @@ public class CrystalVolumeDerivativeTest {
         this.info = info;
         this.crystal = new Crystal(a, b, c, alpha, beta, gamma, sg);
     }
+    /**
+     * Finite-Difference parameters.
+     */
+    private double eps = 0.00001;
+    private double epsD = Math.toDegrees(eps);
+    private double eps2 = 2.0 * eps;
+    private double tolerance = eps * 10.0;
 
     @Test
     public void finiteDifferenceTest() {
 
-        /**
-         * Finite-Difference parameters.
-         */
-        double eps = 0.00001;
-        double epsD = Math.toDegrees(eps);
-        double eps2 = 2.0 * eps;
-        double tolerance = eps * 10.0;
-        
         /**
          * Current unit cell parameters.
          */
@@ -86,43 +93,46 @@ public class CrystalVolumeDerivativeTest {
         double dVdAlpha = crystal.dVdAlpha;
         double dVdBeta = crystal.dVdBeta;
         double dVdGamma = crystal.dVdGamma;
-        
+        double dV;
+
         switch (crystal.spaceGroup.crystalSystem) {
             case TRICLINIC:
-                crystal.changeUnitCellParameters(a + eps, b, c, alpha, beta, gamma);
-                double dV = crystal.volume;
-                crystal.changeUnitCellParameters(a - eps, b, c, alpha, beta, gamma);
-                dV -= crystal.volume;
-                assertEquals(info + " analytic and FD volume derivatives with respect to A should agree.", dVdA, dV / eps2, tolerance);
+                testdVdA();
+                testdVdB();
+                testdVdC();
+                testdVdAlpha();
+                testdVdBeta();
+                testdVdGamma();
                 break;
             case MONOCLINIC:
-                // (alpha == beta || alpha == gamma);
-                crystal.changeUnitCellParameters(a + eps, b, c, alpha, beta, gamma);
-                dV = crystal.volume;
-                crystal.changeUnitCellParameters(a - eps, b, c, alpha, beta, gamma);
-                dV -= crystal.volume;
-                assertEquals(info + " analytic and FD volume derivatives with respect to A should agree.", dVdA, dV / eps2, tolerance);
+                testdVdA();
+                testdVdB();
+                testdVdC();
                 if (alpha == beta) {
-                    crystal.changeUnitCellParameters(a, b, c, alpha, beta, gamma + epsD);
+                    crystal.changeUnitCellParameters(a, b, c, alpha + epsD, beta + epsD, gamma);
                     dV = crystal.volume;
-                    crystal.changeUnitCellParameters(a, b, c, alpha, beta, gamma - epsD);
+                    crystal.changeUnitCellParameters(a, b, c, alpha - epsD, beta - epsD, gamma);
                     dV -= crystal.volume;
-                    assertEquals(info + " analytic and FD volume derivatives with respect to Gamma should agree.", dVdGamma, dV / eps2, tolerance);
+                    double dTot = dVdAlpha + dVdBeta;
+                    assertEquals(info + " analytic and FD volume derivatives with respect to Alpha & Beta should agree.", dTot, dV / eps2, tolerance);
+                    assertEquals(info + " analytic volume derivatives with respect to Alpha and Beta should be equal.", dVdAlpha, dVdBeta, tolerance);
+                    testdVdGamma();
                 } else if (alpha == gamma) {
-                    crystal.changeUnitCellParameters(a, b, c, alpha, beta + epsD, gamma);
+                    crystal.changeUnitCellParameters(a, b, c, alpha + epsD, beta, gamma + epsD);
                     dV = crystal.volume;
-                    crystal.changeUnitCellParameters(a, b, c, alpha, beta - epsD, gamma);
+                    crystal.changeUnitCellParameters(a, b, c, alpha - epsD, beta, gamma - epsD);
                     dV -= crystal.volume;
-                    assertEquals(info + " analytic and FD volume derivatives with respect to Beta should agree.", dVdBeta, dV / eps2, tolerance);
+                    double dTot = dVdAlpha + dVdGamma;
+                    assertEquals(info + " analytic and FD volume derivatives with respect to alpha and gamma should agree.", dTot, dV / eps2, tolerance);
+                    assertEquals(info + " analytic volume derivatives with respect to Alpha and Gamma should be equal.", dVdAlpha, dVdGamma, tolerance);
+                    testdVdBeta();
                 }
                 break;
             case ORTHORHOMBIC:
                 // (alpha == 90.0 && beta == 90.0 && gamma == 90.0);
-                crystal.changeUnitCellParameters(a + eps, b, c, alpha, beta, gamma);
-                dV = crystal.volume;
-                crystal.changeUnitCellParameters(a - eps, b, c, alpha, beta, gamma);
-                dV -= crystal.volume;
-                assertEquals(info + " analytic and FD volume derivatives with respect to A should agree.", dVdA, dV / eps2, tolerance);
+                testdVdA();
+                testdVdB();
+                testdVdC();
                 break;
             case TETRAGONAL:
                 // (a == b && alpha == 90.0 && beta == 90.0 && gamma == 90.0);
@@ -130,28 +140,36 @@ public class CrystalVolumeDerivativeTest {
                 dV = crystal.volume;
                 crystal.changeUnitCellParameters(a - eps, b - eps, c, alpha, beta, gamma);
                 dV -= crystal.volume;
-                assertEquals(info + " analytic and FD volume derivatives with respect to A should agree.", dVdA, dV / eps2, tolerance);
+                assertEquals(info + " analytic and FD volume derivatives with respect to A & B should agree.", dVdA + dVdB, dV / eps2, tolerance);
                 assertEquals(info + " analytic volume derivatives with respect to A and B should be equal.", dVdA, dVdB, tolerance);
+                testdVdC();
                 break;
             case TRIGONAL:
-                // Rombohedral axes, primitive cell.
                 if (a == b && b == c && alpha == beta && beta == gamma) {
+                    // Rombohedral axes, primitive cell.
                     crystal.changeUnitCellParameters(a + eps, b + eps, c + eps, alpha, beta, gamma);
                     dV = crystal.volume;
                     crystal.changeUnitCellParameters(a - eps, b - eps, c - eps, alpha, beta, gamma);
                     dV -= crystal.volume;
-                    assertEquals(info + " analytic and FD volume derivatives with respect to A should agree.", dVdA, dV / eps2, tolerance);
+                    double dTot = dVdA + dVdB + dVdC;
+                    assertEquals(info + " analytic and FD volume derivatives with respect to the sides should agree.", dTot, dV / eps2, tolerance);
                     assertEquals(info + " analytic volume derivatives with respect to A and B should be equal.", dVdA, dVdB, tolerance);
-                    // Hexagonal axes, triple obverse cell.
+                    crystal.changeUnitCellParameters(a, b, c, alpha + epsD, beta + epsD, gamma + epsD);
+                    dV = crystal.volume;
+                    crystal.changeUnitCellParameters(a, b, c, alpha - epsD, beta - epsD, gamma - epsD);
+                    dV -= crystal.volume;
+                    dTot = dVdAlpha + dVdBeta + dVdGamma;
+                    assertEquals(info + " analytic and FD volume derivatives with respect to the angles should agree.", dTot, dV / eps2, tolerance);
+                    assertEquals(info + " analytic volume derivatives with respect to Alpha and Beta should be equal.", dVdAlpha, dVdBeta, tolerance);
                 } else if (a == b && alpha == 90.0 && beta == 90.0 && gamma == 120.0) {
+                    // Hexagonal axes, triple obverse cell.
                     crystal.changeUnitCellParameters(a + eps, b + eps, c, alpha, beta, gamma);
                     dV = crystal.volume;
                     crystal.changeUnitCellParameters(a - eps, b - eps, c, alpha, beta, gamma);
                     dV -= crystal.volume;
-                    assertEquals(info + " analytic and FD volume derivatives with respect to A should agree.", dVdA, dV / eps2, tolerance);
+                    assertEquals(info + " analytic and FD volume derivatives with respect to A & B should agree.", dVdA + dVdB, dV / eps2, tolerance);
                     assertEquals(info + " analytic volume derivatives with respect to A and B should be equal.", dVdA, dVdB, tolerance);
-                } else {
-                    // Programming error.
+                    testdVdC();
                 }
                 break;
             case HEXAGONAL:
@@ -160,8 +178,9 @@ public class CrystalVolumeDerivativeTest {
                 dV = crystal.volume;
                 crystal.changeUnitCellParameters(a - eps, b - eps, c, alpha, beta, gamma);
                 dV -= crystal.volume;
-                assertEquals(info + " analytic and FD volume derivatives with respect to A should agree.", dVdA, dV / eps2, tolerance);
+                assertEquals(info + " analytic and FD volume derivatives with respect to A & B should agree.", dVdA + dVdB, dV / eps2, tolerance);
                 assertEquals(info + " analytic volume derivatives with respect to A and B should be equal.", dVdA, dVdB, tolerance);
+                testdVdC();
                 break;
             case CUBIC:
                 // (a == b && b == c && alpha == 90.0 && beta == 90.0 && gamma == 90.0);
@@ -169,9 +188,100 @@ public class CrystalVolumeDerivativeTest {
                 dV = crystal.volume;
                 crystal.changeUnitCellParameters(a - eps, b - eps, c - eps, alpha, beta, gamma);
                 dV -= crystal.volume;
-                assertEquals(info + " analytic and FD volume derivatives with respect to A should agree.", dVdA, dV / eps2, tolerance);
+                double dTot = dVdA + dVdB + dVdC;
+                assertEquals(info + " analytic and FD volume derivatives with respect to A, B & C should agree.", dTot, dV / eps2, tolerance);
                 assertEquals(info + " analytic volume derivatives with respect to A and B should be equal.", dVdA, dVdB, tolerance);
                 break;
         }
+    }
+
+    private void testdVdA() {
+        double dVdA = crystal.dVdA;
+        double a = crystal.a;
+        double b = crystal.b;
+        double c = crystal.c;
+        double alpha = crystal.alpha;
+        double beta = crystal.beta;
+        double gamma = crystal.gamma;
+        crystal.changeUnitCellParameters(a + eps, b, c, alpha, beta, gamma);
+        double dV = crystal.volume;
+        crystal.changeUnitCellParameters(a - eps, b, c, alpha, beta, gamma);
+        dV -= crystal.volume;
+        assertEquals(info + " analytic and FD volume derivatives with respect to A should agree.", dVdA, dV / eps2, tolerance);
+    }
+
+    private void testdVdB() {
+        double dVdB = crystal.dVdB;
+        double a = crystal.a;
+        double b = crystal.b;
+        double c = crystal.c;
+        double alpha = crystal.alpha;
+        double beta = crystal.beta;
+        double gamma = crystal.gamma;
+        crystal.changeUnitCellParameters(a, b + eps, c, alpha, beta, gamma);
+        double dV = crystal.volume;
+        crystal.changeUnitCellParameters(a, b - eps, c, alpha, beta, gamma);
+        dV -= crystal.volume;
+        assertEquals(info + " analytic and FD volume derivatives with respect to B should agree.", dVdB, dV / eps2, tolerance);
+    }
+
+    private void testdVdC() {
+        double dVdC = crystal.dVdC;
+        double a = crystal.a;
+        double b = crystal.b;
+        double c = crystal.c;
+        double alpha = crystal.alpha;
+        double beta = crystal.beta;
+        double gamma = crystal.gamma;
+        crystal.changeUnitCellParameters(a, b, c + eps, alpha, beta, gamma);
+        double dV = crystal.volume;
+        crystal.changeUnitCellParameters(a, b, c - eps, alpha, beta, gamma);
+        dV -= crystal.volume;
+        assertEquals(info + " analytic and FD volume derivatives with respect to C should agree.", dVdC, dV / eps2, tolerance);
+    }
+
+    private void testdVdAlpha() {
+        double dVdAlpha = crystal.dVdAlpha;
+        double a = crystal.a;
+        double b = crystal.b;
+        double c = crystal.c;
+        double alpha = crystal.alpha;
+        double beta = crystal.beta;
+        double gamma = crystal.gamma;
+        crystal.changeUnitCellParameters(a, b, c, alpha + epsD, beta, gamma);
+        double dV = crystal.volume;
+        crystal.changeUnitCellParameters(a, b, c, alpha - epsD, beta, gamma);
+        dV -= crystal.volume;
+        assertEquals(info + " analytic and FD volume derivatives with respect to Alpha should agree.", dVdAlpha, dV / eps2, tolerance);
+    }
+
+    private void testdVdBeta() {
+        double dVdBeta = crystal.dVdBeta;
+        double a = crystal.a;
+        double b = crystal.b;
+        double c = crystal.c;
+        double alpha = crystal.alpha;
+        double beta = crystal.beta;
+        double gamma = crystal.gamma;
+        crystal.changeUnitCellParameters(a, b, c, alpha, beta + epsD, gamma);
+        double dV = crystal.volume;
+        crystal.changeUnitCellParameters(a, b, c, alpha, beta - epsD, gamma);
+        dV -= crystal.volume;
+        assertEquals(info + " analytic and FD volume derivatives with respect to Beta should agree.", dVdBeta, dV / eps2, tolerance);
+    }
+
+    private void testdVdGamma() {
+        double dVdGamma = crystal.dVdGamma;
+        double a = crystal.a;
+        double b = crystal.b;
+        double c = crystal.c;
+        double alpha = crystal.alpha;
+        double beta = crystal.beta;
+        double gamma = crystal.gamma;
+        crystal.changeUnitCellParameters(a, b, c, alpha, beta, gamma + epsD);
+        double dV = crystal.volume;
+        crystal.changeUnitCellParameters(a, b, c, alpha, beta, gamma - epsD);
+        dV -= crystal.volume;
+        assertEquals(info + " analytic and FD volume derivatives with respect to Gamma should agree.", dVdGamma, dV / eps2, tolerance);
     }
 }
