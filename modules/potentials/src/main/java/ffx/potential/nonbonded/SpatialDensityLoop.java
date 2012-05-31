@@ -36,7 +36,7 @@ public abstract class SpatialDensityLoop extends IntegerForLoop {
 
     private static final Logger logger = Logger.getLogger(SpatialDensityLoop.class.getName());
     private int nSymm;
-    private final SpatialDensityRegion region;
+    private SpatialDensityRegion spatialDensityRegion;
     private int octant = 0;
     private final SpatialDensitySchedule spatialDensitySchedule;
 
@@ -49,13 +49,17 @@ public abstract class SpatialDensityLoop extends IntegerForLoop {
      */
     public SpatialDensityLoop(SpatialDensityRegion region, int nSymm,
                               int atomsPerChunk[]) {
-        this.region = region;
+        this.spatialDensityRegion = region;
         this.nSymm = nSymm;
         this.spatialDensitySchedule = new SpatialDensitySchedule(region.nThreads,
                                                                  region.nAtoms, atomsPerChunk, 0.97);
         assert (nSymm <= region.nSymm);
     }
 
+    public void setRegion(SpatialDensityRegion spatialDensityRegion) {
+        this.spatialDensityRegion = spatialDensityRegion;
+    }
+    
     /** {@inheritDoc} */
     @Override
     public IntegerSchedule schedule() {
@@ -69,7 +73,7 @@ public abstract class SpatialDensityLoop extends IntegerForLoop {
      */
     public void setNsymm(int nSymm) {
         this.nSymm = nSymm;
-        assert (nSymm <= region.nSymm);
+        assert (nSymm <= spatialDensityRegion.nSymm);
     }
 
     /**
@@ -88,9 +92,9 @@ public abstract class SpatialDensityLoop extends IntegerForLoop {
     public void run(int lb, int ub) {
         // Loop over work cells
         for (int icell = lb; icell <= ub; icell++) {
-            int ia = region.actualA[icell];
-            int ib = region.actualB[icell];
-            int ic = region.actualC[icell];
+            int ia = spatialDensityRegion.actualA[icell];
+            int ib = spatialDensityRegion.actualB[icell];
+            int ic = spatialDensityRegion.actualC[icell];
             switch (octant) {
                 // Case 0 -> In place.
                 case 0:
@@ -129,10 +133,10 @@ public abstract class SpatialDensityLoop extends IntegerForLoop {
 
     private void gridCell(int ia, int ib, int ic) {
         for (int iSymm = 0; iSymm < nSymm; iSymm++) {
-            final int pairList[] = region.cellList[iSymm];
-            final int index = region.index(ia, ib, ic);
-            final int start = region.cellStart[iSymm][index];
-            final int stop = start + region.cellCount[iSymm][index];
+            final int pairList[] = spatialDensityRegion.cellList[iSymm];
+            final int index = spatialDensityRegion.index(ia, ib, ic);
+            final int start = spatialDensityRegion.cellStart[iSymm][index];
+            final int stop = start + spatialDensityRegion.cellCount[iSymm][index];
             for (int i = start; i < stop; i++) {
                 int n = pairList[i];
                 gridDensity(iSymm, n);

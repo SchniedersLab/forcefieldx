@@ -178,7 +178,7 @@ public class PMEWisdom {
                 parallelTeam);
         neighborList.buildList(coordinates, neighborLists, null, true, true);
         ParticleMeshEwald particleMeshEwald = new ParticleMeshEwald(forceField,
-                atoms, crystal, parallelTeam, neighborLists, neighborList.getPairwiseSchedule());
+                atoms, crystal, neighborList, parallelTeam);
 
         /**
          * Time the high accuracy energy gradients.
@@ -245,8 +245,9 @@ public class PMEWisdom {
             forceField.addForceFieldDouble(ForceFieldDouble.EWALD_ALPHA, alpha);
             forceField.addForceFieldDouble(ForceFieldDouble.PME_MESH_DENSITY, spacing);
             forceField.addForceFieldInteger(ForceFieldInteger.PME_ORDER, order);
-            ParticleMeshEwald particleMeshEwald = new ParticleMeshEwald(forceField, atoms, crystal,
-                    parallelTeam, neighborLists, neighborList.getPairwiseSchedule());
+            ParticleMeshEwald particleMeshEwald = new ParticleMeshEwald(forceField,
+                atoms, crystal, neighborList, parallelTeam);
+            
             System.gc();
             particleMeshEwald.energy(true, false);
             particleMeshEwald.getGradients(gradients);
@@ -278,7 +279,7 @@ public class PMEWisdom {
         forceField.addForceFieldInteger(ForceField.ForceFieldInteger.PME_ORDER,
                 order);
         ParticleMeshEwald particleMeshEwald = new ParticleMeshEwald(forceField,
-                atoms, crystal, parallelTeam, neighborLists, neighborList.getPairwiseSchedule());
+                atoms, crystal, neighborList, parallelTeam);
         System.gc();
         long bestTime = System.nanoTime();
         particleMeshEwald.energy(true, false);

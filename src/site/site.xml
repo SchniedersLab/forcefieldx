@@ -83,7 +83,7 @@
             <item name="Space Groups" href="/symmetry.html"/>
             <item name="Examples" href="/examples.html"/>
         </menu>
-        <menu name="Modules" inherit="top">
+        <menu name="OpenFFX Modules" inherit="top">
             <item name="Algorithms"  href="modules/algorithms/index.html"/>
             <item name="Automatic Parameterization"  href="modules/autoparm/index.html"/>
             <item name="Binding Affinity"  href="modules/binding/index.html"/>

@@ -76,7 +76,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     protected final int nTorsionTorsions;
     protected int nRestraintBonds;
     protected int nVanDerWaals, nPME, nGK;
-    
     protected boolean bondTerm;
     protected boolean angleTerm;
     protected boolean stretchBendTerm;
@@ -91,7 +90,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     protected boolean polarizationTerm;
     protected boolean generalizedKirkwoodTerm;
     protected boolean lambdaBondedTerms = false;
-    
     protected boolean bondTermOrig;
     protected boolean angleTermOrig;
     protected boolean stretchBendTermOrig;
@@ -105,7 +103,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     protected boolean multipoleTermOrig;
     protected boolean polarizationTermOrig;
     protected boolean generalizedKirkwoodTermOrig;
-    
     protected double bondEnergy, bondRMSD;
     protected double angleEnergy, angleRMSD;
     protected double stretchBendEnergy;
@@ -407,8 +404,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
 
         if (multipoleTerm) {
-            particleMeshEwald = new ParticleMeshEwald(forceField, atoms, crystal, parallelTeam,
-                    vanderWaals.getNeighborLists(), vanderWaals.getPairwiseSchedule());
+            particleMeshEwald = new ParticleMeshEwald(forceField, atoms, crystal, 
+                    vanderWaals.getNeighborList(), parallelTeam);
         } else {
             particleMeshEwald = null;
         }
@@ -419,7 +416,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     public void setLambdaBondedTerms(boolean lambdaBondedTerms) {
         this.lambdaBondedTerms = lambdaBondedTerms;
     }
-    
+
     /**
      * <p>energy</p>
      *
@@ -606,7 +603,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
 
     /**
-     * {@inheritDoc}
+     * {
+     *
+     * @inheritDoc}
      */
     @Override
     public double getTotalEnergy() {
@@ -692,7 +691,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
 
     /**
-     * {@inheritDoc}
+     * {
+     *
+     * @inheritDoc}
      */
     @Override
     public String toString() {
@@ -794,7 +795,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
 
     /**
-     * {@inheritDoc}
+     * {
+     *
+     * @inheritDoc}
      */
     @Override
     public void setLambda(double lambda) {
@@ -818,7 +821,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
 
     /**
-     * {@inheritDoc}
+     * {
+     *
+     * @inheritDoc}
      */
     @Override
     public void setScaling(double scaling[]) {
@@ -826,7 +831,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
 
     /**
-     * {@inheritDoc}
+     * {
+     *
+     * @inheritDoc}
      */
     @Override
     public double[] getScaling() {
@@ -852,7 +859,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
 
     /**
-     * {@inheritDoc}
+     * {
+     *
+     * @inheritDoc}
      */
     @Override
     public double energyAndGradient(double x[], double g[]) {
@@ -924,7 +933,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
 
     /**
-     * {@inheritDoc}
+     * {
+     *
+     * @inheritDoc}
      */
     @Override
     public double[] getCoordinates(double x[]) {
@@ -946,7 +957,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
 
     /**
-     * {@inheritDoc}
+     * {
+     *
+     * @inheritDoc}
      */
     @Override
     public double[] getMass() {
@@ -963,7 +976,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
 
     /**
-     * {@inheritDoc}
+     * {
+     *
+     * @inheritDoc}
      */
     @Override
     public int getNumberOfVariables() {
@@ -971,7 +986,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
 
     /**
-     * {@inheritDoc}
+     * {
+     *
+     * @inheritDoc}
      */
     @Override
     public double getdEdL() {
@@ -991,7 +1008,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
 
     /**
-     * {@inheritDoc}
+     * {
+     *
+     * @inheritDoc}
      */
     @Override
     public void getdEdXdL(double gradients[]) {
@@ -1009,7 +1028,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
 
     /**
-     * {@inheritDoc}
+     * {
+     *
+     * @inheritDoc}
      */
     @Override
     public double getLambda() {
@@ -1017,7 +1038,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
 
     /**
-     * {@inheritDoc}
+     * {
+     *
+     * @inheritDoc}
      */
     @Override
     public double getd2EdL2() {
@@ -1112,16 +1135,23 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 generalizedKirkwoodTerm = generalizedKirkwoodTermOrig;
         }
     }
-    
+
     public void setCrystal(Crystal crystal) {
         if (this.crystal.strictEquals(crystal)) {
             this.crystal = crystal;
         } else {
-            // Update vdW and PME
             this.crystal = crystal;
+            /**
+             * Update VanDerWaals first, in case the NeighborList needs to be
+             * re-allocated to include a larger number of replicated cells.
+             */
             vanderWaals.setCrystal(crystal);
-            //particleMeshEwald.setCrystal(crystal);
+            particleMeshEwald.setCrystal(crystal);
+            
+            /**
+             * TODO: update GeneralizedKirkwood to include support for symmetry
+             * operators and periodic boundary conditions.
+             */
         }
     }
-    
 }

@@ -455,6 +455,10 @@ public class NeighborList extends ParallelRegion {
         }
     }
 
+    public int[][][] getNeighborList() {
+        return lists;
+    }
+    
     /**
      * <p>Getter for the field
      * <code>pairwiseSchedule</code>.</p>

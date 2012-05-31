@@ -414,6 +414,7 @@ public class ParticleMeshEwald implements LambdaInterface {
     private final ParallelTeam fftTeam;
     private final boolean cudaFFT;
     private IntegerSchedule permanentSchedule;
+    private final NeighborList neighborList;
     private final InitializationRegion initializationRegion;
     private final ExpandInducedDipolesRegion expandInducedDipolesRegion;
     private final RotateMultipolesRegion rotateMultipolesRegion;
@@ -447,18 +448,20 @@ public class ParticleMeshEwald implements LambdaInterface {
      * @param atoms An ordered array of Atoms.
      * @param crystal The definition of the unit cell, space group symmetry and,
      *                if necessary, replicates symmetry.
+     * @param neighborList The NeighborList for both van der Waals and PME.
      * @param parallelTeam A ParallelTeam that delegates parallelization.
-     * @param neighborLists The NeighborLists for both van der Waals and PME.
-     * @param permanentSchedule a {@link edu.rit.pj.IntegerSchedule} object.
      */
     public ParticleMeshEwald(ForceField forceField, Atom[] atoms,
-                             Crystal crystal, ParallelTeam parallelTeam,
-                             int neighborLists[][][], IntegerSchedule permanentSchedule) {
+                             Crystal crystal, NeighborList neighborList, ParallelTeam parallelTeam) {
         this.forceField = forceField;
         this.atoms = atoms;
         this.crystal = crystal;
         this.parallelTeam = parallelTeam;
-        this.neighborLists = neighborLists;
+        this.neighborList = neighborList;
+        
+        neighborLists = neighborList.getNeighborList();
+        permanentSchedule = neighborList.getPairwiseSchedule();
+                
         nAtoms = atoms.length;
         nSymm = crystal.spaceGroup.getNumberOfSymOps();
         maxThreads = parallelTeam.getThreadCount();
@@ -729,7 +732,6 @@ public class ParticleMeshEwald implements LambdaInterface {
                 fftTeam = parallelTeam;
             }
         }
-        this.permanentSchedule = permanentSchedule;
         ranges = new Range[maxThreads];
         /**
          * The Ewald schedule just includes interactions within the real
@@ -746,8 +748,8 @@ public class ParticleMeshEwald implements LambdaInterface {
          * a ReplicatesCrystal.
          */
         if (aewald > 0.0) {
-            reciprocalSpace = new ReciprocalSpace(crystal.getUnitCell(), forceField,
-                                                  coordinates, atoms, aewald, fftTeam, parallelTeam);
+            reciprocalSpace = new ReciprocalSpace(this, crystal.getUnitCell(), forceField,
+                                                  atoms, aewald, fftTeam, parallelTeam);
             permanentReciprocalEnergyRegion = new PermanentReciprocalEnergyRegion(maxThreads);
             polarizationReciprocalEnergyRegion = new PolarizationReciprocalEnergyRegion(maxThreads);
         } else {
@@ -1202,6 +1204,10 @@ public class ParticleMeshEwald implements LambdaInterface {
         return multipoleEnergy + polarizationEnergy;
     }
 
+    public void setCrystal(Crystal crystal) {
+        logger.warning(" The setCrystal method is not yet supported.");
+    }
+    
     /**
      * <p>Getter for the field <code>interactions</code>.</p>
      *

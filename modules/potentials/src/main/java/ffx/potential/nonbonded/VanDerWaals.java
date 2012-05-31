@@ -200,7 +200,7 @@ public class VanDerWaals implements MaskingInterface,
      * in the van der Waals energy code. The AMOEBA force field includes 1-4
      * interactions fully.
      */
-    private final NeighborList neighborListBuilder;
+    private final NeighborList neighborList;
     private final VanDerWaalsRegion vanDerWaalsRegion;
     /**
      * Timing variables.
@@ -411,8 +411,8 @@ public class VanDerWaals implements MaskingInterface,
         /**
          * Parallel neighbor list builder.
          */
-        neighborListBuilder = new NeighborList(null, this.crystal, atoms, off, buff, parallelTeam);
-        pairwiseSchedule = neighborListBuilder.getPairwiseSchedule();
+        neighborList = new NeighborList(null, this.crystal, atoms, off, buff, parallelTeam);
+        pairwiseSchedule = neighborList.getPairwiseSchedule();
         neighborLists = new int[nSymm][][];
 
         /**
@@ -438,6 +438,14 @@ public class VanDerWaals implements MaskingInterface,
         }
     }
 
+    /**
+     * Allow sharing the of the VanDerWaals NeighborList with ParticleMeshEwald.
+     * @return The NeighborList.
+     */
+    public NeighborList getNeighborList() {
+        return neighborList;
+    }
+    
     /**
      * <p>Getter for the field
      * <code>pairwiseSchedule</code>.</p>
@@ -751,9 +759,7 @@ public class VanDerWaals implements MaskingInterface,
     }
 
     /**
-     * {
-     *
-     * @inheritDoc}
+     * {@inheritDoc}
      */
     @Override
     public double getd2EdL2() {
@@ -771,8 +777,9 @@ public class VanDerWaals implements MaskingInterface,
     public void setCrystal(Crystal crystal) {
         if (!this.crystal.strictEquals(crystal)) {
             this.crystal = crystal;
-            if (nSymm != crystal.spaceGroup.symOps.size()) {
-                nSymm = crystal.spaceGroup.symOps.size();
+            int newNSymm = crystal.spaceGroup.getNumberOfSymOps();
+            if (nSymm != newNSymm) {
+                nSymm = newNSymm;
                 /**
                  * Allocate memory if necessary.
                  */
@@ -781,7 +788,7 @@ public class VanDerWaals implements MaskingInterface,
                     neighborLists = new int[nSymm][][];
                 }
             }
-            neighborListBuilder.setCrystal(crystal);
+            neighborList.setCrystal(crystal);
             // TODO reduce, expand and rebuild list. 
         } else {
             this.crystal = crystal;
@@ -804,9 +811,7 @@ public class VanDerWaals implements MaskingInterface,
         }
 
         /**
-         * {
-         *
-         * @inheritDoc}
+         * {@inheritDoc}
          *
          * This is method should not be called; it is invoked by Parallel Java.
          *
@@ -870,9 +875,9 @@ public class VanDerWaals implements MaskingInterface,
              */
             if (threadIndex == 0) {
                 if (constructVanDerWaals) {
-                    neighborListBuilder.buildList(reduced, neighborLists, null, true, true);
+                    neighborList.buildList(reduced, neighborLists, null, true, true);
                 } else {
-                    neighborListBuilder.buildList(reduced, neighborLists, null, false, false);
+                    neighborList.buildList(reduced, neighborLists, null, false, false);
                 }
             }
             if (constructVanDerWaals) {

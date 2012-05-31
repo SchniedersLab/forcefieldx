@@ -136,21 +136,21 @@ public class ReplicatesCrystal extends Crystal {
          */
         if (unitCell.changeUnitCellParameters(a, b, c, alpha, beta, gamma)) {
             /**
-             * Then, update the parameters of the ReplicatesCrystal and 
-             * possibly the number of replicates.
+             * Then, update the parameters of the ReplicatesCrystal and possibly
+             * the number of replicates.
              */
             int ll = 1;
             int mm = 1;
             int nn = 1;
 
-            while (unitCell.a * 1l < cutOff2) {
+            while (unitCell.a * ll < cutOff2) {
                 ll++;
             }
             while (unitCell.b * mm < cutOff2) {
                 mm++;
             }
             while (unitCell.c * nn < cutOff2) {
-                nn++;
+                nn++;                
             }
             if (super.changeUnitCellParameters(a * ll, b * mm, c * nn, alpha, beta, gamma)) {
                 l = ll;
@@ -165,7 +165,9 @@ public class ReplicatesCrystal extends Crystal {
     }
 
     /**
-     * {@inheritDoc}
+     * {
+     *
+     * @inheritDoc}
      *
      * Returns the unit cell for this ReplicatesCrystal. This is useful for the
      * reciprocal space portion of PME that operates on the unit cell even
@@ -177,7 +179,9 @@ public class ReplicatesCrystal extends Crystal {
     }
 
     /**
-     * {@inheritDoc}
+     * {
+     *
+     * @inheritDoc}
      *
      * Include information about the base unit cell and replicates cell.
      */

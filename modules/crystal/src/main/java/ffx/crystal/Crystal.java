@@ -283,6 +283,7 @@ public class Crystal {
     }
 
     private void updateCrystal() {
+
         switch (crystalSystem) {
             case CUBIC:
             case ORTHORHOMBIC:
@@ -427,11 +428,9 @@ public class Crystal {
             double gamma) {
 
         if (!SpaceGroup.checkRestrictions(crystalSystem, a, b, c, alpha, beta, gamma)) {
-            if (logger.isLoggable(Level.FINER)) {
-                String message = " The proposed lattice parameters do not satisfy the " + crystalSystem
-                        + " crystal system restrictions and were ignored.";
-                logger.finer(message);
-            }
+            String message = " The proposed lattice parameters do not satisfy the " + crystalSystem
+                    + " crystal system restrictions and were ignored.";
+            logger.info(message);
             return false;
         }
 
@@ -507,8 +506,10 @@ public class Crystal {
 
     /**
      * Two crystals are equal if all unit cell parameters are within 0.01.
-     * 
-     * {@inheritDoc}
+     *
+     * {
+     *
+     * @inheritDoc}
      */
     @Override
     public boolean equals(Object obj) {
