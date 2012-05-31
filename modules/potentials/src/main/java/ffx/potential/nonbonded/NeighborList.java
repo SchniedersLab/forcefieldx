@@ -1,22 +1,21 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X Description: Force Field X - Software for Molecular
+ * Biophysics Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.potential.nonbonded;
 
@@ -38,39 +37,24 @@ import ffx.crystal.Crystal;
 import ffx.potential.bonded.Atom;
 
 /**
- * The NeighborList class builds Verlet lists in parallel via a
- * spatial decomposition.
- * <ol>
- * <li>
- * The unit cell is partitioned into <code>nA * nB * nC</code> smaller
- * axis-aligned cells, where nA, nB and nC are chosen as large as possible
- * subject to the criteria that the length of each side of a sub-volume
- * (rCellA, rCellB, rCellC) multiplied by (nEdgeA, nEdgeB, nEdgeC),
- * respectively, must be greater than the cutoff distance <code>Rcut</code>
- * plus a buffer distance <code>delta</code>:
- * <center><code>rCellA * nEdgeA >= (Rcut + delta)</code></center>
- * <center><code>rCellB * nEdgeB >= (Rcut + delta)</code></center>
- * <center><code>rCellC * nEdgeC >= (Rcut + delta)</code></center>
+ * The NeighborList class builds Verlet lists in parallel via a spatial
+ * decomposition. <ol> <li> The unit cell is partitioned into
+ * <code>nA * nB * nC</code> smaller axis-aligned cells, where nA, nB and nC are
+ * chosen as large as possible subject to the criteria that the length of each
+ * side of a sub-volume (rCellA, rCellB, rCellC) multiplied by (nEdgeA, nEdgeB,
+ * nEdgeC), respectively, must be greater than the cutoff distance
+ * <code>Rcut</code> plus a buffer distance
+ * <code>delta</code>: <center><code>rCellA * nEdgeA >= (Rcut + delta)</code></center> <center><code>rCellB * nEdgeB >= (Rcut + delta)</code></center> <center><code>rCellC * nEdgeC >= (Rcut + delta)</code></center>
  * All neighbors of an atom are in a block of
- * (2*nEdgeA+1)(2*nEdgeB+1)(2*nEdgeC+1)
- * neighborCells.
- * </li>
- * <p>
- * <li>
+ * (2*nEdgeA+1)(2*nEdgeB+1)(2*nEdgeC+1) neighborCells. </li> <p> <li>
  * Interactions between an atom and neighbors in the asymmetric unit require
  * only half the neighboring cells to be searched to avoid double counting.
  * However, enumeration of interactions between an atom in the asymmetric unit
- * and its neighbors in a symmetry mate require all cells to be searched.
- * </li>
- * <p>
- * <li>
- * Verlet lists from the search are stored, which reduces the number of
- * neigbors whose distances must be calculated by a factor of approximately:
- * <center><code>(4/3*Pi*Rcut^3)/(neighborCells*Vcell)</code></center>
+ * and its neighbors in a symmetry mate require all cells to be searched. </li>
+ * <p> <li> Verlet lists from the search are stored, which reduces the number of
+ * neigbors whose distances must be calculated by a factor of approximately: <center><code>(4/3*Pi*Rcut^3)/(neighborCells*Vcell)</code></center>
  * About 1/3 as many interactions are contained in the Verlet lists as in the
- * neighboring cells.
- * </li>
- * </ol>
+ * neighboring cells. </li> </ol>
  *
  * @author Michael J. Schnieders
  * @since 1.0
@@ -82,11 +66,11 @@ public class NeighborList extends ParallelRegion {
     /**
      * The crystal object defines the unit cell dimensions and spacegroup.
      */
-    private final Crystal crystal;
+    private Crystal crystal;
     /**
      * The number of asymmetric units in the unit cell.
      */
-    private final int nSymm;
+    private int nSymm;
     /**
      * The number of atoms in the asymmetric unit.
      */
@@ -133,7 +117,25 @@ public class NeighborList extends ParallelRegion {
      * symmetry mates.
      */
     private int symmetryMateCount;
-    private final int nEdgeA, nEdgeB, nEdgeC;
+    /**
+     * The number of subcells that must be searched along the a-axis to find all
+     * neighbors within the cutoff + buffer distance.
+     *
+     * If each nEdgeX == 1 for (X=A,B,C} then all neighbors will be found in
+     * 3x3x3 = 27 cells. If each nEdgeX == 2, then all neighbors will be found
+     * in 5x5x5 = 125 cells (in this case the cells are smaller).
+     */
+    private int nEdgeA;
+    /**
+     * The number of subcells that must be searched along the b-axis to find all
+     * neighbors within the cutoff + buffer distance.
+     */
+    private int nEdgeB;
+    /**
+     * The number of subcells that must be searched along the c-axis to find all
+     * neighbors within the cutoff + buffer distance.
+     */
+    private int nEdgeC;
     /**
      * The number of divisions along the A-axis.
      */
@@ -153,12 +155,12 @@ public class NeighborList extends ParallelRegion {
     /**
      * The number of cells (nDivisions^3).
      */
-    private final int nCells;
+    private int nCells;
     /**
      * A temporary array that holds the index of the cell each atom is assigned
-     * to.
+     * to. [nSymm][nAtoms]
      */
-    private final int cellIndex[][];
+    private int cellIndex[][];
     /**
      * The cell indices of each atom along a A-axis.
      */
@@ -174,20 +176,20 @@ public class NeighborList extends ParallelRegion {
     /**
      * The list of atoms in each cell. [nSymm][nAtoms] = atom index
      */
-    private final int cellList[][];
+    private int cellList[][];
     /**
      * The offset of each atom from the start of the cell. The first atom atom
      * in the cell has 0 offset. [nSymm][nAtom] = offset of the atom
      */
-    private final int cellOffset[][];
+    private int cellOffset[][];
     /**
      * The number of atoms in each cell. [nSymm][nCell]
      */
-    private final int cellCount[][];
+    private int cellCount[][];
     /**
      * The index of the first atom in each cell. [nSymm][nCell]
      */
-    private final int cellStart[][];
+    private int cellStart[][];
     /**
      * The cutoff beyound which the pairwise energy is zero.
      */
@@ -205,7 +207,21 @@ public class NeighborList extends ParallelRegion {
      * The sum of the cutoff + buffer.
      */
     private final double total;
-    private final double minLengthA, minLengthB, minLengthC;
+    /**
+     * minLengthA is the smallest a-axis for a subcell, given nEdgeA, that
+     * assures all neighbors will be found.
+     */
+    private double minLengthA;
+    /**
+     * minLengthB is the smallest b-axis for a subcell, given nEdgeB, that
+     * assures all neighbors will be found.
+     */
+    private double minLengthB;
+    /**
+     * minLengthC is the smallest c-axis for a subcell, given nEdgeC, that
+     * assures all neighbors will be found.
+     */
+    private double minLengthC;
     /**
      * Total^2 for distance comparisons without taking a sqrt.
      */
@@ -218,7 +234,8 @@ public class NeighborList extends ParallelRegion {
      * Atoms being used list.
      */
     private boolean use[];
-    /***************************************************************************
+    /**
+     * *************************************************************************
      * Parallel variables.
      */
     /**
@@ -249,22 +266,67 @@ public class NeighborList extends ParallelRegion {
      * @since 1.0
      */
     public NeighborList(MaskingInterface maskingRules, Crystal crystal,
-            Atom atoms[], double cutoff, double buffer,
-            ParallelTeam parallelTeam) {
+                        Atom atoms[], double cutoff, double buffer,
+                        ParallelTeam parallelTeam) {
         this.maskingRules = maskingRules;
         this.crystal = crystal;
         this.cutoff = cutoff;
         this.buffer = buffer;
         this.parallelTeam = new ParallelTeam(parallelTeam.getThreadCount());
         nAtoms = atoms.length;
-        nSymm = crystal.spaceGroup.symOps.size();
-        total = cutoff + buffer;
 
+        /**
+         * Configure the neighbor cutoff and list rebuilding criteria.
+         */
+        total = cutoff + buffer;
         total2 = total * total;
         motion2 = (buffer / 2.0) * (buffer / 2.0);
         previous = new double[nAtoms * 3];
+
+        /**
+         * Allocate memory for fractional coordinates and subcell pointers for
+         * each atom.
+         */
+        frac = new double[3 * nAtoms];
+        cellA = new int[nAtoms];
+        cellB = new int[nAtoms];
+        cellC = new int[nAtoms];
+
+        /**
+         * Initialize parallel constructs.
+         */
+        threadCount = parallelTeam.getThreadCount();
+        verletListLoop = new NeighborListLoop[threadCount];
+        for (int i = 0; i < threadCount; i++) {
+            verletListLoop[i] = new NeighborListLoop();
+        }
+        listCount = new int[nAtoms];
+        sharedCount = new SharedInteger();
+        ranges = new Range[threadCount];
+        pairwiseSchedule = new PairwiseSchedule(threadCount, nAtoms, ranges);
+
+        /**
+         * Initialize the neighbor list builder subcells.
+         */
+        initNeighborList(true);
+    }
+
+    private void initNeighborList(boolean print) {
+
+        /**
+         * Set the number of symmetry operators.
+         */
+        nSymm = crystal.spaceGroup.symOps.size();
+                
+        /**
+         * Find the shortest crystal axis length.
+         */
         final double side = min(min(crystal.a, crystal.b), crystal.c);
 
+        /**
+         * Assert that the boundary conditions defined by the crystal allow use
+         * of the minimum image condition.
+         */
         assert (side > 2.0 * total);
 
         /**
@@ -273,14 +335,16 @@ public class NeighborList extends ParallelRegion {
         nEdgeA = 2;
         nEdgeB = nEdgeA;
         nEdgeC = nEdgeA;
+        /**
+         * minLengthA is the smallest a-axis for a subcell, given nEdgeA, that
+         * assures all neighbors will be found.
+         */
         minLengthA = total / (double) nEdgeA;
         minLengthB = total / (double) nEdgeB;
         minLengthC = total / (double) nEdgeC;
-
         nA = (int) floor(crystal.a / minLengthA);
         nB = (int) floor(crystal.b / minLengthB);
         nC = (int) floor(crystal.c / minLengthC);
-
         if (nA < nEdgeA * 2 + 1) {
             nA = 1;
         }
@@ -290,52 +354,67 @@ public class NeighborList extends ParallelRegion {
         if (nC < nEdgeC * 2 + 1) {
             nC = 1;
         }
-
-        StringBuilder sb = new StringBuilder("\n Neighbor List Builder\n");
         nAB = nA * nB;
         nCells = nAB * nC;
-        sb.append(format(" Sub-volumes:                          %8d\n", nCells));
-        sb.append(format(" Average atoms per sub-volume:         %8d", nAtoms * nSymm / nCells));
 
-        cellList = new int[nSymm][nAtoms];
-        cellIndex = new int[nSymm][nAtoms];
-        cellOffset = new int[nSymm][nAtoms];
-        cellStart = new int[nSymm][nCells];
-        cellCount = new int[nSymm][nCells];
-        cellA = new int[nAtoms];
-        cellB = new int[nAtoms];
-        cellC = new int[nAtoms];
-        frac = new double[3 * nAtoms];
-
-        // Parallel constructs.
-        threadCount = parallelTeam.getThreadCount();
-        verletListLoop = new NeighborListLoop[threadCount];
-        for (int i = 0; i < threadCount; i++) {
-            verletListLoop[i] = new NeighborListLoop();
+        if (print) {
+            StringBuilder sb = new StringBuilder("\n Neighbor List Builder\n");
+            sb.append(format(" Sub-volumes:                          %8d\n", nCells));
+            sb.append(format(" Average atoms per sub-volume:         %8d", nAtoms * nSymm / nCells));
+            logger.info(sb.toString());
         }
 
-        listCount = new int[nAtoms];
-        sharedCount = new SharedInteger();
-        ranges = new Range[threadCount];
-        pairwiseSchedule = new PairwiseSchedule(threadCount, nAtoms, ranges);
-
-        logger.info(sb.toString());
+        /**
+         * Allocate memory if necessary.
+         */
+        if (cellList == null) {
+            cellList = new int[nSymm][nAtoms];
+            cellIndex = new int[nSymm][nAtoms];
+            cellOffset = new int[nSymm][nAtoms];
+            cellStart = new int[nSymm][nCells];
+            cellCount = new int[nSymm][nCells];
+        } else if (cellList.length < nSymm) {
+            cellList = new int[nSymm][nAtoms];
+            cellIndex = new int[nSymm][nAtoms];
+            cellOffset = new int[nSymm][nAtoms];
+            cellStart = new int[nSymm][nCells];
+            cellCount = new int[nSymm][nCells];
+        } else if (cellStart[0].length < nCells) {
+            cellStart = new int[nSymm][nCells];
+            cellCount = new int[nSymm][nCells];
+        }
     }
 
+    /**
+     * The NeighborList will be re-configured, if necessary,
+     * for the supplied Crystal. Changes to both unit cell parameters and 
+     * number of symmetry operators are accomodated.
+     * 
+     * @param crystal A crystal defining boundary conditions and symmetry.
+     */
+    public void setCrystal(Crystal crystal){
+        if (!this.crystal.strictEquals(crystal)) {
+            this.crystal = crystal;
+            initNeighborList(false);
+        } else {
+            this.crystal = crystal;
+        }
+    }
+    
     /**
      * This method can be called as necessary to build/rebuild the neighbor
      * lists.
      *
      * @param coordinates The coordinates of each atom [nSymm][nAtoms*3].
      * @param lists The neighbor lists [nSymm][nAtoms][nPairs].
-     * @param forceRebuild If true, the list is rebuilt even if no atom has moved
-     *      half the buffer size.
+     * @param forceRebuild If true, the list is rebuilt even if no atom has
+     * moved half the buffer size.
      * @since 1.0
      * @param use an array of boolean.
      * @param log a boolean.
      */
     public void buildList(final double coordinates[][], final int lists[][][],
-            boolean use[], boolean forceRebuild, boolean log) {
+                          boolean use[], boolean forceRebuild, boolean log) {
         this.coordinates = coordinates;
         this.lists = lists;
         this.use = use;
@@ -372,7 +451,8 @@ public class NeighborList extends ParallelRegion {
     }
 
     /**
-     * <p>Getter for the field <code>pairwiseSchedule</code>.</p>
+     * <p>Getter for the field
+     * <code>pairwiseSchedule</code>.</p>
      *
      * @return a {@link ffx.potential.nonbonded.PairwiseSchedule} object.
      */
@@ -508,6 +588,7 @@ public class NeighborList extends ParallelRegion {
      * {@inheritDoc}
      *
      * This is method should not be called; it is invoked by Parallel Java.
+     *
      * @since 0.l
      */
     @Override
@@ -520,6 +601,7 @@ public class NeighborList extends ParallelRegion {
      * {@inheritDoc}
      *
      * This is method should not be called; it is invoked by Parallel Java.
+     *
      * @since 1.0
      */
     @Override
@@ -543,7 +625,7 @@ public class NeighborList extends ParallelRegion {
     public void finish() {
         if (logger.isLoggable(Level.FINE)) {
             logger.fine(String.format(" Parallel Neighbor List:             %10.3f sec",
-                    (System.nanoTime() - time) * 1e-9));
+                                      (System.nanoTime() - time) * 1e-9));
         }
     }
 
@@ -651,9 +733,8 @@ public class NeighborList extends ParallelRegion {
                         int cStop = c + nEdgeC;
 
                         /**
-                         * If the number of divisions is 1 in any direction
-                         * then set the loop limits to the current cell
-                         * value.
+                         * If the number of divisions is 1 in any direction then
+                         * set the loop limits to the current cell value.
                          */
                         if (nA == 1) {
                             aStart = a;
@@ -672,8 +753,8 @@ public class NeighborList extends ParallelRegion {
                             // Interactions within the "self-volume".
                             atomCellPairs(index);
                             /**
-                             * Half of the neighboring volumes are
-                             * searched to avoid double counting.
+                             * Half of the neighboring volumes are searched to
+                             * avoid double counting.
                              */
                             // (a, b+1..b+nE, c)
                             for (int bi = b1; bi <= bStop; bi++) {
@@ -695,7 +776,8 @@ public class NeighborList extends ParallelRegion {
                             }
                         } else {
                             /**
-                             * Interactions with all adjacent symmetry mate cells.
+                             * Interactions with all adjacent symmetry mate
+                             * cells.
                              */
                             for (int ai = aStart; ai <= aStop; ai++) {
                                 for (int bi = bStart; bi <= bStop; bi++) {
@@ -720,6 +802,12 @@ public class NeighborList extends ParallelRegion {
          * cell by subtracting nX. If the index is < 0, it is mapped into the
          * periodic unit cell by adding nX. The Neighbor list algorithm never
          * requires multiple additions or subtractions of nX.
+         *
+         *
+         *
+         *
+         *
+
          *
          * @param i The index along the a-axis.
          * @param j The index along the b-axis.

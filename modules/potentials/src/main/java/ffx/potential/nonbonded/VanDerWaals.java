@@ -773,10 +773,15 @@ public class VanDerWaals implements MaskingInterface,
             this.crystal = crystal;
             if (nSymm != crystal.spaceGroup.symOps.size()) {
                 nSymm = crystal.spaceGroup.symOps.size();
-                reduced = new double[nSymm][nAtoms * 3];
-                neighborLists = new int[nSymm][][];
+                /**
+                 * Allocate memory if necessary.
+                 */
+                if (reduced == null || reduced.length < nSymm) {
+                    reduced = new double[nSymm][nAtoms * 3];
+                    neighborLists = new int[nSymm][][];
+                }
             }
-            // neighborListBuilder.setCrystal(crystal);
+            neighborListBuilder.setCrystal(crystal);
             // TODO reduce, expand and rebuild list. 
         } else {
             this.crystal = crystal;
