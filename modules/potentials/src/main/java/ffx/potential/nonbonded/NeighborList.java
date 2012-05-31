@@ -44,17 +44,21 @@ import ffx.potential.bonded.Atom;
  * side of a sub-volume (rCellA, rCellB, rCellC) multiplied by (nEdgeA, nEdgeB,
  * nEdgeC), respectively, must be greater than the cutoff distance
  * <code>Rcut</code> plus a buffer distance
- * <code>delta</code>: <center><code>rCellA * nEdgeA >= (Rcut + delta)</code></center> <center><code>rCellB * nEdgeB >= (Rcut + delta)</code></center> <center><code>rCellC * nEdgeC >= (Rcut + delta)</code></center>
- * All neighbors of an atom are in a block of
- * (2*nEdgeA+1)(2*nEdgeB+1)(2*nEdgeC+1) neighborCells. </li> <p> <li>
- * Interactions between an atom and neighbors in the asymmetric unit require
- * only half the neighboring cells to be searched to avoid double counting.
- * However, enumeration of interactions between an atom in the asymmetric unit
- * and its neighbors in a symmetry mate require all cells to be searched. </li>
- * <p> <li> Verlet lists from the search are stored, which reduces the number of
- * neigbors whose distances must be calculated by a factor of approximately: <center><code>(4/3*Pi*Rcut^3)/(neighborCells*Vcell)</code></center>
- * About 1/3 as many interactions are contained in the Verlet lists as in the
- * neighboring cells. </li> </ol>
+ * <code>delta</code>:
+ * <center><code>rCellA * nEdgeA >= (Rcut + delta)</code></center>
+ * <center><code>rCellB * nEdgeB >= (Rcut + delta)</code></center>
+ * <center><code>rCellC * nEdgeC >= (Rcut + delta)</code></center> All neighbors
+ * of an atom are in a block of (2*nEdgeA+1)(2*nEdgeB+1)(2*nEdgeC+1)
+ * neighborCells. </li> <p> <li> Interactions between an atom and neighbors in
+ * the asymmetric unit require only half the neighboring cells to be searched to
+ * avoid double counting. However, enumeration of interactions between an atom
+ * in the asymmetric unit and its neighbors in a symmetry mate require all cells
+ * to be searched. </li> <p> <li> Verlet lists from the search are stored, which
+ * reduces the number of neigbors whose distances must be calculated by a factor
+ * of approximately:
+ * <center><code>(4/3*Pi*Rcut^3)/(neighborCells*Vcell)</code></center> About 1/3
+ * as many interactions are contained in the Verlet lists as in the neighboring
+ * cells. </li> </ol>
  *
  * @author Michael J. Schnieders
  * @since 1.0
@@ -266,8 +270,8 @@ public class NeighborList extends ParallelRegion {
      * @since 1.0
      */
     public NeighborList(MaskingInterface maskingRules, Crystal crystal,
-                        Atom atoms[], double cutoff, double buffer,
-                        ParallelTeam parallelTeam) {
+            Atom atoms[], double cutoff, double buffer,
+            ParallelTeam parallelTeam) {
         this.maskingRules = maskingRules;
         this.crystal = crystal;
         this.cutoff = cutoff;
@@ -293,6 +297,11 @@ public class NeighborList extends ParallelRegion {
         cellC = new int[nAtoms];
 
         /**
+         * Initialize the neighbor list builder subcells.
+         */
+        initNeighborList(true);
+
+        /**
          * Initialize parallel constructs.
          */
         threadCount = parallelTeam.getThreadCount();
@@ -305,10 +314,6 @@ public class NeighborList extends ParallelRegion {
         ranges = new Range[threadCount];
         pairwiseSchedule = new PairwiseSchedule(threadCount, nAtoms, ranges);
 
-        /**
-         * Initialize the neighbor list builder subcells.
-         */
-        initNeighborList(true);
     }
 
     private void initNeighborList(boolean print) {
@@ -317,7 +322,7 @@ public class NeighborList extends ParallelRegion {
          * Set the number of symmetry operators.
          */
         nSymm = crystal.spaceGroup.symOps.size();
-                
+
         /**
          * Find the shortest crystal axis length.
          */
@@ -386,13 +391,13 @@ public class NeighborList extends ParallelRegion {
     }
 
     /**
-     * The NeighborList will be re-configured, if necessary,
-     * for the supplied Crystal. Changes to both unit cell parameters and 
-     * number of symmetry operators are accomodated.
-     * 
+     * The NeighborList will be re-configured, if necessary, for the supplied
+     * Crystal. Changes to both unit cell parameters and number of symmetry
+     * operators are accomodated.
+     *
      * @param crystal A crystal defining boundary conditions and symmetry.
      */
-    public void setCrystal(Crystal crystal){
+    public void setCrystal(Crystal crystal) {
         if (!this.crystal.strictEquals(crystal)) {
             this.crystal = crystal;
             initNeighborList(false);
@@ -400,7 +405,7 @@ public class NeighborList extends ParallelRegion {
             this.crystal = crystal;
         }
     }
-    
+
     /**
      * This method can be called as necessary to build/rebuild the neighbor
      * lists.
@@ -414,7 +419,7 @@ public class NeighborList extends ParallelRegion {
      * @param log a boolean.
      */
     public void buildList(final double coordinates[][], final int lists[][][],
-                          boolean use[], boolean forceRebuild, boolean log) {
+            boolean use[], boolean forceRebuild, boolean log) {
         this.coordinates = coordinates;
         this.lists = lists;
         this.use = use;
@@ -585,7 +590,9 @@ public class NeighborList extends ParallelRegion {
     }
 
     /**
-     * {@inheritDoc}
+     * {
+     *
+     * @inheritDoc}
      *
      * This is method should not be called; it is invoked by Parallel Java.
      *
@@ -598,7 +605,9 @@ public class NeighborList extends ParallelRegion {
     }
 
     /**
-     * {@inheritDoc}
+     * {
+     *
+     * @inheritDoc}
      *
      * This is method should not be called; it is invoked by Parallel Java.
      *
@@ -615,7 +624,9 @@ public class NeighborList extends ParallelRegion {
     }
 
     /**
-     * {@inheritDoc}
+     * {
+     *
+     * @inheritDoc}
      *
      * This is method should not be called; it is invoked by Parallel Java.
      *
@@ -625,7 +636,7 @@ public class NeighborList extends ParallelRegion {
     public void finish() {
         if (logger.isLoggable(Level.FINE)) {
             logger.fine(String.format(" Parallel Neighbor List:             %10.3f sec",
-                                      (System.nanoTime() - time) * 1e-9));
+                    (System.nanoTime() - time) * 1e-9));
         }
     }
 
@@ -802,6 +813,8 @@ public class NeighborList extends ParallelRegion {
          * cell by subtracting nX. If the index is < 0, it is mapped into the
          * periodic unit cell by adding nX. The Neighbor list algorithm never
          * requires multiple additions or subtractions of nX.
+         *
+         *
          *
          *
          *
