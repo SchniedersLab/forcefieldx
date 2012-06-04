@@ -211,8 +211,8 @@
                                 </reportSet>
                             </reportSets>
                             <configuration>
-                                <dependencyDetailsEnabled>false</dependencyDetailsEnabled>
-                                <dependencyLocationsEnabled>false</dependencyLocationsEnabled>
+                                <dependencyDetailsEnabled>skipAssembly</dependencyDetailsEnabled>
+                                <dependencyLocationsEnabled>skipAssembly</dependencyLocationsEnabled>
                             </configuration>
                         </plugin>
                         <plugin>
@@ -255,12 +255,12 @@
                                 <webUser>${kenai.user.name}</webUser>
                                 <webPassword>${kenai.password}</webPassword>
                                 <statusIds>Open, In Progress, Reopened, Resolved, Closed</statusIds>
-                                <resolutionIds>Unresolved, Fixed, Won't Fix, Duplicate, Incomplete, Cannot Reproduce</resolutionIds>
+                                <resolutionIds>Unresolved, Fixed, Won't Fix, Duplicate, Incomplete, Cannot Reproduce</resolutionIds>                              
                             </configuration>
                             <reportSets>
                                 <reportSet>
                                     <reports>
-                                        <!-- report>jira-report</report -->
+                                        <report>jira-report</report>
                                         <report>changes-report</report>
                                     </reports>
                                 </reportSet>

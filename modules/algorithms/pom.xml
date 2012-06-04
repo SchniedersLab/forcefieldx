@@ -104,7 +104,7 @@
             <groupId>org.codehaus.groovy</groupId>
             <artifactId>groovy-all</artifactId>
             <type>jar</type>
-            <version>1.8.2</version>
+            <version>1.8.6</version>
         </dependency>
     </dependencies>
 </project>

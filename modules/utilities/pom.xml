@@ -25,7 +25,7 @@
             <groupId>commons-configuration</groupId>
             <artifactId>commons-configuration</artifactId>
             <type>jar</type>
-            <version>1.6</version>
+            <version>1.8</version>
         </dependency>
     </dependencies>
 </project>

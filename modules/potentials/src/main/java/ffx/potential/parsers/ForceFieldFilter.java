@@ -184,7 +184,7 @@ public class ForceFieldFilter {
                     } catch (Exception e) {
                         continue;
                     }
-                    List<String> list = config.getList(key);
+                    String list[] = config.getStringArray(key);
                     for (String s : list) {
                         // Add back the key to the input line.
                         s = key + " " + s;
