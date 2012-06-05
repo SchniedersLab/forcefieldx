@@ -205,7 +205,7 @@ public class ReciprocalSpace {
             double aewald, ParallelTeam fftTeam, ParallelTeam parallelTeam) {
 
         this.particleMeshEwald = particleMeshEwald;
-        this.crystal = crystal;
+        this.crystal = crystal.getUnitCell();
         this.forceField = forceField;
         this.atoms = atoms;
         this.nAtoms = atoms.length;
@@ -215,7 +215,7 @@ public class ReciprocalSpace {
 
         coordinates = particleMeshEwald.coordinates;
         threadCount = parallelTeam.getThreadCount();
-        nSymm = crystal.spaceGroup.getNumberOfSymOps();
+        nSymm = this.crystal.spaceGroup.getNumberOfSymOps();
 
         /**
          * Construct the parallel convolution object.
@@ -296,14 +296,13 @@ public class ReciprocalSpace {
         /**
          * Check if the number of symmetry operators has changed.
          */
-        int newNsymm = crystal.getUnitCell().spaceGroup.getNumberOfSymOps();
-        if (nSymm != newNsymm) {
+        this.crystal = crystal.getUnitCell();
+        if (nSymm != this.crystal.spaceGroup.getNumberOfSymOps()) {
             logger.info(this.crystal.toString());
             logger.info(crystal.toString());
             logger.severe(" The reciprocal space class does not currently allow changes in the number of symmetry operators.");
         }
         this.coordinates = particleMeshEwald.coordinates;
-        this.crystal = crystal.getUnitCell();
         initConvolution();
     }
 
@@ -352,8 +351,6 @@ public class ReciprocalSpace {
         fftX = nX;
         fftY = nY;
         fftZ = nZ;
-        fftSpace = fftX * fftY * fftZ * 2;
-        splineGrid = new double[fftSpace];
 
         /**
          * Populate the matrix that fractionalizes multipoles.
@@ -373,12 +370,16 @@ public class ReciprocalSpace {
             a[2][i] = fftZ * crystal.A[i][2];
         }
 
+        fftSpace = fftX * fftY * fftZ * 2;
         boolean dimChanged = fftX != fftXCurrent || fftY != fftYCurrent || fftZ != fftZCurrent;
-
+        
         if (!cudaFFT) {
             if (complexFFT3D == null || dimChanged) {
                 complexFFT3D = new Complex3DParallel(fftX, fftY, fftZ, fftTeam, recipSchedule);
                 complexFFT3D.setRecip(generalizedInfluenceFunction());
+                if (splineGrid == null || splineGrid.length < fftSpace) {
+                    splineGrid = new double[fftSpace];
+                }
                 splineBuffer = DoubleBuffer.wrap(splineGrid);
             }
             cudaFFT3D = null;
@@ -720,11 +721,20 @@ public class ReciprocalSpace {
      */
     private class BSplineRegion extends ParallelRegion {
 
+        private double r00;
+        private double r01;
+        private double r02;
+        private double r10;
+        private double r11;
+        private double r12;
+        private double r20;
+        private double r21;
+        private double r22;
         private final BSplineFillLoop bSplineFillLoop[];
-        public double splineX[][][][];
-        public double splineY[][][][];
-        public double splineZ[][][][];
-        public int initGrid[][][];
+        public final double splineX[][][][];
+        public final double splineY[][][][];
+        public final double splineZ[][][][];
+        public final int initGrid[][][];
 
         public BSplineRegion() {
             bSplineFillLoop = new BSplineFillLoop[threadCount];
@@ -732,6 +742,19 @@ public class ReciprocalSpace {
             splineX = new double[nSymm][nAtoms][][];
             splineY = new double[nSymm][nAtoms][][];
             splineZ = new double[nSymm][nAtoms][][];
+        }
+
+        @Override
+        public void start() {
+            r00 = crystal.A[0][0];
+            r01 = crystal.A[0][1];
+            r02 = crystal.A[0][2];
+            r10 = crystal.A[1][0];
+            r11 = crystal.A[1][1];
+            r12 = crystal.A[1][2];
+            r20 = crystal.A[2][0];
+            r21 = crystal.A[2][1];
+            r22 = crystal.A[2][2];
         }
 
         @Override
@@ -745,15 +768,12 @@ public class ReciprocalSpace {
 
             /**
              * Currently this condition would indicate a programming bug, since
-             * the spacegroup is not allowed to change and the ReciprocalSpace
-             * class should be operating on a Unit Cell (and not a replicated
+             * the space group is not allowed to change and the ReciprocalSpace
+             * class should be operating on a unit cell with a fixed number
+             * of space group symmetry operators (and not a replicated
              * unit cell).
              */
             if (splineX.length < nSymm) {
-                initGrid = new int[nSymm][nAtoms][];
-                splineX = new double[nSymm][nAtoms][][];
-                splineY = new double[nSymm][nAtoms][][];
-                splineZ = new double[nSymm][nAtoms][][];
                 logger.warning(" Unexpected change in the number of reciprocal space symmetry operators.");
             }
 
@@ -766,15 +786,6 @@ public class ReciprocalSpace {
 
         private class BSplineFillLoop extends IntegerForLoop {
 
-            private double r00;
-            private double r01;
-            private double r02;
-            private double r10;
-            private double r11;
-            private double r12;
-            private double r20;
-            private double r21;
-            private double r22;
             private final double bSplineWork[][];
             private final IntegerSchedule schedule = IntegerSchedule.fixed();
             // Extra padding to avert cache interference.
@@ -795,15 +806,6 @@ public class ReciprocalSpace {
             public void start() {
                 int threadIndex = getThreadIndex();
                 bSplineTime[threadIndex] -= System.nanoTime();
-                r00 = crystal.A[0][0];
-                r01 = crystal.A[0][1];
-                r02 = crystal.A[0][2];
-                r10 = crystal.A[1][0];
-                r11 = crystal.A[1][1];
-                r12 = crystal.A[1][2];
-                r20 = crystal.A[2][0];
-                r21 = crystal.A[2][1];
-                r22 = crystal.A[2][2];
             }
 
             @Override

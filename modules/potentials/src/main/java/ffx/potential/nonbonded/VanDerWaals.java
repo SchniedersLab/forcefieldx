@@ -202,7 +202,7 @@ public class VanDerWaals implements MaskingInterface,
      */
     private final NeighborList neighborList;
     private final VanDerWaalsRegion vanDerWaalsRegion;
-    private boolean constructVanDerWaals = true;
+    private boolean neighborListOnly = true;
     /**
      * Timing variables.
      */
@@ -791,8 +791,9 @@ public class VanDerWaals implements MaskingInterface,
             }
         }
         neighborList.setCrystal(crystal);
-        constructVanDerWaals = true;
+        neighborListOnly = true;
         try {
+            print = false;
             parallelTeam.execute(vanDerWaalsRegion);
         } catch (Exception e) {
             String message = " Fatal exception expanding coordinates.\n";
@@ -840,7 +841,7 @@ public class VanDerWaals implements MaskingInterface,
 
         @Override
         public void finish() {
-            constructVanDerWaals = false;
+            neighborListOnly = false;
         }
 
         @Override
@@ -878,13 +879,16 @@ public class VanDerWaals implements MaskingInterface,
              * Build the neighbor-list (if necessary) using reduced coordinates.
              */
             if (threadIndex == 0) {
-                if (constructVanDerWaals) {
-                    neighborList.buildList(reduced, neighborLists, null, true, true);
-                } else {
-                    neighborList.buildList(reduced, neighborLists, null, false, false);
-                }
+                boolean forceRebuild = false;
+                if (neighborListOnly) {
+                    forceRebuild = true;
+                } 
+                neighborList.buildList(reduced, neighborLists, null, forceRebuild, print);
             }
-            if (constructVanDerWaals) {
+            
+
+            
+            if (neighborListOnly) {
                 return;
             }
             barrier();

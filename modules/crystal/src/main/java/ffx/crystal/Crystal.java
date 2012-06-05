@@ -41,7 +41,9 @@ import static ffx.numerics.VectorMath.*;
  * apply the minimum image convention and space group symmetry operators.
  *
  * @author Michael J. Schnieders
+ * 
  * @since 1.0
+ * 
  * @version $Id: $
  */
 public class Crystal {

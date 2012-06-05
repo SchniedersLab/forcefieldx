@@ -32,15 +32,13 @@ import static ffx.crystal.SpaceGroup.LaueSystem.*;
  * distinct space groups in three dimensions.
  *
  * @author Michael J. Schnieders
+ * 
  * @see <a href="http://it.iucr.org/Ab/">International Tables for
  * Crystallography Volume A: Space-group symmetry</a>
- *
  * @see <a href="http://www.ccp4.ac.uk/html/symlib.html">CCP4 symlib</a>
- * @see <a href="http://it.iucr.org/Ab/">International Tables for
- * Crystallography Volume A: Space-group symmetry</a>
- *
- * @see <a href="http://www.ccp4.ac.uk/html/symlib.html">CCP4 symlib</a>
+ * 
  * @since 1.0
+ * 
  * @version $Id: $
  */
 public class SpaceGroup {
@@ -396,7 +394,7 @@ public class SpaceGroup {
             case TRICLINIC:
                 return true;
             case MONOCLINIC:
-                return (alpha == beta || alpha == gamma);
+                return (alpha == 90.0 && gamma == 90.0);
             case ORTHORHOMBIC:
                 return (alpha == 90.0 && beta == 90.0 && gamma == 90.0);
             case TETRAGONAL:

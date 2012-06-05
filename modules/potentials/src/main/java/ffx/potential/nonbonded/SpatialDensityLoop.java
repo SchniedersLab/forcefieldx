@@ -37,8 +37,8 @@ public abstract class SpatialDensityLoop extends IntegerForLoop {
     private static final Logger logger = Logger.getLogger(SpatialDensityLoop.class.getName());
     private int nSymm;
     private SpatialDensityRegion spatialDensityRegion;
+    private SpatialDensitySchedule spatialDensitySchedule;
     private int octant = 0;
-    private final SpatialDensitySchedule spatialDensitySchedule;
 
     /**
      * <p>Constructor for SpatialDensityLoop.</p>
@@ -58,6 +58,8 @@ public abstract class SpatialDensityLoop extends IntegerForLoop {
 
     public void setRegion(SpatialDensityRegion spatialDensityRegion) {
         this.spatialDensityRegion = spatialDensityRegion;
+        this.spatialDensitySchedule = new SpatialDensitySchedule(spatialDensityRegion.nThreads,
+                                                                 spatialDensityRegion.nAtoms, spatialDensityRegion.actualCount, 0.97);        
     }
     
     /** {@inheritDoc} */

@@ -105,37 +105,20 @@ public class CrystalVolumeDerivativeTest {
                 testdVdGamma();
                 break;
             case MONOCLINIC:
+                // alpha == gamma == 90.0
                 testdVdA();
                 testdVdB();
                 testdVdC();
-                if (alpha == beta) {
-                    crystal.changeUnitCellParameters(a, b, c, alpha + epsD, beta + epsD, gamma);
-                    dV = crystal.volume;
-                    crystal.changeUnitCellParameters(a, b, c, alpha - epsD, beta - epsD, gamma);
-                    dV -= crystal.volume;
-                    double dTot = dVdAlpha + dVdBeta;
-                    assertEquals(info + " analytic and FD volume derivatives with respect to Alpha & Beta should agree.", dTot, dV / eps2, tolerance);
-                    assertEquals(info + " analytic volume derivatives with respect to Alpha and Beta should be equal.", dVdAlpha, dVdBeta, tolerance);
-                    testdVdGamma();
-                } else if (alpha == gamma) {
-                    crystal.changeUnitCellParameters(a, b, c, alpha + epsD, beta, gamma + epsD);
-                    dV = crystal.volume;
-                    crystal.changeUnitCellParameters(a, b, c, alpha - epsD, beta, gamma - epsD);
-                    dV -= crystal.volume;
-                    double dTot = dVdAlpha + dVdGamma;
-                    assertEquals(info + " analytic and FD volume derivatives with respect to alpha and gamma should agree.", dTot, dV / eps2, tolerance);
-                    assertEquals(info + " analytic volume derivatives with respect to Alpha and Gamma should be equal.", dVdAlpha, dVdGamma, tolerance);
-                    testdVdBeta();
-                }
+                testdVdBeta();
                 break;
             case ORTHORHOMBIC:
-                // (alpha == 90.0 && beta == 90.0 && gamma == 90.0);
+                // alpha == beta == gamma == 90.0
                 testdVdA();
                 testdVdB();
                 testdVdC();
                 break;
             case TETRAGONAL:
-                // (a == b && alpha == 90.0 && beta == 90.0 && gamma == 90.0);
+                // a == b && alpha == beta == gamma == 90.0
                 crystal.changeUnitCellParameters(a + eps, b + eps, c, alpha, beta, gamma);
                 dV = crystal.volume;
                 crystal.changeUnitCellParameters(a - eps, b - eps, c, alpha, beta, gamma);
@@ -173,7 +156,7 @@ public class CrystalVolumeDerivativeTest {
                 }
                 break;
             case HEXAGONAL:
-                // (a == b && alpha == 90.0 && beta == 90.0 && gamma == 120.0);
+                // a == b && alpha == beta == 90.0 && gamma == 120.0
                 crystal.changeUnitCellParameters(a + eps, b + eps, c, alpha, beta, gamma);
                 dV = crystal.volume;
                 crystal.changeUnitCellParameters(a - eps, b - eps, c, alpha, beta, gamma);
@@ -183,7 +166,7 @@ public class CrystalVolumeDerivativeTest {
                 testdVdC();
                 break;
             case CUBIC:
-                // (a == b && b == c && alpha == 90.0 && beta == 90.0 && gamma == 90.0);
+                // a == b == c && alpha == beta == gamma == 90.0
                 crystal.changeUnitCellParameters(a + eps, b + eps, c + eps, alpha, beta, gamma);
                 dV = crystal.volume;
                 crystal.changeUnitCellParameters(a - eps, b - eps, c - eps, alpha, beta, gamma);

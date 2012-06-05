@@ -250,7 +250,7 @@ public class SpatialDensityRegion extends ParallelRegion {
             nWork = 1;
         }
 
-        logger.info(String.format(" nA %d nB %d nC %d nWork %d", nA, nB, nC, nWork));
+        logger.fine(String.format(" nA %d nB %d nC %d nWork %d", nA, nB, nC, nWork));
 
         workA = new int[nWork];
         workB = new int[nWork];
@@ -382,7 +382,8 @@ public class SpatialDensityRegion extends ParallelRegion {
                 }
             }
         } catch (Exception e) {
-            logger.severe(e.toString());
+            String message = " Exception in SpatialDensityRegion.";
+            logger.log(Level.SEVERE, message, e);
         }
     }
 
