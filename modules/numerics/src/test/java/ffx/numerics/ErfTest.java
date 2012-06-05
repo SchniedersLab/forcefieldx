@@ -1,25 +1,22 @@
 /**
- * <p>Title: Force Field X</p>
- * <p>Description: Force Field X is a Molecular Biophysics Environment</p>
- * <p>Copyright: Copyright (c) Michael J. Schnieders 2002-2009</p>
- *
- * @author Michael J. Schnieders
- * @version 0.1
+ * Title: Force Field X 
+ * Description: Force Field X - Software for Molecular Biophysics 
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.numerics;
 
@@ -40,28 +37,28 @@ import static org.junit.Assert.assertEquals;
 public class ErfTest {
 
     /**
-     * Java double precision follows the IEEE 754 Binary Floating-Point Arithmetic
-     * standard. Each double consumes 8 bytes of storage and offers 52 binary
-     * digits of precision (14-15 decimal digits). This implementation of Erf
-     * passes for a tolerance of 1.0e-15 and (as one might expect) fails
+     * Java double precision follows the IEEE 754 Binary Floating-Point
+     * Arithmetic standard. Each double consumes 8 bytes of storage and offers
+     * 52 binary digits of precision (14-15 decimal digits). This implementation
+     * of Erf passes for a tolerance of 1.0e-15 and (as one might expect) fails
      * using 1.0e-16.
      */
     private static final double tolerance = 1.0e-15;
 
     /**
-     * The expected values were found to 20 decimal points of precision
-     * using Mathematica:
+     * The expected values were found to 20 decimal points of precision using
+     * Mathematica: 
      * Erf[SetPrecision[x, 20]]
      * Erfc[SetPrecision[x, 20]]
      */
     @Parameters
     public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][] {{"Test 0.0", 0.0e0, 0.0e0},
-                                             {"Test 0.1; below the first branch point.", 0.1e0, 0.1124629160182848984e0},
-                                             {"Test 0.46875; at the first branch point.", 0.46875e0, 0.4926134732179379916e0},
-                                             {"Test 1.0; between the branch points.", 1.0e0, 0.842700792949714869e0},
-                                             {"Test 4.0; at the second branch point.", 4.0e0, 1.0e0 - 1.5417257900280018852e-8},
-                                             {"Test 5.0; above the second branch point.", 5.0e0, 1.0e0 - 1.5374597944280348502e-12}
+        return Arrays.asList(new Object[][]{{"Test 0.0", 0.0e0, 0.0e0},
+                    {"Test 0.1; below the first branch point.", 0.1e0, 0.1124629160182848984e0},
+                    {"Test 0.46875; at the first branch point.", 0.46875e0, 0.4926134732179379916e0},
+                    {"Test 1.0; between the branch points.", 1.0e0, 0.842700792949714869e0},
+                    {"Test 4.0; at the second branch point.", 4.0e0, 1.0e0 - 1.5417257900280018852e-8},
+                    {"Test 5.0; above the second branch point.", 5.0e0, 1.0e0 - 1.5374597944280348502e-12}
                 });
     }
     private final String info;

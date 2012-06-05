@@ -1,10 +1,7 @@
 /**
- * <p>Title: Force Field X</p>
- * <p>Description: Force Field X is a Molecular Biophysics Environment</p>
- * <p>Copyright: Copyright (c) Michael J. Schnieders 2002-2009</p>
- *
- * @author Michael J. Schnieders
- * @version 0.1
+ * Title: Force Field X
+ * Description: Force Field X - Software for Molecular Biophysics
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -21,7 +18,6 @@
  * along with Force Field X; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
  */
-
 package ffx.potential.bonded;
 
 import org.junit.After;

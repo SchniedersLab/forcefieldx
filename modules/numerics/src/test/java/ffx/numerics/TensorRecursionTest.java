@@ -29,7 +29,6 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertEquals;
 
 /**
  * Parameterized Test of the TensorRecursion class.

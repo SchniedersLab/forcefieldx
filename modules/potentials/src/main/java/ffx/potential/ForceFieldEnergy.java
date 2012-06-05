@@ -1137,21 +1137,20 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
 
     public void setCrystal(Crystal crystal) {
-        if (this.crystal.strictEquals(crystal)) {
-            this.crystal = crystal;
-        } else {
             this.crystal = crystal;
             /**
              * Update VanDerWaals first, in case the NeighborList needs to be
              * re-allocated to include a larger number of replicated cells.
              */
-            vanderWaals.setCrystal(crystal);
-            particleMeshEwald.setCrystal(crystal);
-            
+            if (vanderWaalsTerm == true) {
+                vanderWaals.setCrystal(crystal);
+            }
+            if (multipoleTerm == true) {
+                particleMeshEwald.setCrystal(crystal);
+            }
             /**
              * TODO: update GeneralizedKirkwood to include support for symmetry
              * operators and periodic boundary conditions.
              */
-        }
     }
 }

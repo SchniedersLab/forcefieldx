@@ -28,7 +28,6 @@ import java.util.logging.Logger;
 
 import edu.rit.pj.ParallelTeam;
 
-import ffx.autoparm.PME_2.Polarization;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.parameters.AtomType;

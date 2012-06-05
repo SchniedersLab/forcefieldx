@@ -1,10 +1,7 @@
 /**
- * <p>Title: Force Field X</p>
- * <p>Description: Force Field X is a Molecular Biophysics Environment</p>
- * <p>Copyright: Copyright (c) Michael J. Schnieders 2002-2009</p>
- *
- * @author Michael J. Schnieders
- * @version 0.1
+ * Title: Force Field X
+ * Description: Force Field X - Software for Molecular Biophysics
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
@@ -32,7 +29,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertEquals;
 
 /**

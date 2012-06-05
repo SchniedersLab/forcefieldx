@@ -150,7 +150,7 @@ public class ReplicatesCrystal extends Crystal {
                 mm++;
             }
             while (unitCell.c * nn < cutOff2) {
-                nn++;                
+                nn++;
             }
             if (super.changeUnitCellParameters(a * ll, b * mm, c * nn, alpha, beta, gamma)) {
                 l = ll;
@@ -165,9 +165,37 @@ public class ReplicatesCrystal extends Crystal {
     }
 
     /**
-     * {
-     *
-     * @inheritDoc}
+     * Two crystals are equal only if all unit cell parameters are exactly the
+     * same.
+     */
+    @Override
+    public boolean strictEquals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        
+        if (!(obj instanceof ReplicatesCrystal)) {
+            return false;
+        }
+        
+        if (this == obj) {
+            return true;
+        }
+
+        ReplicatesCrystal other = (ReplicatesCrystal) obj;
+
+        if (!this.unitCell.strictEquals(other.unitCell)) {
+            return false;
+        }
+
+        return (a == other.a && b == other.b && c == other.c
+                && alpha == other.alpha && beta == other.beta && gamma == other.gamma
+                && spaceGroup.number == other.spaceGroup.number
+                && spaceGroup.symOps.size() == other.spaceGroup.symOps.size());
+    }
+
+    /**
+     * {@inheritDoc}
      *
      * Returns the unit cell for this ReplicatesCrystal. This is useful for the
      * reciprocal space portion of PME that operates on the unit cell even
@@ -179,9 +207,7 @@ public class ReplicatesCrystal extends Crystal {
     }
 
     /**
-     * {
-     *
-     * @inheritDoc}
+     * {@inheritDoc}
      *
      * Include information about the base unit cell and replicates cell.
      */

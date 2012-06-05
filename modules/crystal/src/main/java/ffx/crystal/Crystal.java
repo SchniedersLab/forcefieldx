@@ -21,7 +21,6 @@ package ffx.crystal;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static java.lang.Math.*;
@@ -542,9 +541,11 @@ public class Crystal {
         if (obj == null) {
             return false;
         }
+        
         if (!(obj instanceof Crystal)) {
             return false;
         }
+        
         if (this == obj) {
             return true;
         }
@@ -553,8 +554,7 @@ public class Crystal {
 
         return (a == other.a && b == other.b && c == other.c
                 && alpha == other.alpha && beta == other.beta && gamma == other.gamma
-                && spaceGroup.number == other.spaceGroup.number
-                && spaceGroup.symOps.size() == other.spaceGroup.symOps.size());
+                && spaceGroup.number == other.spaceGroup.number);
     }
 
     /**

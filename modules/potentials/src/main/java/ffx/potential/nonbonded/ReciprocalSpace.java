@@ -212,7 +212,7 @@ public class ReciprocalSpace {
         this.aEwald = aewald;
         this.fftTeam = fftTeam;
         this.parallelTeam = parallelTeam;
-        
+
         coordinates = particleMeshEwald.coordinates;
         threadCount = parallelTeam.getThreadCount();
         nSymm = crystal.spaceGroup.getNumberOfSymOps();
@@ -237,10 +237,10 @@ public class ReciprocalSpace {
         }
         cudaFFT = forceField.getBoolean(ForceField.ForceFieldBoolean.CUDAFFT, false);
         bSplineOrder = forceField.getInteger(ForceFieldInteger.PME_ORDER, 5);
-        
+
         /**
-         * Initialize convolution objects that may be re-allocated during
-         * NPT simulations.
+         * Initialize convolution objects that may be re-allocated during NPT
+         * simulations.
          */
         double density = initConvolution();
 
@@ -293,22 +293,18 @@ public class ReciprocalSpace {
     }
 
     public void setCrystal(Crystal crystal) {
-        if (!crystal.strictEquals(crystal)) {
-            /**
-             * Check if the number of symmetry operators has changed.
-             */
-            int newNsymm = crystal.spaceGroup.getNumberOfSymOps();
-            if (nSymm != newNsymm) {
-                logger.info(this.crystal.toString());
-                logger.info(crystal.toString());
-                logger.severe(" The reciprocal space class does not currently allow changes in the number of symmetry operators.");
-            }
-            this.coordinates = particleMeshEwald.coordinates;
-            this.crystal = crystal;
-            initConvolution();
-        } else {
-            this.crystal = crystal;
+        /**
+         * Check if the number of symmetry operators has changed.
+         */
+        int newNsymm = crystal.getUnitCell().spaceGroup.getNumberOfSymOps();
+        if (nSymm != newNsymm) {
+            logger.info(this.crystal.toString());
+            logger.info(crystal.toString());
+            logger.severe(" The reciprocal space class does not currently allow changes in the number of symmetry operators.");
         }
+        this.coordinates = particleMeshEwald.coordinates;
+        this.crystal = crystal.getUnitCell();
+        initConvolution();
     }
 
     private double initConvolution() {
