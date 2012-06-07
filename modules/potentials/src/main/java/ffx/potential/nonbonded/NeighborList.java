@@ -319,7 +319,6 @@ public class NeighborList extends ParallelRegion {
          */
         int newNSymm = crystal.spaceGroup.symOps.size();
         if (nSymm != newNSymm) {
-            logger.info(String.format(" NeighborList nSymm %d -> %d", nSymm, newNSymm));
             nSymm = newNSymm;
         }
 

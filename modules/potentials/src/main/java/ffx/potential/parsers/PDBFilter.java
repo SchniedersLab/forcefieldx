@@ -2129,8 +2129,6 @@ public final class PDBFilter extends SystemFilter {
                 residueName = residue.getName().toUpperCase();
             }
 
-            logger.info(" Atom typing " + residueName);
-
             /**
              * Backbone heavy atoms.
              */
@@ -2313,7 +2311,6 @@ public final class PDBFilter extends SystemFilter {
      */
     private void assignAminoAcidSideChain(ResiduePosition position, AminoAcid3 aminoAcid, Residue residue,
                                           Atom CA, Atom N, Atom C) throws MissingHeavyAtomException {
-        logger.info(" Assigning side chain amino acids " + aminoAcid);
         switch (aminoAcid) {
             case GLY:
                 switch (position) {

@@ -120,7 +120,6 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
                     }
                 }
             }
-            print();
         }
     }
 
