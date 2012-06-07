@@ -1,22 +1,21 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X Description: Force Field X - Software for Molecular
+ * Biophysics Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.potential.parameters;
 
@@ -58,13 +57,14 @@ public class ForceField {
 
     public enum ForceFieldDouble {
 
-        A_AXIS, B_AXIS, C_AXIS, ALPHA, BETA, GAMMA, POLAR_DAMP, POLAR_SOR, 
-        POLAR_EPS, POLAR_EPS_PRECISE, EWALD_CUTOFF, EWALD_ALPHA, EWALD_PRECISION, PME_MESH_DENSITY,
+        A_AXIS, B_AXIS, C_AXIS, ALPHA, BETA, GAMMA, POLAR_DAMP, POLAR_SOR,
+        POLAR_EPS, POLAR_EPS_PRECISE, EWALD_CUTOFF, EWALD_ALPHA, EWALD_PRECISION,
+        PME_MESH_DENSITY,
         VDW_CUTOFF, MPOLE_11_SCALE, MPOLE_12_SCALE, MPOLE_13_SCALE,
         MPOLE_14_SCALE, MPOLE_15_SCALE, POLAR_12_SCALE, POLAR_13_SCALE,
         DIRECT_11_SCALE, RIGID_SCALE, VDW_LAMBDA_EXPONENT, VDW_LAMBDA_ALPHA,
-        PERMANENT_LAMBDA_EXPONENT, PERMANENT_LAMBDA_ALPHA, 
-        POLARIZATION_LAMBDA_START, POLARIZATION_LAMBDA_END, 
+        PERMANENT_LAMBDA_EXPONENT, PERMANENT_LAMBDA_ALPHA,
+        POLARIZATION_LAMBDA_START, POLARIZATION_LAMBDA_END,
         POLARIZATION_LAMBDA_EXPONENT, DUAL_TOPOLOGY_LAMBDA_EXPONENT
     }
 
@@ -119,9 +119,11 @@ public class ForceField {
     private final Map<ForceFieldType, Map> forceFieldTypes;
 
     /**
-     * <p>Getter for the field <code>forceFieldURL</code>.</p>
+     * <p>Getter for the field
+     * <code>forceFieldURL</code>.</p>
      *
-     * @param forceField a {@link ffx.potential.parameters.ForceField.Force_Field} object.
+     * @param forceField a {@link ffx.potential.parameters.ForceField.Force_Field}
+     * object.
      * @return a {@link java.net.URL} object.
      */
     public static URL getForceFieldURL(Force_Field forceField) {
@@ -135,7 +137,8 @@ public class ForceField {
     /**
      * ForceField Constructor.
      *
-     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration}
+     * object.
      * @param parameterFile a {@link java.io.File} object.
      */
     public ForceField(CompositeConfiguration properties, File parameterFile) {
@@ -146,7 +149,8 @@ public class ForceField {
     /**
      * ForceField Constructor.
      *
-     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration}
+     * object.
      */
     public ForceField(CompositeConfiguration properties) {
         this.properties = properties;
@@ -186,7 +190,7 @@ public class ForceField {
     }
 
     public int minClass() {
-        int minClass = maxClass(); 
+        int minClass = maxClass();
         for (AtomType type : atomTypes.values()) {
             if (type.atomClass < minClass) {
                 minClass = type.atomClass;
@@ -194,7 +198,7 @@ public class ForceField {
         }
         return minClass;
     }
-    
+
     public int minType() {
         int minType = maxType();
         for (String key : atomTypes.keySet()) {
@@ -205,9 +209,9 @@ public class ForceField {
         }
         return minType;
     }
-    
+
     public int minBioType() {
-        int minBioType = maxBioType(); 
+        int minBioType = maxBioType();
         for (String key : bioTypes.keySet()) {
             int type = Integer.parseInt(key);
             if (type < minBioType) {
@@ -216,9 +220,9 @@ public class ForceField {
         }
         return minBioType;
     }
-    
+
     public int maxClass() {
-        int maxClass = 0; 
+        int maxClass = 0;
         for (AtomType type : atomTypes.values()) {
             if (type.atomClass > maxClass) {
                 maxClass = type.atomClass;
@@ -226,7 +230,7 @@ public class ForceField {
         }
         return maxClass;
     }
-    
+
     public int maxType() {
         int maxType = 0;
         for (String key : atomTypes.keySet()) {
@@ -237,9 +241,9 @@ public class ForceField {
         }
         return maxType;
     }
-    
+
     public int maxBioType() {
-        int maxBioType = 0; 
+        int maxBioType = 0;
         for (String key : bioTypes.keySet()) {
             int type = Integer.parseInt(key);
             if (type > maxBioType) {
@@ -248,9 +252,9 @@ public class ForceField {
         }
         return maxBioType;
     }
-    
+
     public void renumberForceField(int classOffset, int typeOffset, int bioTypeOffset) {
-            
+
         for (AngleType patchType : angleTypes.values()) {
             patchType.incrementClasses(classOffset);
         }
@@ -303,10 +307,10 @@ public class ForceField {
             patchType.incrementClass(classOffset);
         }
     }
-    
+
     /**
-     * Append a 2nd ForceField "patch" to the current ForceField. Note that
-     * only the force field types are appended; properties are ignored.
+     * Append a 2nd ForceField "patch" to the current ForceField. Note that only
+     * the force field types are appended; properties are ignored.
      *
      * @param patch The force field patch to append.
      */
@@ -315,17 +319,17 @@ public class ForceField {
         int classOffset = maxClass();
         int typeOffset = maxType();
         int bioTypeOffset = maxBioType();
-        
+
         int minClass = patch.minClass();
         int minType = patch.minType();
         int minBioType = patch.minBioType();
-        
+
         classOffset -= (minClass - 1);
-        typeOffset -= (minType -1);
+        typeOffset -= (minType - 1);
         bioTypeOffset -= (minBioType - 1);
-        
+
         patch.renumberForceField(classOffset, typeOffset, bioTypeOffset);
-        
+
         for (AngleType patchType : patch.angleTypes.values()) {
             angleTypes.put(patchType.getKey(), patchType);
         }
@@ -396,7 +400,8 @@ public class ForceField {
     /**
      * <p>getDouble</p>
      *
-     * @param forceFieldDouble a {@link ffx.potential.parameters.ForceField.ForceFieldDouble} object.
+     * @param forceFieldDouble a {@link ffx.potential.parameters.ForceField.ForceFieldDouble}
+     * object.
      * @return a double.
      * @throws java.lang.Exception if any.
      */
@@ -415,7 +420,8 @@ public class ForceField {
     /**
      * <p>getDouble</p>
      *
-     * @param forceFieldDouble a {@link ffx.potential.parameters.ForceField.ForceFieldDouble} object.
+     * @param forceFieldDouble a {@link ffx.potential.parameters.ForceField.ForceFieldDouble}
+     * object.
      * @param defaultValue a double.
      * @return a double.
      */
@@ -431,7 +437,8 @@ public class ForceField {
     /**
      * <p>getInteger</p>
      *
-     * @param forceFieldInteger a {@link ffx.potential.parameters.ForceField.ForceFieldInteger} object.
+     * @param forceFieldInteger a {@link ffx.potential.parameters.ForceField.ForceFieldInteger}
+     * object.
      * @return a int.
      * @throws java.lang.Exception if any.
      */
@@ -450,7 +457,8 @@ public class ForceField {
     /**
      * <p>getInteger</p>
      *
-     * @param forceFieldInteger a {@link ffx.potential.parameters.ForceField.ForceFieldInteger} object.
+     * @param forceFieldInteger a {@link ffx.potential.parameters.ForceField.ForceFieldInteger}
+     * object.
      * @param defaultValue a int.
      * @return a int.
      */
@@ -466,7 +474,8 @@ public class ForceField {
     /**
      * <p>getString</p>
      *
-     * @param forceFieldString a {@link ffx.potential.parameters.ForceField.ForceFieldString} object.
+     * @param forceFieldString a {@link ffx.potential.parameters.ForceField.ForceFieldString}
+     * object.
      * @return a {@link java.lang.String} object.
      * @throws java.lang.Exception if any.
      */
@@ -485,7 +494,8 @@ public class ForceField {
     /**
      * <p>getString</p>
      *
-     * @param forceFieldString a {@link ffx.potential.parameters.ForceField.ForceFieldString} object.
+     * @param forceFieldString a {@link ffx.potential.parameters.ForceField.ForceFieldString}
+     * object.
      * @param defaultString a {@link java.lang.String} object.
      * @return a {@link java.lang.String} object.
      */
@@ -501,7 +511,8 @@ public class ForceField {
     /**
      * <p>getBoolean</p>
      *
-     * @param forceFieldBoolean a {@link ffx.potential.parameters.ForceField.ForceFieldBoolean} object.
+     * @param forceFieldBoolean a {@link ffx.potential.parameters.ForceField.ForceFieldBoolean}
+     * object.
      * @return a boolean.
      * @throws java.lang.Exception if any.
      */
@@ -520,7 +531,8 @@ public class ForceField {
     /**
      * <p>getBoolean</p>
      *
-     * @param forceFieldBoolean a {@link ffx.potential.parameters.ForceField.ForceFieldBoolean} object.
+     * @param forceFieldBoolean a {@link ffx.potential.parameters.ForceField.ForceFieldBoolean}
+     * object.
      * @param defaultBoolean a {@link java.lang.Boolean} object.
      * @return a boolean.
      */
@@ -536,10 +548,8 @@ public class ForceField {
     /**
      * Add a force field keyword that is represented by a double.
      *
-     * @param forceFieldDouble
-     *            ForceFieldDouble
-     * @param value
-     *            double
+     * @param forceFieldDouble ForceFieldDouble
+     * @param value double
      */
     public void addForceFieldDouble(ForceFieldDouble forceFieldDouble, double value) {
         if (forceFieldDouble == null) {
@@ -561,10 +571,8 @@ public class ForceField {
     /**
      * Add a force field keyword that is represented by an int.
      *
-     * @param forceFieldInteger
-     *            ForceFieldInteger
-     * @param value
-     *            int
+     * @param forceFieldInteger ForceFieldInteger
+     * @param value int
      */
     public void addForceFieldInteger(ForceFieldInteger forceFieldInteger, int value) {
         if (forceFieldInteger == null) {
@@ -586,10 +594,8 @@ public class ForceField {
     /**
      * Store a force field keyword that is represented by a String.
      *
-     * @param forceFieldString
-     *            ForceFieldString
-     * @param value
-     *            String
+     * @param forceFieldString ForceFieldString
+     * @param value String
      */
     public void addForceFieldString(ForceFieldString forceFieldString, String value) {
         if (forceFieldString == null) {
@@ -636,8 +642,7 @@ public class ForceField {
      * complicated than simple Strings or doubles, in that they have multiple
      * fields and may occur multiple times.
      *
-     * @param type
-     *            BaseType
+     * @param type BaseType
      */
     public void addForceFieldType(BaseType type) {
         if (type == null) {
@@ -698,7 +703,8 @@ public class ForceField {
     }
 
     /**
-     * <p>Getter for the field <code>atomTypes</code>.</p>
+     * <p>Getter for the field
+     * <code>atomTypes</code>.</p>
      *
      * @param moleculeName a {@link java.lang.String} object.
      * @return a {@link java.util.HashMap} object.
@@ -854,7 +860,8 @@ public class ForceField {
     /**
      * <p>getForceFieldTypeCount</p>
      *
-     * @param type a {@link ffx.potential.parameters.ForceField.ForceFieldType} object.
+     * @param type a {@link ffx.potential.parameters.ForceField.ForceFieldType}
+     * object.
      * @return a int.
      */
     public int getForceFieldTypeCount(ForceFieldType type) {
@@ -925,8 +932,7 @@ public class ForceField {
     /**
      * Prints any force field keyword to Standard.out.
      *
-     * @param key
-     *            String
+     * @param key String
      */
     public void log(String key) {
         ForceFieldType type = ForceFieldType.valueOf(key);
@@ -955,8 +961,7 @@ public class ForceField {
     /**
      * Return a String for any Force Field keyword.
      *
-     * @param type
-     *            ForceFieldType
+     * @param type ForceFieldType
      * @return String
      */
     public String toString(ForceFieldType type) {
@@ -991,6 +996,106 @@ public class ForceField {
             return key + " " + Arrays.toString(l.toArray());
         } else {
             return key + " is not defined.";
+        }
+    }
+
+    /**
+     * Patches that add new atom classes/types that bond to existing
+     * atom classes/types require "hybrid" force field types that
+     * include a mixture of new and existing types.
+     *
+     * @param typeMap A look-up from new types to existing types.
+     */
+    public void patchClassesAndTypes(HashMap<AtomType, AtomType> typeMap) {
+
+        for (AngleType angleType : angleTypes.values().toArray(new AngleType[angleTypes.size()])) {
+            String currentKey = angleType.key;
+            angleType.patchClasses(typeMap);
+            if (!angleType.key.equals(currentKey)) {
+                angleTypes.remove(currentKey);
+                addForceFieldType(angleType);
+            }
+        }
+
+        for (BondType bondType : bondTypes.values().toArray(new BondType[bondTypes.size()])) {
+            String currentKey = bondType.key;
+            bondType.patchClasses(typeMap);
+            if (!bondType.key.equals(currentKey)) {
+                bondTypes.remove(currentKey);
+                addForceFieldType(bondType);
+            }
+        }
+
+        for (OutOfPlaneBendType outOfPlaneBendType : outOfPlaneBendTypes.values().toArray(new OutOfPlaneBendType[outOfPlaneBendTypes.size()])) {
+            String currentKey = outOfPlaneBendType.key;
+            outOfPlaneBendType.patchClasses(typeMap);
+            if (!outOfPlaneBendType.key.equals(currentKey)) {
+                outOfPlaneBendTypes.remove(currentKey);
+                addForceFieldType(outOfPlaneBendType);
+            }
+        }
+
+        for (PiTorsionType piTorsionType : piTorsionTypes.values().toArray(new PiTorsionType[piTorsionTypes.size()])) {
+            String currentKey = piTorsionType.key;
+            piTorsionType.patchClasses(typeMap);
+            if (!piTorsionType.key.equals(currentKey)) {
+                piTorsionTypes.remove(currentKey);
+                addForceFieldType(piTorsionType);
+            }
+        }
+
+        for (StretchBendType stretchBendType : stretchBendTypes.values().toArray(new StretchBendType[stretchBendTypes.size()])) {
+            String currentKey = stretchBendType.key;
+            stretchBendType.patchClasses(typeMap);
+            if (!stretchBendType.key.equals(currentKey)) {
+                stretchBendTypes.remove(currentKey);
+                addForceFieldType(stretchBendType);
+            }
+        }
+
+        for (TorsionTorsionType torsionTorsionType : torsionTorsionTypes.values().toArray(new TorsionTorsionType[torsionTorsionTypes.size()])) {
+            String currentKey = torsionTorsionType.key;
+            torsionTorsionType.patchClasses(typeMap);
+            if (!torsionTorsionType.key.equals(currentKey)) {
+                torsionTorsionTypes.remove(currentKey);
+                addForceFieldType(torsionTorsionType);
+            }
+        }
+
+        for (TorsionType torsionType : torsionTypes.values().toArray(new TorsionType[torsionTypes.size()])) {
+            String currentKey = torsionType.key;
+            torsionType.patchClasses(typeMap);
+            if (!torsionType.key.equals(currentKey)) {
+                torsionTypes.remove(currentKey);
+                addForceFieldType(torsionType);
+            }
+        }
+
+        for (UreyBradleyType ureyBradleyType : ureyBradleyTypes.values().toArray(new UreyBradleyType[ureyBradleyTypes.size()])) {
+            String currentKey = ureyBradleyType.key;
+            ureyBradleyType.patchClasses(typeMap);
+            if (!ureyBradleyType.key.equals(currentKey)) {
+                ureyBradleyTypes.remove(currentKey);
+                addForceFieldType(ureyBradleyType);
+            }
+        }
+
+        for (MultipoleType multipoleType : multipoleTypes.values().toArray(new MultipoleType[multipoleTypes.size()])) {
+            String currentKey = multipoleType.key;
+            multipoleType.patchTypes(typeMap);
+            if (!multipoleType.key.equals(currentKey)) {
+                multipoleTypes.remove(currentKey);
+                addForceFieldType(multipoleType);
+            }
+        }
+
+        for (PolarizeType polarizeType : polarizeTypes.values().toArray(new PolarizeType[polarizeTypes.size()])) {
+            String currentKey = polarizeType.key;
+            polarizeType.patchTypes(typeMap);
+            if (!polarizeType.key.equals(currentKey)) {
+                polarizeTypes.remove(currentKey);
+                addForceFieldType(polarizeType);
+            }
         }
     }
 }

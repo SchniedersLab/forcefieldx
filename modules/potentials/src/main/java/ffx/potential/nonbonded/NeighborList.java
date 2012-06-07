@@ -317,7 +317,12 @@ public class NeighborList extends ParallelRegion {
         /**
          * Set the number of symmetry operators.
          */
-        nSymm = crystal.spaceGroup.symOps.size();
+        int newNSymm = crystal.spaceGroup.symOps.size();
+        if (nSymm != newNSymm) {
+            logger.info(String.format(" NeighborList nSymm %d -> %d", nSymm, newNSymm));
+            nSymm = newNSymm;
+        }
+
 
         /**
          * Find the shortest crystal axis length.
@@ -372,20 +377,27 @@ public class NeighborList extends ParallelRegion {
             cellList = new int[nSymm][nAtoms];
             cellIndex = new int[nSymm][nAtoms];
             cellOffset = new int[nSymm][nAtoms];
-            cellStart = new int[nSymm][nCells];
-            cellCount = new int[nSymm][nCells];
         } else if (cellList.length < nSymm) {
-            logger.info(String.format(" Neighbor-List: Increasing memory (%d -> %d)", cellList.length, nSymm));
+            logger.info(String.format(" Neighbor-List: Increasing memory for nSymm (%d -> %d)", cellList.length, nSymm));
             cellList = new int[nSymm][nAtoms];
             cellIndex = new int[nSymm][nAtoms];
             cellOffset = new int[nSymm][nAtoms];
-            cellStart = new int[nSymm][nCells];
-            cellCount = new int[nSymm][nCells];
-        } else if (cellStart[0].length < nCells) {
-            logger.info(String.format(" Neighbor-List: Increasing Cells (%d -> %d)", cellStart[0].length, nCells));
-            cellStart = new int[nSymm][nCells];
-            cellCount = new int[nSymm][nCells];
         }
+        
+        if (cellStart == null) {
+            cellStart = new int[nSymm][nCells];
+            cellCount = new int[nSymm][nCells];
+        } else if (cellStart.length < nSymm) {
+            int maxCells = Math.max(nCells, cellStart[0].length);
+            cellStart = new int[nSymm][maxCells];
+            cellCount = new int[nSymm][maxCells];
+        } else if (cellStart[0].length < nCells) {
+            logger.info(String.format(" Neighbor-List: Increasing memory for nCell (%d -> %d)", cellStart[0].length, nCells));
+            for (int i=0; i<cellStart.length; i++) {
+                cellStart[i] = new int[nCells];
+                cellCount[i] = new int[nCells];
+            }
+        }        
     }
 
     /**

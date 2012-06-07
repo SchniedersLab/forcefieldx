@@ -1,27 +1,27 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X Description: Force Field X - Software for Molecular
+ * Biophysics Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.potential.parameters;
 
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.logging.Logger;
 
 import static java.lang.Math.abs;
@@ -91,15 +91,12 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
      * units of Bohr, and are converted to electron-Angstroms and
      * electron-Angstroms^2, respectively, before the constructor returns.
      *
-     * @param charge
-     *            double
-     * @param dipole
-     *            double[]
-     * @param quadrupole
-     *            double[]
-     * @param multipoleFrameTypes
-     *            int[]
-     * @param frameDefinition a {@link ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition} object.
+     * @param charge double
+     * @param dipole double[]
+     * @param quadrupole double[]
+     * @param multipoleFrameTypes int[]
+     * @param frameDefinition a {@link ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition}
+     * object.
      */
     public MultipoleType(double charge, double dipole[], double quadrupole[][],
                          int[] multipoleFrameTypes, MultipoleFrameDefinition frameDefinition) {
@@ -127,6 +124,28 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
             }
         }
         setKey(frameAtomTypes);
+    }
+
+    /**
+     * Remap new atom types to known internal ones.
+     *
+     * @param typeMap a lookup between new atom types and known atom types.
+     */
+    public void patchTypes(HashMap<AtomType, AtomType> typeMap) {
+        boolean patched = false;
+        for (AtomType newType : typeMap.keySet()) {
+            for (int i = 1; i < frameAtomTypes.length; i++) {
+                if (frameAtomTypes[i] > 0 && frameAtomTypes[i] == newType.type) {
+                    AtomType knownType = typeMap.get(newType);
+                    frameAtomTypes[i] = knownType.type;
+                    patched = true;
+                }
+            }
+        }
+        if (patched) {
+            setKey(frameAtomTypes);
+        }
+
     }
 
     private void initMultipole() {
@@ -247,13 +266,17 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
         return multipoleBuffer.toString();
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String toString() {
         return toBohrString();
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int compare(String s1, String s2) {
         String keys1[] = s1.split(" ");
@@ -284,7 +307,9 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
         return 0;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean equals(Object other) {
         if (other == this) {
@@ -306,7 +331,9 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
         return true;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int hashCode() {
         int hash = 7;
@@ -318,42 +345,99 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
      * makes multipole code much easier to read.
      */
     public static final int t000 = 0;
-    /** Constant <code>t100=1</code> */
+    /**
+     * Constant
+     * <code>t100=1</code>
+     */
     public static final int t100 = 1;
-    /** Constant <code>t010=2</code> */
+    /**
+     * Constant
+     * <code>t010=2</code>
+     */
     public static final int t010 = 2;
-    /** Constant <code>t001=3</code> */
+    /**
+     * Constant
+     * <code>t001=3</code>
+     */
     public static final int t001 = 3;
-    /** Constant <code>t200=4</code> */
+    /**
+     * Constant
+     * <code>t200=4</code>
+     */
     public static final int t200 = 4;
-    /** Constant <code>t020=5</code> */
+    /**
+     * Constant
+     * <code>t020=5</code>
+     */
     public static final int t020 = 5;
-    /** Constant <code>t002=6</code> */
+    /**
+     * Constant
+     * <code>t002=6</code>
+     */
     public static final int t002 = 6;
-    /** Constant <code>t110=7</code> */
+    /**
+     * Constant
+     * <code>t110=7</code>
+     */
     public static final int t110 = 7;
-    /** Constant <code>t101=8</code> */
+    /**
+     * Constant
+     * <code>t101=8</code>
+     */
     public static final int t101 = 8;
-    /** Constant <code>t011=9</code> */
+    /**
+     * Constant
+     * <code>t011=9</code>
+     */
     public static final int t011 = 9;
-    /** Constant <code>t300=10</code> */
+    /**
+     * Constant
+     * <code>t300=10</code>
+     */
     public static final int t300 = 10;
-    /** Constant <code>t030=11</code> */
+    /**
+     * Constant
+     * <code>t030=11</code>
+     */
     public static final int t030 = 11;
-    /** Constant <code>t003=12</code> */
+    /**
+     * Constant
+     * <code>t003=12</code>
+     */
     public static final int t003 = 12;
-    /** Constant <code>t210=13</code> */
+    /**
+     * Constant
+     * <code>t210=13</code>
+     */
     public static final int t210 = 13;
-    /** Constant <code>t201=14</code> */
+    /**
+     * Constant
+     * <code>t201=14</code>
+     */
     public static final int t201 = 14;
-    /** Constant <code>t120=15</code> */
+    /**
+     * Constant
+     * <code>t120=15</code>
+     */
     public static final int t120 = 15;
-    /** Constant <code>t021=16</code> */
+    /**
+     * Constant
+     * <code>t021=16</code>
+     */
     public static final int t021 = 16;
-    /** Constant <code>t102=17</code> */
+    /**
+     * Constant
+     * <code>t102=17</code>
+     */
     public static final int t102 = 17;
-    /** Constant <code>t012=18</code> */
+    /**
+     * Constant
+     * <code>t012=18</code>
+     */
     public static final int t012 = 18;
-    /** Constant <code>t111=19</code> */
+    /**
+     * Constant
+     * <code>t111=19</code>
+     */
     public static final int t111 = 19;
 }

@@ -1,27 +1,27 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X Description: Force Field X - Software for Molecular
+ * Biophysics Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.potential.parameters;
 
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 
 /**
  * The PiTorsionType class defines a Pi-Torsion energy term.
@@ -44,10 +44,8 @@ public final class PiTorsionType extends BaseType implements Comparator<String> 
     /**
      * PiTorsionType Constructor.
      *
-     * @param atomClasses
-     *            int[]
-     * @param forceConstant
-     *            double
+     * @param atomClasses int[]
+     * @param forceConstant double
      */
     public PiTorsionType(int atomClasses[], double forceConstant) {
         super(ForceField.ForceFieldType.PITORS, sortKey(atomClasses));
@@ -68,10 +66,37 @@ public final class PiTorsionType extends BaseType implements Comparator<String> 
     }
 
     /**
+     * Remap new atom classes to known internal ones.
+     *
+     * @param typeMap a lookup between new atom types and known atom types.
+     */
+    public void patchClasses(HashMap<AtomType, AtomType> typeMap) {
+        int count = 0;
+        for (AtomType newType : typeMap.keySet()) {
+            for (int i = 0; i < atomClasses.length; i++) {
+                if (atomClasses[i] == newType.atomClass) {
+                    count++;
+                }
+            }
+        }
+        if (count > 0 && count < atomClasses.length) {
+            for (AtomType newType : typeMap.keySet()) {
+                for (int i = 0; i < atomClasses.length; i++) {
+                    if (atomClasses[i] == newType.atomClass) {
+                        AtomType knownType = typeMap.get(newType);
+                        atomClasses[i] = knownType.atomClass;
+                    }
+                }
+
+            }
+            setKey(sortKey(atomClasses));
+        }
+    }
+
+    /**
      * This method sorts the atom classes as: min, max
      *
-     * @param c
-     *            atomClasses
+     * @param c atomClasses
      * @return lookup key
      */
     public static String sortKey(int c[]) {
@@ -104,7 +129,9 @@ public final class PiTorsionType extends BaseType implements Comparator<String> 
      */
     public static double units = 1.0;
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int compare(String s1, String s2) {
         String keys1[] = s1.split(" ");
@@ -122,7 +149,9 @@ public final class PiTorsionType extends BaseType implements Comparator<String> 
         return 0;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean equals(Object other) {
         if (other == this) {
@@ -140,7 +169,9 @@ public final class PiTorsionType extends BaseType implements Comparator<String> 
         return true;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int hashCode() {
         int hash = 5;

@@ -1,22 +1,21 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X Description: Force Field X - Software for Molecular
+ * Biophysics Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.potential.parsers;
 
@@ -37,10 +36,7 @@ import ffx.crystal.SpaceGroup;
 import ffx.numerics.VectorMath;
 import ffx.potential.bonded.*;
 import ffx.potential.bonded.Utilities.FileType;
-import ffx.potential.parameters.AtomType;
-import ffx.potential.parameters.BioType;
-import ffx.potential.parameters.BondType;
-import ffx.potential.parameters.ForceField;
+import ffx.potential.parameters.*;
 import ffx.potential.parsers.PDBFilter.ResiduePosition;
 import ffx.utilities.Hybrid36;
 
@@ -54,8 +50,9 @@ import static ffx.potential.parsers.PDBFilter.ResiduePosition.*;
  * following records are recognized: ANISOU, ATOM, CONECT, CRYST1, END, HELIX,
  * HETATM, LINK, SHEET, SSBOND, REMARK. The rest are currently ignored.
  *
- * @see <a href="http://www.wwpdb.org/documentation/format32/v3.2.html">
- *  PDB format 3.2</a>
+ * @see <a href="http://www.wwpdb.org/documentation/format32/v3.2.html"> PDB
+ * format 3.2</a>
+ *
  * @author Michael J. Schnieders
  * @since 1.0
  * @version $Id: $
@@ -84,13 +81,12 @@ public final class PDBFilter extends SystemFilter {
      * List of segIDs defined for the PDB file.
      *
      * The expectation is for chain naming from A-Z, then from 0-9. For large
-     * systems, chain names are sometimes reused due to limitations in
-     * the PBD format.
+     * systems, chain names are sometimes reused due to limitations in the PBD
+     * format.
      *
      * However, we define segIDs to always be unique. For the first A-Z,0-9
-     * series chainID == segID. Then, for second A-Z,0-9 series, the
-     * segID = 1A-1Z,10-19, and for the third series segID = 2A-2Z,20-29,
-     * and so on.
+     * series chainID == segID. Then, for second A-Z,0-9 series, the segID =
+     * 1A-1Z,10-19, and for the third series segID = 2A-2Z,20-29, and so on.
      */
     private List<String> segIDs = new ArrayList<String>();
     private Character currentChainID = null;
@@ -105,6 +101,7 @@ public final class PDBFilter extends SystemFilter {
 
     /**
      * Convert possibly duplicate chain IDs into unique segIDs.
+     *
      * @param c chain ID just read.
      * @return a unique segID.
      */
@@ -153,9 +150,11 @@ public final class PDBFilter extends SystemFilter {
      * <p>Constructor for PDBFilter.</p>
      *
      * @param files a {@link java.util.List} object.
-     * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly} object.
+     * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly}
+     * object.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration}
+     * object.
      */
     public PDBFilter(List<File> files, MolecularAssembly molecularAssembly,
                      ForceField forceField, CompositeConfiguration properties) {
@@ -167,9 +166,11 @@ public final class PDBFilter extends SystemFilter {
      * Parse the PDB File from a URL.
      *
      * @param file a {@link java.io.File} object.
-     * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly} object.
+     * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly}
+     * object.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration}
+     * object.
      */
     public PDBFilter(File file, MolecularAssembly molecularAssembly,
                      ForceField forceField, CompositeConfiguration properties) {
@@ -183,7 +184,8 @@ public final class PDBFilter extends SystemFilter {
      * @param file a {@link java.io.File} object.
      * @param molecularAssemblies a {@link java.util.List} object.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration}
+     * object.
      */
     public PDBFilter(File file, List<MolecularAssembly> molecularAssemblies,
                      ForceField forceField, CompositeConfiguration properties) {
@@ -731,10 +733,10 @@ public final class PDBFilter extends SystemFilter {
                 logger.log(Level.WARNING, message, e);
             }
         }
-        
+
         int pdbAtoms = activeMolecularAssembly.getAtomArray().length;
         assignAtomTypes();
-        
+
         StringBuilder sb = new StringBuilder(" Disulfide Bonds:");
         for (Bond bond : ssBondList) {
             Atom a1 = bond.getAtom(0);
@@ -812,8 +814,8 @@ public final class PDBFilter extends SystemFilter {
     }
 
     /**
-     * Assign force field atoms types to common chemistries using
-     * "biotype" records.
+     * Assign force field atoms types to common chemistries using "biotype"
+     * records.
      */
     public void assignAtomTypes() {
         /**
@@ -841,27 +843,33 @@ public final class PDBFilter extends SystemFilter {
                 for (int residueNumber = 0; residueNumber < numberOfResidues; residueNumber++) {
                     Residue residue = residues.get(residueNumber);
                     String name = residue.getName().toUpperCase();
-                    AminoAcid3 aminoAcid = null;
+                    boolean aa = false;
                     for (AminoAcid3 amino : aminoAcidList) {
                         if (amino.toString().equalsIgnoreCase(name)) {
-                            aminoAcid = amino;
+                            aa = true;
                             break;
                         }
                     }
-                    if (aminoAcid == null) {
-                        isProtein = false;
-                        break;
+                    // Check for a patch.
+                    if (!aa) {
+                        HashMap<String, AtomType> types = forceField.getAtomTypes(name);
+                        if (types.isEmpty()) {
+                            isProtein = false;
+                            break;
+                        } else {
+                            logger.info(" Patch found for non-standard amino acid " + name);
+                        }
                     }
                 }
 
                 /**
-                 * If all the residues in this chain have known amino acids names,
-                 * then attempt to assign atom types.
+                 * If all the residues in this chain have known amino acids
+                 * names, then attempt to assign atom types.
                  */
                 if (isProtein) {
                     try {
                         logger.info(format(" Amino acid chain %s", polymer.getName()));
-                        double dist = properties.getDouble("chainbreak",3.0);
+                        double dist = properties.getDouble("chainbreak", 3.0);
                         // Detect main chain breaks!
                         List<List<Residue>> subChains = findChainBreaks(residues, dist);
                         for (List<Residue> subChain : subChains) {
@@ -883,8 +891,8 @@ public final class PDBFilter extends SystemFilter {
                     Residue residue = residues.get(residueNumber);
                     String name = residue.getName().toUpperCase();
                     /**
-                     * Convert 1 and 2-character nucleic acid names
-                     * to 3-character names.
+                     * Convert 1 and 2-character nucleic acid names to
+                     * 3-character names.
                      */
                     if (name.length() == 1) {
                         if (name.equals("A")) {
@@ -921,8 +929,8 @@ public final class PDBFilter extends SystemFilter {
                 }
 
                 /**
-                 * If all the residues in this chain have known nucleic acids names,
-                 * then attempt to assign atom types.
+                 * If all the residues in this chain have known nucleic acids
+                 * names, then attempt to assign atom types.
                  */
                 if (isNucleicAcid) {
                     try {
@@ -1027,8 +1035,7 @@ public final class PDBFilter extends SystemFilter {
                 }
             }
             /**
-             * Create missing hydrogen atoms.
-             * Check for missing heavy atoms.
+             * Create missing hydrogen atoms. Check for missing heavy atoms.
              */
             if (patched && !types.isEmpty()) {
                 for (AtomType type : types.values()) {
@@ -1082,8 +1089,7 @@ public final class PDBFilter extends SystemFilter {
                     List<Bond> aBonds = ia.getBonds();
                     int numBonds = aBonds.size();
                     /**
-                     * Try to find the following configuration:
-                     * ib-ia-ic
+                     * Try to find the following configuration: ib-ia-ic
                      */
                     Atom ib = null;
                     Atom ic = null;
@@ -1202,7 +1208,6 @@ public final class PDBFilter extends SystemFilter {
                     }
                 }
             }
-
             if (!patched) {
                 logger.log(Level.WARNING, format(" Deleting unrecognized molecule %s.", m.toString()));
                 activeMolecularAssembly.deleteMolecule((Molecule) m);
@@ -1243,8 +1248,8 @@ public final class PDBFilter extends SystemFilter {
                 }
 
                 /**
-                 * Compute the distance between the previous carbonyl carbon
-                 * and the current nitrogen.
+                 * Compute the distance between the previous carbonyl carbon and
+                 * the current nitrogen.
                  */
                 double r = VectorMath.dist(pC.getXYZ(), N.getXYZ());
                 if (r > cutoff) {
@@ -1331,8 +1336,8 @@ public final class PDBFilter extends SystemFilter {
             }
 
             /**
-             * Check if the sugar is deoxyribose and change the residue
-             * name if necessary.
+             * Check if the sugar is deoxyribose and change the residue name if
+             * necessary.
              */
             boolean isDNA = false;
             Atom O2s = (Atom) residue.getAtomNode("O2\'");
@@ -1413,10 +1418,8 @@ public final class PDBFilter extends SystemFilter {
             Atom O5s = null;
             if (position == FIRST_RESIDUE) {
                 /**
-                 * The 5' O5' oxygen of the nucleic acid is generally
-                 * terminated by
-                 * 1.) A phosphate group PO3 (-3).
-                 * 2.) A hydrogen.
+                 * The 5' O5' oxygen of the nucleic acid is generally terminated
+                 * by 1.) A phosphate group PO3 (-3). 2.) A hydrogen.
                  *
                  * If the base has phosphate atom we will assume a PO3 group.
                  */
@@ -1511,8 +1514,8 @@ public final class PDBFilter extends SystemFilter {
             }
 
             /**
-             * Do some checks on the current base to make sure all atoms
-             * have been assigned an atom type.
+             * Do some checks on the current base to make sure all atoms have
+             * been assigned an atom type.
              */
             resAtoms = residue.getAtomList();
             for (Atom atom : resAtoms) {
@@ -1982,8 +1985,8 @@ public final class PDBFilter extends SystemFilter {
                 j = 2;
                 position = LAST_RESIDUE;
                 /**
-                 * If the lest residue only contains a nitrogen turn it into
-                 * an NH2 group.
+                 * If the lest residue only contains a nitrogen turn it into an
+                 * NH2 group.
                  */
                 Atom N = (Atom) residue.getAtomNode("N");
                 if (residue.getAtomNodeList().size() == 1 && N != null) {
@@ -2021,7 +2024,7 @@ public final class PDBFilter extends SystemFilter {
                     residue.deleteAtom(H3);
                 }
             }
-            
+
             AminoAcid3 aminoAcid = AminoAcid3.UNK;
             int aminoAcidNumber = -1;
             for (AminoAcid3 amino : aminoAcidList) {
@@ -2031,17 +2034,32 @@ public final class PDBFilter extends SystemFilter {
                     break;
                 }
             }
-            
-            
-            
+
+            /**
+             * Non-standard Amino Acid; use ALA backbone types.
+             */
+            boolean nonStandard = false;
+            if (aminoAcid == AminoAcid3.UNK) {
+                residueName = "ALA";
+                aminoAcidNumber = -1;
+                nonStandard = true;
+                for (AminoAcid3 amino : aminoAcidList) {
+                    aminoAcidNumber++;
+                    if (amino.toString().equalsIgnoreCase(residueName)) {
+                        break;
+                    }
+                }
+                residueName = residue.getName().toUpperCase();
+            }
+
+
             /**
              * Check for missing heavy atoms.
              *
-             * This check ignores special terminating groups like
-             * FOR, NH2, etc.
+             * This check ignores special terminating groups like FOR, NH2, etc.
              */
             int expected = aminoAcidHeavyAtoms[aminoAcidNumber];
-            if (aminoAcid != AminoAcid3.GLY && expected >= 4) {
+            if (aminoAcid != AminoAcid3.GLY && expected >= 4 && !nonStandard) {
                 int actual = 0;
                 List<Atom> resAtoms = residue.getAtomList();
                 for (Atom atom : resAtoms) {
@@ -2085,6 +2103,7 @@ public final class PDBFilter extends SystemFilter {
                     }
                 }
             }
+
             aminoAcid = AminoAcid3.UNK;
             aminoAcidNumber = -1;
             for (AminoAcid3 amino : aminoAcidList) {
@@ -2096,6 +2115,23 @@ public final class PDBFilter extends SystemFilter {
             }
 
             /**
+             * Non-standard Amino Acid; use ALA backbone types.
+             */
+            if (aminoAcid == AminoAcid3.UNK) {
+                residueName = "ALA";
+                aminoAcidNumber = -1;
+                for (AminoAcid3 amino : aminoAcidList) {
+                    aminoAcidNumber++;
+                    if (amino.toString().equalsIgnoreCase(residueName)) {
+                        break;
+                    }
+                }
+                residueName = residue.getName().toUpperCase();
+            }
+
+            logger.info(" Atom typing " + residueName);
+
+            /**
              * Backbone heavy atoms.
              */
             Atom N = (Atom) residue.getAtomNode("N");
@@ -2103,6 +2139,7 @@ public final class PDBFilter extends SystemFilter {
             if (position != FIRST_RESIDUE) {
                 bond(pC, N);
             }
+
             Atom CA = null;
             Atom C = null;
             Atom O = null;
@@ -2234,8 +2271,8 @@ public final class PDBFilter extends SystemFilter {
                 bond(C, OXT);
             }
             /**
-             * Do some checks on the current residue to make sure all atoms
-             * have been assigned an atom type.
+             * Do some checks on the current residue to make sure all atoms have
+             * been assigned an atom type.
              */
             List<Atom> resAtoms = residue.getAtomList();
             for (Atom atom : resAtoms) {
@@ -2254,8 +2291,8 @@ public final class PDBFilter extends SystemFilter {
                 }
             }
             /**
-             * Remember the current C-alpha and carbonyl C atoms for use
-             * with the next residue.
+             * Remember the current C-alpha and carbonyl C atoms for use with
+             * the next residue.
              */
             pCA = CA;
             pC = C;
@@ -2276,6 +2313,7 @@ public final class PDBFilter extends SystemFilter {
      */
     private void assignAminoAcidSideChain(ResiduePosition position, AminoAcid3 aminoAcid, Residue residue,
                                           Atom CA, Atom N, Atom C) throws MissingHeavyAtomException {
+        logger.info(" Assigning side chain amino acids " + aminoAcid);
         switch (aminoAcid) {
             case GLY:
                 switch (position) {
@@ -2627,15 +2665,243 @@ public final class PDBFilter extends SystemFilter {
                 setHydrogenAtom(residue, "HG3", CG, 1.10e0, CB, 111.2e0, CD, 111.2e0, -1, 334);
                 break;
             case UNK:
-                switch (position) {
-                    case FIRST_RESIDUE:
-                        setHydrogenAtom(residue, "HA2", CA, 1.10e0, N, 109.5e0, C, 109.5e0, 1, 355);
-                        break;
-                    case LAST_RESIDUE:
-                        setHydrogenAtom(residue, "HA2", CA, 1.10e0, N, 109.5e0, C, 109.5e0, 1, 506);
-                        break;
-                    default:
-                        setHydrogenAtom(residue, "HA2", CA, 1.10e0, N, 109.5e0, C, 109.5e0, 1, 6);
+                String residueName = residue.getName();
+                logger.info(" Patching side-chain " + residueName);
+                HashMap<String, AtomType> types = forceField.getAtomTypes(residueName);
+                HashMap<AtomType, AtomType> typeMap = new HashMap<AtomType, AtomType>();
+                if (!types.isEmpty()) {
+                    boolean patched = true;
+                    ArrayList<Atom> residueAtoms = residue.getAtomList();
+                    // Assign atom types for side-chain atoms.
+                    for (Atom atom : residueAtoms) {
+                        String atomName = atom.getName().toUpperCase();
+                        AtomType internalType = atom.getAtomType();
+                        // Map the internal type to the new type.
+                        if (internalType != null) {
+                            AtomType newType = types.get(atomName);
+                            if (newType != null) {
+                                typeMap.put(newType, internalType);
+                                types.remove(atomName);
+                            }
+                        } else {
+                            AtomType atomType = types.get(atomName);
+                            if (atomType == null) {
+                                logger.info(" No atom type was found for " + atomName + " of " + residueName + ".");
+                                patched = false;
+                                break;
+                            } else {
+                                atom.setAtomType(atomType);
+                                types.remove(atomName);
+                            }
+                        }
+                    }
+                    
+                    forceField.patchClassesAndTypes(typeMap);
+                    
+                    // Create a new multipole type for HA with the correct frame.
+                    Atom HA = (Atom) residue.getAtomNode("HA");
+                    Atom CAlpha = (Atom) residue.getAtomNode("CA");
+                    Atom CBeta = (Atom) residue.getAtomNode("CB");
+                    int frame[] = new int[3];
+                    frame[0] = HA.getAtomType().type;
+                    frame[1] = CAlpha.getAtomType().type;
+                    frame[2] = forceField.getAtomType("Alanine", "CB").type;
+                    MultipoleType multipoleType = forceField.getMultipoleType(frame[0] + " " + frame[1] + " " + frame[2]);
+                    
+                    frame[2] = CBeta.getAtomType().type;
+                    multipoleType = new MultipoleType(multipoleType.charge, multipoleType.dipole, 
+                        multipoleType.quadrupole, frame, multipoleType.frameDefinition);
+                    forceField.addForceFieldType(multipoleType);
+                            
+                    // Check for missing heavy atoms.
+                    if (patched && !types.isEmpty()) {
+                        for (AtomType type : types.values()) {
+                            if (type.atomicNumber != 1) {
+                                logger.info(" Missing heavy atom " + type.name);
+                                patched = false;
+                                break;
+                            }
+                        }
+                    }
+                    // Create bonds between known atoms.
+                    if (patched) {
+                        for (Atom atom : residueAtoms) {
+                            String atomName = atom.getName();
+                            String bonds[] = forceField.getBonds(residueName, atomName);
+                            if (bonds != null) {
+                                for (String name : bonds) {
+                                    Atom atom2 = (Atom) residue.getAtomNode(name);
+                                    if (atom2 != null && !atom.isBonded(atom2)) {
+                                        bond(atom, atom2);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    // Create missing hydrogen atoms.
+                    if (patched && !types.isEmpty()) {
+                        // Create a hashmap of the molecule's atoms
+                        HashMap<String, Atom> atomMap = new HashMap<String, Atom>();
+                        for (Atom atom : residueAtoms) {
+                            atomMap.put(atom.getName().toUpperCase(), atom);
+                        }
+                        for (String atomName : types.keySet()) {
+                            AtomType type = types.get(atomName);
+                            String bonds[] = forceField.getBonds(residueName, atomName.toUpperCase());
+                            if (bonds == null || bonds.length != 1) {
+                                patched = false;
+                                logger.info(" Check biotype for hydrogen " + type.name + ".");
+                                break;
+                            }
+                            // Get the heavy atom the hydrogen is bonded to.
+                            Atom ia = atomMap.get(bonds[0].toUpperCase());
+                            Atom hydrogen = new Atom(0, atomName, ia.getAltLoc(), new double[3],
+                                                     ia.getResidueName(), ia.getResidueNumber(), ia.getChainID(),
+                                                     ia.getOccupancy(), ia.getTempFactor(), ia.getSegID());
+                            logger.fine(" Created hydrogen " + atomName + ".");
+                            hydrogen.setAtomType(type);
+                            hydrogen.setHetero(true);
+                            residue.addMSNode(hydrogen);
+                            int valence = ia.getAtomType().valence;
+                            List<Bond> aBonds = ia.getBonds();
+                            int numBonds = aBonds.size();
+                            /**
+                             * Try to find the following configuration: ib-ia-ic
+                             */
+                            Atom ib = null;
+                            Atom ic = null;
+                            Atom id = null;
+                            if (numBonds > 0) {
+                                Bond bond = aBonds.get(0);
+                                ib = bond.get1_2(ia);
+                            }
+                            if (numBonds > 1) {
+                                Bond bond = aBonds.get(1);
+                                ic = bond.get1_2(ia);
+                            }
+                            if (numBonds > 2) {
+                                Bond bond = aBonds.get(2);
+                                id = bond.get1_2(ia);
+                            }
+
+                            /**
+                             * Building the hydrogens depends on hybridization
+                             * and the locations of other bonded atoms.
+                             */
+                            logger.fine(" Bonding " + atomName + " to " + ia.getName()
+                                        + " (" + numBonds + " of " + valence + ").");
+                            switch (valence) {
+                                case 4:
+                                    switch (numBonds) {
+                                        case 3:
+                                            // Find the average coordinates of atoms ib, ic and id.
+                                            double b[] = ib.getXYZ();
+                                            double c[] = ib.getXYZ();
+                                            double d[] = ib.getXYZ();
+                                            double a[] = new double[3];
+                                            a[0] = (b[0] + c[0] + d[0]) / 3.0;
+                                            a[1] = (b[1] + c[1] + d[1]) / 3.0;
+                                            a[2] = (b[2] + c[2] + d[2]) / 3.0;
+
+                                            // Place the hydrogen at chiral position #1.
+                                            intxyz(hydrogen, ia, 1.0, ib, 109.5, ic, 109.5, 0);
+                                            double e1[] = hydrogen.getXYZ();
+                                            double ret[] = new double[3];
+                                            diff(a, e1, ret);
+                                            double l1 = r(ret);
+
+                                            // Place the hydrogen at chiral position #2.
+                                            intxyz(hydrogen, ia, 1.0, ib, 109.5, ic, 109.5, 1);
+                                            double e2[] = hydrogen.getXYZ();
+                                            diff(a, e2, ret);
+                                            double l2 = r(ret);
+
+                                            // Revert to #1 if it is farther from the average.
+                                            if (l1 > l2) {
+                                                hydrogen.setXYZ(e1);
+                                            }
+                                            break;
+                                        case 2:
+                                            intxyz(hydrogen, ia, 1.0, ib, 109.5, ic, 109.5, 0);
+                                            break;
+                                        case 1:
+                                            intxyz(hydrogen, ia, 1.0, ib, 109.5, null, 0.0, 0);
+                                            break;
+                                        case 0:
+                                            intxyz(hydrogen, ia, 1.0, null, 0.0, null, 0.0, 0);
+                                            break;
+                                        default:
+                                            logger.info(" Check biotype for hydrogen " + atomName + ".");
+                                            patched = false;
+                                    }
+                                    break;
+                                case 3:
+                                    switch (numBonds) {
+                                        case 2:
+                                            intxyz(hydrogen, ia, 1.0, ib, 120.0, ic, 180.0, 0);
+                                            break;
+                                        case 1:
+                                            intxyz(hydrogen, ia, 1.0, ib, 120.0, null, 0.0, 0);
+                                            break;
+                                        case 0:
+                                            intxyz(hydrogen, ia, 1.0, null, 0.0, null, 0.0, 0);
+                                            break;
+                                        default:
+                                            logger.info(" Check biotype for hydrogen " + atomName + ".");
+                                            patched = false;
+                                    }
+                                    break;
+                                case 2:
+                                    switch (numBonds) {
+                                        case 1:
+                                            intxyz(hydrogen, ia, 1.0, ib, 120.0, null, 0.0, 0);
+                                            break;
+                                        case 0:
+                                            intxyz(hydrogen, ia, 1.0, null, 0.0, null, 0.0, 0);
+                                            break;
+                                        default:
+                                            logger.info(" Check biotype for hydrogen " + atomName + ".");
+                                            patched = false;
+                                    }
+                                    break;
+                                case 1:
+                                    switch (numBonds) {
+                                        case 0:
+                                            intxyz(hydrogen, ia, 1.0, null, 0.0, null, 0.0, 0);
+                                            break;
+                                        default:
+                                            logger.info(" Check biotype for hydrogen " + atomName + ".");
+                                            patched = false;
+                                    }
+                                    break;
+                                default:
+                                    logger.info(" Check biotype for hydrogen " + atomName + ".");
+                                    patched = false;
+                            }
+                            if (!patched) {
+                                break;
+                            } else {
+                                bond(ia, hydrogen);
+                            }
+                        }
+                    }
+                    if (!patched) {
+                        logger.log(Level.SEVERE, format(" Could not patch %s.", residueName));
+                    } else {
+                        logger.info(" Patch for " + residueName + " succeeded.");
+                    }
+                } else {
+
+                    switch (position) {
+                        case FIRST_RESIDUE:
+                            setHydrogenAtom(residue, "HA2", CA, 1.10e0, N, 109.5e0, C, 109.5e0, 1, 355);
+                            break;
+                        case LAST_RESIDUE:
+                            setHydrogenAtom(residue, "HA2", CA, 1.10e0, N, 109.5e0, C, 109.5e0, 1, 506);
+                            break;
+                        default:
+                            setHydrogenAtom(residue, "HA2", CA, 1.10e0, N, 109.5e0, C, 109.5e0, 1, 6);
+                    }
                 }
                 break;
         }
@@ -2767,6 +3033,7 @@ public final class PDBFilter extends SystemFilter {
 
     /**
      * Determine the atom type based on a biotype key.
+     *
      * @param key The biotype key.
      * @return The atom type.
      * @since 1.0
@@ -2783,9 +3050,9 @@ public final class PDBFilter extends SystemFilter {
             }
         }
         /*
-        else {
-        logger.severe(format("The biotype %s was not found.", bioType.toString()));
-        } */
+         * else { logger.severe(format("The biotype %s was not found.",
+         * bioType.toString())); }
+         */
         return null;
     }
 
@@ -2833,10 +3100,10 @@ public final class PDBFilter extends SystemFilter {
             String message = "Exception writing to file: " + saveFile.toString();
             logger.log(Level.WARNING, message, e);
             return false;
-        }        
+        }
         return writeFile(saveFile, true);
     }
-    
+
     /**
      * {@inheritDoc}
      *
@@ -2849,8 +3116,8 @@ public final class PDBFilter extends SystemFilter {
         }
 
         /**
-         * Create StringBuilders for ATOM, ANISOU and TER records that can
-         * be reused.
+         * Create StringBuilders for ATOM, ANISOU and TER records that can be
+         * reused.
          */
         StringBuilder sb = new StringBuilder("ATOM  ");
         StringBuilder anisouSB = new StringBuilder("ANISOU");
@@ -3270,8 +3537,8 @@ public final class PDBFilter extends SystemFilter {
     };
 
     /**
-     * Since enumeration values must start with a letter, an 'M' is added
-     * to modified bases whose IUPAC name starts with an integer.
+     * Since enumeration values must start with a letter, an 'M' is added to
+     * modified bases whose IUPAC name starts with an integer.
      */
     public enum NucleicAcid3 {
 
@@ -3306,9 +3573,8 @@ public final class PDBFilter extends SystemFilter {
     /**
      * Biotype keys for amino acid backbone atom types.
      *
-     * ntyp[0][..] are for N-terminal residues.
-     * ntyp[1][..] are mid-chain residues.
-     * ntyp[2][..] are for C-terminal residues.
+     * ntyp[0][..] are for N-terminal residues. ntyp[1][..] are mid-chain
+     * residues. ntyp[2][..] are for C-terminal residues.
      */
     private static final int nType[][] = {
         {350, 356, 362, 368, 374, 380, 386, 392, 398, 404, 412, 418, 424, 430, 436, 442, 448,

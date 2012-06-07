@@ -1,34 +1,34 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X Description: Force Field X - Software for Molecular
+ * Biophysics Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.potential.parameters;
 
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 
 import static java.lang.Math.PI;
 import static java.lang.Math.pow;
 
 /**
- * The OutOfPlaneBendType class defines one Allinger style
- * out-of-plane angle bending energy type.
+ * The OutOfPlaneBendType class defines one Allinger style out-of-plane angle
+ * bending energy type.
  *
  * @author Michael J. Schnieders
  * @since 1.0
@@ -48,10 +48,8 @@ public final class OutOfPlaneBendType extends BaseType implements Comparator<Str
     /**
      * OutOfPlaneBendType Constructor.
      *
-     * @param atomClasses
-     *            int[]
-     * @param forceConstant
-     *            double
+     * @param atomClasses int[]
+     * @param forceConstant double
      */
     public OutOfPlaneBendType(int atomClasses[], double forceConstant) {
         super(ForceField.ForceFieldType.OPBEND, sortKey(atomClasses));
@@ -74,10 +72,38 @@ public final class OutOfPlaneBendType extends BaseType implements Comparator<Str
     }
 
     /**
-     * This method sorts the atom classes for the out-of-plane angle bending type.
+     * Remap new atom classes to known internal ones.
      *
-     * @param c
-     *            atomClasses
+     * @param typeMap a lookup between new atom types and known atom types.
+     */
+    public void patchClasses(HashMap<AtomType, AtomType> typeMap) {
+        int count = 0;
+        for (AtomType newType : typeMap.keySet()) {
+            for (int i = 0; i < atomClasses.length; i++) {
+                if (atomClasses[i] == newType.atomClass) {
+                    count++;
+                }
+            }
+        }
+        if (count > 0 && count < 2) {
+            for (AtomType newType : typeMap.keySet()) {
+                for (int i = 0; i < atomClasses.length; i++) {
+                    if (atomClasses[i] == newType.atomClass) {
+                        AtomType knownType = typeMap.get(newType);
+                        atomClasses[i] = knownType.atomClass;
+                    }
+                }
+
+            }
+            setKey(sortKey(atomClasses));
+        }
+    }
+
+    /**
+     * This method sorts the atom classes for the out-of-plane angle bending
+     * type.
+     *
+     * @param c atomClasses
      * @return lookup key
      */
     public static String sortKey(int c[]) {
@@ -117,15 +143,17 @@ public final class OutOfPlaneBendType extends BaseType implements Comparator<Str
     public static final double sextic = 0.000000022;
     /**
      * Convert Out-of-Plane bending energy to kcal/mole.
-     * 
-     * TINKER v.5 and v.6 Units:  1.0 / (180.0/PI)^2 = 0.00030461741979
-     * TINKER v.4 Units: 0.02191418
-     * 
+     *
+     * TINKER v.5 and v.6 Units: 1.0 / (180.0/PI)^2 = 0.00030461741979 TINKER
+     * v.4 Units: 0.02191418
+     *
      * Ratio of v.4 to v.5/6 = 0.02191418 / 1.0 / (180.0/PI)^2 = 71.94
      */
     public static final double units = 1.0 / pow(180.0 / PI, 2);
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int compare(String s1, String s2) {
         String keys1[] = s1.split(" ");
@@ -143,7 +171,9 @@ public final class OutOfPlaneBendType extends BaseType implements Comparator<Str
         return 0;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean equals(Object other) {
         if (other == this) {
@@ -161,7 +191,9 @@ public final class OutOfPlaneBendType extends BaseType implements Comparator<Str
         return true;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int hashCode() {
         int hash = 7;

@@ -1,27 +1,27 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X Description: Force Field X - Software for Molecular
+ * Biophysics Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.potential.parameters;
 
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 
 import static java.lang.Math.*;
 
@@ -118,9 +118,38 @@ public final class TorsionType extends BaseType implements Comparator<String> {
     }
 
     /**
+     * Remap new atom classes to known internal ones.
+     *
+     * @param typeMap a lookup between new atom types and known atom types.
+     */
+    public void patchClasses(HashMap<AtomType, AtomType> typeMap) {
+        int count = 0;
+        for (AtomType newType : typeMap.keySet()) {
+            for (int i = 0; i < atomClasses.length; i++) {
+                if (atomClasses[i] == newType.atomClass) {
+                    count++;
+                }
+            }
+        }
+        if (count > 0 && count < atomClasses.length) {
+            for (AtomType newType : typeMap.keySet()) {
+                for (int i = 0; i < atomClasses.length; i++) {
+                    if (atomClasses[i] == newType.atomClass) {
+                        AtomType knownType = typeMap.get(newType);
+                        atomClasses[i] = knownType.atomClass;
+                    }
+                }
+
+            }
+            setKey(sortKey(atomClasses));
+        }
+    }
+
+    /**
      * {@inheritDoc}
      *
      * Nicely formatted Torsion angle.
+     *
      * @since 1.0
      */
     @Override
@@ -182,6 +211,7 @@ public final class TorsionType extends BaseType implements Comparator<String> {
      * {@inheritDoc}
      *
      * Implements the Comparator<String> interface.
+     *
      * @since 1.0
      */
     @Override
@@ -220,7 +250,9 @@ public final class TorsionType extends BaseType implements Comparator<String> {
     /**
      * {@inheritDoc}
      *
-     * Override the default <code>equals</code> method.
+     * Override the default
+     * <code>equals</code> method.
+     *
      * @since 1.0
      */
     @Override
@@ -243,7 +275,9 @@ public final class TorsionType extends BaseType implements Comparator<String> {
     /**
      * {@inheritDoc}
      *
-     * Implementation of the <code>hashCode</code> method.
+     * Implementation of the
+     * <code>hashCode</code> method.
+     *
      * @since 1.0
      */
     @Override
