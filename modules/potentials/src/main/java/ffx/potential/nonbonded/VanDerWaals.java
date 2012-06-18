@@ -427,15 +427,15 @@ public class VanDerWaals implements MaskingInterface,
             logger.log(Level.SEVERE, message, e);
         }
 
-        logger.info(" Van der Waals");
-        logger.info(format(" Switch Start:                            %5.2f (A)", cut));
-        logger.info(format(" Cut-Off:                                 %5.2f (A)", off));
+        logger.info("\n Van der Waals");
+        logger.info(format(" Switch Start:                           %6.3f (A)", cut));
+        logger.info(format(" Cut-Off:                                %6.3f (A)", off));
         //logger.info(format(" Long-Range Correction:                   %B", doLongRangeCorrection));
 
         if (lambdaTerm) {
-            logger.info("\n Van der Waals Lambda Parameters");
-            logger.info(String.format(" Softcore alpha:  %5.3f", vdwLambdaAlpha));
-            logger.info(String.format(" Lambda exponent: %5.3f", vdwLambdaExponent));
+            logger.info(" Lambda Parameters");
+            logger.info(format(" Softcore Alpha:                          %5.3f", vdwLambdaAlpha));
+            logger.info(format(" Lambda Exponent:                         %5.3f", vdwLambdaExponent));
         }
     }
 
@@ -882,12 +882,12 @@ public class VanDerWaals implements MaskingInterface,
                 boolean forceRebuild = false;
                 if (neighborListOnly) {
                     forceRebuild = true;
-                } 
+                }
                 neighborList.buildList(reduced, neighborLists, null, forceRebuild, print);
             }
-            
 
-            
+
+
             if (neighborListOnly) {
                 return;
             }

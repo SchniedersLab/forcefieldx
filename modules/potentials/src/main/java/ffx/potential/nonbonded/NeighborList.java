@@ -365,7 +365,7 @@ public class NeighborList extends ParallelRegion {
         if (print) {
             StringBuilder sb = new StringBuilder("\n Neighbor List Builder\n");
             sb.append(format(" Sub-volumes:                          %8d\n", nCells));
-            sb.append(format(" Average atoms per sub-volume:         %8d", nAtoms * nSymm / nCells));
+            sb.append(format(" Average Atoms Per Sub-Volume:         %8d", nAtoms * nSymm / nCells));
             logger.info(sb.toString());
         }
 
