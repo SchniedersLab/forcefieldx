@@ -26,26 +26,84 @@ import org.apache.commons.io.FilenameUtils;
 // Groovy Imports
 import groovy.util.CliBuilder;
 
+// FFX Imports
+import ffx.algorithms.Minimize;
+import ffx.potential.DualTopologyEnergy;
+import ffx.potential.ForceFieldEnergy;
+import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.MolecularAssembly;
+
 // Default convergence criteria.
 double eps = 1.0;
+
+// First softcore atom for topology 1.
+double s = -1;
+
+// First softcore atom for topology 2.
+double s2 = -1;
+
+// Last softcore atom for topology 1.
+double f = -1;
+
+// Last softcore atom for topology 2.
+double f2 = -1;
+
+// Fixed lambda value.
+double lambda = -1;
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc minimize [options] <filename>');
+def cli = new CliBuilder(usage:' ffxc minimize [options] <filename1> [filename2]');
 cli.h(longOpt:'help', 'Print this help message.');
+cli.s(longOpt:'start', args:1, argName:'0', 'Starting ligand atom.');
+cli.s2(longOpt:'start2', args:1, argName:'0', 'Starting ligand atom for the 2nd topology.');
+cli.f(longOpt:'final', args:1, argName:'0', 'Final ligand atom.');
+cli.f2(longOpt:'final2', args:1, argName:'0', 'Final ligand atom for the 2nd topology.');
+cli.l(longOpt:'lambda', args:1, argName:'0.0', 'Initial lambda value.');
 cli.e(longOpt:'eps', args:1, argName:'1.0', 'RMS gradient convergence criteria');
 cli.p(longOpt:'polarization', args:1, 'polarization model: [none / direct / mutual]');
 def options = cli.parse(args);
 
 List<String> arguments = options.arguments();
-if (options.h || arguments == null || arguments.size() != 1) {
+if (options.h || arguments == null || arguments.size() < 1) {
     return cli.usage();
 }
 
-// Read in command line.
+// Read in the first command line file.
 String filename = arguments.get(0);
+
+// Read in the second topology, if specified.
+String filename2 = null;
+if (arguments.size() > 1) {
+    filename2 = arguments.get(1);
+}
+
+// Starting ligand atom.
+if (options.s) {
+    s = Integer.parseInt(options.s);
+}
+
+// Final ligand atom.
+if (options.f) {
+    f = Integer.parseInt(options.f);
+}
+
+// Starting ligand atom for the 2nd topology.
+if (options.s2) {
+    s2 = Integer.parseInt(options.s2);
+}
+
+// Final ligand atom for the 2nd topology.
+if (options.f2) {
+    f2 = Integer.parseInt(options.f2);
+}
+
+// Starting lambda value.
+if (options.l) {
+    lambda = Double.parseDouble(options.l);
+}
 
 // Load convergence criteria.
 if (options.e) {
@@ -56,20 +114,93 @@ if (options.p) {
     System.setProperty("polarization", options.p);
 }
 
-logger.info("\n Running minimize on " + filename);
-logger.info(" RMS gradient convergence criteria: " + eps);
-
-// Open the system.
+// Open the first topology.
 systems = open(filename);
 
-// Do the minimization
-e = minimize(eps);
+if ((lambda >= 0.0 && lambda <= 1.0) || filename2 != null) {
+    System.setProperty("lambdaterm", 'true');
+     
+    // Get a reference to the first system's ForceFieldEnergy and atom array.
+    ForceFieldEnergy energy = active.getPotentialEnergy();
+    Atom[] atoms = active.getAtomArray();
+    // Apply the ligand atom selection
+    for (int i = s; i <= f; i++) {
+        Atom ai = atoms[i - 1];
+        ai.setApplyLambda(true);
+        ai.print();
+    }
 
-String ext = FilenameUtils.getExtension(filename);
-filename = FilenameUtils.removeExtension(filename);
+    // Turn off checks for overlapping atoms, which is expected for lambda=0.
+    energy.getCrystal().setSpecialPositionCutoff(0.0);
 
-if (ext.toUpperCase().contains("XYZ")) {
-    saveAsXYZ(new File(filename + ".xyz"));
-} else {
-    saveAsPDB(systems, new File(filename + ".pdb"));
+    // Check that lambda is within the limit 0..1
+    if (lambda < 0.0 || lambda > 1.0) {
+        lambda = 0.0;
+        energy.setLambda(lambda);
+    }
 }
+
+if (filename2 == null) {
+    logger.info("\n Running minimize on " + filename);
+    logger.info(" RMS gradient convergence criteria: " + eps);
+
+    // Do the minimization
+    e = minimize(eps);
+
+    String ext = FilenameUtils.getExtension(filename);
+    filename = FilenameUtils.removeExtension(filename);
+
+    if (ext.toUpperCase().contains("XYZ")) {
+        saveAsXYZ(new File(filename + ".xyz"));
+    } else {
+        saveAsPDB(systems, new File(filename + ".pdb"));
+    }
+} else {
+    logger.info("\n Running minimize on a dual topology from " + filename + " and " + filename2);
+    logger.info(" RMS gradient convergence criteria: " + eps);
+
+    // Save a reference to the first topology.
+    MolecularAssembly topology1 = active;
+
+    systems2 = open(filename2);
+
+    ForceFieldEnergy energy = active.getPotentialEnergy();
+    atoms = active.getAtomArray();
+    // Apply the ligand atom selection for the 2nd topology.
+    for (int i = s2; i <= f2; i++) {
+        Atom ai = atoms[i - 1];
+        ai.setApplyLambda(true);
+        ai.print();
+    }
+    // Turn off checks for overlapping atoms, which is expected for lambda=0.
+    energy.getCrystal().setSpecialPositionCutoff(0.0);
+
+    // Create the DualTopology potential energy.
+    DualTopologyEnergy dualTopologyEnergy = new DualTopologyEnergy(topology1, active);
+    dualTopologyEnergy.setLambda(lambda);
+
+    Minimize minimize = new Minimize(topology1, dualTopologyEnergy, null);
+
+    minimize.minimize(eps);
+
+    // Save topology 1
+    String ext = FilenameUtils.getExtension(filename);
+    filename = FilenameUtils.removeExtension(filename);
+
+    if (ext.toUpperCase().contains("XYZ")) {
+        saveAsXYZ(new File(filename + ".xyz"));
+    } else {
+        saveAsPDB(systems, new File(filename + ".pdb"));
+    }
+
+    // Save topology 2
+    ext = FilenameUtils.getExtension(filename2);
+    filename2 = FilenameUtils.removeExtension(filename2);
+
+    if (ext.toUpperCase().contains("XYZ")) {
+        saveAsXYZ(new File(filename2 + ".xyz"));
+    } else {
+        saveAsPDB(systems2, new File(filename2 + ".pdb"));
+    }
+}
+

@@ -57,13 +57,36 @@ public class Minimize implements OptimizationListener, Terminatable {
     /**
      * <p>Constructor for Minimize.</p>
      *
-     * @param assembly a {@link ffx.potential.bonded.MolecularAssembly} object.
-     * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
+     * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly} object.
+     * @param potential a {@link ffx.numerics.Potential} object. 
+     * @param algorithmListener a {@link ffx.algorithms.AlgorithmListener} object.
      */
-    public Minimize(MolecularAssembly assembly, AlgorithmListener listener) {
-        assert (assembly != null);
-        molecularAssembly = assembly;
-        algorithmListener = listener;
+    public Minimize(MolecularAssembly molecularAssembly, Potential potential, 
+            AlgorithmListener algorithmListener) {
+        assert (molecularAssembly != null);
+        this.molecularAssembly = molecularAssembly;
+        this.algorithmListener = algorithmListener;
+        this.potential = potential;
+        n = potential.getNumberOfVariables();
+        x = new double[n];
+        grad = new double[n];
+        scaling = new double[n];
+        for (int i = 0; i < n; i++) {
+            scaling[i] = 12.0;
+        }
+        potential.setScaling(scaling);
+    }
+    
+    /**
+     * <p>Constructor for Minimize.</p>
+     *
+     * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly} object.
+     * @param algorithmListener a {@link ffx.algorithms.AlgorithmListener} object.
+     */
+    public Minimize(MolecularAssembly molecularAssembly, AlgorithmListener algorithmListener) {
+        assert (molecularAssembly != null);
+        this.molecularAssembly = molecularAssembly;
+        this.algorithmListener = algorithmListener;
         if (molecularAssembly.getPotentialEnergy() == null) {
             molecularAssembly.setPotential(new ForceFieldEnergy(molecularAssembly));
         }
@@ -77,7 +100,7 @@ public class Minimize implements OptimizationListener, Terminatable {
         }
         potential.setScaling(scaling);
     }
-
+    
     /** {@inheritDoc} */
     @Override
     public void terminate() {
