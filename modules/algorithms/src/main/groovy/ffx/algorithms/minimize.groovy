@@ -114,30 +114,33 @@ if (options.p) {
     System.setProperty("polarization", options.p);
 }
 
+boolean lambdaTerm = false;
+if ((lambda >= 0.0 && lambda <= 1.0) || filename2 != null) {
+    lambdaTerm = true;
+    System.setProperty("lambdaterm", 'true');
+    // Check that lambda is within the limit 0..1
+    if (lambda < 0.0 || lambda > 1.0) {
+        lambda = 0.0;
+    }
+}
+
 // Open the first topology.
 systems = open(filename);
 
-if ((lambda >= 0.0 && lambda <= 1.0) || filename2 != null) {
-    System.setProperty("lambdaterm", 'true');
-     
-    // Get a reference to the first system's ForceFieldEnergy and atom array.
+if (lambdaTerm) { 
+    // Get a reference to the first system's ForceFieldEnergy.
     ForceFieldEnergy energy = active.getPotentialEnergy();
-    Atom[] atoms = active.getAtomArray();
+    // Set the lambda value.
+    energy.setLambda(lambda);
     // Apply the ligand atom selection
+    Atom[] atoms = active.getAtomArray();
     for (int i = s; i <= f; i++) {
         Atom ai = atoms[i - 1];
         ai.setApplyLambda(true);
         ai.print();
     }
-
     // Turn off checks for overlapping atoms, which is expected for lambda=0.
     energy.getCrystal().setSpecialPositionCutoff(0.0);
-
-    // Check that lambda is within the limit 0..1
-    if (lambda < 0.0 || lambda > 1.0) {
-        lambda = 0.0;
-        energy.setLambda(lambda);
-    }
 }
 
 if (filename2 == null) {

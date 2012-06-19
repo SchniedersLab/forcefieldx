@@ -339,7 +339,7 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
          * Apply the dual-topology scaling for the total energy.
          */
         totalEnergy = lambdaPow * energy1 + oneMinusLambdaPow * restraintEnergy1
-                + oneMinusLambdaPow * energy2 + lambdaPow * restraintEnergy2;
+                      + oneMinusLambdaPow * energy2 + lambdaPow * restraintEnergy2;
 
         if (logger.isLoggable(Level.FINEST)) {
             logger.finest(String.format(" Topology 1 Energy & Restraints: %15.8f %15.8f\n", lambdaPow * energy1, oneMinusLambdaPow * restraintEnergy1));
@@ -349,7 +349,7 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
         /**
          * Scale and pack the gradient.
          */
-        packGradient(g);
+        packGradient(x, g);
 
         return totalEnergy;
     }
@@ -364,7 +364,7 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
         return scaling;
     }
 
-    private void packGradient(double g[]) {
+    private void packGradient(double x[], double g[]) {
         if (g == null) {
             g = new double[nVariables];
         }
@@ -403,9 +403,29 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
                 g[indexUnique++] = oneMinusLambdaPow * g2[index] + lambdaPow * rg2[index++];
             }
         }
+
+        if (scaling != null) {
+            int len = x.length;
+            for (int i = 0; i < len; i++) {
+                x[i] *= scaling[i];
+                g[i] /= scaling[i];
+            }
+        }
     }
 
     private void unpackCoordinates(double x[]) {
+
+        /**
+         * Unscale the coordinates.
+         */
+        if (scaling != null) {
+            int len = x.length;
+            for (int i = 0; i < len; i++) {
+                x[i] /= scaling[i];
+            }
+        }
+
+
         int index = 0;
         int indexCommon = 0;
         int indexUnique = 3 * nShared;
@@ -531,18 +551,18 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
     @Override
     public double getdEdL() {
         double dEdL1 = lambdaPow * forceFieldEnergy1.getdEdL()
-                + dLambdaPow * energy1 + dOneMinusLambdaPow * restraintEnergy1;
+                       + dLambdaPow * energy1 + dOneMinusLambdaPow * restraintEnergy1;
         double dEdL2 = -oneMinusLambdaPow * forceFieldEnergy2.getdEdL()
-                + dOneMinusLambdaPow * energy2 + dLambdaPow * restraintEnergy2;
+                       + dOneMinusLambdaPow * energy2 + dLambdaPow * restraintEnergy2;
         return dEdL1 + dEdL2;
     }
 
     @Override
     public double getd2EdL2() {
         double d2EdL2_1 = lambdaPow * forceFieldEnergy1.getd2EdL2() + 2.0 * dLambdaPow * forceFieldEnergy1.getdEdL()
-                + d2LambdaPow * energy1 + d2OneMinusLambdaPow * restraintEnergy1;
+                          + d2LambdaPow * energy1 + d2OneMinusLambdaPow * restraintEnergy1;
         double d2EdL2_2 = oneMinusLambdaPow * forceFieldEnergy2.getd2EdL2() - 2.0 * dOneMinusLambdaPow * forceFieldEnergy2.getdEdL()
-                + d2OneMinusLambdaPow * energy2 + d2LambdaPow * restraintEnergy2;
+                          + d2OneMinusLambdaPow * energy2 + d2LambdaPow * restraintEnergy2;
         return d2EdL2_1 + d2EdL2_2;
     }
 
@@ -568,18 +588,18 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
             Atom a = atoms1[i];
             if (!a.applyLambda()) {
                 g[indexCommon++] = lambdaPow * gl1[index] + dLambdaPow * g1[index]
-                        + dOneMinusLambdaPow * rg1[index++];
+                                   + dOneMinusLambdaPow * rg1[index++];
                 g[indexCommon++] = lambdaPow * gl1[index] + dLambdaPow * g1[index]
-                        + dOneMinusLambdaPow * rg1[index++];
+                                   + dOneMinusLambdaPow * rg1[index++];
                 g[indexCommon++] = lambdaPow * gl1[index] + dLambdaPow * g1[index]
-                        + dOneMinusLambdaPow * rg1[index++];
+                                   + dOneMinusLambdaPow * rg1[index++];
             } else {
                 g[indexUnique++] = lambdaPow * gl1[index] + dLambdaPow * g1[index]
-                        + dOneMinusLambdaPow * rg1[index++];
+                                   + dOneMinusLambdaPow * rg1[index++];
                 g[indexUnique++] = lambdaPow * gl1[index] + dLambdaPow * g1[index]
-                        + dOneMinusLambdaPow * rg1[index++];
+                                   + dOneMinusLambdaPow * rg1[index++];
                 g[indexUnique++] = lambdaPow * gl1[index] + dLambdaPow * g1[index]
-                        + dOneMinusLambdaPow * rg1[index++];
+                                   + dOneMinusLambdaPow * rg1[index++];
             }
         }
 
@@ -592,18 +612,18 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
             Atom a = atoms2[i];
             if (!a.applyLambda()) {
                 g[indexCommon++] += (-oneMinusLambdaPow * gl2[index]
-                        + dOneMinusLambdaPow * g2[index] + dLambdaPow * rg2[index++]);
+                                     + dOneMinusLambdaPow * g2[index] + dLambdaPow * rg2[index++]);
                 g[indexCommon++] += (-oneMinusLambdaPow * gl2[index]
-                        + dOneMinusLambdaPow * g2[index] + dLambdaPow * rg2[index++]);
+                                     + dOneMinusLambdaPow * g2[index] + dLambdaPow * rg2[index++]);
                 g[indexCommon++] += (-oneMinusLambdaPow * gl2[index]
-                        + dOneMinusLambdaPow * g2[index] + dLambdaPow * rg2[index++]);
+                                     + dOneMinusLambdaPow * g2[index] + dLambdaPow * rg2[index++]);
             } else {
                 g[indexUnique++] = -oneMinusLambdaPow * gl2[index]
-                        + dOneMinusLambdaPow * g2[index] + dLambdaPow * rg2[index++];
+                                   + dOneMinusLambdaPow * g2[index] + dLambdaPow * rg2[index++];
                 g[indexUnique++] = -oneMinusLambdaPow * gl2[index]
-                        + dOneMinusLambdaPow * g2[index] + dLambdaPow * rg2[index++];
+                                   + dOneMinusLambdaPow * g2[index] + dLambdaPow * rg2[index++];
                 g[indexUnique++] = -oneMinusLambdaPow * gl2[index]
-                        + dOneMinusLambdaPow * g2[index] + dLambdaPow * rg2[index++];
+                                   + dOneMinusLambdaPow * g2[index] + dLambdaPow * rg2[index++];
             }
         }
     }
