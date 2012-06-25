@@ -27,7 +27,6 @@ import java.util.logging.Logger;
 import static java.lang.String.format;
 
 import ffx.crystal.Crystal;
-import ffx.potential.bonded.MolecularAssembly;
 
 /**
  * The DYNFilter class parses TINKER Restart (*.DYN) files.
@@ -39,15 +38,15 @@ import ffx.potential.bonded.MolecularAssembly;
 public class DYNFilter {
 
     private static final Logger logger = Logger.getLogger(DYNFilter.class.getName());
-    MolecularAssembly molecularAssembly;
 
+    private String label;
+    
     /**
      * <p>Constructor for DYNFilter.</p>
      *
-     * @param s a {@link ffx.potential.bonded.MolecularAssembly} object.
      */
-    public DYNFilter(MolecularAssembly s) {
-        molecularAssembly = s;
+    public DYNFilter(String label) {
+        this.label = label;
     }
 
     /**
@@ -76,10 +75,7 @@ public class DYNFilter {
                 return false;
             }
             int numatoms = Integer.parseInt(tokens[0]);
-            if (numatoms != molecularAssembly.getAtomList().size()) {
-                return false;
-            }
-
+            
             // Box size and angles
             br.readLine();
             data = br.readLine().trim();
@@ -192,8 +188,9 @@ public class DYNFilter {
             bw = new BufferedWriter(fw);
 
             bw.write(" Number of Atoms and Title :\n");
-            int numberOfAtoms = molecularAssembly.getAtomList().size();
-            String output = format("%7d  %s\n", numberOfAtoms, molecularAssembly.toString());
+            assert(x.length % 3 == 0);
+            int numberOfAtoms = x.length / 3;
+            String output = format("%7d  %s\n", numberOfAtoms, label);
             bw.write(output);
 
             bw.write(" Periodic Box Dimensions :\n");

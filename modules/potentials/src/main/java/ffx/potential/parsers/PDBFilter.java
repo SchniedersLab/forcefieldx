@@ -1125,20 +1125,19 @@ public final class PDBFilter extends SystemFilter {
                                     a[0] = (b[0] + c[0] + d[0]) / 3.0;
                                     a[1] = (b[1] + c[1] + d[1]) / 3.0;
                                     a[2] = (b[2] + c[2] + d[2]) / 3.0;
-
                                     // Place the hydrogen at chiral position #1.
                                     intxyz(hydrogen, ia, 1.0, ib, 109.5, ic, 109.5, 0);
-                                    double e1[] = hydrogen.getXYZ();
+                                    double e1[] = new double[3]; 
+                                    hydrogen.getXYZ(e1);
                                     double ret[] = new double[3];
                                     diff(a, e1, ret);
                                     double l1 = r(ret);
-
                                     // Place the hydrogen at chiral position #2.
                                     intxyz(hydrogen, ia, 1.0, ib, 109.5, ic, 109.5, 1);
-                                    double e2[] = hydrogen.getXYZ();
+                                    double e2[] = new double[3];
+                                    hydrogen.getXYZ(e2);
                                     diff(a, e2, ret);
                                     double l2 = r(ret);
-
                                     // Revert to #1 if it is farther from the average.
                                     if (l1 > l2) {
                                         hydrogen.setXYZ(e1);
