@@ -25,21 +25,24 @@
 
 package edu.rit.pj.cluster;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-
-import edu.rit.mp.ByteBuf;
 import edu.rit.mp.Channel;
 import edu.rit.mp.ChannelGroup;
+
+import edu.rit.mp.ByteBuf;
+
 import edu.rit.util.Range;
+
+import java.io.File;
+import java.io.IOException;
+
+import java.net.InetSocketAddress;
 
 /**
  * Class JobFrontendProxy provides a proxy object for sending messages to a PJ
  * job frontend process.
  *
  * @author  Alan Kaminsky
- * @version 24-Jan-2012
+ * @version 20-Jun-2012
  */
 public class JobFrontendProxy
 	extends Proxy
@@ -73,6 +76,7 @@ public class JobFrontendProxy
 	 * @param  jvm              Full pathname of Java Virtual Machine.
 	 * @param  classpath        Java class path for PJ Library.
 	 * @param  jvmflags         Array of JVM command line flags.
+	 * @param  shellCommand     Shell command string.
 	 * @param  Nt               Number of CPUs assigned to the process.
 	 *
 	 * @exception  IOException
@@ -85,12 +89,14 @@ public class JobFrontendProxy
 		 String jvm,
 		 String classpath,
 		 String[] jvmflags,
+		 String shellCommand,
 		 int Nt)
 		throws IOException
 		{
 		send
 			(JobFrontendMessage.assignBackend
-				(theJobScheduler, name, host, jvm, classpath, jvmflags, Nt));
+				(theJobScheduler, name, host, jvm, classpath, jvmflags,
+				 shellCommand, Nt));
 		}
 
 	/**

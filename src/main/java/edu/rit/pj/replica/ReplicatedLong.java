@@ -25,13 +25,17 @@
 
 package edu.rit.pj.replica;
 
-import java.io.IOException;
-import java.util.concurrent.atomic.AtomicLong;
-
 import edu.rit.mp.LongBuf;
+
 import edu.rit.mp.buf.LongItemBuf;
+
 import edu.rit.pj.Comm;
+
 import edu.rit.pj.reduction.LongOp;
+
+import java.io.IOException;
+
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Class ReplicatedLong provides a replicated, shared reduction variable for

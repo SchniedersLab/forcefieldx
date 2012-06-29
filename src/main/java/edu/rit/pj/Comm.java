@@ -25,12 +25,6 @@
 
 package edu.rit.pj;
 
-import java.io.IOException;
-import java.io.InterruptedIOException;
-import java.io.PrintStream;
-import java.net.InetSocketAddress;
-import java.util.LinkedList;
-
 import edu.rit.mp.Buf;
 import edu.rit.mp.Channel;
 import edu.rit.mp.ChannelGroup;
@@ -39,13 +33,26 @@ import edu.rit.mp.IORequest;
 import edu.rit.mp.IntegerBuf;
 import edu.rit.mp.ObjectBuf;
 import edu.rit.mp.Status;
+
 import edu.rit.pj.cluster.CommPattern;
 import edu.rit.pj.cluster.JobBackend;
 import edu.rit.pj.cluster.JobFrontend;
 import edu.rit.pj.cluster.JobSchedulerException;
+
 import edu.rit.pj.reduction.IntegerOp;
 import edu.rit.pj.reduction.Op;
+
 import edu.rit.util.Range;
+
+import java.io.IOException;
+import java.io.InterruptedIOException;
+import java.io.PrintStream;
+
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+
+import java.util.HashMap;
+import java.util.LinkedList;
 
 /**
  * Class Comm provides a communicator for a PJ cluster parallel program. Class
@@ -1214,7 +1221,7 @@ public class Comm
 			catch (JobSchedulerException exc)
 				{
 				// We were not able to contact the Job Scheduler.
-				System.out.println
+				System.err.println
 					(" No Job Scheduler at " +
 					 PJProperties.getPjHost() + ":" +
 					 PJProperties.getPjPort() +

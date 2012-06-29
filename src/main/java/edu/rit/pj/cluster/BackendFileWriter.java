@@ -25,13 +25,14 @@
 
 package edu.rit.pj.cluster;
 
+import edu.rit.io.LineBufferedOutputStream;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+
 import java.util.HashMap;
 import java.util.Map;
-
-import edu.rit.io.LineBufferedOutputStream;
 
 /**
  * Class BackendFileWriter provides an object that writes sequential files in

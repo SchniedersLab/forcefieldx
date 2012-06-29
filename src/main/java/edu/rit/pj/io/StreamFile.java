@@ -25,14 +25,14 @@
 
 package edu.rit.pj.io;
 
+import edu.rit.pj.cluster.JobBackend;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-
-import edu.rit.pj.cluster.JobBackend;
 
 /**
  * Class StreamFile represents a file that resides in the user's account in the

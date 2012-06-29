@@ -25,9 +25,9 @@
 
 package edu.rit.pj;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 import edu.rit.util.Range;
+
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Class DynamicIntegerSchedule provides a dynamic schedule object. The loop

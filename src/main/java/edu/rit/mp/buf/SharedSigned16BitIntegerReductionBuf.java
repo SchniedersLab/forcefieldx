@@ -25,12 +25,14 @@
 
 package edu.rit.mp.buf;
 
-import java.nio.ByteBuffer;
-
 import edu.rit.mp.Buf;
+import edu.rit.mp.Signed16BitIntegerBuf;
+
 import edu.rit.pj.reduction.IntegerOp;
 import edu.rit.pj.reduction.Op;
 import edu.rit.pj.reduction.SharedInteger;
+
+import java.nio.ByteBuffer;
 
 /**
  * Class SharedSigned16BitIntegerReductionBuf provides a reduction buffer for

@@ -27,8 +27,11 @@ package edu.rit.mp.buf;
 
 import edu.rit.mp.Buf;
 import edu.rit.mp.ObjectBuf;
+
 import edu.rit.pj.reduction.ObjectOp;
 import edu.rit.pj.reduction.Op;
+
+import java.nio.ByteBuffer;
 
 /**
  * Class ObjectItemBuf provides a buffer for a single object item sent or

@@ -25,10 +25,10 @@
 
 package edu.rit.pj.cluster;
 
-import java.io.IOException;
-
 import edu.rit.mp.Channel;
 import edu.rit.mp.ChannelGroup;
+
+import java.io.IOException;
 
 /**
  * Class JobSchedulerProxy provides a proxy object for sending messages to a PJ

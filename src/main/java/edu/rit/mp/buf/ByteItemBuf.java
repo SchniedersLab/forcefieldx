@@ -25,12 +25,13 @@
 
 package edu.rit.mp.buf;
 
-import java.nio.ByteBuffer;
-
 import edu.rit.mp.Buf;
 import edu.rit.mp.ByteBuf;
+
 import edu.rit.pj.reduction.ByteOp;
 import edu.rit.pj.reduction.Op;
+
+import java.nio.ByteBuffer;
 
 /**
  * Class ByteItemBuf provides a buffer for a single byte item sent or

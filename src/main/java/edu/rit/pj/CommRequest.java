@@ -25,9 +25,9 @@
 
 package edu.rit.pj;
 
-import java.io.IOException;
-
 import edu.rit.mp.IORequest;
+
+import java.io.IOException;
 
 /**
  * Class CommRequest provides an object for doing a non-blocking message passing

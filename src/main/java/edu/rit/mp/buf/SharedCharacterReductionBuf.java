@@ -25,12 +25,14 @@
 
 package edu.rit.mp.buf;
 
-import java.nio.ByteBuffer;
-
 import edu.rit.mp.Buf;
+import edu.rit.mp.CharacterBuf;
+
 import edu.rit.pj.reduction.CharacterOp;
 import edu.rit.pj.reduction.Op;
 import edu.rit.pj.reduction.SharedCharacter;
+
+import java.nio.ByteBuffer;
 
 /**
  * Class SharedCharacterReductionBuf provides a reduction buffer for class

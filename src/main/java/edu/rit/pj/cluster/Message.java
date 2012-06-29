@@ -25,7 +25,10 @@
 
 package edu.rit.pj.cluster;
 
+import java.io.IOException;
 import java.io.Externalizable;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 
 /**
  * Class Message is the abstract base class for a message sent to a process in

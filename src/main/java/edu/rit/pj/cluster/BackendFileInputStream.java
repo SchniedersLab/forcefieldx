@@ -25,14 +25,16 @@
 
 package edu.rit.pj.cluster;
 
+import edu.rit.mp.ByteBuf;
+
+import edu.rit.util.Range;
+
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InterruptedIOException;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.io.InputStream;
 
-import edu.rit.mp.ByteBuf;
-import edu.rit.util.Range;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Class BackendFileInputStream provides an object in a job backend process

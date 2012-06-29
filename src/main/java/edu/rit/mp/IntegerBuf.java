@@ -25,21 +25,27 @@
 
 package edu.rit.mp;
 
-import java.nio.ByteBuffer;
-
 import edu.rit.mp.buf.EmptyIntegerBuf;
 import edu.rit.mp.buf.IntegerArrayBuf;
 import edu.rit.mp.buf.IntegerArrayBuf_1;
 import edu.rit.mp.buf.IntegerItemBuf;
 import edu.rit.mp.buf.IntegerMatrixBuf;
 import edu.rit.mp.buf.IntegerMatrixBuf_1;
+import edu.rit.mp.buf.SharedIntegerBuf;
 import edu.rit.mp.buf.SharedIntegerArrayBuf;
 import edu.rit.mp.buf.SharedIntegerArrayBuf_1;
-import edu.rit.mp.buf.SharedIntegerBuf;
+
+import edu.rit.pj.reduction.IntegerOp;
+import edu.rit.pj.reduction.Op;
 import edu.rit.pj.reduction.SharedInteger;
 import edu.rit.pj.reduction.SharedIntegerArray;
+
 import edu.rit.util.Arrays;
 import edu.rit.util.Range;
+
+import java.io.IOException;
+
+import java.nio.ByteBuffer;
 
 /**
  * Class IntegerBuf is the abstract base class for a buffer of integer items

@@ -25,13 +25,17 @@
 
 package edu.rit.pj.replica;
 
-import java.io.IOException;
-import java.util.concurrent.atomic.AtomicLong;
-
 import edu.rit.mp.DoubleBuf;
+
 import edu.rit.mp.buf.DoubleItemBuf;
+
 import edu.rit.pj.Comm;
+
 import edu.rit.pj.reduction.DoubleOp;
+
+import java.io.IOException;
+
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Class ReplicatedDouble provides a replicated, shared reduction variable for

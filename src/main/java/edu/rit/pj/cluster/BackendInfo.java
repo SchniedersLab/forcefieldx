@@ -4,7 +4,7 @@
 // Package: edu.rit.pj.cluster
 // Unit:    Class edu.rit.pj.cluster.BackendInfo
 //
-// This Java source file is copyright (C) 2008 by Alan Kaminsky. All rights
+// This Java source file is copyright (C) 2012 by Alan Kaminsky. All rights
 // reserved. For further information, contact the author, Alan Kaminsky, at
 // ark@cs.rit.edu.
 //
@@ -25,12 +25,15 @@
 
 package edu.rit.pj.cluster;
 
+import java.util.LinkedList;
+import java.util.List;
+
 /**
  * Class BackendInfo provides a record of information about one backend node in
  * the PJ cluster middleware.
  *
  * @author  Alan Kaminsky
- * @version 21-May-2008
+ * @version 20-Jun-2012
  */
 public class BackendInfo
 	{
@@ -131,6 +134,11 @@ public class BackendInfo
 	public String[] jvmflags;
 
 	/**
+	 * Shell command string on the backend.
+	 */
+	public String shellCommand;
+
+	/**
 	 * The job that has reserved or is running on the backend.
 	 */
 	public JobInfo job;
@@ -140,19 +148,19 @@ public class BackendInfo
 	/**
 	 * Construct a new backend information record.
 	 *
-	 * @param  name           The backend's name.
-	 * @param  totalCpus      The total number of CPUs in the backend.
-	 * @param  state          The backend's state.
-	 * @param  stateTime      The time when the backend entered its current
-	 *                        state.
-	 * @param  host           The host name for SSH remote logins to the
-	 *                        backend.
-	 * @param  jvm            The full pathname for executing the Java Virtual
-	 *                        Machine (JVM) on the backend.
-	 * @param  classpath      The Java class path for the Parallel Java Library
-	 *                        on the backend.
-	 * @param  jvmflags       Array of command line flags for the JVM (zero or
-	 *                        more).
+	 * @param  name          The backend's name.
+	 * @param  totalCpus     The total number of CPUs in the backend.
+	 * @param  state         The backend's state.
+	 * @param  stateTime     The time when the backend entered its current
+	 *                       state.
+	 * @param  host          The host name for SSH remote logins to the backend.
+	 * @param  jvm           The full pathname for executing the Java Virtual
+	 *                       Machine (JVM) on the backend.
+	 * @param  classpath     The Java class path for the Parallel Java Library
+	 *                       on the backend.
+	 * @param  jvmflags      Array of command line flags for the JVM (zero or
+	 *                       more).
+	 * @param  shellCommand  Shell command string.
 	 */
 	public BackendInfo
 		(String name,
@@ -162,7 +170,8 @@ public class BackendInfo
 		 String host,
 		 String jvm,
 		 String classpath,
-		 String[] jvmflags)
+		 String[] jvmflags,
+		 String shellCommand)
 		{
 		this.name = name;
 		this.totalCpus = totalCpus;
@@ -172,6 +181,7 @@ public class BackendInfo
 		this.jvm = jvm;
 		this.classpath = classpath;
 		this.jvmflags = jvmflags;
+		this.shellCommand = shellCommand;
 		}
 
 	}

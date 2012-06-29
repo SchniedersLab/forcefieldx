@@ -25,11 +25,12 @@
 
 package edu.rit.pj;
 
+import edu.rit.util.LongRange;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.concurrent.atomic.AtomicLong;
 
-import edu.rit.util.LongRange;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Class LongSchedule provides an object that determines how to schedule the

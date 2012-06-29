@@ -26,6 +26,7 @@
 package edu.rit.util;
 
 import java.io.PrintStream;
+
 import java.util.Date;
 
 /**

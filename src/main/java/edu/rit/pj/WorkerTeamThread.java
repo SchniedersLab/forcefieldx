@@ -25,6 +25,8 @@
 
 package edu.rit.pj;
 
+import edu.rit.io.Stdio;
+
 import java.util.concurrent.Semaphore;
 
 /**

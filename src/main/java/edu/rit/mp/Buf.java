@@ -25,10 +25,11 @@
 
 package edu.rit.mp;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-
 import edu.rit.pj.reduction.Op;
+
+import java.io.IOException;
+
+import java.nio.ByteBuffer;
 
 /**
  * Class Buf is the abstract base class for a buffer of items sent or received

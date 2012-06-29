@@ -25,23 +25,29 @@
 
 package edu.rit.pj.cluster;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-
 import edu.rit.mp.Channel;
 import edu.rit.mp.ChannelGroup;
 import edu.rit.mp.ChannelGroupClosedException;
-import edu.rit.mp.ObjectBuf;
 import edu.rit.mp.Status;
+
+import edu.rit.mp.ObjectBuf;
+
 import edu.rit.mp.buf.ObjectItemBuf;
+
 import edu.rit.pj.PJProperties;
+
 import edu.rit.util.Timer;
 import edu.rit.util.TimerTask;
 import edu.rit.util.TimerThread;
+
+import java.io.File;
+import java.io.IOException;
+
+import java.net.InetSocketAddress;
+
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Class NonPjJobFrontend provides the message handler for a job frontend
@@ -49,7 +55,7 @@ import edu.rit.util.TimerThread;
  * but does not run a PJ program.
  *
  * @author  Alan Kaminsky
- * @version 24-Jan-2012
+ * @version 20-Jun-2012
  */
 public class NonPjJobFrontend
 	implements Runnable, JobFrontendRef
@@ -356,6 +362,7 @@ public class NonPjJobFrontend
 	 * @param  jvm              Full pathname of Java Virtual Machine.
 	 * @param  classpath        Java class path for PJ Library.
 	 * @param  jvmflags         Array of JVM command line flags.
+	 * @param  shellCommand     Shell command string.
 	 * @param  Nt               Number of CPUs assigned to the process.
 	 *
 	 * @exception  IOException
@@ -368,6 +375,7 @@ public class NonPjJobFrontend
 		 String jvm,
 		 String classpath,
 		 String[] jvmflags,
+		 String shellCommand,
 		 int Nt)
 		throws IOException
 		{

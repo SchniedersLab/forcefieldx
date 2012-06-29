@@ -25,26 +25,31 @@
 
 package edu.rit.mp;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.nio.ByteBuffer;
-
 import edu.rit.mp.buf.EmptyObjectBuf;
 import edu.rit.mp.buf.ObjectArrayBuf;
 import edu.rit.mp.buf.ObjectArrayBuf_1;
 import edu.rit.mp.buf.ObjectItemBuf;
 import edu.rit.mp.buf.ObjectMatrixBuf;
 import edu.rit.mp.buf.ObjectMatrixBuf_1;
+import edu.rit.mp.buf.SharedObjectBuf;
 import edu.rit.mp.buf.SharedObjectArrayBuf;
 import edu.rit.mp.buf.SharedObjectArrayBuf_1;
-import edu.rit.mp.buf.SharedObjectBuf;
+
+import edu.rit.pj.reduction.ObjectOp;
+import edu.rit.pj.reduction.Op;
 import edu.rit.pj.reduction.SharedObject;
 import edu.rit.pj.reduction.SharedObjectArray;
+
 import edu.rit.util.Arrays;
 import edu.rit.util.Range;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+
+import java.nio.ByteBuffer;
 
 /**
  * Class ObjectBuf is the abstract base class for a buffer of object items

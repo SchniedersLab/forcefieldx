@@ -25,13 +25,14 @@
 
 package edu.rit.http;
 
+import edu.rit.util.Logger;
+import edu.rit.util.PrintStreamLogger;
+
 import java.io.IOException;
+
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-
-import edu.rit.util.Logger;
-import edu.rit.util.PrintStreamLogger;
 
 // For unit test main program
 // import java.io.PrintWriter;

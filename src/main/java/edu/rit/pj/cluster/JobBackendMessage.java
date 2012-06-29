@@ -25,15 +25,17 @@
 
 package edu.rit.pj.cluster;
 
-import java.io.Externalizable;
+import edu.rit.util.ByteSequence;
+
 import java.io.IOException;
+import java.io.Externalizable;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+
 import java.net.InetSocketAddress;
+
 import java.util.Map;
 import java.util.Properties;
-
-import edu.rit.util.ByteSequence;
 
 /**
  * Class JobBackendMessage provides a message sent to a Job Backend process

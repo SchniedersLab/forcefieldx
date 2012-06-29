@@ -25,6 +25,8 @@
 
 package edu.rit.pj;
 
+import edu.rit.pj.reduction.*;
+
 /**
  * Class ParallelConstruct is the common base class for all parallel constructs
  * that are executed by a {@linkplain ParallelTeam}.

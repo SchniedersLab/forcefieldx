@@ -25,13 +25,14 @@
 
 package edu.rit.mp.buf;
 
-import java.nio.ByteBuffer;
-
 import edu.rit.mp.Buf;
 import edu.rit.mp.LongBuf;
+
 import edu.rit.pj.reduction.LongOp;
 import edu.rit.pj.reduction.Op;
 import edu.rit.pj.reduction.SharedLong;
+
+import java.nio.ByteBuffer;
 
 /**
  * Class SharedLongBuf provides a buffer for a shared long item sent or

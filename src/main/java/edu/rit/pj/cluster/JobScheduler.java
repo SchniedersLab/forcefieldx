@@ -25,34 +25,44 @@
 
 package edu.rit.pj.cluster;
 
+import edu.rit.http.HttpRequest;
+import edu.rit.http.HttpResponse;
+import edu.rit.http.HttpServer;
+
+import edu.rit.mp.Channel;
+import edu.rit.mp.ChannelGroup;
+import edu.rit.mp.ChannelGroupClosedException;
+import edu.rit.mp.ConnectListener;
+import edu.rit.mp.Status;
+
+import edu.rit.mp.ObjectBuf;
+
+import edu.rit.mp.buf.ObjectItemBuf;
+
+import edu.rit.pj.Version;
+
+import edu.rit.util.Logger;
+import edu.rit.util.PrintStreamLogger;
+import edu.rit.util.Timer;
+import edu.rit.util.TimerTask;
+import edu.rit.util.TimerThread;
+
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+
 import java.net.InetSocketAddress;
+
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-
-import edu.rit.http.HttpRequest;
-import edu.rit.http.HttpResponse;
-import edu.rit.http.HttpServer;
-import edu.rit.mp.Channel;
-import edu.rit.mp.ChannelGroup;
-import edu.rit.mp.ChannelGroupClosedException;
-import edu.rit.mp.ConnectListener;
-import edu.rit.mp.ObjectBuf;
-import edu.rit.mp.Status;
-import edu.rit.mp.buf.ObjectItemBuf;
-import edu.rit.pj.Version;
-import edu.rit.util.Logger;
-import edu.rit.util.PrintStreamLogger;
-import edu.rit.util.Timer;
-import edu.rit.util.TimerTask;
-import edu.rit.util.TimerThread;
+import java.util.NoSuchElementException;
+import java.util.Scanner;
 
 /**
  * Class JobScheduler is the main program for the PJ Job Scheduler Daemon
@@ -68,7 +78,7 @@ import edu.rit.util.TimerThread;
  * Configuration}.
  *
  * @author  Alan Kaminsky
- * @version 24-Jan-2012
+ * @version 20-Jun-2012
  */
 public class JobScheduler
 	implements JobSchedulerRef
@@ -833,6 +843,7 @@ public class JobScheduler
 							 /*jvm            */ backendinfo.jvm,
 							 /*classpath      */ backendinfo.classpath,
 							 /*jvmflags       */ backendinfo.jvmflags,
+							 /*shellCommand   */ backendinfo.shellCommand,
 							 /*Nt             */ Ncpus);
 						}
 

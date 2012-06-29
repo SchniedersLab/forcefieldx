@@ -25,14 +25,17 @@
 
 package edu.rit.mp.buf;
 
-import java.nio.ByteBuffer;
-import java.nio.ShortBuffer;
-
 import edu.rit.mp.Buf;
 import edu.rit.mp.ShortBuf;
-import edu.rit.pj.reduction.Op;
+
 import edu.rit.pj.reduction.ShortOp;
+import edu.rit.pj.reduction.Op;
+
+import edu.rit.util.Arrays;
 import edu.rit.util.Range;
+
+import java.nio.ByteBuffer;
+import java.nio.ShortBuffer;
 
 /**
  * Class ShortMatrixBuf_1 provides a buffer for a matrix of short items

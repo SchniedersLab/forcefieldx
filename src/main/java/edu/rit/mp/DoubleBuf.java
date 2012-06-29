@@ -25,21 +25,27 @@
 
 package edu.rit.mp;
 
-import java.nio.ByteBuffer;
-
 import edu.rit.mp.buf.DoubleArrayBuf;
 import edu.rit.mp.buf.DoubleArrayBuf_1;
 import edu.rit.mp.buf.DoubleItemBuf;
 import edu.rit.mp.buf.DoubleMatrixBuf;
 import edu.rit.mp.buf.DoubleMatrixBuf_1;
 import edu.rit.mp.buf.EmptyDoubleBuf;
+import edu.rit.mp.buf.SharedDoubleBuf;
 import edu.rit.mp.buf.SharedDoubleArrayBuf;
 import edu.rit.mp.buf.SharedDoubleArrayBuf_1;
-import edu.rit.mp.buf.SharedDoubleBuf;
+
+import edu.rit.pj.reduction.DoubleOp;
+import edu.rit.pj.reduction.Op;
 import edu.rit.pj.reduction.SharedDouble;
 import edu.rit.pj.reduction.SharedDoubleArray;
+
 import edu.rit.util.Arrays;
 import edu.rit.util.Range;
+
+import java.io.IOException;
+
+import java.nio.ByteBuffer;
 
 /**
  * Class DoubleBuf is the abstract base class for a buffer of double items sent

@@ -4,7 +4,7 @@
 // Package: edu.rit.pj.cluster
 // Unit:    Class edu.rit.pj.cluster.Configuration
 //
-// This Java source file is copyright (C) 2008 by Alan Kaminsky. All rights
+// This Java source file is copyright (C) 2012 by Alan Kaminsky. All rights
 // reserved. For further information, contact the author, Alan Kaminsky, at
 // ark@cs.rit.edu.
 //
@@ -27,6 +27,7 @@ package edu.rit.pj.cluster;
 
 import java.io.File;
 import java.io.IOException;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -37,49 +38,43 @@ import java.util.Scanner;
  * computer running Parallel Java. The configuration information is read from a
  * plain text file. Each configuration file entry is on a single line. Lines
  * beginning with <TT>#</TT> and blank lines are ignored. The order of the
- * entries in the file does not matter. The items in each entry are separated by
- * whitespace; there cannot be any whitespace within an item (unless stated
- * otherwise). The configuration file entries are:
+ * entries in the file does not matter (unless stated otherwise below). The
+ * items in each entry are separated by whitespace; there cannot be any
+ * whitespace within an item (unless stated otherwise below). The configuration
+ * file entries are:
  * <UL>
- * <LI>
+ * <P><LI>
  * <TT>cluster &lt;name&gt;</TT>
  * <BR>The name of the cluster is <TT>&lt;name&gt;</TT>. The name may contain
  * whitespace. This entry must be specified; there is no default.
- * <BR>&nbsp;
- * <LI>
+ * <P><LI>
  * <TT>logfile &lt;file&gt;</TT>
  * <BR>The Job Scheduler will append log entries to the log file named
  * <TT>&lt;file&gt;</TT>. This entry must be specified; there is no default.
- * <BR>&nbsp;
- * <LI>
+ * <P><LI>
  * <TT>webhost &lt;host&gt;</TT>
  * <BR>The host name for the Job Scheduler's web interface is
  * <TT>&lt;host&gt;</TT>. This entry must be specified; there is no default.
- * <BR>&nbsp;
- * <LI>
+ * <P><LI>
  * <TT>webport &lt;port&gt;</TT>
  * <BR>The port number for the Job Scheduler's web interface is
  * <TT>&lt;port&gt;</TT>. If not specified, the default port number is 8080.
- * <BR>&nbsp;
- * <LI>
+ * <P><LI>
  * <TT>schedulerhost &lt;host&gt;</TT>
  * <BR>The host name to which the Job Scheduler listens for connections from job
  * frontend processes is <TT>&lt;host&gt;</TT>. If not specified, the default is
  * <TT>"localhost"</TT>.
- * <BR>&nbsp;
- * <LI>
+ * <P><LI>
  * <TT>schedulerport &lt;port&gt;</TT>
  * <BR>The port number to which the Job Scheduler listens for connections from
  * job frontend processes is <TT>&lt;port&gt;</TT>. If not specified, the
  * default port number is 20617.
- * <BR>&nbsp;
- * <LI>
+ * <P><LI>
  * <TT>frontendhost &lt;host&gt;</TT>
  * <BR>The host name to which job frontend processes listen for connections from
  * job backend processes is <TT>&lt;host&gt;</TT>. This entry must be specified;
  * there is no default.
- * <BR>&nbsp;
- * <LI>
+ * <P><LI>
  * <TT>backend &lt;name&gt; &lt;cpus&gt; &lt;host&gt; &lt;jvm&gt;
  * &lt;classpath&gt; [&lt;jvmflag&gt; ...]</TT>
  * <BR>The parallel computer includes a backend node named
@@ -90,8 +85,14 @@ import java.util.Scanner;
  * on the backend node is <TT>&lt;classpath&gt;</TT>. Each
  * <TT>&lt;jvmflag&gt;</TT> (zero or more) gives a flag passed to the JVM on the
  * command line. At least one of this entry must be specified.
- * <BR>&nbsp;
- * <LI>
+ * <P><LI>
+ * <TT>backendshell &lt;name&gt; &lt;shell command&gt;</TT>
+ * <BR>On the backend node named <TT>&lt;name&gt;</TT>, use the given shell
+ * command string when starting a job backend process. This entry, if present,
+ * must appear after the corresponding <TT>backend &lt;name&gt;</TT> entry. If
+ * this entry is omitted, the default shell command string is
+ * <TT>"bash&nbsp;-l&nbsp;-c"</TT>.
+ * <P><LI>
  * <TT>jobtime &lt;time&gt;</TT>
  * <BR>The maximum time in seconds any Parallel Java job is allowed to run. The
  * Job Scheduler will abort a job if it runs for this many seconds. If not
@@ -135,7 +136,7 @@ import java.util.Scanner;
  * </TABLE>
  *
  * @author  Alan Kaminsky
- * @version 21-May-2008
+ * @version 20-Jun-2012
  */
 public class Configuration
 	{
@@ -162,6 +163,9 @@ public class Configuration
 	// List of backend information objects.
 	private ArrayList<BackendInfo> myBackendInfo =
 		new ArrayList<BackendInfo>();
+
+	// Default shell comand string.
+	private static final String DEFAULT_SHELL_COMMAND = "bash -l -c";
 
 	// Maximum job time. 0 means no maximum.
 	private int myJobTime;
@@ -386,8 +390,22 @@ public class Configuration
 							 host,
 							 jvm,
 							 classpath,
-							 jvmflags.toArray (new String [jvmflags.size()]));
+							 jvmflags.toArray (new String [jvmflags.size()]),
+							 DEFAULT_SHELL_COMMAND);
 					myBackendInfo.add (backendinfo);
+					}
+				else if (command.equals ("backendshell"))
+					{
+					String name = linescanner.next();
+					String shellCommand = linescanner.nextLine().trim();
+					BackendInfo backendinfo = backendInfoForName (name);
+					if (backendinfo == null)
+						{
+						throw new IOException
+							("Invalid backendshell command, no backend named \""+
+							 name+"\"");
+						}
+					backendinfo.shellCommand = shellCommand;
 					}
 				else if (command.equals ("jobtime"))
 					{
@@ -443,6 +461,25 @@ public class Configuration
 			{
 			if (scanner != null) scanner.close();
 			}
+		}
+
+// Hidden operations.
+
+	/**
+	 * Returns the backend info object for the given backend name.
+	 *
+	 * @param  name  Backend name.
+	 *
+	 * @return  Backend info, or null if <TT>name</TT> does not exist.
+	 */
+	private BackendInfo backendInfoForName
+		(String name)
+		{
+		for (BackendInfo backendinfo : myBackendInfo)
+			{
+			if (backendinfo.name.equals (name)) return backendinfo;
+			}
+		return null;
 		}
 
 	}

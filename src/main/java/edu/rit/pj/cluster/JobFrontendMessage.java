@@ -25,11 +25,12 @@
 
 package edu.rit.pj.cluster;
 
-import java.io.Externalizable;
 import java.io.File;
 import java.io.IOException;
+import java.io.Externalizable;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+
 import java.net.InetSocketAddress;
 
 /**
@@ -37,7 +38,7 @@ import java.net.InetSocketAddress;
  * (interface {@linkplain JobFrontendRef}) in the PJ cluster middleware.
  *
  * @author  Alan Kaminsky
- * @version 24-Jan-2012
+ * @version 20-Jun-2012
  */
 public abstract class JobFrontendMessage
 	extends Message
@@ -46,7 +47,7 @@ public abstract class JobFrontendMessage
 
 // Hidden data members.
 
-	private static final long serialVersionUID = -294465313248920647L;
+	private static final long serialVersionUID = -6601793901631997673L;
 
 // Exported constructors.
 
@@ -79,6 +80,7 @@ public abstract class JobFrontendMessage
 	 * @param  jvm              Full pathname of Java Virtual Machine.
 	 * @param  classpath        Java class path for PJ Library.
 	 * @param  jvmflags         Array of JVM command line flags.
+	 * @param  shellCommand     Shell command string.
 	 * @param  Nt               Number of CPUs assigned to the process.
 	 *
 	 * @return  "Assign backend" message.
@@ -90,11 +92,13 @@ public abstract class JobFrontendMessage
 		 String jvm,
 		 String classpath,
 		 String[] jvmflags,
+		 String shellCommand,
 		 int Nt)
 		{
 		return
 			new AssignBackendMessage
-				(theJobScheduler, name, host, jvm, classpath, jvmflags, Nt);
+				(theJobScheduler, name, host, jvm, classpath, jvmflags,
+				 shellCommand, Nt);
 		}
 
 	/**
@@ -455,18 +459,19 @@ public abstract class JobFrontendMessage
 	 * message in the PJ cluster middleware.
 	 *
 	 * @author  Alan Kaminsky
-	 * @version 21-May-2008
+	 * @version 20-Jun-2008
 	 */
 	private static class AssignBackendMessage
 		extends JobFrontendMessage
 		{
-		private static final long serialVersionUID = 2210066968017350236L;
+		private static final long serialVersionUID = 4426930548078115598L;
 
 		private String name;
 		private String host;
 		private String jvm;
 		private String classpath;
 		private String[] jvmflags;
+		private String shellCommand;
 		private int Nt;
 
 		public AssignBackendMessage()
@@ -480,6 +485,7 @@ public abstract class JobFrontendMessage
 			 String jvm,
 			 String classpath,
 			 String[] jvmflags,
+			 String shellCommand,
 			 int Nt)
 			{
 			super (Message.FROM_JOB_SCHEDULER);
@@ -488,6 +494,7 @@ public abstract class JobFrontendMessage
 			this.jvm = jvm;
 			this.classpath = classpath;
 			this.jvmflags = jvmflags;
+			this.shellCommand = shellCommand;
 			this.Nt = Nt;
 			}
 
@@ -497,7 +504,8 @@ public abstract class JobFrontendMessage
 			throws IOException
 			{
 			theJobFrontend.assignBackend
-				(theJobScheduler, name, host, jvm, classpath, jvmflags, Nt);
+				(theJobScheduler, name, host, jvm, classpath, jvmflags,
+				 shellCommand, Nt);
 			}
 
 		public void writeExternal
@@ -514,6 +522,7 @@ public abstract class JobFrontendMessage
 				{
 				out.writeUTF (jvmflags[i]);
 				}
+			out.writeUTF (shellCommand);
 			out.writeInt (Nt);
 			}
 
@@ -531,6 +540,7 @@ public abstract class JobFrontendMessage
 				{
 				jvmflags[i] = in.readUTF();
 				}
+			shellCommand = in.readUTF();
 			Nt = in.readInt();
 			}
 		}

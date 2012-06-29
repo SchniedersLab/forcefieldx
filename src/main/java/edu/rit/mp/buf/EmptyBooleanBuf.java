@@ -25,12 +25,13 @@
 
 package edu.rit.mp.buf;
 
-import java.nio.ByteBuffer;
-
-import edu.rit.mp.BooleanBuf;
 import edu.rit.mp.Buf;
+import edu.rit.mp.BooleanBuf;
+
 import edu.rit.pj.reduction.BooleanOp;
 import edu.rit.pj.reduction.Op;
+
+import java.nio.ByteBuffer;
 
 /**
  * Class EmptyBooleanBuf provides a Boolean buffer that contains no items for

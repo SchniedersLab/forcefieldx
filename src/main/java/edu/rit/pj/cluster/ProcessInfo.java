@@ -25,9 +25,9 @@
 
 package edu.rit.pj.cluster;
 
-import java.net.InetSocketAddress;
-
 import edu.rit.util.Timer;
+
+import java.net.InetSocketAddress;
 
 /**
  * Class ProcessInfo provides a record of information about one job backend

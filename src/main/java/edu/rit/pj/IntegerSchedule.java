@@ -25,10 +25,10 @@
 
 package edu.rit.pj;
 
+import edu.rit.util.Range;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-
-import edu.rit.util.Range;
 
 /**
  * Class IntegerSchedule provides an object that determines how to schedule the

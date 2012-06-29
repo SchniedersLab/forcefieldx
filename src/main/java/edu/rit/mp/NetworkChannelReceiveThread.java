@@ -28,7 +28,10 @@ package edu.rit.mp;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InterruptedIOException;
+
 import java.nio.ByteBuffer;
+
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SocketChannel;
 
 /**

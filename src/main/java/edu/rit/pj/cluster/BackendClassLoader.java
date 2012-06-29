@@ -4,7 +4,7 @@
 // Package: edu.rit.pj.cluster
 // Unit:    Class edu.rit.pj.cluster.BackendClassLoader
 //
-// This Java source file is copyright (C) 2006 by Alan Kaminsky. All rights
+// This Java source file is copyright (C) 2012 by Alan Kaminsky. All rights
 // reserved. For further information, contact the author, Alan Kaminsky, at
 // ark@cs.rit.edu.
 //
@@ -25,7 +25,15 @@
 
 package edu.rit.pj.cluster;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.net.URL;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Class BackendClassLoader provides a class loader for a job backend process in
@@ -33,12 +41,9 @@ import java.io.IOException;
  * class and the parent class loaders cannot do so, the backend class loader
  * sends a request for the class file to the job frontend process, waits for the
  * job frontend process to send the class file, and loads the class.
- * <P>
- * Class BackendClassLoader supports loading of resources that are class files.
- * Support for loading of resources that are not class files is TBD.
  *
  * @author  Alan Kaminsky
- * @version 26-Oct-2006
+ * @version 15-Jun-2012
  */
 public class BackendClassLoader
 	extends ClassLoader
@@ -49,6 +54,10 @@ public class BackendClassLoader
 	private JobBackendRef myJobBackend;
 	private JobFrontendRef myJobFrontend;
 	private ResourceCache myCache;
+
+	// Map from resource name to resource URL for non-class-file resources.
+	private Map<String,URL> myResourceURLMap =
+		Collections.synchronizedMap (new HashMap<String,URL>());
 
 // Exported constructors.
 
@@ -146,6 +155,67 @@ public class BackendClassLoader
 			throw new ClassNotFoundException
 				("Class " + className + " not found because thread interrupted",
 				 exc);
+			}
+		}
+
+	/**
+	 * Find the resource with the given name.
+	 *
+	 * @param  name  Resource name.
+	 *
+	 * @return  URL for reading the resource, or null if the resource could not
+	 *          be found.
+	 */
+	protected URL findResource
+		(String name)
+		{
+		try
+			{
+			URL url = myResourceURLMap.get (name);
+
+			if (url == null)
+				{
+				// If the resource is not in the cache, ask the Job Frontend for
+				// it.
+				if (! myCache.contains (name))
+					{
+					myJobFrontend.requestResource (myJobBackend, name);
+					}
+
+				// Wait until the resource shows up in the cache.
+				byte[] content = myCache.get (name);
+				if (content == null) return null;
+
+				// Store the resource contents in a temporary file, which will
+				// be deleted when the JVM exits.
+				String fname = new File (name) .getName();
+				int i = fname.lastIndexOf ('.');
+				String fprefix = i == -1 ? fname : fname.substring (0, i);
+				String fsuffix = i == -1 ? null : fname.substring (i);
+				File file = File.createTempFile (fprefix+"_tmp", fsuffix);
+				OutputStream out =
+					new BufferedOutputStream
+						(new FileOutputStream (file));
+				out.write (content);
+				out.close();
+				file.deleteOnExit();
+
+				// Map resource name to temporary file URL.
+				url = file.toURI().toURL();
+				myResourceURLMap.put (name, url);
+				}
+
+			return url;
+			}
+
+		catch (IOException exc)
+			{
+			return null;
+			}
+
+		catch (InterruptedException exc)
+			{
+			return null;
 			}
 		}
 

@@ -27,6 +27,7 @@ package edu.rit.pj.cluster;
 
 import java.io.File;
 import java.io.IOException;
+
 import java.net.InetSocketAddress;
 
 /**
@@ -34,7 +35,7 @@ import java.net.InetSocketAddress;
  * process.
  *
  * @author  Alan Kaminsky
- * @version 24-Jan-2012
+ * @version 20-Jun-2012
  */
 public interface JobFrontendRef
 	{
@@ -50,6 +51,7 @@ public interface JobFrontendRef
 	 * @param  jvm              Full pathname of Java Virtual Machine.
 	 * @param  classpath        Java class path for PJ Library.
 	 * @param  jvmflags         Array of JVM command line flags.
+	 * @param  shellCommand     Shell command string.
 	 * @param  Nt               Number of CPUs assigned to the process.
 	 *
 	 * @exception  IOException
@@ -62,6 +64,7 @@ public interface JobFrontendRef
 		 String jvm,
 		 String classpath,
 		 String[] jvmflags,
+		 String shellCommand,
 		 int Nt)
 		throws IOException;
 

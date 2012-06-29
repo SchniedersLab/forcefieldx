@@ -25,13 +25,16 @@
 
 package edu.rit.mp.buf;
 
-import java.nio.ByteBuffer;
-
 import edu.rit.mp.Buf;
+import edu.rit.mp.FloatBuf;
+
 import edu.rit.pj.reduction.FloatOp;
 import edu.rit.pj.reduction.Op;
 import edu.rit.pj.reduction.SharedFloatArray;
+
 import edu.rit.util.Range;
+
+import java.nio.ByteBuffer;
 
 /**
  * Class SharedFloatArrayReductionBuf provides a reduction buffer for class
