@@ -191,6 +191,7 @@ if (filename2 == null) {
     filename = FilenameUtils.removeExtension(filename);
 
     if (ext.toUpperCase().contains("XYZ")) {
+        dat.setActive(0);
         saveAsXYZ(new File(filename + ".xyz"));
     } else {
         saveAsPDB(systems, new File(filename + ".pdb"));
@@ -201,6 +202,7 @@ if (filename2 == null) {
     filename2 = FilenameUtils.removeExtension(filename2);
 
     if (ext.toUpperCase().contains("XYZ")) {
+        dat.setActive(1);
         saveAsXYZ(new File(filename2 + ".xyz"));
     } else {
         saveAsPDB(systems2, new File(filename2 + ".pdb"));

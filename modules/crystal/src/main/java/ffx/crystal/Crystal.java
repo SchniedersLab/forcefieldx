@@ -1358,9 +1358,15 @@ public class Crystal {
     }
 
     /**
-     * {
-     *
-     * @inheritDoc}
+     * A String containing the unit cell parameters.
+     * @return A string with the unit cell parameters. 
+     */
+    public String toShortString(){
+        return String.format("%6.2f %6.2f %6.2f %6.2f %6.2f %6.2f", a,b,c,alpha,beta,gamma);
+    }
+    
+    /**
+     * {@inheritDoc}
      */
     @Override
     public String toString() {
