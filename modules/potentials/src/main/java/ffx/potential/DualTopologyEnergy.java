@@ -206,7 +206,6 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
         gl1 = new double[nAtoms1 * 3];
         gl2 = new double[nAtoms2 * 3];
 
-
         /**
          *
          * lambdaExponent =

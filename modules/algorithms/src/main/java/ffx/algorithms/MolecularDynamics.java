@@ -316,7 +316,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
         }
 
         if (dynFilter == null) {
-            dynFilter = new DYNFilter(molecularAssembly);
+            dynFilter = new DYNFilter(molecularAssembly.getName());
         }
 
         if (pdbFilter == null) {
