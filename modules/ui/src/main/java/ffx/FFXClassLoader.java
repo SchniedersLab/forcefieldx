@@ -1,22 +1,21 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X Description: Force Field X - Software for Molecular
+ * Biophysics Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx;
 
@@ -29,8 +28,9 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 /**
- * Class loader able to load classes and DLLs with a higher priority from a given set of JARs.
- * Its bytecode is Java 1.1 compatible to be loadable by old JVMs.
+ * Class loader able to load classes and DLLs with a higher priority from a
+ * given set of JARs. Its bytecode is Java 1.1 compatible to be loadable by old
+ * JVMs.
  *
  * @author Michael J. Schnieders; derived from work by Emmanuel Puybaret
  * @version $Id: $
@@ -56,7 +56,8 @@ public class FFXClassLoader extends ClassLoader {
                                                   "org.apache.commons.lang3",
                                                   "org.apache.commons.math",
                                                   "edu.rit.pj",
-                                                  "jcuda"};
+                                                  "jcuda",
+                                                  "com.amd.aparapi"};
     static final List<String> ffxFiles;
 
     static {
@@ -79,6 +80,8 @@ public class FFXClassLoader extends ClassLoader {
                     "jcuda/jcuda-all.jar",
                     // Parallel Java
                     "edu.rit.pj/pj.jar",
+                    // Aparapi
+                    "com.amd.aparapi/aparapi.jar",
                     // Java3D 1.5.2 and (so far) 1.6.0 depend on JOGL v. 1.1.1
                     "java3d/j3dcore.jar",
                     "java3d/j3dutils.jar",
@@ -122,6 +125,8 @@ public class FFXClassLoader extends ClassLoader {
                 ffxFiles.add("64-bit/libJCudaDriver-apple-x86_64.jnilib");
                 ffxFiles.add("64-bit/libJCudaRuntime-apple-x86_64.jnilib");
                 ffxFiles.add("64-bit/libJCufft-apple-x86_64.jnilib");
+                // Aparapi
+                ffxFiles.add("64-bit/libaparapi_x86_64.dylib");
             }
         } else if ("LINUX".equals(osName)) {
             if (x86_64) {
@@ -134,11 +139,15 @@ public class FFXClassLoader extends ClassLoader {
                 ffxFiles.add("64-bit/libJCudaDriver-linux-x86_64.so");
                 ffxFiles.add("64-bit/libJCudaRuntime-linux-x86_64.so");
                 ffxFiles.add("64-bit/libJCufft-linux-x86_64.so");
+                // Aparapi
+                ffxFiles.add("64-bit/libaparapi_x86_64.so");
             } else {
                 ffxFiles.add("32-bit/libgluegen-rt.so");
                 ffxFiles.add("32-bit/libjogl.so");
                 ffxFiles.add("32-bit/libjogl_awt.so");
                 ffxFiles.add("32-bit/libjogl_cg.so");
+                // Aparapi
+                ffxFiles.add("32-bit/libaparapi_x86.so");
             }
         } else if (osName.startsWith("WINDOWS")) {
             if (x86_64) {
@@ -151,11 +160,15 @@ public class FFXClassLoader extends ClassLoader {
                 ffxFiles.add("64-bit/JCudaDriver-linux-x86_64.dll");
                 ffxFiles.add("64-bit/JCudaRuntime-linux-x86_64.dll");
                 ffxFiles.add("64-bit/JCufft-linux-x86_64.dll");
+                // Aparapi
+                ffxFiles.add("64-bit/aparapi_x86_64.dll");
             } else {
                 ffxFiles.add("32-bit/gluegen-rt.dll");
                 ffxFiles.add("32-bit/jogl.dll");
                 ffxFiles.add("32-bit/jogl_awt.dll");
                 ffxFiles.add("32-bit/jogl_cg.dll");
+                // Aparapi
+                ffxFiles.add("32-bit/aparapi_x86.dll");
             }
         }
     }
@@ -164,7 +177,8 @@ public class FFXClassLoader extends ClassLoader {
      * Force Field X custom class loader considers JARs and DLLs of
      * <code>extensionJarsAndDlls</code> as classpath and libclasspath elements
      * with a higher priority than the ones of default classpath. It will load
-     * itself all the classes belonging to packages of <code>applicationPackages</code>.
+     * itself all the classes belonging to packages of
+     * <code>applicationPackages</code>.
      *
      * @param parent a {@link java.lang.ClassLoader} object.
      */
@@ -174,7 +188,8 @@ public class FFXClassLoader extends ClassLoader {
     }
 
     /**
-     * Returns the file name of a temporary copy of <code>input</code> content.
+     * Returns the file name of a temporary copy of
+     * <code>input</code> content.
      *
      * @param input a {@link java.io.InputStream} object.
      * @param suffix a {@link java.lang.String} object.
@@ -215,8 +230,8 @@ public class FFXClassLoader extends ClassLoader {
     /**
      * {@inheritDoc}
      *
-     * Finds and defines the given class among the extension JARs
-     * given in constructor, then among resources.
+     * Finds and defines the given class among the extension JARs given in
+     * constructor, then among resources.
      */
     @Override
     protected Class findClass(String name) throws ClassNotFoundException {
@@ -353,8 +368,8 @@ public class FFXClassLoader extends ClassLoader {
     /**
      * {@inheritDoc}
      *
-     * Loads a class with this class loader if its package belongs to <code>applicationPackages</code>
-     * given in constructor.
+     * Loads a class with this class loader if its package belongs to
+     * <code>applicationPackages</code> given in constructor.
      */
     @Override
     protected Class loadClass(String name, boolean resolve) throws ClassNotFoundException {
@@ -407,6 +422,7 @@ public class FFXClassLoader extends ClassLoader {
 
         // Compute DLLs prefix and suffix
         String dllSuffix;
+        String dllSuffix2 = null;
         String dllPrefix;
 
         String osName = System.getProperty("os.name");
@@ -415,6 +431,7 @@ public class FFXClassLoader extends ClassLoader {
             dllPrefix = "";
         } else if (osName.startsWith("Mac OS X")) {
             dllSuffix = ".jnilib";
+            dllSuffix2 = ".dylib";
             dllPrefix = "lib";
         } else {
             dllSuffix = ".so";
@@ -445,6 +462,15 @@ public class FFXClassLoader extends ClassLoader {
                         // Copy DLL to a tmp file
                         String extensionDll = copyInputStreamToTmpFile(extensionJarOrDllUrl.openStream(),
                                                                        name, dllSuffix);
+                        // Add extracted file to extension DLLs map
+                        extensionDlls.put(name, extensionDll);
+                    } else if (dllSuffix2 != null && extensionJarOrDll.endsWith(dllSuffix2)) {
+                        int start = lastSlashIndex + 1 + dllPrefix.length();
+                        int end = extensionJarOrDll.indexOf(dllSuffix2);
+                        String name = extensionJarOrDll.substring(start, end);
+                        // Copy DLL to a tmp file
+                        String extensionDll = copyInputStreamToTmpFile(extensionJarOrDllUrl.openStream(),
+                                                                       name, dllSuffix2);
                         // Add extracted file to extension DLLs map
                         extensionDlls.put(name, extensionDll);
                     }
