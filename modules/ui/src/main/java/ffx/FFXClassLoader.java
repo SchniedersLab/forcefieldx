@@ -55,6 +55,7 @@ public class FFXClassLoader extends ClassLoader {
                                                   "org.apache.commons.lang",
                                                   "org.apache.commons.lang3",
                                                   "org.apache.commons.math",
+                                                  "org.apache.commons.math3",
                                                   "edu.rit.pj",
                                                   "jcuda",
                                                   "com.amd.aparapi"};
@@ -105,6 +106,7 @@ public class FFXClassLoader extends ClassLoader {
                     "commons-lang/commons-lang3.jar",
                     "commons-logging/commons-logging.jar",
                     "commons-math/commons-math.jar",
+                    "commons-math/commons-math3.jar",
                     // Mac OS X Extensions
                     "macosx/AppleJavaExtensions.jar",
                     // Java Help
