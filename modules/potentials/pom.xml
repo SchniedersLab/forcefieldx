@@ -144,9 +144,9 @@
         </dependency>
         <dependency>
             <groupId>commons-math</groupId>
-            <artifactId>commons-math</artifactId>
+            <artifactId>commons-math3</artifactId>
             <type>jar</type>
-            <version>2.2</version>
+            <version>3.0</version>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>
