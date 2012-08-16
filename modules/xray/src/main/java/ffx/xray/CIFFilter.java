@@ -1,22 +1,21 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X Description: Force Field X - Software for Molecular
+ * Biophysics Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.xray;
 
@@ -44,7 +43,7 @@ public class CIFFilter implements DiffractionFileFilter {
     private double reshigh = -1.0;
     private String sgname = null;
     private int sgnum = -1;
-    private int h = -1, k = -1, l = -1, fo = -1, sigfo = -1, rfree = -1;
+    private int h = -1, k = -1, l = -1, fo = -1, sigfo = -1, io = -1, sigio = -1, rfree = -1;
     private int nall, nobs;
 
     private static enum Header {
@@ -53,7 +52,7 @@ public class CIFFilter implements DiffractionFileFilter {
         angle_alpha, angle_beta, angle_gamma, Int_Tables_number,
         space_group_name_H_M, crystal_id, wavelength_id, scale_group_code,
         status, index_h, index_k, index_l, F_meas, F_meas_au, F_meas_sigma,
-        F_meas_sigma_au, NOVALUE;
+        F_meas_sigma_au, intensity_meas, intensity_sigma, NOVALUE;
 
         public static Header toHeader(String str) {
             try {
@@ -70,13 +69,17 @@ public class CIFFilter implements DiffractionFileFilter {
     public CIFFilter() {
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ReflectionList getReflectionList(File cifFile) {
         return getReflectionList(cifFile, null);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ReflectionList getReflectionList(File cifFile, CompositeConfiguration properties) {
         try {
@@ -181,7 +184,9 @@ public class CIFFilter implements DiffractionFileFilter {
         return reflectionlist;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getResolution(File cifFile, Crystal crystal) {
         double res = Double.POSITIVE_INFINITY;
@@ -259,12 +264,15 @@ public class CIFFilter implements DiffractionFileFilter {
         return res;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean readFile(File cifFile, ReflectionList reflectionlist,
             DiffractionRefinementData refinementdata, CompositeConfiguration properties) {
         int nread, nnan, nres, nignore, ncifignore, nfriedel, ncut;
         boolean transpose = false;
+        boolean intensitiesToAmplitudes = false;
 
         StringBuilder sb = new StringBuilder();
         sb.append(String.format("\nOpening %s\n", cifFile.getName()));
@@ -304,6 +312,12 @@ public class CIFFilter implements DiffractionFileFilter {
                         case F_meas_sigma_au:
                             sigfo = ncol;
                             break;
+                        case intensity_meas:
+                            io = ncol;
+                            break;
+                        case intensity_sigma:
+                            sigio = ncol;
+                            break;
                         case status:
                             rfree = ncol;
                             break;
@@ -320,6 +334,14 @@ public class CIFFilter implements DiffractionFileFilter {
                 }
             }
 
+            if (fo < 0 && sigfo < 0 && io > 0 && sigio > 0){
+                intensitiesToAmplitudes = true;
+            }
+            
+            if (fo < 0 && io < 0) {
+                logger.severe("Reflection data (I/F) not found in CIF file!");
+            }
+            
             // go back to where the reflections start
             br.reset();
 
@@ -442,7 +464,7 @@ public class CIFFilter implements DiffractionFileFilter {
                         }
                     }
 
-                    if (fo > 0 && sigfo > 0 && !isnull) {
+                    if (!intensitiesToAmplitudes && !isnull) {
                         if (strarray[fo].charAt(0) == '?'
                                 || strarray[sigfo].charAt(0) == '?') {
                             isnull = true;
@@ -469,6 +491,24 @@ public class CIFFilter implements DiffractionFileFilter {
                         }
                     }
 
+                    if (intensitiesToAmplitudes && !isnull) {
+                        if (strarray[io].charAt(0) == '?'
+                                || strarray[sigio].charAt(0) == '?') {
+                            isnull = true;
+                            nnan++;
+                            continue;
+                        }
+
+                        if (friedel) {
+                            anofsigf[hkl.index()][2] = Double.parseDouble(strarray[io]);
+                            anofsigf[hkl.index()][3] = Double.parseDouble(strarray[sigio]);
+                            nfriedel++;
+                        } else {
+                            anofsigf[hkl.index()][0] = Double.parseDouble(strarray[io]);
+                            anofsigf[hkl.index()][1] = Double.parseDouble(strarray[sigio]);
+                        }
+                    }
+
                     nread++;
                 } else {
                     HKL tmp = new HKL(ih, ik, il);
@@ -484,6 +524,10 @@ public class CIFFilter implements DiffractionFileFilter {
 
             // set up fsigf from F+ and F-
             refinementdata.generate_fsigf_from_anofsigf(anofsigf);
+            
+            if (intensitiesToAmplitudes){
+                refinementdata.intensities_to_amplitudes();
+            }
         } catch (IOException ioe) {
             System.out.println("IO Exception: " + ioe.getMessage());
             return false;
