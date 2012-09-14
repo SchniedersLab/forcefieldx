@@ -153,8 +153,8 @@ public final class PDBFilter extends SystemFilter {
      * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly}
      * object.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration}
-     * object.
+     * @param properties a
+     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
      */
     public PDBFilter(List<File> files, MolecularAssembly molecularAssembly,
                      ForceField forceField, CompositeConfiguration properties) {
@@ -169,8 +169,8 @@ public final class PDBFilter extends SystemFilter {
      * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly}
      * object.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration}
-     * object.
+     * @param properties a
+     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
      */
     public PDBFilter(File file, MolecularAssembly molecularAssembly,
                      ForceField forceField, CompositeConfiguration properties) {
@@ -184,8 +184,8 @@ public final class PDBFilter extends SystemFilter {
      * @param file a {@link java.io.File} object.
      * @param molecularAssemblies a {@link java.util.List} object.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration}
-     * object.
+     * @param properties a
+     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
      */
     public PDBFilter(File file, List<MolecularAssembly> molecularAssemblies,
                      ForceField forceField, CompositeConfiguration properties) {
@@ -977,10 +977,14 @@ public final class PDBFilter extends SystemFilter {
                         case CL:
                             atom.setAtomType(findAtomType(2007));
                             break;
+                        case BR:
+                            atom.setAtomType(findAtomType(2009));
+                            break;
                         case ZN:
                         case ZN2:
                             atom.setAtomType(findAtomType(2008));
                             break;
+
                         default:
                             logger.severe(format(" Check residue %s of chain %s.", ion.toString(), ion.getChainID()));
                     }
@@ -1126,14 +1130,14 @@ public final class PDBFilter extends SystemFilter {
                                     a[1] = (b[1] + c[1] + d[1]) / 3.0;
                                     a[2] = (b[2] + c[2] + d[2]) / 3.0;
                                     // Place the hydrogen at chiral position #1.
-                                    intxyz(hydrogen, ia, 1.0, ib, 109.5, ic, 109.5, 0);
-                                    double e1[] = new double[3]; 
+                                    intxyz(hydrogen, ia, 1.0, ib, 109.5, ic, 109.5, 1);
+                                    double e1[] = new double[3];
                                     hydrogen.getXYZ(e1);
                                     double ret[] = new double[3];
                                     diff(a, e1, ret);
                                     double l1 = r(ret);
                                     // Place the hydrogen at chiral position #2.
-                                    intxyz(hydrogen, ia, 1.0, ib, 109.5, ic, 109.5, 1);
+                                    intxyz(hydrogen, ia, 1.0, ib, 109.5, ic, 109.5, -1);
                                     double e2[] = new double[3];
                                     hydrogen.getXYZ(e2);
                                     diff(a, e2, ret);
@@ -1158,9 +1162,9 @@ public final class PDBFilter extends SystemFilter {
                             }
                             break;
                         case 3:
-                            switch (numBonds) {
+                            switch (numBonds) {    
                                 case 2:
-                                    intxyz(hydrogen, ia, 1.0, ib, 120.0, ic, 180.0, 0);
+                                    intxyz(hydrogen, ia, 1.0, ib, 120.0, ic, 0.0, 0);
                                     break;
                                 case 1:
                                     intxyz(hydrogen, ia, 1.0, ib, 120.0, null, 0.0, 0);
@@ -2691,9 +2695,9 @@ public final class PDBFilter extends SystemFilter {
                             }
                         }
                     }
-                    
+
                     forceField.patchClassesAndTypes(typeMap);
-                    
+
                     // Create a new multipole type for HA with the correct frame.
                     Atom HA = (Atom) residue.getAtomNode("HA");
                     Atom CAlpha = (Atom) residue.getAtomNode("CA");
@@ -2703,12 +2707,12 @@ public final class PDBFilter extends SystemFilter {
                     frame[1] = CAlpha.getAtomType().type;
                     frame[2] = forceField.getAtomType("Alanine", "CB").type;
                     MultipoleType multipoleType = forceField.getMultipoleType(frame[0] + " " + frame[1] + " " + frame[2]);
-                    
+
                     frame[2] = CBeta.getAtomType().type;
-                    multipoleType = new MultipoleType(multipoleType.charge, multipoleType.dipole, 
-                        multipoleType.quadrupole, frame, multipoleType.frameDefinition);
+                    multipoleType = new MultipoleType(multipoleType.charge, multipoleType.dipole,
+                                                      multipoleType.quadrupole, frame, multipoleType.frameDefinition);
                     forceField.addForceFieldType(multipoleType);
-                            
+
                     // Check for missing heavy atoms.
                     if (patched && !types.isEmpty()) {
                         for (AtomType type : types.values()) {
@@ -3508,7 +3512,7 @@ public final class PDBFilter extends SystemFilter {
 
     private enum HetAtoms {
 
-        HOH, H2O, WAT, NA, K, MG, MG2, CA, CA2, CL, ZN, ZN2
+        HOH, H2O, WAT, NA, K, MG, MG2, CA, CA2, CL, BR, ZN, ZN2
     };
 
     public enum AminoAcid1 {

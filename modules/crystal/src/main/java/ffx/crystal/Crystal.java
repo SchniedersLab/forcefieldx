@@ -508,9 +508,7 @@ public class Crystal {
     /**
      * Two crystals are equal if all unit cell parameters are within 0.01.
      *
-     * {
-     *
-     * @inheritDoc}
+     * {@inheritDoc}
      */
     @Override
     public boolean equals(Object obj) {
@@ -560,9 +558,7 @@ public class Crystal {
     }
 
     /**
-     * {
-     *
-     * @inheritDoc}
+     * {@inheritDoc}
      */
     @Override
     public int hashCode() {

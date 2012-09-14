@@ -601,9 +601,7 @@ public class VanDerWaals implements MaskingInterface,
     }
 
     /**
-     * {
-     *
-     * @inheritDoc}
+     * {@inheritDoc}
      *
      * Apply masking rules for 1-2 and 1-3 interactions.
      */
@@ -622,9 +620,7 @@ public class VanDerWaals implements MaskingInterface,
     }
 
     /**
-     * {
-     *
-     * @inheritDoc}
+     * {@inheritDoc}
      *
      * Remove the masking rules for 1-2 and 1-3 interactions.
      */
@@ -671,9 +667,7 @@ public class VanDerWaals implements MaskingInterface,
     }
 
     /**
-     * {
-     *
-     * @inheritDoc}
+     * {@inheritDoc}
      */
     @Override
     public void setLambda(double lambda) {
@@ -723,9 +717,7 @@ public class VanDerWaals implements MaskingInterface,
     }
 
     /**
-     * {
-     *
-     * @inheritDoc}
+     * {@inheritDoc}
      */
     @Override
     public double getLambda() {
@@ -733,9 +725,7 @@ public class VanDerWaals implements MaskingInterface,
     }
 
     /**
-     * {
-     *
-     * @inheritDoc}
+     * {@inheritDoc}
      */
     @Override
     public double getdEdL() {
@@ -743,9 +733,7 @@ public class VanDerWaals implements MaskingInterface,
     }
 
     /**
-     * {
-     *
-     * @inheritDoc}
+     * {@inheritDoc}
      */
     @Override
     public void getdEdXdL(double[] lambdaGradient) {

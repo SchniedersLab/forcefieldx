@@ -962,8 +962,8 @@ public class MolecularAssembly extends MSGroup {
             } else if (resName.equalsIgnoreCase("NA") || resName.equalsIgnoreCase("K")
                     || resName.equalsIgnoreCase("MG") || resName.equalsIgnoreCase("MG2")
                     || resName.equalsIgnoreCase("CA") || resName.equalsIgnoreCase("CA2")
-                    || resName.equalsIgnoreCase("CL") || resName.equalsIgnoreCase("ZN")
-                    || resName.equalsIgnoreCase("ZN2")) {
+                    || resName.equalsIgnoreCase("CL") || resName.equalsIgnoreCase("BR")
+                    || resName.equalsIgnoreCase("ZN") || resName.equalsIgnoreCase("ZN2")) {
                 ions.add(m);
             } else {
                 molecules.add(m);

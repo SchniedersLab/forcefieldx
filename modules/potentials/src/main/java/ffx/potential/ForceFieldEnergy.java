@@ -603,9 +603,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
 
     /**
-     * {
-     *
-     * @inheritDoc}
+     * {@inheritDoc}
      */
     @Override
     public double getTotalEnergy() {
@@ -691,9 +689,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
 
     /**
-     * {
-     *
-     * @inheritDoc}
+     * {@inheritDoc}
      */
     @Override
     public String toString() {
@@ -795,9 +791,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
 
     /**
-     * {
-     *
-     * @inheritDoc}
+     * {@inheritDoc}
      */
     @Override
     public void setLambda(double lambda) {
@@ -821,9 +815,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
 
     /**
-     * {
-     *
-     * @inheritDoc}
+     * {@inheritDoc}
      */
     @Override
     public void setScaling(double scaling[]) {
@@ -831,9 +823,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
 
     /**
-     * {
-     *
-     * @inheritDoc}
+     * {@inheritDoc}
      */
     @Override
     public double[] getScaling() {
@@ -859,9 +849,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
 
     /**
-     * {
-     *
-     * @inheritDoc}
+     * {@inheritDoc}
      */
     @Override
     public double energyAndGradient(double x[], double g[]) {
@@ -933,9 +921,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
 
     /**
-     * {
-     *
-     * @inheritDoc}
+     * {@inheritDoc}
      */
     @Override
     public double[] getCoordinates(double x[]) {
@@ -957,9 +943,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
 
     /**
-     * {
-     *
-     * @inheritDoc}
+     * {@inheritDoc}
      */
     @Override
     public double[] getMass() {
@@ -976,9 +960,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
 
     /**
-     * {
-     *
-     * @inheritDoc}
+     * {@inheritDoc}
      */
     @Override
     public int getNumberOfVariables() {
@@ -986,9 +968,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
 
     /**
-     * {
-     *
-     * @inheritDoc}
+     * {@inheritDoc}
      */
     @Override
     public double getdEdL() {
@@ -1008,9 +988,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
 
     /**
-     * {
-     *
-     * @inheritDoc}
+     * {@inheritDoc}
      */
     @Override
     public void getdEdXdL(double gradients[]) {
@@ -1028,9 +1006,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
 
     /**
-     * {
-     *
-     * @inheritDoc}
+     * {@inheritDoc}
      */
     @Override
     public double getLambda() {
@@ -1038,9 +1014,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
 
     /**
-     * {
-     *
-     * @inheritDoc}
+     * {@inheritDoc}
      */
     @Override
     public double getd2EdL2() {

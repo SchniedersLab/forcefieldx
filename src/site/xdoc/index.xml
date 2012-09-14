@@ -7,14 +7,14 @@
     <properties>
         <title>Welcome</title>
         <author email="michael.schnieders@gmail.com">
-          Michael Schnieders
+            Michael Schnieders
         </author>
     </properties>
     <body>
         <section name="Welcome to Force Field X">
             <p>Force Field X is a group of open source (GPL v. 3), platform independent
-               (Java Runtime Environment) modules for molecular biophysics.
-               Key methods include:
+                (Java Runtime Environment) modules for molecular biophysics.
+                Key methods include:
             </p>            
             <ul>
                 <li>Polarizable AMOEBA force fields</li>
@@ -24,12 +24,31 @@
                 <li>Real space refinement for CryoEM</li>
                 <li>Methods for structure based drug design</li>
             </ul>
+            <table>
+                <tr>
+                    <td>
+                        <p align="center">
+                            <img src="images/3NPC.png" alt="Refinement" />
+                        </p>
+                    </td>
+                    <td>
+                        <p align="center">
+                            <img src="images/trypsin-start.png" alt="Binding" />
+                        </p>
+                    </td>
+                    <td>
+                        <p align="center">
+                            <img src="images/pentanamide.png" alt="Crystal Thermodynamics" />
+                        </p>
+                    </td>
+                </tr>
+            </table>
             <subsection name="Ewald X-Ray Crystallography Refinement">
                 <p>In collaboration with scientists at Vertex Pharmacueticals, we are using the
-                polarizable AMOEBA force field evaluated using Ewald summation to re-refine
-                protein-drug structures in the context of the original diffraction data (ie. using
-                an X-ray likelihood target) in order to provide the most precise atomic
-                resolution models possible.
+                    polarizable AMOEBA force field evaluated using Ewald summation to re-refine
+                    protein-drug structures in the context of the original diffraction data (ie. using
+                    an X-ray likelihood target) in order to provide the most precise atomic
+                    resolution models possible.
                 </p>
                 <p>The Ewald refinements exhibit:</p>
                 <ol>

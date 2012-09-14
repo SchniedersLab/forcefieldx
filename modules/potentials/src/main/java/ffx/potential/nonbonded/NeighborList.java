@@ -599,9 +599,7 @@ public class NeighborList extends ParallelRegion {
     }
 
     /**
-     * {
-     *
-     * @inheritDoc}
+     * {@inheritDoc}
      *
      * This is method should not be called; it is invoked by Parallel Java.
      *
@@ -614,9 +612,7 @@ public class NeighborList extends ParallelRegion {
     }
 
     /**
-     * {
-     *
-     * @inheritDoc}
+     * {@inheritDoc}
      *
      * This is method should not be called; it is invoked by Parallel Java.
      *
@@ -633,9 +629,7 @@ public class NeighborList extends ParallelRegion {
     }
 
     /**
-     * {
-     *
-     * @inheritDoc}
+     * {@inheritDoc}
      *
      * This is method should not be called; it is invoked by Parallel Java.
      *
