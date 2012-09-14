@@ -1,22 +1,21 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X Description: Force Field X - Software for Molecular
+ * Biophysics Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.xray;
 
@@ -140,10 +139,9 @@ public class DiffractionRefinementData {
      * model anisotropic B
      */
     public double model_b[] = new double[6];
-
     /**
-     * duplicated settings - these are also in DiffractionData,
-     * but duplicated here until settings are put in their own class
+     * duplicated settings - these are also in DiffractionData, but duplicated
+     * here until settings are put in their own class
      */
     public int rfreeflag;
     public final double fsigfcutoff;
@@ -246,14 +244,14 @@ public class DiffractionRefinementData {
             }
         }
 
-        if (logger.isLoggable(Level.INFO)) {
+        if (logger.isLoggable(Level.WARNING)) {
             StringBuilder sb = new StringBuilder();
             sb.append("\ninternally flagging Rfree reflections\n");
             sb.append("  flagging 5% of observed data reflections\n");
             sb.append(String.format("  selected %d of %d reflections\n",
                     nfree, n));
 
-            logger.info(sb.toString());
+            logger.warning(sb.toString());
         }
     }
 
@@ -277,6 +275,39 @@ public class DiffractionRefinementData {
                 fsigf[i][1] = Math.sqrt(anofsigf[i][1] * anofsigf[i][1]
                         + anofsigf[i][3] * anofsigf[i][3]);
             }
+        }
+    }
+
+    /**
+     * generate amplitudes from intensities.  Does NOT use French & Wilson
+     * scaling, just simple square root.
+     */
+    public void intensities_to_amplitudes() {
+        double tmp;
+        
+        for (int i = 0; i < n; i++) {
+            if (fsigf[i][0] > 0.0){
+                tmp = fsigf[i][0];
+                fsigf[i][0] = Math.sqrt(tmp);
+                if (fsigf[i][1] < tmp){
+                    fsigf[i][1] = fsigf[i][0] -
+                            Math.sqrt(tmp - fsigf[i][1]);
+                } else {
+                    fsigf[i][1] = fsigf[i][0];
+                }
+            } else if (!Double.isNaN(fsigf[i][0])) {
+                fsigf[i][0] = 0.0;
+                fsigf[i][1] = 0.0;
+            }
+        }
+        
+        if (logger.isLoggable(Level.WARNING)) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("\ninternally converting intensities to amplitudes\n");
+            sb.append("  this does NOT use French & Wilson scaling\n");
+            sb.append("  and may not be what you want!\n");
+
+            logger.warning(sb.toString());
         }
     }
 
