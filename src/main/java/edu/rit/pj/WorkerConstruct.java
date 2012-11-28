@@ -106,7 +106,7 @@ public abstract class WorkerConstruct
 			}
 		return myTeam.myRegion;
 		}
-		
+
 	/**
 	 * Determine the number of worker threads in the current process in the
 	 * worker team executing this worker construct. This does not include the

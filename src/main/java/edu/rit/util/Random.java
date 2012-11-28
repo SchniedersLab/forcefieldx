@@ -277,7 +277,7 @@ public abstract class Random
 			throw new IllegalArgumentException
 				("Random.nextBoolean(): skip = " + skip + " illegal");
 			}
-			
+
 		// Use the high-order (sign) bit of the 64-bit random value.
 		return next (skip) >= 0L;
 		}
@@ -559,7 +559,7 @@ public abstract class Random
 	 * sequence. Each value in the range &minus;9223372036854775808 through
 	 * 9223372036854775807 is returned with a probability of 1/2<SUP>64</SUP>.
 	 *
-	 * @return  Long value in the range &minus;9223372036854775808 through 
+	 * @return  Long value in the range &minus;9223372036854775808 through
 	 *          9223372036854775807 inclusive.
 	 */
 	public long nextLong()
@@ -575,7 +575,7 @@ public abstract class Random
 	 *
 	 * @param  skip  Number of positions to skip.
 	 *
-	 * @return  Long value in the range &minus;9223372036854775808 through 
+	 * @return  Long value in the range &minus;9223372036854775808 through
 	 *          9223372036854775807 inclusive.
 	 *
 	 * @exception  IllegalArgumentException

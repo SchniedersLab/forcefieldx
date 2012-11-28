@@ -296,7 +296,7 @@ public abstract class HttpServer
 //					response.close();
 //					}
 //				};
-//		
+//
 //		Thread.currentThread().join();
 //		}
 

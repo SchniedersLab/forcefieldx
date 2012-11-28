@@ -478,7 +478,7 @@ public class ChannelGroup
 		{
 		return myChannelGroupId;
 		}
-		
+
 	/**
 	 * Obtain this channel group's listen address. This is the near end host and
 	 * port to which this channel group is listening for connection requests. If

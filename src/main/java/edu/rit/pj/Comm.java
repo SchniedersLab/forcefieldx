@@ -1092,7 +1092,7 @@ public class Comm
 	 *     Host name.
 	 * @param  channelgroup
 	 *     Channel group for message passing in this communicator.
-	 * @param  address       
+	 * @param  address
 	 *     Map from rank (array index) to channel group address (array element).
 	 */
 	private Comm
@@ -1176,7 +1176,7 @@ public class Comm
 			{
 			throw new NullPointerException ("Comm.init(): args is null");
 			}
-			
+
 		// Get the job backend object.
 		JobBackend backend = JobBackend.getJobBackend();
 
@@ -1212,7 +1212,7 @@ public class Comm
 						 args);
 
 				// We were able to contact the Job Scheduler.
-				
+
 				// Run the job frontend in this process, then exit.
 				frontend.run();
 				System.exit (0);
@@ -1226,7 +1226,7 @@ public class Comm
 					 PJProperties.getPjHost() + ":" +
 					 PJProperties.getPjPort() +
 					 ", running in this (one) process");
-				
+
 				// Set up world communicator.
 				theWorldCommunicator =
 					new Comm
@@ -1243,7 +1243,7 @@ public class Comm
 		else
 			{
 			// We're running on a backend processor.
-			
+
 			// Set up world communicator.
 			theWorldCommunicator =
 				new Comm
@@ -2730,7 +2730,7 @@ public class Comm
 		//     0     1     2     3     4     5     6     7
 		//     |     |     |     |     |     |     |     |
 		//     |---->|     |     |     |     |     |     |  Round 1
-		//     |     |     |     |     |     |     |     | 
+		//     |     |     |     |     |     |     |     |
 		//     |---------->|     |     |     |     |     |  Round 2
 		//     |     |---------->|     |     |     |     |
 		//     |     |     |     |     |     |     |     |
@@ -2876,19 +2876,19 @@ public class Comm
 		//     0     1     2     3     4     5     6     7
 		//     |     |     |     |     |     |     |     |
 		//     |---->|     |     |     |     |     |     |
-		//     |     |     |     |     |     |     |     | 
+		//     |     |     |     |     |     |     |     |
 		//     |---------->|     |     |     |     |     |
-		//     |     |     |     |     |     |     |     | 
+		//     |     |     |     |     |     |     |     |
 		//     |---------------->|     |     |     |     |
-		//     |     |     |     |     |     |     |     | 
+		//     |     |     |     |     |     |     |     |
 		//     |---------------------->|     |     |     |
-		//     |     |     |     |     |     |     |     | 
+		//     |     |     |     |     |     |     |     |
 		//     |---------------------------->|     |     |
-		//     |     |     |     |     |     |     |     | 
+		//     |     |     |     |     |     |     |     |
 		//     |---------------------------------->|     |
-		//     |     |     |     |     |     |     |     | 
+		//     |     |     |     |     |     |     |     |
 		//     |---------------------------------------->|
-		//     |     |     |     |     |     |     |     | 
+		//     |     |     |     |     |     |     |     |
 
 		// Root process sends all messages.
 		if (myRank == root)
@@ -3042,19 +3042,19 @@ public class Comm
 		//     0     1     2     3     4     5     6     7
 		//     |     |     |     |     |     |     |     |
 		//     |<----|     |     |     |     |     |     |
-		//     |     |     |     |     |     |     |     | 
+		//     |     |     |     |     |     |     |     |
 		//     |<----------|     |     |     |     |     |
-		//     |     |     |     |     |     |     |     | 
+		//     |     |     |     |     |     |     |     |
 		//     |<----------------|     |     |     |     |
-		//     |     |     |     |     |     |     |     | 
+		//     |     |     |     |     |     |     |     |
 		//     |<----------------------|     |     |     |
-		//     |     |     |     |     |     |     |     | 
+		//     |     |     |     |     |     |     |     |
 		//     |<----------------------------|     |     |
-		//     |     |     |     |     |     |     |     | 
+		//     |     |     |     |     |     |     |     |
 		//     |<----------------------------------|     |
-		//     |     |     |     |     |     |     |     | 
+		//     |     |     |     |     |     |     |     |
 		//     |<----------------------------------------|
-		//     |     |     |     |     |     |     |     | 
+		//     |     |     |     |     |     |     |     |
 
 		// Root process receives all messages.
 		if (myRank == root)
@@ -3350,7 +3350,7 @@ public class Comm
 		//     |     |<----------------------|     |     |
 		//     |     |     |<----------------------|     |
 		//     |     |     |     |<----------------------|
-		//     |     |     |     |     |     |     |     | 
+		//     |     |     |     |     |     |     |     |
 		//     |<----------|     |     |     |     |     |  Round 2
 		//     |     |<----------|     |     |     |     |
 		//     |     |     |     |     |     |     |     |
@@ -3490,7 +3490,7 @@ public class Comm
 		//     0     1     2     3     4     5     6     7
 		//     |     |     |     |     |     |     |     |
 		//     |<--->|     |<--->|     |<--->|     |<--->|  Round 1
-		//     |     |     |     |     |     |     |     | 
+		//     |     |     |     |     |     |     |     |
 		//     |<--------->|     |     |<--------->|     |  Round 2
 		//     |     |<--------->|     |     |<--------->|
 		//     |     |     |     |     |     |     |     |

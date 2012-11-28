@@ -124,7 +124,7 @@ class NetworkChannelReceiveThread
 					myNetworkChannel.close();
 					break receiveloop;
 					}
-				
+
 				// Wait for a matching I/O request to show up in the incoming
 				// queue.
 				iorequest =

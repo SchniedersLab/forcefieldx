@@ -106,7 +106,7 @@ public abstract class ParallelConstruct
 			}
 		return myTeam.myRegion;
 		}
-		
+
 	/**
 	 * Determine the number of threads in the parallel team executing this
 	 * parallel construct.

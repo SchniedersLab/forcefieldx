@@ -112,7 +112,7 @@ import java.util.Scanner;
  * <PRE> # Parallel Java Job Scheduler configuration file
  * # Frontend node: tardis.cs.rit.edu
  * # Backend nodes: dr00-dr09
- * 
+ *
  * cluster RIT CS Tardis Hybrid SMP Cluster
  * logfile /var/tmp/parajava/scheduler.log
  * webhost tardis.cs.rit.edu

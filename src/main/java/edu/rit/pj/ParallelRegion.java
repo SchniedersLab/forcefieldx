@@ -848,7 +848,7 @@ public abstract class ParallelRegion
 	 * Execute a parallel iteration within this parallel region. For further
 	 * information, see class {@linkplain ParallelIteration}. The items
 	 * processed by the iteration are the elements of the given array. The
-	 * iteration order is from index 0 upwards. At the end of the parallel 
+	 * iteration order is from index 0 upwards. At the end of the parallel
 	 * iteration, the parallel team threads wait for each other at a barrier.
 	 * <P>
 	 * <I>Note:</I> Either all threads in the parallel team must call the

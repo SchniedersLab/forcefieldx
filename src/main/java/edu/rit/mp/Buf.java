@@ -64,7 +64,7 @@ public abstract class Buf
 	 */
 	protected final int myLength;
 
-	// Type and length sent or received in a message. 
+	// Type and length sent or received in a message.
 	byte myMessageType;
 	int myMessageLength;
 

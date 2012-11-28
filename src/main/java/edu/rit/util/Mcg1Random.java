@@ -191,7 +191,7 @@ public class Mcg1Random
 		// Handbook of Applied Cryptography, Section 14.3.4.
 
 		// q = int (x / 2^63)
-		long q = x_95_32 >>> 31; 
+		long q = x_95_32 >>> 31;
 
 		// r = x mod 2^63
 		long r = x_63_0 & 0x7FFFFFFFFFFFFFFFL;
