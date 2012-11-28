@@ -1,6 +1,9 @@
 /**
- * Title: Force Field X Description: Force Field X - Software for Molecular
- * Biophysics Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
@@ -34,7 +37,7 @@ import ffx.crystal.*;
  * CIF file reader
  *
  * @author Tim Fenn
- * @version $Id: $
+ *
  */
 public class CIFFilter implements DiffractionFileFilter {
 
@@ -334,14 +337,14 @@ public class CIFFilter implements DiffractionFileFilter {
                 }
             }
 
-            if (fo < 0 && sigfo < 0 && io > 0 && sigio > 0){
+            if (fo < 0 && sigfo < 0 && io > 0 && sigio > 0) {
                 intensitiesToAmplitudes = true;
             }
-            
+
             if (fo < 0 && io < 0) {
                 logger.severe("Reflection data (I/F) not found in CIF file!");
             }
-            
+
             // go back to where the reflections start
             br.reset();
 
@@ -524,8 +527,8 @@ public class CIFFilter implements DiffractionFileFilter {
 
             // set up fsigf from F+ and F-
             refinementdata.generate_fsigf_from_anofsigf(anofsigf);
-            
-            if (intensitiesToAmplitudes){
+
+            if (intensitiesToAmplitudes) {
                 refinementdata.intensities_to_amplitudes();
             }
         } catch (IOException ioe) {

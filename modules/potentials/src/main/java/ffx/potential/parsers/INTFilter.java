@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.potential.parsers;
 
@@ -47,7 +49,7 @@ import static ffx.numerics.VectorMath.*;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public class INTFilter extends SystemFilter {
 
@@ -72,12 +74,14 @@ public class INTFilter extends SystemFilter {
      * <p>Constructor for INTFilter.</p>
      *
      * @param files a {@link java.util.List} object.
-     * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly} object.
+     * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly}
+     * object.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * @param properties a
+     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
      */
     public INTFilter(List<File> files, MolecularAssembly molecularAssembly,
-                     ForceField forceField, CompositeConfiguration properties) {
+            ForceField forceField, CompositeConfiguration properties) {
         super(files, molecularAssembly, forceField, properties);
         fileType = FileType.INT;
     }
@@ -86,12 +90,14 @@ public class INTFilter extends SystemFilter {
      * <p>Constructor for INTFilter.</p>
      *
      * @param file a {@link java.io.File} object.
-     * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly} object.
+     * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly}
+     * object.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * @param properties a
+     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
      */
     public INTFilter(File file, MolecularAssembly molecularAssembly,
-                     ForceField forceField, CompositeConfiguration properties) {
+            ForceField forceField, CompositeConfiguration properties) {
         super(file, molecularAssembly, forceField, properties);
         fileType = FileType.INT;
     }
@@ -210,6 +216,7 @@ public class INTFilter extends SystemFilter {
      * {@inheritDoc}
      *
      * Parse the INT File.
+     *
      * @since 1.0
      */
     @Override
@@ -406,7 +413,9 @@ public class INTFilter extends SystemFilter {
         return false;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean writeFile(File saveFile, boolean append) {
         /*

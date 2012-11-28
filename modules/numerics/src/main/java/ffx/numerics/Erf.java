@@ -1,6 +1,9 @@
 /**
- * Title: Force Field X Description: Force Field X - Software for Molecular
- * Biophysics. Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
@@ -38,7 +41,7 @@ import static org.apache.commons.math.util.FastMath.exp;
  * function at Wikipedia</a><br> <a href="http://mathworld.wolfram.com/Erf.html"
  * target="_blank"> Error function at MathWorld</a>
  * @since 1.0
- * @version $Id: $
+ *
  */
 public class Erf {
 
@@ -114,7 +117,7 @@ public class Erf {
             xnum = (xnum + 3.77485237685302021e2) * ysq;
             xden = (xden + 1.28261652607737228e3) * ysq;
             result = x * (xnum + 3.20937758913846947e3)
-                     / (xden + 2.84423683343917062e3);
+                    / (xden + 2.84423683343917062e3);
             if (mode) {
                 result = 1.0 - result;
             }
@@ -139,7 +142,7 @@ public class Erf {
             xnum = (xnum + 2.05107837782607147e3) * y;
             xden = (xden + 3.43936767414372164e3) * y;
             result = (xnum + 1.23033935479799725e3)
-                     / (xden + 1.23033935480374942e3);
+                    / (xden + 1.23033935480374942e3);
             double ysq = floor(16.0 * y) / 16.0;
             double del = (y - ysq) * (y + ysq);
             result = exp(-ysq * ysq - del) * result;
@@ -168,7 +171,7 @@ public class Erf {
                 xnum = (xnum + 1.60837851487422766e-2) * ysq;
                 xden = (xden + 6.05183413124413191e-2) * ysq;
                 result = ysq * (xnum + 6.58749161529837803e-4)
-                         / (xden + 2.33520497626869185e-3);
+                        / (xden + 2.33520497626869185e-3);
                 result = (sqrpi - result) / y;
                 ysq = floor(16.0 * y) / 16.0;
                 double del = (y - ysq) * (y + ysq);

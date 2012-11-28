@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
 // Apache Imports
@@ -57,17 +59,17 @@ CIFFilter ciffilter = new CIFFilter();
 ReflectionList reflectionlist = ciffilter.getReflectionList(new File(datafilename), systems[0].getProperties());
 
 if (reflectionlist == null) {
-  println("Using crystal information from PDB to generate MTZ file");
+    println("Using crystal information from PDB to generate MTZ file");
 
-  Crystal crystal = systems[0].getCrystal().getUnitCell();
-  double res = ciffilter.getResolution(new File(datafilename), crystal);
-  if (res < 0.0) {
-    println("resolution could not be determined from PDB and CIF file");
-    return;
-  }
+    Crystal crystal = systems[0].getCrystal().getUnitCell();
+    double res = ciffilter.getResolution(new File(datafilename), crystal);
+    if (res < 0.0) {
+        println("resolution could not be determined from PDB and CIF file");
+        return;
+    }
 
-  Resolution resolution = new Resolution(res);
-  reflectionlist = new ReflectionList(crystal, resolution, systems[0].getProperties());
+    Resolution resolution = new Resolution(res);
+    reflectionlist = new ReflectionList(crystal, resolution, systems[0].getProperties());
 }
 
 DiffractionRefinementData refinementdata = new DiffractionRefinementData(systems[0].getProperties(), reflectionlist);

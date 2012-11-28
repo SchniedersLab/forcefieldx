@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.xray;
 
@@ -38,28 +40,24 @@ import ffx.potential.bonded.Atom;
 
 /**
  * The BulkSolventList class builds a list of atoms in symmetry mates that are
- * within a cutoff distance of an atom in the asymmetric unit. This is done
- * in parallel via a spatial decomposition.
- * <ol>
- * <li>
- * The unit cell is partitioned into <code>nA * nB * nC</code> smaller
- * axis-aligned cells, where nA, nB and nC are chosen as large as possible
- * subject to the criteria that the length of each side of a sub-volume
- * (rCellA, rCellB, rCellC) multiplied by (nEdgeA, nEdgeB, nEdgeC),
- * respectively, must be greater than the cutoff distance <code>Rcut</code>
- * plus a buffer distance <code>delta</code>:
+ * within a cutoff distance of an atom in the asymmetric unit. This is done in
+ * parallel via a spatial decomposition. <ol> <li> The unit cell is partitioned
+ * into
+ * <code>nA * nB * nC</code> smaller axis-aligned cells, where nA, nB and nC are
+ * chosen as large as possible subject to the criteria that the length of each
+ * side of a sub-volume (rCellA, rCellB, rCellC) multiplied by (nEdgeA, nEdgeB,
+ * nEdgeC), respectively, must be greater than the cutoff distance
+ * <code>Rcut</code> plus a buffer distance
+ * <code>delta</code>:
  * <center><code>rCellA * nEdgeA >= (Rcut + delta)</code></center>
  * <center><code>rCellB * nEdgeB >= (Rcut + delta)</code></center>
- * <center><code>rCellC * nEdgeC >= (Rcut + delta)</code></center>
- * All neighbors of an atom are in a block of
- * (2*nEdgeA+1)(2*nEdgeB+1)(2*nEdgeC+1)
- * neighborCells.
- * </li>
- * </ol>
+ * <center><code>rCellC * nEdgeC >= (Rcut + delta)</code></center> All neighbors
+ * of an atom are in a block of (2*nEdgeA+1)(2*nEdgeB+1)(2*nEdgeC+1)
+ * neighborCells. </li> </ol>
  *
  * @author Michael J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public class BulkSolventList extends ParallelRegion {
 
@@ -161,7 +159,8 @@ public class BulkSolventList extends ParallelRegion {
      * The array of fractional "a", "b", and "c" coordinates.
      */
     private final double frac[][];
-    /***************************************************************************
+    /**
+     * *************************************************************************
      * Parallel variables.
      */
     /**
@@ -413,6 +412,7 @@ public class BulkSolventList extends ParallelRegion {
      * {@inheritDoc}
      *
      * This is method should not be called; it is invoked by Parallel Java.
+     *
      * @since 1.0
      */
     @Override
@@ -424,6 +424,7 @@ public class BulkSolventList extends ParallelRegion {
      * {@inheritDoc}
      *
      * This is method should not be called; it is invoked by Parallel Java.
+     *
      * @since 1.0
      */
     @Override
@@ -452,8 +453,9 @@ public class BulkSolventList extends ParallelRegion {
     }
 
     /**
-     * The SelectionListLoop class encapsulates thread local variables and methods
-     * for selecting atoms based on a spatial decomposition of the unit cell.
+     * The SelectionListLoop class encapsulates thread local variables and
+     * methods for selecting atoms based on a spatial decomposition of the unit
+     * cell.
      *
      * @author Michael J. Schnieders
      *
@@ -503,9 +505,8 @@ public class BulkSolventList extends ParallelRegion {
                     int cStop = c + nEdgeC;
 
                     /**
-                     * If the number of divisions is 1 in any direction
-                     * then set the loop limits to the current cell
-                     * value.
+                     * If the number of divisions is 1 in any direction then set
+                     * the loop limits to the current cell value.
                      */
                     if (nA == 1) {
                         aStart = a;
@@ -540,6 +541,8 @@ public class BulkSolventList extends ParallelRegion {
          * cell by subtracting nX. If the index is < 0, it is mapped into the
          * periodic unit cell by adding nX. The Neighbor list algorithm never
          * requires multiple additions or subtractions of nX.
+         *
+
          *
          * @param i The index along the a-axis.
          * @param j The index along the b-axis.

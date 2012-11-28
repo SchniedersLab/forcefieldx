@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2009
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.xray;
 
@@ -36,7 +38,7 @@ import ffx.xray.CrystalReciprocalSpace.SolventModel;
  * Crystal statistics output/logger
  *
  * @author Tim Fenn
- * @version $Id: $
+ *
  */
 public class CrystalStats {
 
@@ -61,7 +63,8 @@ public class CrystalStats {
      * constructor
      *
      * @param reflectionlist {@link ReflectionList} to use for logging
-     * @param refinementdata {@link DiffractionRefinementData} to use for logging
+     * @param refinementdata {@link DiffractionRefinementData} to use for
+     * logging
      */
     public CrystalStats(ReflectionList reflectionlist,
             DiffractionRefinementData refinementdata) {
@@ -93,7 +96,7 @@ public class CrystalStats {
         print = true;
 
         StringBuilder sb = new StringBuilder();
-        
+
         sb.append("REMARK   3  DATA USED IN REFINEMENT\n");
         sb.append(String.format("REMARK   3   RESOLUTION RANGE HIGH (ANGSTROMS) : %6.2f\n", reshigh));
         sb.append(String.format("REMARK   3   RESOLUTION RANGE LOW  (ANGSTROMS) : %6.2f\n", reslow));
@@ -141,7 +144,7 @@ public class CrystalStats {
                 refinementdata.model_b[5],
                 refinementdata.model_b[2]));
         sb.append("REMARK   3\n");
-        
+
         if (refinementdata.crs_fs.solventmodel != SolventModel.NONE) {
             sb.append("REMARK   3  BULK SOLVENT MODELLING\n");
             switch (refinementdata.crs_fs.solventmodel) {
@@ -192,7 +195,7 @@ public class CrystalStats {
         sb.append(String.format("REMARK   3    -LOG LIKELIHOOD (FREE SET) : %g\n",
                 refinementdata.llkf));
         sb.append("REMARK   3\n");
-        
+
         return sb.toString();
     }
 
@@ -337,14 +340,16 @@ public class CrystalStats {
      *
      * @param natoms number of atoms in the structure
      * @param nnonhatoms number of non-H atoms in the structure
-     * @see <a href="http://dx.doi.org/10.1107/S0907444998012645" target="_blank">
-     * D. W. J. Cruickshank, Acta Cryst. (1999). D55, 583-601</a>
-     * @see <a href="http://dx.doi.org/10.1107/S0907444902003931" target="_blank">
-     * D. M. Blow, Acta Cryst. (2002). D58, 792-797</a>
-     * @see <a href="http://dx.doi.org/10.1107/S0907444998012645" target="_blank">
-     * D. W. J. Cruickshank, Acta Cryst. (1999). D55, 583-601</a>
-     * @see <a href="http://dx.doi.org/10.1107/S0907444902003931" target="_blank">
-     * D. M. Blow, Acta Cryst. (2002). D58, 792-797</a>
+     * @see <a href="http://dx.doi.org/10.1107/S0907444998012645"
+     * target="_blank"> D. W. J. Cruickshank, Acta Cryst. (1999). D55,
+     * 583-601</a>
+     * @see <a href="http://dx.doi.org/10.1107/S0907444902003931"
+     * target="_blank"> D. M. Blow, Acta Cryst. (2002). D58, 792-797</a>
+     * @see <a href="http://dx.doi.org/10.1107/S0907444998012645"
+     * target="_blank"> D. W. J. Cruickshank, Acta Cryst. (1999). D55,
+     * 583-601</a>
+     * @see <a href="http://dx.doi.org/10.1107/S0907444902003931"
+     * target="_blank"> D. M. Blow, Acta Cryst. (2002). D58, 792-797</a>
      */
     public void printDPIStats(int natoms, int nnonhatoms) {
         int nhkli = 0;

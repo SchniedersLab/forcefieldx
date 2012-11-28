@@ -1,6 +1,9 @@
 /**
- * Title: Force Field X Description: Force Field X - Software for Molecular
- * Biophysics Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
@@ -31,7 +34,7 @@ import static java.lang.Math.pow;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public final class AngleType extends BaseType implements Comparator<String> {
 

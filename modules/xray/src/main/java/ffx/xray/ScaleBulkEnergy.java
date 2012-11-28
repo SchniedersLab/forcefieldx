@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2009
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.xray;
 
@@ -42,54 +44,58 @@ import static ffx.numerics.VectorMath.*;
  *
  * @author Tim Fenn<br>
  * @see <a href="http://dx.doi.org/10.1107/S0907444905007894" target="_blank">
- * P. V. Afonine, R. W. Grosse-Kunstleve and P. D. Adams,
- * Acta Cryst. (2005). D61, 850-855</a>
+ * P. V. Afonine, R. W. Grosse-Kunstleve and P. D. Adams, Acta Cryst. (2005).
+ * D61, 850-855</a>
  *
  * @see <a href="http://dx.doi.org/10.1107/S0021889802008580" target="_blank">
- * R. W. Grosse-Kunstleve and P. D. Adams, J. Appl. Cryst. (2002). 35, 477-480.</a>
+ * R. W. Grosse-Kunstleve and P. D. Adams, J. Appl. Cryst. (2002). 35,
+ * 477-480.</a>
  *
- * @see <a href="http://dx.doi.org/10.1002/jcc.1032" target="_blank">
- * J. A. Grant, B. T. Pickup, A. Nicholls, J. Comp. Chem. (2001). 22, 608-640</a>
+ * @see <a href="http://dx.doi.org/10.1002/jcc.1032" target="_blank"> J. A.
+ * Grant, B. T. Pickup, A. Nicholls, J. Comp. Chem. (2001). 22, 608-640</a>
  *
- * @see <a href="http://dx.doi.org/10.1006/jmbi.1994.1633" target="_blank">
- * J. S. Jiang, A. T. Brunger, JMB (1994) 243, 100-115.</a>
+ * @see <a href="http://dx.doi.org/10.1006/jmbi.1994.1633" target="_blank"> J.
+ * S. Jiang, A. T. Brunger, JMB (1994) 243, 100-115.</a>
  * @see <a href="http://dx.doi.org/10.1107/S0907444905007894" target="_blank">
- * P. V. Afonine, R. W. Grosse-Kunstleve and P. D. Adams,
- * Acta Cryst. (2005). D61, 850-855</a>
+ * P. V. Afonine, R. W. Grosse-Kunstleve and P. D. Adams, Acta Cryst. (2005).
+ * D61, 850-855</a>
  *
  * @see <a href="http://dx.doi.org/10.1107/S0021889802008580" target="_blank">
- * R. W. Grosse-Kunstleve and P. D. Adams, J. Appl. Cryst. (2002). 35, 477-480.</a>
+ * R. W. Grosse-Kunstleve and P. D. Adams, J. Appl. Cryst. (2002). 35,
+ * 477-480.</a>
  *
- * @see <a href="http://dx.doi.org/10.1002/jcc.1032" target="_blank">
- * J. A. Grant, B. T. Pickup, A. Nicholls, J. Comp. Chem. (2001). 22, 608-640</a>
+ * @see <a href="http://dx.doi.org/10.1002/jcc.1032" target="_blank"> J. A.
+ * Grant, B. T. Pickup, A. Nicholls, J. Comp. Chem. (2001). 22, 608-640</a>
  *
- * @see <a href="http://dx.doi.org/10.1006/jmbi.1994.1633" target="_blank">
- * J. S. Jiang, A. T. Brunger, JMB (1994) 243, 100-115.</a>
+ * @see <a href="http://dx.doi.org/10.1006/jmbi.1994.1633" target="_blank"> J.
+ * S. Jiang, A. T. Brunger, JMB (1994) 243, 100-115.</a>
  * @see <a href="http://dx.doi.org/10.1107/S0907444905007894" target="_blank">
- * P. V. Afonine, R. W. Grosse-Kunstleve and P. D. Adams,
- * Acta Cryst. (2005). D61, 850-855</a>
+ * P. V. Afonine, R. W. Grosse-Kunstleve and P. D. Adams, Acta Cryst. (2005).
+ * D61, 850-855</a>
  *
  * @see <a href="http://dx.doi.org/10.1107/S0021889802008580" target="_blank">
- * R. W. Grosse-Kunstleve and P. D. Adams, J. Appl. Cryst. (2002). 35, 477-480.</a>
+ * R. W. Grosse-Kunstleve and P. D. Adams, J. Appl. Cryst. (2002). 35,
+ * 477-480.</a>
  *
- * @see <a href="http://dx.doi.org/10.1002/jcc.1032" target="_blank">
- * J. A. Grant, B. T. Pickup, A. Nicholls, J. Comp. Chem. (2001). 22, 608-640</a>
+ * @see <a href="http://dx.doi.org/10.1002/jcc.1032" target="_blank"> J. A.
+ * Grant, B. T. Pickup, A. Nicholls, J. Comp. Chem. (2001). 22, 608-640</a>
  *
- * @see <a href="http://dx.doi.org/10.1006/jmbi.1994.1633" target="_blank">
- * J. S. Jiang, A. T. Brunger, JMB (1994) 243, 100-115.</a>
+ * @see <a href="http://dx.doi.org/10.1006/jmbi.1994.1633" target="_blank"> J.
+ * S. Jiang, A. T. Brunger, JMB (1994) 243, 100-115.</a>
  * @see <a href="http://dx.doi.org/10.1107/S0907444905007894" target="_blank">
- * P. V. Afonine, R. W. Grosse-Kunstleve and P. D. Adams,
- * Acta Cryst. (2005). D61, 850-855</a>
+ * P. V. Afonine, R. W. Grosse-Kunstleve and P. D. Adams, Acta Cryst. (2005).
+ * D61, 850-855</a>
  *
  * @see <a href="http://dx.doi.org/10.1107/S0021889802008580" target="_blank">
- * R. W. Grosse-Kunstleve and P. D. Adams, J. Appl. Cryst. (2002). 35, 477-480.</a>
+ * R. W. Grosse-Kunstleve and P. D. Adams, J. Appl. Cryst. (2002). 35,
+ * 477-480.</a>
  *
- * @see <a href="http://dx.doi.org/10.1002/jcc.1032" target="_blank">
- * J. A. Grant, B. T. Pickup, A. Nicholls, J. Comp. Chem. (2001). 22, 608-640</a>
+ * @see <a href="http://dx.doi.org/10.1002/jcc.1032" target="_blank"> J. A.
+ * Grant, B. T. Pickup, A. Nicholls, J. Comp. Chem. (2001). 22, 608-640</a>
  *
- * @see <a href="http://dx.doi.org/10.1006/jmbi.1994.1633" target="_blank">
- * J. S. Jiang, A. T. Brunger, JMB (1994) 243, 100-115.</a>
- * @version $Id: $
+ * @see <a href="http://dx.doi.org/10.1006/jmbi.1994.1633" target="_blank"> J.
+ * S. Jiang, A. T. Brunger, JMB (1994) 243, 100-115.</a>
+ *
  */
 public class ScaleBulkEnergy implements Potential {
 
@@ -136,7 +142,8 @@ public class ScaleBulkEnergy implements Potential {
      * <p>Constructor for ScaleBulkEnergy.</p>
      *
      * @param reflectionlist a {@link ffx.crystal.ReflectionList} object.
-     * @param refinementdata a {@link ffx.xray.DiffractionRefinementData} object.
+     * @param refinementdata a {@link ffx.xray.DiffractionRefinementData}
+     * object.
      * @param n a int.
      */
     public ScaleBulkEnergy(ReflectionList reflectionlist, DiffractionRefinementData refinementdata, int n) {
@@ -239,7 +246,7 @@ public class ScaleBulkEnergy implements Potential {
             double d = f1 - f2;
             double d2 = d * d;
             double dr = -2.0 * d;
-            
+
             sum += d2;
             sumfo += f1 * f1;
 
@@ -342,7 +349,9 @@ public class ScaleBulkEnergy implements Potential {
         return sum / sumfo;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double energyAndGradient(double[] x, double[] g) {
         if (optimizationScaling != null) {
@@ -365,7 +374,9 @@ public class ScaleBulkEnergy implements Potential {
         return sum;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setScaling(double[] scaling) {
         if (scaling != null && scaling.length == n) {
@@ -375,31 +386,41 @@ public class ScaleBulkEnergy implements Potential {
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getScaling() {
         return optimizationScaling;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getMass() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
-    
-    /** {@inheritDoc} */
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getTotalEnergy() {
         return totalEnergy;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int getNumberOfVariables() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getCoordinates(double[] parameters) {
         throw new UnsupportedOperationException("Not supported yet.");
@@ -407,14 +428,15 @@ public class ScaleBulkEnergy implements Potential {
 
     /**
      * Return a reference to each variables type.
-     * @return the type of each variable. 
+     *
+     * @return the type of each variable.
      */
     @Override
     public VARIABLE_TYPE[] getVariableTypes() {
         return null;
     }
 
-	@Override
-	public void setEnergyTermState(STATE state) {
-	}
+    @Override
+    public void setEnergyTermState(STATE state) {
+    }
 }

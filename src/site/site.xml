@@ -2,7 +2,7 @@
 <project
     name="Force Field X"
     xmlns="http://maven.apache.org/DECORATION/1.3.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/DECORATION/1.3.0 http://maven.apache.org/xsd/decoration-1.3.0.xsd">
+                                                     xsi:schemaLocation="http://maven.apache.org/DECORATION/1.3.0 http://maven.apache.org/xsd/decoration-1.3.0.xsd">
     <version position="right" />
     <publishDate position="right" format="MMM dd yyyy" />
 
@@ -10,7 +10,7 @@
         <logo
             target="_blank"
             name="Force Field X Development"
-            href="http://kenai.com/projects/ffx/"
+            href="http://kenai.com/projects/ffx"
             img="/images/icon90.png"
             />
     </poweredBy>
@@ -30,27 +30,32 @@
     <skin>
         <groupId>org.apache.maven.skins</groupId>
         <artifactId>maven-fluido-skin</artifactId>
-        <version>1.2.1</version>
+        <version>1.3</version>
     </skin>
     <custom>
         <fluidoSkin>
             <topBarEnabled>true</topBarEnabled>
             <sideBarEnabled>false</sideBarEnabled>
+            <topBarContainerStyle>width: 90%;</topBarContainerStyle>
+            <navBarStyle>navbar-inverse</navBarStyle>
             <googleSearch/>
-            <sourceLineNumbersEnabled>false</sourceLineNumbersEnabled>
-            <!-- ohloh>
+
+            <ohloh>
                 <projectId>487436</projectId>
                 <widget>thin-badge</widget>
-            </ohloh -->
+            </ohloh>
+
             <!-- facebookLike/ -->
             <!-- googlePlusOne/ -->
+
             <topBarIcon>
-                <name>Force Field X</name>
-                <alt>Force Field X</alt>
+                <name>Force Field X Development</name>
+                <alt>Force Field X Development</alt>
                 <target>_blank</target>
                 <src>/images/icon90.png</src>
-                <href>/index.html</href>
+                <href>http://kenai.com/projects/ffx</href>
             </topBarIcon>
+            <sourceLineNumbersEnabled>false</sourceLineNumbersEnabled>
         </fluidoSkin>
     </custom>
     <body>
@@ -70,7 +75,7 @@
             <item name="Message Forum" href="http://kenai.com/projects/ffx/forums/user-forum"/>
             <item name="Wiki" href="http://kenai.com/projects/ffx/pages/Home"/>
         </links>
-        <menu name="Overview" inherit="top">
+        <menu name="Force Field X" inherit="top">
             <item name="Welcome" href="/index.html"/>
             <!-- item name="Run Force Field X" href="/webstart.html"/ -->
             <item name="Download" href="/download.html"/>
@@ -83,23 +88,23 @@
             <item name="Space Groups" href="/symmetry.html"/>
             <item name="Examples" href="/examples.html"/>
         </menu>
-        <menu name="OpenFFX Modules" inherit="top">
-            <item name="Algorithms"  href="modules/algorithms/index.html"/>
-            <item name="Automatic Parameterization"  href="modules/autoparm/index.html"/>
-            <item name="Binding Affinity"  href="modules/binding/index.html"/>
-            <item name="Coarse Grain" href="modules/cg/index.html"/>
-            <!-- item name="Continuum Electrostatics" href="modules/continuum/index.html"/ -->
-            <item name="Crystal" href="modules/crystal/index.html"/>
-            <!-- item name="Nucleic Acids" href="modules/nucleic/index.html"/ -->
-            <item name="Numerics" href="modules/numerics/index.html"/>
-            <item name="Potentials" href="modules/potentials/index.html"/>
-            <item name="User Interfaces" href="modules/ui/index.html"/>
-            <item name="Utilities" href="modules/utilities/index.html"/>
-            <item name="X-Ray Refinement" href="modules/xray/index.html"/>
-        </menu>
-        <menu name="For Developers">
-            <item name="Project Organization" href="/project.html"/>
+        <menu name="FFX Commons" inherit="top">
+            <item name="Organization" href="/project.html"/>
             <item name="Source Code" href="/source.html"/>
+            <item name="Project Modules" href="/modules.html">
+                <item name="Algorithms"  href="modules/algorithms/index.html"/>
+                <item name="Automatic Parameterization"  href="modules/autoparm/index.html"/>
+                <item name="Binding Affinity"  href="modules/binding/index.html"/>
+                <item name="Coarse Grain" href="modules/cg/index.html"/>
+                <!-- item name="Continuum Electrostatics" href="modules/continuum/index.html"/ -->
+                <item name="Crystal" href="modules/crystal/index.html"/>
+                <!-- item name="Nucleic Acids" href="modules/nucleic/index.html"/ -->
+                <item name="Numerics" href="modules/numerics/index.html"/>
+                <item name="Potentials" href="modules/potentials/index.html"/>
+                <item name="User Interfaces" href="modules/ui/index.html"/>
+                <item name="Utilities" href="modules/utilities/index.html"/>
+                <item name="X-Ray Refinement" href="modules/xray/index.html"/>
+            </item>
             <item name="Development Resources" href="/links.html"/>
         </menu>
         <menu ref="reports"/>

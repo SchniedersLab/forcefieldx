@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.potential.bonded;
 
@@ -36,7 +38,7 @@ import static ffx.utilities.HashCodeUtil.hash;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public abstract class BondedTerm extends MSNode {
 
@@ -72,7 +74,9 @@ public abstract class BondedTerm extends MSNode {
         id = i;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean destroy() {
         super.destroy();
@@ -97,22 +101,23 @@ public abstract class BondedTerm extends MSNode {
 
     /**
      * Check if any atom of this BondedTerm has the Lambda flag set.
-     * @return  True if Lambda is applied to one of the BondedTerm atoms.
+     *
+     * @return True if Lambda is applied to one of the BondedTerm atoms.
      */
     public boolean applyLambda() {
-        for (int i=0; i<atoms.length; i++) {
+        for (int i = 0; i < atoms.length; i++) {
             if (atoms[i].applyLambda()) {
                 return true;
             }
         }
         return false;
     }
-    
+
     /**
      * {@inheritDoc}
      *
-     * Overidden method that returns true if object is equals to this, is of
-     * the same Class and has the same id.
+     * Overidden method that returns true if object is equals to this, is of the
+     * same Class and has the same id.
      */
     @Override
     public final boolean equals(Object object) {
@@ -184,7 +189,9 @@ public abstract class BondedTerm extends MSNode {
         return value;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public final int hashCode() {
         return hash(SEED, getID().hashCode());
@@ -218,10 +225,12 @@ public abstract class BondedTerm extends MSNode {
         bonds = b;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setColor(RendererCache.ColorModel newColorModel, Color3f color,
-                         Material mat) {
+            Material mat) {
         if (atoms == null) {
             return;
         }
@@ -274,7 +283,9 @@ public abstract class BondedTerm extends MSNode {
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setSelected(boolean b) {
         super.setSelected(b);
@@ -303,10 +314,12 @@ public abstract class BondedTerm extends MSNode {
         value = v;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setView(RendererCache.ViewModel newViewModel,
-                        List<BranchGroup> newShapes) {
+            List<BranchGroup> newShapes) {
         if (atoms == null) {
             return;
         }
@@ -331,7 +344,9 @@ public abstract class BondedTerm extends MSNode {
         return String.format("%s  (%7.2f,%7.2f)", id, value, energy);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public abstract void update();
 }

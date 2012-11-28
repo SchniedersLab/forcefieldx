@@ -10,11 +10,26 @@
     <body>
         <section name="Binding Affinity Publications">
             <ol>
-                <li><a href="http://dx.doi.org/10.1109/IEMBS.2009.5335108" target="_blank"><img src="images/pdf.png" alt="PDF"/></a>Yue, S.; Dian, J.; Schnieders, M. J.; Pengyu, R. Trypsin-ligand binding free energy calculation with AMOEBA, <i>Engineering in Medicine and Biology Society, 2009. EMBC 2009. Annual International Conference of the IEEE</i>, pp 2328-2331.</li>
-                <li><a href="http://dx.doi.org/10.1002/jcc.21268" target="_blank"><img src="images/pdf.png" alt="PDF"/></a>Jiao, D.; Zhang, J. J.; Duke, R. E.; Li, G. H.; Schnieders, M. J.; Ren, P. Y., Trypsin-Ligand Binding Free Energies from Explicit and Implicit Solvent Simulations with Polarizable Potential.
-                <i>Journal of Computational Chemistry </i> <b> 2009</b>, 30, (11), 1701-1711.</li>
-                <li><a href="http://dx.doi.org/10.1073/pnas.0711686105" target="_blank"><img src="images/pdf.png" alt="PDF"/></a>Jiao, D.; Golubkov, P. A.; Darden, T. A.; Ren, P., Calculation of protein-ligand binding free energy by using a polarizable potential.
-                <i>Proceedings of the National Academy of Sciences </i> <b> 2008</b>, 105, (17), 6290-6295.</li>
+                <li>
+                    <a href="http://dx.doi.org/10.1109/IEMBS.2009.5335108" target="_blank">
+                        <img src="images/pdf.png" alt="PDF"/>
+                    </a>Yue, S.; Dian, J.; Schnieders, M. J.; Pengyu, R. Trypsin-ligand binding free energy calculation with AMOEBA,
+                    <i>Engineering in Medicine and Biology Society, 2009. EMBC 2009. Annual International Conference of the IEEE</i>, pp 2328-2331.
+                </li>
+                <li>
+                    <a href="http://dx.doi.org/10.1002/jcc.21268" target="_blank">
+                        <img src="images/pdf.png" alt="PDF"/>
+                    </a>Jiao, D.; Zhang, J. J.; Duke, R. E.; Li, G. H.; Schnieders, M. J.; Ren, P. Y., Trypsin-Ligand Binding Free Energies from Explicit and Implicit Solvent Simulations with Polarizable Potential.
+                    <i>Journal of Computational Chemistry </i>
+                    <b> 2009</b>, 30, (11), 1701-1711.
+                </li>
+                <li>
+                    <a href="http://dx.doi.org/10.1073/pnas.0711686105" target="_blank">
+                        <img src="images/pdf.png" alt="PDF"/>
+                    </a>Jiao, D.; Golubkov, P. A.; Darden, T. A.; Ren, P., Calculation of protein-ligand binding free energy by using a polarizable potential.
+                    <i>Proceedings of the National Academy of Sciences </i>
+                    <b> 2008</b>, 105, (17), 6290-6295.
+                </li>
             </ol>
         </section>
     </body>

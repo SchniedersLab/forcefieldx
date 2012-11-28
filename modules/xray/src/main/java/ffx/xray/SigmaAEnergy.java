@@ -1,6 +1,9 @@
 /**
- * Title: Force Field X Description: Force Field X - Software for Molecular
- * Biophysics. Copyright: Copyright (c) Michael J. Schnieders 2001-2009
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
@@ -151,7 +154,7 @@ import static ffx.numerics.VectorMath.*;
  *
  * @see <a href="http://dx.doi.org/10.1107/S0108767396004370" target="_blank">
  * N. S. Pannu and R. J. Read, Acta Cryst. (1996). A52, 659-668.</a>
- * @version $Id: $
+ *
  */
 public class SigmaAEnergy implements Potential {
 

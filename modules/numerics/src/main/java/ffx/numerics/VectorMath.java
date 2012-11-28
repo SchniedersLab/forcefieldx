@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.numerics;
 
@@ -31,7 +33,7 @@ import static java.lang.Math.*;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public final class VectorMath {
 
@@ -117,12 +119,9 @@ public final class VectorMath {
     /**
      * Finds the angle formed by three atoms
      *
-     * @param i
-     *            Atom position vector
-     * @param j
-     *            Atom position vector (central atom)
-     * @param k
-     *            Atom position vector
+     * @param i Atom position vector
+     * @param j Atom position vector (central atom)
+     * @param k Atom position vector
      * @return The angle in the range [ -pi, pi ]
      */
     public static double bondAngle(double[] i, double[] j, double[] k) {
@@ -145,12 +144,9 @@ public final class VectorMath {
     /**
      * Finds the angle formed by three atoms
      *
-     * @param i
-     *            Atom position vector
-     * @param j
-     *            Atom position vector (central atom)
-     * @param k
-     *            Atom position vector
+     * @param i Atom position vector
+     * @param j Atom position vector (central atom)
+     * @param k Atom position vector
      * @return The angle in the range [ -pi, pi ]
      */
     public static float bondAngle(float[] i, float[] j, float[] k) {
@@ -174,12 +170,9 @@ public final class VectorMath {
     /**
      * Finds the cross-product between two vectors
      *
-     * @param a
-     *            First vector
-     * @param b
-     *            Second vector
-     * @param ret
-     *            The cross-product a x b
+     * @param a First vector
+     * @param b Second vector
+     * @param ret The cross-product a x b
      */
     public static void cross(double[] a, double[] b, double ret[]) {
         ret[0] = a[1] * b[2] - a[2] * b[1];
@@ -190,12 +183,9 @@ public final class VectorMath {
     /**
      * Finds the cross-product between two vectors
      *
-     * @param a
-     *            First vector
-     * @param b
-     *            Second vector
-     * @param ret
-     *            The cross-product a x b
+     * @param a First vector
+     * @param b Second vector
+     * @param ret The cross-product a x b
      */
     public static void cross(float[] a, float[] b, float ret[]) {
         ret[0] = a[1] * b[2] - a[2] * b[1];
@@ -206,7 +196,7 @@ public final class VectorMath {
     /**
      * returns the determinant for a 3x3 matrix
      *
-     * @param m  input matrix
+     * @param m input matrix
      * @return determinant
      */
     public static double determinant3(double m[][]) {
@@ -236,12 +226,9 @@ public final class VectorMath {
     /**
      * Finds the difference between two vectors
      *
-     * @param a
-     *            First vector
-     * @param b
-     *            Second vector
-     * @param ret
-     *            Return Values
+     * @param a First vector
+     * @param b Second vector
+     * @param ret Return Values
      */
     public static void diff(double[] a, double[] b, double[] ret) {
         ret[0] = a[0] - b[0];
@@ -252,12 +239,9 @@ public final class VectorMath {
     /**
      * Finds the difference between two vectors
      *
-     * @param a
-     *            First vector
-     * @param b
-     *            Second vector
-     * @param ret
-     *            Return Values
+     * @param a First vector
+     * @param b Second vector
+     * @param ret Return Values
      */
     public static void diff(float[] a, float[] b, float[] ret) {
         ret[0] = a[0] - b[0];
@@ -268,14 +252,10 @@ public final class VectorMath {
     /**
      * Finds the dihedral angle formed between 4 atoms
      *
-     * @param a
-     *            Atom position vector
-     * @param b
-     *            Atom position vector
-     * @param c
-     *            Atom position vector
-     * @param d
-     *            Atom position vector
+     * @param a Atom position vector
+     * @param b Atom position vector
+     * @param c Atom position vector
+     * @param d Atom position vector
      * @return The dihedral angle in the range [ -pi, pi ]
      */
     public static double dihedralAngle(double[] a, double[] b, double[] c,
@@ -306,14 +286,10 @@ public final class VectorMath {
     /**
      * Finds the dihedral angle formed between 4 atoms
      *
-     * @param a
-     *            Atom position vector
-     * @param b
-     *            Atom position vector
-     * @param c
-     *            Atom position vector
-     * @param d
-     *            Atom position vector
+     * @param a Atom position vector
+     * @param b Atom position vector
+     * @param c Atom position vector
+     * @param d Atom position vector
      * @return The dihedral angle in the range [ -pi, pi ]
      */
     public static float dihedralAngle(float[] a, float[] b, float[] c, float[] d) {
@@ -343,10 +319,8 @@ public final class VectorMath {
     /**
      * Finds the distance between two vectors
      *
-     * @param a
-     *            First vector
-     * @param b
-     *            Second vector
+     * @param a First vector
+     * @param b Second vector
      * @return The distance between vectors a and b
      */
     public static double dist(double[] a, double[] b) {
@@ -360,10 +334,8 @@ public final class VectorMath {
     /**
      * Finds the distance between two vectors
      *
-     * @param a
-     *            First vector
-     * @param b
-     *            Second vector
+     * @param a First vector
+     * @param b Second vector
      * @return The distance between vectors a and b
      */
     public static float dist(float[] a, float[] b) {
@@ -377,10 +349,8 @@ public final class VectorMath {
     /**
      * Finds the dot product between two vectors
      *
-     * @param a
-     *            First vector
-     * @param b
-     *            Second vector
+     * @param a First vector
+     * @param b Second vector
      * @return The dot product of a and b
      */
     public static double dot(double[] a, double[] b) {
@@ -390,10 +360,8 @@ public final class VectorMath {
     /**
      * Finds the dot product between two vectors
      *
-     * @param a
-     *            First vector
-     * @param b
-     *            Second vector
+     * @param a First vector
+     * @param b Second vector
      * @return The dot product of a and b
      */
     public static float dot(float[] a, float[] b) {
@@ -404,8 +372,7 @@ public final class VectorMath {
      * Returns n!! Precondition: n >= -1 Returning 1 for -1 input is analogous
      * to Maple behavior.
      *
-     * @param n
-     *            long
+     * @param n long
      * @return long
      */
     public static long doublefactorial(long n) {
@@ -423,8 +390,9 @@ public final class VectorMath {
      * 9223372036854775807 20! = 2432902008176640000 is ok. 21! returns an
      * overflow: -4249290049419214848
      *
-     * @param n
-     *            long
+
+     *
+     * @param n long
      * @return long
      */
     public static long factorial(long n) {
@@ -445,7 +413,7 @@ public final class VectorMath {
      * @param m input matrix
      * @return matrix inverse
      */
-    public static double[][] mat3inverse(double m[][]){
+    public static double[][] mat3inverse(double m[][]) {
         double res[][] = new double[3][3];
         mat3inverse(m, res);
         return res;
@@ -457,7 +425,7 @@ public final class VectorMath {
      * @param m an array of double.
      * @param res an array of double.
      */
-    public static void mat3inverse(double m[][], double res[][]){
+    public static void mat3inverse(double m[][], double res[][]) {
         double det = determinant3(m);
         res[0][0] = (m[1][1] * m[2][2] - m[1][2] * m[2][1]) / det;
         res[0][1] = (m[0][2] * m[2][1] - m[0][1] * m[2][2]) / det;
@@ -655,10 +623,8 @@ public final class VectorMath {
     /**
      * Normalizes a vector
      *
-     * @param n
-     *            A vector to be normalized.
-     * @param ret
-     *            The normalized vector.
+     * @param n A vector to be normalized.
+     * @param ret The normalized vector.
      */
     public static void norm(double[] n, double[] ret) {
         double length;
@@ -671,10 +637,8 @@ public final class VectorMath {
     /**
      * Normalizes a vector
      *
-     * @param n
-     *            A vector to be normalized.
-     * @param ret
-     *            The normalized vector.
+     * @param n A vector to be normalized.
+     * @param ret The normalized vector.
      */
     public static void norm(float[] n, float[] ret) {
         float length;
@@ -701,8 +665,7 @@ public final class VectorMath {
     /**
      * Finds the length of a vector
      *
-     * @param d
-     *            A vector to find the length of.
+     * @param d A vector to find the length of.
      * @return Length of vector d.
      */
     public static double r(double[] d) {
@@ -712,8 +675,7 @@ public final class VectorMath {
     /**
      * Finds the length of a vector
      *
-     * @param d
-     *            A vector to find the length of.
+     * @param d A vector to find the length of.
      * @return Length of vector d.
      */
     public static float r(float[] d) {
@@ -724,8 +686,7 @@ public final class VectorMath {
     /**
      * Finds the length^2 of a vector
      *
-     * @param d
-     *            A vector to find the length of.
+     * @param d A vector to find the length of.
      * @return Length^2 of vector d.
      */
     public static double rsq(double[] d) {
@@ -735,12 +696,9 @@ public final class VectorMath {
     /**
      * Scales a vector
      *
-     * @param n
-     *            A vector to be scaled
-     * @param a
-     *            A scaler value
-     * @param ret
-     *            The scaled vector
+     * @param n A vector to be scaled
+     * @param a A scaler value
+     * @param ret The scaled vector
      */
     public static void scalar(double[] n, double a, double[] ret) {
         ret[0] = n[0] * a;
@@ -751,12 +709,9 @@ public final class VectorMath {
     /**
      * Scales a vector
      *
-     * @param n
-     *            A vector to be scaled
-     * @param a
-     *            A scaler value
-     * @param ret
-     *            The scaled Vector
+     * @param n A vector to be scaled
+     * @param a A scaler value
+     * @param ret The scaled Vector
      */
     public static void scalar(float[] n, float a, float[] ret) {
         ret[0] = n[0] * a;

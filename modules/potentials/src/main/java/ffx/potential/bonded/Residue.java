@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.potential.bonded;
 
@@ -41,7 +43,7 @@ import static ffx.utilities.HashCodeUtil.hash;
  * The Residue class represents individual amino acids or nucleic acid bases.
  *
  * @author Michael J. Schnieders
- * @version $Id: $
+ *
  */
 public class Residue extends MSGroup {
 
@@ -96,29 +98,65 @@ public class Residue extends MSGroup {
     private static final long serialVersionUID = 1L;
     private static Point3d point3d = new Point3d();
     private static Point2d point2d = new Point2d();
-    /** Constant <code>NA1Set</code> */
+    /**
+     * Constant
+     * <code>NA1Set</code>
+     */
     public static EnumSet NA1Set = EnumSet.allOf(NA1.class);
-    /** Constant <code>NA3Set</code> */
+    /**
+     * Constant
+     * <code>NA3Set</code>
+     */
     public static EnumSet NA3Set = EnumSet.allOf(NA3.class);
-    /** Constant <code>NASet</code> */
+    /**
+     * Constant
+     * <code>NASet</code>
+     */
     public static EnumSet NASet = EnumSet.allOf(NA.class);
-    /** Constant <code>NA1toNA3</code> */
+    /**
+     * Constant
+     * <code>NA1toNA3</code>
+     */
     public static Hashtable<NA1, NA3> NA1toNA3 = new Hashtable<NA1, NA3>();
-    /** Constant <code>NA3Color</code> */
+    /**
+     * Constant
+     * <code>NA3Color</code>
+     */
     public static Hashtable<NA3, Color3f> NA3Color = new Hashtable<NA3, Color3f>();
-    /** Constant <code>AA1Set</code> */
+    /**
+     * Constant
+     * <code>AA1Set</code>
+     */
     public static EnumSet AA1Set = EnumSet.allOf(AA1.class);
-    /** Constant <code>AA3Set</code> */
+    /**
+     * Constant
+     * <code>AA3Set</code>
+     */
     public static EnumSet AA3Set = EnumSet.allOf(AA3.class);
-    /** Constant <code>AASet</code> */
+    /**
+     * Constant
+     * <code>AASet</code>
+     */
     public static EnumSet AASet = EnumSet.allOf(AA.class);
-    /** Constant <code>AA1toAA3</code> */
+    /**
+     * Constant
+     * <code>AA1toAA3</code>
+     */
     public static Hashtable<AA1, AA3> AA1toAA3 = new Hashtable<AA1, AA3>();
-    /** Constant <code>AA3Color</code> */
+    /**
+     * Constant
+     * <code>AA3Color</code>
+     */
     public static Hashtable<AA3, Color3f> AA3Color = new Hashtable<AA3, Color3f>();
-    /** Constant <code>SSTypeColor</code> */
+    /**
+     * Constant
+     * <code>SSTypeColor</code>
+     */
     public static Hashtable<SSType, Color3f> SSTypeColor = new Hashtable<SSType, Color3f>();
-    /** Constant <code>Ramachandran="new String[17]"</code> */
+    /**
+     * Constant
+     * <code>Ramachandran="new String[17]"</code>
+     */
     public static String Ramachandran[] = new String[17];
 
     static {
@@ -325,8 +363,8 @@ public class Residue extends MSGroup {
                 setFinalized(false);
             } else {
                 /**
-                 * Allow overwriting of the root alternate
-                 * conformer (' ' or 'A').
+                 * Allow overwriting of the root alternate conformer (' ' or
+                 * 'A').
                  */
                 Character currentAlt = currentAtom.getAltLoc();
                 if (currentAlt.equals(' ') || currentAlt.equals('A')) {
@@ -344,7 +382,7 @@ public class Residue extends MSGroup {
         }
         return currentAtom;
     }
-    
+
     /**
      * <p>deleteAtom</p>
      *
@@ -353,7 +391,7 @@ public class Residue extends MSGroup {
     public void deleteAtom(Atom atomToDelete) {
         MSNode atoms = getAtomNode();
         if (atoms.contains(atomToDelete) != null) {
-            logger.info(" The following atom is being deleted from the model:\n" 
+            logger.info(" The following atom is being deleted from the model:\n"
                     + atomToDelete.toString());
             atoms.remove(atomToDelete);
         }
@@ -391,7 +429,9 @@ public class Residue extends MSGroup {
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void drawLabel(Canvas3D canvas, J3DGraphics2D g2d, Node node) {
         if (RendererCache.labelResidues) {
@@ -487,7 +527,9 @@ public class Residue extends MSGroup {
         return resNumber;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public final int hashCode() {
         int hash = hash(SEED, getParent().hashCode());
@@ -517,7 +559,7 @@ public class Residue extends MSGroup {
             a = (Atom) li.next();
             String id = a.getName();
             if (!id.equals("CA") && !id.equals("N") && !id.equals("C")
-                && !id.equals("O")) {
+                    && !id.equals("O")) {
                 a.getV3D(v2);
                 v.add(v2);
                 count++;
@@ -529,10 +571,12 @@ public class Residue extends MSGroup {
         logger.info(getName() + " " + v.toString());
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setColor(RendererCache.ColorModel newColorModel, Color3f color,
-                         Material mat) {
+            Material mat) {
         // If Color by Residue, pass this Residue's Color
         if (newColorModel == RendererCache.ColorModel.RESIDUE) {
             switch (residueType) {
@@ -566,7 +610,8 @@ public class Residue extends MSGroup {
     }
 
     /**
-     * <p>Setter for the field <code>chainID</code>.</p>
+     * <p>Setter for the field
+     * <code>chainID</code>.</p>
      *
      * @param c a {@link java.lang.Character} object.
      */
@@ -575,7 +620,8 @@ public class Residue extends MSGroup {
     }
 
     /**
-     * <p>Getter for the field <code>segID</code>.</p>
+     * <p>Getter for the field
+     * <code>segID</code>.</p>
      *
      * @return a {@link java.lang.String} object.
      */
@@ -593,7 +639,9 @@ public class Residue extends MSGroup {
     }
     private String shortString = null;
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String toString() {
         if (shortString == null) {

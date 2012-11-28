@@ -1,6 +1,9 @@
 /**
- * Title: Force Field X Description: Force Field X - Software for Molecular
- * Biophysics Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
@@ -34,7 +37,7 @@ import org.apache.commons.configuration.CompositeConfiguration;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public class ForceField {
 
@@ -124,8 +127,8 @@ public class ForceField {
      * <p>Getter for the field
      * <code>forceFieldURL</code>.</p>
      *
-     * @param forceField a {@link ffx.potential.parameters.ForceField.Force_Field}
-     * object.
+     * @param forceField a
+     * {@link ffx.potential.parameters.ForceField.Force_Field} object.
      * @return a {@link java.net.URL} object.
      */
     public static URL getForceFieldURL(Force_Field forceField) {
@@ -139,8 +142,8 @@ public class ForceField {
     /**
      * ForceField Constructor.
      *
-     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration}
-     * object.
+     * @param properties a
+     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
      * @param parameterFile a {@link java.io.File} object.
      */
     public ForceField(CompositeConfiguration properties, File parameterFile) {
@@ -151,8 +154,8 @@ public class ForceField {
     /**
      * ForceField Constructor.
      *
-     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration}
-     * object.
+     * @param properties a
+     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
      */
     public ForceField(CompositeConfiguration properties) {
         this.properties = properties;
@@ -402,8 +405,8 @@ public class ForceField {
     /**
      * <p>getDouble</p>
      *
-     * @param forceFieldDouble a {@link ffx.potential.parameters.ForceField.ForceFieldDouble}
-     * object.
+     * @param forceFieldDouble a
+     * {@link ffx.potential.parameters.ForceField.ForceFieldDouble} object.
      * @return a double.
      * @throws java.lang.Exception if any.
      */
@@ -422,13 +425,13 @@ public class ForceField {
     /**
      * <p>getDouble</p>
      *
-     * @param forceFieldDouble a {@link ffx.potential.parameters.ForceField.ForceFieldDouble}
-     * object.
+     * @param forceFieldDouble a
+     * {@link ffx.potential.parameters.ForceField.ForceFieldDouble} object.
      * @param defaultValue a double.
      * @return a double.
      */
     public double getDouble(ForceFieldDouble forceFieldDouble,
-                            double defaultValue) {
+            double defaultValue) {
         try {
             return getDouble(forceFieldDouble);
         } catch (Exception e) {
@@ -439,8 +442,8 @@ public class ForceField {
     /**
      * <p>getInteger</p>
      *
-     * @param forceFieldInteger a {@link ffx.potential.parameters.ForceField.ForceFieldInteger}
-     * object.
+     * @param forceFieldInteger a
+     * {@link ffx.potential.parameters.ForceField.ForceFieldInteger} object.
      * @return a int.
      * @throws java.lang.Exception if any.
      */
@@ -459,13 +462,13 @@ public class ForceField {
     /**
      * <p>getInteger</p>
      *
-     * @param forceFieldInteger a {@link ffx.potential.parameters.ForceField.ForceFieldInteger}
-     * object.
+     * @param forceFieldInteger a
+     * {@link ffx.potential.parameters.ForceField.ForceFieldInteger} object.
      * @param defaultValue a int.
      * @return a int.
      */
     public int getInteger(ForceFieldInteger forceFieldInteger,
-                          int defaultValue) {
+            int defaultValue) {
         try {
             return getInteger(forceFieldInteger);
         } catch (Exception e) {
@@ -476,8 +479,8 @@ public class ForceField {
     /**
      * <p>getString</p>
      *
-     * @param forceFieldString a {@link ffx.potential.parameters.ForceField.ForceFieldString}
-     * object.
+     * @param forceFieldString a
+     * {@link ffx.potential.parameters.ForceField.ForceFieldString} object.
      * @return a {@link java.lang.String} object.
      * @throws java.lang.Exception if any.
      */
@@ -496,13 +499,13 @@ public class ForceField {
     /**
      * <p>getString</p>
      *
-     * @param forceFieldString a {@link ffx.potential.parameters.ForceField.ForceFieldString}
-     * object.
+     * @param forceFieldString a
+     * {@link ffx.potential.parameters.ForceField.ForceFieldString} object.
      * @param defaultString a {@link java.lang.String} object.
      * @return a {@link java.lang.String} object.
      */
     public String getString(ForceFieldString forceFieldString,
-                            String defaultString) {
+            String defaultString) {
         try {
             return getString(forceFieldString);
         } catch (Exception e) {
@@ -513,8 +516,8 @@ public class ForceField {
     /**
      * <p>getBoolean</p>
      *
-     * @param forceFieldBoolean a {@link ffx.potential.parameters.ForceField.ForceFieldBoolean}
-     * object.
+     * @param forceFieldBoolean a
+     * {@link ffx.potential.parameters.ForceField.ForceFieldBoolean} object.
      * @return a boolean.
      * @throws java.lang.Exception if any.
      */
@@ -533,13 +536,13 @@ public class ForceField {
     /**
      * <p>getBoolean</p>
      *
-     * @param forceFieldBoolean a {@link ffx.potential.parameters.ForceField.ForceFieldBoolean}
-     * object.
+     * @param forceFieldBoolean a
+     * {@link ffx.potential.parameters.ForceField.ForceFieldBoolean} object.
      * @param defaultBoolean a {@link java.lang.Boolean} object.
      * @return a boolean.
      */
     public boolean getBoolean(ForceFieldBoolean forceFieldBoolean,
-                              Boolean defaultBoolean) {
+            Boolean defaultBoolean) {
         try {
             return getBoolean(forceFieldBoolean);
         } catch (Exception e) {
@@ -658,8 +661,8 @@ public class ForceField {
         }
         if (treeMap.containsKey(type.key)) {
             logger.warning(" A force field entry of type " + type.forceFieldType
-                           + " already exists with the key: " + type.key
-                           + "\n The (discarded) old entry: " + treeMap.get(type.key).
+                    + " already exists with the key: " + type.key
+                    + "\n The (discarded) old entry: " + treeMap.get(type.key).
                     toString() + "\n The new entry: " + type.toString());
         }
         Class baseTypeClass = type.getClass();
@@ -696,7 +699,7 @@ public class ForceField {
     public AtomType getAtomType(String moleculeName, String atomName) {
         for (BioType bioType : bioTypes.values()) {
             if (bioType.moleculeName.equalsIgnoreCase(moleculeName)
-                && bioType.atomName.equalsIgnoreCase(atomName)) {
+                    && bioType.atomName.equalsIgnoreCase(atomName)) {
                 String key = Integer.toString(bioType.atomType);
                 return atomTypes.get(key);
             }
@@ -733,7 +736,7 @@ public class ForceField {
     public String[] getBonds(String moleculeName, String atomName) {
         for (BioType bioType : bioTypes.values()) {
             if (bioType.moleculeName.equalsIgnoreCase(moleculeName)
-                && bioType.atomName.equalsIgnoreCase(atomName)) {
+                    && bioType.atomName.equalsIgnoreCase(atomName)) {
                 return bioType.bonds;
             }
         }
@@ -868,7 +871,7 @@ public class ForceField {
      */
     public int getForceFieldTypeCount(ForceFieldType type) {
         TreeMap<String, BaseType> treeMap =
-                                  (TreeMap<String, BaseType>) forceFieldTypes.get(type);
+                (TreeMap<String, BaseType>) forceFieldTypes.get(type);
         if (treeMap == null) {
             logger.warning("Unrecognized Force Field Type: " + type);
             return 0;
@@ -894,7 +897,7 @@ public class ForceField {
                 PolarizeType polarizeType2 = polarizeTypes.get(key2);
                 if (polarizeType2 == null) {
                     logger.severe(format("Polarize type %s references nonexistant polarize type %s.",
-                                         key, key2));
+                            key, key2));
                 }
                 int types2[] = polarizeType2.polarizationGroup;
                 if (types2 == null) {
@@ -1002,9 +1005,9 @@ public class ForceField {
     }
 
     /**
-     * Patches that add new atom classes/types that bond to existing
-     * atom classes/types require "hybrid" force field types that
-     * include a mixture of new and existing types.
+     * Patches that add new atom classes/types that bond to existing atom
+     * classes/types require "hybrid" force field types that include a mixture
+     * of new and existing types.
      *
      * @param typeMap A look-up from new types to existing types.
      */

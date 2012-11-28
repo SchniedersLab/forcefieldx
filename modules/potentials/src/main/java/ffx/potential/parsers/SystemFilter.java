@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.potential.parsers;
 
@@ -38,15 +40,14 @@ import ffx.potential.parameters.ForceField;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public abstract class SystemFilter {
 
     /**
      * This follows the TINKER file versioning scheme.
      *
-     * @param file
-     *            File to find a version for.
+     * @param file File to find a version for.
      * @return File Versioned File.
      */
     public static File version(File file) {
@@ -143,14 +144,13 @@ public abstract class SystemFilter {
     protected ArrayList<Bond> bondList = null;
     /**
      * The current MolecularAssembly being populated. Note that more than one
-     * MolecularAssembly should be defined for PDB files with
-     * alternate locations.
+     * MolecularAssembly should be defined for PDB files with alternate
+     * locations.
      */
     protected MolecularAssembly activeMolecularAssembly = null;
     /**
-     * All MolecularAssembly instances defined. More than one
-     * MolecularAssembly should be defined for PDB entries with
-     * alternate locations.
+     * All MolecularAssembly instances defined. More than one MolecularAssembly
+     * should be defined for PDB entries with alternate locations.
      */
     protected Vector<MolecularAssembly> systems = new Vector<MolecularAssembly>();
     /**
@@ -182,12 +182,14 @@ public abstract class SystemFilter {
      * <p>Constructor for SystemFilter.</p>
      *
      * @param files a {@link java.util.List} object.
-     * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly} object.
+     * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly}
+     * object.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * @param properties a
+     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
      */
     public SystemFilter(List<File> files, MolecularAssembly molecularAssembly,
-                        ForceField forceField, CompositeConfiguration properties) {
+            ForceField forceField, CompositeConfiguration properties) {
         this.files = files;
         if (files != null) {
             this.currentFile = files.get(0);
@@ -201,12 +203,14 @@ public abstract class SystemFilter {
      * <p>Constructor for SystemFilter.</p>
      *
      * @param file a {@link java.io.File} object.
-     * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly} object.
+     * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly}
+     * object.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * @param properties a
+     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
      */
     public SystemFilter(File file, MolecularAssembly molecularAssembly,
-                        ForceField forceField, CompositeConfiguration properties) {
+            ForceField forceField, CompositeConfiguration properties) {
         files = new ArrayList<File>();
         if (file != null) {
             files.add(file);
@@ -223,10 +227,11 @@ public abstract class SystemFilter {
      * @param file a {@link java.io.File} object.
      * @param molecularAssemblies a {@link java.util.List} object.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * @param properties a
+     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
      */
     public SystemFilter(File file, List<MolecularAssembly> molecularAssemblies,
-                        ForceField forceField, CompositeConfiguration properties) {
+            ForceField forceField, CompositeConfiguration properties) {
         files = new ArrayList<File>();
         if (file != null) {
             files.add(file);
@@ -260,7 +265,8 @@ public abstract class SystemFilter {
     }
 
     /**
-     * <p>Getter for the field <code>atomList</code>.</p>
+     * <p>Getter for the field
+     * <code>atomList</code>.</p>
      *
      * @return a {@link java.util.ArrayList} object.
      */
@@ -292,7 +298,8 @@ public abstract class SystemFilter {
     /**
      * <p>getMolecularAssemblys</p>
      *
-     * @return an array of {@link ffx.potential.bonded.MolecularAssembly} objects.
+     * @return an array of {@link ffx.potential.bonded.MolecularAssembly}
+     * objects.
      */
     public MolecularAssembly[] getMolecularAssemblys() {
         if (systems.size() > 0) {
@@ -323,7 +330,8 @@ public abstract class SystemFilter {
     }
 
     /**
-     * <p>Getter for the field <code>files</code>.</p>
+     * <p>Getter for the field
+     * <code>files</code>.</p>
      *
      * @return a {@link java.util.List} object.
      */
@@ -339,7 +347,8 @@ public abstract class SystemFilter {
     public abstract boolean readFile();
 
     /**
-     * <p>Setter for the field <code>fileRead</code>.</p>
+     * <p>Setter for the field
+     * <code>fileRead</code>.</p>
      *
      * @param fileRead a boolean.
      */
@@ -348,7 +357,8 @@ public abstract class SystemFilter {
     }
 
     /**
-     * <p>Setter for the field <code>forceField</code>.</p>
+     * <p>Setter for the field
+     * <code>forceField</code>.</p>
      *
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
      */
@@ -357,9 +367,11 @@ public abstract class SystemFilter {
     }
 
     /**
-     * <p>Setter for the field <code>properties</code>.</p>
+     * <p>Setter for the field
+     * <code>properties</code>.</p>
      *
-     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * @param properties a
+     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
      */
     public void setProperties(CompositeConfiguration properties) {
         this.properties = properties;
@@ -368,7 +380,8 @@ public abstract class SystemFilter {
     /**
      * <p>setMolecularSystem</p>
      *
-     * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly} object.
+     * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly}
+     * object.
      */
     public void setMolecularSystem(MolecularAssembly molecularAssembly) {
         activeMolecularAssembly = molecularAssembly;
@@ -397,7 +410,8 @@ public abstract class SystemFilter {
     }
 
     /**
-     * <p>Setter for the field <code>files</code>.</p>
+     * <p>Setter for the field
+     * <code>files</code>.</p>
      *
      * @param files a {@link java.util.List} object.
      */
@@ -413,8 +427,8 @@ public abstract class SystemFilter {
     /**
      * This method is different for each subclass and must be overidden.
      *
-     * If the append flag is true, "saveFile" will be appended to. Otherwise
-     * the default versioning scheme will be applied.
+     * If the append flag is true, "saveFile" will be appended to. Otherwise the
+     * default versioning scheme will be applied.
      *
      * @param saveFile a {@link java.io.File} object.
      * @param append a boolean.

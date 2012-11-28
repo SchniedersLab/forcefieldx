@@ -1,6 +1,9 @@
 /**
- * Title: Force Field X Description: Force Field X - Software for Molecular
- * Biophysics Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
@@ -30,7 +33,7 @@ import static java.lang.Math.PI;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public final class StretchBendType extends BaseType implements Comparator<String> {
 
@@ -141,8 +144,8 @@ public final class StretchBendType extends BaseType implements Comparator<String
     @Override
     public String toString() {
         return String.format("strbnd  %5d  %5d  %5d  %6.2f  %6.2f",
-                             atomClasses[0], atomClasses[1], atomClasses[2],
-                             forceConstants[0], forceConstants[1]);
+                atomClasses[0], atomClasses[1], atomClasses[2],
+                forceConstants[0], forceConstants[1]);
     }
     /**
      * Constant

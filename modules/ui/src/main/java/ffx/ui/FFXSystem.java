@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.ui;
 
@@ -32,39 +34,40 @@ import ffx.potential.bonded.MolecularAssembly;
 import ffx.utilities.Keyword;
 
 /**
- * The FFXSystem class contains extensions to the generic
- * MolecularAssembly class.
+ * The FFXSystem class contains extensions to the generic MolecularAssembly
+ * class.
  *
  * @author Michael J. Schnieders
- * 
- * @version $Id: $
+ *
+ *
  */
 public class FFXSystem extends MolecularAssembly {
 
     private static final Logger logger = Logger.getLogger(FFXSystem.class.getName());
     private static final long serialVersionUID = 50L;
-    /** Constant <code>MultiScaleLevel=4</code> */
+    /**
+     * Constant
+     * <code>MultiScaleLevel=4</code>
+     */
     public static final int MultiScaleLevel = 4;
     // Log file being used for modeling commands
     private File logFile;
     // Key file for this system
     private File keyFile;
-
     private Hashtable<String, Keyword> keywords = new Hashtable<String, Keyword>();
     private CompositeConfiguration properties = null;
-
     private String commandDescription = null;
     // Archive
     private Trajectory trajectory = null;
     // Flag to indicate this System is being closed
     private boolean closing = false;
 
-
     /**
      * Constructor.
      *
      * @param file Coordinate file.
-     * @param description Short description of the command that created this system.
+     * @param description Short description of the command that created this
+     * system.
      * @param properties Properties controlling operations on this system.
      */
     public FFXSystem(File file, String description, CompositeConfiguration properties) {
@@ -75,9 +78,11 @@ public class FFXSystem extends MolecularAssembly {
     }
 
     /**
-     * <p>Getter for the field <code>properties</code>.</p>
+     * <p>Getter for the field
+     * <code>properties</code>.</p>
      *
-     * @return a {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * @return a {@link org.apache.commons.configuration.CompositeConfiguration}
+     * object.
      */
     public CompositeConfiguration getProperties() {
         return properties;
@@ -95,7 +100,9 @@ public class FFXSystem extends MolecularAssembly {
         keywords.put(k.getKeyword(), k);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean destroy() {
         setClosing(true);
@@ -103,7 +110,8 @@ public class FFXSystem extends MolecularAssembly {
     }
 
     /**
-     * <p>Getter for the field <code>keyFile</code>.</p>
+     * <p>Getter for the field
+     * <code>keyFile</code>.</p>
      *
      * @return a {@link java.io.File} object.
      */
@@ -122,7 +130,8 @@ public class FFXSystem extends MolecularAssembly {
     }
 
     /**
-     * <p>Getter for the field <code>keywords</code>.</p>
+     * <p>Getter for the field
+     * <code>keywords</code>.</p>
      *
      * @return a {@link java.util.Hashtable} object.
      */
@@ -131,7 +140,8 @@ public class FFXSystem extends MolecularAssembly {
     }
 
     /**
-     * <p>Getter for the field <code>logFile</code>.</p>
+     * <p>Getter for the field
+     * <code>logFile</code>.</p>
      *
      * @return a {@link java.io.File} object.
      */
@@ -149,7 +159,8 @@ public class FFXSystem extends MolecularAssembly {
     }
 
     /**
-     * <p>Getter for the field <code>trajectory</code>.</p>
+     * <p>Getter for the field
+     * <code>trajectory</code>.</p>
      *
      * @return a {@link ffx.ui.Trajectory} object.
      */
@@ -192,7 +203,8 @@ public class FFXSystem extends MolecularAssembly {
     }
 
     /**
-     * <p>Setter for the field <code>closing</code>.</p>
+     * <p>Setter for the field
+     * <code>closing</code>.</p>
      *
      * @param b a boolean.
      */
@@ -201,7 +213,8 @@ public class FFXSystem extends MolecularAssembly {
     }
 
     /**
-     * <p>Setter for the field <code>commandDescription</code>.</p>
+     * <p>Setter for the field
+     * <code>commandDescription</code>.</p>
      *
      * @param command a {@link java.lang.String} object.
      */
@@ -210,7 +223,8 @@ public class FFXSystem extends MolecularAssembly {
     }
 
     /**
-     * <p>Setter for the field <code>keyFile</code>.</p>
+     * <p>Setter for the field
+     * <code>keyFile</code>.</p>
      *
      * @param f a {@link java.io.File} object.
      */
@@ -219,7 +233,8 @@ public class FFXSystem extends MolecularAssembly {
     }
 
     /**
-     * <p>Setter for the field <code>keywords</code>.</p>
+     * <p>Setter for the field
+     * <code>keywords</code>.</p>
      *
      * @param k a {@link java.util.Hashtable} object.
      */
@@ -228,7 +243,8 @@ public class FFXSystem extends MolecularAssembly {
     }
 
     /**
-     * <p>Setter for the field <code>logFile</code>.</p>
+     * <p>Setter for the field
+     * <code>logFile</code>.</p>
      *
      * @param f a {@link java.io.File} object.
      */
@@ -237,7 +253,8 @@ public class FFXSystem extends MolecularAssembly {
     }
 
     /**
-     * <p>Setter for the field <code>trajectory</code>.</p>
+     * <p>Setter for the field
+     * <code>trajectory</code>.</p>
      *
      * @param t a {@link ffx.ui.Trajectory} object.
      */
@@ -286,7 +303,9 @@ public class FFXSystem extends MolecularAssembly {
         return sb.toString();
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String toString() {
         if (getFile() != null) {

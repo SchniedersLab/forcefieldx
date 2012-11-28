@@ -1,6 +1,9 @@
 /**
- * Title: Force Field X Description: Force Field X - Software for Molecular
- * Biophysics. Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
@@ -61,7 +64,7 @@ import static ffx.potential.parameters.MultipoleType.*;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public class ReciprocalSpace {
 
@@ -192,11 +195,12 @@ public class ReciprocalSpace {
     /**
      * Reciprocal Space PME contribution.
      *
+     * @param particleMeshEwald a
+     * {@link ffx.potential.nonbonded.ParticleMeshEwald} object.
      * @param crystal a {@link ffx.crystal.Crystal} object.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param coordinates an array of double.
      * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
-     * @param aewald a double.
+     * @param aewald the Ewald parameter.
      * @param fftTeam a {@link edu.rit.pj.ParallelTeam} object.
      * @param parallelTeam a {@link edu.rit.pj.ParallelTeam} object.
      */
@@ -372,7 +376,7 @@ public class ReciprocalSpace {
 
         fftSpace = fftX * fftY * fftZ * 2;
         boolean dimChanged = fftX != fftXCurrent || fftY != fftYCurrent || fftZ != fftZCurrent;
-        
+
         if (!cudaFFT) {
             if (complexFFT3D == null || dimChanged) {
                 complexFFT3D = new Complex3DParallel(fftX, fftY, fftZ, fftTeam, recipSchedule);
@@ -395,7 +399,6 @@ public class ReciprocalSpace {
                 cudaThread.start();
                 cudaFFT3D.setRecip(generalizedInfluenceFunction());
                 splineBuffer = cudaFFT3D.getDoubleBuffer();
-                spatialDensityRegion.setGridBuffer(splineBuffer);
             }
             complexFFT3D = null;
         }
@@ -403,6 +406,9 @@ public class ReciprocalSpace {
         if (spatialDensityRegion == null || dimChanged) {
             spatialDensityRegion = new SpatialDensityRegion(fftX, fftY, fftZ, splineGrid, bSplineOrder, nSymm,
                     10, threadCount, crystal, atoms, coordinates);
+            if (cudaFFT) {
+                spatialDensityRegion.setGridBuffer(splineBuffer);
+            }
         }
 
         return density;
@@ -411,25 +417,22 @@ public class ReciprocalSpace {
     public void printTimings() {
         if (logger.isLoggable(Level.FINE)) {
             if (complexFFT3D != null) {
-
                 double total = (bSplineTotal + convTotal + splinePermanentTotal + permanentPhiTotal
                         + splineInducedTotal + inducedPhiTotal) * toSeconds;
-
-                logger.info(String.format("\n Reciprocal Space: %7.4f (sec)", total));
+                logger.fine(String.format("\n Reciprocal Space: %7.4f (sec)", total));
                 long convTime[] = complexFFT3D.getTimings();
-                logger.info("                           Direct Field    SCF Field");
-                logger.info(" Thread  B-Spline  3DConv  Spline  Phi     Spline  Phi      Count");
+                logger.fine("                           Direct Field    SCF Field");
+                logger.fine(" Thread  B-Spline  3DConv  Spline  Phi     Spline  Phi      Count");
                 for (int i = 0; i < threadCount; i++) {
-                    logger.info(String.format("    %3d   %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f  %6d", i,
+                    logger.fine(String.format("    %3d   %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f  %6d", i,
                             bSplineTime[i] * toSeconds, convTime[i] * toSeconds, splinePermanentTime[i] * toSeconds,
                             permanentPhiTime[i] * toSeconds, splineInducedTime[i] * toSeconds,
                             inducedPhiTime[i] * toSeconds, splineCount[i]));
                 }
-                logger.info(String.format(" Actual   %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f  %6d",
+                logger.fine(String.format(" Actual   %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f  %6d",
                         bSplineTotal * toSeconds, convTotal * toSeconds, splinePermanentTotal * toSeconds,
                         permanentPhiTotal * toSeconds, splineInducedTotal * toSeconds,
                         inducedPhiTotal * toSeconds, nAtoms));
-
             }
         }
     }
@@ -469,7 +472,6 @@ public class ReciprocalSpace {
      * <p>computeBSplines</p>
      */
     public void computeBSplines() {
-
         try {
             bSplineTotal -= System.nanoTime();
             parallelTeam.execute(bSplineRegion);
@@ -769,9 +771,8 @@ public class ReciprocalSpace {
             /**
              * Currently this condition would indicate a programming bug, since
              * the space group is not allowed to change and the ReciprocalSpace
-             * class should be operating on a unit cell with a fixed number
-             * of space group symmetry operators (and not a replicated
-             * unit cell).
+             * class should be operating on a unit cell with a fixed number of
+             * space group symmetry operators (and not a replicated unit cell).
              */
             if (splineX.length < nSymm) {
                 logger.warning(" Unexpected change in the number of reciprocal space symmetry operators.");

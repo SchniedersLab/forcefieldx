@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.autoparm;
 
@@ -51,7 +53,7 @@ import static ffx.numerics.VectorMath.r;
  *
  * @author Gaurav Chattree
  * @since 1.0
- * @version $Id: $
+ *
  */
 public class Potential2 implements OptimizationListener {
 
@@ -80,7 +82,10 @@ public class Potential2 implements OptimizationListener {
     public int nSteps;
     public int nvars;
     private static final Logger logger = Logger.getLogger(Potential2.class.getName());
-    /** Constant <code>BOHR=0.52917720859</code> */
+    /**
+     * Constant
+     * <code>BOHR=0.52917720859</code>
+     */
     public static final double BOHR = 0.52917720859;
     public PME_2 pme = null;
     public double stats[] = new double[5];
@@ -88,9 +93,9 @@ public class Potential2 implements OptimizationListener {
     BufferedReader stdreader = new BufferedReader(stdinput);
 
     /**
-     * key_filename and cube_filename can be null if they are in the same directory as xyz_filename
-     * eps is only needed if choice == 4, otherwise leave as null
-     * cube_filename is needed if choice == 1
+     * key_filename and cube_filename can be null if they are in the same
+     * directory as xyz_filename eps is only needed if choice == 4, otherwise
+     * leave as null cube_filename is needed if choice == 1
      *
      * @param choice a int.
      * @param xyz_filename a {@link java.lang.String} object.
@@ -441,7 +446,7 @@ public class Potential2 implements OptimizationListener {
             String output;
             for (int i = 0; i < nPoints; i++) {
                 output = myFormatter.format(gridpoints[i][0]) + "\t" + myFormatter.format(gridpoints[i][1]) + "\t" + myFormatter.format(gridpoints[i][2]) + "\t" + myFormatter2.format(gridpoints[i][3]);
-                //bw.write("\t"+i+"\t"+gridpoints[i][0]%-12.6f+"\t"+gridpoints[i][1]%-12.6f+"\t"+gridpoints[i][2]%-12.6f+"\t"+gridpoints[i][3]%-12.6f+"\n");	
+                //bw.write("\t"+i+"\t"+gridpoints[i][0]%-12.6f+"\t"+gridpoints[i][1]%-12.6f+"\t"+gridpoints[i][2]%-12.6f+"\t"+gridpoints[i][3]%-12.6f+"\n");
                 bw.write("\t" + (i + 1) + "\t" + output + "\n");
             }
             bw.close();
@@ -971,7 +976,9 @@ public class Potential2 implements OptimizationListener {
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean optimizationUpdate(int iter, int nfun, double grms,
             double xrms, double f, double df, double angle,

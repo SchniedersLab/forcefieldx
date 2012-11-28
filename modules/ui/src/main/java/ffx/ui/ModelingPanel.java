@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.ui;
 
@@ -61,7 +63,7 @@ import ffx.utilities.Keyword;
  * executables.
  *
  * @author Michael J. Schnieders
- * @version $Id: $
+ *
  */
 public class ModelingPanel extends JPanel implements ActionListener,
         MouseListener {
@@ -165,7 +167,9 @@ public class ModelingPanel extends JPanel implements ActionListener,
         initialize();
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void actionPerformed(ActionEvent evt) {
         synchronized (this) {
@@ -315,8 +319,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
     /**
      * This handles conditional command option input.
      *
-     * @param evt
-     *            ActionEvent
+     * @param evt ActionEvent
      */
     private void conditionalCommandEvent(ActionEvent evt) {
         Object source = evt.getSource();
@@ -825,10 +828,8 @@ public class ModelingPanel extends JPanel implements ActionListener,
      * Launch the active command on the active system in the specified
      * directory.
      *
-     * @param command
-     *            The command to be excuted.
-     * @param dir
-     *            The directory to execute the command in.
+     * @param command The command to be excuted.
+     * @param dir The directory to execute the command in.
      * @return a {@link ffx.ui.FFXExec} object.
      */
     public FFXExec launch(String command, String dir) {
@@ -1512,22 +1513,30 @@ public class ModelingPanel extends JPanel implements ActionListener,
         statusLabel.setText("  " + createCommandInput());
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     public void mouseEntered(MouseEvent evt) {
         mouseClicked(evt);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     public void mouseExited(MouseEvent evt) {
         mouseClicked(evt);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     public void mousePressed(MouseEvent evt) {
         mouseClicked(evt);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     public void mouseReleased(MouseEvent evt) {
         mouseClicked(evt);
     }
@@ -1603,8 +1612,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
     /**
      * Set the description divider location
      *
-     * @param b
-     *            True to show the command description
+     * @param b True to show the command description
      */
     private void setDivider(boolean b) {
         descriptCheckBox.setSelected(b);

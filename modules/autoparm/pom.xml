@@ -5,15 +5,18 @@
          http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>com.kenai.ffx</groupId>
+        <groupId>edu.uiowa.eng.ffx</groupId>
         <artifactId>ffx</artifactId>
-        <version>1.0.0-alpha</version>
+        <version>1.0.0-beta</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
-    <groupId>com.kenai.ffx</groupId>
+    <groupId>edu.uiowa.eng.ffx</groupId>
     <artifactId>autoparm</artifactId>
     <packaging>jar</packaging>
     <name>Automatic Parameterization</name>
+    <description>The Automatic Parameterization module supports parameterization 
+        of small molecules for the AMOEBA force field.
+    </description>
     <build>
         <plugins>
             <plugin>
@@ -30,7 +33,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-resources-plugin</artifactId>
-                <version>2.5</version>
+                <version>2.6</version>
                 <inherited>false</inherited>
                 <executions>
                     <execution>
@@ -88,19 +91,19 @@
     </build>
     <dependencies>
         <dependency>
-            <groupId>com.kenai.ffx</groupId>
+            <groupId>edu.uiowa.eng.ffx</groupId>
             <artifactId>potentials</artifactId>
-            <version>1.0.0-alpha</version>
+            <version>1.0.0-beta</version>
             <type>jar</type>
         </dependency>
         <dependency>
-            <groupId>com.kenai.ffx</groupId>
+            <groupId>edu.uiowa.eng.ffx</groupId>
             <artifactId>algorithms</artifactId>
             <version>${project.version}</version>
             <type>jar</type>
         </dependency>
         <dependency>
-            <groupId>com.kenai.ffx</groupId>
+            <groupId>edu.uiowa.eng.ffx</groupId>
             <artifactId>utilities</artifactId>
             <version>${project.version}</version>
             <type>jar</type>

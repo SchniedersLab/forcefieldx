@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.algorithms;
 
@@ -32,7 +34,7 @@ import ffx.numerics.Potential;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public class Stochastic extends Integrator {
 
@@ -53,7 +55,7 @@ public class Stochastic extends Integrator {
 
     /**
      * Constructor for Stochastic Dynamics.
-     * 
+     *
      * @param friction Friction coefficient.
      * @param nVariables Number of variables.
      * @param x Variables current value.
@@ -62,7 +64,7 @@ public class Stochastic extends Integrator {
      * @param mass Mass of the variables.
      */
     public Stochastic(double friction, int nVariables, double x[],
-                              double v[], double a[], double mass[]) {
+            double v[], double a[], double mass[]) {
         this.friction = friction;
         this.numberOfVariables = nVariables;
         this.x = x;
@@ -85,6 +87,7 @@ public class Stochastic extends Integrator {
 
     /**
      * Set the stochastic dynamics time-step.
+     *
      * @param dt
      */
     @Override
@@ -104,8 +107,8 @@ public class Stochastic extends Integrator {
     }
 
     /**
-     * Initialize the Random number generator used to apply random forces
-     * to the particles.
+     * Initialize the Random number generator used to apply random forces to the
+     * particles.
      *
      * @param seed Random number generator seed.
      */
@@ -114,9 +117,9 @@ public class Stochastic extends Integrator {
     }
 
     /**
-     * Set the frictional and random coefficients, store the current
-     * atom positions, then find new atom positions and half-step
-     * velocities via Verlet recursion.
+     * Set the frictional and random coefficients, store the current atom
+     * positions, then find new atom positions and half-step velocities via
+     * Verlet recursion.
      */
     @Override
     public void halfStep(Potential potential) {
@@ -127,8 +130,8 @@ public class Stochastic extends Integrator {
             double prand;
             if (fdt <= 0.0) {
                 /**
-                 * In the limit of no friction, SD recovers normal
-                 * molecular dynamics.
+                 * In the limit of no friction, SD recovers normal molecular
+                 * dynamics.
                  */
                 pfric = 1.0;
                 vfric[i] = dt;
@@ -141,8 +144,8 @@ public class Stochastic extends Integrator {
                 double rho = 0.0;
                 if (fdt >= 0.05) {
                     /**
-                     * Analytical expressions when the friction coefficient
-                     * is large.
+                     * Analytical expressions when the friction coefficient is
+                     * large.
                      */
                     pfric = efdt;
                     vfric[i] = (1.0 - efdt) * inverseFriction;
@@ -152,8 +155,8 @@ public class Stochastic extends Integrator {
                     rho = (1.0 - efdt) * (1.0 - efdt) / sqrt(pterm * vterm);
                 } else {
                     /**
-                     * Use a series expansions when friction coefficient
-                     * is small.
+                     * Use a series expansions when friction coefficient is
+                     * small.
                      */
                     double fdt2 = fdt * fdt;
                     double fdt3 = fdt * fdt2;
@@ -164,9 +167,9 @@ public class Stochastic extends Integrator {
                     double fdt8 = fdt4 * fdt4;
                     double fdt9 = fdt4 * fdt5;
                     afric = (fdt2 / 2.0 - fdt3 / 6.0 + fdt4 / 24.0
-                             - fdt5 / 120.0 + fdt6 / 720.0
-                             - fdt7 / 5040.0 + fdt8 / 40320.0
-                             - fdt9 / 362880.0) / (friction * friction);
+                            - fdt5 / 120.0 + fdt6 / 720.0
+                            - fdt7 / 5040.0 + fdt8 / 40320.0
+                            - fdt9 / 362880.0) / (friction * friction);
                     vfric[i] = dt - friction * afric;
                     pfric = 1.0 - friction * vfric[i];
                     pterm = 2.0 * fdt3 / 3.0 - fdt4 / 2.0
@@ -178,12 +181,12 @@ public class Stochastic extends Integrator {
                             - 4.0 * fdt6 / 45.0 + 8.0 * fdt7 / 315.0
                             - 2.0 * fdt8 / 315.0 + 4.0 * fdt9 / 2835.0;
                     rho = sqrt(3.0) * (0.5 - fdt / 16.0
-                                       - 17.0 * fdt2 / 1280.0
-                                       + 17.0 * fdt3 / 6144.0
-                                       + 40967.0 * fdt4 / 34406400.0
-                                       - 57203.0 * fdt5 / 275251200.0
-                                       - 1429487.0 * fdt6 / 13212057600.0
-                                       + 1877509.0 * fdt7 / 105696460800.0);
+                            - 17.0 * fdt2 / 1280.0
+                            + 17.0 * fdt3 / 6144.0
+                            + 40967.0 * fdt4 / 34406400.0
+                            - 57203.0 * fdt5 / 275251200.0
+                            - 1429487.0 * fdt6 / 13212057600.0
+                            + 1877509.0 * fdt7 / 105696460800.0);
                 }
                 /**
                  * Compute random terms to thermostat the nonzero friction case.
@@ -199,8 +202,8 @@ public class Stochastic extends Integrator {
             }
 
             /**
-             * Store the current atom positions, then find new atom
-             * positions and half-step velocities via Verlet recursion.
+             * Store the current atom positions, then find new atom positions
+             * and half-step velocities via Verlet recursion.
              */
             x[i] += (v[i] * vfric[i] + a[i] * afric + prand);
             v[i] = v[i] * pfric + 0.5 * a[i] * vfric[i];
@@ -208,8 +211,8 @@ public class Stochastic extends Integrator {
     }
 
     /**
-     * Use Newton's second law to get the next acceleration and find
-     * the full-step velocities using the Verlet recursion.
+     * Use Newton's second law to get the next acceleration and find the
+     * full-step velocities using the Verlet recursion.
      */
     @Override
     public void fullStep(double[] gradient) {

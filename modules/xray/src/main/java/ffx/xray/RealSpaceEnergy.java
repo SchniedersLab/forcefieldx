@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2009
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.xray;
 
@@ -33,7 +35,7 @@ import ffx.xray.RefinementMinimize.RefinementMode;
  *
  * @author Timothy D. Fenn and Michael J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public class RealSpaceEnergy implements LambdaInterface, Potential {
 
@@ -52,8 +54,8 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
     /**
      * Diffraction data energy target
      *
-     * @param realspacedata {@link RealSpaceData} object to associate with
-     * the target
+     * @param realspacedata {@link RealSpaceData} object to associate with the
+     * target
      * @param nxyz number of xyz parameters
      * @param nb number of b factor parameters
      * @param nocc number of occupancy parameters
@@ -72,7 +74,9 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
         setRefinementBooleans();
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double energyAndGradient(double[] x, double[] g) {
         double e = 0.0;
@@ -115,7 +119,8 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
     }
 
     /**
-     * <p>Getter for the field <code>refinementMode</code>.</p>
+     * <p>Getter for the field
+     * <code>refinementMode</code>.</p>
      *
      * @return a {@link ffx.xray.RefinementMinimize.RefinementMode} object.
      */
@@ -124,9 +129,11 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
     }
 
     /**
-     * <p>Setter for the field <code>refinementMode</code>.</p>
+     * <p>Setter for the field
+     * <code>refinementMode</code>.</p>
      *
-     * @param refinementmode a {@link ffx.xray.RefinementMinimize.RefinementMode} object.
+     * @param refinementmode a
+     * {@link ffx.xray.RefinementMinimize.RefinementMode} object.
      */
     public void setRefinementMode(RefinementMode refinementmode) {
         this.refinementMode = refinementmode;
@@ -184,7 +191,9 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getCoordinates(double x[]) {
         assert (x != null);
@@ -222,19 +231,25 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setScaling(double[] scaling) {
         optimizationScaling = scaling;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getScaling() {
         return optimizationScaling;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getMass() {
         double mass[] = new double[nxyz];
@@ -251,19 +266,25 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
         return mass;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getTotalEnergy() {
         return totalEnergy;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int getNumberOfVariables() {
         return nxyz;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setLambda(double lambda) {
         if (lambda <= 1.0 && lambda >= 0.0) {
@@ -275,25 +296,33 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getLambda() {
         return lambda;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getdEdL() {
         return realspacedata.computeRealSpaceTarget(true);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getd2EdL2() {
         return 0.0;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void getdEdXdL(double[] gradient) {
         realspacedata.computeRealSpaceTarget(true);
@@ -304,7 +333,8 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
 
     /**
      * Return a reference to each variables type.
-     * @return the type of each variable. 
+     *
+     * @return the type of each variable.
      */
     @Override
     public VARIABLE_TYPE[] getVariableTypes() {

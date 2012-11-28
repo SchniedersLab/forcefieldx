@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.ui;
 
@@ -27,12 +29,12 @@ import java.util.logging.SimpleFormatter;
 import edu.rit.pj.Comm;
 
 /**
- * A minor extension to the SimpleFormatter to reduce verbosity
- * if debugging is not turned on.
+ * A minor extension to the SimpleFormatter to reduce verbosity if debugging is
+ * not turned on.
  *
  * @author Michael J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public class LogFormatter extends SimpleFormatter {
 
@@ -43,7 +45,7 @@ public class LogFormatter extends SimpleFormatter {
      * Constructor for the LogFormatter.
      *
      * @param debug If debug is true, then LogFormatter is equivalent to
-     *      {@link SimpleFormatter}.
+     * {@link SimpleFormatter}.
      * @since 1.0
      */
     public LogFormatter(boolean debug) {
@@ -58,6 +60,7 @@ public class LogFormatter extends SimpleFormatter {
      *
      * If more than one process is active, prepend the rank of the process to
      * each line of the message.
+     *
      * @since 1.0
      */
     @Override

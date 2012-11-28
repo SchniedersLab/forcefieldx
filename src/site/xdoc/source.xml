@@ -5,12 +5,12 @@
     xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
     <properties>
         <title>Source Code</title>
-        <author email="michael.schnieders@gmail.com">Michael Schnieders</author>
+        <author email="michael-schnieders@uiowa.edu">Michael Schnieders</author>
     </properties>
     <body>
         <section name="Source Code">
             <subsection name="Git the Code">
-                <p>The Force Field X project is hosted at 
+                <p>The Force Field X project is hosted at
                     <a target="_blank" href="http://www.kenai.com/projects/ffx/">Kenai</a> with the source code in a GIT repository.
                     "
                     <a target="_blank" href="http://git-scm.com/">Git</a> is a free and open source, distributed version control system designed to handle everything from
@@ -48,17 +48,17 @@
         <section name="Developing Force Field X">
             <subsection name="Maven Software Project Management">
                 <p>Maven is like "make", but exceptionally more powerful due to the platform independence of the Jave Runtime Environment.
-                Maven is used to manage the dependencies of Force Field X, compile it, test it, document it and then put everything together into the website.
+                    Maven is used to manage the dependencies of Force Field X, compile it, test it, document it and then put everything together into the website.
                 </p>
                 <p>The Force Field X web site facilitates technology transfer and further development of features. Available documentation includes:</p>
                 <ul>
-                    <li>Application Programming Interface (API) documentation for Force Field X packages is available as 
+                    <li>Application Programming Interface (API) documentation for Force Field X packages is available as
                         <a href="apidocs/index.html">Javadocs.</a>
                     </li>
-                    <li>Force Field X source code is available 
+                    <li>Force Field X source code is available
                         <a href="xref/index.html">cross-referenced</a> with line numbers.
                     </li>
-                    <li>The 
+                    <li>The
                         <a href="jdepend-report.html">JDepend Report</a> is used to avoid cyclic package dependencies.
                     </li>
                 </ul>

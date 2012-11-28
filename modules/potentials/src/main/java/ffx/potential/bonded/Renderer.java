@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.potential.bonded;
 
@@ -35,7 +37,7 @@ import javax.swing.JLabel;
  * MolecularAssembly instances.
  *
  * @author Michael J. Schnieders
- * @version $Id: $
+ *
  */
 public class Renderer extends Behavior {
 
@@ -56,10 +58,8 @@ public class Renderer extends Behavior {
     /**
      * Constructor
      *
-     * @param b
-     *            Bounds of this behavior
-     * @param s
-     *            JLabel for status
+     * @param b Bounds of this behavior
+     * @param s JLabel for status
      */
     public Renderer(Bounds b, JLabel s) {
         setSchedulingBounds(b);
@@ -76,18 +76,12 @@ public class Renderer extends Behavior {
     /**
      * This node arms UpdateBehavior with a graphics operation to carry out
      *
-     * @param nodes
-     *            Nodes where the operation will be performed
-     * @param t
-     *            True for a change in atomic position
-     * @param v
-     *            True for a change in rendering method
-     * @param vtype
-     *            The rendering method to use
-     * @param c
-     *            True for a change in rendering color
-     * @param ctype
-     *            The coloring method to use
+     * @param nodes Nodes where the operation will be performed
+     * @param t True for a change in atomic position
+     * @param v True for a change in rendering method
+     * @param vtype The rendering method to use
+     * @param c True for a change in rendering color
+     * @param ctype The coloring method to use
      */
     public void arm(ArrayList<MSNode> nodes, boolean t, boolean v,
             RendererCache.ViewModel vtype, boolean c,
@@ -118,9 +112,11 @@ public class Renderer extends Behavior {
      * @param node a {@link ffx.potential.bonded.MSNode} object.
      * @param t a boolean.
      * @param v a boolean.
-     * @param vtype a {@link ffx.potential.bonded.RendererCache.ViewModel} object.
+     * @param vtype a {@link ffx.potential.bonded.RendererCache.ViewModel}
+     * object.
      * @param c a boolean.
-     * @param ctype a {@link ffx.potential.bonded.RendererCache.ColorModel} object.
+     * @param ctype a {@link ffx.potential.bonded.RendererCache.ColorModel}
+     * object.
      */
     public void arm(MSNode node, boolean t, boolean v,
             RendererCache.ViewModel vtype, boolean c,

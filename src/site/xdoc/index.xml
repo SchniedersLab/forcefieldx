@@ -6,7 +6,7 @@
     http://maven.apache.org/xsd/xdoc-2.0.xsd">
     <properties>
         <title>Welcome</title>
-        <author email="michael.schnieders@gmail.com">
+        <author email="michael-schnieders@uiowa.edu">
             Michael Schnieders
         </author>
     </properties>
@@ -15,7 +15,7 @@
             <p>Force Field X is a group of open source (GPL v. 3), platform independent
                 (Java Runtime Environment) modules for molecular biophysics.
                 Key methods include:
-            </p>            
+            </p>
             <ul>
                 <li>Polarizable AMOEBA force fields</li>
                 <li>Particle-mesh Ewald electrostatics</li>
@@ -24,7 +24,7 @@
                 <li>Real space refinement for CryoEM</li>
                 <li>Methods for structure based drug design</li>
             </ul>
-            <table>
+            <!-- table>
                 <tr>
                     <td>
                         <p align="center">
@@ -42,7 +42,7 @@
                         </p>
                     </td>
                 </tr>
-            </table>
+            </table -->
             <subsection name="Ewald X-Ray Crystallography Refinement">
                 <p>In collaboration with scientists at Vertex Pharmacueticals, we are using the
                     polarizable AMOEBA force field evaluated using Ewald summation to re-refine

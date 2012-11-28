@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.potential.bonded;
 
@@ -27,13 +29,16 @@ import java.util.logging.Logger;
  * cases where more specialized classes have not been implemented.
  *
  * @author Michael J. Schnieders
- * @version $Id: $
+ *
  */
 public class Molecule extends MSGroup {
 
     private Logger logger = Logger.getLogger(Molecule.class.getName());
     private static final long serialVersionUID = 1L;
-    /** Constant <code>MultiScaleLevel=2</code> */
+    /**
+     * Constant
+     * <code>MultiScaleLevel=2</code>
+     */
     public static final int MultiScaleLevel = 2;
     /**
      * Residue number assigned in PDB files.
@@ -77,7 +82,7 @@ public class Molecule extends MSGroup {
      * @param chainID a {@link java.lang.Character} object.
      * @param segID a {@link java.lang.String} object.
      */
-    public Molecule(String name, int residueNum, 
+    public Molecule(String name, int residueNum,
             Character chainID, String segID) {
         super(name + "-" + residueNum + " " + segID);
         this.residueName = name;
@@ -86,7 +91,9 @@ public class Molecule extends MSGroup {
         this.segID = segID;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setName(String name) {
         super.setName(name + "-" + residueNum + " " + segID);
@@ -94,7 +101,8 @@ public class Molecule extends MSGroup {
     }
 
     /**
-     * <p>Getter for the field <code>residueName</code>.</p>
+     * <p>Getter for the field
+     * <code>residueName</code>.</p>
      *
      * @return a {@link java.lang.String} object.
      */
@@ -112,7 +120,8 @@ public class Molecule extends MSGroup {
     }
 
     /**
-     * <p>Getter for the field <code>chainID</code>.</p>
+     * <p>Getter for the field
+     * <code>chainID</code>.</p>
      *
      * @return a {@link java.lang.Character} object.
      */
@@ -121,7 +130,8 @@ public class Molecule extends MSGroup {
     }
 
     /**
-     * <p>Getter for the field <code>segID</code>.</p>
+     * <p>Getter for the field
+     * <code>segID</code>.</p>
      *
      * @return a {@link java.lang.String} object.
      */
@@ -163,8 +173,8 @@ public class Molecule extends MSGroup {
                 setFinalized(false);
             } else {
                 /**
-                 * Allow overwriting of the root alternate
-                 * conformer (' ' or 'A').
+                 * Allow overwriting of the root alternate conformer (' ' or
+                 * 'A').
                  */
                 Character currentAlt = currentAtom.getAltLoc();
                 if (currentAlt.equals(' ') || currentAlt.equals('A')) {
@@ -183,7 +193,9 @@ public class Molecule extends MSGroup {
         return currentAtom;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void finalize(boolean finalizeGeometry) {
         setFinalized(false);

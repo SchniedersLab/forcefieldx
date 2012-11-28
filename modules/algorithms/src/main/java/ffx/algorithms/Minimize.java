@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.algorithms;
 
@@ -36,7 +38,7 @@ import ffx.potential.bonded.MolecularAssembly;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public class Minimize implements OptimizationListener, Terminatable {
 
@@ -57,11 +59,13 @@ public class Minimize implements OptimizationListener, Terminatable {
     /**
      * <p>Constructor for Minimize.</p>
      *
-     * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly} object.
-     * @param potential a {@link ffx.numerics.Potential} object. 
-     * @param algorithmListener a {@link ffx.algorithms.AlgorithmListener} object.
+     * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly}
+     * object.
+     * @param potential a {@link ffx.numerics.Potential} object.
+     * @param algorithmListener a {@link ffx.algorithms.AlgorithmListener}
+     * object.
      */
-    public Minimize(MolecularAssembly molecularAssembly, Potential potential, 
+    public Minimize(MolecularAssembly molecularAssembly, Potential potential,
             AlgorithmListener algorithmListener) {
         assert (molecularAssembly != null);
         this.molecularAssembly = molecularAssembly;
@@ -76,12 +80,14 @@ public class Minimize implements OptimizationListener, Terminatable {
         }
         potential.setScaling(scaling);
     }
-    
+
     /**
      * <p>Constructor for Minimize.</p>
      *
-     * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly} object.
-     * @param algorithmListener a {@link ffx.algorithms.AlgorithmListener} object.
+     * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly}
+     * object.
+     * @param algorithmListener a {@link ffx.algorithms.AlgorithmListener}
+     * object.
      */
     public Minimize(MolecularAssembly molecularAssembly, AlgorithmListener algorithmListener) {
         assert (molecularAssembly != null);
@@ -100,8 +106,10 @@ public class Minimize implements OptimizationListener, Terminatable {
         }
         potential.setScaling(scaling);
     }
-    
-    /** {@inheritDoc} */
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void terminate() {
         terminate = true;
@@ -175,6 +183,7 @@ public class Minimize implements OptimizationListener, Terminatable {
      * {@inheritDoc}
      *
      * Implement the OptimizationListener interface.
+     *
      * @since 1.0
      */
     @Override

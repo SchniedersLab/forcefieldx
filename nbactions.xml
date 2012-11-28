@@ -1,48 +1,44 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <actions>
-        <action>
-            <actionName>run</actionName>
-            <goals>
-                <goal>exec:exec</goal>
-            </goals>
-            <recursive>false</recursive>
-        </action>
-        <action>
-            <actionName>CUSTOM-Build Local Website</actionName>
-            <goals>
-                <goal>site:site</goal>
-                
-            </goals>
-            <displayName>Build Local Website</displayName>
-        </action>
-        <action>
-            <actionName>build</actionName>
-            <goals>
-                <goal>deploy</goal>
-                
-                
-            </goals>
-            <properties>
-                <skipTests>true</skipTests>
-            </properties>
-        </action>
-        <action>
-            <actionName>rebuild</actionName>
-            <goals>
-                <goal>clean</goal>
-                <goal>deploy</goal>
-                
-            </goals>
-            <properties>
-                <skipTests>true</skipTests>
-            </properties>
-        </action>
-        <action>
-            <actionName>build-with-dependencies</actionName>
-            <reactor>also-make</reactor>
-            <goals>
-                <goal>deploy</goal>
-            </goals>
-        </action>
-        
-    </actions>
+    <action>
+        <actionName>run</actionName>
+        <goals>
+            <goal>exec:exec</goal>
+        </goals>
+        <recursive>false</recursive>
+    </action>
+    <action>
+        <actionName>CUSTOM-Build Local Website</actionName>
+        <goals>
+            <goal>site:site</goal>
+
+        </goals>
+        <displayName>Build Local Website</displayName>
+    </action>
+    <action>
+        <actionName>build</actionName>
+        <goals>
+            <goal>deploy</goal>
+        </goals>
+        <properties>
+            <skipTests>true</skipTests>
+        </properties>
+    </action>
+    <action>
+        <actionName>rebuild</actionName>
+        <goals>
+            <goal>clean</goal>
+            <goal>deploy</goal>
+        </goals>
+        <properties>
+            <skipTests>true</skipTests>
+        </properties>
+    </action>
+    <action>
+        <actionName>build-with-dependencies</actionName>
+        <reactor>also-make</reactor>
+        <goals>
+            <goal>deploy</goal>
+        </goals>
+    </action>
+</actions>

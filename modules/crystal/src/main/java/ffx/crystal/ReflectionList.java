@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.crystal;
 
@@ -30,12 +32,12 @@ import static java.lang.Math.*;
 import org.apache.commons.configuration.CompositeConfiguration;
 
 /**
- * Uses some methods from:
- * Cowtan, K. 2002. Generic representation and evaluation of properties as a
- * function of position in reciprocal space. J. Appl. Cryst. 35:655-663.
+ * Uses some methods from: Cowtan, K. 2002. Generic representation and
+ * evaluation of properties as a function of position in reciprocal space. J.
+ * Appl. Cryst. 35:655-663.
  *
  * @author Timothy Fenn
- * @version $Id: $
+ *
  */
 public class ReflectionList {
 
@@ -66,7 +68,8 @@ public class ReflectionList {
      *
      * @param crystal a {@link ffx.crystal.Crystal} object.
      * @param resolution a {@link ffx.crystal.Resolution} object.
-     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * @param properties a
+     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
      */
     public ReflectionList(Crystal crystal, Resolution resolution,
             CompositeConfiguration properties) {
@@ -159,7 +162,9 @@ public class ReflectionList {
                 new Resolution(resolution));
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String toString() {
         return "reflection list with " + this.hkllist.size()

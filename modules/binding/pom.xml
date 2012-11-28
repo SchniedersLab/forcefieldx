@@ -5,21 +5,22 @@
          http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>com.kenai.ffx</groupId>
+        <groupId>edu.uiowa.eng.ffx</groupId>
         <artifactId>ffx</artifactId>
-        <version>1.0.0-alpha</version>
+        <version>1.0.0-beta</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
-    <groupId>com.kenai.ffx</groupId>
+    <groupId>edu.uiowa.eng.ffx</groupId>
     <artifactId>binding</artifactId>
     <packaging>jar</packaging>
     <name>Binding Affinity</name>
-    <description>Methods for computing binding affinities.</description>
-    <inceptionYear>2008</inceptionYear>
-
+    <description>The Binding Affinity module will contain methods for 
+        computing binding affinities.
+    </description>
+    <inceptionYear>2012</inceptionYear>
     <organization>
         <!-- This is used to generate the Copyright on the website.
-             Module authors should override this with their name. -->
+        Module authors should override this with their name. -->
         <name>Pengyu Ren</name>
         <url>http://biomol.bme.utexas.edu/lab</url>
     </organization>
@@ -39,7 +40,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-resources-plugin</artifactId>
-                <version>2.5</version>
+                <version>2.6</version>
                 <inherited>false</inherited>
                 <executions>
                     <execution>
@@ -103,13 +104,13 @@
     </developers>
     <dependencies>
         <dependency>
-            <groupId>com.kenai.ffx</groupId>
+            <groupId>edu.uiowa.eng.ffx</groupId>
             <artifactId>algorithms</artifactId>
             <version>${project.version}</version>
             <type>jar</type>
         </dependency>
         <dependency>
-            <groupId>com.kenai.ffx</groupId>
+            <groupId>edu.uiowa.eng.ffx</groupId>
             <artifactId>potentials</artifactId>
             <version>${project.version}</version>
             <type>jar</type>

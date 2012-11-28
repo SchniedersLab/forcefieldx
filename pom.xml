@@ -4,16 +4,15 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
          http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.kenai.ffx</groupId>
+    <groupId>edu.uiowa.eng.ffx</groupId>
     <artifactId>ffx</artifactId>
     <packaging>pom</packaging>
     <name>Force Field X</name>
-    <version>1.0.0-alpha</version>
+    <version>1.0.0-beta</version>
     <description>Software for Molecular Biophysics</description>
-    <url>http://ffx.kenai.com</url>
+    <url>http://ffx.eng.uiowa.edu</url>
     <prerequisites>
-        <maven>3.0.2</maven>
-        <!-- 3.0.3 and 3.0.4 also work -->
+        <maven>3.0.3</maven>
     </prerequisites>
     <issueManagement>
         <system>Jira</system>
@@ -60,9 +59,9 @@
         <developer>
             <id>michael.schnieders</id>
             <name>Michael J. Schnieders</name>
-            <email>michael.schnieders@gmail.com</email>
-            <organization>Postdoc, Ren Lab, University of Texas at Austin</organization>
-            <organizationUrl>http://ffx.kenai.com</organizationUrl>
+            <email>michael-schnieders@uiowa.edu</email>
+            <organization>Assistant Professor, The U. of Iowa</organization>
+            <organizationUrl>http://ffx.eng.uiowa.edu</organizationUrl>
             <roles>
                 <role>Director of Force Field X</role>
             </roles>
@@ -73,7 +72,7 @@
             <name>Timothy D. Fenn</name>
             <email>tim.fenn@gmail.com</email>
             <organization>Scientist at Merck</organization>
-            <organizationUrl>http://ffx.kenai.com</organizationUrl>
+            <organizationUrl>http://ffx.eng.uiowa.edu</organizationUrl>
             <roles>
                 <role>Chief Crystallograper</role>
                 <role>Crystal Module</role>
@@ -85,7 +84,7 @@
             <id>prffx</id>
             <name>Pengyu Ren</name>
             <email>pren@mail.utexas.edu</email>
-            <organization>Associate Professor, U. of Texas, Austin</organization>
+            <organization>Associate Professor, The U. of Texas at Austin</organization>
             <organizationUrl>http://biomol.bme.utexas.edu/lab/</organizationUrl>
             <roles>
                 <role>AMOEBA Force Field</role>
@@ -111,7 +110,7 @@
             <id>ZhenXia</id>
             <name>Zhen Xia</name>
             <email>oversnow@gmail.com</email>
-            <organization>Postdoc, Ren Lab, U. of Texas, Austin</organization>
+            <organization>Postdoc, Ren Lab, The U. of Texas at Austin</organization>
             <organizationUrl>http://biomol.bme.utexas.edu/lab/</organizationUrl>
             <roles>
                 <role>Coarse Grain Module</role>
@@ -167,15 +166,48 @@
     </scm>
     <organization>
         <!-- This is used to generate the Copyright on the website.
-             Module authors should use their name. -->
+        Module authors should use their name. -->
         <name>Michael J. Schnieders</name>
-        <url>http://ffx.kenai.com</url>
+        <url>http://ffx.eng.uiowa.edu</url>
     </organization>
     <build>
+        <pluginManagement>
+            <!-- Explicitly define plugin versions for reproducible builds -->
+            <plugins>
+                <plugin>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.0</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-clean-plugin</artifactId>
+                    <version>2.5</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-deploy-plugin</artifactId>
+                    <version>2.7</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-install-plugin</artifactId>
+                    <version>2.4</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>2.4</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>2.12.4</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-resources-plugin</artifactId>
+                    <version>2.6</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <plugins>
             <plugin>
                 <artifactId>maven-site-plugin</artifactId>
-                <version>3.1</version>
+                <version>3.2</version>
                 <inherited>true</inherited>
                 <dependencies>
                     <dependency>
@@ -189,7 +221,7 @@
                     <reportPlugins>
                         <plugin>
                             <artifactId>maven-project-info-reports-plugin</artifactId>
-                            <version>2.4</version>
+                            <version>2.6</version>
                             <reportSets>
                                 <reportSet>
                                     <reports>
@@ -211,13 +243,13 @@
                                 </reportSet>
                             </reportSets>
                             <configuration>
-                                <dependencyDetailsEnabled>skipAssembly</dependencyDetailsEnabled>
-                                <dependencyLocationsEnabled>skipAssembly</dependencyLocationsEnabled>
+                                <dependencyDetailsEnabled>${dependencyDetails}</dependencyDetailsEnabled>
+                                <dependencyLocationsEnabled>${dependencyDetails}</dependencyLocationsEnabled>
                             </configuration>
                         </plugin>
                         <plugin>
                             <artifactId>maven-javadoc-plugin</artifactId>
-                            <version>2.8.1</version>
+                            <version>2.9</version>
                             <configuration>
                                 <quiet>true</quiet>
                                 <header><![CDATA[
@@ -239,23 +271,25 @@
                             <version>2.3</version>
                             <configuration>
                                 <goal>aggregate</goal>
+                                <goal>test-aggregate</goal>
                             </configuration>
                         </plugin>
                         <plugin>
                             <artifactId>maven-surefire-report-plugin</artifactId>
-                            <version>2.12</version>
+                            <version>2.12.4</version>
                             <configuration>
                                 <aggregate>true</aggregate>
                             </configuration>
                         </plugin>
                         <plugin>
                             <artifactId>maven-changes-plugin</artifactId>
-                            <version>2.7</version>
+                            <version>2.8</version>
                             <configuration>
+                                <aggregated>true</aggregated>
                                 <webUser>${kenai.user.name}</webUser>
                                 <webPassword>${kenai.password}</webPassword>
                                 <statusIds>Open, In Progress, Reopened, Resolved, Closed</statusIds>
-                                <resolutionIds>Unresolved, Fixed, Won't Fix, Duplicate, Incomplete, Cannot Reproduce</resolutionIds>                              
+                                <resolutionIds>Unresolved, Fixed, Won't Fix, Duplicate, Incomplete, Cannot Reproduce</resolutionIds>
                             </configuration>
                             <reportSets>
                                 <reportSet>
@@ -266,20 +300,28 @@
                                 </reportSet>
                             </reportSets>
                         </plugin>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-checkstyle-plugin</artifactId>
+                            <version>2.9.1</version>
+                            <configuration>
+                                <goal>checkstyle-aggregate</goal>
+                            </configuration>
+                        </plugin>
                         <!-- plugin>
                             <groupId>org.apache.maven.plugins</groupId>
                             <artifactId>maven-changelog-plugin</artifactId>
                             <version>2.2</version>
                         </plugin -->
-                        <!-- plugin>
+                        <plugin>
                             <groupId>org.apache.maven.plugins</groupId>
                             <artifactId>maven-linkcheck-plugin</artifactId>
                             <version>1.1</version>
-                        </plugin -->
-                        <!-- plugin>
+                        </plugin>
+                        <plugin>
                             <groupId>org.apache.maven.plugins</groupId>
                             <artifactId>maven-pmd-plugin</artifactId>
-                            <version>2.5</version>
+                            <version>2.7.1</version>
                             <configuration>
                                 <linkXref>true</linkXref>
                                 <minimumTokens>500</minimumTokens>
@@ -287,7 +329,15 @@
                                 <targetJdk>1.6</targetJdk>
                                 <minimumPriority>2</minimumPriority>
                             </configuration>
-                        </plugin -->
+                            <reportSets>
+                                <reportSet>
+                                    <reports>
+                                        <report>pmd</report>
+                                        <report>cpd</report>
+                                    </reports>
+                                </reportSet>
+                            </reportSets>
+                        </plugin>
                     </reportPlugins>
                 </configuration>
             </plugin>
@@ -305,14 +355,14 @@
             </plugin>
             <plugin>
                 <artifactId>maven-scm-plugin</artifactId>
-                <version>1.7</version>
+                <version>1.8.1</version>
                 <configuration>
                     <connectionType>connection</connectionType>
                 </configuration>
             </plugin>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>2.5.1</version>
+                <version>3.0</version>
                 <configuration>
                     <optimize>true</optimize>
                     <debug>true</debug>
@@ -322,7 +372,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-source-plugin</artifactId>
-                <version>2.1.2</version>
+                <version>2.2.1</version>
                 <inherited>false</inherited>
                 <executions>
                     <execution>
@@ -336,7 +386,7 @@
             </plugin>
             <!-- plugin>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.8.1</version>
+                <version>2.9</version>
                 <inherited>false</inherited>
                 <executions>
                     <execution>
@@ -353,7 +403,7 @@
             </plugin -->
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
-                <version>2.3</version>
+                <version>2.4</version>
                 <inherited>false</inherited>
                 <configuration>
                     <descriptors>
@@ -361,7 +411,6 @@
                     </descriptors>
                     <finalName>ffx-${project.version}</finalName>
                     <outputDirectory>${project.build.directory}/site</outputDirectory>
-                    <skipAssembly>${skipAssembly}</skipAssembly>
                 </configuration>
                 <executions>
                     <execution>
@@ -374,7 +423,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-install-plugin</artifactId>
-                <version>2.3.1</version>
+                <version>2.4</version>
                 <configuration>
                     <createChecksum>true</createChecksum>
                 </configuration>
@@ -414,7 +463,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.12</version>
+                <version>2.12.4</version>
                 <configuration>
                     <!-- This prevents Mac OS X from using its old Java3D verion.  -->
                     <useSystemClassLoader>false</useSystemClassLoader>
@@ -423,7 +472,7 @@
             </plugin>
             <!-- plugin>
                 <artifactId>maven-pdf-plugin</artifactId>
-                <version>1.1</version>
+                <version>1.2</version>
                 <executions>
                     <execution>
                         <id>pdf</id>
@@ -433,6 +482,7 @@
                         </goals>
                         <configuration>
                             <outputDirectory>${project.reporting.outputDirectory}/site</outputDirectory>
+                            <implementation>itext</implementation>
                         </configuration>
                     </execution>
                 </executions>
@@ -469,47 +519,56 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.10</version>
+            <version>4.11</version>
             <type>jar</type>
             <scope>test</scope>
         </dependency>
     </dependencies>
     <distributionManagement>
-        <downloadUrl>http://ffx.kenai.com</downloadUrl>
+        <downloadUrl>http://ffx.eng.uiowa.edu</downloadUrl>
         <site>
-            <id>kenai</id>
+            <id>Kenai</id>
             <name>Force Field X Website Deploy Location</name>
             <url>${website.repo}</url>
         </site>
         <snapshotRepository>
             <uniqueVersion>false</uniqueVersion>
-            <id>snapshots</id>
+            <id>Snapshots</id>
             <name>Local Maven SNAPSHOT Repository</name>
             <url>${snapshot.repo}</url>
         </snapshotRepository>
         <repository>
             <uniqueVersion>false</uniqueVersion>
-            <id>releases</id>
+            <id>Releases</id>
             <name>Local Maven Release Repository</name>
             <url>${release.repo}</url>
         </repository>
     </distributionManagement>
     <properties>
-        <compileVersion>1.6</compileVersion>
-        <targetVersion>1.6</targetVersion>
-        <!-- Default locations for deploying the website,
-             installing jars and releasing jars. These
-             can be over-ridden by a developer's settings.xml -->
+        <!-- Default locations for deploying the website, snapshot location and
+        release location. These can be over-ridden by a developer's
+        settings.xml -->
         <website.repo>file:website</website.repo>
         <snapshot.repo>file:lib</snapshot.repo>
         <release.repo>file:release</release.repo>
-        <!-- Default website build skips the assembly -->
-        <skipAssembly>true</skipAssembly>
+        <!-- Control the source version and target JRE version -->
+        <compileVersion>7</compileVersion>
+        <targetVersion>7</targetVersion>
         <!-- Setting the source encoding is required for builds
-             that are platform independent. -->
+        that are platform independent. -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.build.timestamp.format>MM-dd-yyyy</maven.build.timestamp.format>
         <timestamp>${maven.build.timestamp}</timestamp>
+        <!-- Skip most website reports by default -->
+        <assembly.skipAssembly>true</assembly.skipAssembly>
+        <changes.jira.skip>true</changes.jira.skip>
+        <checkstyle.skip>true</checkstyle.skip>
+        <dependencyDetails>false</dependencyDetails>
+        <maven.javadoc.skip>true</maven.javadoc.skip>
+        <maven.jxr.skip>true</maven.jxr.skip>
+        <linkcheck.skip>true</linkcheck.skip>
+        <pmd.skip>true</pmd.skip>
+        <skipSurefireReport>true</skipSurefireReport>
     </properties>
     <modules>
         <module>modules/algorithms</module>
@@ -525,4 +584,16 @@
         <module>modules/utilities</module>
         <module>modules/xray</module>
     </modules>
+    <reporting>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>2.9.1</version>
+                <configuration>
+                    <configLocation>config/sun_checks.xml</configLocation>
+                </configuration>
+            </plugin>
+        </plugins>
+    </reporting>
 </project>

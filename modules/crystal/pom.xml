@@ -5,22 +5,26 @@
          http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>com.kenai.ffx</groupId>
+        <groupId>edu.uiowa.eng.ffx</groupId>
         <artifactId>ffx</artifactId>
-        <version>1.0.0-alpha</version>
+        <version>1.0.0-beta</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
-    <groupId>com.kenai.ffx</groupId>
+    <groupId>edu.uiowa.eng.ffx</groupId>
     <artifactId>crystal</artifactId>
     <packaging>jar</packaging>
     <name>Crystal</name>
+    <description>The Crystal module includes support for the minimum image convention, 
+        symmetry operators, all 230 space groups and transformations between Cartesian 
+        and fractional coordinates.
+    </description>
     <developers>
         <developer>
             <id>fenn</id>
             <name>Timothy D. Fenn</name>
             <email>tim.fenn@gmail.com</email>
-            <organization>Postdoc, Stanford University</organization>
-            <organizationUrl>http://ffx.kenai.com</organizationUrl>
+            <organization>Scientist at Merck</organization>
+            <organizationUrl>http://ffx.eng.uiowa.edu</organizationUrl>
             <roles>
                 <role>Chief Crystallographer</role>
             </roles>
@@ -29,10 +33,10 @@
         <developer>
             <id>michael.schnieders</id>
             <name>Michael J. Schnieders</name>
-            <email>michael.schnieders@gmail.com</email>
-            <url>http://ffx.kenai.com</url>
-            <organization>Postdoc, Lab of Pengyu Ren, U. of Texas at Austin</organization>
-            <organizationUrl>http://ffx.kenai.com</organizationUrl>
+            <email>michael-schnieders@uiowa.edu</email>
+            <url>http://ffx.eng.uiowa.edu</url>
+            <organization>Assistant Professor, The U. of Iowa</organization>
+            <organizationUrl>http://ffx.eng.uiowa.edu</organizationUrl>
             <roles>
                 <role>Director of Force Field X</role>
             </roles>
@@ -41,13 +45,13 @@
     </developers>
     <dependencies>
         <dependency>
-            <groupId>com.kenai.ffx</groupId>
+            <groupId>edu.uiowa.eng.ffx</groupId>
             <artifactId>numerics</artifactId>
             <version>${project.version}</version>
             <type>jar</type>
         </dependency>
         <dependency>
-            <groupId>com.kenai.ffx</groupId>
+            <groupId>edu.uiowa.eng.ffx</groupId>
             <artifactId>utilities</artifactId>
             <version>${project.version}</version>
             <type>jar</type>

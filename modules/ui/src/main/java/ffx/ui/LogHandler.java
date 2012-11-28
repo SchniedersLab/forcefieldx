@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.ui;
 
@@ -34,19 +36,18 @@ import java.util.logging.LogRecord;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public class LogHandler extends Handler {
 
     private static final boolean headless = GraphicsEnvironment.isHeadless();
-
     private MainPanel mainPanel = null;
     private boolean fatal = false;
 
     /**
-     * A reference to the Force Field X MainPanel container to shut down
-     * if we encounter a fatal (SEVERE) exception. If we are not in
-     * Headless mode, then LogRecords can be published to the ModelingShell.
+     * A reference to the Force Field X MainPanel container to shut down if we
+     * encounter a fatal (SEVERE) exception. If we are not in Headless mode,
+     * then LogRecords can be published to the ModelingShell.
      *
      * @param mainPanel the Force Field X MainPanel.
      * @since 1.0
@@ -69,6 +70,7 @@ public class LogHandler extends Handler {
      * {@inheritDoc}
      *
      * Publish a LogRecord.
+     *
      * @since 1.0.
      */
     @Override
@@ -85,8 +87,8 @@ public class LogHandler extends Handler {
             msg = getFormatter().format(record);
         } catch (Exception e) {
             /**
-             * We don't want to throw an exception here, but we
-             * report the exception to any registered ErrorManager.
+             * We don't want to throw an exception here, but we report the
+             * exception to any registered ErrorManager.
              */
             reportError(null, e, ErrorManager.FORMAT_FAILURE);
             return;
@@ -114,14 +116,16 @@ public class LogHandler extends Handler {
             }
         } catch (Exception e) {
             /**
-             * We don't want to throw an exception here, but we
-             * report the exception to any registered ErrorManager.
+             * We don't want to throw an exception here, but we report the
+             * exception to any registered ErrorManager.
              */
             reportError(null, e, ErrorManager.WRITE_FAILURE);
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void flush() {
 
@@ -136,6 +140,7 @@ public class LogHandler extends Handler {
      * {@inheritDoc}
      *
      * Flush, but do not close System.out or the Shell.
+     *
      * @since 1.0
      */
     @Override

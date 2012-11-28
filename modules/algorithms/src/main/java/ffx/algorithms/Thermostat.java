@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.algorithms;
 
@@ -40,7 +42,7 @@ import ffx.numerics.Potential.VARIABLE_TYPE;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public abstract class Thermostat {
 
@@ -90,7 +92,7 @@ public abstract class Thermostat {
      * @param t a double.
      */
     public Thermostat(int nVariables, double x[], double v[], double mass[],
-                      VARIABLE_TYPE type[], double t) {
+            VARIABLE_TYPE type[], double t) {
         assert (nVariables > 3);
 
         this.nVariables = nVariables;
@@ -105,19 +107,20 @@ public abstract class Thermostat {
         random = new Random();
         setTargetTemperature(t);
         /**
-         * Set the degrees of freedom to nVariables - 3 because we will
-         * remove center of mass motion.
+         * Set the degrees of freedom to nVariables - 3 because we will remove
+         * center of mass motion.
          */
         removingCenterOfMassMotion = true;
         dof = nVariables - 3;
     }
 
     /**
-     * If center of mass motion is being removed, then the mean
-     * kinetic energy of the system will be 3 * kT/2 less than if
-     * center of mass motion is allowed.
+     * If center of mass motion is being removed, then the mean kinetic energy
+     * of the system will be 3 * kT/2 less than if center of mass motion is
+     * allowed.
      *
-     * @param remove <code>true</code> if center of mass motion is being removed.
+     * @param remove <code>true</code> if center of mass motion is being
+     * removed.
      */
     public void removingCenterOfMassMotion(boolean remove) {
         removingCenterOfMassMotion = remove;
@@ -134,9 +137,8 @@ public abstract class Thermostat {
 
     /**
      * <p>The setRandomSeed method is used to initialize the Random number
-     * generator to the same starting state, such that separate runs
-     * produce the same Maxwell-Boltzmann initial velocities.
-     * same </p>
+     * generator to the same starting state, such that separate runs produce the
+     * same Maxwell-Boltzmann initial velocities. same </p>
      *
      * @param seed The seed.
      */
@@ -145,8 +147,8 @@ public abstract class Thermostat {
     }
 
     /**
-     * <p>Log the target temperature and current number of kT per
-     * degree of freedom (should be 0.5 kT at equilibrium).</p>
+     * <p>Log the target temperature and current number of kT per degree of
+     * freedom (should be 0.5 kT at equilibrium).</p>
      *
      * @param level a {@link java.util.logging.Level} object.
      */
@@ -171,7 +173,8 @@ public abstract class Thermostat {
     }
 
     /**
-     * <p>Getter for the field <code>kineticEnergy</code>.</p>
+     * <p>Getter for the field
+     * <code>kineticEnergy</code>.</p>
      *
      * @return a double.
      */
@@ -180,7 +183,8 @@ public abstract class Thermostat {
     }
 
     /**
-     * <p>Getter for the field <code>targetTemperature</code>.</p>
+     * <p>Getter for the field
+     * <code>targetTemperature</code>.</p>
      *
      * @return a double.
      */
@@ -204,8 +208,8 @@ public abstract class Thermostat {
     }
 
     /**
-     * Reset velocities from a Maxwell-Boltzmann distribution of momenta.
-     * The variance of each independent momentum component is kT * mass.
+     * Reset velocities from a Maxwell-Boltzmann distribution of momenta. The
+     * variance of each independent momentum component is kT * mass.
      */
     public void maxwell(double targetTemperature) {
         for (int i = 0; i < nVariables; i++) {
@@ -227,8 +231,8 @@ public abstract class Thermostat {
 
         /**
          * The current temperature will deviate slightly from the target
-         * temperature if the center of mass motion was removed and/or
-         * due to finite system size.
+         * temperature if the center of mass motion was removed and/or due to
+         * finite system size.
          *
          * Scale the velocities to reach the target temperature.
          */
@@ -314,8 +318,8 @@ public abstract class Thermostat {
     }
 
     /**
-     * Remove center of mass translational and rotational velocity by
-     * inverting the moment of inertia tensor.
+     * Remove center of mass translational and rotational velocity by inverting
+     * the moment of inertia tensor.
      */
     private void removeCenterOfMassMotion(boolean print) {
         double xx = 0.0;
@@ -380,8 +384,8 @@ public abstract class Thermostat {
         }
 
         /**
-         * Only remove center of mass rotational momentum for
-         * non-periodic systems.
+         * Only remove center of mass rotational momentum for non-periodic
+         * systems.
          */
         if (false) {
             index = 0;

@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.autoparm;
 
@@ -45,7 +47,7 @@ import static ffx.potential.parameters.MultipoleType.BOHR;
  *
  * @author Gaurav Chattree
  * @since 1.0
- * @version $Id: $
+ *
  */
 public class Poledit {
 
@@ -59,10 +61,9 @@ public class Poledit {
     /**
      * This method takes data from GDMA and prints out multipole parameters
      *
-     * @param gdmaoutfname
-     * File location of multipole params output by GDMA
-     * @param peditinfname
-     * File location of molecular polarization group information
+     * @param gdmaoutfname File location of multipole params output by GDMA
+     * @param peditinfname File location of molecular polarization group
+     * information
      */
     public Poledit(String gdmaoutfname, String peditinfname) {
         pedit = true;
@@ -384,8 +385,7 @@ public class Poledit {
     /**
      * Creates and returns an atomType object from an element name
      *
-     * To work on:
-     * What is 'thole' and is it necessary in this function.
+     * To work on: What is 'thole' and is it necessary in this function.
      *
      * @param type a int.
      * @param element a {@link java.lang.String} object.
@@ -527,7 +527,8 @@ public class Poledit {
     }
 
     /**
-     * Sets up connectivities based on radii and then prints this information out to an xyz file
+     * Sets up connectivities based on radii and then prints this information
+     * out to an xyz file
      *
      * @param name a {@link java.lang.String} object.
      */
@@ -571,7 +572,7 @@ public class Poledit {
     }
 
     /**
-     *An example MultipoleFrameTypes would be: {401,401,404}*
+     * An example MultipoleFrameTypes would be: {401,401,404}*
      */
     public void setframeAutomatic() {
         for (int i = 0; i < atoms.length; i++) {
@@ -983,7 +984,7 @@ public class Poledit {
             localMultipole[k][0] = localMultipole[k][0] - sum;
         }
 
-        //maintain traceless quadrupole at each multipole site                                        
+        //maintain traceless quadrupole at each multipole site
 
         for (int i = 0; i < nAtoms; i++) {
             sum = localMultipole[i][4] + localMultipole[i][8] + localMultipole[i][12];
@@ -1101,6 +1102,5 @@ public class Poledit {
         //Poledit p2 = new Poledit("/users/gchattree/Research/Compounds/test_compounds/phenobarbital-tinker-goal/phenobarbital.gdmaout","/users/gchattree/Research/Compounds/test_compounds/phenobarbital-test/phenobarbital-peditin.txt");
         //Poledit p3 = new Poledit("/users/gchattree/Research/Compounds/poltypeffx-2/di-n-propyl_sulfide-test/di-n-propyl_sulfide.gdmaout", "/users/gchattree/Research/Compounds/poltypeffx-2/di-n-propyl_sulfide-test/di-n-propyl_sulfide-peditin.txt");
         //Poledit p4 = new Poledit("/users/gchattree/Research/Compounds/easycompounds/2-ethoxyethanol/2-ethoxyethanol.gdmaout","/users/gchattree/Research/Compounds/easycompounds/2-ethoxyethanol/2-ethoxyethanol-peditin.txt");
-
     }
 }

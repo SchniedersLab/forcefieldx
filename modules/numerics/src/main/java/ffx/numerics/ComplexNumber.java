@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.numerics;
 
@@ -26,7 +28,7 @@ import static java.lang.Math.*;
  * <p>ComplexNumber class.</p>
  *
  * @author Timothy Fenn
- * @version $Id: $
+ *
  */
 public class ComplexNumber {
 
@@ -50,7 +52,9 @@ public class ComplexNumber {
         im = imag;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String toString() {
         if (im == 0) {
@@ -106,7 +110,7 @@ public class ComplexNumber {
      *
      * @param b a {@link ffx.numerics.ComplexNumber} object.
      */
-    public void copy(ComplexNumber b){
+    public void copy(ComplexNumber b) {
         ComplexNumber a = this;
         a.re = b.re;
         a.im = b.im;
@@ -146,7 +150,7 @@ public class ComplexNumber {
      *
      * @param s a double.
      */
-    public void phase_shift_ip(double s){
+    public void phase_shift_ip(double s) {
         ComplexNumber a = this;
         double sr = Math.cos(s);
         double si = Math.sin(s);
@@ -299,7 +303,7 @@ public class ComplexNumber {
     /**
      * <p>reciprocal_ip</p>
      */
-    public void reciprocal_ip(){
+    public void reciprocal_ip() {
         ComplexNumber a = this;
         double scale = re * re + im * im;
         a.re = re / scale;

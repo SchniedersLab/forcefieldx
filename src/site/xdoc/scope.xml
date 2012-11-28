@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <document>
     <properties>
-        <author email="michael.schnieders@gmail.com">
-			Michael Schnieders
+        <author email="michael-schnieders@uiowa.edu">
+            Michael Schnieders
         </author>
         <title>Scope</title>
     </properties>
@@ -10,30 +10,30 @@
     <body>
         <section name="Scope">
             <p> Molecular tools may be of use to scientists or teachers
-		working in a range of fields and at a variety of length
-		scales including:
+                working in a range of fields and at a variety of length
+                scales including:
             </p>
             <ul>
                 <li>
                     <a href="scope.html#Chemistry and Biochemistry">
-			Chemistry and Biochemistry
+                        Chemistry and Biochemistry
                     </a>
                 </li>
                 <li>
                     <a href="scope.html#Molecular Biology">
-			Molecular Biology
+                        Molecular Biology
                     </a>
                 </li>
                 <li>
                     <a href="scope.html#Molecular Engineering and Nanotechnology" >
-			Molecular Engineering and Nanotechnology
+                        Molecular Engineering and Nanotechnology
                     </a>
                 </li>
             </ul>
             <p>
-            Shown below is an overview of systems that have been
-            investigated using classical potentials. Click on the
-            images to see more detail.
+                Shown below is an overview of systems that have been
+                investigated using classical potentials. Click on the
+                images to see more detail.
             </p>
             <subsection name="Chemistry and Biochemistry">
                 <table>

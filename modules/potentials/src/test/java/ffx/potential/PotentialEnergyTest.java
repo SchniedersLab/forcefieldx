@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.potential;
 
@@ -73,47 +75,47 @@ public class PotentialEnergyTest {
                         -33012.66179952, 623490,
                         -13041.30955459, 623490},
                     {true,
-                     "DHFR Benchmark",
-                     "ffx/potential/structures/dhfr.xyz",
-                     6423.84579926, 16569,
-                     3746.31506290, 11584,
-                     -21.85553039, 4031,
-                     687.46861123, 7023,
-                     198.72886589, 1566,
-                     426.23738971, 6701,
-                     48.26628393, 292,
-                     -41.71473465, 147,
-                     32630.94057333, 3480445,
-                     -79396.71166429, 1463353,
-                     -32141.39930772, 1463353},
+                        "DHFR Benchmark",
+                        "ffx/potential/structures/dhfr.xyz",
+                        6423.84579926, 16569,
+                        3746.31506290, 11584,
+                        -21.85553039, 4031,
+                        687.46861123, 7023,
+                        198.72886589, 1566,
+                        426.23738971, 6701,
+                        48.26628393, 292,
+                        -41.71473465, 147,
+                        32630.94057333, 3480445,
+                        -79396.71166429, 1463353,
+                        -32141.39930772, 1463353},
                     {true,
-                     "SNARE P1",
-                     "ffx/potential/structures/1n7s.P1.xyz",
-                     1405.28569930, 20160,
-                     2976.77005458, 33020,
-                     25.68062976, 27696,
-                     10.00655326, 1288,
-                     540.99677465, 9948,
-                     1671.56977674, 45796,
-                     159.42575736, 1480,
-                     -2243.98305878, 1072,
-                     16013.08734188, 2966572,
-                     -49215.72628076, 1328456,
-                     -11245.82734685, 1328456},
+                        "SNARE P1",
+                        "ffx/potential/structures/1n7s.P1.xyz",
+                        1405.28569930, 20160,
+                        2976.77005458, 33020,
+                        25.68062976, 27696,
+                        10.00655326, 1288,
+                        540.99677465, 9948,
+                        1671.56977674, 45796,
+                        159.42575736, 1480,
+                        -2243.98305878, 1072,
+                        16013.08734188, 2966572,
+                        -49215.72628076, 1328456,
+                        -11245.82734685, 1328456},
                     {true,
-                     "SNARE P212121",
-                     "ffx/potential/structures/1n7s.P212121.xyz",
-                     351.32142483, 5040,
-                     744.19251364, 8255,
-                     6.42015744, 6924,
-                     2.50163831, 322,
-                     135.24919366, 2487,
-                     417.89244418, 11449,
-                     39.85643934, 370,
-                     -560.99576469, 268,
-                     4003.27183547, 741643,
-                     -12303.93157019, 332114,
-                     -2811.45683671, 332114}});
+                        "SNARE P212121",
+                        "ffx/potential/structures/1n7s.P212121.xyz",
+                        351.32142483, 5040,
+                        744.19251364, 8255,
+                        6.42015744, 6924,
+                        2.50163831, 322,
+                        135.24919366, 2487,
+                        417.89244418, 11449,
+                        39.85643934, 370,
+                        -560.99576469, 268,
+                        4003.27183547, 741643,
+                        -12303.93157019, 332114,
+                        -2811.45683671, 332114}});
     }
     private final String info;
     private final File structure;
@@ -205,7 +207,7 @@ public class PotentialEnergyTest {
 
         polarization = Polarization.MUTUAL;
         System.setProperty("polarization", "mutual");
-        
+
         ClassLoader cl = this.getClass().getClassLoader();
         structure = new File(cl.getResource(filename).getPath());
 
@@ -232,10 +234,10 @@ public class PotentialEnergyTest {
         mpoleTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.MPOLETERM, true);
 
         /*
-        if (ci) {
-        testGradient();
-        testSoftCore();
-        } */
+         if (ci) {
+         testGradient();
+         testSoftCore();
+         } */
     }
 
     /**
@@ -351,12 +353,12 @@ public class PotentialEnergyTest {
             logger.severe("\n" + a0.toString() + String.format(" failed: %10.6f.", len) + String.format(
                     "\nAnalytic: (%12.4f, %12.4f, %12.4f)\n",
                     analytic[0], analytic[1], analytic[2]) + String.format("Numeric:  (%12.4f, %12.4f, %12.4f)\n",
-                                                                           numeric[0], numeric[1], numeric[2]));
+                    numeric[0], numeric[1], numeric[2]));
         } else {
             logger.info("\n" + a0.toString() + String.format(" passed: %10.6f.", len) + String.format(
                     "\nAnalytic: (%12.4f, %12.4f, %12.4f)\n",
                     analytic[0], analytic[1], analytic[2]) + String.format("Numeric:  (%12.4f, %12.4f, %12.4f)\n",
-                                                                           numeric[0], numeric[1], numeric[2]));
+                    numeric[0], numeric[1], numeric[2]));
         }
         assertEquals(a0.toString(), 0.0, len, gradientTolerance);
     }

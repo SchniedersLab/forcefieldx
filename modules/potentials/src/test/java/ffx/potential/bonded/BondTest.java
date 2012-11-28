@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.potential.bonded;
 
@@ -115,10 +117,14 @@ public class BondTest {
 
     @Before
     public void setUp() {
-        a1 = new Atom("A1"); a1.setXYZ(a1d);
-        a2 = new Atom("A2"); a2.setXYZ(a2d);
-        a3 = new Atom("A3"); a3.setXYZ(a3d);
-        a4 = new Atom("A4"); a4.setXYZ(a4d);
+        a1 = new Atom("A1");
+        a1.setXYZ(a1d);
+        a2 = new Atom("A2");
+        a2.setXYZ(a2d);
+        a3 = new Atom("A3");
+        a3.setXYZ(a3d);
+        a4 = new Atom("A4");
+        a4.setXYZ(a4d);
         assertNotNull(a1);
         assertNotNull(a2);
         assertNotNull(a3);

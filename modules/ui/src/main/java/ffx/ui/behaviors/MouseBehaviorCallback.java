@@ -1,25 +1,24 @@
 /**
- * <p>Title: Force Field X</p>
- * <p>Description: Force Field X is a Molecular Engineering Environment</p>
- * <p>Copyright: Copyright (c) Michael J. Schnieders 2002-2009</p>
+ * Title: Force Field X.
  *
- * @author Michael J. Schnieders
- * @version 0.1
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.ui.behaviors;
 
@@ -30,50 +29,69 @@ import javax.media.j3d.Transform3D;
  * receive callbacks when transforms are updated.
  *
  * @author Michael J. Schnieders
- * @version $Id: $
+ *
  */
 public interface MouseBehaviorCallback {
-	/** Constant <code>ROTATE=0</code> */
-	public final static int ROTATE = 0;
-	/** Constant <code>TRANSLATE=1</code> */
-	public final static int TRANSLATE = 1;
-	/** Constant <code>ZOOM=2</code> */
-	public final static int ZOOM = 2;
-	/** Constant <code>SELECTION=4</code> */
-	public final static int SELECTION = 4;
-	/** Constant <code>PROPERTIES=5</code> */
-	public final static int PROPERTIES = 5;
-	/** Constant <code>ORBIT=6</code> */
-	public final static int ORBIT = 6;
 
-	/*
-	 * Classes implementing this interface that are registered with one of the
-	 * MouseBehaviors will be called every time the behavior updates the
-	 * Transform @param type will be one of ROTATE, TRANSLATE or ZOOM
-	 */
-	/**
-	 * <p>transformChanged</p>
-	 *
-	 * @param type a int.
-	 * @param transform a {@link javax.media.j3d.Transform3D} object.
-	 */
-	public void transformChanged(int type, Transform3D transform);
+    /**
+     * Constant
+     * <code>ROTATE=0</code>
+     */
+    public final static int ROTATE = 0;
+    /**
+     * Constant
+     * <code>TRANSLATE=1</code>
+     */
+    public final static int TRANSLATE = 1;
+    /**
+     * Constant
+     * <code>ZOOM=2</code>
+     */
+    public final static int ZOOM = 2;
+    /**
+     * Constant
+     * <code>SELECTION=4</code>
+     */
+    public final static int SELECTION = 4;
+    /**
+     * Constant
+     * <code>PROPERTIES=5</code>
+     */
+    public final static int PROPERTIES = 5;
+    /**
+     * Constant
+     * <code>ORBIT=6</code>
+     */
+    public final static int ORBIT = 6;
 
-	/**
-	 * <p>transformClicked</p>
-	 *
-	 * @param type a int.
-	 * @param transform a {@link javax.media.j3d.Transform3D} object.
-	 */
-	public void transformClicked(int type, Transform3D transform);
+    /*
+     * Classes implementing this interface that are registered with one of the
+     * MouseBehaviors will be called every time the behavior updates the
+     * Transform @param type will be one of ROTATE, TRANSLATE or ZOOM
+     */
+    /**
+     * <p>transformChanged</p>
+     *
+     * @param type a int.
+     * @param transform a {@link javax.media.j3d.Transform3D} object.
+     */
+    public void transformChanged(int type, Transform3D transform);
 
-	/**
-	 * <p>transformDoubleClicked</p>
-	 *
-	 * @param type a int.
-	 * @param transform a {@link javax.media.j3d.Transform3D} object.
-	 */
-	public void transformDoubleClicked(int type, Transform3D transform);
+    /**
+     * <p>transformClicked</p>
+     *
+     * @param type a int.
+     * @param transform a {@link javax.media.j3d.Transform3D} object.
+     */
+    public void transformClicked(int type, Transform3D transform);
+
+    /**
+     * <p>transformDoubleClicked</p>
+     *
+     * @param type a int.
+     * @param transform a {@link javax.media.j3d.Transform3D} object.
+     */
+    public void transformDoubleClicked(int type, Transform3D transform);
 }
 /*
  * Copyright (c) 1996-1998 Sun Microsystems, Inc. All Rights Reserved. Sun

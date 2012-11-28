@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.potential.bonded;
 
@@ -33,7 +35,7 @@ import static ffx.numerics.VectorMath.diff;
  * system.
  *
  * @author Michael J. Schnieders
- * @version $Id: $
+ *
  */
 public final class Utilities {
 
@@ -133,12 +135,9 @@ public final class Utilities {
      * into the residue. This assumes that the "cap" is only linked to the rest
      * of the polymer through the end atom.
      *
-     * @param end
-     *            Atom
-     * @param seed
-     *            Atom
-     * @param residue
-     *            Residue
+     * @param end Atom
+     * @param seed Atom
+     * @param residue Residue
      */
     public static void addCap(Atom end, Atom seed, Residue residue) {
         List<Atom> cap = getAtomListFromPool();
@@ -156,10 +155,8 @@ public final class Utilities {
      * Add a phosphate and its bonded oxygens that are not bonded to a carbon to
      * the specified residue.
      *
-     * @param phosphate
-     *            Atom
-     * @param residue
-     *            Residue
+     * @param phosphate Atom
+     * @param residue Residue
      */
     public static void addPhosphate(Atom phosphate, Residue residue) {
         if (phosphate == null) {
@@ -181,7 +178,7 @@ public final class Utilities {
     }
 
     private static Residue assignResidue(List<Atom> backbone, int start,
-                                         List<Atom> atoms, List<Atom> sidePolymer) {
+            List<Atom> atoms, List<Atom> sidePolymer) {
         Atom a;
         int atomicnum;
         int bins[] = new int[5]; // 0 = S, 1 = P, 2 = O, 3 = N, 4 = C
@@ -418,6 +415,7 @@ public final class Utilities {
 
     /**
      * Convert possibly duplicate chainID into a unique segID.
+     *
      * @param c chain ID just read.
      * @return a unique segID.
      */
@@ -455,10 +453,8 @@ public final class Utilities {
      * peptide backbone) Atoms preloaded into the List provide search
      * termination.
      *
-     * @param seed
-     *            Atom
-     * @param atoms
-     *            List
+     * @param seed Atom
+     * @param atoms List
      */
     private static void collectAtoms(Atom seed, List<Atom> atoms) {
         if (seed == null) {
@@ -629,7 +625,7 @@ public final class Utilities {
                             lastAtoms.add(alpha);
                             lastAtoms.add(carbonyl2);
                             aa = patternMatch(1, lastAtoms,
-                                              PolymerType.AMINOACID);
+                                    PolymerType.AMINOACID);
                             addAtomListToPool(lastAtoms);
                             if (aa != null) {
                                 addCap(alpha, carbonyl2, aa);
@@ -755,16 +751,15 @@ public final class Utilities {
      * Returns a carbon that is bonded to the atom a, a carbonyl group, and a
      * nitrogen. O=C-alpha-N
      *
-     * @param a
-     *            Atom
+     * @param a Atom
      * @return Atom
      */
     public static Atom findAlphaCarbon(Atom a) {
         for (Bond b : a.getBonds()) {
             Atom alpha = b.get1_2(a);
             if (alpha.getAtomicNumber() == 6
-                && findCO(alpha) != null
-                && formsBondsWith(alpha, 7)) {
+                    && findCO(alpha) != null
+                    && formsBondsWith(alpha, 7)) {
                 return alpha;
             }
         }
@@ -775,10 +770,8 @@ public final class Utilities {
      * Returns the first atom with the specified atomic number that bonds with
      * atom a, or null otherwise.
      *
-     * @param a
-     *            Atom
-     * @param atomicNumber
-     *            int
+     * @param a Atom
+     * @param atomicNumber int
      * @return Atom
      */
     public static Atom findBondWith(Atom a, int atomicNumber) {
@@ -795,8 +788,7 @@ public final class Utilities {
      * Returns a carbon that is bonded to the adjacent atom, which bonds 1
      * carbon and 1 oxygen.
      *
-     * @param adjacent
-     *            Atom
+     * @param adjacent Atom
      * @return Atom
      */
     public static Atom findC5(Atom adjacent) {
@@ -812,8 +804,7 @@ public final class Utilities {
     /**
      * Returns a carbon that is bonded to the adjacent atom and an oxygen.
      *
-     * @param adjacent
-     *            Atom
+     * @param adjacent Atom
      * @return Atom
      */
     public static Atom findCarbonyl(Atom adjacent) {
@@ -835,8 +826,7 @@ public final class Utilities {
      * Returns a carbon that is bonded to the adjacent atom, which bonds 2
      * carbons and 1 oxygen.
      *
-     * @param adjacent
-     *            Atom
+     * @param adjacent Atom
      * @return Atom
      */
     public static Atom findCCO(Atom adjacent) {
@@ -850,8 +840,8 @@ public final class Utilities {
     }
 
     /**
-     * Returns the first nitrogen atom found that is bonded to the
-     * adjacent atom.
+     * Returns the first nitrogen atom found that is bonded to the adjacent
+     * atom.
      *
      * @param adjacent Atom
      * @return Atom a nitrogen atom.
@@ -870,8 +860,7 @@ public final class Utilities {
      * Returns a carbon that is bonded to the adjacent atom, which bonds at
      * least 1 oxygen.
      *
-     * @param adjacent
-     *            Atom
+     * @param adjacent Atom
      * @return Atom
      */
     public static Atom findCO(Atom adjacent) {
@@ -889,10 +878,8 @@ public final class Utilities {
      * atom o. O-P-X-C where X is the returned atom. This is useful for
      * traversing a nucleic acid backbone.
      *
-     * @param p
-     *            Atom
-     * @param o
-     *            Atom
+     * @param p Atom
+     * @param o Atom
      * @return Atom
      */
     public static Atom findOtherOxygen(Atom p, Atom o) {
@@ -908,16 +895,13 @@ public final class Utilities {
     /**
      * <p>findPolymer</p>
      *
-     * @param atoms
-     *            List
-     * @param currentAtom
-     *            Atom
-     * @param path
-     *            List
+     * @param atoms List
+     * @param currentAtom Atom
+     * @param path List
      * @return List
      */
     public static List<Atom> findPolymer(List<Atom> atoms, Atom currentAtom,
-                                         List<Atom> path) {
+            List<Atom> path) {
         // Atom has no bonds to follow
         if (currentAtom.getBonds() == null) {
             path = getAtomListFromPool();
@@ -1021,10 +1005,8 @@ public final class Utilities {
     /**
      * Returns an atom bonded to the "end" atom, which is not equal to "other".
      *
-     * @param end
-     *            Atom
-     * @param other
-     *            Atom
+     * @param end Atom
+     * @param other Atom
      * @return Atom
      */
     public static Atom findSeed(Atom end, Atom other) {
@@ -1041,10 +1023,8 @@ public final class Utilities {
      * True if Atom a forms a bond with another atom of the specified atomic
      * Number.
      *
-     * @param a
-     *            Atom
-     * @param atomicNumber
-     *            int
+     * @param a Atom
+     * @param atomicNumber int
      * @return boolean
      */
     public static boolean formsBondsWith(Atom a, int atomicNumber) {
@@ -1072,10 +1052,8 @@ public final class Utilities {
     /**
      * Returns true if the lists contain any atom in common.
      *
-     * @param list1
-     *            List
-     * @param list2
-     *            List
+     * @param list1 List
+     * @param list2 List
      * @return boolean
      */
     private static boolean haveCommonAtom(List<Atom> list1, List<Atom> list2) {
@@ -1093,8 +1071,7 @@ public final class Utilities {
     /**
      * Returns true if Atom a is water oxygen.
      *
-     * @param a
-     *            Atom
+     * @param a Atom
      * @return boolean
      */
     public static boolean isWaterOxygen(Atom a) {
@@ -1114,10 +1091,8 @@ public final class Utilities {
      * This function returns the number of times atom "a" is bonded to an atom
      * of the specified atomic number.
      *
-     * @param a
-     *            Atom
-     * @param atomicNumber
-     *            int
+     * @param a Atom
+     * @param atomicNumber int
      * @return int
      */
     public static int numberOfBondsWith(Atom a, int atomicNumber) {
@@ -1134,7 +1109,7 @@ public final class Utilities {
     // Check to see if a portion of the backbone matches that of a
     // biological polymer, and if so determine the respective residue
     private static Residue patternMatch(int start, List<Atom> backbone,
-                                        PolymerType type) {
+            PolymerType type) {
         int pattern[];
         // Initialization
         if (type == PolymerType.AMINOACID) {
@@ -1224,15 +1199,13 @@ public final class Utilities {
         Character c = null;
         if (i < 26) {
             /**
-             * 65 is 'A'.
-             * 90 is 'Z'.
+             * 65 is 'A'. 90 is 'Z'.
              */
             c = Character.valueOf((char) (i + 65));
         } else {
             i -= 26;
             /**
-             * 48 is '0'.
-             * 57 is '9'.
+             * 48 is '0'. 57 is '9'.
              */
             c = Character.valueOf((char) (i + 48));
         }
@@ -1242,8 +1215,7 @@ public final class Utilities {
     /**
      * Returns an List with reversed ordering.
      *
-     * @param atomList
-     *            List
+     * @param atomList List
      * @return List
      */
     static private List<Atom> reverseAtomList(List<Atom> atomList) {

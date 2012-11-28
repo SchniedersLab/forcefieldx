@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.potential.bonded;
 
@@ -35,7 +37,7 @@ import static ffx.potential.parameters.StretchBendType.units;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public class StretchBend extends BondedTerm implements Comparable<StretchBend> {
 
@@ -56,14 +58,16 @@ public class StretchBend extends BondedTerm implements Comparable<StretchBend> {
     final private double bond1Eq;
 
     /**
-     * <p>Setter for the field <code>stretchBendType</code>.</p>
+     * <p>Setter for the field
+     * <code>stretchBendType</code>.</p>
      *
-     * @param stretchBendType a {@link ffx.potential.parameters.StretchBendType} object.
+     * @param stretchBendType a {@link ffx.potential.parameters.StretchBendType}
+     * object.
      */
     public void setStretchBendType(StretchBendType stretchBendType) {
         this.stretchBendType = stretchBendType;
         /**
-         * Match the atom class of the angle to the atom class of the 
+         * Match the atom class of the angle to the atom class of the
          * stretch-bend type.
          */
         if (atoms[0].getAtomType().atomClass == stretchBendType.atomClasses[0]) {
@@ -76,7 +80,8 @@ public class StretchBend extends BondedTerm implements Comparable<StretchBend> {
     }
 
     /**
-     * <p>Setter for the field <code>rigidScale</code>.</p>
+     * <p>Setter for the field
+     * <code>rigidScale</code>.</p>
      *
      * @param rigidScale a double.
      */
@@ -87,8 +92,7 @@ public class StretchBend extends BondedTerm implements Comparable<StretchBend> {
     /**
      * Constructor for the Stretch-Bend class.
      *
-     * @param a
-     *            The Angle that this stretch-bend is based on.
+     * @param a The Angle that this stretch-bend is based on.
      */
     public StretchBend(Angle a) {
         super();
@@ -110,15 +114,30 @@ public class StretchBend extends BondedTerm implements Comparable<StretchBend> {
     public void update() {
         energy(false);
     }
-    /** Constant <code>v10=new double[3]</code> */
+    /**
+     * Constant
+     * <code>v10=new double[3]</code>
+     */
     protected static final double v10[] = new double[3];
-    /** Constant <code>v12=new double[3]</code> */
+    /**
+     * Constant
+     * <code>v12=new double[3]</code>
+     */
     protected static final double v12[] = new double[3];
-    /** Constant <code>p=new double[3]</code> */
+    /**
+     * Constant
+     * <code>p=new double[3]</code>
+     */
     protected static final double p[] = new double[3];
-    /** Constant <code>dta=new double[3]</code> */
+    /**
+     * Constant
+     * <code>dta=new double[3]</code>
+     */
     protected static final double dta[] = new double[3];
-    /** Constant <code>dtc=new double[3]</code> */
+    /**
+     * Constant
+     * <code>dtc=new double[3]</code>
+     */
     protected static final double dtc[] = new double[3];
     /**
      * Gradient on atom 0.
@@ -136,8 +155,7 @@ public class StretchBend extends BondedTerm implements Comparable<StretchBend> {
     /**
      * Evaluate the Stretch-Bend energy.
      *
-     * @param gradient
-     *            Evaluate the gradient.
+     * @param gradient Evaluate the gradient.
      * @return Returns the energy.
      */
     public double energy(boolean gradient) {
@@ -193,11 +211,11 @@ public class StretchBend extends BondedTerm implements Comparable<StretchBend> {
      */
     public void log() {
         logger.info(String.format(" %s %6d-%s %6d-%s %6d-%s"
-                                  + "%7.4f %10.4f",
-                                  "Stretch-Bend", atoms[0].getXYZIndex(),
-                                  atoms[0].getAtomType().name, atoms[1].getXYZIndex(),
-                                  atoms[1].getAtomType().name, atoms[2].getXYZIndex(),
-                                  atoms[2].getAtomType().name, value, energy));
+                + "%7.4f %10.4f",
+                "Stretch-Bend", atoms[0].getXYZIndex(),
+                atoms[0].getAtomType().name, atoms[1].getXYZIndex(),
+                atoms[1].getAtomType().name, atoms[2].getXYZIndex(),
+                atoms[2].getAtomType().name, value, energy));
     }
 
     /**
@@ -208,10 +226,12 @@ public class StretchBend extends BondedTerm implements Comparable<StretchBend> {
     @Override
     public String toString() {
         return String.format("%s  (%7.2f,%7.2f,%7.1f,%7.2f)", id,
-                             bonds[0].value, bonds[1].value, angle.value, energy);
+                bonds[0].value, bonds[1].value, angle.value, energy);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int compareTo(StretchBend sb) {
         return angle.compareTo(sb.angle);

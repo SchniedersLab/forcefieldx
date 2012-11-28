@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.potential.nonbonded;
 
@@ -42,25 +44,20 @@ import ffx.potential.parameters.ForceField.ForceFieldString;
 /**
  * The PMEWisdom class searches through Ewald coefficients and
  * {@link ReciprocalSpace} grid spacings to find the most efficient combination
- * that maintains an RMS gradient error below a specified tolarance
- * (typically 10-4 RMS Kcal/mole/Angstrom or better).
- * This is especially useful for {@link Crystal} space groups with a large number
- * of symmetry operators. The gold standard gradients are computed using:
- * <ol>
- * <li>An Ewald coefficient of 0.42.</li>
- * <li>A real space cutoff of 10.0 Angstroms.</li>
- * <li>A grid spacing of 0.5 Angstroms.</li>
- * <li>A b-Spline order of 10.</li>
- * </ol>
+ * that maintains an RMS gradient error below a specified tolarance (typically
+ * 10-4 RMS Kcal/mole/Angstrom or better). This is especially useful for
+ * {@link Crystal} space groups with a large number of symmetry operators. The
+ * gold standard gradients are computed using: <ol> <li>An Ewald coefficient of
+ * 0.42.</li> <li>A real space cutoff of 10.0 Angstroms.</li> <li>A grid spacing
+ * of 0.5 Angstroms.</li> <li>A b-Spline order of 10.</li> </ol>
  *
  * @author Michael J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public class PMEWisdom {
 
     private static final Logger logger = Logger.getLogger(PMEWisdom.class.getName());
-    
     private final MolecularAssembly molecularAssembly;
     private final ForceField forceField;
     private final Crystal crystal;
@@ -79,7 +76,8 @@ public class PMEWisdom {
      * The PMEWisdom constructor requires a MolecularAssembly that is a
      * periodic.
      *
-     * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly} object.
+     * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly}
+     * object.
      * @since 1.0
      */
     public PMEWisdom(MolecularAssembly molecularAssembly) {
@@ -153,18 +151,16 @@ public class PMEWisdom {
      * <p>run</p>
      */
     public void run() {
-        final double maxCutoff = min(min(crystal.a, crystal.b), crystal.c) /
-                2.0 - buffer;
+        final double maxCutoff = min(min(crystal.a, crystal.b), crystal.c)
+                / 2.0 - buffer;
 
         /**
          * Following Essmann et al. (1995), we choose a real space Ewald cutoff
-         * of 9.0 Angstroms and require that erfc(Beta * r) / r < 10^(-8) at
-         * the cutoff. A beta value (aka the Ewald coefficient) of 0.42
-         * satisfies this criteria.
-         * <p>
-         * In the limit of infinite b-Spline order a Gaussian is
-         * achieved. Here we use order 10. Finally, a reciprocal space
-         * grid spacing of 0.66 A is chosen.
+         * of 9.0 Angstroms and require that erfc(Beta * r) / r < 10^(-8) at the
+         * cutoff. A beta value (aka the Ewald coefficient) of 0.42 satisfies
+         * this criteria. <p> In the limit of infinite b-Spline order a Gaussian
+         * is achieved. Here we use order 10. Finally, a reciprocal space grid
+         * spacing of 0.66 A is chosen.
          */
         double beta = 0.42;
         double cutoff = ParticleMeshEwald.ewaldCutoff(beta, maxCutoff, 1e-10);
@@ -186,8 +182,8 @@ public class PMEWisdom {
         long bestTime = System.nanoTime();
         double highAccuracyEnergy = particleMeshEwald.energy(true, false);
         bestTime = System.nanoTime() - bestTime;
-        logger.info(String.format("High Accuracy Time:           %5.3f\n", bestTime *
-                toSeconds));
+        logger.info(String.format("High Accuracy Time:           %5.3f\n", bestTime
+                * toSeconds));
         particleMeshEwald.getGradients(highAccuracyGradients);
 
         double realSpaceTolerance = 1.0e-6;
@@ -208,11 +204,11 @@ public class PMEWisdom {
                     break;
                 }
             } else {
-                logger.info("Breaking due to slow time.\n" +
-                        String.format("Best Time:                   %5.3f\n", bestTime *
-                        toSeconds) +
-                        String.format("New Time:                    %5.3f\n", newTime *
-                        toSeconds));
+                logger.info("Breaking due to slow time.\n"
+                        + String.format("Best Time:                   %5.3f\n", bestTime
+                        * toSeconds)
+                        + String.format("New Time:                    %5.3f\n", newTime
+                        * toSeconds));
                 break;
             }
         }
@@ -228,7 +224,7 @@ public class PMEWisdom {
         double previousRMS = 0.0;
         double rms = 0.0;
         NeighborList neighborList = new NeighborList(null, crystal, atoms, cutoff, buffer,
-                    parallelTeam);
+                parallelTeam);
         neighborList.buildList(coordinates, neighborLists, null, true, false);
 
         logger.setLevel(Level.INFO);
@@ -246,8 +242,8 @@ public class PMEWisdom {
             forceField.addForceFieldDouble(ForceFieldDouble.PME_MESH_DENSITY, spacing);
             forceField.addForceFieldInteger(ForceFieldInteger.PME_ORDER, order);
             ParticleMeshEwald particleMeshEwald = new ParticleMeshEwald(forceField,
-                atoms, crystal, neighborList, parallelTeam);
-            
+                    atoms, crystal, neighborList, parallelTeam);
+
             System.gc();
             particleMeshEwald.energy(true, false);
             particleMeshEwald.getGradients(gradients);
@@ -307,8 +303,8 @@ public class PMEWisdom {
         sb.append(String.format("Ewald Coefficient:      %5.3f\n", alpha));
         sb.append(String.format("Real Space Cutoff:      %5.3f\n", cutoff));
         sb.append(String.format("Grid Spacing:           %5.3f\n", spacing));
-        sb.append(String.format("Time:                   %5.3f\n", bestTime *
-                toSeconds));
+        sb.append(String.format("Time:                   %5.3f\n", bestTime
+                * toSeconds));
         logger.info(sb.toString());
         return bestTime;
     }

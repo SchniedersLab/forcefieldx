@@ -1,6 +1,9 @@
 /**
- * Title: Force Field X Description: Force Field X - Software for Molecular
- * Biophysics Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
@@ -32,7 +35,7 @@ import ffx.numerics.ComplexNumber;
  * <p>DiffractionRefinementData class.</p>
  *
  * @author Timothy Fenn
- * @version $Id: $
+ *
  */
 public class DiffractionRefinementData {
 
@@ -279,19 +282,19 @@ public class DiffractionRefinementData {
     }
 
     /**
-     * generate amplitudes from intensities.  Does NOT use French & Wilson
+     * generate amplitudes from intensities. Does NOT use French & Wilson
      * scaling, just simple square root.
      */
     public void intensities_to_amplitudes() {
         double tmp;
-        
+
         for (int i = 0; i < n; i++) {
-            if (fsigf[i][0] > 0.0){
+            if (fsigf[i][0] > 0.0) {
                 tmp = fsigf[i][0];
                 fsigf[i][0] = Math.sqrt(tmp);
-                if (fsigf[i][1] < tmp){
-                    fsigf[i][1] = fsigf[i][0] -
-                            Math.sqrt(tmp - fsigf[i][1]);
+                if (fsigf[i][1] < tmp) {
+                    fsigf[i][1] = fsigf[i][0]
+                            - Math.sqrt(tmp - fsigf[i][1]);
                 } else {
                     fsigf[i][1] = fsigf[i][0];
                 }
@@ -300,7 +303,7 @@ public class DiffractionRefinementData {
                 fsigf[i][1] = 0.0;
             }
         }
-        
+
         if (logger.isLoggable(Level.WARNING)) {
             StringBuilder sb = new StringBuilder();
             sb.append("\ninternally converting intensities to amplitudes\n");

@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.potential.bonded;
 
@@ -36,17 +38,23 @@ import static ffx.utilities.HashCodeUtil.hash;
  * The Polymer class encapsulates a peptide or nucleotide chain.
  *
  * @author Michael J. Schnieders
- * @version $Id: $
+ *
  */
 public class Polymer extends MSGroup {
 
     private static final long serialVersionUID = 1L;
-    /** Constant <code>MultiScaleLevel=3</code> */
+    /**
+     * Constant
+     * <code>MultiScaleLevel=3</code>
+     */
     public static final int MultiScaleLevel = 3;
     private static int count = 0;
     private static double[] da = new double[3];
     private static double[] db = new double[3];
-    /** Constant <code>polymerColor</code> */
+    /**
+     * Constant
+     * <code>polymerColor</code>
+     */
     public static Map<Integer, Color3f> polymerColor = new HashMap<Integer, Color3f>();
 
     static {
@@ -94,7 +102,7 @@ public class Polymer extends MSGroup {
      *
      * @param segID A unique identifier from A-Z,0-9, then 1A-1Z,10-19, etc.
      * @param residues Represents a MSNode where the Polymer's residues have
-     *              been attached.
+     * been attached.
      * @param chainID a {@link java.lang.Character} object.
      */
     public Polymer(Character chainID, String segID, MSNode residues) {
@@ -234,7 +242,8 @@ public class Polymer extends MSGroup {
     }
 
     /**
-     * <p>Getter for the field <code>link</code>.</p>
+     * <p>Getter for the field
+     * <code>link</code>.</p>
      *
      * @return a boolean.
      */
@@ -243,7 +252,8 @@ public class Polymer extends MSGroup {
     }
 
     /**
-     * <p>Getter for the field <code>chainID</code>.</p>
+     * <p>Getter for the field
+     * <code>chainID</code>.</p>
      *
      * @return a {@link java.lang.Character} object.
      */
@@ -255,7 +265,7 @@ public class Polymer extends MSGroup {
      * Get the Phi Psi List for the Polymer
      *
      * @return An ArrayList of Dihedral objects representing the Phi/Psi angles
-     *         of the Polymer, useful for creating Ramachandran plots
+     * of the Polymer, useful for creating Ramachandran plots
      */
     public List<ArrayList<Torsion>> getPhiPsiList() {
         MSNode dihedrals;
@@ -364,12 +374,12 @@ public class Polymer extends MSGroup {
             try {
                 Residue.NA1.valueOf(resName);
                 residue = new Residue(resName, resNum, Residue.ResidueType.NA,
-                                      chainID, getName());
+                        chainID, getName());
             } catch (Exception e) {
                 try {
                     Residue.AA1.valueOf(resName);
                     residue = new Residue(resName, resNum, Residue.ResidueType.AA,
-                                          chainID, getName());
+                            chainID, getName());
                 } catch (Exception ex) {
                 }
             }
@@ -377,34 +387,38 @@ public class Polymer extends MSGroup {
             try {
                 Residue.NA3.valueOf(resName);
                 residue = new Residue(resName, resNum, Residue.ResidueType.NA,
-                                      chainID, getName());
+                        chainID, getName());
             } catch (Exception e) {
                 try {
                     Residue.AA3.valueOf(resName);
                     residue = new Residue(resName, resNum, Residue.ResidueType.AA,
-                                          chainID, getName());
+                            chainID, getName());
                 } catch (Exception ex) {
                 }
             }
         }
         if (residue == null) {
             residue = new Residue(resName, resNum, Residue.ResidueType.UNK,
-                                  chainID, getName());
+                    chainID, getName());
         }
         addMSNode(residue);
         return residue;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int hashCode() {
         return hash(SEED, polymerNumber);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setColor(RendererCache.ColorModel newColorModel, Color3f color,
-                         Material mat) {
+            Material mat) {
         // If coloring by Polymer, pass this Polymer's color
         if (newColorModel == RendererCache.ColorModel.POLYMER) {
             int index = polymerNumber % 10;
@@ -422,7 +436,8 @@ public class Polymer extends MSGroup {
     }
 
     /**
-     * <p>Setter for the field <code>link</code>.</p>
+     * <p>Setter for the field
+     * <code>link</code>.</p>
      *
      * @param t a boolean.
      */
@@ -430,10 +445,12 @@ public class Polymer extends MSGroup {
         link = t;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setView(RendererCache.ViewModel newViewModel,
-                        List<BranchGroup> newShapes) {
+            List<BranchGroup> newShapes) {
         for (ListIterator li = getAtomNodeList().listIterator(); li.hasNext();) {
             MSGroup atomGroup = (MSGroup) li.next();
             atomGroup.setView(newViewModel, newShapes);

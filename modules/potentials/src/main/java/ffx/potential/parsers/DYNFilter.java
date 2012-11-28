@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.potential.parsers;
 
@@ -33,14 +35,13 @@ import ffx.crystal.Crystal;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public class DYNFilter {
 
     private static final Logger logger = Logger.getLogger(DYNFilter.class.getName());
-
     private String label;
-    
+
     /**
      * <p>Constructor for DYNFilter.</p>
      *
@@ -75,7 +76,7 @@ public class DYNFilter {
                 return false;
             }
             int numatoms = Integer.parseInt(tokens[0]);
-            
+
             // Box size and angles
             br.readLine();
             data = br.readLine().trim();
@@ -188,7 +189,7 @@ public class DYNFilter {
             bw = new BufferedWriter(fw);
 
             bw.write(" Number of Atoms and Title :\n");
-            assert(x.length % 3 == 0);
+            assert (x.length % 3 == 0);
             int numberOfAtoms = x.length / 3;
             String output = format("%7d  %s\n", numberOfAtoms, label);
             bw.write(output);

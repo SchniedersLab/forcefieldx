@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.potential.bonded;
 
@@ -36,7 +38,7 @@ import static ffx.potential.parameters.AngleType.*;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public class Angle extends BondedTerm implements Comparable<Angle> {
 
@@ -64,10 +66,8 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
     /**
      * Angle constructor
      *
-     * @param b1
-     *            Bond that forms one leg of the angle
-     * @param b2
-     *            Bond that forms the other leg of the angle
+     * @param b1 Bond that forms one leg of the angle
+     * @param b2 Bond that forms the other leg of the angle
      */
     public Angle(Bond b1, Bond b2) {
         super();
@@ -91,7 +91,8 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
     }
 
     /**
-     * <p>Setter for the field <code>angleMode</code>.</p>
+     * <p>Setter for the field
+     * <code>angleMode</code>.</p>
      *
      * @param mode a {@link ffx.potential.bonded.Angle.AngleMode} object.
      * @param a4 a {@link ffx.potential.bonded.Atom} object.
@@ -129,7 +130,8 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
     }
 
     /**
-     * <p>Setter for the field <code>rigidScale</code>.</p>
+     * <p>Setter for the field
+     * <code>rigidScale</code>.</p>
      *
      * @param rigidScale a double.
      */
@@ -151,8 +153,7 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
      * atom of the opposite leg is returned. These atoms are said to be 1-3 to
      * each other.
      *
-     * @param a
-     *            Atom
+     * @param a Atom
      * @return Atom
      */
     public Atom get1_3(Atom a) {
@@ -168,10 +169,9 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
     /**
      * Finds the common bond between <b>this</b> angle and another
      *
-     * @param a
-     *            An Angle that may have a common bond with <b>this</b> angle
+     * @param a An Angle that may have a common bond with <b>this</b> angle
      * @return The common Bond between this Angle and Angle a, or null if this
-     *         == a or no common bond exists
+     * == a or no common bond exists
      */
     public Bond getCommonBond(Angle a) {
         // Comparing an angle to itself returns null
@@ -197,10 +197,9 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
     /**
      * Finds the other bond that makes up <b>this</b> angle
      *
-     * @param b
-     *            The bond to find the opposite of
+     * @param b The bond to find the opposite of
      * @return The other Bond that makes up this Angle, or null if Bond b is not
-     *         part of this Angle
+     * part of this Angle
      */
     public Bond getOtherBond(Bond b) {
         if (b == bonds[0]) {
@@ -242,8 +241,7 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
     /**
      * Evaluate this Angle energy.
      *
-     * @param gradient
-     *            Evaluate the gradient.
+     * @param gradient Evaluate the gradient.
      * @return Returns the energy.
      */
     public double energy(boolean gradient) {
@@ -267,7 +265,7 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
                     energy = units * rigidScale * angleType.forceConstant * dv2 * (1.0 + cubic * dv + quartic * dv2 + quintic * dv3 + sextic * dv4);
                     if (gradient) {
                         double deddt = units * rigidScale * angleType.forceConstant * dv
-                                       * toDegrees(2.0 + 3.0 * cubic * dv + 4.0 * quartic * dv2 + 5.0 * quintic * dv3 + 6.0 * sextic * dv4);
+                                * toDegrees(2.0 + 3.0 * cubic * dv + 4.0 * quartic * dv2 + 5.0 * quintic * dv3 + 6.0 * sextic * dv4);
                         double rp = r(p);
                         rp = max(rp, 0.000001);
                         double terma = -deddt / (rab2 * rp);
@@ -390,7 +388,9 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
         return String.format("%s  (%7.1f,%7.2f)", id, value, energy);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int compareTo(Angle a) {
         if (a == null) {
@@ -447,13 +447,25 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
      * Vector v10 cross v30.
      */
     protected static final double p[] = new double[3];
-    /** Constant <code>ip=new double[3]</code> */
+    /**
+     * Constant
+     * <code>ip=new double[3]</code>
+     */
     protected static final double ip[] = new double[3];
-    /** Constant <code>jp=new double[3]</code> */
+    /**
+     * Constant
+     * <code>jp=new double[3]</code>
+     */
     protected static final double jp[] = new double[3];
-    /** Constant <code>kp=new double[3]</code> */
+    /**
+     * Constant
+     * <code>kp=new double[3]</code>
+     */
     protected static final double kp[] = new double[3];
-    /** Constant <code>lp=new double[3]</code> */
+    /**
+     * Constant
+     * <code>lp=new double[3]</code>
+     */
     protected static final double lp[] = new double[3];
     /**
      * Gradient on atom 0.
@@ -467,7 +479,10 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
      * Gradient on Atom 2.
      */
     protected static final double g2[] = new double[3];
-    /** Constant <code>g3=new double[3]</code> */
+    /**
+     * Constant
+     * <code>g3=new double[3]</code>
+     */
     protected static final double g3[] = new double[3];
     private static final double ded0[] = new double[3];
     private static final double ded2[] = new double[3];

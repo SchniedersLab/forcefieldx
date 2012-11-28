@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.crystal;
 
@@ -141,34 +143,34 @@ public class ReflectionListTest {
     }
 
     /*
-    @Test
-    public void listreflections() {
-    int nhkl = 0;
-    int nbin[] = new int[10];
-    for (HKL i : i222list.hkllist) {
-    System.out.println(nhkl + ": " + i.h() + " " + i.k() + " " + i.l()
-    + " eps: " + i.epsilon()
-    + " allowed: " + i.allowed()
-    + " bin: " + i.bin
-    + " res: " + Crystal.res(i222list.crystal, i));
-    nhkl++;
-    nbin[i.bin]++;
-    }
-    System.out.println("bin  # HKL");
-    for (int i = 0; i < 10; i++) {
-    System.out.println(i + "  " + nbin[i]);
-    }
-    }
+     @Test
+     public void listreflections() {
+     int nhkl = 0;
+     int nbin[] = new int[10];
+     for (HKL i : i222list.hkllist) {
+     System.out.println(nhkl + ": " + i.h() + " " + i.k() + " " + i.l()
+     + " eps: " + i.epsilon()
+     + " allowed: " + i.allowed()
+     + " bin: " + i.bin
+     + " res: " + Crystal.res(i222list.crystal, i));
+     nhkl++;
+     nbin[i.bin]++;
+     }
+     System.out.println("bin  # HKL");
+     for (int i = 0; i < 10; i++) {
+     System.out.println(i + "  " + nbin[i]);
+     }
+     }
      */
 
     /*
-    for (Iterator i = hkls.hkls.entrySet().iterator(); i.hasNext(); nhkl++) {
-    Map.Entry ei = (Map.Entry) i.next();
-    Object key = ei.getKey();
-    HKL ih = (HKL) ei.getValue();
+     for (Iterator i = hkls.hkls.entrySet().iterator(); i.hasNext(); nhkl++) {
+     Map.Entry ei = (Map.Entry) i.next();
+     Object key = ei.getKey();
+     HKL ih = (HKL) ei.getValue();
 
-    System.out.println(nhkl + ": " + key + " " + ih.h() + " " + ih.k() + " " + ih.l()
-    + " eps: " + ih.epsilon() + " res: " + Crystal.res(crystal, ih));
-    }
+     System.out.println(nhkl + ": " + key + " " + ih.h() + " " + ih.k() + " " + ih.l()
+     + " eps: " + ih.epsilon() + " res: " + Crystal.res(crystal, ih));
+     }
      */
 }

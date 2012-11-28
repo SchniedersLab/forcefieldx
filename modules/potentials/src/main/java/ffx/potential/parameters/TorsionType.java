@@ -1,6 +1,9 @@
 /**
- * Title: Force Field X Description: Force Field X - Software for Molecular
- * Biophysics Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
@@ -30,7 +33,7 @@ import static java.lang.Math.*;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public final class TorsionType extends BaseType implements Comparator<String> {
 
@@ -72,7 +75,7 @@ public final class TorsionType extends BaseType implements Comparator<String> {
      * @param periodicity double[]
      */
     public TorsionType(int atomClasses[], double amplitude[], double phase[],
-                       int periodicity[]) {
+            int periodicity[]) {
         super(ForceField.ForceFieldType.TORSION, sortKey(atomClasses));
         this.atomClasses = atomClasses;
         int max = 1;
@@ -160,7 +163,7 @@ public final class TorsionType extends BaseType implements Comparator<String> {
         }
         for (int i = 0; i < amplitude.length; i++) {
             torsionBuffer.append(String.format(" %7.3f %7.3f %1d",
-                                               amplitude[i], phase[i], periodicity[i]));
+                    amplitude[i], phase[i], periodicity[i]));
         }
         return torsionBuffer.toString();
     }

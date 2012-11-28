@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.utilities;
 
@@ -27,7 +29,8 @@ import java.lang.reflect.Array;
  * @author Timothy Fenn
  */
 /**
- * Collected methods which allow easy implementation of <code>hashCode</code>.
+ * Collected methods which allow easy implementation of
+ * <code>hashCode</code>.
  *
  * Example use case:
  * <pre>
@@ -42,14 +45,15 @@ import java.lang.reflect.Array;
  * </pre>
  *
  * @author Michael J. Schnieders
- * @version $Id: $
+ *
  */
 public final class HashCodeUtil {
 
     /**
-     * An initial value for a <code>hashCode</code>, to which is added contributions
-     * from fields. Using a non-zero value decreases collisons of <code>hashCode</code>
-     * values.
+     * An initial value for a
+     * <code>hashCode</code>, to which is added contributions from fields. Using
+     * a non-zero value decreases collisons of
+     * <code>hashCode</code> values.
      */
     public static final int SEED = 23;
 
@@ -126,10 +130,12 @@ public final class HashCodeUtil {
     }
 
     /**
-     * <code>aObject</code> is a possibly-null object field, and possibly an array.
+     * <code>aObject</code> is a possibly-null object field, and possibly an
+     * array.
      *
-     * If <code>aObject</code> is an array, then each element may be a primitive
-     * or a possibly-null object.
+     * If
+     * <code>aObject</code> is an array, then each element may be a primitive or
+     * a possibly-null object.
      *
      * @param aSeed a int.
      * @param aObject a {@link java.lang.Object} object.

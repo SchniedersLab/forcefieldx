@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.potential.bonded;
 
@@ -36,7 +38,7 @@ import static ffx.potential.parameters.TorsionTorsionType.units;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public class TorsionTorsion extends BondedTerm {
 
@@ -86,38 +88,82 @@ public class TorsionTorsion extends BondedTerm {
         setID_Key(false);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void update() {
         energy(false);
     }
-    /** Constant <code>v01=new double[3]</code> */
+    /**
+     * Constant
+     * <code>v01=new double[3]</code>
+     */
     protected static final double v01[] = new double[3];
-    /** Constant <code>v12=new double[3]</code> */
+    /**
+     * Constant
+     * <code>v12=new double[3]</code>
+     */
     protected static final double v12[] = new double[3];
-    /** Constant <code>v23=new double[3]</code> */
+    /**
+     * Constant
+     * <code>v23=new double[3]</code>
+     */
     protected static final double v23[] = new double[3];
-    /** Constant <code>v34=new double[3]</code> */
+    /**
+     * Constant
+     * <code>v34=new double[3]</code>
+     */
     protected static final double v34[] = new double[3];
-    /** Constant <code>v02=new double[3]</code> */
+    /**
+     * Constant
+     * <code>v02=new double[3]</code>
+     */
     protected static final double[] v02 = new double[3];
-    /** Constant <code>v13=new double[3]</code> */
+    /**
+     * Constant
+     * <code>v13=new double[3]</code>
+     */
     protected static final double[] v13 = new double[3];
-    /** Constant <code>v24=new double[3]</code> */
+    /**
+     * Constant
+     * <code>v24=new double[3]</code>
+     */
     protected static final double[] v24 = new double[3];
-    /** Constant <code>t=new double[3]</code> */
+    /**
+     * Constant
+     * <code>t=new double[3]</code>
+     */
     protected static final double t[] = new double[3];
-    /** Constant <code>u=new double[3]</code> */
+    /**
+     * Constant
+     * <code>u=new double[3]</code>
+     */
     protected static final double u[] = new double[3];
-    /** Constant <code>v=new double[3]</code> */
+    /**
+     * Constant
+     * <code>v=new double[3]</code>
+     */
     protected static final double v[] = new double[3];
-    /** Constant <code>x1=new double[3]</code> */
+    /**
+     * Constant
+     * <code>x1=new double[3]</code>
+     */
     protected static final double[] x1 = new double[3];
-    /** Constant <code>x2=new double[3]</code> */
+    /**
+     * Constant
+     * <code>x2=new double[3]</code>
+     */
     protected static final double[] x2 = new double[3];
-    /** Constant <code>tu=new double[3]</code> */
+    /**
+     * Constant
+     * <code>tu=new double[3]</code>
+     */
     protected static final double tu[] = new double[3];
-    /** Constant <code>uv=new double[3]</code> */
+    /**
+     * Constant
+     * <code>uv=new double[3]</code>
+     */
     protected static final double uv[] = new double[3];
     /**
      * Array of 4 spline energies surrounding the actual Torsion-Torsion
@@ -155,14 +201,16 @@ public class TorsionTorsion extends BondedTerm {
      * Gradient on Atom 3.
      */
     protected static final double g3[] = new double[3];
-    /** Constant <code>g4=new double[3]</code> */
+    /**
+     * Constant
+     * <code>g4=new double[3]</code>
+     */
     protected static final double g4[] = new double[3];
 
     /**
      * Evaluate the Torsion-Torsion energy.
      *
-     * @param gradient
-     *            Evaluate the gradient.
+     * @param gradient Evaluate the gradient.
      * @return Returns the energy.
      */
     public double energy(boolean gradient) {
@@ -346,7 +394,7 @@ public class TorsionTorsion extends BondedTerm {
      * Check for inversion of the central atom if it is chiral.
      *
      * @return The sign convention - if negative the torsion angle signs are
-     *         inverted.
+     * inverted.
      */
     protected double chktor() {
         ArrayList<Bond> bnds = atoms[2].getBonds();

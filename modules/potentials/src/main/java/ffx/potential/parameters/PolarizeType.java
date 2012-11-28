@@ -1,6 +1,9 @@
 /**
- * Title: Force Field X Description: Force Field X - Software for Molecular
- * Biophysics Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
@@ -29,7 +32,7 @@ import static java.lang.Math.pow;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public final class PolarizeType extends BaseType implements Comparator<String> {
 
@@ -64,7 +67,7 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
      * @param thole a double.
      */
     public PolarizeType(int atomType, double polarizability, double thole,
-                        int polarizationGroup[]) {
+            int polarizationGroup[]) {
         super(ForceField.ForceFieldType.POLARIZE, Integer.toString(atomType));
         this.type = atomType;
         this.thole = thole;

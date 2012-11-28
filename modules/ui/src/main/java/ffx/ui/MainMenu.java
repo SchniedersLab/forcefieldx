@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.ui;
 
@@ -38,7 +40,7 @@ import ffx.ui.properties.FFXLocale;
  * The MainMenu class creates the Force Field X Menu Bar
  *
  * @author Michael J. Schnieders
- * @version $Id: $
+ *
  */
 public class MainMenu extends JMenuBar {
 
@@ -306,7 +308,8 @@ public class MainMenu extends JMenuBar {
          */
         Action a = addMenuItem(helpMenu, icons + "help", "HelpContents", 'H', KeyEvent.VK_HELP, mainPanel);
         /**
-         * Fix the ACCELERATOR_KEY for the Help menu item; no modifiers will be used.
+         * Fix the ACCELERATOR_KEY for the Help menu item; no modifiers will be
+         * used.
          */
         a.putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_HELP, 0));
 
@@ -327,7 +330,6 @@ public class MainMenu extends JMenuBar {
             String actionCommand, int mnemonic, int accelerator,
             final ActionListener actionListener) {
         Action a = new AbstractAction() {
-
             @Override
             public void actionPerformed(ActionEvent e) {
                 actionListener.actionPerformed(e);
@@ -346,7 +348,6 @@ public class MainMenu extends JMenuBar {
         final JRadioButtonMenuItem menuItem = new JRadioButtonMenuItem();
 
         Action a = new AbstractAction() {
-
             @Override
             public void actionPerformed(ActionEvent e) {
                 /**
@@ -374,7 +375,6 @@ public class MainMenu extends JMenuBar {
         final JCheckBoxMenuItem menuItem = new JCheckBoxMenuItem();
 
         Action a = new AbstractAction() {
-
             @Override
             public void actionPerformed(ActionEvent e) {
                 /**

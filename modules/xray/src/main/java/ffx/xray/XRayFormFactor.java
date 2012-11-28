@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.xray;
 
@@ -37,28 +39,30 @@ import ffx.xray.RefinementMinimize.RefinementMode;
 import static ffx.numerics.VectorMath.*;
 
 /**
- * This implementation uses the coefficients from Su and Coppens and
- * 3 coefficient parameters derived from CCTBX.
+ * This implementation uses the coefficients from Su and Coppens and 3
+ * coefficient parameters derived from CCTBX.
  *
  * @author Tim Fenn<br>
- * 
+ *
  * @see <a href="http://dx.doi.org/10.1107/S0108767397004558" target="_blank">
  * Z. Su and P. Coppens, Acta Cryst. (1997). A53, 749-762</a>
  *
  * @see <a href="http://dx.doi.org/10.1107/S010876739800124X" target="_blank">
  * Z. Su and P. Coppens, Acta Cryst. (1998). A54, 357</a>
  *
- * @see <a href="http://harker.chem.buffalo.edu/group/groupindex.html" target="_blank">
- * The Coppens lab website (Source data)</a>
+ * @see <a href="http://harker.chem.buffalo.edu/group/groupindex.html"
+ * target="_blank"> The Coppens lab website (Source data)</a>
  *
- * @see <a href="http://www.iucr.org/resources/commissions/crystallographic-computing/newsletters/3" target="_blank">
- * R. W. Grosse-Kunstleve, N. K. Sauter and P. D. Adams.
- * Newsletter of the IUCr Commission on Crystallographic Computing. (2004). 3, 22-31.</a>
+ * @see <a
+ * href="http://www.iucr.org/resources/commissions/crystallographic-computing/newsletters/3"
+ * target="_blank"> R. W. Grosse-Kunstleve, N. K. Sauter and P. D. Adams.
+ * Newsletter of the IUCr Commission on Crystallographic Computing. (2004). 3,
+ * 22-31.</a>
  *
  * @see <a href="http://dx.doi.org/10.1107/S0907444909022707" target="_blank">
- * M. J. Schnieders, T. D. Fenn, V. S. Pande and A. T. Brunger,
- * Acta Cryst. (2009). D65 952-965.</a>
- * @version $Id: $
+ * M. J. Schnieders, T. D. Fenn, V. S. Pande and A. T. Brunger, Acta Cryst.
+ * (2009). D65 952-965.</a>
+ *
  */
 public final class XRayFormFactor implements FormFactor {
 
@@ -1001,7 +1005,9 @@ public final class XRayFormFactor implements FormFactor {
         return occ * sum;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double rho(double f, double lambda, double xyz[]) {
         return rho_n(f, lambda, xyz, n);
@@ -1032,7 +1038,9 @@ public final class XRayFormFactor implements FormFactor {
         return f + (lambda * occ * twopi32 * sum);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void rho_grad(double xyz[], double dfc, RefinementMode refinementmode) {
         rho_grad_n(xyz, n, dfc, refinementmode);
@@ -1044,7 +1052,8 @@ public final class XRayFormFactor implements FormFactor {
      * @param xyz an array of double.
      * @param ng a int.
      * @param dfc a double.
-     * @param refinementmode a {@link ffx.xray.RefinementMinimize.RefinementMode} object.
+     * @param refinementmode a
+     * {@link ffx.xray.RefinementMinimize.RefinementMode} object.
      */
     public void rho_grad_n(double xyz[], int ng, double dfc, RefinementMode refinementmode) {
         assert (ng > 0 && ng <= n);
@@ -1154,13 +1163,17 @@ public final class XRayFormFactor implements FormFactor {
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void update(double xyz[]) {
         update(xyz, u2b(uadd));
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void update(double xyz[], double badd) {
         this.xyz[0] = xyz[0];

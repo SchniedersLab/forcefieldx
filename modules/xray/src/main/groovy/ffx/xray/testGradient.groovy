@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
 // Groovy Imports
@@ -84,7 +86,7 @@ if (options.a) {
 }
 
 if (options.n) {
-   atomicNum = Integer.parseInt(options.n);
+    atomicNum = Integer.parseInt(options.n);
 }
 
 // Load the finite-difference step size in Angstroms.
@@ -122,7 +124,7 @@ Atom[] atoms = diffractiondata.getAtomArray();
 int natoms = atoms.length;
 
 if (atomID >= natoms) {
-   atomID = 0;
+    atomID = 0;
 }
 
 logger.info("atom list:");
@@ -136,7 +138,7 @@ for (int i = atomID; i < natoms; i++) {
     Atom atom = atoms[i];
 
     if (atomicNum > 0 && atom.getAtomType().atomicNumber != atomicNum) {
-       continue;
+        continue;
     }
 
     atom.getXYZGradient(gxyz);
@@ -193,9 +195,9 @@ for (int i = atomID; i < natoms; i++) {
 
     double len = Math.sqrt(dx * dx + dy * dy + dz * dz);
     logger.info("atom " + i + ": (" + atom.getXYZIndex() + ") " + atom.toString()
-	   	+ String.format(" %s: %10.6f.", len > gradientTolerance ? "FAILED" : "passed", len)
-		+ String.format("\n Analytic XYZ: (%12.4f, %12.4f, %12.4f)", gxyz[0], gxyz[1], gxyz[2])
-		+ String.format("\n  Numeric XYZ: (%12.4f, %12.4f, %12.4f)", fd[0], fd[1], fd[2]));
+        + String.format(" %s: %10.6f.", len > gradientTolerance ? "FAILED" : "passed", len)
+        + String.format("\n Analytic XYZ: (%12.4f, %12.4f, %12.4f)", gxyz[0], gxyz[1], gxyz[2])
+        + String.format("\n  Numeric XYZ: (%12.4f, %12.4f, %12.4f)", fd[0], fd[1], fd[2]));
 
     // B
     if (atom.getAnisou() == null) {
@@ -213,9 +215,9 @@ for (int i = atomID; i < natoms; i++) {
 
 	double lenb = Math.sqrt(db * db);
 	logger.info("atom " + i + ": (" + atom.getXYZIndex() + ") " + atom.toString()
-		    + String.format(" %s: %10.6f.", lenb > gradientTolerance ? "FAILED" : "passed", lenb)
-		    + String.format("\n Analytic B: (%12.4f)", bg)
-		    + String.format("\n  Numeric B: (%12.4f)\n", fdb));
+            + String.format(" %s: %10.6f.", lenb > gradientTolerance ? "FAILED" : "passed", lenb)
+            + String.format("\n Analytic B: (%12.4f)", bg)
+            + String.format("\n  Numeric B: (%12.4f)\n", fdb));
     } else {
 	double[] anisou = atom.getAnisou();
 	for (int j = 0; j < 6; j++) {
@@ -233,13 +235,13 @@ for (int i = atomID; i < natoms; i++) {
 	}
 
 	double lenb = Math.sqrt(danisou[0] * danisou[0] + danisou[1] * danisou[1]
-				+ danisou[2] * danisou[2] + danisou[3] * danisou[3]
-				+ danisou[4] * danisou[4] + danisou[5] * danisou[5]);
+            + danisou[2] * danisou[2] + danisou[3] * danisou[3]
+            + danisou[4] * danisou[4] + danisou[5] * danisou[5]);
 	logger.info("atom " + i + ": (" + atom.getXYZIndex() + ") " + atom.toString()
-                    + String.format(" %s: %10.6f.", lenb > gradientTolerance ? "FAILED" : "passed", lenb)
-                    + String.format("\n Analytic B(anis): (%12.4f, %12.4f, %12.4f, %12.4f, %12.4f, %12.4f)",
-				    ganisou[0], ganisou[1], ganisou[2], ganisou[3], ganisou[4], ganisou[5])
-                    + String.format("\n  Numeric B(anis): (%12.4f, %12.4f, %12.4f, %12.4f, %12.4f, %12.4f)\n",
-				    fdanisou[0], fdanisou[1], fdanisou[2], fdanisou[3], fdanisou[4], fdanisou[5]));
+            + String.format(" %s: %10.6f.", lenb > gradientTolerance ? "FAILED" : "passed", lenb)
+            + String.format("\n Analytic B(anis): (%12.4f, %12.4f, %12.4f, %12.4f, %12.4f, %12.4f)",
+                ganisou[0], ganisou[1], ganisou[2], ganisou[3], ganisou[4], ganisou[5])
+            + String.format("\n  Numeric B(anis): (%12.4f, %12.4f, %12.4f, %12.4f, %12.4f, %12.4f)\n",
+                fdanisou[0], fdanisou[1], fdanisou[2], fdanisou[3], fdanisou[4], fdanisou[5]));
     }
 }

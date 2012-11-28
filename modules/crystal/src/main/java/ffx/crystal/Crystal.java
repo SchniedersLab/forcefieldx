@@ -1,6 +1,9 @@
 /**
- * Title: Force Field X Description: Force Field X - Software for Molecular
- * Biophysics Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
@@ -41,10 +44,10 @@ import static ffx.numerics.VectorMath.*;
  * apply the minimum image convention and space group symmetry operators.
  *
  * @author Michael J. Schnieders
- * 
+ *
  * @since 1.0
- * 
- * @version $Id: $
+ *
+ *
  */
 public class Crystal {
 
@@ -541,11 +544,11 @@ public class Crystal {
         if (obj == null) {
             return false;
         }
-        
+
         if (!(obj instanceof Crystal)) {
             return false;
         }
-        
+
         if (this == obj) {
             return true;
         }
@@ -1355,12 +1358,13 @@ public class Crystal {
 
     /**
      * A String containing the unit cell parameters.
-     * @return A string with the unit cell parameters. 
+     *
+     * @return A string with the unit cell parameters.
      */
-    public String toShortString(){
-        return String.format("%6.2f %6.2f %6.2f %6.2f %6.2f %6.2f", a,b,c,alpha,beta,gamma);
+    public String toShortString() {
+        return String.format("%6.2f %6.2f %6.2f %6.2f %6.2f %6.2f", a, b, c, alpha, beta, gamma);
     }
-    
+
     /**
      * {@inheritDoc}
      */

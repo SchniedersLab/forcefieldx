@@ -1,7 +1,9 @@
 /**
- * Title: Force Field X 
- * Description: Force Field X - Software for Molecular
- * Biophysics Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
@@ -32,14 +34,14 @@ import static ffx.crystal.SpaceGroup.LaueSystem.*;
  * distinct space groups in three dimensions.
  *
  * @author Michael J. Schnieders
- * 
+ *
  * @see <a href="http://it.iucr.org/Ab/">International Tables for
  * Crystallography Volume A: Space-group symmetry</a>
  * @see <a href="http://www.ccp4.ac.uk/html/symlib.html">CCP4 symlib</a>
- * 
+ *
  * @since 1.0
- * 
- * @version $Id: $
+ *
+ *
  */
 public class SpaceGroup {
 

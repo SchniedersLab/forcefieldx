@@ -5,12 +5,12 @@
     xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
     <properties>
         <title>Download</title>
-        <author email="michael.schnieders@gmail.com">Michael J. Schnieders</author>
+        <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
     </properties>
     <body>
         <section name="Download">
             <p>A single Force Field X distribution supports Linux, Mac OS X and Microsoft Windows
-            operating systems for both 32-Bit and 64-Bit hardware.
+                operating systems for both 32-Bit and 64-Bit hardware.
             </p>
             <p>The distribution includes:</p>
             <ul>
@@ -32,27 +32,27 @@
                         </tr>
                     </thead>
                     <tbody>
-                    <tr>
-                        <td>Force Field X ${project.version} (Binary tar.gz)</td>
-                        <td>${timestamp}</td>
-                        <td>
-                            <a href="ffx-${project.version}-bin.tar.gz">ffx-${project.version}-bin.tar.gz</a>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Force Field X ${project.version} (Binary tar.bz2)</td>
-                        <td>${timestamp}</td>
-                        <td>
-                            <a href="ffx-${project.version}-bin.tar.bz2">ffx-${project.version}-bin.tar.bz2</a>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Force Field X ${project.version} (Binary zip)</td>
-                        <td>${timestamp}</td>
-                        <td>
-                            <a href="ffx-${project.version}-bin.zip">ffx-${project.version}-bin.zip</a>
-                        </td>
-                    </tr>
+                        <tr>
+                            <td>Force Field X ${project.version} (Binary tar.gz)</td>
+                            <td>${timestamp}</td>
+                            <td>
+                                <a href="ffx-${project.version}-bin.tar.gz">ffx-${project.version}-bin.tar.gz</a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Force Field X ${project.version} (Binary tar.bz2)</td>
+                            <td>${timestamp}</td>
+                            <td>
+                                <a href="ffx-${project.version}-bin.tar.bz2">ffx-${project.version}-bin.tar.bz2</a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Force Field X ${project.version} (Binary zip)</td>
+                            <td>${timestamp}</td>
+                            <td>
+                                <a href="ffx-${project.version}-bin.zip">ffx-${project.version}-bin.zip</a>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </subsection>

@@ -1,6 +1,9 @@
 /**
- * Title: Force Field X Description: Force Field X - Software for Molecular
- * Biophysics. Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
@@ -38,7 +41,7 @@ import edu.rit.pj.ParallelTeam;
  *
  * @author Michal J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public class Complex3DParallel {
 
@@ -555,12 +558,10 @@ public class Complex3DParallel {
         // Parallel Array Initialization.
         try {
             parallelTeam.execute(new ParallelRegion() {
-
                 @Override
                 public void run() {
                     try {
                         execute(0, dim - 1, new IntegerForLoop() {
-
                             @Override
                             public void run(final int lb, final int ub) {
                                 Random randomNumberGenerator = new Random(1);

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<actions>
+    <action>
+        <actionName>CUSTOM-Run CUDA 3D FFT</actionName>
+        <displayName>Run CUDA 3D FFT</displayName>
+        <recursive>false</recursive>
+        <goals>
+            <goal>exec:exec</goal>
+        </goals>
+    </action>
+</actions>

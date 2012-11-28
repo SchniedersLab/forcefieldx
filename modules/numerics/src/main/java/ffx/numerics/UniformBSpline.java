@@ -1,37 +1,38 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.numerics;
 
 /**
- * Static methods to generate and differentiate uniform b-Splines.
- * <p>
- * C. de Boor, A Practical Guide to Splines. (Springer, New York, 2001)
+ * Static methods to generate and differentiate uniform b-Splines. <p> C. de
+ * Boor, A Practical Guide to Splines. (Springer, New York, 2001)
  *
  * @author Michael J. Schnieders
  * @see <a href="http://www.wikipedia.org/wiki/B-spline"
- *      target="_blank">b-Splines at Wikipedia</a><br>
- *      <a href="http://mathworld.wolfram.com/B-Spline.html"
- *      target="_blank">b-Splines at MathWorld</a><br>
+ * target="_blank">b-Splines at Wikipedia</a><br> <a
+ * href="http://mathworld.wolfram.com/B-Spline.html" target="_blank">b-Splines
+ * at MathWorld</a><br>
  * @since 1.0
- * @version $Id: $
+ *
  */
 public class UniformBSpline {
 
@@ -41,13 +42,13 @@ public class UniformBSpline {
     /**
      * Generate uniform b-Spline coefficients.
      *
-     * @param x     A double in the range [0.0, 1.0].
-     * @param order     b-Spline order (degree + 1).
-     * @param coefficients  b-Spline coefficients (n coefficients for order n).
+     * @param x A double in the range [0.0, 1.0].
+     * @param order b-Spline order (degree + 1).
+     * @param coefficients b-Spline coefficients (n coefficients for order n).
      * @since 1.0
      */
     public static void bSpline(final double x, final int order,
-                               final double coefficients[]) {
+            final double coefficients[]) {
         // Initialization to get to a linear b-Spline (degree 1).
         coefficients[0] = 1.0 - x;
         coefficients[1] = x;
@@ -60,19 +61,15 @@ public class UniformBSpline {
     /**
      * Uniform b-Spline recursion.
      *
-     * @param x
-     *            A double in the range [0.0, 1.0].
-     * @param order
-     *            Current b-Spline order.
-     * @param coefficients
-     *            Current b-Spline coefficients.
-     * @param newCoefficients
-     *            New b-Spline coefficients for order + 1.
+     * @param x A double in the range [0.0, 1.0].
+     * @param order Current b-Spline order.
+     * @param coefficients Current b-Spline coefficients.
+     * @param newCoefficients New b-Spline coefficients for order + 1.
      *
      * @since 1.0
      */
     private static void bSplineRecur(final double x, final int order,
-                                     final double coefficients[], final double newCoefficients[]) {
+            final double coefficients[], final double newCoefficients[]) {
         double div, k1mw;
         int i, km1, kmi;
         div = 1.0 / order;
@@ -89,20 +86,19 @@ public class UniformBSpline {
     /**
      * Generate uniform b-Spline coefficients and their derivatives.
      *
-     * @param x     A double in the range [0.0, 1.0].
-     * @param order     b-Spline order (degree + 1).
-     * @param deriveOrder Derivative order.<br>
-     *                    0 = no derivative.<br>
-     *                    1 = 1rst derivative.<br>
-     *                    It must not be greater than the b-Spline degree (order - 1).<br>
-     *                    The method is currently limited to deriveOrder <= 5.<br>
-     * @param coefficients  The b-Spline coefficient array of size [order][deriveOrder + 1].
-     * @param work  A work array of size [order][order].
+     * @param x A double in the range [0.0, 1.0].
+     * @param order b-Spline order (degree + 1).
+     * @param deriveOrder Derivative order.<br> 0 = no derivative.<br> 1 = 1rst
+     * derivative.<br> It must not be greater than the b-Spline degree (order -
+     * 1).<br> The method is currently limited to deriveOrder <= 5.<br>
+     * @param coefficients The b-Spline coefficient array of size
+     * [order][deriveOrder + 1].
+     * @param work A work array of size [order][order].
      * @since 1.0
      */
     public static void bSplineDerivatives(final double x, final int order,
-                                          final int deriveOrder, final double coefficients[][],
-                                          final double work[][]) {
+            final int deriveOrder, final double coefficients[][],
+            final double work[][]) {
 
         assert (deriveOrder <= order - 1 && deriveOrder <= 5);
 
@@ -166,10 +162,8 @@ public class UniformBSpline {
     /**
      * Differentiate a uniform b-Spline in place.
      *
-     * @param coefficients
-     *            B-Spline coefficients.
-     * @param order
-     *            B-Spline order.
+     * @param coefficients B-Spline coefficients.
+     * @param order B-Spline order.
      *
      * @since 1.0
      */

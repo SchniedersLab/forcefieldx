@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.potential.parsers;
 
@@ -48,7 +50,7 @@ import ffx.potential.parameters.ForceField;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public class XYZFilter extends SystemFilter {
 
@@ -119,9 +121,10 @@ public class XYZFilter extends SystemFilter {
      * @param files a {@link java.util.List} object.
      * @param system a {@link ffx.potential.bonded.MolecularAssembly} object.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * @param properties a
+     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
      */
-    public XYZFilter(List<File> files, MolecularAssembly system, 
+    public XYZFilter(List<File> files, MolecularAssembly system,
             ForceField forceField, CompositeConfiguration properties) {
         super(files, system, forceField, properties);
         this.fileType = FileType.XYZ;
@@ -133,7 +136,8 @@ public class XYZFilter extends SystemFilter {
      * @param file a {@link java.io.File} object.
      * @param system a {@link ffx.potential.bonded.MolecularAssembly} object.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * @param properties a
+     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
      */
     public XYZFilter(File file, MolecularAssembly system,
             ForceField forceField, CompositeConfiguration properties) {
@@ -314,9 +318,9 @@ public class XYZFilter extends SystemFilter {
                 }
             }
             /*
-            if (getType() == FileType.ARC) {
-            return readtrajectory();
-            } */
+             if (getType() == FileType.ARC) {
+             return readtrajectory();
+             } */
             return true;
         } catch (IOException e) {
             logger.severe(e.toString());
@@ -351,7 +355,7 @@ public class XYZFilter extends SystemFilter {
 
             snapShot++;
             logger.info(String.format(" Reading snapshot %d of %s.",
-                                      snapShot, activeMolecularAssembly));
+                    snapShot, activeMolecularAssembly));
 
             data = bin.readLine();
             // Read past blank lines
@@ -378,7 +382,7 @@ public class XYZFilter extends SystemFilter {
                 String[] tokens = data.trim().split(" +");
                 if (tokens == null || tokens.length < 6) {
                     String message = String.format("Check atom %d in %s.", (i + 1),
-                                                   currentFile.getName());
+                            currentFile.getName());
                     logger.warning(message);
                     return false;
                 }
@@ -397,7 +401,7 @@ public class XYZFilter extends SystemFilter {
             logger.log(Level.WARNING, message, e);
         } catch (IOException e) {
             String message = String.format("Exception reading from file %s.",
-                                           currentFile);
+                    currentFile);
             logger.log(Level.WARNING, message, e);
         }
         return false;
@@ -412,7 +416,7 @@ public class XYZFilter extends SystemFilter {
                 bin.close();
             } catch (Exception e) {
                 String message = String.format("Exception closing file %s.",
-                                               activeMolecularAssembly.getFile());
+                        activeMolecularAssembly.getFile());
                 logger.log(Level.WARNING, message, e);
             }
         }
@@ -475,7 +479,7 @@ public class XYZFilter extends SystemFilter {
                 for (Atom a : atomList) {
                     int i = a.xyzIndex - 1;
                     Vector3d v3d = new Vector3d(coords[i][0], coords[i][1],
-                                                coords[i][2]);
+                            coords[i][2]);
                     a.addTrajectoryCoords(v3d, cycle);
                 }
                 cycle++;
@@ -491,7 +495,9 @@ public class XYZFilter extends SystemFilter {
         return false;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean writeFile(File saveFile, boolean append) {
         if (saveFile == null) {
@@ -506,7 +512,7 @@ public class XYZFilter extends SystemFilter {
             activeMolecularAssembly.setName(newFile.getName());
             FileWriter fw = null;
             if (append && !newFile.exists()) {
-                fw = new FileWriter(newFile);                
+                fw = new FileWriter(newFile);
             } else {
                 fw = new FileWriter(newFile, append);
             }

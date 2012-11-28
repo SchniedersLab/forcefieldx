@@ -1,7 +1,9 @@
 /**
- * Title: Force Field X 
- * Description: Force Field X - Software for Molecular Biophysics 
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
@@ -47,9 +49,7 @@ public class ErfTest {
 
     /**
      * The expected values were found to 20 decimal points of precision using
-     * Mathematica: 
-     * Erf[SetPrecision[x, 20]]
-     * Erfc[SetPrecision[x, 20]]
+     * Mathematica: Erf[SetPrecision[x, 20]] Erfc[SetPrecision[x, 20]]
      */
     @Parameters
     public static Collection<Object[]> data() {

@@ -5,7 +5,7 @@
     xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
     <properties>
         <title>Getting (Web) Started</title>
-        <author email="michael.schnieders@gmail.com">
+        <author email="michael-schnieders@uiowa.edu">
             Michael Schnieders
         </author>
     </properties>

@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.potential.bonded;
 
@@ -39,13 +41,15 @@ import static ffx.potential.parameters.BondType.*;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public class Bond extends BondedTerm implements Comparable<Bond> {
 
     private static final Logger logger = Logger.getLogger(Bond.class.getName());
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int compareTo(Bond b) {
         if (b == null) {
@@ -91,11 +95,11 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
     public BondType bondType = null;
     private double rigidScale = 1.0;
     private static final float a0col[] = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
-                                          0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+        0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
     private static final float f4a[] = {0.0f, 0.0f, 0.0f, 0.9f};
     private static final float f4b[] = {0.0f, 0.0f, 0.0f, 0.9f};
     private static float f16[] = {0.0f, 0.0f, 0.0f, 0.9f, 0.0f, 0.0f, 0.0f,
-                                  0.9f, 0.0f, 0.0f, 0.0f, 0.9f, 0.0f, 0.0f, 0.0f, 0.9f};
+        0.9f, 0.0f, 0.0f, 0.0f, 0.9f, 0.0f, 0.0f, 0.0f, 0.9f};
     // Some static variables used for computing cylinder orientations
     private static double d;
     private static double a13d[] = new double[3];
@@ -132,10 +136,8 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
     /**
      * Bond constructor.
      *
-     * @param a1
-     *            Atom number 1.
-     * @param a2
-     *            Atom number 2.
+     * @param a1 Atom number 1.
+     * @param a2 Atom number 2.
      */
     public Bond(Atom a1, Atom a2) {
         atoms = new Atom[2];
@@ -158,8 +160,7 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
      * Simple Bond constructor that is intended to be used with the equals
      * method.
      *
-     * @param n
-     *            Bond id
+     * @param n Bond id
      */
     public Bond(String n) {
         super(n);
@@ -175,7 +176,8 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
     }
 
     /**
-     * <p>Setter for the field <code>rigidScale</code>.</p>
+     * <p>Setter for the field
+     * <code>rigidScale</code>.</p>
      *
      * @param rigidScale a double.
      */
@@ -202,10 +204,9 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
      * Find the other Atom in <b>this</b> Bond. These two atoms are said to be
      * 1-2.
      *
-     * @param a
-     *            The known Atom.
+     * @param a The known Atom.
      * @return The other Atom that makes up <b>this</b> Bond, or Null if Atom a
-     *         is not part of <b>this</b> Bond.
+     * is not part of <b>this</b> Bond.
      */
     public Atom get1_2(Atom a) {
         if (a == atoms[0]) {
@@ -220,10 +221,9 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
     /**
      * Finds the common Atom between <b>this</b> Bond and Bond b.
      *
-     * @param b
-     *            Bond to compare with.
+     * @param b Bond to compare with.
      * @return The Atom the Bonds have in common or Null if they are the same
-     *         Bond or have no atom in common
+     * Bond or have no atom in common
      */
     public Atom getCommonAtom(Bond b) {
         if (b == this || b == null) {
@@ -247,10 +247,9 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
     /**
      * Find the Atom that <b>this</b> Bond and Bond b do not have in common.
      *
-     * @param b
-     *            Bond to compare with
+     * @param b Bond to compare with
      * @return The Atom that Bond b and <b>this</b> Bond do not have in common,
-     *         or Null if they have no Atom in common
+     * or Null if they have no Atom in common
      */
     public Atom getOtherAtom(Bond b) {
         if (b == this || b == null) {
@@ -274,13 +273,12 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
     /**
      * Create the Bond Scenegraph Objects.
      *
-     * @param newShapes
-     *            List
+     * @param newShapes List
      */
     private void initJ3D(List<BranchGroup> newShapes) {
         detail = RendererCache.detail;
         branchGroup = RendererCache.doubleCylinderFactory(atoms[0], atoms[1],
-                                                          detail);
+                detail);
         cy1tg = (TransformGroup) branchGroup.getChild(0);
         cy2tg = (TransformGroup) branchGroup.getChild(1);
         cy1 = (Shape3D) cy1tg.getChild(0);
@@ -291,7 +289,9 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
         update();
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void removeFromParent() {
         super.removeFromParent();
@@ -328,8 +328,7 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
     /**
      * Specifies <b>this</b> Bond helps form an angle with the given Bond
      *
-     * @param b
-     *            Bond that forms an angle with <b>this</b> Bond
+     * @param b Bond that forms an angle with <b>this</b> Bond
      */
     public void setAngleWith(Bond b) {
         formsAngleWith.add(b);
@@ -345,7 +344,7 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
      * @param newRot a boolean.
      */
     public void setBondTransform3d(Transform3D t3d, double[] pos,
-                                   double[] orient, double len, boolean newRot) {
+            double[] orient, double len, boolean newRot) {
         // Bond Orientation
         if (newRot) {
             angle = angle(orient, y);
@@ -366,8 +365,7 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
     /**
      * Set the color of this Bond's Java3D shapes based on the passed Atom.
      *
-     * @param a
-     *            Atom
+     * @param a Atom
      */
     public void setColor(Atom a) {
         if (viewModel != ViewModel.INVISIBLE && viewModel != ViewModel.WIREFRAME && branchGroup != null) {
@@ -383,10 +381,8 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
     /**
      * Manage cylinder visibility.
      *
-     * @param visible
-     *            boolean
-     * @param newShapes
-     *            List
+     * @param visible boolean
+     * @param newShapes List
      */
     public void setCylinderVisible(boolean visible, List<BranchGroup> newShapes) {
         if (!visible) {
@@ -419,7 +415,7 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
      */
     @Override
     public void setView(RendererCache.ViewModel newViewModel,
-                        List<BranchGroup> newShapes) {
+            List<BranchGroup> newShapes) {
         switch (newViewModel) {
             case WIREFRAME:
                 viewModel = ViewModel.WIREFRAME;
@@ -608,8 +604,7 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
     /**
      * Evaluate this Bond energy.
      *
-     * @param gradient
-     *            Evaluate the gradient.
+     * @param gradient Evaluate the gradient.
      * @return Returns the energy.
      */
     public double energy(boolean gradient) {
@@ -638,8 +633,8 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
      */
     public void log() {
         logger.info(String.format(" %s %6d-%s %6d-%s %6.4f  %6.4f  %10.4f",
-                                  "Bond", atoms[0].getXYZIndex(), atoms[0].getAtomType().name,
-                                  atoms[1].getXYZIndex(), atoms[1].getAtomType().name,
-                                  bondType.distance, value, energy));
+                "Bond", atoms[0].getXYZIndex(), atoms[0].getAtomType().name,
+                atoms[1].getXYZIndex(), atoms[1].getAtomType().name,
+                bondType.distance, value, energy));
     }
 }

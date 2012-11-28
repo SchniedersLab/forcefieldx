@@ -1,28 +1,25 @@
-
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
- *
- * @author Michael J. Schnieders
- * @version $Id: $
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
-
 package ffx.autoparm;
 
 import java.io.*;
@@ -63,7 +60,8 @@ public class ForceFieldFilter_2 {
     /**
      * <p>Constructor for ForceFieldFilter_2.</p>
      *
-     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * @param properties a
+     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
      * @param forceFieldFile a {@link java.io.File} object.
      */
     public ForceFieldFilter_2(CompositeConfiguration properties, File forceFieldFile) {
@@ -86,9 +84,9 @@ public class ForceFieldFilter_2 {
             parameterLocation = parameterLocation.replaceAll("\"", "");
             // Append the suffix if necessary
             /*
-            if (!parameterLocation.endsWith(".prm")) {
-            parameterLocation = parameterLocation + ".prm";
-            } */
+             if (!parameterLocation.endsWith(".prm")) {
+             parameterLocation = parameterLocation + ".prm";
+             } */
             parameterFile = new File(parameterLocation);
             // If the location is not absolute, check if it is relative
             // to the key file location.
@@ -113,8 +111,8 @@ public class ForceFieldFilter_2 {
                     && forceFieldFile.canRead()) {
                 parse(new FileInputStream(forceFieldFile));
                 /**
-                 * Parse an internal parameter file and add it to the
-                 * composite configuration.
+                 * Parse an internal parameter file and add it to the composite
+                 * configuration.
                  */
             } else {
                 String forceFieldString = properties.getString("forcefield", "AMOEBA-BIO-2009");
@@ -263,7 +261,8 @@ public class ForceFieldFilter_2 {
                                     boolean value = true;
                                     if (tokens.length > 1 && tokens[0].toUpperCase().endsWith("TERM")) {
                                         /**
-                                         * Handle the token "ONLY" specially to shut off all other terms.
+                                         * Handle the token "ONLY" specially to
+                                         * shut off all other terms.
                                          */
                                         if (tokens[1].equalsIgnoreCase("ONLY")) {
                                             for (ForceFieldBoolean term : ForceFieldBoolean.values()) {
@@ -273,7 +272,8 @@ public class ForceFieldFilter_2 {
                                             }
                                         } else if (tokens[1].equalsIgnoreCase("NONE")) {
                                             /**
-                                             * Legacy support for the "NONE" token.
+                                             * Legacy support for the "NONE"
+                                             * token.
                                              */
                                             value = false;
                                         } else {

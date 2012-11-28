@@ -1,6 +1,9 @@
 /**
- * Title: Force Field X Description: Force Field X - Software for Molecular
- * Biophysics. Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
@@ -39,7 +42,7 @@ import ffx.ui.MainPanel;
  * items: About, Preferences, Quit and File Associations
  *
  * @author Michael J. Schnieders
- * @version $Id: $
+ *
  */
 public class OSXAdapter extends ApplicationAdapter {
 
@@ -85,12 +88,12 @@ public class OSXAdapter extends ApplicationAdapter {
             }
         } catch (NoClassDefFoundError e) {
             logger.log(Level.WARNING, "\nThis version of Mac OS X does not support "
-                                      + "the Apple EAWT.  Application Menu handling "
-                                      + "has been disabled\n", e);
+                    + "the Apple EAWT.  Application Menu handling "
+                    + "has been disabled\n", e);
         } catch (ClassNotFoundException e) {
             logger.log(Level.WARNING, "\nThis version of Mac OS X does not support "
-                                      + "the Apple EAWT.  Application Menu handling "
-                                      + "has been disabled\n", e);
+                    + "the Apple EAWT.  Application Menu handling "
+                    + "has been disabled\n", e);
         } catch (Exception e) {
             logger.log(Level.WARNING, "\nException while loading the OSXAdapter", e);
         }

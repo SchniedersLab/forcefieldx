@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2009
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.xray;
 
@@ -37,7 +39,7 @@ import ffx.potential.bonded.Residue;
  * constructs a {@link RefinementEnergy} object for this purpose
  *
  * @author Tim Fenn
- * @version $Id: $
+ *
  */
 public class RefinementMinimize implements OptimizationListener, Terminatable {
 
@@ -114,7 +116,8 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
      * @param data input {@link DataContainer} that will be used as the model,
      * must contain a {@link RefinementModel} and either {@link DiffractionData}
      * or {@link RealSpaceData}
-     * @param refinementmode {@link RefinementMinimize.RefinementMode} for refinement
+     * @param refinementmode {@link RefinementMinimize.RefinementMode} for
+     * refinement
      */
     public RefinementMinimize(DataContainer data, RefinementMode refinementmode) {
         this.data = data;
@@ -234,7 +237,8 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
     }
 
     /**
-     * <p>Getter for the field <code>eps</code>.</p>
+     * <p>Getter for the field
+     * <code>eps</code>.</p>
      *
      * @return a {@link java.lang.Double} object.
      */
@@ -440,7 +444,9 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
         return refinementenergy;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean optimizationUpdate(int iter, int nfun, double grms, double xrms, double f, double df, double angle, LineSearchResult info) {
         long currentTime = System.nanoTime();
@@ -478,7 +484,9 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
         return true;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void terminate() {
         terminate = true;

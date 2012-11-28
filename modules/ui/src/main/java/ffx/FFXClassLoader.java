@@ -1,6 +1,9 @@
 /**
- * Title: Force Field X Description: Force Field X - Software for Molecular
- * Biophysics Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
@@ -19,11 +22,23 @@
  */
 package ffx;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.ProtectionDomain;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -33,7 +48,7 @@ import java.util.jar.JarFile;
  * JVMs.
  *
  * @author Michael J. Schnieders; derived from work by Emmanuel Puybaret
- * @version $Id: $
+ *
  */
 public class FFXClassLoader extends ClassLoader {
 
@@ -41,40 +56,40 @@ public class FFXClassLoader extends ClassLoader {
     private final Map extensionDlls = new HashMap();
     private JarFile[] extensionJars = null;
     private final String[] applicationPackages = {"ffx",
-                                                  "javax.media.j3d",
-                                                  "javax.vecmath",
-                                                  "com.sun.j3d",
-                                                  "com.sun.opengl",
-                                                  "com.sun.gluegen.runtime",
-                                                  "javax.media.opengl",
-                                                  "groovy",
-                                                  "org.codehaus.groovy",
-                                                  "org.apache.commons.cli",
-                                                  "org.apache.commons.configuration",
-                                                  "org.apache.commons.io",
-                                                  "org.apache.commons.lang",
-                                                  "org.apache.commons.lang3",
-                                                  "org.apache.commons.math",
-                                                  "org.apache.commons.math3",
-                                                  "edu.rit.pj",
-                                                  "jcuda",
-                                                  "com.amd.aparapi"};
-    static final List<String> ffxFiles;
+        "javax.media.j3d",
+        "javax.vecmath",
+        "com.sun.j3d",
+        "com.sun.opengl",
+        "com.sun.gluegen.runtime",
+        "javax.media.opengl",
+        "groovy",
+        "org.codehaus.groovy",
+        "org.apache.commons.cli",
+        "org.apache.commons.configuration",
+        "org.apache.commons.io",
+        "org.apache.commons.lang",
+        "org.apache.commons.lang3",
+        "org.apache.commons.math",
+        "org.apache.commons.math3",
+        "edu.rit.pj",
+        "jcuda",
+        "com.amd.aparapi"};
+    static final List<String> FFX_FILES;
 
     static {
-        ffxFiles = new ArrayList<String>(Arrays.asList(new String[]{
-                    "com.kenai.ffx/algorithms.jar",
-                    "com.kenai.ffx/autoparm.jar",
-                    "com.kenai.ffx/binding.jar",
-                    "com.kenai.ffx/crystal.jar",
-                    "com.kenai.ffx/numerics.jar",
-                    "com.kenai.ffx/potentials.jar",
-                    "com.kenai.ffx/ui.jar",
-                    "com.kenai.ffx/utilities.jar",
-                    "com.kenai.ffx/xray.jar",
+        FFX_FILES = new ArrayList<String>(Arrays.asList(new String[]{
+                    "edu.uiowa.eng.ffx/algorithms.jar",
+                    "edu.uiowa.eng.ffx/autoparm.jar",
+                    "edu.uiowa.eng.ffx/binding.jar",
+                    "edu.uiowa.eng.ffx/crystal.jar",
+                    "edu.uiowa.eng.ffx/numerics.jar",
+                    "edu.uiowa.eng.ffx/potentials.jar",
+                    "edu.uiowa.eng.ffx/ui.jar",
+                    "edu.uiowa.eng.ffx/utilities.jar",
+                    "edu.uiowa.eng.ffx/xray.jar",
                     // Force Field X Extensions
-                    "com.kenai.ffx/algorithms-ext.jar",
-                    "com.kenai.ffx/xray-ext.jar",
+                    "edu.uiowa.eng.ffx/algorithms-ext.jar",
+                    "edu.uiowa.eng.ffx/xray-ext.jar",
                     // Groovy
                     "org.codehaus.groovy/groovy-all.jar",
                     // CUDA
@@ -115,62 +130,62 @@ public class FFXClassLoader extends ClassLoader {
 
         String osName = System.getProperty("os.name").toUpperCase();
         String osArch = System.getProperty("sun.arch.data.model");
-        boolean x86_64 = "64".equals(osArch);
+        final boolean x8664 = "64".equals(osArch);
         if ("MAC OS X".equals(osName)) {
             // JOGL Universal Binaries
-            ffxFiles.add("universal/libgluegen-rt.jnilib");
-            ffxFiles.add("universal/libjogl.jnilib");
-            ffxFiles.add("universal/libjogl_awt.jnilib");
-            ffxFiles.add("universal/libjogl_cg.jnilib");
-            if (x86_64) {
+            FFX_FILES.add("universal/libgluegen-rt.jnilib");
+            FFX_FILES.add("universal/libjogl.jnilib");
+            FFX_FILES.add("universal/libjogl_awt.jnilib");
+            FFX_FILES.add("universal/libjogl_cg.jnilib");
+            if (x8664) {
                 // JCUDA
-                ffxFiles.add("64-bit/libJCudaDriver-apple-x86_64.jnilib");
-                ffxFiles.add("64-bit/libJCudaRuntime-apple-x86_64.jnilib");
-                ffxFiles.add("64-bit/libJCufft-apple-x86_64.jnilib");
+                FFX_FILES.add("64-bit/libJCudaDriver-apple-x86_64.jnilib");
+                FFX_FILES.add("64-bit/libJCudaRuntime-apple-x86_64.jnilib");
+                FFX_FILES.add("64-bit/libJCufft-apple-x86_64.jnilib");
                 // Aparapi
-                ffxFiles.add("64-bit/libaparapi_x86_64.dylib");
+                FFX_FILES.add("64-bit/libaparapi_x86_64.dylib");
             }
         } else if ("LINUX".equals(osName)) {
-            if (x86_64) {
+            if (x8664) {
                 // JOGL
-                ffxFiles.add("64-bit/libgluegen-rt.so");
-                ffxFiles.add("64-bit/libjogl.so");
-                ffxFiles.add("64-bit/libjogl_awt.so");
-                ffxFiles.add("64-bit/libjogl_cg.so");
+                FFX_FILES.add("64-bit/libgluegen-rt.so");
+                FFX_FILES.add("64-bit/libjogl.so");
+                FFX_FILES.add("64-bit/libjogl_awt.so");
+                FFX_FILES.add("64-bit/libjogl_cg.so");
                 // JCUDA
-                ffxFiles.add("64-bit/libJCudaDriver-linux-x86_64.so");
-                ffxFiles.add("64-bit/libJCudaRuntime-linux-x86_64.so");
-                ffxFiles.add("64-bit/libJCufft-linux-x86_64.so");
+                FFX_FILES.add("64-bit/libJCudaDriver-linux-x86_64.so");
+                FFX_FILES.add("64-bit/libJCudaRuntime-linux-x86_64.so");
+                FFX_FILES.add("64-bit/libJCufft-linux-x86_64.so");
                 // Aparapi
-                ffxFiles.add("64-bit/libaparapi_x86_64.so");
+                FFX_FILES.add("64-bit/libaparapi_x86_64.so");
             } else {
-                ffxFiles.add("32-bit/libgluegen-rt.so");
-                ffxFiles.add("32-bit/libjogl.so");
-                ffxFiles.add("32-bit/libjogl_awt.so");
-                ffxFiles.add("32-bit/libjogl_cg.so");
+                FFX_FILES.add("32-bit/libgluegen-rt.so");
+                FFX_FILES.add("32-bit/libjogl.so");
+                FFX_FILES.add("32-bit/libjogl_awt.so");
+                FFX_FILES.add("32-bit/libjogl_cg.so");
                 // Aparapi
-                ffxFiles.add("32-bit/libaparapi_x86.so");
+                FFX_FILES.add("32-bit/libaparapi_x86.so");
             }
         } else if (osName.startsWith("WINDOWS")) {
-            if (x86_64) {
+            if (x8664) {
                 // JOGL
-                ffxFiles.add("64-bit/gluegen-rt.dll");
-                ffxFiles.add("64-bit/jogl.dll");
-                ffxFiles.add("64-bit/jogl_cg.dll");
-                ffxFiles.add("64-bit/jogl_awt.dll");
+                FFX_FILES.add("64-bit/gluegen-rt.dll");
+                FFX_FILES.add("64-bit/jogl.dll");
+                FFX_FILES.add("64-bit/jogl_cg.dll");
+                FFX_FILES.add("64-bit/jogl_awt.dll");
                 // JCUDA
-                ffxFiles.add("64-bit/JCudaDriver-linux-x86_64.dll");
-                ffxFiles.add("64-bit/JCudaRuntime-linux-x86_64.dll");
-                ffxFiles.add("64-bit/JCufft-linux-x86_64.dll");
+                FFX_FILES.add("64-bit/JCudaDriver-linux-x86_64.dll");
+                FFX_FILES.add("64-bit/JCudaRuntime-linux-x86_64.dll");
+                FFX_FILES.add("64-bit/JCufft-linux-x86_64.dll");
                 // Aparapi
-                ffxFiles.add("64-bit/aparapi_x86_64.dll");
+                FFX_FILES.add("64-bit/aparapi_x86_64.dll");
             } else {
-                ffxFiles.add("32-bit/gluegen-rt.dll");
-                ffxFiles.add("32-bit/jogl.dll");
-                ffxFiles.add("32-bit/jogl_awt.dll");
-                ffxFiles.add("32-bit/jogl_cg.dll");
+                FFX_FILES.add("32-bit/gluegen-rt.dll");
+                FFX_FILES.add("32-bit/jogl.dll");
+                FFX_FILES.add("32-bit/jogl_awt.dll");
+                FFX_FILES.add("32-bit/jogl_cg.dll");
                 // Aparapi
-                ffxFiles.add("32-bit/aparapi_x86.dll");
+                FFX_FILES.add("32-bit/aparapi_x86.dll");
             }
         }
     }
@@ -184,7 +199,7 @@ public class FFXClassLoader extends ClassLoader {
      *
      * @param parent a {@link java.lang.ClassLoader} object.
      */
-    public FFXClassLoader(ClassLoader parent) {
+    public FFXClassLoader(final ClassLoader parent) {
         super(parent);
         protectionDomain = FFXClassLoader.class.getProtectionDomain();
     }
@@ -194,12 +209,13 @@ public class FFXClassLoader extends ClassLoader {
      * <code>input</code> content.
      *
      * @param input a {@link java.io.InputStream} object.
+     * @param name a {@link java.lang.String} object.
      * @param suffix a {@link java.lang.String} object.
      * @return a {@link java.lang.String} object.
      * @throws java.io.IOException if any.
      */
-    public static String copyInputStreamToTmpFile(InputStream input, String name,
-                                                  String suffix) throws IOException {
+    public static String copyInputStreamToTmpFile(final InputStream input,
+            String name, final String suffix) throws IOException {
         File tmpFile = null;
         name = "ffx." + name + ".";
         try {
@@ -284,7 +300,7 @@ public class FFXClassLoader extends ClassLoader {
             in.close();
             // Define class
             return defineClass(name, out.toByteArray(), 0, out.size(),
-                               this.protectionDomain);
+                    this.protectionDomain);
         } catch (IOException ex) {
             throw new ClassNotFoundException("Class " + name, ex);
         }
@@ -392,8 +408,8 @@ public class FFXClassLoader extends ClassLoader {
                     String applicationPackage = this.applicationPackages[i];
                     int applicationPackageLength = applicationPackage.length();
                     if ((applicationPackageLength == 0
-                         && name.indexOf('.') == 0)
-                        || (applicationPackageLength > 0
+                            && name.indexOf('.') == 0)
+                            || (applicationPackageLength > 0
                             && name.startsWith(applicationPackage))) {
                         loadedClass = findClass(name);
                         break;
@@ -420,7 +436,7 @@ public class FFXClassLoader extends ClassLoader {
         }
         extensionsLoaded = true;
 
-        String extensionJarsAndDlls[] = ffxFiles.toArray(new String[ffxFiles.size()]);
+        String extensionJarsAndDlls[] = FFX_FILES.toArray(new String[FFX_FILES.size()]);
 
         // Compute DLLs prefix and suffix
         String dllSuffix;
@@ -454,7 +470,7 @@ public class FFXClassLoader extends ClassLoader {
                         String name = extensionJarOrDll.substring(start, end);
                         // Copy jar to a tmp file
                         String extensionJar = copyInputStreamToTmpFile(extensionJarOrDllUrl.openStream(),
-                                                                       name, ".jar");
+                                name, ".jar");
                         // Add extracted file to the extension jars list
                         extensionJarList.add(new JarFile(extensionJar, false));
                     } else if (extensionJarOrDll.endsWith(dllSuffix)) {
@@ -463,7 +479,7 @@ public class FFXClassLoader extends ClassLoader {
                         String name = extensionJarOrDll.substring(start, end);
                         // Copy DLL to a tmp file
                         String extensionDll = copyInputStreamToTmpFile(extensionJarOrDllUrl.openStream(),
-                                                                       name, dllSuffix);
+                                name, dllSuffix);
                         // Add extracted file to extension DLLs map
                         extensionDlls.put(name, extensionDll);
                     } else if (dllSuffix2 != null && extensionJarOrDll.endsWith(dllSuffix2)) {
@@ -472,7 +488,7 @@ public class FFXClassLoader extends ClassLoader {
                         String name = extensionJarOrDll.substring(start, end);
                         // Copy DLL to a tmp file
                         String extensionDll = copyInputStreamToTmpFile(extensionJarOrDllUrl.openStream(),
-                                                                       name, dllSuffix2);
+                                name, dllSuffix2);
                         // Add extracted file to extension DLLs map
                         extensionDlls.put(name, extensionDll);
                     }

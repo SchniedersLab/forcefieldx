@@ -5,13 +5,16 @@
          http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>com.kenai.ffx</groupId>
+        <groupId>edu.uiowa.eng.ffx</groupId>
         <artifactId>ffx</artifactId>
-        <version>1.0.0-alpha</version>
+        <version>1.0.0-beta</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
-    <groupId>com.kenai.ffx</groupId>
+    <groupId>edu.uiowa.eng.ffx</groupId>
     <artifactId>cg</artifactId>
     <packaging>jar</packaging>
     <name>Coarse Grain</name>
+    <description>The Coarse Grain module will support physics based coarse 
+        grain potentials.
+    </description>
 </project>

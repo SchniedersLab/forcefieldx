@@ -1,6 +1,9 @@
 /**
- * Title: Force Field X Description: Force Field X - Software for Molecular
- * Biophysics Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
@@ -32,7 +35,7 @@ import static java.lang.Math.abs;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public final class TorsionTorsionType extends BaseType implements Comparator<String> {
 
@@ -51,7 +54,7 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
      * @return
      */
     private static int cytsy(int n, double dm[], double du[], double cr[],
-                             double rs[], double c[]) {
+            double rs[], double c[]) {
         if (n < 3) {
             return -2;
         }
@@ -158,7 +161,7 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
      * @param c
      */
     private static void cytsys(int n, double dm[], double du[], double cr[],
-                               double rs[], double c[]) {
+            double rs[], double c[]) {
         /**
          * Updating phase.
          */
@@ -233,7 +236,7 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
      * @param energy an array of double.
      */
     public TorsionTorsionType(int atomClasses[], int gridPoints[],
-                              double torsion1[], double torsion2[], double energy[]) {
+            double torsion1[], double torsion2[], double energy[]) {
         super(ForceField.ForceFieldType.TORTORS, sortKey(atomClasses));
         this.atomClasses = atomClasses;
         nx = gridPoints[0];
@@ -437,8 +440,8 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
      * @param dmu
      */
     private void nspline(int n, double x0[], double y0[],
-                         double y21, double y2n, double s1[], double s2[], double h[], double g[],
-                         double dy[], double dla[], double dmu[]) {
+            double y21, double y2n, double s1[], double s2[], double h[], double g[],
+            double dy[], double dla[], double dmu[]) {
         /**
          * Calculate the intervals.
          */
@@ -516,8 +519,8 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
      * @param rs
      */
     private void cspline(int n, double xn[], double fn[], double b[],
-                         double[] c, double d[], double h[], double du[], double dm[],
-                         double rc[], double rs[]) {
+            double[] c, double d[], double h[], double du[], double dm[],
+            double rc[], double rs[]) {
         double eps = 0.000001;
         if (Math.abs(fn[n] - fn[0]) > eps) {
             logger.severe("TORTOR values are not periodic.");
@@ -586,12 +589,12 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
             tortorBuffer.append(String.format("  %5d", i));
         }
         tortorBuffer.append(String.format("  %2d  %2d", gridPoints[0],
-                                          gridPoints[1]));
+                gridPoints[1]));
         for (int i = 0; i < energy.length; i++) {
             int nxi = i % nx;
             int nyi = i / ny;
             tortorBuffer.append(String.format(" \\\n  % 6.1f  % 6.1f  % 8.5f",
-                                              tx[nxi], ty[nyi], energy[i]));
+                    tx[nxi], ty[nyi], energy[i]));
         }
         return tortorBuffer.toString();
     }

@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2009
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.xray;
 
@@ -32,7 +34,7 @@ import ffx.potential.bonded.MolecularAssembly;
  * <p>RealSpaceFile class.</p>
  *
  * @author Tim Fenn
- * @version $Id: $
+ *
  */
 public class RealSpaceFile {
 
@@ -73,8 +75,8 @@ public class RealSpaceFile {
     }
 
     /**
-     * read in a Real Space density file based on the molecular assembly filename,
-     * using a weight of 1.0 and neutron value of false
+     * read in a Real Space density file based on the molecular assembly
+     * filename, using a weight of 1.0 and neutron value of false
      *
      * @param assembly {@link ffx.potential.bonded.MolecularAssembly} from which
      * a filename will be determined
@@ -84,8 +86,8 @@ public class RealSpaceFile {
     }
 
     /**
-     * read in a Real Space density file based on the molecular assembly filename,
-     * using a weight of 1.0
+     * read in a Real Space density file based on the molecular assembly
+     * filename, using a weight of 1.0
      *
      * @param assembly {@link ffx.potential.bonded.MolecularAssembly} from which
      * a filename will be determined
@@ -95,8 +97,8 @@ public class RealSpaceFile {
     }
 
     /**
-     * read in a Real Space density file based on the molecular assembly filename,
-     * using a weight of 1.0
+     * read in a Real Space density file based on the molecular assembly
+     * filename, using a weight of 1.0
      *
      * @param assembly {@link ffx.potential.bonded.MolecularAssembly} from which
      * a filename will be determined

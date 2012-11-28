@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2009
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.xray;
 
@@ -185,36 +187,36 @@ public class ScaleBulkMinimizeTest {
         refinementdata.setCrystalReciprocalSpace_fs(crs);
 
         /*
-        try {
-        PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter("/tmp/foo.cns")));
-        out.println("ANOMalous=FALSE");
-        out.println("DECLare NAME=FC DOMAin=RECIprocal TYPE=COMP END");
-        for (HKL ih : reflectionlist.hkllist) {
-        if (ih.h() == 0
-        && ih.k() == 0
-        && ih.l() == 0) {
-        continue;
-        }
-        double fc[] = refinementdata.fs[ih.index()];
-        out.printf("INDE %5d%5d%5d FC= ", ih.h(), ih.k(), ih.l());
-        out.printf("%10.3f%10.3f\n",
-        Math.hypot(fc[0], fc[1]),
-        Math.toDegrees(Math.atan2(fc[1], fc[0])));
-        }
-        out.close();
-        } catch (Exception e) {
-        System.out.println("error: " + e.getMessage());
-        }
+         try {
+         PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter("/tmp/foo.cns")));
+         out.println("ANOMalous=FALSE");
+         out.println("DECLare NAME=FC DOMAin=RECIprocal TYPE=COMP END");
+         for (HKL ih : reflectionlist.hkllist) {
+         if (ih.h() == 0
+         && ih.k() == 0
+         && ih.l() == 0) {
+         continue;
+         }
+         double fc[] = refinementdata.fs[ih.index()];
+         out.printf("INDE %5d%5d%5d FC= ", ih.h(), ih.k(), ih.l());
+         out.printf("%10.3f%10.3f\n",
+         Math.hypot(fc[0], fc[1]),
+         Math.toDegrees(Math.atan2(fc[1], fc[0])));
+         }
+         out.close();
+         } catch (Exception e) {
+         System.out.println("error: " + e.getMessage());
+         }
          */
 
         ScaleBulkMinimize scalebulkminimize =
                 new ScaleBulkMinimize(reflectionlist, refinementdata, crs);
         /*
-        if (refinementdata.solvent_n > 1) {
-            scalebulkminimize.minimize(7, 1e-2);
-            scalebulkminimize.GridOptimize();
-        }
-        */
+         if (refinementdata.solvent_n > 1) {
+         scalebulkminimize.minimize(7, 1e-2);
+         scalebulkminimize.GridOptimize();
+         }
+         */
         scalebulkminimize.minimize(7, 1e-4);
 
         SigmaAMinimize sigmaaminimize = new SigmaAMinimize(reflectionlist,

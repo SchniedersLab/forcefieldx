@@ -5,7 +5,7 @@
     xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
     <properties>
         <title>Install</title>
-        <author email="michael.schnieders@gmail.com">Michael J. Schnieders</author>
+        <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
     </properties>
     <body>
         <section name="Install">
@@ -39,7 +39,7 @@
                                         <code>JAVA_HOME</code> is not set or the JRE version is less than ${targetVersion},
                                         then please follow Oracle's
                                         <a href="http://www.oracle.com/technetwork/java/javase/system-configurations-135212.html" target="_blank">
-                                        Java installation instructions
+                                            Java installation instructions
                                         </a> to install a JRE and/or set the
                                         <code>JAVA_HOME</code> environment variable.
                                     </p>
@@ -71,12 +71,12 @@
                                         echo $PATH
                                         which ffxc
                                     </source>
-                                        <!--
-                                        Both the graphical
-                                        <code>ffx</code> and command line
-                                        compiler
-                                        <code>ffxc</code> versions should now be available. -->
-                                   
+                                    <!--
+                                    Both the graphical
+                                    <code>ffx</code> and command line
+                                    compiler
+                                    <code>ffxc</code> versions should now be available. -->
+
                                 </li>
                             </ol>
                         </td>
@@ -162,10 +162,10 @@
                                         <code>JAVA_HOME</code> is not set or the version is less than ${targetVersion},
                                         then please follow Oracle's
                                         <a href="http://www.oracle.com/technetwork/java/javase/system-configurations-135212.html" target="_blank">
-                            Java installation instructions
+                                            Java installation instructions
                                         </a> to install a JRE. The Windows installer will set the
                                         <code>JAVA_HOME</code> environment variable for you (please open a new DOS window after
-                            the installation finishes to check).
+                                        the installation finishes to check).
                                     </p>
                                 </li>
                             </ol>

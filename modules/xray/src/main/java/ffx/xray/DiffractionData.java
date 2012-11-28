@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2009
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.xray;
 
@@ -49,7 +51,7 @@ import ffx.xray.RefinementMinimize.RefinementMode;
  * <p>DiffractionData class.</p>
  *
  * @author Tim Fenn
- * @version $Id: $
+ *
  */
 public class DiffractionData implements DataContainer {
 
@@ -101,8 +103,9 @@ public class DiffractionData implements DataContainer {
      * construct a diffraction data assembly, assumes an X-ray data set with a
      * weight of 1.0 using the same name as the molecular assembly
      *
-     * @param assembly {@link ffx.potential.bonded.MolecularAssembly molecular assembly}
-     * object, used as the atomic model for comparison against the data
+     * @param assembly
+     * {@link ffx.potential.bonded.MolecularAssembly molecular assembly} object,
+     * used as the atomic model for comparison against the data
      * @param properties system properties file
      */
     public DiffractionData(MolecularAssembly assembly,
@@ -114,8 +117,9 @@ public class DiffractionData implements DataContainer {
     /**
      * construct a diffraction data assembly
      *
-     * @param assembly {@link ffx.potential.bonded.MolecularAssembly molecular assembly}
-     * object, used as the atomic model for comparison against the data
+     * @param assembly
+     * {@link ffx.potential.bonded.MolecularAssembly molecular assembly} object,
+     * used as the atomic model for comparison against the data
      * @param properties system properties file
      * @param datafile one or more {@link DiffractionFile} to be refined against
      */
@@ -129,11 +133,12 @@ public class DiffractionData implements DataContainer {
      * construct a diffraction data assembly, assumes an X-ray data set with a
      * weight of 1.0 using the same name as the molecular assembly
      *
-     * @param assembly {@link ffx.potential.bonded.MolecularAssembly molecular assembly}
-     * object, used as the atomic model for comparison against the data
+     * @param assembly
+     * {@link ffx.potential.bonded.MolecularAssembly molecular assembly} object,
+     * used as the atomic model for comparison against the data
      * @param properties system properties file
-     * @param solventmodel the type of solvent model desired -
-     * see {@link CrystalReciprocalSpace.SolventModel bulk solvent model} selections
+     * @param solventmodel the type of solvent model desired - see
+     * {@link CrystalReciprocalSpace.SolventModel bulk solvent model} selections
      */
     public DiffractionData(MolecularAssembly assembly,
             CompositeConfiguration properties, int solventmodel) {
@@ -144,11 +149,12 @@ public class DiffractionData implements DataContainer {
     /**
      * construct a diffraction data assembly
      *
-     * @param assembly {@link ffx.potential.bonded.MolecularAssembly molecular assembly}
-     * object, used as the atomic model for comparison against the data
+     * @param assembly
+     * {@link ffx.potential.bonded.MolecularAssembly molecular assembly} object,
+     * used as the atomic model for comparison against the data
      * @param properties system properties file
-     * @param solventmodel the type of solvent model desired -
-     * see {@link CrystalReciprocalSpace.SolventModel bulk solvent model} selections
+     * @param solventmodel the type of solvent model desired - see
+     * {@link CrystalReciprocalSpace.SolventModel bulk solvent model} selections
      * @param datafile one or more {@link DiffractionFile} to be refined against
      */
     public DiffractionData(MolecularAssembly assembly,
@@ -162,9 +168,10 @@ public class DiffractionData implements DataContainer {
      * construct a diffraction data assembly, assumes an X-ray data set with a
      * weight of 1.0 using the same name as the molecular assembly
      *
-     * @param assembly {@link ffx.potential.bonded.MolecularAssembly molecular assembly}
-     * object array (typically containing alternate conformer assemblies), used
-     * as the atomic model for comparison against the data
+     * @param assembly
+     * {@link ffx.potential.bonded.MolecularAssembly molecular assembly} object
+     * array (typically containing alternate conformer assemblies), used as the
+     * atomic model for comparison against the data
      * @param properties system properties file
      */
     public DiffractionData(MolecularAssembly assembly[],
@@ -176,9 +183,10 @@ public class DiffractionData implements DataContainer {
     /**
      * construct a diffraction data assembly
      *
-     * @param assembly {@link ffx.potential.bonded.MolecularAssembly molecular assembly}
-     * object array (typically containing alternate conformer assemblies), used
-     * as the atomic model for comparison against the data
+     * @param assembly
+     * {@link ffx.potential.bonded.MolecularAssembly molecular assembly} object
+     * array (typically containing alternate conformer assemblies), used as the
+     * atomic model for comparison against the data
      * @param properties system properties file
      * @param datafile one or more {@link DiffractionFile} to be refined against
      */
@@ -190,12 +198,13 @@ public class DiffractionData implements DataContainer {
     /**
      * construct a diffraction data assembly
      *
-     * @param assembly {@link ffx.potential.bonded.MolecularAssembly molecular assembly}
-     * object array (typically containing alternate conformer assemblies), used
-     * as the atomic model for comparison against the data
+     * @param assembly
+     * {@link ffx.potential.bonded.MolecularAssembly molecular assembly} object
+     * array (typically containing alternate conformer assemblies), used as the
+     * atomic model for comparison against the data
      * @param properties system properties file
-     * @param solventmodel the type of solvent model desired -
-     * see {@link CrystalReciprocalSpace.SolventModel bulk solvent model} selections
+     * @param solventmodel the type of solvent model desired - see
+     * {@link CrystalReciprocalSpace.SolventModel bulk solvent model} selections
      * @param datafile one or more {@link DiffractionFile} to be refined against
      */
     public DiffractionData(MolecularAssembly assembly[],
@@ -389,7 +398,9 @@ public class DiffractionData implements DataContainer {
      *
      * @param refinementMode the
      * {@link RefinementMinimize.RefinementMode refinement mode} requested
-     * @see CrystalReciprocalSpace#computeAtomicGradients(double[][], int[], int, ffx.xray.RefinementMinimize.RefinementMode, boolean) computeAtomicGradients
+     * @see CrystalReciprocalSpace#computeAtomicGradients(double[][], int[],
+     * int, ffx.xray.RefinementMinimize.RefinementMode, boolean)
+     * computeAtomicGradients
      */
     public void computeAtomicGradients(RefinementMode refinementMode) {
         for (int i = 0; i < n; i++) {
@@ -403,8 +414,8 @@ public class DiffractionData implements DataContainer {
     }
 
     /**
-     * parallelized call to compute atomic density on a grid, followed by FFT
-     * to compute structure factors.
+     * parallelized call to compute atomic density on a grid, followed by FFT to
+     * compute structure factors.
      *
      * @see CrystalReciprocalSpace#computeDensity(double[][], boolean)
      */
@@ -439,49 +450,65 @@ public class DiffractionData implements DataContainer {
         return refinementmodel.atomarray;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ArrayList<ArrayList<Residue>> getAltResidues() {
         return refinementmodel.altresidues;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ArrayList<ArrayList<Molecule>> getAltMolecules() {
         return refinementmodel.altmolecules;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public MolecularAssembly[] getMolecularAssembly() {
         return assembly;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public RefinementModel getRefinementModel() {
         return refinementmodel;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getWeight() {
         return xweight;
     }
-    
-    /** {@inheritDoc} */
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setWeight(double weight) {
         this.xweight = weight;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String printOptimizationHeader() {
         return "R  Rfree";
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String printOptimizationUpdate() {
         StringBuilder sb = new StringBuilder();
@@ -494,7 +521,9 @@ public class DiffractionData implements DataContainer {
         return sb.toString();
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String printEnergyUpdate() {
         StringBuilder sb = new StringBuilder();

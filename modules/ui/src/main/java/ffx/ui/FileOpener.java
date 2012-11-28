@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.ui;
 
@@ -34,12 +36,12 @@ import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.SystemFilter;
 
 /**
- * The FileOpener class opens a file into Force Field X using a filter
- * from the ffe.parsers package. The OpenFile class implements the Runnable
- * interface so that opening a file does not freeze FFX.
+ * The FileOpener class opens a file into Force Field X using a filter from the
+ * ffe.parsers package. The OpenFile class implements the Runnable interface so
+ * that opening a file does not freeze FFX.
  *
  * @author Michael J. Schnieders
- * @version $Id: $
+ *
  */
 public class FileOpener
         implements Runnable {
@@ -114,7 +116,7 @@ public class FileOpener
                         continue;
                     }
                     FFXSystem newSystem = new FFXSystem(ffxSystem.getFile(),
-                                                        "Alternate Location " + c, ffxSystem.getProperties());
+                            "Alternate Location " + c, ffxSystem.getProperties());
                     newSystem.setForceField(ffxSystem.getForceField());
                     pdbFilter.setAltID(newSystem, c);
                     pdbFilter.clearSegIDs();
@@ -134,7 +136,9 @@ public class FileOpener
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void run() {
         if (mainPanel != null && systemFilter != null) {

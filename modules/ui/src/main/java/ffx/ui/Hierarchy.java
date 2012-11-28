@@ -1,25 +1,24 @@
 /**
- * <p>Title: Force Field X</p>
- * <p>Description: Force Field X is a Molecular Biophysics Environment</p>
- * <p>Copyright: Copyright (c) Michael J. Schnieders 2002-2009</p>
+ * Title: Force Field X.
  *
- * @author Michael J. Schnieders
- * @version 0.1
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.ui;
 
@@ -44,7 +43,7 @@ import ffx.potential.bonded.RendererCache;
  * active system and nodes.
  *
  * @author Michael J. Schnieders
- * @version $Id: $
+ *
  */
 public final class Hierarchy extends JTree implements TreeSelectionListener {
 
@@ -190,7 +189,8 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
     }
 
     /**
-     * <p>Getter for the field <code>activeNode</code>.</p>
+     * <p>Getter for the field
+     * <code>activeNode</code>.</p>
      *
      * @return a {@link ffx.potential.bonded.MSNode} object.
      */
@@ -199,7 +199,8 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
     }
 
     /**
-     * <p>Getter for the field <code>activeNodes</code>.</p>
+     * <p>Getter for the field
+     * <code>activeNodes</code>.</p>
      *
      * @return a {@link java.util.ArrayList} object.
      */
@@ -437,7 +438,8 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
     }
 
     /**
-     * <p>Setter for the field <code>status</code>.</p>
+     * <p>Setter for the field
+     * <code>status</code>.</p>
      *
      * @param s a {@link javax.swing.JLabel} object.
      * @param t a {@link javax.swing.JLabel} object.
@@ -481,7 +483,9 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String toString() {
         return "Structural Hierarchy";
@@ -516,7 +520,9 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void valueChanged(TreeSelectionEvent e) {
         synchronized (this) {

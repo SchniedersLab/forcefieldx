@@ -1,6 +1,9 @@
 /**
- * Title: Force Field X Description: Force Field X - Software for Molecular
- * Biophysics. Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
@@ -25,7 +28,7 @@ package ffx.numerics;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public interface Potential {
 
@@ -43,8 +46,7 @@ public interface Potential {
      *
      * @param x Input parameters.
      * @param g Output gradients with respect to each parameter.
-     * @return Function value at
-     * <code>x</code>.
+     * @return Function value at <code>x</code>.
      * @since 1.0
      */
     public abstract double energyAndGradient(double x[], double g[]);

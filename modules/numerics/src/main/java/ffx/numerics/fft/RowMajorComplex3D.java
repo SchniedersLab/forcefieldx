@@ -1,42 +1,36 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.numerics.fft;
 
 /**
  * Compute the 3D FFT of complex, double precision input of arbitrary dimensions
- * via 1D Mixed Radix FFTs.
- * <p>
- * The location of the input point [i, j, k] within the input array must be:<br>
- * <br>
- * double real = input[x*nextX + y*nextY + z*nextZ]<br>
- * double imag = input[x*nextX + y*nextY + z*nextZ + 1]<br>
- * <br>
- * where<br>
- * int nextX = 2<br>
- * int nextY = 2*nX<br>
- * int nextZ = 2*nX*nY<br>
- * <p>
+ * via 1D Mixed Radix FFTs. <p> The location of the input point [i, j, k] within
+ * the input array must be:<br> <br> double real = input[x*nextX + y*nextY +
+ * z*nextZ]<br> double imag = input[x*nextX + y*nextY + z*nextZ + 1]<br> <br>
+ * where<br> int nextX = 2<br> int nextY = 2*nX<br> int nextZ = 2*nX*nY<br> <p>
  *
  * @author Michal J. Schnieders
- * @version $Id: $
+ *
  */
 public class RowMajorComplex3D {
 
@@ -75,8 +69,7 @@ public class RowMajorComplex3D {
     /**
      * Compute the 3D FFT.
      *
-     * @param input
-     *            The input array must be of size 2 * nX * nY * nZ.
+     * @param input The input array must be of size 2 * nX * nY * nZ.
      */
     public void fft(final double input[]) {
         int x, y, z, i, stride, offset;
@@ -107,8 +100,7 @@ public class RowMajorComplex3D {
     /**
      * Compute the inverse 3D FFT.
      *
-     * @param input
-     *            The input array must be of size 2 * nX * nY * nZ.
+     * @param input The input array must be of size 2 * nX * nY * nZ.
      */
     public void ifft(final double input[]) {
         int x, y, z, i, stride, offset;
@@ -136,7 +128,8 @@ public class RowMajorComplex3D {
     }
 
     /**
-     * <p>Setter for the field <code>recip</code>.</p>
+     * <p>Setter for the field
+     * <code>recip</code>.</p>
      *
      * @param recip an array of double.
      */
@@ -144,8 +137,8 @@ public class RowMajorComplex3D {
         int offset, y, x, z, i;
 
         /**
-         * Reorder the reciprocal space data into the order it is needed
-         * by the convolution routine.
+         * Reorder the reciprocal space data into the order it is needed by the
+         * convolution routine.
          */
         int index = 0;
         for (offset = 0, y = 0; y < nY; y++) {

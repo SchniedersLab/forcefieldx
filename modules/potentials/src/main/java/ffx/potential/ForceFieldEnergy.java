@@ -1,6 +1,9 @@
 /**
- * Title: Force Field X Description: Force Field X - Software for Molecular
- * Biophysics. Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
@@ -46,7 +49,7 @@ import ffx.potential.parameters.ForceField.ForceFieldString;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public class ForceFieldEnergy implements Potential, LambdaInterface {
 
@@ -404,7 +407,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
 
         if (multipoleTerm) {
-            particleMeshEwald = new ParticleMeshEwald(forceField, atoms, crystal, 
+            particleMeshEwald = new ParticleMeshEwald(forceField, atoms, crystal,
                     vanderWaals.getNeighborList(), parallelTeam);
         } else {
             particleMeshEwald = null;
@@ -1111,20 +1114,20 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
 
     public void setCrystal(Crystal crystal) {
-            this.crystal = crystal;
-            /**
-             * Update VanDerWaals first, in case the NeighborList needs to be
-             * re-allocated to include a larger number of replicated cells.
-             */
-            if (vanderWaalsTerm == true) {
-                vanderWaals.setCrystal(crystal);
-            }
-            if (multipoleTerm == true) {
-                particleMeshEwald.setCrystal(crystal);
-            }
-            /**
-             * TODO: update GeneralizedKirkwood to include support for symmetry
-             * operators and periodic boundary conditions.
-             */
+        this.crystal = crystal;
+        /**
+         * Update VanDerWaals first, in case the NeighborList needs to be
+         * re-allocated to include a larger number of replicated cells.
+         */
+        if (vanderWaalsTerm == true) {
+            vanderWaals.setCrystal(crystal);
+        }
+        if (multipoleTerm == true) {
+            particleMeshEwald.setCrystal(crystal);
+        }
+        /**
+         * TODO: update GeneralizedKirkwood to include support for symmetry
+         * operators and periodic boundary conditions.
+         */
     }
 }

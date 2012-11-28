@@ -1,6 +1,9 @@
 /**
- * Title: Force Field X Description: Force Field X - Software for Molecular
- * Biophysics Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
@@ -43,7 +46,7 @@ import ffx.numerics.LBFGS;
  * Phenobarbital and 12-ethanediol for now
  *
  * @author Gaurav Chattree
- * 
+ *
  * @since 1.0
  */
 @RunWith(Parameterized.class)

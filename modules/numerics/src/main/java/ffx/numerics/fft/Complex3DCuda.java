@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.numerics.fft;
 
@@ -40,10 +42,13 @@ import jcuda.LogLevel;
 import jcuda.Pointer;
 import jcuda.Sizeof;
 import jcuda.driver.*;
+
 import jcuda.jcufft.JCufft;
 import jcuda.jcufft.cufftHandle;
 import jcuda.jcufft.cufftType;
+import jcuda.utils.KernelLauncher;
 
+import static jcuda.runtime.JCuda.*;
 import static jcuda.driver.JCudaDriver.*;
 import static jcuda.jcufft.JCufft.*;
 
@@ -52,7 +57,7 @@ import static jcuda.jcufft.JCufft.*;
  *
  * @author Michal J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public class Complex3DCuda implements Runnable {
 
@@ -75,11 +80,10 @@ public class Complex3DCuda implements Runnable {
         FFT, IFFT, CONVOLUTION, RECIP
     };
 
-    
     public DoubleBuffer getDoubleBuffer() {
         return pinnedMemoryBuffer;
     }
-    
+
     /**
      * Initialize the 3D FFT for complex 3D matrix.
      *
@@ -99,8 +103,7 @@ public class Complex3DCuda implements Runnable {
     /**
      * Compute the 3D FFT using CUDA.
      *
-     * @param data
-     *            The input data array must be of size 2 * nX * nY * nZ.
+     * @param data The input data array must be of size 2 * nX * nY * nZ.
      * @since 1.0
      */
     public void fft(final double data[]) {
@@ -108,19 +111,18 @@ public class Complex3DCuda implements Runnable {
         if (dead || mode != null) {
             return;
         }
-        //pinnedMemoryBuffer.rewind();
-        //pinnedMemoryBuffer.put(data);
+        // pinnedMemoryBuffer.rewind();
+        // pinnedMemoryBuffer.put(data);
         mode = MODE.FFT;
         execute();
-        //pinnedMemoryBuffer.rewind();
-        //pinnedMemoryBuffer.get(data);
+        // pinnedMemoryBuffer.rewind();
+        // pinnedMemoryBuffer.get(data);
     }
 
     /**
      * Compute the inverse 3D FFT using CUDA.
      *
-     * @param data
-     *            The input data array must be of size 2 * nX * nY * nZ.
+     * @param data The input data array must be of size 2 * nX * nY * nZ.
      * @since 1.0
      */
     public void ifft(final double data[]) {
@@ -128,12 +130,12 @@ public class Complex3DCuda implements Runnable {
         if (dead || mode != null) {
             return;
         }
-        //pinnedMemoryBuffer.rewind();
-        //pinnedMemoryBuffer.put(data);
+        // pinnedMemoryBuffer.rewind();
+        // pinnedMemoryBuffer.put(data);
         mode = MODE.IFFT;
         execute();
-        //pinnedMemoryBuffer.rewind();
-        //pinnedMemoryBuffer.get(data);
+        // pinnedMemoryBuffer.rewind();
+        // pinnedMemoryBuffer.get(data);
     }
 
     /**
@@ -147,18 +149,19 @@ public class Complex3DCuda implements Runnable {
             return;
         }
         // Copy input into pinned memory.
-        //pinnedMemoryBuffer.rewind();
-        //pinnedMemoryBuffer.put(data);
+        // pinnedMemoryBuffer.rewind();
+        // pinnedMemoryBuffer.put(data);
         // Do the CUDA computation.
         mode = MODE.CONVOLUTION;
         execute();
         // Copy output from pinned memory.
-        //pinnedMemoryBuffer.rewind();
-        //pinnedMemoryBuffer.get(data);
+        // pinnedMemoryBuffer.rewind();
+        // pinnedMemoryBuffer.get(data);
     }
 
     /**
-     * <p>Setter for the field <code>recip</code>.</p>
+     * <p>Setter for the field
+     * <code>recip</code>.</p>
      *
      * @param recip an array of double.
      */
@@ -173,8 +176,8 @@ public class Complex3DCuda implements Runnable {
     }
 
     /**
-     * Notify the CUDA thread and then wait until the requested
-     * operation completes.
+     * Notify the CUDA thread and then wait until the requested operation
+     * completes.
      *
      * @return Returns 0 upon success.
      */
@@ -220,7 +223,9 @@ public class Complex3DCuda implements Runnable {
         return 0;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void run() {
         JCudaDriver.setExceptionsEnabled(true);
@@ -237,9 +242,9 @@ public class Complex3DCuda implements Runnable {
         cuDeviceGetProperties(prop, dev);
         logger.info(" CUDA " + prop.toFormattedString());
         cuDeviceGet(dev, 0);
+
         // Create a context that allows the GPU to map pinned host memory.
         // cuCtxCreate(pctx, CUctx_flags.CU_CTX_MAP_HOST, dev);
-        
         // Create a context that does not allows the GPU to map pinned host memory.
         cuCtxCreate(pctx, 0, dev);
 
@@ -258,18 +263,17 @@ public class Complex3DCuda implements Runnable {
             logger.log(Level.SEVERE, message, e);
         }
 
-        // Allocate pinned Host memory and get a DoubleBuffer reference to it.
         pinnedMemory = new Pointer();
-        
-        // Allocate pinned memory mapped into the GPU address space. 
+
+        // Allocate pinned memory mapped into the GPU address space.
         // cuMemHostAlloc(pinnedMemory, len * 2 * Sizeof.DOUBLE, CU_MEMHOSTALLOC_DEVICEMAP);
-        
-        // Allocate pinned memory
+        // Allocate memory
         cuMemHostAlloc(pinnedMemory, len * 2 * Sizeof.DOUBLE, 0);
+
         ByteBuffer byteBuffer = pinnedMemory.getByteBuffer(0, len * 2 * Sizeof.DOUBLE);
         byteBuffer.order(ByteOrder.nativeOrder());
         pinnedMemoryBuffer = byteBuffer.asDoubleBuffer();
-        
+
         // Allocate a work array on the device.
         dataDevice = new CUdeviceptr();
         cuMemAlloc(dataDevice, len * 2 * Sizeof.DOUBLE);
@@ -280,7 +284,9 @@ public class Complex3DCuda implements Runnable {
 
         // Create and execute a JCufft plan for the data
         plan = new cufftHandle();
+
         cufftPlan3d(plan, nZ, nY, nX, cufftType.CUFFT_Z2Z);
+        //cufftSetCompatibilityMode(plan, cufftCompatibility.CUFFT_COMPATIBILITY_FFTW_ALL);
 
         dataGPUPtr = Pointer.to(dataDevice);
         recipGPUPtr = Pointer.to(recipDevice);
@@ -310,12 +316,13 @@ public class Complex3DCuda implements Runnable {
                             break;
 
                         case CONVOLUTION:
-                            cuMemcpyHtoD(dataDevice, pinnedMemory, 2 * len * Sizeof.DOUBLE);
-                            cufftExecZ2Z(plan, dataDevice, dataDevice, CUFFT_FORWARD);
-                            
+
                             // Zero Copy
                             // cufftExecZ2Z(plan, pinnedMemory, dataDevice, CUFFT_FORWARD);
-                            
+                            // Copy data to device and run forward FFT.
+                            cuMemcpyHtoD(dataDevice, pinnedMemory, 2 * len * Sizeof.DOUBLE);
+                            cufftExecZ2Z(plan, dataDevice, dataDevice, CUFFT_FORWARD);
+
                             // Set up the execution parameters for the kernel
                             cuFuncSetBlockShape(function, threads, 1, 1);
                             int offset = 0;
@@ -331,10 +338,10 @@ public class Complex3DCuda implements Runnable {
                             cuParamSetSize(function, offset);
                             // Call the kernel function.
                             cuLaunchGrid(function, gridSize, gridSize);
-                            
+
                             // Zero Copy
                             // cufftExecZ2Z(plan, dataDevice, pinnedMemory, CUFFT_INVERSE);
-                            
+                            // Perform inverse FFT and copy memory back to the CPU.
                             cufftExecZ2Z(plan, dataDevice, dataDevice, CUFFT_INVERSE);
                             cuMemcpyDtoH(pinnedMemory, dataDevice, 2 * len * Sizeof.DOUBLE);
                             break;
@@ -346,10 +353,10 @@ public class Complex3DCuda implements Runnable {
                             break;
 
                     }
-                    
-                    // Block for the context's tasks to complete. 
+
+                    // Block for the context's tasks to complete.
                     cuCtxSynchronize();
-                    
+
                     // Reset the mode to null and notify the calling thread.
                     mode = null;
                     notify();
@@ -371,7 +378,9 @@ public class Complex3DCuda implements Runnable {
         logger.info(" CUDA Thread Done!");
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void finalize() throws Throwable {
         try {
@@ -427,7 +436,8 @@ public class Complex3DCuda implements Runnable {
             for (int j = 0; j < dim; j++) {
                 for (int i = 0; i < dim; i++) {
                     orig[index] = random.nextDouble();
-                    recip[index] = orig[index];
+                    //recip[index] = orig[index];
+                    recip[index] = 1.0;
                     index++;
                 }
             }
@@ -435,7 +445,7 @@ public class Complex3DCuda implements Runnable {
 
         Complex3D complex3D = new Complex3D(dim, dim, dim);
         Complex3DParallel complex3DParallel =
-                          new Complex3DParallel(dim, dim, dim, new ParallelTeam(), IntegerSchedule.fixed());
+                new Complex3DParallel(dim, dim, dim, new ParallelTeam(), IntegerSchedule.fixed());
         complex3DParallel.setRecip(recip);
 
         Complex3DCuda complex3DCUDA = new Complex3DCuda(dim, dim, dim);
@@ -497,7 +507,7 @@ public class Complex3DCuda implements Runnable {
         for (int i = 0; i < reps; i++) {
             for (int j = 0; j < dimCubed; j++) {
                 data[j * 2] = orig[j];
-                data[j * 2 + 1] = 0.0f;
+                data[j * 2 + 1] = 0.0;
             }
             long time = System.nanoTime();
             complex3DCUDA.convolution(data);
@@ -512,7 +522,7 @@ public class Complex3DCuda implements Runnable {
         double avg = 0.0;
         rmse = 0.0;
         for (int i = 0; i < dimCubed; i++) {
-            double error = Math.abs((answer[i] - data[2 * i]) / dimCubed);
+            double error = Math.abs(answer[i] / dimCubed - data[2 * i]);
             avg += error;
             if (error > maxError) {
                 maxError = error;
@@ -528,14 +538,14 @@ public class Complex3DCuda implements Runnable {
         complex3DCUDA = null;
 
         System.out.println(String.format(" Best Sequential Time:  %8.3f",
-                                         toSeconds * seqTime));
+                toSeconds * seqTime));
         System.out.println(String.format(" Best Parallel Time:    %8.3f",
-                                         toSeconds * parTime));
+                toSeconds * parTime));
         System.out.println(String.format(" Best CUDA Time:        %8.3f",
-                                         toSeconds * clTime));
+                toSeconds * clTime));
         System.out.println(String.format(" Parallel Speedup: %15.5f", (double) seqTime
-                                                                      / parTime));
+                / parTime));
         System.out.println(String.format(" CUDA Speedup:     %15.5f", (double) seqTime
-                                                                      / clTime));
+                / clTime));
     }
 }

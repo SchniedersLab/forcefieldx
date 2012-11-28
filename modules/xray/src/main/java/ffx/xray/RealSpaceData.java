@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.xray;
 
@@ -38,7 +40,7 @@ import ffx.xray.RefinementMinimize.RefinementMode;
  * <p>RealSpaceData class.</p>
  *
  * @author Tim Fenn
- * @version $Id: $
+ *
  */
 public class RealSpaceData implements DataContainer {
 
@@ -58,8 +60,9 @@ public class RealSpaceData implements DataContainer {
      * construct a real space data assembly, assumes a real space map with a
      * weight of 1.0 using the same name as the molecular assembly
      *
-     * @param assembly {@link ffx.potential.bonded.MolecularAssembly molecular assembly}
-     * object, used as the atomic model for comparison against the data
+     * @param assembly
+     * {@link ffx.potential.bonded.MolecularAssembly molecular assembly} object,
+     * used as the atomic model for comparison against the data
      * @param properties system properties file
      * @param diffractiondata {@link ffx.xray.DiffractionData diffraction data}
      */
@@ -72,8 +75,9 @@ public class RealSpaceData implements DataContainer {
      * construct a real space data assembly, assumes a real space map with a
      * weight of 1.0 using the same name as the molecular assembly
      *
-     * @param assembly {@link ffx.potential.bonded.MolecularAssembly molecular assembly}
-     * object, used as the atomic model for comparison against the data
+     * @param assembly
+     * {@link ffx.potential.bonded.MolecularAssembly molecular assembly} object,
+     * used as the atomic model for comparison against the data
      * @param properties system properties file
      * @param diffractiondata {@link ffx.xray.DiffractionData diffraction data}
      */
@@ -141,8 +145,9 @@ public class RealSpaceData implements DataContainer {
      * construct a real space data assembly, assumes a real space map with a
      * weight of 1.0 using the same name as the molecular assembly
      *
-     * @param assembly {@link ffx.potential.bonded.MolecularAssembly molecular assembly}
-     * object, used as the atomic model for comparison against the data
+     * @param assembly
+     * {@link ffx.potential.bonded.MolecularAssembly molecular assembly} object,
+     * used as the atomic model for comparison against the data
      * @param properties system properties file
      */
     public RealSpaceData(MolecularAssembly assembly,
@@ -154,8 +159,9 @@ public class RealSpaceData implements DataContainer {
     /**
      * construct a real space data assembly
      *
-     * @param assembly {@link ffx.potential.bonded.MolecularAssembly molecular assembly}
-     * object, used as the atomic model for comparison against the data
+     * @param assembly
+     * {@link ffx.potential.bonded.MolecularAssembly molecular assembly} object,
+     * used as the atomic model for comparison against the data
      * @param properties system properties file
      * @param datafile one or more {@link RealSpaceFile} to be refined against
      */
@@ -167,9 +173,10 @@ public class RealSpaceData implements DataContainer {
     /**
      * construct a real space data assembly
      *
-     * @param assembly {@link ffx.potential.bonded.MolecularAssembly molecular assembly}
-     * object array (typically containing alternate conformer assemblies), used
-     * as the atomic model for comparison against the data
+     * @param assembly
+     * {@link ffx.potential.bonded.MolecularAssembly molecular assembly} object
+     * array (typically containing alternate conformer assemblies), used as the
+     * atomic model for comparison against the data
      * @param properties system properties file
      * @param datafile one or more {@link RealSpaceFile} to be refined against
      */
@@ -326,55 +333,73 @@ public class RealSpaceData implements DataContainer {
         this.lambda = lambda;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Atom[] getAtomArray() {
         return refinementmodel.atomarray;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ArrayList<ArrayList<Residue>> getAltResidues() {
         return refinementmodel.altresidues;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ArrayList<ArrayList<Molecule>> getAltMolecules() {
         return refinementmodel.altmolecules;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public MolecularAssembly[] getMolecularAssembly() {
         return assembly;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public RefinementModel getRefinementModel() {
         return refinementmodel;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getWeight() {
         return xweight;
     }
-    
-    /** {@inheritDoc} */
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setWeight(double weight) {
         this.xweight = weight;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String printOptimizationHeader() {
         return "Density score";
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String printOptimizationUpdate() {
         StringBuilder sb = new StringBuilder();
@@ -384,7 +409,9 @@ public class RealSpaceData implements DataContainer {
         return sb.toString();
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String printEnergyUpdate() {
         StringBuilder sb = new StringBuilder();

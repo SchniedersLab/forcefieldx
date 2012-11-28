@@ -1,6 +1,9 @@
 /**
- * Title: Force Field X Description: Force Field X - Software for Molecular
- * Biophysics. Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
@@ -42,7 +45,7 @@ import ffx.potential.parsers.XYZFilter;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public class MolecularDynamics implements Runnable, Terminatable {
 
@@ -87,11 +90,11 @@ public class MolecularDynamics implements Runnable, Terminatable {
      *
      * @param assembly a {@link ffx.potential.bonded.MolecularAssembly} object.
      * @param potentialEnergy a {@link ffx.numerics.Potential} object.
-     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration}
-     * object.
+     * @param properties a
+     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
      * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
-     * @param requestedThermostat a {@link ffx.algorithms.Thermostat.Thermostats}
-     * object.
+     * @param requestedThermostat a
+     * {@link ffx.algorithms.Thermostat.Thermostats} object.
      */
     public MolecularDynamics(MolecularAssembly assembly,
             Potential potentialEnergy,
@@ -292,7 +295,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
          */
         saveFrequency = 1000;
         if (saveInterval >= this.dt) {
-           saveFrequency = (int) (saveInterval / this.dt);            
+            saveFrequency = (int) (saveInterval / this.dt);
         }
 
         File file = molecularAssembly.getFile();

@@ -6,7 +6,7 @@
     http://maven.apache.org/xsd/xdoc-2.0.xsd">
     <properties>
         <title>Properties</title>
-        <author email="michael.schnieders@gmail.com">Michael J. Schnieders</author>
+        <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
     </properties>
     <body>
         <section name="Properties">
@@ -25,8 +25,8 @@
                     </ul>
                 </li>
                 <li>Second highest precedence is given to structure specific properties.
-                For example, when opening a structure named filename.pdb or filename.xyz,
-                Force Field X will attempt to read properties from:
+                    For example, when opening a structure named filename.pdb or filename.xyz,
+                    Force Field X will attempt to read properties from:
                     <ol>
                         <li>fileame.properties
                         </li>
@@ -81,9 +81,9 @@
                             <td>none</td>
                             <td>Length of the
                                 <code>a-axis</code> of the unit cell in Angstroms. There is no
-                            default for
+                                default for
                                 <code>a-axis</code>. If it is not specified, the calculation is
-                            treated as aperiodic.
+                                treated as aperiodic.
                             </td>
                         </tr>
                         <tr>
@@ -109,7 +109,7 @@
                             <td>Angle between the
                                 <code>b-axis</code> and
                                 <code>c-axis</code>
-                            of the unit cell in degrees.
+                                of the unit cell in degrees.
                             </td>
                         </tr>
                         <tr>
@@ -119,7 +119,7 @@
                             <td>Angle between the
                                 <code>a-axis</code> and
                                 <code>c-axis</code>
-                            of the unit cell in degrees.
+                                of the unit cell in degrees.
                             </td>
                         </tr>
                         <tr>
@@ -129,7 +129,7 @@
                             <td>Angle between the
                                 <code>a-axis</code> and
                                 <code>b-axis</code>
-                            of the unit cell in degrees.
+                                of the unit cell in degrees.
                             </td>
                         </tr>
                         <tr>
@@ -137,16 +137,16 @@
                             <td>string</td>
                             <td>P 1</td>
                             <td>One of the 230 space groups using the convention followed by the
-                            PDB CRYST1 record, which is to use a Hermann-Mauguin symbol without
-                            parenthesis, e.g.,
+                                PDB CRYST1 record, which is to use a Hermann-Mauguin symbol without
+                                parenthesis, e.g.,
                                 <code>P 21 21 2</code> and using the full symbol,
-                            e.g.,
+                                e.g.,
                                 <code>C 1 2 1</code> instead of
                                 <code>C 2</code>.
-                            The defaut is
+                                The defaut is
                                 <code>P 1</code> if an a-axis is specified, but not a space group.
-                            Internal checks are performed to ensure unit cell parameters are
-                            consistent with the symmetry of the space group.
+                                Internal checks are performed to ensure unit cell parameters are
+                                consistent with the symmetry of the space group.
                             </td>
                         </tr>
                     </tbody>
@@ -183,9 +183,9 @@
                             <td>boolean</td>
                             <td>true</td>
                             <td>Controls use of the permanent multipole electrostatics term for
-                            the AMOEBA potential. Setting
+                                the AMOEBA potential. Setting
                                 <code>mpoleterm</code> to false also turns
-                            off polarization, overriding the polarizeterm property below.
+                                off polarization, overriding the polarizeterm property below.
                             </td>
                         </tr>
                         <tr>
@@ -193,7 +193,7 @@
                             <td>boolean</td>
                             <td>true</td>
                             <td>Specifies use of the out-of-plane bending term for atoms at
-                            trigonal centers under the AMOEBA potentials.
+                                trigonal centers under the AMOEBA potentials.
                             </td>
                         </tr>
                         <tr>
@@ -201,7 +201,7 @@
                             <td>boolean</td>
                             <td>true</td>
                             <td>Specifies use of the pi-torsion term between atoms that have
-                            double bond character under the AMOEBA potentials.
+                                double bond character under the AMOEBA potentials.
                             </td>
                         </tr>
                         <tr>
@@ -209,9 +209,9 @@
                             <td>boolean</td>
                             <td>true</td>
                             <td>Controls use of polarizable electrostatics for the AMOEBA
-                            potential. Setting
+                                potential. Setting
                                 <code>polarizeterm</code> to false overrides the polarization
-                            property below.
+                                property below.
                             </td>
                         </tr>
                         <tr>
@@ -220,9 +220,9 @@
                             <td>mutual</td>
                             <td>[mutual/direct/none]
                                 <code>Mutual</code> indicates the induced dipoles on each
-                            atom interact self-consistently.
+                                atom interact self-consistently.
                                 <code>Direct</code> indicates that induced dipoles
-                            are influenced by the permanent multipoles, but not each other.
+                                are influenced by the permanent multipoles, but not each other.
                                 <code>None</code> turns off polarization.
                             </td>
                         </tr>
@@ -231,13 +231,13 @@
                             <td>double</td>
                             <td>1.0e-6</td>
                             <td>This is the convergence criteria for the self-consistent field
-                            calculation in units of RMS Debye. The default of 1e-6 is
-                            necessary for optimizations to a tight tolerance. For optimization
-                            during X-rey refinement to an RMS gradient per atom of 0.1, then
-                            a looser
+                                calculation in units of RMS Debye. The default of 1e-6 is
+                                necessary for optimizations to a tight tolerance. For optimization
+                                during X-rey refinement to an RMS gradient per atom of 0.1, then
+                                a looser
                                 <code>polar-eps</code> of 1e-3 is sufficient. For molecular dynamics
-                            with a thermostat, 1e-2 is resonable trade-off between accuracy
-                            and performance.
+                                with a thermostat, 1e-2 is resonable trade-off between accuracy
+                                and performance.
                             </td>
                         </tr>
                         <tr>
@@ -245,12 +245,12 @@
                             <td>double</td>
                             <td>0.70</td>
                             <td>Calculation of the self-consistent field is based on successive
-                            over-relaxtion (SOR). The
+                                over-relaxtion (SOR). The
                                 <code>polar-sor</code> parameter controls the fractional
-                            change in the induced dipoles that is accepted prior to the beginning
-                            of the following iteration. The default value of 0.70 does not usually
-                            need to be changed, although in rare cases a slightly more conservative
-                            value of 0.65 is necessary.
+                                change in the induced dipoles that is accepted prior to the beginning
+                                of the following iteration. The default value of 0.70 does not usually
+                                need to be changed, although in rare cases a slightly more conservative
+                                value of 0.65 is necessary.
                             </td>
                         </tr>
                         <tr>
@@ -258,7 +258,7 @@
                             <td>boolean</td>
                             <td>true</td>
                             <td>Specifies use of the stretch-bend bond-angle coupling term for the
-                            AMOEBA potentials.
+                                AMOEBA potentials.
                             </td>
                         </tr>
                         <tr>
@@ -273,7 +273,7 @@
                             <td>boolean</td>
                             <td>true</td>
                             <td>Specifies use of spline based torsion-torsion terms for AMOEBA
-                            protein and nucleic acid force fields.
+                                protein and nucleic acid force fields.
                             </td>
                         </tr>
                         <tr>
@@ -281,7 +281,7 @@
                             <td>boolean</td>
                             <td>true</td>
                             <td>Specifies use of the Urey-Bradley restraint between water hydrogen
-                            atoms for the AMOEBA water model.
+                                atoms for the AMOEBA water model.
                             </td>
                         </tr>
                         <tr>
@@ -289,9 +289,9 @@
                             <td>boolean</td>
                             <td>true</td>
                             <td>Specifies use of the Buffered-14-7 van der Waals potential for the
-                            AMOEBA force field. If set to
+                                AMOEBA force field. If set to
                                 <code>false</code>, all non-bonded terms
-                            are turned off.
+                                are turned off.
                             </td>
                         </tr>
                     </tbody>
@@ -356,7 +356,7 @@
                             <td>double</td>
                             <td>1.2</td>
                             <td>Specifies the number of mesh points per Angstrom
-                            for the reciprocal space mesh.
+                                for the reciprocal space mesh.
                             </td>
                         </tr>
                         <tr>
@@ -364,7 +364,7 @@
                             <td>integer</td>
                             <td>5</td>
                             <td>Specifies the PME b-Spline order, which must be
-                            greater than or equal to 5 for AMOEBA.
+                                greater than or equal to 5 for AMOEBA.
                             </td>
                         </tr>
                     </tbody>
@@ -387,8 +387,8 @@
                             <td>string</td>
                             <td>null</td>
                             <td>title of the Fo column in the input MTZ file
-                            (if it is not one of the default values of F, Fo,
-                            Fp or Fobs)
+                                (if it is not one of the default values of F, Fo,
+                                Fp or Fobs)
                             </td>
                         </tr>
                         <tr>
@@ -396,8 +396,8 @@
                             <td>string</td>
                             <td>null</td>
                             <td>title of the sigFo column in the input MTZ file
-                            (if it is not one of the default values of sigF, sigFo,
-                            sigFp or SigFobs)
+                                (if it is not one of the default values of sigF, sigFo,
+                                sigFp or SigFobs)
                             </td>
                         </tr>
                         <tr>
@@ -405,9 +405,9 @@
                             <td>string</td>
                             <td>null</td>
                             <td>title of the Rfree column in the input MTZ file
-                            (if it is not one of the default values of Rfree, freeR,
-                            freeRflag, Rfreeflag, test, freer_flag or
-                            R-free-flags)
+                                (if it is not one of the default values of Rfree, freeR,
+                                freeRflag, Rfreeflag, test, freer_flag or
+                                R-free-flags)
                             </td>
                         </tr>
                         <tr>
@@ -415,7 +415,7 @@
                             <td>boolean</td>
                             <td>true</td>
                             <td>uses 3 Gaussians in form factor equation rather than
-                            6 (set to false for atomic resolution data)
+                                6 (set to false for atomic resolution data)
                             </td>
                         </tr>
                         <tr>
@@ -423,7 +423,7 @@
                             <td>double</td>
                             <td>0.5</td>
                             <td>atom radius buffer for sampling grid density, added
-                            to dynamically determined radius
+                                to dynamically determined radius
                             </td>
                         </tr>
                         <tr>
@@ -431,7 +431,7 @@
                             <td>boolean</td>
                             <td>true</td>
                             <td>apply a resolution dependent spline fit between
-                            Fo and Fc
+                                Fo and Fc
                             </td>
                         </tr>
                         <tr>
@@ -451,7 +451,7 @@
                             <td>integer</td>
                             <td>-1</td>
                             <td>integer flag for Rfree reflections (negative:
-                            automatically determined from data)
+                                automatically determined from data)
                             </td>
                         </tr>
                         <tr>
@@ -459,7 +459,7 @@
                             <td>integer</td>
                             <td>10</td>
                             <td>number of bins to divide data into for purposes of
-                            statistics/sigmaA fits
+                                statistics/sigmaA fits
                             </td>
                         </tr>
                         <tr>
@@ -467,7 +467,7 @@
                             <td>boolean</td>
                             <td>false</td>
                             <td>grid over bulk solvent parameters to determine
-                            optimal starting values
+                                optimal starting values
                             </td>
                         </tr>
                         <tr>
@@ -487,8 +487,8 @@
                             <td>double</td>
                             <td>1.0</td>
                             <td>weight for summed diffraction data (weights for
-                            individual data sets are provided at the script
-                            level)
+                                individual data sets are provided at the script
+                                level)
                             </td>
                         </tr>
                         <tr>
@@ -496,8 +496,8 @@
                             <td>double</td>
                             <td>1.0</td>
                             <td>harmonic restraint B-factor weight between bonded
-                            atoms (increase to 5 or 10 for low resolution structures
-                            if necessary)
+                                atoms (increase to 5 or 10 for low resolution structures
+                                if necessary)
                             </td>
                         </tr>
                         <tr>
@@ -511,7 +511,7 @@
                             <td>double</td>
                             <td>5.0</td>
                             <td>fictitious mass to assign to B factors for
-                            extended Lagrangian methods
+                                extended Lagrangian methods
                             </td>
                         </tr>
                         <tr>
@@ -519,7 +519,7 @@
                             <td>boolean</td>
                             <td>false</td>
                             <td>set to true to refine a B factor for each
-                            residue
+                                residue
                             </td>
                         </tr>
                         <tr>
@@ -527,7 +527,7 @@
                             <td>integer</td>
                             <td>1</td>
                             <td>number of residues per B factor (requires
-                            residuebfactor to be true)
+                                residuebfactor to be true)
                             </td>
                         </tr>
                         <tr>
@@ -535,7 +535,7 @@
                             <td>boolean</td>
                             <td>false</td>
                             <td>set to true to add ANISOU records to the PDB file
-                            based on isotropic B factors
+                                based on isotropic B factors
                             </td>
                         </tr>
                         <tr>
@@ -543,7 +543,7 @@
                             <td>boolean</td>
                             <td>false</td>
                             <td>set to true to refine occupancies of HETATMs, only
-                            performed if hetatms are in alternate conformers or occ
+                                performed if hetatms are in alternate conformers or occ
                             &lt; 1.0
                             </td>
                         </tr>
@@ -552,7 +552,7 @@
                             <td>double</td>
                             <td>10.0</td>
                             <td>fictitious mass to assign to occupancies for
-                            extended Lagrangian methods
+                                extended Lagrangian methods
                             </td>
                         </tr>
                     </tbody>

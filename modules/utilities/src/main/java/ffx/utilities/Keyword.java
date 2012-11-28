@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.utilities;
 
@@ -37,7 +39,7 @@ import org.apache.commons.configuration.SystemConfiguration;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public class Keyword {
 
@@ -126,7 +128,8 @@ public class Keyword {
     }
 
     /**
-     * <p>Getter for the field <code>keyword</code>.</p>
+     * <p>Getter for the field
+     * <code>keyword</code>.</p>
      *
      * @return a {@link java.lang.String} object.
      */
@@ -141,7 +144,9 @@ public class Keyword {
         logger.info(this.toString());
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder(keyword + " ");
@@ -153,22 +158,22 @@ public class Keyword {
 
     /**
      * This method sets up configuration properties in the following precedence
-     * order:
-     * 1.) Java system properties
-     *     a.) -Dkey=value from the Java command line
-     *     b.) System.setProperty("key","value") within Java code.
+     * order: 1.) Java system properties a.) -Dkey=value from the Java command
+     * line b.) System.setProperty("key","value") within Java code.
      *
      * 2.) Structure specific properties (for example pdbname.properties)
      *
      * 3.) User specific properties (~/.ffx/ffx.properties)
      *
-     * 4.) System wide properties (file defined by environment variable FFX_PROPERTIES)
+     * 4.) System wide properties (file defined by environment variable
+     * FFX_PROPERTIES)
      *
      * 5.) Internal force field definition.
      *
      * @since 1.0
      * @param file a {@link java.io.File} object.
-     * @return a {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * @return a {@link org.apache.commons.configuration.CompositeConfiguration}
+     * object.
      */
     public static CompositeConfiguration loadProperties(File file) {
         /**

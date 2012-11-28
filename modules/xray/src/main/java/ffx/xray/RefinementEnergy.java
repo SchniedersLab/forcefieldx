@@ -1,6 +1,9 @@
 /**
- * Title: Force Field X Description: Force Field X - Software for Molecular
- * Biophysics. Copyright: Copyright (c) Michael J. Schnieders 2001-2009
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
@@ -44,7 +47,7 @@ import static ffx.numerics.VectorMath.b2u;
  *
  * @author Timothy D. Fenn and Michael J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmListener {
 
@@ -252,7 +255,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
                 }
                 double chemE = e;
                 System.out.println("chem E: " + e + " scaled chem E: " + ktscale * e);
-                
+
                 e = chemE * ktscale;
                 // normalize gradients for multiple-counted atoms
                 if (assemblysize > 1) {
@@ -593,7 +596,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
     @Override
     public void getdEdXdL(double[] gradient) {
         double weight = data.getWeight();
-        
+
         if (thermostat != null) {
             ktscale = Thermostat.convert / (thermostat.getTargetTemperature() * Thermostat.kB);
         }

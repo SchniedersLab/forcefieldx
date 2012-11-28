@@ -1,6 +1,9 @@
 /**
- * Title: Force Field X Description: Force Field X - Software for Molecular
- * Biophysics Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
@@ -32,7 +35,7 @@ import static java.lang.Math.pow;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public final class OutOfPlaneBendType extends BaseType implements Comparator<String> {
 
@@ -122,8 +125,8 @@ public final class OutOfPlaneBendType extends BaseType implements Comparator<Str
     @Override
     public String toString() {
         return String.format("opbend  %5d  %5d  %5d  %5d  %6.2f", atomClasses[0],
-                             atomClasses[1], atomClasses[2],
-                             atomClasses[3], forceConstant);
+                atomClasses[1], atomClasses[2],
+                atomClasses[3], forceConstant);
     }
     /**
      * Cubic coefficient in out-of-plane angle bending potential.

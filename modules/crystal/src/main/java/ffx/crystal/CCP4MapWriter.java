@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT Aexty WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.crystal;
 
@@ -34,13 +36,17 @@ import static java.lang.Math.sqrt;
  * <p>CCP4MapWriter class.</p>
  *
  * @author Tim Fenn
- * @see <a href="http://www.ccp4.ac.uk/html/maplib.html" target="_blank">CCP4 map format</a>
+ * @see <a href="http://www.ccp4.ac.uk/html/maplib.html" target="_blank">CCP4
+ * map format</a>
  *
- * @see <a href="http://www.ccp4.ac.uk/dist/html/library.html" target="_blank">CCP4 library documentation</a>
- * @see <a href="http://www.ccp4.ac.uk/html/maplib.html" target="_blank">CCP4 map format</a>
+ * @see <a href="http://www.ccp4.ac.uk/dist/html/library.html"
+ * target="_blank">CCP4 library documentation</a>
+ * @see <a href="http://www.ccp4.ac.uk/html/maplib.html" target="_blank">CCP4
+ * map format</a>
  *
- * @see <a href="http://www.ccp4.ac.uk/dist/html/library.html" target="_blank">CCP4 library documentation</a>
- * @version $Id: $
+ * @see <a href="http://www.ccp4.ac.uk/dist/html/library.html"
+ * target="_blank">CCP4 library documentation</a>
+ *
  */
 public class CCP4MapWriter {
 
@@ -92,7 +98,7 @@ public class CCP4MapWriter {
      * @param filename a {@link java.lang.String} object.
      */
     public CCP4MapWriter(int orix, int oriy, int oriz, int extx, int exty, int extz,
-            int nx, int ny, int nz, Crystal crystal, String filename){
+            int nx, int ny, int nz, Crystal crystal, String filename) {
         this.orix = orix;
         this.oriy = oriy;
         this.oriz = oriz;
@@ -108,7 +114,8 @@ public class CCP4MapWriter {
     }
 
     /**
-     * set the stepping across the array (e.g. 2 if data is separated by 1 space)
+     * set the stepping across the array (e.g. 2 if data is separated by 1
+     * space)
      *
      * @param stride the step size desired
      */

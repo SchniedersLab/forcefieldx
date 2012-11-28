@@ -1,6 +1,9 @@
 /**
- * Title: Force Field X Description: Force Field X - Software for Molecular
- * Biophysics. Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
@@ -34,7 +37,7 @@ import ffx.potential.bonded.MolecularAssembly;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public class SimulatedAnnealing implements Runnable, Terminatable {
 
@@ -52,8 +55,8 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
      *
      * @param assembly a {@link ffx.potential.bonded.MolecularAssembly} object.
      * @param potentialEnergy a {@link ffx.numerics.Potential} object.
-     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration}
-     * object.
+     * @param properties a
+     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
      * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
      */
     public SimulatedAnnealing(MolecularAssembly assembly,
@@ -70,11 +73,13 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
      *
      * @param assembly a {@link ffx.potential.bonded.MolecularAssembly} object.
      * @param potentialEnergy a {@link ffx.numerics.Potential} object.
-     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration}
-     * object.
+     * @param properties a
+     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
      * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
-     * @param requestedThermostat a {@link ffx.algorithms.Thermostat.Thermostats}
-     * @param requestedIntegrator a {@link ffx.algorithms.Integrator.Integrators}
+     * @param requestedThermostat a
+     * {@link ffx.algorithms.Thermostat.Thermostats}
+     * @param requestedIntegrator a
+     * {@link ffx.algorithms.Integrator.Integrators}
      */
     public SimulatedAnnealing(MolecularAssembly assembly,
             Potential potentialEnergy,

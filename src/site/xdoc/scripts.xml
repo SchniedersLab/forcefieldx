@@ -6,30 +6,28 @@
     http://maven.apache.org/xsd/xdoc-2.0.xsd">
     <properties>
         <title>Commands</title>
-        <author email="michael.schnieders@gmail.com">Michael J. Schnieders</author>
+        <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
     </properties>
     <body>
         <section name="Commands">
-            <subsection name="Running Force Field X">                
-                <p>Force Field X is launched using the following syntax:
-                </p>
-                <source>ffxc [-D&lt;property=value&gt;] &lt;command&gt; [-options] &lt;PDB|XYZ&gt;</source>
-                <p>
+            <p>Force Field X is launched using the following syntax:
+            </p>
+            <source>ffxc [-D&lt;property=value&gt;] &lt;command&gt; [-options] &lt;PDB|XYZ&gt;</source>
+            <p>
                 Force Field X supports a variety of internal commands that are listed below.
                 Information on the options available for a command is output if the help flag
                 is specified following the command.
-                </p>
-                <source>ffxc &lt;command&gt; -h</source>
-                <p>Custom modifications to a command, or the creation of a completely new command,
+            </p>
+            <source>ffxc &lt;command&gt; -h</source>
+            <p>Custom modifications to a command, or the creation of a completely new command,
                 is possible by launching Force Field X with a script file.
-                </p>
-                <source>ffxc [-D&lt;property=value&gt;] &lt;path/to/script.groovy&gt; [-options] &lt;PDB|XYZ&gt;</source>
-                <p>
+            </p>
+            <source>ffxc [-D&lt;property=value&gt;] &lt;path/to/script.groovy&gt; [-options] &lt;PDB|XYZ&gt;</source>
+            <p>
                 Example scripts are located in the ffx/scripts directory and are based on the Groovy
                 scripting langauge. Force Field X packages can be imported and used by following the
-                    <a href="apidocs/index.html">FFX API documentation</a>.
-                </p>
-            </subsection>
+                <a href="apidocs/index.html">FFX API documentation</a>.
+            </p>
             <subsection name="List of Commands">
                 <table>
                     <thead>
@@ -177,13 +175,13 @@
                             </td>
                             <td>Compute the bulk solvent contribution to the X-ray target.</td>
                         </tr>            
- <!-- 
- TODO: Add in the autoparm scripts
- minimize_2
- poledit
- potential
- superpose
- -->                
+                        <!-- 
+                        TODO: Add in the autoparm scripts
+                        minimize_2
+                        poledit
+                        potential
+                        superpose
+                        -->                
                     </tbody>
                 </table>
             </subsection>

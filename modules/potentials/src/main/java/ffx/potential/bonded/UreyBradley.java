@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.potential.bonded;
 
@@ -32,7 +34,7 @@ import static ffx.potential.parameters.UreyBradleyType.*;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public class UreyBradley extends BondedTerm implements Comparable<UreyBradley> {
 
@@ -49,7 +51,8 @@ public class UreyBradley extends BondedTerm implements Comparable<UreyBradley> {
     protected Angle angle = null;
 
     /**
-     * <p>Setter for the field <code>ureyBradleyType</code>.</p>
+     * <p>Setter for the field
+     * <code>ureyBradleyType</code>.</p>
      *
      * @param a a {@link ffx.potential.parameters.UreyBradleyType} object.
      */
@@ -58,7 +61,8 @@ public class UreyBradley extends BondedTerm implements Comparable<UreyBradley> {
     }
 
     /**
-     * <p>Setter for the field <code>rigidScale</code>.</p>
+     * <p>Setter for the field
+     * <code>rigidScale</code>.</p>
      *
      * @param rigidScale a double.
      */
@@ -104,8 +108,7 @@ public class UreyBradley extends BondedTerm implements Comparable<UreyBradley> {
     /**
      * Evaluate the Urey-Bradley energy.
      *
-     * @param gradient
-     *            Evaluate the gradient.
+     * @param gradient Evaluate the gradient.
      * @return Returns the energy.
      */
     public double energy(boolean gradient) {
@@ -136,12 +139,14 @@ public class UreyBradley extends BondedTerm implements Comparable<UreyBradley> {
      */
     public void log() {
         logger.info(String.format(" %s %6d-%s %6d-%s %6.4f  %6.4f  %10.4f",
-                                  "Urey-Bradley", atoms[0].getXYZIndex(), atoms[0].getAtomType().name,
-                                  atoms[2].getXYZIndex(), atoms[2].getAtomType().name, ureyBradleyType.distance, value,
-                                  energy));
+                "Urey-Bradley", atoms[0].getXYZIndex(), atoms[0].getAtomType().name,
+                atoms[2].getXYZIndex(), atoms[2].getAtomType().name, ureyBradleyType.distance, value,
+                energy));
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int compareTo(UreyBradley ub) {
         return angle.compareTo(ub.angle);

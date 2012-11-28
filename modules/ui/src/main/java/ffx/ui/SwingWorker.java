@@ -1,25 +1,24 @@
 /**
- * <p>Title: Force Field X</p>
- * <p>Description: Force Field X is a Molecular Biophysics Environment</p>
- * <p>Copyright: Copyright (c) Michael J. Schnieders 2002-2009</p>
+ * Title: Force Field X.
  *
- * @author Michael J. Schnieders
- * @version 0.1
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.ui;
 
@@ -34,129 +33,132 @@ import javax.swing.SwingUtilities;
  * the SwingWorker after creating it.
  *
  * @author Michael J. Schnieders
- * @version $Id: $
+ *
  */
 public abstract class SwingWorker {
-	/**
-	 * Class to maintain reference to current worker thread under separate
-	 * synchronization control.
-	 */
-	private static class ThreadVar {
-		private Thread thread;
 
-		ThreadVar(Thread t) {
-			thread = t;
-		}
+    /**
+     * Class to maintain reference to current worker thread under separate
+     * synchronization control.
+     */
+    private static class ThreadVar {
 
-		synchronized void clear() {
-			thread = null;
-		}
+        private Thread thread;
 
-		synchronized Thread get() {
-			return thread;
-		}
-	}
+        ThreadVar(Thread t) {
+            thread = t;
+        }
 
-	// private Thread thread;
-	private Object value; // see getValue(), setValue()
-	private ThreadVar threadVar;
+        synchronized void clear() {
+            thread = null;
+        }
 
-	/**
-	 * Start a thread that will call the <code>construct</code> method and then
-	 * exit.
-	 */
-	public SwingWorker() {
-		final Runnable doFinished = new Runnable() {
-			public void run() {
-				finished();
-			}
-		};
-		Runnable doConstruct = new Runnable() {
-			public void run() {
-				try {
-					setValue(construct());
-				} finally {
-					threadVar.clear();
-				}
-				SwingUtilities.invokeLater(doFinished);
-			}
-		};
-		Thread t = new Thread(doConstruct);
-		threadVar = new ThreadVar(t);
-	}
+        synchronized Thread get() {
+            return thread;
+        }
+    }
+    // private Thread thread;
+    private Object value; // see getValue(), setValue()
+    private ThreadVar threadVar;
 
-	/**
-	 * Compute the value to be returned by the <code>get</code> method.
-	 *
-	 * @return a {@link java.lang.Object} object.
-	 */
-	public abstract Object construct();
+    /**
+     * Start a thread that will call the
+     * <code>construct</code> method and then exit.
+     */
+    public SwingWorker() {
+        final Runnable doFinished = new Runnable() {
+            public void run() {
+                finished();
+            }
+        };
+        Runnable doConstruct = new Runnable() {
+            public void run() {
+                try {
+                    setValue(construct());
+                } finally {
+                    threadVar.clear();
+                }
+                SwingUtilities.invokeLater(doFinished);
+            }
+        };
+        Thread t = new Thread(doConstruct);
+        threadVar = new ThreadVar(t);
+    }
 
-	/**
-	 * Called on the event dispatching thread (not on the worker thread) after
-	 * the <code>construct</code> method has returned.
-	 */
-	public void finished() {
-	}
+    /**
+     * Compute the value to be returned by the
+     * <code>get</code> method.
+     *
+     * @return a {@link java.lang.Object} object.
+     */
+    public abstract Object construct();
 
-	/**
-	 * Return the value created by the <code>construct</code> method. Returns
-	 * null if either the constructing thread or the current thread was
-	 * interrupted before a value was produced.
-	 *
-	 * @return the value created by the <code>construct</code> method
-	 */
-	public Object get() {
-		while (true) {
-			Thread t = threadVar.get();
-			if (t == null) {
-				return getValue();
-			}
-			try {
-				t.join();
-			} catch (InterruptedException e) {
-				Thread.currentThread().interrupt(); // propagate
-				return null;
-			}
-		}
-	}
+    /**
+     * Called on the event dispatching thread (not on the worker thread) after
+     * the
+     * <code>construct</code> method has returned.
+     */
+    public void finished() {
+    }
 
-	/**
-	 * Get the value produced by the worker thread, or null if it hasn't been
-	 * constructed yet.
-	 *
-	 * @return a {@link java.lang.Object} object.
-	 */
-	protected synchronized Object getValue() {
-		return value;
-	}
+    /**
+     * Return the value created by the
+     * <code>construct</code> method. Returns null if either the constructing
+     * thread or the current thread was interrupted before a value was produced.
+     *
+     * @return the value created by the <code>construct</code> method
+     */
+    public Object get() {
+        while (true) {
+            Thread t = threadVar.get();
+            if (t == null) {
+                return getValue();
+            }
+            try {
+                t.join();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt(); // propagate
+                return null;
+            }
+        }
+    }
 
-	/**
-	 * A new method that interrupts the worker thread. Call this method to force
-	 * the worker to stop what it's doing.
-	 */
-	public void interrupt() {
-		Thread t = threadVar.get();
-		if (t != null) {
-			t.interrupt();
-		}
-		threadVar.clear();
-	}
+    /**
+     * Get the value produced by the worker thread, or null if it hasn't been
+     * constructed yet.
+     *
+     * @return a {@link java.lang.Object} object.
+     */
+    protected synchronized Object getValue() {
+        return value;
+    }
 
-	/**
-	 * Set the value produced by worker thread
-	 */
-	private synchronized void setValue(Object x) {
-		value = x;
-	}
+    /**
+     * A new method that interrupts the worker thread. Call this method to force
+     * the worker to stop what it's doing.
+     */
+    public void interrupt() {
+        Thread t = threadVar.get();
+        if (t != null) {
+            t.interrupt();
+        }
+        threadVar.clear();
+    }
 
-	/**
-	 * Start the worker thread.
-	 */
-	public void start() {
-		Thread t = threadVar.get();
-		if (t != null) {
-			t.start();
-		}
-	}
+    /**
+     * Set the value produced by worker thread
+     */
+    private synchronized void setValue(Object x) {
+        value = x;
+    }
+
+    /**
+     * Start the worker thread.
+     */
+    public void start() {
+        Thread t = threadVar.get();
+        if (t != null) {
+            t.start();
+        }
+    }
 }

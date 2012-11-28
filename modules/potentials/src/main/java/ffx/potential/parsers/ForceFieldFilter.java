@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.potential.parsers;
 
@@ -51,7 +53,7 @@ import ffx.utilities.Keyword;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public class ForceFieldFilter {
 
@@ -63,7 +65,8 @@ public class ForceFieldFilter {
     /**
      * <p>Constructor for ForceFieldFilter.</p>
      *
-     * @param properties a {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * @param properties a
+     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
      */
     public ForceFieldFilter(CompositeConfiguration properties) {
         this.properties = properties;
@@ -96,9 +99,9 @@ public class ForceFieldFilter {
             parameterLocation = parameterLocation.replaceAll("\"", "");
             // Append the suffix if necessary
             /*
-            if (!parameterLocation.endsWith(".prm")) {
-            parameterLocation = parameterLocation + ".prm";
-            } */
+             if (!parameterLocation.endsWith(".prm")) {
+             parameterLocation = parameterLocation + ".prm";
+             } */
             parameterFile = new File(parameterLocation);
             // If the location is not absolute, check if it is relative
             // to the key file location.
@@ -129,8 +132,8 @@ public class ForceFieldFilter {
                 }
                 parse(new FileInputStream(forceFieldFile));
                 /**
-                 * Parse an internal parameter file and add it to the
-                 * composite configuration.
+                 * Parse an internal parameter file and add it to the composite
+                 * configuration.
                  */
             } else {
                 String forceFieldString = properties.getString("forcefield", "AMOEBA-BIO-2009");
@@ -254,7 +257,7 @@ public class ForceFieldFilter {
                 String tokens[] = input.trim().split(" +");
                 if (tokens != null) {
                     String keyword = tokens[0].toUpperCase().replaceAll("-",
-                                                                        "_");
+                            "_");
                     boolean parsed = true;
                     try {
                         // Parse Keywords with a String value.
@@ -279,7 +282,8 @@ public class ForceFieldFilter {
                                     boolean value = true;
                                     if (tokens.length > 1 && tokens[0].toUpperCase().endsWith("TERM")) {
                                         /**
-                                         * Handle the token "ONLY" specially to shut off all other terms.
+                                         * Handle the token "ONLY" specially to
+                                         * shut off all other terms.
                                          */
                                         if (tokens[1].equalsIgnoreCase("ONLY")) {
                                             for (ForceFieldBoolean term : ForceFieldBoolean.values()) {
@@ -289,7 +293,8 @@ public class ForceFieldFilter {
                                             }
                                         } else if (tokens[1].equalsIgnoreCase("NONE")) {
                                             /**
-                                             * Legacy support for the "NONE" token.
+                                             * Legacy support for the "NONE"
+                                             * token.
                                              */
                                             value = false;
                                         } else {
@@ -396,7 +401,7 @@ public class ForceFieldFilter {
             newBondAngle[j] = bondAngle[j];
         }
         AngleType angleType = new AngleType(atomClasses, forceConstant,
-                                            newBondAngle);
+                newBondAngle);
         forceField.addForceFieldType(angleType);
     }
 
@@ -452,7 +457,7 @@ public class ForceFieldFilter {
             // Hybridization
             int hybridization = Integer.parseInt(tokens[index++]);
             AtomType atomType = new AtomType(type, atomClass, name,
-                                             environment, atomicNumber, mass, hybridization);
+                    environment, atomicNumber, mass, hybridization);
             forceField.addForceFieldType(atomType);
         } catch (Exception e) {
             String message = "Exception parsing CHARGE type:\n" + input + "\n";
@@ -511,7 +516,7 @@ public class ForceFieldFilter {
             double forceConstant = Double.parseDouble(tokens[3]);
             double distance = Double.parseDouble(tokens[4]);
             BondType bondType = new BondType(atomClasses, forceConstant,
-                                             distance);
+                    distance);
             forceField.addForceFieldType(bondType);
         } catch (Exception e) {
             String message = "Exception parsing BOND type:\n" + input + "\n";
@@ -547,7 +552,7 @@ public class ForceFieldFilter {
                 atomTypes[i] = Integer.parseInt(tokens[i + 1]);
             }
             MultipoleType.MultipoleFrameDefinition frameDefinition =
-                                                   MultipoleType.MultipoleFrameDefinition.ZTHENX;
+                    MultipoleType.MultipoleFrameDefinition.ZTHENX;
             if (atomTypes.length == 3 && (atomTypes[1] < 0 || atomTypes[2] < 0)) {
                 frameDefinition = MultipoleType.MultipoleFrameDefinition.BISECTOR;
             } else if (atomTypes.length == 4 && atomTypes[2] < 0 && atomTypes[3] < 0) {
@@ -601,7 +606,7 @@ public class ForceFieldFilter {
             quadrupole[0][2] = quadrupole[2][0];
             quadrupole[1][2] = quadrupole[2][1];
             MultipoleType multipoleType = new MultipoleType(c, dipole,
-                                                            quadrupole, atomTypes, frameDefinition);
+                    quadrupole, atomTypes, frameDefinition);
             forceField.addForceFieldType(multipoleType);
         } catch (Exception e) {
             String message = "Exception parsing MULTIPOLE type:\n" + input + "\n";
@@ -658,7 +663,7 @@ public class ForceFieldFilter {
             quadrupole[0][2] = quadrupole[2][0];
             quadrupole[1][2] = quadrupole[2][1];
             MultipoleType multipoleType = new MultipoleType(c, dipole,
-                                                            quadrupole, atomTypes, frameDefinition);
+                    quadrupole, atomTypes, frameDefinition);
             forceField.addForceFieldType(multipoleType);
         } catch (Exception e) {
             String message = "Exception parsing MULTIPOLE type:\n" + input + "\n";
@@ -679,7 +684,7 @@ public class ForceFieldFilter {
             atomClasses[3] = Integer.parseInt(tokens[4]);
             double forceConstant = Double.parseDouble(tokens[5]);
             OutOfPlaneBendType opbendType = new OutOfPlaneBendType(atomClasses,
-                                                                   forceConstant);
+                    forceConstant);
             forceField.addForceFieldType(opbendType);
         } catch (Exception e) {
             String message = "Exception parsing OPBEND type:\n" + input + "\n";
@@ -698,7 +703,7 @@ public class ForceFieldFilter {
             atomClasses[1] = Integer.parseInt(tokens[2]);
             double forceConstant = Double.parseDouble(tokens[3]);
             PiTorsionType piTorsionType = new PiTorsionType(atomClasses,
-                                                            forceConstant);
+                    forceConstant);
             forceField.addForceFieldType(piTorsionType);
         } catch (Exception e) {
             String message = "Exception parsing PITORS type:\n" + input + "\n";
@@ -723,7 +728,7 @@ public class ForceFieldFilter {
                 }
             }
             PolarizeType polarizeType = new PolarizeType(atomType,
-                                                         polarizability, thole, polarizationGroup);
+                    polarizability, thole, polarizationGroup);
             forceField.addForceFieldType(polarizeType);
             //polarizeType.log();
         } catch (Exception e) {
@@ -746,7 +751,7 @@ public class ForceFieldFilter {
             forceConstants[0] = Double.parseDouble(tokens[4]);
             forceConstants[1] = Double.parseDouble(tokens[5]);
             StretchBendType strbndType = new StretchBendType(atomClasses,
-                                                             forceConstants);
+                    forceConstants);
             forceField.addForceFieldType(strbndType);
         } catch (Exception e) {
             String message = "Exception parsing STRBND type:\n" + input + "\n";
@@ -776,7 +781,7 @@ public class ForceFieldFilter {
                 periodicity[i] = Integer.parseInt(tokens[index++]);
             }
             TorsionType torsionType = new TorsionType(atomClasses, amplitude,
-                                                      phase, periodicity);
+                    phase, periodicity);
             forceField.addForceFieldType(torsionType);
         } catch (Exception e) {
             String message = "Exception parsing TORSION type:\n" + input + "\n";
@@ -785,7 +790,7 @@ public class ForceFieldFilter {
     }
 
     private void parseTorsionTorsion(String input, String[] tokens,
-                                     BufferedReader br) {
+            BufferedReader br) {
         if (tokens.length < 8) {
             logger.warning("Invalid TORTORS type:\n" + input);
             return;
@@ -874,7 +879,7 @@ public class ForceFieldFilter {
             double forceConstant = Double.parseDouble(tokens[4]);
             double distance = Double.parseDouble(tokens[5]);
             UreyBradleyType ureyType = new UreyBradleyType(atomClasses,
-                                                           forceConstant, distance);
+                    forceConstant, distance);
             forceField.addForceFieldType(ureyType);
         } catch (Exception e) {
             String message = "Exception parsing UREYBRAD type:\n" + input + "\n";
@@ -896,7 +901,7 @@ public class ForceFieldFilter {
                 reductionFactor = Double.parseDouble(tokens[4]);
             }
             VDWType vdwType = new VDWType(atomType, radius, wellDepth,
-                                          reductionFactor);
+                    reductionFactor);
             forceField.addForceFieldType(vdwType);
         } catch (Exception e) {
             String message = "Exception parsing VDW type:\n" + input + "\n";

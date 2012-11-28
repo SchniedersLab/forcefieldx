@@ -1,6 +1,9 @@
 /**
- * Title: Force Field X Description: Force Field X - Software for Molecular
- * Biophysics. Copyright: Copyright (c) Michael J. Schnieders 2001-2009
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
@@ -40,7 +43,7 @@ import static ffx.numerics.VectorMath.*;
  *
  * @author Timothy D. Fenn and Michael J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public class XRayEnergy implements LambdaInterface, Potential {
 
@@ -218,8 +221,8 @@ public class XRayEnergy implements LambdaInterface, Potential {
      * <p>Setter for the field
      * <code>refinementMode</code>.</p>
      *
-     * @param refinementmode a {@link ffx.xray.RefinementMinimize.RefinementMode}
-     * object.
+     * @param refinementmode a
+     * {@link ffx.xray.RefinementMinimize.RefinementMode} object.
      */
     public void setRefinementMode(RefinementMode refinementmode) {
         this.refinementMode = refinementmode;

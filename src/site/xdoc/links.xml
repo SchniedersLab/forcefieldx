@@ -6,7 +6,7 @@
     http://maven.apache.org/xsd/xdoc-2.0.xsd">
     <properties>
         <title>Development Resources</title>
-        <author email="michael.schnieders@gmail.com">
+        <author email="michael-schnieders@uiowa.edu">
             Michael Schnieders
         </author>
     </properties>
@@ -23,13 +23,13 @@
                     <tr>
                         <td>
                             <a href="http://www.oracle.com/technetwork/java/javase/downloads">
-                            Java SE Development Kit (JDK)
+                                Java SE Development Kit (JDK)
                             </a>
                         </td>
                         <td>
-                            Java Platform, Standard Edition (Java SE) lets you develop and deploy Java 
-                            applications on desktops and servers, as well as in today's demanding embedded 
-                            environments. Java offers the rich user interface, performance, versatility, 
+                            Java Platform, Standard Edition (Java SE) lets you develop and deploy Java
+                            applications on desktops and servers, as well as in today's demanding embedded
+                            environments. Java offers the rich user interface, performance, versatility,
                             portability, and security that today’s applications require.
                         </td>
                         <td>

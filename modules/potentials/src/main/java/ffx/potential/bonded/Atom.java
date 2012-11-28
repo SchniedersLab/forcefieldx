@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.potential.bonded;
 
@@ -50,7 +52,7 @@ import static ffx.utilities.HashCodeUtil.hash;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public class Atom extends MSNode implements Comparable<Atom> {
 
@@ -96,17 +98,32 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
     private static Point3d point3d = new Point3d();
     private static Point2d point2d = new Point2d();
-    /** Constant <code>AtomColor</code> */
+    /**
+     * Constant
+     * <code>AtomColor</code>
+     */
     public static final Map<Integer, Color3f> AtomColor = new HashMap<Integer, Color3f>();
-    /** Constant <code>AtomVDW</code> */
+    /**
+     * Constant
+     * <code>AtomVDW</code>
+     */
     public static final Map<Integer, Float> AtomVDW = new HashMap<Integer, Float>();
     /**
      * Hybridizations
      */
-    /** Constant <code>SP2=3</code> */
-    /** Constant <code>SP3=4</code> */
+    /**
+     * Constant
+     * <code>SP2=3</code>
+     */
+    /**
+     * Constant
+     * <code>SP3=4</code>
+     */
     public static final int SP = 2, SP2 = 3, SP3 = 4;
-    /** Constant <code>hybridTable</code> */
+    /**
+     * Constant
+     * <code>hybridTable</code>
+     */
     public static final Map<String, Integer> hybridTable = new HashMap<String, Integer>();
 
     static {
@@ -148,7 +165,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
         hybridTable.put("19", 0);
         hybridTable.put("26", 8);
     }
-
     private boolean hetatm;
     /**
      * Either the PDB "name" record or the molecular mechanics atom type name.
@@ -277,7 +293,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     // "stale" is True if this Atom's J3D transforms need to be updated before
     // making it visible
     private boolean stale = false;
-    
+
     /**
      * Default constructor.
      *
@@ -329,9 +345,9 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * @since 1.0.
      */
     public Atom(int xyzIndex, String name,
-                Character altLoc, double[] xyz, String resName, int resSeq,
-                Character chainID, double occupancy, double tempFactor,
-                String segID) {
+            Character altLoc, double[] xyz, String resName, int resSeq,
+            Character chainID, double occupancy, double tempFactor,
+            String segID) {
         this(xyzIndex, name, null, xyz);
         this.resName = resName;
         this.resSeq = resSeq;
@@ -396,12 +412,13 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     public boolean isDeuterium() {
         String name = getName();
-        return (isHydrogen() && (
-                name.charAt(0) == 'D' ||
-                name.charAt(0) == 'd'));
+        return (isHydrogen() && (name.charAt(0) == 'D'
+                || name.charAt(0) == 'd'));
     }
-    
-    /** {@inheritDoc} */
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void drawLabel(Canvas3D canvas, J3DGraphics2D g2d, Node node) {
         if (RendererCache.labelAtoms) {
@@ -410,7 +427,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
             point3d.z = getZ();
             RendererCache.getScreenCoordinate(canvas, node, point3d, point2d);
             g2d.drawString(toShortString(), (float) point2d.x,
-                           (float) point2d.y);
+                    (float) point2d.y);
         }
 
     }
@@ -437,7 +454,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     /**
-     * <p>Getter for the field <code>angles</code>.</p>
+     * <p>Getter for the field
+     * <code>angles</code>.</p>
      *
      * @return a {@link java.util.ArrayList} object.
      */
@@ -462,7 +480,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     public Appearance getAtomAppearance() {
         if (appearance == null) {
             appearance = RendererCache.appearanceFactory(currentCol,
-                                                         polygonType);
+                    polygonType);
         }
         return appearance;
     }
@@ -485,7 +503,9 @@ public class Atom extends MSNode implements Comparable<Atom> {
         return atomType.atomicNumber;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ArrayList<Atom> getAtomList() {
         ArrayList<Atom> atoms = new ArrayList<Atom>();
@@ -494,7 +514,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     /**
-     * <p>Getter for the field <code>atomType</code>.</p>
+     * <p>Getter for the field
+     * <code>atomType</code>.</p>
      *
      * @return a {@link ffx.potential.parameters.AtomType} object.
      */
@@ -530,7 +551,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     /**
-     * <p>Getter for the field <code>bornRadius</code>.</p>
+     * <p>Getter for the field
+     * <code>bornRadius</code>.</p>
      *
      * @return a double.
      */
@@ -565,7 +587,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     /**
-     * <p>Getter for the field <code>segID</code>.</p>
+     * <p>Getter for the field
+     * <code>segID</code>.</p>
      *
      * @return a {@link java.lang.String} object.
      */
@@ -583,7 +606,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     /**
-     * <p>Getter for the field <code>torsions</code>.</p>
+     * <p>Getter for the field
+     * <code>torsions</code>.</p>
      *
      * @return a {@link java.util.ArrayList} object.
      */
@@ -672,7 +696,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     /**
-     * <p>Getter for the field <code>multipoleReferenceSites</code>.</p>
+     * <p>Getter for the field
+     * <code>multipoleReferenceSites</code>.</p>
      *
      * @return an array of {@link ffx.potential.bonded.Atom} objects.
      */
@@ -681,7 +706,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     /**
-     * <p>Getter for the field <code>multipoleType</code>.</p>
+     * <p>Getter for the field
+     * <code>multipoleType</code>.</p>
      *
      * @return a {@link ffx.potential.parameters.MultipoleType} object.
      */
@@ -690,7 +716,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     /**
-     * <p>Getter for the field <code>polarizeType</code>.</p>
+     * <p>Getter for the field
+     * <code>polarizeType</code>.</p>
      *
      * @return a {@link ffx.potential.parameters.PolarizeType} object.
      */
@@ -766,7 +793,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     /**
-     * <p>Setter for the field <code>resName</code>.</p>
+     * <p>Setter for the field
+     * <code>resName</code>.</p>
      *
      * @param resName a {@link java.lang.String} object.
      */
@@ -830,7 +858,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     /**
-     * <p>Setter for the field <code>altLoc</code>.</p>
+     * <p>Setter for the field
+     * <code>altLoc</code>.</p>
      *
      * @param a a {@link java.lang.Character} object.
      */
@@ -839,7 +868,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     /**
-     * <p>Getter for the field <code>altLoc</code>.</p>
+     * <p>Getter for the field
+     * <code>altLoc</code>.</p>
      *
      * @return a {@link java.lang.Character} object.
      */
@@ -903,7 +933,9 @@ public class Atom extends MSNode implements Comparable<Atom> {
         return xyz[2];
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public final int hashCode() {
         return hash(SEED, xyzIndex);
@@ -912,24 +944,23 @@ public class Atom extends MSNode implements Comparable<Atom> {
     /**
      * Create the Sphere Java3D objects.
      *
-     * @param newShapes
-     *            List
+     * @param newShapes List
      */
     private void initSphere(List<BranchGroup> newShapes) {
         if (appearance == null) {
             appearance = RendererCache.appearanceFactory(currentCol,
-                                                         ViewModel.FILL);
+                    ViewModel.FILL);
         }
         if (transform3D == null) {
             transform3D = RendererCache.transform3DFactory(new Vector3d(xyz),
-                                                           scale);
+                    scale);
         } else {
             transform3D.setTranslation(new Vector3d(xyz));
             transform3D.setScale(scale);
         }
         detail = RendererCache.detail;
         branchGroup = RendererCache.sphereFactory(appearance, detail,
-                                                  transform3D);
+                transform3D);
         transformGroup = (TransformGroup) branchGroup.getChild(0);
         sphere = (Shape3D) transformGroup.getChild(0);
         sphere.setUserData(this);
@@ -939,8 +970,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     /**
      * Checks to see if an Atom is bonded to <b>this</b> Atom
      *
-     * @param a
-     *            Atom to check
+     * @param a Atom to check
      * @return True is Atom a is bonded to <b>this</b>this atom
      */
     public boolean isBonded(Atom a) {
@@ -1088,7 +1118,9 @@ public class Atom extends MSNode implements Comparable<Atom> {
         logger.info(toString());
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void removeFromParent() {
         super.removeFromParent();
@@ -1114,7 +1146,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     /**
-     * <p>Setter for the field <code>atomType</code>.</p>
+     * <p>Setter for the field
+     * <code>atomType</code>.</p>
      *
      * @param atomType a {@link ffx.potential.parameters.AtomType} object.
      */
@@ -1141,7 +1174,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     /**
-     * <p>Setter for the field <code>tempFactor</code>.</p>
+     * <p>Setter for the field
+     * <code>tempFactor</code>.</p>
      *
      * @param tempFactor a double.
      */
@@ -1150,7 +1184,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     /**
-     * <p>Getter for the field <code>tempFactor</code>.</p>
+     * <p>Getter for the field
+     * <code>tempFactor</code>.</p>
      *
      * @return a double.
      */
@@ -1159,7 +1194,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     /**
-     * <p>Setter for the field <code>tempFactorGradient</code>.</p>
+     * <p>Setter for the field
+     * <code>tempFactorGradient</code>.</p>
      *
      * @param tempFactorGradient a double.
      */
@@ -1177,7 +1213,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     /**
-     * <p>Getter for the field <code>tempFactorGradient</code>.</p>
+     * <p>Getter for the field
+     * <code>tempFactorGradient</code>.</p>
      *
      * @return a double.
      */
@@ -1186,7 +1223,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     /**
-     * <p>Setter for the field <code>occupancy</code>.</p>
+     * <p>Setter for the field
+     * <code>occupancy</code>.</p>
      *
      * @param occupancy a double.
      */
@@ -1195,7 +1233,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     /**
-     * <p>Getter for the field <code>occupancy</code>.</p>
+     * <p>Getter for the field
+     * <code>occupancy</code>.</p>
      *
      * @return a double.
      */
@@ -1204,7 +1243,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     /**
-     * <p>Setter for the field <code>occupancyGradient</code>.</p>
+     * <p>Setter for the field
+     * <code>occupancyGradient</code>.</p>
      *
      * @param occupancyGradient a double.
      */
@@ -1222,7 +1262,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     /**
-     * <p>Getter for the field <code>occupancyGradient</code>.</p>
+     * <p>Getter for the field
+     * <code>occupancyGradient</code>.</p>
      *
      * @return a double.
      */
@@ -1231,7 +1272,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     /**
-     * <p>Setter for the field <code>anisou</code>.</p>
+     * <p>Setter for the field
+     * <code>anisou</code>.</p>
      *
      * @param anisou an array of double.
      */
@@ -1240,7 +1282,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     /**
-     * <p>Getter for the field <code>anisou</code>.</p>
+     * <p>Getter for the field
+     * <code>anisou</code>.</p>
      *
      * @return an array of double.
      */
@@ -1250,7 +1293,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     /**
-     * <p>Setter for the field <code>anisouGradient</code>.</p>
+     * <p>Setter for the field
+     * <code>anisouGradient</code>.</p>
      *
      * @param anisou an array of double.
      */
@@ -1273,7 +1317,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     /**
-     * <p>Getter for the field <code>anisouGradient</code>.</p>
+     * <p>Getter for the field
+     * <code>anisouGradient</code>.</p>
      *
      * @return an array of double.
      */
@@ -1282,7 +1327,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     /**
-     * <p>Setter for the field <code>formFactorWidth</code>.</p>
+     * <p>Setter for the field
+     * <code>formFactorWidth</code>.</p>
      *
      * @param width a double.
      */
@@ -1291,7 +1337,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     /**
-     * <p>Getter for the field <code>formFactorWidth</code>.</p>
+     * <p>Getter for the field
+     * <code>formFactorWidth</code>.</p>
      *
      * @return a double.
      */
@@ -1300,7 +1347,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     /**
-     * <p>Setter for the field <code>formFactorIndex</code>.</p>
+     * <p>Setter for the field
+     * <code>formFactorIndex</code>.</p>
      *
      * @param formFactorIndex a int.
      */
@@ -1309,7 +1357,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     /**
-     * <p>Getter for the field <code>formFactorIndex</code>.</p>
+     * <p>Getter for the field
+     * <code>formFactorIndex</code>.</p>
      *
      * @return a int.
      */
@@ -1329,8 +1378,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     /**
      * Specify that <b>this</b> Atom is part of a Bond
      *
-     * @param b
-     *            Bond that <b>this</b> Atom is part of
+     * @param b Bond that <b>this</b> Atom is part of
      */
     public void setBond(Bond b) {
         bonds.add(b);
@@ -1370,7 +1418,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     @Override
     public void setColor(ColorModel newColorModel, Color3f newCol,
-                         Material newMat) {
+            Material newMat) {
         switch (newColorModel) {
             case CPK:
                 newCol = RendererCache.getColor(this, ColorModel.CPK);
@@ -1548,27 +1596,34 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     /**
-     * <p>Setter for the field <code>multipoleType</code>.</p>
+     * <p>Setter for the field
+     * <code>multipoleType</code>.</p>
      *
-     * @param multipoleType a {@link ffx.potential.parameters.MultipoleType} object.
-     * @param multipoleReferenceSites an array of {@link ffx.potential.bonded.Atom} objects.
+     * @param multipoleType a {@link ffx.potential.parameters.MultipoleType}
+     * object.
+     * @param multipoleReferenceSites an array of
+     * {@link ffx.potential.bonded.Atom} objects.
      */
     public void setMultipoleType(MultipoleType multipoleType,
-                                 Atom[] multipoleReferenceSites) {
+            Atom[] multipoleReferenceSites) {
         this.multipoleType = multipoleType;
         this.multipoleReferenceSites = multipoleReferenceSites;
     }
 
     /**
-     * <p>Setter for the field <code>polarizeType</code>.</p>
+     * <p>Setter for the field
+     * <code>polarizeType</code>.</p>
      *
-     * @param polarizeType a {@link ffx.potential.parameters.PolarizeType} object.
+     * @param polarizeType a {@link ffx.potential.parameters.PolarizeType}
+     * object.
      */
     public void setPolarizeType(PolarizeType polarizeType) {
         this.polarizeType = polarizeType;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setSelected(boolean b) {
         selected = b;
@@ -1582,7 +1637,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * @param newShapes a {@link java.util.List} object.
      */
     public void setSphereVisible(boolean sphereVisible,
-                                 List<BranchGroup> newShapes) {
+            List<BranchGroup> newShapes) {
         if (!sphereVisible) {
             // Make this atom invisible.
             if (branchGroup != null) {
@@ -1678,7 +1733,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
             case LINES:
                 polygonType = newViewModel;
                 appearance = RendererCache.appearanceFactory(currentCol,
-                                                             polygonType);
+                        polygonType);
                 if (viewModel != ViewModel.INVISIBLE) {
                     setSphereVisible(true, newShapes);
                 }
@@ -1707,11 +1762,11 @@ public class Atom extends MSNode implements Comparable<Atom> {
             }
             StringBuilder multipoleBuffer = new StringBuilder(toString());
             multipoleBuffer.append(String.format("\n%11$s % 7.5f\n" + "%11$s % 7.5f % 7.5f % 7.5f\n" + "%11$s % 7.5f\n" + "%11$s % 7.5f % 7.5f\n" + "%11$s % 7.5f % 7.5f % 7.5f",
-                                                 multipoleType.charge, globalDipole[0], globalDipole[1],
-                                                 globalDipole[2], globalQuadrupole[0][0],
-                                                 globalQuadrupole[1][0], globalQuadrupole[1][1],
-                                                 globalQuadrupole[2][0], globalQuadrupole[2][1],
-                                                 globalQuadrupole[2][2], "                 "));
+                    multipoleType.charge, globalDipole[0], globalDipole[1],
+                    globalDipole[2], globalQuadrupole[0][0],
+                    globalQuadrupole[1][0], globalQuadrupole[1][1],
+                    globalQuadrupole[2][0], globalQuadrupole[2][1],
+                    globalQuadrupole[2][2], "                 "));
             return multipoleBuffer.toString();
         }
     }
@@ -1729,15 +1784,17 @@ public class Atom extends MSNode implements Comparable<Atom> {
         return shortString;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String toString() {
         if (altLoc != null && altLoc != ' ') {
             return String.format("%s %7d-%s %s %d (%7.2f,%7.2f,%7.2f) %s", altLoc, xyzIndex, getName(),
-                                 resName, resSeq, xyz[0], xyz[1], xyz[2], segID);
+                    resName, resSeq, xyz[0], xyz[1], xyz[2], segID);
         }
         return String.format("%7d-%s %s %d (%7.2f,%7.2f,%7.2f) %s", xyzIndex, getName(), resName, resSeq,
-                             xyz[0], xyz[1], xyz[2], segID);
+                xyz[0], xyz[1], xyz[2], segID);
     }
 
     /**

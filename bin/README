@@ -1,8 +1,11 @@
 
-Native OpenCL (JOCL) and OpenGL (JOGL) using Gluegen
-Native CUDA (JCUDA)
+Force Field X uses the following Java Wrappers around native libraries:
+1) JOCL for OpenCL (uses Gluegen)
+2) JOGL for OpenGL (uses Gluegen
+3) JCUDA for CUDA v. 5.0 (build 35) 
 
-universal: Mac OS X universal binaries (PPC, 32-bit and 64-bit).
-32-bit:    Linux and Windows 32-bit binaries.
-64-bit:    Linux and Windows 64-bit binaries.
+The native binaries for JOCL, JOGL, Gluegen and JCUDA are in the following directories:
+1) universal: Mac OS X universal binaries (PPC, 32-bit and 64-bit).
+2) 32-bit:    Linux and Windows 32-bit binaries.
+3) 64-bit:    Linux, Mac OS X and Windows 64-bit binaries.
 

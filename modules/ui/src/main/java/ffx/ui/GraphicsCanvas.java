@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.ui;
 
@@ -51,7 +53,7 @@ import ffx.potential.bonded.RendererCache.ViewModel;
  * Spacefill/CPK, RMIN and Tube.
  *
  * @author Michael J. Schnieders
- * @version $Id: $
+ *
  */
 @SuppressWarnings("serial")
 public class GraphicsCanvas extends Canvas3D implements ActionListener {
@@ -81,7 +83,10 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
 
         ROTATE, TRANSLATE, ZOOM;
     }
-    /** Constant <code>imageFormatHash</code> */
+    /**
+     * Constant
+     * <code>imageFormatHash</code>
+     */
     public static final Hashtable<String, ImageFormat> imageFormatHash = new Hashtable<String, ImageFormat>();
 
     static {
@@ -226,8 +231,7 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     /**
      * This attaches a MolecularAssembly to the Scene BranchGroup.
      *
-     * @param s
-     *            MolecularAssembly to attach.
+     * @param s MolecularAssembly to attach.
      */
     public void attachModel(MolecularAssembly s) {
         if (s == null) {
@@ -286,7 +290,8 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     }
 
     /**
-     * <p>Getter for the field <code>mouseMode</code>.</p>
+     * <p>Getter for the field
+     * <code>mouseMode</code>.</p>
      *
      * @return a {@link ffx.ui.GraphicsCanvas.MouseMode} object.
      */
@@ -295,7 +300,8 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     }
 
     /**
-     * <p>Getter for the field <code>leftButtonMode</code>.</p>
+     * <p>Getter for the field
+     * <code>leftButtonMode</code>.</p>
      *
      * @return a {@link ffx.ui.GraphicsCanvas.LeftButtonMode} object.
      */
@@ -534,7 +540,9 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
          */
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     // The following three methods modify default Canvas3D methods.
     @Override
     public void paint(java.awt.Graphics g) {
@@ -706,7 +714,9 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
             m.rotateAbout(new Vector3d(center));
         }
     }
-    /** ******************************************************************** */
+    /**
+     * ********************************************************************
+     */
     // The following three methods modidfy default Canvas3D methods.
     /**
      * Save preferences to the user node.
@@ -796,13 +806,14 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
         setColorModel(model);
     }
 
-    /** ********************************************************************** */
+    /**
+     * **********************************************************************
+     */
     // Color Commands
     /**
      * Operates on the Active nodes.
      *
-     * @param model
-     *            String
+     * @param model String
      */
     public void setColorModel(String model) {
         if (!RendererCache.colorModelHash.containsKey(model.toUpperCase())) {
@@ -819,8 +830,7 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     /**
      * Operates on the passed node.
      *
-     * @param model
-     *            String
+     * @param model String
      * @param node a {@link ffx.potential.bonded.MSNode} object.
      */
     public void setColorModel(String model, MSNode node) {
@@ -1013,8 +1023,7 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     /**
      * Operates on the active nodes.
      *
-     * @param model
-     *            String
+     * @param model String
      */
     public void setViewModel(String model) {
         if (!RendererCache.viewModelHash.containsKey(model.toUpperCase())) {
@@ -1036,8 +1045,7 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     /**
      * Operates on the supplied node.
      *
-     * @param model
-     *            String
+     * @param model String
      * @param node a {@link ffx.potential.bonded.MSNode} object.
      */
     public void setViewModel(String model, MSNode node) {
@@ -1051,7 +1059,9 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
         renderer.arm(node, false, true, viewModel, false, null);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String toString() {
         return "3D Graphics";
@@ -1063,9 +1073,11 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
      * @param n a {@link java.util.ArrayList} object.
      * @param t a boolean.
      * @param v a boolean.
-     * @param newViewModel a {@link ffx.potential.bonded.RendererCache.ViewModel} object.
+     * @param newViewModel a
+     * {@link ffx.potential.bonded.RendererCache.ViewModel} object.
      * @param c a boolean.
-     * @param newColorModel a {@link ffx.potential.bonded.RendererCache.ColorModel} object.
+     * @param newColorModel a
+     * {@link ffx.potential.bonded.RendererCache.ColorModel} object.
      */
     public void updateScene(ArrayList<MSNode> n, boolean t, boolean v,
             RendererCache.ViewModel newViewModel, boolean c,
@@ -1081,9 +1093,11 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
      * @param n a {@link ffx.potential.bonded.MSNode} object.
      * @param t a boolean.
      * @param v a boolean.
-     * @param newViewModel a {@link ffx.potential.bonded.RendererCache.ViewModel} object.
+     * @param newViewModel a
+     * {@link ffx.potential.bonded.RendererCache.ViewModel} object.
      * @param c a boolean.
-     * @param newColorModel a {@link ffx.potential.bonded.RendererCache.ColorModel} object.
+     * @param newColorModel a
+     * {@link ffx.potential.bonded.RendererCache.ColorModel} object.
      */
     public void updateScene(MSNode n, boolean t, boolean v,
             RendererCache.ViewModel newViewModel, boolean c,
@@ -1099,9 +1113,11 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
      * @param n a {@link java.util.ArrayList} object.
      * @param t a boolean.
      * @param v a boolean.
-     * @param newViewModel a {@link ffx.potential.bonded.RendererCache.ViewModel} object.
+     * @param newViewModel a
+     * {@link ffx.potential.bonded.RendererCache.ViewModel} object.
      * @param c a boolean.
-     * @param newColorModel a {@link ffx.potential.bonded.RendererCache.ColorModel} object.
+     * @param newColorModel a
+     * {@link ffx.potential.bonded.RendererCache.ColorModel} object.
      */
     public void updateSceneWait(ArrayList<MSNode> n, boolean t, boolean v,
             RendererCache.ViewModel newViewModel, boolean c,
@@ -1123,7 +1139,8 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     /**
      * <p>viewWait</p>
      *
-     * @param viewModel a {@link ffx.potential.bonded.RendererCache.ViewModel} object.
+     * @param viewModel a {@link ffx.potential.bonded.RendererCache.ViewModel}
+     * object.
      */
     public void viewWait(ViewModel viewModel) {
         if (viewModel == null) {
@@ -1178,7 +1195,8 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     /**
      * <p>colorWait</p>
      *
-     * @param colorModel a {@link ffx.potential.bonded.RendererCache.ColorModel} object.
+     * @param colorModel a {@link ffx.potential.bonded.RendererCache.ColorModel}
+     * object.
      */
     public void colorWait(ColorModel colorModel) {
         if (colorModel == null) {
@@ -1199,9 +1217,11 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
      * @param n a {@link ffx.potential.bonded.MSNode} object.
      * @param t a boolean.
      * @param v a boolean.
-     * @param newViewModel a {@link ffx.potential.bonded.RendererCache.ViewModel} object.
+     * @param newViewModel a
+     * {@link ffx.potential.bonded.RendererCache.ViewModel} object.
      * @param c a boolean.
-     * @param newColorModel a {@link ffx.potential.bonded.RendererCache.ColorModel} object.
+     * @param newColorModel a
+     * {@link ffx.potential.bonded.RendererCache.ColorModel} object.
      */
     public void updateSceneWait(MSNode n, boolean t, boolean v,
             RendererCache.ViewModel newViewModel, boolean c,

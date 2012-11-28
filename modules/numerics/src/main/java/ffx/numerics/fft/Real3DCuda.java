@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.numerics.fft;
 
@@ -47,7 +49,7 @@ import static jcuda.jcufft.JCufft.*;
  *
  * @author Michal J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public class Real3DCuda implements Runnable {
 
@@ -120,7 +122,9 @@ public class Real3DCuda implements Runnable {
         return 0;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void run() {
         JCudaDriver.setExceptionsEnabled(true);
@@ -198,7 +202,6 @@ public class Real3DCuda implements Runnable {
                     }
 
                     // Set up the execution parameters for the kernel
-                    /*
                     cuFuncSetBlockShape(function, threads, 1, 1);
                     int offset = 0;
                     offset = align(offset, Sizeof.POINTER);
@@ -212,8 +215,7 @@ public class Real3DCuda implements Runnable {
                     offset += Sizeof.INT;
                     cuParamSetSize(function, offset);
                     // Call the kernel function.
-                    cuLaunchGrid(function,gridSize,gridSize);
-                     */
+                    cuLaunchGrid(function, gridSize, gridSize);
 
                     ret = cufftExecC2R(planC2R, dataDevice, dataDevice);
                     if (ret != cufftResult.CUFFT_SUCCESS) {
@@ -259,7 +261,9 @@ public class Real3DCuda implements Runnable {
         free = false;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void finalize() throws Throwable {
         try {
@@ -284,7 +288,7 @@ public class Real3DCuda implements Runnable {
                 if (dimNotFinal < 1) {
                     dimNotFinal = 64;
                 }
-                reps = Integer.parseInt(args[2]);
+                reps = Integer.parseInt(args[1]);
                 if (reps < 1) {
                     reps = 5;
                 }
@@ -341,8 +345,8 @@ public class Real3DCuda implements Runnable {
 
         Real3D real3D = new Real3D(dim, dim, dim);
         Real3DParallel real3DParallel =
-                       new Real3DParallel(dim, dim, dim, new ParallelTeam(),
-                                          IntegerSchedule.fixed());
+                new Real3DParallel(dim, dim, dim, new ParallelTeam(),
+                IntegerSchedule.fixed());
         Real3DCuda real3DCUDA = new Real3DCuda(dim, dim, dim, dataf, recipf);
 
         Thread cudaThread = new Thread(real3DCUDA);
@@ -422,7 +426,7 @@ public class Real3DCuda implements Runnable {
                         logger.info(String.format("Not a number %d %d %d", x, y, z));
                         System.exit(-1);
                     }
-                    double error = Math.abs(origf[index] - dataf[index] / dimCubed);
+                    double error = Math.abs(origf[index] - dataf[index]);
                     avg += error;
                     if (error > maxError) {
                         maxError = error;
@@ -439,14 +443,14 @@ public class Real3DCuda implements Runnable {
         logger.info(String.format("CUDA RMSE:   %12.10f, Max: %12.10f, Avg: %12.10f", rmse, maxError, avg));
 
         System.out.println(String.format("Best Sequential Time:  %8.3f",
-                                         toSeconds * seqTime));
+                toSeconds * seqTime));
         System.out.println(String.format("Best Parallel Time:    %8.3f",
-                                         toSeconds * parTime));
+                toSeconds * parTime));
         System.out.println(String.format("Best CUDA Time:        %8.3f",
-                                         toSeconds * clTime));
+                toSeconds * clTime));
         System.out.println(String.format("Parallel Speedup: %15.5f", (double) seqTime
-                                                                     / parTime));
+                / parTime));
         System.out.println(String.format("CUDA Speedup:     %15.5f", (double) seqTime
-                                                                     / clTime));
+                / clTime));
     }
 }

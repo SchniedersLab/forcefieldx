@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx;
 
@@ -59,7 +61,7 @@ import ffx.ui.macosx.OSXAdapter;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public class Main extends JFrame {
 
@@ -206,6 +208,7 @@ public class Main extends JFrame {
 
     /**
      * Start the Force Field X command line interface.
+     *
      * @param commandLineFile
      * @param argList
      */
@@ -221,6 +224,7 @@ public class Main extends JFrame {
 
     /**
      * Start the Force Field X graphical user interface.
+     *
      * @param commandLineFile
      * @param argList
      */
@@ -229,8 +233,8 @@ public class Main extends JFrame {
         logger.info(String.format(" Starting up the graphical user interface."));
 
         /**
-         * Some Mac OS X specific features that help FFX look native.
-         * These need to be set before the MainPanel is created.
+         * Some Mac OS X specific features that help FFX look native. These need
+         * to be set before the MainPanel is created.
          */
         if (SystemUtils.IS_OS_MAC_OSX) {
             OSXAdapter.setOSXProperties();
@@ -253,17 +257,17 @@ public class Main extends JFrame {
      * @throws java.lang.Exception if any.
      */
     public static void main(String[] args) throws Exception {
-        
+
         /**
          * Process any "-D" command line flags.
          */
         args = processProperties(args);
-        
+
         /**
          * Configure our logging.
          */
         startLogging();
-        
+
         /**
          * Print out the header.
          */
@@ -343,7 +347,6 @@ public class Main extends JFrame {
         ImageIcon icon = new ImageIcon(iconURL);
         setIconImage(icon.getImage());
         addWindowListener(new WindowAdapter() {
-
             @Override
             public void windowClosing(WindowEvent e) {
                 if (mainPanel != null) {
@@ -381,7 +384,7 @@ public class Main extends JFrame {
                             embeddedScript.openStream(), commandLineFile.getName(), ".ffx"));
                 } catch (Exception e) {
                     logger.warning("Exception extracting embedded script "
-                                   + embeddedScript.toString() + "\n" + e.toString());
+                            + embeddedScript.toString() + "\n" + e.toString());
                 }
             }
         }
@@ -419,7 +422,10 @@ public class Main extends JFrame {
                 "Up Time: " + stopWatch).append("Logger: " + logger.getName());
         return toStringBuilder.toString();
     }
-    /** Constant <code>stopWatch</code> */
+    /**
+     * Constant
+     * <code>stopWatch</code>
+     */
     public static StopWatch stopWatch = new StopWatch();
     /**
      * This is the main application wrapper.

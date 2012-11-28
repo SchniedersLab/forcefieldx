@@ -1,6 +1,9 @@
 /**
- * Title: Force Field X Description: Force Field X - Software for Molecular
- * Biophysics. Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
@@ -39,7 +42,7 @@ import ffx.potential.bonded.Atom;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public class SpatialDensityRegion extends ParallelRegion {
 
@@ -306,8 +309,8 @@ public class SpatialDensityRegion extends ParallelRegion {
     /**
      * <p>setDensityLoop</p>
      *
-     * @param loops an array of {@link ffx.potential.nonbonded.SpatialDensityLoop}
-     * objects.
+     * @param loops an array of
+     * {@link ffx.potential.nonbonded.SpatialDensityLoop} objects.
      */
     public void setDensityLoop(SpatialDensityLoop loops[]) {
         spatialDensityLoop = loops;

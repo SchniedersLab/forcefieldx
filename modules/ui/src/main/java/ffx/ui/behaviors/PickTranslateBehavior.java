@@ -1,25 +1,24 @@
 /**
- * <p>Title: Force Field X</p>
- * <p>Description: Force Field X is a Molecular Engineering Environment</p>
- * <p>Copyright: Copyright (c) Michael J. Schnieders 2002-2009</p>
+ * Title: Force Field X.
  *
- * @author Michael J. Schnieders
- * @version 0.1
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.ui.behaviors;
 
@@ -34,111 +33,120 @@ import com.sun.j3d.utils.picking.PickResult;
  * scenegraph object.
  *
  * @author Michael J. Schnieders
- * @version $Id: $
+ *
  */
 public class PickTranslateBehavior extends PickMouseBehavior implements
-		MouseBehaviorCallback {
-	public MouseTranslate translate;
-	private PickingCallback callback = null;
-	private TransformGroup currentTG;
+        MouseBehaviorCallback {
 
-	/**
-	 * <p>Constructor for PickTranslateBehavior.</p>
-	 *
-	 * @param root a {@link javax.media.j3d.BranchGroup} object.
-	 * @param canvas a {@link javax.media.j3d.Canvas3D} object.
-	 * @param bounds a {@link javax.media.j3d.Bounds} object.
-	 * @param VPTG a {@link javax.media.j3d.TransformGroup} object.
-	 * @param pickMode a int.
-	 */
-	public PickTranslateBehavior(BranchGroup root, Canvas3D canvas,
-			Bounds bounds, TransformGroup VPTG, int pickMode) {
-		super(canvas, root, bounds);
-		translate = new MouseTranslate(MouseBehavior.MANUAL_WAKEUP, VPTG);
-		translate.setTransformGroup(currGrp);
-		translate.setFactor(0.1);
-		currGrp.addChild(translate);
-		translate.setSchedulingBounds(bounds);
-		setSchedulingBounds(bounds);
-		pickCanvas.setMode(pickMode);
-	}
+    public MouseTranslate translate;
+    private PickingCallback callback = null;
+    private TransformGroup currentTG;
 
-	/*
-	 * Return the pickMode component of this PickTranslateBehavior.
-	 */
-	/**
-	 * <p>getPickMode</p>
-	 *
-	 * @return a int.
-	 */
-	public int getPickMode() {
-		return pickCanvas.getMode();
-	}
+    /**
+     * <p>Constructor for PickTranslateBehavior.</p>
+     *
+     * @param root a {@link javax.media.j3d.BranchGroup} object.
+     * @param canvas a {@link javax.media.j3d.Canvas3D} object.
+     * @param bounds a {@link javax.media.j3d.Bounds} object.
+     * @param VPTG a {@link javax.media.j3d.TransformGroup} object.
+     * @param pickMode a int.
+     */
+    public PickTranslateBehavior(BranchGroup root, Canvas3D canvas,
+            Bounds bounds, TransformGroup VPTG, int pickMode) {
+        super(canvas, root, bounds);
+        translate = new MouseTranslate(MouseBehavior.MANUAL_WAKEUP, VPTG);
+        translate.setTransformGroup(currGrp);
+        translate.setFactor(0.1);
+        currGrp.addChild(translate);
+        translate.setSchedulingBounds(bounds);
+        setSchedulingBounds(bounds);
+        pickCanvas.setMode(pickMode);
+    }
 
-	/*
-	 * Sets the pickMode component of this PickTranslateBehavior to the value of
-	 * the passed pickMode. @param pickMode the pickMode to be copied.
-	 */
-	/**
-	 * <p>setPickMode</p>
-	 *
-	 * @param pickMode a int.
-	 */
-	public void setPickMode(int pickMode) {
-		pickCanvas.setMode(pickMode);
-	}
+    /*
+     * Return the pickMode component of this PickTranslateBehavior.
+     */
+    /**
+     * <p>getPickMode</p>
+     *
+     * @return a int.
+     */
+    public int getPickMode() {
+        return pickCanvas.getMode();
+    }
 
-	/*
-	 * Register the class @param callback to be called each time the picked
-	 * object moves
-	 */
-	/**
-	 * <p>setupCallback</p>
-	 *
-	 * @param callback a {@link ffx.ui.behaviors.PickingCallback} object.
-	 */
-	public void setupCallback(PickingCallback callback) {
-		this.callback = callback;
-		if (callback == null) {
-			translate.setupCallback(null);
-		} else {
-			translate.setupCallback(this);
-		}
-	}
+    /*
+     * Sets the pickMode component of this PickTranslateBehavior to the value of
+     * the passed pickMode. @param pickMode the pickMode to be copied.
+     */
+    /**
+     * <p>setPickMode</p>
+     *
+     * @param pickMode a int.
+     */
+    public void setPickMode(int pickMode) {
+        pickCanvas.setMode(pickMode);
+    }
 
-	/** {@inheritDoc} */
-	public void transformChanged(int type, Transform3D transform) {
-		callback.transformChanged(PickingCallback.TRANSLATE, currentTG);
-	}
+    /*
+     * Register the class @param callback to be called each time the picked
+     * object moves
+     */
+    /**
+     * <p>setupCallback</p>
+     *
+     * @param callback a {@link ffx.ui.behaviors.PickingCallback} object.
+     */
+    public void setupCallback(PickingCallback callback) {
+        this.callback = callback;
+        if (callback == null) {
+            translate.setupCallback(null);
+        } else {
+            translate.setupCallback(this);
+        }
+    }
 
-	/** {@inheritDoc} */
-	public void transformClicked(int type, Transform3D transform) {
-		callback.transformClicked(PickingCallback.TRANSLATE, currentTG);
-	}
+    /**
+     * {@inheritDoc}
+     */
+    public void transformChanged(int type, Transform3D transform) {
+        callback.transformChanged(PickingCallback.TRANSLATE, currentTG);
+    }
 
-	/** {@inheritDoc} */
-	public void transformDoubleClicked(int type, Transform3D transform) {
-		callback.transformDoubleClicked(PickingCallback.TRANSLATE, currentTG);
-	}
+    /**
+     * {@inheritDoc}
+     */
+    public void transformClicked(int type, Transform3D transform) {
+        callback.transformClicked(PickingCallback.TRANSLATE, currentTG);
+    }
 
-	/*
-	 * Update the scene to manipulate any nodes. This is not meant to be called
-	 * by users. Behavior automatically calls this. You can call this only if
-	 * you know what you are doing.
-	 * @param xpos Current mouse X pos. @param ypos Current mouse Y pos.
-	 */
-	/** {@inheritDoc} */
-	public void updateScene(int xpos, int ypos) {
-		if ((mevent.getModifiersEx() & MouseEvent.BUTTON3_DOWN_MASK) == MouseEvent.BUTTON3_DOWN_MASK) {
-			pickCanvas.setShapeLocation(xpos, ypos);
-			PickResult r = pickCanvas.pickClosest();
-			if (r != null) {
-				if (callback != null) {
-					callback.transformChanged(PickingCallback.NO_PICK, null);
-				}
-			}
-		}
-	}
+    /**
+     * {@inheritDoc}
+     */
+    public void transformDoubleClicked(int type, Transform3D transform) {
+        callback.transformDoubleClicked(PickingCallback.TRANSLATE, currentTG);
+    }
+
+    /*
+     * Update the scene to manipulate any nodes. This is not meant to be called
+     * by users. Behavior automatically calls this. You can call this only if
+     * you know what you are doing.
+     * @param xpos Current mouse X pos. @param ypos Current mouse Y pos.
+     */
+    /**
+     * {@inheritDoc}
+     */
+    public void updateScene(int xpos, int ypos) {
+        if ((mevent.getModifiersEx() & MouseEvent.BUTTON3_DOWN_MASK) == MouseEvent.BUTTON3_DOWN_MASK) {
+            pickCanvas.setShapeLocation(xpos, ypos);
+            PickResult r = pickCanvas.pickClosest();
+            if (r != null) {
+                if (callback != null) {
+                    callback.transformChanged(PickingCallback.NO_PICK, null);
+                }
+            }
+        }
+    }
 }
 /*
  * Copyright (c) 1996-1998 Sun MicroFSystems, Inc. All Rights Reserved. Sun

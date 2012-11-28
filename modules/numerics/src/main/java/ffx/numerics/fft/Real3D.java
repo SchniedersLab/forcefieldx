@@ -1,30 +1,33 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.numerics.fft;
 
 /**
- * Compute the 3D FFT of real, double precision input of arbitrary dimensions.<p>
+ * Compute the 3D FFT of real, double precision input of arbitrary
+ * dimensions.<p>
  *
  * @author Michal J. Schnieders
- * @version $Id: $
+ *
  */
 public class Real3D {
 
@@ -39,12 +42,9 @@ public class Real3D {
     /**
      * Initialize the 3D FFT for complex 3D matrix.
      *
-     * @param nX
-     *            X-dimension.
-     * @param nY
-     *            Y-dimension.
-     * @param nZ
-     *            Z-dimension.
+     * @param nX X-dimension.
+     * @param nY Y-dimension.
+     * @param nZ Z-dimension.
      */
     public Real3D(int nX, int nY, int nZ) {
         this.n = nX;
@@ -66,8 +66,7 @@ public class Real3D {
     /**
      * Compute the 3D FFT.
      *
-     * @param input
-     *            The input array must be of size (nX + 2) * nY * nZ.
+     * @param input The input array must be of size (nX + 2) * nY * nZ.
      */
     public void fft(final double input[]) {
         int i, x, y, z, offset, stride;
@@ -97,8 +96,7 @@ public class Real3D {
     /**
      * Compute the inverese 3D FFT.
      *
-     * @param input
-     *            The input array must be of size (nX + 2) * nY * nZ.
+     * @param input The input array must be of size (nX + 2) * nY * nZ.
      */
     public void ifft(final double input[]) {
         int i, x, y, z, stride, offset;
@@ -126,7 +124,8 @@ public class Real3D {
     }
 
     /**
-     * <p>Setter for the field <code>recip</code>.</p>
+     * <p>Setter for the field
+     * <code>recip</code>.</p>
      *
      * @param recip an array of double.
      */
@@ -134,8 +133,8 @@ public class Real3D {
         int offset, y, x, z, i;
 
         /**
-         * Reorder the reciprocal space data into the order it is needed
-         * by the convolution routine.
+         * Reorder the reciprocal space data into the order it is needed by the
+         * convolution routine.
          */
         int index = 0;
         for (index = 0, offset = 0, y = 0; y < nY; y++) {

@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.ui;
 
@@ -40,7 +42,7 @@ import ffx.potential.bonded.RendererCache;
  * The GraphicsPrefs class allows users to select graphics preferences.
  *
  * @author Michael J. Schnieders
- * @version $Id: $
+ *
  */
 public class GraphicsPrefs extends JDialog implements ActionListener {
 
@@ -53,10 +55,8 @@ public class GraphicsPrefs extends JDialog implements ActionListener {
     /**
      * Contructor
      *
-     * @param frame
-     *            Parent frame
-     * @param r
-     *            Data structure root
+     * @param frame Parent frame
+     * @param r Data structure root
      */
     public GraphicsPrefs(Frame frame, MSRoot r) {
         super(frame, "", true);
@@ -129,7 +129,9 @@ public class GraphicsPrefs extends JDialog implements ActionListener {
                 (dim.height - ddim.height) / 2);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     public void actionPerformed(ActionEvent e) {
         if (e.getActionCommand().equalsIgnoreCase("Apply")) {
             if (change != false) {
@@ -157,7 +159,6 @@ public class GraphicsPrefs extends JDialog implements ActionListener {
         s.setSnapToTicks(true);
         s.setBorder(new TitledBorder(eb, description));
         s.addChangeListener(new ChangeListener() {
-
             public void stateChanged(ChangeEvent e) {
                 JSlider source = (JSlider) e.getSource();
                 if (source.getValueIsAdjusting()) {

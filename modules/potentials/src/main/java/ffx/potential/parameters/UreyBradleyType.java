@@ -1,6 +1,9 @@
 /**
- * Title: Force Field X Description: Force Field X - Software for Molecular
- * Biophysics Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
@@ -28,7 +31,7 @@ import java.util.HashMap;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public final class UreyBradleyType extends BaseType implements Comparator<String> {
 
@@ -53,7 +56,7 @@ public final class UreyBradleyType extends BaseType implements Comparator<String
      * @param distance double
      */
     public UreyBradleyType(int atomClasses[], double forceConstant,
-                           double distance) {
+            double distance) {
         super(ForceField.ForceFieldType.UREYBRAD, sortKey(atomClasses));
         this.atomClasses = atomClasses;
         this.forceConstant = forceConstant;
@@ -127,8 +130,8 @@ public final class UreyBradleyType extends BaseType implements Comparator<String
     @Override
     public String toString() {
         return String.format("ureybrad  %5d  %5d  %5d  %6.2f  %7.4f",
-                             atomClasses[0], atomClasses[1], atomClasses[2], forceConstant,
-                             distance);
+                atomClasses[0], atomClasses[1], atomClasses[2], forceConstant,
+                distance);
     }
     /**
      * Convert bond stretch energy to kcal/mole.

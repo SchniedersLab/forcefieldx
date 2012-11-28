@@ -6,31 +6,29 @@
     http://maven.apache.org/xsd/xdoc-2.0.xsd">
     <properties>
         <title>Project Organization</title>
-        <author email="michael.schnieders@gmail.com">Michael J. Schnieders</author>
+        <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
     </properties>
     <body>
         <section name="Project Organization">
-            <subsection name="Parent Project">
-                <p align="justify">
-                    The Force Field X parent project provides:
-                </p>
-                <ul>
-                    <li>
-                        <a href="project-info.html">Shared infrastructure</a> for the development of modules (like this website,
+            <p align="justify">
+                The Force Field X parent project provides:
+            </p>
+            <ul>
+                <li>
+                    <a href="project-info.html">Shared infrastructure</a> for the development of modules (like this website,
                     mailing lists, forums, code repositories, etc.).
-                    </li>
-                    <li>
-                        <a href="project-reports.html">Aggregate documentaion</a> of the source code, API documentation,
-                        unit testing and known issues.
-                    </li>
-                    <li>
-                        A variety of
-                        <a href="modules/ui/index.html">user interfaces</a> that run on all platforms. This includes a GUI, command
-                        line version, scripting based on Groovy and even dissemination via
-                        <a href="webstart.html">Java Webstart</a>.
-                    </li>
-                </ul>
-            </subsection>
+                </li>
+                <li>
+                    <a href="project-reports.html">Aggregate documentaion</a> of the source code, API documentation,
+                    unit testing and known issues.
+                </li>
+                <li>
+                    A variety of
+                    <a href="modules/ui/index.html">user interfaces</a> that run on all platforms. This includes a GUI, command
+                    line version, scripting based on Groovy and even dissemination via
+                    <a href="webstart.html">Java Webstart</a>.
+                </li>
+            </ul>
             <subsection name="Modules">
                 <p align="justify">
                     Force Field X modules are lead by PIs, postdocs or graduate students.

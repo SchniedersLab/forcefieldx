@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.potential.parameters;
 
@@ -30,7 +32,7 @@ import ffx.potential.parameters.ForceField.ForceFieldType;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public abstract class BaseType {
 
@@ -41,7 +43,8 @@ public abstract class BaseType {
     /**
      * Public constructor.
      *
-     * @param forceFieldType a {@link ffx.potential.parameters.ForceField.ForceFieldType} object.
+     * @param forceFieldType a
+     * {@link ffx.potential.parameters.ForceField.ForceFieldType} object.
      * @param keys an array of int.
      * @since 1.0
      */
@@ -62,7 +65,8 @@ public abstract class BaseType {
     /**
      * Public constructor.
      *
-     * @param forceFieldType a {@link ffx.potential.parameters.ForceField.ForceFieldType} object.
+     * @param forceFieldType a
+     * {@link ffx.potential.parameters.ForceField.ForceFieldType} object.
      * @param key a {@link java.lang.String} object.
      * @since 1.0
      */
@@ -72,7 +76,8 @@ public abstract class BaseType {
     }
 
     /**
-     * <p>Setter for the field <code>key</code>.</p>
+     * <p>Setter for the field
+     * <code>key</code>.</p>
      *
      * @param keys an array of int.
      */
@@ -86,7 +91,8 @@ public abstract class BaseType {
     }
 
     /**
-     * <p>Setter for the field <code>key</code>.</p>
+     * <p>Setter for the field
+     * <code>key</code>.</p>
      *
      * @param key a {@link java.lang.String} object.
      */
@@ -95,7 +101,8 @@ public abstract class BaseType {
     }
 
     /**
-     * Get the <code>key</code> for this Type.
+     * Get the
+     * <code>key</code> for this Type.
      *
      * @return the key
      * @since 1.0
@@ -105,7 +112,8 @@ public abstract class BaseType {
     }
 
     /**
-     * Log <code>this</code> type.
+     * Log
+     * <code>this</code> type.
      *
      * @since 1.0
      */
@@ -116,7 +124,8 @@ public abstract class BaseType {
     }
 
     /**
-     * Print <code>this</code> to System.out.
+     * Print
+     * <code>this</code> to System.out.
      *
      * @since 1.0
      */
@@ -128,6 +137,7 @@ public abstract class BaseType {
      * {@inheritDoc}
      *
      * Basic toString method.
+     *
      * @since 1.0
      */
     @Override

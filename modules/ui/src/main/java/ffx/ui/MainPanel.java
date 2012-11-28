@@ -1,6 +1,9 @@
 /**
- * Title: Force Field X Description: Force Field X - Software for Molecular
- * Biophysics. Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
@@ -66,7 +69,7 @@ import ffx.utilities.Keyword;
  * input/output and is used to pass references among the various sub-Panels.
  *
  * @author Michael J. Schnieders
- * @version $Id: $
+ *
  */
 public final class MainPanel extends JPanel implements ActionListener,
         ChangeListener {
@@ -796,34 +799,31 @@ public final class MainPanel extends JPanel implements ActionListener,
     }
     /**
      * Constant
-     * <code>version="Version 1.0.0-ALPHA"</code>
+     * <code>version="Version 1.0.0-BETA"</code>
      */
-    public static final String version = "Version 1.0.0-ALPHA";
+    public static final String version = "Version 1.0.0-BETA";
     /**
      * Constant
-     * <code>date="March 2011"</code>
+     * <code>date="December 2012"</code>
      */
-    public static final String date = "March 2011";
+    public static final String date = "December 2012";
     /**
      * Constant
-     * <code>border=" ______________________________________"{trunked}</code>
      */
     public static final String border =
             " ______________________________________________________________________________\n";
     /**
      * Constant
-     * <code>title="        FORCE FIELD X - Software for Mo"{trunked}</code>
      */
     public static final String title =
             "        FORCE FIELD X - Software for Molecular Biophysics \n";
     /**
      * Constant
-     * <code>aboutString="         + version +    + date +  \n   "{trunked}</code>
      */
     public static final String aboutString =
             "        " + version + "  " + date + " \n"
-            + "        Copyright (c)  Michael J. Schnieders  2001-2011 \n"
-            + "        Copyright (c)  Force Field X Module Authors  2009-2011 \n"
+            + "        Copyright (c)  Michael J. Schnieders  2001-2012 \n"
+            + "        Copyright (c)  Force Field X Module Authors  2009-2012 \n"
             + "\n"
             + "        Module                           Copyright (c) \n"
             + "        Binding Affinity                 Pengyu Ren \n"
@@ -833,10 +833,10 @@ public final class MainPanel extends JPanel implements ActionListener,
             + "        All Rights Reserved \n"
             + "\n"
             + "        Force Field X is distributed under the GPL v.3 license and \n"
-            + "        hosted by the Ren lab. \n"
+            + "        hosted by the Schnieders lab. \n"
             + "\n"
-            + "        For publications please see http://ffx.kenai.com/publications.html \n"
-            + "        For the GPL v.3 license see http://ffx.kenai.com/license.html \n";
+            + "        For publications please see http://ffx.eng.uiowa.edu/publications.html \n"
+            + "        For the GPL v.3 license see http://ffx.eng.uiowa.edu/license.html \n";
 
     private void initAbout() {
         aboutTextArea = new JTextArea();
@@ -1782,8 +1782,8 @@ public final class MainPanel extends JPanel implements ActionListener,
     /**
      * <p>saveAsPDB</p>
      *
-     * @param activeSystems an array of {@link ffx.potential.bonded.MolecularAssembly}
-     * objects.
+     * @param activeSystems an array of
+     * {@link ffx.potential.bonded.MolecularAssembly} objects.
      * @param file a {@link java.io.File} object.
      */
     public void saveAsPDB(MolecularAssembly activeSystems[], File file) {

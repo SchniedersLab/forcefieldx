@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.numerics.fft;
 
@@ -51,7 +53,7 @@ import static jcuda.jcufft.JCufft.*;
  *
  * @author Michal J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public class RowMajorComplex3DCuda implements Runnable {
 
@@ -122,7 +124,9 @@ public class RowMajorComplex3DCuda implements Runnable {
         return 0;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void run() {
         JCudaDriver.setExceptionsEnabled(true);
@@ -229,7 +233,9 @@ public class RowMajorComplex3DCuda implements Runnable {
         free = false;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void finalize() throws Throwable {
         try {
@@ -293,7 +299,7 @@ public class RowMajorComplex3DCuda implements Runnable {
 
         RowMajorComplex3D complex3D = new RowMajorComplex3D(dim, dim, dim);
         RowMajorComplex3DParallel complex3DParallel =
-                                  new RowMajorComplex3DParallel(dim, dim, dim, new ParallelTeam(), IntegerSchedule.fixed());
+                new RowMajorComplex3DParallel(dim, dim, dim, new ParallelTeam(), IntegerSchedule.fixed());
         RowMajorComplex3DCuda complex3DCUDA = new RowMajorComplex3DCuda(dim, dim, dim, data, recip);
         Thread cudaThread = new Thread(complex3DCUDA);
 
@@ -385,14 +391,14 @@ public class RowMajorComplex3DCuda implements Runnable {
         complex3DCUDA = null;
 
         System.out.println(String.format(" Best Sequential Time:  %8.3f",
-                                         toSeconds * seqTime));
+                toSeconds * seqTime));
         System.out.println(String.format(" Best Parallel Time:    %8.3f",
-                                         toSeconds * parTime));
+                toSeconds * parTime));
         System.out.println(String.format(" Best CUDA Time:        %8.3f",
-                                         toSeconds * clTime));
+                toSeconds * clTime));
         System.out.println(String.format(" Parallel Speedup: %15.5f", (double) seqTime
-                                                                      / parTime));
+                / parTime));
         System.out.println(String.format(" CUDA Speedup:     %15.5f", (double) seqTime
-                                                                      / clTime));
+                / clTime));
     }
 }

@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.numerics;
 
@@ -28,15 +30,15 @@ import static java.lang.System.arraycopy;
 import static ffx.numerics.LBFGS.*;
 
 /**
- * This class implements an algorithm for uni-dimensional line search. This
- * file is a translation of FORTRAN code written by Jay Ponder.<br>
+ * This class implements an algorithm for uni-dimensional line search. This file
+ * is a translation of FORTRAN code written by Jay Ponder.<br>
  *
- * @author Michael J. Schnieders<br>
- *         Derived from Jay Ponder's FORTRAN code (search.f).
- * @see <a href="http://dasher.wustl.edu/tinker" target="_blank">
- *      Jay Ponder's original FORTRAN code.</a>
+ * @author Michael J. Schnieders<br> Derived from Jay Ponder's FORTRAN code
+ * (search.f).
+ * @see <a href="http://dasher.wustl.edu/tinker" target="_blank"> Jay Ponder's
+ * original FORTRAN code.</a>
  * @since 1.0
- * @version $Id: $
+ *
  */
 public class LineSearch {
 
@@ -110,8 +112,8 @@ public class LineSearch {
         restart = false;
 
         /**
-         * We now have an appropriate step size. Return if the gradient
-         * is small and function decreases.
+         * We now have an appropriate step size. Return if the gradient is small
+         * and function decreases.
          */
         if (abs(sgB / sg0) <= cappa && fB < fA) {
             if (info[0] == null) {
@@ -130,10 +132,9 @@ public class LineSearch {
         }
 
         /**
-         * If the finite difference curvature is negative double the
-         * step; or if step is less than parabolic estimate less than
-         * 4 * step use this estimate, otherwise truncate to step
-         * or 4 * step, respectively.
+         * If the finite difference curvature is negative double the step; or if
+         * step is less than parabolic estimate less than 4 * step use this
+         * estimate, otherwise truncate to step or 4 * step, respectively.
          */
         step = 2.0 * step;
         if (sgB > sgA) {
@@ -189,18 +190,17 @@ public class LineSearch {
             return f0;
         }
         /**
-         * Get the next pair of bracketing points by replacing one
-         * of the current brackets with the interpolated point
+         * Get the next pair of bracketing points by replacing one of the
+         * current brackets with the interpolated point
          */
         if (fC <= fA || fC <= fB) {
             double cubstp = min(abs(cube), abs(step - cube));
             if (cubstp >= stepMin && intpln < intMax) {
                 if (sgA * sgB < 0.0) {
                     /**
-                     * If the current brackets have slopes of
-                     * opposite sign, then substitute the interpolated
-                     * points for the bracket point with slope of
-                     * same sign as the interpolated point
+                     * If the current brackets have slopes of opposite sign,
+                     * then substitute the interpolated points for the bracket
+                     * point with slope of same sign as the interpolated point
                      */
                     if (sgA * sgC < 0.0) {
                         fB = fC;
@@ -214,11 +214,10 @@ public class LineSearch {
                     }
                 } else {
                     /**
-                     * If current brackets have slope of same sign, then
-                     * replace the far bracket if the interpolated point
-                     * has a slope of the opposite sign or a lower function
-                     * value than the near bracket, otherwise replace the
-                     * far bracket point.
+                     * If current brackets have slope of same sign, then replace
+                     * the far bracket if the interpolated point has a slope of
+                     * the opposite sign or a lower function value than the near
+                     * bracket, otherwise replace the far bracket point.
                      */
                     if (sgA * sgC < 0.0 || fA <= fC) {
                         fB = fC;
@@ -310,8 +309,8 @@ public class LineSearch {
      * @since 1.0
      */
     public double search(int n, double[] x, double f, double[] g,
-                         double[] p, double angle[], double fMove, LineSearchResult[] info,
-                         int[] functionEvaluations, Potential optimizationSystem) {
+            double[] p, double angle[], double fMove, LineSearchResult[] info,
+            int[] functionEvaluations, Potential optimizationSystem) {
 
         assert (n > 0);
 
@@ -347,8 +346,8 @@ public class LineSearch {
         double sNorm = sqrt(XdotY(n, s, 0, 1, s, 0, 1));
 
         /**
-         * Store the initial function, then normalize the search
-         * vector and find the projected gradient.
+         * Store the initial function, then normalize the search vector and find
+         * the projected gradient.
          */
         f0 = f;
         arraycopy(x, 0, x0, 0, n);
@@ -370,8 +369,8 @@ public class LineSearch {
         }
 
         /**
-         * Set the initial stepSize to the length of the passed
-         * search vector, or based on previous function decrease.
+         * Set the initial stepSize to the length of the passed search vector,
+         * or based on previous function decrease.
          */
         step = 2.0 * abs(fMove / sg0);
         step = min(step, sNorm);

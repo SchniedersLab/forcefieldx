@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.numerics.fft;
 
@@ -27,28 +29,22 @@ import java.util.logging.Logger;
 import static java.lang.Math.*;
 
 /**
- * Compute the FFT of complex, double precision data of arbitrary length n.
- * This class uses a mixed radix method and has special methods to handle
- * factors [2, 3, 4, 5, 6, 7] and a general method for larger prime factors.
- * <p>
- * "Clive Temperton. Self-sorting mixed-radix fast fourier transforms. Journal
- * of Computational Physics, 52(1):1-23, 1983."
- * <p>
+ * Compute the FFT of complex, double precision data of arbitrary length n. This
+ * class uses a mixed radix method and has special methods to handle factors [2,
+ * 3, 4, 5, 6, 7] and a general method for larger prime factors. <p> "Clive
+ * Temperton. Self-sorting mixed-radix fast fourier transforms. Journal of
+ * Computational Physics, 52(1):1-23, 1983." <p>
  *
- * @author Michal J. Schnieders<br>
- *         Derived from:<br>
- *         Bruce R. Miller (bruce.miller@nist.gov)<br>
- *         Contribution of the National Institute of Standards and Technology,
- *         not subject to copyright.<br>
- *         Derived from:<br>
- *         GSL (Gnu Scientific Library) FFT Code by Brian Gough (bjg@network-theory.co.uk)
+ * @author Michal J. Schnieders<br> Derived from:<br> Bruce R. Miller
+ * (bruce.miller@nist.gov)<br> Contribution of the National Institute of
+ * Standards and Technology, not subject to copyright.<br> Derived from:<br> GSL
+ * (Gnu Scientific Library) FFT Code by Brian Gough (bjg@network-theory.co.uk)
  * @see <a href="http://www.jstor.org/stable/2003354" target="_blank">J. W.
- *      Cooley and J. W. Tukey, Mathematics of Computation 19 (90), 297
- *      (1965)</a><br>
- *      <a href="http://en.wikipedia.org/wiki/Fast_Fourier_transform"
- *      target="_blank">FFT at Wikipedia</a><br>
+ * Cooley and J. W. Tukey, Mathematics of Computation 19 (90), 297
+ * (1965)</a><br> <a href="http://en.wikipedia.org/wiki/Fast_Fourier_transform"
+ * target="_blank">FFT at Wikipedia</a><br>
  * @since 1.0
- * @version $Id: $
+ *
  */
 public class Complex {
 
@@ -178,7 +174,8 @@ public class Complex {
     }
 
     /**
-     * <p>Getter for the field <code>factors</code>.</p>
+     * <p>Getter for the field
+     * <code>factors</code>.</p>
      *
      * @return an array of int.
      */
@@ -211,7 +208,7 @@ public class Complex {
      * <PRE>
      *    Re(D[i]) = data[offset + stride*i]
      *    Im(D[i]) = data[offset + stride*i+1]
-     *</PRE>
+     * </PRE>
      *
      * @param data an array of double.
      * @param offset a int.

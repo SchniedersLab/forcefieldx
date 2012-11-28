@@ -11,8 +11,8 @@
         <section name="X-Ray Examples">
             <subsection name="Prior to using the X-Ray interface">
                 <p>In order to use the X-Ray interface, X-ray reflection data
-                must be provided along with an atomic model. Currently accepted
-                formats include:
+                    must be provided along with an atomic model. Currently accepted
+                    formats include:
                 </p>
                 <ul>
                     <li>CCP4 MTZ format (preferred)</li>
@@ -20,7 +20,7 @@
                     <li>CNS format</li>
                 </ul>
                 <p>If you are using the CIF format, FFX will attempt to read in
-                the following header information:
+                    the following header information:
                 </p>
                 <ul>
                     <li>symmetry.Int_Tables_number or symmetry.space_group_name_H-M</li>
@@ -29,197 +29,197 @@
                     <li>refln.status (for Rfree), F_meas_au and F_meas_sigma_au</li>
                 </ul>
                 <p>Alternatively, if you are using a CNS file, FFX will attempt
-                to read the header information:
+                    to read the header information:
                     <source>{sg=P6(1) a=102.1 b=...}</source>
-                Alternatively, the information will be obtained from the CRYST
-                header information in the PDB file provided for refinement.
+                    Alternatively, the information will be obtained from the CRYST
+                    header information in the PDB file provided for refinement.
                 </p>
                 <p>Any of the data information (resolution, Rfree integer flag,
-                cell lengths/angles) can be overwritten by providing a property
-                file.
+                    cell lengths/angles) can be overwritten by providing a property
+                    file.
                 </p>
             </subsection>
             <subsection name="File names/extensions">
                 <p>The atomic coordinates are best provided as a PDB file for
-                the purposes of X-ray usage (as B-factors and occupancies are
-                necessary/relevant). If the coordinates are provided in
-                filename.pdb, then an optional property file can be provided as
-                filename.key or filename.properties. This property file can
-                contain crystal information, force field and/or refinement
-                options. For example:
+                    the purposes of X-ray usage (as B-factors and occupancies are
+                    necessary/relevant). If the coordinates are provided in
+                    filename.pdb, then an optional property file can be provided as
+                    filename.key or filename.properties. This property file can
+                    contain crystal information, force field and/or refinement
+                    options. For example:
                 </p>
                 <source>
-a-axis 39.767
-b-axis 51.750
-c-axis 132.938
-alpha 90.00
-beta 90.00
-gamma 90.00
-spacegroup P212121
-resolution 1.7
-rfreeflag 1
+                    a-axis 39.767
+                    b-axis 51.750
+                    c-axis 132.938
+                    alpha 90.00
+                    beta 90.00
+                    gamma 90.00
+                    spacegroup P212121
+                    resolution 1.7
+                    rfreeflag 1
                 </source>
                 <p>Which will override any information acquired from the PDB
-                file or reflection file.
+                    file or reflection file.
                 </p>
                 <p>For the X-ray refinement scripts, reflection files can be
-                provided on the command line. If only a coordinate file name is
-                provided, then the program will search for valid reflection
-                files using the base filename. In the example above, this would
-                result in the program searching for filename.mtz, filename.ent/cif/sf
-                and finally filename.cns/hkl.
+                    provided on the command line. If only a coordinate file name is
+                    provided, then the program will search for valid reflection
+                    files using the base filename. In the example above, this would
+                    result in the program searching for filename.mtz, filename.ent/cif/sf
+                    and finally filename.cns/hkl.
                 </p>
             </subsection>
             <subsection name="Scaling data/fitting sigmaA parameters/MTZ output">
                 <p>The
                     <a href="http://kenai.com/projects/ffx/sources/source/content/modules/xray/src/main/groovy/ffx/xray/scaleBulk.groovy">xray.scaleBulk</a>
-                script will perform anisotropic scaling,
-                fit a bulk solvent and compute crystallographic statistics (such
-                as R/Rfree) and write out a MTZ file, without modifying the input
-                coordinates, other than adding hydrogens (if necessary). Here is
-                the output from 2R4R:
+                    script will perform anisotropic scaling,
+                    fit a bulk solvent and compute crystallographic statistics (such
+                    as R/Rfree) and write out a MTZ file, without modifying the input
+                    coordinates, other than adding hydrogens (if necessary). Here is
+                    the output from 2R4R:
                 </p>
                 <source>
-  Fc to Fo scale: 0.56
-  Fc to Fo spline scale: 1.07 0.88 0.95 1.00 1.01 1.04 1.03 1.00 0.99 0.96
-  aniso B tensor:
-    -20.7258 0.00000 6.04607
-    0.00000 34.6983 0.00000
-    6.04607 0.00000 1.82392
-  bulk solvent model: polynomial switch
-  bulk solvent a: 0.00000 w: 0.800000
-  bulk solvent scale: 0.440275  B: 106.995
-  -log likelihood: 18883.5 (free set: 2371.35)
+                    Fc to Fo scale: 0.56
+                    Fc to Fo spline scale: 1.07 0.88 0.95 1.00 1.01 1.04 1.03 1.00 0.99 0.96
+                    aniso B tensor:
+                    -20.7258 0.00000 6.04607
+                    0.00000 34.6983 0.00000
+                    6.04607 0.00000 1.82392
+                    bulk solvent model: polynomial switch
+                    bulk solvent a: 0.00000 w: 0.800000
+                    bulk solvent scale: 0.440275  B: 106.995
+                    -log likelihood: 18883.5 (free set: 2371.35)
 
-Blow DPI (eqn 7):  0.4694 nonH atoms:  0.6628
-Cruickshank DPI (eqn 27):  0.4775 nonH atoms:  0.6742
-Acta Cryst (1999) D55, 583-601 and Acta Cryst (2002) D58, 792-797
+                    Blow DPI (eqn 7):  0.4694 nonH atoms:  0.6628
+                    Cruickshank DPI (eqn 27):  0.4775 nonH atoms:  0.6742
+                    Acta Cryst (1999) D55, 583-601 and Acta Cryst (2002) D58, 792-797
 
-# reflections (for 100% complete): 19906
-     res. range | #HKL (R)|#HKL (cv)|    #bin |   #miss |%complete
- 85.923   7.475 |    1754 |     216 |    1970 |      20 | 98.99
-  7.473   5.886 |    1786 |     201 |    1987 |       4 | 99.80
-  5.886   5.125 |    1801 |     183 |    1984 |       5 | 99.75
-  5.124   4.643 |    1812 |     176 |    1988 |       1 | 99.95
-  4.643   4.303 |    1786 |     203 |    1989 |       5 | 99.75
-  4.303   4.041 |    1778 |     202 |    1980 |      12 | 99.40
-  4.041   3.838 |    1785 |     187 |    1972 |      20 | 99.00
-  3.838   3.668 |    1790 |     177 |    1967 |      25 | 98.74
-  3.668   3.524 |    1770 |     168 |    1938 |      46 | 97.68
-  3.524   3.400 |    1692 |     204 |    1896 |      97 | 95.13
- 85.923   3.400 |   17754 |    1917 |   19671 |     235 | 98.82
+                    # reflections (for 100% complete): 19906
+                    res. range | #HKL (R)|#HKL (cv)|    #bin |   #miss |%complete
+                    85.923   7.475 |    1754 |     216 |    1970 |      20 | 98.99
+                    7.473   5.886 |    1786 |     201 |    1987 |       4 | 99.80
+                    5.886   5.125 |    1801 |     183 |    1984 |       5 | 99.75
+                    5.124   4.643 |    1812 |     176 |    1988 |       1 | 99.95
+                    4.643   4.303 |    1786 |     203 |    1989 |       5 | 99.75
+                    4.303   4.041 |    1778 |     202 |    1980 |      12 | 99.40
+                    4.041   3.838 |    1785 |     187 |    1972 |      20 | 99.00
+                    3.838   3.668 |    1790 |     177 |    1967 |      25 | 98.74
+                    3.668   3.524 |    1770 |     168 |    1938 |      46 | 97.68
+                    3.524   3.400 |    1692 |     204 |    1896 |      97 | 95.13
+                    85.923   3.400 |   17754 |    1917 |   19671 |     235 | 98.82
 
-     res. range |   signal |    sigma |      s/n
- 85.923   7.475 |   441.80 |    10.74 |    43.62
-  7.473   5.886 |   271.55 |    11.56 |    28.46
-  5.886   5.125 |   286.52 |    15.06 |    23.59
-  5.124   4.643 |   315.70 |    16.80 |    22.69
-  4.643   4.303 |   296.68 |    18.65 |    19.82
-  4.303   4.041 |   257.25 |    21.41 |    15.34
-  4.041   3.838 |   207.39 |    25.19 |    10.32
-  3.838   3.668 |   183.12 |    27.91 |     7.95
-  3.668   3.524 |   162.23 |    30.25 |     6.23
-  3.524   3.400 |   146.64 |    33.67 |     4.97
- 85.923   3.400 |   258.28 |    20.80 |    18.39
+                    res. range |   signal |    sigma |      s/n
+                    85.923   7.475 |   441.80 |    10.74 |    43.62
+                    7.473   5.886 |   271.55 |    11.56 |    28.46
+                    5.886   5.125 |   286.52 |    15.06 |    23.59
+                    5.124   4.643 |   315.70 |    16.80 |    22.69
+                    4.643   4.303 |   296.68 |    18.65 |    19.82
+                    4.303   4.041 |   257.25 |    21.41 |    15.34
+                    4.041   3.838 |   207.39 |    25.19 |    10.32
+                    3.838   3.668 |   183.12 |    27.91 |     7.95
+                    3.668   3.524 |   162.23 |    30.25 |     6.23
+                    3.524   3.400 |   146.64 |    33.67 |     4.97
+                    85.923   3.400 |   258.28 |    20.80 |    18.39
 
-s and w are analagous to D and sum_wc - J. Appl. Cryst. (2005) 38, 193-198
+                    s and w are analagous to D and sum_wc - J. Appl. Cryst. (2005) 38, 193-198
 
-     res. range |       R |   Rfree |       s |    w(E) |    w(F) |     FOM
- 85.923   7.475 |   30.38 |   34.84 |  0.8436 |  0.2767 |  102.09 |  0.7142
-  7.473   5.886 |   22.53 |   27.91 |  0.8877 |  0.1970 |   43.06 |  0.7984
-  5.886   5.125 |   22.27 |   28.63 |  0.9093 |  0.2577 |   59.00 |  0.7610
-  5.124   4.643 |   17.59 |   22.31 |  0.9349 |  0.1406 |   35.53 |  0.8456
-  4.643   4.303 |   18.55 |   25.56 |  0.9255 |  0.1858 |   44.23 |  0.8104
-  4.303   4.041 |   19.65 |   24.96 |  0.9212 |  0.1970 |   40.53 |  0.7930
-  4.041   3.838 |   20.37 |   24.56 |  0.9297 |  0.1642 |   27.38 |  0.8280
-  3.838   3.668 |   22.52 |   26.61 |  0.8813 |  0.1709 |   24.83 |  0.8156
-  3.668   3.524 |   23.58 |   26.49 |  0.8607 |  0.1773 |   22.55 |  0.8098
-  3.524   3.400 |   28.58 |   32.32 |  0.8550 |  0.2956 |   33.27 |  0.7213
- 85.923   3.400 |   22.68 |   27.94 |  0.8952 |  0.2059 |   43.32 |  0.7900
+                    res. range |       R |   Rfree |       s |    w(E) |    w(F) |     FOM
+                    85.923   7.475 |   30.38 |   34.84 |  0.8436 |  0.2767 |  102.09 |  0.7142
+                    7.473   5.886 |   22.53 |   27.91 |  0.8877 |  0.1970 |   43.06 |  0.7984
+                    5.886   5.125 |   22.27 |   28.63 |  0.9093 |  0.2577 |   59.00 |  0.7610
+                    5.124   4.643 |   17.59 |   22.31 |  0.9349 |  0.1406 |   35.53 |  0.8456
+                    4.643   4.303 |   18.55 |   25.56 |  0.9255 |  0.1858 |   44.23 |  0.8104
+                    4.303   4.041 |   19.65 |   24.96 |  0.9212 |  0.1970 |   40.53 |  0.7930
+                    4.041   3.838 |   20.37 |   24.56 |  0.9297 |  0.1642 |   27.38 |  0.8280
+                    3.838   3.668 |   22.52 |   26.61 |  0.8813 |  0.1709 |   24.83 |  0.8156
+                    3.668   3.524 |   23.58 |   26.49 |  0.8607 |  0.1773 |   22.55 |  0.8098
+                    3.524   3.400 |   28.58 |   32.32 |  0.8550 |  0.2956 |   33.27 |  0.7213
+                    85.923   3.400 |   22.68 |   27.94 |  0.8952 |  0.2059 |   43.32 |  0.7900
                 </source>
                 <p>This output provides all the scaling values, data statistics
-                and model-versus-data statistics required to carry out a quick
-                analysis of a structure. The (optional) output MTZ file contains
-                Fourier coefficients (Fo-Fc and 2Fo-Fc) that can be auto-opened
-                in coot, along with other useful coefficients (bulk solvent and
-                Fc coefficients, sigmaA, FOM, etc).
+                    and model-versus-data statistics required to carry out a quick
+                    analysis of a structure. The (optional) output MTZ file contains
+                    Fourier coefficients (Fo-Fc and 2Fo-Fc) that can be auto-opened
+                    in coot, along with other useful coefficients (bulk solvent and
+                    Fc coefficients, sigmaA, FOM, etc).
                 </p>
             </subsection>
             <subsection name="X-Ray refinement">
                 <p>The refinement engine in FFX is set up to be dynamic.
-                Refinement can include simulated annealing, refine coordinates
-                only, B factors only, occupancies, all three, etc. Example
-                scripts to refine an X-ray structure are provided, although we
-                encourage users to edit and modify the scripts as required for
-                their task.
+                    Refinement can include simulated annealing, refine coordinates
+                    only, B factors only, occupancies, all three, etc. Example
+                    scripts to refine an X-ray structure are provided, although we
+                    encourage users to edit and modify the scripts as required for
+                    their task.
                 </p>
                 <p>For example, to carry out simulated annealing followed by
-                coordinate and then B-factor refinement, the provided
+                    coordinate and then B-factor refinement, the provided
                     <a href="http://kenai.com/projects/ffx/sources/source/content/modules/xray/src/main/groovy/ffx/xray/anneal.groovy">xray.anneal</a>
-                script should suffice. The job can be run
-                by providing the atomic coordinates and structure factors:
+                    script should suffice. The job can be run
+                    by providing the atomic coordinates and structure factors:
                 </p>
                 <source>ffxc xray.anneal 1N7S.pdb 1N7S.mtz</source>
                 <p>The xray.anneal script is provided in the scripts
-                directory.  Running the script without any arguments prints out
-                the usage information, reproduced here:
+                    directory.  Running the script without any arguments prints out
+                    the usage information, reproduced here:
                 </p>
                 <source>
-usage:  ffxc xray.anneal [options] &lt;pdbfilename&gt; [datafilename]
- -d,--data &lt;data.mtz,1.0,false&gt;   specify input data filename (or simply
-                                  provide the datafilename argument after
-                                  the PDB file), weight applied to the
-                                  data (wA) and if the data is from a
-                                  neutron experiment
- -H,--hightemp &lt;1000.0&gt;           starting temperature
- -h,--help                        Print this help message.
- -L,--lowtemp &lt;100.0&gt;             ending temperature
- -n,--mdsteps &lt;200&gt;               Number of molecular dynamics steps at
-                                  each temperature.
- -N,--annealsteps &lt;10&gt;            Number of steps between high and low
-                                  temperature
- -r,--mode &lt;coordinates&gt;          type of refinement: [coordinates /
-                                  bfactors / coordinates_and_bfactors /
-                                  occupancies / bfactors_and_occupancies /
-                                  coordinates_and_occupancies /
-                                  coordinates_and_bfactors_and_occupancies
-                                  ]
- -s,--suffix &lt;_anneal&gt;            output suffix
- -S,--scf                         set to turn off SCF/polarization
+                    usage:  ffxc xray.anneal [options] &lt;pdbfilename&gt; [datafilename]
+                    -d,--data &lt;data.mtz,1.0,false&gt;   specify input data filename (or simply
+                    provide the datafilename argument after
+                    the PDB file), weight applied to the
+                    data (wA) and if the data is from a
+                    neutron experiment
+                    -H,--hightemp &lt;1000.0&gt;           starting temperature
+                    -h,--help                        Print this help message.
+                    -L,--lowtemp &lt;100.0&gt;             ending temperature
+                    -n,--mdsteps &lt;200&gt;               Number of molecular dynamics steps at
+                    each temperature.
+                    -N,--annealsteps &lt;10&gt;            Number of steps between high and low
+                    temperature
+                    -r,--mode &lt;coordinates&gt;          type of refinement: [coordinates /
+                    bfactors / coordinates_and_bfactors /
+                    occupancies / bfactors_and_occupancies /
+                    coordinates_and_occupancies /
+                    coordinates_and_bfactors_and_occupancies
+                    ]
+                    -s,--suffix &lt;_anneal&gt;            output suffix
+                    -S,--scf                         set to turn off SCF/polarization
                 </source>
                 <p>So an equivalent way to run the annealing script would be:
                 </p>
                 <source>ffxc xray.anneal -d 1N7S.mtz,1.0,false 1N7S.pdb</source>
                 <p>The -d flag can be present multiple times on the command
-                line, which can be used for joint neutron/X-ray refinement.
+                    line, which can be used for joint neutron/X-ray refinement.
                 </p>
             </subsection>
             <subsection name="Scripts relevant to diffraction data">
                 <p>As mentioned, several scripts are provided for use.  They
-                can be found here:
+                    can be found here:
                     <a href="http://kenai.com/projects/ffx/sources/source/show/modules/xray/src/main/groovy/ffx">included diffraction data scripts</a>
-                And consists of:
+                    And consists of:
                 </p>
                 <ol>
                     <li>cif2mtz: converts a cif to an mtz file with symmetry
-                    information gathered from a PDB file
+                        information gathered from a PDB file
                     </li>
                     <li>deuterate: replaces hydrogen atoms with deuterium (only
-                    if bonded to N, O or S) and water with deuterium water
-                    for the purposes of neutron refinement
+                        if bonded to N, O or S) and water with deuterium water
+                        for the purposes of neutron refinement
                     </li>
                     <li>mtzInfo: print info regarding a MTZ file</li>
                     <li>xray.anneal: simulated annealing</li>
                     <li>xray.minimize: optimization of coordinates,
-                    Bs and occupancies in any combination (or all three can be
-                    performed in order)
+                        Bs and occupancies in any combination (or all three can be
+                        performed in order)
                     </li>
                     <li>xray.scaleBulk: simply scale the model and data, then
-                    print statistics and write out a MTZ file
+                        print statistics and write out a MTZ file
                     </li>
                 </ol>
                 <p>Similar scripts are included for real space
-                refinement.
+                    refinement.
                 </p>
             </subsection>
         </section>

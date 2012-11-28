@@ -1,6 +1,24 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+/**
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
+ *
+ * This file is part of Force Field X.
+ *
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
+ *
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.xray;
 
@@ -20,19 +38,25 @@ import ffx.crystal.SpaceGroup;
  * <p>CCP4MapFilter class.</p>
  *
  * @author Tim Fenn
- * @see <a href="http://www.ccp4.ac.uk/html/maplib.html" target="_blank">CCP4 map format</a>
+ * @see <a href="http://www.ccp4.ac.uk/html/maplib.html" target="_blank">CCP4
+ * map format</a>
  *
- * @see <a href="http://www.ccp4.ac.uk/dist/html/library.html" target="_blank">CCP4 library documentation</a>
- * @see <a href="http://www.ccp4.ac.uk/html/maplib.html" target="_blank">CCP4 map format</a>
+ * @see <a href="http://www.ccp4.ac.uk/dist/html/library.html"
+ * target="_blank">CCP4 library documentation</a>
+ * @see <a href="http://www.ccp4.ac.uk/html/maplib.html" target="_blank">CCP4
+ * map format</a>
  *
- * @see <a href="http://www.ccp4.ac.uk/dist/html/library.html" target="_blank">CCP4 library documentation</a>
- * @version $Id: $
+ * @see <a href="http://www.ccp4.ac.uk/dist/html/library.html"
+ * target="_blank">CCP4 library documentation</a>
+ *
  */
 public class CCP4MapFilter implements RealSpaceFileFilter {
 
     private static final Logger logger = Logger.getLogger(CCP4MapFilter.class.getName());
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Crystal getCrystal(String filename, CompositeConfiguration properties) {
         int imapdata;
@@ -118,7 +142,9 @@ public class CCP4MapFilter implements RealSpaceFileFilter {
                 SpaceGroup.spaceGroupNames[sg - 1]);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean readFile(String filename, RealSpaceRefinementData refinementdata,
             CompositeConfiguration properties) {
@@ -257,15 +283,15 @@ public class CCP4MapFilter implements RealSpaceFileFilter {
             rmsd = bb.order(b).getFloat();
 
             /*
-            System.out.println("col: " + ori[0] + " " + ext[0] + " " + ni[0]);
-            System.out.println("row: " + ori[1] + " " + ext[1] + " " + ni[1]);
-            System.out.println("sec: " + ori[2] + " " + ext[2] + " " + ni[2]);
-            System.out.println("order: " + axisi[0] + " " + axisi[1] + " " + axisi[2]);
-            System.out.println("min: " + min + " max: " + max + " mean: " + mean);
-            System.out.println("sd: " + sd + " rmsd: " + rmsd);
-            System.out.println("sg: " + sg);
-            System.out.println("a: " + cella + " b: " + cellb + " c: " + cellc
-            + " alpha: " + cellalpha + " beta: " + cellbeta + " gamma: " + cellgamma);
+             System.out.println("col: " + ori[0] + " " + ext[0] + " " + ni[0]);
+             System.out.println("row: " + ori[1] + " " + ext[1] + " " + ni[1]);
+             System.out.println("sec: " + ori[2] + " " + ext[2] + " " + ni[2]);
+             System.out.println("order: " + axisi[0] + " " + axisi[1] + " " + axisi[2]);
+             System.out.println("min: " + min + " max: " + max + " mean: " + mean);
+             System.out.println("sd: " + sd + " rmsd: " + rmsd);
+             System.out.println("sg: " + sg);
+             System.out.println("a: " + cella + " b: " + cellb + " c: " + cellc
+             + " alpha: " + cellalpha + " beta: " + cellbeta + " gamma: " + cellgamma);
              */
 
             if (logger.isLoggable(Level.INFO)) {

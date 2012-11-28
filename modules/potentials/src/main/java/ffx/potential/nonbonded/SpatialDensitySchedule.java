@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.potential.nonbonded;
 
@@ -30,7 +32,7 @@ import edu.rit.util.Range;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public class SpatialDensitySchedule extends IntegerSchedule {
 
@@ -52,7 +54,7 @@ public class SpatialDensitySchedule extends IntegerSchedule {
      * @param loadBalancePercentage a double.
      */
     public SpatialDensitySchedule(int nThreads, int nAtoms,
-                                  int atomsPerChunk[], double loadBalancePercentage) {
+            int atomsPerChunk[], double loadBalancePercentage) {
         this.nAtoms = nAtoms;
         this.atomsPerChunk = atomsPerChunk;
         this.nThreads = nThreads;
@@ -77,7 +79,9 @@ public class SpatialDensitySchedule extends IntegerSchedule {
         return true;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void start(int nThreads, Range chunkRange) {
         this.nThreads = nThreads;
@@ -93,11 +97,13 @@ public class SpatialDensitySchedule extends IntegerSchedule {
         if (nThreads != ranges.length) {
             ranges = new Range[nThreads];
         }
-        
+
         defineRanges();
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Range next(int threadID) {
         if (!threadDone[threadID]) {
@@ -125,8 +131,8 @@ public class SpatialDensitySchedule extends IntegerSchedule {
                 // Define the range for this thread.
                 Range current = ranges[thread];
                 if (current == null
-                    || current.lb() != start
-                    || current.ub() != stop) {
+                        || current.lb() != start
+                        || current.ub() != stop) {
                     ranges[thread] = new Range(start, stop);
                     //logger.info(format("Range for thread %d %s %d.", thread+1, ranges[thread], total));
                 }
@@ -140,10 +146,10 @@ public class SpatialDensitySchedule extends IntegerSchedule {
                     stop = ub;
                     current = ranges[thread];
                     if (current == null
-                        || current.lb() != start
-                        || current.ub() != stop) {
+                            || current.lb() != start
+                            || current.ub() != stop) {
                         ranges[thread] = new Range(start, stop);
-                    //logger.info(format("Range for thread %d %s %d.", thread+1, ranges[thread], total));
+                        //logger.info(format("Range for thread %d %s %d.", thread+1, ranges[thread], total));
                     }
                     break;
                 }
@@ -152,8 +158,8 @@ public class SpatialDensitySchedule extends IntegerSchedule {
                 int stop = i;
                 Range current = ranges[thread];
                 if (current == null
-                    || current.lb() != start
-                    || current.ub() != stop) {
+                        || current.lb() != start
+                        || current.ub() != stop) {
                     ranges[thread] = new Range(start, stop);
                     //logger.info(format("Range for thread %d %s %d.", thread+1, ranges[thread], total));
                 }
@@ -161,7 +167,7 @@ public class SpatialDensitySchedule extends IntegerSchedule {
         }
 
         // No work for remaining threads.
-        for (int i=thread + 1; i < nThreads; i++) {
+        for (int i = thread + 1; i < nThreads; i++) {
             ranges[i] = null;
         }
     }

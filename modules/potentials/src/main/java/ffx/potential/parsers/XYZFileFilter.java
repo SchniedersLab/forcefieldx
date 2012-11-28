@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.potential.parsers;
 
@@ -29,12 +31,12 @@ import javax.swing.filechooser.FileFilter;
 import org.apache.commons.io.FilenameUtils;
 
 /**
- * The XYZFileFilter class is used to choose a TINKER Cartesian
- * Coordinate (*.XYZ) file.
+ * The XYZFileFilter class is used to choose a TINKER Cartesian Coordinate
+ * (*.XYZ) file.
  *
  * @author Michael J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public final class XYZFileFilter extends FileFilter {
 
@@ -47,8 +49,9 @@ public final class XYZFileFilter extends FileFilter {
     /**
      * {@inheritDoc}
      *
-     * This method return <code>true</code> if the file is a directory or
-     * TINKER Cartesian coordinate (*.XYZ) file.
+     * This method return
+     * <code>true</code> if the file is a directory or TINKER Cartesian
+     * coordinate (*.XYZ) file.
      */
     @Override
     public boolean accept(File file) {
@@ -76,8 +79,8 @@ public final class XYZFileFilter extends FileFilter {
                 return false;
             }
             /**
-             * If the first token is not an integer this file is not
-             * a TINKER Cartesian Coordinate File.
+             * If the first token is not an integer this file is not a TINKER
+             * Cartesian Coordinate File.
              */
             String rawdata = br.readLine();
             String header[] = rawdata.trim().split(" +");

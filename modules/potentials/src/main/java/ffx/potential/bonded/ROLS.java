@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.potential.bonded;
 
@@ -33,13 +35,19 @@ import ffx.potential.bonded.RendererCache.ViewModel;
  * The ROLS Interace defines "Recursive Over Length Scales" (ROLS) Methods.
  *
  * @author Michael J. Schnieders
- * @version $Id: $
+ *
  */
 public interface ROLS {
 
-    /** Constant <code>MaxLengthScale=5</code> */
+    /**
+     * Constant
+     * <code>MaxLengthScale=5</code>
+     */
     public static final int MaxLengthScale = 5;
-    /** Constant <code>LengthScale=MaxLengthScale</code> */
+    /**
+     * Constant
+     * <code>LengthScale=MaxLengthScale</code>
+     */
     public static int LengthScale = MaxLengthScale;
 
     /**
@@ -95,7 +103,8 @@ public interface ROLS {
     /**
      * <p>setColor</p>
      *
-     * @param colorModel a {@link ffx.potential.bonded.RendererCache.ColorModel} object.
+     * @param colorModel a {@link ffx.potential.bonded.RendererCache.ColorModel}
+     * object.
      * @param color a {@link javax.vecmath.Color3f} object.
      * @param mat a {@link javax.media.j3d.Material} object.
      */
@@ -104,7 +113,8 @@ public interface ROLS {
     /**
      * <p>setView</p>
      *
-     * @param viewModel a {@link ffx.potential.bonded.RendererCache.ViewModel} object.
+     * @param viewModel a {@link ffx.potential.bonded.RendererCache.ViewModel}
+     * object.
      * @param newShapes a {@link java.util.List} object.
      */
     public void setView(ViewModel viewModel, List<BranchGroup> newShapes);

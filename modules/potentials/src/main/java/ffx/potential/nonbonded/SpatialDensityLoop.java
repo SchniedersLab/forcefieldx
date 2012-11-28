@@ -1,22 +1,21 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X Description: Force Field X - Software for Molecular
+ * Biophysics Copyright: Copyright (c) Michael J. Schnieders 2001-2012
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.potential.nonbonded;
 
@@ -30,7 +29,7 @@ import edu.rit.pj.IntegerSchedule;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public abstract class SpatialDensityLoop extends IntegerForLoop {
 
@@ -43,26 +42,29 @@ public abstract class SpatialDensityLoop extends IntegerForLoop {
     /**
      * <p>Constructor for SpatialDensityLoop.</p>
      *
-     * @param region a {@link ffx.potential.nonbonded.SpatialDensityRegion} object.
+     * @param region a {@link ffx.potential.nonbonded.SpatialDensityRegion}
+     * object.
      * @param nSymm a int.
      * @param atomsPerChunk an array of int.
      */
     public SpatialDensityLoop(SpatialDensityRegion region, int nSymm,
-                              int atomsPerChunk[]) {
+            int atomsPerChunk[]) {
         this.spatialDensityRegion = region;
         this.nSymm = nSymm;
         this.spatialDensitySchedule = new SpatialDensitySchedule(region.nThreads,
-                                                                 region.nAtoms, atomsPerChunk, 0.97);
+                region.nAtoms, atomsPerChunk, 0.97);
         assert (nSymm <= region.nSymm);
     }
 
     public void setRegion(SpatialDensityRegion spatialDensityRegion) {
         this.spatialDensityRegion = spatialDensityRegion;
         this.spatialDensitySchedule = new SpatialDensitySchedule(spatialDensityRegion.nThreads,
-                                                                 spatialDensityRegion.nAtoms, spatialDensityRegion.actualCount, 0.97);        
+                spatialDensityRegion.nAtoms, spatialDensityRegion.actualCount, 0.97);
     }
-    
-    /** {@inheritDoc} */
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public IntegerSchedule schedule() {
         return spatialDensitySchedule;
@@ -79,7 +81,8 @@ public abstract class SpatialDensityLoop extends IntegerForLoop {
     }
 
     /**
-     * <p>Setter for the field <code>octant</code>.</p>
+     * <p>Setter for the field
+     * <code>octant</code>.</p>
      *
      * @param octant a int.
      * @return a {@link ffx.potential.nonbonded.SpatialDensityLoop} object.
@@ -89,7 +92,9 @@ public abstract class SpatialDensityLoop extends IntegerForLoop {
         return this;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void run(int lb, int ub) {
         // Loop over work cells

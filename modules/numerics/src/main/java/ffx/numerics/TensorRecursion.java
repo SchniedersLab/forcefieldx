@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.numerics;
 
@@ -28,23 +30,19 @@ import static java.lang.Math.sqrt;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public class TensorRecursion {
 
     /**
-     * The index is based on the idea of filling tetrahedron.
-     * <p>
-     * 1/r has an index of 0 <br>
-     * derivatives of x are first -> indeces from 1..o for d/dx..do/dox) <br>
-     * derivatives of x & y are second -> base triangle of size (o+1)(o+2)/2 <br>
-     * derivatives of x & y & z are last -> total size (o+1)*(o+2)*(o+3)/6 <br>
-     * <p>
-     * This function is useful to set up masking constants:<br>
-     * static int Tlmn = tensorIndex(l,m,n,order) <br>
-     * For example the (d/dy)^2 (1/R) storage location: <br>
-     * static int T020 = tensorIndex(0,2,0,order)
-     * <p>
+     * The index is based on the idea of filling tetrahedron. <p> 1/r has an
+     * index of 0 <br> derivatives of x are first -> indeces from 1..o for
+     * d/dx..do/dox) <br> derivatives of x & y are second -> base triangle of
+     * size (o+1)(o+2)/2 <br> derivatives of x & y & z are last -> total size
+     * (o+1)*(o+2)*(o+3)/6 <br> <p> This function is useful to set up masking
+     * constants:<br> static int Tlmn = tensorIndex(l,m,n,order) <br> For
+     * example the (d/dy)^2 (1/R) storage location: <br> static int T020 =
+     * tensorIndex(0,2,0,order) <p>
      *
      * @param dx int The number of d/dx operations.
      * @param dy int The number of d/dy operations.
@@ -85,7 +83,6 @@ public class TensorRecursion {
         assert (ret < Integer.MAX_VALUE);
         return (int) ret;
     }
-
     /**
      * Store the auxillary tensor memory to avoid memory consumption.
      */
@@ -109,7 +106,7 @@ public class TensorRecursion {
      * @param order a int.
      */
     public TensorRecursion(int order) {
-        assert(order > 0);
+        assert (order > 0);
         o1 = order + 1;
         il = o1;
         im = il * o1;
@@ -133,10 +130,8 @@ public class TensorRecursion {
      * O(order^8). For order = 5, this approach is a factor of 10 slower than
      * tensorRecursion.
      *
-     * @param r
-     *            double[] vector between two sites.
-     * @param tensor
-     *            double[] length must be at least binomial(order + 3, 3).
+     * @param r double[] vector between two sites.
+     * @param tensor double[] length must be at least binomial(order + 3, 3).
      */
     public void noStorageTensorRecursion(double r[], double tensor[]) {
         // 1/r
@@ -175,22 +170,15 @@ public class TensorRecursion {
     /**
      * This function is a driver to collect elements of the Cartesion multipole
      * tensor. Collecting all tensors scales slightly better than O(order^4).
-     * <p>
-     * For a multipole expansion truncated at quadrupole order, for example,
+     * <p> For a multipole expansion truncated at quadrupole order, for example,
      * up to order 5 is needed for energy gradients. The number of terms this
-     * requires is binomial(5 + 3, 3) or 8! / (5! * 3!), which is 56.
-     * <p>
-     * The packing of the tensor elements for order = 1<br>
-     * tensor[0] = 1/|r| <br>
-     * tensor[1] = -x/|r|^3 <br>
-     * tensor[2] = -y/|r|^3 <br>
-     * tensor[3] = -z/|r|^3 <br>
-     * <p>
+     * requires is binomial(5 + 3, 3) or 8! / (5! * 3!), which is 56. <p> The
+     * packing of the tensor elements for order = 1<br> tensor[0] = 1/|r| <br>
+     * tensor[1] = -x/|r|^3 <br> tensor[2] = -y/|r|^3 <br> tensor[3] = -z/|r|^3
+     * <br> <p>
      *
-     * @param r
-     *            double[] vector between two sites.
-     * @param tensor
-     *            double[] length must be at least binomial(order + 3, 3).
+     * @param r double[] vector between two sites.
+     * @param tensor double[] length must be at least binomial(order + 3, 3).
      * @since 1.0
      */
     public void tensorRecursion(final double r[], final double tensor[]) {
@@ -305,22 +293,18 @@ public class TensorRecursion {
             }
         }
     }
-    
+
     /**
-     * This routine implements the recurrence relations for computation of
-     * any Cartesion multipole tensor in ~O(L^8) time, where L is the total
-     * order l + m + n, given the auxillary elements T0000.
-     * <p>
-     * It implements the recursion relationships from the reference below
-     * in brute force fashion, without saving intermediate values. This is
-     * useful for finding a single tensor, rather than all binomial(L + 3, 3).
-     * <p>
-     * The specific recursion equations (41-43) and set of auxillary tensor
-     * elements from equation (40) can be found in:
-     * <p>
-     * Matt Challacombe, Eric Schwegler and Jan Almlof, Modern developments in
-     * Hartree-Fock theory: Fast methods for computing the
-     * Coulomb matrix. Computational Chemistry: Review of Current Trends pp.
+     * This routine implements the recurrence relations for computation of any
+     * Cartesion multipole tensor in ~O(L^8) time, where L is the total order l
+     * + m + n, given the auxillary elements T0000. <p> It implements the
+     * recursion relationships from the reference below in brute force fashion,
+     * without saving intermediate values. This is useful for finding a single
+     * tensor, rather than all binomial(L + 3, 3). <p> The specific recursion
+     * equations (41-43) and set of auxillary tensor elements from equation (40)
+     * can be found in: <p> Matt Challacombe, Eric Schwegler and Jan Almlof,
+     * Modern developments in Hartree-Fock theory: Fast methods for computing
+     * the Coulomb matrix. Computational Chemistry: Review of Current Trends pp.
      * 53-107, Ed. J. Leczszynski, World Scientifc, 1996.
      *
      * @param l int The number of (d/dx) operations.
@@ -333,7 +317,7 @@ public class TensorRecursion {
      * @since 1.0
      */
     private static double Tlmnj(final int l, final int m, final int n,
-                                final int j, final double[] r, final double[] T000) {
+            final int j, final double[] r, final double[] T000) {
         if (m == 0 && n == 0) {
             if (l > 1) {
                 return r[0] * Tlmnj(l - 1, 0, 0, j + 1, r, T000) + (l - 1) * Tlmnj(l - 2, 0, 0, j + 1, r, T000);
@@ -354,5 +338,4 @@ public class TensorRecursion {
             return r[2] * Tlmnj(l, m, 0, j + 1, r, T000);
         }
     }
-
 }

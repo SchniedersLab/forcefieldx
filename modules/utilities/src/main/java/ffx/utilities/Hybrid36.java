@@ -1,35 +1,36 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.utilities;
 
 /**
- * Java port of the hy36encode() and hy36decode() functions in the
- * hybrid_36.py Python prototype/reference implementation.
+ * Java port of the hy36encode() and hy36decode() functions in the hybrid_36.py
+ * Python prototype/reference implementation.
  *
- * @author Michael J. Schnieders
- *         Derived from code by:
- *         Ralf W. Grosse-Kunstleve, Vincent B. Chen, Jeff J. Headd, Sep 2007.
+ * @author Michael J. Schnieders <br> Derived from code by: Ralf W.
+ * Grosse-Kunstleve, Vincent B. Chen, Jeff J. Headd, Sep 2007.
  * @see <a href="http://cci.lbl.gov/hybrid_36/">LBL Hybrid36 Reference</a>
  * @since 1.0
- * @version $Id: $
+ *
  */
 public class Hybrid36 {
 
@@ -70,6 +71,7 @@ public class Hybrid36 {
         }
         return result;
     }
+
     private static int decodePure(int[] digits_values, int digits_size,
             String s) {
         boolean have_minus = false;
@@ -111,12 +113,12 @@ public class Hybrid36 {
     /**
      * hybrid-36 encoder: converts integer value to string result
      *
-     *    width: must be 4 (e.g. for residue sequence numbers)
-     *    or 5 (e.g. for atom serial numbers)
+     * width: must be 4 (e.g. for residue sequence numbers) or 5 (e.g. for atom
+     * serial numbers)
      *
-     *    value: integer value to be converted
+     * value: integer value to be converted
      *
-     *    return value: String of size width
+     * return value: String of size width
      *
      * @param width a int.
      * @param value a int.
@@ -165,12 +167,12 @@ public class Hybrid36 {
     /**
      * hybrid-36 decoder: converts string s to integer result
      *
-     *    width: must be 4 (e.g. for residue sequence numbers)
-     *    or 5 (e.g. for atom serial numbers)
+     * width: must be 4 (e.g. for residue sequence numbers) or 5 (e.g. for atom
+     * serial numbers)
      *
-     *    s: string to be converted
+     * s: string to be converted
      *
-     *    return value: conversion result
+     * return value: conversion result
      *
      * @param width a int.
      * @param s a {@link java.lang.String} object.
@@ -243,23 +245,27 @@ public class Hybrid36 {
             System.out.println("ERROR: \"" + result + "\" != \"" + expected + "\"");
         }
     }
+
     private static void checkInt(int result, int expected) {
         if (result != expected) {
             System.out.println("ERROR: " + result + " != " + expected);
         }
     }
+
     private static void recycle4(int value, String encoded) {
         String s = encode(4, value);
         checkString(s, encoded);
         int d = decode(4, s);
         checkInt(d, value);
     }
+
     private static void recycle5(int value, String encoded) {
         String s = encode(5, value);
         checkString(s, encoded);
         int d = decode(5, s);
         checkInt(d, value);
     }
+
     private static void checkEncodeException(int width, int value, String expected_msg) {
         String msg = "";
         try {
@@ -269,6 +275,7 @@ public class Hybrid36 {
         }
         checkString(msg, "java.lang.Error: " + expected_msg);
     }
+
     private static void checkDecodeException(int width, String s, String expected_msg) {
         String msg = "";
         try {
@@ -278,7 +285,6 @@ public class Hybrid36 {
         }
         checkString(msg, "java.lang.Error: " + expected_msg);
     }
-
     private static int random_seed = 13;
 
     private static int kernighan_and_ritchie_rand() {

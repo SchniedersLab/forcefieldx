@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.ui;
 
@@ -59,7 +61,7 @@ import ffx.potential.bonded.RendererCache.ViewModel;
  * includes the Force Field X API, Java API and Groovy extensions.
  *
  * @author Michael J. Schnieders
- * @version $Id: $
+ *
  */
 public class ModelingShell extends Console implements AlgorithmListener {
 
@@ -424,27 +426,27 @@ public class ModelingShell extends Console implements AlgorithmListener {
     }
 
     /*
-    @Override
-    public void runScript() {
-    runScript(null);
-    }
-    
-    @Override
-    public void runScript(EventObject evt) {
-    scriptStartup();
-    super.runScript(evt);
-    }
-    
-    @Override
-    public void runSelectedScript() {
-    runSelectedScript(null);
-    }
-    
-    @Override
-    public void runSelectedScript(EventObject evt) {
-    scriptStartup();
-    super.runSelectedScript(evt);
-    } */
+     @Override
+     public void runScript() {
+     runScript(null);
+     }
+
+     @Override
+     public void runScript(EventObject evt) {
+     scriptStartup();
+     super.runScript(evt);
+     }
+
+     @Override
+     public void runSelectedScript() {
+     runSelectedScript(null);
+     }
+
+     @Override
+     public void runSelectedScript(EventObject evt) {
+     scriptStartup();
+     super.runSelectedScript(evt);
+     } */
     /**
      * {@inheritDoc}
      *
@@ -484,36 +486,36 @@ public class ModelingShell extends Console implements AlgorithmListener {
     }
 
     /*
-    @Override
-    public void clearOutput(EventObject evt) {
-    clearOutput();
-    }
-    
-    @Override
-    public void fileNewWindow() {
-    mainPanel.resetShell();
-    }
-    
-    @Override
-    public void fileNewWindow(EventObject evt) {
-    fileNewWindow();
-    }
-    
-    @Override
-    public void showAbout() {
-    mainPanel.about();
-    }
-    
-    @Override
-    public void showAbout(EventObject evt) {
-    showAbout();
-    }
-    
-    @Override
-    public void updateTitle() {
-    JFrame frame = (JFrame) getFrame();
-    frame.setTitle("Force Field X Shell");
-    } */
+     @Override
+     public void clearOutput(EventObject evt) {
+     clearOutput();
+     }
+
+     @Override
+     public void fileNewWindow() {
+     mainPanel.resetShell();
+     }
+
+     @Override
+     public void fileNewWindow(EventObject evt) {
+     fileNewWindow();
+     }
+
+     @Override
+     public void showAbout() {
+     mainPanel.about();
+     }
+
+     @Override
+     public void showAbout(EventObject evt) {
+     showAbout();
+     }
+
+     @Override
+     public void updateTitle() {
+     JFrame frame = (JFrame) getFrame();
+     frame.setTitle("Force Field X Shell");
+     } */
     private void scriptStartup() {
         clearOutput();
         Object name = getScriptFile();
@@ -580,7 +582,6 @@ public class ModelingShell extends Console implements AlgorithmListener {
             scroll();
         } else {
             SwingUtilities.invokeLater(new Runnable() {
-
                 @Override
                 public void run() {
                     scroll();
@@ -618,7 +619,6 @@ public class ModelingShell extends Console implements AlgorithmListener {
             scroll();
         } else {
             SwingUtilities.invokeLater(new Runnable() {
-
                 @Override
                 public void run() {
                     scroll();
@@ -628,23 +628,24 @@ public class ModelingShell extends Console implements AlgorithmListener {
     }
     /**
      * Confirm whether to interrupt the running thread.
+     *
      * @param evt
      */
     /* @Override
-    public void confirmRunInterrupt(EventObject evt) {
-    int rc = JOptionPane.showConfirmDialog((Component) getFrame(), "Attempt to interrupt script?",
-    "Force Field X Shell", JOptionPane.YES_NO_OPTION);
-    if (rc == JOptionPane.YES_OPTION) {
-    interrupted = true;
-    if (terminatableAlgorithm != null) {
-    terminatableAlgorithm.terminate();
-    }
-    Thread thread = getRunThread();
-    if (thread != null) {
-    thread.interrupt();
-    }
-    }
-    } */
+     public void confirmRunInterrupt(EventObject evt) {
+     int rc = JOptionPane.showConfirmDialog((Component) getFrame(), "Attempt to interrupt script?",
+     "Force Field X Shell", JOptionPane.YES_NO_OPTION);
+     if (rc == JOptionPane.YES_OPTION) {
+     interrupted = true;
+     if (terminatableAlgorithm != null) {
+     terminatableAlgorithm.terminate();
+     }
+     Thread thread = getRunThread();
+     if (thread != null) {
+     thread.interrupt();
+     }
+     }
+     } */
     private static final Preferences preferences = Preferences.userNodeForPackage(ModelingShell.class);
 
     /**
@@ -686,13 +687,17 @@ public class ModelingShell extends Console implements AlgorithmListener {
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String toString() {
         return "Force Field X Shell";
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean algorithmUpdate(MolecularAssembly active) {
         if (interrupted) {
@@ -702,8 +707,8 @@ public class ModelingShell extends Console implements AlgorithmListener {
         GraphicsCanvas graphics = mainPanel.getGraphics3D();
         if (graphics != null) {
             /**
-             * Use the blocking graphics update method so that only self-consistent
-             * coordinate sets are displayed.
+             * Use the blocking graphics update method so that only
+             * self-consistent coordinate sets are displayed.
              */
             graphics.updateSceneWait(active, true, false, null, false, null);
         }

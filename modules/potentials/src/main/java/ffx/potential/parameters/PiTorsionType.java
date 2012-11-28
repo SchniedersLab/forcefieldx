@@ -1,6 +1,9 @@
 /**
- * Title: Force Field X Description: Force Field X - Software for Molecular
- * Biophysics Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
@@ -28,7 +31,7 @@ import java.util.HashMap;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public final class PiTorsionType extends BaseType implements Comparator<String> {
 
@@ -122,7 +125,7 @@ public final class PiTorsionType extends BaseType implements Comparator<String> 
     @Override
     public String toString() {
         return String.format("pitors  %5d  %5d  %4.2f", atomClasses[0],
-                             atomClasses[1], forceConstant);
+                atomClasses[1], forceConstant);
     }
     /**
      * Convert Pi-Torsion energy to kcal/mole.

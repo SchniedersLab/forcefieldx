@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.numerics.fft;
 
@@ -30,11 +32,12 @@ import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
 
 /**
- * Compute the 3D FFT of real, double precision input of arbitrary dimensions in parallel.<p>
+ * Compute the 3D FFT of real, double precision input of arbitrary dimensions in
+ * parallel.<p>
  *
  * @author Michal J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public class Real3DParallel {
 
@@ -52,12 +55,9 @@ public class Real3DParallel {
     /**
      * Initialize the FFT for real input.
      *
-     * @param nX
-     *            X-dimension.
-     * @param nY
-     *            Y-dimension.
-     * @param nZ
-     *            Z-dimension.
+     * @param nX X-dimension.
+     * @param nY Y-dimension.
+     * @param nZ Z-dimension.
      * @since 1.0
      * @param parallelTeam a {@link edu.rit.pj.ParallelTeam} object.
      */
@@ -83,16 +83,11 @@ public class Real3DParallel {
     /**
      * Initialize the FFT for real input.
      *
-     * @param nX
-     *            X-dimension.
-     * @param nY
-     *            Y-dimension.
-     * @param nZ
-     *            Z-dimension.
-     * @param parallelTeam
-     *            The ParallelTeam that will execute the transforms.
-     * @param integerSchedule
-     *            The IntegerSchedule to use.
+     * @param nX X-dimension.
+     * @param nY Y-dimension.
+     * @param nZ Z-dimension.
+     * @param parallelTeam The ParallelTeam that will execute the transforms.
+     * @param integerSchedule The IntegerSchedule to use.
      * @since 1.0
      */
     public Real3DParallel(int nX, int nY, int nZ, ParallelTeam parallelTeam,
@@ -122,8 +117,7 @@ public class Real3DParallel {
     /**
      * Compute the 3D FFT.
      *
-     * @param input
-     *            The input array must be of size (nX + 2) * nY * nZ.
+     * @param input The input array must be of size (nX + 2) * nY * nZ.
      * @since 1.0
      */
     public void fft(final double input[]) {
@@ -140,8 +134,7 @@ public class Real3DParallel {
     /**
      * Compute the inverese 3D FFT.
      *
-     * @param input
-     *            The input array must be of size (nX + 2) * nY * nZ.
+     * @param input The input array must be of size (nX + 2) * nY * nZ.
      * @since 1.0
      */
     public void ifft(final double input[]) {
@@ -173,7 +166,8 @@ public class Real3DParallel {
     }
 
     /**
-     * <p>Setter for the field <code>recip</code>.</p>
+     * <p>Setter for the field
+     * <code>recip</code>.</p>
      *
      * @param recip The recip array must be of size [(nX/2 + 1) * nY * nZ].
      */
@@ -181,8 +175,8 @@ public class Real3DParallel {
         int offset, y, x, z, i;
 
         /**
-         * Reorder the reciprocal space data into the order it is needed
-         * by the convolution routine.
+         * Reorder the reciprocal space data into the order it is needed by the
+         * convolution routine.
          */
         int index = 0;
         for (index = 0, offset = 0, y = 0; y < nY; y++) {
@@ -562,12 +556,10 @@ public class Real3DParallel {
         // Parallel Array Initialization.
         try {
             parallelTeam.execute(new ParallelRegion() {
-
                 @Override
                 public void run() {
                     try {
                         execute(0, dim - 1, new IntegerForLoop() {
-
                             @Override
                             public void run(int lb, int ub) {
                                 Random randomNumberGenerator = new Random(1);
@@ -577,7 +569,7 @@ public class Real3DParallel {
                                         for (int x = 0; x < dim; x++) {
                                             double randomNumber = randomNumberGenerator.nextDouble();
                                             data[index] = randomNumber;
-                                            index ++;
+                                            index++;
                                         }
                                     }
                                 }

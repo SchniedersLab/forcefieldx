@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2009
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.xray;
 
@@ -31,7 +33,7 @@ import ffx.potential.bonded.MolecularAssembly;
  * <p>DiffractionFile class.</p>
  *
  * @author Tim Fenn
- * @version $Id: $
+ *
  */
 public class DiffractionFile {
 
@@ -82,8 +84,8 @@ public class DiffractionFile {
         } else {
             diffractionfilter = null;
         }
-        
-        if (diffractionfilter == null){
+
+        if (diffractionfilter == null) {
             logger.severe("input data file format not recognized!\n Please use an appropriate file extension: [MTZ: mtz] [CIF: cif, ent, sf] [CNS: cns, hkl] to identify your data file type!");
         }
 
@@ -106,7 +108,8 @@ public class DiffractionFile {
     /**
      * <p>Constructor for DiffractionFile.</p>
      *
-     * @param assembly an array of {@link ffx.potential.bonded.MolecularAssembly} objects.
+     * @param assembly an array of
+     * {@link ffx.potential.bonded.MolecularAssembly} objects.
      * @param weight a double.
      */
     public DiffractionFile(MolecularAssembly assembly[], double weight) {
@@ -116,7 +119,8 @@ public class DiffractionFile {
     /**
      * <p>Constructor for DiffractionFile.</p>
      *
-     * @param assembly an array of {@link ffx.potential.bonded.MolecularAssembly} objects.
+     * @param assembly an array of
+     * {@link ffx.potential.bonded.MolecularAssembly} objects.
      * @param weight a double.
      * @param neutron a boolean.
      */

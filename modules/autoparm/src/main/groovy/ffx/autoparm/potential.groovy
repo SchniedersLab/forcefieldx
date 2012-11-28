@@ -1,7 +1,9 @@
 /**
- * Title: Force Field X 
- * Description: Force Field X - Software for Molecular Biophysics 
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
@@ -46,6 +48,6 @@ Integer choice = Integer.parseInt(arguments.get(0));
 String filename = arguments.get(1);
 int out_type = 5;
 if(choice == 4){
-	eps = Double.parseDouble(arguments.get(2));
+    eps = Double.parseDouble(arguments.get(2));
 }
 potential(choice, filename, eps);

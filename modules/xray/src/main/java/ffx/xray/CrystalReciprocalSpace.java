@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.xray;
 
@@ -56,17 +58,19 @@ import static ffx.numerics.fft.Complex3D.iComplex3D;
  * @see <a href="http://dx.doi.org/10.1107/S0108767388009183" target="_blank">
  * A. T. Brunger, Acta Cryst. (1989). A45, 42-50.</a>
  *
- * @see <a href="http://dx.doi.org/10.1107/97809553602060000551" target="_blank">
- * G. Bricogne, Int. Tables Cryst. (2006). Vol. B, ch. 1.3, pp. 25-98.</a>
+ * @see <a href="http://dx.doi.org/10.1107/97809553602060000551"
+ * target="_blank"> G. Bricogne, Int. Tables Cryst. (2006). Vol. B, ch. 1.3, pp.
+ * 25-98.</a>
  *
- * @see <a href="http://dx.doi.org/10.1002/jcc.1032" target="_blank">
- * J. A. Grant, B. T. Pickup, A. Nicholls, J. Comp. Chem. (2001). 22, 608-640</a>
+ * @see <a href="http://dx.doi.org/10.1002/jcc.1032" target="_blank"> J. A.
+ * Grant, B. T. Pickup, A. Nicholls, J. Comp. Chem. (2001). 22, 608-640</a>
  *
- * @see <a href="http://dx.doi.org/10.1006/jmbi.1994.1633" target="_blank">
- * J. S. Jiang, A. T. Brunger, JMB (1994) 243, 100-115.</a>
+ * @see <a href="http://dx.doi.org/10.1006/jmbi.1994.1633" target="_blank"> J.
+ * S. Jiang, A. T. Brunger, JMB (1994) 243, 100-115.</a>
  *
  * @see <a href="http://dx.doi.org/10.1107/S0907444910031045" target="_blank">
- * T.D. Fenn, M. J. Schnieders, A. T. Brunger, Acta Cryst. (2010). D66, 1024-1031.</a>
+ * T.D. Fenn, M. J. Schnieders, A. T. Brunger, Acta Cryst. (2010). D66,
+ * 1024-1031.</a>
  * @see <a href="http://dx.doi.org/10.1107/S0567739473000458" target="_blank">
  * L. F. Ten Eyck, Acta Cryst. (1973). A29, 183-191.</a>
  *
@@ -79,17 +83,19 @@ import static ffx.numerics.fft.Complex3D.iComplex3D;
  * @see <a href="http://dx.doi.org/10.1107/S0108767388009183" target="_blank">
  * A. T. Brunger, Acta Cryst. (1989). A45, 42-50.</a>
  *
- * @see <a href="http://dx.doi.org/10.1107/97809553602060000551" target="_blank">
- * G. Bricogne, Int. Tables Cryst. (2006). Vol. B, ch. 1.3, pp. 25-98.</a>
+ * @see <a href="http://dx.doi.org/10.1107/97809553602060000551"
+ * target="_blank"> G. Bricogne, Int. Tables Cryst. (2006). Vol. B, ch. 1.3, pp.
+ * 25-98.</a>
  *
- * @see <a href="http://dx.doi.org/10.1002/jcc.1032" target="_blank">
- * J. A. Grant, B. T. Pickup, A. Nicholls, J. Comp. Chem. (2001). 22, 608-640</a>
+ * @see <a href="http://dx.doi.org/10.1002/jcc.1032" target="_blank"> J. A.
+ * Grant, B. T. Pickup, A. Nicholls, J. Comp. Chem. (2001). 22, 608-640</a>
  *
- * @see <a href="http://dx.doi.org/10.1006/jmbi.1994.1633" target="_blank">
- * J. S. Jiang, A. T. Brunger, JMB (1994) 243, 100-115.</a>
+ * @see <a href="http://dx.doi.org/10.1006/jmbi.1994.1633" target="_blank"> J.
+ * S. Jiang, A. T. Brunger, JMB (1994) 243, 100-115.</a>
  *
  * @see <a href="http://dx.doi.org/10.1107/S0907444910031045" target="_blank">
- * T.D. Fenn, M. J. Schnieders, A. T. Brunger, Acta Cryst. (2010). D66, 1024-1031.</a>
+ * T.D. Fenn, M. J. Schnieders, A. T. Brunger, Acta Cryst. (2010). D66,
+ * 1024-1031.</a>
  * @see <a href="http://dx.doi.org/10.1107/S0567739473000458" target="_blank">
  * L. F. Ten Eyck, Acta Cryst. (1973). A29, 183-191.</a>
  *
@@ -102,17 +108,19 @@ import static ffx.numerics.fft.Complex3D.iComplex3D;
  * @see <a href="http://dx.doi.org/10.1107/S0108767388009183" target="_blank">
  * A. T. Brunger, Acta Cryst. (1989). A45, 42-50.</a>
  *
- * @see <a href="http://dx.doi.org/10.1107/97809553602060000551" target="_blank">
- * G. Bricogne, Int. Tables Cryst. (2006). Vol. B, ch. 1.3, pp. 25-98.</a>
+ * @see <a href="http://dx.doi.org/10.1107/97809553602060000551"
+ * target="_blank"> G. Bricogne, Int. Tables Cryst. (2006). Vol. B, ch. 1.3, pp.
+ * 25-98.</a>
  *
- * @see <a href="http://dx.doi.org/10.1002/jcc.1032" target="_blank">
- * J. A. Grant, B. T. Pickup, A. Nicholls, J. Comp. Chem. (2001). 22, 608-640</a>
+ * @see <a href="http://dx.doi.org/10.1002/jcc.1032" target="_blank"> J. A.
+ * Grant, B. T. Pickup, A. Nicholls, J. Comp. Chem. (2001). 22, 608-640</a>
  *
- * @see <a href="http://dx.doi.org/10.1006/jmbi.1994.1633" target="_blank">
- * J. S. Jiang, A. T. Brunger, JMB (1994) 243, 100-115.</a>
+ * @see <a href="http://dx.doi.org/10.1006/jmbi.1994.1633" target="_blank"> J.
+ * S. Jiang, A. T. Brunger, JMB (1994) 243, 100-115.</a>
  *
  * @see <a href="http://dx.doi.org/10.1107/S0907444910031045" target="_blank">
- * T.D. Fenn, M. J. Schnieders, A. T. Brunger, Acta Cryst. (2010). D66, 1024-1031.</a>
+ * T.D. Fenn, M. J. Schnieders, A. T. Brunger, Acta Cryst. (2010). D66,
+ * 1024-1031.</a>
  * @see <a href="http://dx.doi.org/10.1107/S0567739473000458" target="_blank">
  * L. F. Ten Eyck, Acta Cryst. (1973). A29, 183-191.</a>
  *
@@ -125,17 +133,19 @@ import static ffx.numerics.fft.Complex3D.iComplex3D;
  * @see <a href="http://dx.doi.org/10.1107/S0108767388009183" target="_blank">
  * A. T. Brunger, Acta Cryst. (1989). A45, 42-50.</a>
  *
- * @see <a href="http://dx.doi.org/10.1107/97809553602060000551" target="_blank">
- * G. Bricogne, Int. Tables Cryst. (2006). Vol. B, ch. 1.3, pp. 25-98.</a>
+ * @see <a href="http://dx.doi.org/10.1107/97809553602060000551"
+ * target="_blank"> G. Bricogne, Int. Tables Cryst. (2006). Vol. B, ch. 1.3, pp.
+ * 25-98.</a>
  *
- * @see <a href="http://dx.doi.org/10.1002/jcc.1032" target="_blank">
- * J. A. Grant, B. T. Pickup, A. Nicholls, J. Comp. Chem. (2001). 22, 608-640</a>
+ * @see <a href="http://dx.doi.org/10.1002/jcc.1032" target="_blank"> J. A.
+ * Grant, B. T. Pickup, A. Nicholls, J. Comp. Chem. (2001). 22, 608-640</a>
  *
- * @see <a href="http://dx.doi.org/10.1006/jmbi.1994.1633" target="_blank">
- * J. S. Jiang, A. T. Brunger, JMB (1994) 243, 100-115.</a>
+ * @see <a href="http://dx.doi.org/10.1006/jmbi.1994.1633" target="_blank"> J.
+ * S. Jiang, A. T. Brunger, JMB (1994) 243, 100-115.</a>
  *
  * @see <a href="http://dx.doi.org/10.1107/S0907444910031045" target="_blank">
- * T.D. Fenn, M. J. Schnieders, A. T. Brunger, Acta Cryst. (2010). D66, 1024-1031.</a>
+ * T.D. Fenn, M. J. Schnieders, A. T. Brunger, Acta Cryst. (2010). D66,
+ * 1024-1031.</a>
  * @see <a href="http://dx.doi.org/10.1107/S0567739473000458" target="_blank">
  * L. F. Ten Eyck, Acta Cryst. (1973). A29, 183-191.</a>
  *
@@ -148,17 +158,19 @@ import static ffx.numerics.fft.Complex3D.iComplex3D;
  * @see <a href="http://dx.doi.org/10.1107/S0108767388009183" target="_blank">
  * A. T. Brunger, Acta Cryst. (1989). A45, 42-50.</a>
  *
- * @see <a href="http://dx.doi.org/10.1107/97809553602060000551" target="_blank">
- * G. Bricogne, Int. Tables Cryst. (2006). Vol. B, ch. 1.3, pp. 25-98.</a>
+ * @see <a href="http://dx.doi.org/10.1107/97809553602060000551"
+ * target="_blank"> G. Bricogne, Int. Tables Cryst. (2006). Vol. B, ch. 1.3, pp.
+ * 25-98.</a>
  *
- * @see <a href="http://dx.doi.org/10.1002/jcc.1032" target="_blank">
- * J. A. Grant, B. T. Pickup, A. Nicholls, J. Comp. Chem. (2001). 22, 608-640</a>
+ * @see <a href="http://dx.doi.org/10.1002/jcc.1032" target="_blank"> J. A.
+ * Grant, B. T. Pickup, A. Nicholls, J. Comp. Chem. (2001). 22, 608-640</a>
  *
- * @see <a href="http://dx.doi.org/10.1006/jmbi.1994.1633" target="_blank">
- * J. S. Jiang, A. T. Brunger, JMB (1994) 243, 100-115.</a>
+ * @see <a href="http://dx.doi.org/10.1006/jmbi.1994.1633" target="_blank"> J.
+ * S. Jiang, A. T. Brunger, JMB (1994) 243, 100-115.</a>
  *
  * @see <a href="http://dx.doi.org/10.1107/S0907444910031045" target="_blank">
- * T.D. Fenn, M. J. Schnieders, A. T. Brunger, Acta Cryst. (2010). D66, 1024-1031.</a>
+ * T.D. Fenn, M. J. Schnieders, A. T. Brunger, Acta Cryst. (2010). D66,
+ * 1024-1031.</a>
  * @see <a href="http://dx.doi.org/10.1107/S0567739473000458" target="_blank">
  * L. F. Ten Eyck, Acta Cryst. (1973). A29, 183-191.</a>
  *
@@ -171,17 +183,19 @@ import static ffx.numerics.fft.Complex3D.iComplex3D;
  * @see <a href="http://dx.doi.org/10.1107/S0108767388009183" target="_blank">
  * A. T. Brunger, Acta Cryst. (1989). A45, 42-50.</a>
  *
- * @see <a href="http://dx.doi.org/10.1107/97809553602060000551" target="_blank">
- * G. Bricogne, Int. Tables Cryst. (2006). Vol. B, ch. 1.3, pp. 25-98.</a>
+ * @see <a href="http://dx.doi.org/10.1107/97809553602060000551"
+ * target="_blank"> G. Bricogne, Int. Tables Cryst. (2006). Vol. B, ch. 1.3, pp.
+ * 25-98.</a>
  *
- * @see <a href="http://dx.doi.org/10.1002/jcc.1032" target="_blank">
- * J. A. Grant, B. T. Pickup, A. Nicholls, J. Comp. Chem. (2001). 22, 608-640</a>
+ * @see <a href="http://dx.doi.org/10.1002/jcc.1032" target="_blank"> J. A.
+ * Grant, B. T. Pickup, A. Nicholls, J. Comp. Chem. (2001). 22, 608-640</a>
  *
- * @see <a href="http://dx.doi.org/10.1006/jmbi.1994.1633" target="_blank">
- * J. S. Jiang, A. T. Brunger, JMB (1994) 243, 100-115.</a>
+ * @see <a href="http://dx.doi.org/10.1006/jmbi.1994.1633" target="_blank"> J.
+ * S. Jiang, A. T. Brunger, JMB (1994) 243, 100-115.</a>
  *
  * @see <a href="http://dx.doi.org/10.1107/S0907444910031045" target="_blank">
- * T.D. Fenn, M. J. Schnieders, A. T. Brunger, Acta Cryst. (2010). D66, 1024-1031.</a>
+ * T.D. Fenn, M. J. Schnieders, A. T. Brunger, Acta Cryst. (2010). D66,
+ * 1024-1031.</a>
  * @see <a href="http://dx.doi.org/10.1107/S0567739473000458" target="_blank">
  * L. F. Ten Eyck, Acta Cryst. (1973). A29, 183-191.</a>
  *
@@ -194,17 +208,19 @@ import static ffx.numerics.fft.Complex3D.iComplex3D;
  * @see <a href="http://dx.doi.org/10.1107/S0108767388009183" target="_blank">
  * A. T. Brunger, Acta Cryst. (1989). A45, 42-50.</a>
  *
- * @see <a href="http://dx.doi.org/10.1107/97809553602060000551" target="_blank">
- * G. Bricogne, Int. Tables Cryst. (2006). Vol. B, ch. 1.3, pp. 25-98.</a>
+ * @see <a href="http://dx.doi.org/10.1107/97809553602060000551"
+ * target="_blank"> G. Bricogne, Int. Tables Cryst. (2006). Vol. B, ch. 1.3, pp.
+ * 25-98.</a>
  *
- * @see <a href="http://dx.doi.org/10.1002/jcc.1032" target="_blank">
- * J. A. Grant, B. T. Pickup, A. Nicholls, J. Comp. Chem. (2001). 22, 608-640</a>
+ * @see <a href="http://dx.doi.org/10.1002/jcc.1032" target="_blank"> J. A.
+ * Grant, B. T. Pickup, A. Nicholls, J. Comp. Chem. (2001). 22, 608-640</a>
  *
- * @see <a href="http://dx.doi.org/10.1006/jmbi.1994.1633" target="_blank">
- * J. S. Jiang, A. T. Brunger, JMB (1994) 243, 100-115.</a>
+ * @see <a href="http://dx.doi.org/10.1006/jmbi.1994.1633" target="_blank"> J.
+ * S. Jiang, A. T. Brunger, JMB (1994) 243, 100-115.</a>
  *
  * @see <a href="http://dx.doi.org/10.1107/S0907444910031045" target="_blank">
- * T.D. Fenn, M. J. Schnieders, A. T. Brunger, Acta Cryst. (2010). D66, 1024-1031.</a>
+ * T.D. Fenn, M. J. Schnieders, A. T. Brunger, Acta Cryst. (2010). D66,
+ * 1024-1031.</a>
  * @see <a href="http://dx.doi.org/10.1107/S0567739473000458" target="_blank">
  * L. F. Ten Eyck, Acta Cryst. (1973). A29, 183-191.</a>
  *
@@ -217,19 +233,21 @@ import static ffx.numerics.fft.Complex3D.iComplex3D;
  * @see <a href="http://dx.doi.org/10.1107/S0108767388009183" target="_blank">
  * A. T. Brunger, Acta Cryst. (1989). A45, 42-50.</a>
  *
- * @see <a href="http://dx.doi.org/10.1107/97809553602060000551" target="_blank">
- * G. Bricogne, Int. Tables Cryst. (2006). Vol. B, ch. 1.3, pp. 25-98.</a>
+ * @see <a href="http://dx.doi.org/10.1107/97809553602060000551"
+ * target="_blank"> G. Bricogne, Int. Tables Cryst. (2006). Vol. B, ch. 1.3, pp.
+ * 25-98.</a>
  *
- * @see <a href="http://dx.doi.org/10.1002/jcc.1032" target="_blank">
- * J. A. Grant, B. T. Pickup, A. Nicholls, J. Comp. Chem. (2001). 22, 608-640</a>
+ * @see <a href="http://dx.doi.org/10.1002/jcc.1032" target="_blank"> J. A.
+ * Grant, B. T. Pickup, A. Nicholls, J. Comp. Chem. (2001). 22, 608-640</a>
  *
- * @see <a href="http://dx.doi.org/10.1006/jmbi.1994.1633" target="_blank">
- * J. S. Jiang, A. T. Brunger, JMB (1994) 243, 100-115.</a>
+ * @see <a href="http://dx.doi.org/10.1006/jmbi.1994.1633" target="_blank"> J.
+ * S. Jiang, A. T. Brunger, JMB (1994) 243, 100-115.</a>
  *
  * @see <a href="http://dx.doi.org/10.1107/S0907444910031045" target="_blank">
- * T.D. Fenn, M. J. Schnieders, A. T. Brunger, Acta Cryst. (2010). D66, 1024-1031.</a>
+ * T.D. Fenn, M. J. Schnieders, A. T. Brunger, Acta Cryst. (2010). D66,
+ * 1024-1031.</a>
  * @author Michael J. Schnieders
- * @version $Id: $
+ *
  */
 public class CrystalReciprocalSpace {
 
@@ -301,8 +319,10 @@ public class CrystalReciprocalSpace {
      * Crystal Reciprocal Space constructor, assumes this is not a bulk solvent
      * mask and is not a neutron data set
      *
-     * @param reflectionlist the {@link ReflectionList} to fill with structure factors
-     * @param atoms array of {@link ffx.potential.bonded.Atom atoms} for structure factor computation
+     * @param reflectionlist the {@link ReflectionList} to fill with structure
+     * factors
+     * @param atoms array of {@link ffx.potential.bonded.Atom atoms} for
+     * structure factor computation
      * @param fftTeam {@link edu.rit.pj.ParallelTeam} for parallelization
      * @param parallelTeam {@link edu.rit.pj.ParallelTeam} for parallelization
      */
@@ -317,8 +337,10 @@ public class CrystalReciprocalSpace {
      * Crystal Reciprocal Space constructor, assumes this is not a neutron data
      * set and implements a polynomial bulk solvent mask if needed
      *
-     * @param reflectionlist the {@link ReflectionList} to fill with structure factors
-     * @param atoms array of {@link ffx.potential.bonded.Atom atoms} for structure factor computation
+     * @param reflectionlist the {@link ReflectionList} to fill with structure
+     * factors
+     * @param atoms array of {@link ffx.potential.bonded.Atom atoms} for
+     * structure factor computation
      * @param fftTeam {@link edu.rit.pj.ParallelTeam} for parallelization
      * @param parallelTeam {@link edu.rit.pj.ParallelTeam} for parallelization
      * @param solventmask true if this is a bulk solvent mask
@@ -335,8 +357,10 @@ public class CrystalReciprocalSpace {
      * Crystal Reciprocal Space constructor, assumes a polynomial bulk solvent
      * mask if needed
      *
-     * @param reflectionlist the {@link ReflectionList} to fill with structure factors
-     * @param atoms array of {@link ffx.potential.bonded.Atom atoms} for structure factor computation
+     * @param reflectionlist the {@link ReflectionList} to fill with structure
+     * factors
+     * @param atoms array of {@link ffx.potential.bonded.Atom atoms} for
+     * structure factor computation
      * @param fftTeam {@link edu.rit.pj.ParallelTeam} for parallelization
      * @param parallelTeam {@link edu.rit.pj.ParallelTeam} for parallelization
      * @param solventmask true if this is a bulk solvent mask
@@ -353,8 +377,10 @@ public class CrystalReciprocalSpace {
     /**
      * Crystal Reciprocal Space constructor, all parameters provided
      *
-     * @param reflectionlist the {@link ReflectionList} to fill with structure factors
-     * @param atoms array of {@link ffx.potential.bonded.Atom atoms} for structure factor computation
+     * @param reflectionlist the {@link ReflectionList} to fill with structure
+     * factors
+     * @param atoms array of {@link ffx.potential.bonded.Atom atoms} for
+     * structure factor computation
      * @param fftTeam {@link edu.rit.pj.ParallelTeam} for parallelization
      * @param parallelTeam {@link edu.rit.pj.ParallelTeam} for parallelization
      * @param solventmask true if this is a bulk solvent mask
@@ -577,8 +603,8 @@ public class CrystalReciprocalSpace {
 
         } else {
             /**
-             * Create nSymm pieces of work per thread; the empty pieces will
-             * be removed leaving 1 piece of work per thread.
+             * Create nSymm pieces of work per thread; the empty pieces will be
+             * removed leaving 1 piece of work per thread.
              */
             int minWork = nSymm;
             spatialDensityRegion = new SpatialDensityRegion(fftX, fftY, fftZ,
@@ -791,7 +817,8 @@ public class CrystalReciprocalSpace {
      * @param hkldata structure factors to apply inverse FFT
      * @param freer array of free r flags corresponding to hkldata
      * @param flag Rfree flag value
-     * @param refinementmode {@link RefinementMinimize.RefinementMode refinement mode}
+     * @param refinementmode
+     * {@link RefinementMinimize.RefinementMode refinement mode}
      * @see RefinementMinimize.RefinementMode
      * @see DiffractionRefinementData
      */
@@ -806,7 +833,8 @@ public class CrystalReciprocalSpace {
      * @param hkldata structure factors to apply inverse FFT
      * @param freer array of free r flags corresponding to hkldata
      * @param flag Rfree flag value
-     * @param refinementmode {@link RefinementMinimize.RefinementMode refinement mode}
+     * @param refinementmode
+     * {@link RefinementMinimize.RefinementMode refinement mode}
      * @param print if true, print information on timings during the calculation
      * @see RefinementMinimize.RefinementMode
      * @see DiffractionRefinementData
@@ -886,8 +914,8 @@ public class CrystalReciprocalSpace {
 
 
         /*
-        CCP4MapWriter mapout = new CCP4MapWriter(fftX, fftY, fftZ, crystal, "/tmp/foo.map");
-        mapout.write(densityGrid);
+         CCP4MapWriter mapout = new CCP4MapWriter(fftX, fftY, fftZ, crystal, "/tmp/foo.map");
+         mapout.write(densityGrid);
          */
 
         startTime = System.nanoTime();
@@ -924,7 +952,8 @@ public class CrystalReciprocalSpace {
     }
 
     /**
-     * parallelized computation of structure factors (identical to compuateDensity)
+     * parallelized computation of structure factors (identical to
+     * compuateDensity)
      *
      * @param hkldata structure factor list to fill in
      * @see DiffractionRefinementData
@@ -934,7 +963,8 @@ public class CrystalReciprocalSpace {
     }
 
     /**
-     * parallelized computation of structure factors (identical to computeDensity)
+     * parallelized computation of structure factors (identical to
+     * computeDensity)
      *
      * @param hkldata structure factor list to fill in
      * @param print if true, print information on timings during the calculation
@@ -1277,7 +1307,7 @@ public class CrystalReciprocalSpace {
             final double frz = fftZ * uvw[2];
             final int ifrz = (int) frz;
             final int ifrzu = ifrz + frad;
-            
+
             for (int ix = ifrx - frad; ix <= ifrxu; ix++) {
                 int gix = Crystal.mod(ix, fftX);
                 xf[0] = ix / (double) fftX;

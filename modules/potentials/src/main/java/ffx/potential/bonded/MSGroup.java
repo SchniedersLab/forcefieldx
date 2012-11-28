@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.potential.bonded;
 
@@ -41,7 +43,7 @@ import ffx.potential.parameters.*;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public abstract class MSGroup extends MSNode {
 
@@ -70,21 +72,45 @@ public abstract class MSGroup extends MSNode {
     private double[] center;
     // List of underconstrained Atoms
     private ArrayList<Atom> dangelingatoms;
-    /** Constant <code>bondTime=0</code> */
+    /**
+     * Constant
+     * <code>bondTime=0</code>
+     */
     protected static long bondTime = 0;
-    /** Constant <code>angleTime=0</code> */
+    /**
+     * Constant
+     * <code>angleTime=0</code>
+     */
     protected static long angleTime = 0;
-    /** Constant <code>stretchBendTime=0</code> */
+    /**
+     * Constant
+     * <code>stretchBendTime=0</code>
+     */
     protected static long stretchBendTime = 0;
-    /** Constant <code>ureyBradleyTime=0</code> */
+    /**
+     * Constant
+     * <code>ureyBradleyTime=0</code>
+     */
     protected static long ureyBradleyTime = 0;
-    /** Constant <code>outOfPlaneBendTime=0</code> */
+    /**
+     * Constant
+     * <code>outOfPlaneBendTime=0</code>
+     */
     protected static long outOfPlaneBendTime = 0;
-    /** Constant <code>torsionTime=0</code> */
+    /**
+     * Constant
+     * <code>torsionTime=0</code>
+     */
     protected static long torsionTime = 0;
-    /** Constant <code>piOrbitalTorsionTime=0</code> */
+    /**
+     * Constant
+     * <code>piOrbitalTorsionTime=0</code>
+     */
     protected static long piOrbitalTorsionTime = 0;
-    /** Constant <code>torsionTorsionTime=0</code> */
+    /**
+     * Constant
+     * <code>torsionTorsionTime=0</code>
+     */
     protected static long torsionTorsionTime = 0;
 
     /**
@@ -150,13 +176,13 @@ public abstract class MSGroup extends MSNode {
         boolean sorted = false;
         while (!sorted) {
             sorted = true;
-            for (int i=1; i<nAtoms; i++) {
-                Atom a1 = atoms[i-1];
+            for (int i = 1; i < nAtoms; i++) {
+                Atom a1 = atoms[i - 1];
                 Atom a2 = atoms[i];
                 if (a1.getName().compareToIgnoreCase(a2.getName()) > 0) {
                     int i1 = a1.xyzIndex;
                     int i2 = a2.xyzIndex;
-                    atoms[i-1] = a2;
+                    atoms[i - 1] = a2;
                     atoms[i] = a1;
                     a1.xyzIndex = i2;
                     a2.xyzIndex = i1;
@@ -281,7 +307,7 @@ public abstract class MSGroup extends MSNode {
             if (centralAtom.isTrigonal()) {
                 Atom atom4 = angle.getTrigonalAtom();
                 String key = atom4.getAtomType().atomClass + " " + centralAtom.getAtomType().atomClass
-                             + " 0 0";
+                        + " 0 0";
                 OutOfPlaneBendType outOfPlaneBendType = forceField.getOutOfPlaneBendType(key);
                 if (outOfPlaneBendType != null) {
                     angle.setAngleMode(AngleMode.IN_PLANE, atom4);
@@ -319,14 +345,14 @@ public abstract class MSGroup extends MSNode {
                                 TorsionType torsionType = forceField.getTorsionType(key);
                                 if (torsionType != null) {
                                     Torsion torsion = new Torsion(bond1,
-                                                                  middleBond, bond3);
+                                            middleBond, bond3);
                                     torsion.torsionType = torsionType;
                                     newTorsionNode.add(torsion);
                                     torsions.add(torsion);
                                 } else {
                                     logger.severe(format("No TorsionType for key: %s\n%s\n%s\n%s\n%s\n",
-                                                         key, toString(), bond1.toString(),
-                                                         middleBond.toString(), bond3.toString()));
+                                            key, toString(), bond1.toString(),
+                                            middleBond.toString(), bond3.toString()));
                                 }
                             }
                         }
@@ -399,18 +425,18 @@ public abstract class MSGroup extends MSNode {
                                 for (Torsion t : torsions) {
                                     if (!reversed) {
                                         if (t.compare(atoms[0], atoms[1],
-                                                      atoms[2], atoms[3])) {
+                                                atoms[2], atoms[3])) {
                                             torsionTorsion.torsions[0] = t;
                                         } else if (t.compare(atoms[1],
-                                                                 atoms[2], atoms[3], atoms[4])) {
+                                                atoms[2], atoms[3], atoms[4])) {
                                             torsionTorsion.torsions[1] = t;
                                         }
                                     } else {
                                         if (t.compare(atoms[4], atoms[3],
-                                                      atoms[2], atoms[1])) {
+                                                atoms[2], atoms[1])) {
                                             torsionTorsion.torsions[0] = t;
                                         } else if (t.compare(atoms[3],
-                                                                 atoms[2], atoms[1], atoms[0])) {
+                                                atoms[2], atoms[1], atoms[0])) {
                                             torsionTorsion.torsions[1] = t;
                                         }
                                     }
@@ -482,8 +508,7 @@ public abstract class MSGroup extends MSNode {
     /**
      * Joiner joins
      *
-     * @param bond
-     *            Bond
+     * @param bond Bond
      * @return Joint
      * @param group1 a {@link ffx.potential.bonded.MSGroup} object.
      * @param group2 a {@link ffx.potential.bonded.MSGroup} object.
@@ -579,7 +604,7 @@ public abstract class MSGroup extends MSNode {
                 if (outOfPlaneBendType != null) {
                     angle.setAngleMode(AngleMode.IN_PLANE, atom4);
                     OutOfPlaneBend outOfPlaneBend = new OutOfPlaneBend(angle,
-                                                                       atom4);
+                            atom4);
                     outOfPlaneBend.outOfPlaneBendType = outOfPlaneBendType;
                     newOutOfPlaneNode.insert(outOfPlaneBend, 0);
                 }
@@ -608,13 +633,13 @@ public abstract class MSGroup extends MSNode {
                             TorsionType torsionType = ff.getTorsionType(key);
                             if (torsionType != null) {
                                 Torsion torsion = new Torsion(bond1, bond,
-                                                              bond3);
+                                        bond3);
                                 torsion.torsionType = torsionType;
                                 torsions.add(torsion);
                                 newTorsionNode.add(torsion);
                             } else {
                                 logger.severe(format("No TorsionType for key: %s\n%s\n%s\n%s\n%s\n",
-                                                     key, toString(), bond1.toString(), bond1.toString(), bond3.toString()));
+                                        key, toString(), bond1.toString(), bond1.toString(), bond3.toString()));
                             }
                         }
                     }
@@ -674,18 +699,18 @@ public abstract class MSGroup extends MSNode {
                                 for (Torsion t : torsions) {
                                     if (!reversed) {
                                         if (t.compare(atoms[0], atoms[1],
-                                                      atoms[2], atoms[3])) {
+                                                atoms[2], atoms[3])) {
                                             torsionTorsion.torsions[0] = t;
                                         } else if (t.compare(atoms[1],
-                                                                 atoms[2], atoms[3], atoms[4])) {
+                                                atoms[2], atoms[3], atoms[4])) {
                                             torsionTorsion.torsions[1] = t;
                                         }
                                     } else {
                                         if (t.compare(atoms[4], atoms[3],
-                                                      atoms[2], atoms[1])) {
+                                                atoms[2], atoms[1])) {
                                             torsionTorsion.torsions[0] = t;
                                         } else if (t.compare(atoms[3],
-                                                                 atoms[2], atoms[1], atoms[0])) {
+                                                atoms[2], atoms[1], atoms[0])) {
                                             torsionTorsion.torsions[1] = t;
                                         }
                                     }
@@ -699,8 +724,8 @@ public abstract class MSGroup extends MSNode {
         }
         newTorsionTorsionNode.setName("Torsion-Torsions (" + newTorsionTorsionNode.getChildCount() + ")");
         Joint j = new Joint(group1, group2, newBondNode, newAngleNode,
-                            newStretchBendNode, newUreyBradleyNode, newOutOfPlaneNode,
-                            newTorsionNode, newPiOrbitalTorsionNode, newTorsionTorsionNode);
+                newStretchBendNode, newUreyBradleyNode, newOutOfPlaneNode,
+                newTorsionNode, newPiOrbitalTorsionNode, newTorsionTorsionNode);
         return j;
     }
 
@@ -842,9 +867,9 @@ public abstract class MSGroup extends MSNode {
     }
 
     /*
-    public boolean getBondsKnown() {
-    return bondsKnown;
-    }
+     public boolean getBondsKnown() {
+     return bondsKnown;
+     }
      */
     /**
      * Returns the MultiScaleGroup's center as a double[3].
@@ -1056,10 +1081,9 @@ public abstract class MSGroup extends MSNode {
 
     /**
      * Sets the BondsKnown Variable
-
-    public void setBondsKnown(boolean b) {
-    bondsKnown = b;
-    } */
+     *
+     * public void setBondsKnown(boolean b) { bondsKnown = b; }
+     */
     /**
      * Set the value of Center to d.
      *
@@ -1069,10 +1093,12 @@ public abstract class MSGroup extends MSNode {
         center = d;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setColor(RendererCache.ColorModel newColorModel, Color3f color,
-                         Material mat) {
+            Material mat) {
         if (newColorModel == RendererCache.ColorModel.MOLECULE && (color == null || mat == null)) {
             return;
         }
@@ -1141,10 +1167,12 @@ public abstract class MSGroup extends MSNode {
         add(termNode);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setView(RendererCache.ViewModel newViewModel,
-                        List<BranchGroup> newShapes) {
+            List<BranchGroup> newShapes) {
         atomNode.setView(newViewModel, newShapes);
         bondNode.setView(newViewModel, newShapes);
     }
@@ -1159,7 +1187,9 @@ public abstract class MSGroup extends MSNode {
         return getName();
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void update() {
         updateAtoms();

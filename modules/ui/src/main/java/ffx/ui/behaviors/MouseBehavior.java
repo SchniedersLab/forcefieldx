@@ -1,25 +1,24 @@
 /**
- * <p>Title: Force Field X</p>
- * <p>Description: Force Field X is a Molecular Engineering Environment</p>
- * <p>Copyright: Copyright (c) Michael J. Schnieders 2002-2009</p>
+ * Title: Force Field X.
  *
- * @author Michael J. Schnieders
- * @version 0.1
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.ui.behaviors;
 
@@ -32,142 +31,152 @@ import javax.media.j3d.*;
  * The MouseBehavior class is the Base class for all mouse manipulators.
  *
  * @author Michael J. Schnieders
- * @version $Id: $
+ *
  */
 public abstract class MouseBehavior extends Behavior {
-	/*
-	 * Set this flag if you want to manually wakeup the behavior.
-	 */
-	/** Constant <code>MANUAL_WAKEUP=0x1</code> */
-	public static final int MANUAL_WAKEUP = 0x1;
-	/*
-	 * Set this flag if you want to invert the inputs. This is useful when the
-	 * transform for the view platform is being changed instead of the transform
-	 * for the object.
-	 */
-	/** Constant <code>INVERT_INPUT=0x2</code> */
-	public static final int INVERT_INPUT = 0x2;
-	protected WakeupCriterion[] mouseEvents;
-	protected WakeupOr mouseCriterion;
-	protected Behavior poster;
-	protected int id;
-	protected WakeupOnBehaviorPost postCriterion;
-	protected int x, y;
-	protected int x_last, y_last;
-	protected TransformGroup transformGroup;
-	protected Transform3D transformX;
-	protected Transform3D transformY;
-	protected Transform3D currXform;
-	protected boolean buttonPress = false;
-	protected boolean reset = false;
-	protected boolean invert = false;
-	protected boolean wakeUp = false;
-	protected int flags = 0;
-	protected TransformGroup ViewerTG;
-	/*
-	 * Swap a new transformGroup replacing the old one. This allows manipulators
-	 * to operate on different nodes.
-	 * @param transformGroup The *new* transform group to be manipulated.
-	 */
-	Transform3D t3d = new Transform3D();
+    /*
+     * Set this flag if you want to manually wakeup the behavior.
+     */
 
-	/**
-	 * <p>Constructor for MouseBehavior.</p>
-	 *
-	 * @param format a int.
-	 * @param VPTG a {@link javax.media.j3d.TransformGroup} object.
-	 */
-	public MouseBehavior(int format, TransformGroup VPTG) {
-		super();
-		flags = format;
-		ViewerTG = VPTG;
-		currXform = new Transform3D();
-		transformX = new Transform3D();
-		transformY = new Transform3D();
-		reset = true;
-	}
+    /**
+     * Constant
+     * <code>MANUAL_WAKEUP=0x1</code>
+     */
+    public static final int MANUAL_WAKEUP = 0x1;
+    /*
+     * Set this flag if you want to invert the inputs. This is useful when the
+     * transform for the view platform is being changed instead of the transform
+     * for the object.
+     */
+    /**
+     * Constant
+     * <code>INVERT_INPUT=0x2</code>
+     */
+    public static final int INVERT_INPUT = 0x2;
+    protected WakeupCriterion[] mouseEvents;
+    protected WakeupOr mouseCriterion;
+    protected Behavior poster;
+    protected int id;
+    protected WakeupOnBehaviorPost postCriterion;
+    protected int x, y;
+    protected int x_last, y_last;
+    protected TransformGroup transformGroup;
+    protected Transform3D transformX;
+    protected Transform3D transformY;
+    protected Transform3D currXform;
+    protected boolean buttonPress = false;
+    protected boolean reset = false;
+    protected boolean invert = false;
+    protected boolean wakeUp = false;
+    protected int flags = 0;
+    protected TransformGroup ViewerTG;
+    /*
+     * Swap a new transformGroup replacing the old one. This allows manipulators
+     * to operate on different nodes.
+     * @param transformGroup The *new* transform group to be manipulated.
+     */
+    Transform3D t3d = new Transform3D();
 
-	/**
-	 * <p>Constructor for MouseBehavior.</p>
-	 *
-	 * @param format a int.
-	 * @param VPTG a {@link javax.media.j3d.TransformGroup} object.
-	 * @param b a {@link javax.media.j3d.Behavior} object.
-	 * @param i a int.
-	 */
-	public MouseBehavior(int format, TransformGroup VPTG, Behavior b, int i) {
-		this(format, VPTG);
-		poster = b;
-		id = i;
-	}
+    /**
+     * <p>Constructor for MouseBehavior.</p>
+     *
+     * @param format a int.
+     * @param VPTG a {@link javax.media.j3d.TransformGroup} object.
+     */
+    public MouseBehavior(int format, TransformGroup VPTG) {
+        super();
+        flags = format;
+        ViewerTG = VPTG;
+        currXform = new Transform3D();
+        transformX = new Transform3D();
+        transformY = new Transform3D();
+        reset = true;
+    }
 
-	/*
-	 * Initializes the behavior.
-	 */
-	/**
-	 * <p>initialize</p>
-	 */
-	public void initialize() {
-		mouseEvents = new WakeupCriterion[3];
-		mouseEvents[0] = new WakeupOnAWTEvent(MouseEvent.MOUSE_DRAGGED);
-		mouseEvents[1] = new WakeupOnAWTEvent(MouseEvent.MOUSE_PRESSED);
-		mouseEvents[2] = new WakeupOnAWTEvent(MouseEvent.MOUSE_RELEASED);
-		mouseCriterion = new WakeupOr(mouseEvents);
-		if (poster == null) {
-			wakeupOn(mouseCriterion);
-		} else {
-			postCriterion = new WakeupOnBehaviorPost(poster, id);
-			wakeupOn(postCriterion);
-		}
-		x = 0;
-		y = 0;
-		x_last = 0;
-		y_last = 0;
-	}
+    /**
+     * <p>Constructor for MouseBehavior.</p>
+     *
+     * @param format a int.
+     * @param VPTG a {@link javax.media.j3d.TransformGroup} object.
+     * @param b a {@link javax.media.j3d.Behavior} object.
+     * @param i a int.
+     */
+    public MouseBehavior(int format, TransformGroup VPTG, Behavior b, int i) {
+        this(format, VPTG);
+        poster = b;
+        id = i;
+    }
 
-	/*
-	 * Handles mouse events
-	 */
-	/**
-	 * <p>processMouseEvent</p>
-	 *
-	 * @param evt a {@link java.awt.event.MouseEvent} object.
-	 */
-	public void processMouseEvent(MouseEvent evt) {
-		if (evt.getID() == MouseEvent.MOUSE_PRESSED) {
-			buttonPress = true;
-		} else if (evt.getID() == MouseEvent.MOUSE_RELEASED) {
-			buttonPress = false;
-			wakeUp = false;
-		}
-	}
+    /*
+     * Initializes the behavior.
+     */
+    /**
+     * <p>initialize</p>
+     */
+    public void initialize() {
+        mouseEvents = new WakeupCriterion[3];
+        mouseEvents[0] = new WakeupOnAWTEvent(MouseEvent.MOUSE_DRAGGED);
+        mouseEvents[1] = new WakeupOnAWTEvent(MouseEvent.MOUSE_PRESSED);
+        mouseEvents[2] = new WakeupOnAWTEvent(MouseEvent.MOUSE_RELEASED);
+        mouseCriterion = new WakeupOr(mouseEvents);
+        if (poster == null) {
+            wakeupOn(mouseCriterion);
+        } else {
+            postCriterion = new WakeupOnBehaviorPost(poster, id);
+            wakeupOn(postCriterion);
+        }
+        x = 0;
+        y = 0;
+        x_last = 0;
+        y_last = 0;
+    }
 
-	/** {@inheritDoc} */
-	public abstract void processStimulus(Enumeration criteria);
+    /*
+     * Handles mouse events
+     */
+    /**
+     * <p>processMouseEvent</p>
+     *
+     * @param evt a {@link java.awt.event.MouseEvent} object.
+     */
+    public void processMouseEvent(MouseEvent evt) {
+        if (evt.getID() == MouseEvent.MOUSE_PRESSED) {
+            buttonPress = true;
+        } else if (evt.getID() == MouseEvent.MOUSE_RELEASED) {
+            buttonPress = false;
+            wakeUp = false;
+        }
+    }
 
-	/**
-	 * <p>Setter for the field <code>transformGroup</code>.</p>
-	 *
-	 * @param t a {@link javax.media.j3d.TransformGroup} object.
-	 */
-	public void setTransformGroup(TransformGroup t) {
-		transformGroup = t;
-		currXform = new Transform3D();
-		transformX = new Transform3D();
-		transformY = new Transform3D();
-		reset = true;
-	}
+    /**
+     * {@inheritDoc}
+     */
+    public abstract void processStimulus(Enumeration criteria);
 
-	/*
-	 * Manually wake up the behavior. If MANUAL_WAKEUP flag was set upon
-	 * creation, you must wake up this behavior each time it is handled.
-	 */
-	/**
-	 * <p>wakeup</p>
-	 */
-	public void wakeup() {
-		wakeUp = true;
-	}
+    /**
+     * <p>Setter for the field
+     * <code>transformGroup</code>.</p>
+     *
+     * @param t a {@link javax.media.j3d.TransformGroup} object.
+     */
+    public void setTransformGroup(TransformGroup t) {
+        transformGroup = t;
+        currXform = new Transform3D();
+        transformX = new Transform3D();
+        transformY = new Transform3D();
+        reset = true;
+    }
+
+    /*
+     * Manually wake up the behavior. If MANUAL_WAKEUP flag was set upon
+     * creation, you must wake up this behavior each time it is handled.
+     */
+    /**
+     * <p>wakeup</p>
+     */
+    public void wakeup() {
+        wakeUp = true;
+    }
 }
 /*
  * Copyright (c) 1996-1998 Sun Microsystems, Inc. All Rights Reserved. Sun

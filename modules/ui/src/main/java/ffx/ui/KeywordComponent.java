@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.ui;
 
@@ -45,7 +47,7 @@ import static ffx.utilities.HashCodeUtil.hash;
  * The KeywordComponent class is used to represent one TINKER keyword.
  *
  * @author Michael J. Schnieders
- * @version $Id: $
+ *
  */
 public final class KeywordComponent implements MouseListener, ActionListener,
         ChangeListener, DocumentListener {
@@ -174,7 +176,9 @@ public final class KeywordComponent implements MouseListener, ActionListener,
         options = o;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void actionPerformed(ActionEvent evt) {
         synchronized (this) {
@@ -213,7 +217,9 @@ public final class KeywordComponent implements MouseListener, ActionListener,
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void changedUpdate(DocumentEvent evt) {
         isModified = true;
@@ -333,7 +339,8 @@ public final class KeywordComponent implements MouseListener, ActionListener,
     }
 
     /**
-     * <p>Getter for the field <code>keyword</code>.</p>
+     * <p>Getter for the field
+     * <code>keyword</code>.</p>
      *
      * @return a {@link java.lang.String} object.
      */
@@ -388,7 +395,8 @@ public final class KeywordComponent implements MouseListener, ActionListener,
     }
 
     /**
-     * <p>Getter for the field <code>keywordDescription</code>.</p>
+     * <p>Getter for the field
+     * <code>keywordDescription</code>.</p>
      *
      * @return a {@link java.lang.String} object.
      */
@@ -397,7 +405,8 @@ public final class KeywordComponent implements MouseListener, ActionListener,
     }
 
     /**
-     * <p>Getter for the field <code>keywordGroup</code>.</p>
+     * <p>Getter for the field
+     * <code>keywordGroup</code>.</p>
      *
      * @return a {@link java.lang.String} object.
      */
@@ -430,7 +439,9 @@ public final class KeywordComponent implements MouseListener, ActionListener,
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int hashCode() {
         return hash(SEED, keyword.hashCode());
@@ -453,7 +464,9 @@ public final class KeywordComponent implements MouseListener, ActionListener,
         init = true;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void insertUpdate(DocumentEvent evt) {
         isModified = true;
@@ -473,8 +486,7 @@ public final class KeywordComponent implements MouseListener, ActionListener,
      * that can be repeated multipule times are ComboBoxes are stored in
      * ComboBoxes.
      *
-     * @param s
-     *            A Keyword line, not including the Keyword itself.
+     * @param s A Keyword line, not including the Keyword itself.
      */
     public void loadKeywordEntry(String s) {
         synchronized (this) {
@@ -510,7 +522,9 @@ public final class KeywordComponent implements MouseListener, ActionListener,
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void mouseClicked(MouseEvent evt) {
         synchronized (this) {
@@ -524,35 +538,47 @@ public final class KeywordComponent implements MouseListener, ActionListener,
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void mouseEntered(MouseEvent evt) {
         mouseClicked(evt);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void mouseExited(MouseEvent evt) {
         mouseClicked(evt);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void mousePressed(MouseEvent evt) {
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void mouseReleased(MouseEvent evt) {
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void removeUpdate(DocumentEvent evt) {
         isModified = true;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void stateChanged(ChangeEvent evt) {
         isModified = true;

@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.ui;
 
@@ -55,7 +57,7 @@ import ffx.utilities.Keyword;
  * files.
  *
  * @author Michael J. Schnieders
- * @version $Id: $
+ *
  */
 public final class KeywordPanel extends JPanel implements ActionListener {
 
@@ -224,7 +226,8 @@ public final class KeywordPanel extends JPanel implements ActionListener {
     }
 
     /**
-     * <p>Getter for the field <code>paramFiles</code>.</p>
+     * <p>Getter for the field
+     * <code>paramFiles</code>.</p>
      *
      * @return an array of {@link java.lang.String} objects.
      */
@@ -930,8 +933,6 @@ public final class KeywordPanel extends JPanel implements ActionListener {
             return true;
         }
     }
-
-
     private static final Preferences preferences = Preferences.userNodeForPackage(KeywordPanel.class);
 
     /**
@@ -970,8 +971,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
     /**
      * Make the passed Keyword Group active in the editor.
      *
-     * @param keygroup
-     *            String
+     * @param keygroup String
      */
     public void setKeywordGroup(String keygroup) {
         synchronized (this) {
@@ -992,10 +992,8 @@ public final class KeywordPanel extends JPanel implements ActionListener {
      * should be null to just indicate the Keyword is present (active). If this
      * Keyword can apprear many times, value will be appended to the list.
      *
-     * @param key
-     *            String
-     * @param value
-     *            String
+     * @param key String
+     * @param value String
      */
     public void setKeywordValue(String key, String value) {
         synchronized (this) {
@@ -1045,8 +1043,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
     /**
      * Store the KeywordPanel's current keyword content into sys.
      *
-     * @param sys
-     *            FFXSystem
+     * @param sys FFXSystem
      */
     public void store(FFXSystem sys) {
         synchronized (this) {
@@ -1092,7 +1089,9 @@ public final class KeywordPanel extends JPanel implements ActionListener {
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String toString() {
         return "Keyword Editor";

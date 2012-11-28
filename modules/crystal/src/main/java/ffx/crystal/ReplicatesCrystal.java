@@ -1,6 +1,9 @@
 /**
- * Title: Force Field X Description: Force Field X - Software for Molecular
- * Biophysics Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
@@ -34,7 +37,7 @@ import java.util.logging.Logger;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public class ReplicatesCrystal extends Crystal {
 
@@ -173,11 +176,11 @@ public class ReplicatesCrystal extends Crystal {
         if (obj == null) {
             return false;
         }
-        
+
         if (!(obj instanceof ReplicatesCrystal)) {
             return false;
         }
-        
+
         if (this == obj) {
             return true;
         }
@@ -234,7 +237,8 @@ public class ReplicatesCrystal extends Crystal {
      *
      * @param unitCell The unit cell of the crystal.
      * @param cutOff2 Two times the cutoff distance.
-     * @return
+     * @return A Crystal or ReplicatesCrystal large enough to satisfy the
+     * minimum image convention.
      */
     public static Crystal replicatesCrystalFactory(Crystal unitCell, double cutOff2) {
 

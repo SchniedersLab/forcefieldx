@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2009
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.xray;
 
@@ -35,7 +37,7 @@ import ffx.xray.SplineEnergy.Type;
  * <p>SplineMinimize class.</p>
  *
  * @author Timothy Fenn
- * @version $Id: $
+ *
  */
 public class SplineMinimize implements OptimizationListener, Terminatable {
 
@@ -58,7 +60,8 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
      * <p>Constructor for SplineMinimize.</p>
      *
      * @param reflectionlist a {@link ffx.crystal.ReflectionList} object.
-     * @param refinementdata a {@link ffx.xray.DiffractionRefinementData} object.
+     * @param refinementdata a {@link ffx.xray.DiffractionRefinementData}
+     * object.
      * @param x an array of double.
      * @param type a int.
      */
@@ -133,7 +136,9 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
         return splineenergy;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean optimizationUpdate(int iter, int nfun, double grms, double xrms, double f, double df, double angle, LineSearchResult info) {
         long currentTime = System.nanoTime();
@@ -143,22 +148,22 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
         this.nSteps = iter;
 
         /*
-        if (iter == 0) {
-            logger.info("\n Limited Memory BFGS Quasi-Newton Optimization: \n\n");
-            logger.info(" Cycle       Energy      G RMS    Delta E   Delta X    Angle  Evals     Time\n");
-        }
-        if (info == null) {
-            logger.info(String.format("%6d %13.4g %11.4g\n",
-                    iter, f, grms));
-        } else {
-            if (info == LineSearchResult.Success) {
-                logger.info(String.format("%6d %13.4g %11.4g %11.4g %10.4g %9.2g %7d %8.3g\n",
-                        iter, f, grms, df, xrms, angle, nfun, seconds));
-            } else {
-                logger.info(String.format("%6d %13.4g %11.4g %11.4g %10.4g %9.2g %7d %8s\n",
-                        iter, f, grms, df, xrms, angle, nfun, info.toString()));
-            }
-        }
+         if (iter == 0) {
+         logger.info("\n Limited Memory BFGS Quasi-Newton Optimization: \n\n");
+         logger.info(" Cycle       Energy      G RMS    Delta E   Delta X    Angle  Evals     Time\n");
+         }
+         if (info == null) {
+         logger.info(String.format("%6d %13.4g %11.4g\n",
+         iter, f, grms));
+         } else {
+         if (info == LineSearchResult.Success) {
+         logger.info(String.format("%6d %13.4g %11.4g %11.4g %10.4g %9.2g %7d %8.3g\n",
+         iter, f, grms, df, xrms, angle, nfun, seconds));
+         } else {
+         logger.info(String.format("%6d %13.4g %11.4g %11.4g %10.4g %9.2g %7d %8s\n",
+         iter, f, grms, df, xrms, angle, nfun, info.toString()));
+         }
+         }
          */
 
         if (terminate) {
@@ -169,7 +174,9 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
         return true;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void terminate() {
         terminate = true;

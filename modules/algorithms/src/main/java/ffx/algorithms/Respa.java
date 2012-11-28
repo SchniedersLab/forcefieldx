@@ -1,6 +1,9 @@
 /**
- * Title: Force Field X Description: Force Field X - Software for Molecular
- * Biophysics. Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
@@ -29,7 +32,7 @@ import ffx.numerics.Potential;
  * The inner RESPA loop is position Verlet.
  *
  * @author Gaurav Chattree
- * 
+ *
  * @since 1.0
  */
 public class Respa extends Integrator {

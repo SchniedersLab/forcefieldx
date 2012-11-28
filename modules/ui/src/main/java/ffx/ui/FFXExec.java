@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.ui;
 
@@ -31,12 +33,12 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
  * TINKER programs are executed in their own thread through a call to a Native
  * method called "FFXExec" which in turn calls the function "system()". The
  * reason we are not using the System.exec() methods is that some TINKER
- * routines execute indefinitely. Users may want to exit Force Field X and
- * shut down the JVM after launching a dynamics run, for example. In this case
- * the thread should not be dependent on a JVM instance.
+ * routines execute indefinitely. Users may want to exit Force Field X and shut
+ * down the JVM after launching a dynamics run, for example. In this case the
+ * thread should not be dependent on a JVM instance.
  *
  * @author Michael J. Schnieders
- * @version $Id: $
+ *
  */
 public class FFXExec implements Runnable {
 
@@ -73,20 +75,13 @@ public class FFXExec implements Runnable {
     /**
      * Constructor
      *
-     * @param s
-     *            FFXSystem the Native command will execute on
-     * @param n
-     *            Name of the log file
-     * @param a
-     *            Command to execute
-     * @param d
-     *            Directory to launch the command in
-     * @param m
-     *            MainPanel
-     * @param file
-     *            File to open
-     * @param o
-     *            Load the resulting version file onto the passed FFXSystem
+     * @param s FFXSystem the Native command will execute on
+     * @param n Name of the log file
+     * @param a Command to execute
+     * @param d Directory to launch the command in
+     * @param m MainPanel
+     * @param file File to open
+     * @param o Load the resulting version file onto the passed FFXSystem
      */
     public FFXExec(FFXSystem s, String n, String a, String d, MainPanel m,
             File file, boolean o) {
@@ -101,7 +96,8 @@ public class FFXExec implements Runnable {
     }
 
     /**
-     * <p>Getter for the field <code>returnValue</code>.</p>
+     * <p>Getter for the field
+     * <code>returnValue</code>.</p>
      *
      * @return a int.
      */
@@ -121,16 +117,11 @@ public class FFXExec implements Runnable {
     /**
      * nativeExec method for launching native executables
      *
-     * @param argv
-     *            String
-     * @param dir
-     *            String
-     * @param path
-     *            String
-     * @param classpath
-     *            String
-     * @param jre
-     *            String
+     * @param argv String
+     * @param dir String
+     * @param path String
+     * @param classpath String
+     * @param jre String
      * @return int
      */
     private native int nativeExec(String argv, String dir, String path,

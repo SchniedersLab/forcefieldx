@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.xray;
 
@@ -41,34 +43,37 @@ import static ffx.numerics.VectorMath.*;
  * chapter 4.4.4.
  *
  * @author Tim Fenn<br>
- * @see <a href="http://dx.doi.org/10.1107/97809553602060000594" target="_blank">
- * V. F. Sears, Int. Tables Vol. C (2006). Table 4.4.4.1</a>
+ * @see <a href="http://dx.doi.org/10.1107/97809553602060000594"
+ * target="_blank"> V. F. Sears, Int. Tables Vol. C (2006). Table 4.4.4.1</a>
  *
- * @see <a href="http://dx.doi.org/10.1107/97809553602060000600" target="_blank">
- * B. T. M. Willis, Int. Tables Vol. C (2006). Chapter 6.1.3</a>
- *
- * @see <a href="http://dx.doi.org/10.1107/S0907444909022707" target="_blank">
- * M. J. Schnieders, T. D. Fenn, V. S. Pande and A. T. Brunger,
- * Acta Cryst. (2009). D65 952-965.</a>
- * @see <a href="http://dx.doi.org/10.1107/97809553602060000594" target="_blank">
- * V. F. Sears, Int. Tables Vol. C (2006). Table 4.4.4.1</a>
- *
- * @see <a href="http://dx.doi.org/10.1107/97809553602060000600" target="_blank">
- * B. T. M. Willis, Int. Tables Vol. C (2006). Chapter 6.1.3</a>
+ * @see <a href="http://dx.doi.org/10.1107/97809553602060000600"
+ * target="_blank"> B. T. M. Willis, Int. Tables Vol. C (2006). Chapter
+ * 6.1.3</a>
  *
  * @see <a href="http://dx.doi.org/10.1107/S0907444909022707" target="_blank">
- * M. J. Schnieders, T. D. Fenn, V. S. Pande and A. T. Brunger,
- * Acta Cryst. (2009). D65 952-965.</a>
- * @see <a href="http://dx.doi.org/10.1107/97809553602060000594" target="_blank">
- * V. F. Sears, Int. Tables Vol. C (2006). Table 4.4.4.1</a>
+ * M. J. Schnieders, T. D. Fenn, V. S. Pande and A. T. Brunger, Acta Cryst.
+ * (2009). D65 952-965.</a>
+ * @see <a href="http://dx.doi.org/10.1107/97809553602060000594"
+ * target="_blank"> V. F. Sears, Int. Tables Vol. C (2006). Table 4.4.4.1</a>
  *
- * @see <a href="http://dx.doi.org/10.1107/97809553602060000600" target="_blank">
- * B. T. M. Willis, Int. Tables Vol. C (2006). Chapter 6.1.3</a>
+ * @see <a href="http://dx.doi.org/10.1107/97809553602060000600"
+ * target="_blank"> B. T. M. Willis, Int. Tables Vol. C (2006). Chapter
+ * 6.1.3</a>
  *
  * @see <a href="http://dx.doi.org/10.1107/S0907444909022707" target="_blank">
- * M. J. Schnieders, T. D. Fenn, V. S. Pande and A. T. Brunger,
- * Acta Cryst. (2009). D65 952-965.</a>
- * @version $Id: $
+ * M. J. Schnieders, T. D. Fenn, V. S. Pande and A. T. Brunger, Acta Cryst.
+ * (2009). D65 952-965.</a>
+ * @see <a href="http://dx.doi.org/10.1107/97809553602060000594"
+ * target="_blank"> V. F. Sears, Int. Tables Vol. C (2006). Table 4.4.4.1</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1107/97809553602060000600"
+ * target="_blank"> B. T. M. Willis, Int. Tables Vol. C (2006). Chapter
+ * 6.1.3</a>
+ *
+ * @see <a href="http://dx.doi.org/10.1107/S0907444909022707" target="_blank">
+ * M. J. Schnieders, T. D. Fenn, V. S. Pande and A. T. Brunger, Acta Cryst.
+ * (2009). D65 952-965.</a>
+ *
  */
 public final class NeutronFormFactor implements FormFactor {
 
@@ -339,7 +344,9 @@ public final class NeutronFormFactor implements FormFactor {
         return occ * sum;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double rho(double f, double lambda, double xyz[]) {
         diff(this.xyz, xyz, dxyz);
@@ -351,7 +358,9 @@ public final class NeutronFormFactor implements FormFactor {
         return f + (lambda * occ * twopi32 * sum);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void rho_grad(double xyz[], double dfc, RefinementMode refinementmode) {
         diff(this.xyz, xyz, dxyz);
@@ -458,13 +467,17 @@ public final class NeutronFormFactor implements FormFactor {
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void update(double xyz[]) {
         update(xyz, u2b(uadd));
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void update(double xyz[], double badd) {
         this.xyz[0] = xyz[0];

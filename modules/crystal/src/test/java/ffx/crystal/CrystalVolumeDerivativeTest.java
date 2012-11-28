@@ -1,6 +1,9 @@
 /**
- * Title: Force Field X Description: Force Field X - Software for Molecular
- * Biophysics Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
@@ -39,19 +42,19 @@ public class CrystalVolumeDerivativeTest {
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
                     {"Triclinic (3TRW)",
-                     28.38, 31.73, 36.75, 90.12, 99.61, 96.52, "P-1"},
+                        28.38, 31.73, 36.75, 90.12, 99.61, 96.52, "P-1"},
                     {"Cubic (3RN4)",
-                     92.69, 92.69, 92.69, 90.0, 90.0, 90.0, "P23"},
+                        92.69, 92.69, 92.69, 90.0, 90.0, 90.0, "P23"},
                     {"Orthorhombic (2WLD)",
-                     79.09, 94.81, 100.85, 90.0, 90.0, 90.0, "P222"},
+                        79.09, 94.81, 100.85, 90.0, 90.0, 90.0, "P222"},
                     {"Monoclinic (3V0E)",
-                     50.85, 38.60, 89.83, 90.0, 103.99, 90.0, "P2"},
+                        50.85, 38.60, 89.83, 90.0, 103.99, 90.0, "P2"},
                     {"Hexagonal (4DAC)",
-                     63.67, 63.67, 40.40, 90.0, 90.0, 120.0, "P6"},
+                        63.67, 63.67, 40.40, 90.0, 90.0, 120.0, "P6"},
                     {"Tetragonal (3TI8)",
-                     112.56, 112.56, 66.81, 90.0, 90.0, 90.0, "P4"},
+                        112.56, 112.56, 66.81, 90.0, 90.0, 90.0, "P4"},
                     {"Trigonal (3TNZ)",
-                     108.99, 108.99, 49.40, 90.0, 90.0, 120.0, "P3"}
+                        108.99, 108.99, 49.40, 90.0, 90.0, 120.0, "P3"}
                 });
     }
     private final String info;

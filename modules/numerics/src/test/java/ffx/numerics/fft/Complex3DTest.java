@@ -1,22 +1,24 @@
 /**
- * Title: Force Field X
- * Description: Force Field X - Software for Molecular Biophysics
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
- * Force Field X is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as published
- * by the Free Software Foundation.
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
- * Force Field X is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Force Field X; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.numerics.fft;
 
@@ -40,11 +42,10 @@ public class Complex3DTest {
 
     @Parameters
     public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][] {{"Test nx=32, ny=32, nz=32}", 32, 32, 32},
-                                             {"Test nx=32, ny=45, nz=21}", 32, 45, 21}
+        return Arrays.asList(new Object[][]{{"Test nx=32, ny=32, nz=32}", 32, 32, 32},
+                    {"Test nx=32, ny=45, nz=21}", 32, 45, 21}
                 });
     }
-
     private final String info;
     private final int nx;
     private final int ny;
@@ -61,13 +62,13 @@ public class Complex3DTest {
         this.ny = ny;
         this.nz = nz;
         tot = nx * ny * nz;
-        data = new double [tot * 2];
-        expected = new double [tot];
+        data = new double[tot * 2];
+        expected = new double[tot];
         recip = new double[tot];
     }
 
     @Before
-    public void setUp(){
+    public void setUp() {
         Random random = new Random();
         for (int i = 0; i < tot; i++) {
             int index = i * 2;
@@ -90,7 +91,7 @@ public class Complex3DTest {
             int index = i * 2;
             double actual = data[index] / tot;
             double orig = expected[i];
-            assertEquals(info, orig, actual, tolerance );
+            assertEquals(info, orig, actual, tolerance);
         }
     }
 
@@ -106,7 +107,7 @@ public class Complex3DTest {
             int index = i * 2;
             double actual = data[index] / tot;
             double orig = expected[i];
-            assertEquals(info, orig, actual, tolerance );
+            assertEquals(info, orig, actual, tolerance);
         }
     }
 }

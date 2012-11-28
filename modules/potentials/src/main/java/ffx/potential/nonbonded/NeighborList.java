@@ -1,6 +1,9 @@
 /**
- * Title: Force Field X Description: Force Field X - Software for Molecular
- * Biophysics Copyright: Copyright (c) Michael J. Schnieders 2001-2012
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
@@ -44,21 +47,25 @@ import ffx.potential.bonded.Atom;
  * side of a sub-volume (rCellA, rCellB, rCellC) multiplied by (nEdgeA, nEdgeB,
  * nEdgeC), respectively, must be greater than the cutoff distance
  * <code>Rcut</code> plus a buffer distance
- * <code>delta</code>: <center><code>rCellA * nEdgeA >= (Rcut + delta)</code></center> <center><code>rCellB * nEdgeB >= (Rcut + delta)</code></center> <center><code>rCellC * nEdgeC >= (Rcut + delta)</code></center>
- * All neighbors of an atom are in a block of
- * (2*nEdgeA+1)(2*nEdgeB+1)(2*nEdgeC+1) neighborCells. </li> <p> <li>
- * Interactions between an atom and neighbors in the asymmetric unit require
- * only half the neighboring cells to be searched to avoid double counting.
- * However, enumeration of interactions between an atom in the asymmetric unit
- * and its neighbors in a symmetry mate require all cells to be searched. </li>
- * <p> <li> Verlet lists from the search are stored, which reduces the number of
- * neigbors whose distances must be calculated by a factor of approximately: <center><code>(4/3*Pi*Rcut^3)/(neighborCells*Vcell)</code></center>
- * About 1/3 as many interactions are contained in the Verlet lists as in the
- * neighboring cells. </li> </ol>
+ * <code>delta</code>:
+ * <center><code>rCellA * nEdgeA >= (Rcut + delta)</code></center>
+ * <center><code>rCellB * nEdgeB >= (Rcut + delta)</code></center>
+ * <center><code>rCellC * nEdgeC >= (Rcut + delta)</code></center> All neighbors
+ * of an atom are in a block of (2*nEdgeA+1)(2*nEdgeB+1)(2*nEdgeC+1)
+ * neighborCells. </li> <p> <li> Interactions between an atom and neighbors in
+ * the asymmetric unit require only half the neighboring cells to be searched to
+ * avoid double counting. However, enumeration of interactions between an atom
+ * in the asymmetric unit and its neighbors in a symmetry mate require all cells
+ * to be searched. </li> <p> <li> Verlet lists from the search are stored, which
+ * reduces the number of neigbors whose distances must be calculated by a factor
+ * of approximately:
+ * <center><code>(4/3*Pi*Rcut^3)/(neighborCells*Vcell)</code></center> About 1/3
+ * as many interactions are contained in the Verlet lists as in the neighboring
+ * cells. </li> </ol>
  *
  * @author Michael J. Schnieders
  * @since 1.0
- * @version $Id: $
+ *
  */
 public class NeighborList extends ParallelRegion {
 
@@ -382,7 +389,7 @@ public class NeighborList extends ParallelRegion {
             cellIndex = new int[nSymm][nAtoms];
             cellOffset = new int[nSymm][nAtoms];
         }
-        
+
         if (cellStart == null) {
             cellStart = new int[nSymm][nCells];
             cellCount = new int[nSymm][nCells];
@@ -392,11 +399,11 @@ public class NeighborList extends ParallelRegion {
             cellCount = new int[nSymm][maxCells];
         } else if (cellStart[0].length < nCells) {
             logger.info(String.format(" Neighbor-List: Increasing memory for nCell (%d -> %d)", cellStart[0].length, nCells));
-            for (int i=0; i<cellStart.length; i++) {
+            for (int i = 0; i < cellStart.length; i++) {
                 cellStart[i] = new int[nCells];
                 cellCount[i] = new int[nCells];
             }
-        }        
+        }
     }
 
     /**
@@ -816,6 +823,8 @@ public class NeighborList extends ParallelRegion {
          * cell by subtracting nX. If the index is < 0, it is mapped into the
          * periodic unit cell by adding nX. The Neighbor list algorithm never
          * requires multiple additions or subtractions of nX.
+         *
+         *
          *
          *
          *
