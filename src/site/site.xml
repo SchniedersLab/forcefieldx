@@ -5,7 +5,11 @@
                                                      xsi:schemaLocation="http://maven.apache.org/DECORATION/1.3.0 http://maven.apache.org/xsd/decoration-1.3.0.xsd">
     <version position="right" />
     <publishDate position="right" format="MMM dd yyyy" />
-
+    <skin>
+        <groupId>org.apache.maven.skins</groupId>
+        <artifactId>maven-fluido-skin</artifactId>
+        <version>1.3</version>
+    </skin>
     <poweredBy>
         <logo
             target="_blank"
@@ -14,7 +18,7 @@
             img="/images/icon90.png"
             />
     </poweredBy>
-
+    <googleAnalyticsAccountId>UA-12576019-1</googleAnalyticsAccountId>
     <!-- bannerRight>
         <name>Force Field X</name>
         <src>/images/forcefieldx.png</src>
@@ -25,29 +29,11 @@
         <src>/images/helixBanner.jpg</src>
         <href>http://ffx.kenai.com</href>
     </bannerLeft -->
-
-    <googleAnalyticsAccountId>UA-12576019-1</googleAnalyticsAccountId>
-    <skin>
-        <groupId>org.apache.maven.skins</groupId>
-        <artifactId>maven-fluido-skin</artifactId>
-        <version>1.3</version>
-    </skin>
     <custom>
         <fluidoSkin>
-            <topBarEnabled>true</topBarEnabled>
             <sideBarEnabled>false</sideBarEnabled>
+            <topBarEnabled>true</topBarEnabled>
             <topBarContainerStyle>width: 90%;</topBarContainerStyle>
-            <navBarStyle>navbar-inverse</navBarStyle>
-            <googleSearch/>
-
-            <ohloh>
-                <projectId>487436</projectId>
-                <widget>thin-badge</widget>
-            </ohloh>
-
-            <!-- facebookLike/ -->
-            <!-- googlePlusOne/ -->
-
             <topBarIcon>
                 <name>Force Field X Development</name>
                 <alt>Force Field X Development</alt>
@@ -55,6 +41,18 @@
                 <src>/images/icon90.png</src>
                 <href>http://kenai.com/projects/ffx</href>
             </topBarIcon>
+            <navBarStyle>navbar-inverse</navBarStyle>
+            <leftColumnClass>span0</leftColumnClass>
+            <bodyColumnClass>span12</bodyColumnClass>
+            <googleSearch>
+                <sitesearch>true</sitesearch>
+            </googleSearch>
+            <ohloh>
+                <projectId>487436</projectId>
+                <widget>thin-badge</widget>
+            </ohloh>
+            <!-- facebookLike/ -->
+            <!-- googlePlusOne/ -->
             <sourceLineNumbersEnabled>false</sourceLineNumbersEnabled>
         </fluidoSkin>
     </custom>
