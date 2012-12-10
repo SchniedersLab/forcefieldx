@@ -27,6 +27,8 @@ package ffx.utilities;
  *
  * @author Tim Fenn
  *
+ * @since 1.0
+ *
  */
 public class ByteSwap {
 
@@ -50,12 +52,12 @@ public class ByteSwap {
      * @return Byte swapped representation.
      */
     public static int swap(int value) {
-        int b1 = (value >> 0) & 0xff;
+        int b1 = (value) & 0xff;
         int b2 = (value >> 8) & 0xff;
         int b3 = (value >> 16) & 0xff;
         int b4 = (value >> 24) & 0xff;
 
-        return b1 << 24 | b2 << 16 | b3 << 8 | b4 << 0;
+        return b1 << 24 | b2 << 16 | b3 << 8 | b4;
     }
 
     /**
@@ -65,7 +67,7 @@ public class ByteSwap {
      * @return Byte swapped representation.
      */
     public static long swap(long value) {
-        long b1 = (value >> 0) & 0xff;
+        long b1 = (value) & 0xff;
         long b2 = (value >> 8) & 0xff;
         long b3 = (value >> 16) & 0xff;
         long b4 = (value >> 24) & 0xff;
@@ -75,7 +77,7 @@ public class ByteSwap {
         long b8 = (value >> 56) & 0xff;
 
         return b1 << 56 | b2 << 48 | b3 << 40 | b4 << 32
-                | b5 << 24 | b6 << 16 | b7 << 8 | b8 << 0;
+                | b5 << 24 | b6 << 16 | b7 << 8 | b8;
     }
 
     /**
@@ -111,7 +113,8 @@ public class ByteSwap {
      * @param array Array of values to swap
      */
     public static void swap(short[] array) {
-        for (int i = 0; i < array.length; i++) {
+        int n = array.length;
+        for (int i = 0; i < n; i++) {
             array[i] = swap(array[i]);
         }
     }
@@ -123,7 +126,8 @@ public class ByteSwap {
      * @param array Array of values to swap
      */
     public static void swap(int[] array) {
-        for (int i = 0; i < array.length; i++) {
+        int n = array.length;
+        for (int i = 0; i < n; i++) {
             array[i] = swap(array[i]);
         }
     }
@@ -135,7 +139,8 @@ public class ByteSwap {
      * @param array Array of values to swap
      */
     public static void swap(long[] array) {
-        for (int i = 0; i < array.length; i++) {
+        int n = array.length;
+        for (int i = 0; i < n; i++) {
             array[i] = swap(array[i]);
         }
     }
@@ -147,7 +152,8 @@ public class ByteSwap {
      * @param array Array of values to swap
      */
     public static void swap(float[] array) {
-        for (int i = 0; i < array.length; i++) {
+        int n = array.length;
+        for (int i = 0; i < n; i++) {
             array[i] = swap(array[i]);
         }
     }
@@ -159,7 +165,8 @@ public class ByteSwap {
      * @param array Array of values to swap
      */
     public static void swap(double[] array) {
-        for (int i = 0; i < array.length; i++) {
+        int n = array.length;
+        for (int i = 0; i < n; i++) {
             array[i] = swap(array[i]);
         }
     }

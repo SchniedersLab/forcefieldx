@@ -11,8 +11,11 @@
         <actionName>CUSTOM-Build Local Website</actionName>
         <goals>
             <goal>site:site</goal>
-
+            <goal>site:stage</goal>
         </goals>
+        <properties>
+            <skipTests>true</skipTests>
+        </properties>
         <displayName>Build Local Website</displayName>
     </action>
     <action>

@@ -6,6 +6,34 @@
       toplink="true">
     <part id="2012">
         <title>2012</title>
+        <faq id="14">
+            <question>
+                Ren, P., Chun, J., Thomas, D. G., Schnieders, M. J., Marucho, M., Zhang, J., and N. A. Baker,
+                Biomolecular electrostatics and solvation: a computational perspective
+                <i>Quarterly Reviews of Biophysics</i>
+                <b>2012</b> 45, (4), 427-491.
+                <a href="http://dx.doi.org/10.1017/S003358351200011X">
+                    <img src="images/pdf.png" alt="PDF"/>
+                </a>
+            </question>
+            <answer>
+                <p>
+                    An understanding of molecular interactions is essential for insight into biological systems at the
+                    molecular scale. Among the various components of molecular interactions, electrostatics are of special
+                    importance because of their long-range nature and their influence on polar or charged molecules,
+                    including water, aqueous ions, proteins, nucleic acids, carbohydrates, and membrane lipids. In
+                    particular, robust models of electrostatic interactions are essential for understanding the solvation
+                    properties of biomolecules and the effects of solvation upon biomolecular folding, binding, enzyme
+                    catalysis, and dynamics. Electrostatics, therefore, are of central importance to understanding
+                    biomolecular structure and modeling interactions within and among biological molecules. This review
+                    discusses the solvation of biomolecules with a computational biophysics view toward describing the
+                    phenomenon. While our main focus lies on the computational aspect of the models, we provide an overview
+                    of the basic elements of biomolecular solvation (e.g. solvent structure, polarization, ion binding,
+                    and non-polar behavior) in order to provide a background to understand the different types of solvation
+                    models.
+                </p>
+            </answer>
+        </faq>
         <faq id="13">
             <question>
                 Schnieders, M. J., J. Baltrusaitis, Y. Shi, G. Chattree, L. Zheng, W. Yang and P. Ren
@@ -18,41 +46,41 @@
             </question>
             <answer>
                 <p>
-                    An important unsolved problem in materials science is prediction of the thermodynamic 
-                    stability of organic crystals and their solubility from first principles. Solubility can 
-                    be defined as the saturating concentration of a molecule within a liquid solvent, where 
-                    the physical picture is of solvated molecules in equilibrium with their solid phase. Despite 
-                    the importance of solubility in determining the oral bioavailability of pharmaceuticals, 
-                    prediction tools are currently limited to quantitative structure–property relationships that 
-                    are fit to experimental solubility measurements. For the first time, we describe a consistent 
-                    procedure for the prediction of the structure, thermodynamic stability, and solubility of 
-                    organic crystals from molecular dynamics simulations using the polarizable multipole AMOEBA 
-                    force field. Our approach is based on a thermodynamic cycle that decomposes standard state 
-                    solubility into the sum of solid–vapor sublimation and vapor–liquid solvation free energies 
+                    An important unsolved problem in materials science is prediction of the thermodynamic
+                    stability of organic crystals and their solubility from first principles. Solubility can
+                    be defined as the saturating concentration of a molecule within a liquid solvent, where
+                    the physical picture is of solvated molecules in equilibrium with their solid phase. Despite
+                    the importance of solubility in determining the oral bioavailability of pharmaceuticals,
+                    prediction tools are currently limited to quantitative structure–property relationships that
+                    are fit to experimental solubility measurements. For the first time, we describe a consistent
+                    procedure for the prediction of the structure, thermodynamic stability, and solubility of
+                    organic crystals from molecular dynamics simulations using the polarizable multipole AMOEBA
+                    force field. Our approach is based on a thermodynamic cycle that decomposes standard state
+                    solubility into the sum of solid–vapor sublimation and vapor–liquid solvation free energies
                     ΔG°
                     <sub>solubility</sub> = ΔG°
                     <sub>sub</sub> + ΔG°
-                    <sub>solv</sub>, which are computed via the 
-                    orthogonal space random walk (OSRW) sampling strategy. Application to the n-alkylamides series 
-                    from acetamide through octanamide was selected due to the dependence of their solubility on both 
-                    amide hydrogen bonding and the hydrophobic effect, which are each fundamental to protein structure 
-                    and solubility. On average, the calculated absolute standard state solubility free energies are 
-                    accurate to within 1.1 kcal/mol. The experimental trend of decreasing solubility as a function 
-                    of n-alkylamide chain length is recapitulated by the increasing stability of the crystalline 
+                    <sub>solv</sub>, which are computed via the
+                    orthogonal space random walk (OSRW) sampling strategy. Application to the n-alkylamides series
+                    from acetamide through octanamide was selected due to the dependence of their solubility on both
+                    amide hydrogen bonding and the hydrophobic effect, which are each fundamental to protein structure
+                    and solubility. On average, the calculated absolute standard state solubility free energies are
+                    accurate to within 1.1 kcal/mol. The experimental trend of decreasing solubility as a function
+                    of n-alkylamide chain length is recapitulated by the increasing stability of the crystalline
                     state and to a lesser degree by decreasing favorability of solvation (i.e., the hydrophobic effect).
-                    Our results suggest that coupling the polarizable AMOEBA force field with an orthogonal space 
-                    based free energy algorithm, as implemented in the program 
+                    Our results suggest that coupling the polarizable AMOEBA force field with an orthogonal space
+                    based free energy algorithm, as implemented in the program
                     <b>
                         <i>Force Field X</i>
-                    </b>, is a consistent procedure 
+                    </b>, is a consistent procedure
                     for predicting the structure, thermodynamic stability, and solubility of organic crystals.
                 </p>
-            </answer>        
+            </answer>
         </faq>
         <faq id="12">
             <question>
                 Schnieders, M. J., T. S. Kaoud, C. Yan; K. N. Dalby and P. Ren
-                Computational Insights for the Discovery of 
+                Computational Insights for the Discovery of
                 Non-ATP Competitive Inhibitors of MAP Kinases
                 <i>Current Pharmaceutical Design</i>
                 <b>2012</b> 18, (9), 1173-85.
@@ -70,15 +98,15 @@
                     kinase inhibitors for the extracellular signal regulated kinases (ERK1/2),
                     the c-jun N-terminal kinases (JNK1/2/3) and the p38 MAPKs (α, β, γ, and δ).
                     Special emphasis is placed on the role of computational methods in the drug
-                    discovery process for MAP kinases. Topics include recent advances in X-ray 
+                    discovery process for MAP kinases. Topics include recent advances in X-ray
                     crystallography theory that improve the MAP kinase structures essential to
                     structurebased drug discovery, the use of molecular dynamics to understand the
                     conformational heterogeneity of the activation loop and inhibitors discovered by
                     virtual screening. The impact of an advanced polarizable force field such as
                     AMOEBA used in conjunction with sophisticated kinetic and thermodynamic simulation
-                    methods is also discussed. 
+                    methods is also discussed.
                 </p>
-            </answer>        
+            </answer>
         </faq>
     </part>
     <part id="2011">
@@ -180,7 +208,7 @@
                     An implementation of symmetry accelerated PME for the polarizable atomic
                     multipole optimized energetics for biomolecular applications (AMOEBA) force
                     field is presented. Relative to a single CPU core performing calculations on a
-                    P1 unit cell, our AMOEBA engine called 
+                    P1 unit cell, our AMOEBA engine called
                     <b>
                         <i>Force Field X</i>
                     </b> (FFX) accelerates energy

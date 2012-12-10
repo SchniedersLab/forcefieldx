@@ -25,10 +25,6 @@ package ffx.utilities;
 import java.lang.reflect.Array;
 
 /**
- *
- * @author Timothy Fenn
- */
-/**
  * Collected methods which allow easy implementation of
  * <code>hashCode</code>.
  *
@@ -44,15 +40,16 @@ import java.lang.reflect.Array;
  *  }
  * </pre>
  *
- * @author Michael J. Schnieders
+ * @author Timothy D. Fenn and Michael J. Schnieders
  *
+ * @since 1.0
  */
 public final class HashCodeUtil {
 
     /**
      * An initial value for a
      * <code>hashCode</code>, to which is added contributions from fields. Using
-     * a non-zero value decreases collisons of
+     * a non-zero value decreases collisions of
      * <code>hashCode</code> values.
      */
     public static final int SEED = 23;
@@ -103,7 +100,6 @@ public final class HashCodeUtil {
      * @return a int.
      */
     public static int hash(int aSeed, long aLong) {
-        System.out.println("long...");
         return firstTerm(aSeed) + (int) (aLong ^ (aLong >>> 32));
     }
 

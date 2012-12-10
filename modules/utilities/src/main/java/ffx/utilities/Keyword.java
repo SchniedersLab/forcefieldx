@@ -38,8 +38,8 @@ import org.apache.commons.configuration.SystemConfiguration;
  * The Keyword class holds a single Force Field X keyword entry.
  *
  * @author Michael J. Schnieders
- * @since 1.0
  *
+ * @since 1.0
  */
 public class Keyword {
 
