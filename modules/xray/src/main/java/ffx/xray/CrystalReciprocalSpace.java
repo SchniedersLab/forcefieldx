@@ -541,17 +541,17 @@ public class CrystalReciprocalSpace {
         if (logger.isLoggable(Level.INFO)) {
             StringBuilder sb = new StringBuilder();
             if (solvent) {
-                sb.append(String.format("\n Bulk solvent grid settings:\n"));
-                sb.append(String.format(" Bulk solvent model type:       %s\n",
+                sb.append(String.format("  Bulk Solvent Grid\n"));
+                sb.append(String.format("  Bulk solvent model type:       %s\n",
                         solventname));
             } else {
-                sb.append(String.format("\n Atomic grid settings:\n"));
+                sb.append(String.format("  Atomic Grid\n"));
             }
-            sb.append(String.format(" Form factor grid radius (radius):  %d (%8.3f)\n",
+            sb.append(String.format("  Form factor grid radius (radius):  %d (%8.3f)\n",
                     aradgrid, arad));
-            sb.append(String.format(" Grid density:               %8.3f\n",
+            sb.append(String.format("  Grid density:               %8.3f\n",
                     density));
-            sb.append(String.format(" Grid dimensions:           (%d,%d,%d)\n",
+            sb.append(String.format("  Grid dimensions:           (%d,%d,%d)\n",
                     fftX, fftY, fftZ));
             logger.info(sb.toString());
         }

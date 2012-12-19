@@ -1,19 +1,25 @@
-@REM ----------------------------------------------------------------------------
-@REM Copyright 2001-2004 The Apache Software Foundation.
+@REM ###########################################################################
+@REM Title: Force Field X.
 @REM
-@REM Licensed under the Apache License, Version 2.0 (the "License");
-@REM you may not use this file except in compliance with the License.
-@REM You may obtain a copy of the License at
+@REM Description: Force Field X - Software for Molecular Biophysics.
 @REM
-@REM      http://www.apache.org/licenses/LICENSE-2.0
+@REM Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
 @REM
-@REM Unless required by applicable law or agreed to in writing, software
-@REM distributed under the License is distributed on an "AS IS" BASIS,
-@REM WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-@REM See the License for the specific language governing permissions and
-@REM limitations under the License.
-@REM ----------------------------------------------------------------------------
+@REM This file is part of Force Field X.
 @REM
+@REM Force Field X is free software; you can redistribute it and/or modify it
+@REM under the terms of the GNU General Public License version 3 as published by
+@REM the Free Software Foundation.
+@REM
+@REM Force Field X is distributed in the hope that it will be useful, but WITHOUT
+@REM ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+@REM FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+@REM details.
+@REM
+@REM You should have received a copy of the GNU General Public License along with
+@REM Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+@REM Place, Suite 330, Boston, MA 02111-1307 USA
+@REM ###########################################################################
 
 @echo off
 
@@ -53,7 +59,7 @@ goto Win9xApp
 :Win9xGetScriptDir
 set SAVEDIR=%CD%
 %0\
-cd %0\..\.. 
+cd %0\..\..
 set BASEDIR=%CD%
 cd %SAVEDIR%
 set SAVE_DIR=

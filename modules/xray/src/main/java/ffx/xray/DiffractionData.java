@@ -256,7 +256,7 @@ public class DiffractionData implements DataContainer {
                 reflectionlist[i] = datafile[i].diffractionfilter.getReflectionList(tmp, properties);
 
                 if (reflectionlist[i] == null) {
-                    logger.info("Using crystal information from molecular assembly to generate crystal information");
+                    logger.info(" Crystal information from the PDB or property file will be used.");
                     crystalinit = assembly[i].getCrystal().getUnitCell();
                     double res = datafile[i].diffractionfilter.getResolution(tmp, crystalinit);
                     if (res < 0.0) {
@@ -289,26 +289,31 @@ public class DiffractionData implements DataContainer {
 
         if (logger.isLoggable(Level.INFO)) {
             StringBuilder sb = new StringBuilder();
-            sb.append("\nRefinement data settings:\n");
-            sb.append("  using cctbx 3 Gaussians (use_3g): " + use_3g + "\n");
-            sb.append("  atomic form factor radius buffer (aradbuff): " + aradbuff + "\n");
-            sb.append("  reciprocal space sampling rate (sampling): " + sampling + "\n");
-            sb.append("  resolution dependent spline scale (splinefit): " + splinefit + "\n");
+            sb.append(" Refinement Settings\n\n");
+            sb.append("  Target Function\n");
+            sb.append("  X-ray refinement weight (xweight): " + xweight + "\n");
+            sb.append("  Use cctbx 3 Gaussians (use_3g): " + use_3g + "\n");
+            sb.append("  Atomic form factor radius buffer (aradbuff): " + aradbuff + "\n");
+            sb.append("  Reciprocal space sampling rate (sampling): " + sampling + "\n");
+            sb.append("  Resolution dependent spline scale (splinefit): " + splinefit + "\n");
+            sb.append("  Solvent grid search (gridsearch): " + gridsearch + "\n");
+            sb.append("  X-ray scale fit tolerance (xrayscaletol): " + xrayscaletol + "\n");
+            sb.append("  Sigma A fit tolerance (sigmaatol): " + sigmaatol + "\n\n");
+            sb.append("  Reflections\n");
             sb.append("  F/sigF cutoff (fsigfcutoff): " + fsigfcutoff + "\n");
             sb.append("  R Free flag (rfreeflag) (if -1, value will be updated when data is read in): " + rflag + "\n");
-            sb.append("  n bins (nbins): " + reflectionlist[0].nbins + "\n");
-            sb.append("  solvent grid search (gridsearch): " + gridsearch + "\n");
-            sb.append("  X-ray scale fit tolerance (xrayscaletol): " + xrayscaletol + "\n");
-            sb.append("  sigma A fit tolerance (sigmaatol): " + sigmaatol + "\n");
-            sb.append("  X-ray refinement weight (xweight): " + xweight + "\n");
-            sb.append("  B similarity weight (bsimweight): " + bsimweight + "\n");
-            sb.append("  B non-zero weight (bnonzeroweight): " + bnonzeroweight + "\n");
-            sb.append("  B Lagrangian mass (bmass): " + bmass + "\n");
-            sb.append("  B factors refined by residue (residuebfactor): " + residuebfactor + "\n");
+            sb.append("  Number of bins (nbins): " + reflectionlist[0].nbins + "\n\n");
+            sb.append("  B-Factors\n");
+            sb.append("  Similarity weight (bsimweight): " + bsimweight + "\n");
+            sb.append("  Non-zero weight (bnonzeroweight): " + bnonzeroweight + "\n");
+            sb.append("  Lagrangian mass (bmass): " + bmass + "\n");
+            sb.append("  Refined by residue (residuebfactor): " + residuebfactor + "\n");
             sb.append("    (if true, num. residues per B (nresiduebfactor): " + nresiduebfactor + ")\n");
-            sb.append("  add ANISOU for refinement (addanisou): " + addanisou + "\n");
-            sb.append("  refine occupancies on molecules (HETATMs - refinemolocc): " + refinemolocc + "\n");
-            sb.append("  Occupancy Lagrangian mass (occmass): " + occmass + "\n");
+            sb.append("  Add ANISOU for refinement (addanisou): " + addanisou + "\n\n");
+            sb.append("  Occupancies\n");
+            sb.append("  Refine on molecules (HETATMs - refinemolocc): " + refinemolocc + "\n");
+            sb.append("  Lagrangian mass (occmass): " + occmass + "\n");
+
             logger.info(sb.toString());
         }
 
@@ -577,7 +582,9 @@ public class DiffractionData implements DataContainer {
             }
 
             StringBuilder sb = new StringBuilder();
-            sb.append(String.format("statistics for data set %d of %d\nweight: %6.2f is neutron: %s\nmodel: %s data file: %s\n",
+            sb.append(String.format(" Statistics for Data Set %d of %d\n\n"
+                    + "  Weight:     %6.2f\n  Neutron data: %4s\n"
+                    + "  Model:        %s\n  Data file:    %s\n",
                     i + 1, n, dataname[i].weight, dataname[i].neutron,
                     modelname, dataname[i].filename));
             logger.info(sb.toString());
@@ -606,7 +613,7 @@ public class DiffractionData implements DataContainer {
      */
     public void scaleBulkFit(int i) {
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format("scaling data set %d of %d\nweight: %6.2f is neutron: %s\nmodel: %s data file: %s\n",
+        sb.append(String.format(" Scaling Data Set %d of %d\n\n  Weight: %6.2f\n  Neutron data: %s\n  Model: %s\n  Data file: %s",
                 i + 1, n, dataname[i].weight, dataname[i].neutron,
                 modelname, dataname[i].filename));
         logger.info(sb.toString());
@@ -634,10 +641,10 @@ public class DiffractionData implements DataContainer {
 
         // minimize
         if (solventmodel != SolventModel.NONE && gridsearch) {
-            scalebulkminimize[i].minimize(7, 1e-2);
+            scalebulkminimize[i].minimize(6, 1e-2);
             scalebulkminimize[i].GridOptimize();
         }
-        scalebulkminimize[i].minimize(7, xrayscaletol);
+        scalebulkminimize[i].minimize(6, xrayscaletol);
 
         // sigmaA / LLK calculation
         sigmaaminimize[i] = new SigmaAMinimize(reflectionlist[i], refinementdata[i]);

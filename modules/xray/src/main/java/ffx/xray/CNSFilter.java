@@ -115,7 +115,7 @@ public class CNSFilter implements DiffractionFileFilter {
         }
 
         if (sgnum < 0 || cell[0] < 0 || resolution == null) {
-            logger.info("insufficient information to generate Reflection List");
+            logger.info(" The CNS file contains insufficient information to generate the reflection list.");
             return null;
         }
 
@@ -191,10 +191,10 @@ public class CNSFilter implements DiffractionFileFilter {
         boolean transpose = false;
 
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format("\nOpening %s\n", cnsFile.getName()));
+        sb.append(String.format("\n Opening %s\n", cnsFile.getName()));
         if (refinementdata.rfreeflag < 0) {
             refinementdata.set_freerflag(1);
-            sb.append(String.format("Setting R free flag to CNS default: %d\n", refinementdata.rfreeflag));
+            sb.append(String.format(" Setting R free flag to CNS default: %d\n", refinementdata.rfreeflag));
         }
 
         try {

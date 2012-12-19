@@ -95,7 +95,7 @@ public class FileOpener
                 PDBFilter pdbFilter = (PDBFilter) systemFilter;
                 List<Character> altLocs = pdbFilter.getAltLocs();
                 if (altLocs.size() > 1 || altLocs.get(0) != ' ') {
-                    StringBuilder altLocString = new StringBuilder(" Alternate locations [ ");
+                    StringBuilder altLocString = new StringBuilder("\n Alternate locations found [ ");
                     for (Character c : altLocs) {
                         // Do not report the root conformer.
                         if (c == ' ') {
@@ -103,7 +103,7 @@ public class FileOpener
                         }
                         altLocString.append(format("(%s) ", c));
                     }
-                    altLocString.append("]");
+                    altLocString.append("]\n");
                     logger.info(altLocString.toString());
                 }
 

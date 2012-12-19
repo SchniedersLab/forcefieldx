@@ -298,11 +298,11 @@ public class ModelingShell extends Console implements AlgorithmListener {
      */
     public Potential minimize(double eps) {
         if (interrupted) {
-            logger.info("Algorithm interrupted - skipping minimization.");
+            logger.info(" Algorithm interrupted - skipping minimization.");
             return null;
         }
         if (terminatableAlgorithm != null) {
-            logger.info("Algorithm already running - skipping minimization.");
+            logger.info(" Algorithm already running - skipping minimization.");
             return null;
         }
         MolecularAssembly active = mainPanel.getHierarchy().getActive();
@@ -313,7 +313,7 @@ public class ModelingShell extends Console implements AlgorithmListener {
             terminatableAlgorithm = null;
             return potential;
         } else {
-            logger.info("No active system to minimize.");
+            logger.info(" No active system to minimize.");
         }
         return null;
     }
@@ -329,11 +329,11 @@ public class ModelingShell extends Console implements AlgorithmListener {
     public Potential minimize_2(String xyzf, double eps, String keyfile) {
         Potential potential = null;
         if (interrupted) {
-            logger.info("Algorithm interrupted - skipping minimization.");
+            logger.info(" Algorithm interrupted - skipping minimization.");
             return null;
         }
         if (terminatableAlgorithm != null) {
-            logger.info("Algorithm already running - skipping minimization.");
+            logger.info(" Algorithm already running - skipping minimization.");
             return null;
         }
         Minimize_2 minimize;
@@ -408,10 +408,10 @@ public class ModelingShell extends Console implements AlgorithmListener {
      */
     public void potential(Integer choice, String fname, Double eps) {
         if (interrupted) {
-            logger.info("Algorithm interrupted - skipping minimization.");
+            logger.info(" Algorithm interrupted - skipping minimization.");
         }
         if (terminatableAlgorithm != null) {
-            logger.info("Algorithm already running - skipping minimization.");
+            logger.info(" Algorithm already running - skipping minimization.");
         }
         try {
             if (choice == 1) {

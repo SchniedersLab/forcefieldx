@@ -38,7 +38,7 @@ import ffx.numerics.LineSearch.LineSearchResult;
  * optimization problems.<br>
  *
  * @author Michael J. Schnieders<br> Derived from:<br> Robert Dodier's Java
- * translation of orignal FORTRAN code by Jorge Nocedal.
+ * translation of original FORTRAN code by Jorge Nocedal.
  * @see <a href="http://www.jstor.org/stable/2006193"> J. Nocedal, "Updating
  * Quasi-Newton Matrices with Limited Storage", Mathematics of Computation, 35,
  * 773-782 (1980)</a><br> <a href="http://dx.doi.org/10.1007/BF01589116"
@@ -476,7 +476,6 @@ public class LBFGS {
         for (int i = x0, j = y0; i != stop; i += dx, j += dy) {
             y[j] += a * x[i];
         }
-        return;
     }
 
     /**

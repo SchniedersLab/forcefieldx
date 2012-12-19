@@ -86,10 +86,10 @@ public class MTZFilterTest {
                 mtzfilter.readFile(mtzfile, reflectionlist, refinementdata, null));
 
         assertEquals("mtz file should have correct number of columns",
-                6, mtzfilter.ncol);
+                6, mtzfilter.nColumns);
 
         assertEquals("mtz file should have correct number of reflections",
-                48115, mtzfilter.nrfl);
+                48115, mtzfilter.nReflections);
 
         assertEquals("mtz file should have correct space group number",
                 1, mtzfilter.sgnum);

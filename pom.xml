@@ -560,7 +560,7 @@
         <maven.build.timestamp.format>MM-dd-yyyy</maven.build.timestamp.format>
         <timestamp>${maven.build.timestamp}</timestamp>
         <!-- Skip most website reports by default -->
-        <assembly.skipAssembly>true</assembly.skipAssembly>
+        <assembly.skipAssembly>false</assembly.skipAssembly>
         <changes.jira.skip>true</changes.jira.skip>
         <checkstyle.skip>true</checkstyle.skip>
         <dependencyDetails>false</dependencyDetails>

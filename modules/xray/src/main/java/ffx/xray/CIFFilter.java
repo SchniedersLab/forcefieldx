@@ -156,7 +156,7 @@ public class CIFFilter implements DiffractionFileFilter {
         }
 
         if (sgnum < 0 || reshigh < 0 || cell[0] < 0) {
-            logger.info("insufficient information in CIF header to generate Reflection List");
+            logger.info(" The CIF header contains insufficient information to generate the reflection list.");
             return null;
         }
 
@@ -278,10 +278,10 @@ public class CIFFilter implements DiffractionFileFilter {
         boolean intensitiesToAmplitudes = false;
 
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format("\nOpening %s\n", cifFile.getName()));
+        sb.append(String.format(" Opening %s\n", cifFile.getName()));
         if (refinementdata.rfreeflag < 0) {
             refinementdata.set_freerflag(1);
-            sb.append(String.format("Setting R free flag to CIF default: %d\n", refinementdata.rfreeflag));
+            sb.append(String.format(" Setting R free flag to CIF default: %d\n", refinementdata.rfreeflag));
         }
 
         try {
@@ -536,23 +536,23 @@ public class CIFFilter implements DiffractionFileFilter {
             return false;
         }
 
-        sb.append(String.format("HKL data is %s\n",
+        sb.append(String.format(" HKL data is %s\n",
                 transpose ? "transposed" : "not transposed"));
-        sb.append(String.format("# HKL read in:                             %d\n",
+        sb.append(String.format(" HKL read in:                             %d\n",
                 nread));
-        sb.append(String.format("# HKL read as friedel mates:               %d\n",
+        sb.append(String.format(" HKL read as friedel mates:               %d\n",
                 nfriedel));
-        sb.append(String.format("# HKL with NaN (ignored):                  %d\n",
+        sb.append(String.format(" HKL with NaN (ignored):                  %d\n",
                 nnan));
-        sb.append(String.format("# HKL NOT read in (status <, -, h or l):   %d\n",
+        sb.append(String.format(" HKL NOT read in (status <, -, h or l):   %d\n",
                 ncifignore));
-        sb.append(String.format("# HKL NOT read in (too high resolution):   %d\n",
+        sb.append(String.format(" HKL NOT read in (too high resolution):   %d\n",
                 nres));
-        sb.append(String.format("# HKL NOT read in (not in internal list?): %d\n",
+        sb.append(String.format(" HKL NOT read in (not in internal list?): %d\n",
                 nignore));
-        sb.append(String.format("# HKL NOT read in (F/sigF cutoff):         %d\n",
+        sb.append(String.format(" HKL NOT read in (F/sigF cutoff):         %d\n",
                 ncut));
-        sb.append(String.format("# HKL in internal list:                    %d\n",
+        sb.append(String.format(" HKL in internal list:                    %d\n",
                 reflectionlist.hkllist.size()));
         if (logger.isLoggable(Level.INFO)) {
             logger.info(sb.toString());

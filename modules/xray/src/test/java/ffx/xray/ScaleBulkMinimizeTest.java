@@ -217,7 +217,7 @@ public class ScaleBulkMinimizeTest {
          scalebulkminimize.GridOptimize();
          }
          */
-        scalebulkminimize.minimize(7, 1e-4);
+        scalebulkminimize.minimize(6, 1e-4);
 
         SigmaAMinimize sigmaaminimize = new SigmaAMinimize(reflectionlist,
                 refinementdata);

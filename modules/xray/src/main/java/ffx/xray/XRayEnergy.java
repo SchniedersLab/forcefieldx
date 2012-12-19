@@ -103,9 +103,10 @@ public class XRayEnergy implements LambdaInterface, Potential {
         setRefinementBooleans();
 
         if (refineb) {
-            logger.info("B temperature: " + temp);
-            logger.info("B non-zero restraint weight: " + diffractiondata.bnonzeroweight);
-            logger.info("B similarity restraint weight: " + diffractiondata.bsimweight);
+            logger.info(" B-Factor Refinement Parameters");
+            logger.info(" Temperature:                 " + temp);
+            logger.info(" Non-zero restraint weight:   " + diffractiondata.bnonzeroweight);
+            logger.info(" Similarity restraint weight: " + diffractiondata.bsimweight);
         }
     }
 

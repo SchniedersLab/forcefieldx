@@ -43,13 +43,13 @@ import ffx.xray.CrystalReciprocalSpace.SolventModel;
 public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
 
     private static final Logger logger = Logger.getLogger(ScaleBulkMinimize.class.getName());
-    private static double toSeconds = 0.000000001;
+    private static double toSeconds = 1.0e-9;
     private static final double eightpi2 = 8.0 * Math.PI * Math.PI;
     private final ReflectionList reflectionlist;
-    private final DiffractionRefinementData refinementdata;
+    private final DiffractionRefinementData refinementData;
     private final Crystal crystal;
     private final CrystalReciprocalSpace crs;
-    private final ScaleBulkEnergy bulksolventenergy;
+    private final ScaleBulkEnergy bulkSolventEnergy;
     private final int solvent_n;
     private final int n;
     private final double x[];
@@ -72,7 +72,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
     public ScaleBulkMinimize(ReflectionList reflectionlist,
             DiffractionRefinementData refinementdata, CrystalReciprocalSpace crs) {
         this.reflectionlist = reflectionlist;
-        this.refinementdata = refinementdata;
+        this.refinementData = refinementdata;
         this.crystal = reflectionlist.crystal;
         this.crs = crs;
 
@@ -82,7 +82,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
             solvent_n = 3;
         }
         n = solvent_n + refinementdata.scale_n;
-        bulksolventenergy = new ScaleBulkEnergy(reflectionlist, refinementdata, n);
+        bulkSolventEnergy = new ScaleBulkEnergy(reflectionlist, refinementdata, n);
 
         x = new double[n];
         grad = new double[n];
@@ -103,16 +103,16 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
             scaling[i] = 1.0;
         }
 
-        bulksolventenergy.setScaling(scaling);
+        bulkSolventEnergy.setScaling(scaling);
 
         setInitialScale();
     }
 
     private void setInitialScale() {
-        double fc[][] = refinementdata.fc;
-        double fo[][] = refinementdata.fsigf;
+        double fc[][] = refinementData.fc;
+        double fo[][] = refinementData.fsigf;
 
-        double e = bulksolventenergy.energyAndGradient(x, grad);
+        double e = bulkSolventEnergy.energyAndGradient(x, grad);
         double fct, sumfofc, sumfc;
         sumfofc = sumfc = 0.0;
         for (HKL ih : reflectionlist.hkllist) {
@@ -123,7 +123,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
                 continue;
             }
 
-            fct = refinementdata.fctot_f(i);
+            fct = refinementData.fctot_f(i);
             sumfofc += fo[i][0] * fct;
             sumfc += fct * fct;
         }
@@ -140,11 +140,11 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         }
 
         double min = Double.POSITIVE_INFINITY;
-        double k = refinementdata.solvent_k;
+        double k = refinementData.solvent_k;
         double kmin = 0.05;
         double kmax = 0.9;
         double kstep = 0.05;
-        double b = refinementdata.solvent_ueq;
+        double b = refinementData.solvent_ueq;
         double bmin = 10.0;
         double bmax = 200.0;
         double bstep = 10.0;
@@ -153,7 +153,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
 
                 x[1] = i;
                 x[2] = j;
-                double sum = bulksolventenergy.energyAndGradient(x, grad);
+                double sum = bulkSolventEnergy.energyAndGradient(x, grad);
 
                 System.out.println("ks: " + i + " bs: " + j + " sum: " + sum);
                 if (sum < min) {
@@ -164,8 +164,8 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
             }
         }
         System.out.println("minks: " + k + " minbs: " + b + " min: " + min);
-        refinementdata.solvent_k = k;
-        refinementdata.solvent_ueq = b;
+        refinementData.solvent_k = k;
+        refinementData.solvent_ueq = b;
     }
 
     /**
@@ -194,8 +194,8 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
             for (double j = bmin; j <= bmax; j += bstep) {
                 crs.setSolventAB(i, j);
 
-                crs.computeDensity(refinementdata.fs);
-                double sum = bulksolventenergy.energyAndGradient(x, grad);
+                crs.computeDensity(refinementData.fs);
+                double sum = bulkSolventEnergy.energyAndGradient(x, grad);
 
                 System.out.println("a: " + i + " b: " + j + " sum: " + sum);
                 if (sum < min) {
@@ -207,9 +207,9 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         }
         System.out.println("mina: " + a + " minb: " + b + " min: " + min);
         crs.setSolventAB(a, b);
-        refinementdata.solvent_a = a;
-        refinementdata.solvent_b = b;
-        crs.computeDensity(refinementdata.fs);
+        refinementData.solvent_a = a;
+        refinementData.solvent_b = b;
+        crs.computeDensity(refinementData.fs);
     }
 
     /**
@@ -240,16 +240,16 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
      */
     public ScaleBulkEnergy minimize(int m, double eps) {
 
-        double e = bulksolventenergy.energyAndGradient(x, grad);
+        double e = bulkSolventEnergy.energyAndGradient(x, grad);
 
         long mtime = -System.nanoTime();
         time = -System.nanoTime();
         done = false;
-        int status = LBFGS.minimize(n, m, x, e, grad, eps, bulksolventenergy, this);
+        int status = LBFGS.minimize(n, m, x, e, grad, eps, bulkSolventEnergy, this);
         done = true;
         switch (status) {
             case 0:
-                logger.info(String.format("\n Optimization achieved convergence criteria: %8.5f\n", grms));
+                logger.info(String.format("\n Optimization achieved convergence criteria: %10.5f\n", grms));
                 break;
             case 1:
                 logger.info(String.format("\n Optimization terminated at step %d.\n", nSteps));
@@ -257,32 +257,30 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
             default:
                 logger.warning("\n Optimization failed.\n");
         }
-        refinementdata.model_k = x[0] / scaling[0];
+        refinementData.model_k = x[0] / scaling[0];
         if (solvent_n > 1) {
-            refinementdata.solvent_k = x[1] / scaling[1];
-            refinementdata.solvent_ueq = x[2] / scaling[2];
+            refinementData.solvent_k = x[1] / scaling[1];
+            refinementData.solvent_ueq = x[2] / scaling[2];
 
             if (crs != null) {
-                refinementdata.solvent_a = crs.solvent_a;
-                refinementdata.solvent_b = crs.solvent_b;
+                refinementData.solvent_a = crs.solvent_a;
+                refinementData.solvent_b = crs.solvent_b;
             }
         }
         for (int i = 0; i < 6; i++) {
             if (crystal.scale_b[i] >= 0) {
-                refinementdata.model_b[i] =
+                refinementData.model_b[i] =
                         x[solvent_n + crystal.scale_b[i]]
                         / scaling[solvent_n + crystal.scale_b[i]];
             }
         }
 
         if (logger.isLoggable(Level.INFO)) {
-            StringBuilder sb = new StringBuilder();
             mtime += System.nanoTime();
-            sb.append(String.format("minimizer time: %g\n", mtime * toSeconds));
-            logger.info(sb.toString());
+            logger.info(String.format(" Optimization time: %8.3f (sec)\n", mtime * toSeconds));
         }
 
-        return bulksolventenergy;
+        return bulkSolventEnergy;
     }
 
     /**
@@ -297,18 +295,18 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         this.nSteps = iter;
 
         if (iter == 0) {
-            logger.info("\n Limited Memory BFGS Quasi-Newton Optimization (Fc to Fo scaling parameters): \n\n");
-            logger.info(" Cycle       Energy      G RMS    Delta E   Delta X    Angle  Evals     Time\n");
+            logger.info("\n Limited Memory BFGS Quasi-Newton Optimization of Fc to Fo Scaling Parameters\n");
+            logger.info(" Cycle       Energy      G RMS    Delta E   Delta X    Angle  Evals     Time");
         }
         if (info == null) {
-            logger.info(String.format("%6d %13.4g %11.4g\n",
+            logger.info(String.format("%6d %12.5f %10.6f",
                     iter, f, grms));
         } else {
             if (info == LineSearchResult.Success) {
-                logger.info(String.format("%6d %13.4g %11.4g %11.4g %10.4g %9.2g %7d %8.3g\n",
+                logger.info(String.format("%6d %12.5f %10.6f %10.6f %9.5f %8.2f %6d %8.3f",
                         iter, f, grms, df, xrms, angle, nfun, seconds));
             } else {
-                logger.info(String.format("%6d %13.4g %11.4g %11.4g %10.4g %9.2g %7d %8s\n",
+                logger.info(String.format("%6d %12.5f %10.6f %10.6f %9.5f %8.2f %6d %8s",
                         iter, f, grms, df, xrms, angle, nfun, info.toString()));
             }
         }

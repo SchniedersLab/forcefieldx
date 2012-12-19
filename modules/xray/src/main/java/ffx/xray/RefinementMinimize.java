@@ -77,17 +77,18 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
          */
         COORDINATES_AND_BFACTORS_AND_OCCUPANCIES
     }
+    public final RefinementEnergy refinementEnergy;
+
     private static final Logger logger = Logger.getLogger(RefinementMinimize.class.getName());
-    private static double toSeconds = 0.000000001;
-    private final DataContainer data;
-    private final RefinementModel refinementmodel;
-    private final Atom atomarray[];
+    private static double toSeconds = 1.0e-9;
+    private final DataContainer dataContainer;
+    private final RefinementModel refinementModel;
+    private final Atom atomArray[];
     private final int nAtoms;
-    public final RefinementEnergy refinementenergy;
     private RefinementMode refinementMode;
-    private final int nxyz;
-    private final int nb;
-    private final int nocc;
+    private final int nXYZ;
+    private final int nB;
+    private final int nOcc;
     private final int n;
     private final double x[];
     private final double grad[];
@@ -120,24 +121,24 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
      * refinement
      */
     public RefinementMinimize(DataContainer data, RefinementMode refinementmode) {
-        this.data = data;
-        this.refinementmodel = data.getRefinementModel();
+        this.dataContainer = data;
+        this.refinementModel = data.getRefinementModel();
         this.refinementMode = refinementmode;
-        this.atomarray = data.getAtomArray();
-        this.nAtoms = atomarray.length;
+        this.atomArray = data.getAtomArray();
+        this.nAtoms = atomArray.length;
 
-        refinementenergy = new RefinementEnergy(data, refinementmode, null);
+        refinementEnergy = new RefinementEnergy(data, refinementmode, null);
 
-        this.nxyz = refinementenergy.nxyz;
-        this.nb = refinementenergy.nb;
-        this.nocc = refinementenergy.nocc;
-        this.n = refinementenergy.getNumberOfVariables();
+        this.nXYZ = refinementEnergy.nxyz;
+        this.nB = refinementEnergy.nb;
+        this.nOcc = refinementEnergy.nocc;
+        this.n = refinementEnergy.getNumberOfVariables();
 
         x = new double[n];
         grad = new double[n];
         scaling = new double[n];
 
-        refinementenergy.getCoordinates(x);
+        refinementEnergy.getCoordinates(x);
 
         double xyzscale = 1.0;
         double bisoscale = 1.0;
@@ -160,7 +161,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
                 || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS
                 || refinementmode == RefinementMode.COORDINATES_AND_OCCUPANCIES
                 || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
-            for (int i = 0; i < nxyz; i++) {
+            for (int i = 0; i < nXYZ; i++) {
                 scaling[i] = xyzscale;
             }
         }
@@ -169,12 +170,12 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
                 || refinementmode == RefinementMode.BFACTORS_AND_OCCUPANCIES
                 || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS
                 || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
-            int i = nxyz;
+            int i = nXYZ;
             int resnum = -1;
             if (data instanceof DiffractionData) {
                 DiffractionData diffractiondata = (DiffractionData) data;
                 int nres = diffractiondata.nresiduebfactor + 1;
-                for (Atom a : atomarray) {
+                for (Atom a : atomArray) {
                     // ignore hydrogens!!!
                     if (a.getAtomicNumber() == 1) {
                         continue;
@@ -188,10 +189,10 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
                         if (resnum != a.getResidueNumber()) {
                             if (nres >= diffractiondata.nresiduebfactor) {
                                 if (resnum > -1
-                                        && i < nxyz + nb - 1) {
+                                        && i < nXYZ + nB - 1) {
                                     i++;
                                 }
-                                if (i < nxyz + nb) {
+                                if (i < nXYZ + nB) {
                                     scaling[i] = bisoscale;
                                 }
                                 nres = 1;
@@ -206,7 +207,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
                     }
                 }
             } else {
-                logger.severe("B refinement not supported for this data type!");
+                logger.severe(" B refinement not supported for this data type!");
             }
         }
 
@@ -215,25 +216,25 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
                 || refinementmode == RefinementMode.COORDINATES_AND_OCCUPANCIES
                 || refinementmode == RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES) {
             if (data instanceof DiffractionData) {
-                int i = nxyz + nb;
-                for (ArrayList<Residue> list : refinementmodel.altresidues) {
+                int i = nXYZ + nB;
+                for (ArrayList<Residue> list : refinementModel.altresidues) {
                     for (int j = 0; j < list.size(); j++) {
                         scaling[i] = occscale;
                         i++;
                     }
                 }
-                for (ArrayList<Molecule> list : refinementmodel.altmolecules) {
+                for (ArrayList<Molecule> list : refinementModel.altmolecules) {
                     for (int j = 0; j < list.size(); j++) {
                         scaling[i] = occscale;
                         i++;
                     }
                 }
             } else {
-                logger.severe("occupancy refinement not supported for this data type!");
+                logger.severe(" Occupancy refinement not supported for this data type!");
             }
         }
 
-        refinementenergy.setScaling(scaling);
+        refinementEnergy.setScaling(scaling);
     }
 
     /**
@@ -245,7 +246,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
     public Double getEps() {
         boolean hasaniso = false;
 
-        for (Atom a : atomarray) {
+        for (Atom a : atomArray) {
             // ignore hydrogens!!!
             if (a.getAtomicNumber() == 1) {
                 continue;
@@ -305,7 +306,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
      * @return the number of xyz parameters
      */
     public int getNXYZ() {
-        return nxyz;
+        return nXYZ;
     }
 
     /**
@@ -314,7 +315,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
      * @return the number of B factor parameters
      */
     public int getNB() {
-        return nb;
+        return nB;
     }
 
     /**
@@ -323,7 +324,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
      * @return the number of occupancy parameters
      */
     public int getNOcc() {
-        return nocc;
+        return nOcc;
     }
 
     /**
@@ -376,39 +377,40 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
      */
     public RefinementEnergy minimize(int m, double eps, int maxiter) {
         String typestring;
-        if (data instanceof DiffractionData) {
+        if (dataContainer instanceof DiffractionData) {
             typestring = "X-ray";
-        } else if (data instanceof RealSpaceData) {
+        } else if (dataContainer instanceof RealSpaceData) {
             typestring = "Real Space";
         } else {
             typestring = "null";
         }
 
+        logger.info(" Beginning " + typestring + " Refinement");
         switch (refinementMode) {
             case COORDINATES:
-                logger.info("Beginning " + typestring + " refinement - mode: coordinates nparams: " + n);
+                logger.info(" Mode: Coordinates");
                 break;
             case BFACTORS:
-                logger.info("Beginning " + typestring + " refinement - mode: bfactors nparams: " + n);
+                logger.info(" Mode: B-Factors");
                 break;
             case COORDINATES_AND_BFACTORS:
-                logger.info("Beginning " + typestring + " refinement - mode: coordinates and bfactors nparams: " + n);
+                logger.info(" Mode: Coordinates and B-Factors");
                 break;
             case OCCUPANCIES:
-                logger.info("Beginning " + typestring + " refinement - mode: occupancies nparams: " + n);
-                break;
+                logger.info(" Mode: Occupancies");
             case COORDINATES_AND_OCCUPANCIES:
-                logger.info("Beginning " + typestring + " refinement - mode: coordinates and occupancies nparams: " + n);
+                logger.info(" Mode: Coordinates and Occupancies");
                 break;
             case BFACTORS_AND_OCCUPANCIES:
-                logger.info("Beginning " + typestring + " refinement - mode: bfactors and occupancies nparams: " + n);
+                logger.info(" Mode: B-Factors and Occupancies");
                 break;
             case COORDINATES_AND_BFACTORS_AND_OCCUPANCIES:
-                logger.info("Beginning " + typestring + " refinement - mode: coordinates and bfactors and occupancies nparams: " + n);
+                logger.info(" Mode: Coordinates, B-Factors and Occupancies");
                 break;
         }
+        logger.info(" Number of Parameters: " + n);
 
-        refinementenergy.getCoordinates(x);
+        refinementEnergy.getCoordinates(x);
         /**
          * Scale coordinates.
          */
@@ -420,28 +422,28 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
         time = -System.nanoTime();
         done = false;
         int status = 0;
-        double e = refinementenergy.energyAndGradient(x, grad);
-        status = LBFGS.minimize(n, m, x, e, grad, eps, maxiter, refinementenergy, this);
+        double e = refinementEnergy.energyAndGradient(x, grad);
+        status = LBFGS.minimize(n, m, x, e, grad, eps, maxiter, refinementEnergy, this);
         done = true;
         switch (status) {
             case 0:
-                logger.info(String.format("\n Optimization achieved convergence criteria: %8.5f\n", grms));
+                logger.info(String.format("\n Optimization achieved convergence criteria: %8.5f", grms));
                 break;
             case 1:
-                logger.info(String.format("\n Optimization terminated at step %d.\n", nSteps));
+                logger.info(String.format("\n Optimization terminated at step %d.", nSteps));
                 break;
             default:
-                logger.warning("\n Optimization failed.\n");
+                logger.warning("\n Optimization failed.");
         }
 
         if (logger.isLoggable(Level.INFO)) {
             StringBuilder sb = new StringBuilder();
             mtime += System.nanoTime();
-            sb.append(String.format("minimizer time: %g\n", mtime * toSeconds));
+            sb.append(String.format(" Optimization time: %g (sec)", mtime * toSeconds));
             logger.info(sb.toString());
         }
 
-        return refinementenergy;
+        return refinementEnergy;
     }
 
     /**
@@ -456,23 +458,22 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
         this.nSteps = iter;
 
         if (iter == 0) {
-            logger.info("\n Limited Memory BFGS Quasi-Newton Optimization: \n\n");
+            logger.info("\n Limited Memory BFGS Quasi-Newton Optimization: \n");
             logger.info(" Cycle       Energy      G RMS    Delta E   Delta X    Angle  Evals     Time      "
-                    + data.printOptimizationHeader() + "\n");
+                    + dataContainer.printOptimizationHeader());
         }
         if (info == null) {
-            logger.info(String.format("%6d %13.4g %11.4g\n",
+            logger.info(String.format("%6d %12.3f %10.3f",
                     iter, f, grms));
         } else {
             if (info == LineSearchResult.Success) {
                 StringBuilder sb = new StringBuilder();
-                sb.append(String.format("%6d %13.4g %11.4g %11.4g %10.4g %9.2g %7d %8.3g ",
+                sb.append(String.format("%6d %12.3f %10.3f %10.3f %9.4f %8.2f %6d %8.3f ",
                         iter, f, grms, df, xrms, angle, nfun, seconds));
-                sb.append(data.printOptimizationUpdate());
-                sb.append(String.format("\n"));
+                sb.append(dataContainer.printOptimizationUpdate());
                 logger.info(sb.toString());
             } else {
-                logger.info(String.format("%6d %13.4g %11.4g %11.4g %10.4g %9.2g %7d %8s\n",
+                logger.info(String.format("%6d %12.3g %10.3f %10.3f %9.4f %8.2f %6d %8s",
                         iter, f, grms, df, xrms, angle, nfun, info.toString()));
             }
         }
@@ -495,7 +496,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
                 try {
                     wait(1);
                 } catch (Exception e) {
-                    logger.log(Level.WARNING, "Exception terminating minimization.\n", e);
+                    logger.log(Level.WARNING, " Exception terminating minimization.\n", e);
                 }
             }
         }

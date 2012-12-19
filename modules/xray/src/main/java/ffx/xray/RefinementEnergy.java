@@ -177,7 +177,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
                         }
                     }
                 } else {
-                    logger.severe("Refinement method not supported for this data type!");
+                    logger.severe(" Refinement method not supported for this data type!");
                 }
                 break;
         }
@@ -254,7 +254,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
                     setAssemblyi(i, g, gChemical[i]);
                 }
                 double chemE = e;
-                System.out.println("chem E: " + e + " scaled chem E: " + ktscale * e);
+                //System.out.println("chem E: " + e + " scaled chem E: " + ktscale * e);
 
                 e = chemE * ktscale;
                 // normalize gradients for multiple-counted atoms
@@ -272,7 +272,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
                     gXray = new double[nxyz];
                 }
                 double xE = dataEnergy.energyAndGradient(x, gXray);
-                System.out.println("Xray E: " + xE + " scaled Xray E: " + weight * xE);
+                //System.out.println("Xray E: " + xE + " scaled Xray E: " + weight * xE);
                 e += weight * xE;
 
                 /*
@@ -469,7 +469,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
         if (thermostat != null) {
             ktscale = Thermostat.convert / (thermostat.getTargetTemperature() * Thermostat.kB);
         }
-        logger.info("kTscale: " + ktscale);
+        logger.info(" kTscale: " + ktscale);
         logger.info(data.printEnergyUpdate());
 
         return true;

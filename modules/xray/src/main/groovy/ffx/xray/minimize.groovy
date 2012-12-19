@@ -158,7 +158,7 @@ if (threestage) {
     if (beps < 0.0) {
 	beps = refinementMinimize.getEps();
     }
-    logger.info("\n RMS gradient convergence criteria: " + beps + " max number of iterations: " + maxiter);
+    logger.info("\n RMS gradient convergence criteria: " + beps + "\n Maximum number of iterations: " + maxiter + "\n");
     refinementMinimize.minimize(beps, maxiter);
     diffractiondata.scaleBulkFit();
     diffractiondata.printStats();

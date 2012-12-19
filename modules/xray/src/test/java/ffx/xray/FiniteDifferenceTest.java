@@ -196,7 +196,7 @@ public class FiniteDifferenceTest {
 
         ScaleBulkMinimize scalebulkminimize =
                 new ScaleBulkMinimize(reflectionlist, refinementdata, crs);
-        scalebulkminimize.minimize(7, 1e-4);
+        scalebulkminimize.minimize(6, 1e-4);
 
         sigmaaminimize = new SigmaAMinimize(reflectionlist,
                 refinementdata);

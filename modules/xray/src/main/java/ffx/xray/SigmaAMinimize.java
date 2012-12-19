@@ -47,11 +47,11 @@ import ffx.numerics.OptimizationListener;
 public class SigmaAMinimize implements OptimizationListener, Terminatable {
 
     private static final Logger logger = Logger.getLogger(SplineEnergy.class.getName());
-    private static double toSeconds = 0.000000001;
+    private static double toSeconds = 1.0e-9;
     private final ReflectionList reflectionlist;
     protected final DiffractionRefinementData refinementdata;
     private final Crystal crystal;
-    private final SigmaAEnergy sigmaaenergy;
+    private final SigmaAEnergy sigmaAEnergy;
     private final int n;
     private final double x[];
     private final double grad[];
@@ -76,7 +76,7 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
         this.crystal = reflectionlist.crystal;
 
         n = refinementdata.nbins * 2;
-        sigmaaenergy = new SigmaAEnergy(reflectionlist, refinementdata);
+        sigmaAEnergy = new SigmaAEnergy(reflectionlist, refinementdata);
         x = new double[n];
         grad = new double[n];
         scaling = new double[n];
@@ -91,14 +91,14 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
 
         // generate Es
         int type = SplineEnergy.Type.FCTOESQ;
-        SplineMinimize splineminimize = new SplineMinimize(reflectionlist,
+        SplineMinimize splineMinimize = new SplineMinimize(reflectionlist,
                 refinementdata, refinementdata.fcesq, type);
-        splineminimize.minimize(7, 1.0);
+        splineMinimize.minimize(7, 1.0);
 
         type = SplineEnergy.Type.FOTOESQ;
-        splineminimize = new SplineMinimize(reflectionlist,
+        splineMinimize = new SplineMinimize(reflectionlist,
                 refinementdata, refinementdata.foesq, type);
-        splineminimize.minimize(7, 1.0);
+        splineMinimize.minimize(7, 1.0);
 
         // generate initial w estimate
         ReflectionSpline spline = new ReflectionSpline(reflectionlist,
@@ -136,7 +136,8 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
             mean += (wi - mean) / tot;
         }
 
-        logger.info("starting mean w: " + mean + " w scaling: " + 1.0 / mean);
+        logger.info(String.format(" Starting mean w:    %8.3f", mean));
+        logger.info(String.format(" Starting w scaling: %8.3f", 1.0 / mean));
         for (int i = 0; i < refinementdata.nbins; i++) {
             x[i] -= x[i + refinementdata.nbins];
             x[i] *= scaling[i];
@@ -144,7 +145,7 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
             x[i + refinementdata.nbins] *= scaling[i + refinementdata.nbins];
         }
 
-        sigmaaenergy.setScaling(scaling);
+        sigmaAEnergy.setScaling(scaling);
     }
 
     /**
@@ -153,7 +154,7 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
      * @return a double.
      */
     public double calculateLikelihood() {
-        sigmaaenergy.energyAndGradient(x, grad);
+        sigmaAEnergy.energyAndGradient(x, grad);
         return refinementdata.llkr;
     }
 
@@ -163,7 +164,7 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
      * @return a double.
      */
     public double calculateLikelihoodFree() {
-        return sigmaaenergy.energyAndGradient(x, grad);
+        return sigmaAEnergy.energyAndGradient(x, grad);
     }
 
     /**
@@ -194,13 +195,14 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
      */
     public SigmaAEnergy minimize(int m, double eps) {
 
-        double e = sigmaaenergy.energyAndGradient(x, grad);
+        double e = sigmaAEnergy.energyAndGradient(x, grad);
 
         long mtime = -System.nanoTime();
         time = -System.nanoTime();
         done = false;
-        int status = LBFGS.minimize(n, m, x, e, grad, eps, sigmaaenergy, this);
+        int status = LBFGS.minimize(n, m, x, e, grad, eps, sigmaAEnergy, this);
         done = true;
+
         switch (status) {
             case 0:
                 logger.info(String.format("\n Optimization achieved convergence criteria: %8.5f\n", grms));
@@ -221,11 +223,11 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
         if (logger.isLoggable(Level.INFO)) {
             StringBuilder sb = new StringBuilder();
             mtime += System.nanoTime();
-            sb.append(String.format("minimizer time: %g\n", mtime * toSeconds));
+            sb.append(String.format(" Optimization time: %8.3f (sec)\n", mtime * toSeconds));
             logger.info(sb.toString());
         }
 
-        return sigmaaenergy;
+        return sigmaAEnergy;
     }
 
     /**
@@ -240,18 +242,18 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
         this.nSteps = iter;
 
         if (iter == 0) {
-            logger.info("\n Limited Memory BFGS Quasi-Newton Optimization (sigmaA parameters): \n\n");
-            logger.info(" Cycle       Energy      G RMS    Delta E   Delta X    Angle  Evals     Time\n");
+            logger.info("\n Limited Memory BFGS Quasi-Newton Optimization of SigmaA Parameters\n");
+            logger.info(" Cycle       Energy      G RMS    Delta E   Delta X    Angle  Evals     Time");
         }
         if (info == null) {
-            logger.info(String.format("%6d %13.4g %11.4g\n",
+            logger.info(String.format("%6d %12.2f %10.2f",
                     iter, f, grms));
         } else {
             if (info == LineSearchResult.Success) {
-                logger.info(String.format("%6d %13.4g %11.4g %11.4g %10.4g %9.2g %7d %8.3g\n",
+                logger.info(String.format("%6d %12.2f %10.2f %10.5f %9.5f %8.2f %6d %8.3f",
                         iter, f, grms, df, xrms, angle, nfun, seconds));
             } else {
-                logger.info(String.format("%6d %13.4g %11.4g %11.4g %10.4g %9.2g %7d %8s\n",
+                logger.info(String.format("%6d %12.2f %10.2f %10.5f %9.5f %8.2f %6d %8s",
                         iter, f, grms, df, xrms, angle, nfun, info.toString()));
             }
         }

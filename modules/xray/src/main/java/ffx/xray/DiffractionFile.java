@@ -72,7 +72,7 @@ public class DiffractionFile {
     public DiffractionFile(String filename, double weight, boolean neutron) {
         File tmp = new File(filename);
         if (!tmp.exists()) {
-            logger.severe("data file: " + filename + " not found!");
+            logger.severe(" Data file: " + filename + " not found!");
         }
 
         if (isExtension(filename, "mtz")) {
@@ -167,32 +167,32 @@ public class DiffractionFile {
 
         File tmp = new File(name + ".mtz");
         if (tmp.exists()) {
-            logger.info("data file: " + tmp.getName());
+            //logger.info("\n Data file: " + tmp.getName());
             diffractionfilter = new MTZFilter();
         } else {
             tmp = new File(name + ".cif");
             if (tmp.exists()) {
-                logger.info("data file: " + tmp.getName());
+                //logger.info("\n Data file: " + tmp.getName());
                 diffractionfilter = new CIFFilter();
             } else {
                 tmp = new File(name + ".ent");
                 if (tmp.exists()) {
-                    logger.info("data file: " + tmp.getName());
+                    //logger.info("\n Data file: " + tmp.getName());
                     diffractionfilter = new CIFFilter();
                 } else {
                     tmp = new File(name + ".sf");
                     if (tmp.exists()) {
-                        logger.info("data file: " + tmp.getName());
+                        //logger.info("\n Data file: " + tmp.getName());
                         diffractionfilter = new CIFFilter();
                     } else {
                         tmp = new File(name + ".cns");
                         if (tmp.exists()) {
-                            logger.info("data file: " + tmp.getName());
+                            //logger.info("\n Data file: " + tmp.getName());
                             diffractionfilter = new CNSFilter();
                         } else {
                             tmp = new File(name + ".hkl");
                             if (tmp.exists()) {
-                                logger.info("data file: " + tmp.getName());
+                                //logger.info("\n Data file: " + tmp.getName());
                                 diffractionfilter = new CNSFilter();
                             } else {
                                 logger.severe("no input data found!");

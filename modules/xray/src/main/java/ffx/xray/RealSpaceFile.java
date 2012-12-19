@@ -61,7 +61,7 @@ public class RealSpaceFile {
     public RealSpaceFile(String filename, double weight) {
         File tmp = new File(filename);
         if (!tmp.exists()) {
-            logger.severe("data file: " + filename + " not found!");
+            logger.severe(" Data file: " + filename + " not found!");
         }
 
         if (isExtension(filename, "map")) {
@@ -109,10 +109,10 @@ public class RealSpaceFile {
 
         File tmp = new File(name + ".map");
         if (tmp.exists()) {
-            logger.info("data file: " + tmp.getName());
+            logger.info(" Data file: " + tmp.getName());
             realspacefilter = new CCP4MapFilter();
         } else {
-            logger.severe("no input data found!");
+            logger.severe(" No input data was found.");
             realspacefilter = null;
         }
 

@@ -97,7 +97,7 @@ public class RealSpaceData implements DataContainer {
 
         if (logger.isLoggable(Level.INFO)) {
             StringBuilder sb = new StringBuilder();
-            sb.append("\nRefinement data settings:\n");
+            sb.append(" Refinement Settings\n");
             sb.append("  Real space refinement weight (xweight): " + xweight + "\n");
             logger.info(sb.toString());
         }
@@ -217,7 +217,7 @@ public class RealSpaceData implements DataContainer {
 
         if (logger.isLoggable(Level.INFO)) {
             StringBuilder sb = new StringBuilder();
-            sb.append("\nRefinement data settings:\n");
+            sb.append(" Refinement Settings\n");
             sb.append("  Real space refinement weight (xweight): " + xweight + "\n");
             logger.info(sb.toString());
         }

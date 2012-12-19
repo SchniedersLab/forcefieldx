@@ -11,7 +11,7 @@
                 Ren, P., Chun, J., Thomas, D. G., Schnieders, M. J., Marucho, M., Zhang, J., and N. A. Baker,
                 Biomolecular electrostatics and solvation: a computational perspective
                 <i>Quarterly Reviews of Biophysics</i>
-                <b>2012</b> 45, (4), 427-491.
+                <b>2012</b> 45, (4), 427-91.
                 <a href="http://dx.doi.org/10.1017/S003358351200011X">
                     <img src="images/pdf.png" alt="PDF"/>
                 </a>
@@ -39,7 +39,7 @@
                 Schnieders, M. J., J. Baltrusaitis, Y. Shi, G. Chattree, L. Zheng, W. Yang and P. Ren
                 The Structure, Thermodynamics, and Solubility of Organic Crystals from Simulation with a Polarizable Force Field
                 <i>Journal of Chemical Theory and Computation</i>
-                <b>2012</b> 8, (5), 1721–1736.
+                <b>2012</b> 8, (5), 1721–36.
                 <a href="http://dx.doi.org/10.1021/ct300035u">
                     <img src="images/pdf.png" alt="PDF"/>
                 </a>
@@ -236,39 +236,6 @@
         <title>2010</title>
         <faq id="8">
             <question>
-                Fenn, T. D.*, M. J. Schnieders*, A. T. Brunger and V. S. Pande,
-                Polarizable atomic multipole X-ray refinement:
-                Hydration geometry and application to macromolecules.
-                <i>Biophysical Journal</i>
-                <b>2010</b>, 98, (12), 2984-92 (*joint first authors).
-                <a target="_blank" href="http://dx.doi.org/10.1016/j.bpj.2010.02.057">
-                    <img src="images/pdf.png" alt="PDF"/>
-                </a>
-            </question>
-            <answer>
-                <p>
-                    We recently developed a polarizable atomic multipole refinement method assisted
-                    by the AMOEBA force field for macromolecular crystallography. Compared to
-                    standard refinement procedures, the method uses a more rigorous treatment of
-                    X-ray scattering and electrostatics that can significantly improve the resultant
-                    information contained in an atomic model. We applied this method to
-                    high-resolution lysozyme and trypsin data sets, and validated its utility for
-                    precisely describing biomolecular electron density, as indicated by a 0.4–0.6%
-                    decrease in the R- and R
-                    <sub>free</sub>-values, and a corresponding decrease in the
-                    relative energy of 0.4–0.8 Kcal/mol/residue. The re-refinements illustrate the
-                    ability of force field electrostatics to orient water networks and catalytically
-                    relevant hydrogens, which can be used to make predictions regarding active site
-                    function, activity, and protein-ligand interaction energies. Re-refinement of a
-                    DNA crystal structure generates the zigzag spine pattern of hydrogen bonding in
-                    the minor groove without manual intervention. The polarizable atomic multipole
-                    electrostatics model implemented in the AMOEBA force field is applicable and
-                    informative for crystal structures solved at any resolution.
-                </p>
-            </answer>
-        </faq>
-        <faq id="7">
-            <question>
                 Fenn, T. D., M. J. Schnieders and A. T. Brunger,
                 A smooth and differentiable bulk-solvent model for macromolecular diffraction.
                 <i>Acta Crystallographica Section D</i>
@@ -300,13 +267,46 @@
                 </p>
             </answer>
         </faq>
+        <faq id="7">
+            <question>
+                Fenn, T. D.*, M. J. Schnieders*, A. T. Brunger and V. S. Pande,
+                Polarizable atomic multipole X-ray refinement:
+                Hydration geometry and application to macromolecules.
+                <i>Biophysical Journal</i>
+                <b>2010</b>, 98, (12), 2984-92 (*joint first authors).
+                <a target="_blank" href="http://dx.doi.org/10.1016/j.bpj.2010.02.057">
+                    <img src="images/pdf.png" alt="PDF"/>
+                </a>
+            </question>
+            <answer>
+                <p>
+                    We recently developed a polarizable atomic multipole refinement method assisted
+                    by the AMOEBA force field for macromolecular crystallography. Compared to
+                    standard refinement procedures, the method uses a more rigorous treatment of
+                    X-ray scattering and electrostatics that can significantly improve the resultant
+                    information contained in an atomic model. We applied this method to
+                    high-resolution lysozyme and trypsin data sets, and validated its utility for
+                    precisely describing biomolecular electron density, as indicated by a 0.4–0.6%
+                    decrease in the R- and R
+                    <sub>free</sub>-values, and a corresponding decrease in the
+                    relative energy of 0.4–0.8 Kcal/mol/residue. The re-refinements illustrate the
+                    ability of force field electrostatics to orient water networks and catalytically
+                    relevant hydrogens, which can be used to make predictions regarding active site
+                    function, activity, and protein-ligand interaction energies. Re-refinement of a
+                    DNA crystal structure generates the zigzag spine pattern of hydrogen bonding in
+                    the minor groove without manual intervention. The polarizable atomic multipole
+                    electrostatics model implemented in the AMOEBA force field is applicable and
+                    informative for crystal structures solved at any resolution.
+                </p>
+            </answer>
+        </faq>
         <faq id="6">
             <question>
                 Ponder, J. W., C. Wu, P. Ren, V. S. Pande, J. D. Chodera, M. J. Schnieders,
                 I. Haque, D. L. Mobley, D. S. Lambrecht, R. A. DiStasio, M. Head-Gordon,
                 G. N. I. Clark, M. E. Johnson and T. Head-Gordon,
                 Current Status of the AMOEBA Polarizable Force Field.
-                <i>The Journal of Physical Chemistry B.</i>
+                <i>The Journal of Physical Chemistry B</i>
                 <b>2010</b>, 114, 2549-64.
                 <a target="_blank" href="http://dx.doi.org/10.1021/jp910674d">
                     <img src="images/pdf.png" alt="PDF"/>

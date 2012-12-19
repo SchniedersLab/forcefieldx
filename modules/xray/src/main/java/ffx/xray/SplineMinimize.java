@@ -125,13 +125,13 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
         done = true;
         switch (status) {
             case 0:
-                logger.info(String.format("\n Optimization achieved convergence criteria: %8.5f\n", grms));
+                logger.fine(String.format("\n Optimization achieved convergence criteria: %8.5f\n", grms));
                 break;
             case 1:
-                logger.info(String.format("\n Optimization terminated at step %d.\n", nSteps));
+                logger.fine(String.format("\n Optimization terminated at step %d.\n", nSteps));
                 break;
             default:
-                logger.warning("\n Optimization failed.\n");
+                logger.warning("\n Spline Optimization failed.\n");
         }
         return splineenergy;
     }

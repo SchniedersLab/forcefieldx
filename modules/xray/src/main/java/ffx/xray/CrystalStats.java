@@ -382,9 +382,9 @@ public class CrystalStats {
         cruickdpi = natni * noni * rfreefrac * res;
 
         StringBuilder sb = new StringBuilder("\n");
-        sb.append(String.format("Blow DPI (eqn 7): %7.4f nonH atoms: %7.4f\n", blowdpih, blowdpi));
-        sb.append(String.format("Cruickshank DPI (eqn 27): %7.4f nonH atoms: %7.4f\n", cruickdpih, cruickdpi));
-        sb.append(String.format("Acta Cryst (1999) D55, 583-601 and Acta Cryst (2002) D58, 792-797\n\n"));
+        sb.append(String.format(" Blow DPI for all / non-H atoms:        %7.4f / %7.4f\n", blowdpih, blowdpi));
+        sb.append(String.format(" Cruickshank DPI for all / non-H atoms: %7.4f / %7.4f", cruickdpih, cruickdpi));
+        //sb.append(String.format(" Acta Cryst (1999) D55, 583-601 and Acta Cryst (2002) D58, 792-797\n\n"));
         if (print) {
             logger.info(sb.toString());
         }
@@ -430,21 +430,18 @@ public class CrystalStats {
             }
         }
 
-        StringBuilder sb = new StringBuilder("\n");
-        sb.append("# reflections (for 100% complete): " + refinementdata.n + "\n");
-        sb.append(String.format("%15s | %8s|%9s| %7s | %7s |%s\n",
-                "res. range", "#HKL (R)", "#HKL (cv)", "#bin", "#miss",
-                "%complete"));
+        StringBuilder sb = new StringBuilder(String.format("\n %15s | %8s|%9s| %7s | %7s | %s\n",
+                "Res. Range", " HKL (R)", " HKL (cv)", " Bin", " Miss",
+                "Complete (%)"));
         for (int i = 0; i < n; i++) {
-            sb.append(String.format("%7.3f %7.3f | ", res[i][0], res[i][1]));
+            sb.append(String.format(" %7.3f %7.3f | ", res[i][0], res[i][1]));
             sb.append(String.format("%7d | %7d | %7d | %7d | ",
                     nhkl[i][0], nhkl[i][1], nhkl[i][0] + nhkl[i][1],
                     nhkl[i][2]));
-            sb.append(String.format("%5.2f\n", (((double) nhkl[i][0] + nhkl[i][1])
+            sb.append(String.format("%6.2f\n", (((double) nhkl[i][0] + nhkl[i][1])
                     / (nhkl[i][0] + nhkl[i][1] + nhkl[i][2])) * 100.0));
         }
-
-        sb.append(String.format("%7.3f %7.3f | ", res[0][0], res[n - 1][1]));
+        sb.append(String.format(" %7.3f %7.3f | ", res[0][0], res[n - 1][1]));
         int sum1 = 0;
         int sum2 = 0;
         int sum3 = 0;
@@ -455,8 +452,9 @@ public class CrystalStats {
         }
         sb.append(String.format("%7d | %7d | %7d | %7d | ",
                 sum1, sum2, sum1 + sum2, sum3));
-        sb.append(String.format("%5.2f\n\n",
+        sb.append(String.format("%6.2f\n",
                 (((double) sum1 + sum2) / (sum1 + sum2 + sum3)) * 100.0));
+        sb.append(String.format(" Number of reflections if complete: %10d", refinementdata.n));
 
         nobshkl = sum1 + sum2;
         highnobshkl = nhkl[n - 1][0] + nhkl[n - 1][1];
@@ -540,23 +538,23 @@ public class CrystalStats {
             s[n][3] += (fomphi[i][0] - s[n][3]) / nhkl[n];
         }
 
-        StringBuilder sb = new StringBuilder("\n");
-        sb.append("s and w are analagous to D and sum_wc - J. Appl. Cryst. (2005) 38, 193-198\n\n");
-        sb.append(String.format("%15s | %7s | %7s | %7s | %7s | %7s | %7s\n",
-                "res. range", "  R", "Rfree", "s", "w(E)", "w(F)", "FOM"));
+        StringBuilder sb = new StringBuilder(
+                String.format("\n %15s | %7s | %7s | %7s | %7s | %7s | %7s\n",
+                "Res. Range", "  R", "Rfree", "s", "w(E)", "w(F)", "FOM"));
         for (int i = 0; i < n; i++) {
-            sb.append(String.format("%7.3f %7.3f | ", res[i][0], res[i][1]));
+            sb.append(String.format(" %7.3f %7.3f | ", res[i][0], res[i][1]));
             sb.append(String.format("%7.2f | %7.2f | %7.4f | %7.4f | %7.2f | %7.4f\n",
                     (rb[i][0] / sumfo[i][0]) * 100.0,
                     (rb[i][1] / sumfo[i][1]) * 100.0,
                     s[i][0], s[i][1], s[i][2], s[i][3]));
         }
 
-        sb.append(String.format("%7.3f %7.3f | ", res[0][0], res[n - 1][1]));
-        sb.append(String.format("%7.2f | %7.2f | %7.4f | %7.4f | %7.2f | %7.4f\n\n",
+        sb.append(String.format(" %7.3f %7.3f | ", res[0][0], res[n - 1][1]));
+        sb.append(String.format("%7.2f | %7.2f | %7.4f | %7.4f | %7.2f | %7.4f\n",
                 (rb[n][0] / sumfo[n][0]) * 100.0,
                 (rb[n][1] / sumfo[n][1]) * 100.0,
                 s[n][0], s[n][1], s[n][2], s[n][3]));
+        sb.append(" s and w are analagous to D and sum_wc");
 
         reslow = res[0][0];
         reshigh = res[n - 1][1];
@@ -597,53 +595,52 @@ public class CrystalStats {
             scale[b] += (fh - scale[b]) / nhkl[b];
         }
 
-        StringBuilder sb = new StringBuilder("\n");
-        sb.append(String.format("  Fc to Fo scale: %4.2f\n",
+        StringBuilder sb = new StringBuilder(
+                String.format(" Fc to Fo scale: %4.2f\n",
                 exp(0.25 * refinementdata.model_k)));
-        sb.append("  Fc to Fo spline scale: ");
+        sb.append(" Fc to Fo spline scale: ");
         for (int i = 0; i < n; i++) {
             sb.append(String.format("%4.2f ", scale[i]));
         }
-        sb.append("\n");
-        sb.append(String.format("  aniso B tensor:\n"));
-        sb.append(String.format("    %g %g %g\n",
+        sb.append(String.format("\n Aniso B tensor:\n"));
+        sb.append(String.format("  %10.4f %10.4f %10.4f\n",
                 refinementdata.model_b[0],
                 refinementdata.model_b[3],
                 refinementdata.model_b[4]));
-        sb.append(String.format("    %g %g %g\n",
+        sb.append(String.format("  %10.4f %10.4f %10.4f\n",
                 refinementdata.model_b[3],
                 refinementdata.model_b[1],
                 refinementdata.model_b[5]));
-        sb.append(String.format("    %g %g %g\n",
+        sb.append(String.format("  %10.4f %10.4f %10.4f\n",
                 refinementdata.model_b[4],
                 refinementdata.model_b[5],
                 refinementdata.model_b[2]));
         if (refinementdata.crs_fs.solventmodel != SolventModel.NONE) {
             switch (refinementdata.crs_fs.solventmodel) {
                 case (SolventModel.BINARY):
-                    sb.append("  bulk solvent model: binary mask\n");
-                    sb.append(String.format("  bulk solvent probe radius: %g shrink radius: %g\n",
+                    sb.append(" Bulk solvent model: Binary mask\n");
+                    sb.append(String.format("  Probe radius: %8.3f\n  Shrink radius: %8.3f\n",
                             refinementdata.solvent_a,
                             refinementdata.solvent_b));
                     break;
                 case (SolventModel.POLYNOMIAL):
-                    sb.append("  bulk solvent model: polynomial switch\n");
-                    sb.append(String.format("  bulk solvent a: %g w: %g\n",
+                    sb.append(" Bulk solvent model: Polynomial switch\n");
+                    sb.append(String.format("  a:     %8.3f\n  w:     %8.3f\n",
                             refinementdata.solvent_a,
                             refinementdata.solvent_b));
                     break;
                 case (SolventModel.GAUSSIAN):
-                    sb.append("  bulk solvent model: Gaussian\n");
-                    sb.append(String.format("  bulk solvent A: %g sd scale: %g\n",
+                    sb.append(" Bulk solvent model: Gaussian\n");
+                    sb.append(String.format("  A: %8.3f\n  sd scale: %8.3f\n",
                             refinementdata.solvent_a,
                             refinementdata.solvent_b));
                     break;
             }
-            sb.append(String.format("  bulk solvent scale: %g  B: %g\n",
+            sb.append(String.format("  Scale: %8.3f\n  B:     %8.3f\n",
                     refinementdata.solvent_k,
                     refinementdata.solvent_ueq * 8.0 * Math.PI * Math.PI));
         }
-        sb.append(String.format("  -log likelihood: %g (free set: %g)\n\n",
+        sb.append(String.format("\n -log Likelihood: %14.3f (free set: %14.3f)",
                 refinementdata.llkr, refinementdata.llkf));
 
         if (print) {
@@ -695,17 +692,16 @@ public class CrystalStats {
             sn[n][2] += ((fo[i][0] / fo[i][1]) - sn[n][2]) / nhkl[n];
         }
 
-        StringBuilder sb = new StringBuilder("\n");
-        sb.append(String.format("%15s | %8s | %8s | %8s \n",
-                "res. range", "signal", "sigma", "s/n"));
+        StringBuilder sb = new StringBuilder(String.format("\n %15s | %7s | %7s | %7s \n",
+                "Res. Range", "Signal", "Sigma", "S/N"));
         for (int i = 0; i < n; i++) {
-            sb.append(String.format("%7.3f %7.3f | ", res[i][0], res[i][1]));
-            sb.append(String.format("%8.2f | %8.2f | %8.2f\n",
+            sb.append(String.format(" %7.3f %7.3f | ", res[i][0], res[i][1]));
+            sb.append(String.format("%7.2f | %7.2f | %7.2f\n",
                     sn[i][0], sn[i][1], sn[i][2]));
         }
 
-        sb.append(String.format("%7.3f %7.3f | ", res[0][0], res[n - 1][1]));
-        sb.append(String.format("%8.2f | %8.2f | %8.2f\n\n",
+        sb.append(String.format(" %7.3f %7.3f | ", res[0][0], res[n - 1][1]));
+        sb.append(String.format("%7.2f | %7.2f | %7.2f",
                 sn[n][0], sn[n][1], sn[n][2]));
 
         if (print) {
