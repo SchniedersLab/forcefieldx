@@ -180,37 +180,13 @@
             <groupId>java3d</groupId>
             <artifactId>j3dcore</artifactId>
             <type>jar</type>
-            <version>1.5.2</version>
-        </dependency>
-        <dependency>
-            <groupId>java3d</groupId>
-            <artifactId>j3dutils</artifactId>
-            <type>jar</type>
-            <version>1.5.2</version>
+            <version>1.6.0</version>
         </dependency>
         <dependency>
             <groupId>java3d</groupId>
             <artifactId>j3dvrml</artifactId>
             <type>jar</type>
-            <version>1.5.2</version>
+            <version>1.6.0</version>
         </dependency>
-        <dependency>
-            <groupId>java3d</groupId>
-            <artifactId>vecmath</artifactId>
-            <type>jar</type>
-            <version>1.5.2</version>
-        </dependency>
-        <dependency>
-            <groupId>net.java.dev.jogl</groupId>
-            <artifactId>jogl</artifactId>
-            <type>jar</type>
-            <version>1.1.1</version>
-        </dependency>
-        <!-- dependency>
-            <groupId>org.jogamp</groupId>
-            <artifactId>jogl</artifactId>
-            <type>jar</type>
-            <version>2.0.0</version>
-        </dependency -->
     </dependencies>
 </project>

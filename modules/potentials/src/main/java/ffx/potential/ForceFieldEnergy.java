@@ -265,9 +265,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             rigidScale = 1.0;
         }
 
-        logger.info("\n Bonded Terms\n");
+        logger.info("\n Bonded Terms");
         if (rigidHydrogens && rigidScale > 1.0) {
-            logger.info(format(" Rigid hydrogens:                    %10.2f", rigidScale));
+            logger.info(format("  Rigid hydrogens:                   %10.2f", rigidScale));
         }
 
         // Collect, count, pack and sort bonds.
@@ -276,7 +276,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             nBonds = bond.size();
             bonds = bond.toArray(new Bond[nBonds]);
             Arrays.sort(bonds);
-            logger.info(format(" Bonds:                              %10d", nBonds));
+            logger.info(format("  Bonds:                             %10d", nBonds));
         } else {
             nBonds = 0;
             bonds = null;
@@ -288,7 +288,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             nAngles = angle.size();
             angles = angle.toArray(new Angle[nAngles]);
             Arrays.sort(angles);
-            logger.info(format(" Angles:                             %10d", nAngles));
+            logger.info(format("  Angles:                            %10d", nAngles));
         } else {
             nAngles = 0;
             angles = null;
@@ -300,7 +300,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             nStretchBends = stretchBend.size();
             stretchBends = stretchBend.toArray(new StretchBend[nStretchBends]);
             Arrays.sort(stretchBends);
-            logger.info(format(" Stretch-Bends:                      %10d", nStretchBends));
+            logger.info(format("  Stretch-Bends:                     %10d", nStretchBends));
         } else {
             nStretchBends = 0;
             stretchBends = null;
@@ -312,7 +312,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             nUreyBradleys = ureyBradley.size();
             ureyBradleys = ureyBradley.toArray(new UreyBradley[nUreyBradleys]);
             Arrays.sort(ureyBradleys);
-            logger.info(format(" Urey-Bradleys:                      %10d", nUreyBradleys));
+            logger.info(format("  Urey-Bradleys:                     %10d", nUreyBradleys));
         } else {
             nUreyBradleys = 0;
             ureyBradleys = null;
@@ -359,7 +359,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             nOutOfPlaneBends = outOfPlaneBend.size();
             outOfPlaneBends = outOfPlaneBend.toArray(new OutOfPlaneBend[nOutOfPlaneBends]);
             Arrays.sort(outOfPlaneBends);
-            logger.info(format(" Out-of-Plane Bends:                 %10d", nOutOfPlaneBends));
+            logger.info(format("  Out-of-Plane Bends:                %10d", nOutOfPlaneBends));
         } else {
             nOutOfPlaneBends = 0;
             outOfPlaneBends = null;
@@ -370,7 +370,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             ArrayList<ROLS> torsion = molecularAssembly.getTorsionList();
             nTorsions = torsion.size();
             torsions = torsion.toArray(new Torsion[nTorsions]);
-            logger.info(format(" Torsions:                           %10d", nTorsions));
+            logger.info(format("  Torsions:                          %10d", nTorsions));
         } else {
             nTorsions = 0;
             torsions = null;
@@ -381,7 +381,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             ArrayList<ROLS> piOrbitalTorsion = molecularAssembly.getPiOrbitalTorsionList();
             nPiOrbitalTorsions = piOrbitalTorsion.size();
             piOrbitalTorsions = piOrbitalTorsion.toArray(new PiOrbitalTorsion[nPiOrbitalTorsions]);
-            logger.info(format(" Pi-Orbital Torsions:                %10d", nPiOrbitalTorsions));
+            logger.info(format("  Pi-Orbital Torsions:               %10d", nPiOrbitalTorsions));
         } else {
             nPiOrbitalTorsions = 0;
             piOrbitalTorsions = null;
@@ -392,7 +392,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             ArrayList<ROLS> torsionTorsion = molecularAssembly.getTorsionTorsionList();
             nTorsionTorsions = torsionTorsion.size();
             torsionTorsions = torsionTorsion.toArray(new TorsionTorsion[nTorsionTorsions]);
-            logger.info(format(" Torsion-Torsions:                   %10d", nTorsionTorsions));
+            logger.info(format("  Torsion-Torsions:                  %10d", nTorsionTorsions));
         } else {
             nTorsionTorsions = 0;
             torsionTorsions = null;
@@ -698,85 +698,85 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     public String toString() {
         StringBuilder sb = new StringBuilder("\n");
         if (bondTerm && nBonds > 0) {
-            sb.append(String.format(" %s %16.8f %12d %12.3f (%8.5f)\n",
+            sb.append(String.format("  %s %16.8f %12d %12.3f (%8.5f)\n",
                     "Bond Streching    ", bondEnergy, nBonds,
                     bondTime * toSeconds, bondRMSD));
         }
         if (angleTerm && nAngles > 0) {
-            sb.append(String.format(" %s %16.8f %12d %12.3f (%8.5f)\n",
+            sb.append(String.format("  %s %16.8f %12d %12.3f (%8.5f)\n",
                     "Angle Bending     ", angleEnergy, nAngles,
                     angleTime * toSeconds, angleRMSD));
         }
         if (stretchBendTerm && nStretchBends > 0) {
-            sb.append(String.format(" %s %16.8f %12d %12.3f\n",
+            sb.append(String.format("  %s %16.8f %12d %12.3f\n",
                     "Stretch-Bend      ", stretchBendEnergy,
                     nStretchBends, stretchBendTime * toSeconds));
         }
         if (ureyBradleyTerm && nUreyBradleys > 0) {
-            sb.append(String.format(" %s %16.8f %12d %12.3f\n",
+            sb.append(String.format("  %s %16.8f %12d %12.3f\n",
                     "Urey-Bradley      ", ureyBradleyEnergy,
                     nUreyBradleys, ureyBradleyTime * toSeconds));
         }
         if (outOfPlaneBendTerm && nOutOfPlaneBends > 0) {
-            sb.append(String.format(" %s %16.8f %12d %12.3f\n",
+            sb.append(String.format("  %s %16.8f %12d %12.3f\n",
                     "Out-of-Plane Bend ", outOfPlaneBendEnergy,
                     nOutOfPlaneBends, outOfPlaneBendTime * toSeconds));
         }
         if (torsionTerm && nTorsions > 0) {
-            sb.append(String.format(" %s %16.8f %12d %12.3f\n",
+            sb.append(String.format("  %s %16.8f %12d %12.3f\n",
                     "Torsional Angle   ", torsionEnergy, nTorsions,
                     torsionTime * toSeconds));
         }
         if (piOrbitalTorsionTerm && nPiOrbitalTorsions > 0) {
-            sb.append(String.format(" %s %16.8f %12d %12.3f\n",
+            sb.append(String.format("  %s %16.8f %12d %12.3f\n",
                     "Pi-Orbital Torsion", piOrbitalTorsionEnergy,
                     nPiOrbitalTorsions, piOrbitalTorsionTime * toSeconds));
         }
         if (torsionTorsionTerm && nTorsionTorsions > 0) {
-            sb.append(String.format(" %s %16.8f %12d %12.3f\n",
+            sb.append(String.format("  %s %16.8f %12d %12.3f\n",
                     "Torsion-Torsion   ", torsionTorsionEnergy,
                     nTorsionTorsions, torsionTorsionTime * toSeconds));
         }
         if (restraintBondTerm && nRestraintBonds > 0) {
-            sb.append(String.format(" %s %16.8f %12d %12.3f\n",
+            sb.append(String.format("  %s %16.8f %12d %12.3f\n",
                     "Bond Restraint    ", restraintBondEnergy, nRestraintBonds,
                     restraintBondTime * toSeconds));
         }
         if (vanderWaalsTerm && nVanDerWaals > 0) {
-            sb.append(String.format(" %s %16.8f %12d %12.3f\n",
+            sb.append(String.format("  %s %16.8f %12d %12.3f\n",
                     "Van der Waals     ", vanDerWaalsEnergy,
                     nVanDerWaals, vanDerWaalsTime * toSeconds));
         }
         if (multipoleTerm && nPME > 0) {
             if (polarizationTerm) {
-                sb.append(String.format(" %s %16.8f %12d\n",
+                sb.append(String.format("  %s %16.8f %12d\n",
                         "Atomic Multipoles ", permanentMultipoleEnergy, nPME));
             } else {
-                sb.append(String.format(" %s %16.8f %12d %12.3f\n",
+                sb.append(String.format("  %s %16.8f %12d %12.3f\n",
                         "Atomic Multipoles ", permanentMultipoleEnergy, nPME, electrostaticTime * toSeconds));
             }
         }
         if (polarizationTerm && nPME > 0) {
-            sb.append(String.format(" %s %16.8f %12d %12.3f\n",
+            sb.append(String.format("  %s %16.8f %12d %12.3f\n",
                     "Polarization      ", polarizationEnergy,
                     nPME, electrostaticTime * toSeconds));
         }
         if (generalizedKirkwoodTerm && nGK > 0) {
-            sb.append(String.format(" %s %16.8f %12d\n",
+            sb.append(String.format("  %s %16.8f %12d\n",
                     "Solvation         ", solvationEnergy, nGK));
         }
 
-        sb.append(String.format("\n %s %16.8f  %s %12.3f (sec)\n",
+        sb.append(String.format("  %s %16.8f  %s %12.3f (sec)\n",
                 "Total Potential   ", totalEnergy, "(Kcal/mole)", totalTime * toSeconds));
 
         int nsymm = crystal.getUnitCell().spaceGroup.getNumberOfSymOps();
         if (nsymm > 1) {
-            sb.append(String.format(" %s %16.8f\n", "Unit Cell         ",
+            sb.append(String.format("  %s %16.8f\n", "Unit Cell         ",
                     totalEnergy * nsymm));
         }
         if (crystal.getUnitCell() != crystal) {
             nsymm = crystal.spaceGroup.getNumberOfSymOps();
-            sb.append(String.format(" %s %16.8f\n", "Replicates Cell   ",
+            sb.append(String.format("  %s %16.8f\n", "Replicates Cell   ",
                     totalEnergy * nsymm));
         }
 

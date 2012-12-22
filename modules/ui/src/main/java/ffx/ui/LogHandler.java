@@ -99,7 +99,7 @@ public class LogHandler extends Handler {
                 System.err.println(msg);
                 System.err.println(" Force Field X will not continue.");
                 System.err.println(" Shutting down...");
-                mainPanel.exit();
+                //mainPanel.exit();
             }
             ModelingShell shell = null;
             Thread thread = null;

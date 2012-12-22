@@ -1172,16 +1172,15 @@ public final class MainPanel extends JPanel implements ActionListener,
         String extension = FilenameUtils.getExtension(name);
 
         /**
-         * Run the Force Field X script.
+         * Run a Force Field X script.
          */
         if (extension.equalsIgnoreCase("ffx") || extension.equalsIgnoreCase("groovy")) {
             ModelingShell shell = getModelingShell();
+            shell.runFFXScript(file);
             if (java.awt.GraphicsEnvironment.isHeadless()) {
-                shell.headlessRun(file);
                 exit();
             } else {
-                shell.loadScriptFile(file);
-                shell.runScript();
+                return null;
             }
         }
 

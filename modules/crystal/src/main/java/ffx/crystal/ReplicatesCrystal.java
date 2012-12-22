@@ -219,14 +219,14 @@ public class ReplicatesCrystal extends Crystal {
         StringBuilder sb = new StringBuilder(unitCell.toString());
 
         sb.append("\n\n Replicates Cell\n");
-        sb.append(String.format(" Dimension:                     (%3d x%3d x%3d)\n", l, m, n));
-        sb.append(String.format(" A-axis:                               %8.3f\n", a));
-        sb.append(String.format(" B-axis:                               %8.3f\n", b));
-        sb.append(String.format(" C-axis:                               %8.3f\n", c));
-        sb.append(String.format(" Alpha:                                %8.3f\n", alpha));
-        sb.append(String.format(" Beta:                                 %8.3f\n", beta));
-        sb.append(String.format(" Gamma:                                %8.3f\n", gamma));
-        sb.append(String.format(" Total Symmetry Operators:             %8d\n", spaceGroup.getNumberOfSymOps()));
+        sb.append(String.format("  Dimension:                    (%3d x%3d x%3d)\n", l, m, n));
+        sb.append(String.format("  A-axis:                              %8.3f\n", a));
+        sb.append(String.format("  B-axis:                              %8.3f\n", b));
+        sb.append(String.format("  C-axis:                              %8.3f\n", c));
+        sb.append(String.format("  Alpha:                               %8.3f\n", alpha));
+        sb.append(String.format("  Beta:                                %8.3f\n", beta));
+        sb.append(String.format("  Gamma:                               %8.3f\n", gamma));
+        sb.append(String.format("  Total Symmetry Operators:            %8d", spaceGroup.getNumberOfSymOps()));
         return sb.toString();
     }
 

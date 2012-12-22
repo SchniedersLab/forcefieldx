@@ -9,14 +9,10 @@
     <includeBaseDirectory>false</includeBaseDirectory>
     <dependencySets>
         <dependencySet>
-            <unpackOptions>
-                <excludes>
-                    <exclude>META-INF/*</exclude>
-                </excludes>
-            </unpackOptions>
             <outputFileNameMapping>${artifact.groupId}/${artifact.artifactId}.jar</outputFileNameMapping>
             <unpack>false</unpack>
             <scope>runtime</scope>
+            <useTransitiveDependencies>true</useTransitiveDependencies>
         </dependencySet>
     </dependencySets>
     <fileSets>
@@ -27,20 +23,6 @@
                 <include>FFXClassLoader.class</include>
             </includes>
             <outputDirectory>ffx</outputDirectory>
-        </fileSet>
-        <fileSet>
-            <directory>${basedir}/../../bin/universal</directory>
-            <includes>
-                <include>*</include>
-            </includes>
-            <outputDirectory>universal</outputDirectory>
-        </fileSet>
-        <fileSet>
-            <directory>${basedir}/../../bin/32-bit</directory>
-            <includes>
-                <include>*</include>
-            </includes>
-            <outputDirectory>32-bit</outputDirectory>
         </fileSet>
         <fileSet>
             <directory>${basedir}/../../bin/64-bit</directory>

@@ -92,13 +92,12 @@ public class Main extends JFrame {
         }
         args = new String[newArgs.size()];
         newArgs.toArray(args);
-
         return args;
     }
+
     private static final Logger logger = Logger.getLogger(Main.class.getName());
     private static Level level;
     private static LogHandler logHandler;
-
     /**
      * Replace the default console handler with our custom FFX handler.
      */
@@ -130,7 +129,7 @@ public class Main extends JFrame {
     }
 
     /**
-     * Print out credits.
+     * Print out the promo.
      */
     private static void header(String args[]) {
         StringBuilder sb = new StringBuilder();
@@ -147,7 +146,7 @@ public class Main extends JFrame {
     /**
      * Print out help for the command line version of Force Field X.
      */
-    private static void commandLineInteraceHelp() {
+    private static void commandLineInterfaceHelp() {
         logger.info(" usage: ffxc [-D<property=value>] <command> [-options] <PDB|XYZ>");
         logger.info("\n where commands include:\n");
         ClassLoader classLoader = ClassLoader.getSystemClassLoader();
@@ -193,7 +192,6 @@ public class Main extends JFrame {
      * Start up the Parallel Java communication layer.
      */
     private static void startParallelJava(String args[]) {
-
         try {
             Comm.init(args);
             Comm world = Comm.world();
@@ -203,7 +201,6 @@ public class Main extends JFrame {
             String message = String.format(" Exception starting up the Parallel Java communication layer.");
             logger.log(Level.WARNING, message, e.toString());
         }
-
     }
 
     /**
@@ -277,7 +274,7 @@ public class Main extends JFrame {
          * Print out help for the command line interface.
          */
         if (GraphicsEnvironment.isHeadless() && args.length < 2) {
-            commandLineInteraceHelp();
+            commandLineInterfaceHelp();
         }
 
         /**
@@ -365,6 +362,7 @@ public class Main extends JFrame {
         if (SystemUtils.IS_OS_MAC_OSX) {
             OSXAdapter.macOSXRegistration(mainPanel);
         }
+
         // Finally, open the supplied file if necessary.
         if (commandLineFile != null && !commandLineFile.exists()) {
             /**
@@ -388,6 +386,7 @@ public class Main extends JFrame {
                 }
             }
         }
+
         if (commandLineFile != null) {
             if (commandLineFile.exists()) {
                 mainPanel.getModelingShell().setArgList(argList);
@@ -396,7 +395,8 @@ public class Main extends JFrame {
                 logger.warning(format("%s was not found.", commandLineFile.toString()));
             }
         }
-        if (System.getProperty("ffx.timer") != null) {
+
+        if (logger.isLoggable(Level.FINE)) {
             StringBuilder sb = new StringBuilder();
             sb.append(format("\n Start-up Time (msec): %s.", stopWatch.getTime()));
             Runtime runtime = Runtime.getRuntime();
@@ -407,7 +407,7 @@ public class Main extends JFrame {
             sb.append(format("\n In-Use Memory   (Kb): %d", occupiedMemory / KB));
             sb.append(format("\n Free Memory     (Kb): %d", runtime.freeMemory() / KB));
             sb.append(format("\n Total Memory    (Kb): %d", runtime.totalMemory() / KB));
-            logger.info(sb.toString());
+            logger.fine(sb.toString());
         }
     }
 

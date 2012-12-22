@@ -25,6 +25,7 @@ package ffx;
 import java.io.File;
 import java.net.URL;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static java.lang.String.format;
@@ -48,19 +49,22 @@ public class HeadlessMain {
     private static final Logger logger = Logger.getLogger(HeadlessMain.class.getName());
 
     /**
-     * Main does some window initializations.
+     * Complete initializations.
      *
      * @param commandLineFile a {@link java.io.File} object.
      * @param argList a {@link java.util.List} object.
      * @param logHandler a {@link ffx.ui.LogHandler} object.
      */
     public HeadlessMain(File commandLineFile, List<String> argList, LogHandler logHandler) {
+        // Start a timer.
         stopWatch.start();
-        // Create the MainPanel and MainMenu, then add them to the JFrame
+
+        // Construct the MainPanel, set it's LogHandler, and initialize then it.
         mainPanel = new MainPanel();
         logHandler.setMainPanel(mainPanel);
         mainPanel.initialize();
-        // Finally, open the supplied file if necessary.
+
+        // Open the supplied script file.
         if (commandLineFile != null) {
             if (!commandLineFile.exists()) {
                 /**
@@ -91,7 +95,11 @@ public class HeadlessMain {
                 logger.warning(format("%s was not found.", commandLineFile.toString()));
             }
         }
-        if (System.getProperty("ffx.timer") != null) {
+
+        /**
+         * Print start-up information.
+         */
+        if (logger.isLoggable(Level.FINE)) {
             StringBuilder sb = new StringBuilder();
             sb.append(format("\n Start-up Time (msec): %s.", stopWatch.getTime()));
             Runtime runtime = Runtime.getRuntime();
@@ -102,7 +110,7 @@ public class HeadlessMain {
             sb.append(format("\n In-Use Memory   (Kb): %d", occupiedMemory / KB));
             sb.append(format("\n Free Memory     (Kb): %d", runtime.freeMemory() / KB));
             sb.append(format("\n Total Memory    (Kb): %d", runtime.totalMemory() / KB));
-            logger.info(sb.toString());
+            logger.fine(sb.toString());
         }
     }
 
@@ -118,9 +126,10 @@ public class HeadlessMain {
         return toStringBuilder.toString();
     }
     /**
-     * This is the main application wrapper.
+     * This is the main application container for both the GUI and CLI.
      */
     public MainPanel mainPanel;
+
     /**
      * Constant
      * <code>stopWatch</code>

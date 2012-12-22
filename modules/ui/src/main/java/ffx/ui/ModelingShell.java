@@ -208,7 +208,7 @@ public class ModelingShell extends Console implements AlgorithmListener {
      *
      * @param file a {@link java.io.File} object.
      */
-    public void headlessRun(File file) {
+    public void runFFXScript(File file) {
         try {
             before();
             getShell().evaluate(file);

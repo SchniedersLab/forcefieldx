@@ -235,7 +235,7 @@ public class ReciprocalSpace {
         }
         if (available) {
             recipSchedule = IntegerSchedule.parse(recipStrategy);
-            logger.info(" Convolution schedule " + recipStrategy);
+            logger.info("  Convolution schedule " + recipStrategy);
         } else {
             recipSchedule = IntegerSchedule.fixed();
         }
@@ -253,9 +253,9 @@ public class ReciprocalSpace {
          */
         if (logger.isLoggable(Level.INFO)) {
             StringBuilder sb = new StringBuilder();
-            sb.append(format(" PME B-Spline Order:                   %8d\n", bSplineOrder));
-            sb.append(format(" PME Grid Density:                     %8.3f\n", density));
-            sb.append(format(" PME Grid Dimensions:             (%3d,%3d,%3d)", fftX, fftY, fftZ));
+            sb.append(format("   PME B-Spline Order:                 %8d\n", bSplineOrder));
+            sb.append(format("   PME Grid Density:                   %8.3f\n", density));
+            sb.append(format("   PME Grid Dimensions:           (%3d,%3d,%3d)", fftX, fftY, fftZ));
             logger.info(sb.toString());
         }
 

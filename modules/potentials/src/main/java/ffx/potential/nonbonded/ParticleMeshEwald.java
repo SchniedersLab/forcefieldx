@@ -558,11 +558,11 @@ public class ParticleMeshEwald implements LambdaInterface {
                 polarizationLambdaEnd = 1.0;
             }
 
-            logger.info("\n Electrostatic Lambda Parameters");
-            logger.info(String.format(" Permanent multipole softcore alpha:  %5.3f", permanentLambdaAlpha));
-            logger.info(String.format(" Permanent multipole lambda exponent: %5.3f", permanentLambdaExponent));
-            logger.info(String.format(" Polarization lambda exponent:        %5.3f", polarizationLambdaExponent));
-            logger.info(String.format(" Polarization lambda range:  %5.3f .. %5.3f",
+            logger.info("\n  Electrostatic Lambda Parameters");
+            logger.info(String.format("  Permanent multipole softcore alpha:  %4.2f", permanentLambdaAlpha));
+            logger.info(String.format("  Permanent multipole lambda exponent: %4.2f", permanentLambdaExponent));
+            logger.info(String.format("  Polarization lambda exponent:        %4.2f", polarizationLambdaExponent));
+            logger.info(String.format("  Polarization lambda range: %4.2f .. %4.2f",
                     polarizationLambdaStart, polarizationLambdaEnd));
         }
 
@@ -626,7 +626,7 @@ public class ParticleMeshEwald implements LambdaInterface {
         if (lambdaTerm) {
             ligandStart = forceField.getInteger(ForceFieldInteger.LIGAND_START, 0) - 1;
             ligandStop = forceField.getInteger(ForceFieldInteger.LIGAND_STOP, nAtoms - 1) - 1;
-            logger.info(String.format(" The ligand starts at atom %d and ends at %d.", ligandStart + 1, ligandStop + 1));
+            logger.info(String.format("  The ligand starts at atom %d and ends at %d.", ligandStart + 1, ligandStop + 1));
             double maxr = 10.0;
             for (int i = ligandStart; i <= ligandStop; i++) {
                 Atom ai = atoms[i];
@@ -680,17 +680,17 @@ public class ParticleMeshEwald implements LambdaInterface {
         aewald = forceField.getDouble(ForceFieldDouble.EWALD_ALPHA, ewaldCoefficient(off, ewald_precision));
         setEwaldParameters(off, aewald);
         if (logger.isLoggable(Level.INFO)) {
-            StringBuilder sb = new StringBuilder("\n Electrostatics\n");
-            sb.append(format(" Polarization:                         %8s\n", polarization.toString()));
+            StringBuilder sb = new StringBuilder("  Electrostatics\n");
+            sb.append(format("   Polarization:                       %8s\n", polarization.toString()));
             if (polarization == Polarization.MUTUAL) {
-                sb.append(format(" SCF convergence criteria:            %8.3e\n", poleps));
-                sb.append(format(" SOR parameter                         %8.3f\n", polsor));
+                sb.append(format("   SCF convergence criteria:          %8.3e\n", poleps));
+                sb.append(format("   SOR parameter                       %8.3f\n", polsor));
             }
             if (aewald > 0.0) {
-                sb.append(format(" Real space cut-off:                   %8.3f (A)\n", off));
-                sb.append(format(" Ewald coefficient:                    %8.3f", aewald));
+                sb.append(format("   Real space cut-off:                 %8.3f (A)\n", off));
+                sb.append(format("   Ewald coefficient:                  %8.3f", aewald));
             } else {
-                sb.append(format(" Electrostatics cut-off:               %8.3f (A)\n", off));
+                sb.append(format("   Electrostatics cut-off:             %8.3f (A)\n", off));
             }
             logger.info(sb.toString());
         }
@@ -828,17 +828,17 @@ public class ParticleMeshEwald implements LambdaInterface {
         } else {
             energy = lambdaAllAtomSCF();
             if (logger.isLoggable(Level.FINE)) {
-                logger.fine(String.format(" Solvated energy: %20.8f", energy));
+                logger.fine(String.format("  Solvated energy: %20.8f", energy));
             }
             double temp = energy;
             energy = lambdaNoLigandSCF();
             if (logger.isLoggable(Level.FINE)) {
-                logger.fine(String.format(" Step 2 energy:   %20.8f", energy - temp));
+                logger.fine(String.format("  Step 2 energy:   %20.8f", energy - temp));
             }
             temp = energy;
             energy = lambdaVacuumLigandSCF();
             if (logger.isLoggable(Level.FINE)) {
-                logger.fine(String.format(" Vacuum energy:   %20.8f", energy - temp));
+                logger.fine(String.format("  Vacuum energy:   %20.8f", energy - temp));
             }
         }
 
@@ -1323,7 +1323,7 @@ public class ParticleMeshEwald implements LambdaInterface {
             long directTime = System.nanoTime() - startTime;
             if (print) {
                 sb = new StringBuilder(
-                        "\n SELF-CONSISTENT FIELD\n"
+                        "\n Self-Consistent Field\n"
                         + " Iter     RMS Change (Debyes)   Time\n");
             }
             boolean done = false;

@@ -329,7 +329,6 @@ public class NeighborList extends ParallelRegion {
             nSymm = newNSymm;
         }
 
-
         /**
          * Find the shortest crystal axis length.
          */
@@ -370,9 +369,9 @@ public class NeighborList extends ParallelRegion {
         nCells = nAB * nC;
 
         if (print) {
-            StringBuilder sb = new StringBuilder("\n Neighbor List Builder\n");
-            sb.append(format(" Sub-volumes:                          %8d\n", nCells));
-            sb.append(format(" Average Atoms Per Sub-Volume:         %8d", nAtoms * nSymm / nCells));
+            StringBuilder sb = new StringBuilder("  Neighbor List Builder\n");
+            sb.append(format("   Sub-volumes:                        %8d\n", nCells));
+            sb.append(format("   Average Atoms Per Sub-Volume:       %8d", nAtoms * nSymm / nCells));
             logger.info(sb.toString());
         }
 
@@ -384,7 +383,7 @@ public class NeighborList extends ParallelRegion {
             cellIndex = new int[nSymm][nAtoms];
             cellOffset = new int[nSymm][nAtoms];
         } else if (cellList.length < nSymm) {
-            logger.info(String.format(" Neighbor-List: Increasing memory for nSymm (%d -> %d)", cellList.length, nSymm));
+            logger.info(String.format("  Neighbor-List: Increasing memory for nSymm (%d -> %d)", cellList.length, nSymm));
             cellList = new int[nSymm][nAtoms];
             cellIndex = new int[nSymm][nAtoms];
             cellOffset = new int[nSymm][nAtoms];
@@ -398,7 +397,7 @@ public class NeighborList extends ParallelRegion {
             cellStart = new int[nSymm][maxCells];
             cellCount = new int[nSymm][maxCells];
         } else if (cellStart[0].length < nCells) {
-            logger.info(String.format(" Neighbor-List: Increasing memory for nCell (%d -> %d)", cellStart[0].length, nCells));
+            logger.info(String.format("  Neighbor-List: Increasing memory for nCell (%d -> %d)", cellStart[0].length, nCells));
             for (int i = 0; i < cellStart.length; i++) {
                 cellStart[i] = new int[nCells];
                 cellCount[i] = new int[nCells];
@@ -482,14 +481,14 @@ public class NeighborList extends ParallelRegion {
     }
 
     private void print() {
-        StringBuilder sb = new StringBuilder(format(" Buffer:                                  %5.2f (A)\n", buffer));
-        sb.append(format(" Cut-off:                                 %5.2f (A)\n", cutoff));
-        sb.append(format(" Total:                                   %5.2f (A)\n", total));
-        sb.append(format(" Neighbors in the asymmetric unit: %12d\n", asymmetricUnitCount));
+        StringBuilder sb = new StringBuilder(format("   Buffer:                                %5.2f (A)\n", buffer));
+        sb.append(format("   Cut-off:                               %5.2f (A)\n", cutoff));
+        sb.append(format("   Total:                                 %5.2f (A)\n", total));
+        sb.append(format("   Neighbors in the asymmetric unit:%11d\n", asymmetricUnitCount));
         if (nSymm > 1) {
             int num = (asymmetricUnitCount + symmetryMateCount) * nSymm;
-            sb.append(format(" Neighbors in symmetry mates:      %12d\n", symmetryMateCount));
-            sb.append(format(" Neighbors in the unit cell:       %12d\n", num));
+            sb.append(format("   Neighbors in symmetry mates:    %12d\n", symmetryMateCount));
+            sb.append(format("   Neighbors in the unit cell:     %12d\n", num));
         }
         logger.info(sb.toString());
     }
@@ -610,7 +609,7 @@ public class NeighborList extends ParallelRegion {
      *
      * This is method should not be called; it is invoked by Parallel Java.
      *
-     * @since 0.l
+     * @since 1.0
      */
     @Override
     public void start() {
@@ -640,12 +639,12 @@ public class NeighborList extends ParallelRegion {
      *
      * This is method should not be called; it is invoked by Parallel Java.
      *
-     * since 0.1
+     * @since 1.0
      */
     @Override
     public void finish() {
         if (logger.isLoggable(Level.FINE)) {
-            logger.fine(String.format(" Parallel Neighbor List:             %10.3f sec",
+            logger.fine(String.format("   Parallel Neighbor List:           %10.3f sec",
                     (System.nanoTime() - time) * 1e-9));
         }
     }
@@ -681,6 +680,7 @@ public class NeighborList extends ParallelRegion {
      * cell.
      *
      * @author Michael J. Schnieders
+     *
      * @since 1.0
      */
     private class NeighborListLoop extends IntegerForLoop {
@@ -820,21 +820,9 @@ public class NeighborList extends ParallelRegion {
 
         /**
          * If the index is >= to nX, it is mapped back into the periodic unit
-         * cell by subtracting nX. If the index is < 0, it is mapped into the
-         * periodic unit cell by adding nX. The Neighbor list algorithm never
-         * requires multiple additions or subtractions of nX.
-         *
-         *
-         *
-         *
-         *
-         *
-         *
-         *
-         *
-         *
-         *
-
+         * cell by subtracting nX. If the index is less than 0, it is mapped
+         * into the periodic unit cell by adding nX. The Neighbor list algorithm
+         * never requires multiple additions or subtractions of nX.
          *
          * @param i The index along the a-axis.
          * @param j The index along the b-axis.
@@ -866,26 +854,38 @@ public class NeighborList extends ParallelRegion {
             final double xi = xyz[i3 + XX];
             final double yi = xyz[i3 + YY];
             final double zi = xyz[i3 + ZZ];
-            final int pairList[] = cellList[iSymm];
+            final int pairCellAtoms[] = cellList[iSymm];
             int start = cellStart[iSymm][pairCellIndex];
             final int pairStop = start + cellCount[iSymm][pairCellIndex];
             final double pair[] = coordinates[iSymm];
-            // Check if this pair search is over atoms in the asymmetric unit.
+            /**
+             * Check if this pair search is over atoms in the asymmetric unit.
+             */
             if (iSymm == 0) {
-                // Interactions between atoms in the asymmetrc unit may be
-                // masked.
+                /**
+                 * Interactions between atoms in the asymmetric unit may be
+                 * masked.
+                 */
                 if (maskingRules != null) {
                     maskingRules.applyMask(mask, atomIndex);
                 }
-                // If the self-volume is being searched for pairs, we must avoid
-                // double counting.
+                /**
+                 * If the self-volume is being searched for pairs, we must
+                 * avoid double counting.
+                 */
                 if (atomCellIndex == pairCellIndex) {
+                    /**
+                     * The cellOffset is the index of the current atom in
+                     * the cell that is being searched for neighbors.
+                     */
                     start += cellOffset[iSymm][atomIndex] + 1;
                 }
             }
-            // Loop over atoms in the "pair" cell.
+            /**
+             * Loop over atoms in the "pair" cell.
+             */
             for (int j = start; j < pairStop; j++) {
-                final int aj = pairList[j];
+                final int aj = pairCellAtoms[j];
                 if (use != null && !use[aj]) {
                     continue;
                 }
@@ -899,6 +899,10 @@ public class NeighborList extends ParallelRegion {
                     final double zr = zi - zj;
                     final double d2 = crystal.image(xr, yr, zr);
                     if (d2 <= total2) {
+                        /**
+                         * Add the pair to the list, reallocating the array
+                         * size if necessary.
+                         */
                         try {
                             pairs[n++] = aj;
                         } catch (Exception e) {
@@ -909,6 +913,9 @@ public class NeighborList extends ParallelRegion {
                     }
                 }
             }
+            /**
+             * Interactions between atoms in the asymmetric unit may be masked.
+             */
             if (iSymm == 0 && maskingRules != null) {
                 maskingRules.removeMask(mask, atomIndex);
             }

@@ -61,7 +61,7 @@
             <name>Michael J. Schnieders</name>
             <email>michael-schnieders@uiowa.edu</email>
             <organization>Assistant Professor, The U. of Iowa</organization>
-            <organizationUrl>http://ffx.eng.uiowa.edu</organizationUrl>
+            <organizationUrl>http://www.uiowa.edu</organizationUrl>
             <roles>
                 <role>Director of Force Field X</role>
             </roles>
@@ -72,7 +72,7 @@
             <name>Timothy D. Fenn</name>
             <email>tim.fenn@gmail.com</email>
             <organization>Scientist at Merck</organization>
-            <organizationUrl>http://ffx.eng.uiowa.edu</organizationUrl>
+            <organizationUrl>http://www.merck.com</organizationUrl>
             <roles>
                 <role>Chief Crystallograper</role>
                 <role>Crystal Module</role>
@@ -85,12 +85,9 @@
             <name>Pengyu Ren</name>
             <email>pren@mail.utexas.edu</email>
             <organization>Associate Professor, The U. of Texas at Austin</organization>
-            <organizationUrl>http://biomol.bme.utexas.edu/lab/</organizationUrl>
+            <organizationUrl>http://www.utexas.edu</organizationUrl>
             <roles>
                 <role>AMOEBA Force Field</role>
-                <role>Automatic Parameterization</role>
-                <role>Binding Affinity Module</role>
-                <role>Coarse Grain Module</role>
             </roles>
             <timezone>-5</timezone>
         </developer>
@@ -102,7 +99,6 @@
             <organizationUrl>http://combio.dicp.ac.cn/</organizationUrl>
             <roles>
                 <role>Coarse grained polarizable model</role>
-                <role>Full atom polarizable model</role>
             </roles>
             <timezone>+8</timezone>
         </developer>
@@ -136,7 +132,6 @@
             <organization>Sao Paulo, Brazil</organization>
             <roles>
                 <role>Algorithms Module</role>
-                <role>Replica Exchange</role>
             </roles>
             <timezone>-3</timezone>
         </developer>
@@ -262,6 +257,7 @@
                                     <id>aggregate</id>
                                     <reports>
                                         <report>aggregate</report>
+                                        <!--report>test-aggregate</report-->
                                     </reports>
                                 </reportSet>
                             </reportSets>
@@ -384,23 +380,6 @@
                     </execution>
                 </executions>
             </plugin>
-            <!-- plugin>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.9</version>
-                <inherited>false</inherited>
-                <executions>
-                    <execution>
-                        <id>attach-javadoc</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>aggregate-jar</goal>
-                        </goals>
-                        <configuration>
-                            <quiet>true</quiet>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin -->
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>2.4</version>
@@ -525,7 +504,7 @@
         </dependency>
     </dependencies>
     <distributionManagement>
-        <downloadUrl>http://ffx.eng.uiowa.edu</downloadUrl>
+        <downloadUrl>http://ffx.eng.uiowa.edu/download.html</downloadUrl>
         <site>
             <id>Kenai</id>
             <name>Force Field X Website Deploy Location</name>
@@ -552,8 +531,8 @@
         <snapshot.repo>file:lib</snapshot.repo>
         <release.repo>file:release</release.repo>
         <!-- Control the source version and target JRE version -->
-        <compileVersion>7</compileVersion>
-        <targetVersion>7</targetVersion>
+        <compileVersion>6</compileVersion>
+        <targetVersion>6</targetVersion>
         <!-- Setting the source encoding is required for builds
         that are platform independent. -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

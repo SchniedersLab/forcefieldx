@@ -58,10 +58,8 @@ public class FFXClassLoader extends ClassLoader {
     private final String[] applicationPackages = {"ffx",
         "javax.media.j3d",
         "javax.vecmath",
-        "com.sun.j3d",
-        "com.sun.opengl",
-        "com.sun.gluegen.runtime",
         "javax.media.opengl",
+        "com.sun.j3d",
         "groovy",
         "org.codehaus.groovy",
         "org.apache.commons.cli",
@@ -71,10 +69,14 @@ public class FFXClassLoader extends ClassLoader {
         "org.apache.commons.lang3",
         "org.apache.commons.math",
         "org.apache.commons.math3",
+        "org.jogamp",
         "edu.rit.pj",
         "jcuda",
         "com.amd.aparapi"};
     static final List<String> FFX_FILES;
+    private static String gluegen = null;
+    private static String jogl = null;
+    private static String nativeExtension = null;
 
     static {
         FFX_FILES = new ArrayList<String>(Arrays.asList(new String[]{
@@ -98,17 +100,19 @@ public class FFXClassLoader extends ClassLoader {
                     "edu.rit.pj/pj.jar",
                     // Aparapi
                     "com.amd.aparapi/aparapi.jar",
-                    // Java3D 1.5.2 and (so far) 1.6.0 depend on JOGL v. 1.1.1
+                    // Java3D 1.5.2 depends on JOGL v. 1.1.1
+                    // Java3D 1.6.0 depends on JOGL v. 2.0.0
                     "java3d/j3dcore.jar",
                     "java3d/j3dutils.jar",
                     "java3d/j3dvrml.jar",
                     "java3d/vecmath.jar",
                     // GLUEGEN and JOGL v. 1.1.1
-                    "net.java.dev.jogl/jogl.jar",
-                    "net.java.dev.jogl/gluegen-rt.jar",
+                    // "net.java.dev.jogl/jogl.jar",
+                    // "net.java.dev.jogl/gluegen-rt.jar",
                     // JOGAMP GLUEGEN, JOGL and JOCL v. 2.0
-                    // "org.jogamp/gluegen-rt.jar",
-                    // "org.jogamp/jogl.jar",
+                    "org.jogamp/gluegen-rt.jar",
+                    "org.jogamp/jogl-all.jar",
+                    "org.jogamp/joal.jar",
                     // "org.jogamp/nativewindow.jar",
                     // Apache Commons
                     "commons-beanutils/commons-beanutils.jar",
@@ -132,60 +136,40 @@ public class FFXClassLoader extends ClassLoader {
         String osArch = System.getProperty("sun.arch.data.model");
         final boolean x8664 = "64".equals(osArch);
         if ("MAC OS X".equals(osName)) {
+            // Gluegen Runtime Universal Binaries
+            FFX_FILES.add("org.jogamp/gluegen-rt-natives-macosx-universal.jar");
             // JOGL Universal Binaries
-            FFX_FILES.add("universal/libgluegen-rt.jnilib");
-            FFX_FILES.add("universal/libjogl.jnilib");
-            FFX_FILES.add("universal/libjogl_awt.jnilib");
-            FFX_FILES.add("universal/libjogl_cg.jnilib");
+            FFX_FILES.add("org.jogamp/jogl-all-natives-macosx-universal.jar");
+            nativeExtension = "-natives-macosx-universal.jar";
             if (x8664) {
                 // JCUDA
                 FFX_FILES.add("64-bit/libJCudaDriver-apple-x86_64.jnilib");
                 FFX_FILES.add("64-bit/libJCudaRuntime-apple-x86_64.jnilib");
                 FFX_FILES.add("64-bit/libJCufft-apple-x86_64.jnilib");
-                // Aparapi
-                FFX_FILES.add("64-bit/libaparapi_x86_64.dylib");
             }
         } else if ("LINUX".equals(osName)) {
             if (x8664) {
+                // Gluegen Runtime
+                FFX_FILES.add("org.jogamp/gluegen-rt-natives-linux-amd64.jar");
                 // JOGL
-                FFX_FILES.add("64-bit/libgluegen-rt.so");
-                FFX_FILES.add("64-bit/libjogl.so");
-                FFX_FILES.add("64-bit/libjogl_awt.so");
-                FFX_FILES.add("64-bit/libjogl_cg.so");
+                FFX_FILES.add("org.jogamp/jogl-all-natives-linux-amd64.jar");
+                nativeExtension = "-natives-linux-amd64.jar";
                 // JCUDA
                 FFX_FILES.add("64-bit/libJCudaDriver-linux-x86_64.so");
                 FFX_FILES.add("64-bit/libJCudaRuntime-linux-x86_64.so");
                 FFX_FILES.add("64-bit/libJCufft-linux-x86_64.so");
-                // Aparapi
-                FFX_FILES.add("64-bit/libaparapi_x86_64.so");
-            } else {
-                FFX_FILES.add("32-bit/libgluegen-rt.so");
-                FFX_FILES.add("32-bit/libjogl.so");
-                FFX_FILES.add("32-bit/libjogl_awt.so");
-                FFX_FILES.add("32-bit/libjogl_cg.so");
-                // Aparapi
-                FFX_FILES.add("32-bit/libaparapi_x86.so");
             }
         } else if (osName.startsWith("WINDOWS")) {
             if (x8664) {
+                // Gluegen Runtime
+                FFX_FILES.add("org.jogamp/gluegen-rt-natives-windows-amd64.jar");
                 // JOGL
-                FFX_FILES.add("64-bit/gluegen-rt.dll");
-                FFX_FILES.add("64-bit/jogl.dll");
-                FFX_FILES.add("64-bit/jogl_cg.dll");
-                FFX_FILES.add("64-bit/jogl_awt.dll");
+                FFX_FILES.add("org.jogamp/jogl-all-natives-windows-amd64.jar");
+                nativeExtension = "-natives-windows-amd64.jar";
                 // JCUDA
                 FFX_FILES.add("64-bit/JCudaDriver-linux-x86_64.dll");
                 FFX_FILES.add("64-bit/JCudaRuntime-linux-x86_64.dll");
                 FFX_FILES.add("64-bit/JCufft-linux-x86_64.dll");
-                // Aparapi
-                FFX_FILES.add("64-bit/aparapi_x86_64.dll");
-            } else {
-                FFX_FILES.add("32-bit/gluegen-rt.dll");
-                FFX_FILES.add("32-bit/jogl.dll");
-                FFX_FILES.add("32-bit/jogl_awt.dll");
-                FFX_FILES.add("32-bit/jogl_cg.dll");
-                // Aparapi
-                FFX_FILES.add("32-bit/aparapi_x86.dll");
             }
         }
     }
@@ -217,13 +201,19 @@ public class FFXClassLoader extends ClassLoader {
     public static String copyInputStreamToTmpFile(final InputStream input,
             String name, final String suffix) throws IOException {
         File tmpFile = null;
-        name = "ffx." + name + ".";
-        try {
-            tmpFile = File.createTempFile(name, suffix);
-        } catch (Exception e) {
-            System.out.println(" Could not extract a Force Field X library.");
-            System.err.println(e.toString());
-            System.exit(-1);
+        if (name.contains("gluegen-rt") && name.contains("natives")) {
+            tmpFile = new File(gluegen + nativeExtension);
+        } else if (name.contains("jogl-all") && name.contains("natives")) {
+            tmpFile = new File(jogl + nativeExtension);
+        } else {
+            try {
+                name = "ffx." + name + ".";
+                tmpFile = File.createTempFile(name, suffix);
+            } catch (Exception e) {
+                System.out.println(" Could not extract a Force Field X library.");
+                System.err.println(e.toString());
+                System.exit(-1);
+            }
         }
         tmpFile.deleteOnExit();
         OutputStream output = null;
@@ -242,6 +232,7 @@ public class FFXClassLoader extends ClassLoader {
                 output.close();
             }
         }
+
         return tmpFile.toString();
     }
 
@@ -253,6 +244,12 @@ public class FFXClassLoader extends ClassLoader {
      */
     @Override
     protected Class findClass(String name) throws ClassNotFoundException {
+
+        /*
+         if (name.startsWith("com.jogamp")) {
+         System.out.println(" Class requested:" + name);
+         } */
+
         if (!extensionsLoaded) {
             loadExtensions();
         }
@@ -274,6 +271,7 @@ public class FFXClassLoader extends ClassLoader {
                 }
             }
         }
+
         // If it's not an extension class, search if its an application
         // class that can be read from resources
         if (classInputStream == null) {
@@ -316,6 +314,12 @@ public class FFXClassLoader extends ClassLoader {
         if (!extensionsLoaded) {
             loadExtensions();
         }
+
+        /*
+         if (libname.startsWith("gluegen")) {
+         System.out.println(" Library requested:" + libname);
+         }
+         */
 
         return (String) this.extensionDlls.get(libname);
     }
@@ -457,7 +461,7 @@ public class FFXClassLoader extends ClassLoader {
         }
 
         // Find extension Jars and DLLs
-        ArrayList extensionJarList = new ArrayList();
+        ArrayList<JarFile> extensionJarList = new ArrayList<JarFile>();
         for (int i = 0; i < extensionJarsAndDlls.length; i++) {
             String extensionJarOrDll = extensionJarsAndDlls[i];
             try {
@@ -473,6 +477,11 @@ public class FFXClassLoader extends ClassLoader {
                                 name, ".jar");
                         // Add extracted file to the extension jars list
                         extensionJarList.add(new JarFile(extensionJar, false));
+                        if (name.equals("gluegen-rt")) {
+                            gluegen = extensionJar.substring(0, extensionJar.length() - 4);
+                        } else if (name.equals("jogl-all")) {
+                            jogl = extensionJar.substring(0, extensionJar.length() - 4);
+                        }
                     } else if (extensionJarOrDll.endsWith(dllSuffix)) {
                         int start = lastSlashIndex + 1 + dllPrefix.length();
                         int end = extensionJarOrDll.indexOf(dllSuffix);
@@ -500,7 +509,7 @@ public class FFXClassLoader extends ClassLoader {
 
         // Create extensionJars array
         if (extensionJarList.size() > 0) {
-            this.extensionJars = (JarFile[]) extensionJarList.toArray(new JarFile[extensionJarList.size()]);
+            extensionJars = (JarFile[]) extensionJarList.toArray(new JarFile[extensionJarList.size()]);
         }
     }
 }

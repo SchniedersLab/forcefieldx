@@ -253,7 +253,8 @@ public class SpatialDensityRegion extends ParallelRegion {
             nWork = 1;
         }
 
-        logger.fine(String.format(" nA %d nB %d nC %d nWork %d", nA, nB, nC, nWork));
+        logger.fine(String.format("   Spatial cells:                 (%3d,%3d,%3d)", nA, nB, nC));
+        logger.fine(String.format("   Spatial work:                           %4d", nWork));
 
         workA = new int[nWork];
         workB = new int[nWork];
