@@ -26,6 +26,7 @@ import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.util.EventObject;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -65,17 +66,38 @@ import ffx.potential.bonded.RendererCache.ViewModel;
  */
 public class ModelingShell extends Console implements AlgorithmListener {
 
+    /**
+     * The logger for this class.
+     */
     private static final Logger logger = Logger.getLogger(ModelingShell.class.getName());
-    private static final long serialVersionUID = 1L;
+    /**
+     * A reference to the main application container.
+     */
     private MainPanel mainPanel;
+    /**
+     * The flag interrupted is true if a script is running and the user requests
+     * it be canceled.
+     */
     private boolean interrupted;
+    /**
+     * The flag headless is true for the CLI and false for the GUI.
+     */
     private boolean headless;
+    /**
+     * An algorithm that implements the Terminatable interface can be cleanly
+     * terminated before completion. For example, after completion of an
+     * optimization step or MD step.
+     */
     private Terminatable terminatableAlgorithm = null;
-    private Rectangle outputSize = new Rectangle(0, 0, 0, 0);
-    private Rectangle scrollTo = new Rectangle(0, 0, 0, 0);
+    /**
+     * Flag to indicate if a script is running.
+     */
+    public boolean scriptRunning;
+    /**
+     * Timing.
+     */
     private long time;
     private long subTime;
-    public boolean scriptRunning;
     private static final double toSeconds = 1.0e-9;
 
     /**
@@ -83,14 +105,50 @@ public class ModelingShell extends Console implements AlgorithmListener {
      *
      * @param m a {@link ffx.ui.MainPanel} object.
      */
-    public ModelingShell(MainPanel m) {
-        mainPanel = m;
+    public ModelingShell(MainPanel mainPanel) {
+        this.mainPanel = mainPanel;
         headless = java.awt.GraphicsEnvironment.isHeadless();
 
+        /**
+         * Configure the Swing GUI for the shell.
+         */
         if (!headless) {
             run();
+            // Output JTextPane
+            JTextPane output = getOutputArea();
+            output.setBackground(Color.BLACK);
+            output.setForeground(Color.WHITE);
+            // Input JTextPane
+            JTextPane input = getInputArea();
+            input.setBackground(Color.WHITE);
+            input.setForeground(Color.BLACK);
+            // Output StyledDocument Styles
+            StyledDocument doc = output.getStyledDocument();
+            Style defStyle = StyleContext.getDefaultStyleContext().getStyle(StyleContext.DEFAULT_STYLE);
+            Style regular = doc.addStyle("regular", defStyle);
+            Style prompt = doc.addStyle("prompt", regular);
+            Style command = doc.addStyle("command", regular);
+            Style result = doc.addStyle("result", regular);
+            StyleConstants.setFontFamily(regular, "Monospaced");
+            setPromptStyle(prompt);
+            setCommandStyle(command);
+            setResultStyle(result);
+            StyleConstants.setForeground(prompt, Color.ORANGE);
+            StyleConstants.setForeground(command, Color.GREEN);
+            StyleConstants.setForeground(result, Color.GREEN);
+            StyleConstants.setBackground(result, Color.BLACK);
+            clearOutput();
         }
+        initContext();
+        loadPrefs();
+        initMenus();
+    }
 
+    /**
+     * Initialize access to Force Field X variables and methods from with the
+     * Shell.
+     */
+    private void initContext() {
         setVariable("dat", mainPanel.getHierarchy());
         setVariable("cmd", mainPanel);
         setVariable("vis", mainPanel.getGraphics3D());
@@ -149,49 +207,36 @@ public class ModelingShell extends Console implements AlgorithmListener {
         setVariable("potential", new MethodClosure(this, "potential"));
         setVariable("poledit", new MethodClosure(this, "poledit"));
         setVariable("superpose", new MethodClosure(this, "superpose"));
+    }
+
+    /**
+     * Update the shell menu items.
+     */
+    private void initMenus() {
+        JFrame frame = (JFrame) this.getFrame();
+        MenuBar menuBar = frame.getMenuBar();
+        /**
+         * File Menu.
+         */
+        Menu menu = menuBar.getMenu(0);
 
         /**
-         * Configure the Swing GUI for the shell.
+         * Remove "Capture Std. Out", "Capture Std. Error" & "Detached Output"
+         * from the View menu.
          */
-        if (!headless) {
-
-            JTextPane output = getOutputArea();
-            outputSize = output.getVisibleRect();
-
-            output.setBackground(Color.BLACK);
-            output.setForeground(Color.WHITE);
-            JTextPane input = getInputArea();
-            input.setBackground(Color.WHITE);
-            input.setForeground(Color.BLACK);
-
-            StyledDocument doc = output.getStyledDocument();
-            Style defStyle = StyleContext.getDefaultStyleContext().getStyle(StyleContext.DEFAULT_STYLE);
-            Style regular = doc.addStyle("regular", defStyle);
-            Style prompt = doc.addStyle("prompt", regular);
-            Style command = doc.addStyle("command", regular);
-            Style result = doc.addStyle("result", regular);
-            StyleConstants.setFontFamily(regular, "Monospaced");
-            setPromptStyle(prompt);
-            setCommandStyle(command);
-            setResultStyle(result);
-            StyleConstants.setForeground(prompt, Color.ORANGE);
-            StyleConstants.setForeground(command, Color.GREEN);
-            StyleConstants.setForeground(result, Color.GREEN);
-            StyleConstants.setBackground(result, Color.BLACK);
-
-            getStatusLabel().setText("Welcome to the Force Field X Shell.");
-
-            JFrame frame = (JFrame) this.getFrame();
-            frame.setTitle("Force Field X Shell");
-            URL iconURL = getClass().getClassLoader().getResource(
-                    "ffx/ui/icons/icon64.png");
-            ImageIcon icon = new ImageIcon(iconURL);
-            frame.setIconImage(icon.getImage());
-
-            clearOutput();
-        }
-
-        loadPrefs();
+        menu = menuBar.getMenu(2);
+        menu.remove(5);
+        menu.remove(5);
+        menu.remove(9);
+        /**
+         * Edit the Script menu.
+         */
+        menu = menuBar.getMenu(4);
+        menu.remove(4);
+        menu.remove(4);
+        menu.remove(4);
+        menu.remove(5);
+        menu.remove(7);
     }
 
     /**
@@ -204,7 +249,7 @@ public class ModelingShell extends Console implements AlgorithmListener {
     }
 
     /**
-     * <p>headlessRun</p>
+     * <p>runFFXScript</p>
      *
      * @param file a {@link java.io.File} object.
      */
@@ -252,11 +297,11 @@ public class ModelingShell extends Console implements AlgorithmListener {
      */
     public ForceFieldEnergy energy() {
         if (interrupted) {
-            logger.info("Algorithm interrupted - skipping energy.");
+            logger.info(" Algorithm interrupted - skipping energy.");
             return null;
         }
         if (terminatableAlgorithm != null) {
-            logger.info("Algorithm already running - skipping energy.");
+            logger.info(" Algorithm already running - skipping energy.");
             return null;
         }
 
@@ -446,7 +491,8 @@ public class ModelingShell extends Console implements AlgorithmListener {
      public void runSelectedScript(EventObject evt) {
      scriptStartup();
      super.runSelectedScript(evt);
-     } */
+     }
+     */
     /**
      * {@inheritDoc}
      *
@@ -480,53 +526,60 @@ public class ModelingShell extends Console implements AlgorithmListener {
         if (!java.awt.GraphicsEnvironment.isHeadless()) {
             JTextPane output = getOutputArea();
             output.setText("");
-            appendOutput(MainPanel.border + MainPanel.title
-                    + MainPanel.aboutString + "\n" + MainPanel.border, getCommandStyle());
+            appendOutput(MainPanel.border + "\n" + MainPanel.title
+                    + MainPanel.aboutString + "\n" + MainPanel.border + "\n", getCommandStyle());
         }
     }
 
-    /*
-     @Override
-     public void clearOutput(EventObject evt) {
-     clearOutput();
-     }
+    @Override
+    public void clearOutput(EventObject evt) {
+        clearOutput();
+    }
 
-     @Override
-     public void fileNewWindow() {
-     mainPanel.resetShell();
-     }
+    @Override
+    public void fileNewWindow() {
+        mainPanel.resetShell();
+    }
 
-     @Override
-     public void fileNewWindow(EventObject evt) {
-     fileNewWindow();
-     }
+    @Override
+    public void fileNewWindow(EventObject evt) {
+        fileNewWindow();
+    }
 
-     @Override
-     public void showAbout() {
-     mainPanel.about();
-     }
+    @Override
+    public void showAbout() {
+        mainPanel.about();
+    }
 
-     @Override
-     public void showAbout(EventObject evt) {
-     showAbout();
-     }
+    @Override
+    public void showAbout(EventObject evt) {
+        showAbout();
+    }
 
-     @Override
-     public void updateTitle() {
-     JFrame frame = (JFrame) getFrame();
-     frame.setTitle("Force Field X Shell");
-     } */
+    /**
+     * Clear output text from any previous script and then output a message
+     * about the new script.
+     */
     private void scriptStartup() {
         clearOutput();
+
+        /**
+         * Attempt to get the script's name.
+         */
         Object name = getScriptFile();
         if (name != null && name instanceof File) {
             name = ((File) name).getName();
         }
+        /**
+         * A short message about the script to be evaluated.
+         */
+        String message;
         if (name == null || name.toString().equalsIgnoreCase("null")) {
-            appendOutput(String.format("\n Evaluating...\n\n"), getPromptStyle());
+            message = String.format("\n Evaluating...\n\n");
         } else {
-            appendOutput(String.format("\n Evaluating " + name + "...\n\n"), getPromptStyle());
+            message = String.format("\n Evaluating " + name + "...\n\n");
         }
+        appendOutput(message, getPromptStyle());
     }
 
     /**
@@ -537,12 +590,6 @@ public class ModelingShell extends Console implements AlgorithmListener {
         terminatableAlgorithm = null;
         time = System.nanoTime();
         subTime = time;
-        if (!headless) {
-            outputSize = getOutputArea().getVisibleRect();
-            scrollTo.x = 0;
-            scrollTo.height = outputSize.height;
-            scrollTo.width = outputSize.width;
-        }
     }
 
     /**
@@ -562,15 +609,12 @@ public class ModelingShell extends Console implements AlgorithmListener {
      * @param style Style to use.
      */
     public void appendOutputNl(String string, Style style) {
-
         if (interrupted) {
             return;
         }
-
         if (headless) {
             logger.info(string);
         }
-
         if (string.equals("Result: ")) {
             string = " Script result: \n";
         } else if (string.equals("groovy> ")) {
@@ -595,9 +639,13 @@ public class ModelingShell extends Console implements AlgorithmListener {
      */
     public void scroll() {
         JTextPane output = getOutputArea();
-        Dimension dim = output.getSize();
-        scrollTo.y = dim.height - outputSize.y;
-        output.scrollRectToVisible(scrollTo);
+        JSplitPane splitPane = getSplitPane();
+        JScrollPane scrollPane = (JScrollPane) splitPane.getBottomComponent();
+        JViewport viewport = scrollPane.getViewport();
+        Rectangle visibleSize = viewport.getVisibleRect();
+        Dimension totalSize = output.getSize();
+        Point point = new Point(0, totalSize.height - visibleSize.height);
+        viewport.setViewPosition(point);
     }
 
     /**
@@ -610,10 +658,12 @@ public class ModelingShell extends Console implements AlgorithmListener {
         if (interrupted) {
             return;
         }
+
         if (headless) {
             logger.info(string);
             return;
         }
+
         super.appendOutput(string, style);
         if (EventQueue.isDispatchThread()) {
             scroll();
@@ -626,26 +676,28 @@ public class ModelingShell extends Console implements AlgorithmListener {
             });
         }
     }
+
     /**
-     * Confirm whether to interrupt the running thread.
+     * If at exit time, a script is running, the user is given an option to
+     * interrupt it first
      *
-     * @param evt
+     * @return
      */
-    /* @Override
-     public void confirmRunInterrupt(EventObject evt) {
-     int rc = JOptionPane.showConfirmDialog((Component) getFrame(), "Attempt to interrupt script?",
-     "Force Field X Shell", JOptionPane.YES_NO_OPTION);
-     if (rc == JOptionPane.YES_OPTION) {
-     interrupted = true;
-     if (terminatableAlgorithm != null) {
-     terminatableAlgorithm.terminate();
-     }
-     Thread thread = getRunThread();
-     if (thread != null) {
-     thread.interrupt();
-     }
-     }
-     } */
+    @Override
+    public Object askToInterruptScript() {
+        if (!scriptRunning) {
+            return true;
+        }
+        int rc = JOptionPane.showConfirmDialog(getScrollArea(),
+                "Script executing. Press 'OK' to attempt to interrupt it before exiting.",
+                "Force Field X Shell", JOptionPane.OK_CANCEL_OPTION);
+        if (rc == JOptionPane.OK_OPTION) {
+            doInterrupt();
+            return true;
+        } else {
+            return false;
+        }
+    }
     private static final Preferences preferences = Preferences.userNodeForPackage(ModelingShell.class);
 
     /**
@@ -701,7 +753,7 @@ public class ModelingShell extends Console implements AlgorithmListener {
     @Override
     public boolean algorithmUpdate(MolecularAssembly active) {
         if (interrupted) {
-            return !interrupted;
+            return false;
         }
 
         GraphicsCanvas graphics = mainPanel.getGraphics3D();
@@ -713,6 +765,51 @@ public class ModelingShell extends Console implements AlgorithmListener {
             graphics.updateSceneWait(active, true, false, null, false, null);
         }
 
-        return !interrupted;
+        if (interrupted) {
+            /**
+             * The algorithm could have been interrupted during the graphics
+             * update.
+             */
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    @Override
+    public void run() {
+        super.run();
+        // Set labels and icon for Force Field X.
+        getStatusLabel().setText("Welcome to the Force Field X Shell.");
+        JFrame frame = (JFrame) this.getFrame();
+        frame.setTitle("Force Field X Shell");
+        URL iconURL = getClass().getClassLoader().getResource(
+                "ffx/ui/icons/icon64.png");
+        ImageIcon icon = new ImageIcon(iconURL);
+        frame.setIconImage(icon.getImage());
+    }
+
+    @Override
+    public void clearContext() {
+        super.clearContext();
+        initContext();
+    }
+
+    @Override
+    public void clearContext(EventObject evt) {
+        super.clearContext(evt);
+        initContext();
+    }
+
+    @Override
+    public void updateTitle() {
+        JFrame frame = (JFrame) this.getFrame();
+        File file = (File) getScriptFile();
+        if (file != null) {
+            String name = file.getName();
+            frame.setTitle(name + " - Force Field X Shell");
+        } else {
+            frame.setTitle("Force Field X Shell");
+        }
     }
 }

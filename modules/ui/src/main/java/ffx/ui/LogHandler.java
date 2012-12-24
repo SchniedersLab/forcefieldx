@@ -99,17 +99,14 @@ public class LogHandler extends Handler {
                 System.err.println(msg);
                 System.err.println(" Force Field X will not continue.");
                 System.err.println(" Shutting down...");
-                //mainPanel.exit();
+                mainPanel.exit();
             }
             ModelingShell shell = null;
-            Thread thread = null;
             if (mainPanel != null) {
                 shell = mainPanel.getModelingShell();
-                if (shell != null) {
-                    thread = shell.getRunThread();
-                }
             }
-            if (!headless && thread != null && thread.isAlive() && !thread.isInterrupted()) {
+
+            if (!headless && shell != null) {
                 shell.appendOutputNl(msg, shell.getResultStyle());
             } else {
                 System.out.println(msg);

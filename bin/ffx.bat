@@ -77,14 +77,14 @@ if "%REPO%"=="" set REPO=%BASEDIR%
 
 set CLASSPATH="%BASEDIR%"\etc;"%BASEDIR%"\bin\ffx-all.jar
 
-set EXTRA_JVM_ARGUMENTS=-Xms128M -Xmx2G -Xss2M -XX:MaxPermSize=1500M
+set EXTRA_JVM_ARGUMENTS=-Xms1G -Xmx1G -Xss1M 
 
 goto endInit
 
 @REM Reaching here means variables are defined and arguments have been captured
 :endInit
 
-%JAVACMD% %JAVA_OPTS% %EXTRA_JVM_ARGUMENTS% -classpath %CLASSPATH_PREFIX%;%CLASSPATH% -Djava.system.class.loader="ffx.FFXClassLoader" -Dapp.name="ffx" -Dj3d.rend="jogl" -Dapp.repo="%REPO%" -Dbasedir="%BASEDIR%" ffx.Main %CMD_LINE_ARGS%
+%JAVACMD% %JAVA_OPTS% %EXTRA_JVM_ARGUMENTS% -classpath %CLASSPATH_PREFIX%;%CLASSPATH% -Djava.system.class.loader="ffx.FFXClassLoader" -Dapp.name="Force Field X" -Dj3d.rend="jogl" -Dapp.repo="%REPO%" -Dbasedir="%BASEDIR%" ffx.Main %CMD_LINE_ARGS%
 if ERRORLEVEL 1 goto error
 goto end
 

@@ -100,20 +100,15 @@ public class FFXClassLoader extends ClassLoader {
                     "edu.rit.pj/pj.jar",
                     // Aparapi
                     "com.amd.aparapi/aparapi.jar",
-                    // Java3D 1.5.2 depends on JOGL v. 1.1.1
-                    // Java3D 1.6.0 depends on JOGL v. 2.0.0
+                    // Java3D 1.6.0 (depends on JOGL v. 2.0.0)
                     "java3d/j3dcore.jar",
                     "java3d/j3dutils.jar",
                     "java3d/j3dvrml.jar",
                     "java3d/vecmath.jar",
-                    // GLUEGEN and JOGL v. 1.1.1
-                    // "net.java.dev.jogl/jogl.jar",
-                    // "net.java.dev.jogl/gluegen-rt.jar",
-                    // JOGAMP GLUEGEN, JOGL and JOCL v. 2.0
+                    // JOGAMP GLUEGEN, JOGL and JOCL v. 2.0.0
                     "org.jogamp/gluegen-rt.jar",
                     "org.jogamp/jogl-all.jar",
                     "org.jogamp/joal.jar",
-                    // "org.jogamp/nativewindow.jar",
                     // Apache Commons
                     "commons-beanutils/commons-beanutils.jar",
                     "commons-cli/commons-cli.jar",
@@ -158,6 +153,12 @@ public class FFXClassLoader extends ClassLoader {
                 FFX_FILES.add("64-bit/libJCudaDriver-linux-x86_64.so");
                 FFX_FILES.add("64-bit/libJCudaRuntime-linux-x86_64.so");
                 FFX_FILES.add("64-bit/libJCufft-linux-x86_64.so");
+            } else {
+                // Gluegen Runtime
+                FFX_FILES.add("org.jogamp/gluegen-rt-natives-linux-i586.jar");
+                // JOGL
+                FFX_FILES.add("org.jogamp/jogl-all-natives-linux-i586.jar");
+                nativeExtension = "-natives-linux-i586.jar";
             }
         } else if (osName.startsWith("WINDOWS")) {
             if (x8664) {
@@ -170,6 +171,12 @@ public class FFXClassLoader extends ClassLoader {
                 FFX_FILES.add("64-bit/JCudaDriver-linux-x86_64.dll");
                 FFX_FILES.add("64-bit/JCudaRuntime-linux-x86_64.dll");
                 FFX_FILES.add("64-bit/JCufft-linux-x86_64.dll");
+            } else {
+                // Gluegen Runtime
+                FFX_FILES.add("org.jogamp/gluegen-rt-natives-windows-i586.jar");
+                // JOGL
+                FFX_FILES.add("org.jogamp/jogl-all-natives-windows-i586.jar");
+                nativeExtension = "-natives-windows-i586.jar";
             }
         }
     }

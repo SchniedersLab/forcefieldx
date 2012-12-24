@@ -1,9 +1,8 @@
 
-Force Field X uses the following Java Wrappers around native libraries:
+Force Field X uses the following wrappers around native libraries:
 1) JOCL for OpenCL (depends on Gluegen)
 2) JOGL for OpenGL (depends on Gluegen
 3) JCUDA for CUDA v. 5.0 (build 35) 
 
-The native 64-bit binaries for JCUDA are in the directory "64-bit" for
-Linux, Mac OS X and Windows 64-bit binaries.
+The native 64-bit binaries for JCUDA are in the directory "64-bit" for Linux, Mac OS X and Windows 64-bit binaries. The other native libraries are handled via the Maven repository. 
 

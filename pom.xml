@@ -425,15 +425,15 @@
                     <arguments>
                         <argument>-ms1G</argument>
                         <argument>-mx1G</argument>
+                        <!-- argument>-agentpath:/Applications/NetBeans/NetBeans 7.2.1.app/Contents/Resources/NetBeans/profiler/lib/deployed/jdk16/mac/libprofilerinterface.jnilib=/Applications/NetBeans/NetBeans 7.2.1.app/Contents/Resources/NetBeans/profiler/lib,5140</argument -->
                         <argument>-Djava.system.class.loader=ffx.FFXClassLoader</argument>
-                        <argument>-Djava.awt.headless=true</argument>
-                        <!-- argument>-agentpath:/var/folders/0X/0X4T2G99FQeIjz6vjul5zE+++TM/-Tmp-/NBProfiler8162447009688957002.link/deployed/jdk16/mac/libprofilerinterface.jnilib=/var/folders/0X/0X4T2G99FQeIjz6vjul5zE+++TM/-Tmp-/NBProfiler8162447009688957002.link,5140</argument -->
+                        <argument>-Djava.awt.headless=false</argument>
                         <argument>-classpath</argument>
                         <argument>bin/ffx-all.jar</argument>
                         <argument>ffx.Main</argument>
                         <argument>timer</argument>
                         <argument>-n</argument>
-                        <argument>10000</argument>
+                        <argument>10</argument>
                         <argument>-c</argument>
                         <argument>8</argument>
                         <argument>examples/ubiquitin.xyz</argument>
@@ -444,9 +444,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.12.4</version>
                 <configuration>
-                    <!-- This prevents Mac OS X from using its old Java3D verion.  -->
-                    <useSystemClassLoader>false</useSystemClassLoader>
-                    <argLine>-ms1G -mx1G -Dj3d.rend=jogl -Dffx.ci=${ffx.ci}</argLine>
+                    <argLine>-ms1G -mx1G -Djava.system.class.loader=ffx.FFXClassLoader -Dj3d.rend=jogl -Dffx.ci=${ffx.ci}</argLine>
                 </configuration>
             </plugin>
             <!-- plugin>
