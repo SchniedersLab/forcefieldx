@@ -444,7 +444,8 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.12.4</version>
                 <configuration>
-                    <argLine>-ms1G -mx1G -Djava.system.class.loader=ffx.FFXClassLoader -Dj3d.rend=jogl -Dffx.ci=${ffx.ci}</argLine>
+                    <useSystemClassLoader>false</useSystemClassLoader>
+                    <argLine>-Xms1G -Xmx1G -Xss1M -Djava.awt.headless=true -Dj3d.rend=jogl -Dffx.ci=${ffx.ci}</argLine>
                 </configuration>
             </plugin>
             <!-- plugin>
