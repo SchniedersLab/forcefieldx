@@ -14,7 +14,7 @@
     <artifactId>autoparm</artifactId>
     <packaging>jar</packaging>
     <name>Automatic Parameterization</name>
-    <description>The Automatic Parameterization module supports parameterization 
+    <description>The Automatic Parameterization module supports parameterization
         of small molecules for the AMOEBA force field.
     </description>
     <build>
@@ -89,6 +89,38 @@
             </resource>
         </resources>
     </build>
+    <profiles>
+        <profile>
+            <id>ffx.jarsigner</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-jarsigner-plugin</artifactId>
+                        <version>1.2</version>
+                        <configuration>
+                            <archive>target/autoparm-${project.version}.jar</archive>
+                            <alias>FFXKey</alias>
+                            <storepass>${storepass}</storepass>
+                            <keypass>${keypass}</keypass>
+                            <removeExistingSignatures>true</removeExistingSignatures>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>sign</id>
+                                <phase>install</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
     <dependencies>
         <dependency>
             <groupId>edu.uiowa.eng.ffx</groupId>

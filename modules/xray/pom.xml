@@ -19,7 +19,7 @@
         <url>http://ffx.eng.uiowa.edu</url>
     </organization>
     <description>
-        The X-ray Refinement module includes support for reading/writing of MTZ files, 
+        The X-ray Refinement module includes support for reading/writing of MTZ files,
         writing of CNS/CCP4 map files, anisotropic scaling of the model to the data,
         a bulk solvent correction of models using a continuous function, SigmaA computation,
         a likelihood target function, Crystallography statistics (R, Rfree, etc),
@@ -106,6 +106,38 @@
             </resource>
         </resources>
     </build>
+    <profiles>
+        <profile>
+            <id>ffx.jarsigner</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-jarsigner-plugin</artifactId>
+                        <version>1.2</version>
+                        <configuration>
+                            <archive>target/xray-${project.version}.jar</archive>
+                            <alias>FFXKey</alias>
+                            <storepass>${storepass}</storepass>
+                            <keypass>${keypass}</keypass>
+                            <removeExistingSignatures>true</removeExistingSignatures>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>sign</id>
+                                <phase>install</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
     <dependencies>
         <dependency>
             <groupId>edu.uiowa.eng.ffx</groupId>

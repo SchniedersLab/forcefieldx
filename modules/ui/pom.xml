@@ -146,15 +146,16 @@
                         <artifactId>maven-jarsigner-plugin</artifactId>
                         <version>1.2</version>
                         <configuration>
-                            <archive>target/site/ffx-all.jar</archive>
-                            <alias>signFiles</alias>
-                            <storepass>ForceFieldX</storepass>
-                            <keypass>ForceFieldX</keypass>
+                            <archive>target/ui-${project.version}.jar</archive>
+                            <alias>FFXKey</alias>
+                            <storepass>${storepass}</storepass>
+                            <keypass>${keypass}</keypass>
+                            <removeExistingSignatures>true</removeExistingSignatures>
                         </configuration>
                         <executions>
                             <execution>
                                 <id>sign</id>
-                                <phase>site</phase>
+                                <phase>install</phase>
                                 <goals>
                                     <goal>sign</goal>
                                 </goals>

@@ -1180,7 +1180,7 @@ public abstract class MSGroup extends MSNode {
     /**
      * {@inheritDoc}
      *
-     * Returns the MultiScaleGroup's name.
+     * Returns the MSGroup's name.
      */
     @Override
     public String toString() {

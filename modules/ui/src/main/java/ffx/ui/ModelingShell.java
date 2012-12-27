@@ -138,10 +138,11 @@ public class ModelingShell extends Console implements AlgorithmListener {
             StyleConstants.setForeground(result, Color.GREEN);
             StyleConstants.setBackground(result, Color.BLACK);
             clearOutput();
+            initMenus();
         }
         initContext();
         loadPrefs();
-        initMenus();
+
     }
 
     /**
@@ -216,15 +217,10 @@ public class ModelingShell extends Console implements AlgorithmListener {
         JFrame frame = (JFrame) this.getFrame();
         MenuBar menuBar = frame.getMenuBar();
         /**
-         * File Menu.
-         */
-        Menu menu = menuBar.getMenu(0);
-
-        /**
          * Remove "Capture Std. Out", "Capture Std. Error" & "Detached Output"
          * from the View menu.
          */
-        menu = menuBar.getMenu(2);
+        Menu menu = menuBar.getMenu(2);
         menu.remove(5);
         menu.remove(5);
         menu.remove(9);
@@ -493,6 +489,7 @@ public class ModelingShell extends Console implements AlgorithmListener {
      super.runSelectedScript(evt);
      }
      */
+    
     /**
      * {@inheritDoc}
      *

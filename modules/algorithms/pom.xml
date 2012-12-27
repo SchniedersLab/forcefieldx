@@ -14,7 +14,7 @@
     <artifactId>algorithms</artifactId>
     <packaging>jar</packaging>
     <name>Algorithms</name>
-    <description>The Algorithms module includes support for local optimization, molecular dynamics 
+    <description>The Algorithms module includes support for local optimization, molecular dynamics
         and global optimization via simulated annealing.
     </description>
     <build>
@@ -81,7 +81,38 @@
             </resource>
         </resources>
     </build>
-
+    <profiles>
+        <profile>
+            <id>ffx.jarsigner</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-jarsigner-plugin</artifactId>
+                        <version>1.2</version>
+                        <configuration>
+                            <archive>target/algorithms-${project.version}.jar</archive>
+                            <alias>FFXKey</alias>
+                            <storepass>${storepass}</storepass>
+                            <keypass>${keypass}</keypass>
+                            <removeExistingSignatures>true</removeExistingSignatures>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>sign</id>
+                                <phase>install</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
     <dependencies>
         <dependency>
             <groupId>edu.uiowa.eng.ffx</groupId>

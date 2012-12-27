@@ -822,18 +822,13 @@ public final class MainPanel extends JPanel implements ActionListener,
      */
     public static final String aboutString =
             "        " + version + "  " + date + " \n"
-            + "        Copyright (c)  Michael J. Schnieders  2001-2012 \n"
-            + "        Copyright (c)  Force Field X Module Authors  2009-2012 \n"
-            + "\n"
-            + "        Module                           Copyright (c) \n"
-            + "        Binding Affinity                 Pengyu Ren \n"
-            + "        X-Ray/Neutron/CryoEM Refinement  Timothy D. Fenn \n"
-            + "        Automatic Parameterization       Johnny Wu and Gaurav Chattree \n"
+            + "\n        Copyright (c)  Michael J. Schnieders    2001-2012 \n"
+            + "        Portions Copyright (c)  Timothy D. Fenn 2009-2012 \n"
             + "\n"
             + "        All Rights Reserved \n"
             + "\n"
             + "        Force Field X is distributed under the GPL v.3 license and \n"
-            + "        hosted by the Schnieders lab. \n"
+            + "        hosted by the Schnieders lab at The University of Iowa. \n"
             + "\n"
             + "        For publications please see http://ffx.eng.uiowa.edu/publications.html \n"
             + "        For the GPL v.3 license see http://ffx.eng.uiowa.edu/license.html \n";

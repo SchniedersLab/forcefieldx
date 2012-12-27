@@ -96,7 +96,11 @@ public class Molecule extends MSGroup {
      */
     @Override
     public void setName(String name) {
-        super.setName(name + "-" + residueNum + " " + segID);
+        if (segID != null) {
+            super.setName(name + "-" + residueNum + " " + segID);
+        } else {
+            super.setName(name);
+        }
         this.residueName = name;
     }
 
@@ -157,7 +161,7 @@ public class Molecule extends MSGroup {
     /**
      * {@inheritDoc}
      *
-     * Allows adding Atom FNodes to the Molecule.
+     * Allows adding Atom MSNodes to the Molecule.
      */
     @Override
     public MSNode addMSNode(MSNode o) {

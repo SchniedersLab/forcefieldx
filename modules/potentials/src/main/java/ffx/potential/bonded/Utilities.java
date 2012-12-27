@@ -312,66 +312,70 @@ public final class Utilities {
      * This routine sub-divides a system into groups of ions, water, hetero
      * molecules, and polynucleotides/polypeptides.
      *
-     * @param m a {@link ffx.potential.bonded.MolecularAssembly} object.
+     * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly}
+     * object.
      * @param atoms a {@link java.util.List} object.
      */
-    public static void biochemistry(MolecularAssembly m, List<Atom> atoms) {
+    public static void biochemistry(MolecularAssembly molecularAssembly, List<Atom> atoms) {
         Atom atom, seed = null;
         int num = 0;
         int waterNum = 0;
         int ionNum = 0;
-        int heteroNum = 0;
+        int moleculeNum = 0;
         List<String> segIDs = new ArrayList<String>();
         while (atoms.size() > 0) {
-            // Nitrogens are used to "seed" a backbone search rather than carbon
-            // because a carbon can be separated from the backbone by a sulfur
-            // (ie. MET).
+            /**
+             * Nitrogen is used to "seed" a backbone search because carbon can
+             * be separated from the backbone by a sulfur (ie. MET).
+             */
             for (Atom a : atoms) {
                 seed = a;
                 if (seed.getAtomicNumber() == 7) {
                     break;
                 }
             }
-            // No more nitrogens, so no DNA/RNA/Protein molecules can are left
+            /**
+             * If no nitrogen atoms remain, there are no nucleic or amino acids.
+             */
             if (seed.getAtomicNumber() != 7) {
-                List<Atom> resatoms;
+                List<Atom> moleculeAtoms;
                 while (atoms.size() > 0) {
                     atom = atoms.get(0);
                     // Check for a metal ion or noble gas
                     if (atom.getNumBonds() == 0) {
                         ionNum++;
-                        Molecule ion = new Molecule(ionNum + "-" + atom.getName());
+                        Molecule ion = new Molecule(atom.getName() + "-" + ionNum);
                         ion.addMSNode(atom);
                         atoms.remove(0);
-                        m.addMSNode(ion);
+                        molecularAssembly.addMSNode(ion);
                         continue;
                     } // Check for water
                     else if (atom.getAtomicNumber() == 8 && isWaterOxygen(atom)) {
                         waterNum++;
-                        Molecule water = new Molecule("" + waterNum + "-Water");
+                        Molecule water = new Molecule("Water-" + waterNum);
                         water.addMSNode(atom);
                         atoms.remove(0);
                         List<Bond> bonds = atom.getBonds();
                         for (Bond b : bonds) {
-                            Atom o = b.get1_2(atom);
-                            water.addMSNode(o);
-                            atoms.remove(o);
+                            Atom hydrogen = b.get1_2(atom);
+                            water.addMSNode(hydrogen);
+                            atoms.remove(hydrogen);
                         }
-                        m.addMSNode(water);
+                        molecularAssembly.addMSNode(water);
                         continue;
                     }
                     // Otherwise classify the molecule as a hetero
-                    heteroNum++;
-                    Molecule hetero = new Molecule("" + heteroNum + "-Hetero");
-                    resatoms = getAtomListFromPool();
-                    collectAtoms(atoms.get(0), resatoms);
-                    while (resatoms.size() > 0) {
-                        atom = resatoms.get(0);
-                        resatoms.remove(0);
-                        hetero.addMSNode(atom);
+                    moleculeNum++;
+                    Molecule molecule = new Molecule("Molecule-" + moleculeNum);
+                    moleculeAtoms = getAtomListFromPool();
+                    collectAtoms(atoms.get(0), moleculeAtoms);
+                    while (moleculeAtoms.size() > 0) {
+                        atom = moleculeAtoms.get(0);
+                        moleculeAtoms.remove(0);
+                        molecule.addMSNode(atom);
                         atoms.remove(atom);
                     }
-                    m.addMSNode(hetero);
+                    molecularAssembly.addMSNode(molecule);
                 }
                 seed = null;
                 break;
@@ -394,11 +398,11 @@ public final class Utilities {
                     atoms.remove(a);
                 }
                 logger.fine(" Sequenced chain: " + c.getName());
-                m.addMSNode(c);
+                molecularAssembly.addMSNode(c);
                 num++;
             } else {
-                heteroNum++;
-                Molecule hetero = new Molecule("" + heteroNum + "-Hetero");
+                moleculeNum++;
+                Molecule hetero = new Molecule("" + moleculeNum + "-Hetero");
                 atom = backbone.get(0);
                 List<Atom> heteroAtomList = getAtomListFromPool();
                 collectAtoms(atom, heteroAtomList);
@@ -408,7 +412,7 @@ public final class Utilities {
                 for (Atom a : hetero.getAtomList()) {
                     atoms.remove(a);
                 }
-                m.addMSNode(hetero);
+                molecularAssembly.addMSNode(hetero);
             }
         }
     }

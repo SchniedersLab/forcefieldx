@@ -425,9 +425,8 @@
                     <arguments>
                         <argument>-ms1G</argument>
                         <argument>-mx1G</argument>
-                        <!-- argument>-agentpath:/Applications/NetBeans/NetBeans 7.2.1.app/Contents/Resources/NetBeans/profiler/lib/deployed/jdk16/mac/libprofilerinterface.jnilib=/Applications/NetBeans/NetBeans 7.2.1.app/Contents/Resources/NetBeans/profiler/lib,5140</argument -->
                         <argument>-Djava.system.class.loader=ffx.FFXClassLoader</argument>
-                        <argument>-Djava.awt.headless=false</argument>
+                        <argument>-Djava.awt.headless=true</argument>
                         <argument>-classpath</argument>
                         <argument>bin/ffx-all.jar</argument>
                         <argument>ffx.Main</argument>

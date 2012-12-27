@@ -107,7 +107,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * Constant
      * <code>AtomVDW</code>
      */
-    public static final Map<Integer, Float> AtomVDW = new HashMap<Integer, Float>();
+    public static final Map<Integer, Double> AtomVDW = new HashMap<Integer, Double>();
     /**
      * Hybridizations
      */
@@ -152,6 +152,49 @@ public class Atom extends MSNode implements Comparable<Atom> {
             } else {
                 AtomColor.put(i, RendererCache.GREEN);
             }
+        }
+    }
+
+    static {
+        AtomVDW.put(0, 1.0);
+        AtomVDW.put(1, 1.20);
+        AtomVDW.put(2, 1.22);
+        AtomVDW.put(3, 0.78);
+        AtomVDW.put(4, 0.34);
+        AtomVDW.put(5, 2.08);
+        AtomVDW.put(6, 1.85);
+        AtomVDW.put(7, 1.54);
+        AtomVDW.put(8, 1.40);
+        AtomVDW.put(9, 1.35);
+        AtomVDW.put(10, 1.60);
+        AtomVDW.put(11, 0.98);
+        AtomVDW.put(12, 0.78);
+        AtomVDW.put(13, 0.57);
+        AtomVDW.put(14, 2.00);
+        AtomVDW.put(15, 1.90);
+        AtomVDW.put(16, 1.85);
+        AtomVDW.put(17, 1.81);
+        AtomVDW.put(18, 1.91);
+        AtomVDW.put(19, 1.33);
+        AtomVDW.put(20, 1.06);
+        AtomVDW.put(21, 0.91);
+        AtomVDW.put(22, 0.83);
+        AtomVDW.put(23, 0.82);
+        AtomVDW.put(24, 2.00);
+        AtomVDW.put(25, 2.00);
+        AtomVDW.put(26, 2.00);
+        AtomVDW.put(27, 2.00);
+        AtomVDW.put(28, 2.00);
+        AtomVDW.put(29, 2.00);
+        AtomVDW.put(30, 2.00);
+        AtomVDW.put(31, 2.00);
+        AtomVDW.put(32, 2.00);
+        AtomVDW.put(33, 2.00);
+        AtomVDW.put(34, 2.00);
+        AtomVDW.put(35, 1.95);
+        AtomVDW.put(36, 1.89);
+        for (int i = 37; i < 109; i++) {
+            AtomVDW.put(i, 2.00);
         }
     }
 
@@ -1792,6 +1835,9 @@ public class Atom extends MSNode implements Comparable<Atom> {
         if (altLoc != null && altLoc != ' ') {
             return String.format("%s %7d-%s %s %d (%7.2f,%7.2f,%7.2f) %s", altLoc, xyzIndex, getName(),
                     resName, resSeq, xyz[0], xyz[1], xyz[2], segID);
+        }
+        if (resName == null) {
+            return String.format("%7d-%s (%7.2f,%7.2f,%7.2f)", xyzIndex, getName(), xyz[0], xyz[1], xyz[2]);
         }
         return String.format("%7d-%s %s %d (%7.2f,%7.2f,%7.2f) %s", xyzIndex, getName(), resName, resSeq,
                 xyz[0], xyz[1], xyz[2], segID);

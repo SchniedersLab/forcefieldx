@@ -94,10 +94,10 @@ public class Main extends JFrame {
         newArgs.toArray(args);
         return args;
     }
-
     private static final Logger logger = Logger.getLogger(Main.class.getName());
     private static Level level;
     private static LogHandler logHandler;
+
     /**
      * Replace the default console handler with our custom FFX handler.
      */
@@ -254,7 +254,6 @@ public class Main extends JFrame {
      * @throws java.lang.Exception if any.
      */
     public static void main(String[] args) throws Exception {
-
         /**
          * Process any "-D" command line flags.
          */
