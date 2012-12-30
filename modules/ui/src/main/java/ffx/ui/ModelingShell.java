@@ -138,7 +138,7 @@ public class ModelingShell extends Console implements AlgorithmListener {
             StyleConstants.setForeground(result, Color.GREEN);
             StyleConstants.setBackground(result, Color.BLACK);
             clearOutput();
-            initMenus();
+            //initMenus();
         }
         initContext();
         loadPrefs();
@@ -489,7 +489,7 @@ public class ModelingShell extends Console implements AlgorithmListener {
      super.runSelectedScript(evt);
      }
      */
-    
+
     /**
      * {@inheritDoc}
      *
