@@ -96,7 +96,7 @@
                                 <a href="modules/algorithms/scripts/minimize.groovy" >minimize</a>
                             </td>
                             <td>Minimize a structure under the AMOEBA potential.</td>
-                        </tr>                    
+                        </tr>
                         <tr>
                             <td>
                                 <a href="modules/potentials/scripts/moveIntoUnitCell.groovy" >moveIntoUnitCell</a>
@@ -174,14 +174,14 @@
                                 <a href="modules/xray/scripts/xray/scaleBulk.groovy" >xray.scaleBulk</a>
                             </td>
                             <td>Compute the bulk solvent contribution to the X-ray target.</td>
-                        </tr>            
-                        <!-- 
+                        </tr>
+                        <!--
                         TODO: Add in the autoparm scripts
                         minimize_2
                         poledit
                         potential
                         superpose
-                        -->                
+                        -->
                     </tbody>
                 </table>
             </subsection>

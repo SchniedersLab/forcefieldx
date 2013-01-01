@@ -36,7 +36,6 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
-import java.util.zip.GZIPInputStream;
 
 import javax.help.HelpSet;
 import javax.help.JHelp;
@@ -52,6 +51,7 @@ import javax.swing.filechooser.FileSystemView;
 import javax.vecmath.Vector3d;
 
 import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.SystemUtils;
 
@@ -305,6 +305,7 @@ public final class MainPanel extends JPanel implements ActionListener,
     @Override
     public void actionPerformed(ActionEvent evt) {
         String arg = evt.getActionCommand();
+        logger.info(" Action: " + arg);
         // File Commands
         if (arg.equals("Open")) {
             open();
@@ -1353,46 +1354,69 @@ public final class MainPanel extends JPanel implements ActionListener,
      * @return a {@link java.lang.Thread} object.
      */
     public Thread open(String name) {
+        File file = resolveName(name);
+        if (file == null) {
+            logger.warning(name + ": could not be found.");
+            return null;
+        }
+        return open(file, null);
+    }
+
+    private File resolveName(String name) {
+        // Return null if name == null.
         if (name == null) {
             return null;
         }
-        // Check for an absolute pathname
-        File f = new File(name);
-        if (!f.exists()) {
-            // Check for a file in the CWD
-            f = new File(pwd + File.separator + name);
-            if (!f.exists()) {
-                logger.warning(name + ": could not be found.");
+        File file = new File(name);
+        // If the file exists, return it.
+        if (file.exists()) {
+            return file;
+        }
+        // Check for a file in the CWD.
+        file = new File(pwd + File.separator + name);
+        if (file.exists()) {
+            return file;
+        }
+        // Check for an HTTP address
+        if (name.startsWith("http://")) {
+            String fileName = FilenameUtils.getName(name);
+            if (fileName == null) {
                 return null;
             }
+            return downloadURL(name);
         }
-        return open(f, null);
+        // Check for a PDB ID.
+        if (name.length() == 4) {
+            String fileName = name + ".pdb";
+            String path = getPWD().getAbsolutePath();
+            File pdbFile = new File(path + File.separatorChar + fileName);
+            if (!pdbFile.exists()) {
+                String fromURL = PDBFilter.pdbForID(name);
+                return downloadURL(fromURL);
+            } else {
+                return pdbFile;
+            }
+        }
+        return null;
     }
 
     /**
      * <p>open</p>
      *
-     * @param name an array of {@link java.lang.String} objects.
+     * @param names an array of {@link java.lang.String} objects.
      * @return a {@link java.lang.Thread} object.
      */
-    public Thread open(String name[]) {
-        if (name == null) {
+    public Thread open(String names[]) {
+        if (names == null) {
             return null;
         }
-        int n = name.length;
+        int n = names.length;
         List<File> files = new ArrayList<File>();
-
-        // Check for an absolute pathname
+        // Resolve all file names.
         for (int i = 0; i < n; i++) {
-            String currentFile = name[i];
-            File file = new File(currentFile);
-            if (!file.exists()) {
-                // Check for a file in the CWD
-                file = new File(pwd + File.separator + currentFile);
-                if (!file.exists()) {
-                    logger.warning(currentFile + ": could not be found.");
-                    return null;
-                }
+            File file = resolveName(names[i]);
+            if (file == null || !file.exists()) {
+                return null;
             }
             files.add(file);
         }
@@ -1411,74 +1435,68 @@ public final class MainPanel extends JPanel implements ActionListener,
         if (code == null) {
             return;
         }
-        code = code.trim();
+        code = code.toLowerCase().trim();
         if (code == null || code.length() != 4) {
             return;
         }
-        try {
-            // Get the PDB File
-            String fileName = code + ".pdb";
-            String path = getPWD().getAbsolutePath();
-            File pdbFile = new File(path + File.separatorChar + fileName);
-            CompositeConfiguration properties = Keyword.loadProperties(pdbFile);
-            forceFieldFilter = new ForceFieldFilter(properties);
-            ForceField forceField = forceFieldFilter.parse();
-            FFXSystem newSystem = new FFXSystem(pdbFile, "PDB", properties);
-            newSystem.setForceField(forceField);
-
-            if (!pdbFile.exists()) {
-                String pdbAddress = PDBFilter.pdbForID(code);
-                String message = String.format(" Downloading %s." + pdbAddress);
-                logger.log(Level.INFO, message);
-                BufferedWriter bw = null;
-                BufferedReader br = null;
-                try {
-                    URL url = new URL(pdbAddress);
-                    GZIPInputStream is = new GZIPInputStream(url.openStream());
-                    br = new BufferedReader(new InputStreamReader(is));
-                    int retry = 0;
-                    while (!br.ready() && retry < 10) {
-                        synchronized (this) {
-                            if (logger.isLoggable(Level.INFO)) {
-                                logger.info("Waiting on Network");
-                            }
-                            wait(50);
-                            retry++;
-                        }
-                    }
-                    FileWriter fw = new FileWriter(pdbFile);
-                    bw = new BufferedWriter(fw);
-                    if (logger.isLoggable(Level.INFO)) {
-                        logger.info(" Saving to: " + pdbFile.getAbsolutePath());
-                    }
-                    while (br.ready()) {
-                        bw.write(br.readLine());
-                        bw.newLine();
-                    }
-                } catch (Exception ex) {
-                    logger.log(Level.WARNING, " Exception reading PDB file " + pdbFile, ex);
-                    return;
-                } finally {
-                    if (bw != null) {
-                        bw.flush();
-                        bw.close();
-                    }
-                    if (br != null) {
-                        br.close();
-                    }
-                }
-            } else {
-                String message = String.format(" Reading the local copy of the PDB file %s.", pdbFile);
-                logger.warning(message);
+        String fileName = code + ".pdb";
+        String path = getPWD().getAbsolutePath();
+        File pdbFile = new File(path + File.separatorChar + fileName);
+        CompositeConfiguration properties = Keyword.loadProperties(pdbFile);
+        forceFieldFilter = new ForceFieldFilter(properties);
+        ForceField forceField = forceFieldFilter.parse();
+        FFXSystem newSystem = new FFXSystem(pdbFile, "PDB", properties);
+        newSystem.setForceField(forceField);
+        if (!pdbFile.exists()) {
+            String fromURL = PDBFilter.pdbForID(code);
+            pdbFile = downloadURL(fromURL);
+            if (pdbFile == null || !pdbFile.exists()) {
+                return;
             }
-            PDBFilter pdbFilter = new PDBFilter(pdbFile, newSystem, forceField, properties);
-            setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-            FileOpener openFile = new FileOpener(pdbFilter, this);
-            openThread = new Thread(openFile);
-            openThread.start();
-            setPanel(GRAPHICS);
+        } else {
+            String message = String.format(" Reading the local copy of the PDB file %s.", pdbFile);
+            logger.info(message);
+        }
+        PDBFilter pdbFilter = new PDBFilter(pdbFile, newSystem, forceField, properties);
+        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+        FileOpener openFile = new FileOpener(pdbFilter, this);
+        openThread = new Thread(openFile);
+        openThread.start();
+        setPanel(GRAPHICS);
+    }
+
+    private File downloadURL(String fromString) {
+        /**
+         * Check for null input.
+         */
+        if (fromString == null) {
+            return null;
+        }
+
+        /**
+         * Convert the string to a URL instance.
+         */
+        URL fromURL = null;
+        try {
+            fromURL = new URL(fromString);
         } catch (Exception e) {
-            return;
+            String message = String.format(" URL incorrectly formatted %s.", fromString);
+            logger.log(Level.INFO, message, e);
+            return null;
+        }
+
+        /**
+         * Download the URL to a local file.
+         */
+        logger.info(String.format(" Downloading %s", fromString));
+        try {
+            File toFile = new File(FilenameUtils.getName(fromURL.getPath()));
+            FileUtils.copyURLToFile(fromURL, toFile, 1000, 1000);
+            logger.info(String.format(" Saved to %s\n", toFile.getPath()));
+            return toFile;
+        } catch (Exception ex) {
+            logger.log(Level.INFO, " Failed to read URL " + fromURL.getPath(), ex);
+            return null;
         }
     }
 

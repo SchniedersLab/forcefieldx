@@ -106,9 +106,9 @@ public class FFXClassLoader extends ClassLoader {
                     "java3d/j3dvrml.jar",
                     "java3d/vecmath.jar",
                     // JOGAMP GLUEGEN, JOGL and JOCL v. 2.0.0
-                    "org.jogamp/gluegen-rt.jar",
-                    "org.jogamp/jogl-all.jar",
-                    "org.jogamp/joal.jar",
+                    "org.jogamp.gluegen/gluegen-rt.jar",
+                    "org.jogamp.jogl/jogl-all.jar",
+                    "org.jogamp.jocl/jocl.jar",
                     // Apache Commons
                     "commons-beanutils/commons-beanutils.jar",
                     "commons-cli/commons-cli.jar",
@@ -132,9 +132,9 @@ public class FFXClassLoader extends ClassLoader {
         final boolean x8664 = "64".equals(osArch);
         if ("MAC OS X".equals(osName)) {
             // Gluegen Runtime Universal Binaries
-            FFX_FILES.add("org.jogamp/gluegen-rt-natives-macosx-universal.jar");
+            FFX_FILES.add("org.jogamp.gluegen/gluegen-rt-natives-macosx-universal.jar");
             // JOGL Universal Binaries
-            FFX_FILES.add("org.jogamp/jogl-all-natives-macosx-universal.jar");
+            FFX_FILES.add("org.jogamp.jogl/jogl-all-natives-macosx-universal.jar");
             nativeExtension = "-natives-macosx-universal.jar";
             if (x8664) {
                 // JCUDA
@@ -145,9 +145,9 @@ public class FFXClassLoader extends ClassLoader {
         } else if ("LINUX".equals(osName)) {
             if (x8664) {
                 // Gluegen Runtime
-                FFX_FILES.add("org.jogamp/gluegen-rt-natives-linux-amd64.jar");
+                FFX_FILES.add("org.jogamp.gluegen/gluegen-rt-natives-linux-amd64.jar");
                 // JOGL
-                FFX_FILES.add("org.jogamp/jogl-all-natives-linux-amd64.jar");
+                FFX_FILES.add("org.jogamp.jogl/jogl-all-natives-linux-amd64.jar");
                 nativeExtension = "-natives-linux-amd64.jar";
                 // JCUDA
                 FFX_FILES.add("64-bit/libJCudaDriver-linux-x86_64.so");
@@ -155,17 +155,17 @@ public class FFXClassLoader extends ClassLoader {
                 FFX_FILES.add("64-bit/libJCufft-linux-x86_64.so");
             } else {
                 // Gluegen Runtime
-                FFX_FILES.add("org.jogamp/gluegen-rt-natives-linux-i586.jar");
+                FFX_FILES.add("org.jogamp.gluegen/gluegen-rt-natives-linux-i586.jar");
                 // JOGL
-                FFX_FILES.add("org.jogamp/jogl-all-natives-linux-i586.jar");
+                FFX_FILES.add("org.jogamp.jogl/jogl-all-natives-linux-i586.jar");
                 nativeExtension = "-natives-linux-i586.jar";
             }
         } else if (osName.startsWith("WINDOWS")) {
             if (x8664) {
                 // Gluegen Runtime
-                FFX_FILES.add("org.jogamp/gluegen-rt-natives-windows-amd64.jar");
+                FFX_FILES.add("org.jogamp.glugen/gluegen-rt-natives-windows-amd64.jar");
                 // JOGL
-                FFX_FILES.add("org.jogamp/jogl-all-natives-windows-amd64.jar");
+                FFX_FILES.add("org.jogamp.jogl/jogl-all-natives-windows-amd64.jar");
                 nativeExtension = "-natives-windows-amd64.jar";
                 // JCUDA
                 FFX_FILES.add("64-bit/JCudaDriver-linux-x86_64.dll");
@@ -173,9 +173,9 @@ public class FFXClassLoader extends ClassLoader {
                 FFX_FILES.add("64-bit/JCufft-linux-x86_64.dll");
             } else {
                 // Gluegen Runtime
-                FFX_FILES.add("org.jogamp/gluegen-rt-natives-windows-i586.jar");
+                FFX_FILES.add("org.jogamp.gluegen/gluegen-rt-natives-windows-i586.jar");
                 // JOGL
-                FFX_FILES.add("org.jogamp/jogl-all-natives-windows-i586.jar");
+                FFX_FILES.add("org.jogamp.jogl/jogl-all-natives-windows-i586.jar");
                 nativeExtension = "-natives-windows-i586.jar";
             }
         }

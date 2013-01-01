@@ -65,6 +65,10 @@ import ffx.ui.macosx.OSXAdapter;
  */
 public class Main extends JFrame {
 
+    private static final Logger logger = Logger.getLogger(Main.class.getName());
+    private static Level level;
+    private static LogHandler logHandler;
+
     /**
      * Process any "-D" command line flags.
      */
@@ -75,11 +79,12 @@ public class Main extends JFrame {
             if (arg.startsWith("-D")) {
                 // Remove -D from the front of String.
                 arg = arg.substring(2);
-                // Split at the equals if it exists.
+                // Split at the first equals if it exists.
                 if (arg.contains("=")) {
                     int equalsPosition = arg.indexOf("=");
                     String key = arg.substring(0, equalsPosition);
                     String value = arg.substring(equalsPosition + 1);
+                    // Set the system property.
                     System.setProperty(key, value);
                 } else {
                     if (arg.length() > 0) {
@@ -87,16 +92,15 @@ public class Main extends JFrame {
                     }
                 }
             } else {
+                // Collect non "-D" arguments.
                 newArgs.add(arg);
             }
         }
+        // Return the remaining arguments.
         args = new String[newArgs.size()];
         newArgs.toArray(args);
         return args;
     }
-    private static final Logger logger = Logger.getLogger(Main.class.getName());
-    private static Level level;
-    private static LogHandler logHandler;
 
     /**
      * Replace the default console handler with our custom FFX handler.
@@ -129,7 +133,7 @@ public class Main extends JFrame {
     }
 
     /**
-     * Print out the promo.
+     * Print out a promo.
      */
     private static void header(String args[]) {
         StringBuilder sb = new StringBuilder();
@@ -286,6 +290,9 @@ public class Main extends JFrame {
          */
         startParallelJava(args);
 
+        /**
+         * Parse the specified command or structure file.
+         */
         File commandLineFile = null;
         int nArgs = args.length;
         if (nArgs > 0) {

@@ -9,9 +9,9 @@
     <includeBaseDirectory>false</includeBaseDirectory>
     <dependencySets>
         <dependencySet>
-            <outputFileNameMapping>${artifact.groupId}/${artifact.artifactId}.jar</outputFileNameMapping>
+            <outputFileNameMapping>${artifact.groupId}/${artifact.artifactId}${dashClassifier?}.jar</outputFileNameMapping>
             <unpack>false</unpack>
-            <scope>runtime</scope>
+            <scope>compile</scope>
             <useTransitiveDependencies>true</useTransitiveDependencies>
         </dependencySet>
     </dependencySets>

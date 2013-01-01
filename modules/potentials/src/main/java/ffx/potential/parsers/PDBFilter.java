@@ -206,7 +206,7 @@ public final class PDBFilter extends SystemFilter {
         if (id.length() != 4) {
             return null;
         }
-        return "http://www.rcsb.org/pdb/files/" + id.toLowerCase() + ".pdb.gz";
+        return "http://www.rcsb.org/pdb/files/" + id.toLowerCase() + ".pdb";
     }
 
     /**
@@ -219,7 +219,7 @@ public final class PDBFilter extends SystemFilter {
         if (id.length() != 4) {
             return null;
         }
-        return "http://www.rcsb.org/pdb/files/" + id.toLowerCase() + ".cif.gz";
+        return "http://www.rcsb.org/pdb/files/" + id.toLowerCase() + ".cif";
     }
 
     /**
