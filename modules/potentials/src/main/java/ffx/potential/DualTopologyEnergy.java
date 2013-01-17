@@ -210,16 +210,6 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
         gl2 = new double[nAtoms2 * 3];
 
         /**
-         *
-         * lambdaExponent =
-         * topology1.getForceField().getDouble(ForceFieldDouble.DUAL_TOPOLOGY_LAMBDA_EXPONENT,
-         * 1.0); if (lambdaExponent < 1.0) { lambdaExponent = 1.0; }
-         *
-         * logger.info(String.format(" Dual Topology Lambda Exponent: %5.3f\n",
-         * lambdaExponent));
-         *
-         */
-        /**
          * Check that all atoms that are not undergoing alchemy are common to
          * both topologies.
          */

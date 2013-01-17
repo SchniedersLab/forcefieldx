@@ -226,6 +226,10 @@ public class ParticleMeshEwald implements LambdaInterface {
      */
     private final boolean isSoft[];
     /**
+     * No electrostatics on softcore atoms.
+     */
+    private boolean noSoftcoreElectrostatics = false;
+    /**
      * When computing the polarization energy at L there are 3 pieces. 1.)
      * Upol(1) = The polarization energy computed normally (ie. system with
      * ligand). 2.) Uenv = The polarization energy of the system without the
@@ -4247,6 +4251,10 @@ public class ParticleMeshEwald implements LambdaInterface {
                     final double y[] = coordinates[iSymm][1];
                     final double z[] = coordinates[iSymm][2];
                     for (int ii = lb; ii <= ub; ii++) {
+                        double softcoreScale = 1.0;
+                        if (isSoft[ii] && noSoftcoreElectrostatics) {
+                            softcoreScale = 0.0;
+                        }
                         final double in[] = localMultipole[ii];
                         final double out[] = globalMultipole[iSymm][ii];
                         localOrigin[0] = x[ii];
@@ -4262,7 +4270,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                             }
                         }
                         if (referenceSites == null || referenceSites.length < 2) {
-                            out[t000] = in[0];
+                            out[t000] = in[0] * softcoreScale;
                             out[t100] = 0.0;
                             out[t010] = 0.0;
                             out[t001] = 0.0;
@@ -4440,16 +4448,16 @@ public class ParticleMeshEwald implements LambdaInterface {
                             quadrupoleScale = 0.0;
                         }
 
-                        out[t000] = in[0] * chargeScale;
-                        out[t100] = dipole[0] * dipoleScale;
-                        out[t010] = dipole[1] * dipoleScale;
-                        out[t001] = dipole[2] * dipoleScale;
-                        out[t200] = quadrupole[0][0] * quadrupoleScale;
-                        out[t020] = quadrupole[1][1] * quadrupoleScale;
-                        out[t002] = quadrupole[2][2] * quadrupoleScale;
-                        out[t110] = quadrupole[0][1] * quadrupoleScale;
-                        out[t101] = quadrupole[0][2] * quadrupoleScale;
-                        out[t011] = quadrupole[1][2] * quadrupoleScale;
+                        out[t000] = in[0] * chargeScale * softcoreScale;
+                        out[t100] = dipole[0] * dipoleScale * softcoreScale;
+                        out[t010] = dipole[1] * dipoleScale * softcoreScale;
+                        out[t001] = dipole[2] * dipoleScale * softcoreScale;
+                        out[t200] = quadrupole[0][0] * quadrupoleScale * softcoreScale;
+                        out[t020] = quadrupole[1][1] * quadrupoleScale * softcoreScale;
+                        out[t002] = quadrupole[2][2] * quadrupoleScale * softcoreScale;
+                        out[t110] = quadrupole[0][1] * quadrupoleScale * softcoreScale;
+                        out[t101] = quadrupole[0][2] * quadrupoleScale * softcoreScale;
+                        out[t011] = quadrupole[1][2] * quadrupoleScale * softcoreScale;
 
                         /* No rotation (useful for checking non-torque parts
                          * of the multipole gradient
@@ -4466,7 +4474,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                          */
 
                         PolarizeType polarizeType = atoms[ii].getPolarizeType();
-                        polarizability[ii] = polarizeType.polarizability;
+                        polarizability[ii] = polarizeType.polarizability * softcoreScale;
                     }
                 }
             }
@@ -5537,6 +5545,15 @@ public class ParticleMeshEwald implements LambdaInterface {
                     logger.log(Level.SEVERE, message);
             }
         }
+    }
+
+    /**
+     * Should softcore atoms include electrostatic moments and polarizability.
+     *
+     * @param noElec true means moments and polarizability set to zero.
+     */
+    public void setNoSoftCoreElectrostatics(boolean noElec) {
+        noSoftcoreElectrostatics = noElec;
     }
 
     /**
