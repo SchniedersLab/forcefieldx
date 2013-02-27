@@ -1991,7 +1991,7 @@ public final class PDBFilter extends SystemFilter {
                 j = 2;
                 position = LAST_RESIDUE;
                 /**
-                 * If the lest residue only contains a nitrogen turn it into an
+                 * If the last residue only contains a nitrogen turn it into an
                  * NH2 group.
                  */
                 Atom N = (Atom) residue.getAtomNode("N");
@@ -2013,10 +2013,22 @@ public final class PDBFilter extends SystemFilter {
                     residue.deleteAtom(OT2);
                 }
             }
+
+            AminoAcid3 aminoAcid = AminoAcid3.UNK;
+            int aminoAcidNumber = -1;
+            for (AminoAcid3 amino : aminoAcidList) {
+                aminoAcidNumber++;
+                if (amino.toString().equalsIgnoreCase(residueName)) {
+                    aminoAcid = amino;
+                    break;
+                }
+            }
+
             /**
-             * Only the first nitrogen should have an H1, H2 or H3 atom.
+             * Only the first nitrogen should have H1, H2 and H3 atoms, unless
+             * its an NME cap.
              */
-            if (position != FIRST_RESIDUE && numberOfResidues > 1) {
+            if (position != FIRST_RESIDUE && numberOfResidues > 1 && aminoAcid != AminoAcid3.NME) {
                 Atom H1 = (Atom) residue.getAtomNode("H1");
                 if (H1 != null) {
                     residue.deleteAtom(H1);
@@ -2028,16 +2040,6 @@ public final class PDBFilter extends SystemFilter {
                 Atom H3 = (Atom) residue.getAtomNode("H3");
                 if (H3 != null) {
                     residue.deleteAtom(H3);
-                }
-            }
-
-            AminoAcid3 aminoAcid = AminoAcid3.UNK;
-            int aminoAcidNumber = -1;
-            for (AminoAcid3 amino : aminoAcidList) {
-                aminoAcidNumber++;
-                if (amino.toString().equalsIgnoreCase(residueName)) {
-                    aminoAcid = amino;
-                    break;
                 }
             }
 
@@ -2139,16 +2141,22 @@ public final class PDBFilter extends SystemFilter {
              * Backbone heavy atoms.
              */
             Atom N = (Atom) residue.getAtomNode("N");
-            N.setAtomType(findAtomType(nType[j][aminoAcidNumber]));
-            if (position != FIRST_RESIDUE) {
-                bond(pC, N);
+            if (N != null) {
+                N.setAtomType(findAtomType(nType[j][aminoAcidNumber]));
+                if (position != FIRST_RESIDUE) {
+                    bond(pC, N);
+                }
             }
 
             Atom CA = null;
             Atom C = null;
             Atom O = null;
             if (!(position == LAST_RESIDUE && aminoAcid == AminoAcid3.NH2)) {
-                CA = setHeavyAtom(residue, "CA", N, caType[j][aminoAcidNumber]);
+                if (aminoAcid == AminoAcid3.ACE || aminoAcid == AminoAcid3.NME) {
+                    CA = setHeavyAtom(residue, "CH3", N, caType[j][aminoAcidNumber]);
+                } else {
+                    CA = setHeavyAtom(residue, "CA", N, caType[j][aminoAcidNumber]);
+                }
                 if (!(position == LAST_RESIDUE && aminoAcid == AminoAcid3.NME)) {
                     C = setHeavyAtom(residue, "C", CA, cType[j][aminoAcidNumber]);
                     O = (Atom) residue.getAtomNode("O");
@@ -2177,6 +2185,8 @@ public final class PDBFilter extends SystemFilter {
                             break;
                         case PCA:
                             setHydrogenAtom(residue, "H", N, 1.01e0, CA, 109.5e0, C, -60.0e0, 0, atomType);
+                            break;
+                        case ACE:
                             break;
                         default:
                             setHydrogenAtom(residue, "H1", N, 1.01e0, CA, 109.5e0, C, 180.0e0, 0, atomType);

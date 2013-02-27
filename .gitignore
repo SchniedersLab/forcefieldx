@@ -18,5 +18,6 @@ catalog.xml
 .settings/
 release/
 /.netbeans/
+nb-configuration.xml
 conf/*.jar
 bin/scheduler.log
