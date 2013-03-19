@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2013.
  *
  * This file is part of Force Field X.
  *
@@ -805,9 +805,9 @@ public final class MainPanel extends JPanel implements ActionListener,
     public static final String version = "Version 1.0.0-BETA";
     /**
      * Constant
-     * <code>date="December 2012"</code>
+     * <code>date="March 2013"</code>
      */
-    public static final String date = "December 2012";
+    public static final String date = "March 2013";
     /**
      * Constant
      */
@@ -823,8 +823,8 @@ public final class MainPanel extends JPanel implements ActionListener,
      */
     public static final String aboutString =
             "        " + version + "  " + date + " \n"
-            + "\n        Copyright (c)  Michael J. Schnieders    2001-2012 \n"
-            + "        Portions Copyright (c)  Timothy D. Fenn 2009-2012 \n"
+            + "\n        Copyright (c)  Michael J. Schnieders    2001-2013 \n"
+            + "        Portions Copyright (c)  Timothy D. Fenn 2009-2013 \n"
             + "\n"
             + "        All Rights Reserved \n"
             + "\n"

@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2013.
  *
  * This file is part of Force Field X.
  *
@@ -119,7 +119,14 @@ public class SpatialDensitySchedule extends IntegerSchedule {
         int thread = 0;
         int start = 0;
         int total = 0;
-        int goal = (int) (nAtoms * loadBalancePercentage / nThreads);
+        
+        // Calculate the total number of atoms that will be place on the grid.
+        for (int i=0; i<atomsPerChunk.length; i++) {
+            total += atomsPerChunk[i];
+        }
+        int goal = (int) ((total * loadBalancePercentage) / nThreads);
+
+        total = 0;
         for (int i = lb; i <= ub; i++) {
             int chunksLeft = ub - i + 1;
             int threadsLeft = nThreads - thread;
@@ -134,7 +141,7 @@ public class SpatialDensitySchedule extends IntegerSchedule {
                         || current.lb() != start
                         || current.ub() != stop) {
                     ranges[thread] = new Range(start, stop);
-                    //logger.info(format("Range for thread %d %s %d.", thread+1, ranges[thread], total));
+                    //logger.info(String.format("Range for thread %d %s %d.", thread, ranges[thread], total));
                 }
 
                 // Initialization for the next thread.
@@ -149,7 +156,7 @@ public class SpatialDensitySchedule extends IntegerSchedule {
                             || current.lb() != start
                             || current.ub() != stop) {
                         ranges[thread] = new Range(start, stop);
-                        //logger.info(format("Range for thread %d %s %d.", thread+1, ranges[thread], total));
+                        logger.finest(String.format("Range for thread %d %s %d.", thread, ranges[thread], total));
                     }
                     break;
                 }
@@ -161,7 +168,7 @@ public class SpatialDensitySchedule extends IntegerSchedule {
                         || current.lb() != start
                         || current.ub() != stop) {
                     ranges[thread] = new Range(start, stop);
-                    //logger.info(format("Range for thread %d %s %d.", thread+1, ranges[thread], total));
+                    //logger.info(String.format("Range for thread %d %s %d.", thread, ranges[thread], total));
                 }
             }
         }

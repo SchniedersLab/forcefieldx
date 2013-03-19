@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2013.
  *
  * This file is part of Force Field X.
  *
@@ -99,15 +99,15 @@ public class SpatialDensityRegion extends ParallelRegion {
      */
     protected final int workC[];
     /**
-     * The A index of each octant (0..nA - 1) that may not have any atoms.
+     * The A index of each octant (0..nA - 1) that has atoms.
      */
     protected final int actualA[];
     /**
-     * The B index of each octant (0..nB - 1) that may not have any atoms.
+     * The B index of each octant (0..nB - 1) that has atoms.
      */
     protected final int actualB[];
     /**
-     * The C index of each octant (0..nC - 1) that may not have any atoms.
+     * The C index of each octant (0..nC - 1) that has atoms.
      */
     protected final int actualC[];
     /**
@@ -195,15 +195,13 @@ public class SpatialDensityRegion extends ParallelRegion {
         int nX = gX / basisSize;
         int nY = gY / basisSize;
         int nZ = gZ / basisSize;
-        int div = 1;
-        int currentWork = 0;
         if (threadCount > 1 && nZ > 1) {
             if (nZ % 2 != 0) {
                 nZ--;
             }
             nC = nZ;
-            div = 2;
-            currentWork = nC / div / threadCount;
+            int div = 2;
+            int currentWork = nC / div / threadCount;
             // If we have enough work per thread, stop dividing the domain.
             if (currentWork >= minWork || nY < 2) {
                 nA = 1;
@@ -407,7 +405,6 @@ public class SpatialDensityRegion extends ParallelRegion {
         // Call the selectAtoms method of subclasses.
         selectAtoms();
 
-        // Zero out the cell counts.
         for (int iSymm = 0; iSymm < nSymm; iSymm++) {
             final int cellIndexs[] = cellIndex[iSymm];
             final int cellCounts[] = cellCount[iSymm];
@@ -415,6 +412,8 @@ public class SpatialDensityRegion extends ParallelRegion {
             final int cellLists[] = cellList[iSymm];
             final int cellOffsets[] = cellOffset[iSymm];
             final boolean selected[] = select[iSymm];
+
+            // Zero out the cell counts.
             for (int i = 0; i < nCells; i++) {
                 cellCounts[i] = 0;
             }
@@ -502,44 +501,47 @@ public class SpatialDensityRegion extends ParallelRegion {
                 final int i1 = i - 1;
                 cellStarts[i] = cellStarts[i1] + cellCounts[i1];
             }
+        }
 
-            // Loop over work chunks and get rid of empty chunks.
-            actualWork = 0;
-            for (int icell = 0; icell < nWork; icell++) {
-                int ia = workA[icell];
-                int ib = workB[icell];
-                int ic = workC[icell];
-                int ii = count(ia, ib, ic);
-                // Fractional chunks along the C-axis.
-                if (nC > 1) {
-                    ii += count(ia, ib, ic + 1);
-                    // Fractional chunks along the B-axis.
-                    if (nB > 1) {
-                        ii += count(ia, ib + 1, ic);
-                        ii += count(ia, ib + 1, ic + 1);
-                        // Fractional chunks along the A-axis.
-                        if (nA > 1) {
-                            ii += count(ia + 1, ib, ic);
-                            ii += count(ia + 1, ib, ic + 1);
-                            ii += count(ia + 1, ib + 1, ic);
-                            ii += count(ia + 1, ib + 1, ic + 1);
-                        }
+        // Loop over work chunks and get rid of empty chunks.
+        actualWork = 0;
+        int totalAtoms = 0;
+        for (int icell = 0; icell < nWork; icell++) {
+            int ia = workA[icell];
+            int ib = workB[icell];
+            int ic = workC[icell];
+            int ii = count(ia, ib, ic);
+            // Fractional chunks along the C-axis.
+            if (nC > 1) {
+                ii += count(ia, ib, ic + 1);
+                // Fractional chunks along the B-axis.
+                if (nB > 1) {
+                    ii += count(ia, ib + 1, ic);
+                    ii += count(ia, ib + 1, ic + 1);
+                    // Fractional chunks along the A-axis.
+                    if (nA > 1) {
+                        ii += count(ia + 1, ib, ic);
+                        ii += count(ia + 1, ib, ic + 1);
+                        ii += count(ia + 1, ib + 1, ic);
+                        ii += count(ia + 1, ib + 1, ic + 1);
                     }
                 }
-
-                // If there is work in this chunk, include it.
-                if (ii > 0) {
-                    actualA[actualWork] = ia;
-                    actualB[actualWork] = ib;
-                    actualC[actualWork] = ic;
-                    actualCount[actualWork++] = ii;
-                }
             }
 
-            if (logger.isLoggable(Level.FINEST)) {
-                logger.fine(String.format(" Empty chunks: %d out of %d.",
-                        nWork - actualWork, nWork));
+            // If there is work in this chunk, include it.
+            if (ii > 0) {
+                actualA[actualWork] = ia;
+                actualB[actualWork] = ib;
+                actualC[actualWork] = ic;
+                actualCount[actualWork++] = ii;
+                totalAtoms += ii;
             }
+        }
+
+        if (logger.isLoggable(Level.FINEST)) {
+            logger.finest(String.format(" Empty chunks: %d out of %d.",
+                    nWork - actualWork, nWork));
+            logger.finest(String.format(" Expected atoms %d vs. atoms in chunks %d.", nAtoms * nSymm, totalAtoms));
         }
     }
 

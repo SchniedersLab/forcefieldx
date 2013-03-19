@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2013.
  *
  * This file is part of Force Field X.
  *
@@ -49,7 +49,7 @@ public class ForceField {
     public enum Force_Field {
 
         AMOEBA_WATER, AMOEBA_2004, AMOEBA_PROTEIN_2004, AMOEBA_PROTEIN_2004_U1,
-        AMOEBA_2009, AMOEBA_BIO_2009
+        AMOEBA_2009, AMOEBA_BIO_2009, AMOEBA_BIO_2009_ORIG
     }
 
     public enum ForceFieldString {
@@ -663,7 +663,7 @@ public class ForceField {
             logger.warning(" A force field entry of type " + type.forceFieldType
                     + " already exists with the key: " + type.key
                     + "\n The (discarded) old entry: " + treeMap.get(type.key).
-                    toString() + "\n The new entry: " + type.toString());
+                    toString() + "\n The new entry            : " + type.toString());
         }
         Class baseTypeClass = type.getClass();
         treeMap.put(type.key, baseTypeClass.cast(type));

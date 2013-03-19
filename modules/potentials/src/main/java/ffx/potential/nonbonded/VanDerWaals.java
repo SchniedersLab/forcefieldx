@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2013.
  *
  * This file is part of Force Field X.
  *
@@ -46,6 +46,7 @@ import ffx.potential.LambdaInterface;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
+import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.VDWType;
@@ -290,12 +291,17 @@ public class VanDerWaals implements MaskingInterface,
         angleMask = new int[nAtoms][];
         for (int i = 0; i < nAtoms; i++) {
             Atom ai = atoms[i];
+            assert (i == ai.xyzIndex - 1);
             double xyz[] = ai.getXYZ();
             int i3 = i * 3;
             coordinates[i3 + XX] = xyz[XX];
             coordinates[i3 + YY] = xyz[YY];
             coordinates[i3 + ZZ] = xyz[ZZ];
-            atomClass[i] = ai.getAtomType().atomClass;
+            AtomType type = ai.getAtomType();
+            if (type == null) {
+                logger.info(ai.toString());
+            }
+            atomClass[i] = type.atomClass;
             VDWType vdwType = forceField.getVDWType(Integer.toString(atomClass[i]));
             ai.setVDWType(vdwType);
             ArrayList<Bond> bonds = ai.getBonds();

@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2013.
  *
  * This file is part of Force Field X.
  *
@@ -412,7 +412,10 @@ public final class PDBFilter extends SystemFilter {
                             } else {
                                 // The new atom has been added.
                                 atoms.put(serial, newAtom);
-                                newAtom.setXYZIndex(xyzIndex++);
+                                // Check if the newAtom took the xyzIndex of a previous alternate conformer.
+                                if (newAtom.xyzIndex == 0) {
+                                    newAtom.setXYZIndex(xyzIndex++);
+                                }
                             }
                             break;
                         case HETATM:
@@ -980,14 +983,13 @@ public final class PDBFilter extends SystemFilter {
                         case CL:
                             atom.setAtomType(findAtomType(2007));
                             break;
-                        case BR:
-                            atom.setAtomType(findAtomType(2009));
-                            break;
                         case ZN:
                         case ZN2:
                             atom.setAtomType(findAtomType(2008));
                             break;
-
+                        case BR:
+                            atom.setAtomType(findAtomType(2009));
+                            break;
                         default:
                             logger.severe(format(" Check residue %s of chain %s.", ion.toString(), ion.getChainID()));
                     }
@@ -1004,10 +1006,10 @@ public final class PDBFilter extends SystemFilter {
             for (MSNode m : water) {
                 Molecule wat = (Molecule) m;
                 try {
-                    Atom O = setHeavyAtom(wat, "O", null, 2001);
-                    Atom H1 = setHydrogenAtom(wat, "H1", O, 0.96e0, null, 109.5e0, null, 120.0e0, 0, 2002);
+                    Atom O = setHeavy(wat, "O", null, 2001);
+                    Atom H1 = setHydrogen(wat, "H1", O, 0.96e0, null, 109.5e0, null, 120.0e0, 0, 2002);
                     H1.setHetero(true);
-                    Atom H2 = setHydrogenAtom(wat, "H2", O, 0.96e0, H1, 109.5e0, null, 120.0e0, 0, 2002);
+                    Atom H2 = setHydrogen(wat, "H2", O, 0.96e0, H1, 109.5e0, null, 120.0e0, 0, 2002);
                     H2.setHetero(true);
                 } catch (Exception e) {
                     String message = "Error assigning atom types to a water.";
@@ -1432,82 +1434,82 @@ public final class PDBFilter extends SystemFilter {
                 P = (Atom) residue.getAtomNode("P");
                 if (P != null) {
                     if (isDNA) {
-                        P = setHeavyAtom(residue, "P", null, 1247);
-                        setHeavyAtom(residue, "OP1", P, 1248);
-                        setHeavyAtom(residue, "OP2", P, 1248);
-                        setHeavyAtom(residue, "OP3", P, 1248);
-                        O5s = setHeavyAtom(residue, "O5\'", P, 1246);
+                        P = setHeavy(residue, "P", null, 1247);
+                        setHeavy(residue, "OP1", P, 1248);
+                        setHeavy(residue, "OP2", P, 1248);
+                        setHeavy(residue, "OP3", P, 1248);
+                        O5s = setHeavy(residue, "O5\'", P, 1246);
                     } else {
-                        P = setHeavyAtom(residue, "P", null, 1235);
-                        setHeavyAtom(residue, "OP1", P, 1236);
-                        setHeavyAtom(residue, "OP2", P, 1236);
-                        setHeavyAtom(residue, "OP3", P, 1236);
-                        O5s = setHeavyAtom(residue, "O5\'", P, 1234);
+                        P = setHeavy(residue, "P", null, 1235);
+                        setHeavy(residue, "OP1", P, 1236);
+                        setHeavy(residue, "OP2", P, 1236);
+                        setHeavy(residue, "OP3", P, 1236);
+                        O5s = setHeavy(residue, "O5\'", P, 1234);
                     }
                 } else {
                     if (isDNA) {
-                        O5s = setHeavyAtom(residue, "O5\'", P, 1244);
+                        O5s = setHeavy(residue, "O5\'", P, 1244);
                     } else {
-                        O5s = setHeavyAtom(residue, "O5\'", P, 1232);
+                        O5s = setHeavy(residue, "O5\'", P, 1232);
                     }
                 }
             } else {
-                P = setHeavyAtom(residue, "P", pO3s, pTyp[naNumber]);
-                setHeavyAtom(residue, "OP1", P, opTyp[naNumber]);
-                setHeavyAtom(residue, "OP2", P, opTyp[naNumber]);
-                O5s = setHeavyAtom(residue, "O5\'", P, o5Typ[naNumber]);
+                P = setHeavy(residue, "P", pO3s, pTyp[naNumber]);
+                setHeavy(residue, "OP1", P, opTyp[naNumber]);
+                setHeavy(residue, "OP2", P, opTyp[naNumber]);
+                O5s = setHeavy(residue, "O5\'", P, o5Typ[naNumber]);
             }
             /**
              * Build the ribose sugar atoms of the current base.
              */
-            Atom C5s = setHeavyAtom(residue, "C5\'", O5s, c5Typ[naNumber]);
-            Atom C4s = setHeavyAtom(residue, "C4\'", C5s, c4Typ[naNumber]);
-            Atom O4s = setHeavyAtom(residue, "O4\'", C4s, o4Typ[naNumber]);
-            Atom C1s = setHeavyAtom(residue, "C1\'", O4s, c1Typ[naNumber]);
-            Atom C3s = setHeavyAtom(residue, "C3\'", C4s, c3Typ[naNumber]);
-            Atom C2s = setHeavyAtom(residue, "C2\'", C3s, c2Typ[naNumber]);
+            Atom C5s = setHeavy(residue, "C5\'", O5s, c5Typ[naNumber]);
+            Atom C4s = setHeavy(residue, "C4\'", C5s, c4Typ[naNumber]);
+            Atom O4s = setHeavy(residue, "O4\'", C4s, o4Typ[naNumber]);
+            Atom C1s = setHeavy(residue, "C1\'", O4s, c1Typ[naNumber]);
+            Atom C3s = setHeavy(residue, "C3\'", C4s, c3Typ[naNumber]);
+            Atom C2s = setHeavy(residue, "C2\'", C3s, c2Typ[naNumber]);
             bond(C2s, C1s);
             Atom O3s = null;
             if (position == LAST_RESIDUE || numberOfResidues == 1) {
                 if (isDNA) {
-                    O3s = setHeavyAtom(residue, "O3\'", C3s, 1249);
+                    O3s = setHeavy(residue, "O3\'", C3s, 1249);
                 } else {
-                    O3s = setHeavyAtom(residue, "O3\'", C3s, 1237);
+                    O3s = setHeavy(residue, "O3\'", C3s, 1237);
                 }
             } else {
-                O3s = setHeavyAtom(residue, "O3\'", C3s, o3Typ[naNumber]);
+                O3s = setHeavy(residue, "O3\'", C3s, o3Typ[naNumber]);
             }
             if (!isDNA) {
-                O2s = setHeavyAtom(residue, "O2\'", C2s, o2Typ[naNumber]);
+                O2s = setHeavy(residue, "O2\'", C2s, o2Typ[naNumber]);
             }
             /**
              * Build the backbone hydrogen atoms.
              */
             if (position == FIRST_RESIDUE && P == null) {
-                setHydrogenAtom(residue, "H5T", O5s, 1.00e0, C5s, 109.5e0, C4s, 180.0e0, 0, h5tTyp[naNumber]);
+                setHydrogen(residue, "H5T", O5s, 1.00e0, C5s, 109.5e0, C4s, 180.0e0, 0, h5tTyp[naNumber]);
             }
-            setHydrogenAtom(residue, "H5\'1", C5s, 1.09e0, O5s, 109.5e0, C4s, 109.5e0, 1, h51Typ[naNumber]);
-            setHydrogenAtom(residue, "H5\'2", C5s, 1.09e0, O5s, 109.5e0, C4s, 109.5e0, -1, h52Typ[naNumber]);
-            setHydrogenAtom(residue, "H4\'", C4s, 1.09e0, C5s, 109.5e0, C3s, 109.5e0, -1, h4Typ[naNumber]);
-            setHydrogenAtom(residue, "H3\'", C3s, 1.09e0, C4s, 109.5e0, C2s, 109.5e0, -1, h3Typ[naNumber]);
+            setHydrogen(residue, "H5\'1", C5s, 1.09e0, O5s, 109.5e0, C4s, 109.5e0, 1, h51Typ[naNumber]);
+            setHydrogen(residue, "H5\'2", C5s, 1.09e0, O5s, 109.5e0, C4s, 109.5e0, -1, h52Typ[naNumber]);
+            setHydrogen(residue, "H4\'", C4s, 1.09e0, C5s, 109.5e0, C3s, 109.5e0, -1, h4Typ[naNumber]);
+            setHydrogen(residue, "H3\'", C3s, 1.09e0, C4s, 109.5e0, C2s, 109.5e0, -1, h3Typ[naNumber]);
             if (isDNA) {
-                setHydrogenAtom(residue, "H2\'1", C2s, 1.09e0, C3s, 109.5e0, C1s, 109.5e0, -1, h21Typ[naNumber]);
-                setHydrogenAtom(residue, "H2\'2", C2s, 1.09e0, C3s, 109.5e0, C1s, 109.5e0, 1, h22Typ[naNumber]);
+                setHydrogen(residue, "H2\'1", C2s, 1.09e0, C3s, 109.5e0, C1s, 109.5e0, -1, h21Typ[naNumber]);
+                setHydrogen(residue, "H2\'2", C2s, 1.09e0, C3s, 109.5e0, C1s, 109.5e0, 1, h22Typ[naNumber]);
             } else {
-                setHydrogenAtom(residue, "H2\'", C2s, 1.09e0, C3s, 109.5e0, C1s, 109.5e0, -1, h21Typ[naNumber]);
+                setHydrogen(residue, "H2\'", C2s, 1.09e0, C3s, 109.5e0, C1s, 109.5e0, -1, h21Typ[naNumber]);
                 // Add the O2' Methyl for OMC and OMG
                 if (nucleicAcid == NucleicAcid3.OMC || nucleicAcid == NucleicAcid3.OMG) {
-                    Atom CM2 = setHeavyAtom(residue, "CM2", O2s, 1427);
-                    Atom HM21 = setHydrogenAtom(residue, "HM21", CM2, 1.08e0, O2s, 109.5e0, C2s, 0.0e0, 0, 1428);
-                    setHydrogenAtom(residue, "HM22", CM2, 1.08e0, O2s, 109.5e0, HM21, 109.5e0, 1, 1429);
-                    setHydrogenAtom(residue, "HM23", CM2, 1.08e0, O2s, 109.5e0, HM21, 109.5e0, -1, 1430);
+                    Atom CM2 = setHeavy(residue, "CM2", O2s, 1427);
+                    Atom HM21 = setHydrogen(residue, "HM21", CM2, 1.08e0, O2s, 109.5e0, C2s, 0.0e0, 0, 1428);
+                    setHydrogen(residue, "HM22", CM2, 1.08e0, O2s, 109.5e0, HM21, 109.5e0, 1, 1429);
+                    setHydrogen(residue, "HM23", CM2, 1.08e0, O2s, 109.5e0, HM21, 109.5e0, -1, 1430);
                 } else {
-                    setHydrogenAtom(residue, "HO\'", O2s, 1.00e0, C2s, 109.5e0, C3s, 180.0e0, 0, h22Typ[naNumber]);
+                    setHydrogen(residue, "HO\'", O2s, 1.00e0, C2s, 109.5e0, C3s, 180.0e0, 0, h22Typ[naNumber]);
                 }
             }
-            setHydrogenAtom(residue, "H1\'", C1s, 1.09e0, O4s, 109.5e0, C2s, 109.5e0, -1, h1Typ[naNumber]);
+            setHydrogen(residue, "H1\'", C1s, 1.09e0, O4s, 109.5e0, C2s, 109.5e0, -1, h1Typ[naNumber]);
             if (position == LAST_RESIDUE || numberOfResidues == 1) {
-                setHydrogenAtom(residue, "H3T", O3s, 1.00e0, C3s, 109.5e0, C4s, 180.0e0, 0, h3tTyp[naNumber]);
+                setHydrogen(residue, "H3T", O3s, 1.00e0, C3s, 109.5e0, C4s, 180.0e0, 0, h3tTyp[naNumber]);
             }
             /**
              * Build the nucleic acid base.
@@ -1574,107 +1576,107 @@ public final class PDBFilter extends SystemFilter {
                  C2,
                  N3,
                  C4;
-                N9 = setHeavyAtom(residue, "N9", C1s, 1017);
-                C8 = setHeavyAtom(residue, "C8", N9, 1021);
-                N7 = setHeavyAtom(residue, "N7", C8, 1020);
-                C5 = setHeavyAtom(residue, "C5", N7, 1019);
-                C6 = setHeavyAtom(residue, "C6", C5, 1025);
-                N6 = setHeavyAtom(residue, "N6", C6, 1027);
-                N1 = setHeavyAtom(residue, "N1", C6, 1024);
-                C2 = setHeavyAtom(residue, "C2", N1, 1023);
-                N3 = setHeavyAtom(residue, "N3", C2, 1022);
-                C4 = setHeavyAtom(residue, "C4", N3, 1018);
+                N9 = setHeavy(residue, "N9", C1s, 1017);
+                C8 = setHeavy(residue, "C8", N9, 1021);
+                N7 = setHeavy(residue, "N7", C8, 1020);
+                C5 = setHeavy(residue, "C5", N7, 1019);
+                C6 = setHeavy(residue, "C6", C5, 1025);
+                N6 = setHeavy(residue, "N6", C6, 1027);
+                N1 = setHeavy(residue, "N1", C6, 1024);
+                C2 = setHeavy(residue, "C2", N1, 1023);
+                N3 = setHeavy(residue, "N3", C2, 1022);
+                C4 = setHeavy(residue, "C4", N3, 1018);
                 bond(C4, C5);
                 bond(C4, N9);
-                setHydrogenAtom(residue, "H8", C8, 1.08e0, N7, 123.1e0, C5, 180.0e0, 0, 1030);
-                setHydrogenAtom(residue, "H61", N6, 1.00e0, C6, 120.0e0, N7, 180.0e0, 0, 1028);
-                setHydrogenAtom(residue, "H62", N6, 1.00e0, C6, 120.0e0, N7, 0.0e0, 0, 1029);
-                setHydrogenAtom(residue, "H2", C2, 1.08e0, N3, 115.4e0, C4, 180.0e0, 0, 1026);
+                setHydrogen(residue, "H8", C8, 1.08e0, N7, 123.1e0, C5, 180.0e0, 0, 1030);
+                setHydrogen(residue, "H61", N6, 1.00e0, C6, 120.0e0, N7, 180.0e0, 0, 1028);
+                setHydrogen(residue, "H62", N6, 1.00e0, C6, 120.0e0, N7, 0.0e0, 0, 1029);
+                setHydrogen(residue, "H2", C2, 1.08e0, N3, 115.4e0, C4, 180.0e0, 0, 1026);
                 break;
             case M1MA:
                 Atom CM1;
                 Atom HM11;
-                N9 = setHeavyAtom(residue, "N9", C1s, 1605);
-                C8 = setHeavyAtom(residue, "C8", N9, 1609);
-                N7 = setHeavyAtom(residue, "N7", C8, 1608);
-                C5 = setHeavyAtom(residue, "C5", N7, 1607);
-                C6 = setHeavyAtom(residue, "C6", C5, 1613);
-                N6 = setHeavyAtom(residue, "N6", C6, 1615);
-                N1 = setHeavyAtom(residue, "N1", C6, 1612);
-                C2 = setHeavyAtom(residue, "C2", N1, 1611);
-                N3 = setHeavyAtom(residue, "N3", C2, 1610);
-                C4 = setHeavyAtom(residue, "C4", N3, 1606);
-                CM1 = setHeavyAtom(residue, "CM1", N1, 1619);
+                N9 = setHeavy(residue, "N9", C1s, 1605);
+                C8 = setHeavy(residue, "C8", N9, 1609);
+                N7 = setHeavy(residue, "N7", C8, 1608);
+                C5 = setHeavy(residue, "C5", N7, 1607);
+                C6 = setHeavy(residue, "C6", C5, 1613);
+                N6 = setHeavy(residue, "N6", C6, 1615);
+                N1 = setHeavy(residue, "N1", C6, 1612);
+                C2 = setHeavy(residue, "C2", N1, 1611);
+                N3 = setHeavy(residue, "N3", C2, 1610);
+                C4 = setHeavy(residue, "C4", N3, 1606);
+                CM1 = setHeavy(residue, "CM1", N1, 1619);
                 bond(C4, C5);
                 bond(C4, N9);
-                setHydrogenAtom(residue, "H2", C2, 1.08e0, N3, 115.4e0, C4, 180.0e0, 0, 1614);
-                setHydrogenAtom(residue, "H6", C6, 1.08e0, C5, 109.5e0, C4, 180.0e0, 0, 1623);
-                setHydrogenAtom(residue, "H8", C8, 1.08e0, N7, 123.1e0, C5, 180.0e0, 0, 1618);
-                setHydrogenAtom(residue, "HN61", N6, 1.00e0, C6, 109.5e0, C5, 0.0e0, 0, 1616);
-                setHydrogenAtom(residue, "HN62", N6, 1.00e0, C6, 109.5e0, C5, 109.5e0, 0, 1617);
-                HM11 = setHydrogenAtom(residue, "HM11", CM1, 1.08e0, N1, 109.5e0, C2, 0.0e0, 0, 1620);
-                setHydrogenAtom(residue, "HM12", CM1, 1.08e0, N1, 109.5e0, HM11, 109.5e0, 1, 1621);
-                setHydrogenAtom(residue, "HM13", CM1, 1.08e0, N1, 109.5e0, HM11, 109.5e0, -1, 1622);
+                setHydrogen(residue, "H2", C2, 1.08e0, N3, 115.4e0, C4, 180.0e0, 0, 1614);
+                setHydrogen(residue, "H6", C6, 1.08e0, C5, 109.5e0, C4, 180.0e0, 0, 1623);
+                setHydrogen(residue, "H8", C8, 1.08e0, N7, 123.1e0, C5, 180.0e0, 0, 1618);
+                setHydrogen(residue, "HN61", N6, 1.00e0, C6, 109.5e0, C5, 0.0e0, 0, 1616);
+                setHydrogen(residue, "HN62", N6, 1.00e0, C6, 109.5e0, C5, 109.5e0, 0, 1617);
+                HM11 = setHydrogen(residue, "HM11", CM1, 1.08e0, N1, 109.5e0, C2, 0.0e0, 0, 1620);
+                setHydrogen(residue, "HM12", CM1, 1.08e0, N1, 109.5e0, HM11, 109.5e0, 1, 1621);
+                setHydrogen(residue, "HM13", CM1, 1.08e0, N1, 109.5e0, HM11, 109.5e0, -1, 1622);
                 break;
             case CYT:
             case OMC:
                 Atom O2;
                 Atom N4;
-                N1 = setHeavyAtom(residue, "N1", C1s, 1078);
-                C2 = setHeavyAtom(residue, "C2", N1, 1079);
-                O2 = setHeavyAtom(residue, "O2", C2, 1084);
-                N3 = setHeavyAtom(residue, "N3", C2, 1080);
-                C4 = setHeavyAtom(residue, "C4", N3, 1081);
-                N4 = setHeavyAtom(residue, "N4", C4, 1085);
-                C5 = setHeavyAtom(residue, "C5", C4, 1082);
-                C6 = setHeavyAtom(residue, "C6", C5, 1083);
+                N1 = setHeavy(residue, "N1", C1s, 1078);
+                C2 = setHeavy(residue, "C2", N1, 1079);
+                O2 = setHeavy(residue, "O2", C2, 1084);
+                N3 = setHeavy(residue, "N3", C2, 1080);
+                C4 = setHeavy(residue, "C4", N3, 1081);
+                N4 = setHeavy(residue, "N4", C4, 1085);
+                C5 = setHeavy(residue, "C5", C4, 1082);
+                C6 = setHeavy(residue, "C6", C5, 1083);
                 bond(C6, N1);
-                setHydrogenAtom(residue, "H41", N4, 1.00e0, C4, 120.0e0, N3, 0.0e0, 0, 1086);
-                setHydrogenAtom(residue, "H42", N4, 1.00e0, C4, 120.0e0, N3, 180.0e0, 0, 1087);
-                setHydrogenAtom(residue, "H5", C5, 1.08e0, C4, 121.6e0, N3, 180.0e0, 0, 1088);
-                setHydrogenAtom(residue, "H6", C6, 1.08e0, C5, 119.4e0, C4, 180.0e0, 0, 1089);
+                setHydrogen(residue, "H41", N4, 1.00e0, C4, 120.0e0, N3, 0.0e0, 0, 1086);
+                setHydrogen(residue, "H42", N4, 1.00e0, C4, 120.0e0, N3, 180.0e0, 0, 1087);
+                setHydrogen(residue, "H5", C5, 1.08e0, C4, 121.6e0, N3, 180.0e0, 0, 1088);
+                setHydrogen(residue, "H6", C6, 1.08e0, C5, 119.4e0, C4, 180.0e0, 0, 1089);
                 break;
             case M5MC:
                 Atom CM5;
                 Atom HM51;
-                N1 = setHeavyAtom(residue, "N1", C1s, 1508);
-                C2 = setHeavyAtom(residue, "C2", N1, 1509);
-                O2 = setHeavyAtom(residue, "O2", C2, 1514);
-                N3 = setHeavyAtom(residue, "N3", C2, 1510);
-                C4 = setHeavyAtom(residue, "C4", N3, 1511);
-                N4 = setHeavyAtom(residue, "N4", C4, 1515);
-                C5 = setHeavyAtom(residue, "C5", C4, 1512);
-                C6 = setHeavyAtom(residue, "C6", C5, 1513);
-                CM5 = setHeavyAtom(residue, "CM5", C5, 1519);
+                N1 = setHeavy(residue, "N1", C1s, 1508);
+                C2 = setHeavy(residue, "C2", N1, 1509);
+                O2 = setHeavy(residue, "O2", C2, 1514);
+                N3 = setHeavy(residue, "N3", C2, 1510);
+                C4 = setHeavy(residue, "C4", N3, 1511);
+                N4 = setHeavy(residue, "N4", C4, 1515);
+                C5 = setHeavy(residue, "C5", C4, 1512);
+                C6 = setHeavy(residue, "C6", C5, 1513);
+                CM5 = setHeavy(residue, "CM5", C5, 1519);
                 bond(C6, N1);
-                setHydrogenAtom(residue, "H41", N4, 1.00e0, C4, 120.0e0, N3, 0.0e0, 0, 1516);
-                setHydrogenAtom(residue, "H42", N4, 1.00e0, C4, 120.0e0, C5, 0.0e0, 0, 1517);
-                setHydrogenAtom(residue, "H6", C6, 1.08e0, C5, 119.4e0, C4, 180.0e0, 0, 1518);
-                HM51 = setHydrogenAtom(residue, "HM51", CM5, 1.08e0, C5, 109.5e0, C4, 0.0e0, 0, 1520);
-                setHydrogenAtom(residue, "HM52", CM5, 1.08e0, C5, 109.5e0, HM51, 109.5e0, 1, 1521);
-                setHydrogenAtom(residue, "HM53", CM5, 1.08e0, C5, 109.5e0, HM51, 109.5e0, -1, 1522);
+                setHydrogen(residue, "H41", N4, 1.00e0, C4, 120.0e0, N3, 0.0e0, 0, 1516);
+                setHydrogen(residue, "H42", N4, 1.00e0, C4, 120.0e0, C5, 0.0e0, 0, 1517);
+                setHydrogen(residue, "H6", C6, 1.08e0, C5, 119.4e0, C4, 180.0e0, 0, 1518);
+                HM51 = setHydrogen(residue, "HM51", CM5, 1.08e0, C5, 109.5e0, C4, 0.0e0, 0, 1520);
+                setHydrogen(residue, "HM52", CM5, 1.08e0, C5, 109.5e0, HM51, 109.5e0, 1, 1521);
+                setHydrogen(residue, "HM53", CM5, 1.08e0, C5, 109.5e0, HM51, 109.5e0, -1, 1522);
                 break;
             case GUA:
             case OMG:
                 Atom O6;
                 Atom N2;
-                N9 = setHeavyAtom(residue, "N9", C1s, 1047);
-                C8 = setHeavyAtom(residue, "C8", N9, 1051);
-                N7 = setHeavyAtom(residue, "N7", C8, 1050);
-                C5 = setHeavyAtom(residue, "C5", N7, 1049);
-                C6 = setHeavyAtom(residue, "C6", C5, 1055);
-                O6 = setHeavyAtom(residue, "O6", C6, 1060);
-                N1 = setHeavyAtom(residue, "N1", C6, 1054);
-                C2 = setHeavyAtom(residue, "C2", N1, 1053);
-                N2 = setHeavyAtom(residue, "N2", C2, 1057);
-                N3 = setHeavyAtom(residue, "N3", C2, 1052);
-                C4 = setHeavyAtom(residue, "C4", N3, 1048);
+                N9 = setHeavy(residue, "N9", C1s, 1047);
+                C8 = setHeavy(residue, "C8", N9, 1051);
+                N7 = setHeavy(residue, "N7", C8, 1050);
+                C5 = setHeavy(residue, "C5", N7, 1049);
+                C6 = setHeavy(residue, "C6", C5, 1055);
+                O6 = setHeavy(residue, "O6", C6, 1060);
+                N1 = setHeavy(residue, "N1", C6, 1054);
+                C2 = setHeavy(residue, "C2", N1, 1053);
+                N2 = setHeavy(residue, "N2", C2, 1057);
+                N3 = setHeavy(residue, "N3", C2, 1052);
+                C4 = setHeavy(residue, "C4", N3, 1048);
                 bond(C4, C5);
                 bond(C4, N9);
-                setHydrogenAtom(residue, "H8", C8, 1.08e0, N7, 123.0e0, C5, 180.0e0, 0, 1061);
-                setHydrogenAtom(residue, "H1", N1, 1.00e0, C6, 117.4e0, C5, 180.0e0, 0, 1056);
-                setHydrogenAtom(residue, "H21", N2, 1.00e0, C2, 120.0e0, N1, 0.0e0, 0, 1058);
-                setHydrogenAtom(residue, "H22", N2, 1.00e0, C2, 120.0e0, N1, 180.0e0, 0, 1059);
+                setHydrogen(residue, "H8", C8, 1.08e0, N7, 123.0e0, C5, 180.0e0, 0, 1061);
+                setHydrogen(residue, "H1", N1, 1.00e0, C6, 117.4e0, C5, 180.0e0, 0, 1056);
+                setHydrogen(residue, "H21", N2, 1.00e0, C2, 120.0e0, N1, 0.0e0, 0, 1058);
+                setHydrogen(residue, "H22", N2, 1.00e0, C2, 120.0e0, N1, 180.0e0, 0, 1059);
                 break;
             case YYG:
                 Atom C10,
@@ -1697,266 +1699,266 @@ public final class PDBFilter extends SystemFilter {
                  H101,
                  H191,
                  H241;
-                N9 = setHeavyAtom(residue, "N9", C1s, 1640);
-                C8 = setHeavyAtom(residue, "C8", N9, 1644);
-                N7 = setHeavyAtom(residue, "N7", C8, 1643);
-                C5 = setHeavyAtom(residue, "C5", N7, 1642);
-                C6 = setHeavyAtom(residue, "C6", C5, 1648);
-                O6 = setHeavyAtom(residue, "O6", C6, 1650);
-                N1 = setHeavyAtom(residue, "N1", C6, 1647);
-                C2 = setHeavyAtom(residue, "C2", N1, 1646);
-                N2 = setHeavyAtom(residue, "N2", C2, 1649);
-                N3 = setHeavyAtom(residue, "N3", C2, 1645);
-                C3 = setHeavyAtom(residue, "C3", N3, 1652);
-                C4 = setHeavyAtom(residue, "C4", N3, 1641);
-                C11 = setHeavyAtom(residue, "C11", N2, 1657);
-                C10 = setHeavyAtom(residue, "C10", C11, 1658);
-                C12 = setHeavyAtom(residue, "C12", C11, 1656);
-                C13 = setHeavyAtom(residue, "C13", C12, 1662);
-                C14 = setHeavyAtom(residue, "C14", C13, 1665);
-                C15 = setHeavyAtom(residue, "C15", C14, 1668);
-                C16 = setHeavyAtom(residue, "C16", C15, 1675);
-                O17 = setHeavyAtom(residue, "O17", C16, 1676);
-                O18 = setHeavyAtom(residue, "O18", C16, 1674);
-                C19 = setHeavyAtom(residue, "C19", O18, 1670);
-                N20 = setHeavyAtom(residue, "N20", C15, 1677);
-                C21 = setHeavyAtom(residue, "C21", N20, 1679);
-                O22 = setHeavyAtom(residue, "O22", C21, 1680);
-                O23 = setHeavyAtom(residue, "O23", C21, 1681);
-                C24 = setHeavyAtom(residue, "C24", O23, 1682);
+                N9 = setHeavy(residue, "N9", C1s, 1640);
+                C8 = setHeavy(residue, "C8", N9, 1644);
+                N7 = setHeavy(residue, "N7", C8, 1643);
+                C5 = setHeavy(residue, "C5", N7, 1642);
+                C6 = setHeavy(residue, "C6", C5, 1648);
+                O6 = setHeavy(residue, "O6", C6, 1650);
+                N1 = setHeavy(residue, "N1", C6, 1647);
+                C2 = setHeavy(residue, "C2", N1, 1646);
+                N2 = setHeavy(residue, "N2", C2, 1649);
+                N3 = setHeavy(residue, "N3", C2, 1645);
+                C3 = setHeavy(residue, "C3", N3, 1652);
+                C4 = setHeavy(residue, "C4", N3, 1641);
+                C11 = setHeavy(residue, "C11", N2, 1657);
+                C10 = setHeavy(residue, "C10", C11, 1658);
+                C12 = setHeavy(residue, "C12", C11, 1656);
+                C13 = setHeavy(residue, "C13", C12, 1662);
+                C14 = setHeavy(residue, "C14", C13, 1665);
+                C15 = setHeavy(residue, "C15", C14, 1668);
+                C16 = setHeavy(residue, "C16", C15, 1675);
+                O17 = setHeavy(residue, "O17", C16, 1676);
+                O18 = setHeavy(residue, "O18", C16, 1674);
+                C19 = setHeavy(residue, "C19", O18, 1670);
+                N20 = setHeavy(residue, "N20", C15, 1677);
+                C21 = setHeavy(residue, "C21", N20, 1679);
+                O22 = setHeavy(residue, "O22", C21, 1680);
+                O23 = setHeavy(residue, "O23", C21, 1681);
+                C24 = setHeavy(residue, "C24", O23, 1682);
                 bond(C4, C5);
                 bond(C4, N9);
                 bond(N1, C12);
-                setHydrogenAtom(residue, "H8", C8, 1.08e0, N7, 123.0e0, C5, 180.0e0, 0, 1651);
-                H31 = setHydrogenAtom(residue, "H31", C3, 1.08e0, N3, 109.5e0, C4, 0.0e0, 0, 1653);
-                setHydrogenAtom(residue, "H32", C3, 1.08e0, N3, 109.5e0, H31, 109.5e0, 1, 1654);
-                setHydrogenAtom(residue, "H33", C3, 1.08e0, N3, 109.5e0, H31, 109.5e0, -1, 1655);
-                H101 = setHydrogenAtom(residue, "H101", C10, 1.08e0, C11, 109.5e0, N2, 0.0e0, 0, 1659);
-                setHydrogenAtom(residue, "H102", C10, 1.08e0, C11, 109.5e0, H101, 109.5e0, 1, 1660);
-                setHydrogenAtom(residue, "H103", C10, 1.08e0, C11, 109.5e0, H101, 109.5e0, -1, 1661);
-                setHydrogenAtom(residue, "H131", C13, 1.08e0, C12, 109.5e0, C14, 109.5e0, 1, 1663);
-                setHydrogenAtom(residue, "H132", C13, 1.08e0, C12, 109.5e0, C14, 109.5e0, -1, 1664);
-                setHydrogenAtom(residue, "H141", C14, 1.08e0, C13, 109.5e0, C15, 109.5e0, 1, 1666);
-                setHydrogenAtom(residue, "H142", C14, 1.08e0, C13, 109.5e0, C15, 109.5e0, -1, 1667);
-                setHydrogenAtom(residue, "H15", C15, 1.08e0, C14, 109.5e0, O18, 180.e0, 0, 1669);
-                H191 = setHydrogenAtom(residue, "H191", C19, 1.08e0, O18, 109.5e0, C16, 0.0e0, 0, 1671);
-                setHydrogenAtom(residue, "H192", C19, 1.08e0, O18, 109.5e0, H191, 109.5e0, 1, 1672);
-                setHydrogenAtom(residue, "H193", C19, 1.08e0, O18, 109.5e0, H191, 109.5e0, -1, 1673);
-                setHydrogenAtom(residue, "HN2", N20, 1.00e0, C15, 109.5e0, O22, 180.0e0, 0, 1678);
-                H241 = setHydrogenAtom(residue, "H241", C24, 1.08e0, O23, 109.5e0, C21, 0.0e0, 0, 1683);
-                setHydrogenAtom(residue, "H242", C24, 1.08e0, O23, 109.5e0, H241, 109.5e0, 1, 1684);
-                setHydrogenAtom(residue, "H243", C24, 1.08e0, O23, 109.5e0, H241, 109.5e0, -1, 1685);
+                setHydrogen(residue, "H8", C8, 1.08e0, N7, 123.0e0, C5, 180.0e0, 0, 1651);
+                H31 = setHydrogen(residue, "H31", C3, 1.08e0, N3, 109.5e0, C4, 0.0e0, 0, 1653);
+                setHydrogen(residue, "H32", C3, 1.08e0, N3, 109.5e0, H31, 109.5e0, 1, 1654);
+                setHydrogen(residue, "H33", C3, 1.08e0, N3, 109.5e0, H31, 109.5e0, -1, 1655);
+                H101 = setHydrogen(residue, "H101", C10, 1.08e0, C11, 109.5e0, N2, 0.0e0, 0, 1659);
+                setHydrogen(residue, "H102", C10, 1.08e0, C11, 109.5e0, H101, 109.5e0, 1, 1660);
+                setHydrogen(residue, "H103", C10, 1.08e0, C11, 109.5e0, H101, 109.5e0, -1, 1661);
+                setHydrogen(residue, "H131", C13, 1.08e0, C12, 109.5e0, C14, 109.5e0, 1, 1663);
+                setHydrogen(residue, "H132", C13, 1.08e0, C12, 109.5e0, C14, 109.5e0, -1, 1664);
+                setHydrogen(residue, "H141", C14, 1.08e0, C13, 109.5e0, C15, 109.5e0, 1, 1666);
+                setHydrogen(residue, "H142", C14, 1.08e0, C13, 109.5e0, C15, 109.5e0, -1, 1667);
+                setHydrogen(residue, "H15", C15, 1.08e0, C14, 109.5e0, O18, 180.e0, 0, 1669);
+                H191 = setHydrogen(residue, "H191", C19, 1.08e0, O18, 109.5e0, C16, 0.0e0, 0, 1671);
+                setHydrogen(residue, "H192", C19, 1.08e0, O18, 109.5e0, H191, 109.5e0, 1, 1672);
+                setHydrogen(residue, "H193", C19, 1.08e0, O18, 109.5e0, H191, 109.5e0, -1, 1673);
+                setHydrogen(residue, "HN2", N20, 1.00e0, C15, 109.5e0, O22, 180.0e0, 0, 1678);
+                H241 = setHydrogen(residue, "H241", C24, 1.08e0, O23, 109.5e0, C21, 0.0e0, 0, 1683);
+                setHydrogen(residue, "H242", C24, 1.08e0, O23, 109.5e0, H241, 109.5e0, 1, 1684);
+                setHydrogen(residue, "H243", C24, 1.08e0, O23, 109.5e0, H241, 109.5e0, -1, 1685);
                 break;
             case M2MG:
                 Atom CM2;
                 Atom HM21;
-                N9 = setHeavyAtom(residue, "N9", C1s, 1316);
-                C8 = setHeavyAtom(residue, "C8", N9, 1320);
-                N7 = setHeavyAtom(residue, "N7", C8, 1319);
-                C5 = setHeavyAtom(residue, "C5", N7, 1318);
-                C6 = setHeavyAtom(residue, "C6", C5, 1324);
-                O6 = setHeavyAtom(residue, "O6", C6, 1328);
-                N1 = setHeavyAtom(residue, "N1", C6, 1323);
-                C2 = setHeavyAtom(residue, "C2", N1, 1322);
-                N2 = setHeavyAtom(residue, "N2", C2, 1326);
-                N3 = setHeavyAtom(residue, "N3", C2, 1321);
-                C4 = setHeavyAtom(residue, "C4", N3, 1317);
-                CM2 = setHeavyAtom(residue, "CM2", N2, 1330);
+                N9 = setHeavy(residue, "N9", C1s, 1316);
+                C8 = setHeavy(residue, "C8", N9, 1320);
+                N7 = setHeavy(residue, "N7", C8, 1319);
+                C5 = setHeavy(residue, "C5", N7, 1318);
+                C6 = setHeavy(residue, "C6", C5, 1324);
+                O6 = setHeavy(residue, "O6", C6, 1328);
+                N1 = setHeavy(residue, "N1", C6, 1323);
+                C2 = setHeavy(residue, "C2", N1, 1322);
+                N2 = setHeavy(residue, "N2", C2, 1326);
+                N3 = setHeavy(residue, "N3", C2, 1321);
+                C4 = setHeavy(residue, "C4", N3, 1317);
+                CM2 = setHeavy(residue, "CM2", N2, 1330);
                 bond(C4, C5);
                 bond(C4, N9);
-                setHydrogenAtom(residue, "H8", C8, 1.08e0, N7, 123.0e0, C5, 180.0e0, 0, 1329);
-                setHydrogenAtom(residue, "H1", N1, 1.00e0, C6, 117.4e0, C5, 180.0e0, 0, 1325);
-                setHydrogenAtom(residue, "H2", N2, 1.00e0, C2, 120.0e0, N1, 0.0e0, 0, 1327);
-                HM21 = setHydrogenAtom(residue, "HM21", CM2, 1.08e0, N2, 109.5e0, C2, 0.0e0, 0, 1331);
-                setHydrogenAtom(residue, "HM22", CM2, 1.08e0, N2, 109.5e0, HM21, 109.5e0, 1, 1332);
-                setHydrogenAtom(residue, "HM23", CM2, 1.08e0, N2, 109.5e0, HM21, 109.5e0, -1, 1333);
+                setHydrogen(residue, "H8", C8, 1.08e0, N7, 123.0e0, C5, 180.0e0, 0, 1329);
+                setHydrogen(residue, "H1", N1, 1.00e0, C6, 117.4e0, C5, 180.0e0, 0, 1325);
+                setHydrogen(residue, "H2", N2, 1.00e0, C2, 120.0e0, N1, 0.0e0, 0, 1327);
+                HM21 = setHydrogen(residue, "HM21", CM2, 1.08e0, N2, 109.5e0, C2, 0.0e0, 0, 1331);
+                setHydrogen(residue, "HM22", CM2, 1.08e0, N2, 109.5e0, HM21, 109.5e0, 1, 1332);
+                setHydrogen(residue, "HM23", CM2, 1.08e0, N2, 109.5e0, HM21, 109.5e0, -1, 1333);
                 break;
             case M2G:
-                N9 = setHeavyAtom(residue, "N9", C1s, 1379);
-                C8 = setHeavyAtom(residue, "C8", N9, 1383);
-                N7 = setHeavyAtom(residue, "N7", C8, 1382);
-                C5 = setHeavyAtom(residue, "C5", N7, 1381);
-                C6 = setHeavyAtom(residue, "C6", C5, 1387);
-                O6 = setHeavyAtom(residue, "O6", C6, 1390);
-                N1 = setHeavyAtom(residue, "N1", C6, 1386);
-                C2 = setHeavyAtom(residue, "C2", N1, 1385);
-                N2 = setHeavyAtom(residue, "N2", C2, 1389);
-                N3 = setHeavyAtom(residue, "N3", C2, 1384);
-                C4 = setHeavyAtom(residue, "C4", N3, 1380);
-                CM1 = setHeavyAtom(residue, "CM1", N2, 1392);
-                CM2 = setHeavyAtom(residue, "CM2", N2, 1396);
+                N9 = setHeavy(residue, "N9", C1s, 1379);
+                C8 = setHeavy(residue, "C8", N9, 1383);
+                N7 = setHeavy(residue, "N7", C8, 1382);
+                C5 = setHeavy(residue, "C5", N7, 1381);
+                C6 = setHeavy(residue, "C6", C5, 1387);
+                O6 = setHeavy(residue, "O6", C6, 1390);
+                N1 = setHeavy(residue, "N1", C6, 1386);
+                C2 = setHeavy(residue, "C2", N1, 1385);
+                N2 = setHeavy(residue, "N2", C2, 1389);
+                N3 = setHeavy(residue, "N3", C2, 1384);
+                C4 = setHeavy(residue, "C4", N3, 1380);
+                CM1 = setHeavy(residue, "CM1", N2, 1392);
+                CM2 = setHeavy(residue, "CM2", N2, 1396);
                 bond(C4, C5);
                 bond(C4, N9);
-                setHydrogenAtom(residue, "H8", C8, 1.08e0, N7, 123.0e0, C5, 180.0e0, 0, 1391);
-                setHydrogenAtom(residue, "H1", N1, 1.00e0, C6, 117.4e0, C5, 180.0e0, 0, 1388);
-                HM11 = setHydrogenAtom(residue, "HM11", CM1, 1.08e0, N2, 109.5e0, C2, 0.0e0, 0, 1393);
-                setHydrogenAtom(residue, "HM12", CM1, 1.08e0, N2, 109.5e0, HM11, 109.5e0, 1, 1394);
-                setHydrogenAtom(residue, "HM13", CM1, 1.08e0, N2, 109.5e0, HM11, 109.5e0, -1, 1395);
-                HM21 = setHydrogenAtom(residue, "HM21", CM2, 1.08e0, N2, 109.5e0, C2, 0.0e0, 0, 1397);
-                setHydrogenAtom(residue, "HM22", CM2, 1.08e0, N2, 109.5e0, HM21, 109.5e0, 1, 1398);
-                setHydrogenAtom(residue, "HM23", CM2, 1.08e0, N2, 109.5e0, HM21, 109.5e0, -1, 1399);
+                setHydrogen(residue, "H8", C8, 1.08e0, N7, 123.0e0, C5, 180.0e0, 0, 1391);
+                setHydrogen(residue, "H1", N1, 1.00e0, C6, 117.4e0, C5, 180.0e0, 0, 1388);
+                HM11 = setHydrogen(residue, "HM11", CM1, 1.08e0, N2, 109.5e0, C2, 0.0e0, 0, 1393);
+                setHydrogen(residue, "HM12", CM1, 1.08e0, N2, 109.5e0, HM11, 109.5e0, 1, 1394);
+                setHydrogen(residue, "HM13", CM1, 1.08e0, N2, 109.5e0, HM11, 109.5e0, -1, 1395);
+                HM21 = setHydrogen(residue, "HM21", CM2, 1.08e0, N2, 109.5e0, C2, 0.0e0, 0, 1397);
+                setHydrogen(residue, "HM22", CM2, 1.08e0, N2, 109.5e0, HM21, 109.5e0, 1, 1398);
+                setHydrogen(residue, "HM23", CM2, 1.08e0, N2, 109.5e0, HM21, 109.5e0, -1, 1399);
                 break;
             case M7MG:
                 Atom CM7;
                 Atom HM71;
-                N9 = setHeavyAtom(residue, "N9", C1s, 1539);
-                C8 = setHeavyAtom(residue, "C8", N9, 1543);
-                N7 = setHeavyAtom(residue, "N7", C8, 1542);
-                C5 = setHeavyAtom(residue, "C5", N7, 1541);
-                C6 = setHeavyAtom(residue, "C6", C5, 1547);
-                O6 = setHeavyAtom(residue, "O6", C6, 1552);
-                N1 = setHeavyAtom(residue, "N1", C6, 1546);
-                C2 = setHeavyAtom(residue, "C2", N1, 1545);
-                N2 = setHeavyAtom(residue, "N2", C2, 1549);
-                N3 = setHeavyAtom(residue, "N3", C2, 1544);
-                C4 = setHeavyAtom(residue, "C4", N3, 1540);
-                CM7 = setHeavyAtom(residue, "CM7", N7, 1555);
+                N9 = setHeavy(residue, "N9", C1s, 1539);
+                C8 = setHeavy(residue, "C8", N9, 1543);
+                N7 = setHeavy(residue, "N7", C8, 1542);
+                C5 = setHeavy(residue, "C5", N7, 1541);
+                C6 = setHeavy(residue, "C6", C5, 1547);
+                O6 = setHeavy(residue, "O6", C6, 1552);
+                N1 = setHeavy(residue, "N1", C6, 1546);
+                C2 = setHeavy(residue, "C2", N1, 1545);
+                N2 = setHeavy(residue, "N2", C2, 1549);
+                N3 = setHeavy(residue, "N3", C2, 1544);
+                C4 = setHeavy(residue, "C4", N3, 1540);
+                CM7 = setHeavy(residue, "CM7", N7, 1555);
                 bond(C4, C5);
                 bond(C4, N9);
-                setHydrogenAtom(residue, "H81", C8, 1.08e0, N7, 109.5e0, N9, 109.5e0, 1, 1553);
-                setHydrogenAtom(residue, "H82", C8, 1.08e0, N7, 109.5e0, N9, 109.5e0, -1, 1554);
-                setHydrogenAtom(residue, "H1", N1, 1.00e0, C6, 117.4e0, C5, 180.0e0, 0, 1548);
-                setHydrogenAtom(residue, "H21", N2, 1.00e0, C2, 120.0e0, N1, 0.0e0, 0, 1550);
-                setHydrogenAtom(residue, "H22", N2, 1.00e0, C2, 120.0e0, N3, 0.0e0, 0, 1551);
-                HM71 = setHydrogenAtom(residue, "HM71", CM7, 1.08e0, N7, 109.5e0, C8, 0.0e0, 0, 1556);
-                setHydrogenAtom(residue, "HM72", CM7, 1.08e0, N7, 109.5e0, HM71, 109.5e0, 1, 1557);
-                setHydrogenAtom(residue, "HM73", CM7, 1.08e0, N7, 109.5e0, HM71, 109.5e0, -1, 1558);
+                setHydrogen(residue, "H81", C8, 1.08e0, N7, 109.5e0, N9, 109.5e0, 1, 1553);
+                setHydrogen(residue, "H82", C8, 1.08e0, N7, 109.5e0, N9, 109.5e0, -1, 1554);
+                setHydrogen(residue, "H1", N1, 1.00e0, C6, 117.4e0, C5, 180.0e0, 0, 1548);
+                setHydrogen(residue, "H21", N2, 1.00e0, C2, 120.0e0, N1, 0.0e0, 0, 1550);
+                setHydrogen(residue, "H22", N2, 1.00e0, C2, 120.0e0, N3, 0.0e0, 0, 1551);
+                HM71 = setHydrogen(residue, "HM71", CM7, 1.08e0, N7, 109.5e0, C8, 0.0e0, 0, 1556);
+                setHydrogen(residue, "HM72", CM7, 1.08e0, N7, 109.5e0, HM71, 109.5e0, 1, 1557);
+                setHydrogen(residue, "HM73", CM7, 1.08e0, N7, 109.5e0, HM71, 109.5e0, -1, 1558);
                 break;
             case URI:
                 Atom O4;
-                N1 = setHeavyAtom(residue, "N1", C1s, 1106);
-                C2 = setHeavyAtom(residue, "C2", N1, 1107);
-                O2 = setHeavyAtom(residue, "O2", C2, 1112);
-                N3 = setHeavyAtom(residue, "N3", C2, 1108);
-                C4 = setHeavyAtom(residue, "C4", N3, 1109);
-                O4 = setHeavyAtom(residue, "O4", C4, 1114);
-                C5 = setHeavyAtom(residue, "C5", C4, 1110);
-                C6 = setHeavyAtom(residue, "C6", C5, 1111);
+                N1 = setHeavy(residue, "N1", C1s, 1106);
+                C2 = setHeavy(residue, "C2", N1, 1107);
+                O2 = setHeavy(residue, "O2", C2, 1112);
+                N3 = setHeavy(residue, "N3", C2, 1108);
+                C4 = setHeavy(residue, "C4", N3, 1109);
+                O4 = setHeavy(residue, "O4", C4, 1114);
+                C5 = setHeavy(residue, "C5", C4, 1110);
+                C6 = setHeavy(residue, "C6", C5, 1111);
                 bond(C6, N1);
-                setHydrogenAtom(residue, "H3", N3, 1.00e0, C2, 116.5e0, N1, 180.0e0, 0, 1113);
-                setHydrogenAtom(residue, "H5", C5, 1.08e0, C4, 120.4e0, N3, 180.0e0, 0, 1115);
-                setHydrogenAtom(residue, "H6", C6, 1.08e0, C5, 118.6e0, C4, 180.0e0, 0, 1116);
+                setHydrogen(residue, "H3", N3, 1.00e0, C2, 116.5e0, N1, 180.0e0, 0, 1113);
+                setHydrogen(residue, "H5", C5, 1.08e0, C4, 120.4e0, N3, 180.0e0, 0, 1115);
+                setHydrogen(residue, "H6", C6, 1.08e0, C5, 118.6e0, C4, 180.0e0, 0, 1116);
                 break;
             case PSU:
                 // C1s bonds to C5 in PsuedoUridine
-                C5 = setHeavyAtom(residue, "C5", C1s, 1485);
-                C6 = setHeavyAtom(residue, "C6", C5, 1486);
-                N1 = setHeavyAtom(residue, "N1", C6, 1481);
-                C2 = setHeavyAtom(residue, "C2", N1, 1482);
-                O2 = setHeavyAtom(residue, "O2", C2, 1487);
-                N3 = setHeavyAtom(residue, "N3", C2, 1483);
-                C4 = setHeavyAtom(residue, "C4", N3, 1484);
-                O4 = setHeavyAtom(residue, "O4", C4, 1489);
+                C5 = setHeavy(residue, "C5", C1s, 1485);
+                C6 = setHeavy(residue, "C6", C5, 1486);
+                N1 = setHeavy(residue, "N1", C6, 1481);
+                C2 = setHeavy(residue, "C2", N1, 1482);
+                O2 = setHeavy(residue, "O2", C2, 1487);
+                N3 = setHeavy(residue, "N3", C2, 1483);
+                C4 = setHeavy(residue, "C4", N3, 1484);
+                O4 = setHeavy(residue, "O4", C4, 1489);
                 bond(C4, C5);
-                setHydrogenAtom(residue, "H1", N1, 1.00e0, C2, 120.0e0, O2, 0.0e0, 0, 1491);
-                setHydrogenAtom(residue, "H3", N3, 1.00e0, C2, 120.0e0, O2, 0.0e0, 0, 1488);
-                setHydrogenAtom(residue, "H6", C6, 1.08e0, C5, 120.0e0, C1s, 0.0e0, 0, 1490);
+                setHydrogen(residue, "H1", N1, 1.00e0, C2, 120.0e0, O2, 0.0e0, 0, 1491);
+                setHydrogen(residue, "H3", N3, 1.00e0, C2, 120.0e0, O2, 0.0e0, 0, 1488);
+                setHydrogen(residue, "H6", C6, 1.08e0, C5, 120.0e0, C1s, 0.0e0, 0, 1490);
                 break;
             case H2U:
-                N1 = setHeavyAtom(residue, "N1", C1s, 1350);
-                C2 = setHeavyAtom(residue, "C2", N1, 1351);
-                O2 = setHeavyAtom(residue, "O2", C2, 1356);
-                N3 = setHeavyAtom(residue, "N3", C2, 1352);
-                C4 = setHeavyAtom(residue, "C4", N3, 1353);
-                O4 = setHeavyAtom(residue, "O4", C4, 1358);
-                C5 = setHeavyAtom(residue, "C5", C4, 1354);
-                C6 = setHeavyAtom(residue, "C6", C5, 1355);
+                N1 = setHeavy(residue, "N1", C1s, 1350);
+                C2 = setHeavy(residue, "C2", N1, 1351);
+                O2 = setHeavy(residue, "O2", C2, 1356);
+                N3 = setHeavy(residue, "N3", C2, 1352);
+                C4 = setHeavy(residue, "C4", N3, 1353);
+                O4 = setHeavy(residue, "O4", C4, 1358);
+                C5 = setHeavy(residue, "C5", C4, 1354);
+                C6 = setHeavy(residue, "C6", C5, 1355);
                 bond(C6, N1);
-                setHydrogenAtom(residue, "H3", N3, 1.00e0, C2, 116.5e0, N1, 180.0e0, 0, 1357);
-                setHydrogenAtom(residue, "H51", C5, 1.08e0, C4, 109.5e0, C6, 109.5e0, 1, 1359);
-                setHydrogenAtom(residue, "H52", C5, 1.08e0, C4, 109.5e0, C6, 109.5e0, -1, 1360);
-                setHydrogenAtom(residue, "H61", C6, 1.08e0, C5, 109.5e0, N1, 109.5e0, 1, 1361);
-                setHydrogenAtom(residue, "H62", C6, 1.08e0, C5, 109.5e0, N1, 109.5e0, -1, 1362);
+                setHydrogen(residue, "H3", N3, 1.00e0, C2, 116.5e0, N1, 180.0e0, 0, 1357);
+                setHydrogen(residue, "H51", C5, 1.08e0, C4, 109.5e0, C6, 109.5e0, 1, 1359);
+                setHydrogen(residue, "H52", C5, 1.08e0, C4, 109.5e0, C6, 109.5e0, -1, 1360);
+                setHydrogen(residue, "H61", C6, 1.08e0, C5, 109.5e0, N1, 109.5e0, 1, 1361);
+                setHydrogen(residue, "H62", C6, 1.08e0, C5, 109.5e0, N1, 109.5e0, -1, 1362);
                 break;
             case M5MU:
                 Atom C5M;
                 Atom H5M1;
-                N1 = setHeavyAtom(residue, "N1", C1s, 1575);
-                C2 = setHeavyAtom(residue, "C2", N1, 1576);
-                O2 = setHeavyAtom(residue, "O2", C2, 1581);
-                N3 = setHeavyAtom(residue, "N3", C2, 1577);
-                C4 = setHeavyAtom(residue, "C4", N3, 1578);
-                O4 = setHeavyAtom(residue, "O4", C4, 1583);
-                C5 = setHeavyAtom(residue, "C5", C4, 1579);
-                C6 = setHeavyAtom(residue, "C6", C5, 1580);
-                C5M = setHeavyAtom(residue, "C5M", C5, 1585);
+                N1 = setHeavy(residue, "N1", C1s, 1575);
+                C2 = setHeavy(residue, "C2", N1, 1576);
+                O2 = setHeavy(residue, "O2", C2, 1581);
+                N3 = setHeavy(residue, "N3", C2, 1577);
+                C4 = setHeavy(residue, "C4", N3, 1578);
+                O4 = setHeavy(residue, "O4", C4, 1583);
+                C5 = setHeavy(residue, "C5", C4, 1579);
+                C6 = setHeavy(residue, "C6", C5, 1580);
+                C5M = setHeavy(residue, "C5M", C5, 1585);
                 bond(C6, N1);
-                setHydrogenAtom(residue, "H3", N3, 1.00e0, C2, 116.5e0, N1, 180.0e0, 0, 1582);
-                setHydrogenAtom(residue, "H6", C6, 1.08e0, C5, 118.6e0, C4, 180.0e0, 0, 1584);
-                H5M1 = setHydrogenAtom(residue, "H5M1", C5M, 1.08e0, C5, 109.5e0, C6, 0.0e0, 0, 1586);
-                setHydrogenAtom(residue, "H5M2", C5M, 1.08e0, C5, 109.5e0, H5M1, 109.5e0, 1, 1587);
-                setHydrogenAtom(residue, "H5M3", C5M, 1.08e0, C5, 109.5e0, H5M1, 109.5e0, -1, 1588);
+                setHydrogen(residue, "H3", N3, 1.00e0, C2, 116.5e0, N1, 180.0e0, 0, 1582);
+                setHydrogen(residue, "H6", C6, 1.08e0, C5, 118.6e0, C4, 180.0e0, 0, 1584);
+                H5M1 = setHydrogen(residue, "H5M1", C5M, 1.08e0, C5, 109.5e0, C6, 0.0e0, 0, 1586);
+                setHydrogen(residue, "H5M2", C5M, 1.08e0, C5, 109.5e0, H5M1, 109.5e0, 1, 1587);
+                setHydrogen(residue, "H5M3", C5M, 1.08e0, C5, 109.5e0, H5M1, 109.5e0, -1, 1588);
                 break;
             case DAD:
-                N9 = setHeavyAtom(residue, "N9", C1s, 1132);
-                C8 = setHeavyAtom(residue, "C8", N9, 1136);
-                N7 = setHeavyAtom(residue, "N7", C8, 1135);
-                C5 = setHeavyAtom(residue, "C5", N7, 1134);
-                C6 = setHeavyAtom(residue, "C6", C5, 1140);
-                N6 = setHeavyAtom(residue, "N6", C6, 1142);
-                N1 = setHeavyAtom(residue, "N1", C6, 1139);
-                C2 = setHeavyAtom(residue, "C2", N1, 1138);
-                N3 = setHeavyAtom(residue, "N3", C2, 1137);
-                C4 = setHeavyAtom(residue, "C4", N3, 1133);
+                N9 = setHeavy(residue, "N9", C1s, 1132);
+                C8 = setHeavy(residue, "C8", N9, 1136);
+                N7 = setHeavy(residue, "N7", C8, 1135);
+                C5 = setHeavy(residue, "C5", N7, 1134);
+                C6 = setHeavy(residue, "C6", C5, 1140);
+                N6 = setHeavy(residue, "N6", C6, 1142);
+                N1 = setHeavy(residue, "N1", C6, 1139);
+                C2 = setHeavy(residue, "C2", N1, 1138);
+                N3 = setHeavy(residue, "N3", C2, 1137);
+                C4 = setHeavy(residue, "C4", N3, 1133);
                 bond(C4, C5);
                 bond(C4, N9);
-                setHydrogenAtom(residue, "H8", C8, 1.08e0, N7, 123.1e0, C5, 180.0e0, 0, 1145);
-                setHydrogenAtom(residue, "H61", N6, 1.00e0, C6, 120.0e0, N7, 180.0e0, 0, 1143);
-                setHydrogenAtom(residue, "H62", N6, 1.00e0, C6, 120.0e0, N7, 0.0e0, 0, 1144);
-                setHydrogenAtom(residue, "H2", C2, 1.08e0, N3, 115.4e0, C4, 180.0e0, 0, 1141);
+                setHydrogen(residue, "H8", C8, 1.08e0, N7, 123.1e0, C5, 180.0e0, 0, 1145);
+                setHydrogen(residue, "H61", N6, 1.00e0, C6, 120.0e0, N7, 180.0e0, 0, 1143);
+                setHydrogen(residue, "H62", N6, 1.00e0, C6, 120.0e0, N7, 0.0e0, 0, 1144);
+                setHydrogen(residue, "H2", C2, 1.08e0, N3, 115.4e0, C4, 180.0e0, 0, 1141);
                 break;
             case DCY:
-                N1 = setHeavyAtom(residue, "N1", C1s, 1191);
-                C2 = setHeavyAtom(residue, "C2", N1, 1192);
-                O2 = setHeavyAtom(residue, "O2", C2, 1197);
-                N3 = setHeavyAtom(residue, "N3", C2, 1193);
-                C4 = setHeavyAtom(residue, "C4", N3, 1194);
-                N4 = setHeavyAtom(residue, "N4", C4, 1198);
-                C5 = setHeavyAtom(residue, "C5", C4, 1195);
-                C6 = setHeavyAtom(residue, "C6", C5, 1196);
+                N1 = setHeavy(residue, "N1", C1s, 1191);
+                C2 = setHeavy(residue, "C2", N1, 1192);
+                O2 = setHeavy(residue, "O2", C2, 1197);
+                N3 = setHeavy(residue, "N3", C2, 1193);
+                C4 = setHeavy(residue, "C4", N3, 1194);
+                N4 = setHeavy(residue, "N4", C4, 1198);
+                C5 = setHeavy(residue, "C5", C4, 1195);
+                C6 = setHeavy(residue, "C6", C5, 1196);
                 bond(C6, N1);
-                setHydrogenAtom(residue, "H41", N4, 1.00e0, C4, 120.0e0, N3, 0.0e0, 0, 1199);
-                setHydrogenAtom(residue, "H42", N4, 1.00e0, C4, 120.0e0, N3, 180.0e0, 0, 1200);
-                setHydrogenAtom(residue, "H5", C5, 1.08e0, C4, 121.6e0, N3, 180.0e0, 0, 1201);
-                setHydrogenAtom(residue, "H6", C6, 1.08e0, C5, 119.4e0, C4, 180.0e0, 0, 1202);
+                setHydrogen(residue, "H41", N4, 1.00e0, C4, 120.0e0, N3, 0.0e0, 0, 1199);
+                setHydrogen(residue, "H42", N4, 1.00e0, C4, 120.0e0, N3, 180.0e0, 0, 1200);
+                setHydrogen(residue, "H5", C5, 1.08e0, C4, 121.6e0, N3, 180.0e0, 0, 1201);
+                setHydrogen(residue, "H6", C6, 1.08e0, C5, 119.4e0, C4, 180.0e0, 0, 1202);
                 break;
             case DGU:
-                N9 = setHeavyAtom(residue, "N9", C1s, 1161);
-                C8 = setHeavyAtom(residue, "C8", N9, 1165);
-                N7 = setHeavyAtom(residue, "N7", C8, 1164);
-                C5 = setHeavyAtom(residue, "C5", N7, 1163);
-                C6 = setHeavyAtom(residue, "C6", C5, 1169);
-                O6 = setHeavyAtom(residue, "O6", C6, 1174);
-                N1 = setHeavyAtom(residue, "N1", C6, 1168);
-                C2 = setHeavyAtom(residue, "C2", N1, 1167);
-                N2 = setHeavyAtom(residue, "N2", C2, 1171);
-                N3 = setHeavyAtom(residue, "N3", C2, 1166);
-                C4 = setHeavyAtom(residue, "C4", N3, 1162);
+                N9 = setHeavy(residue, "N9", C1s, 1161);
+                C8 = setHeavy(residue, "C8", N9, 1165);
+                N7 = setHeavy(residue, "N7", C8, 1164);
+                C5 = setHeavy(residue, "C5", N7, 1163);
+                C6 = setHeavy(residue, "C6", C5, 1169);
+                O6 = setHeavy(residue, "O6", C6, 1174);
+                N1 = setHeavy(residue, "N1", C6, 1168);
+                C2 = setHeavy(residue, "C2", N1, 1167);
+                N2 = setHeavy(residue, "N2", C2, 1171);
+                N3 = setHeavy(residue, "N3", C2, 1166);
+                C4 = setHeavy(residue, "C4", N3, 1162);
                 bond(C4, C5);
                 bond(C4, N9);
-                setHydrogenAtom(residue, "H8", C8, 1.08e0, N7, 123.0e0, C5, 180.0e0, 0, 1175);
-                setHydrogenAtom(residue, "H1", N1, 1.00e0, C6, 117.4e0, C5, 180.0e0, 0, 1170);
-                setHydrogenAtom(residue, "H21", N2, 1.00e0, C2, 120.0e0, N1, 0.0e0, 0, 1172);
-                setHydrogenAtom(residue, "H22", N2, 1.00e0, C2, 120.0e0, N1, 180.0e0, 0, 1173);
+                setHydrogen(residue, "H8", C8, 1.08e0, N7, 123.0e0, C5, 180.0e0, 0, 1175);
+                setHydrogen(residue, "H1", N1, 1.00e0, C6, 117.4e0, C5, 180.0e0, 0, 1170);
+                setHydrogen(residue, "H21", N2, 1.00e0, C2, 120.0e0, N1, 0.0e0, 0, 1172);
+                setHydrogen(residue, "H22", N2, 1.00e0, C2, 120.0e0, N1, 180.0e0, 0, 1173);
                 break;
             case DTY:
                 Atom C7;
                 Atom H;
-                N1 = setHeavyAtom(residue, "N1", C1s, 1218);
-                C2 = setHeavyAtom(residue, "C2", N1, 1219);
-                O2 = setHeavyAtom(residue, "O2", C2, 1224);
-                N3 = setHeavyAtom(residue, "N3", C2, 1220);
-                C4 = setHeavyAtom(residue, "C4", N3, 1221);
-                O4 = setHeavyAtom(residue, "O4", C4, 1226);
-                C5 = setHeavyAtom(residue, "C5", C4, 1222);
-                C7 = setHeavyAtom(residue, "C7", C5, 1227);
-                C6 = setHeavyAtom(residue, "C6", C5, 1223);
+                N1 = setHeavy(residue, "N1", C1s, 1218);
+                C2 = setHeavy(residue, "C2", N1, 1219);
+                O2 = setHeavy(residue, "O2", C2, 1224);
+                N3 = setHeavy(residue, "N3", C2, 1220);
+                C4 = setHeavy(residue, "C4", N3, 1221);
+                O4 = setHeavy(residue, "O4", C4, 1226);
+                C5 = setHeavy(residue, "C5", C4, 1222);
+                C7 = setHeavy(residue, "C7", C5, 1227);
+                C6 = setHeavy(residue, "C6", C5, 1223);
                 bond(C6, N1);
-                setHydrogenAtom(residue, "H3", N3, 1.00e0, C2, 116.8e0, N1, 180.0e0, 0, 1225);
-                H = setHydrogenAtom(residue, "H71", C7, 1.09e0, C5, 109.5e0, C4, 0.0e0, 0, 1228);
-                setHydrogenAtom(residue, "H72", C7, 1.09e0, C5, 109.5e0, H, 109.5e0, 1, 1228);
-                setHydrogenAtom(residue, "H73", C7, 1.09e0, C5, 109.5e0, H, 109.5e0, -1, 1228);
-                setHydrogenAtom(residue, "H6", C6, 1.08e0, C5, 119.4e0, C4, 180.0e0, 0, 1229);
+                setHydrogen(residue, "H3", N3, 1.00e0, C2, 116.8e0, N1, 180.0e0, 0, 1225);
+                H = setHydrogen(residue, "H71", C7, 1.09e0, C5, 109.5e0, C4, 0.0e0, 0, 1228);
+                setHydrogen(residue, "H72", C7, 1.09e0, C5, 109.5e0, H, 109.5e0, 1, 1228);
+                setHydrogen(residue, "H73", C7, 1.09e0, C5, 109.5e0, H, 109.5e0, -1, 1228);
+                setHydrogen(residue, "H6", C6, 1.08e0, C5, 119.4e0, C4, 180.0e0, 0, 1229);
                 break;
         }
     }
@@ -2026,7 +2028,7 @@ public final class PDBFilter extends SystemFilter {
 
             /**
              * Only the first nitrogen should have H1, H2 and H3 atoms, unless
-             * its an NME cap.
+             * it's an NME cap.
              */
             if (position != FIRST_RESIDUE && numberOfResidues > 1 && aminoAcid != AminoAcid3.NME) {
                 Atom H1 = (Atom) residue.getAtomNode("H1");
@@ -2060,11 +2062,9 @@ public final class PDBFilter extends SystemFilter {
                 residueName = residue.getName().toUpperCase();
             }
 
-
             /**
-             * Check for missing heavy atoms.
-             *
-             * This check ignores special terminating groups like FOR, NH2, etc.
+             * Check for missing heavy atoms. This check ignores special
+             * terminating groups like FOR, NH2, etc.
              */
             int expected = aminoAcidHeavyAtoms[aminoAcidNumber];
             if (aminoAcid != AminoAcid3.GLY && expected >= 4 && !nonStandard) {
@@ -2153,12 +2153,12 @@ public final class PDBFilter extends SystemFilter {
             Atom O = null;
             if (!(position == LAST_RESIDUE && aminoAcid == AminoAcid3.NH2)) {
                 if (aminoAcid == AminoAcid3.ACE || aminoAcid == AminoAcid3.NME) {
-                    CA = setHeavyAtom(residue, "CH3", N, caType[j][aminoAcidNumber]);
+                    CA = setHeavy(residue, "CH3", N, caType[j][aminoAcidNumber]);
                 } else {
-                    CA = setHeavyAtom(residue, "CA", N, caType[j][aminoAcidNumber]);
+                    CA = setHeavy(residue, "CA", N, caType[j][aminoAcidNumber]);
                 }
                 if (!(position == LAST_RESIDUE && aminoAcid == AminoAcid3.NME)) {
-                    C = setHeavyAtom(residue, "C", CA, cType[j][aminoAcidNumber]);
+                    C = setHeavy(residue, "C", CA, cType[j][aminoAcidNumber]);
                     O = (Atom) residue.getAtomNode("O");
                     if (O == null) {
                         O = (Atom) residue.getAtomNode("OT1");
@@ -2180,36 +2180,36 @@ public final class PDBFilter extends SystemFilter {
                 case FIRST_RESIDUE:
                     switch (aminoAcid) {
                         case PRO:
-                            setHydrogenAtom(residue, "H2", N, 1.01e0, CA, 109.5e0, C, 0.0e0, 0, atomType);
-                            setHydrogenAtom(residue, "H3", N, 1.01e0, CA, 109.5e0, C, -120.0e0, 0, atomType);
+                            setHydrogenAtom(residue, "H2", N, 1.02, CA, 109.5, C, 0.0, 0, atomType);
+                            setHydrogenAtom(residue, "H3", N, 1.02, CA, 109.5, C, -120.0, 0, atomType);
                             break;
                         case PCA:
-                            setHydrogenAtom(residue, "H", N, 1.01e0, CA, 109.5e0, C, -60.0e0, 0, atomType);
+                            setHydrogenAtom(residue, "H", N, 1.02, CA, 109.5, C, -60.0, 0, atomType);
                             break;
                         case ACE:
                             break;
                         default:
-                            setHydrogenAtom(residue, "H1", N, 1.01e0, CA, 109.5e0, C, 180.0e0, 0, atomType);
-                            setHydrogenAtom(residue, "H2", N, 1.01e0, CA, 109.5e0, C, 60.0e0, 0, atomType);
-                            setHydrogenAtom(residue, "H3", N, 1.01e0, CA, 109.5e0, C, -60.0e0, 0, atomType);
+                            setHydrogenAtom(residue, "H1", N, 1.02, CA, 109.5, C, 180.0, 0, atomType);
+                            setHydrogenAtom(residue, "H2", N, 1.02, CA, 109.5, C, 60.0, 0, atomType);
+                            setHydrogenAtom(residue, "H3", N, 1.02, CA, 109.5, C, -60.0, 0, atomType);
                     }
                     break;
                 case LAST_RESIDUE:
                     switch (aminoAcid) {
                         case NH2:
-                            setHydrogenAtom(residue, "H1", N, 1.01e0, pC, 120.9e0, pCA, 0.0e0, 0, atomType);
-                            setHydrogenAtom(residue, "H2", N, 1.01e0, pC, 120.3e0, pCA, 180.0e0, 0, atomType);
+                            setHydrogenAtom(residue, "H1", N, 1.02, pC, 119.0, pCA, 0.0, 0, atomType);
+                            setHydrogenAtom(residue, "H2", N, 1.02, pC, 119.0, pCA, 180.0, 0, atomType);
                             break;
                         case NME:
-                            setHydrogenAtom(residue, "H", N, 1.01e0, C, 119.0e0, CA, 119.0e0, 1, atomType);
+                            setHydrogenAtom(residue, "H", N, 1.02, pC, 118.0, CA, 121.0, 1, atomType);
                             break;
                         default:
-                            setHydrogenAtom(residue, "H", N, 1.01e0, pC, 119.0e0, CA, 119.0e0, 1, atomType);
+                            setHydrogenAtom(residue, "H", N, 1.02, pC, 119.0, CA, 119.0, 1, atomType);
                     }
                     break;
                 default:
                     // Mid-chain nitrogen hydrogen.
-                    setHydrogenAtom(residue, "H", N, 1.01e0, pC, 119.0e0, CA, 119.0e0, 1, atomType);
+                    setHydrogenAtom(residue, "H", N, 1.02, pC, 119.0, CA, 119.0, 1, atomType);
             }
             /**
              * C-alpha hydrogen atoms.
@@ -2223,31 +2223,31 @@ public final class PDBFilter extends SystemFilter {
                 case FIRST_RESIDUE:
                     switch (aminoAcid) {
                         case FOR:
-                            setHydrogenAtom(residue, "H", C, 1.12e0, O, 0.0e0, null, 0.0e0, 0, atomType);
+                            setHydrogenAtom(residue, "H", C, 1.12, O, 0.0, null, 0.0, 0, atomType);
                             break;
                         case ACE:
-                            setHydrogenAtom(residue, "H1", CA, 1.10e0, C, 109.5e0, O, 180.0e0, 0, atomType);
-                            setHydrogenAtom(residue, "H2", CA, 1.10e0, C, 109.5e0, O, 60.0e0, 0, atomType);
-                            setHydrogenAtom(residue, "H3", CA, 1.10e0, C, 109.5e0, O, -60.0e0, 0, atomType);
+                            setHydrogenAtom(residue, "H1", CA, 1.10, C, 109.5, O, 180.0, 0, atomType);
+                            setHydrogenAtom(residue, "H2", CA, 1.10, C, 109.5, O, 60.0, 0, atomType);
+                            setHydrogenAtom(residue, "H3", CA, 1.10, C, 109.5, O, -60.0, 0, atomType);
                             break;
                         default:
-                            setHydrogenAtom(residue, haName, CA, 1.10e0, N, 109.5e0, C, 109.5e0, -1, atomType);
+                            setHydrogenAtom(residue, haName, CA, 1.10, N, 109.5, C, 109.5, -1, atomType);
                             break;
                     }
                     break;
                 case LAST_RESIDUE:
                     switch (aminoAcid) {
                         case NME:
-                            setHydrogenAtom(residue, "H1", CA, 1.10e0, N, 109.5e0, pC, 180.0e0, 0, atomType);
-                            setHydrogenAtom(residue, "H2", CA, 1.10e0, N, 109.5e0, pC, 60.0e0, 0, atomType);
-                            setHydrogenAtom(residue, "H3", CA, 1.10e0, N, 109.5e0, pC, -60.0e0, 0, atomType);
+                            setHydrogenAtom(residue, "H1", CA, 1.10, N, 109.5, pC, 180.0, 0, atomType);
+                            setHydrogenAtom(residue, "H2", CA, 1.10, N, 109.5, pC, 60.0, 0, atomType);
+                            setHydrogenAtom(residue, "H3", CA, 1.10, N, 109.5, pC, -60.0, 0, atomType);
                             break;
                         default:
-                            setHydrogenAtom(residue, haName, CA, 1.10e0, N, 109.5e0, C, 109.5e0, -1, atomType);
+                            setHydrogenAtom(residue, haName, CA, 1.10, N, 109.5, C, 109.5, -1, atomType);
                     }
                     break;
                 default:
-                    setHydrogenAtom(residue, haName, CA, 1.10e0, N, 109.5e0, C, 109.0e0, -1, atomType);
+                    setHydrogenAtom(residue, haName, CA, 1.10, N, 109.5, C, 109.0, -1, atomType);
             }
             /**
              * Build the amino acid side chain.
@@ -2278,7 +2278,7 @@ public final class PDBFilter extends SystemFilter {
                             occupancy, tempFactor, segID);
                     OXT.setAtomType(atomType);
                     residue.addMSNode(OXT);
-                    intxyz(OXT, C, 1.25e0, CA, 117.0e0, O, 126.0, 1);
+                    intxyz(OXT, C, 1.25, CA, 117.0, O, 126.0, 1);
                 } else {
                     OXT.setAtomType(atomType);
                 }
@@ -2327,355 +2327,419 @@ public final class PDBFilter extends SystemFilter {
      */
     private void assignAminoAcidSideChain(ResiduePosition position, AminoAcid3 aminoAcid, Residue residue,
             Atom CA, Atom N, Atom C) throws MissingHeavyAtomException {
+        int k = cbType[aminoAcid.ordinal()];
         switch (aminoAcid) {
             case GLY:
                 switch (position) {
                     case FIRST_RESIDUE:
-                        setHydrogenAtom(residue, "HA3", CA, 1.10e0, N, 109.5e0, C, 109.5e0, 1, 355);
+                        k = haType[0][k];
                         break;
                     case LAST_RESIDUE:
-                        setHydrogenAtom(residue, "HA3", CA, 1.10e0, N, 109.5e0, C, 109.5e0, 1, 506);
+                        k = haType[2][k];
                         break;
                     default:
-                        setHydrogenAtom(residue, "HA3", CA, 1.10e0, N, 109.5e0, C, 109.5e0, 1, 6);
+                        k = haType[1][k];
+
                 }
+                setHydrogen(residue, "HA3", CA, 1.10, N, 109.5, C, 109.5, 1, k);
                 break;
             case ALA:
-                Atom CB = setHeavyAtom(residue, "CB", CA, 13);
-                setHydrogenAtom(residue, "HB1", CB, 1.10e0, CA, 110.2e0, N, 180.0e0, 0, 14);
-                setHydrogenAtom(residue, "HB2", CB, 1.10e0, CA, 110.2e0, N, 60.0e0, 0, 14);
-                setHydrogenAtom(residue, "HB3", CB, 1.10e0, CA, 110.2e0, N, -60.0e0, 0, 14);
+                Atom CB = setHeavy(residue, "CB", CA, k);
+                Atom HB1 = setHydrogen(residue, "HB1", CB, 1.11, CA, 109.4, N, 180.0, 0, k + 1);
+                setHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, HB1, 109.4, 1, k + 1);
+                setHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, HB1, 109.4, -1, k + 1);
                 break;
             case VAL:
-                CB = setHeavyAtom(residue, "CB", CA, 21);
-                Atom CG1 = setHeavyAtom(residue, "CG1", CB, 23);
-                Atom CG2 = setHeavyAtom(residue, "CG2", CB, 25);
-                setHydrogenAtom(residue, "HB", CB, 1.10e0, CA, 107.0e0, CG1, 108.2e0, 1, 22);
-                setHydrogenAtom(residue, "HG11", CG1, 1.10e0, CB, 111.6e0, CA, 180.0e0, 0, 24);
-                setHydrogenAtom(residue, "HG12", CG1, 1.10e0, CB, 111.6e0, CA, 60.0e0, 0, 24);
-                setHydrogenAtom(residue, "HG13", CG1, 1.10e0, CB, 111.6e0, CA, -60.0e0, 0, 24);
-                setHydrogenAtom(residue, "HG21", CG2, 1.10e0, CB, 111.6e0, CA, 180.0e0, 0, 26);
-                setHydrogenAtom(residue, "HG22", CG2, 1.10e0, CB, 111.6e0, CA, 60.0e0, 0, 26);
-                setHydrogenAtom(residue, "HG23", CG2, 1.10e0, CB, 111.6e0, CA, -60.0e0, 0, 26);
+                CB = setHeavy(residue, "CB", CA, k);
+                Atom CG1 = setHeavy(residue, "CG1", CB, k + 2);
+                Atom CG2 = setHeavy(residue, "CG2", CB, k + 4);
+                Atom HB = setHydrogen(residue, "HB", CB, 1.11, CA, 109.4, CG1, 109.4, 1, k + 1);
+                Atom HG11 = setHydrogen(residue, "HG11", CG1, 1.11, CB, 109.4, CA, 180.0, 0, k + 3);
+                Atom HG12 = setHydrogen(residue, "HG12", CG1, 1.11, CB, 109.4, HG11, 109.4, 1, k + 3);
+                Atom HG13 = setHydrogen(residue, "HG13", CG1, 1.11, CB, 109.4, HG11, 109.4, -1, k + 3);
+                Atom HG21 = setHydrogen(residue, "HG21", CG2, 1.11, CB, 109.4, CA, 180.0, 0, k + 5);
+                Atom HG22 = setHydrogen(residue, "HG22", CG2, 1.11, CB, 109.4, HG21, 109.4, 1, k + 5);
+                Atom HG23 = setHydrogen(residue, "HG23", CG2, 1.11, CB, 109.4, HG21, 109.4, -1, k + 5);
                 break;
             case LEU:
-                CB = setHeavyAtom(residue, "CB", CA, 33);
-                Atom CG = setHeavyAtom(residue, "CG", CB, 35);
-                Atom CD1 = setHeavyAtom(residue, "CD1", CG, 37);
-                Atom CD2 = setHeavyAtom(residue, "CD2", CG, 39);
-                setHydrogenAtom(residue, "HB2", CB, 1.10e0, CA, 107.9e0, CG, 110.0e0, 1, 34);
-                setHydrogenAtom(residue, "HB3", CB, 1.10e0, CA, 107.9e0, CG, 110.0e0, -1, 34);
-                setHydrogenAtom(residue, "HG", CG, 1.10e0, CB, 107.0e0, CD1, 108.2e0, 1, 36);
-                setHydrogenAtom(residue, "HD11", CD1, 1.10e0, CG, 111.6e0, CB, 180.0e0, 0, 38);
-                setHydrogenAtom(residue, "HD12", CD1, 1.10e0, CG, 111.6e0, CB, 60.0e0, 0, 38);
-                setHydrogenAtom(residue, "HD13", CD1, 1.10e0, CG, 111.6e0, CB, -60.0e0, 0, 38);
-                setHydrogenAtom(residue, "HD21", CD2, 1.10e0, CG, 111.6e0, CB, 180.0e0, 0, 40);
-                setHydrogenAtom(residue, "HD22", CD2, 1.10e0, CG, 111.6e0, CB, 60.0e0, 0, 40);
-                setHydrogenAtom(residue, "HD23", CD2, 1.10e0, CG, 111.6e0, CB, -60.0e0, 0, 40);
+                CB = setHeavy(residue, "CB", CA, k);
+                Atom CG = setHeavy(residue, "CG", CB, k + 2);
+                Atom CD1 = setHeavy(residue, "CD1", CG, k + 4);
+                Atom CD2 = setHeavy(residue, "CD2", CG, k + 6);
+                Atom HB2 = setHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, CG, 109.4, 1, k + 1);
+                Atom HB3 = setHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, CG, 109.4, -1, k + 1);
+                Atom HG = setHydrogen(residue, "HG", CG, 1.11, CB, 109.4, CD1, 109.4, 1, k + 3);
+                Atom HD11 = setHydrogen(residue, "HD11", CD1, 1.11, CG, 109.4, CB, 180.0, 0, k + 5);
+                Atom HD12 = setHydrogen(residue, "HD12", CD1, 1.11, CG, 109.4, HD11, 109.4, 1, k + 5);
+                Atom HD13 = setHydrogen(residue, "HD13", CD1, 1.11, CG, 109.4, HD11, 109.4, -1, k + 5);
+                Atom HD21 = setHydrogen(residue, "HD21", CD2, 1.11, CG, 109.4, CB, 180.0, 0, k + 7);
+                Atom HD22 = setHydrogen(residue, "HD22", CD2, 1.11, CG, 109.4, HD21, 109.4, 1, k + 7);
+                Atom HD23 = setHydrogen(residue, "HD23", CD2, 1.11, CG, 109.4, HD21, 109.4, -1, k + 7);
                 break;
             case ILE:
-                CB = setHeavyAtom(residue, "CB", CA, 47);
-                CG1 = setHeavyAtom(residue, "CG1", CB, 49);
-                CG2 = setHeavyAtom(residue, "CG2", CB, 51);
+                CB = setHeavy(residue, "CB", CA, k);
+                CG1 = setHeavy(residue, "CG1", CB, k + 2);
+                CG2 = setHeavy(residue, "CG2", CB, k + 4);
                 try {
-                    CD1 = setHeavyAtom(residue, "CD1", CG1, 53);
+                    CD1 = setHeavy(residue, "CD1", CG1, k + 6);
                 } catch (MissingHeavyAtomException missingHeavyAtomException) {
-                    CD1 = setHeavyAtom(residue, "CD", CG1, 53);
+                    CD1 = setHeavy(residue, "CD", CG1, k + 6);
                 }
-                setHydrogenAtom(residue, "HB", CB, 1.10e0, CA, 107.0e0, CG1, 108.2e0, -1, 48);
-                setHydrogenAtom(residue, "HG12", CG1, 1.10e0, CB, 109.5e0, CD1, 109.5e0, 1, 50);
-                setHydrogenAtom(residue, "HG13", CG1, 1.10e0, CB, 109.5e0, CD1, 109.5e0, -1, 50);
-                setHydrogenAtom(residue, "HG21", CG2, 1.10e0, CB, 111.6e0, CA, 180.0e0, 0, 52);
-                setHydrogenAtom(residue, "HG22", CG2, 1.10e0, CB, 111.6e0, CA, 60.0e0, 0, 52);
-                setHydrogenAtom(residue, "HG23", CG2, 1.10e0, CB, 111.6e0, CA, -60.0e0, 0, 52);
-                setHydrogenAtom(residue, "HD11", CD1, 1.10e0, CG1, 111.6e0, CB, 180.0e0, 0, 54);
-                setHydrogenAtom(residue, "HD12", CD1, 1.10e0, CG1, 111.6e0, CB, 60.0e0, 0, 54);
-                setHydrogenAtom(residue, "HD13", CD1, 1.10e0, CG1, 111.6e0, CB, -60.0e0, 0, 54);
+                HB = setHydrogen(residue, "HB", CB, 1.11, CA, 109.4, CG1, 109.4, -1, k + 1);
+                HG12 = setHydrogen(residue, "HG12", CG1, 1.11, CB, 109.4, CD1, 109.4, 1, k + 3);
+                HG13 = setHydrogen(residue, "HG13", CG1, 1.11, CB, 109.4, CD1, 109.4, -1, k + 3);
+                HG21 = setHydrogen(residue, "HG21", CG2, 1.11, CB, 110.0, CG1, 180.0, 0, k + 5);
+                HG22 = setHydrogen(residue, "HG22", CG2, 1.11, CB, 110.0, HG21, 109.0, 1, k + 5);
+                HG23 = setHydrogen(residue, "HG23", CG2, 1.11, CB, 110.0, HG21, 109.0, -1, k + 5);
+                HD11 = setHydrogen(residue, "HD11", CD1, 1.11, CG1, 110.0, CB, 180.0, 0, k + 7);
+                HD12 = setHydrogen(residue, "HD12", CD1, 1.11, CG1, 110.0, HD11, 109.0, 1, k + 7);
+                HD13 = setHydrogen(residue, "HD13", CD1, 1.11, CG1, 110.0, HD11, 109.0, -1, k + 7);
                 break;
             case SER:
-                CB = setHeavyAtom(residue, "CB", CA, 61);
-                Atom OG = setHeavyAtom(residue, "OG", CB, 63);
-                setHydrogenAtom(residue, "HB2", CB, 1.10e0, CA, 109.2e0, OG, 109.5e0, 1, 62);
-                setHydrogenAtom(residue, "HB3", CB, 1.10e0, CA, 109.2e0, OG, 109.5e0, -1, 62);
-                setHydrogenAtom(residue, "HG", OG, 0.94e0, CB, 106.9e0, CA, 180.0e0, 0, 64);
+                CB = setHeavy(residue, "CB", CA, k);
+                Atom OG = setHeavy(residue, "OG", CB, k + 2);
+                HB2 = setHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, OG, 106.7, 1, k + 1);
+                HB3 = setHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, OG, 106.7, -1, k + 1);
+                HG = setHydrogen(residue, "HG", OG, 0.94, CB, 106.9, CA, 180.0, 0, k + 3);
                 break;
             case THR:
-                CB = setHeavyAtom(residue, "CB", CA, 71);
-                Atom OG1 = setHeavyAtom(residue, "OG1", CB, 73);
-                CG2 = setHeavyAtom(residue, "CG2", CB, 75);
-                setHydrogenAtom(residue, "HB", CB, 1.10e0, CA, 107.0e0, OG1, 108.2e0, -1, 72);
-                setHydrogenAtom(residue, "HG1", OG1, 0.94e0, CB, 106.9e0, CA, 180.0e0, 0, 74);
-                setHydrogenAtom(residue, "HG21", CG2, 1.10e0, CB, 111.6e0, CA, 180.0e0, 0, 76);
-                setHydrogenAtom(residue, "HG22", CG2, 1.10e0, CB, 111.6e0, CA, 60.0e0, 0, 76);
-                setHydrogenAtom(residue, "HG23", CG2, 1.10e0, CB, 111.6e0, CA, -60.0e0, 0, 76);
+                CB = setHeavy(residue, "CB", CA, k);
+                Atom OG1 = setHeavy(residue, "OG1", CB, k + 2);
+                CG2 = setHeavy(residue, "CG2", CB, k + 4);
+                HB = setHydrogen(residue, "HB", CB, 1.11, CA, 109.4, OG1, 106.7, -1, k + 1);
+                Atom HG1 = setHydrogen(residue, "HG1", OG1, 0.94, CB, 106.9, CA, 180.0, 0, k + 3);
+                HG21 = setHydrogen(residue, "HG21", CG2, 1.11, CB, 110.0, CA, 180.0, 0, k + 5);
+                HG22 = setHydrogen(residue, "HG22", CG2, 1.11, CB, 110.0, HG21, 109.0, 1, k + 5);
+                HD23 = setHydrogen(residue, "HG23", CG2, 1.11, CB, 110.0, HG21, 109.0, -1, k + 5);
                 break;
             case CYS:
-                CB = setHeavyAtom(residue, "CB", CA, 83);
-                Atom SG = setHeavyAtom(residue, "SG", CB, 85);
-                setHydrogenAtom(residue, "HB2", CB, 1.10e0, CA, 109.5e0, SG, 107.5e0, 1, 84);
-                setHydrogenAtom(residue, "HB3", CB, 1.10e0, CA, 109.5e0, SG, 107.5e0, -1, 84);
-                setHydrogenAtom(residue, "HG", SG, 1.34e0, CB, 96.0e0, CA, 180.0e0, 0, 86);
+                CB = setHeavy(residue, "CB", CA, k);
+                Atom SG = setHeavy(residue, "SG", CB, k + 2);
+                HB2 = setHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, SG, 112.0, 1, k + 1);
+                HB3 = setHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, SG, 112.0, -1, k + 1);
+                HG = setHydrogen(residue, "HG", SG, 1.34, CB, 96.0, CA, 180.0, 0, k + 3);
                 break;
             case CYX:
-                CB = setHeavyAtom(residue, "CB", CA, 93);
-                SG = setHeavyAtom(residue, "SG", CB, 95);
-                setHydrogenAtom(residue, "HB2", CB, 1.10e0, CA, 109.5e0, SG, 107.5e0, 1, 94);
-                setHydrogenAtom(residue, "HB3", CB, 1.10e0, CA, 109.5e0, SG, 107.5e0, -1, 94);
+                CB = setHeavy(residue, "CB", CA, k);
+                SG = setHeavy(residue, "SG", CB, k + 2);
+                HB2 = setHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, SG, 112.0, 1, k + 1);
+                HB3 = setHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, SG, 112.0, -1, k + 1);
                 List<Atom> resAtoms = residue.getAtomList();
                 for (Atom atom : resAtoms) {
                     atom.setResName("CYS");
                 }
                 residue.setName("CYS");
                 break;
+            case CYD:
+                CB = setHeavy(residue, "CB", CA, k);
+                SG = setHeavy(residue, "SG", CB, k + 2);
+                HB2 = setHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, SG, 112.0, 1, k + 1);
+                HB3 = setHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, SG, 112.0, -1, k + 1);
+                break;
             case PRO:
-                CB = setHeavyAtom(residue, "CB", CA, 101);
-                CG = setHeavyAtom(residue, "CG", CB, 103);
-                Atom CD = null;
+                CB = setHeavy(residue, "CB", CA, k);
+                CG = setHeavy(residue, "CG", CB, k + 2);
+                Atom CD;
                 if (position == FIRST_RESIDUE) {
-                    CD = setHeavyAtom(residue, "CD", CG, 410);
+                    CD = setHeavy(residue, "CD", CG, 469);
                 } else {
-                    CD = setHeavyAtom(residue, "CD", CG, 105);
+                    CD = setHeavy(residue, "CD", CG, k + 4);
                 }
                 bond(CD, N);
-                setHydrogenAtom(residue, "HB2", CB, 1.10e0, CA, 111.2e0, CG, 111.2e0, 1, 102);
-                setHydrogenAtom(residue, "HB3", CB, 1.10e0, CA, 111.2e0, CG, 111.2e0, -1, 102);
-                setHydrogenAtom(residue, "HG2", CG, 1.10e0, CB, 111.2e0, CD, 111.2e0, 1, 104);
-                setHydrogenAtom(residue, "HG3", CG, 1.10e0, CB, 111.2e0, CD, 111.2e0, -1, 104);
+                HB2 = setHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, CG, 109.4, 1, k + 1);
+                HB3 = setHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, CG, 109.4, -1, k + 1);
+                Atom HG2 = setHydrogen(residue, "HG2", CG, 1.11, CB, 109.4, CD, 109.4, 1, k + 3);
+                HB3 = setHydrogen(residue, "HG3", CG, 1.11, CB, 109.4, CD, 109.4, -1, k + 3);
                 if (position == FIRST_RESIDUE) {
-                    setHydrogenAtom(residue, "HD2", CD, 1.10e0, CG, 111.2e0, N, 111.2e0, 1, 411);
-                    setHydrogenAtom(residue, "HD3", CD, 1.10e0, CG, 111.2e0, N, 111.2e0, -1, 411);
+                    setHydrogen(residue, "HD2", CD, 1.11, CG, 109.4, N, 109.4, 1, 470);
+                    setHydrogen(residue, "HD3", CD, 1.11, CG, 109.4, N, 109.4, -1, 470);
                 } else {
-                    setHydrogenAtom(residue, "HD2", CD, 1.10e0, CG, 111.2e0, N, 111.2e0, 1, 106);
-                    setHydrogenAtom(residue, "HD3", CD, 1.10e0, CG, 111.2e0, N, 111.2e0, -1, 106);
+                    setHydrogen(residue, "HD2", CD, 1.11, CG, 109.4, N, 109.4, 1, k + 5);
+                    setHydrogen(residue, "HD3", CD, 1.11, CG, 109.4, N, 109.4, -1, k + 5);
                 }
                 break;
             case PHE:
-                CB = setHeavyAtom(residue, "CB", CA, 113);
-                CG = setHeavyAtom(residue, "CG", CB, 115);
-                CD1 = setHeavyAtom(residue, "CD1", CG, 116);
-                CD2 = setHeavyAtom(residue, "CD2", CG, 116);
-                Atom CE1 = setHeavyAtom(residue, "CE1", CD1, 118);
-                Atom CE2 = setHeavyAtom(residue, "CE2", CD2, 118);
-                Atom CZ = setHeavyAtom(residue, "CZ", CE1, 120);
+                CB = setHeavy(residue, "CB", CA, k);
+                CG = setHeavy(residue, "CG", CB, k + 2);
+                CD1 = setHeavy(residue, "CD1", CG, k + 3);
+                CD2 = setHeavy(residue, "CD2", CG, k + 3);
+                Atom CE1 = setHeavy(residue, "CE1", CD1, k + 5);
+                Atom CE2 = setHeavy(residue, "CE2", CD2, k + 5);
+                Atom CZ = setHeavy(residue, "CZ", CE1, k + 7);
                 bond(CE2, CZ);
-                setHydrogenAtom(residue, "HB2", CB, 1.10e0, CA, 107.9e0, CG, 110.0e0, 1, 114);
-                setHydrogenAtom(residue, "HB3", CB, 1.10e0, CA, 107.9e0, CG, 110.0e0, -1, 114);
-                setHydrogenAtom(residue, "HD1", CD1, 1.10e0, CG, 120.0e0, CB, 0.0e0, 0, 117);
-                setHydrogenAtom(residue, "HD2", CD2, 1.10e0, CG, 120.0e0, CB, 0.0e0, 0, 117);
-                setHydrogenAtom(residue, "HE1", CE1, 1.10e0, CD1, 120.0e0, CG, 180.0e0, 0, 119);
-                setHydrogenAtom(residue, "HE2", CE2, 1.10e0, CD2, 120.0e0, CG, 180.0e0, 0, 119);
-                setHydrogenAtom(residue, "HZ", CZ, 1.10e0, CE2, 120.0e0, CD2, 180.0e0, 0, 121);
+                HB2 = setHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, CG, 109.4, 1, k + 1);
+                HB3 = setHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, CG, 109.4, -1, k + 1);
+                Atom HD1 = setHydrogen(residue, "HD1", CD1, 1.11, CG, 120.0, CE1, 120.0, 1, k + 4);
+                Atom HD2 = setHydrogen(residue, "HD2", CD2, 1.11, CG, 120.0, CE2, 120.0, 1, k + 4);
+                Atom HE1 = setHydrogen(residue, "HE1", CE1, 1.11, CD1, 120.0, CZ, 120.0, 1, k + 6);
+                Atom HE2 = setHydrogen(residue, "HE2", CE2, 1.11, CD2, 120.0, CZ, 120.0, 1, k + 6);
+                Atom HZ = setHydrogen(residue, "HZ", CZ, 1.11, CE1, 120.0, CE2, 120.0, 1, k + 8);
                 break;
             case TYR:
-                CB = setHeavyAtom(residue, "CB", CA, 128);
-                CG = setHeavyAtom(residue, "CG", CB, 130);
-                CD1 = setHeavyAtom(residue, "CD1", CG, 131);
-                CD2 = setHeavyAtom(residue, "CD2", CG, 131);
-                CE1 = setHeavyAtom(residue, "CE1", CD1, 133);
-                CE2 = setHeavyAtom(residue, "CE2", CD2, 133);
-                CZ = setHeavyAtom(residue, "CZ", CE1, 135);
+                CB = setHeavy(residue, "CB", CA, k);
+                CG = setHeavy(residue, "CG", CB, k + 2);
+                CD1 = setHeavy(residue, "CD1", CG, k + 3);
+                CD2 = setHeavy(residue, "CD2", CG, k + 3);
+                CE1 = setHeavy(residue, "CE1", CD1, k + 5);
+                CE2 = setHeavy(residue, "CE2", CD2, k + 5);
+                CZ = setHeavy(residue, "CZ", CE1, k + 7);
                 bond(CE2, CZ);
-                Atom OH = setHeavyAtom(residue, "OH", CZ, 136);
-                setHydrogenAtom(residue, "HB2", CB, 1.10e0, CA, 107.9e0, CG, 110.0e0, 1, 129);
-                setHydrogenAtom(residue, "HB3", CB, 1.10e0, CA, 107.9e0, CG, 110.0e0, -1, 129);
-                setHydrogenAtom(residue, "HD1", CD1, 1.10e0, CG, 120.0e0, CB, 0.0e0, 0, 132);
-                setHydrogenAtom(residue, "HD2", CD2, 1.10e0, CG, 120.0e0, CB, 0.0e0, 0, 132);
-                setHydrogenAtom(residue, "HE1", CE1, 1.10e0, CD1, 120.0e0, CG, 180.0e0, 0, 134);
-                setHydrogenAtom(residue, "HE2", CE2, 1.10e0, CD2, 120.0e0, CG, 180.0e0, 0, 134);
-                setHydrogenAtom(residue, "HH", OH, 0.97e0, CZ, 108.0e0, CE2, 0.0e0, 0, 137);
+                Atom OH = setHeavy(residue, "OH", CZ, k + 8);
+                HB2 = setHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, CG, 109.4, 1, k + 1);
+                HB3 = setHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, CG, 109.4, -1, k + 1);
+                HD1 = setHydrogen(residue, "HD1", CD1, 1.10, CG, 120.0, CE1, 120.0, 1, k + 4);
+                HD2 = setHydrogen(residue, "HD2", CD2, 1.10, CG, 120.0, CE2, 120.0, 1, k + 4);
+                HE1 = setHydrogen(residue, "HE1", CE1, 1.10, CD1, 120.0, CZ, 120.0, 1, k + 6);
+                HE2 = setHydrogen(residue, "HE2", CE2, 1.10, CD2, 120.0, CZ, 120.0, 1, k + 6);
+                Atom HH = setHydrogen(residue, "HH", OH, 0.97, CZ, 108.0, CE2, 0.0, 0, k + 9);
+                break;
+            case TYD:
+                CB = setHeavy(residue, "CB", CA, k);
+                CG = setHeavy(residue, "CG", CB, k + 2);
+                CD1 = setHeavy(residue, "CD1", CG, k + 3);
+                CD2 = setHeavy(residue, "CD2", CG, k + 3);
+                CE1 = setHeavy(residue, "CE1", CD1, k + 5);
+                CE2 = setHeavy(residue, "CE2", CD2, k + 5);
+                CZ = setHeavy(residue, "CZ", CE1, k + 7);
+                bond(CE2, CZ);
+                OH = setHeavy(residue, "OH", CZ, k + 8);
+                HB2 = setHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, CG, 109.4, 1, k + 1);
+                HB3 = setHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, CG, 109.4, -1, k + 1);
+                HD1 = setHydrogen(residue, "HD1", CD1, 1.10, CG, 120.0, CE1, 120.0, 1, k + 4);
+                HD2 = setHydrogen(residue, "HD2", CD2, 1.10, CG, 120.0, CE2, 120.0, 1, k + 4);
+                HE1 = setHydrogen(residue, "HE1", CE1, 1.10, CD1, 120.0, CZ, 120.0, 1, k + 6);
+                HE2 = setHydrogen(residue, "HE2", CE2, 1.10, CD2, 120.0, CZ, 120.0, 1, k + 6);
                 break;
             case TRP:
-                CB = setHeavyAtom(residue, "CB", CA, 144);
-                CG = setHeavyAtom(residue, "CG", CB, 146);
-                CD1 = setHeavyAtom(residue, "CD1", CG, 147);
-                CD2 = setHeavyAtom(residue, "CD2", CG, 149);
-                Atom NE1 = setHeavyAtom(residue, "NE1", CD1, 150);
-                CE2 = setHeavyAtom(residue, "CE2", NE1, 152);
+                CB = setHeavy(residue, "CB", CA, k);
+                CG = setHeavy(residue, "CG", CB, k + 2);
+                CD1 = setHeavy(residue, "CD1", CG, k + 3);
+                CD2 = setHeavy(residue, "CD2", CG, k + 5);
+                Atom NE1 = setHeavy(residue, "NE1", CD1, k + 6);
+                CE2 = setHeavy(residue, "CE2", NE1, k + 8);
                 bond(CE2, CD2);
-                Atom CE3 = setHeavyAtom(residue, "CE3", CD2, 153);
-                Atom CZ2 = setHeavyAtom(residue, "CZ2", CE2, 155);
-                Atom CZ3 = setHeavyAtom(residue, "CZ3", CE3, 157);
-                Atom CH2 = setHeavyAtom(residue, "CH2", CZ3, 159);
+                Atom CE3 = setHeavy(residue, "CE3", CD2, k + 9);
+                Atom CZ2 = setHeavy(residue, "CZ2", CE2, k + 11);
+                Atom CZ3 = setHeavy(residue, "CZ3", CE3, k + 13);
+                Atom CH2 = setHeavy(residue, "CH2", CZ3, k + 15);
                 bond(CH2, CZ2);
-                setHydrogenAtom(residue, "HB2", CB, 1.10e0, CA, 107.9e0, CG, 110.0e0, 1, 145);
-                setHydrogenAtom(residue, "HB3", CB, 1.10e0, CA, 107.9e0, CG, 110.0e0, -1, 145);
-                setHydrogenAtom(residue, "HD1", CD1, 1.09e0, CG, 126.0e0, CB, 0.0e0, 0, 148);
-                setHydrogenAtom(residue, "HE1", NE1, 1.01e0, CD1, 126.3e0, CG, 180.0e0, 0, 151);
-                setHydrogenAtom(residue, "HE3", CE3, 1.09e0, CZ3, 120.0e0, CH2, 180.0e0, 0, 154);
-                setHydrogenAtom(residue, "HZ2", CZ2, 1.09e0, CH2, 120.0e0, CZ3, 180.0e0, 0, 156);
-                setHydrogenAtom(residue, "HZ3", CZ3, 1.09e0, CH2, 120.0e0, CZ2, 180.0e0, 0, 158);
-                setHydrogenAtom(residue, "HH2", CH2, 1.09e0, CZ3, 120.0e0, CE3, 180.0e0, 0, 160);
+                HB2 = setHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, CG, 109.4, 1, k + 1);
+                HB3 = setHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, CG, 109.4, -1, k + 1);
+                HD1 = setHydrogen(residue, "HD1", CD1, 1.10, CG, 126.0, NE1, 126.0, 1, k + 4);
+                HE1 = setHydrogen(residue, "HE1", NE1, 1.05, CD1, 126.0, CE2, 126.0, 1, k + 7);
+                Atom HE3 = setHydrogen(residue, "HE3", CE3, 1.10, CD1, 120.0, CZ3, 120.0, 1, k + 10);
+                Atom HZ2 = setHydrogen(residue, "HZ2", CZ2, 1.10, CE2, 120.0, CH2, 120.0, 1, k + 12);
+                Atom HZ3 = setHydrogen(residue, "HZ3", CZ3, 1.10, CE3, 120.0, CH2, 120.0, 1, k + 14);
+                Atom HH2 = setHydrogen(residue, "HH2", CH2, 1.10, CZ2, 120.0, CZ3, 120.0, 1, k + 16);
                 break;
             case HIS:
-                CB = setHeavyAtom(residue, "CB", CA, 167);
-                CG = setHeavyAtom(residue, "CG", CB, 169);
-                Atom ND1 = setHeavyAtom(residue, "ND1", CG, 170);
-                CD2 = setHeavyAtom(residue, "CD2", CG, 172);
-                CE1 = setHeavyAtom(residue, "CE1", ND1, 174);
-                Atom NE2 = setHeavyAtom(residue, "NE2", CE1, 176);
+                CB = setHeavy(residue, "CB", CA, k);
+                CG = setHeavy(residue, "CG", CB, k + 2);
+                Atom ND1 = setHeavy(residue, "ND1", CG, k + 3);
+                CD2 = setHeavy(residue, "CD2", CG, k + 5);
+                CE1 = setHeavy(residue, "CE1", ND1, k + 7);
+                Atom NE2 = setHeavy(residue, "NE2", CE1, k + 9);
                 bond(NE2, CD2);
-                setHydrogenAtom(residue, "HB2", CB, 1.10e0, CA, 107.9e0, CG, 110.0e0, 1, 168);
-                setHydrogenAtom(residue, "HB3", CB, 1.10e0, CA, 107.9e0, CG, 110.0e0, -1, 168);
-                setHydrogenAtom(residue, "HD1", ND1, 1.02e0, CE1, 126.0e0, NE2, 180.0e0, 0, 171);
-                setHydrogenAtom(residue, "HD2", CD2, 1.09e0, NE2, 126.0e0, CE1, 180.0e0, 0, 173);
-                setHydrogenAtom(residue, "HE1", CE1, 1.09e0, NE2, 126.0e0, CD2, 180.0e0, 0, 175);
-                setHydrogenAtom(residue, "HE2", NE2, 1.02e0, CE1, 126.0e0, ND1, 180.0e0, 0, 177);
+                HB2 = setHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, CG, 109.4, 1, k + 1);
+                HB3 = setHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, CG, 109.4, -1, k + 1);
+                HD1 = setHydrogen(residue, "HD1", ND1, 1.02, CG, 126.0, CB, 0.0, 0, k + 4);
+                HD2 = setHydrogen(residue, "HD2", CD2, 1.10, CG, 126.0, NE2, 126.0, 1, k + 6);
+                HE1 = setHydrogen(residue, "HE1", CE1, 1.10, ND1, 126.0, NE2, 126.0, 1, k + 8);
+                HE2 = setHydrogen(residue, "HE2", NE2, 1.02, CD2, 126.0, CE1, 126.0, 1, k + 10);
                 break;
             case HID:
-                CB = setHeavyAtom(residue, "CB", CA, 184);
-                CG = setHeavyAtom(residue, "CG", CB, 186);
-                ND1 = setHeavyAtom(residue, "ND1", CG, 187);
-                CD2 = setHeavyAtom(residue, "CD2", CG, 189);
-                CE1 = setHeavyAtom(residue, "CE1", ND1, 191);
-                NE2 = setHeavyAtom(residue, "NE2", CE1, 193);
+                CB = setHeavy(residue, "CB", CA, k);
+                CG = setHeavy(residue, "CG", CB, k + 2);
+                ND1 = setHeavy(residue, "ND1", CG, k + 3);
+                CD2 = setHeavy(residue, "CD2", CG, k + 5);
+                CE1 = setHeavy(residue, "CE1", ND1, k + 7);
+                NE2 = setHeavy(residue, "NE2", CE1, k + 9);
                 bond(NE2, CD2);
-                setHydrogenAtom(residue, "HB2", CB, 1.10e0, CA, 107.9e0, CG, 110.0e0, 1, 185);
-                setHydrogenAtom(residue, "HB3", CB, 1.10e0, CA, 107.9e0, CG, 110.0e0, -1, 185);
-                setHydrogenAtom(residue, "HD1", ND1, 1.02e0, CE1, 126.0e0, NE2, 180.0e0, 0, 188);
-                setHydrogenAtom(residue, "HD2", CD2, 1.09e0, NE2, 126.0e0, CE1, 180.0e0, 0, 190);
-                setHydrogenAtom(residue, "HE1", CE1, 1.09e0, NE2, 126.0e0, CD2, 180.0e0, 0, 192);
+                HB2 = setHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, CG, 109.4, 1, k + 1);
+                HB3 = setHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, CG, 109.4, -1, k + 1);
+                HD1 = setHydrogen(residue, "HD1", ND1, 1.02, CG, 126.0, CB, 0.0, 0, k + 4);
+                HD2 = setHydrogen(residue, "HD2", CD2, 1.10, CG, 126.0, NE2, 126.0, 1, k + 6);
+                HE1 = setHydrogen(residue, "HE1", CE1, 1.10, ND1, 126.0, NE2, 126.0, 1, k + 8);
                 break;
             case HIE:
-                CB = setHeavyAtom(residue, "CB", CA, 200);
-                CG = setHeavyAtom(residue, "CG", CB, 202);
-                ND1 = setHeavyAtom(residue, "ND1", CG, 203);
-                CD2 = setHeavyAtom(residue, "CD2", CG, 204);
-                CE1 = setHeavyAtom(residue, "CE1", ND1, 206);
-                NE2 = setHeavyAtom(residue, "NE2", CE1, 208);
+                CB = setHeavy(residue, "CB", CA, k);
+                CG = setHeavy(residue, "CG", CB, k + 2);
+                ND1 = setHeavy(residue, "ND1", CG, k + 3);
+                CD2 = setHeavy(residue, "CD2", CG, k + 4);
+                CE1 = setHeavy(residue, "CE1", ND1, k + 6);
+                NE2 = setHeavy(residue, "NE2", CE1, k + 8);
                 bond(NE2, CD2);
-                setHydrogenAtom(residue, "HB2", CB, 1.10e0, CA, 107.9e0, CG, 110.0e0, 1, 201);
-                setHydrogenAtom(residue, "HB3", CB, 1.10e0, CA, 107.9e0, CG, 110.0e0, -1, 201);
-                setHydrogenAtom(residue, "HD2", CD2, 1.09e0, NE2, 126.0e0, CE1, 180.0e0, 0, 205);
-                setHydrogenAtom(residue, "HE1", CE1, 1.09e0, NE2, 126.0e0, CD2, 180.0e0, 0, 207);
-                setHydrogenAtom(residue, "HE2", NE2, 1.02e0, CE1, 126.0e0, ND1, 180.0e0, 0, 209);
+                HB2 = setHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, CG, 109.4, 1, k + 1);
+                HB3 = setHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, CG, 109.4, -1, k + 1);
+                HD2 = setHydrogen(residue, "HD2", CD2, 1.10, CG, 126.0, NE2, 126.0, 1, k + 5);
+                HE1 = setHydrogen(residue, "HE1", CE1, 1.10, ND1, 126.0, NE2, 126.0, 1, k + 7);
+                HE2 = setHydrogen(residue, "HE2", NE2, 1.02, CD2, 126.0, CE1, 126.0, 1, k + 9);
                 break;
             case ASP:
-                CB = setHeavyAtom(residue, "CB", CA, 216);
-                CG = setHeavyAtom(residue, "CG", CB, 218);
-                Atom OD1 = setHeavyAtom(residue, "OD1", CG, 219);
-                Atom OD2 = setHeavyAtom(residue, "OD2", CG, 219);
-                setHydrogenAtom(residue, "HB2", CB, 1.10e0, CA, 107.9e0, CG, 110.0e0, 1, 217);
-                setHydrogenAtom(residue, "HB3", CB, 1.10e0, CA, 107.9e0, CG, 110.0e0, -1, 217);
+                CB = setHeavy(residue, "CB", CA, k);
+                CG = setHeavy(residue, "CG", CB, k + 2);
+                Atom OD1 = setHeavy(residue, "OD1", CG, k + 3);
+                Atom OD2 = setHeavy(residue, "OD2", CG, k + 3);
+                HB2 = setHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, CG, 107.9, 1, k + 1);
+                HB3 = setHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, CG, 107.9, -1, k + 1);
+                break;
+            case ASH:
+                CB = setHeavy(residue, "CB", CA, k);
+                CG = setHeavy(residue, "CG", CB, k + 2);
+                OD1 = setHeavy(residue, "OD1", CG, k + 3);
+                OD2 = setHeavy(residue, "OD2", CG, k + 4);
+                HB2 = setHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, CG, 107.9, 1, k + 1);
+                HB3 = setHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, CG, 107.9, -1, k + 1);
+                HD2 = setHydrogen(residue, "HD2", OD2, 0.98, CG, 108.7, OD1, 0.0, 0, k + 5);
                 break;
             case ASN:
-                CB = setHeavyAtom(residue, "CB", CA, 226);
-                CG = setHeavyAtom(residue, "CG", CB, 228);
-                OD1 = setHeavyAtom(residue, "OD1", CG, 229);
-                Atom ND2 = setHeavyAtom(residue, "ND2", CG, 230);
-                setHydrogenAtom(residue, "HB2", CB, 1.10e0, CA, 107.9e0, CG, 110.0e0, 1, 227);
-                setHydrogenAtom(residue, "HB3", CB, 1.10e0, CA, 107.9e0, CG, 110.0e0, -1, 227);
-                setHydrogenAtom(residue, "HD21", ND2, 1.01e0, CG, 120.9e0, CB, 0.0e0, 0, 231);
-                setHydrogenAtom(residue, "HD22", ND2, 1.01e0, CG, 120.3e0, CB, 180.0e0, 0, 231);
+                CB = setHeavy(residue, "CB", CA, k);
+                CG = setHeavy(residue, "CG", CB, k + 2);
+                OD1 = setHeavy(residue, "OD1", CG, k + 3);
+                Atom ND2 = setHeavy(residue, "ND2", CG, k + 4);
+                HB2 = setHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, CG, 107.9, 1, k + 1);
+                HB3 = setHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, CG, 107.9, -1, k + 1);
+                HD21 = setHydrogen(residue, "HD21", ND2, 1.02, CG, 119.0, CB, 0.0, 0, k + 5);
+                HD22 = setHydrogen(residue, "HD22", ND2, 1.02, CG, 119.0, HD21, 120.0, 1, k + 5);
                 break;
             case GLU:
-                CB = setHeavyAtom(residue, "CB", CA, 238);
-                CG = setHeavyAtom(residue, "CG", CB, 240);
-                CD = setHeavyAtom(residue, "CD", CG, 242);
-                Atom OE1 = setHeavyAtom(residue, "OE1", CD, 243);
-                Atom OE2 = setHeavyAtom(residue, "OE2", CD, 243);
-                setHydrogenAtom(residue, "HB2", CB, 1.10e0, CA, 107.9e0, CG, 110.0e0, 1, 239);
-                setHydrogenAtom(residue, "HB3", CB, 1.10e0, CA, 107.9e0, CG, 110.0e0, -1, 239);
-                setHydrogenAtom(residue, "HG2", CG, 1.10e0, CB, 109.5e0, CD, 109.5e0, 1, 241);
-                setHydrogenAtom(residue, "HG3", CG, 1.10e0, CB, 109.5e0, CD, 109.5e0, -1, 241);
+                CB = setHeavy(residue, "CB", CA, k);
+                CG = setHeavy(residue, "CG", CB, k + 2);
+                CD = setHeavy(residue, "CD", CG, k + 4);
+                Atom OE1 = setHeavy(residue, "OE1", CD, k + 5);
+                Atom OE2 = setHeavy(residue, "OE2", CD, k + 5);
+                HB2 = setHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, CG, 109.4, 1, k + 1);
+                HB3 = setHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, CG, 109.4, -1, k + 1);
+                HG2 = setHydrogen(residue, "HG2", CG, 1.11, CB, 109.4, CD, 107.9, 1, k + 3);
+                Atom HG3 = setHydrogen(residue, "HG3", CG, 1.11, CB, 109.4, CD, 107.9, -1, k + 3);
+                break;
+            case GLH:
+                CB = setHeavy(residue, "CB", CA, k);
+                CG = setHeavy(residue, "CG", CB, k + 2);
+                CD = setHeavy(residue, "CD", CG, k + 4);
+                OE1 = setHeavy(residue, "OE1", CD, k + 5);
+                OE2 = setHeavy(residue, "OE2", CD, k + 6);
+                HB2 = setHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, CG, 109.4, 1, k + 1);
+                HB3 = setHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, CG, 109.4, -1, k + 1);
+                HG2 = setHydrogen(residue, "HG2", CG, 1.11, CB, 109.4, CD, 107.9, 1, k + 3);
+                HG3 = setHydrogen(residue, "HG3", CG, 1.11, CB, 109.4, CD, 107.9, -1, k + 3);
+                HE2 = setHydrogen(residue, "HE2", OE2, 0.98, CD, 108.7, OE1, 0.0, 0, k + 7);
                 break;
             case GLN:
-                CB = setHeavyAtom(residue, "CB", CA, 250);
-                CG = setHeavyAtom(residue, "CG", CB, 252);
-                CD = setHeavyAtom(residue, "CD", CG, 254);
-                OE1 = setHeavyAtom(residue, "OE1", CD, 255);
-                NE2 = setHeavyAtom(residue, "NE2", CD, 256);
-                setHydrogenAtom(residue, "HB2", CB, 1.10e0, CA, 107.9e0, CG, 110.0e0, 1, 251);
-                setHydrogenAtom(residue, "HB3", CB, 1.10e0, CA, 107.9e0, CG, 110.0e0, -1, 251);
-                setHydrogenAtom(residue, "HG2", CG, 1.10e0, CB, 109.5e0, CD, 109.5e0, 1, 253);
-                setHydrogenAtom(residue, "HG3", CG, 1.10e0, CB, 109.5e0, CD, 109.5e0, -1, 253);
-                setHydrogenAtom(residue, "HE21", NE2, 1.01e0, CD, 120.9e0, CG, 0.0e0, 0, 257);
-                setHydrogenAtom(residue, "HE22", NE2, 1.01e0, CD, 120.3e0, CG, 180.0e0, 0, 257);
+                CB = setHeavy(residue, "CB", CA, k);
+                CG = setHeavy(residue, "CG", CB, k + 2);
+                CD = setHeavy(residue, "CD", CG, k + 4);
+                OE1 = setHeavy(residue, "OE1", CD, k + 5);
+                NE2 = setHeavy(residue, "NE2", CD, k + 6);
+                HB2 = setHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, CG, 109.4, 1, k + 1);
+                HB3 = setHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, CG, 109.4, -1, k + 1);
+                HG2 = setHydrogen(residue, "HG2", CG, 1.11, CB, 109.4, CD, 107.9, 1, k + 3);
+                HG3 = setHydrogen(residue, "HG3", CG, 1.11, CB, 109.4, CD, 107.9, -1, k + 3);
+                Atom HE21 = setHydrogen(residue, "HE21", NE2, 1.02, CD, 119.0, CG, 0.0, 0, k + 7);
+                Atom HE22 = setHydrogen(residue, "HE22", NE2, 1.02, CD, 119.0, HE21, 120.0, 1, k + 7);
                 break;
             case MET:
-                CB = setHeavyAtom(residue, "CB", CA, 264);
-                CG = setHeavyAtom(residue, "CG", CB, 266);
-                Atom SD = setHeavyAtom(residue, "SD", CG, 268);
-                Atom CE = setHeavyAtom(residue, "CE", SD, 269);
-                setHydrogenAtom(residue, "HB2", CB, 1.10e0, CA, 107.9e0, CG, 110.0e0, 1, 265);
-                setHydrogenAtom(residue, "HB3", CB, 1.10e0, CA, 107.9e0, CG, 110.0e0, -1, 265);
-                setHydrogenAtom(residue, "HG2", CG, 1.10e0, CB, 109.5e0, SD, 109.5e0, 1, 267);
-                setHydrogenAtom(residue, "HG3", CG, 1.10e0, CB, 109.5e0, SD, 109.5e0, -1, 267);
-                setHydrogenAtom(residue, "HE1", CE, 1.10e0, SD, 110.2e0, CG, 180.0e0, 0, 270);
-                setHydrogenAtom(residue, "HE2", CE, 1.10e0, SD, 110.2e0, CG, 60.0e0, 0, 270);
-                setHydrogenAtom(residue, "HE3", CE, 1.10e0, SD, 110.2e0, CG, -60.0e0, 0, 270);
+                CB = setHeavy(residue, "CB", CA, k);
+                CG = setHeavy(residue, "CG", CB, k + 2);
+                Atom SD = setHeavy(residue, "SD", CG, k + 4);
+                Atom CE = setHeavy(residue, "CE", SD, k + 5);
+                HB2 = setHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, CG, 109.4, 1, k + 1);
+                HB3 = setHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, CG, 109.4, -1, k + 1);
+                HG2 = setHydrogen(residue, "HG2", CG, 1.11, CB, 109.4, SD, 112.0, 1, k + 3);
+                HG3 = setHydrogen(residue, "HG3", CG, 1.11, CB, 109.4, SD, 112.0, -1, k + 3);
+                HE1 = setHydrogen(residue, "HE1", CE, 1.11, SD, 112.0, CG, 180.0, 0, k + 6);
+                HE2 = setHydrogen(residue, "HE2", CE, 1.11, SD, 112.0, HE1, 109.4, 1, k + 6);
+                HE3 = setHydrogen(residue, "HE3", CE, 1.11, SD, 112.0, HE1, 109.4, -1, k + 6);
                 break;
             case LYS:
-                CB = setHeavyAtom(residue, "CB", CA, 277);
-                CG = setHeavyAtom(residue, "CG", CB, 279);
-                CD = setHeavyAtom(residue, "CD", CG, 281);
-                CE = setHeavyAtom(residue, "CE", CD, 283);
-                Atom NZ = setHeavyAtom(residue, "NZ", CE, 285);
-                setHydrogenAtom(residue, "HB2", CB, 1.10e0, CA, 107.9e0, CG, 110.0e0, 1, 278);
-                setHydrogenAtom(residue, "HB3", CB, 1.10e0, CA, 107.9e0, CG, 110.0e0, -1, 278);
-                setHydrogenAtom(residue, "HG2", CG, 1.10e0, CB, 109.5e0, CD, 109.5e0, 1, 280);
-                setHydrogenAtom(residue, "HG3", CG, 1.10e0, CB, 109.5e0, CD, 109.5e0, -1, 280);
-                setHydrogenAtom(residue, "HD2", CD, 1.10e0, CG, 109.5e0, CE, 109.5e0, 1, 282);
-                setHydrogenAtom(residue, "HD3", CD, 1.10e0, CG, 109.5e0, CE, 109.5e0, -1, 282);
-                setHydrogenAtom(residue, "HE2", CE, 1.10e0, CD, 110.9e0, NZ, 107.3e0, 1, 284);
-                setHydrogenAtom(residue, "HE3", CE, 1.10e0, CD, 110.9e0, NZ, 107.3e0, -1, 284);
-                setHydrogenAtom(residue, "HZ1", NZ, 1.04e0, CE, 110.5e0, CD, 180.0e0, 0, 286);
-                setHydrogenAtom(residue, "HZ2", NZ, 1.04e0, CE, 110.5e0, CD, 60.0e0, 0, 286);
-                setHydrogenAtom(residue, "HZ3", NZ, 1.04e0, CE, 110.5e0, CD, -60.0e0, 0, 286);
+                CB = setHeavy(residue, "CB", CA, k);
+                CG = setHeavy(residue, "CG", CB, k + 2);
+                CD = setHeavy(residue, "CD", CG, k + 4);
+                CE = setHeavy(residue, "CE", CD, k + 6);
+                Atom NZ = setHeavy(residue, "NZ", CE, k + 8);
+                HB2 = setHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, CG, 109.4, 1, k + 1);
+                HB3 = setHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, CG, 109.4, -1, k + 1);
+                HG2 = setHydrogen(residue, "HG2", CG, 1.11, CB, 109.4, CD, 109.4, 1, k + 3);
+                HG3 = setHydrogen(residue, "HG3", CG, 1.11, CB, 109.4, CD, 109.4, -1, k + 3);
+                HG3 = setHydrogen(residue, "HD2", CD, 1.11, CG, 109.4, CE, 109.4, 1, k + 5);
+                Atom HD3 = setHydrogen(residue, "HD3", CD, 1.11, CG, 109.4, CE, 109.4, -1, k + 5);
+                HE2 = setHydrogen(residue, "HE2", CE, 1.11, CD, 109.4, NZ, 108.8, 1, k + 7);
+                HE3 = setHydrogen(residue, "HE3", CE, 1.11, CD, 109.4, NZ, 108.8, -1, k + 7);
+                Atom HZ1 = setHydrogen(residue, "HZ1", NZ, 1.02, CE, 109.5, CD, 180.0, 0, k + 9);
+                HZ2 = setHydrogen(residue, "HZ2", NZ, 1.02, CE, 109.5, HZ1, 109.5, 1, k + 9);
+                HZ3 = setHydrogen(residue, "HZ3", NZ, 1.02, CE, 109.5, HZ1, 109.5, -1, k + 9);
+                break;
+            case LYD:
+                CB = setHeavy(residue, "CB", CA, k);
+                CG = setHeavy(residue, "CG", CB, k + 2);
+                CD = setHeavy(residue, "CD", CG, k + 4);
+                CE = setHeavy(residue, "CE", CD, k + 6);
+                NZ = setHeavy(residue, "NZ", CE, k + 8);
+                HB2 = setHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, CG, 109.4, 1, k + 1);
+                HB3 = setHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, CG, 109.4, -1, k + 1);
+                HG2 = setHydrogen(residue, "HG2", CG, 1.11, CB, 109.4, CD, 109.4, 1, k + 3);
+                HG3 = setHydrogen(residue, "HG3", CG, 1.11, CB, 109.4, CD, 109.4, -1, k + 3);
+                HG3 = setHydrogen(residue, "HD2", CD, 1.11, CG, 109.4, CE, 109.4, 1, k + 5);
+                HD3 = setHydrogen(residue, "HD3", CD, 1.11, CG, 109.4, CE, 109.4, -1, k + 5);
+                HE2 = setHydrogen(residue, "HE2", CE, 1.11, CD, 109.4, NZ, 108.8, 1, k + 7);
+                HE3 = setHydrogen(residue, "HE3", CE, 1.11, CD, 109.4, NZ, 108.8, -1, k + 7);
+                HZ1 = setHydrogen(residue, "HZ1", NZ, 1.02, CE, 109.5, CD, 180.0, 0, k + 9);
+                HZ2 = setHydrogen(residue, "HZ2", NZ, 1.02, CE, 109.5, HZ1, 109.5, 1, k + 9);
                 break;
             case ARG:
-                CB = setHeavyAtom(residue, "CB", CA, 293);
-                CG = setHeavyAtom(residue, "CG", CB, 295);
-                CD = setHeavyAtom(residue, "CD", CG, 297);
-                Atom NE = setHeavyAtom(residue, "NE", CD, 299);
-                CZ = setHeavyAtom(residue, "CZ", NE, 301);
-                Atom NH1 = setHeavyAtom(residue, "NH1", CZ, 302);
-                Atom NH2 = setHeavyAtom(residue, "NH2", CZ, 302);
-                setHydrogenAtom(residue, "HB2", CB, 1.10e0, CA, 107.9e0, CG, 110.0e0, 1, 294);
-                setHydrogenAtom(residue, "HB3", CB, 1.10e0, CA, 107.9e0, CG, 110.0e0, -1, 294);
-                setHydrogenAtom(residue, "HG2", CG, 1.10e0, CB, 109.5e0, CD, 109.5e0, 1, 296);
-                setHydrogenAtom(residue, "HG3", CG, 1.10e0, CB, 109.5e0, CD, 109.5e0, -1, 296);
-                setHydrogenAtom(residue, "HD2", CD, 1.10e0, CG, 109.5e0, NE, 109.5e0, 1, 298);
-                setHydrogenAtom(residue, "HD3", CD, 1.10e0, CG, 109.5e0, NE, 109.5e0, -1, 298);
-                setHydrogenAtom(residue, "HE", NE, 1.01e0, CD, 118.5e0, CZ, 120.0e0, 1, 300);
-                setHydrogenAtom(residue, "HH11", NH1, 1.01e0, CZ, 122.5e0, NE, 0.0e0, 0, 303);
-                setHydrogenAtom(residue, "HH12", NH1, 1.01e0, CZ, 118.5e0, NE, 180.0e0, 0, 303);
-                setHydrogenAtom(residue, "HH21", NH2, 1.01e0, CZ, 122.5e0, NE, 0.0e0, 0, 303);
-                setHydrogenAtom(residue, "HH22", NH2, 1.01e0, CZ, 118.5e0, NE, 180.0e0, 0, 303);
+                CB = setHeavy(residue, "CB", CA, k);
+                CG = setHeavy(residue, "CG", CB, k + 2);
+                CD = setHeavy(residue, "CD", CG, k + 4);
+                Atom NE = setHeavy(residue, "NE", CD, k + 6);
+                CZ = setHeavy(residue, "CZ", NE, k + 8);
+                Atom NH1 = setHeavy(residue, "NH1", CZ, k + 9);
+                Atom NH2 = setHeavy(residue, "NH2", CZ, k + 9);
+                HB2 = setHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, CG, 109.4, 1, k + 1);
+                HB3 = setHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, CG, 109.4, -1, k + 1);
+                HG2 = setHydrogen(residue, "HG2", CG, 1.11, CB, 109.4, CD, 109.4, 1, k + 3);
+                HG3 = setHydrogen(residue, "HG3", CG, 1.11, CB, 109.4, CD, 109.4, -1, k + 3);
+                HD2 = setHydrogen(residue, "HD2", CD, 1.11, CG, 109.4, NE, 109.4, 1, k + 5);
+                HD3 = setHydrogen(residue, "HD3", CD, 1.11, CG, 109.4, NE, 109.4, -1, k + 5);
+                Atom HE = setHydrogen(residue, "HE", NE, 1.02, CD, 120.0, CZ, 120.0, 1, k + 7);
+                Atom HH11 = setHydrogen(residue, "HH11", NH1, 1.02, CZ, 120.0, NE, 180.0, 0, k + 10);
+                Atom HH12 = setHydrogen(residue, "HH12", NH1, 1.02, CZ, 120.0, HH11, 120.0, 1, k + 10);
+                Atom HH21 = setHydrogen(residue, "HH21", NH2, 1.02, CZ, 120.0, NE, 180.0, 0, k + 10);
+                Atom HH22 = setHydrogen(residue, "HH22", NH2, 1.02, CZ, 120.0, NE, 120.0, 1, k + 10);
                 break;
             case ORN:
-                CB = setHeavyAtom(residue, "CB", CA, 310);
-                CG = setHeavyAtom(residue, "CG", CB, 312);
-                CD = setHeavyAtom(residue, "CD", CG, 314);
-                NE = setHeavyAtom(residue, "NE", CD, 316);
-                setHydrogenAtom(residue, "HB2", CB, 1.10e0, CA, 107.9e0, CG, 110.0e0, 1, 311);
-                setHydrogenAtom(residue, "HB3", CB, 1.10e0, CA, 107.9e0, CG, 110.0e0, -1, 311);
-                setHydrogenAtom(residue, "HG2", CG, 1.10e0, CB, 109.5e0, CD, 109.5e0, 1, 313);
-                setHydrogenAtom(residue, "HG3", CG, 1.10e0, CB, 109.5e0, CD, 109.5e0, -1, 313);
-                setHydrogenAtom(residue, "HD2", CD, 1.10e0, CG, 109.5e0, NE, 109.5e0, 1, 315);
-                setHydrogenAtom(residue, "HD3", CD, 1.10e0, CG, 109.5e0, NE, 109.5e0, -1, 315);
-                setHydrogenAtom(residue, "HE1", NE, 1.04e0, CD, 110.5e0, CG, 180.0e0, 0, 317);
-                setHydrogenAtom(residue, "HE2", NE, 1.04e0, CD, 110.5e0, CG, 60.0e0, 0, 317);
-                setHydrogenAtom(residue, "HE3", NE, 1.04e0, CD, 110.5e0, CG, -60.0e0, 0, 317);
+                CB = setHeavy(residue, "CB", CA, k);
+                CG = setHeavy(residue, "CG", CB, k + 2);
+                CD = setHeavy(residue, "CD", CG, k + 4);
+                NE = setHeavy(residue, "NE", CD, k + 6);
+                HB2 = setHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, CG, 109.4, 1, k + 1);
+                HB3 = setHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, CG, 109.4, -1, k + 1);
+                HG2 = setHydrogen(residue, "HG2", CG, 1.11, CB, 109.4, CD, 109.4, 1, k + 3);
+                HG3 = setHydrogen(residue, "HG3", CG, 1.11, CB, 109.4, CD, 109.4, -1, k + 3);
+                HD2 = setHydrogen(residue, "HD2", CD, 1.11, CG, 109.4, NE, 109.4, 1, k + 5);
+                HD3 = setHydrogen(residue, "HD3", CD, 1.11, CG, 109.4, NE, 109.4, -1, k + 5);
+                HE1 = setHydrogen(residue, "HE1", NE, 1.02, CD, 109.5, CG, 180.0, 0, k + 7);
+                HE2 = setHydrogen(residue, "HE2", NE, 1.02, CD, 109.5, HE1, 109.5, 1, k + 7);
+                HE3 = setHydrogen(residue, "HE3", NE, 1.02, CD, 109.5, HE1, 109.5, -1, k + 7);
                 break;
             case AIB:
-                Atom CB1 = setHeavyAtom(residue, "CB1", CA, 323);
-                Atom CB2 = setHeavyAtom(residue, "CB1", CA, 323);
-                setHydrogenAtom(residue, "HB11", CB1, 1.10e0, CA, 110.2e0, N, 180.0e0, 0, 324);
-                setHydrogenAtom(residue, "HB12", CB1, 1.10e0, CA, 110.2e0, N, 60.0e0, 0, 324);
-                setHydrogenAtom(residue, "HB13", CB1, 1.10e0, CA, 110.2e0, N, -60.0e0, 0, 324);
-                setHydrogenAtom(residue, "HB21", CB2, 1.10e0, CA, 110.2e0, N, 180.0e0, 0, 324);
-                setHydrogenAtom(residue, "HG22", CB2, 1.10e0, CA, 110.2e0, N, 60.0e0, 0, 324);
-                setHydrogenAtom(residue, "HG23", CB2, 1.10e0, CA, 110.2e0, N, -60.0e0, 0, 324);
+                Atom CB1 = setHeavy(residue, "CB1", CA, k);
+                Atom CB2 = setHeavy(residue, "CB1", CA, k);
+                Atom HB11 = setHydrogen(residue, "HB11", CB1, 1.11, CA, 109.4, N, 180.0, 0, k + 1);
+                Atom HB12 = setHydrogen(residue, "HB12", CB1, 1.11, CA, 109.4, HB11, 109.4, 1, k + 1);
+                Atom HB13 = setHydrogen(residue, "HB13", CB1, 1.11, CA, 109.4, HB11, 109.4, -1, k + 1);
+                HG21 = setHydrogen(residue, "HG21", CB2, 1.11, CA, 109.4, N, 180.0, 0, k + 1);
+                HG22 = setHydrogen(residue, "HG22", CB2, 1.11, CA, 109.4, HG21, 109.4, 1, k + 1);
+                HG23 = setHydrogen(residue, "HG23", CB2, 1.11, CA, 109.4, HG21, 109.4, -1, k + 1);
                 break;
             case PCA:
-                CB = setHeavyAtom(residue, "CB", CA, 331);
-                CG = setHeavyAtom(residue, "CG", CB, 333);
-                CD = setHeavyAtom(residue, "CD", CG, 335);
-                Atom OE = setHeavyAtom(residue, "OE", CD, 336);
-                setHydrogenAtom(residue, "HB2", CB, 1.10e0, CA, 111.2e0, CG, 111.2e0, 1, 332);
-                setHydrogenAtom(residue, "HB3", CB, 1.10e0, CA, 111.2e0, CG, 111.2e0, -1, 332);
-                setHydrogenAtom(residue, "HG2", CG, 1.10e0, CB, 111.2e0, CD, 111.2e0, 1, 334);
-                setHydrogenAtom(residue, "HG3", CG, 1.10e0, CB, 111.2e0, CD, 111.2e0, -1, 334);
+                CB = setHeavy(residue, "CB", CA, k);
+                CG = setHeavy(residue, "CG", CB, k + 2);
+                CD = setHeavy(residue, "CD", CG, k + 4);
+                Atom OE = setHeavy(residue, "OE", CD, k + 5);
+                HB2 = setHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, CG, 109.4, 1, k + 1);
+                HB3 = setHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, CG, 109.4, -1, k + 1);
+                HG2 = setHydrogen(residue, "HG2", CG, 1.11, CB, 109.4, CD, 109.4, 1, k + 3);
+                HG3 = setHydrogen(residue, "HG3", CG, 1.11, CB, 109.4, CD, 109.4, -1, k + 3);
                 break;
             case UNK:
                 String residueName = residue.getName();
@@ -2907,13 +2971,13 @@ public final class PDBFilter extends SystemFilter {
 
                     switch (position) {
                         case FIRST_RESIDUE:
-                            setHydrogenAtom(residue, "HA2", CA, 1.10e0, N, 109.5e0, C, 109.5e0, 1, 355);
+                            setHydrogen(residue, "HA2", CA, 1.10e0, N, 109.5e0, C, 109.5e0, 1, 355);
                             break;
                         case LAST_RESIDUE:
-                            setHydrogenAtom(residue, "HA2", CA, 1.10e0, N, 109.5e0, C, 109.5e0, 1, 506);
+                            setHydrogen(residue, "HA2", CA, 1.10e0, N, 109.5e0, C, 109.5e0, 1, 506);
                             break;
                         default:
-                            setHydrogenAtom(residue, "HA2", CA, 1.10e0, N, 109.5e0, C, 109.5e0, 1, 6);
+                            setHydrogen(residue, "HA2", CA, 1.10e0, N, 109.5e0, C, 109.5e0, 1, 6);
                     }
                 }
                 break;
@@ -2979,7 +3043,7 @@ public final class PDBFilter extends SystemFilter {
         }
     }
 
-    private Atom setHeavyAtom(MSGroup residue, String atomName, Atom bondedTo, int key)
+    private Atom setHeavy(MSGroup residue, String atomName, Atom bondedTo, int key)
             throws MissingHeavyAtomException {
         Atom atom = (Atom) residue.getAtomNode(atomName);
         AtomType atomType = findAtomType(key);
@@ -2994,7 +3058,7 @@ public final class PDBFilter extends SystemFilter {
         return atom;
     }
 
-    private Atom setHydrogenAtom(MSGroup residue, String atomName, Atom ia, double bond, Atom ib, double angle1,
+    private Atom setHydrogen(MSGroup residue, String atomName, Atom ia, double bond, Atom ib, double angle1,
             Atom ic, double angle2, int chiral, int lookUp) {
         AtomType atomType = findAtomType(lookUp);
         return setHydrogenAtom(residue, atomName, ia, bond, ib, angle1, ic, angle2, chiral, atomType);
@@ -3037,7 +3101,9 @@ public final class PDBFilter extends SystemFilter {
         String key = BondType.sortKey(c);
         BondType bondType = forceField.getBondType(key);
         if (bondType == null) {
-            logger.severe(format("No BondType for key: %s\n %s\n %s", key, a1.toString(), a2.toString()));
+            logger.severe(format("No BondType for key: %s\n %s\n %s\n %s\n %s", key,
+                    a1.toString(), a1.getAtomType().toString(),
+                    a2.toString(), a2.getAtomType().toString()));
         } else {
             bond.setBondType(bondType);
         }
@@ -3099,8 +3165,8 @@ public final class PDBFilter extends SystemFilter {
      * @return a boolean.
      */
     public boolean writeFileWithHeader(File saveFile, StringBuilder header) {
-        FileWriter fw = null;
-        BufferedWriter bw = null;
+        FileWriter fw;
+        BufferedWriter bw;
         try {
             File newFile = saveFile;
             activeMolecularAssembly.setFile(newFile);
@@ -3140,8 +3206,8 @@ public final class PDBFilter extends SystemFilter {
             anisouSB.append(' ');
             terSB.append(' ');
         }
-        FileWriter fw = null;
-        BufferedWriter bw = null;
+        FileWriter fw;
+        BufferedWriter bw;
         try {
             File newFile = saveFile;
             if (!append) {
@@ -3530,19 +3596,26 @@ public final class PDBFilter extends SystemFilter {
 
     public enum AminoAcid1 {
 
-        G, A, V, L, I, S, T, C, c, P, F, Y, W, H, U, Z,
-        D, N, E, Q, M, K, R, O, B, J, f, a, n, m, X
+        G, A, V, L, I, S, T, C, X, c,
+        P, F, Y, y, W, H, U, Z, D, d,
+        N, E, e, Q, M, K, k, R, O, B,
+        J, t, f, a, o, n, m, x
     };
 
     public enum AminoAcid3 {
 
-        GLY, ALA, VAL, LEU, ILE, SER, THR, CYS, CYX, PRO, PHE, TYR, TRP, HIS,
-        HID, HIE, ASP, ASN, GLU, GLN, MET, LYS, ARG, ORN, AIB, PCA, FOR, ACE,
-        NH2, NME, UNK
+        GLY, ALA, VAL, LEU, ILE, SER, THR, CYS, CYX, CYD,
+        PRO, PHE, TYR, TYD, TRP, HIS, HID, HIE, ASP, ASH,
+        ASN, GLU, GLH, GLN, MET, LYS, LYD, ARG, ORN, AIB,
+        PCA, H2N, FOR, ACE, COH, NH2, NME, UNK
     };
     static final List<AminoAcid3> aminoAcidList = Arrays.asList(AminoAcid3.values());
-    public final int aminoAcidHeavyAtoms[] = {4, 5, 7, 8, 8, 6, 7, 6, 6, 7, 11, 12, 14, 10, 10, 10,
-        8, 8, 9, 9, 8, 9, 11, 8, 6, 8, 0, 0, 0, 0, 0};
+    public final int aminoAcidHeavyAtoms[] = {
+        4, 5, 7, 8, 8, 6, 7, 6, 6, 6,
+        7, 11, 12, 12, 14, 10, 10, 10, 8, 8,
+        8, 9, 9, 9, 8, 9, 9, 11, 8, 6,
+        8, 0, 0, 0, 0, 0, 0, 0
+    };
 
     public enum NucleicAcid1 {
 
@@ -3556,79 +3629,233 @@ public final class PDBFilter extends SystemFilter {
     public enum NucleicAcid3 {
 
         ADE, GUA, CYT, URI, DAD, DGU, DCY, DTY, THY, MP1, DP2, TP3, UNK, M2MG,
-        H2U,
-        M2G, OMC, OMG, PSU, M5MC, M7MG, M5MU, M1MA, YYG
+        H2U, M2G, OMC, OMG, PSU, M5MC, M7MG, M5MU, M1MA, YYG
     };
     static final List<NucleicAcid3> nucleicAcidList = Arrays.asList(NucleicAcid3.values());
     /**
-     * Biotype keys for nucleic acid backbone atom types.
+     * Biotype keys for nucleic acid backbone atom types. These are consistent
+     * with parameter files from TINKER v. 6.1 (June 2012).
      */
-    private final int o5Typ[] = {1001, 1031, 1062, 1090, 1117, 1146, 1176, 1203, 0, 0, 0, 0, 1300, 1334, 1363, 1400, 1431, 1465, 1492, 1523, 1559, 1589, 1624};
-    private final int c5Typ[] = {1002, 1032, 1063, 1091, 1118, 1147, 1177, 1204, 0, 0, 0, 0, 1301, 1335, 1364, 1401, 1432, 1466, 1493, 1524, 1560, 1590, 1625};
-    private final int h51Typ[] = {1003, 1033, 1064, 1092, 1119, 1148, 1178, 1205, 0, 0, 0, 0, 1302, 1336, 1365, 1402, 1433, 1467, 1494, 1525, 1561, 1591, 1626};
-    private final int h52Typ[] = {1004, 1034, 1065, 1093, 1120, 1149, 1179, 1206, 0, 0, 0, 0, 1303, 1337, 1366, 1403, 1434, 1468, 1495, 1526, 1562, 1592, 1627};
-    private final int c4Typ[] = {1005, 1035, 1066, 1094, 1121, 1150, 1180, 1207, 0, 0, 0, 0, 1304, 1338, 1367, 1404, 1435, 1469, 1496, 1527, 1563, 1593, 1628};
-    private final int h4Typ[] = {1006, 1036, 1067, 1095, 1122, 1151, 1181, 1208, 0, 0, 0, 0, 1305, 1339, 1368, 1405, 1436, 1470, 1497, 1528, 1564, 1594, 1629};
-    private final int o4Typ[] = {1007, 1037, 1068, 1096, 1123, 1152, 1182, 1209, 0, 0, 0, 0, 1306, 1340, 1369, 1406, 1437, 1471, 1498, 1529, 1565, 1595, 1630};
-    private final int c1Typ[] = {1008, 1038, 1069, 1097, 1124, 1153, 1183, 1210, 0, 0, 0, 0, 1307, 1341, 1370, 1407, 1438, 1472, 1499, 1530, 1566, 1596, 1631};
-    private final int h1Typ[] = {1009, 1039, 1070, 1098, 1125, 1154, 1184, 1211, 0, 0, 0, 0, 1308, 1342, 1371, 1408, 1439, 1473, 1500, 1531, 1567, 1597, 1632};
-    private final int c3Typ[] = {1010, 1040, 1071, 1099, 1126, 1155, 1185, 1212, 0, 0, 0, 0, 1309, 1343, 1372, 1409, 1440, 1474, 1501, 1532, 1568, 1598, 1633};
-    private final int h3Typ[] = {1011, 1041, 1072, 1100, 1127, 1156, 1186, 1213, 0, 0, 0, 0, 1310, 1344, 1373, 1410, 1441, 1475, 1502, 1533, 1569, 1599, 1634};
-    private final int c2Typ[] = {1012, 1042, 1073, 1101, 1128, 1157, 1187, 1214, 0, 0, 0, 0, 1311, 1345, 1374, 1411, 1442, 1476, 1503, 1534, 1570, 1600, 1635};
-    private final int h21Typ[] = {1013, 1043, 1074, 1102, 1129, 1158, 1188, 1215, 0, 0, 0, 0, 1312, 1346, 1375, 1412, 1443, 1477, 1504, 1535, 1571, 1601, 1636};
-    private final int o2Typ[] = {1014, 1044, 1075, 1103, 0, 0, 0, 0, 0, 0, 0, 0, 1313, 1347, 1376, 1413, 1444, 1478, 1505, 1536, 1572, 1602, 1637};
-    private final int h22Typ[] = {1015, 1045, 1076, 1104, 1130, 1159, 1189, 1216, 0, 0, 0, 0, 1314, 1348, 1377, 0, 0, 1479, 1506, 1537, 1573, 1603, 1638};
-    private final int o3Typ[] = {1016, 1046, 1077, 1105, 1131, 1160, 1190, 1217, 0, 0, 0, 0, 1315, 1349, 1378, 1414, 1445, 1480, 1507, 1538, 1574, 1604, 1639};
-    private final int pTyp[] = {1230, 1230, 1230, 1230, 1242, 1242, 1242, 1242, 0, 0, 0, 0, 1230, 1230, 1230, 1230, 1230, 1230, 1230, 1230, 1230, 1230, 1230};
-    private final int opTyp[] = {1231, 1231, 1231, 1231, 1243, 1243, 1243, 1243, 0, 0, 0, 0, 1231, 1231, 1231, 1231, 1231, 1231, 1231, 1231, 1231, 1231, 1231};
-    private final int h5tTyp[] = {1233, 1233, 1233, 1233, 1245, 1245, 1245, 1245, 0, 0, 0, 0, 1233, 1233, 1233, 1233, 1233, 1233, 1233, 1233, 1233, 1233, 1233};
-    private final int h3tTyp[] = {1238, 1238, 1238, 1238, 1250, 1250, 1250, 1250, 0, 0, 0, 0, 1238, 1238, 1238, 1238, 1238, 1238, 1238, 1238, 1238, 1238, 1238};
+    private final int o5Typ[] = {
+        1001, 1031, 1062, 1090, 1117, 1146, 1176, 1203, 0, 0, 0, 0,
+        1300, 1334, 1363, 1400, 1431, 1465, 1492, 1523, 1559, 1589, 1624
+    };
+    private final int c5Typ[] = {
+        1002, 1032, 1063, 1091, 1118, 1147, 1177, 1204, 0, 0, 0, 0,
+        1301, 1335, 1364, 1401, 1432, 1466, 1493, 1524, 1560, 1590, 1625
+    };
+    private final int h51Typ[] = {
+        1003, 1033, 1064, 1092, 1119, 1148, 1178, 1205, 0, 0, 0, 0,
+        1302, 1336, 1365, 1402, 1433, 1467, 1494, 1525, 1561, 1591, 1626
+    };
+    private final int h52Typ[] = {
+        1004, 1034, 1065, 1093, 1120, 1149, 1179, 1206, 0, 0, 0, 0,
+        1303, 1337, 1366, 1403, 1434, 1468, 1495, 1526, 1562, 1592, 1627
+    };
+    private final int c4Typ[] = {
+        1005, 1035, 1066, 1094, 1121, 1150, 1180, 1207, 0, 0, 0, 0,
+        1304, 1338, 1367, 1404, 1435, 1469, 1496, 1527, 1563, 1593, 1628
+    };
+    private final int h4Typ[] = {
+        1006, 1036, 1067, 1095, 1122, 1151, 1181, 1208, 0, 0, 0, 0,
+        1305, 1339, 1368, 1405, 1436, 1470, 1497, 1528, 1564, 1594, 1629
+    };
+    private final int o4Typ[] = {
+        1007, 1037, 1068, 1096, 1123, 1152, 1182, 1209, 0, 0, 0, 0,
+        1306, 1340, 1369, 1406, 1437, 1471, 1498, 1529, 1565, 1595, 1630
+    };
+    private final int c1Typ[] = {
+        1008, 1038, 1069, 1097, 1124, 1153, 1183, 1210, 0, 0, 0, 0,
+        1307, 1341, 1370, 1407, 1438, 1472, 1499, 1530, 1566, 1596, 1631
+    };
+    private final int h1Typ[] = {
+        1009, 1039, 1070, 1098, 1125, 1154, 1184, 1211, 0, 0, 0, 0,
+        1308, 1342, 1371, 1408, 1439, 1473, 1500, 1531, 1567, 1597, 1632
+    };
+    private final int c3Typ[] = {
+        1010, 1040, 1071, 1099, 1126, 1155, 1185, 1212, 0, 0, 0, 0,
+        1309, 1343, 1372, 1409, 1440, 1474, 1501, 1532, 1568, 1598, 1633
+    };
+    private final int h3Typ[] = {
+        1011, 1041, 1072, 1100, 1127, 1156, 1186, 1213, 0, 0, 0, 0,
+        1310, 1344, 1373, 1410, 1441, 1475, 1502, 1533, 1569, 1599, 1634
+    };
+    private final int c2Typ[] = {
+        1012, 1042, 1073, 1101, 1128, 1157, 1187, 1214, 0, 0, 0, 0,
+        1311, 1345, 1374, 1411, 1442, 1476, 1503, 1534, 1570, 1600, 1635
+    };
+    private final int h21Typ[] = {
+        1013, 1043, 1074, 1102, 1129, 1158, 1188, 1215, 0, 0, 0, 0,
+        1312, 1346, 1375, 1412, 1443, 1477, 1504, 1535, 1571, 1601, 1636
+    };
+    private final int o2Typ[] = {
+        1014, 1044, 1075, 1103, 0, 0, 0, 0, 0, 0, 0, 0,
+        1313, 1347, 1376, 1413, 1444, 1478, 1505, 1536, 1572, 1602, 1637
+    };
+    private final int h22Typ[] = {
+        1015, 1045, 1076, 1104, 1130, 1159, 1189, 1216, 0, 0, 0, 0,
+        1314, 1348, 1377, 0, 0, 1479, 1506, 1537, 1573, 1603, 1638
+    };
+    private final int o3Typ[] = {
+        1016, 1046, 1077, 1105, 1131, 1160, 1190, 1217, 0, 0, 0, 0,
+        1315, 1349, 1378, 1414, 1445, 1480, 1507, 1538, 1574, 1604, 1639
+    };
+    private final int pTyp[] = {
+        1230, 1230, 1230, 1230, 1242, 1242, 1242, 1242, 0, 0, 0, 0,
+        1230, 1230, 1230, 1230, 1230, 1230, 1230, 1230, 1230, 1230, 1230
+    };
+    private final int opTyp[] = {
+        1231, 1231, 1231, 1231, 1243, 1243, 1243, 1243, 0, 0, 0, 0,
+        1231, 1231, 1231, 1231, 1231, 1231, 1231, 1231, 1231, 1231, 1231
+    };
+    private final int h5tTyp[] = {
+        1233, 1233, 1233, 1233, 1245, 1245, 1245, 1245, 0, 0, 0, 0,
+        1233, 1233, 1233, 1233, 1233, 1233, 1233, 1233, 1233, 1233, 1233
+    };
+    private final int h3tTyp[] = {
+        1238, 1238, 1238, 1238, 1250, 1250, 1250, 1250, 0, 0, 0, 0,
+        1238, 1238, 1238, 1238, 1238, 1238, 1238, 1238, 1238, 1238, 1238
+    };
     /**
-     * Biotype keys for amino acid backbone atom types.
-     *
-     * ntyp[0][..] are for N-terminal residues. ntyp[1][..] are mid-chain
-     * residues. ntyp[2][..] are for C-terminal residues.
+     * Biotype keys for amino acid backbone atom types. These are consistent
+     * with parameter files from TINKER v. 6.1 (June 2012).
+     * <br>
+     * xType[0][..] are for N-terminal residues.
+     * <br>
+     * xType[1][..] are mid-chain residues.
+     * <br>
+     * xType[2][..] are for C-terminal residues.
      */
     private static final int nType[][] = {
-        {350, 356, 362, 368, 374, 380, 386, 392, 398, 404, 412, 418, 424, 430, 436, 442, 448,
-            454, 460, 466, 472, 478, 484, 490, 496, 325, 0, 0, 0, 0, 350},
-        {1, 7, 15, 27, 41, 55, 65, 77, 87, 96, 107, 122, 138, 161, 178, 194, 210, 220,
-            232, 244, 258, 271, 287, 304, 318, 325, 0, 0, 0, 0, 1},
-        {501, 507, 513, 519, 525, 531, 537, 543, 549, 555, 560, 566, 572, 578, 584, 590, 596,
-            602, 608, 614, 620, 626, 632, 638, 644, 0, 0, 0, 344, 346, 501}};
+        {
+            403, 409, 415, 421, 427, 433, 439, 445,
+            451, 457, 463, 471, 477, 483, 489, 495,
+            501, 507, 513, 519, 525, 531, 537, 543,
+            549, 555, 561, 567, 573, 579, 391, 762,
+            0, 0, 0, 0, 0, 403
+        }, {
+            1, 7, 15, 27, 41, 55, 65, 77,
+            87, 96, 105, 116, 131, 147, 162, 185,
+            202, 218, 234, 244, 256, 268, 280, 294,
+            308, 321, 337, 353, 370, 384, 391, 0,
+            0, 0, 0, 0, 0, 1
+        }, {
+            584, 590, 596, 602, 608, 614, 620, 626,
+            632, 638, 644, 649, 655, 661, 667, 673,
+            679, 685, 691, 697, 703, 709, 715, 721,
+            727, 733, 739, 745, 751, 757, 0, 0,
+            0, 0, 773, 775, 777, 584
+        }
+    };
     private static final int caType[][] = {
-        {351, 357, 363, 369, 375, 381, 387, 393, 399, 405, 413, 419, 425, 431, 437, 443, 449,
-            455, 461, 467, 473, 479, 485, 491, 497, 326, 0, 340, 0, 0, 351},
-        {2, 8, 16, 28, 42, 56, 66, 78, 88, 97, 108, 123, 139, 162, 179, 195, 211, 221,
-            233, 245, 259, 272, 288, 305, 319, 326, 0, 0, 0, 0, 2},
-        {502, 508, 514, 520, 526, 532, 538, 544, 550, 556, 561, 567, 573, 579, 585, 591, 597,
-            603, 609, 615, 621, 627, 633, 639, 645, 0, 0, 0, 0, 348, 502}};
-    private static final int cType[][] = {{
-            352, 358, 364, 370, 376, 382, 388, 394, 400, 406, 414, 420, 426, 432, 438, 444, 450,
-            456, 462, 468, 474, 480, 486, 492, 498, 327, 337, 342, 0, 0, 352},
-        {3, 9, 17, 29, 43, 57, 67, 79, 89, 98, 109, 124, 140, 163, 180, 196, 212, 222,
-            234, 246, 260, 273, 289, 306, 320, 327, 0, 0, 0, 0, 3},
-        {503, 509, 515, 521, 527, 533, 539, 545, 551, 557, 562, 568, 574, 580, 586, 592, 598,
-            604, 610, 616, 622, 628, 634, 640, 646, 0, 0, 0, 0, 0, 503}};
-    private static final int hnType[][] = {{
-            353, 359, 365, 371, 377, 383, 389, 395, 401, 407, 415, 421, 427, 433, 439, 445, 451,
-            457, 463, 469, 475, 481, 487, 493, 499, 328, 0, 0, 0, 0, 353},
-        {4, 10, 18, 30, 44, 58, 68, 80, 90, 0, 110, 125, 141, 164, 181, 197, 213, 223,
-            235, 247, 261, 274, 290, 307, 321, 328, 0, 0, 0, 0, 4},
-        {504, 510, 516, 522, 528, 534, 540, 546, 552, 0, 563, 569, 575, 581, 587, 593, 599,
-            605, 611, 617, 623, 629, 635, 641, 647, 0, 0, 0, 345, 347, 504}};
-    private static final int oType[][] = {{
-            354, 360, 366, 372, 378, 384, 390, 396, 402, 408, 416, 422, 428, 434, 440, 446, 452,
-            458, 464, 470, 476, 482, 488, 494, 500, 329, 339, 343, 0, 0, 354},
-        {5, 11, 19, 31, 45, 59, 69, 81, 91, 99, 111, 126, 142, 165, 182, 198, 214, 224,
-            236, 248, 262, 275, 291, 308, 322, 329, 0, 0, 0, 0, 5},
-        {505, 511, 517, 523, 529, 535, 541, 547, 553, 558, 564, 570, 576, 582, 588, 594, 600,
-            606, 612, 618, 624, 630, 636, 642, 648, 0, 0, 0, 0, 0, 505}};
-    private static final int haType[][] = {{
-            355, 361, 367, 373, 379, 385, 391, 397, 403, 409, 417, 423, 429, 435, 441, 447, 453,
-            459, 465, 471, 477, 483, 489, 495, 0, 330, 338, 341, 0, 0, 355},
-        {6, 12, 20, 32, 46, 60, 70, 82, 92, 100, 112, 127, 143, 166, 183, 199, 215, 225,
-            237, 249, 263, 276, 292, 309, 0, 330, 0, 0, 0, 0, 6},
-        {506, 512, 518, 524, 530, 536, 542, 548, 554, 559, 565, 571, 577, 583, 589, 595, 601,
-            607, 613, 619, 625, 631, 637, 643, 0, 0, 0, 0, 0, 349, 506}};
+        {
+            404, 410, 416, 422, 428, 434, 440, 446,
+            452, 458, 464, 472, 478, 484, 490, 496,
+            502, 508, 514, 520, 526, 532, 538, 544,
+            550, 556, 562, 568, 574, 580, 392, 0,
+            0, 767, 0, 0, 0, 404
+        }, {
+            2, 8, 16, 28, 42, 56, 66, 78,
+            88, 97, 106, 117, 132, 148, 163, 186,
+            203, 219, 235, 245, 257, 269, 281, 295,
+            309, 322, 338, 354, 371, 385, 392, 0,
+            0, 0, 0, 0, 0, 2
+        }, {
+            585, 591, 597, 603, 609, 615, 621, 627,
+            633, 639, 645, 650, 656, 662, 668, 674,
+            680, 686, 692, 698, 704, 710, 716, 722,
+            728, 734, 740, 746, 752, 758, 0, 0,
+            0, 0, 0, 0, 779, 585
+        }
+    };
+    private static final int cType[][] = {
+        {
+            405, 411, 417, 423, 429, 435, 441, 447,
+            453, 459, 465, 473, 479, 485, 491, 497,
+            503, 509, 515, 521, 527, 533, 539, 545,
+            551, 557, 563, 569, 575, 581, 393, 0,
+            764, 769, 0, 0, 0, 405
+        }, {
+            3, 9, 17, 29, 43, 57, 67, 79,
+            89, 98, 107, 118, 133, 149, 164, 187,
+            204, 220, 236, 246, 258, 270, 282, 296,
+            310, 323, 339, 355, 372, 386, 393, 0,
+            0, 0, 0, 0, 0, 3
+        }, {
+            586, 592, 598, 604, 610, 616, 622, 628,
+            634, 640, 646, 651, 657, 663, 669, 675,
+            681, 687, 693, 699, 705, 711, 717, 723,
+            729, 735, 741, 747, 753, 759, 0, 0,
+            0, 0, 771, 0, 0, 586
+        }
+    };
+    private static final int hnType[][] = {
+        {
+            406, 412, 418, 424, 430, 436, 442, 448,
+            454, 460, 466, 474, 480, 486, 492, 498,
+            504, 510, 516, 522, 528, 534, 540, 546,
+            552, 558, 564, 570, 576, 582, 394, 763,
+            0, 0, 0, 0, 0, 406
+        }, {
+            4, 10, 18, 30, 44, 58, 68, 80,
+            90, 99, 0, 119, 134, 150, 165, 188,
+            205, 221, 237, 247, 259, 271, 283, 297,
+            311, 324, 340, 356, 373, 387, 394, 0,
+            0, 0, 0, 0, 0, 4
+        }, {
+            587, 593, 599, 605, 611, 617, 623, 629,
+            635, 641, 0, 652, 658, 664, 670, 676,
+            682, 688, 694, 700, 706, 712, 718, 724,
+            730, 736, 742, 748, 754, 760, 0, 0,
+            0, 0, 774, 776, 778, 587}
+    };
+    private static final int oType[][] = {
+        {
+            407, 413, 419, 425, 431, 437, 443, 449,
+            455, 461, 467, 475, 481, 487, 493, 499,
+            505, 511, 517, 523, 529, 535, 541, 547,
+            553, 559, 565, 571, 577, 583, 395, 0,
+            766, 770, 0, 0, 0, 407
+        }, {
+            5, 11, 19, 31, 45, 59, 69, 81,
+            91, 100, 108, 120, 135, 151, 166, 189,
+            206, 222, 238, 248, 260, 272, 284, 298,
+            312, 325, 341, 357, 374, 388, 395, 0,
+            0, 0, 0, 0, 0, 5
+        }, {
+            588, 594, 600, 606, 612, 618, 624, 630,
+            636, 642, 647, 653, 659, 665, 671, 677,
+            683, 689, 695, 701, 707, 713, 719, 725,
+            731, 737, 743, 749, 755, 761, 0, 0,
+            0, 0, 772, 0, 0, 588
+        }
+    };
+    private static final int haType[][] = {
+        {
+            408, 414, 420, 426, 432, 438, 444, 450,
+            456, 462, 468, 476, 482, 488, 494, 500,
+            506, 512, 518, 524, 530, 536, 542, 548,
+            554, 560, 566, 572, 578, 0, 396, 0,
+            765, 768, 0, 0, 0, 408},
+        {
+            6, 12, 20, 32, 46, 60, 70, 82,
+            92, 101, 109, 121, 136, 152, 167, 190,
+            207, 223, 239, 249, 261, 273, 285, 299,
+            313, 326, 342, 358, 375, 0, 396, 0,
+            0, 0, 0, 0, 0, 6},
+        {
+            589, 595, 601, 607, 613, 619, 625, 631,
+            637, 643, 648, 654, 660, 666, 672, 678,
+            684, 690, 696, 702, 708, 714, 720, 726,
+            732, 738, 744, 750, 756, 0, 0, 0,
+            0, 0, 0, 0, 780, 589
+        }
+    };
+    private static final int cbType[] = {
+        0, 13, 21, 33, 47, 61, 71, 83,
+        93, 102, 110, 122, 137, 153, 168, 191,
+        208, 224, 240, 250, 262, 274, 286, 300,
+        314, 327, 343, 359, 376, 389, 397, 0,
+        0, 0, 0, 0, 0, 0
+    };
 }

@@ -191,7 +191,7 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>2.12.4</version>
+                    <version>2.14</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-resources-plugin</artifactId>
@@ -272,14 +272,14 @@
                         </plugin>
                         <plugin>
                             <artifactId>maven-surefire-report-plugin</artifactId>
-                            <version>2.12.4</version>
+                            <version>2.14</version>
                             <configuration>
                                 <aggregate>true</aggregate>
                             </configuration>
                         </plugin>
                         <plugin>
                             <artifactId>maven-changes-plugin</artifactId>
-                            <version>2.8</version>
+                            <version>2.9</version>
                             <configuration>
                                 <aggregated>true</aggregated>
                                 <webUser>${kenai.user.name}</webUser>
@@ -299,7 +299,7 @@
                         <plugin>
                             <groupId>org.apache.maven.plugins</groupId>
                             <artifactId>maven-checkstyle-plugin</artifactId>
-                            <version>2.9.1</version>
+                            <version>2.10</version>
                             <configuration>
                                 <goal>checkstyle-aggregate</goal>
                             </configuration>
@@ -317,12 +317,12 @@
                         <plugin>
                             <groupId>org.apache.maven.plugins</groupId>
                             <artifactId>maven-pmd-plugin</artifactId>
-                            <version>2.7.1</version>
+                            <version>3.0.1</version>
                             <configuration>
                                 <linkXref>true</linkXref>
                                 <minimumTokens>500</minimumTokens>
                                 <aggregate>true</aggregate>
-                                <targetJdk>1.6</targetJdk>
+                                <targetJdk>1.7</targetJdk>
                                 <minimumPriority>2</minimumPriority>
                             </configuration>
                             <reportSets>
@@ -441,7 +441,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.12.4</version>
+                <version>2.14</version>
                 <configuration>
                     <useSystemClassLoader>false</useSystemClassLoader>
                     <argLine>-Xms1G -Xmx1G -Xss1M -Djava.awt.headless=true -Dj3d.rend=jogl -Dffx.ci=${ffx.ci}</argLine>
@@ -566,7 +566,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>2.9.1</version>
+                <version>2.10</version>
                 <configuration>
                     <configLocation>config/sun_checks.xml</configLocation>
                 </configuration>

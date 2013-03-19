@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2013.
  *
  * This file is part of Force Field X.
  *
@@ -147,6 +147,12 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         // Get a reference to the sorted atom array.
         atoms = molecularAssembly.getAtomArray();
         nAtoms = atoms.length;
+
+        // Check that atom ordering is correct.
+        for (int i=0; i<nAtoms; i++) {
+            int index = atoms[i].xyzIndex - 1;
+            assert(i == index);
+        }
 
         ForceField forceField = molecularAssembly.getForceField();
         bondTerm = forceField.getBoolean(ForceFieldBoolean.BONDTERM, true);

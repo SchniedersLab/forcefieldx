@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2013.
  *
  * This file is part of Force Field X.
  *
@@ -26,7 +26,6 @@ import java.io.*;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -191,6 +190,10 @@ public class ForceFieldFilter {
                     for (String s : list) {
                         // Add back the key to the input line.
                         s = key + " " + s;
+
+                        // Split the line on the pound symbol to remove comments.
+                        s = s.split("#+")[0];
+
                         String tokens[] = s.trim().split(" +");
                         String input = s;
                         switch (type) {
@@ -254,6 +257,10 @@ public class ForceFieldFilter {
             BufferedReader br = new BufferedReader(new InputStreamReader(stream));
             while (br.ready()) {
                 String input = br.readLine();
+
+                // Split the line on the pound symbol to remove comments.
+                input = input.split("#")[0];
+
                 String tokens[] = input.trim().split(" +");
                 if (tokens != null) {
                     String keyword = tokens[0].toUpperCase().replaceAll("-",
@@ -566,7 +573,7 @@ public class ForceFieldFilter {
                 atomTypes[i] = abs(atomTypes[i]);
             }
             double c = Double.parseDouble(tokens[1 + numTypes]);
-            input = br.readLine();
+            input = br.readLine().split("#")[0];
             tokens = input.trim().split(" +");
             if (tokens.length != 3) {
                 logger.warning("Invalid MULTIPOLE type:\n" + input);
@@ -576,7 +583,7 @@ public class ForceFieldFilter {
             dipole[0] = Double.parseDouble(tokens[0]);
             dipole[1] = Double.parseDouble(tokens[1]);
             dipole[2] = Double.parseDouble(tokens[2]);
-            input = br.readLine();
+            input = br.readLine().split("#")[0];
             tokens = input.trim().split(" +");
             if (tokens.length != 1) {
                 logger.warning("Invalid MULTIPOLE type:\n" + input);
@@ -584,7 +591,7 @@ public class ForceFieldFilter {
             }
             double quadrupole[][] = new double[3][3];
             quadrupole[0][0] = Double.parseDouble(tokens[0]);
-            input = br.readLine();
+            input = br.readLine().split("#")[0];
             tokens = input.trim().split(" +");
             if (tokens.length != 2) {
                 logger.warning("Invalid MULTIPOLE type:\n" + input);
@@ -592,7 +599,7 @@ public class ForceFieldFilter {
             }
             quadrupole[1][0] = Double.parseDouble(tokens[0]);
             quadrupole[1][1] = Double.parseDouble(tokens[1]);
-            input = br.readLine();
+            input = br.readLine().split("#")[0];
             tokens = input.trim().split(" +");
             if (tokens.length != 3) {
                 logger.warning("Invalid MULTIPOLE type:\n" + input);
