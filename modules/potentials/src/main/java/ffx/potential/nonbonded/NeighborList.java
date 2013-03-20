@@ -27,6 +27,7 @@ import java.util.logging.Logger;
 
 import static java.lang.Math.floor;
 import static java.lang.Math.min;
+import static java.lang.Math.sqrt;
 import static java.lang.String.format;
 
 import edu.rit.pj.IntegerForLoop;
@@ -242,6 +243,10 @@ public class NeighborList extends ParallelRegion {
      */
     private boolean use[];
     /**
+     * List of atoms.
+     */
+    private Atom atoms[];
+    /**
      * *************************************************************************
      * Parallel variables.
      */
@@ -280,6 +285,7 @@ public class NeighborList extends ParallelRegion {
         this.cutoff = cutoff;
         this.buffer = buffer;
         this.parallelTeam = new ParallelTeam(parallelTeam.getThreadCount());
+        this.atoms = atoms;
         nAtoms = atoms.length;
 
         /**
@@ -371,7 +377,8 @@ public class NeighborList extends ParallelRegion {
         if (print) {
             StringBuilder sb = new StringBuilder("  Neighbor List Builder\n");
             sb.append(format("   Sub-volumes:                        %8d\n", nCells));
-            sb.append(format("   Average Atoms Per Sub-Volume:       %8d", nAtoms * nSymm / nCells));
+            sb.append(format("   Average Atoms Per Sub-Volume:       %8d",
+                    nAtoms * nSymm / nCells));
             logger.info(sb.toString());
         }
 
@@ -383,7 +390,8 @@ public class NeighborList extends ParallelRegion {
             cellIndex = new int[nSymm][nAtoms];
             cellOffset = new int[nSymm][nAtoms];
         } else if (cellList.length < nSymm) {
-            logger.info(String.format("  Neighbor-List: Increasing memory for nSymm (%d -> %d)", cellList.length, nSymm));
+            logger.info(String.format("  Neighbor-List: Increasing memory for nSymm (%d -> %d)",
+                    cellList.length, nSymm));
             cellList = new int[nSymm][nAtoms];
             cellIndex = new int[nSymm][nAtoms];
             cellOffset = new int[nSymm][nAtoms];
@@ -397,7 +405,8 @@ public class NeighborList extends ParallelRegion {
             cellStart = new int[nSymm][maxCells];
             cellCount = new int[nSymm][maxCells];
         } else if (cellStart[0].length < nCells) {
-            logger.info(String.format("  Neighbor-List: Increasing memory for nCell (%d -> %d)", cellStart[0].length, nCells));
+            logger.info(String.format("  Neighbor-List: Increasing memory for nCell (%d -> %d)",
+                    cellStart[0].length, nCells));
             for (int i = 0; i < cellStart.length; i++) {
                 cellStart[i] = new int[nCells];
                 cellCount[i] = new int[nCells];
@@ -689,10 +698,10 @@ public class NeighborList extends ParallelRegion {
         private int iSymm;
         private int atomIndex;
         private int count;
+        private int asymmetricIndex[];
         private double xyz[];
         private int pairs[];
         private final byte mask[];
-        private final int asymmetricIndex[];
         private final IntegerSchedule schedule;
         // Extra padding to avert cache interference.
         private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
@@ -700,7 +709,6 @@ public class NeighborList extends ParallelRegion {
 
         public NeighborListLoop() {
             pairs = new int[len];
-            asymmetricIndex = cellIndex[0];
             mask = new byte[nAtoms];
             for (int i = 0; i < nAtoms; i++) {
                 mask[i] = 1;
@@ -726,6 +734,7 @@ public class NeighborList extends ParallelRegion {
 
         @Override
         public void run(final int lb, final int ub) {
+            asymmetricIndex = cellIndex[0];
             for (iSymm = 0; iSymm < nSymm; iSymm++) {
                 int list[][] = lists[iSymm];
                 // Loop over all atoms.
@@ -870,15 +879,15 @@ public class NeighborList extends ParallelRegion {
                     maskingRules.applyMask(mask, atomIndex);
                 }
                 /**
-                 * If the self-volume is being searched for pairs, we must
-                 * avoid double counting.
+                 * If the self-volume is being searched for pairs, we must avoid
+                 * double counting.
                  */
                 if (atomCellIndex == pairCellIndex) {
                     /**
-                     * The cellOffset is the index of the current atom in
-                     * the cell that is being searched for neighbors.
+                     * The cellOffset is the index of the current atom in the
+                     * cell that is being searched for neighbors.
                      */
-                    start += cellOffset[iSymm][atomIndex] + 1;
+                    start += cellOffset[0][atomIndex] + 1;
                 }
             }
             /**
@@ -900,8 +909,15 @@ public class NeighborList extends ParallelRegion {
                     final double d2 = crystal.image(xr, yr, zr);
                     if (d2 <= total2) {
                         /**
-                         * Add the pair to the list, reallocating the array
-                         * size if necessary.
+                         * Warn about close overlaps.
+                         */
+                        if (d2 < crystal.specialPositionCutoff2) {
+                            logger.warning(format(" Close overlap (%6.3f) between atoms (iSymm = %d):\n %s\n %s\n",
+                                    sqrt(d2), iSymm, atoms[atomIndex].toString(), atoms[aj].toString()));
+                        }
+                        /**
+                         * Add the pair to the list, reallocating the array size
+                         * if necessary.
                          */
                         try {
                             pairs[n++] = aj;

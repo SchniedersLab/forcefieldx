@@ -122,7 +122,7 @@ public class VanDerWaals implements MaskingInterface,
      * Reduced coordinates of size: [nSymm][nAtoms * 3]
      */
     private double reduced[][];
-    private final double reducedXYZ[];
+    private double reducedXYZ[];
     /**
      * Neighbor lists for each atom. Size: [nSymm][nAtoms][nNeighbors]
      */
@@ -784,6 +784,7 @@ public class VanDerWaals implements MaskingInterface,
              */
             if (reduced == null || reduced.length < nSymm) {
                 reduced = new double[nSymm][nAtoms * 3];
+                reducedXYZ = reduced[0];
                 neighborLists = new int[nSymm][][];
             }
         }
@@ -846,7 +847,7 @@ public class VanDerWaals implements MaskingInterface,
             int threadIndex = getThreadIndex();
 
             /**
-             * Locally initialize the Loops to help with NUMA.
+             * Locally initialize the Loops to help with NUMA?
              */
             if (initializationLoop[threadIndex] == null) {
                 initializationLoop[threadIndex] = new InitializationLoop();
@@ -882,11 +883,11 @@ public class VanDerWaals implements MaskingInterface,
                 }
                 neighborList.buildList(reduced, neighborLists, null, forceRebuild, print);
             }
+            barrier();
 
             if (neighborListOnly) {
                 return;
             }
-            barrier();
 
             /**
              * Compute van der Waals energy and gradient.
@@ -969,10 +970,11 @@ public class VanDerWaals implements MaskingInterface,
                         gradX[threadIndex] = new double[nAtoms];
                         gradY[threadIndex] = new double[nAtoms];
                         gradZ[threadIndex] = new double[nAtoms];
+                    } else {
+                        fill(gradX[threadIndex], 0.0);
+                        fill(gradY[threadIndex], 0.0);
+                        fill(gradZ[threadIndex], 0.0);
                     }
-                    fill(gradX[threadIndex], 0.0);
-                    fill(gradY[threadIndex], 0.0);
-                    fill(gradZ[threadIndex], 0.0);
                 }
 
                 if (lambdaTerm) {
@@ -980,10 +982,11 @@ public class VanDerWaals implements MaskingInterface,
                         lambdaGradX[threadIndex] = new double[nAtoms];
                         lambdaGradY[threadIndex] = new double[nAtoms];
                         lambdaGradZ[threadIndex] = new double[nAtoms];
+                    } else {
+                        fill(lambdaGradX[threadIndex], 0.0);
+                        fill(lambdaGradY[threadIndex], 0.0);
+                        fill(lambdaGradZ[threadIndex], 0.0);
                     }
-                    fill(lambdaGradX[threadIndex], 0.0);
-                    fill(lambdaGradY[threadIndex], 0.0);
-                    fill(lambdaGradZ[threadIndex], 0.0);
                 }
             }
         }

@@ -158,7 +158,7 @@ public class Crystal {
      * An atom and one of its symmetry copies within the specialPositionCutoff
      * should be flagged to be at a special position.
      */
-    public double specialPositionCutoff = 0.1;
+    public double specialPositionCutoff = 0.2;
     public double specialPositionCutoff2 = specialPositionCutoff * specialPositionCutoff;
 
     /**
