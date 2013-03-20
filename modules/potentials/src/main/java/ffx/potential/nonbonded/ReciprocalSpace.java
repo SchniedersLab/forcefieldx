@@ -432,7 +432,7 @@ public class ReciprocalSpace {
                 logger.fine(String.format(" Actual   %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f  %6d",
                         bSplineTotal * toSeconds, convTotal * toSeconds, splinePermanentTotal * toSeconds,
                         permanentPhiTotal * toSeconds, splineInducedTotal * toSeconds,
-                        inducedPhiTotal * toSeconds, nAtoms));
+                        inducedPhiTotal * toSeconds, nAtoms * nSymm));
             }
         }
     }

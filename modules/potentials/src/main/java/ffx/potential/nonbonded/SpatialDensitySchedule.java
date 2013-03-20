@@ -119,7 +119,7 @@ public class SpatialDensitySchedule extends IntegerSchedule {
         int thread = 0;
         int start = 0;
         int total = 0;
-        
+
         // Calculate the total number of atoms that will be place on the grid.
         for (int i=0; i<atomsPerChunk.length; i++) {
             total += atomsPerChunk[i];
@@ -156,7 +156,7 @@ public class SpatialDensitySchedule extends IntegerSchedule {
                             || current.lb() != start
                             || current.ub() != stop) {
                         ranges[thread] = new Range(start, stop);
-                        logger.finest(String.format("Range for thread %d %s %d.", thread, ranges[thread], total));
+                        //logger.finest(String.format("Range for thread %d %s %d.", thread, ranges[thread], total));
                     }
                     break;
                 }

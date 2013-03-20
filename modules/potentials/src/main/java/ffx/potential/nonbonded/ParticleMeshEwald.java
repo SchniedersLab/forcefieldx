@@ -1192,7 +1192,7 @@ public class ParticleMeshEwald implements LambdaInterface {
             sb.append(format("\n Total Time =    Real +   Recip (sec)\n"));
             sb.append(format("   %8.3f =%8.3f +%8.3f\n", toSeconds * (realSpaceTime + reciprocalSpaceTime), toSeconds * realSpaceTime,
                     toSeconds * reciprocalSpaceTime));
-            sb.append(format(" Multipole Self-Energy:   %16.8f\n", eself));
+            sb.append(format("\n Multipole Self-Energy:   %16.8f\n", eself));
             sb.append(format(" Multipole Reciprocal:    %16.8f\n", erecip));
             sb.append(format(" Multipole Real Space:    %16.8f\n", ereal));
             sb.append(format(" Polarization Self-Energy:%16.8f\n", eselfi));
