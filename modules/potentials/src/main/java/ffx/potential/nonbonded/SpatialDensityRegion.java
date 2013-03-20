@@ -538,8 +538,6 @@ public class SpatialDensityRegion extends ParallelRegion {
             }
         }
 
-        assert(nAtoms * nSymm == totalAtoms);
-        
         if (logger.isLoggable(Level.FINEST)) {
             logger.finest(String.format(" Empty chunks: %d out of %d.",
                     nWork - actualWork, nWork));
