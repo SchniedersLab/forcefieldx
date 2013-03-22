@@ -253,9 +253,9 @@ public class ReciprocalSpace {
          */
         if (logger.isLoggable(Level.INFO)) {
             StringBuilder sb = new StringBuilder();
-            sb.append(format("   PME B-Spline Order:                 %8d\n", bSplineOrder));
-            sb.append(format("   PME Grid Density:                   %8.3f\n", density));
-            sb.append(format("   PME Grid Dimensions:           (%3d,%3d,%3d)", fftX, fftY, fftZ));
+            sb.append(format("   B-Spline Order:                     %8d\n", bSplineOrder));
+            sb.append(format("   Mesh Density:                       %8.3f\n", density));
+            sb.append(format("   Mesh Dimensions:               (%3d,%3d,%3d)", fftX, fftY, fftZ));
             logger.info(sb.toString());
         }
 
