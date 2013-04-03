@@ -4,6 +4,36 @@
       xsi:schemaLocation="http://maven.apache.org/FML/1.0.1 http://maven.apache.org/xsd/fml-1.0.1.xsd"
       title="Publications"
       toplink="true">
+    <part id="2013">
+        <title>2013</title>
+        <faq id="15">
+            <question>
+                Shi, Y., Schnieders, M. J., Piquemal, J.-P., and P. Ren,
+                Polarizable Force Fields for Biomolecular Modeling
+                <i>Reviews in Computational Chemistry</i>
+                <b>2013</b> Edition: 28, Publisher: Springer, Editors: Kenny B. Lipkowitz
+                <a href="www.researchgate.net/publication/235949749_Polarizable_Force_Fields_for_Biomolecular_Modeling">
+                    <img src="images/pdf.png" alt="PDF"/>
+                </a>
+            </question>
+            <answer>
+                <p>
+                    Molecular mechanics based modeling has been widely used in the study of chemical and
+                    biological systems. The classical potential energy functions and their parameters are
+                    referred to as force fields. Empirical force fields for biomolecules emerged in the early
+                    1970's, followed by the first molecular dynamics simulations of the bovine pancreatic
+                    trypsin inhibitors (BPTI). Over the past 30 years, a great number of empirical
+                    molecular mechanics force fields, including AMBER, CHARMM, GROMOS, OPLS,
+                    and many others, have been developed. These force fields share similar functional forms,
+                    including valence interactions represented by harmonic oscillators, point dispersionrepulsion
+                    for van der Waals (vdW) interactions, and an electrostatic contribution based
+                    on fixed atomic partial charges. This generation of molecular mechanics force fields has
+                    been widely used in the study of molecular structures, dynamics, interactions, design and
+                    engineering.
+                </p>
+            </answer>
+        </faq>
+    </part>
     <part id="2012">
         <title>2012</title>
         <faq id="14">

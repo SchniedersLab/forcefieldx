@@ -409,6 +409,9 @@ public final class PDBFilter extends SystemFilter {
                             if (returnedAtom != newAtom) {
                                 // A previously added atom has been retained.
                                 atoms.put(serial, returnedAtom);
+                                if (logger.isLoggable(Level.FINE)) {
+                                    logger.fine(returnedAtom + " has been retained over\n" + newAtom);
+                                }
                             } else {
                                 // The new atom has been added.
                                 atoms.put(serial, newAtom);
@@ -463,6 +466,9 @@ public final class PDBFilter extends SystemFilter {
                             if (returnedAtom != newAtom) {
                                 // A previously added atom has been retained.
                                 atoms.put(serial, returnedAtom);
+                                if (logger.isLoggable(Level.FINE)) {
+                                    logger.fine(returnedAtom + " has been retained over\n" + newAtom);
+                                }
                             } else {
                                 // The new atom has been added.
                                 atoms.put(serial, newAtom);
@@ -1235,7 +1241,6 @@ public final class PDBFilter extends SystemFilter {
 
         for (Residue residue : residues) {
             List<Atom> resAtoms = residue.getAtomList();
-
             if (pC == null) {
                 /**
                  * Initialization.
