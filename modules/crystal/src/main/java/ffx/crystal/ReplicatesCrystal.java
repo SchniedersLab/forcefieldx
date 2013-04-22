@@ -28,25 +28,43 @@ import java.util.logging.Logger;
 
 /**
  * The ReplicatesCrystal class extends Crystal to generate additional symmetry
- * operators needed to describe a "replicated" crystal. The replicated crystal
- * cell edges are of length (l*a, m*b, n*c) where l, m and n are integers and a,
- * b and c are the original unit cell edge lengths. Usually, replicates integers
- * l, m and n are chosen large enough so that the ReplicatesCrystal is
- * consistent with application of the minimum image convention (i.e. each
- * replicated cell edge is more than twice the cutoff).
- *
+ * operators needed to describe a "replicated" super cell. The replicated
+ * crystal cell edges are of length {l*a, m*b, n*c} where l, m and n are
+ * integers and a, b and c are the original unit cell edge lengths.
+ * <br>
+ * The replicates integers l, m and n are chosen large enough for the
+ * ReplicatesCrystal to allow consistent application of the minimum image
+ * convention. This is ensured by increasing l, m and/or n until a sphere of
+ * of necessary radius fits entirely inside the ReplicatedCrystal.
+ * <br>
  * @author Michael J. Schnieders
  * @since 1.0
- *
  */
 public class ReplicatesCrystal extends Crystal {
-
+    /**
+     * The logger.
+     */
     private static final Logger logger = Logger.getLogger(ReplicatesCrystal.class.getName());
+    /**
+     * The base unit cell for the system being simulated.
+     */
     private final Crystal unitCell;
+    /**
+     * The number of replicates along the a-axis.
+     */
     private int l;
+    /**
+     * The number of replicates along the b-axis.
+     */
     private int m;
+    /**
+     * The number of replicates along the c-axis.
+     */
     private int n;
-    private final double cutOff2;
+    /**
+     * The cut-off distance in Angstroms.
+     */
+    private final double cutOff;
 
     /**
      * Constructor for a ReplicatesCrystal.
@@ -55,6 +73,7 @@ public class ReplicatesCrystal extends Crystal {
      * @param l Number of replicates along the a-axis.
      * @param m Number of replicates along the b-axis.
      * @param n Number of replicates along the c-axis.
+     * @param cutOff2 Twice the cut-off distance.
      * @since 1.0
      */
     public ReplicatesCrystal(Crystal unitCell, int l, int m, int n, double cutOff2) {
@@ -68,7 +87,7 @@ public class ReplicatesCrystal extends Crystal {
         this.l = l;
         this.m = m;
         this.n = n;
-        this.cutOff2 = cutOff2;
+        this.cutOff = cutOff2 / 2.0;
 
         /**
          * At this point, the ReplicatesCrystal references a SpaceGroup instance
@@ -79,6 +98,10 @@ public class ReplicatesCrystal extends Crystal {
         updateReplicateOperators();
     }
 
+    /**
+     * Update the list of symmetry operators used to generate the replicates
+     * super cell from the asymmetric unit.
+     */
     private void updateReplicateOperators() {
         List<SymOp> symOps = spaceGroup.symOps;
         /**
@@ -117,16 +140,16 @@ public class ReplicatesCrystal extends Crystal {
     }
 
     /**
-     * Change the cell parameters of the unit cell, which is followed by an
-     * update of the ReplicateCrystal parameters and possibly the number of
+     * Change the cell parameters for the base unit cell, which is followed by
+     * an update of the ReplicateCrystal parameters and possibly the number of
      * replicated cells.
      *
-     * @param a
-     * @param b
-     * @param c
-     * @param alpha
-     * @param beta
-     * @param gamma
+     * @param a The length of the a-axis for the base unit cell (in Angstroms).
+     * @param b The length of the b-axis for the base unit cell (in Angstroms).
+     * @param c The length of the c-axis for the base unit cell (in Angstroms).
+     * @param alpha The angle between the b-axis and c-axis (in Degrees).
+     * @param beta The angle between the a-axis and c-axis (in Degrees).
+     * @param gamma The angle between the a-axis and b-axis (in Degrees).
      * @return True is returned if the unit cell and replicates cell are updated
      * successfully.
      */
@@ -146,13 +169,13 @@ public class ReplicatesCrystal extends Crystal {
             int mm = 1;
             int nn = 1;
 
-            while (unitCell.a * ll < cutOff2) {
+            while (unitCell.interfacialRadiusA * ll < cutOff) {
                 ll++;
             }
-            while (unitCell.b * mm < cutOff2) {
+            while (unitCell.interfacialRadiusB * mm < cutOff) {
                 mm++;
             }
-            while (unitCell.c * nn < cutOff2) {
+            while (unitCell.interfacialRadiusC * nn < cutOff) {
                 nn++;
             }
             if (super.changeUnitCellParameters(a * ll, b * mm, c * nn, alpha, beta, gamma)) {
@@ -250,13 +273,15 @@ public class ReplicatesCrystal extends Crystal {
         int m = 1;
         int n = 1;
 
-        while (unitCell.a * l < cutOff2) {
+        double cutOff = cutOff2 / 2.0;
+
+        while (unitCell.interfacialRadiusA * l < cutOff) {
             l++;
         }
-        while (unitCell.b * m < cutOff2) {
+        while (unitCell.interfacialRadiusB * m < cutOff) {
             m++;
         }
-        while (unitCell.c * n < cutOff2) {
+        while (unitCell.interfacialRadiusC * n < cutOff) {
             n++;
         }
 

@@ -42,8 +42,10 @@ import ffx.potential.bonded.Atom;
 
 /**
  * The NeighborList class builds Verlet lists in parallel via a spatial
- * decomposition. <ol> <li> The unit cell is partitioned into
- * <code>nA * nB * nC</code> smaller axis-aligned cells, where nA, nB and nC are
+ * decomposition.
+ * <br>
+ * <ol><li> The unit cell is partitioned into
+ * <code>nA * nB * nC</code> smaller axis-aligned cells, where {nA, nB, nC} are
  * chosen as large as possible subject to the criteria that the length of each
  * side of a sub-volume (rCellA, rCellB, rCellC) multiplied by (nEdgeA, nEdgeB,
  * nEdgeC), respectively, must be greater than the cutoff distance
@@ -51,25 +53,30 @@ import ffx.potential.bonded.Atom;
  * <code>delta</code>:
  * <center><code>rCellA * nEdgeA >= (Rcut + delta)</code></center>
  * <center><code>rCellB * nEdgeB >= (Rcut + delta)</code></center>
- * <center><code>rCellC * nEdgeC >= (Rcut + delta)</code></center> All neighbors
- * of an atom are in a block of (2*nEdgeA+1)(2*nEdgeB+1)(2*nEdgeC+1)
- * neighborCells. </li> <p> <li> Interactions between an atom and neighbors in
- * the asymmetric unit require only half the neighboring cells to be searched to
- * avoid double counting. However, enumeration of interactions between an atom
- * in the asymmetric unit and its neighbors in a symmetry mate require all cells
- * to be searched. </li> <p> <li> Verlet lists from the search are stored, which
- * reduces the number of neigbors whose distances must be calculated by a factor
- * of approximately:
+ * <center><code>rCellC * nEdgeC >= (Rcut + delta)</code></center>
+ * <br>
+ * All neighbors of an atom are in a block of
+ * (2*nEdgeA+1)(2*nEdgeB+1)(2*nEdgeC+1) neighborCells. </li>
+ * <br>
+ * <p><li>
+ * Interactions between an atom and neighbors in the asymmetric unit require
+ * only half the neighboring cells to be searched to avoid double counting.
+ * However, enumeration of interactions between an atom in the asymmetric unit
+ * and its neighbors in a symmetry mate require all cells to be searched. </li>
+ * <p> <li> Verlet lists from the search are stored, which reduces the number of
+ * neighbors whose distances must be calculated by a factor of approximately:
  * <center><code>(4/3*Pi*Rcut^3)/(neighborCells*Vcell)</code></center> About 1/3
  * as many interactions are contained in the Verlet lists as in the neighboring
  * cells. </li> </ol>
  *
  * @author Michael J. Schnieders
  * @since 1.0
- *
  */
 public class NeighborList extends ParallelRegion {
 
+    /**
+     * The logger.
+     */
     private static final Logger logger = Logger.getLogger(NeighborList.class.getName());
     /**
      * The crystal object defines the unit cell dimensions and spacegroup.
@@ -216,21 +223,6 @@ public class NeighborList extends ParallelRegion {
      */
     private final double total;
     /**
-     * minLengthA is the smallest a-axis for a subcell, given nEdgeA, that
-     * assures all neighbors will be found.
-     */
-    private double minLengthA;
-    /**
-     * minLengthB is the smallest b-axis for a subcell, given nEdgeB, that
-     * assures all neighbors will be found.
-     */
-    private double minLengthB;
-    /**
-     * minLengthC is the smallest c-axis for a subcell, given nEdgeC, that
-     * assures all neighbors will be found.
-     */
-    private double minLengthC;
-    /**
      * Total^2 for distance comparisons without taking a sqrt.
      */
     private final double total2;
@@ -336,15 +328,15 @@ public class NeighborList extends ParallelRegion {
         }
 
         /**
-         * Find the shortest crystal axis length.
+         * Find the largest sphere that is inclosed by the unit cell.
          */
-        final double side = min(min(crystal.a, crystal.b), crystal.c);
+        final double sphere = min(min(crystal.interfacialRadiusA, crystal.interfacialRadiusB), crystal.interfacialRadiusC);
 
         /**
          * Assert that the boundary conditions defined by the crystal allow use
          * of the minimum image condition.
          */
-        assert (side > 2.0 * total);
+        assert (sphere > total);
 
         /**
          * nEdgeA, nEdgeB and nEdgeC must be >= 1.
@@ -353,15 +345,15 @@ public class NeighborList extends ParallelRegion {
         nEdgeB = nEdgeA;
         nEdgeC = nEdgeA;
         /**
-         * minLengthA is the smallest a-axis for a subcell, given nEdgeA, that
-         * assures all neighbors will be found.
+         * totalA is the smallest a-axis for a subcell, given nEdgeA subcells
+         * along the a-axis, that assures all neighbors will be found.
          */
-        minLengthA = total / (double) nEdgeA;
-        minLengthB = total / (double) nEdgeB;
-        minLengthC = total / (double) nEdgeC;
-        nA = (int) floor(crystal.a / minLengthA);
-        nB = (int) floor(crystal.b / minLengthB);
-        nC = (int) floor(crystal.c / minLengthC);
+        double totalA = total / (double) nEdgeA;
+        double totalB = total / (double) nEdgeB;
+        double totalC = total / (double) nEdgeC;
+        nA = (int) floor(crystal.interfacialRadiusA / totalA);
+        nB = (int) floor(crystal.interfacialRadiusB / totalB);
+        nC = (int) floor(crystal.interfacialRadiusC / totalC);
         if (nA < nEdgeA * 2 + 1) {
             nA = 1;
         }
@@ -383,7 +375,7 @@ public class NeighborList extends ParallelRegion {
         }
 
         /**
-         * Allocate memory if necessary.
+         * Allocate memory, if necessary.
          */
         if (cellList == null) {
             cellList = new int[nSymm][nAtoms];
@@ -475,6 +467,10 @@ public class NeighborList extends ParallelRegion {
         }
     }
 
+    /**
+     * Return the Verlet list.
+     * @return  The Verlet list of size [nSymm][nAtoms][nNeighbors].
+     */
     public int[][][] getNeighborList() {
         return lists;
     }

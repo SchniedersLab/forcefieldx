@@ -24,6 +24,7 @@ package ffx.crystal;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static java.lang.Math.*;
@@ -44,10 +45,7 @@ import static ffx.numerics.VectorMath.*;
  * apply the minimum image convention and space group symmetry operators.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
- *
- *
  */
 public class Crystal {
 
@@ -64,6 +62,18 @@ public class Crystal {
      * Length of the cell edge in the direction of the <b>c</b> basis vector.
      */
     public double c;
+    /**
+     * Length of the reciprocal basis vector <b>a*</b>.
+     */
+    public double aStar;
+    /**
+     * Length of the reciprocal basis vector <b>b*</b>.
+     */
+    public double bStar;
+    /**
+     * Length of the reciprocal basis vector <b>c*</b>.
+     */
+    public double cStar;
     /**
      * The interaxial lattice angle between <b>b</b> and <b>c</b>.
      */
@@ -140,9 +150,21 @@ public class Crystal {
      */
     public final double G[][] = new double[3][3];
     /**
-     * the reciprocal space metric matrix.
+     * The reciprocal space metric matrix.
      */
     public double Gstar[][];
+    /**
+     * Interfacial radius in the direction of the A-axis.
+     */
+    public double interfacialRadiusA;
+    /**
+     * Interfacial radius in the direction of the B-axis.
+     */
+    public double interfacialRadiusB;
+    /**
+     * Interfacial radius in the direction of the C-axis.
+     */
+    public double interfacialRadiusC;
     private double cos_alpha;
     private double sin_beta;
     private double cos_beta;
@@ -195,6 +217,7 @@ public class Crystal {
         for (int i = 0; i < 6; i++) {
             scale_b[i] = -1;
         }
+
         SymOp symop;
         double rot[][];
         int index = 0;
@@ -286,6 +309,9 @@ public class Crystal {
         updateCrystal();
     }
 
+    /**
+     * Update all Crystal variables that are a function of unit cell parameters.
+     */
     private void updateCrystal() {
 
         switch (crystalSystem) {
@@ -366,13 +392,13 @@ public class Crystal {
         Ai[2][2] = c * gamma_term;
 
         Ai00 = Ai[0][0];
-        Ai10 = Ai[1][0];
-        Ai20 = Ai[2][0];
         Ai01 = Ai[0][1];
-        Ai11 = Ai[1][1];
-        Ai21 = Ai[2][1];
         Ai02 = Ai[0][2];
+        Ai10 = Ai[1][0];
+        Ai11 = Ai[1][1];
         Ai12 = Ai[1][2];
+        Ai20 = Ai[2][0];
+        Ai21 = Ai[2][1];
         Ai22 = Ai[2][2];
 
         // Invert A^-1 to get A
@@ -382,14 +408,38 @@ public class Crystal {
 
         // The columns of A are the reciprocal basis vectors
         A00 = A[0][0];
-        A01 = A[0][1];
-        A02 = A[0][2];
         A10 = A[1][0];
-        A11 = A[1][1];
-        A12 = A[1][2];
         A20 = A[2][0];
+        A01 = A[0][1];
+        A11 = A[1][1];
         A21 = A[2][1];
+        A02 = A[0][2];
+        A12 = A[1][2];
         A22 = A[2][2];
+
+        // Reciprocal basis vector lengths
+        aStar = 1.0 / sqrt(A00 * A00 + A10 * A10 + A20 * A20);
+        bStar = 1.0 / sqrt(A01 * A01 + A11 * A11 + A21 * A21);
+        cStar = 1.0 / sqrt(A02 * A02 + A12 * A12 + A22 * A22);
+        if (logger.isLoggable(Level.FINEST)) {
+            logger.finest(String.format(" Reciprocal Lattice Lengths: (%8.3f, %8.3f, %8.3f)",
+                    aStar, bStar, cStar));
+        }
+
+        // Interfacial diameters from the dot product of the real and reciprocal vectors
+        interfacialRadiusA = (Ai00 * A00 + Ai01 * A10 + Ai02 * A20) * aStar;
+        interfacialRadiusB = (Ai10 * A01 + Ai11 * A11 + Ai12 * A21) * bStar;
+        interfacialRadiusC = (Ai20 * A02 + Ai21 * A12 + Ai22 * A22) * cStar;
+
+        // Divide by 2 to get radii.
+        interfacialRadiusA /= 2.0;
+        interfacialRadiusB /= 2.0;
+        interfacialRadiusC /= 2.0;
+
+        if (logger.isLoggable(Level.FINEST)) {
+            logger.finest(String.format(" Interfacial radii: (%8.3f, %8.3f, %8.3f)",
+                    interfacialRadiusA, interfacialRadiusB, interfacialRadiusC));
+        }
 
         G[0][0] = a * a;
         G[0][1] = a * b * cos_gamma;
@@ -428,6 +478,21 @@ public class Crystal {
 
     }
 
+    /**
+     * This method should be called to update the unit cell parameters of a
+     * crystal. The proposed parameters will only be accepted if symmetry
+     * restrictions are satisfied. If so, all Crystal variables that depend on
+     * the unit cell parameters will be updated.
+     *
+     * @param a length of the a-axis.
+     * @param b length of the b-axis.
+     * @param c length of the c-axis.
+     * @param alpha Angle between b-axis and c-axis.
+     * @param beta Angle between a-axis and c-axis.
+     * @param gamma Angle between a-axis and b-axis.
+     * @return The method return true if the parameters are accepted, false
+     * otherwise.
+     */
     public boolean changeUnitCellParameters(double a, double b, double c, double alpha, double beta,
             double gamma) {
 
@@ -1383,7 +1448,17 @@ public class Crystal {
         sb.append(String.format("   Number of Symmetry Operators:            %3d", spaceGroup.getNumberOfSymOps()));
         return sb.toString();
     }
+
+    /**
+     * A mask equal to 0 for X-coordinates.
+     */
     private static final int XX = 0;
+    /**
+     * A mask equal to 1 for Y-coordinates.
+     */
     private static final int YY = 1;
+    /**
+     * A mask equal to 2 for Z-coordinates.
+     */
     private static final int ZZ = 2;
 }
