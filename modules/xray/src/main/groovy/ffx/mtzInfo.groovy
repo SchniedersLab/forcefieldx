@@ -50,4 +50,4 @@ if (!file.exists()){
 
 MTZFilter mtzfilter = new MTZFilter();
 mtzfilter.getReflectionList(file);
-mtzfilter.print_header();
+mtzfilter.printHeader();

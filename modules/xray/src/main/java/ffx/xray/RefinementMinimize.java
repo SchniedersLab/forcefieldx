@@ -26,11 +26,13 @@ import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.Terminatable;
 import ffx.numerics.LBFGS;
 import ffx.numerics.LineSearch.LineSearchResult;
 import ffx.numerics.OptimizationListener;
 import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Residue;
 
@@ -78,7 +80,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
         COORDINATES_AND_BFACTORS_AND_OCCUPANCIES
     }
     public final RefinementEnergy refinementEnergy;
-
+    private final AlgorithmListener listener;
     private static final Logger logger = Logger.getLogger(RefinementMinimize.class.getName());
     private static double toSeconds = 1.0e-9;
     private final DataContainer dataContainer;
@@ -108,7 +110,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
      * must contain a {@link RefinementModel}
      */
     public RefinementMinimize(DataContainer data) {
-        this(data, RefinementMode.COORDINATES_AND_BFACTORS);
+        this(data, RefinementMode.COORDINATES_AND_BFACTORS, null);
     }
 
     /**
@@ -121,6 +123,22 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
      * refinement
      */
     public RefinementMinimize(DataContainer data, RefinementMode refinementmode) {
+        this(data, refinementmode, null);
+    }
+
+    /**
+     * constructor for refinement
+     *
+     * @param data input {@link DataContainer} that will be used as the model,
+     * must contain a {@link RefinementModel} and either {@link DiffractionData}
+     * or {@link RealSpaceData}
+     * @param refinementmode {@link RefinementMinimize.RefinementMode} for
+     * refinement
+     * @param listener {@link AlgorithmListener} a listener for updates
+     */
+    public RefinementMinimize(DataContainer data, RefinementMode refinementmode,
+            AlgorithmListener listener) {
+        this.listener = listener;
         this.dataContainer = data;
         this.refinementModel = data.getRefinementModel();
         this.refinementMode = refinementmode;
@@ -450,12 +468,22 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
      * {@inheritDoc}
      */
     @Override
-    public boolean optimizationUpdate(int iter, int nfun, double grms, double xrms, double f, double df, double angle, LineSearchResult info) {
+    public boolean optimizationUpdate(int iter, int nfun, double grms,
+            double xrms, double f, double df, double angle, LineSearchResult info) {
         long currentTime = System.nanoTime();
         Double seconds = (currentTime - time) * 1.0e-9;
         time = currentTime;
         this.grms = grms;
         this.nSteps = iter;
+
+        // update display
+        if (listener != null) {
+            MolecularAssembly molecularAssembly[];
+            molecularAssembly = dataContainer.getMolecularAssembly();
+            for (MolecularAssembly ma : molecularAssembly) {
+                listener.algorithmUpdate(ma);
+            }
+        }
 
         if (iter == 0) {
             logger.info("\n Limited Memory BFGS Quasi-Newton Optimization: \n");
