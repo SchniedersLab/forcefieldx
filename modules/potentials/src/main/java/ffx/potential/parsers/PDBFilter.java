@@ -3063,6 +3063,36 @@ public final class PDBFilter extends SystemFilter {
         return atom;
     }
 
+    private Atom setHeavy(MSGroup residue, String atomName, Atom ia, double bond, Atom ib, double angle1,
+            Atom ic, double angle2, int chiral, int lookUp) {
+        AtomType atomType = findAtomType(lookUp);
+        return setHeavyAtom(residue, atomName, ia, bond, ib, angle1, ic, angle2, chiral, atomType);
+    }
+
+    private Atom setHeavyAtom(MSGroup residue, String atomName, Atom ia, double bond, Atom ib, double angle1,
+            Atom ic, double angle2, int chiral, AtomType atomType) {
+        Atom atom = (Atom) residue.getAtomNode(atomName);
+        if (atomType == null) {
+            return null;
+        }
+        if (atom == null) {
+            String resName = ia.getResidueName();
+            int resSeq = ia.getResidueNumber();
+            Character chainID = ia.getChainID();
+            Character altLoc = ia.getAltLoc();
+            String segID = ia.getSegID();
+            double occupancy = ia.getOccupancy();
+            double tempFactor = ia.getTempFactor();
+            atom = new Atom(0, atomName, altLoc, new double[3], resName, resSeq, chainID,
+                    occupancy, tempFactor, segID);
+            residue.addMSNode(atom);
+            intxyz(atom, ia, bond, ib, angle1, ic, angle2, chiral);
+        }
+        bond(ia, atom);
+        atom.setAtomType(atomType);
+        return atom;
+    }
+
     private Atom setHydrogen(MSGroup residue, String atomName, Atom ia, double bond, Atom ib, double angle1,
             Atom ic, double angle2, int chiral, int lookUp) {
         AtomType atomType = findAtomType(lookUp);
