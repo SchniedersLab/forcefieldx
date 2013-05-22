@@ -55,7 +55,7 @@ public class CrystalStats {
     protected int nobshkl, highnobshkl, nobsrfree, highnobsrfree;
     protected double reshigh, reslow, highreshigh, highreslow;
     protected double completeness, highcompleteness;
-    protected double r, rfree, highr, highrfree;
+    protected double rall, r, rfree, highr, highrfree;
     protected double blowdpi, blowdpih, cruickdpi, cruickdpih;
     private boolean print;
 
@@ -111,6 +111,7 @@ public class CrystalStats {
         sb.append("REMARK   3  FIT TO DATA USED IN REFINEMENT\n");
         sb.append("REMARK   3   CROSS-VALIDATION METHOD          : THROUGHOUT\n");
         sb.append("REMARK   3   FREE R VALUE TEST SET SELECTION  : RANDOM\n");
+        sb.append(String.format("REMARK   3   R VALUE               (OBSERVED) : %8.6f\n", rall / 100.0));
         sb.append(String.format("REMARK   3   R VALUE            (WORKING SET) : %8.6f\n", r / 100.0));
         sb.append(String.format("REMARK   3   FREE R VALUE                     : %8.6f\n", rfree / 100.0));
         sb.append(String.format("REMARK   3   FREE R VALUE TEST SET SIZE   (%%) : %6.1f\n", (((double) nobsrfree) / nobshkl) * 100.0));
@@ -205,8 +206,12 @@ public class CrystalStats {
      * @return r value as a percent
      */
     public double getR() {
+        double numer = 0.0;
+        double denom = 0.0;
         double sum = 0.0;
         double sumfo = 0.0;
+        double sumall = 0.0;
+        double sumfoall = 0.0;
         for (HKL ih : reflectionlist.hkllist) {
             int i = ih.index();
             int b = ih.bin();
@@ -223,12 +228,17 @@ public class CrystalStats {
             double fh = spline.f(ss, refinementdata.spline);
 
             ComplexNumber c = new ComplexNumber(fc[i][0], fc[i][1]);
+            numer = abs(abs(fo[i][0]) - fh * abs(c.abs()));
+            denom = abs(fo[i][0]);
+            sumall += numer;
+            sumfoall += denom;
             if (!refinementdata.isfreer(i)) {
-                sum += abs(abs(fo[i][0]) - fh * abs(c.abs()));
-                sumfo += abs(fo[i][0]);
+                sum += numer;
+                sumfo += denom;
             }
         }
 
+        rall = (sumall / sumfoall) * 100.0;
         r = (sum / sumfo) * 100.0;
         return r;
     }
@@ -478,6 +488,10 @@ public class CrystalStats {
         double rb[][] = new double[n + 1][2];
         double sumfo[][] = new double[n + 1][2];
         double s[][] = new double[n + 1][4];
+        double numer = 0.0;
+        double denom = 0.0;
+        double sumall = 0.0;
+        double sumfoall = 0.0;
         ReflectionSpline sigmaaspline = new ReflectionSpline(reflectionlist,
                 refinementdata.sigmaa.length);
 
@@ -514,16 +528,22 @@ public class CrystalStats {
             }
 
             ComplexNumber c = new ComplexNumber(fc[i][0], fc[i][1]);
+            numer = abs(abs(fo[i][0]) - fh * abs(c.abs()));
+            denom = abs(fo[i][0]);
             if (refinementdata.isfreer(i)) {
-                rb[b][1] += abs(abs(fo[i][0]) - fh * abs(c.abs()));
-                sumfo[b][1] += abs(fo[i][0]);
-                rb[n][1] += abs(abs(fo[i][0]) - fh * abs(c.abs()));
-                sumfo[n][1] += abs(fo[i][0]);
+                rb[b][1] += numer;
+                sumfo[b][1] += denom;
+                rb[n][1] += numer;
+                sumfo[n][1] += denom;
+                sumall += numer;
+                sumfoall += denom;
             } else {
-                rb[b][0] += abs(abs(fo[i][0]) - fh * abs(c.abs()));
-                sumfo[b][0] += abs(fo[i][0]);
-                rb[n][0] += abs(abs(fo[i][0]) - fh * abs(c.abs()));
-                sumfo[n][0] += abs(fo[i][0]);
+                rb[b][0] += numer;
+                sumfo[b][0] += denom;
+                rb[n][0] += numer;
+                sumfo[n][0] += denom;
+                sumall += numer;
+                sumfoall += denom;
             }
 
             nhkl[b]++;
@@ -562,6 +582,7 @@ public class CrystalStats {
         highreshigh = res[n - 1][1];
         r = (rb[n][0] / sumfo[n][0]) * 100.0;
         rfree = (rb[n][1] / sumfo[n][1]) * 100.0;
+        rall = (sumall / sumfoall) * 100.0;
         highr = (rb[n - 1][0] / sumfo[n - 1][0]) * 100.0;
         highrfree = (rb[n - 1][1] / sumfo[n - 1][1]) * 100.0;
 

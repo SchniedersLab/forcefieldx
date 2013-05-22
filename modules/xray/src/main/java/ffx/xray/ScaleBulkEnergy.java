@@ -56,45 +56,6 @@ import static ffx.numerics.VectorMath.*;
  *
  * @see <a href="http://dx.doi.org/10.1006/jmbi.1994.1633" target="_blank"> J.
  * S. Jiang, A. T. Brunger, JMB (1994) 243, 100-115.</a>
- * @see <a href="http://dx.doi.org/10.1107/S0907444905007894" target="_blank">
- * P. V. Afonine, R. W. Grosse-Kunstleve and P. D. Adams, Acta Cryst. (2005).
- * D61, 850-855</a>
- *
- * @see <a href="http://dx.doi.org/10.1107/S0021889802008580" target="_blank">
- * R. W. Grosse-Kunstleve and P. D. Adams, J. Appl. Cryst. (2002). 35,
- * 477-480.</a>
- *
- * @see <a href="http://dx.doi.org/10.1002/jcc.1032" target="_blank"> J. A.
- * Grant, B. T. Pickup, A. Nicholls, J. Comp. Chem. (2001). 22, 608-640</a>
- *
- * @see <a href="http://dx.doi.org/10.1006/jmbi.1994.1633" target="_blank"> J.
- * S. Jiang, A. T. Brunger, JMB (1994) 243, 100-115.</a>
- * @see <a href="http://dx.doi.org/10.1107/S0907444905007894" target="_blank">
- * P. V. Afonine, R. W. Grosse-Kunstleve and P. D. Adams, Acta Cryst. (2005).
- * D61, 850-855</a>
- *
- * @see <a href="http://dx.doi.org/10.1107/S0021889802008580" target="_blank">
- * R. W. Grosse-Kunstleve and P. D. Adams, J. Appl. Cryst. (2002). 35,
- * 477-480.</a>
- *
- * @see <a href="http://dx.doi.org/10.1002/jcc.1032" target="_blank"> J. A.
- * Grant, B. T. Pickup, A. Nicholls, J. Comp. Chem. (2001). 22, 608-640</a>
- *
- * @see <a href="http://dx.doi.org/10.1006/jmbi.1994.1633" target="_blank"> J.
- * S. Jiang, A. T. Brunger, JMB (1994) 243, 100-115.</a>
- * @see <a href="http://dx.doi.org/10.1107/S0907444905007894" target="_blank">
- * P. V. Afonine, R. W. Grosse-Kunstleve and P. D. Adams, Acta Cryst. (2005).
- * D61, 850-855</a>
- *
- * @see <a href="http://dx.doi.org/10.1107/S0021889802008580" target="_blank">
- * R. W. Grosse-Kunstleve and P. D. Adams, J. Appl. Cryst. (2002). 35,
- * 477-480.</a>
- *
- * @see <a href="http://dx.doi.org/10.1002/jcc.1032" target="_blank"> J. A.
- * Grant, B. T. Pickup, A. Nicholls, J. Comp. Chem. (2001). 22, 608-640</a>
- *
- * @see <a href="http://dx.doi.org/10.1006/jmbi.1994.1633" target="_blank"> J.
- * S. Jiang, A. T. Brunger, JMB (1994) 243, 100-115.</a>
  *
  */
 public class ScaleBulkEnergy implements Potential {
