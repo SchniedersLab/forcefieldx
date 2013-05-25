@@ -2525,7 +2525,7 @@ public final class PDBFilter extends SystemFilter {
                 Atom CZ2 = setHeavy(residue, "CZ2", CE2, 1.35, CD1, 120.0, CE3, 0.0, 0, k + 11);
                 Atom CZ3 = setHeavy(residue, "CZ3", CE3, 1.35, CD1, 120.0, NE1, 0.0, 0, k + 13);
                 Atom CH2 = setHeavy(residue, "CH2", CZ2, 1.35, CE2, 120.0, CD2, 0.0, 0, k + 15);
-                bond(CH2, CZ2);
+                bond(CH2, CZ3);
                 HB2 = setHydrogen(residue, "HB2", CB, 1.11, CA, 109.4, CG, 109.4, 1, k + 1);
                 HB3 = setHydrogen(residue, "HB3", CB, 1.11, CA, 109.4, CG, 109.4, -1, k + 1);
                 HD1 = setHydrogen(residue, "HD1", CD1, 1.10, CG, 126.0, NE1, 126.0, 1, k + 4);
