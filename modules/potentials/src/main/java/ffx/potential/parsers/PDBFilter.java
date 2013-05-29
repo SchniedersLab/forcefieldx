@@ -1520,7 +1520,7 @@ public final class PDBFilter extends SystemFilter {
              * Build the nucleic acid base.
              */
             try {
-                assignNucleicAcidBaseAtomTypes(nucleicAcid, residue, C1s);
+                assignNucleicAcidBaseAtomTypes(nucleicAcid, residue, C1s, O4s, C2s);
             } catch (MissingHeavyAtomException missingHeavyAtomException) {
                 logger.throwing(PDBFilter.class.getName(), "assignNucleicAcidAtomTypes", missingHeavyAtomException);
                 throw missingHeavyAtomException;
@@ -1567,8 +1567,10 @@ public final class PDBFilter extends SystemFilter {
      *
      * @since 1.0
      */
-    private void assignNucleicAcidBaseAtomTypes(NucleicAcid3 nucleicAcid, Residue residue, Atom C1s)
+    private void assignNucleicAcidBaseAtomTypes(NucleicAcid3 nucleicAcid, Residue residue, Atom C1s, 
+            Atom O4s, Atom C2s)
             throws MissingHeavyAtomException {
+            double glyco = 0;
         switch (nucleicAcid) {
             case ADE:
                 Atom N9,
@@ -1581,16 +1583,16 @@ public final class PDBFilter extends SystemFilter {
                  C2,
                  N3,
                  C4;
-                N9 = setHeavy(residue, "N9", C1s, 1017);
-                C8 = setHeavy(residue, "C8", N9, 1021);
-                N7 = setHeavy(residue, "N7", C8, 1020);
-                C5 = setHeavy(residue, "C5", N7, 1019);
-                C6 = setHeavy(residue, "C6", C5, 1025);
-                N6 = setHeavy(residue, "N6", C6, 1027);
-                N1 = setHeavy(residue, "N1", C6, 1024);
-                C2 = setHeavy(residue, "C2", N1, 1023);
-                N3 = setHeavy(residue, "N3", C2, 1022);
-                C4 = setHeavy(residue, "C4", N3, 1018);
+                N9 = setHeavy(residue, "N9", C1s, 1.48, O4s, 108.1, C2s, 113.7, 1, 1017);
+                C8 = setHeavy(residue, "C8", N9, 1.37, C1s, 128.4, O4s, glyco+180, 0, 1021);
+                N7 = setHeavy(residue, "N7", C8, 1.30, N9, 113.8, C1s, 180.0, 0, 1020);
+                C5 = setHeavy(residue, "C5", N7, 1.39, C8, 104.0, N9, 0.0, 0, 1019);
+                C6 = setHeavy(residue, "C6", C5, 1.40, N7, 132.4, C8, 180.0, 0, 1025);
+                N6 = setHeavy(residue, "N6", C6, 1.34, C5, 123.5, N7, 0.0, 0, 1027);
+                N1 = setHeavy(residue, "N1", C6, 1.35, C5, 117.4, N7, 180.0, 0, 1024);
+                C2 = setHeavy(residue, "C2", N1, 1.33, C6, 118.8, C5, 0.0, 0, 1023);
+                N3 = setHeavy(residue, "N3", C2, 1.32, N1, 129.2, C6, 0.0, 0, 1022);
+                C4 = setHeavy(residue, "C4", N3, 1.35, C2, 110.9, N1, 0.0, 0, 1018);
                 bond(C4, C5);
                 bond(C4, N9);
                 setHydrogen(residue, "H8", C8, 1.08e0, N7, 123.1e0, C5, 180.0e0, 0, 1030);
@@ -1627,14 +1629,14 @@ public final class PDBFilter extends SystemFilter {
             case OMC:
                 Atom O2;
                 Atom N4;
-                N1 = setHeavy(residue, "N1", C1s, 1078);
-                C2 = setHeavy(residue, "C2", N1, 1079);
-                O2 = setHeavy(residue, "O2", C2, 1084);
-                N3 = setHeavy(residue, "N3", C2, 1080);
-                C4 = setHeavy(residue, "C4", N3, 1081);
-                N4 = setHeavy(residue, "N4", C4, 1085);
-                C5 = setHeavy(residue, "C5", C4, 1082);
-                C6 = setHeavy(residue, "C6", C5, 1083);
+                N1 = setHeavy(residue, "N1", C1s, 1.48, O4s, 108.1, C2s, 113.7, 1, 1078);
+                C2 = setHeavy(residue, "C2", N1, 1.37, C1s, 117.8, O4s, glyco+180, 0, 1079);
+                O2 = setHeavy(residue, "O2", C2, 1.24, N1, 118.9, C1s, 0.0, 0, 1084);
+                N3 = setHeavy(residue, "N3", C2, 1.38, N1, 118.7, C1s, 180.0, 0, 1080);
+                C4 = setHeavy(residue, "C4", N3, 1.34, C2, 120.6, N1, 0.0, 0, 1081);
+                N4 = setHeavy(residue, "N4", C4, 1.32, N3, 118.3, O2, 180.0, 0, 1085);
+                C5 = setHeavy(residue, "C5", C4, 1.43, N3, 121.6, C2, 0.0, 0, 1082);
+                C6 = setHeavy(residue, "C6", C5, 1.36, C4, 116.9, N3, 0.0, 0, 1083);
                 bond(C6, N1);
                 setHydrogen(residue, "H41", N4, 1.00e0, C4, 120.0e0, N3, 0.0e0, 0, 1086);
                 setHydrogen(residue, "H42", N4, 1.00e0, C4, 120.0e0, N3, 180.0e0, 0, 1087);
@@ -1665,17 +1667,17 @@ public final class PDBFilter extends SystemFilter {
             case OMG:
                 Atom O6;
                 Atom N2;
-                N9 = setHeavy(residue, "N9", C1s, 1047);
-                C8 = setHeavy(residue, "C8", N9, 1051);
-                N7 = setHeavy(residue, "N7", C8, 1050);
-                C5 = setHeavy(residue, "C5", N7, 1049);
-                C6 = setHeavy(residue, "C6", C5, 1055);
-                O6 = setHeavy(residue, "O6", C6, 1060);
-                N1 = setHeavy(residue, "N1", C6, 1054);
-                C2 = setHeavy(residue, "C2", N1, 1053);
-                N2 = setHeavy(residue, "N2", C2, 1057);
-                N3 = setHeavy(residue, "N3", C2, 1052);
-                C4 = setHeavy(residue, "C4", N3, 1048);
+                N9 = setHeavy(residue, "N9", C1s, 1.48, O4s, 108.1, C2s, 113.7, 1, 1047);
+                C8 = setHeavy(residue, "C8", N9, 1.38, C1s, 128.4, O4s, glyco+180, 0, 1051);
+                N7 = setHeavy(residue, "N7", C8, 1.31, N9, 114.0, C1s, 180.0, 0, 1050);
+                C5 = setHeavy(residue, "C5", N7, 1.39, C8, 103.8, N9, 0.0, 0, 1049);
+                C6 = setHeavy(residue, "C6", C5, 1.40, N7, 130.1, C8, 180.0, 0, 1055);
+                O6 = setHeavy(residue, "O6", C6, 1.23, C5, 128.8, N7, 0.0, 0, 1060);
+                N1 = setHeavy(residue, "N1", C6, 1.40, C5, 111.4, N7, 180.0, 0, 1054);
+                C2 = setHeavy(residue, "C2", N1, 1.38, C6, 125.2, C5, 0.0, 0, 1053);
+                N2 = setHeavy(residue, "N2", C2, 1.34, N1, 116.1, C6, 180.0, 0, 1057);
+                N3 = setHeavy(residue, "N3", C2, 1.33, N1, 123.3, O6, 0.0, 0, 1052);
+                C4 = setHeavy(residue, "C4", N3, 1.36, C2, 112.3, N1, 0.0, 0, 1048);
                 bond(C4, C5);
                 bond(C4, N9);
                 setHydrogen(residue, "H8", C8, 1.08e0, N7, 123.0e0, C5, 180.0e0, 0, 1061);
@@ -1831,14 +1833,14 @@ public final class PDBFilter extends SystemFilter {
                 break;
             case URI:
                 Atom O4;
-                N1 = setHeavy(residue, "N1", C1s, 1106);
-                C2 = setHeavy(residue, "C2", N1, 1107);
-                O2 = setHeavy(residue, "O2", C2, 1112);
-                N3 = setHeavy(residue, "N3", C2, 1108);
-                C4 = setHeavy(residue, "C4", N3, 1109);
-                O4 = setHeavy(residue, "O4", C4, 1114);
-                C5 = setHeavy(residue, "C5", C4, 1110);
-                C6 = setHeavy(residue, "C6", C5, 1111);
+                N1 = setHeavy(residue, "N1", C1s, 1.48, O4s, 108.1, C2s, 113.7, 1, 1106);
+                C2 = setHeavy(residue, "C2", N1, 1.38, C1s, 117.1, O4s, glyco, 0, 1107);
+                O2 = setHeavy(residue, "O2", C2, 1.22, N1, 123.2, C1s, 0.0, 0, 1112);
+                N3 = setHeavy(residue, "N3", C2, 1.37, N1, 114.8, C1s, 180.0, 0, 1108);
+                C4 = setHeavy(residue, "C4", N3, 1.38, C2, 127.0, N1, 0.0, 0, 1109);
+                O4 = setHeavy(residue, "O4", C4, 1.23, N3, 119.8, C2, 180.0, 0, 1114);
+                C5 = setHeavy(residue, "C5", C4, 1.44, N3, 114.7, C2, 0.0, 0, 1110);
+                C6 = setHeavy(residue, "C6", C5, 1.34, O4, 119.2, C4, 0.0, 0, 1111);
                 bond(C6, N1);
                 setHydrogen(residue, "H3", N3, 1.00e0, C2, 116.5e0, N1, 180.0e0, 0, 1113);
                 setHydrogen(residue, "H5", C5, 1.08e0, C4, 120.4e0, N3, 180.0e0, 0, 1115);
@@ -1895,16 +1897,16 @@ public final class PDBFilter extends SystemFilter {
                 setHydrogen(residue, "H5M3", C5M, 1.08e0, C5, 109.5e0, H5M1, 109.5e0, -1, 1588);
                 break;
             case DAD:
-                N9 = setHeavy(residue, "N9", C1s, 1132);
-                C8 = setHeavy(residue, "C8", N9, 1136);
-                N7 = setHeavy(residue, "N7", C8, 1135);
-                C5 = setHeavy(residue, "C5", N7, 1134);
-                C6 = setHeavy(residue, "C6", C5, 1140);
-                N6 = setHeavy(residue, "N6", C6, 1142);
-                N1 = setHeavy(residue, "N1", C6, 1139);
-                C2 = setHeavy(residue, "C2", N1, 1138);
-                N3 = setHeavy(residue, "N3", C2, 1137);
-                C4 = setHeavy(residue, "C4", N3, 1133);
+                N9 = setHeavy(residue, "N9", C1s, 1.48, O4s, 108.1, C2s, 113.7, 1, 1132);
+                C8 = setHeavy(residue, "C8", N9, 1.37, C1s, 128.4, O4s, glyco+180, 0, 1136);
+                N7 = setHeavy(residue, "N7", C8, 1.30, N9, 113.8, C1s, 180.0, 0, 1135);
+                C5 = setHeavy(residue, "C5", N7, 1.39, C8, 104.0, N9, 0.0, 0, 1134);
+                C6 = setHeavy(residue, "C6", C5, 1.40, N7, 132.4, C8, 180.0, 0, 1140);
+                N6 = setHeavy(residue, "N6", C6, 1.34, C5, 123.5, N7, 0.0, 0, 1142);
+                N1 = setHeavy(residue, "N1", C6, 1.35, C5, 117.4, N7, 180.0, 0, 1139);
+                C2 = setHeavy(residue, "C2", N1, 1.33, C6, 118.8, C5, 0.0, 0, 1138);
+                N3 = setHeavy(residue, "N3", C2, 1.32, N1, 129.2, C6, 0.0, 0, 1137);
+                C4 = setHeavy(residue, "C4", N3, 1.35, C2, 110.9, N1, 0.0, 0, 1133);
                 bond(C4, C5);
                 bond(C4, N9);
                 setHydrogen(residue, "H8", C8, 1.08e0, N7, 123.1e0, C5, 180.0e0, 0, 1145);
@@ -1913,14 +1915,14 @@ public final class PDBFilter extends SystemFilter {
                 setHydrogen(residue, "H2", C2, 1.08e0, N3, 115.4e0, C4, 180.0e0, 0, 1141);
                 break;
             case DCY:
-                N1 = setHeavy(residue, "N1", C1s, 1191);
-                C2 = setHeavy(residue, "C2", N1, 1192);
-                O2 = setHeavy(residue, "O2", C2, 1197);
-                N3 = setHeavy(residue, "N3", C2, 1193);
-                C4 = setHeavy(residue, "C4", N3, 1194);
-                N4 = setHeavy(residue, "N4", C4, 1198);
-                C5 = setHeavy(residue, "C5", C4, 1195);
-                C6 = setHeavy(residue, "C6", C5, 1196);
+                N1 = setHeavy(residue, "N1", C1s, 1.48, O4s, 108.1, C2s, 113.7, 1, 1191);
+                C2 = setHeavy(residue, "C2", N1, 1.37, C1s, 117.8, O4s, glyco, 0, 1192);
+                O2 = setHeavy(residue, "O2", C2, 1.24, N1, 118.9, C1s, 0.0, 0, 1197);
+                N3 = setHeavy(residue, "N3", C2, 1.38, N1, 118.7, C1s, 180, 0, 1193);
+                C4 = setHeavy(residue, "C4", N3, 1.34, C2, 120.6, N1, 0.0, 0, 1194);
+                N4 = setHeavy(residue, "N4", C4, 1.32, N3, 118.3, C2, 180.0, 0, 1198);
+                C5 = setHeavy(residue, "C5", C4, 1.43, N3, 121.6, C2, 0.0, 0, 1195);
+                C6 = setHeavy(residue, "C6", C5, 1.36, C4, 116.9, N3, 0.0, 0, 1196);
                 bond(C6, N1);
                 setHydrogen(residue, "H41", N4, 1.00e0, C4, 120.0e0, N3, 0.0e0, 0, 1199);
                 setHydrogen(residue, "H42", N4, 1.00e0, C4, 120.0e0, N3, 180.0e0, 0, 1200);
@@ -1928,17 +1930,17 @@ public final class PDBFilter extends SystemFilter {
                 setHydrogen(residue, "H6", C6, 1.08e0, C5, 119.4e0, C4, 180.0e0, 0, 1202);
                 break;
             case DGU:
-                N9 = setHeavy(residue, "N9", C1s, 1161);
-                C8 = setHeavy(residue, "C8", N9, 1165);
-                N7 = setHeavy(residue, "N7", C8, 1164);
-                C5 = setHeavy(residue, "C5", N7, 1163);
-                C6 = setHeavy(residue, "C6", C5, 1169);
-                O6 = setHeavy(residue, "O6", C6, 1174);
-                N1 = setHeavy(residue, "N1", C6, 1168);
-                C2 = setHeavy(residue, "C2", N1, 1167);
-                N2 = setHeavy(residue, "N2", C2, 1171);
-                N3 = setHeavy(residue, "N3", C2, 1166);
-                C4 = setHeavy(residue, "C4", N3, 1162);
+                N9 = setHeavy(residue, "N9", C1s, 1.48, O4s, 108.1, C2s, 113.7, 1, 1161);
+                C8 = setHeavy(residue, "C8", N9, 1.38, C1s, 128.4, O4s, glyco+180, 0, 1165);
+                N7 = setHeavy(residue, "N7", C8, 1.31, N9, 114.0, C1s, 180.0, 0, 1164);
+                C5 = setHeavy(residue, "C5", N7, 1.39, C8, 103.8, N9, 0.0, 0, 1163);
+                C6 = setHeavy(residue, "C6", C5, 1.40, N7, 130.1, C8, 180.0, 0, 1169);
+                O6 = setHeavy(residue, "O6", C6, 1.23, C5, 128.8, N7, 0.0, 0, 1174);
+                N1 = setHeavy(residue, "N1", C6, 1.40, C5, 111.4, N7, 180.0, 0, 1168);
+                C2 = setHeavy(residue, "C2", N1, 1.38, C6, 125.2, C5, 0.0, 0, 167);
+                N2 = setHeavy(residue, "N2", C2, 1.34, N1, 116.1, C6, 180.0, 0, 1171);
+                N3 = setHeavy(residue, "N3", C2, 1.33, N1, 123.3, O6, 0.0, 0, 1166);
+                C4 = setHeavy(residue, "C4", N3, 1.36, C2, 112.3, N1, 0.0, 0, 1162);
                 bond(C4, C5);
                 bond(C4, N9);
                 setHydrogen(residue, "H8", C8, 1.08e0, N7, 123.0e0, C5, 180.0e0, 0, 1175);
@@ -1949,15 +1951,15 @@ public final class PDBFilter extends SystemFilter {
             case DTY:
                 Atom C7;
                 Atom H;
-                N1 = setHeavy(residue, "N1", C1s, 1218);
-                C2 = setHeavy(residue, "C2", N1, 1219);
-                O2 = setHeavy(residue, "O2", C2, 1224);
-                N3 = setHeavy(residue, "N3", C2, 1220);
-                C4 = setHeavy(residue, "C4", N3, 1221);
-                O4 = setHeavy(residue, "O4", C4, 1226);
-                C5 = setHeavy(residue, "C5", C4, 1222);
-                C7 = setHeavy(residue, "C7", C5, 1227);
-                C6 = setHeavy(residue, "C6", C5, 1223);
+                N1 = setHeavy(residue, "N1", C1s, 1.48, O4s, 108.1, C2s, 113.7, 1, 1218);
+                C2 = setHeavy(residue, "C2", N1, 1.37, C1s, 117.1, O4s, glyco, 0, 1219);
+                O2 = setHeavy(residue, "O2", C2, 1.22, N1, 122.9, C1s, 0.0, 0, 1224);
+                N3 = setHeavy(residue, "N3", C2, 1.38, N1, 115.4, C1s, 180.0, 0, 1220);
+                C4 = setHeavy(residue, "C4", N3, 1.38, C2, 126.4, N1, 0.0, 0, 1221);
+                O4 = setHeavy(residue, "O4", C4, 1.23, N3, 120.5, C2, 180.0, 0, 1226);
+                C5 = setHeavy(residue, "C5", C4, 1.44, N3, 114.1, C2, 0.0, 0, 1222);
+                C7 = setHeavy(residue, "C7", C5, 1.50, C4, 117.5, N3, 180.0, 0, 1227);
+                C6 = setHeavy(residue, "C6", C5, 1.34, C4, 120.8, N3, 0.0, 0, 1223);
                 bond(C6, N1);
                 setHydrogen(residue, "H3", N3, 1.00e0, C2, 116.8e0, N1, 180.0e0, 0, 1225);
                 H = setHydrogen(residue, "H71", C7, 1.09e0, C5, 109.5e0, C4, 0.0e0, 0, 1228);
