@@ -84,7 +84,7 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
      */
     private double restraintEnergy1 = 0;
     /**
-     * Softcore restraint energy of topology 1 (kcal/mol).
+     * Softcore restraint energy of topology 2 (kcal/mol).
      */
     private double restraintEnergy2 = 0;
     /**
@@ -100,28 +100,32 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
      */
     private double oneMinusLambda = 0.0;
     /**
-     * Lambda raised to the power of lambdaExponent: lambda^n
+     * Lambda raised to the power of lambdaExponent: lambda^lambdaExponent
      */
     private double lambdaPow = 1.0;
     /**
-     * One minus Lambda raised to the power of lambdaExponent. (1-lambda)^n
+     * One minus Lambda raised to the power of lambdaExponent:
+     * (1-lambda)^lambdaExponent
      */
     private double oneMinusLambdaPow = 0.0;
     /**
-     * First derivative with respect to lambda. n*lambda^(n-1)
+     * First derivative with respect to lambda of lambda^lambdaExponent
+     * lambdaExponent*lambda^(lambdaExponent-1)
      */
     private double dLambdaPow = 0.0;
     /**
-     * First derivative with respect to lambda: -n*(one-lambda)^(n-1)
+     * First derivative with respect to lambda of (1-lambda)^lambdaExponent
+     * -lambdaExponent*(one-lambda)^(lambdaExponent-1)
      */
     private double dOneMinusLambdaPow = 0.0;
     /**
-     * Second derivative with respect to lambda: n*(n-1)*lambda^(n-2)
+     * Second derivative with respect to lambda of lambda^lambdaExponent
+     * lambdaExponent*(lambdaExponent-1)*lambda^(lambdaExponent-2)
      */
     private double d2LambdaPow = 0.0;
     /**
-     * First derivative of lambdaPow with respect to lambda.
-     * n*(n-1)*(one-lambda)^(n-2)
+     * Second derivative with respect to lambda of (1-lambda)^lambdaExponent
+     * lambdaExponent*(lambdaExponent-1)*(1-lambda)^(lambdaExponent-2)
      */
     private double d2OneMinusLambdaPow = 0.0;
     /**
@@ -185,7 +189,7 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
      */
     private final ForceFieldEnergy forceFieldEnergy1;
     /**
-     * Topology 1 ForceFieldEnergy.
+     * Topology 2 ForceFieldEnergy.
      */
     private final ForceFieldEnergy forceFieldEnergy2;
     /**
