@@ -25,11 +25,12 @@ package ffx.potential;
 import ffx.potential.ResidueEnumerations.AminoAcid3;
 
 /**
+ * The Rotamer Class represents one immutable amino acid Rotamer.
  *
  * @author Ava M. Lynn
- * The Rotamer Class represents one immutable amino acid Rotamer.
  */
 public class Rotamer {
+
     public final double chi1;
     public final double chi2;
     public final double chi3;
@@ -37,15 +38,15 @@ public class Rotamer {
     public final double angles[];
     public final double sigmas[];
     public final AminoAcid3 name;
-    
-    public Rotamer(AminoAcid3 name, double... values){
+
+    public Rotamer(AminoAcid3 name, double... values) {
         int length = values.length;
-        angles = new double [length/2];
-        sigmas = new double [length/2];
-        for(int i=0; i<length; i++){
-            int ii = 2*i;
+        angles = new double[length / 2];
+        sigmas = new double[length / 2];
+        for (int i = 0; i < length; i++) {
+            int ii = 2 * i;
             angles[i] = values[ii];
-            sigmas[i] = values[ii+1];
+            sigmas[i] = values[ii + 1];
         }
         this.name = name;
         chi1 = angles[0];
@@ -53,12 +54,12 @@ public class Rotamer {
         chi3 = angles[2];
         chi4 = angles[3];
     }
-    
+
     @Override
-    public String toString(){
+    public String toString() {
         StringBuilder sb = new StringBuilder(name.toString());
         int length = angles.length;
-        for(int i=0; i<length;i++){
+        for (int i = 0; i < length; i++) {
             sb.append(String.format(" %6.1f %4.1f", angles[i], sigmas[i]));
         }
         return sb.toString();

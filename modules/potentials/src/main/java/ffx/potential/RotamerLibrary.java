@@ -23,227 +23,182 @@
 package ffx.potential;
 
 import ffx.potential.ResidueEnumerations.AminoAcid3;
-import static ffx.potential.ResidueEnumerations.AminoAcid3.ASN;
-import static ffx.potential.ResidueEnumerations.AminoAcid3.GLN;
-import static ffx.potential.ResidueEnumerations.AminoAcid3.GLU;
-import static ffx.potential.ResidueEnumerations.AminoAcid3.LYS;
-import static ffx.potential.ResidueEnumerations.AminoAcid3.MET;
-import static ffx.potential.ResidueEnumerations.AminoAcid3.TRP;
 
 /**
  * The Rotamer Library Class manages a library of side-chain Rotamers.
+ *
  * @author Ava M. Lynn
  */
 public class RotamerLibrary {
-    private static final int numberOfAminoAcids = 20;
+
+    private static final int numberOfAminoAcids = AminoAcid3.values().length;
     private static final Rotamer[][] rotamerCache = new Rotamer[numberOfAminoAcids][];
-    public static Rotamer[] getRotamer(AminoAcid3 name){
-        switch(name){
-            case GLY:
-            case ALA:
-                return null;
+
+    /**
+     * Return an array of Rotamers for the given amino acid.
+     *
+     * @param name The name of the amino acid.
+     * @return An array of Rotamers.
+     */
+    public static Rotamer[] getRotamer(AminoAcid3 name) {
+        int n = name.ordinal();
+        if (rotamerCache[n] != null) {
+            return rotamerCache[n];
+        }
+        switch (name) {
             case VAL:
-                int n = name.ordinal();
-                if (rotamerCache[n] == null) {
-                    // Allocate memory and create rotamers
-                    rotamerCache[n][0] = new Rotamer(name, 173.5, 9.0);
-                    rotamerCache[n][1] = new Rotamer(name, -63.4, 8.1);
-                    rotamerCache[n][2] = new Rotamer(name, 69.3, 9.6);
-                }
-                return rotamerCache[n];
+                rotamerCache[n] = new Rotamer[3];
+                rotamerCache[n][0] = new Rotamer(name, 173.5, 9.0);
+                rotamerCache[n][1] = new Rotamer(name, -63.4, 8.1);
+                rotamerCache[n][2] = new Rotamer(name, 69.3, 9.6);
+                break;
             case LEU:
-                n = name.ordinal();
-                if (rotamerCache[n] == null) {
-                    // Allocate memory and create rotamers
-                    rotamerCache[n][0] = new Rotamer(name, -64.9, 8.2, 176.0, 9.9);
-                    rotamerCache[n][1] = new Rotamer(name, -176.4, 10.2, 63.1, 8.2);
-                    rotamerCache[n][2] = new Rotamer(name, -165.3, 10.0, 168.2, 34.2);
-                    rotamerCache[n][3] = new Rotamer(name, 44.3, 20.0, 60.4, 18.8);
-                }
-                return rotamerCache[n];
+                rotamerCache[n] = new Rotamer[4];
+                rotamerCache[n][0] = new Rotamer(name, -64.9, 8.2, 176.0, 9.9);
+                rotamerCache[n][1] = new Rotamer(name, -176.4, 10.2, 63.1, 8.2);
+                rotamerCache[n][2] = new Rotamer(name, -165.3, 10.0, 168.2, 34.2);
+                rotamerCache[n][3] = new Rotamer(name, 44.3, 20.0, 60.4, 18.8);
+                break;
             case ILE:
-                    n = name.ordinal();
-                    if (rotamerCache[n] == null) {
-                        // Allocate memory and create rotamers
-                        rotamerCache[n][0] = new Rotamer(name, -60.9, 7.5, 168.7, 11.6);
-                        rotamerCache[n][1] = new Rotamer(name, -59.6, 9.6, -64.1, 14.3);
-                        rotamerCache[n][2] = new Rotamer(name, 61.7, 5.0, 163.8, 16.4);
-                        rotamerCache[n][3] = new Rotamer(name, -166.6, 10.1, 166.0, 8.9);
-                        rotamerCache[n][4] = new Rotamer(name, -174.8, 24.9, 72.1, 10.5);
-                }
-                return rotamerCache[n];
+                rotamerCache[n] = new Rotamer[5];
+                rotamerCache[n][0] = new Rotamer(name, -60.9, 7.5, 168.7, 11.6);
+                rotamerCache[n][1] = new Rotamer(name, -59.6, 9.6, -64.1, 14.3);
+                rotamerCache[n][2] = new Rotamer(name, 61.7, 5.0, 163.8, 16.4);
+                rotamerCache[n][3] = new Rotamer(name, -166.6, 10.1, 166.0, 8.9);
+                rotamerCache[n][4] = new Rotamer(name, -174.8, 24.9, 72.1, 10.5);
+                break;
             case SER:
-                n = name.ordinal();
-                if (rotamerCache[n] == null) {
-                    // Allocate memory and create rotamers
-                    rotamerCache[n][0] = new Rotamer(name, 64.7, 16.1);
-                    rotamerCache[n][1] = new Rotamer(name, -69.7, 14.6);
-                    rotamerCache[n][2] = new Rotamer(name, -176.1, 20.2);
-                }
-                return rotamerCache[n];
+                rotamerCache[n] = new Rotamer[3];
+                rotamerCache[n][0] = new Rotamer(name, 64.7, 16.1);
+                rotamerCache[n][1] = new Rotamer(name, -69.7, 14.6);
+                rotamerCache[n][2] = new Rotamer(name, -176.1, 20.2);
+                break;
             case THR:
-                n = name.ordinal();
-                if (rotamerCache[n] == null) {
-                    // Allocate memory and create rotamers
-                    rotamerCache[n][0] = new Rotamer(name, 62.7, 8.5);
-                    rotamerCache[n][1] = new Rotamer(name, -59.7, 9.4);
-                    rotamerCache[n][2] = new Rotamer(name, -169.5, 6.6);
-                }
-                return rotamerCache[n];
+                rotamerCache[n] = new Rotamer[3];
+                rotamerCache[n][0] = new Rotamer(name, 62.7, 8.5);
+                rotamerCache[n][1] = new Rotamer(name, -59.7, 9.4);
+                rotamerCache[n][2] = new Rotamer(name, -169.5, 6.6);
+                break;
             case CYS:
-                n = name.ordinal();
-                if (rotamerCache[n] == null) {
-                    // Allocate memory and create rotamers
-                    rotamerCache[n][0] = new Rotamer(name, -65.2, 10.1);
-                    rotamerCache[n][1] = new Rotamer(name, -179.6, 9.5);
-                    rotamerCache[n][2] = new Rotamer(name, 63.5, 9.6);
-                }
-                return rotamerCache[n];
+            case CYX:
+                rotamerCache[n] = new Rotamer[3];
+                rotamerCache[n][0] = new Rotamer(name, -65.2, 10.1);
+                rotamerCache[n][1] = new Rotamer(name, -179.6, 9.5);
+                rotamerCache[n][2] = new Rotamer(name, 63.5, 9.6);
+                break;
             case PRO:
-                n = name.ordinal();
-                if (rotamerCache[n] == null) {
-                    // Allocate memory and create rotamers
-                    rotamerCache[n][0] = new Rotamer(name, 24.0, 8.0);
-                    rotamerCache[n][1] = new Rotamer(name, 0.0, 8.0);
-                    rotamerCache[n][2] = new Rotamer(name, -24.0, 8.0);
-                }
-                return rotamerCache[n];
+                rotamerCache[n] = new Rotamer[3];
+                rotamerCache[n][0] = new Rotamer(name, 24.0, 8.0);
+                rotamerCache[n][1] = new Rotamer(name, 0.0, 8.0);
+                rotamerCache[n][2] = new Rotamer(name, -24.0, 8.0);
+                break;
             case PHE:
-                n = name.ordinal();
-                if (rotamerCache[n] == null) {
-                    // Allocate memory and create rotamers
-                    rotamerCache[n][0] = new Rotamer(name, -66.3, 10.2, 94.3, 19.5);
-                    rotamerCache[n][1] = new Rotamer(name, -179.2, 9.3, 7.8, 8.9);
-                    rotamerCache[n][2] = new Rotamer(name, 66.0, 12.0, 90.7, 9.4);
-                    rotamerCache[n][3] = new Rotamer(name, -71.9, 16.3, -0.4, 26.1);
-                }
-                return rotamerCache[n];
+                rotamerCache[n] = new Rotamer[4];
+                rotamerCache[n][0] = new Rotamer(name, -66.3, 10.2, 94.3, 19.5);
+                rotamerCache[n][1] = new Rotamer(name, -179.2, 9.3, 7.8, 8.9);
+                rotamerCache[n][2] = new Rotamer(name, 66.0, 12.0, 90.7, 9.4);
+                rotamerCache[n][3] = new Rotamer(name, -71.9, 16.3, -0.4, 26.1);
+                break;
             case TYR:
-                n = name.ordinal();
-                if (rotamerCache[n] == null) {
-                    // Allocate memory and create rotamers
-                    rotamerCache[n][0] = new Rotamer(name, -66.5, 11.4, 96.6, 21.8);
-                    rotamerCache[n][1] = new Rotamer(name, -179.7, 12.6, 71.9, 13.4);
-                    rotamerCache[n][2] = new Rotamer(name, 63.3, 9.4, 89.1, 13.0);
-                    rotamerCache[n][3] = new Rotamer(name, -67.2, 13.2, -1.0, 20.1);
-                }
-                return rotamerCache[n];
+            case TYD:
+                rotamerCache[n] = new Rotamer[4];
+                rotamerCache[n][0] = new Rotamer(name, -66.5, 11.4, 96.6, 21.8);
+                rotamerCache[n][1] = new Rotamer(name, -179.7, 12.6, 71.9, 13.4);
+                rotamerCache[n][2] = new Rotamer(name, 63.3, 9.4, 89.1, 13.0);
+                rotamerCache[n][3] = new Rotamer(name, -67.2, 13.2, -1.0, 20.1);
+                break;
             case TRP:
-                n = name.ordinal();
-                if (rotamerCache[n] == null) {
-                    // Allocate memory and create rotamers
-                    rotamerCache[n][0] = new Rotamer(name, -70.4, 7.0, 100.5, 18.2);
-                    rotamerCache[n][1] = new Rotamer(name, 64.8, 13.0, -88.9, 5.3);
-                    rotamerCache[n][2] = new Rotamer(name, -177.3, 7.9, -95.1, 7.6);
-                    rotamerCache[n][3] = new Rotamer(name, -179.5, 3.4, 87.5, 3.8);
-                    rotamerCache[n][4] = new Rotamer(name, -73.3, 6.5, -87.7, 8.1);
-                    rotamerCache[n][5] = new Rotamer(name, 62.2, 10.0, 112.5, 15.0);
-                }
-                return rotamerCache[n];
+                rotamerCache[n] = new Rotamer[6];
+                rotamerCache[n][0] = new Rotamer(name, -70.4, 7.0, 100.5, 18.2);
+                rotamerCache[n][1] = new Rotamer(name, 64.8, 13.0, -88.9, 5.3);
+                rotamerCache[n][2] = new Rotamer(name, -177.3, 7.9, -95.1, 7.6);
+                rotamerCache[n][3] = new Rotamer(name, -179.5, 3.4, 87.5, 3.8);
+                rotamerCache[n][4] = new Rotamer(name, -73.3, 6.5, -87.7, 8.1);
+                rotamerCache[n][5] = new Rotamer(name, 62.2, 10.0, 112.5, 15.0);
             case HIS:
-                n = name.ordinal();
-                if (rotamerCache[n] == null) {
-                    // Allocate memory and create rotamers
-                    rotamerCache[n][0] = new Rotamer(name, -62.8, 10.0, -74.3, 17.2);
-                    rotamerCache[n][1] = new Rotamer(name, -175.2, 15.4, -88.7, 43.5);
-                    rotamerCache[n][2] = new Rotamer(name, -69.8, 5.9, 96.1, 32.2);
-                    rotamerCache[n][3] = new Rotamer(name, 67.9, 17.4, -80.5, 40.7);
-                    rotamerCache[n][4] = new Rotamer(name, -177.3, 6.3, 100.5, 14.0);
-                    rotamerCache[n][5] = new Rotamer(name, 48.8, 10.0, 89.5, 30.0);
-                }
-                return rotamerCache[n];
+            case HIE:
+            case HID:
+                rotamerCache[n] = new Rotamer[6];
+                rotamerCache[n][0] = new Rotamer(name, -62.8, 10.0, -74.3, 17.2);
+                rotamerCache[n][1] = new Rotamer(name, -175.2, 15.4, -88.7, 43.5);
+                rotamerCache[n][2] = new Rotamer(name, -69.8, 5.9, 96.1, 32.2);
+                rotamerCache[n][3] = new Rotamer(name, 67.9, 17.4, -80.5, 40.7);
+                rotamerCache[n][4] = new Rotamer(name, -177.3, 6.3, 100.5, 14.0);
+                rotamerCache[n][5] = new Rotamer(name, 48.8, 10.0, 89.5, 30.0);
             case ASH:
             case ASP:
-                n = name.ordinal();
-                if (rotamerCache[n] == null) {
-                    // Allocate memory and create rotamers
-                    rotamerCache[n][0] = new Rotamer(name, -68.3, 9.2, -25.7, 31.1);
-                    rotamerCache[n][1] = new Rotamer(name, -169.1, 9.5, 3.9, 38.9);
-                    rotamerCache[n][2] = new Rotamer(name, 63.7, 9.9, 2.4, 29.4);
-                }
-                return rotamerCache[n];
+                rotamerCache[n] = new Rotamer[3];
+                rotamerCache[n][0] = new Rotamer(name, -68.3, 9.2, -25.7, 31.1);
+                rotamerCache[n][1] = new Rotamer(name, -169.1, 9.5, 3.9, 38.9);
+                rotamerCache[n][2] = new Rotamer(name, 63.7, 9.9, 2.4, 29.4);
+                break;
             case ASN:
-                n = name.ordinal();
-                if (rotamerCache[n] == null) {
-                    // Allocate memory and create rotamers
-                    rotamerCache[n][0] = new Rotamer(name, -68.3, 12.3, -36.8, 25.2);
-                    rotamerCache[n][1] = new Rotamer(name, -177.1, 8.8, 1.3, 34.1);
-                    rotamerCache[n][2] = new Rotamer(name, -67.2, 10.8, 128.8, 24.2);
-                    rotamerCache[n][3] = new Rotamer(name, 63.9, 3.7, -6.8, 13.5);
-                    rotamerCache[n][4] = new Rotamer(name, -174.9, 17.9, -156.8, 58.9);
-                    rotamerCache[n][5] = new Rotamer(name, 63.6, 6.6, 53.8, 17.1);
-                }
-                return rotamerCache[n];
+                rotamerCache[n] = new Rotamer[6];
+                rotamerCache[n][0] = new Rotamer(name, -68.3, 12.3, -36.8, 25.2);
+                rotamerCache[n][1] = new Rotamer(name, -177.1, 8.8, 1.3, 34.1);
+                rotamerCache[n][2] = new Rotamer(name, -67.2, 10.8, 128.8, 24.2);
+                rotamerCache[n][3] = new Rotamer(name, 63.9, 3.7, -6.8, 13.5);
+                rotamerCache[n][4] = new Rotamer(name, -174.9, 17.9, -156.8, 58.9);
+                rotamerCache[n][5] = new Rotamer(name, 63.6, 6.6, 53.8, 17.1);
+                break;
             case GLU:
-                n = name.ordinal();
-                if (rotamerCache[n] == null) {
-                    // Allocate memory and create rotamers
-                    rotamerCache[n][0] = new Rotamer(name, -69.6, 19.2, -177.2, 21.7, -11.4, 44.8);
-                    rotamerCache[n][1] = new Rotamer(name, -176.2, 14.9, 175.4, 10.6, -6.7, 39.0);
-                    rotamerCache[n][2] = new Rotamer(name, -64.6, 13.5, -69.1, 17.3, -33.4, 27.4);
-                    rotamerCache[n][3] = new Rotamer(name, -55.6, 10.6, 77.0, 6.8, 25.3, 32.6);
-                    rotamerCache[n][4] = new Rotamer(name, 69.8, 10.6, -179.0, 23.7, 6.6, 64.2);
-                    rotamerCache[n][5] = new Rotamer(name, -173.6, 14.6, 70.6, 8.7, 14.0, 37.1);
-                    rotamerCache[n][6] = new Rotamer(name, 63.0, 4.3, -80.4, 13.9, 16.3, 20.8);
-                }
-                return rotamerCache[n];
+            case GLH:
+                rotamerCache[n] = new Rotamer[7];
+                rotamerCache[n][0] = new Rotamer(name, -69.6, 19.2, -177.2, 21.7, -11.4, 44.8);
+                rotamerCache[n][1] = new Rotamer(name, -176.2, 14.9, 175.4, 10.6, -6.7, 39.0);
+                rotamerCache[n][2] = new Rotamer(name, -64.6, 13.5, -69.1, 17.3, -33.4, 27.4);
+                rotamerCache[n][3] = new Rotamer(name, -55.6, 10.6, 77.0, 6.8, 25.3, 32.6);
+                rotamerCache[n][4] = new Rotamer(name, 69.8, 10.6, -179.0, 23.7, 6.6, 64.2);
+                rotamerCache[n][5] = new Rotamer(name, -173.6, 14.6, 70.6, 8.7, 14.0, 37.1);
+                rotamerCache[n][6] = new Rotamer(name, 63.0, 4.3, -80.4, 13.9, 16.3, 20.8);
+                break;
             case GLN:
-                n = name.ordinal();
-                if (rotamerCache[n] == null) {
-                    // Allocate memory and create rotamers
-                    rotamerCache[n][0] = new Rotamer(name, -66.7, 14.1, -178.5, 14.9, -24.0, 38.0);
-                    rotamerCache[n][1] = new Rotamer(name, -66.7, 14.1, -178.5, 14.9, 156.0, 38.0);
-                    rotamerCache[n][2] = new Rotamer(name, -174.6, 11.5, -177.7, 17.2, -24.0, 38.0);
-                    rotamerCache[n][3] = new Rotamer(name, -174.6, 11.5, -177.7, 17.2, 156.0, 38.0);
-                    rotamerCache[n][4] = new Rotamer(name, -58.7, 11.2, -63.8, 16.1, -46.3, 27.7);
-                    rotamerCache[n][5] = new Rotamer(name, -51.3, 7.3, -90.4, 22.8, 165.0, 38.2);
-                    rotamerCache[n][6] = new Rotamer(name, -179.4, 21.5, 67.3, 7.9, 26.8, 38.4);
-                    rotamerCache[n][7] = new Rotamer(name, 167.5, 14.8, 70.9, 3.7, 174.2, 7.1);
-                    rotamerCache[n][8] = new Rotamer(name, 70.8, 13.0, -165.6, 9.5, -24.0, 38.0);
-                    rotamerCache[n][9] = new Rotamer(name, 70.8, 13.0, -165.6, 9.5, 156.0, 38.0);
-                }
-                return rotamerCache[n];
+                rotamerCache[n] = new Rotamer[10];
+                rotamerCache[n][0] = new Rotamer(name, -66.7, 14.1, -178.5, 14.9, -24.0, 38.0);
+                rotamerCache[n][1] = new Rotamer(name, -66.7, 14.1, -178.5, 14.9, 156.0, 38.0);
+                rotamerCache[n][2] = new Rotamer(name, -174.6, 11.5, -177.7, 17.2, -24.0, 38.0);
+                rotamerCache[n][3] = new Rotamer(name, -174.6, 11.5, -177.7, 17.2, 156.0, 38.0);
+                rotamerCache[n][4] = new Rotamer(name, -58.7, 11.2, -63.8, 16.1, -46.3, 27.7);
+                rotamerCache[n][5] = new Rotamer(name, -51.3, 7.3, -90.4, 22.8, 165.0, 38.2);
+                rotamerCache[n][6] = new Rotamer(name, -179.4, 21.5, 67.3, 7.9, 26.8, 38.4);
+                rotamerCache[n][7] = new Rotamer(name, 167.5, 14.8, 70.9, 3.7, 174.2, 7.1);
+                rotamerCache[n][8] = new Rotamer(name, 70.8, 13.0, -165.6, 9.5, -24.0, 38.0);
+                rotamerCache[n][9] = new Rotamer(name, 70.8, 13.0, -165.6, 9.5, 156.0, 38.0);
+                break;
             case MET:
-                n = name.ordinal();
-                if (rotamerCache[n] == null) {
-                    // Allocate memory and create rotamers
-                    rotamerCache[n][0] = new Rotamer(name, -64.5, 12.7, -68.5, 6.0, -75.6, 14.1);
-                    rotamerCache[n][1] = new Rotamer(name, -78.3, 5.4, -174.7, 15.7, 65.0, 20.0);
-                    rotamerCache[n][2] = new Rotamer(name, -78.3, 5.4, -174.7, 15.7, 180.0, 20.0);
-                    rotamerCache[n][3] = new Rotamer(name, -78.3, 5.4, -174.7, 15.7, -65.0, 20.0);
-                    rotamerCache[n][4] = new Rotamer(name, 178.9, 8.7, 179.0, 13.4, 65.0, 20.0);
-                    rotamerCache[n][5] = new Rotamer(name, 178.9, 8.7, 179.0, 13.4, 65.0, 20.0);
-                    rotamerCache[n][6] = new Rotamer(name, 178.9, 8.7, 179.0, 13.4, -65.0, 20.0);
-                    rotamerCache[n][7] = new Rotamer(name, -70.0, 21.0, -65.0, 20.0, 65.0, 20.0);
-                    rotamerCache[n][8] = new Rotamer(name, -170.0, 24.0, 65.0, 20.0, 180.0, 20.0);
-                    rotamerCache[n][9] = new Rotamer(name, -170.0, 24.0, -65.0, 20.0, 180.0, 20.0);
-                    rotamerCache[n][10] = new Rotamer(name, -70.0, 21.0, 65.0, 20.0, 180.0, 20.0);
-                    rotamerCache[n][11] = new Rotamer(name, -70.0, 21.0, -65.0, 20.0, 180.0, 20.0);
-                    rotamerCache[n][12] = new Rotamer(name, 61.0, 21.0, 65.0, 20.0, 180.0, 20.0);
-                }
-                return rotamerCache[n];
+                rotamerCache[n] = new Rotamer[13];
+                rotamerCache[n][0] = new Rotamer(name, -64.5, 12.7, -68.5, 6.0, -75.6, 14.1);
+                rotamerCache[n][1] = new Rotamer(name, -78.3, 5.4, -174.7, 15.7, 65.0, 20.0);
+                rotamerCache[n][2] = new Rotamer(name, -78.3, 5.4, -174.7, 15.7, 180.0, 20.0);
+                rotamerCache[n][3] = new Rotamer(name, -78.3, 5.4, -174.7, 15.7, -65.0, 20.0);
+                rotamerCache[n][4] = new Rotamer(name, 178.9, 8.7, 179.0, 13.4, 65.0, 20.0);
+                rotamerCache[n][5] = new Rotamer(name, 178.9, 8.7, 179.0, 13.4, 65.0, 20.0);
+                rotamerCache[n][6] = new Rotamer(name, 178.9, 8.7, 179.0, 13.4, -65.0, 20.0);
+                rotamerCache[n][7] = new Rotamer(name, -70.0, 21.0, -65.0, 20.0, 65.0, 20.0);
+                rotamerCache[n][8] = new Rotamer(name, -170.0, 24.0, 65.0, 20.0, 180.0, 20.0);
+                rotamerCache[n][9] = new Rotamer(name, -170.0, 24.0, -65.0, 20.0, 180.0, 20.0);
+                rotamerCache[n][10] = new Rotamer(name, -70.0, 21.0, 65.0, 20.0, 180.0, 20.0);
+                rotamerCache[n][11] = new Rotamer(name, -70.0, 21.0, -65.0, 20.0, 180.0, 20.0);
+                rotamerCache[n][12] = new Rotamer(name, 61.0, 21.0, 65.0, 20.0, 180.0, 20.0);
+                break;
             case LYS:
-                n = name.ordinal();
-                if (rotamerCache[n] == null) {
-                    // Allocate memory and create rotamers
-                    rotamerCache[n][0] = new Rotamer(name, -170.0, 24.0, 180.0, 20.0, 65.0, 20.0, 180.0, 20.0);
-                    rotamerCache[n][1] = new Rotamer(name, -170.0, 24.0, 180.0, 20.0, 180.0, 20.0, 65.0, 20.0);
-                    rotamerCache[n][2] = new Rotamer(name, -170.0, 24.0, 180.0, 20.0, 180.0, 20.0, 180.0, 20.0);
-                    rotamerCache[n][3] = new Rotamer(name, -170.0, 24.0, 180.0, 20.0, -65.0, 20.0, 180.0, 20.0);
-                    rotamerCache[n][4] = new Rotamer(name, -170.0, 24.0, -65.0, 20.0, 180.0, 20.0, 180.0, 20.0);
-                    rotamerCache[n][5] = new Rotamer(name, -70.0, 21.0, 65.0, 20.0, 180.0, 20.0, 180.0, 20.0);
-                    rotamerCache[n][6] = new Rotamer(name, -70.0, 21.0, 180.0, 20.0, 65.0, 20.0, 180.0, 20.0);
-                    rotamerCache[n][7] = new Rotamer(name, -70.0, 21.0, 180.0, 20.0, 180.0, 20.0, 180.0, 20.0);
-                    rotamerCache[n][8] = new Rotamer(name, -70.0, 21.0, 180.0, 20.0, 180.0, 20.0, -65.0, 20.0);
-                    rotamerCache[n][9] = new Rotamer(name, -70.0, 21.0, 180.0, 20.0, -65.0, 20.0, 180.0, 20.0);
-                    rotamerCache[n][10] = new Rotamer(name, -70.0, 21.0, -65.0, 20.0, 180.0, 20.0, 180.0, 20.0);
-                    rotamerCache[n][11] = new Rotamer(name, -70.0, 21.0, -65.0, 20.0, 180.0, 20.0, -65.0, 20.0);
-                }
-                return rotamerCache[n];
-        case ARG:
-            n = name.ordinal();
-            if (rotamerCache[n] == null) {
-                // Allocate memory and create rotamers
+            case LYD:
+                rotamerCache[n] = new Rotamer[12];
+                rotamerCache[n][0] = new Rotamer(name, -170.0, 24.0, 180.0, 20.0, 65.0, 20.0, 180.0, 20.0);
+                rotamerCache[n][1] = new Rotamer(name, -170.0, 24.0, 180.0, 20.0, 180.0, 20.0, 65.0, 20.0);
+                rotamerCache[n][2] = new Rotamer(name, -170.0, 24.0, 180.0, 20.0, 180.0, 20.0, 180.0, 20.0);
+                rotamerCache[n][3] = new Rotamer(name, -170.0, 24.0, 180.0, 20.0, -65.0, 20.0, 180.0, 20.0);
+                rotamerCache[n][4] = new Rotamer(name, -170.0, 24.0, -65.0, 20.0, 180.0, 20.0, 180.0, 20.0);
+                rotamerCache[n][5] = new Rotamer(name, -70.0, 21.0, 65.0, 20.0, 180.0, 20.0, 180.0, 20.0);
+                rotamerCache[n][6] = new Rotamer(name, -70.0, 21.0, 180.0, 20.0, 65.0, 20.0, 180.0, 20.0);
+                rotamerCache[n][7] = new Rotamer(name, -70.0, 21.0, 180.0, 20.0, 180.0, 20.0, 180.0, 20.0);
+                rotamerCache[n][8] = new Rotamer(name, -70.0, 21.0, 180.0, 20.0, 180.0, 20.0, -65.0, 20.0);
+                rotamerCache[n][9] = new Rotamer(name, -70.0, 21.0, 180.0, 20.0, -65.0, 20.0, 180.0, 20.0);
+                rotamerCache[n][10] = new Rotamer(name, -70.0, 21.0, -65.0, 20.0, 180.0, 20.0, 180.0, 20.0);
+                rotamerCache[n][11] = new Rotamer(name, -70.0, 21.0, -65.0, 20.0, 180.0, 20.0, -65.0, 20.0);
+                break;
+            case ARG:
+                rotamerCache[n] = new Rotamer[14];
                 rotamerCache[n][0] = new Rotamer(name, 61.0, 25.0, 180.0, 20.0, 65.0, 20.0, 90.0, 20.0);
                 rotamerCache[n][1] = new Rotamer(name, 61.0, 25.0, 180.0, 20.0, 180.0, 20.0, 180.0, 20.0);
                 rotamerCache[n][2] = new Rotamer(name, -170.0, 24.0, 180.0, 20.0, 65.0, 20.0, 90.0, 20.0);
@@ -258,12 +213,11 @@ public class RotamerLibrary {
                 rotamerCache[n][11] = new Rotamer(name, -70.0, 21.0, 180.0, 20.0, -65.0, 20.0, 180.0, 20.0);
                 rotamerCache[n][12] = new Rotamer(name, -170.0, 21.0, 65.0, 20.0, 65.0, 20.0, 180.0, 20.0);
                 rotamerCache[n][13] = new Rotamer(name, -70.0, 21.0, -65.0, 20.0, -65.0, 20.0, 180.0, 20.0);
-            }
-            return rotamerCache[n];
+                break;
             default:
-                // TODO
+                break;
         }
-        return null;
+        return rotamerCache[n];
     }
 //    ROTAMER LIBRARY BASED ON STATISTICS FROM PONDER AND RICHARDS
 //
@@ -379,5 +333,4 @@ public class RotamerLibrary {
 //109   ARG      -70.0   180.0   -65.0   180.0      21.0  20.0  20.0  20.0
 //110   ARG     -170.0    65.0    65.0   180.0      21.0  20.0  20.0  20.0
 //111   ARG      -70.0   -65.0   -65.0   180.0      21.0  20.0  20.0  20.0
-    
 }

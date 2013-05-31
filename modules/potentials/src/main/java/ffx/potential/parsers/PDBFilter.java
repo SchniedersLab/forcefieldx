@@ -24,7 +24,6 @@ package ffx.potential.parsers;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
@@ -37,6 +36,8 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import ffx.crystal.Crystal;
 import ffx.crystal.SpaceGroup;
 import ffx.numerics.VectorMath;
+import ffx.potential.ResidueEnumerations.AminoAcid3;
+import ffx.potential.ResidueEnumerations.NucleicAcid3;
 import ffx.potential.bonded.*;
 import ffx.potential.bonded.Utilities.FileType;
 import ffx.potential.parameters.*;
@@ -45,6 +46,9 @@ import ffx.utilities.Hybrid36;
 
 import static ffx.numerics.VectorMath.diff;
 import static ffx.numerics.VectorMath.r;
+import static ffx.potential.ResidueEnumerations.aminoAcidHeavyAtoms;
+import static ffx.potential.ResidueEnumerations.aminoAcidList;
+import static ffx.potential.ResidueEnumerations.nucleicAcidList;
 import static ffx.potential.parsers.INTFilter.intxyz;
 import static ffx.potential.parsers.PDBFilter.ResiduePosition.*;
 
@@ -1567,10 +1571,10 @@ public final class PDBFilter extends SystemFilter {
      *
      * @since 1.0
      */
-    private void assignNucleicAcidBaseAtomTypes(NucleicAcid3 nucleicAcid, Residue residue, Atom C1s, 
+    private void assignNucleicAcidBaseAtomTypes(NucleicAcid3 nucleicAcid, Residue residue, Atom C1s,
             Atom O4s, Atom C2s)
             throws MissingHeavyAtomException {
-            double glyco = 0;
+        double glyco = 0;
         switch (nucleicAcid) {
             case ADE:
                 Atom N9,
@@ -1584,7 +1588,7 @@ public final class PDBFilter extends SystemFilter {
                  N3,
                  C4;
                 N9 = setHeavy(residue, "N9", C1s, 1.48, O4s, 108.1, C2s, 113.7, 1, 1017);
-                C8 = setHeavy(residue, "C8", N9, 1.37, C1s, 128.4, O4s, glyco+180, 0, 1021);
+                C8 = setHeavy(residue, "C8", N9, 1.37, C1s, 128.4, O4s, glyco + 180, 0, 1021);
                 N7 = setHeavy(residue, "N7", C8, 1.30, N9, 113.8, C1s, 180.0, 0, 1020);
                 C5 = setHeavy(residue, "C5", N7, 1.39, C8, 104.0, N9, 0.0, 0, 1019);
                 C6 = setHeavy(residue, "C6", C5, 1.40, N7, 132.4, C8, 180.0, 0, 1025);
@@ -1630,7 +1634,7 @@ public final class PDBFilter extends SystemFilter {
                 Atom O2;
                 Atom N4;
                 N1 = setHeavy(residue, "N1", C1s, 1.48, O4s, 108.1, C2s, 113.7, 1, 1078);
-                C2 = setHeavy(residue, "C2", N1, 1.37, C1s, 117.8, O4s, glyco+180, 0, 1079);
+                C2 = setHeavy(residue, "C2", N1, 1.37, C1s, 117.8, O4s, glyco + 180, 0, 1079);
                 O2 = setHeavy(residue, "O2", C2, 1.24, N1, 118.9, C1s, 0.0, 0, 1084);
                 N3 = setHeavy(residue, "N3", C2, 1.38, N1, 118.7, C1s, 180.0, 0, 1080);
                 C4 = setHeavy(residue, "C4", N3, 1.34, C2, 120.6, N1, 0.0, 0, 1081);
@@ -1668,7 +1672,7 @@ public final class PDBFilter extends SystemFilter {
                 Atom O6;
                 Atom N2;
                 N9 = setHeavy(residue, "N9", C1s, 1.48, O4s, 108.1, C2s, 113.7, 1, 1047);
-                C8 = setHeavy(residue, "C8", N9, 1.38, C1s, 128.4, O4s, glyco+180, 0, 1051);
+                C8 = setHeavy(residue, "C8", N9, 1.38, C1s, 128.4, O4s, glyco + 180, 0, 1051);
                 N7 = setHeavy(residue, "N7", C8, 1.31, N9, 114.0, C1s, 180.0, 0, 1050);
                 C5 = setHeavy(residue, "C5", N7, 1.39, C8, 103.8, N9, 0.0, 0, 1049);
                 C6 = setHeavy(residue, "C6", C5, 1.40, N7, 130.1, C8, 180.0, 0, 1055);
@@ -1898,7 +1902,7 @@ public final class PDBFilter extends SystemFilter {
                 break;
             case DAD:
                 N9 = setHeavy(residue, "N9", C1s, 1.48, O4s, 108.1, C2s, 113.7, 1, 1132);
-                C8 = setHeavy(residue, "C8", N9, 1.37, C1s, 128.4, O4s, glyco+180, 0, 1136);
+                C8 = setHeavy(residue, "C8", N9, 1.37, C1s, 128.4, O4s, glyco + 180, 0, 1136);
                 N7 = setHeavy(residue, "N7", C8, 1.30, N9, 113.8, C1s, 180.0, 0, 1135);
                 C5 = setHeavy(residue, "C5", N7, 1.39, C8, 104.0, N9, 0.0, 0, 1134);
                 C6 = setHeavy(residue, "C6", C5, 1.40, N7, 132.4, C8, 180.0, 0, 1140);
@@ -1931,7 +1935,7 @@ public final class PDBFilter extends SystemFilter {
                 break;
             case DGU:
                 N9 = setHeavy(residue, "N9", C1s, 1.48, O4s, 108.1, C2s, 113.7, 1, 1161);
-                C8 = setHeavy(residue, "C8", N9, 1.38, C1s, 128.4, O4s, glyco+180, 0, 1165);
+                C8 = setHeavy(residue, "C8", N9, 1.38, C1s, 128.4, O4s, glyco + 180, 0, 1165);
                 N7 = setHeavy(residue, "N7", C8, 1.31, N9, 114.0, C1s, 180.0, 0, 1164);
                 C5 = setHeavy(residue, "C5", N7, 1.39, C8, 103.8, N9, 0.0, 0, 1163);
                 C6 = setHeavy(residue, "C6", C5, 1.40, N7, 130.1, C8, 180.0, 0, 1169);
@@ -2110,13 +2114,12 @@ public final class PDBFilter extends SystemFilter {
                         throw e;
                     }
                     /**
-                    if (aminoAcid == AminoAcid3.ALA && actual == 4) {
-                        residueName = "GLY".intern();
-                        residue.setName(residueName);
-                    } else if (actual == 5) {
-                        residueName = "ALA".intern();
-                        residue.setName(residueName);
-                    } */
+                     * if (aminoAcid == AminoAcid3.ALA && actual == 4) {
+                     * residueName = "GLY".intern();
+                     * residue.setName(residueName); } else if (actual == 5) {
+                     * residueName = "ALA".intern();
+                     * residue.setName(residueName); }
+                     */
                 }
             }
 
@@ -2389,7 +2392,7 @@ public final class PDBFilter extends SystemFilter {
                 CG1 = setHeavy(residue, "CG1", CB, 1.54, CA, 109.5, N, 180, 0, k + 2);
                 CG2 = setHeavy(residue, "CG2", CB, 1.54, CA, 109.5, N, 109.5, 1, k + 4);
                 CD1 = setHeavy(residue, "CD1", CG1, 1.54, CB, 109.5, CA, 180, 0, k + 6);
-                  //  CD1 = setHeavy(residue, "CD", CG1, 1.54, CB, 109.5, CA, 180, 0, k + 6);
+                //  CD1 = setHeavy(residue, "CD", CG1, 1.54, CB, 109.5, CA, 180, 0, k + 6);
                 HB = setHydrogen(residue, "HB", CB, 1.11, CA, 109.4, CG1, 109.4, -1, k + 1);
                 HG12 = setHydrogen(residue, "HG12", CG1, 1.11, CB, 109.4, CD1, 109.4, 1, k + 3);
                 HG13 = setHydrogen(residue, "HG13", CG1, 1.11, CB, 109.4, CD1, 109.4, -1, k + 3);
@@ -3628,45 +3631,6 @@ public final class PDBFilter extends SystemFilter {
 
         HOH, H2O, WAT, NA, K, MG, MG2, CA, CA2, CL, BR, ZN, ZN2
     };
-
-    public enum AminoAcid1 {
-
-        G, A, V, L, I, S, T, C, X, c,
-        P, F, Y, y, W, H, U, Z, D, d,
-        N, E, e, Q, M, K, k, R, O, B,
-        J, t, f, a, o, n, m, x
-    };
-
-    public enum AminoAcid3 {
-
-        GLY, ALA, VAL, LEU, ILE, SER, THR, CYS, CYX, CYD,
-        PRO, PHE, TYR, TYD, TRP, HIS, HID, HIE, ASP, ASH,
-        ASN, GLU, GLH, GLN, MET, LYS, LYD, ARG, ORN, AIB,
-        PCA, H2N, FOR, ACE, COH, NH2, NME, UNK
-    };
-    static final List<AminoAcid3> aminoAcidList = Arrays.asList(AminoAcid3.values());
-    public final int aminoAcidHeavyAtoms[] = {
-        4, 5, 7, 8, 8, 6, 7, 6, 6, 6,
-        7, 11, 12, 12, 14, 10, 10, 10, 8, 8,
-        8, 9, 9, 9, 8, 9, 9, 11, 8, 6,
-        8, 0, 0, 0, 0, 0, 0, 0
-    };
-
-    public enum NucleicAcid1 {
-
-        A, G, C, U, D, B, I, T, O, W, H, X
-    };
-
-    /**
-     * Since enumeration values must start with a letter, an 'M' is added to
-     * modified bases whose IUPAC name starts with an integer.
-     */
-    public enum NucleicAcid3 {
-
-        ADE, GUA, CYT, URI, DAD, DGU, DCY, DTY, THY, MP1, DP2, TP3, UNK, M2MG,
-        H2U, M2G, OMC, OMG, PSU, M5MC, M7MG, M5MU, M1MA, YYG
-    };
-    static final List<NucleicAcid3> nucleicAcidList = Arrays.asList(NucleicAcid3.values());
     /**
      * Biotype keys for nucleic acid backbone atom types. These are consistent
      * with parameter files from TINKER v. 6.1 (June 2012).
