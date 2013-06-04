@@ -63,7 +63,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     private DYNFilter dynFilter = null;
     private PDBFilter pdbFilter = null;
     private int printFrequency = 100;
-    private int saveFrequency = 1000;
+    private int saveSnapshotFrequency = 1000;
     private int removeCOMMotionFrequency = 100;
     private boolean initVelocities = true;
     private boolean loadRestart = false;
@@ -84,6 +84,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
     private double currentKineticEnergy;
     private double currentPotentialEnergy;
     private double currentTotalEnergy;
+    private boolean saveSnapshotAsPDB = true;
+    private int saveRestartFileFrequency = 1000;
+    private String fileType = "PDB";
+    private double restartFrequency = 0.1;
 
     /**
      * <p>Constructor for MolecularDynamics.</p>
@@ -265,7 +269,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * @param dyn a {@link java.io.File} object.
      */
     public void init(final int nSteps, final double timeStep, final double printInterval,
-            final double saveInterval, final double temperature, final boolean initVelocities,
+            final double saveInterval, final String fileType, final double restartFrequency, final double temperature, final boolean initVelocities,
             final File dyn) {
 
         /**
@@ -293,11 +297,30 @@ public class MolecularDynamics implements Runnable, Terminatable {
         /**
          * Convert the save interval to a save frequency.
          */
-        saveFrequency = 1000;
+        saveSnapshotFrequency = 1000;
         if (saveInterval >= this.dt) {
-            saveFrequency = (int) (saveInterval / this.dt);
+            saveSnapshotFrequency = (int) (saveInterval / this.dt);
         }
 
+        /**
+         * Set snapshot file type.
+         */
+        saveSnapshotAsPDB = true;
+        if (fileType.equals("XYZ")) {
+            saveSnapshotAsPDB = false;
+        }
+        else if (!fileType.equals("PDB")) {
+            logger.warning("Snapshot file type unrecognized; saving snaphshots as PDB.\n");
+        }
+        
+        /**
+         * Convert restart frequency to steps.
+         */
+        saveRestartFileFrequency = 1000;
+        if (restartFrequency >= this.dt) {
+            saveRestartFileFrequency = (int) (restartFrequency / this.dt);
+        }
+        
         File file = molecularAssembly.getFile();
         String filename = FilenameUtils.removeExtension(file.getAbsolutePath());
         if (archiveFile == null) {
@@ -364,7 +387,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
             logger.info(format("\n Molecular dynamics in the NVE ensemble\n"));
         }
 
-        init(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);
+        init(nSteps, timeStep, printInterval, saveInterval, fileType, restartFrequency, temperature, initVelocities, dyn);
 
         done = false;
 
@@ -391,7 +414,17 @@ public class MolecularDynamics implements Runnable, Terminatable {
             }
         }
     }
-
+    
+    /**
+     * Methods to set file type and restartFrequency from groovy scripts
+     */
+    public void setFileType (String fileType) {
+        this.fileType = fileType;
+    }
+    public void setRestartFrequency (double restartFrequency) {
+        this.restartFrequency = restartFrequency;
+    }
+    
     /**
      * Set the number of time steps between removal of center of mass kinetic
      * energy.
@@ -579,23 +612,33 @@ public class MolecularDynamics implements Runnable, Terminatable {
             }
 
             /**
-             * Write out restart files every saveFrequency steps.
+             * Write out snapshots in selected format every saveSnapshotFrequency steps.
              */
-            if (saveFrequency > 0 && step % saveFrequency == 0 && archiveFile != null) {
-                if (xyzFilter.writeFile(archiveFile, true)) {
-                    logger.info(String.format(" Appended snap shot to " + archiveFile.getName()));
-                } else {
-                    logger.warning(String.format(" Appending snap shot to " + archiveFile.getName() + " failed"));
+            if (saveSnapshotFrequency > 0 && step % saveSnapshotFrequency == 0) {
+                if (archiveFile != null && saveSnapshotAsPDB == false) {
+                    if (xyzFilter.writeFile(archiveFile, true)) {
+                        logger.info(String.format(" Appended snap shot to " + archiveFile.getName()));
+                    } else {
+                        logger.warning(String.format(" Appending snap shot to " + archiveFile.getName() + " failed"));
+                    }
                 }
+                else if (saveSnapshotAsPDB == true) {
+                    if (pdbFilter.writeFile(pdbFile, false)) {
+                        logger.info(String.format(" Wrote PDB file to " + pdbFile.getName()));
+                    }
+                }
+            }
+            
+            /**
+             * Write out restart files every saveRestartFileFrequency steps.
+             */
+            if (saveRestartFileFrequency > 0 && step % saveRestartFileFrequency == 0) {
                 if (dynFilter.writeDYN(restartFile, molecularAssembly.getCrystal(), x, v, a, aPrevious)) {
                     logger.info(String.format(" Wrote dynamics restart file to " + restartFile.getName()));
                 } else {
                     logger.info(String.format(" Writing dynamics restart file to " + restartFile.getName() + " failed"));
                 }
-                if (pdbFilter.writeFile(pdbFile, false)) {
-                    logger.info(String.format(" Wrote PDB file to " + pdbFile.getName()));
-                }
-            }
+            }            
 
             /**
              * Notify the algorithmListener.
