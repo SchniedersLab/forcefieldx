@@ -58,6 +58,12 @@ Integrators integrator = null;
 // Reset velocities (ignored if a restart file is given)
 boolean initVelocities = true;
 
+// Interval to write out restart file (psec)
+double restartFrequency = 1000;
+
+// File type of snapshots.
+String fileType = "PDB";
+
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 
@@ -72,6 +78,8 @@ cli.n(longOpt:'steps', args:1, argName:'1000000', 'Number of molecular dynamics 
 cli.p(longOpt:'polarization', args:1, argName:'Mutual', 'Polarization: [None / Direct / Mutual]');
 cli.t(longOpt:'temperature', args:1, argName:'298.15', 'Temperature in degrees Kelvin.');
 cli.w(longOpt:'save', args:1, argName:'0.1', 'Interval to write out coordinates (psec).');
+cli.s(longOpt:'restart', args:1, argName:'0.1', 'Interval to write out restart file (psec).');
+cli.f(longOpt:'file', args:1, argName:'PDB', 'Choose file type to write to [PDB/XYZ]');
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
 if (options.h || arguments == null || arguments.size() != 1) {
@@ -86,6 +94,15 @@ if (options.n) {
     nSteps = Integer.parseInt(options.n);
 }
 
+// Write dyn interval in picoseconds
+if (options.s) {
+    restartFrequency = Double.parseDouble(options.s);
+}
+
+//
+if (options.f) {
+    fileType = options.f.toUpperCase();
+}
 // Load the time steps in femtoseconds.
 if (options.d) {
     timeStep = Double.parseDouble(options.d);
@@ -96,7 +113,7 @@ if (options.l) {
     printInterval = Double.parseDouble(options.l);
 }
 
-// Write interval in picoseconds.
+// Write snapshot interval in picoseconds.
 if (options.w) {
     saveInterval = Double.parseDouble(options.w);
 }
@@ -139,4 +156,6 @@ if (!dyn.exists()) {
 }
 
 MolecularDynamics molDyn = new MolecularDynamics(active, active.getPotentialEnergy(), active.getProperties(), null, thermostat, integrator);
+molDyn.setFileType(fileType);
+molDyn.setRestartFrequency(restartFrequency);
 molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);
