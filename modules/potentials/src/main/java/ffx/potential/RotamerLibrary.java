@@ -85,6 +85,7 @@ public class RotamerLibrary {
                 break;
             case CYS:
             case CYX:
+            case CYD:
                 rotamerCache[n] = new Rotamer[3];
                 rotamerCache[n][0] = new Rotamer(name, -65.2, 10.1);
                 rotamerCache[n][1] = new Rotamer(name, -179.6, 9.5);
@@ -226,7 +227,7 @@ public class RotamerLibrary {
         return rotamerCache[n];
     }
 
-    public void applyRotamer(AminoAcid3 name, Residue residue, Rotamer rotamer) {
+    public static void applyRotamer(AminoAcid3 name, Residue residue, Rotamer rotamer) {
         switch (name) {
             case VAL: {
                 Atom CA = (Atom) residue.getAtomNode("CA");
@@ -403,6 +404,7 @@ public class RotamerLibrary {
                 intxyz(HE1, CE1, 1.11, CD1, 120.0, CZ, 120.0, 1);
                 intxyz(HE2, CE2, 1.11, CD2, 120.0, CZ, 120.0, 1);
                 intxyz(HZ, CZ, 1.11, CE1, 120.0, CE2, 120.0, 1);
+                break;
             }
             case PRO: {
                 Atom CA = (Atom) residue.getAtomNode("CA");

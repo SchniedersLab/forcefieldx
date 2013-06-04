@@ -24,6 +24,8 @@ package ffx.potential;
 
 import ffx.potential.ResidueEnumerations.AminoAcid3;
 
+import static java.lang.Math.max;
+
 /**
  * The Rotamer Class represents one immutable amino acid Rotamer.
  *
@@ -41,9 +43,9 @@ public class Rotamer {
 
     public Rotamer(AminoAcid3 name, double... values) {
         int length = values.length;
-        angles = new double[length / 2];
-        sigmas = new double[length / 2];
-        for (int i = 0; i < length; i++) {
+        angles = new double[max(length / 2,4)];
+        sigmas = new double[max(length / 2,4)];
+        for (int i = 0; i < length / 2; i++) {
             int ii = 2 * i;
             angles[i] = values[ii];
             sigmas[i] = values[ii + 1];
