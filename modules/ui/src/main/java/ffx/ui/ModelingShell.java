@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2013.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
@@ -784,6 +784,7 @@ public class ModelingShell extends Console implements AlgorithmListener {
                 "ffx/ui/icons/icon64.png");
         ImageIcon icon = new ImageIcon(iconURL);
         frame.setIconImage(icon.getImage());
+        frame.setSize(800,800);
     }
 
     @Override

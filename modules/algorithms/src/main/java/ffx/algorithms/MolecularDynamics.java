@@ -355,6 +355,20 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     /**
+     * A version of init with the original method header.
+     * Redirects to the new method with default values for added parameters.
+     * Needed by (at least) ReplicaExchange, which calls this directly.
+     */
+    public void init(final int nSteps, final double timeStep, final double printInterval,
+            final double saveInterval, final double temperature, final boolean initVelocities,
+            final File dyn) {
+
+        final String fileType = "PDB";
+        final double restartFrequency = 0.1;
+        init(nSteps, timeStep, printInterval, saveInterval, fileType, restartFrequency, temperature, initVelocities, dyn);
+    }    
+    
+    /**
      * Blocking molecular dynamics. When this method returns, the MD run is
      * done.
      *
@@ -670,6 +684,13 @@ public class MolecularDynamics implements Runnable, Terminatable {
         terminate = false;
     }
 
+    /**
+    * [SDL] Added as a way for pKa.groovy to request final delta_G
+    */    
+    public double getTotalEnergy() {
+        return currentTotalEnergy;
+    }
+    
     /**
      * {@inheritDoc}
      */

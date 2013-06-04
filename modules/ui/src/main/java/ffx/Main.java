@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2013.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2012.
  *
  * This file is part of Force Field X.
  *
@@ -269,11 +269,6 @@ public class Main extends JFrame {
         startLogging();
 
         /**
-         * Print out the header.
-         */
-        header(args);
-
-        /**
          * Print out help for the command line interface.
          */
         if (GraphicsEnvironment.isHeadless() && args.length < 2) {
@@ -290,6 +285,40 @@ public class Main extends JFrame {
          */
         startParallelJava(args);
 
+        /**
+         * Run the pKa input GUI if requested.
+         * Halts execution until GUI exits.
+         */
+        /**
+        if (System.getProperty("pKaCalc") != null) {
+            if (System.getProperty("pKaCalc").equals("true")) {
+                ffx.pka.pKaRun runnable = new ffx.pka.pKaRun();
+                Thread t = new Thread(runnable,"pKa Thread");
+                t.start();
+                t.join();
+                final int NUM_PKA_ARGS = 25;
+                String[] newArgs = new String[NUM_PKA_ARGS];
+                int currentArg = 0;
+                for (int i=0; i < newArgs.length; i++) {
+                    newArgs[currentArg] = runnable.getArg(i);
+                    if (runnable.getArg(i) == null) {
+                        String temp = runnable.getArg(i - 1);
+                        if (temp.startsWith("-s") || temp.startsWith("-f")) {
+                            currentArg--;
+                        }
+                    } else {
+                        currentArg++;
+                    }
+                }
+                args = newArgs;
+            }
+        }
+        */
+        
+        // Print the header.
+        // Moved this here so I could see the args being supplied by pKaRun.
+        header(args);
+        
         /**
          * Parse the specified command or structure file.
          */
@@ -313,7 +342,7 @@ public class Main extends JFrame {
                 argList.add(args[i]);
             }
         }
-
+        
         /**
          * Start up the GUI or CLI version of Force Field X.
          */
