@@ -25,8 +25,8 @@ package ffx.potential;
 import ffx.potential.ResidueEnumerations.AminoAcid3;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Residue;
+
 import static ffx.potential.parsers.INTFilter.intxyz;
-import static ffx.potential.parsers.PDBFilter.ResiduePosition.FIRST_RESIDUE;
 
 /**
  * The Rotamer Library Class manages a library of side-chain Rotamers.
@@ -44,7 +44,7 @@ public class RotamerLibrary {
      * @param name The name of the amino acid.
      * @return An array of Rotamers.
      */
-    public static Rotamer[] getRotamer(AminoAcid3 name) {
+    public static Rotamer[] getRotamers(AminoAcid3 name) {
         int n = name.ordinal();
         if (rotamerCache[n] != null) {
             return rotamerCache[n];
@@ -119,6 +119,7 @@ public class RotamerLibrary {
                 rotamerCache[n][3] = new Rotamer(name, -179.5, 3.4, 87.5, 3.8);
                 rotamerCache[n][4] = new Rotamer(name, -73.3, 6.5, -87.7, 8.1);
                 rotamerCache[n][5] = new Rotamer(name, 62.2, 10.0, 112.5, 15.0);
+                break;
             case HIS:
             case HIE:
             case HID:
@@ -129,6 +130,7 @@ public class RotamerLibrary {
                 rotamerCache[n][3] = new Rotamer(name, 67.9, 17.4, -80.5, 40.7);
                 rotamerCache[n][4] = new Rotamer(name, -177.3, 6.3, 100.5, 14.0);
                 rotamerCache[n][5] = new Rotamer(name, 48.8, 10.0, 89.5, 30.0);
+                break;
             case ASH:
             case ASP:
                 rotamerCache[n] = new Rotamer[3];
@@ -223,71 +225,10 @@ public class RotamerLibrary {
         }
         return rotamerCache[n];
     }
-    
-    public void applyRotamer(AminoAcid3 name, Residue residue, Rotamer rotamer){
-        if(residue.getName().equalsIgnoreCase("GLY") || residue.getName().equalsIgnoreCase("ALA")){
-            return;
-        }
-        
-        Atom CG = (Atom) residue.getAtomNode("CG");
-        Atom CD = (Atom) residue.getAtomNode("CD");
-        
-        
-        Atom CE = (Atom) residue.getAtomNode("CE");
-        Atom CE1 = (Atom) residue.getAtomNode("CE1");
-        Atom CE2 = (Atom) residue.getAtomNode("CE2");
-        Atom CE3 = (Atom) residue.getAtomNode("CE3");
-        Atom CZ = (Atom) residue.getAtomNode("CZ");
-        Atom CZ2 = (Atom) residue.getAtomNode("CZ2");
-        Atom CZ3 = (Atom) residue.getAtomNode("CZ3");
-        Atom CH2 = (Atom) residue.getAtomNode("CH2");
-        
-        Atom HG1 = (Atom) residue.getAtomNode("HG1");
-        Atom HG2 = (Atom) residue.getAtomNode("HG2");
-        Atom HG3 = (Atom) residue.getAtomNode("HG3");
-        Atom HD1 = (Atom) residue.getAtomNode("HD1");
-        
-        Atom HD2 = (Atom) residue.getAtomNode("HD2");
-        Atom HD21 = (Atom) residue.getAtomNode("HD21");
-        Atom HD22 = (Atom) residue.getAtomNode("HD22");
-        Atom HD23 = (Atom) residue.getAtomNode("HD23");
-        Atom HD3 = (Atom) residue.getAtomNode("HD3");
-        Atom HE = (Atom) residue.getAtomNode("HE");
-        Atom HE1 = (Atom) residue.getAtomNode("HE1");
-        Atom HE2 = (Atom) residue.getAtomNode("HE2");
-        Atom HE21 = (Atom) residue.getAtomNode("HE21");
-        Atom HE22 = (Atom) residue.getAtomNode("HE22");
-        Atom HE3 = (Atom) residue.getAtomNode("HE3");
-        Atom HZ = (Atom) residue.getAtomNode("HZ");
-        Atom HZ1 = (Atom) residue.getAtomNode("HZ1");
-        Atom HZ2 = (Atom) residue.getAtomNode("HZ2");
-        Atom HZ3 = (Atom) residue.getAtomNode("HZ3");
-        Atom HH = (Atom) residue.getAtomNode("HH");
-        Atom HH11 = (Atom) residue.getAtomNode("HH11");
-        Atom HH12 = (Atom) residue.getAtomNode("HH12");
-        Atom HH21 = (Atom) residue.getAtomNode("HH21");
-        Atom HH22 = (Atom) residue.getAtomNode("HH22");
-        Atom HH2 = (Atom) residue.getAtomNode("HH2");       
-        Atom ND1 = (Atom) residue.getAtomNode("ND1");
-        Atom ND2 = (Atom) residue.getAtomNode("ND2");
-        Atom NE = (Atom) residue.getAtomNode("NE");
-        Atom NE1 = (Atom) residue.getAtomNode("NE1");
-        Atom NE2 = (Atom) residue.getAtomNode("NE2");
-        Atom NZ = (Atom) residue.getAtomNode("NZ");
-        Atom NH1 = (Atom) residue.getAtomNode("NH1");
-        Atom NH2 = (Atom) residue.getAtomNode("NH2");
-        Atom OG = (Atom) residue.getAtomNode("OG");
-        Atom OG1 = (Atom) residue.getAtomNode("OG1");
-        Atom OD1 = (Atom) residue.getAtomNode("OD1");
-        Atom OD2 = (Atom) residue.getAtomNode("OD2");
-        Atom OH = (Atom) residue.getAtomNode("OH");
-        Atom OE1 = (Atom) residue.getAtomNode("OE1");
-        Atom OE2 = (Atom) residue.getAtomNode("OE2");
-        Atom SG = (Atom) residue.getAtomNode("SG");
-        Atom SD = (Atom) residue.getAtomNode("SD");
 
-        switch(name){
-            case VAL:
+    public void applyRotamer(AminoAcid3 name, Residue residue, Rotamer rotamer) {
+        switch (name) {
+            case VAL: {
                 Atom CA = (Atom) residue.getAtomNode("CA");
                 Atom CB = (Atom) residue.getAtomNode("CB");
                 Atom N = (Atom) residue.getAtomNode("N");
@@ -300,7 +241,6 @@ public class RotamerLibrary {
                 Atom HG21 = (Atom) residue.getAtomNode("HG21");
                 Atom HG22 = (Atom) residue.getAtomNode("HG22");
                 Atom HG23 = (Atom) residue.getAtomNode("HG23");
-                
                 intxyz(CG1, CB, 1.54, CA, 109.5, N, rotamer.chi1, 0);
                 intxyz(CG2, CB, 1.54, CA, 109.5, CG1, 109.5, -1);
                 intxyz(HB, CB, 1.11, CA, 109.4, CG1, 109.4, 1);
@@ -311,10 +251,12 @@ public class RotamerLibrary {
                 intxyz(HG22, CG2, 1.11, CB, 109.4, HG21, 109.4, 1);
                 intxyz(HG23, CG2, 1.11, CB, 109.4, HG21, 109.4, -1);
                 break;
-            case LEU:
-                CA = (Atom) residue.getAtomNode("CA");
-                CB = (Atom) residue.getAtomNode("CB");
-                N = (Atom) residue.getAtomNode("N");
+            }
+            case LEU: {
+                Atom CA = (Atom) residue.getAtomNode("CA");
+                Atom CB = (Atom) residue.getAtomNode("CB");
+                Atom N = (Atom) residue.getAtomNode("N");
+                Atom CG = (Atom) residue.getAtomNode("CG");
                 Atom CD1 = (Atom) residue.getAtomNode("CD1");
                 Atom CD2 = (Atom) residue.getAtomNode("CD2");
                 Atom HB2 = (Atom) residue.getAtomNode("HB2");
@@ -323,7 +265,9 @@ public class RotamerLibrary {
                 Atom HD11 = (Atom) residue.getAtomNode("HD11");
                 Atom HD12 = (Atom) residue.getAtomNode("HD12");
                 Atom HD13 = (Atom) residue.getAtomNode("HD13");
-                
+                Atom HD21 = (Atom) residue.getAtomNode("HD21");
+                Atom HD22 = (Atom) residue.getAtomNode("HD22");
+                Atom HD23 = (Atom) residue.getAtomNode("HD23");
                 intxyz(CG, CB, 1.54, CA, 109.5, N, rotamer.chi1, 0);
                 intxyz(CD1, CG, 1.54, CB, 109.5, CA, rotamer.chi2, 0);
                 intxyz(CD2, CG, 1.54, CB, 109.5, CD1, 109.5, -1);
@@ -337,7 +281,23 @@ public class RotamerLibrary {
                 intxyz(HD22, CD2, 1.11, CG, 109.4, HD21, 109.4, 1);
                 intxyz(HD23, CD2, 1.11, CG, 109.4, HD21, 109.4, -1);
                 break;
-            case ILE:
+            }
+            case ILE: {
+                Atom CA = (Atom) residue.getAtomNode("CA");
+                Atom CB = (Atom) residue.getAtomNode("CB");
+                Atom N = (Atom) residue.getAtomNode("N");
+                Atom CG1 = (Atom) residue.getAtomNode("CG1");
+                Atom CG2 = (Atom) residue.getAtomNode("CG2");
+                Atom CD1 = (Atom) residue.getAtomNode("CD1");
+                Atom HB = (Atom) residue.getAtomNode("HB");
+                Atom HG12 = (Atom) residue.getAtomNode("HG12");
+                Atom HG13 = (Atom) residue.getAtomNode("HG13");
+                Atom HG21 = (Atom) residue.getAtomNode("HG21");
+                Atom HG22 = (Atom) residue.getAtomNode("HG22");
+                Atom HG23 = (Atom) residue.getAtomNode("HG23");
+                Atom HD11 = (Atom) residue.getAtomNode("HD11");
+                Atom HD12 = (Atom) residue.getAtomNode("HD12");
+                Atom HD13 = (Atom) residue.getAtomNode("HD13");
                 intxyz(CG1, CB, 1.54, CA, 109.5, N, rotamer.chi1, 0);
                 intxyz(CG2, CB, 1.54, CA, 109.5, N, 109.5, 1);
                 intxyz(CD1, CG1, 1.54, CB, 109.5, CA, rotamer.chi2, 0);
@@ -351,13 +311,32 @@ public class RotamerLibrary {
                 intxyz(HD12, CD1, 1.11, CG1, 110.0, HD11, 109.0, 1);
                 intxyz(HD13, CD1, 1.11, CG1, 110.0, HD11, 109.0, -1);
                 break;
-            case SER:
+            }
+            case SER: {
+                Atom CA = (Atom) residue.getAtomNode("CA");
+                Atom CB = (Atom) residue.getAtomNode("CB");
+                Atom N = (Atom) residue.getAtomNode("N");
+                Atom OG = (Atom) residue.getAtomNode("OG");
+                Atom HB2 = (Atom) residue.getAtomNode("HB2");
+                Atom HB3 = (Atom) residue.getAtomNode("HB3");
+                Atom HG = (Atom) residue.getAtomNode("HG");
                 intxyz(OG, CB, 1.41, CA, 107.5, N, rotamer.chi1, 0);
                 intxyz(HB2, CB, 1.11, CA, 109.4, OG, 106.7, 1);
                 intxyz(HB3, CB, 1.11, CA, 109.4, OG, 106.7, -1);
                 intxyz(HG, OG, 0.94, CB, 106.9, CA, 180.0, 0);
                 break;
-            case THR:
+            }
+            case THR: {
+                Atom CA = (Atom) residue.getAtomNode("CA");
+                Atom CB = (Atom) residue.getAtomNode("CB");
+                Atom N = (Atom) residue.getAtomNode("N");
+                Atom OG1 = (Atom) residue.getAtomNode("OG1");
+                Atom CG2 = (Atom) residue.getAtomNode("CG2");
+                Atom HB = (Atom) residue.getAtomNode("HB");
+                Atom HG1 = (Atom) residue.getAtomNode("HG1");
+                Atom HG21 = (Atom) residue.getAtomNode("HG21");
+                Atom HG22 = (Atom) residue.getAtomNode("HG22");
+                Atom HG23 = (Atom) residue.getAtomNode("HG23");
                 intxyz(OG1, CB, 1.41, CA, 107.5, N, rotamer.chi1, 0);
                 intxyz(CG2, CB, 1.54, CA, 109.5, OG1, 107.7, 1);
                 intxyz(HB, CB, 1.11, CA, 109.4, OG1, 106.7, -1);
@@ -366,22 +345,51 @@ public class RotamerLibrary {
                 intxyz(HG22, CG2, 1.11, CB, 110.0, HG21, 109.0, 1);
                 intxyz(HG23, CG2, 1.11, CB, 110.0, HG21, 109.0, -1);
                 break;
-            case CYS:
+            }
+            case CYS: {
+                Atom CA = (Atom) residue.getAtomNode("CA");
+                Atom CB = (Atom) residue.getAtomNode("CB");
+                Atom N = (Atom) residue.getAtomNode("N");
+                Atom SG = (Atom) residue.getAtomNode("SG");
+                Atom HB2 = (Atom) residue.getAtomNode("HB2");
+                Atom HB3 = (Atom) residue.getAtomNode("HB3");
+                Atom HG = (Atom) residue.getAtomNode("HG");
                 intxyz(SG, CB, 1.82, CA, 109.0, N, rotamer.chi1, 0);
                 intxyz(HB2, CB, 1.11, CA, 109.4, SG, 112.0, 1);
                 intxyz(HB3, CB, 1.11, CA, 109.4, SG, 112.0, -1);
                 intxyz(HG, SG, 1.34, CB, 96.0, CA, 180.0, 0);
                 break;
+            }
             case CYX:
+            case CYD: {
+                Atom CA = (Atom) residue.getAtomNode("CA");
+                Atom CB = (Atom) residue.getAtomNode("CB");
+                Atom N = (Atom) residue.getAtomNode("N");
+                Atom SG = (Atom) residue.getAtomNode("SG");
+                Atom HB2 = (Atom) residue.getAtomNode("HB2");
+                Atom HB3 = (Atom) residue.getAtomNode("HB3");
                 intxyz(SG, CB, 1.82, CA, 109.0, N, rotamer.chi1, 0);
                 intxyz(HB2, CB, 1.11, CA, 109.4, SG, 112.0, 1);
                 intxyz(HB3, CB, 1.11, CA, 109.4, SG, 112.0, -1);
                 break;
-            case CYD:
-                intxyz(SG, CB, 1.82, CA, 109.0, N, rotamer.chi1, 0);
-                intxyz(HB2, CB, 1.11, CA, 109.4, SG, 112.0, 1);
-                intxyz(HB3, CB, 1.11, CA, 109.4, SG, 112.0, -1);
-            case PHE:
+            }
+            case PHE: {
+                Atom CA = (Atom) residue.getAtomNode("CA");
+                Atom CB = (Atom) residue.getAtomNode("CB");
+                Atom N = (Atom) residue.getAtomNode("N");
+                Atom CG = (Atom) residue.getAtomNode("CG");
+                Atom CD1 = (Atom) residue.getAtomNode("CD1");
+                Atom CD2 = (Atom) residue.getAtomNode("CD2");
+                Atom CE1 = (Atom) residue.getAtomNode("CE1");
+                Atom CE2 = (Atom) residue.getAtomNode("CE2");
+                Atom CZ = (Atom) residue.getAtomNode("CZ");
+                Atom HB2 = (Atom) residue.getAtomNode("HB2");
+                Atom HB3 = (Atom) residue.getAtomNode("HB3");
+                Atom HD1 = (Atom) residue.getAtomNode("HD1");
+                Atom HD2 = (Atom) residue.getAtomNode("HD2");
+                Atom HE1 = (Atom) residue.getAtomNode("HE1");
+                Atom HE2 = (Atom) residue.getAtomNode("HE2");
+                Atom HZ = (Atom) residue.getAtomNode("HZ");
                 intxyz(CG, CB, 1.50, CA, 109.5, N, rotamer.chi1, 0);
                 intxyz(CD1, CG, 1.39, CB, 120.0, CA, rotamer.chi2, 0);
                 intxyz(CD2, CG, 1.39, CB, 120.0, CD1, 120.0, 1);
@@ -395,7 +403,19 @@ public class RotamerLibrary {
                 intxyz(HE1, CE1, 1.11, CD1, 120.0, CZ, 120.0, 1);
                 intxyz(HE2, CE2, 1.11, CD2, 120.0, CZ, 120.0, 1);
                 intxyz(HZ, CZ, 1.11, CE1, 120.0, CE2, 120.0, 1);
-            case PRO:
+            }
+            case PRO: {
+                Atom CA = (Atom) residue.getAtomNode("CA");
+                Atom CB = (Atom) residue.getAtomNode("CB");
+                Atom N = (Atom) residue.getAtomNode("N");
+                Atom CG = (Atom) residue.getAtomNode("CG");
+                Atom CD = (Atom) residue.getAtomNode("CD");
+                Atom HB2 = (Atom) residue.getAtomNode("HB2");
+                Atom HB3 = (Atom) residue.getAtomNode("HB3");
+                Atom HG2 = (Atom) residue.getAtomNode("HG2");
+                Atom HG3 = (Atom) residue.getAtomNode("HG3");
+                Atom HD2 = (Atom) residue.getAtomNode("HD2");
+                Atom HD3 = (Atom) residue.getAtomNode("HD3");
                 intxyz(CG, CB, 1.54, CA, 107.0, N, rotamer.chi1, 0);
                 intxyz(CD, CG, 1.54, CB, 107.0, CA, rotamer.chi2, 0);
                 intxyz(HB2, CB, 1.11, CA, 109.4, CG, 109.4, 1);
@@ -405,7 +425,25 @@ public class RotamerLibrary {
                 intxyz(HD2, CD, 1.11, CG, 109.4, N, 109.4, 1);
                 intxyz(HD3, CD, 1.11, CG, 109.4, N, 109.4, -1);
                 break;
-            case TYR:
+            }
+            case TYR: {
+                Atom CA = (Atom) residue.getAtomNode("CA");
+                Atom CB = (Atom) residue.getAtomNode("CB");
+                Atom N = (Atom) residue.getAtomNode("N");
+                Atom CG = (Atom) residue.getAtomNode("CG");
+                Atom CD1 = (Atom) residue.getAtomNode("CD1");
+                Atom CD2 = (Atom) residue.getAtomNode("CD2");
+                Atom CE1 = (Atom) residue.getAtomNode("CE1");
+                Atom CE2 = (Atom) residue.getAtomNode("CE2");
+                Atom CZ = (Atom) residue.getAtomNode("CZ");
+                Atom OH = (Atom) residue.getAtomNode("OH");
+                Atom HB2 = (Atom) residue.getAtomNode("HB2");
+                Atom HB3 = (Atom) residue.getAtomNode("HB3");
+                Atom HD1 = (Atom) residue.getAtomNode("HD1");
+                Atom HD2 = (Atom) residue.getAtomNode("HD2");
+                Atom HE1 = (Atom) residue.getAtomNode("HE1");
+                Atom HE2 = (Atom) residue.getAtomNode("HE2");
+                Atom HH = (Atom) residue.getAtomNode("HH");
                 intxyz(CG, CB, 1.50, CA, 109.5, N, rotamer.chi1, 0);
                 intxyz(CD1, CG, 1.39, CB, 120.0, CA, rotamer.chi2, 0);
                 intxyz(CD2, CG, 1.39, CB, 120.0, CD1, 120.0, 1);
@@ -421,7 +459,24 @@ public class RotamerLibrary {
                 intxyz(HE2, CE2, 1.10, CD2, 120.0, CZ, 120.0, 1);
                 intxyz(HH, OH, 0.97, CZ, 108.0, CE2, 0.0, 0);
                 break;
-            case TYD:
+            }
+            case TYD: {
+                Atom CA = (Atom) residue.getAtomNode("CA");
+                Atom CB = (Atom) residue.getAtomNode("CB");
+                Atom N = (Atom) residue.getAtomNode("N");
+                Atom CG = (Atom) residue.getAtomNode("CG");
+                Atom CD1 = (Atom) residue.getAtomNode("CD1");
+                Atom CD2 = (Atom) residue.getAtomNode("CD2");
+                Atom CE1 = (Atom) residue.getAtomNode("CE1");
+                Atom CE2 = (Atom) residue.getAtomNode("CE2");
+                Atom CZ = (Atom) residue.getAtomNode("CZ");
+                Atom OH = (Atom) residue.getAtomNode("OH");
+                Atom HB2 = (Atom) residue.getAtomNode("HB2");
+                Atom HB3 = (Atom) residue.getAtomNode("HB3");
+                Atom HD1 = (Atom) residue.getAtomNode("HD1");
+                Atom HD2 = (Atom) residue.getAtomNode("HD2");
+                Atom HE1 = (Atom) residue.getAtomNode("HE1");
+                Atom HE2 = (Atom) residue.getAtomNode("HE2");
                 intxyz(CG, CB, 1.50, CA, 109.5, N, rotamer.chi1, 0);
                 intxyz(CD1, CG, 1.39, CB, 120.0, CA, rotamer.chi2, 0);
                 intxyz(CD2, CG, 1.39, CB, 120.0, CD1, 120.0, 1);
@@ -436,7 +491,28 @@ public class RotamerLibrary {
                 intxyz(HE1, CE1, 1.10, CD1, 120.0, CZ, 120.0, 1);
                 intxyz(HE2, CE2, 1.10, CD2, 120.0, CZ, 120.0, 1);
                 break;
-            case TRP:
+            }
+            case TRP: {
+                Atom CA = (Atom) residue.getAtomNode("CA");
+                Atom CB = (Atom) residue.getAtomNode("CB");
+                Atom N = (Atom) residue.getAtomNode("N");
+                Atom CG = (Atom) residue.getAtomNode("CG");
+                Atom CD1 = (Atom) residue.getAtomNode("CD1");
+                Atom CD2 = (Atom) residue.getAtomNode("CD2");
+                Atom NE1 = (Atom) residue.getAtomNode("NE1");
+                Atom CE2 = (Atom) residue.getAtomNode("CE2");
+                Atom CE3 = (Atom) residue.getAtomNode("CE3");
+                Atom CZ2 = (Atom) residue.getAtomNode("CZ2");
+                Atom CZ3 = (Atom) residue.getAtomNode("CZ3");
+                Atom CH2 = (Atom) residue.getAtomNode("CH2");
+                Atom HB2 = (Atom) residue.getAtomNode("HB2");
+                Atom HB3 = (Atom) residue.getAtomNode("HB3");
+                Atom HD1 = (Atom) residue.getAtomNode("HD1");
+                Atom HE1 = (Atom) residue.getAtomNode("HE1");
+                Atom HE3 = (Atom) residue.getAtomNode("HE3");
+                Atom HZ2 = (Atom) residue.getAtomNode("HZ2");
+                Atom HZ3 = (Atom) residue.getAtomNode("HZ3");
+                Atom HH2 = (Atom) residue.getAtomNode("HH2");
                 intxyz(CG, CB, 1.50, CA, 109.5, N, rotamer.chi1, 0);
                 intxyz(CD1, CG, 1.35, CB, 126.0, CA, rotamer.chi2, 0);
                 intxyz(CD2, CG, 1.35, CB, 126.0, CD1, 108.0, 1);
@@ -455,7 +531,22 @@ public class RotamerLibrary {
                 intxyz(HZ3, CZ3, 1.10, CE3, 120.0, CH2, 120.0, 1);
                 intxyz(HH2, CH2, 1.10, CZ2, 120.0, CZ3, 120.0, 1);
                 break;
-            case HIS:
+            }
+            case HIS: {
+                Atom CA = (Atom) residue.getAtomNode("CA");
+                Atom CB = (Atom) residue.getAtomNode("CB");
+                Atom N = (Atom) residue.getAtomNode("N");
+                Atom CG = (Atom) residue.getAtomNode("CG");
+                Atom ND1 = (Atom) residue.getAtomNode("ND1");
+                Atom CD2 = (Atom) residue.getAtomNode("CD2");
+                Atom CE1 = (Atom) residue.getAtomNode("CE1");
+                Atom NE2 = (Atom) residue.getAtomNode("NE2");
+                Atom HB2 = (Atom) residue.getAtomNode("HB2");
+                Atom HB3 = (Atom) residue.getAtomNode("HB3");
+                Atom HD1 = (Atom) residue.getAtomNode("HD1");
+                Atom HD2 = (Atom) residue.getAtomNode("HD2");
+                Atom HE1 = (Atom) residue.getAtomNode("HE1");
+                Atom HE2 = (Atom) residue.getAtomNode("HE2");
                 intxyz(CG, CB, 1.50, CA, 109.5, N, rotamer.chi1, 0);
                 intxyz(ND1, CG, 1.35, CB, 126.0, CA, 180, 0);
                 intxyz(CD2, CG, 1.35, CB, 126.0, ND1, rotamer.chi2, 1);
@@ -468,7 +559,21 @@ public class RotamerLibrary {
                 intxyz(HE1, CE1, 1.10, ND1, 126.0, NE2, 126.0, 1);
                 intxyz(HE2, NE2, 1.02, CD2, 126.0, CE1, 126.0, 1);
                 break;
-            case HID:
+            }
+            case HID: {
+                Atom CA = (Atom) residue.getAtomNode("CA");
+                Atom CB = (Atom) residue.getAtomNode("CB");
+                Atom N = (Atom) residue.getAtomNode("N");
+                Atom CG = (Atom) residue.getAtomNode("CG");
+                Atom ND1 = (Atom) residue.getAtomNode("ND1");
+                Atom CD2 = (Atom) residue.getAtomNode("CD2");
+                Atom CE1 = (Atom) residue.getAtomNode("CE1");
+                Atom NE2 = (Atom) residue.getAtomNode("NE2");
+                Atom HB2 = (Atom) residue.getAtomNode("HB2");
+                Atom HB3 = (Atom) residue.getAtomNode("HB3");
+                Atom HD1 = (Atom) residue.getAtomNode("HD1");
+                Atom HD2 = (Atom) residue.getAtomNode("HD2");
+                Atom HE1 = (Atom) residue.getAtomNode("HE1");
                 intxyz(CG, CB, 1.50, CA, 109.5, N, rotamer.chi1, 0);
                 intxyz(ND1, CG, 1.35, CB, 126.0, CA, 180, 0);
                 intxyz(CD2, CG, 1.35, CB, 126.0, ND1, rotamer.chi2, 1);
@@ -480,7 +585,21 @@ public class RotamerLibrary {
                 intxyz(HD2, CD2, 1.10, CG, 126.0, NE2, 126.0, 1);
                 intxyz(HE1, CE1, 1.10, ND1, 126.0, NE2, 126.0, 1);
                 break;
-            case HIE:
+            }
+            case HIE: {
+                Atom CA = (Atom) residue.getAtomNode("CA");
+                Atom CB = (Atom) residue.getAtomNode("CB");
+                Atom N = (Atom) residue.getAtomNode("N");
+                Atom CG = (Atom) residue.getAtomNode("CG");
+                Atom ND1 = (Atom) residue.getAtomNode("ND1");
+                Atom CD2 = (Atom) residue.getAtomNode("CD2");
+                Atom CE1 = (Atom) residue.getAtomNode("CE1");
+                Atom NE2 = (Atom) residue.getAtomNode("NE2");
+                Atom HB2 = (Atom) residue.getAtomNode("HB2");
+                Atom HB3 = (Atom) residue.getAtomNode("HB3");
+                Atom HD2 = (Atom) residue.getAtomNode("HD2");
+                Atom HE1 = (Atom) residue.getAtomNode("HE1");
+                Atom HE2 = (Atom) residue.getAtomNode("HE2");
                 intxyz(CG, CB, 1.50, CA, 109.5, N, rotamer.chi1, 0);
                 intxyz(ND1, CG, 1.35, CB, 126.0, CA, 180, 0);
                 intxyz(CD2, CG, 1.35, CB, 126.0, ND1, rotamer.chi2, 1);
@@ -492,14 +611,33 @@ public class RotamerLibrary {
                 intxyz(HE1, CE1, 1.10, ND1, 126.0, NE2, 126.0, 1);
                 intxyz(HE2, NE2, 1.02, CD2, 126.0, CE1, 126.0, 1);
                 break;
-            case ASP:
+            }
+            case ASP: {
+                Atom CA = (Atom) residue.getAtomNode("CA");
+                Atom CB = (Atom) residue.getAtomNode("CB");
+                Atom N = (Atom) residue.getAtomNode("N");
+                Atom CG = (Atom) residue.getAtomNode("CG");
+                Atom OD1 = (Atom) residue.getAtomNode("OD1");
+                Atom OD2 = (Atom) residue.getAtomNode("OD2");
+                Atom HB2 = (Atom) residue.getAtomNode("HB2");
+                Atom HB3 = (Atom) residue.getAtomNode("HB3");
                 intxyz(CG, CB, 1.51, CA, 107.8, N, rotamer.chi1, 0);
                 intxyz(OD1, CG, 1.25, CB, 117.0, CA, 0.0, 0);
                 intxyz(OD2, CG, 1.25, CB, 117.0, OD1, 126.0, 0);
                 intxyz(HB2, CB, 1.11, CA, 109.4, CG, 107.9, 1);
                 intxyz(HB3, CB, 1.11, CA, 109.4, CG, 107.9, -1);
                 break;
-            case ASH:
+            }
+            case ASH: {
+                Atom CA = (Atom) residue.getAtomNode("CA");
+                Atom CB = (Atom) residue.getAtomNode("CB");
+                Atom N = (Atom) residue.getAtomNode("N");
+                Atom CG = (Atom) residue.getAtomNode("CG");
+                Atom OD1 = (Atom) residue.getAtomNode("OD1");
+                Atom OD2 = (Atom) residue.getAtomNode("OD2");
+                Atom HB2 = (Atom) residue.getAtomNode("HB2");
+                Atom HB3 = (Atom) residue.getAtomNode("HB3");
+                Atom HD2 = (Atom) residue.getAtomNode("HD2");
                 intxyz(CG, CB, 1.51, CA, 107.8, N, rotamer.chi1, 0);
                 intxyz(OD1, CG, 1.25, CB, 117.0, CA, rotamer.chi2, 0);
                 intxyz(OD2, CG, 1.25, CB, 117.0, OD1, 126.0, 0);
@@ -507,7 +645,18 @@ public class RotamerLibrary {
                 intxyz(HB3, CB, 1.11, CA, 109.4, CG, 107.9, -1);
                 intxyz(HD2, OD2, 0.98, CG, 108.7, OD1, 0.0, 0);
                 break;
-            case ASN:
+            }
+            case ASN: {
+                Atom CA = (Atom) residue.getAtomNode("CA");
+                Atom CB = (Atom) residue.getAtomNode("CB");
+                Atom N = (Atom) residue.getAtomNode("N");
+                Atom CG = (Atom) residue.getAtomNode("CG");
+                Atom OD1 = (Atom) residue.getAtomNode("OD1");
+                Atom ND2 = (Atom) residue.getAtomNode("ND2");
+                Atom HB2 = (Atom) residue.getAtomNode("HB2");
+                Atom HB3 = (Atom) residue.getAtomNode("HB3");
+                Atom HD21 = (Atom) residue.getAtomNode("HD21");
+                Atom HD22 = (Atom) residue.getAtomNode("HD22");
                 intxyz(CG, CB, 1.51, CA, 107.8, N, rotamer.chi1, 0);
                 intxyz(OD1, CG, 1.22, CB, 122.5, CA, rotamer.chi2, 0);
                 intxyz(ND2, CG, 1.34, CB, 112.7, OD1, 124.0, 0);
@@ -516,7 +665,19 @@ public class RotamerLibrary {
                 intxyz(HD21, ND2, 1.02, CG, 119.0, CB, 0.0, 0);
                 intxyz(HD22, ND2, 1.02, CG, 119.0, HD21, 120.0, 1);
                 break;
-            case GLU:
+            }
+            case GLU: {
+                Atom CA = (Atom) residue.getAtomNode("CA");
+                Atom CB = (Atom) residue.getAtomNode("CB");
+                Atom N = (Atom) residue.getAtomNode("N");
+                Atom CG = (Atom) residue.getAtomNode("CG");
+                Atom CD = (Atom) residue.getAtomNode("CD");
+                Atom OE1 = (Atom) residue.getAtomNode("OE1");
+                Atom OE2 = (Atom) residue.getAtomNode("OE2");
+                Atom HB2 = (Atom) residue.getAtomNode("HB2");
+                Atom HB3 = (Atom) residue.getAtomNode("HB3");
+                Atom HG2 = (Atom) residue.getAtomNode("HG2");
+                Atom HG3 = (Atom) residue.getAtomNode("HG3");
                 intxyz(CG, CB, 1.54, CA, 109.5, N, rotamer.chi1, 0);
                 intxyz(CD, CG, 1.51, CB, 107.8, CA, rotamer.chi2, 0);
                 intxyz(OE1, CD, 1.25, CG, 117.0, CB, rotamer.chi3, 0);
@@ -526,7 +687,20 @@ public class RotamerLibrary {
                 intxyz(HG2, CG, 1.11, CB, 109.4, CD, 107.9, 1);
                 intxyz(HG3, CG, 1.11, CB, 109.4, CD, 107.9, -1);
                 break;
-            case GLH:
+            }
+            case GLH: {
+                Atom CA = (Atom) residue.getAtomNode("CA");
+                Atom CB = (Atom) residue.getAtomNode("CB");
+                Atom N = (Atom) residue.getAtomNode("N");
+                Atom CG = (Atom) residue.getAtomNode("CG");
+                Atom CD = (Atom) residue.getAtomNode("CD");
+                Atom OE1 = (Atom) residue.getAtomNode("OE1");
+                Atom OE2 = (Atom) residue.getAtomNode("OE2");
+                Atom HB2 = (Atom) residue.getAtomNode("HB2");
+                Atom HB3 = (Atom) residue.getAtomNode("HB3");
+                Atom HG2 = (Atom) residue.getAtomNode("HG2");
+                Atom HG3 = (Atom) residue.getAtomNode("HG3");
+                Atom HE2 = (Atom) residue.getAtomNode("HE2");
                 intxyz(CG, CB, 1.54, CA, 109.5, N, rotamer.chi1, 0);
                 intxyz(CD, CG, 1.51, CB, 107.8, CA, rotamer.chi2, 0);
                 intxyz(OE1, CD, 1.25, CG, 117.0, CB, rotamer.chi3, 0);
@@ -536,8 +710,22 @@ public class RotamerLibrary {
                 intxyz(HG2, CG, 1.11, CB, 109.4, CD, 107.9, 1);
                 intxyz(HG3, CG, 1.11, CB, 109.4, CD, 107.9, -1);
                 intxyz(HE2, OE2, 0.98, CD, 108.7, OE1, 0.0, 0);
-        
-            case GLN:
+                break;
+            }
+            case GLN: {
+                Atom CA = (Atom) residue.getAtomNode("CA");
+                Atom CB = (Atom) residue.getAtomNode("CB");
+                Atom N = (Atom) residue.getAtomNode("N");
+                Atom CG = (Atom) residue.getAtomNode("CG");
+                Atom CD = (Atom) residue.getAtomNode("CD");
+                Atom OE1 = (Atom) residue.getAtomNode("OE1");
+                Atom NE2 = (Atom) residue.getAtomNode("NE2");
+                Atom HB2 = (Atom) residue.getAtomNode("HB2");
+                Atom HB3 = (Atom) residue.getAtomNode("HB3");
+                Atom HG2 = (Atom) residue.getAtomNode("HG2");
+                Atom HG3 = (Atom) residue.getAtomNode("HG3");
+                Atom HE21 = (Atom) residue.getAtomNode("HE21");
+                Atom HE22 = (Atom) residue.getAtomNode("HE22");
                 intxyz(CG, CB, 1.54, CA, 109.5, N, rotamer.chi1, 0);
                 intxyz(CD, CG, 1.51, CB, 107.8, CA, rotamer.chi2, 0);
                 intxyz(OE1, CD, 1.22, CG, 122.5, CB, rotamer.chi3, 0);
@@ -549,8 +737,21 @@ public class RotamerLibrary {
                 intxyz(HE21, NE2, 1.02, CD, 119.0, CG, 0.0, 0);
                 intxyz(HE22, NE2, 1.02, CD, 119.0, HE21, 120.0, 1);
                 break;
-        
-            case MET:
+            }
+            case MET: {
+                Atom CA = (Atom) residue.getAtomNode("CA");
+                Atom CB = (Atom) residue.getAtomNode("CB");
+                Atom N = (Atom) residue.getAtomNode("N");
+                Atom CG = (Atom) residue.getAtomNode("CG");
+                Atom SD = (Atom) residue.getAtomNode("SD");
+                Atom CE = (Atom) residue.getAtomNode("CE");
+                Atom HB2 = (Atom) residue.getAtomNode("HB2");
+                Atom HB3 = (Atom) residue.getAtomNode("HB3");
+                Atom HG2 = (Atom) residue.getAtomNode("HG2");
+                Atom HG3 = (Atom) residue.getAtomNode("HG3");
+                Atom HE1 = (Atom) residue.getAtomNode("HE1");
+                Atom HE2 = (Atom) residue.getAtomNode("HE2");
+                Atom HE3 = (Atom) residue.getAtomNode("HE3");
                 intxyz(CG, CB, 1.54, CA, 109.5, N, rotamer.chi1, 0);
                 intxyz(SD, CG, 1.82, CB, 109.0, CA, rotamer.chi2, 0);
                 intxyz(CE, SD, 1.82, CG, 96.3, CB, rotamer.chi3, 0);
@@ -562,7 +763,26 @@ public class RotamerLibrary {
                 intxyz(HE2, CE, 1.11, SD, 112.0, HE1, 109.4, 1);
                 intxyz(HE3, CE, 1.11, SD, 112.0, HE1, 109.4, -1);
                 break;
-            case LYS:
+            }
+            case LYS: {
+                Atom CA = (Atom) residue.getAtomNode("CA");
+                Atom CB = (Atom) residue.getAtomNode("CB");
+                Atom N = (Atom) residue.getAtomNode("N");
+                Atom CG = (Atom) residue.getAtomNode("CG");
+                Atom CD = (Atom) residue.getAtomNode("CD");
+                Atom CE = (Atom) residue.getAtomNode("CE");
+                Atom NZ = (Atom) residue.getAtomNode("NZ");
+                Atom HB2 = (Atom) residue.getAtomNode("HB2");
+                Atom HB3 = (Atom) residue.getAtomNode("HB3");
+                Atom HG2 = (Atom) residue.getAtomNode("HG2");
+                Atom HG3 = (Atom) residue.getAtomNode("HG3");
+                Atom HD2 = (Atom) residue.getAtomNode("HD2");
+                Atom HD3 = (Atom) residue.getAtomNode("HD3");
+                Atom HE2 = (Atom) residue.getAtomNode("HE2");
+                Atom HE3 = (Atom) residue.getAtomNode("HE3");
+                Atom HZ1 = (Atom) residue.getAtomNode("HZ1");
+                Atom HZ2 = (Atom) residue.getAtomNode("HZ2");
+                Atom HZ3 = (Atom) residue.getAtomNode("HZ3");
                 intxyz(CG, CB, 1.54, CA, 109.5, N, rotamer.chi1, 0);
                 intxyz(CD, CG, 1.54, CB, 109.5, CA, rotamer.chi2, 0);
                 intxyz(CE, CD, 1.54, CG, 109.5, CB, rotamer.chi3, 0);
@@ -579,7 +799,25 @@ public class RotamerLibrary {
                 intxyz(HZ2, NZ, 1.02, CE, 109.5, HZ1, 109.5, 1);
                 intxyz(HZ3, NZ, 1.02, CE, 109.5, HZ1, 109.5, -1);
                 break;
-            case LYD:
+            }
+            case LYD: {
+                Atom CA = (Atom) residue.getAtomNode("CA");
+                Atom CB = (Atom) residue.getAtomNode("CB");
+                Atom N = (Atom) residue.getAtomNode("N");
+                Atom CG = (Atom) residue.getAtomNode("CG");
+                Atom CD = (Atom) residue.getAtomNode("CD");
+                Atom CE = (Atom) residue.getAtomNode("CE");
+                Atom NZ = (Atom) residue.getAtomNode("NZ");
+                Atom HB2 = (Atom) residue.getAtomNode("HB2");
+                Atom HB3 = (Atom) residue.getAtomNode("HB3");
+                Atom HG2 = (Atom) residue.getAtomNode("HG2");
+                Atom HG3 = (Atom) residue.getAtomNode("HG3");
+                Atom HD2 = (Atom) residue.getAtomNode("HD2");
+                Atom HD3 = (Atom) residue.getAtomNode("HD3");
+                Atom HE2 = (Atom) residue.getAtomNode("HE2");
+                Atom HE3 = (Atom) residue.getAtomNode("HE3");
+                Atom HZ1 = (Atom) residue.getAtomNode("HZ1");
+                Atom HZ2 = (Atom) residue.getAtomNode("HZ2");
                 intxyz(CG, CB, 1.54, CA, 109.5, N, rotamer.chi1, 0);
                 intxyz(CD, CG, 1.54, CB, 109.5, CA, rotamer.chi2, 0);
                 intxyz(CE, CD, 1.54, CG, 109.5, CB, rotamer.chi3, 0);
@@ -595,7 +833,28 @@ public class RotamerLibrary {
                 intxyz(HZ1, NZ, 1.02, CE, 109.5, CD, 180.0, 0);
                 intxyz(HZ2, NZ, 1.02, CE, 109.5, HZ1, 109.5, 1);
                 break;
-            case ARG:
+            }
+            case ARG: {
+                Atom CA = (Atom) residue.getAtomNode("CA");
+                Atom CB = (Atom) residue.getAtomNode("CB");
+                Atom N = (Atom) residue.getAtomNode("N");
+                Atom CG = (Atom) residue.getAtomNode("CG");
+                Atom CD = (Atom) residue.getAtomNode("CD");
+                Atom NE = (Atom) residue.getAtomNode("NE");
+                Atom CZ = (Atom) residue.getAtomNode("CZ");
+                Atom NH1 = (Atom) residue.getAtomNode("NH1");
+                Atom NH2 = (Atom) residue.getAtomNode("NH2");
+                Atom HB2 = (Atom) residue.getAtomNode("HB2");
+                Atom HB3 = (Atom) residue.getAtomNode("HB3");
+                Atom HG2 = (Atom) residue.getAtomNode("HG2");
+                Atom HG3 = (Atom) residue.getAtomNode("HG3");
+                Atom HD2 = (Atom) residue.getAtomNode("HD2");
+                Atom HD3 = (Atom) residue.getAtomNode("HD3");
+                Atom HE = (Atom) residue.getAtomNode("HE");
+                Atom HH11 = (Atom) residue.getAtomNode("HH11");
+                Atom HH12 = (Atom) residue.getAtomNode("HH12");
+                Atom HH21 = (Atom) residue.getAtomNode("HH21");
+                Atom HH22 = (Atom) residue.getAtomNode("HH22");
                 intxyz(CG, CB, 1.54, CA, 109.5, N, rotamer.chi1, 0);
                 intxyz(CD, CG, 1.54, CB, 109.5, CA, rotamer.chi2, 0);
                 intxyz(NE, CD, 1.45, CG, 109.5, CB, rotamer.chi3, 0);
@@ -614,10 +873,12 @@ public class RotamerLibrary {
                 intxyz(HH21, NH2, 1.02, CZ, 120.0, NE, 180.0, 0);
                 intxyz(HH22, NH2, 1.02, CZ, 120.0, NE, 120.0, 1);
                 break;
+            }
             default:
-                break;  
+                break;
         }
     }
+}
 //    ROTAMER LIBRARY BASED ON STATISTICS FROM PONDER AND RICHARDS
 //
 //      RESIDUE   CHI1    CHI2    CHI3    CHI4      SIG1  SIG2  SIG3  SIG4
@@ -732,4 +993,4 @@ public class RotamerLibrary {
 //109   ARG      -70.0   180.0   -65.0   180.0      21.0  20.0  20.0  20.0
 //110   ARG     -170.0    65.0    65.0   180.0      21.0  20.0  20.0  20.0
 //111   ARG      -70.0   -65.0   -65.0   180.0      21.0  20.0  20.0  20.0
-}
+
