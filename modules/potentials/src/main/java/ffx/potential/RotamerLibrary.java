@@ -300,9 +300,9 @@ public class RotamerLibrary {
                 Atom HD12 = (Atom) residue.getAtomNode("HD12");
                 Atom HD13 = (Atom) residue.getAtomNode("HD13");
                 intxyz(CG1, CB, 1.54, CA, 109.5, N, rotamer.chi1, 0);
-                intxyz(CG2, CB, 1.54, CA, 109.5, N, 109.5, 1);
+                intxyz(CG2, CB, 1.54, CA, 109.5, CG1, 109.5, -1);
                 intxyz(CD1, CG1, 1.54, CB, 109.5, CA, rotamer.chi2, 0);
-                intxyz(HB, CB, 1.11, CA, 109.4, CG1, 109.4, -1);
+                intxyz(HB, CB, 1.11, CA, 109.4, CG1, 109.4, 1);
                 intxyz(HG12, CG1, 1.11, CB, 109.4, CD1, 109.4, 1);
                 intxyz(HG13, CG1, 1.11, CB, 109.4, CD1, 109.4, -1);
                 intxyz(HG21, CG2, 1.11, CB, 110.0, CG1, 180.0, 0);
@@ -521,8 +521,8 @@ public class RotamerLibrary {
                 intxyz(NE1, CD1, 1.35, CG, 108.0, CD2, 0.0, 0);
                 intxyz(CE2, NE1, 1.35, CD1, 108.0, CG, 0.0, 0);
                 intxyz(CE3, CD2, 1.35, CE2, 120.0, NE1, 180.0, 0);
-                intxyz(CZ2, CE2, 1.35, CD1, 120.0, CE3, 0.0, 0);
-                intxyz(CZ3, CE3, 1.35, CD1, 120.0, NE1, 0.0, 0);
+                intxyz(CZ2, CE2, 1.35, CD2, 120.0, CE3, 0.0, 0);
+                intxyz(CZ3, CE3, 1.35, CD2, 120.0, CE2, 0.0, 0);
                 intxyz(CH2, CZ2, 1.35, CE2, 120.0, CD2, 0.0, 0);
                 intxyz(HB2, CB, 1.11, CA, 109.4, CG, 109.4, 1);
                 intxyz(HB3, CB, 1.11, CA, 109.4, CG, 109.4, -1);
@@ -550,10 +550,10 @@ public class RotamerLibrary {
                 Atom HE1 = (Atom) residue.getAtomNode("HE1");
                 Atom HE2 = (Atom) residue.getAtomNode("HE2");
                 intxyz(CG, CB, 1.50, CA, 109.5, N, rotamer.chi1, 0);
-                intxyz(ND1, CG, 1.35, CB, 126.0, CA, 180, 0);
-                intxyz(CD2, CG, 1.35, CB, 126.0, ND1, rotamer.chi2, 1);
+                intxyz(ND1, CG, 1.35, CB, 126.0, CA, rotamer.chi2, 0);
+                intxyz(CD2, CG, 1.35, CB, 126.0, ND1, 108.0, 1);
                 intxyz(CE1, ND1, 1.35, CG, 108.0, CD2, 0.0, 0);
-                intxyz(NE2, CE1, 1.35, CG, 108.0, ND1, 0.0, 0);
+                intxyz(NE2, CD2, 1.35, CG, 108.0, ND1, 0.0, 0);
                 intxyz(HB2, CB, 1.11, CA, 109.4, CG, 109.4, 1);
                 intxyz(HB3, CB, 1.11, CA, 109.4, CG, 109.4, -1);
                 intxyz(HD1, ND1, 1.02, CG, 126.0, CB, 0.0, 0);
@@ -577,10 +577,10 @@ public class RotamerLibrary {
                 Atom HD2 = (Atom) residue.getAtomNode("HD2");
                 Atom HE1 = (Atom) residue.getAtomNode("HE1");
                 intxyz(CG, CB, 1.50, CA, 109.5, N, rotamer.chi1, 0);
-                intxyz(ND1, CG, 1.35, CB, 126.0, CA, 180, 0);
-                intxyz(CD2, CG, 1.35, CB, 126.0, ND1, rotamer.chi2, 1);
+                intxyz(ND1, CG, 1.35, CB, 126.0, CA, rotamer.chi2, 0);
+                intxyz(CD2, CG, 1.35, CB, 126.0, ND1, 108.0, 1);
                 intxyz(CE1, ND1, 1.35, CG, 108.0, CD2, 0.0, 0);
-                intxyz(NE2, CE1, 1.35, CG, 108.0, ND1, 0.0, 0);
+                intxyz(NE2, CD2, 1.35, CG, 108.0, ND1, 0.0, 0);
                 intxyz(HB2, CB, 1.11, CA, 109.4, CG, 109.4, 1);
                 intxyz(HB3, CB, 1.11, CA, 109.4, CG, 109.4, -1);
                 intxyz(HD1, ND1, 1.02, CG, 126.0, CB, 0.0, 0);
@@ -603,10 +603,10 @@ public class RotamerLibrary {
                 Atom HE1 = (Atom) residue.getAtomNode("HE1");
                 Atom HE2 = (Atom) residue.getAtomNode("HE2");
                 intxyz(CG, CB, 1.50, CA, 109.5, N, rotamer.chi1, 0);
-                intxyz(ND1, CG, 1.35, CB, 126.0, CA, 180, 0);
-                intxyz(CD2, CG, 1.35, CB, 126.0, ND1, rotamer.chi2, 1);
+                intxyz(ND1, CG, 1.35, CB, 126.0, CA, rotamer.chi2, 0);
+                intxyz(CD2, CG, 1.35, CB, 126.0, ND1, 108.0, 1);
                 intxyz(CE1, ND1, 1.35, CG, 108.0, CD2, 0.0, 0);
-                intxyz(NE2, CE1, 1.35, CG, 108.0, ND1, 0.0, 0);
+                intxyz(NE2, CD2, 1.35, CG, 108.0, ND1, 0.0, 0);
                 intxyz(HB2, CB, 1.11, CA, 109.4, CG, 109.4, 1);
                 intxyz(HB3, CB, 1.11, CA, 109.4, CG, 109.4, -1);
                 intxyz(HD2, CD2, 1.10, CG, 126.0, NE2, 126.0, 1);
@@ -625,7 +625,7 @@ public class RotamerLibrary {
                 Atom HB3 = (Atom) residue.getAtomNode("HB3");
                 intxyz(CG, CB, 1.51, CA, 107.8, N, rotamer.chi1, 0);
                 intxyz(OD1, CG, 1.25, CB, 117.0, CA, 0.0, 0);
-                intxyz(OD2, CG, 1.25, CB, 117.0, OD1, 126.0, 0);
+                intxyz(OD2, CG, 1.25, CB, 117.0, OD1, 126.0, 1);
                 intxyz(HB2, CB, 1.11, CA, 109.4, CG, 107.9, 1);
                 intxyz(HB3, CB, 1.11, CA, 109.4, CG, 107.9, -1);
                 break;
@@ -642,7 +642,7 @@ public class RotamerLibrary {
                 Atom HD2 = (Atom) residue.getAtomNode("HD2");
                 intxyz(CG, CB, 1.51, CA, 107.8, N, rotamer.chi1, 0);
                 intxyz(OD1, CG, 1.25, CB, 117.0, CA, rotamer.chi2, 0);
-                intxyz(OD2, CG, 1.25, CB, 117.0, OD1, 126.0, 0);
+                intxyz(OD2, CG, 1.25, CB, 117.0, OD1, 126.0, 1);
                 intxyz(HB2, CB, 1.11, CA, 109.4, CG, 107.9, 1);
                 intxyz(HB3, CB, 1.11, CA, 109.4, CG, 107.9, -1);
                 intxyz(HD2, OD2, 0.98, CG, 108.7, OD1, 0.0, 0);
@@ -661,7 +661,7 @@ public class RotamerLibrary {
                 Atom HD22 = (Atom) residue.getAtomNode("HD22");
                 intxyz(CG, CB, 1.51, CA, 107.8, N, rotamer.chi1, 0);
                 intxyz(OD1, CG, 1.22, CB, 122.5, CA, rotamer.chi2, 0);
-                intxyz(ND2, CG, 1.34, CB, 112.7, OD1, 124.0, 0);
+                intxyz(ND2, CG, 1.34, CB, 112.7, OD1, 124.0, 1);
                 intxyz(HB2, CB, 1.11, CA, 109.4, CG, 107.9, 1);
                 intxyz(HB3, CB, 1.11, CA, 109.4, CG, 107.9, -1);
                 intxyz(HD21, ND2, 1.02, CG, 119.0, CB, 0.0, 0);
@@ -873,7 +873,7 @@ public class RotamerLibrary {
                 intxyz(HH11, NH1, 1.02, CZ, 120.0, NE, 180.0, 0);
                 intxyz(HH12, NH1, 1.02, CZ, 120.0, HH11, 120.0, 1);
                 intxyz(HH21, NH2, 1.02, CZ, 120.0, NE, 180.0, 0);
-                intxyz(HH22, NH2, 1.02, CZ, 120.0, NE, 120.0, 1);
+                intxyz(HH22, NH2, 1.02, CZ, 120.0, HH21, 120.0, 1);
                 break;
             }
             default:

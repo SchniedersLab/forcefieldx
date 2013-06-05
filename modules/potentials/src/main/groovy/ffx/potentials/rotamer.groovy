@@ -82,6 +82,9 @@ for (def i=startResID; i<=finalResID; i++) {
     print residue.toString();
     def name = ResidueEnumerations.AminoAcid3.valueOf(residue.getName());
     Rotamer[] rotamers = RotamerLibrary.getRotamers(name);
+    if (rotamers == null) {
+        continue;
+    }
     e = energy.energy(false, true);
     bestRotamer = -1;
     for (j=0; j<rotamers.length;j++) {
