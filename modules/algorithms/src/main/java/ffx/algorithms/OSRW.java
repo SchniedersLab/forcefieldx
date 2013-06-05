@@ -472,17 +472,6 @@ public class OSRW implements Potential {
             energyCount++;
         }
 
-        if (propagateLambda && energyCount > 0) {
-            /**
-             * Metadynamics grid counts (every 'countInterval' steps).
-             */
-            if (energyCount % countInterval == 0) {
-                System.setProperty("use-precise-polar-eps", "true");
-            } else {
-                System.setProperty("use-precise-polar-eps", "false");
-            }
-        }
-
         double e = potential.energyAndGradient(x, gradient);
 
         double biasEnergy = 0.0;
