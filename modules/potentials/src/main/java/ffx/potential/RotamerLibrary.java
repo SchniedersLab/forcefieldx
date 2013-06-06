@@ -22,8 +22,12 @@
  */
 package ffx.potential;
 
+import java.util.ArrayList;
+import java.util.logging.Logger;
+
 import ffx.potential.ResidueEnumerations.AminoAcid3;
 import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.Residue;
 
 import static ffx.potential.parsers.INTFilter.intxyz;
@@ -35,6 +39,7 @@ import static ffx.potential.parsers.INTFilter.intxyz;
  */
 public class RotamerLibrary {
 
+    private static final Logger logger = Logger.getLogger(ForceFieldEnergy.class.getName());
     private static final int numberOfAminoAcids = AminoAcid3.values().length;
     private static final Rotamer[][] rotamerCache = new Rotamer[numberOfAminoAcids][];
 
@@ -84,7 +89,6 @@ public class RotamerLibrary {
                 rotamerCache[n][2] = new Rotamer(name, -169.5, 6.6);
                 break;
             case CYS:
-            case CYX:
             case CYD:
                 rotamerCache[n] = new Rotamer[3];
                 rotamerCache[n][0] = new Rotamer(name, -65.2, 10.1);
@@ -222,9 +226,89 @@ public class RotamerLibrary {
                 rotamerCache[n][13] = new Rotamer(name, -70.0, 21.0, -65.0, 20.0, -65.0, 20.0, 180.0, 20.0);
                 break;
             default:
+                // Handles GLY, ALA, CYX, ...
                 break;
         }
         return rotamerCache[n];
+    }
+
+    /**
+     * A brute-force global optimization over side-chain rotamers using a
+     * recursive algorithm.
+     */
+    public static double rotamerOptimization(MolecularAssembly molecularAssembly, ArrayList<Residue> residues,
+            double lowEnergy, ArrayList<Integer> optimum) {
+        Residue current = residues.remove(0);
+        AminoAcid3 name = AminoAcid3.valueOf(current.getName());
+        Rotamer[] rotamers = getRotamers(name);
+        double currentEnergy = Double.MAX_VALUE;
+        if (residues.size() > 0) {
+            /**
+             * As long as there are more residues, continue the recursion for
+             * each rotamer of the current residue.
+             */
+            if (rotamers == null) {
+                /**
+                 * Continue to the next residue.
+                 */
+                currentEnergy = rotamerOptimization(molecularAssembly, residues, lowEnergy, optimum);
+                // Add the '-1' flag as a placeholder since this residue has no rotamers.
+                if (currentEnergy < lowEnergy) {
+                    optimum.add(0, -1);
+                }
+            } else {
+                int minRot = -1;
+                for (int i = 0; i < rotamers.length; i++) {
+                    applyRotamer(name, current, rotamers[i]);
+                    double rotEnergy = rotamerOptimization(molecularAssembly, residues, lowEnergy, optimum);
+                    if (rotEnergy < currentEnergy) {
+                        currentEnergy = rotEnergy;
+                    }
+                    if (rotEnergy < lowEnergy) {
+                        minRot = i;
+                        lowEnergy = rotEnergy;
+                    }
+                }
+                if (minRot > -1) {
+                    optimum.add(0, minRot);
+                }
+            }
+        } else {
+            /**
+             * At the end of the recursion, compute the potential energy for
+             * each rotamer of the final residue. If a lower potential energy is
+             * discovered, the rotamers of each residue will be collected as the
+             * recursion returns up the chain.
+             */
+            ForceFieldEnergy energy = molecularAssembly.getPotentialEnergy();
+            if (rotamers == null) {
+                /**
+                 * Handle the case where the side-chain has no rotamers.
+                 */
+                currentEnergy = energy.energy(false, false);
+                logger.info(String.format(" Energy: %16.8f", currentEnergy));
+                if (currentEnergy < lowEnergy) {
+                    optimum.clear();
+                    optimum.add(-1);
+                }
+            } else {
+                for (int i = 0; i < rotamers.length; i++) {
+                    applyRotamer(name, current, rotamers[i]);
+                    double rotEnergy = energy.energy(false, false);
+                    logger.info(String.format(" Energy: %16.8f", rotEnergy));
+                    if (rotEnergy < currentEnergy) {
+                        currentEnergy = rotEnergy;
+                    }
+                    if (rotEnergy < lowEnergy) {
+                        lowEnergy = rotEnergy;
+                        optimum.clear();
+                        optimum.add(i);
+                    }
+                }
+            }
+        }
+        residues.add(0, current);
+        return currentEnergy;
     }
 
     public static void applyRotamer(AminoAcid3 name, Residue residue, Rotamer rotamer) {
@@ -347,7 +431,8 @@ public class RotamerLibrary {
                 intxyz(HG23, CG2, 1.11, CB, 110.0, HG21, 109.0, -1);
                 break;
             }
-            case CYS: {
+            case CYS:
+            case CYX: {
                 Atom CA = (Atom) residue.getAtomNode("CA");
                 Atom CB = (Atom) residue.getAtomNode("CB");
                 Atom N = (Atom) residue.getAtomNode("N");
@@ -361,7 +446,6 @@ public class RotamerLibrary {
                 intxyz(HG, SG, 1.34, CB, 96.0, CA, 180.0, 0);
                 break;
             }
-            case CYX:
             case CYD: {
                 Atom CA = (Atom) residue.getAtomNode("CA");
                 Atom CB = (Atom) residue.getAtomNode("CB");
