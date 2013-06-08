@@ -106,6 +106,7 @@ public class Main extends JFrame {
      * Replace the default console handler with our custom FFX handler.
      */
     private static void startLogging() {
+        // Remove all log handlers from the default logger.
         try {
             Logger defaultLogger = LogManager.getLogManager().getLogger("");
             Handler defaultHandlers[] = defaultLogger.getHandlers();
@@ -116,6 +117,7 @@ public class Main extends JFrame {
             System.err.println(e.toString());
         }
 
+        // Retrieve the log level from the ffx.log system property.
         String logLevel = System.getProperty("ffx.log", "info");
         Level tempLevel;
         try {
@@ -286,39 +288,25 @@ public class Main extends JFrame {
         startParallelJava(args);
 
         /**
-         * Run the pKa input GUI if requested.
-         * Halts execution until GUI exits.
+         * Run the pKa input GUI if requested. Halts execution until GUI exits.
          */
+
         /**
-        if (System.getProperty("pKaCalc") != null) {
-            if (System.getProperty("pKaCalc").equals("true")) {
-                ffx.pka.pKaRun runnable = new ffx.pka.pKaRun();
-                Thread t = new Thread(runnable,"pKa Thread");
-                t.start();
-                t.join();
-                final int NUM_PKA_ARGS = 25;
-                String[] newArgs = new String[NUM_PKA_ARGS];
-                int currentArg = 0;
-                for (int i=0; i < newArgs.length; i++) {
-                    newArgs[currentArg] = runnable.getArg(i);
-                    if (runnable.getArg(i) == null) {
-                        String temp = runnable.getArg(i - 1);
-                        if (temp.startsWith("-s") || temp.startsWith("-f")) {
-                            currentArg--;
-                        }
-                    } else {
-                        currentArg++;
-                    }
-                }
-                args = newArgs;
-            }
-        }
-        */
-        
+         * if (System.getProperty("pKaCalc") != null) { if
+         * (System.getProperty("pKaCalc").equals("true")) { ffx.pka.pKaRun
+         * runnable = new ffx.pka.pKaRun(); Thread t = new Thread(runnable,"pKa
+         * Thread"); t.start(); t.join(); final int NUM_PKA_ARGS = 25; String[]
+         * newArgs = new String[NUM_PKA_ARGS]; int currentArg = 0; for (int i=0;
+         * i < newArgs.length; i++) { newArgs[currentArg] = runnable.getArg(i);
+         * if (runnable.getArg(i) == null) { String temp = runnable.getArg(i -
+         * 1); if (temp.startsWith("-s") || temp.startsWith("-f")) {
+         * currentArg--; } } else { currentArg++; } } args = newArgs; } }
+         */
+
         // Print the header.
         // Moved this here so I could see the args being supplied by pKaRun.
         header(args);
-        
+
         /**
          * Parse the specified command or structure file.
          */
@@ -342,7 +330,7 @@ public class Main extends JFrame {
                 argList.add(args[i]);
             }
         }
-        
+
         /**
          * Start up the GUI or CLI version of Force Field X.
          */
@@ -416,8 +404,7 @@ public class Main extends JFrame {
                             FFXClassLoader.copyInputStreamToTmpFile(
                             embeddedScript.openStream(), commandLineFile.getName(), ".ffx"));
                 } catch (Exception e) {
-                    logger.warning("Exception extracting embedded script "
-                            + embeddedScript.toString() + "\n" + e.toString());
+                    logger.info(String.format(" The embedded script %s could not be extracted.", embeddedScript));
                 }
             }
         }

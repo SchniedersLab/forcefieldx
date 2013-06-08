@@ -38,21 +38,19 @@ public class GraphicsPanel extends JPanel {
 
     private GraphicsCanvas graphics;
     private JPanel canvasPanel;
-    private JPanel statusPanel;
 
     /**
      * <p>Constructor for GraphicsPanel.</p>
      *
-     * @param g a {@link ffx.ui.GraphicsCanvas} object.
-     * @param s a {@link javax.swing.JPanel} object.
+     * @param graphicsCanvas a {@link ffx.ui.GraphicsCanvas} object.
+     * @param statusPanel a {@link javax.swing.JPanel} object.
      */
-    public GraphicsPanel(GraphicsCanvas g, JPanel s) {
+    public GraphicsPanel(GraphicsCanvas graphicsCanvas, JPanel statusPanel) {
         super();
         setLayout(new BorderLayout());
-        statusPanel = s;
-        if (g != null) {
+        if (graphicsCanvas != null) {
             canvasPanel = new JPanel(new GridLayout(1, 1));
-            canvasPanel.add(g);
+            canvasPanel.add(graphicsCanvas);
             add(canvasPanel, BorderLayout.CENTER);
         } else {
             setBackground(Color.BLACK);
@@ -63,6 +61,7 @@ public class GraphicsPanel extends JPanel {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setVisible(boolean v) {
         super.setVisible(v);
         if (graphics != null) {

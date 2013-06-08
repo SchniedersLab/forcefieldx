@@ -142,7 +142,6 @@ public class ModelingShell extends Console implements AlgorithmListener {
         }
         initContext();
         loadPrefs();
-
     }
 
     /**
@@ -282,7 +281,7 @@ public class ModelingShell extends Console implements AlgorithmListener {
         if (node != null) {
             mainPanel.getHierarchy().onlySelection(node);
             sync();
-            logger.info(" Selected: " + node);
+            logger.info(String.format(" Selected: %s.", node));
         }
     }
 
@@ -462,7 +461,7 @@ public class ModelingShell extends Console implements AlgorithmListener {
             }
 
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.warning(e.getMessage());
         }
     }
 
