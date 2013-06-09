@@ -38,7 +38,7 @@ import ffx.utilities.Keyword;
 def cli = new CliBuilder(usage:' ffxc mutatePDB [options] <PDB>');
 cli.h(longOpt:'help', 'Print this help message.');
 cli.r(longOpt:'resid', args:1, argName:'1', 'Residue number.');
-cli.n(longOpt:'resname', args:1, argName:'GLY', 'New residue name.');
+cli.n(longOpt:'resname', args:1, argName:'ALA', 'New residue name.');
 cli.c(longOpt:'chain', args:1, argName:' ', 'Single character chain name (default is \' \').');
 
 def options = cli.parse(args);
