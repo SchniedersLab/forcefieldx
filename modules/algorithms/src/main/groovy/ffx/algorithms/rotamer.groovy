@@ -42,6 +42,8 @@ import ffx.algorithms.RotamerOptimization
 def startResID = -1;
 def finalResID = -1;
 def algorithm = 1;
+def min = false;
+def eps = 0.01;
 
 // Create the command line parser.
 def cli = new CliBuilder(usage:' ffxc rotamer [options] <filename>');
@@ -49,6 +51,7 @@ cli.h(longOpt:'help', 'Print this help message.');
 cli.a(longOpt:'algorithm', args:1, argName:'1', 'Choices are independent residues (1) or all permuations (2).');
 cli.s(longOpt:'start', args:1, argName:'-1', 'Starting residue to perform the rotamer search on (-1 exits).');
 cli.f(longOpt:'finish', args:1, argName:'-1', 'Final residue to perform the rotamer search on (-1 exits).');
+cli.m(longOpt:'minimize', args:1, argName:'0.01', 'Minimize the final structure to the given RMS gradient (Kcal/mole/A).');
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
@@ -70,6 +73,11 @@ if (options.f) {
     finalResID = Integer.parseInt(options.f);
 }
 
+if (options.m) {
+    min = true;
+    eps = Double.parseDouble(options.m);
+}
+
 if (finalResID < startResID || startResID < 0 || finalResID < 0) {
     return;
 }
@@ -87,9 +95,13 @@ energy();
 RotamerOptimization rotamerOptimization = new RotamerOptimization(active, sh);
 
 if (algorithm == 1) {
-    rotamerOptimization(startResID, finalResID, RotamerOptimization.Algorithm.INDEPENDENT);
+    rotamerOptimization.optimize(startResID, finalResID, RotamerOptimization.Algorithm.INDEPENDENT);
 } else {
-    rotamerOptimization(startResID, finalResID, RotamerOptimization.Algorithm.GLOBAL);
+    rotamerOptimization.optimize(startResID, finalResID, RotamerOptimization.Algorithm.GLOBAL);
+}
+
+if (min) {
+    minimize(eps);
 }
 
 logger.info(" Final Energy\n");

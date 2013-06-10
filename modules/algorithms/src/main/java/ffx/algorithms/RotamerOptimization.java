@@ -116,6 +116,9 @@ public class RotamerOptimization implements Terminatable {
             for (int j = 0; j < rotamers.length; j++) {
                 Rotamer rotamer = rotamers[j];
                 RotamerLibrary.applyRotamer(name, residue, rotamer);
+                if (algorithmListener != null) {
+                    algorithmListener.algorithmUpdate(molecularAssembly);
+                }
                 double newE = potential.energy(false, true);
                 if (newE < e) {
                     bestRotamer = j;
