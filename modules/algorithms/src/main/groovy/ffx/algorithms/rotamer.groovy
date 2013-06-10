@@ -35,6 +35,7 @@ import ffx.potential.ForceFieldEnergy;
 
 // Groovy Imports
 import groovy.util.CliBuilder;
+import ffx.algorithms.RotamerOptimization
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
@@ -80,60 +81,15 @@ logger.info("\n Evaluating rotamers for residues " + startResID + " to " + final
 
 open(filename);
 
+logger.info(" Beginning Energy\n");
 energy();
 
-ForceFieldEnergy potential = (ForceFieldEnergy) active.getPotentialEnergy();
-Polymer[] polymers = active.getChains();
+RotamerOptimization rotamerOptimization = new RotamerOptimization(active, sh);
 
 if (algorithm == 1) {
-    for (def i=startResID; i<=finalResID; i++) {
-        Residue residue = polymers[0].getResidue(i);
-        print residue.toString();
-        def name = ResidueEnumerations.AminoAcid3.valueOf(residue.getName());
-        Rotamer[] rotamers = RotamerLibrary.getRotamers(name);
-        if (rotamers == null) {
-            continue;
-        }
-        e = potential.energy(false, true);
-        bestRotamer = -1;
-        for (j=0; j<rotamers.length;j++) {
-            Rotamer rotamer = rotamers[j];
-            RotamerLibrary.applyRotamer(name, residue, rotamer);
-            newE = potential.energy(false, true);
-            if (newE < e) {
-                bestRotamer = j;
-            }
-        }
-        if (bestRotamer > -1) {
-            Rotamer rotamer = rotamers[bestRotamer];
-            RotamerLibrary.applyRotamer(name, residue, rotamer);
-        }
-    }
+    rotamerOptimization(startResID, finalResID, RotamerOptimization.Algorithm.INDEPENDENT);
 } else {
-    ArrayList<Residue> residues = new ArrayList<Residue>();
-    int permutations = 1;
-    for (def i=startResID; i<=finalResID; i++) {
-        Residue residue = polymers[0].getResidue(i);
-        residues.add(residue);
-        def name = ResidueEnumerations.AminoAcid3.valueOf(residue.getName());
-        Rotamer[] rotamers = RotamerLibrary.getRotamers(name);
-        if (rotamers != null) {
-            permutations *= rotamers.length;
-        }
-    }
-    logger.info(" Number of permutations: " + permutations);
-    ArrayList<Integer> optimum = new ArrayList<Integer>();
-    double minEnergy = RotamerLibrary.rotamerOptimization(active, residues, Double.MAX_VALUE, optimum);
-    for (def i=startResID; i<=finalResID; i++) {
-        Residue residue = polymers[0].getResidue(i);
-        def name = ResidueEnumerations.AminoAcid3.valueOf(residue.getName());
-        Rotamer[] rotamers = RotamerLibrary.getRotamers(name);
-        int j = optimum.remove(0);
-        if (rotamers != null) {
-            Rotamer rotamer = rotamers[j];
-            RotamerLibrary.applyRotamer(name, residue, rotamer);
-        }
-    }
+    rotamerOptimization(startResID, finalResID, RotamerOptimization.Algorithm.GLOBAL);
 }
 
 logger.info(" Final Energy\n");
