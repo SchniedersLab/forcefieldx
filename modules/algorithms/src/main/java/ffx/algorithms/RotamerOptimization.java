@@ -47,13 +47,21 @@ public class RotamerOptimization implements Terminatable {
 
         INDEPENDENT, GLOBAL, SLIDING_WINDOW
     }
+    
+    public enum Direction {
+        
+        FORWARD, BACKWARD
+    }
+    
     MolecularAssembly molecularAssembly;
     AlgorithmListener algorithmListener;
     ForceFieldEnergy potential;
     Polymer[] polymers;
     int startResID = -1;
     int finalResID = -1;
+    int windowSize = 3;
     Algorithm algorithm = null;
+    Direction direction = null;
     boolean terminate = false;
     boolean done = true;
 
@@ -85,7 +93,7 @@ public class RotamerOptimization implements Terminatable {
                     e = global();
                     break;
                 case SLIDING_WINDOW:
-                    e = slidingWindow(3,"forward");
+                    e = slidingWindow(windowSize, direction);
                     break;
             }
         }
@@ -93,10 +101,19 @@ public class RotamerOptimization implements Terminatable {
         done = true;
         return e;
     }
-
+    
     public double optimize(int startResID, int finalResID, Algorithm algorithm) {
+            this.startResID = startResID;
+            this.finalResID = finalResID;
+            this.algorithm = algorithm;
+            return optimize();
+        }
+    
+    public double optimize(int startResID, int finalResID, int windowSize, Direction direction, Algorithm algorithm) {
         this.startResID = startResID;
         this.finalResID = finalResID;
+        this.windowSize = windowSize;
+        this.direction = direction;
         this.algorithm = algorithm;
         return optimize();
     }
@@ -167,77 +184,80 @@ public class RotamerOptimization implements Terminatable {
         return e;
     }
 
-    private double slidingWindow(int windowSize, String direction) {
+    private double slidingWindow(int windowSize, Direction direction) {
         double e = Double.MAX_VALUE;
 
         if ((finalResID - startResID) < windowSize-1) {
             logger.warning("StartResID and FinalResID too close for sliding window size.");
         }
         
-        if (direction.equals("forward")) {
-            for (int startWindow = startResID; startWindow + windowSize < finalResID; startWindow++) {
-                
-                if (polymers[0].getResidue(startWindow+windowSize) == null) {
-                    logger.warning("FinalResID references non-existent residue; terminating at end of chain.");
-                    break;
-                }
-                ArrayList<Residue> residues = new ArrayList<Residue>();
-                int permutations = 1;
-                for (int i = startWindow; i < startWindow + windowSize; i++) {
-                    Residue residue = polymers[0].getResidue(i);
-                    residues.add(residue);
-                    AminoAcid3 name = AminoAcid3.valueOf(residue.getName());
-                    Rotamer[] rotamers = RotamerLibrary.getRotamers(name);
-                    if (rotamers != null) {
-                        permutations *= rotamers.length;
-                    }
-                }
-                logger.info(String.format(" Number of permutations: %d.", permutations));
-                ArrayList<Integer> optimum = new ArrayList<Integer>();
-                e = RotamerLibrary.rotamerOptimization(molecularAssembly, residues, Double.MAX_VALUE, optimum);
-                for (int i = startWindow; i < startWindow + windowSize; i++) {
-                    Residue residue = polymers[0].getResidue(i);
-                    AminoAcid3 name = AminoAcid3.valueOf(residue.getName());
-                    Rotamer[] rotamers = RotamerLibrary.getRotamers(name);
-                    int j = optimum.remove(0);
-                    if (rotamers != null) {
-                        Rotamer rotamer = rotamers[j];
-                        RotamerLibrary.applyRotamer(name, residue, rotamer);
-                    }
-                }
-            }
-        } else if (direction.contains("backward")) {
-            for (int endWindow = finalResID; endWindow - windowSize > startResID; endWindow--) {
+        switch (direction) {
+            case FORWARD: 
+                for (int startWindow = startResID; startWindow + (windowSize-1) <= finalResID; startWindow++) {
 
-                if (polymers[0].getResidue(endWindow-windowSize) == null) {
-                    logger.warning("StartResID references non-existent residue; terminating at beginning of chain.");
-                    break;
-                }
-                ArrayList<Residue> residues = new ArrayList<Residue>();
-                int permutations = 1;
-                for (int i = endWindow; i > endWindow - windowSize; i--) {
-                    Residue residue = polymers[0].getResidue(i);
-                    residues.add(residue);
-                    AminoAcid3 name = AminoAcid3.valueOf(residue.getName());
-                    Rotamer[] rotamers = RotamerLibrary.getRotamers(name);
-                    if (rotamers != null) {
-                        permutations *= rotamers.length;
+                    if (polymers[0].getResidue(startWindow+(windowSize-1)) == null) {
+                        logger.warning("FinalResID references non-existent residue; terminating at end of chain.");
+                        break;
+                    }
+                    ArrayList<Residue> residues = new ArrayList<Residue>();
+                    int permutations = 1;
+                    for (int i = startWindow; i <= startWindow + (windowSize-1); i++) {
+                        Residue residue = polymers[0].getResidue(i);
+                        residues.add(residue);
+                        AminoAcid3 name = AminoAcid3.valueOf(residue.getName());
+                        Rotamer[] rotamers = RotamerLibrary.getRotamers(name);
+                        if (rotamers != null) {
+                            permutations *= rotamers.length;
+                        }
+                    }
+                    logger.info(String.format(" Number of permutations: %d.", permutations));
+                    ArrayList<Integer> optimum = new ArrayList<Integer>();
+                    e = RotamerLibrary.rotamerOptimization(molecularAssembly, residues, Double.MAX_VALUE, optimum);
+                    for (int i = startWindow; i <= startWindow + (windowSize-1); i++) {
+                        Residue residue = polymers[0].getResidue(i);
+                        AminoAcid3 name = AminoAcid3.valueOf(residue.getName());
+                        Rotamer[] rotamers = RotamerLibrary.getRotamers(name);
+                        int j = optimum.remove(0);
+                        if (rotamers != null) {
+                            Rotamer rotamer = rotamers[j];
+                            RotamerLibrary.applyRotamer(name, residue, rotamer);
+                        }
                     }
                 }
-                logger.info(String.format(" Number of permutations: %d.", permutations));
-                ArrayList<Integer> optimum = new ArrayList<Integer>();
-                e = RotamerLibrary.rotamerOptimization(molecularAssembly, residues, Double.MAX_VALUE, optimum);
-                for (int i = endWindow; i > endWindow - windowSize; i--) {
-                    Residue residue = polymers[0].getResidue(i);
-                    AminoAcid3 name = AminoAcid3.valueOf(residue.getName());
-                    Rotamer[] rotamers = RotamerLibrary.getRotamers(name);
-                    int j = optimum.remove(0);
-                    if (rotamers != null) {
-                        Rotamer rotamer = rotamers[j];
-                        RotamerLibrary.applyRotamer(name, residue, rotamer);
+                break;
+            case BACKWARD: 
+                for (int endWindow = finalResID; endWindow - (windowSize-1) >= startResID; endWindow--) {
+
+                    if (polymers[0].getResidue(endWindow-windowSize) == null) {
+                        logger.warning("StartResID references non-existent residue; terminating at beginning of chain.");
+                        break;
+                    }
+                    ArrayList<Residue> residues = new ArrayList<Residue>();
+                    int permutations = 1;
+                    for (int i = endWindow; i >= endWindow - (windowSize-1); i--) {
+                        Residue residue = polymers[0].getResidue(i);
+                        residues.add(residue);
+                        AminoAcid3 name = AminoAcid3.valueOf(residue.getName());
+                        Rotamer[] rotamers = RotamerLibrary.getRotamers(name);
+                        if (rotamers != null) {
+                            permutations *= rotamers.length;
+                        }
+                    }
+                    logger.info(String.format(" Number of permutations: %d.", permutations));
+                    ArrayList<Integer> optimum = new ArrayList<Integer>();
+                    e = RotamerLibrary.rotamerOptimization(molecularAssembly, residues, Double.MAX_VALUE, optimum);
+                    for (int i = endWindow; i >= endWindow - (windowSize-1); i--) {
+                        Residue residue = polymers[0].getResidue(i);
+                        AminoAcid3 name = AminoAcid3.valueOf(residue.getName());
+                        Rotamer[] rotamers = RotamerLibrary.getRotamers(name);
+                        int j = optimum.remove(0);
+                        if (rotamers != null) {
+                            Rotamer rotamer = rotamers[j];
+                            RotamerLibrary.applyRotamer(name, residue, rotamer);
+                        }
                     }
                 }
-            }
+                break;
         }
         return e;
     }
