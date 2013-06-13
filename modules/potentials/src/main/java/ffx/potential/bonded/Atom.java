@@ -509,7 +509,9 @@ public class Atom extends MSNode implements Comparable<Atom> {
 
     public Angle getAngle(Atom centralAtom, Atom endAtom) {
         for (Angle angle : angles) {
-            if (angle.get1_3(this).equals(endAtom) && angle.getCentralAtom().equals(centralAtom)) {
+            Atom atom13 = angle.get1_3(this);
+            if (atom13 != null && atom13.equals(endAtom) && 
+                    angle.getCentralAtom().equals(centralAtom)) {
                 return angle;
             }
         }

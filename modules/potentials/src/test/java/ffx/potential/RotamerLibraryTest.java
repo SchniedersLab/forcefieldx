@@ -110,7 +110,8 @@ public class RotamerLibraryTest {
             }
         }
         double finalEnergy = energy.energy(false, false);
+        System.out.println(String.format(" Final energy %16.8f", finalEnergy));
         assertEquals(minEnergy, finalEnergy, 1.0e-8);
-        assertEquals(finalEnergy, 229.555694, 1.0e-6);
+        assertEquals(finalEnergy, -586.514100, 1.0e-6);
     }
 }
