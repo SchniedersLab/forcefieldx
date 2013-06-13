@@ -56,30 +56,25 @@ import ffx.utilities.Keyword;
 @RunWith(Parameterized.class)
 public class ScaleBulkMinimizeTest {
 
-    /*
-     *   NSF D2 domain test Rfree value should be correct expected:<25.45> but was:<25.434741446607674>
-     *   SNARE complex R value should be correct expected:<19.44> but was:<19.416378493002>
-     */
-
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
-                    {true,
+                    {false,
                         "NSF D2 domain test",
                         "ffx/xray/structures/1NSF.pdb",
                         "ffx/xray/structures/1NSF.mtz",
                         null,
                         25.18,
-                        25.43,
+                        25.41,
                         0.8922,
                         0.1524},
-                    {true,
+                    {false,
                         "SNARE complex",
                         "ffx/xray/structures/1N7S.pdb",
                         "ffx/xray/structures/1N7S.mtz",
                         null,
-                        19.42,
-                        21.54,
+                        19.45,
+                        21.55,
                         0.9310,
                         0.1363}
                 });

@@ -211,9 +211,8 @@ public class PotentialEnergyTest {
         ClassLoader cl = this.getClass().getClassLoader();
         structure = new File(cl.getResource(filename).getPath());
 
-        String name = structure.getName();
         int index = filename.lastIndexOf(".");
-        name = filename.substring(0, index);
+        String name = filename.substring(0, index);
         molecularAssembly = new MolecularAssembly(name);
         molecularAssembly.setFile(structure);
 

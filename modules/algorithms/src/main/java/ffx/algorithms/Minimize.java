@@ -246,7 +246,7 @@ public class Minimize implements OptimizationListener, Terminatable {
         }
         logger.info(String.format("%6d%13.4f%11.4f%11.4f%10.4f%7d %8.3f",
                 iter, f, grms, df, xrms, nfun, seconds));
-        // Update the listener and check for an termination request.
+        // Update the listener and check for a termination request.
         if (algorithmListener != null) {
             algorithmListener.algorithmUpdate(molecularAssembly);
         }

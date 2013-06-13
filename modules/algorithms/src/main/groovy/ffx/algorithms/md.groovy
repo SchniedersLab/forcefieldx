@@ -155,7 +155,7 @@ if (!dyn.exists()) {
     dyn = null;
 }
 
-MolecularDynamics molDyn = new MolecularDynamics(active, active.getPotentialEnergy(), active.getProperties(), null, thermostat, integrator);
+MolecularDynamics molDyn = new MolecularDynamics(active, active.getPotentialEnergy(), active.getProperties(), sh, thermostat, integrator);
 molDyn.setFileType(fileType);
 molDyn.setRestartFrequency(restartFrequency);
 molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);

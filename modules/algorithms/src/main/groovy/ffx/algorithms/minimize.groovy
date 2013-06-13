@@ -130,7 +130,7 @@ if ((lambda >= 0.0 && lambda <= 1.0) || filename2 != null) {
 // Open the first topology.
 systems = open(filename);
 
-if (lambdaTerm) { 
+if (lambdaTerm) {
     // Get a reference to the first system's ForceFieldEnergy.
     ForceFieldEnergy energy = active.getPotentialEnergy();
     // Set the lambda value.
@@ -185,7 +185,7 @@ if (filename2 == null) {
     DualTopologyEnergy dualTopologyEnergy = new DualTopologyEnergy(topology1, active);
     dualTopologyEnergy.setLambda(lambda);
 
-    Minimize minimize = new Minimize(topology1, dualTopologyEnergy, null);
+    Minimize minimize = new Minimize(topology1, dualTopologyEnergy, sh);
 
     minimize.minimize(eps);
 

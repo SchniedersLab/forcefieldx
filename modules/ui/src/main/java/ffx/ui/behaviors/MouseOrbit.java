@@ -134,10 +134,10 @@ public class MouseOrbit extends MouseBehavior {
                                 tg_ghost_T3D.get(tg_ghost_mat4d);
                                 Transform3D VPTG_ghost_T3D_inverted = new Transform3D();
                                 Transform3D VPTG_ghost_T3D_noninverted = new Transform3D();
-                                (super.ViewerTG)
-                                        .getTransform(VPTG_ghost_T3D_inverted);
-                                (super.ViewerTG)
-                                        .getTransform(VPTG_ghost_T3D_noninverted);
+                                //(super.ViewerTG).getTransform(VPTG_ghost_T3D_inverted);
+                                ViewerTG.getTransform(VPTG_ghost_T3D_inverted);
+                                //(super.ViewerTG).getTransform(VPTG_ghost_T3D_noninverted);
+                                ViewerTG.getTransform(VPTG_ghost_T3D_noninverted);
                                 VPTG_ghost_T3D_inverted
                                         .setTranslation(new Vector3d(0.0, 0.0,
                                         0.0));
@@ -159,7 +159,8 @@ public class MouseOrbit extends MouseBehavior {
                                 tg_ghost_T3D.setTranslation(tg_ghost_vec3f);
                                 tg_ghost.setTransform(tg_ghost_T3D);
                                 VPTG_ghost_T3D = new Transform3D();
-                                (super.ViewerTG).getTransform(VPTG_ghost_T3D);
+                                //(super.ViewerTG).getTransform(VPTG_ghost_T3D);
+                                ViewerTG.getTransform(VPTG_ghost_T3D);
                                 Vector3f VPTG_ghost_vec3f = new Vector3f();
                                 VPTG_ghost_T3D.get(VPTG_ghost_vec3f);
                                 Vector3f temp_vec3f = new Vector3f();
@@ -186,7 +187,8 @@ public class MouseOrbit extends MouseBehavior {
                                 temp_vec3f.y = temp_vec3f.y + tg_ghost_vec3f.y;
                                 temp_vec3f.z = temp_vec3f.z + tg_ghost_vec3f.z;
                                 VPTG_ghost_T3D.setTranslation(temp_vec3f);
-                                (super.ViewerTG).setTransform(VPTG_ghost_T3D);
+                                //(super.ViewerTG).setTransform(VPTG_ghost_T3D);
+                                ViewerTG.setTransform(VPTG_ghost_T3D);
                                 transformChanged(currXform);
                                 if (callback != null) {
                                     callback.transformChanged(

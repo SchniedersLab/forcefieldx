@@ -491,6 +491,17 @@
                 <enabled>false</enabled>
             </snapshots>
         </repository>
+        <repository>
+            <name>JogAmp Maven Repositorya</name>
+            <id>jogamp.snapshots</id>
+            <url>http://jogamp.org/deployment/maven</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
     </repositories>
     <dependencies>
         <dependency>

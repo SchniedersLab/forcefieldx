@@ -36,7 +36,6 @@ import java.util.logging.LogRecord;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- *
  */
 public class LogHandler extends Handler {
 
@@ -99,6 +98,7 @@ public class LogHandler extends Handler {
                 System.err.println(msg);
                 System.err.println(" Force Field X will not continue.");
                 System.err.println(" Shutting down...");
+                flush();
                 mainPanel.exit();
             }
             ModelingShell shell = null;
@@ -125,10 +125,9 @@ public class LogHandler extends Handler {
      */
     @Override
     public void flush() {
-
-        if (mainPanel.getModelingShell() == null) {
-            System.out.flush();
-        } else {
+        System.out.flush();
+        System.err.flush();
+        if (mainPanel.getModelingShell() != null) {
             // Scroll to visible!
         }
     }

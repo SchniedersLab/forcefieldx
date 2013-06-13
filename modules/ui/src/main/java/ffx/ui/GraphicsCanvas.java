@@ -29,7 +29,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
@@ -87,7 +87,7 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
      * Constant
      * <code>imageFormatHash</code>
      */
-    public static final Hashtable<String, ImageFormat> imageFormatHash = new Hashtable<String, ImageFormat>();
+    public static final HashMap<String, ImageFormat> imageFormatHash = new HashMap<String, ImageFormat>();
 
     static {
         ImageFormat values[] = ImageFormat.values();
@@ -122,26 +122,22 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
      * Behaviors.
      *
      * @param config a {@link java.awt.GraphicsConfiguration} object.
-     * @param f a {@link ffx.ui.MainPanel} object.
+     * @param mainPanel a {@link ffx.ui.MainPanel} object.
      */
-    public GraphicsCanvas(GraphicsConfiguration config, MainPanel f) {
+    public GraphicsCanvas(GraphicsConfiguration config, MainPanel mainPanel) {
         super(config);
-        mainPanel = f;
-        // logger.info("CG: " +
-        // isShadingLanguageSupported(Shader.SHADING_LANGUAGE_CG));
-        // logger.info("GLSL: " +
-        // isShadingLanguageSupported(Shader.SHADING_LANGUAGE_GLSL));
+        this.mainPanel = mainPanel;
         initialize();
     }
 
     /**
      * <p>Constructor for GraphicsCanvas.</p>
      *
-     * @param f a {@link ffx.ui.MainPanel} object.
+     * @param mainlPanel a {@link ffx.ui.MainPanel} object.
      */
-    public GraphicsCanvas(MainPanel f) {
+    public GraphicsCanvas(MainPanel mainlPanel) {
         this(GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getBestConfiguration(
-                new GraphicsConfigTemplate3D()), f);
+                new GraphicsConfigTemplate3D()), mainlPanel);
     }
 
     /**
@@ -223,8 +219,7 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
         } else if (arg.equals("SetGraphicsPickingColor")) {
             setGraphicsPickingColor();
         } else {
-            logger.warning("Graphics Menu command not found: "
-                    + arg.toString());
+            logger.warning(String.format("Graphics Menu command not found: %s.", arg.toString()));
         }
     }
 
@@ -598,20 +593,13 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
         img = ras.getImage().getImage();
         try {
             if (!ImageIO.write(img, imageFormat.toString(), imageName)) {
-                String os = System.getProperty("os.name");
-                logger.severe("No image writer was found for "
-                        + imageFormat.toString()
-                        + " on "
-                        + os
-                        + ".\nThis Java Runtime Environment (JRE) fails to meet the javax.imageio specification.\n"
-                        + "Shame on you " + os + "!\n"
-                        + "Please try a different image format.\n");
+                logger.warning(String.format(" No image writer was found for %s.\n Please try a different image format.\n", imageFormat.toString()));
                 imageName.delete();
             } else {
-                logger.info("" + imageName + " was captured.");
+                logger.info(String.format(" %s was captured.", imageName));
             }
         } catch (IOException e) {
-            logger.warning("Image capture failed.\n" + e);
+            logger.warning(e.getMessage());
         }
         imageCapture = false;
     }
@@ -899,7 +887,7 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     public void setLabelFontSize() {
         Font currentFont = getGraphics2D().getFont();
         int currentSize = currentFont.getSize();
-        String size = new String("" + currentSize);
+        String size = Integer.toString(currentSize);
         size = JOptionPane.showInputDialog("Set the Font Size (8 to 64)", size);
         try {
             int f = Integer.parseInt(size);
@@ -914,7 +902,7 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
             getStatusBar().setText(
                     "  Label Font Size Changed to " + newFont.getSize());
         } catch (NumberFormatException e) {
-            return;
+            logger.warning(e.getMessage());
         }
     }
 
@@ -1130,7 +1118,7 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
                 try {
                     wait(1);
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    logger.warning(e.getMessage());
                 }
             }
         }
