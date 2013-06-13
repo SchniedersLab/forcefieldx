@@ -38,6 +38,7 @@ import javax.vecmath.Vector3d;
 
 import ffx.potential.bonded.RendererCache.ColorModel;
 import ffx.potential.bonded.RendererCache.ViewModel;
+import ffx.potential.parameters.AngleType;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.PolarizeType;
@@ -504,6 +505,15 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     public ArrayList<Angle> getAngles() {
         return angles;
+    }
+
+    public Angle getAngle(Atom centralAtom, Atom endAtom) {
+        for (Angle angle : angles) {
+            if (angle.get1_3(this).equals(endAtom) && angle.getCentralAtom().equals(centralAtom)) {
+                return angle;
+            }
+        }
+        return null;
     }
 
     /**
