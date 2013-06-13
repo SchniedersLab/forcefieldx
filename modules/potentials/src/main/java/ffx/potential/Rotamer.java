@@ -40,12 +40,13 @@ public class Rotamer {
     public final double angles[];
     public final double sigmas[];
     public final AminoAcid3 name;
+    public final int length;
 
     public Rotamer(AminoAcid3 name, double... values) {
-        int length = values.length;
-        angles = new double[max(length / 2,4)];
-        sigmas = new double[max(length / 2,4)];
-        for (int i = 0; i < length / 2; i++) {
+        length = values.length/2;
+        angles = new double[max(length, 4)];
+        sigmas = new double[max(length, 4)];
+        for (int i = 0; i < length; i++) {
             int ii = 2 * i;
             angles[i] = values[ii];
             sigmas[i] = values[ii + 1];
