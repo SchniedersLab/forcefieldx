@@ -837,10 +837,9 @@ public final class PDBFilter extends SystemFilter {
                 }
             }
         }
-        List<MSNode> molecules = activeMolecularAssembly.getMolecules();
-        for (MSNode n : molecules) {
-            MSGroup m = (MSGroup) n;
-            m.reOrderAtoms();
+        List<Molecule> molecules = activeMolecularAssembly.getMolecules();
+        for (Molecule n : molecules) {
+            n.reOrderAtoms();
         }
         List<MSNode> waters = activeMolecularAssembly.getWaters();
         for (MSNode n : waters) {
@@ -1056,7 +1055,7 @@ public final class PDBFilter extends SystemFilter {
 
 
         // Assign small molecule atom types.
-        ArrayList<MSNode> molecules = activeMolecularAssembly.getMolecules();
+        ArrayList<Molecule> molecules = activeMolecularAssembly.getMolecules();
         for (MSNode m : molecules) {
             Molecule molecule = (Molecule) m;
             String moleculeName = molecule.getResidueName();
@@ -3047,7 +3046,7 @@ public final class PDBFilter extends SystemFilter {
             /**
              * Loop over molecules, ions and then water.
              */
-            ArrayList<MSNode> molecules = activeMolecularAssembly.getMolecules();
+            ArrayList<Molecule> molecules = activeMolecularAssembly.getMolecules();
             for (int i = 0; i < molecules.size(); i++) {
                 Molecule molecule = (Molecule) molecules.get(i);
                 Character chainID = molecule.getChainID();

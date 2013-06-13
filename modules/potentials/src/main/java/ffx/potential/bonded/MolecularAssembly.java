@@ -542,7 +542,7 @@ public class MolecularAssembly extends MSGroup {
             }
             return null;
         } else {
-            ArrayList<MSNode> list = getMolecules();
+            ArrayList<Molecule> list = getMolecules();
             for (MSNode node : list) {
                 Molecule m = (Molecule) node;
                 if (m.getSegID().equalsIgnoreCase(atom.getSegID())
@@ -552,8 +552,8 @@ public class MolecularAssembly extends MSGroup {
                     return root;
                 }
             }
-            list = getIons();
-            for (MSNode node : list) {
+            ArrayList<MSNode> ionList = getIons();
+            for (MSNode node : ionList) {
                 Molecule m = (Molecule) node;
                 if (m.getSegID().equalsIgnoreCase(atom.getSegID())
                         && m.getResidueName().equalsIgnoreCase(atom.getResidueName())
@@ -562,8 +562,8 @@ public class MolecularAssembly extends MSGroup {
                     return root;
                 }
             }
-            list = getWaters();
-            for (MSNode node : list) {
+            ArrayList<MSNode> waterList = getWaters();
+            for (MSNode node : waterList) {
                 Molecule m = (Molecule) node;
                 if (m.getSegID().equalsIgnoreCase(atom.getSegID())
                         && m.getResidueName().equalsIgnoreCase(atom.getResidueName())
@@ -574,6 +574,57 @@ public class MolecularAssembly extends MSGroup {
             }
             return null;
         }
+    }
+
+    /**
+     * This method assigns a unique integer to every molecule in the
+     * MolecularAssembly beginning at 0. An integer array with these values for
+     * each atom is returned.
+     */
+    public int[] getMoleculeNumbers() {
+        int moleculeNumber[] = new int[getAtomList().size()];
+        int current = 0;
+        // Move the polymers together
+        Polymer[] polymers = getChains();
+        if (polymers != null && polymers.length > 0) {
+            // Find the center of mass
+            for (Polymer polymer : polymers) {
+                List<Atom> atomList = polymer.getAtomList();
+                for (Atom atom : atomList) {
+                    moleculeNumber[atom.xyzIndex - 1] = current;
+                }
+                current++;
+            }
+        }
+
+        // Loop over each molecule
+        for (MSNode molecule : molecules.getChildList()) {
+            List<Atom> atomList = molecule.getAtomList();
+            for (Atom atom : atomList) {
+                moleculeNumber[atom.xyzIndex - 1] = current;
+            }
+            current++;
+        }
+
+        // Loop over each water
+        for (MSNode wat : water.getChildList()) {
+            List<Atom> atomList = wat.getAtomList();
+            for (Atom atom : atomList) {
+                moleculeNumber[atom.xyzIndex - 1] = current;
+            }
+            current++;
+        }
+
+        // Loop over each ion
+        for (MSNode ion : ions.getChildList()) {
+            List<Atom> atomList = ion.getAtomList();
+            for (Atom atom : atomList) {
+                moleculeNumber[atom.xyzIndex - 1] = current;
+            }
+            current++;
+        }
+
+        return moleculeNumber;
     }
 
     /**
@@ -878,8 +929,12 @@ public class MolecularAssembly extends MSGroup {
      *
      * @return a {@link java.util.ArrayList} object.
      */
-    public ArrayList<MSNode> getMolecules() {
-        return molecules.getChildList();
+    public ArrayList<Molecule> getMolecules() {
+        ArrayList<Molecule> ret = new ArrayList<Molecule>();
+        for (MSNode node : molecules.getChildList()) {
+            ret.add((Molecule) node);
+        }
+        return ret;
     }
 
     /**

@@ -45,6 +45,7 @@ import ffx.potential.LambdaInterface;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
+import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.Torsion;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
@@ -450,21 +451,17 @@ public class ParticleMeshEwald implements LambdaInterface {
     /**
      * ParticleMeshEwald constructor.
      *
-     * @param forceField The forceField parameters to use.
-     * @param atoms An ordered array of Atoms.
-     * @param crystal The definition of the unit cell, space group symmetry and,
-     * if necessary, replicates symmetry.
+     * @param molecularAssembly The MolecularAssembly to compute electrostatics for.
      * @param neighborList The NeighborList for both van der Waals and PME.
      * @param parallelTeam A ParallelTeam that delegates parallelization.
      */
-    public ParticleMeshEwald(ForceField forceField, Atom[] atoms,
-            Crystal crystal, NeighborList neighborList, ParallelTeam parallelTeam) {
-        this.forceField = forceField;
-        this.atoms = atoms;
-        this.crystal = crystal;
+    public ParticleMeshEwald(MolecularAssembly molecularAssembly,
+            NeighborList neighborList, ParallelTeam parallelTeam) {
+        this.forceField = molecularAssembly.getForceField();
+        this.crystal = molecularAssembly.getCrystal();
+        this.atoms = molecularAssembly.getAtomArray();
         this.parallelTeam = parallelTeam;
         this.neighborList = neighborList;
-
         neighborLists = neighborList.getNeighborList();
         permanentSchedule = neighborList.getPairwiseSchedule();
 

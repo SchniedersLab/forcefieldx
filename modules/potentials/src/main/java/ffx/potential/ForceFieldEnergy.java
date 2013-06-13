@@ -407,13 +407,13 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         logger.info("\n Non-Bonded Terms");
 
         if (vanderWaalsTerm) {
-            vanderWaals = new VanDerWaals(forceField, atoms, crystal, parallelTeam);
+            vanderWaals = new VanDerWaals(molecularAssembly, parallelTeam);
         } else {
             vanderWaals = null;
         }
 
         if (multipoleTerm) {
-            particleMeshEwald = new ParticleMeshEwald(forceField, atoms, crystal,
+            particleMeshEwald = new ParticleMeshEwald(molecularAssembly,
                     vanderWaals.getNeighborList(), parallelTeam);
         } else {
             particleMeshEwald = null;

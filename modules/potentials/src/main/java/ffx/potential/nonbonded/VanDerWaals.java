@@ -46,6 +46,7 @@ import ffx.potential.LambdaInterface;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
+import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
@@ -64,6 +65,10 @@ public class VanDerWaals implements MaskingInterface,
         LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(VanDerWaals.class.getName());
+    /**
+     * MolecularAssembly
+     */
+    private MolecularAssembly molecularAssembly;
     /**
      * Crystal parameters.
      */
@@ -100,6 +105,8 @@ public class VanDerWaals implements MaskingInterface,
     private boolean softCoreInit;
     private static final byte HARD = 0;
     private static final byte SOFT = 1;
+    private int molecule[];
+    private boolean intermolecularSoftcore = false;
     private double lambda = 1.0;
     private double vdwLambdaExponent = 1.0;
     private double vdwLambdaAlpha = 0.05;
@@ -219,24 +226,24 @@ public class VanDerWaals implements MaskingInterface,
     /**
      * The VanDerWaals class constructor.
      *
-     * @param forceField The ForceField instance contains {@link VDWType}
-     * parameters.
-     * @param atoms An ordered (by xyzIndex) atom array.
-     * @param crystal A valid Crystal is required.
+     * @param molecularAssembly The MolecularAssembly to compute the van der
+     * Waals energy of.
      * @param parallelTeam The parallel environment.
      * @since 1.0
      */
-    public VanDerWaals(ForceField forceField, Atom[] atoms,
-            Crystal crystal, ParallelTeam parallelTeam) {
-        this.atoms = atoms;
+    public VanDerWaals(MolecularAssembly molecularAssembly,
+            ParallelTeam parallelTeam) {
+        this.molecularAssembly = molecularAssembly;
+        this.atoms = molecularAssembly.getAtomArray();
+        this.crystal = molecularAssembly.getCrystal();
         this.parallelTeam = parallelTeam;
-        this.crystal = crystal;
+
         nAtoms = atoms.length;
         nSymm = this.crystal.spaceGroup.getNumberOfSymOps();
-
         /**
          * Set up the Buffered-14-7 parameters.
          */
+        ForceField forceField = molecularAssembly.getForceField();
         Map<String, VDWType> map = forceField.getVDWTypes();
         TreeMap<String, VDWType> vdwTypes = new TreeMap<String, VDWType>(map);
         maxClass = 0;
@@ -375,8 +382,9 @@ public class VanDerWaals implements MaskingInterface,
             isSoft[i] = false;
             softCore[HARD][i] = false;
             softCore[SOFT][i] = false;
-            softCoreInit = false;
         }
+        softCoreInit = false;
+        molecule = molecularAssembly.getMoleculeNumbers();
 
         lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
         if (lambdaTerm) {
@@ -388,6 +396,8 @@ public class VanDerWaals implements MaskingInterface,
             if (vdwLambdaExponent < 1.0) {
                 vdwLambdaExponent = 1.0;
             }
+            intermolecularSoftcore = forceField.getBoolean(
+                    ForceField.ForceFieldBoolean.INTERMOLECULAR_SOFTCORE, false);
         }
 
         /**
@@ -705,13 +715,14 @@ public class VanDerWaals implements MaskingInterface,
                     // Both soft: full intramolecular ligand interactions.
                     softCore[SOFT][i] = false;
                 } else {
-                    // Both hard: full interaction between condensed phase atoms.
+                    // Both hard: full interaction between atoms.
                     softCore[HARD][i] = false;
                     // Outer loop atom soft, inner loop atom hard.
                     softCore[SOFT][i] = true;
                 }
             }
             softCoreInit = true;
+
         }
 
         // Redo the long range correction.
@@ -722,7 +733,10 @@ public class VanDerWaals implements MaskingInterface,
         } else {
             longRangeCorrection = 0.0;
         }
+    }
 
+    public void setIntermolecularSoftcore(boolean intermolecularSoftcore) {
+        this.intermolecularSoftcore = intermolecularSoftcore;
     }
 
     /**
@@ -1166,6 +1180,7 @@ public class VanDerWaals implements MaskingInterface,
                     final double rediv = 1.0 - redv;
                     final int classi = atomClass[i];
                     final double radEpsi[] = radEps[classi];
+                    final int moleculei = molecule[i];
                     double gxi = 0.0;
                     double gyi = 0.0;
                     double gzi = 0.0;
@@ -1206,7 +1221,7 @@ public class VanDerWaals implements MaskingInterface,
                             int a2 = atomClass[k] * 2;
                             double alpha = 0.0;
                             double lambda5 = 1.0;
-                            boolean soft = softCorei[k];
+                            boolean soft = softCorei[k] || (intermolecularSoftcore && (moleculei != molecule[k]));
                             if (soft) {
                                 alpha = sc1;
                                 lambda5 = sc2;
@@ -1631,6 +1646,7 @@ public class VanDerWaals implements MaskingInterface,
             }
         }
     }
+
     /**
      * *************************************************************************
      * Cutoff and switching constants.
