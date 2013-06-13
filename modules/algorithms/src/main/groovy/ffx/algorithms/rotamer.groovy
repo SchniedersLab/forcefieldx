@@ -42,6 +42,7 @@ import ffx.algorithms.RotamerOptimization.Direction;
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
+def library = 1;
 def startResID = -1;
 def finalResID = -1;
 def windowSize = 3;
@@ -53,6 +54,7 @@ def eps = 0.01;
 // Create the command line parser.
 def cli = new CliBuilder(usage:' ffxc rotamer [options] <filename>');
 cli.h(longOpt:'help', 'Print this help message.');
+cli.l(longOpt:'library', args:1, argName:'1', 'Available rotamer libraries are Ponder and Richards (1) or Richardson (2).');
 cli.a(longOpt:'algorithm', args:1, argName:'1', 'Choices are independent residues (1), all permuations (2), or sliding window (3).');
 cli.w(longOpt:'window', args:1, argName:'3', 'Size of the sliding window with respect to adjacent residues');
 cli.d(longOpt:'direction', args:1, argName:'Forward', 'Direction of the sliding window: [Forward / Backward]');
@@ -64,6 +66,11 @@ def options = cli.parse(args);
 List<String> arguments = options.arguments();
 if (options.h || arguments == null || arguments.size() != 1) {
     return cli.usage();
+}
+
+// Rotamer Library
+if (options.l) {
+    library = Integer.parseInt(options.l);
 }
 
 // Algorithm.
@@ -114,6 +121,12 @@ logger.info(" Beginning Energy\n");
 energy();
 
 RotamerOptimization rotamerOptimization = new RotamerOptimization(active, sh);
+
+if (library == 1) {
+    RotamerLibrary.setLibrary(RotamerLibrary.LibraryName.PonderAndRichards);
+} else {
+    RotamerLibrary.setLibrary(RotamerLibrary.LibraryName.Richardson);
+}
 
 if (algorithm == 1) {
     rotamerOptimization.optimize(startResID, finalResID, RotamerOptimization.Algorithm.INDEPENDENT);
