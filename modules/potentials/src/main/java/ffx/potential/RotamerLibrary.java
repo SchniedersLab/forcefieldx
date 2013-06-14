@@ -59,6 +59,10 @@ public class RotamerLibrary {
         }
     }
 
+    public static LibraryName getLibrary() {
+        return libraryName;
+    }
+
     /**
      * Return an array of Rotamers for the given amino acid.
      *
