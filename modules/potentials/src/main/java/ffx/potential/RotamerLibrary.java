@@ -38,6 +38,7 @@ import static ffx.potential.parsers.INTFilter.intxyz;
  * The Rotamer Library Class manages a library of side-chain Rotamers.
  *
  * @author Ava M. Lynn
+ * @author Shibo Gao
  */
 public class RotamerLibrary {
 
@@ -57,7 +58,7 @@ public class RotamerLibrary {
             rotamerCache[i] = null;
         }
     }
-    
+
     /**
      * Return an array of Rotamers for the given amino acid.
      *
@@ -900,7 +901,7 @@ public class RotamerLibrary {
                 double dHB_CB = HB_CB.bondType.distance;
                 double dHD_CD = HD_CD.bondType.distance;
                 double dHE_CE = HE_CE.bondType.distance;
-                double dHZ_CZ = HZ_CZ.bondType.distance; 
+                double dHZ_CZ = HZ_CZ.bondType.distance;
                 Angle CG_CB_CA = CG.getAngle(CB, CA);
                 Angle CD_CG_CB = CD1.getAngle(CG, CB);
                 Angle CE_CD_CG = CE1.getAngle(CG, CB);
@@ -992,23 +993,59 @@ public class RotamerLibrary {
                 Atom HE1 = (Atom) residue.getAtomNode("HE1");
                 Atom HE2 = (Atom) residue.getAtomNode("HE2");
                 Atom HH = (Atom) residue.getAtomNode("HH");
-                intxyz(CG, CB, 1.50, CA, 109.5, N, rotamer.chi1, 0);
-                intxyz(CD1, CG, 1.39, CB, 120.0, CA, rotamer.chi2, 0);
-                intxyz(CD2, CG, 1.39, CB, 120.0, CD1, 120.0, 1);
-                intxyz(CE1, CD1, 1.39, CG, 120.0, CB, 180, 0);
-                intxyz(CE2, CD2, 1.39, CG, 120.0, CB, 180, 0);
-                intxyz(CZ, CE1, 1.39, CD1, 120.0, CG, 0.0, 0);
-                intxyz(OH, CZ, 1.36, CE2, 120.0, CE1, 120.0, 1);
-                intxyz(HB2, CB, 1.11, CA, 109.4, CG, 109.4, 1);
-                intxyz(HB3, CB, 1.11, CA, 109.4, CG, 109.4, -1);
-                intxyz(HD1, CD1, 1.10, CG, 120.0, CE1, 120.0, 1);
-                intxyz(HD2, CD2, 1.10, CG, 120.0, CE2, 120.0, 1);
-                intxyz(HE1, CE1, 1.10, CD1, 120.0, CZ, 120.0, 1);
-                intxyz(HE2, CE2, 1.10, CD2, 120.0, CZ, 120.0, 1);
+                Bond CG_CB = CG.getBond(CB);
+                Bond CD_CG = CD1.getBond(CG);
+                Bond CE_CD = CE1.getBond(CD1);
+                Bond CZ_CE1 = CZ.getBond(CE1);
+                Bond OH_CZ = OH.getBond(CZ);
+                Bond HB_CB = HB2.getBond(CB);
+                Bond HD_CD = HD1.getBond(CD1);
+                Bond HE_CE = HE1.getBond(CE1);
+                Bond HH_OH = HH.getBond(OH);
+                double dCG_CB = CG_CB.bondType.distance;
+                double dCD_CG = CD_CG.bondType.distance;
+                double dCE_CD = CE_CD.bondType.distance;
+                double dCZ_CE1 = CZ_CE1.bondType.distance;
+                double dOH_CZ = OH_CZ.bondType.distance;
+                double dHB_CB = HB_CB.bondType.distance;
+                double dHD_CD = HD_CD.bondType.distance;
+                double dHE_CE = HE_CE.bondType.distance;
+                double dHH_OH = HH_OH.bondType.distance;
+                Angle CG_CB_CA = CG.getAngle(CB, CA);
+                Angle CD_CG_CB = CD1.getAngle(CG, CB);
+                Angle CE_CD_CG = CE1.getAngle(CD1, CG);
+                Angle CZ_CE1_CD1 = CZ.getAngle(CE1, CD1);
+                Angle OH_CZ_CE2 = OH.getAngle(CZ, CE2);
+                Angle HB_CB_CA = HB2.getAngle(CB, CA);
+                Angle HD_CD_CG = HD1.getAngle(CD1, CG);
+                Angle HE_CE_CD = HE1.getAngle(CE1, CD1);
+                Angle HH_OH_CZ = HH.getAngle(OH, CZ);
+                double dCG_CB_CA = CG_CB_CA.angleType.angle[CG_CB_CA.nh];
+                double dCD_CG_CB = CD_CG_CB.angleType.angle[CD_CG_CB.nh];
+                double dCE_CD_CG = CE_CD_CG.angleType.angle[CE_CD_CG.nh];
+                double dCZ_CE1_CD1 = CZ_CE1_CD1.angleType.angle[CZ_CE1_CD1.nh];
+                double dOH_CZ_CE2 = OH_CZ_CE2.angleType.angle[OH_CZ_CE2.nh];
+                double dHB_CB_CA = HB_CB_CA.angleType.angle[HB_CB_CA.nh];
+                double dHD_CD_CG = HD_CD_CG.angleType.angle[HD_CD_CG.nh];
+                double dHE_CE_CD = HE_CE_CD.angleType.angle[HE_CE_CD.nh];
+                double dHH_OH_CZ = HH_OH_CZ.angleType.angle[HH_OH_CZ.nh];
+                intxyz(CG, CB, dCG_CB, CA, dCG_CB_CA, N, rotamer.chi1, 0);
+                intxyz(CD1, CG, dCD_CG, CB, dCD_CG_CB, CA, rotamer.chi2, 0);
+                intxyz(CD2, CG, dCD_CG, CB, dCD_CG_CB, CD1, 120.0, 1);
+                intxyz(CE1, CD1, dCE_CD, CG, dCE_CD_CG, CB, 180, 0);
+                intxyz(CE2, CD2, dCE_CD, CG, dCE_CD_CG, CB, 180, 0);
+                intxyz(CZ, CE1, dCZ_CE1, CD1, dCZ_CE1_CD1, CG, 0.0, 0);
+                intxyz(OH, CZ, dOH_CZ, CE2, dOH_CZ_CE2, CE1, 120.0, 1);
+                intxyz(HB2, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, 1);
+                intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, -1);
+                intxyz(HD1, CD1, dHD_CD, CG, dHD_CD_CG, CE1, 120.0, 1);
+                intxyz(HD2, CD2, dHD_CD, CG, dHD_CD_CG, CE2, 120.0, 1);
+                intxyz(HE1, CE1, dHE_CE, CD1, dHE_CE_CD, CZ, 120.0, 1);
+                intxyz(HE2, CE2, dHE_CE, CD2, dHE_CE_CD, CZ, 120.0, 1);
                 if (rotamer.length == 3) {
-                    intxyz(HH, OH, 0.97, CZ, 108.0, CE2, rotamer.chi3, 0);
+                    intxyz(HH, OH, dHH_OH, CZ, dHH_OH_CZ, CE2, rotamer.chi3, 0);
                 } else {
-                    intxyz(HH, OH, 0.97, CZ, 108.0, CE2, 0.0, 0);
+                    intxyz(HH, OH, dHH_OH, CZ, dHH_OH_CZ, CE2, 0.0, 0);
                 }
                 break;
             }
@@ -1160,7 +1197,7 @@ public class RotamerLibrary {
                 double dHE3_CE3_CD1 = HE3_CE3_CD1.angleType.angle[HE3_CE3_CD1.nh];
                 double dHZ2_CZ2_CE2 = HZ2_CZ2_CE2.angleType.angle[HZ2_CZ2_CE2.nh];
                 double dHZ3_CZ3_CE3 = HZ3_CZ3_CE3.angleType.angle[HZ3_CZ3_CE3.nh];
-                double dHH2_CH2_CZ2 = HH2_CH2_CZ2.angleType.angle[HH2_CH2_CZ2.nh]; 
+                double dHH2_CH2_CZ2 = HH2_CH2_CZ2.angleType.angle[HH2_CH2_CZ2.nh];
                 intxyz(CG, CB, dCG_CB, CA, dCG_CB_CA, N, rotamer.chi1, 0);
                 intxyz(CD1, CG, dCD1_CG, CB, dCD1_CG_CB, CA, rotamer.chi2, 0);
                 intxyz(CD2, CG, dCD2_CG, CB, dCD2_CG_CB, CD1, 108.0, 1);

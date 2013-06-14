@@ -22,6 +22,7 @@
  */
 package ffx.potential.bonded;
 
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.Hashtable;
 import java.util.ListIterator;
@@ -395,6 +396,20 @@ public class Residue extends MSGroup {
                     + atomToDelete.toString());
             atoms.remove(atomToDelete);
         }
+    }
+
+    public ArrayList<Atom> getSideChainAtoms() {
+        ArrayList<Atom> atoms = getAtomList();
+        ArrayList<Atom> ret = new ArrayList<Atom>(atoms);
+        for (Atom atom : atoms) {
+            String name = atom.getName().toUpperCase();
+            if (name.equals("N") || name.equals("H") || name.equals("H1") || name.equals("H2") || name.equals("H3")
+                    || name.equals("CA") || name.startsWith("HA")
+                    || name.equals("C") || name.equals("O") || name.equals("OXT") || name.equals("OT2")) {
+                ret.remove(atom);
+            }
+        }
+        return ret;
     }
 
     private void assignResidueType() {

@@ -191,7 +191,7 @@ public class Potential2 implements OptimizationListener {
         ParallelTeam parallelTeam = new ParallelTeam();
         crystal = create_crystal(forceField, atoms);
         nSymm = crystal.spaceGroup.getNumberOfSymOps();
-        VanDerWaals vanderWaals = new VanDerWaals(forceField, atoms, crystal, parallelTeam);
+        VanDerWaals vanderWaals = new VanDerWaals(molecularAssembly, crystal, parallelTeam);
         //RENAME
         //store_key_file(structure_prm);
         store_key_file(structure_key);

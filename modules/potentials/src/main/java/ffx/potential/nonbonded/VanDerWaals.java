@@ -228,14 +228,15 @@ public class VanDerWaals implements MaskingInterface,
      *
      * @param molecularAssembly The MolecularAssembly to compute the van der
      * Waals energy of.
+     * @param crystal The boundary conditions.
      * @param parallelTeam The parallel environment.
      * @since 1.0
      */
-    public VanDerWaals(MolecularAssembly molecularAssembly,
+    public VanDerWaals(MolecularAssembly molecularAssembly, Crystal crystal,
             ParallelTeam parallelTeam) {
         this.molecularAssembly = molecularAssembly;
         this.atoms = molecularAssembly.getAtomArray();
-        this.crystal = molecularAssembly.getCrystal();
+        this.crystal = crystal;
         this.parallelTeam = parallelTeam;
 
         nAtoms = atoms.length;
@@ -399,6 +400,8 @@ public class VanDerWaals implements MaskingInterface,
             intermolecularSoftcore = forceField.getBoolean(
                     ForceField.ForceFieldBoolean.INTERMOLECULAR_SOFTCORE, false);
         }
+
+
 
         /**
          * Parallel constructs.

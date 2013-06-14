@@ -452,16 +452,17 @@ public class ParticleMeshEwald implements LambdaInterface {
      * ParticleMeshEwald constructor.
      *
      * @param molecularAssembly The MolecularAssembly to compute electrostatics for.
+     * @param crystal The boundary conditions.
      * @param neighborList The NeighborList for both van der Waals and PME.
      * @param parallelTeam A ParallelTeam that delegates parallelization.
      */
     public ParticleMeshEwald(MolecularAssembly molecularAssembly,
-            NeighborList neighborList, ParallelTeam parallelTeam) {
+            Crystal crystal, NeighborList neighborList, ParallelTeam parallelTeam) {
         this.forceField = molecularAssembly.getForceField();
-        this.crystal = molecularAssembly.getCrystal();
         this.atoms = molecularAssembly.getAtomArray();
-        this.parallelTeam = parallelTeam;
         this.neighborList = neighborList;
+        this.crystal = crystal;
+        this.parallelTeam = parallelTeam;
         neighborLists = neighborList.getNeighborList();
         permanentSchedule = neighborList.getPairwiseSchedule();
 

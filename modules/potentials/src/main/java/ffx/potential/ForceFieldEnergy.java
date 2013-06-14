@@ -264,6 +264,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             this.crystal = unitCell;
         }
 
+
+
         boolean rigidHydrogens = forceField.getBoolean(ForceFieldBoolean.RIGID_HYDROGENS, false);
         double rigidScale = forceField.getDouble(ForceFieldDouble.RIGID_SCALE, 10.0);
 
@@ -407,13 +409,13 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         logger.info("\n Non-Bonded Terms");
 
         if (vanderWaalsTerm) {
-            vanderWaals = new VanDerWaals(molecularAssembly, parallelTeam);
+            vanderWaals = new VanDerWaals(molecularAssembly, crystal, parallelTeam);
         } else {
             vanderWaals = null;
         }
 
         if (multipoleTerm) {
-            particleMeshEwald = new ParticleMeshEwald(molecularAssembly,
+            particleMeshEwald = new ParticleMeshEwald(molecularAssembly, crystal,
                     vanderWaals.getNeighborList(), parallelTeam);
         } else {
             particleMeshEwald = null;
