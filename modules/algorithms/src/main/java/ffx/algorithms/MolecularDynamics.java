@@ -269,8 +269,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * @param dyn a {@link java.io.File} object.
      */
     public void init(final int nSteps, final double timeStep, final double printInterval,
-            final double saveInterval, final String fileType, final double restartFrequency, final double temperature, final boolean initVelocities,
-            final File dyn) {
+            final double saveInterval, final String fileType, final double restartFrequency,
+            final double temperature, final boolean initVelocities, final File dyn) {
 
         /**
          * Return if already running.
@@ -308,11 +308,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
         saveSnapshotAsPDB = true;
         if (fileType.equals("XYZ")) {
             saveSnapshotAsPDB = false;
-        }
-        else if (!fileType.equals("PDB")) {
+        } else if (!fileType.equals("PDB")) {
             logger.warning("Snapshot file type unrecognized; saving snaphshots as PDB.\n");
         }
-        
+
         /**
          * Convert restart frequency to steps.
          */
@@ -320,7 +319,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
         if (restartFrequency >= this.dt) {
             saveRestartFileFrequency = (int) (restartFrequency / this.dt);
         }
-        
+
         File file = molecularAssembly.getFile();
         String filename = FilenameUtils.removeExtension(file.getAbsolutePath());
         if (archiveFile == null) {
@@ -355,9 +354,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     /**
-     * A version of init with the original method header.
-     * Redirects to the new method with default values for added parameters.
-     * Needed by (at least) ReplicaExchange, which calls this directly.
+     * A version of init with the original method header. Redirects to the new
+     * method with default values for added parameters. Needed by (at least)
+     * ReplicaExchange, which calls this directly.
      */
     public void init(final int nSteps, final double timeStep, final double printInterval,
             final double saveInterval, final double temperature, final boolean initVelocities,
@@ -366,8 +365,31 @@ public class MolecularDynamics implements Runnable, Terminatable {
         final String fileType = "PDB";
         final double restartFrequency = 0.1;
         init(nSteps, timeStep, printInterval, saveInterval, fileType, restartFrequency, temperature, initVelocities, dyn);
-    }    
-    
+    }
+
+    /**
+     * Blocking molecular dynamics. When this method returns, the MD run is
+     * done.
+     *
+     * @param nSteps a int.
+     * @param timeStep a double.
+     * @param printInterval a double.
+     * @param saveInterval a double.
+     * @param temperature a double.
+     * @param initVelocities a boolean.
+     * @param fileType a String (either XYZ or PDB).
+     * @param restartFrequency a double specifying the restart frequency.
+     * @param dyn a {@link java.io.File} object.
+     */
+    public void dynamic(final int nSteps, final double timeStep, final double printInterval,
+            final double saveInterval, final double temperature, final boolean initVelocities,
+            String fileType, double restartFrequency, final File dyn) {
+        this.fileType = fileType;
+        this.restartFrequency = restartFrequency;
+        dynamic(nSteps, timeStep, printInterval, saveInterval, temperature,
+                initVelocities, dyn);
+    }
+
     /**
      * Blocking molecular dynamics. When this method returns, the MD run is
      * done.
@@ -428,17 +450,18 @@ public class MolecularDynamics implements Runnable, Terminatable {
             }
         }
     }
-    
+
     /**
      * Methods to set file type and restartFrequency from groovy scripts
      */
-    public void setFileType (String fileType) {
+    public void setFileType(String fileType) {
         this.fileType = fileType;
     }
-    public void setRestartFrequency (double restartFrequency) {
+
+    public void setRestartFrequency(double restartFrequency) {
         this.restartFrequency = restartFrequency;
     }
-    
+
     /**
      * Set the number of time steps between removal of center of mass kinetic
      * energy.
@@ -626,7 +649,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
             }
 
             /**
-             * Write out snapshots in selected format every saveSnapshotFrequency steps.
+             * Write out snapshots in selected format every
+             * saveSnapshotFrequency steps.
              */
             if (saveSnapshotFrequency > 0 && step % saveSnapshotFrequency == 0) {
                 if (archiveFile != null && saveSnapshotAsPDB == false) {
@@ -635,14 +659,13 @@ public class MolecularDynamics implements Runnable, Terminatable {
                     } else {
                         logger.warning(String.format(" Appending snap shot to " + archiveFile.getName() + " failed"));
                     }
-                }
-                else if (saveSnapshotAsPDB == true) {
+                } else if (saveSnapshotAsPDB == true) {
                     if (pdbFilter.writeFile(pdbFile, false)) {
                         logger.info(String.format(" Wrote PDB file to " + pdbFile.getName()));
                     }
                 }
             }
-            
+
             /**
              * Write out restart files every saveRestartFileFrequency steps.
              */
@@ -652,7 +675,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 } else {
                     logger.info(String.format(" Writing dynamics restart file to " + restartFile.getName() + " failed"));
                 }
-            }            
+            }
 
             /**
              * Notify the algorithmListener.
@@ -685,12 +708,12 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     /**
-    * [SDL] Added as a way for pKa.groovy to request final delta_G
-    */    
+     * [SDL] Added as a way for pKa.groovy to request final delta_G
+     */
     public double getTotalEnergy() {
         return currentTotalEnergy;
     }
-    
+
     /**
      * {@inheritDoc}
      */

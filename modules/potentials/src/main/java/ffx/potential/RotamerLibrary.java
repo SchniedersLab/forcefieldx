@@ -671,7 +671,7 @@ public class RotamerLibrary {
                 Angle CG_CB_CA = CG.getAngle(CB, CA);
                 Angle CD_CG_CB = CD1.getAngle(CG, CB);
                 Angle HB_CB_CA = HB2.getAngle(CB, CA);
-                Angle HG_CG_CB = HG.getAngle(CB, CA);
+                Angle HG_CG_CB = HG.getAngle(CG, CB);
                 Angle HD_CD_CG = HD11.getAngle(CD1, CG);
                 double dCG_CB_CA = CG_CB_CA.angleType.angle[CG_CB_CA.nh];
                 double dCD_CG_CB = CD_CG_CB.angleType.angle[CD_CG_CB.nh];
@@ -713,7 +713,7 @@ public class RotamerLibrary {
                 Bond CD1_CG1 = CD1.getBond(CG1);
                 Bond HB_CB = HB.getBond(CB);
                 Bond HG1_CG = HG12.getBond(CG1);
-                Bond HG2_CG = HG12.getBond(CG2);
+                Bond HG2_CG = HG22.getBond(CG2);
                 Bond HD_CD = HD12.getBond(CD1);
                 double dCG1_CB = CG1_CB.bondType.distance;
                 double dCG2_CB = CG2_CB.bondType.distance;
@@ -908,7 +908,7 @@ public class RotamerLibrary {
                 double dHZ_CZ = HZ_CZ.bondType.distance;
                 Angle CG_CB_CA = CG.getAngle(CB, CA);
                 Angle CD_CG_CB = CD1.getAngle(CG, CB);
-                Angle CE_CD_CG = CE1.getAngle(CG, CB);
+                Angle CE_CD_CG = CE1.getAngle(CD1, CG);
                 Angle CZ_CE1_CD1 = CZ.getAngle(CE1, CD1);
                 Angle HB_CB_CA = HB2.getAngle(CB, CA);
                 Angle HD_CD1_CG = HD1.getAngle(CD1, CG);
@@ -1182,7 +1182,7 @@ public class RotamerLibrary {
                 Angle HB_CB_CA = HB2.getAngle(CB, CA);
                 Angle HD1_CD1_CG = HD1.getAngle(CD1, CG);
                 Angle HE1_NE1_CD1 = HE1.getAngle(NE1, CD1);
-                Angle HE3_CE3_CD1 = HE3.getAngle(CE3, CD1);
+                Angle HE3_CE3_CD2 = HE3.getAngle(CE3, CD2);
                 Angle HZ2_CZ2_CE2 = HZ2.getAngle(CZ2, CE2);
                 Angle HZ3_CZ3_CE3 = HZ3.getAngle(CZ3, CH2);
                 Angle HH2_CH2_CZ2 = HH2.getAngle(CH2, CZ3);
@@ -1198,7 +1198,7 @@ public class RotamerLibrary {
                 double dHB_CB_CA = HB_CB_CA.angleType.angle[HB_CB_CA.nh];
                 double dHD1_CD1_CG = HD1_CD1_CG.angleType.angle[HD1_CD1_CG.nh];
                 double dHE1_NE1_CD1 = HE1_NE1_CD1.angleType.angle[HE1_NE1_CD1.nh];
-                double dHE3_CE3_CD1 = HE3_CE3_CD1.angleType.angle[HE3_CE3_CD1.nh];
+                double dHE3_CE3_CD2 = HE3_CE3_CD2.angleType.angle[HE3_CE3_CD2.nh];
                 double dHZ2_CZ2_CE2 = HZ2_CZ2_CE2.angleType.angle[HZ2_CZ2_CE2.nh];
                 double dHZ3_CZ3_CE3 = HZ3_CZ3_CE3.angleType.angle[HZ3_CZ3_CE3.nh];
                 double dHH2_CH2_CZ2 = HH2_CH2_CZ2.angleType.angle[HH2_CH2_CZ2.nh];
@@ -1215,7 +1215,7 @@ public class RotamerLibrary {
                 intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, -1);
                 intxyz(HD1, CD1, dHD1_CD1, CG, dHD1_CD1_CG, NE1, 126.0, 1);
                 intxyz(HE1, NE1, dHE1_NE1, CD1, dHE1_NE1_CD1, CE2, 126.0, 1);
-                intxyz(HE3, CE3, dHE3_CE3, CD1, dHE3_CE3_CD1, CZ3, 120.0, 1);
+                intxyz(HE3, CE3, dHE3_CE3, CD2, dHE3_CE3_CD2, CZ3, 120.0, 1);
                 intxyz(HZ2, CZ2, dHZ2_CZ2, CE2, dHZ2_CZ2_CE2, CH2, 120.0, 1);
                 intxyz(HZ3, CZ3, dHZ3_CZ3, CE3, dHZ3_CZ3_CE3, CH2, 120.0, 1);
                 intxyz(HH2, CH2, dHH2_CH2, CZ2, dHH2_CH2_CZ2, CZ3, 120.0, 1);

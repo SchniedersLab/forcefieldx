@@ -510,6 +510,11 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
         forceFieldEnergy2.setEnergyTermState(state);
     }
 
+    public void setUse(boolean use[]) {
+        forceFieldEnergy1.setUse(use);
+        forceFieldEnergy2.setUse(use);
+    }
+
     @Override
     public void setLambda(double lambda) {
         if (lambda <= 1.0 && lambda >= 0.0) {

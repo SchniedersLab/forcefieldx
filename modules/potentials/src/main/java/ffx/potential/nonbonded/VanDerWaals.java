@@ -78,6 +78,11 @@ public class VanDerWaals implements MaskingInterface,
      */
     private final Atom[] atoms;
     /**
+     * An array of whether each atom in the system should be used in the
+     * calculations.
+     */
+    private boolean use[] = null;
+    /**
      * A local convenience variable equal to atoms.length.
      */
     private final int nAtoms;
@@ -401,7 +406,13 @@ public class VanDerWaals implements MaskingInterface,
                     ForceField.ForceFieldBoolean.INTERMOLECULAR_SOFTCORE, false);
         }
 
-
+        /**
+         * Initialize all atoms to be used in the energy.
+         */
+        use = new boolean[nAtoms];
+        for (int i = 0; i < nAtoms; i++) {
+            use[i] = true;
+        }
 
         /**
          * Parallel constructs.
@@ -567,6 +578,14 @@ public class VanDerWaals implements MaskingInterface,
          * Note the factor of 2 to avoid double counting.
          */
         return total / 2;
+    }
+
+    /**
+     * Set the atoms that will be included in the van der Waals energy.
+     * @param use
+     */
+    public void setUse(boolean use[]) {
+        this.use = use;
     }
 
     /**
@@ -1174,6 +1193,9 @@ public class VanDerWaals implements MaskingInterface,
                 double xyzS[] = reduced[0];
                 int list[][] = neighborLists[0];
                 for (int i = lb; i <= ub; i++) {
+                    if (!use[i]) {
+                        continue;
+                    }
                     int i3 = i * 3;
                     final double xi = reducedXYZ[i3++];
                     final double yi = reducedXYZ[i3++];
@@ -1209,6 +1231,9 @@ public class VanDerWaals implements MaskingInterface,
                     final int npair = neighbors.length;
                     for (int j = 0; j < npair; j++) {
                         final int k = neighbors[j];
+                        if (!use[k]) {
+                            continue;
+                        }
                         int k3 = k * 3;
                         final double xk = xyzS[k3++];
                         final double yk = xyzS[k3++];
@@ -1649,7 +1674,6 @@ public class VanDerWaals implements MaskingInterface,
             }
         }
     }
-
     /**
      * *************************************************************************
      * Cutoff and switching constants.

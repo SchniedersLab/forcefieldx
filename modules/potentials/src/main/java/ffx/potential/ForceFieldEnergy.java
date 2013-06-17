@@ -1155,6 +1155,10 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
     }
 
+    /**
+     * Set the boundary conditions for this calculation.
+     * @param crystal
+     */
     public void setCrystal(Crystal crystal) {
         this.crystal = crystal;
         /**
@@ -1171,5 +1175,19 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
          * TODO: update GeneralizedKirkwood to include support for symmetry
          * operators and periodic boundary conditions.
          */
+    }
+
+    /**
+     * Set the atoms that will be included in non-bonded calculations.
+     * @param use
+     */
+    public void setUse(boolean use[]) {
+        if (vanderWaalsTerm == true) {
+            vanderWaals.setUse(use);
+        }
+
+        if (multipoleTerm == true) {
+            particleMeshEwald.setUse(use);
+        }
     }
 }

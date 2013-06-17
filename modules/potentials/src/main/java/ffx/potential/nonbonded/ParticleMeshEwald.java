@@ -242,7 +242,7 @@ public class ParticleMeshEwald implements LambdaInterface {
      * to true for all atoms except the ligand for part 2. Set the "use" array
      * to true only for the ligand atoms for part 3.
      */
-    private final boolean use[];
+    private boolean use[];
     /**
      * Setting this flag to false turns off interactions between the asymmetric
      * unit and symmetry mates / replicates.
@@ -778,6 +778,14 @@ public class ParticleMeshEwald implements LambdaInterface {
         } else {
             generalizedKirkwood = null;
         }
+    }
+
+        /**
+     * Set the atoms that will be included the electrostatics energy.
+     * @param use
+     */
+    public void setUse(boolean use[]) {
+        this.use = use;
     }
 
     /**
