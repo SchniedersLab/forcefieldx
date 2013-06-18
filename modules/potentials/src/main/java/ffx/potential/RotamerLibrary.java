@@ -22,7 +22,7 @@
  */
 package ffx.potential;
 
-import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 
 import ffx.potential.ResidueEnumerations.AminoAcid3;
@@ -529,8 +529,8 @@ public class RotamerLibrary {
      * A brute-force global optimization over side-chain rotamers using a
      * recursive algorithm.
      */
-    public static double rotamerOptimization(MolecularAssembly molecularAssembly, ArrayList<Residue> residues,
-            double lowEnergy, ArrayList<Integer> optimum) {
+    public static double rotamerOptimization(MolecularAssembly molecularAssembly, List<Residue> residues,
+            double lowEnergy, List<Integer> optimum) {
         Residue current = residues.remove(0);
         AminoAcid3 name = AminoAcid3.valueOf(current.getName());
         Rotamer[] rotamers = getRotamers(name);
@@ -616,65 +616,67 @@ public class RotamerLibrary {
             evaluatedPermutations = 0;
         }
 
-        Residue current = residues[i];
-        AminoAcid3 name = AminoAcid3.valueOf(current.getName());
-        Rotamer[] rotamers = getRotamers(name);
+        Residue residuei = residues[i];
+        AminoAcid3 namei = AminoAcid3.valueOf(residuei.getName());
+        Rotamer[] rotamersi = getRotamers(namei);
         double currentEnergy = Double.MAX_VALUE;
         int nResidues = residues.length;
+
+        logger.info(" Rotamer optimize called for " + residuei.getName());
+
         if (i < nResidues - 1) {
             /**
              * As long as there are more residues, continue the recursion for
              * each rotamer of the current residue.
              */
-            if (rotamers == null) {
+            if (rotamersi == null) {
                 /**
                  * Continue to the next residue.
                  */
+                currentRotamers[i] = -1;
                 currentEnergy = rotamerOptimizationDEE(molecularAssembly, residues, i + 1, currentRotamers, lowEnergy, optimum, eliminatedRotamers, eliminatedRotamerPairs);
                 // Add the '-1' flag as a placeholder since this residue has no rotamers.
-                if (currentEnergy < lowEnergy) {
-                    optimum[i] = -1;
-                }
+                optimum[i] = -1;
             } else {
-                int minRot = -1;
                 /**
                  * Loop over rotamers of residue i.
                  */
-                for (int ri = 0; ri < rotamers.length; ri++) {
+                for (int ri = 0; ri < rotamersi.length; ri++) {
                     /**
                      * Check if rotamer ri has been eliminated by DEE.
                      */
                     if (eliminatedRotamers[i][ri]) {
+                        logger.info(" Eliminated: " + rotamersi[ri]);
                         continue;
                     }
                     /**
                      * Check if rotamer ri has been eliminated by a current
-                     * upstream rotamer (any residue's rotamer from 0 .. i-1.
+                     * upstream rotamer (any residue's rotamer from j = 0 .. i-1).
                      */
                     boolean deadEnd = false;
                     for (int j = 0; j < i; j++) {
                         int rj = currentRotamers[j];
-                        deadEnd = eliminatedRotamerPairs[j][rj][i][ri];
-                        if (deadEnd) {
-                            break;
+                        if (rj > -1) {
+                            deadEnd = eliminatedRotamerPairs[j][rj][i][ri];
+                            if (deadEnd) {
+                                logger.info(" Eliminated: " + rotamersi[ri] + " number " + ri + " by " + residues[j] + " " + rj);
+                                break;
+                            }
                         }
                     }
                     if (deadEnd) {
                         continue;
                     }
-                    applyRotamer(name, current, rotamers[ri]);
+                    applyRotamer(namei, residuei, rotamersi[ri]);
                     currentRotamers[i] = ri;
                     double rotEnergy = rotamerOptimizationDEE(molecularAssembly, residues, i + 1, currentRotamers, lowEnergy, optimum, eliminatedRotamers, eliminatedRotamerPairs);
                     if (rotEnergy < currentEnergy) {
                         currentEnergy = rotEnergy;
                     }
                     if (rotEnergy < lowEnergy) {
-                        minRot = ri;
+                        optimum[i] = ri;
                         lowEnergy = rotEnergy;
                     }
-                }
-                if (minRot > -1) {
-                    optimum[i] = minRot;
                 }
             }
         } else {
@@ -685,18 +687,16 @@ public class RotamerLibrary {
              * recursion returns up the chain.
              */
             ForceFieldEnergy energy = molecularAssembly.getPotentialEnergy();
-            if (rotamers == null) {
+            if (rotamersi == null) {
                 /**
-                 * Handle the case where the side-chain has no rotamers.
+                 * Handle the case where the final side-chain has no rotamers.
                  */
                 currentEnergy = energy.energy(false, false);
                 evaluatedPermutations++;
                 logger.info(String.format(" %d Energy: %16.8f", evaluatedPermutations, currentEnergy));
-                if (currentEnergy < lowEnergy) {
-                    optimum[nResidues - 1] = -1;
-                }
+                optimum[i] = -1;
             } else {
-                for (int ri = 0; ri < rotamers.length; ri++) {
+                for (int ri = 0; ri < rotamersi.length; ri++) {
                     /**
                      * Check if rotamer ri has been eliminated by DEE.
                      */
@@ -710,15 +710,17 @@ public class RotamerLibrary {
                     boolean deadEnd = false;
                     for (int j = 0; j < i; j++) {
                         int rj = currentRotamers[j];
-                        deadEnd = eliminatedRotamerPairs[j][rj][i][ri];
-                        if (deadEnd) {
-                            break;
+                        if (rj > -1) {
+                            deadEnd = eliminatedRotamerPairs[j][rj][i][ri];
+                            if (deadEnd) {
+                                break;
+                            }
                         }
                     }
                     if (deadEnd) {
                         continue;
                     }
-                    applyRotamer(name, current, rotamers[ri]);
+                    applyRotamer(namei, residuei, rotamersi[ri]);
                     double rotEnergy = energy.energy(false, false);
                     evaluatedPermutations++;
                     logger.info(String.format(" %d Energy: %16.8f", evaluatedPermutations, rotEnergy));
@@ -727,7 +729,7 @@ public class RotamerLibrary {
                     }
                     if (rotEnergy < lowEnergy) {
                         lowEnergy = rotEnergy;
-                        optimum[nResidues - 1] = ri;
+                        optimum[i] = ri;
                     }
                 }
             }

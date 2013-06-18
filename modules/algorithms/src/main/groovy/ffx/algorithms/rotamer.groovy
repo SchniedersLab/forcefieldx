@@ -132,6 +132,7 @@ if (algorithm == 1) {
     rotamerOptimization.optimize(startResID, finalResID, RotamerOptimization.Algorithm.INDEPENDENT);
 } else if (algorithm == 2) {
     rotamerOptimization.optimize(startResID, finalResID, RotamerOptimization.Algorithm.GLOBAL);
+    //rotamerOptimization.optimize(startResID, finalResID, RotamerOptimization.Algorithm.GLOBAL);
 } else if (algorithm == 3) {
     rotamerOptimization.optimize(startResID, finalResID, windowSize, direction, RotamerOptimization.Algorithm.SLIDING_WINDOW);
 }
@@ -140,7 +141,7 @@ if (min) {
     minimize(eps);
 }
 
-logger.info(" Final Energy\n");
+logger.info(" Final Energy");
 energy();
 
 String ext = FilenameUtils.getExtension(filename);
