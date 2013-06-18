@@ -603,6 +603,137 @@ public class RotamerLibrary {
         residues.add(0, current);
         return currentEnergy;
     }
+    private static int evaluatedPermutations = 0;
+
+    /**
+     * A brute-force global optimization over side-chain rotamers using a
+     * recursive algorithm.
+     */
+    public static double rotamerOptimizationDEE(MolecularAssembly molecularAssembly, Residue residues[], int i, int currentRotamers[],
+            double lowEnergy, int optimum[], boolean eliminatedRotamers[][], boolean eliminatedRotamerPairs[][][][]) {
+
+        if (i == 0) {
+            evaluatedPermutations = 0;
+        }
+
+        Residue current = residues[i];
+        AminoAcid3 name = AminoAcid3.valueOf(current.getName());
+        Rotamer[] rotamers = getRotamers(name);
+        double currentEnergy = Double.MAX_VALUE;
+        int nResidues = residues.length;
+        if (i < nResidues - 1) {
+            /**
+             * As long as there are more residues, continue the recursion for
+             * each rotamer of the current residue.
+             */
+            if (rotamers == null) {
+                /**
+                 * Continue to the next residue.
+                 */
+                currentEnergy = rotamerOptimizationDEE(molecularAssembly, residues, i + 1, currentRotamers, lowEnergy, optimum, eliminatedRotamers, eliminatedRotamerPairs);
+                // Add the '-1' flag as a placeholder since this residue has no rotamers.
+                if (currentEnergy < lowEnergy) {
+                    optimum[i] = -1;
+                }
+            } else {
+                int minRot = -1;
+                /**
+                 * Loop over rotamers of residue i.
+                 */
+                for (int ri = 0; ri < rotamers.length; ri++) {
+                    /**
+                     * Check if rotamer ri has been eliminated by DEE.
+                     */
+                    if (eliminatedRotamers[i][ri]) {
+                        continue;
+                    }
+                    /**
+                     * Check if rotamer ri has been eliminated by a current
+                     * upstream rotamer (any residue's rotamer from 0 .. i-1.
+                     */
+                    boolean deadEnd = false;
+                    for (int j = 0; j < i; j++) {
+                        int rj = currentRotamers[j];
+                        deadEnd = eliminatedRotamerPairs[j][rj][i][ri];
+                        if (deadEnd) {
+                            break;
+                        }
+                    }
+                    if (deadEnd) {
+                        continue;
+                    }
+                    applyRotamer(name, current, rotamers[ri]);
+                    currentRotamers[i] = ri;
+                    double rotEnergy = rotamerOptimizationDEE(molecularAssembly, residues, i + 1, currentRotamers, lowEnergy, optimum, eliminatedRotamers, eliminatedRotamerPairs);
+                    if (rotEnergy < currentEnergy) {
+                        currentEnergy = rotEnergy;
+                    }
+                    if (rotEnergy < lowEnergy) {
+                        minRot = ri;
+                        lowEnergy = rotEnergy;
+                    }
+                }
+                if (minRot > -1) {
+                    optimum[i] = minRot;
+                }
+            }
+        } else {
+            /**
+             * At the end of the recursion, compute the potential energy for
+             * each rotamer of the final residue. If a lower potential energy is
+             * discovered, the rotamers of each residue will be collected as the
+             * recursion returns up the chain.
+             */
+            ForceFieldEnergy energy = molecularAssembly.getPotentialEnergy();
+            if (rotamers == null) {
+                /**
+                 * Handle the case where the side-chain has no rotamers.
+                 */
+                currentEnergy = energy.energy(false, false);
+                evaluatedPermutations++;
+                logger.info(String.format(" %d Energy: %16.8f", evaluatedPermutations, currentEnergy));
+                if (currentEnergy < lowEnergy) {
+                    optimum[nResidues - 1] = -1;
+                }
+            } else {
+                for (int ri = 0; ri < rotamers.length; ri++) {
+                    /**
+                     * Check if rotamer ri has been eliminated by DEE.
+                     */
+                    if (eliminatedRotamers[i][ri]) {
+                        continue;
+                    }
+                    /**
+                     * Check if rotamer ri has been eliminated by a current
+                     * upstream rotamer (any residue's rotamer from 0 .. i-1.
+                     */
+                    boolean deadEnd = false;
+                    for (int j = 0; j < i; j++) {
+                        int rj = currentRotamers[j];
+                        deadEnd = eliminatedRotamerPairs[j][rj][i][ri];
+                        if (deadEnd) {
+                            break;
+                        }
+                    }
+                    if (deadEnd) {
+                        continue;
+                    }
+                    applyRotamer(name, current, rotamers[ri]);
+                    double rotEnergy = energy.energy(false, false);
+                    evaluatedPermutations++;
+                    logger.info(String.format(" %d Energy: %16.8f", evaluatedPermutations, rotEnergy));
+                    if (rotEnergy < currentEnergy) {
+                        currentEnergy = rotEnergy;
+                    }
+                    if (rotEnergy < lowEnergy) {
+                        lowEnergy = rotEnergy;
+                        optimum[nResidues - 1] = ri;
+                    }
+                }
+            }
+        }
+        return currentEnergy;
+    }
 
     public static void applyRotamer(AminoAcid3 name, Residue residue, Rotamer rotamer) {
         switch (name) {
@@ -633,7 +764,7 @@ public class RotamerLibrary {
                 double dHG_CG_CB = HG_CG_CB.angleType.angle[HG_CG_CB.nh];
                 intxyz(CG1, CB, dCG_CB, CA, dCG_CB_CA, N, rotamer.chi1, 0);
                 intxyz(CG2, CB, dCG_CB, CA, dCG_CB_CA, CG1, 109.5, -1);
-                intxyz(HB, CB, dHB_CB, CA,  dHB_CB_CA, CG1, 109.4, 1);
+                intxyz(HB, CB, dHB_CB, CA, dHB_CB_CA, CG1, 109.4, 1);
                 intxyz(HG11, CG1, dHG_CG, CB, dHG_CG_CB, CA, 180.0, 0);
                 intxyz(HG12, CG1, dHG_CG, CB, dHG_CG_CB, HG11, 109.4, 1);
                 intxyz(HG13, CG1, dHG_CG, CB, dHG_CG_CB, HG11, 109.4, -1);
@@ -892,7 +1023,7 @@ public class RotamerLibrary {
                 Atom HZ = (Atom) residue.getAtomNode("HZ");
                 Bond CG_CB = CG.getBond(CB);
                 Bond CD_CG = CD1.getBond(CG);
-                Bond CE_CD = CE1.getBond (CD1);
+                Bond CE_CD = CE1.getBond(CD1);
                 Bond CZ_CE1 = CZ.getBond(CE1);
                 Bond HB_CB = HB2.getBond(CB);
                 Bond HD_CD = HD1.getBond(CD1);
@@ -1426,7 +1557,7 @@ public class RotamerLibrary {
                 Bond OD1_CG = OD1.getBond(CG);
                 Bond OD2_CG = OD2.getBond(CG);
                 Bond HB_CB = HB2.getBond(CB);
-                double dCG_CB =CG_CB.bondType.distance;
+                double dCG_CB = CG_CB.bondType.distance;
                 double dOD1_CG = OD1_CG.bondType.distance;
                 double dOD2_CG = OD2_CG.bondType.distance;
                 double dHB_CB = HB_CB.bondType.distance;
@@ -1460,7 +1591,7 @@ public class RotamerLibrary {
                 Bond OD2_CG = OD2.getBond(CG);
                 Bond HB_CB = HB2.getBond(CB);
                 Bond HD2_OD2 = HD2.getBond(OD2);
-                double dCG_CB =CG_CB.bondType.distance;
+                double dCG_CB = CG_CB.bondType.distance;
                 double dOD1_CG = OD1_CG.bondType.distance;
                 double dOD2_CG = OD2_CG.bondType.distance;
                 double dHB_CB = HB_CB.bondType.distance;
@@ -1499,7 +1630,7 @@ public class RotamerLibrary {
                 Bond ND2_CG = ND2.getBond(CG);
                 Bond HB_CB = HB2.getBond(CB);
                 Bond HD2_ND2 = HD21.getBond(ND2);
-                double dCG_CB =CG_CB.bondType.distance;
+                double dCG_CB = CG_CB.bondType.distance;
                 double dOD1_CG = OD1_CG.bondType.distance;
                 double dND2_CG = ND2_CG.bondType.distance;
                 double dHB_CB = HB_CB.bondType.distance;
@@ -1654,7 +1785,7 @@ public class RotamerLibrary {
                 Angle OE1_CD_CG = OE1.getAngle(CD, CG);
                 Angle NE2_CD_CG = NE2.getAngle(CD, CG);
                 Angle HB_CB_CA = HB2.getAngle(CB, CA);
-                Angle HG_CG_CB =HG2.getAngle(CG, CB);
+                Angle HG_CG_CB = HG2.getAngle(CG, CB);
                 Angle HE2_NE2_CD = HE21.getAngle(NE2, CD);
                 double dCG_CB_CA = CG_CB_CA.angleType.angle[CG_CB_CA.nh];
                 double dCD_CG_CB = CD_CG_CB.angleType.angle[CD_CG_CB.nh];
@@ -1689,7 +1820,7 @@ public class RotamerLibrary {
                 Atom HE1 = (Atom) residue.getAtomNode("HE1");
                 Atom HE2 = (Atom) residue.getAtomNode("HE2");
                 Atom HE3 = (Atom) residue.getAtomNode("HE3");
-                Bond CG_CB =CG.getBond(CB);
+                Bond CG_CB = CG.getBond(CB);
                 Bond SD_CG = SD.getBond(CG);
                 Bond CE_SD = CE.getBond(SD);
                 Bond HB_CB = HB2.getBond(CB);
@@ -1903,10 +2034,10 @@ public class RotamerLibrary {
                 double dNE_CD = NE_CD.bondType.distance;
                 double dCZ_NE = CZ_NE.bondType.distance;
                 double dNH_CZ = NH_CZ.bondType.distance;
-                double dHB_CB= HB_CB.bondType.distance;
+                double dHB_CB = HB_CB.bondType.distance;
                 double dHG_CG = HG_CG.bondType.distance;
                 double dHD_CD = HD_CD.bondType.distance;
-                double dHE_NE= HE_NE.bondType.distance;
+                double dHE_NE = HE_NE.bondType.distance;
                 double dHH_NH = HH_NH.bondType.distance;
                 Angle CG_CB_CA = CG.getAngle(CB, CA);
                 Angle CD_CG_CB = CD.getAngle(CG, CB);

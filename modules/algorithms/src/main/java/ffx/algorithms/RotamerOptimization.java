@@ -23,6 +23,8 @@
 package ffx.algorithms;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -122,14 +124,12 @@ public class RotamerOptimization implements Terminatable {
                 residues[j] = polymers[0].getResidue(i);
             }
 
-            initDEE(residues);
-
             switch (algorithm) {
                 case INDEPENDENT:
-                    e = independent();
+                    e = independent(Arrays.asList(residues));
                     break;
                 case GLOBAL:
-                    e = global();
+                    e = global(Arrays.asList(residues));
                     break;
                 case SLIDING_WINDOW:
                     e = slidingWindow(windowSize, direction);
@@ -223,7 +223,6 @@ public class RotamerOptimization implements Terminatable {
             // Turn off all side-chain atoms that will be optimized.
             ArrayList<Atom> atoms = residue.getSideChainAtoms();
             for (Atom atom : atoms) {
-                logger.info(atom.toString());
                 use[atom.getXYZIndex() - 1] = false;
             }
         }
@@ -248,7 +247,7 @@ public class RotamerOptimization implements Terminatable {
             // Turn on this residue's side-chain atoms
             ArrayList<Atom> atoms = residue.getSideChainAtoms();
             for (Atom atom : atoms) {
-                use[atom.getXYZIndex()] = true;
+                use[atom.getXYZIndex() - 1] = true;
             }
             energy.setUse(use);
 
@@ -285,7 +284,7 @@ public class RotamerOptimization implements Terminatable {
 
             // Turn on residue i
             for (Atom atom : atomsi) {
-                use[atom.xyzIndex - 1] = true;
+                use[atom.getXYZIndex() - 1] = true;
             }
             int ni = rotamersi.length;
             pairEnergy[i] = new double[ni][][];
@@ -343,6 +342,11 @@ public class RotamerOptimization implements Terminatable {
             use[i] = true;
         }
         energy.setUse(use);
+
+        // Print the energy with all rotamers in their 0th rotamer.
+        logger.info(" Energy of the system with rotamers in their 0th conformation.");
+        energy.energy(false, false);
+        logger.info(energy.toString());
 
         return backboneEnergy;
     }
@@ -519,7 +523,8 @@ public class RotamerOptimization implements Terminatable {
                 }
                 if (minEnergyPairs[i][ri] > eliminationEnergy) {
                     eliminatedRotamers[i][ri] = true;
-                    logger.info(String.format(" Eliminating single %d %d", i, ri));
+                    logger.info(String.format(" Eliminating rotamer:      %s-%d %d",
+                            namei, residuei.getResidueNumber(), ri));
                     eliminated = true;
                     if (eliminatedRotamerPairs[i][ri] == null) {
                         continue;
@@ -530,9 +535,13 @@ public class RotamerOptimization implements Terminatable {
                             continue;
                         }
                         int lenrj = eliminatedRotamerPairs[i][ri][j].length;
+                        Residue residuej = residues[j];
+                        AminoAcid3 namej = AminoAcid3.valueOf(residuej.getName());
                         for (int rj = 0; rj < lenrj; rj++) {
                             eliminatedRotamerPairs[i][ri][j][rj] = true;
-                            logger.info(String.format(" Eliminating pair %d %d %d %d", i, ri, j, rj));
+                            logger.info(String.format(" Eliminating rotamer pair: %s-%d %d, %s-%d %d",
+                                    namei, residuei.getResidueNumber(), ri,
+                                    namej, residuej.getResidueNumber(), rj));
                         }
                     }
                 }
@@ -575,7 +584,9 @@ public class RotamerOptimization implements Terminatable {
                         }
                         if (minEnergyTriples[i][ri][j][rj] > pairEliminationEnergy) {
                             eliminatedRotamerPairs[i][ri][j][rj] = true;
-                            logger.info(String.format(" Eliminating pair %d %d %d %d", i, ri, j, rj));
+                            logger.info(String.format(" Eliminating rotamer pair: %s-%d %d, %s-%d %d",
+                                    namei, residuei.getResidueNumber(), ri,
+                                    namej, residuej.getResidueNumber(), rj));
                             eliminated = true;
                         }
                     }
@@ -601,10 +612,9 @@ public class RotamerOptimization implements Terminatable {
         return optimize();
     }
 
-    private double independent() {
+    private double independent(List<Residue> residues) {
         double e = Double.MAX_VALUE;
-        for (int i = startResID; i <= finalResID; i++) {
-            Residue residue = polymers[0].getResidue(i);
+        for (Residue residue : residues) {
             logger.info(String.format(" Optimizing %s side-chain.", residue));
             AminoAcid3 name = AminoAcid3.valueOf(residue.getName());
             Rotamer[] rotamers = RotamerLibrary.getRotamers(name);
@@ -639,28 +649,64 @@ public class RotamerOptimization implements Terminatable {
         return e;
     }
 
-    private double global() {
-        ArrayList<Residue> residues = new ArrayList<Residue>();
-        int permutations = 1;
-        for (int i = startResID; i <= finalResID; i++) {
-            Residue residue = polymers[0].getResidue(i);
-            residues.add(residue);
+    private double global(List<Residue> residueList) {
+
+        Residue residues[] = residueList.toArray(new Residue[residueList.size()]);
+
+        initDEE(residues);
+        int nResidues = residues.length;
+
+        int nRotamers[] = new int[nResidues];
+
+        /**
+         * Compute the number of permutations without eliminating dead-ends and
+         * compute the number of permutations using singleton elimination.
+         */
+        long permutations = 1;
+        long singletonPermutations = 1;
+        for (int i = 0; i < nResidues; i++) {
+            Residue residue = residues[i];
             AminoAcid3 name = AminoAcid3.valueOf(residue.getName());
             Rotamer[] rotamers = RotamerLibrary.getRotamers(name);
-            if (rotamers != null) {
+            if (rotamers != null && rotamers.length > 1) {
+                int nrot = 0;
+                for (int ri = 0; ri < rotamers.length; ri++) {
+                    if (!eliminatedRotamers[i][ri]) {
+                        nrot++;
+                    }
+                }
                 permutations *= rotamers.length;
+                if (nrot > 1) {
+                    singletonPermutations *= nrot;
+                }
+                nRotamers[i] = nrot;
             }
         }
-        logger.info(String.format(" Number of permutations: %d.", permutations));
-        ArrayList<Integer> optimum = new ArrayList<Integer>();
-        double e = RotamerLibrary.rotamerOptimization(molecularAssembly, residues, Double.MAX_VALUE, optimum);
-        for (int i = startResID; i <= finalResID; i++) {
-            Residue residue = polymers[0].getResidue(i);
+
+        /**
+         * Compute the number of permutations using pair elimination. for (int i
+         * = 0; i < nResidues; i++) { Residue residue = residues[i]; AminoAcid3
+         * name = AminoAcid3.valueOf(residue.getName()); Rotamer[] rotamers =
+         * RotamerLibrary.getRotamers(name); if (rotamers != null &&
+         * rotamers.length > 1) { int nrot = 0; for (int ri = 0; ri <
+         * rotamers.length; ri++) { if (!eliminatedRotamers[i][ri]) { nrot++; }
+         * } permutations *= rotamers.length; if (nrot > 1) {
+         * singletonPermutations *= nrot; } nRotamers[i] = nrot; } }
+         */
+        logger.info(String.format(" Number of permutations without DEE conditions: %d.", permutations));
+        logger.info(String.format(" Number of permutations with singleton eliminations: %d.", singletonPermutations));
+        int optimum[] = new int[nResidues];
+        int currentRotamers[] = new int[nResidues];
+
+        double e = RotamerLibrary.rotamerOptimizationDEE(molecularAssembly, residues, 0, currentRotamers,
+                Double.MAX_VALUE, optimum, eliminatedRotamers, eliminatedRotamerPairs);
+
+        for (int i = 0; i < nResidues; i++) {
+            Residue residue = residues[i];
             AminoAcid3 name = AminoAcid3.valueOf(residue.getName());
             Rotamer[] rotamers = RotamerLibrary.getRotamers(name);
-            int j = optimum.remove(0);
             if (rotamers != null) {
-                Rotamer rotamer = rotamers[j];
+                Rotamer rotamer = rotamers[optimum[i]];
                 RotamerLibrary.applyRotamer(name, residue, rotamer);
             }
         }
