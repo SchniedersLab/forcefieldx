@@ -603,6 +603,7 @@ public class RotamerLibrary {
         residues.add(0, current);
         return currentEnergy;
     }
+
     private static int evaluatedPermutations = 0;
 
     /**
@@ -622,7 +623,7 @@ public class RotamerLibrary {
         double currentEnergy = Double.MAX_VALUE;
         int nResidues = residues.length;
 
-        logger.info(" Rotamer optimize called for " + residuei.getName());
+        //logger.info(" Rotamer optimize called for " + residuei.getName());
 
         if (i < nResidues - 1) {
             /**
@@ -646,12 +647,13 @@ public class RotamerLibrary {
                      * Check if rotamer ri has been eliminated by DEE.
                      */
                     if (eliminatedRotamers[i][ri]) {
-                        logger.info(" Eliminated: " + rotamersi[ri]);
+                        //logger.info(" Eliminated: " + rotamersi[ri]);
                         continue;
                     }
                     /**
                      * Check if rotamer ri has been eliminated by a current
-                     * upstream rotamer (any residue's rotamer from j = 0 .. i-1).
+                     * upstream rotamer (any residue's rotamer from j = 0 ..
+                     * i-1).
                      */
                     boolean deadEnd = false;
                     for (int j = 0; j < i; j++) {
@@ -659,7 +661,7 @@ public class RotamerLibrary {
                         if (rj > -1) {
                             deadEnd = eliminatedRotamerPairs[j][rj][i][ri];
                             if (deadEnd) {
-                                logger.info(" Eliminated: " + rotamersi[ri] + " number " + ri + " by " + residues[j] + " " + rj);
+                                //logger.info(" Eliminated: " + rotamersi[ri] + " number " + ri + " by " + residues[j] + " " + rj);
                                 break;
                             }
                         }

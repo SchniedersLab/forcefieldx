@@ -133,8 +133,8 @@ public class RotamerOptimization implements Terminatable {
                 case GLOBAL:
                     e = global_DEE(residueList);
                     logger.info(String.format(" DEE Global Minimum: %16.8f", e));
-                    // e = global(residueList);
-                    // logger.info(String.format(" Brute Force Global Minimum: %16.8f", e));
+                    //e = global(residueList);
+                    //logger.info(String.format(" Brute Force Global Minimum: %16.8f", e));
                     break;
                 case SLIDING_WINDOW:
                     e = slidingWindow(windowSize, direction);
@@ -238,13 +238,14 @@ public class RotamerOptimization implements Terminatable {
         double e = RotamerLibrary.rotamerOptimizationDEE(molecularAssembly, residues, 0, currentRotamers,
                 Double.MAX_VALUE, optimum, eliminatedRotamers, eliminatedRotamerPairs);
 
+        logger.info("\n Final rotamers:");
         for (int i = 0; i < nResidues; i++) {
             Residue residue = residues[i];
             AminoAcid3 name = AminoAcid3.valueOf(residue.getName());
             Rotamer[] rotamers = RotamerLibrary.getRotamers(name);
             if (rotamers != null) {
                 Rotamer rotamer = rotamers[optimum[i]];
-                logger.info(residue.getResidueNumber() + " " + rotamer.toString() + ", number " + optimum[i]);
+                logger.info(String.format(" %s %s (%d)", residue.getResidueNumber(), rotamer.toString(), optimum[i]));
                 RotamerLibrary.applyRotamer(name, residue, rotamer);
             }
         }
@@ -377,11 +378,15 @@ public class RotamerOptimization implements Terminatable {
         selfAndPairEnergies(residues);
         allocateDEEMemory(residues);
         int i = 1;
-        logger.info(String.format("\n Iteration %d of applying DEE conditions ", i));
-        while (applyDEEConditions(residues)) {
-            logger.info(toString());
-            i++;
+        boolean eliminatedRotamer = true;
+        boolean eliminatedRotamerPair = true;
+        while (eliminatedRotamer || eliminatedRotamerPair) {
             logger.info(String.format("\n Iteration %d of applying DEE conditions ", i));
+            eliminatedRotamer = applyRotamerDEEConditions(residues);
+            eliminatedRotamerPair = applyRotamerPairDEEConditions(residues);
+            logger.info(toString());
+            validateDEE(residues);
+            i++;
         }
         logger.info(" Self-consistent DEE rotamer elimination achieved.\n");
     }
@@ -579,10 +584,12 @@ public class RotamerOptimization implements Terminatable {
             AminoAcid3 namei = AminoAcid3.valueOf(residuei.getName());
             Rotamer rotamersi[] = RotamerLibrary.getRotamers(namei);
             if (rotamersi == null) {
+                logger.info(String.format(" Residue %s has 0 rotamers.", residuei.toString()));
                 continue;
             }
             int lenri = rotamersi.length;
             eliminatedRotamers[i] = new boolean[lenri];
+            logger.info(String.format(" Residue %s with %d rotamers.", residuei.toString(), lenri));
             eliminatedRotamerPairs[i] = new boolean[lenri][][];
             minEnergyPairs[i] = new double[lenri];
             maxEnergyPairs[i] = new double[lenri];
@@ -619,8 +626,9 @@ public class RotamerOptimization implements Terminatable {
     /**
      * Elimination of rotamers.
      */
-    private boolean applyDEEConditions(Residue[] residues) {
+    private boolean applyRotamerDEEConditions(Residue[] residues) {
         int nres = residues.length;
+        // A flag to indicate if any more rotamers or rotamer pairs were eliminated.
         boolean eliminated = false;
         // Loop over residues.
         for (int i = 0; i < nres; i++) {
@@ -634,72 +642,53 @@ public class RotamerOptimization implements Terminatable {
             // Loop over the set of rotamers for residue i.
             for (int ri = 0; ri < lenri; ri++) {
                 // Check for an eliminated single.
-                if (eliminatedRotamers[i][ri]) {
+                if (check(i, ri)) {
                     continue;
                 }
                 // Start the min/max summation with the self-energy.
                 minEnergyPairs[i][ri] = selfEnergy[i][ri];
                 maxEnergyPairs[i][ri] = minEnergyPairs[i][ri];
-                for (int j = i + 1; j < nres; j++) {
+                for (int j = 0; j < nres; j++) {
+                    if (j == i) {
+                        continue;
+                    }
                     Residue residuej = residues[j];
                     AminoAcid3 namej = AminoAcid3.valueOf(residuej.getName());
                     Rotamer rotamersj[] = RotamerLibrary.getRotamers(namej);
                     // Some residues do not have 2 or more rotamers.
-                    if (rotamersj == null || rotamersj.length == 1) {
+                    if (rotamersj == null || rotamersj.length < 2) {
                         continue;
                     }
                     int lenrj = rotamersj.length;
                     double minPairE = Double.MAX_VALUE;
                     double maxPairE = Double.MIN_VALUE;
                     // Loop over residue j's rotamers.
+                    int count = 0;
                     for (int rj = 0; rj < lenrj; rj++) {
-                        // Check for an eliminated single.
-                        if (eliminatedRotamers[j][rj]) {
+                        // Check for an eliminated single or eliminated pair.
+                        if (check(j, rj) || check(i, ri, j, rj)) {
                             continue;
                         }
-                        // Start the min/max summation with the "pair" self-energy.
-                        minEnergyTriples[i][ri][j][rj] = selfEnergy[i][ri] + selfEnergy[j][rj] + pairEnergy[i][ri][j][rj];
-                        maxEnergyTriples[i][ri][j][rj] = minEnergyTriples[i][ri][j][rj];
-                        double current = pairEnergy[i][ri][j][rj];
+                        double current = pair(i, ri, j, rj);
                         if (current < minPairE) {
                             minPairE = current;
                         }
                         if (current > maxPairE) {
                             maxPairE = current;
                         }
-
-                        // Loop over the third residue.
-                        for (int k = j + 1; k < nres; k++) {
-                            Residue residuek = residues[k];
-                            AminoAcid3 namek = AminoAcid3.valueOf(residuek.getName());
-                            Rotamer rotamersk[] = RotamerLibrary.getRotamers(namek);
-                            // Some residues do not have 2 or more rotamers.
-                            if (rotamersk == null || rotamersk.length == 1) {
-                                continue;
-                            }
-                            int lenrk = rotamersk.length;
-                            double minTripleE = Double.MAX_VALUE;
-                            double maxTripleE = Double.MIN_VALUE;
-                            // Loop over the third residues' rotamers.
-                            for (int rk = 0; rk < lenrk; rk++) {
-                                if (eliminatedRotamerPairs[i][ri][k][rk] || eliminatedRotamerPairs[j][rj][k][rk]) {
-                                    continue;
-                                }
-                                double currentTripleE = pairEnergy[i][ri][k][rk] + pairEnergy[j][rj][k][rk];
-                                if (currentTripleE < minTripleE) {
-                                    minTripleE = currentTripleE;
-                                }
-                                if (currentTripleE > maxTripleE) {
-                                    maxTripleE = currentTripleE;
-                                }
-                            }
-                            minEnergyTriples[i][ri][j][rj] += minTripleE;
-                            maxEnergyTriples[i][ri][j][rj] += maxTripleE;
-                        }
+                        count++;
                     }
-                    // Sum the min/max contributions.
-                    minEnergyPairs[i][ri] += minPairE;
-                    maxEnergyPairs[i][ri] += maxPairE;
+                    if (count == 0) {
+                        logger.info(String.format(" Invalid Pair: %s-%d %d, %s-%d.",
+                                namei, residuei.getResidueNumber(), ri,
+                                namej, residuej.getResidueNumber()));
+                        eliminatedRotamers[i][ri] = true;
+                        logger.info(String.format("  Eliminating rotamer: %s-%d %d",
+                                namei, residuei.getResidueNumber(), ri));
+                    } else {
+                        minEnergyPairs[i][ri] += minPairE;
+                        maxEnergyPairs[i][ri] += maxPairE;
+                    }
                 }
             }
 
@@ -709,7 +698,7 @@ public class RotamerOptimization implements Terminatable {
              */
             double eliminationEnergy = Double.MAX_VALUE;
             for (int ri = 0; ri < lenri; ri++) {
-                if (eliminatedRotamers[i][ri]) {
+                if (check(i, ri)) {
                     continue;
                 }
                 if (maxEnergyPairs[i][ri] < eliminationEnergy) {
@@ -722,41 +711,67 @@ public class RotamerOptimization implements Terminatable {
              * case for another rotamer.
              */
             for (int ri = 0; ri < lenri; ri++) {
-                if (eliminatedRotamers[i][ri]) {
+                if (check(i, ri)) {
                     continue;
                 }
                 if (minEnergyPairs[i][ri] > eliminationEnergy) {
                     eliminatedRotamers[i][ri] = true;
-                    logger.info(String.format(" Eliminating rotamer:      %s-%d %d",
-                            namei, residuei.getResidueNumber(), ri));
+                    logger.info(String.format(" Eliminating rotamer:      %s-%d %d (%16.8f > %16.8f)",
+                            namei, residuei.getResidueNumber(), ri, minEnergyPairs[i][ri], eliminationEnergy));
                     eliminated = true;
                     if (eliminatedRotamerPairs[i][ri] == null) {
                         continue;
                     }
-                    for (int j = i + 1; j < nres; j++) {
-                        if (eliminatedRotamerPairs[i][ri][j] == null) {
+                    for (int j = 0; j < nres; j++) {
+                        if (j == i) {
                             continue;
                         }
-                        int lenrj = eliminatedRotamerPairs[i][ri][j].length;
                         Residue residuej = residues[j];
                         AminoAcid3 namej = AminoAcid3.valueOf(residuej.getName());
+                        Rotamer rotamersj[] = RotamerLibrary.getRotamers(namej);
+                        if (rotamersj == null || rotamersj.length < 2) {
+                            continue;
+                        }
+                        int lenrj = rotamersj.length;
                         for (int rj = 0; rj < lenrj; rj++) {
-                            eliminatedRotamerPairs[i][ri][j][rj] = true;
-                            logger.info(String.format(" Eliminating rotamer pair: %s-%d %d, %s-%d %d",
-                                    namei, residuei.getResidueNumber(), ri,
-                                    namej, residuej.getResidueNumber(), rj));
+                            if (!check(i, ri, j, rj)) {
+                                if (i < j) {
+                                    eliminatedRotamerPairs[i][ri][j][rj] = true;
+                                } else {
+                                    eliminatedRotamerPairs[j][rj][i][ri] = true;
+                                }
+                                logger.info(String.format("  Eliminating rotamer pair: %s-%d %d, %s-%d %d",
+                                        namei, residuei.getResidueNumber(), ri,
+                                        namej, residuej.getResidueNumber(), rj));
+                            }
                         }
                     }
                 }
             }
+        }
+        return eliminated;
+    }
 
-            /**
-             * Apply the double elimination criteria to rotamer pairs for
-             * residue i, rotamer ri, residue j and rotamer rj by determining
-             * the most favorable maximum energy.
-             */
+    /**
+     * Elimination of rotamers.
+     */
+    private boolean applyRotamerPairDEEConditions(Residue[] residues) {
+        int nres = residues.length;
+        // A flag to indicate if any more rotamers or rotamer pairs were eliminated.
+        boolean eliminated = false;
+        // Loop over residues.
+        for (int i = 0; i < nres; i++) {
+            Residue residuei = residues[i];
+            AminoAcid3 namei = AminoAcid3.valueOf(residuei.getName());
+            Rotamer rotamersi[] = RotamerLibrary.getRotamers(namei);
+            if (rotamersi == null) {
+                continue;
+            }
+            int lenri = rotamersi.length;
+            // Loop over the set of rotamers for residue i.
             for (int ri = 0; ri < lenri; ri++) {
-                if (eliminatedRotamers[i][ri]) {
+                // Check for an eliminated single.
+                if (check(i, ri)) {
                     continue;
                 }
                 for (int j = i + 1; j < nres; j++) {
@@ -768,9 +783,70 @@ public class RotamerOptimization implements Terminatable {
                         continue;
                     }
                     int lenrj = rotamersj.length;
+                    // Loop over residue j's rotamers.
+                    for (int rj = 0; rj < lenrj; rj++) {
+                        // Check for an eliminated single or pair.
+                        if (check(j, rj) || check(i, ri, j, rj)) {
+                            continue;
+                        }
+                        // Start the min/max summation with the "pair" self-energy.
+                        minEnergyTriples[i][ri][j][rj] = selfEnergy[i][ri] + selfEnergy[j][rj] + pair(i, ri, j, rj);
+                        maxEnergyTriples[i][ri][j][rj] = minEnergyTriples[i][ri][j][rj];
+                        // Loop over the third residue.
+                        for (int k = 0; k < nres; k++) {
+                            if (k == i || k == j) {
+                                continue;
+                            }
+                            Residue residuek = residues[k];
+                            AminoAcid3 namek = AminoAcid3.valueOf(residuek.getName());
+                            Rotamer rotamersk[] = RotamerLibrary.getRotamers(namek);
+                            // Some residues do not have 2 or more rotamers.
+                            if (rotamersk == null || rotamersk.length == 1) {
+                                continue;
+                            }
+                            int lenrk = rotamersk.length;
+                            double minTripleE = Double.MAX_VALUE;
+                            double maxTripleE = Double.MIN_VALUE;
+                            // Loop over the third residues' rotamers.
+                            int count = 0;
+                            for (int rk = 0; rk < lenrk; rk++) {
+                                if (check(k, rk) || check(i, ri, k, rk) || check(j, rj, k, rk)) {
+                                    continue;
+                                }
+                                count++;
+                                double currentTripleE = pair(i, ri, k, rk) + pair(j, rj, k, rk);
+                                if (currentTripleE < minTripleE) {
+                                    minTripleE = currentTripleE;
+                                }
+                                if (currentTripleE > maxTripleE) {
+                                    maxTripleE = currentTripleE;
+                                }
+                            }
+                            if (count == 0) {
+                                logger.info(String.format(" Invalid triple: %s-%d %d, %s-%d %d, %s-%d.",
+                                        namei, residuei.getResidueNumber(), ri,
+                                        namej, residuej.getResidueNumber(), rj,
+                                        namek, residuek.getResidueNumber()));
+                                if (!check(i,ri,j,rj)) {
+                                    eliminatedRotamerPairs[i][ri][j][rj] = true;
+                                    logger.info(String.format("  Eliminating rotamer pair: %s-%d %d, %s-%d %d",
+                                        namei, residuei.getResidueNumber(), ri,
+                                        namej, residuej.getResidueNumber(), rj));
+                                }
+                            } else {
+                                minEnergyTriples[i][ri][j][rj] += minTripleE;
+                                maxEnergyTriples[i][ri][j][rj] += maxTripleE;
+                            }
+                        }
+                    }
+
+                    /**
+                     * Apply the double elimination criteria to the rotamer pair
+                     * by determining the most favorable maximum energy.
+                     */
                     double pairEliminationEnergy = Double.MAX_VALUE;
                     for (int rj = 0; rj < lenrj; rj++) {
-                        if (eliminatedRotamerPairs[i][ri][j][rj]) {
+                        if (check(j, rj) || check(i, ri, j, rj)) {
                             continue;
                         }
                         if (maxEnergyTriples[i][ri][j][rj] < pairEliminationEnergy) {
@@ -782,22 +858,110 @@ public class RotamerOptimization implements Terminatable {
                      * than the worst case for an alternative pair.
                      */
                     for (int rj = 0; rj < lenrj; rj++) {
-                        if (eliminatedRotamerPairs[i][ri][j][rj]) {
+                        if (check(j, rj) || check(i, ri, j, rj)) {
                             continue;
                         }
                         if (minEnergyTriples[i][ri][j][rj] > pairEliminationEnergy) {
-                            /*
                             eliminatedRotamerPairs[i][ri][j][rj] = true;
-                            logger.info(String.format(" Eliminating rotamer pair: %s-%d %d, %s-%d %d",
+                            logger.info(String.format(" Eliminating rotamer pair: %s-%d %d, %s-%d %d (%16.8f > %16.8f)",
                                     namei, residuei.getResidueNumber(), ri,
-                                    namej, residuej.getResidueNumber(), rj));
-                            eliminated = true; */
+                                    namej, residuej.getResidueNumber(), rj,
+                                    minEnergyTriples[i][ri][j][rj], pairEliminationEnergy));
+                            // Check if any of i's rotamers are left to interact with residue j's rotamer rj?
+                            boolean singleton = true;
+                            for (int rii = 0; rii < lenri; rii++) {
+                                if (!check(i,rii,j,rj)) {
+                                    singleton = false;
+                                }
+                            }
+                            // If not, then this rotamer is completely eliminated.
+                            if (singleton) {
+                                if (!check(j,rj)) {
+                                    logger.info(String.format("  Eliminating Rotamer:      %s-%d %d",
+                                            namej, residuej.getResidueNumber(), rj));
+                                    eliminatedRotamers[j][rj] = true;
+                                }
+                            }
+                            eliminated = true;
                         }
                     }
                 }
             }
         }
         return eliminated;
+    }
+
+    private double pair(int i, int ri, int j, int rj) {
+        if (i < j) {
+            return pairEnergy[i][ri][j][rj];
+        } else {
+            return pairEnergy[j][rj][i][ri];
+        }
+    }
+
+    private boolean check(int i, int ri) {
+        return eliminatedRotamers[i][ri];
+    }
+
+    private boolean check(int i, int ri, int j, int rj) {
+        if (i < j) {
+            return eliminatedRotamerPairs[i][ri][j][rj];
+        } else {
+            return eliminatedRotamerPairs[j][rj][i][ri];
+        }
+    }
+
+    private boolean validateDEE(Residue residues[]) {
+        int nres = eliminatedRotamers.length;
+        // Validate residues
+        for (int i = 0; i < nres; i++) {
+            Residue residuei = residues[i];
+            if (eliminatedRotamers[i] != null) {
+                int nroti = eliminatedRotamers[i].length;
+                boolean validResidue = false;
+                for (int ri = 0; ri < nroti; ri++) {
+                    if (!check(i, ri)) {
+                        validResidue = true;
+                    }
+                }
+                if (!validResidue) {
+                    logger.severe(String.format(" Coding error: all %d rotamers for residue %s eliminated.", nroti, residuei));
+                }
+            }
+        }
+
+        // Validate pairs
+        for (int i = 0; i < nres; i++) {
+            Residue residuei = residues[i];
+            AminoAcid3 namei = AminoAcid3.valueOf(residuei.getName());
+            Rotamer rotamersi[] = RotamerLibrary.getRotamers(namei);
+            if (rotamersi == null || rotamersi.length < 2) {
+                continue;
+            }
+            int lenri = rotamersi.length;
+            for (int j = i + 1; j < nres; j++) {
+                Residue residuej = residues[j];
+                AminoAcid3 namej = AminoAcid3.valueOf(residuej.getName());
+                Rotamer rotamersj[] = RotamerLibrary.getRotamers(namej);
+                if (rotamersj == null || rotamersj.length < 2) {
+                    continue;
+                }
+                int lenrj = rotamersj.length;
+                boolean validPair = false;
+                for (int ri = 0; ri < lenri; ri++) {
+                    for (int rj = 0; rj < lenrj; rj++) {
+                        if (!check(i, ri, j, rj)) {
+                            validPair = true;
+                        }
+                    }
+                }
+                if (!validPair) {
+                    logger.severe(String.format(" Coding error: all pairs for %s with residue %s eliminated.",
+                            residuei, residuej));
+                }
+            }
+        }
+        return true;
     }
 
     @Override
@@ -807,18 +971,19 @@ public class RotamerOptimization implements Terminatable {
         int eliminated = 0;
         int eliminatedPairs = 0;
         int nres = eliminatedRotamers.length;
-
         for (int i = 0; i < nres; i++) {
             if (eliminatedRotamers[i] != null) {
-                rotamerCount += eliminatedRotamers[i].length;
-                for (int ri = 0; ri < eliminatedRotamers[i].length; ri++) {
+                int nroti = eliminatedRotamers[i].length;
+                rotamerCount += nroti;
+                for (int ri = 0; ri < nroti; ri++) {
                     if (eliminatedRotamers[i][ri]) {
                         eliminated++;
                     }
                     for (int j = i + 1; j < nres; j++) {
                         if (eliminatedRotamerPairs[i][ri][j] != null) {
-                            pairCount += eliminatedRotamerPairs[i][ri][j].length;
-                            for (int rj = 0; rj < eliminatedRotamerPairs[i][ri][j].length; rj++) {
+                            int nrotj = eliminatedRotamerPairs[i][ri][j].length;
+                            pairCount += nrotj;
+                            for (int rj = 0; rj < nrotj; rj++) {
                                 if (eliminatedRotamerPairs[i][ri][j][rj]) {
                                     eliminatedPairs++;
                                 }
