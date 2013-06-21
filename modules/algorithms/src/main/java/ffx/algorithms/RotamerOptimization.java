@@ -69,12 +69,19 @@ public class RotamerOptimization implements Terminatable {
     /**
      * Self-energy of each residue for each rotamer. [residue][rotamer]
      */
+    double backboneEnergy;
+    double manyBodyEnergy[];
     double selfEnergy[][];
     /**
      * Pair-energies for each pair of residue and pair of rotamers.
      * [residue1][rotamer1][residue2][rotamer2]
      */
     double pairEnergy[][][][];
+    /**
+     * trimer-energies for each trimer of rotamers.
+     * [residue1][rotamer1][residue2][rotamer2][residue3][rotamer3]
+     */
+    double trimerEnergy[][][][][][];
     /**
      * Eliminated rotamers. [residue][rotamer]
      */
@@ -119,12 +126,16 @@ public class RotamerOptimization implements Terminatable {
             potential = (ForceFieldEnergy) molecularAssembly.getPotentialEnergy();
             polymers = molecularAssembly.getChains();
 
-            Residue residues[] = new Residue[finalResID - startResID + 1];
-            for (int i = startResID, j = 0; i <= finalResID; i++, j++) {
-                residues[j] = polymers[0].getResidue(i);
+            ArrayList<Residue> residueList = new ArrayList<Residue>();
+            for (int i = startResID; i <= finalResID; i++) {
+                Residue residue = polymers[0].getResidue(i);
+                AminoAcid3 name = AminoAcid3.valueOf(residue.getName());
+                Rotamer[] rotamers = RotamerLibrary.getRotamers(name);
+                if (rotamers != null) {
+                    residueList.add(residue);
+                }
             }
 
-            ArrayList<Residue> residueList = new ArrayList<Residue>(Arrays.asList(residues));
 
             switch (algorithm) {
                 case INDEPENDENT:
@@ -250,7 +261,76 @@ public class RotamerOptimization implements Terminatable {
             }
         }
 
+        double sumSelfEnergy = 0;
+        double sumPairEnergy = 0;
+        double sumTrimerEnergy = 0;
+        for (int i = 0; i < nResidues; i++) {
+            sumSelfEnergy += selfEnergy[i][optimum[i]];
+            if (i == nResidues - 1) {
+                break;
+            }
+            //for (int j = i + 1; j < nResidues; j++) {
+            //sumPairEnergy += pairEnergy[i][optimum[i]][j][optimum[j]];
+            //}
+            for (int j = 0; j < nResidues; j++) {
+                if (j != i) {
+                    if (i < j) {
+                        sumPairEnergy += pairEnergy[i][optimum[i]][j][optimum[j]];
+                    } else {
+                        sumPairEnergy += pairEnergy[j][optimum[j]][i][optimum[i]];
+                    }
+                }
+            }
+        }
+        
+
         e = potential.energy(false, false);
+        double manyBodiesE;
+        double totalDEEE;
+        totalDEEE = sumSelfEnergy + sumPairEnergy + backboneEnergy;
+        manyBodiesE = e - totalDEEE;
+        logger.info(String.format("The many-body energy is %16.8f", manyBodiesE));
+        
+        int nAtoms = molecularAssembly.getAtomArray().length;
+        boolean use[] = new boolean[nAtoms];
+        for (int i = 0; i < nAtoms; i++) {
+            use[i] = true;
+        }
+        ForceFieldEnergy energy = molecularAssembly.getPotentialEnergy();
+        energy.setUse(use);
+        double manyBodySum = 0;
+        for (int i = 0; i < nResidues; i++) {
+            Residue residue = residues[i];
+            AminoAcid3 name = AminoAcid3.valueOf(residue.getName());
+            Rotamer rotamers[] = RotamerLibrary.getRotamers(name);
+            if (rotamers == null) {
+                continue;
+            }
+
+            // Turn off side-chain atoms for the many body energy.
+            ArrayList<Atom> atoms = residue.getSideChainAtoms();
+            for (Atom atom : atoms) {
+                use[atom.getXYZIndex() - 1] = false;
+            }
+            energy.setUse(use);
+            manyBodyEnergy[i] = (e - potential.energy(false, false)) * 0.5 - selfEnergy[i][optimum[i]];
+            for (int j = 0; j < nResidues; j++) {
+                if (j != i) {
+                    if (i < j) {
+                        manyBodyEnergy[i] -= pairEnergy[i][optimum[i]][j][optimum[j]];
+                    } else {
+                        manyBodyEnergy[i] -= pairEnergy[j][optimum[j]][i][optimum[i]];
+                    }
+                }
+            }
+            manyBodySum += manyBodyEnergy[i];
+            for (Atom atom : atoms) {
+                use[atom.getXYZIndex() - 1] = true;
+            }
+            logger.info(String.format(" %s %16.8f", residue, manyBodyEnergy[i]));
+        }
+        logger.info(String.format(" Many-body sum: %16.8f", manyBodySum));
+
 
         return e;
     }
@@ -410,6 +490,8 @@ public class RotamerOptimization implements Terminatable {
 
         selfEnergy = new double[nResidues][];
         pairEnergy = new double[nResidues][][][];
+        manyBodyEnergy = new double[nResidues];
+        trimerEnergy = new double[nResidues][][][][][];
 
         /**
          * Initialize all atoms to be used.
@@ -441,7 +523,7 @@ public class RotamerOptimization implements Terminatable {
         boolean print = false;
 
         // Compute the backbone energy.
-        double backboneEnergy = energy.energy(false, print);
+        backboneEnergy = energy.energy(false, print);
         logger.info(String.format(" Backbone energy:  %16.8f\n", backboneEnergy));
 
         // Compute the self-energy for each rotamer of each residue
@@ -486,9 +568,6 @@ public class RotamerOptimization implements Terminatable {
             Residue residuei = residues[i];
             AminoAcid3 namei = AminoAcid3.valueOf(residuei.getName());
             Rotamer rotamersi[] = RotamerLibrary.getRotamers(namei);
-            if (rotamersi == null) {
-                continue;
-            }
             ArrayList<Atom> atomsi = residuei.getSideChainAtoms();
 
             // Turn on residue i
@@ -504,12 +583,12 @@ public class RotamerOptimization implements Terminatable {
                 // TODO: reduce memory use.
                 pairEnergy[i][ri] = new double[nResidues][];
                 for (int j = i + 1; j < nResidues; j++) {
+                    if (i >= nResidues - 1) {
+                        continue;
+                    }
                     Residue residuej = residues[j];
                     AminoAcid3 namej = AminoAcid3.valueOf(residuej.getName());
                     Rotamer rotamersj[] = RotamerLibrary.getRotamers(namej);
-                    if (rotamersj == null) {
-                        continue;
-                    }
                     ArrayList<Atom> atomsj = residuej.getSideChainAtoms();
                     // Turn on residue j
                     for (Atom atom : atomsj) {
@@ -528,6 +607,98 @@ public class RotamerOptimization implements Terminatable {
                         logger.info(String.format(" Pair energy %s-%d %d %s-%d %d %16.8f",
                                 namei, residuei.getResidueNumber(), ri,
                                 namej, residuej.getResidueNumber(), rj, pairEnergy[i][ri][j][rj]));
+                    }
+                    // Reset the residue to rotamer zero.
+                    RotamerLibrary.applyRotamer(namej, residuej, rotamersj[0]);
+                    // Turn off residue j
+                    for (Atom atom : atomsj) {
+                        use[atom.getXYZIndex() - 1] = false;
+                    }
+                }
+            }
+            // Reset the residue to rotamer zero.
+            RotamerLibrary.applyRotamer(namei, residuei, rotamersi[0]);
+            // Turn off residue i
+            for (Atom atom : atomsi) {
+                use[atom.getXYZIndex() - 1] = false;
+            }
+            energy.setUse(use);
+        }
+        
+        // Compute the trimer-energy for each pair of rotamers
+        for (int i = 0; i < nResidues; i++) {
+            Residue residuei = residues[i];
+            AminoAcid3 namei = AminoAcid3.valueOf(residuei.getName());
+            Rotamer rotamersi[] = RotamerLibrary.getRotamers(namei);
+            ArrayList<Atom> atomsi = residuei.getSideChainAtoms();
+
+            // Turn on residue i
+            for (Atom atom : atomsi) {
+                use[atom.getXYZIndex() - 1] = true;
+            }
+            int ni = rotamersi.length;
+            trimerEnergy[i] = new double[ni][][][][];
+            for (int ri = 0; ri < ni; ri++) {
+                Rotamer rotameri = rotamersi[ri];
+                RotamerLibrary.applyRotamer(namei, residuei, rotameri);
+                //int npairs = residues.length - (i + 1);
+                // TODO: reduce memory use.
+                trimerEnergy[i][ri] = new double[nResidues][][][];
+                for (int j = i + 1; j < nResidues; j++) {
+                    if (i >= nResidues - 1) {
+                        continue;
+                    }
+                    Residue residuej = residues[j];
+                    AminoAcid3 namej = AminoAcid3.valueOf(residuej.getName());
+                    Rotamer rotamersj[] = RotamerLibrary.getRotamers(namej);
+                    ArrayList<Atom> atomsj = residuej.getSideChainAtoms();
+                    // Turn on residue j
+                    for (Atom atom : atomsj) {
+                        use[atom.getXYZIndex() - 1] = true;
+                    }
+                    energy.setUse(use);
+
+                    // Loop over residue j's rotamers and compute pair-wise energies.
+                    int nj = rotamersj.length;
+                    trimerEnergy[i][ri][j] = new double[nj][][];
+                    for (int rj = 0; rj < nj; rj++) {
+                        Rotamer rotamerj = rotamersj[rj];
+                        RotamerLibrary.applyRotamer(namej, residuej, rotamerj);
+                        trimerEnergy[i][ri][j][rj] = new double[nResidues][];
+                        for (int k = j + 1; k < nResidues; k++) {
+                            if (i >= nResidues - 2 || j >= nResidues - 1) {
+                                continue;
+                            }
+                            Residue residuek = residues[k];
+                            AminoAcid3 namek = AminoAcid3.valueOf(residuek.getName());
+                            Rotamer rotamersk[] = RotamerLibrary.getRotamers(namek);
+                            ArrayList<Atom> atomsk = residuek.getSideChainAtoms();
+                            // Turn on residue k
+                            for (Atom atom : atomsk) {
+                                use[atom.getXYZIndex() - 1] = true;
+                            }
+                            energy.setUse(use);
+                            int nk = rotamersk.length;
+                            trimerEnergy[i][ri][j][rj][k] = new double[nk];
+                            for (int rk = 0; rk < nk; rk++) {
+                                Rotamer rotamerk = rotamersk[rk];
+                                RotamerLibrary.applyRotamer(namek, residuek, rotamerk);
+                                trimerEnergy[i][ri][j][rj][k][rk] = energy.energy(false, print)
+                                        - selfEnergy[i][ri] - selfEnergy[j][rj] - selfEnergy[k][rk]
+                                        - pairEnergy[i][ri][j][rj] - pairEnergy[i][ri][k][rk] - pairEnergy[j][rj][k][rk]
+                                        - backboneEnergy;
+                                logger.info(String.format(" Trimer energy %s-%d %d %s-%d %d %s-%d %d %16.8f",
+                                        namei, residuei.getResidueNumber(), ri,
+                                        namej, residuej.getResidueNumber(), rj,
+                                        namek, residuek.getResidueNumber(), rk, trimerEnergy[i][ri][j][rj][k][rk]));
+                            }
+                            // Reset the residue to rotamer zero.
+                            RotamerLibrary.applyRotamer(namek, residuek, rotamersk[0]);
+                            // Turn off residue k
+                            for (Atom atom : atomsk) {
+                                use[atom.getXYZIndex() - 1] = false;
+                            }
+                        }
                     }
                     // Reset the residue to rotamer zero.
                     RotamerLibrary.applyRotamer(namej, residuej, rotamersj[0]);
@@ -827,11 +998,11 @@ public class RotamerOptimization implements Terminatable {
                                         namei, residuei.getResidueNumber(), ri,
                                         namej, residuej.getResidueNumber(), rj,
                                         namek, residuek.getResidueNumber()));
-                                if (!check(i,ri,j,rj)) {
+                                if (!check(i, ri, j, rj)) {
                                     eliminatedRotamerPairs[i][ri][j][rj] = true;
                                     logger.info(String.format("  Eliminating rotamer pair: %s-%d %d, %s-%d %d",
-                                        namei, residuei.getResidueNumber(), ri,
-                                        namej, residuej.getResidueNumber(), rj));
+                                            namei, residuei.getResidueNumber(), ri,
+                                            namej, residuej.getResidueNumber(), rj));
                                 }
                             } else {
                                 minEnergyTriples[i][ri][j][rj] += minTripleE;
@@ -870,13 +1041,13 @@ public class RotamerOptimization implements Terminatable {
                             // Check if any of i's rotamers are left to interact with residue j's rotamer rj?
                             boolean singleton = true;
                             for (int rii = 0; rii < lenri; rii++) {
-                                if (!check(i,rii,j,rj)) {
+                                if (!check(i, rii, j, rj)) {
                                     singleton = false;
                                 }
                             }
                             // If not, then this rotamer is completely eliminated.
                             if (singleton) {
-                                if (!check(j,rj)) {
+                                if (!check(j, rj)) {
                                     logger.info(String.format("  Eliminating Rotamer:      %s-%d %d",
                                             namej, residuej.getResidueNumber(), rj));
                                     eliminatedRotamers[j][rj] = true;
