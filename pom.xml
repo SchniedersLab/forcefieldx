@@ -156,8 +156,8 @@
     </licenses>
     <scm>
         <url>http://kenai.com/projects/ffx/sources/source/show</url>
-        <connection>scm:git://kenai.com/ffx~source</connection>
-        <developerConnection>scm:git:ssh://${kenai.user.name}@git.kenai.com/ffx~source</developerConnection>
+        <connection>scm:git://kenai.com/ffx~public-source</connection>
+        <developerConnection>scm:git:ssh://${kenai.user.name}@git.kenai.com/ffx~public-source</developerConnection>
     </scm>
     <organization>
         <!-- This is used to generate the Copyright on the website.
@@ -492,7 +492,7 @@
             </snapshots>
         </repository>
         <repository>
-            <name>JogAmp Maven Repositorya</name>
+            <name>JogAmp Maven Repository</name>
             <id>jogamp.snapshots</id>
             <url>http://jogamp.org/deployment/maven</url>
             <releases>
