@@ -22,6 +22,7 @@
  */
 package ffx.potential;
 
+import ffx.potential.ForceFieldEnergy;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -46,11 +47,7 @@ public class RotamerLibrary {
     private static final int numberOfAminoAcids = AminoAcid3.values().length;
     private static final Rotamer[][] rotamerCache = new Rotamer[numberOfAminoAcids][];
     private static LibraryName libraryName = LibraryName.PonderAndRichards;
-
-    public enum LibraryName {
-
-        PonderAndRichards, Richardson
-    }
+    private static int evaluatedPermutations = 0;
 
     public static void setLibrary(LibraryName name) {
         libraryName = name;
@@ -61,6 +58,11 @@ public class RotamerLibrary {
 
     public static LibraryName getLibrary() {
         return libraryName;
+    }
+
+    public static Rotamer[] getRotamers(Residue residue) {
+        AminoAcid3 name = AminoAcid3.valueOf(residue.getName());
+        return getRotamers(name);
     }
 
     /**
@@ -525,221 +527,8 @@ public class RotamerLibrary {
         return rotamerCache[n];
     }
 
-    /**
-     * A brute-force global optimization over side-chain rotamers using a
-     * recursive algorithm.
-     */
-    public static double rotamerOptimization(MolecularAssembly molecularAssembly, List<Residue> residues,
-            double lowEnergy, List<Integer> optimum) {
-        Residue current = residues.remove(0);
-        AminoAcid3 name = AminoAcid3.valueOf(current.getName());
-        Rotamer[] rotamers = getRotamers(name);
-        double currentEnergy = Double.MAX_VALUE;
-        if (residues.size() > 0) {
-            /**
-             * As long as there are more residues, continue the recursion for
-             * each rotamer of the current residue.
-             */
-            if (rotamers == null) {
-                /**
-                 * Continue to the next residue.
-                 */
-                currentEnergy = rotamerOptimization(molecularAssembly, residues, lowEnergy, optimum);
-                // Add the '-1' flag as a placeholder since this residue has no rotamers.
-                if (currentEnergy < lowEnergy) {
-                    optimum.add(0, -1);
-                }
-            } else {
-                int minRot = -1;
-                for (int i = 0; i < rotamers.length; i++) {
-                    applyRotamer(name, current, rotamers[i]);
-                    double rotEnergy = rotamerOptimization(molecularAssembly, residues, lowEnergy, optimum);
-                    if (rotEnergy < currentEnergy) {
-                        currentEnergy = rotEnergy;
-                    }
-                    if (rotEnergy < lowEnergy) {
-                        minRot = i;
-                        lowEnergy = rotEnergy;
-                    }
-                }
-                if (minRot > -1) {
-                    optimum.add(0, minRot);
-                }
-            }
-        } else {
-            /**
-             * At the end of the recursion, compute the potential energy for
-             * each rotamer of the final residue. If a lower potential energy is
-             * discovered, the rotamers of each residue will be collected as the
-             * recursion returns up the chain.
-             */
-            ForceFieldEnergy energy = molecularAssembly.getPotentialEnergy();
-            if (rotamers == null) {
-                /**
-                 * Handle the case where the side-chain has no rotamers.
-                 */
-                currentEnergy = energy.energy(false, false);
-                logger.info(String.format(" Energy: %16.8f", currentEnergy));
-                if (currentEnergy < lowEnergy) {
-                    optimum.clear();
-                    optimum.add(-1);
-                }
-            } else {
-                for (int i = 0; i < rotamers.length; i++) {
-                    applyRotamer(name, current, rotamers[i]);
-                    double rotEnergy = energy.energy(false, false);
-                    logger.info(String.format(" Energy: %16.8f", rotEnergy));
-                    if (rotEnergy < currentEnergy) {
-                        currentEnergy = rotEnergy;
-                    }
-                    if (rotEnergy < lowEnergy) {
-                        lowEnergy = rotEnergy;
-                        optimum.clear();
-                        optimum.add(i);
-                    }
-                }
-            }
-        }
-        residues.add(0, current);
-        return currentEnergy;
-    }
-
-    private static int evaluatedPermutations = 0;
-
-    /**
-     * A brute-force global optimization over side-chain rotamers using a
-     * recursive algorithm.
-     */
-    public static double rotamerOptimizationDEE(MolecularAssembly molecularAssembly, Residue residues[], int i, int currentRotamers[],
-            double lowEnergy, int optimum[], boolean eliminatedRotamers[][], boolean eliminatedRotamerPairs[][][][]) {
-
-        if (i == 0) {
-            evaluatedPermutations = 0;
-        }
-
-        Residue residuei = residues[i];
-        AminoAcid3 namei = AminoAcid3.valueOf(residuei.getName());
-        Rotamer[] rotamersi = getRotamers(namei);
-        double currentEnergy = Double.MAX_VALUE;
-        int nResidues = residues.length;
-
-        //logger.info(" Rotamer optimize called for " + residuei.getName());
-
-        if (i < nResidues - 1) {
-            /**
-             * As long as there are more residues, continue the recursion for
-             * each rotamer of the current residue.
-             */
-            if (rotamersi == null) {
-                /**
-                 * Continue to the next residue.
-                 */
-                currentRotamers[i] = -1;
-                currentEnergy = rotamerOptimizationDEE(molecularAssembly, residues, i + 1, currentRotamers, lowEnergy, optimum, eliminatedRotamers, eliminatedRotamerPairs);
-                // Add the '-1' flag as a placeholder since this residue has no rotamers.
-                optimum[i] = -1;
-            } else {
-                /**
-                 * Loop over rotamers of residue i.
-                 */
-                for (int ri = 0; ri < rotamersi.length; ri++) {
-                    /**
-                     * Check if rotamer ri has been eliminated by DEE.
-                     */
-                    if (eliminatedRotamers[i][ri]) {
-                        //logger.info(" Eliminated: " + rotamersi[ri]);
-                        continue;
-                    }
-                    /**
-                     * Check if rotamer ri has been eliminated by a current
-                     * upstream rotamer (any residue's rotamer from j = 0 ..
-                     * i-1).
-                     */
-                    boolean deadEnd = false;
-                    for (int j = 0; j < i; j++) {
-                        int rj = currentRotamers[j];
-                        if (rj > -1) {
-                            deadEnd = eliminatedRotamerPairs[j][rj][i][ri];
-                            if (deadEnd) {
-                                //logger.info(" Eliminated: " + rotamersi[ri] + " number " + ri + " by " + residues[j] + " " + rj);
-                                break;
-                            }
-                        }
-                    }
-                    if (deadEnd) {
-                        continue;
-                    }
-                    applyRotamer(namei, residuei, rotamersi[ri]);
-                    currentRotamers[i] = ri;
-                    double rotEnergy = rotamerOptimizationDEE(molecularAssembly, residues, i + 1, currentRotamers, lowEnergy, optimum, eliminatedRotamers, eliminatedRotamerPairs);
-                    if (rotEnergy < currentEnergy) {
-                        currentEnergy = rotEnergy;
-                    }
-                    if (rotEnergy < lowEnergy) {
-                        optimum[i] = ri;
-                        lowEnergy = rotEnergy;
-                    }
-                }
-            }
-        } else {
-            /**
-             * At the end of the recursion, compute the potential energy for
-             * each rotamer of the final residue. If a lower potential energy is
-             * discovered, the rotamers of each residue will be collected as the
-             * recursion returns up the chain.
-             */
-            ForceFieldEnergy energy = molecularAssembly.getPotentialEnergy();
-            if (rotamersi == null) {
-                /**
-                 * Handle the case where the final side-chain has no rotamers.
-                 */
-                currentEnergy = energy.energy(false, false);
-                evaluatedPermutations++;
-                logger.info(String.format(" %d Energy: %16.8f", evaluatedPermutations, currentEnergy));
-                optimum[i] = -1;
-            } else {
-                for (int ri = 0; ri < rotamersi.length; ri++) {
-                    /**
-                     * Check if rotamer ri has been eliminated by DEE.
-                     */
-                    if (eliminatedRotamers[i][ri]) {
-                        continue;
-                    }
-                    /**
-                     * Check if rotamer ri has been eliminated by a current
-                     * upstream rotamer (any residue's rotamer from 0 .. i-1.
-                     */
-                    boolean deadEnd = false;
-                    for (int j = 0; j < i; j++) {
-                        int rj = currentRotamers[j];
-                        if (rj > -1) {
-                            deadEnd = eliminatedRotamerPairs[j][rj][i][ri];
-                            if (deadEnd) {
-                                break;
-                            }
-                        }
-                    }
-                    if (deadEnd) {
-                        continue;
-                    }
-                    applyRotamer(namei, residuei, rotamersi[ri]);
-                    double rotEnergy = energy.energy(false, false);
-                    evaluatedPermutations++;
-                    logger.info(String.format(" %d Energy: %16.8f", evaluatedPermutations, rotEnergy));
-                    if (rotEnergy < currentEnergy) {
-                        currentEnergy = rotEnergy;
-                    }
-                    if (rotEnergy < lowEnergy) {
-                        lowEnergy = rotEnergy;
-                        optimum[i] = ri;
-                    }
-                }
-            }
-        }
-        return currentEnergy;
-    }
-
-    public static void applyRotamer(AminoAcid3 name, Residue residue, Rotamer rotamer) {
+    public static void applyRotamer(Residue residue, Rotamer rotamer) {
+        AminoAcid3 name = AminoAcid3.valueOf(residue.getName());
         switch (name) {
             case VAL: {
                 Atom CA = (Atom) residue.getAtomNode("CA");
@@ -2086,119 +1875,10 @@ public class RotamerLibrary {
                 break;
         }
     }
+
+    public enum LibraryName {
+
+        PonderAndRichards, Richardson
+    }
 }
-//    ROTAMER LIBRARY BASED ON STATISTICS FROM PONDER AND RICHARDS
-//
-//      RESIDUE   CHI1    CHI2    CHI3    CHI4      SIG1  SIG2  SIG3  SIG4
-//  1   GLY
-//  2   ALA
-//  3   VAL      173.5                               9.0
-//  4   VAL      -63.4                               8.1
-//  5   VAL       69.3                               9.6
-//  6   LEU      -64.9   176.0                       8.2   9.9
-//  7   LEU     -176.4    63.1                      10.2   8.2
-//  8   LEU     -165.3   168.2                      10.0  34.2
-//  9   LEU       44.3    60.4                      20.0  18.8
-// 10   ILE      -60.9   168.7                       7.5  11.6
-// 11   ILE      -59.6   -64.1                       9.6  14.3
-// 12   ILE       61.7   163.8                       5.0  16.4
-// 13   ILE     -166.6   166.0                      10.1   8.9
-// 14   ILE     -174.8    72.1                      24.9  10.5
-// 15   SER       64.7                              16.1
-// 16   SER      -69.7                              14.6
-// 17   SER     -176.1                              20.2
-// 18   THR       62.7                               8.5
-// 19   THR      -59.7                               9.4
-// 20   THR     -169.5                               6.6
-// 21   CYS      -65.2                              10.1
-// 22   CYS     -179.6                               9.5
-// 23   CYS       63.5                               9.6
-// 24   PRO       24.0                               8.0
-// 25   PRO        0.0                               8.0
-// 26   PRO      -24.0                               8.0
-// 27   PHE      -66.3    94.3                      10.2  19.5
-// 28   PHE     -179.2    78.9                       9.3   8.9
-// 29   PHE       66.0    90.7                      12.0   9.4
-// 30   PHE      -71.9    -0.4                      16.3  26.1
-// 31   TYR      -66.5    96.6                      11.4  21.8
-// 32   TYR     -179.7    71.9                      12.6  13.4
-// 33   TYR       63.3    89.1                       9.4  13.0
-// 34   TYR      -67.2    -1.0                      13.2  20.1
-// 35   TRP      -70.4   100.5                       7.0  18.2
-// 36   TRP       64.8   -88.9                      13.0   5.3
-// 37   TRP     -177.3   -95.1                       7.9   7.6
-// 38   TRP     -179.5    87.5                       3.4   3.8
-// 39   TRP      -73.3   -87.7                       6.5   8.1
-// 40   TRP       62.2   112.5                      10.0  15.0
-// 41   HIS      -62.8   -74.3                      10.0  17.2
-// 42   HIS     -175.2   -87.7                      15.4  43.5
-// 43   HIS      -69.8    96.1                       5.9  32.2
-// 44   HIS       67.9   -80.5                      17.4  40.7
-// 45   HIS     -177.3   100.5                       6.3  14.0
-// 46   HIS       48.8    89.5                      10.0  30.0
-// 47   ASP      -68.3   -25.7                       9.2  31.1
-// 48   ASP     -169.1     3.9                       9.5  38.9
-// 49   ASP       63.7     2.4                       9.9  29.4
-// 50   ASN      -68.3   -36.8                      12.3  25.2
-// 51   ASN     -177.1     1.3                       8.8  34.1
-// 52   ASN      -67.2   128.8                      10.8  24.2
-// 53   ASN       63.9    -6.8                       3.7  13.5
-// 54   ASN     -174.9  -156.8                      17.9  58.9
-// 55   ASN       63.6    53.8                       6.6  17.1
-// 56   GLU      -69.6  -177.2   -11.4              19.2  21.7  44.8
-// 57   GLU     -176.2   175.4    -6.7              14.9  10.6  39.0
-// 58   GLU      -64.6   -69.1   -33.4              13.5  17.3  27.4
-// 59   GLU      -55.6    77.0    25.3              10.6   6.8  32.6
-// 60   GLU       69.8  -179.0     6.6              10.6  23.7  64.2
-// 61   GLU     -173.6    70.6    14.0              14.6   8.7  37.1
-// 62   GLU       63.0   -80.4    16.3               4.3  13.9  20.8
-// 63   GLN      -66.7  -178.5   -24.0              14.1  14.9  38.0
-// 64   GLN      -66.7  -178.5   156.0              14.1  14.9  38.0
-// 65   GLN     -174.6  -177.7   -24.0              11.5  17.2  38.0
-// 66   GLN     -174.6  -177.7   156.0              11.5  17.2  38.0
-// 67   GLN      -58.7   -63.8   -46.3              11.2  16.1  27.7
-// 68   GLN      -51.3   -90.4   165.0               7.3  22.8  38.2
-// 69   GLN     -179.4    67.3    26.8              21.5   7.9  38.4
-// 70   GLN      167.5    70.9   174.2              14.8   3.7   7.1
-// 71   GLN       70.8  -165.6   -24.0              13.0   9.5  38.0
-// 72   GLN       70.8  -165.6   156.0              13.0   9.5  38.0
-// 73   MET      -64.5   -68.5   -75.6              12.7   6.0  14.1
-// 74   MET      -78.3  -174.7    65.0               5.4  15.7  20.0
-// 75   MET      -78.3  -174.7   180.0               5.4  15.7  20.0
-// 76   MET      -78.3  -174.7   -65.0               5.4  15.7  20.0
-// 77   MET      178.9   179.0    65.0               8.7  13.4  20.0
-// 78   MET      178.9   179.0   180.0               8.7  13.4  20.0
-// 79   MET      178.9   179.0   -65.0               8.7  13.4  20.0
-// 80   MET      -70.0   -65.0    65.0              21.0  20.0  20.0
-// 81   MET     -170.0    65.0   180.0              24.0  20.0  20.0
-// 82   MET     -170.0   -65.0   180.0              24.0  20.0  20.0
-// 83   MET      -70.0    65.0   180.0              21.0  20.0  20.0
-// 84   MET      -70.0   -65.0   180.0              21.0  20.0  20.0
-// 85   MET       61.0    65.0   180.0              21.0  20.0  20.0
-// 86   LYS     -170.0   180.0    65.0   180.0      24.0  20.0  20.0  20.0
-// 87   LYS     -170.0   180.0   180.0    65.0      24.0  20.0  20.0  20.0
-// 88   LYS     -170.0   180.0   180.0   180.0      24.0  20.0  20.0  20.0
-// 89   LYS     -170.0   180.0   -65.0   180.0      24.0  20.0  20.0  20.0
-// 90   LYS     -170.0   -65.0   180.0   180.0      24.0  20.0  20.0  20.0
-// 91   LYS      -70.0    65.0   180.0   180.0      21.0  20.0  20.0  20.0
-// 92   LYS      -70.0   180.0    65.0   180.0      21.0  20.0  20.0  20.0
-// 93   LYS      -70.0   180.0   180.0   180.0      21.0  20.0  20.0  20.0
-// 94   LYS      -70.0   180.0   180.0   -65.0      21.0  20.0  20.0  20.0
-// 95   LYS      -70.0   180.0   -65.0   180.0      21.0  20.0  20.0  20.0
-// 96   LYS      -70.0   -65.0   180.0   180.0      21.0  20.0  20.0  20.0
-// 97   LYS      -70.0   -65.0   180.0   -65.0      21.0  20.0  20.0  20.0
-// 98   ARG       61.0   180.0    65.0    90.0      25.0  20.0  20.0  20.0
-// 99   ARG       61.0   180.0   180.0   180.0      25.0  20.0  20.0  20.0
-//100   ARG     -170.0   180.0    65.0    90.0      24.0  20.0  20.0  20.0
-//101   ARG     -170.0   180.0   180.0    90.0      24.0  20.0  20.0  20.0
-//102   ARG     -170.0   180.0   180.0   180.0      24.0  20.0  20.0  20.0
-//103   ARG     -170.0   180.0   180.0   -90.0      24.0  20.0  20.0  20.0
-//104   ARG     -170.0   180.0   -65.0   180.0      24.0  20.0  20.0  20.0
-//105   ARG      -70.0   180.0    65.0    90.0      21.0  20.0  20.0  20.0
-//106   ARG      -70.0   180.0    65.0   180.0      21.0  20.0  20.0  20.0
-//107   ARG      -70.0   180.0   180.0   180.0      21.0  20.0  20.0  20.0
-//108   ARG      -70.0   180.0   180.0   -90.0      21.0  20.0  20.0  20.0
-//109   ARG      -70.0   180.0   -65.0   180.0      21.0  20.0  20.0  20.0
-//110   ARG     -170.0    65.0    65.0   180.0      21.0  20.0  20.0  20.0
-//111   ARG      -70.0   -65.0   -65.0   180.0      21.0  20.0  20.0  20.0
 
