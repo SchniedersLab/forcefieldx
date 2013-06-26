@@ -22,15 +22,12 @@
  */
 package ffx.potential;
 
-import ffx.potential.ForceFieldEnergy;
-import java.util.List;
 import java.util.logging.Logger;
 
 import ffx.potential.ResidueEnumerations.AminoAcid3;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
-import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.bonded.Residue;
 
 import static ffx.potential.parsers.INTFilter.intxyz;
@@ -125,10 +122,11 @@ public class RotamerLibrary {
                 break;
             case CYS:
             case CYD:
-                rotamerCache[n] = new Rotamer[3];
-                rotamerCache[n][0] = new Rotamer(name, -65.2, 10.1);
-                rotamerCache[n][1] = new Rotamer(name, -179.6, 9.5);
-                rotamerCache[n][2] = new Rotamer(name, 63.5, 9.6);
+                rotamerCache[n] = null;
+//                rotamerCache[n] = new Rotamer[3];
+//                rotamerCache[n][0] = new Rotamer(name, -65.2, 10.1);
+//                rotamerCache[n][1] = new Rotamer(name, -179.6, 9.5);
+//                rotamerCache[n][2] = new Rotamer(name, 63.5, 9.6);
                 break;
             case PRO:
                 rotamerCache[n] = new Rotamer[3];
@@ -341,10 +339,11 @@ public class RotamerLibrary {
                 break;
             case CYS:
             case CYD:
-                rotamerCache[n] = new Rotamer[3];
-                rotamerCache[n][0] = new Rotamer(name, 62, 0);
-                rotamerCache[n][1] = new Rotamer(name, -177, 0);
-                rotamerCache[n][2] = new Rotamer(name, -65, 0);
+                rotamerCache[n] = null;
+//                rotamerCache[n] = new Rotamer[3];
+//                rotamerCache[n][0] = new Rotamer(name, 62, 0);
+//                rotamerCache[n][1] = new Rotamer(name, -177, 0);
+//                rotamerCache[n][2] = new Rotamer(name, -65, 0);
                 break;
             case PHE:
                 rotamerCache[n] = new Rotamer[4];
