@@ -786,6 +786,9 @@ public class ParticleMeshEwald implements LambdaInterface {
      */
     public void setUse(boolean use[]) {
         this.use = use;
+        if (generalizedKirkwoodTerm) {
+            generalizedKirkwood.setUse(use);
+        }
     }
 
     /**

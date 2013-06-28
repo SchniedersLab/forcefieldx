@@ -22,6 +22,7 @@
  */
 package ffx.potential.nonbonded;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -60,6 +61,31 @@ import static ffx.potential.parameters.MultipoleType.*;
 public class GeneralizedKirkwood {
 
     private static final Logger logger = Logger.getLogger(GeneralizedKirkwood.class.getName());
+    /**
+     * Some static constants.
+     */
+    private static final double third = 1.0 / 3.0;
+    private static final double pi43 = 4.0 / 3.0 * PI;
+    private static final double pi12 = PI / 12.0;
+    /**
+     * Permittivity of water at STP.
+     */
+    private static final double dWater = 78.3;
+    /**
+     * Kirkwood multipolar reaction field constants.
+     */
+    private static final double fc = 1.0 * (1.0 - dWater) / (0.0 + 1.0 * dWater);
+    private static final double fd = 2.0 * (1.0 - dWater) / (1.0 + 2.0 * dWater);
+    private static final double fq = 3.0 * (1.0 - dWater) / (2.0 + 3.0 * dWater);
+    /**
+     * Empirical constant that controls the GK cross-term.
+     */
+    private static final double gkc = 2.455;
+    /**
+     * Empirical scaling of the Bondi radii.
+     */
+    private static final double bondiScale = 1.03;
+    private boolean use[] = null;
     private final Polarization polarization;
     private final Atom atoms[];
     private final double x[], y[], z[];
@@ -125,6 +151,9 @@ public class GeneralizedKirkwood {
         baseRadius = new double[nAtoms];
         overlapScale = new double[nAtoms];
         born = new double[nAtoms];
+
+        use = new boolean[nAtoms];
+        Arrays.fill(use, true);
 
         cutoff = forceField.getDouble(ForceField.ForceFieldDouble.VDW_CUTOFF, 12.0);
         cut2 = cutoff * cutoff;
@@ -213,6 +242,10 @@ public class GeneralizedKirkwood {
         logger.info("");
     }
 
+    public void setUse(boolean use[]) {
+        this.use = use;
+    }
+
     /**
      * <p>computeBornRadii</p>
      */
@@ -224,10 +257,15 @@ public class GeneralizedKirkwood {
             logger.log(Level.SEVERE, message, e);
         }
 
-        /*
-         for (int i = 0; i < nAtoms; i++) {
-         logger.info(String.format(" Born radii %d %8.3f", i, born[i]));
-         } */
+        for (int i = 0; i < nAtoms; i++) {
+            if (use[i]) {
+                double borni = born[i];
+                if (Double.isInfinite(borni) || Double.isNaN(borni)) {
+                    Atom atom = atoms[i];
+                    logger.severe(String.format(" %s\n Born radii %d %8.3f", atom, i, born[i]));
+                }
+            }
+        }
     }
 
     /**
@@ -363,15 +401,20 @@ public class GeneralizedKirkwood {
             public void run(int lb, int ub) {
                 for (int i = lb; i <= ub; i++) {
                     born[i] = 0.0;
-                    final double ri = baseRadius[i];
-                    if (ri > 0.0) {
+                    final double baseRi = baseRadius[i];
+                    if (!use[i]) {
+                        born[i] = baseRi;
+                        continue;
+                    }
+                    if (baseRi > 0.0) {
                         final double xi = x[i];
                         final double yi = y[i];
                         final double zi = z[i];
-                        double sum = pi43 / (ri * ri * ri);
+                        // Integral initialized to the limit of atom alone in solvent.
+                        double sum = pi43 / (baseRi * baseRi * baseRi);
                         for (int k = 0; k < nAtoms; k++) {
-                            final double rk = baseRadius[k];
-                            if (i != k && rk > 0.0) {
+                            final double baseRk = baseRadius[k];
+                            if (i != k && baseRk > 0.0 && use[k]) {
                                 final double xr = x[k] - xi;
                                 final double yr = y[k] - yi;
                                 final double zr = z[k] - zi;
@@ -380,39 +423,46 @@ public class GeneralizedKirkwood {
                                     continue;
                                 }
                                 final double r = sqrt(r2);
-                                final double sk = rk * overlapScale[k];
-                                final double sk2 = sk * sk;
-                                if (ri + r < sk) {
-                                    final double lik = ri;
-                                    final double uik = sk - r;
-                                    sum = sum + pi43 * (1.0 / (uik * uik * uik) - 1.0 / (lik * lik * lik));
+                                final double scaledRk = baseRk * overlapScale[k];
+                                final double scaledRk2 = scaledRk * scaledRk;
+                                // Atom i is engulfed atom by atom k.
+                                if (baseRi + r < scaledRk) {
+                                    final double lower = baseRi;
+                                    final double upper = scaledRk - r;
+                                    sum = sum + pi43 * (1.0 / (upper * upper * upper)
+                                            - 1.0 / (lower * lower * lower));
                                 }
-                                final double uik = r + sk;
-                                double lik;
-                                if (ri + r < sk) {
-                                    lik = sk - r;
-                                } else if (r < ri + sk) {
-                                    lik = ri;
+                                // Upper integration bound is always the same.
+                                final double upper = r + scaledRk;
+                                // Lower integration bound depends on atoms sizes and separation.
+                                double lower;
+                                if (baseRi + r < scaledRk) {
+                                    // Atom i is engulfed by atom k.
+                                    lower = scaledRk - r;
+                                } else if (r < baseRi + scaledRk) {
+                                    // Atoms are overlapped, begin integration from ri.
+                                    lower = baseRi;
                                 } else {
-                                    lik = r - sk;
+                                    // No overlap between atoms.
+                                    lower = r - scaledRk;
                                 }
-                                final double l2 = lik * lik;
+                                final double l2 = lower * lower;
                                 final double l4 = l2 * l2;
-                                final double lr = lik * r;
+                                final double lr = lower * r;
                                 final double l4r = l4 * r;
-                                final double u2 = uik * uik;
+                                final double u2 = upper * upper;
                                 final double u4 = u2 * u2;
-                                final double ur = uik * r;
+                                final double ur = upper * r;
                                 final double u4r = u4 * r;
-                                final double term = (3.0 * (r2 - sk2) + 6.0 * u2 - 8.0 * ur) / u4r
-                                        - (3.0 * (r2 - sk2) + 6.0 * l2 - 8.0 * lr) / l4r;
+                                final double term = (3.0 * (r2 - scaledRk2) + 6.0 * u2 - 8.0 * ur) / u4r
+                                        - (3.0 * (r2 - scaledRk2) + 6.0 * l2 - 8.0 * lr) / l4r;
                                 sum = sum - pi12 * term;
                             }
                         }
-                        born[i] = pow(sum / pi43, third);
-                        if (born[i] <= 0.0) {
-                            born[i] = 0.0001;
+                        if (sum <= 0.0) {
+                            sum = 0.001;
                         }
+                        born[i] = pow(sum / pi43, third);
                         born[i] = 1.0 / born[i];
                     }
                 }
@@ -691,6 +741,9 @@ public class GeneralizedKirkwood {
                  */
                 for (int ii = lb; ii <= ub; ii++) {
                     final int i = iCarbon[ii];
+                    if (!use[i]) {
+                        continue;
+                    }
                     final double carbonSA = carbonSASA[ii];
                     double sa = acSurf;
                     final double xi = x[i];
@@ -698,7 +751,7 @@ public class GeneralizedKirkwood {
                     final double zi = z[i];
                     int count = 0;
                     for (int k = 0; k < nAtoms; k++) {
-                        if (i != k) {
+                        if (i != k && use[k]) {
                             final double xr = x[k] - xi;
                             final double yr = y[k] - yi;
                             final double zr = z[k] - zi;
@@ -768,6 +821,9 @@ public class GeneralizedKirkwood {
                  */
                 for (int ii = lb; ii <= ub; ii++) {
                     final int i = iCarbon[ii];
+                    if (!use[i]) {
+                        continue;
+                    }
                     double tanhSAi = tanhSA[ii];
                     Atom ssAtom = null;
                     Atom atom = atoms[i];
@@ -815,6 +871,9 @@ public class GeneralizedKirkwood {
                     double e = 0.0;
                     for (int kk = ii + 1; kk < nCarbon; kk++) {
                         int k = iCarbon[kk];
+                        if (!use[k]) {
+                            continue;
+                        }
                         if (omit[k] != i) {
                             final double xr = xi - x[k];
                             final double yr = yi - y[k];
@@ -897,12 +956,15 @@ public class GeneralizedKirkwood {
             public void run(int lb, int ub) {
                 for (int ii = lb; ii <= ub; ii++) {
                     final int i = iCarbon[ii];
+                    if (!use[i]) {
+                        continue;
+                    }
                     final double carbonSA = carbonSASA[ii];
                     final double xi = x[i];
                     final double yi = y[i];
                     final double zi = z[i];
                     for (int k = 0; k < nAtoms; k++) {
-                        if (i != k) {
+                        if (i != k && use[k]) {
                             final double xr = xi - x[k];
                             final double yr = yi - y[k];
                             final double zr = zi - z[k];
@@ -1019,6 +1081,9 @@ public class GeneralizedKirkwood {
             @Override
             public void run(int lb, int ub) {
                 for (int i = lb; i <= ub; i++) {
+                    if (!use[i]) {
+                        continue;
+                    }
                     final double xi = x[i];
                     final double yi = y[i];
                     final double zi = z[i];
@@ -1035,6 +1100,9 @@ public class GeneralizedKirkwood {
                     final double qzzi = multipolei[t002] / 3.0;
                     final double rbi = born[i];
                     for (int k = i; k < nAtoms; k++) {
+                        if (!use[k]) {
+                            continue;
+                        }
                         final double xr = x[k] - xi;
                         final double yr = y[k] - yi;
                         final double zr = z[k] - zi;
@@ -1334,6 +1402,9 @@ public class GeneralizedKirkwood {
             @Override
             public void run(int lb, int ub) {
                 for (int i = lb; i <= ub; i++) {
+                    if (!use[i]) {
+                        continue;
+                    }
                     final double xi = x[i];
                     final double yi = y[i];
                     final double zi = z[i];
@@ -1345,6 +1416,9 @@ public class GeneralizedKirkwood {
                     final double uizCR = inducedDipoleCR[i][2];
                     final double rbi = born[i];
                     for (int k = i; k < nAtoms; k++) {
+                        if (!use[k]) {
+                            continue;
+                        }
                         final double xr = x[k] - xi;
                         final double yr = y[k] - yi;
                         final double zr = z[k] - zi;
@@ -1489,7 +1563,7 @@ public class GeneralizedKirkwood {
         }
 
         public double getEnergy() {
-            return ELECTRIC * sharedGKEnergy.get();
+            return sharedGKEnergy.get();
         }
 
         public int getInteractions() {
@@ -1597,6 +1671,9 @@ public class GeneralizedKirkwood {
             @Override
             public void run(int lb, int ub) {
                 for (i = lb; i <= ub; i++) {
+                    if (!use[i]) {
+                        continue;
+                    }
                     final double xi = x[i];
                     final double yi = y[i];
                     final double zi = z[i];
@@ -1622,6 +1699,9 @@ public class GeneralizedKirkwood {
                     szi = dzi + pzi;
                     rbi = born[i];
                     for (k = i; k < nAtoms; k++) {
+                        if (!use[k]) {
+                            continue;
+                        }
                         xr = x[k] - xi;
                         yr = y[k] - yi;
                         zr = z[k] - zi;
@@ -1769,7 +1849,8 @@ public class GeneralizedKirkwood {
                          * energy.
                          */
                         energyTensors();
-                        gkEnergy += energy();
+                        double gkPairEnergy = energy();
+                        gkEnergy += gkPairEnergy;
                         count++;
                         if (gradient) {
                             /**
@@ -3071,6 +3152,9 @@ public class GeneralizedKirkwood {
             @Override
             public void run(int lb, int ub) {
                 for (int i = lb; i <= ub; i++) {
+                    if (!use[i]) {
+                        continue;
+                    }
                     final double ri = baseRadius[i];
                     if (ri > 0.0) {
                         final double xi = x[i];
@@ -3080,6 +3164,9 @@ public class GeneralizedKirkwood {
                         double term = pi43 / (rbi * rbi * rbi);
                         term = factor / pow(term, (4.0 * third));
                         for (int k = 0; k < nAtoms; k++) {
+                            if (!use[k]) {
+                                continue;
+                            }
                             final double rk = baseRadius[k];
                             if (k != i && rk > 0.0) {
                                 final double xr = x[k] - xi;
@@ -3134,28 +3221,4 @@ public class GeneralizedKirkwood {
             }
         }
     }
-    /**
-     * Some static constants.
-     */
-    private static final double third = 1.0 / 3.0;
-    private static final double pi43 = 4.0 / 3.0 * PI;
-    private static final double pi12 = PI / 12.0;
-    /**
-     * Permittivity of water at STP.
-     */
-    private static final double dWater = 78.3;
-    /**
-     * Kirkwood multipolar reaction field constants.
-     */
-    private static final double fc = 1.0 * (1.0 - dWater) / (0.0 + 1.0 * dWater);
-    private static final double fd = 2.0 * (1.0 - dWater) / (1.0 + 2.0 * dWater);
-    private static final double fq = 3.0 * (1.0 - dWater) / (2.0 + 3.0 * dWater);
-    /**
-     * Empirical constant that controls the GK cross-term.
-     */
-    private static final double gkc = 2.455;
-    /**
-     * Empirical scaling of the Bondi radii.
-     */
-    private static final double bondiScale = 1.03;
 }
