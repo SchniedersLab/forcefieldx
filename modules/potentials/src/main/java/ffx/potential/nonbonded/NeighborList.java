@@ -907,8 +907,8 @@ public class NeighborList extends ParallelRegion {
                         /**
                          * Warn about close overlaps.
                          */
-                        if (d2 < crystal.specialPositionCutoff2) {
-                            logger.warning(format(" Close overlap (%6.3f) between atoms (iSymm = %d):\n %s\n %s\n",
+                        if (d2 < crystal.specialPositionCutoff2 && logger.isLoggable(Level.FINE)) {
+                            logger.fine(format(" Close overlap (%6.3f) between atoms (iSymm = %d):\n %s\n %s\n",
                                     sqrt(d2), iSymm, atoms[atomIndex].toString(), atoms[aj].toString()));
                         }
                         /**
