@@ -562,16 +562,12 @@ public class Residue extends MSGroup {
         super.print();
     }
 
-    /**
-     * <p>printSideChainCOM</p>
-     */
-    public void printSideChainCOM() {
-        Atom a;
+    public double[] getSideChainCOM() {
         Vector3d v = new Vector3d();
         Vector3d v2 = new Vector3d();
         int count = 0;
-        for (ListIterator li = getAtomList().listIterator(); li.hasNext();) {
-            a = (Atom) li.next();
+        for (ListIterator li = getSideChainAtoms().listIterator(); li.hasNext();) {
+            Atom a = (Atom) li.next();
             String id = a.getName();
             if (!id.equals("CA") && !id.equals("N") && !id.equals("C")
                     && !id.equals("O")) {
@@ -582,8 +578,18 @@ public class Residue extends MSGroup {
                 a.print();
             }
         }
-        v.scale(1.0f / count);
-        logger.info(getName() + " " + v.toString());
+        v.scale(1.0 / count);
+        double ret[] = new double[3];
+        v.get(ret);
+        return ret;
+    }
+
+    /**
+     * <p>printSideChainCOM</p>
+     */
+    public void logSideChainCOM() {
+        double com[] = this.getSideChainCOM();
+        logger.info(String.format(" %s %8.3f %8.3f %8.3f ", getName(), com[0], com[1], com[2]));
     }
 
     /**

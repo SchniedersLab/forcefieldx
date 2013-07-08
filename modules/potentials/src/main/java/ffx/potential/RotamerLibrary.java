@@ -362,6 +362,7 @@ public class RotamerLibrary {
                 rotamerCache[n][5] = new Rotamer(name, -65, 0, -85, 0, 180, 0);
                 rotamerCache[n][6] = new Rotamer(name, -65, 0, -30, 0, 0, 0);
                 rotamerCache[n][7] = new Rotamer(name, -65, 0, -30, 0, 180, 0);
+                break;
             case TYD:
                 rotamerCache[n] = new Rotamer[4];
                 rotamerCache[n][0] = new Rotamer(name, 62, 0, 90, 0);
