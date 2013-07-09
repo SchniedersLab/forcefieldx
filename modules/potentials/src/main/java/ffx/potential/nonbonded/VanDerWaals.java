@@ -245,7 +245,7 @@ public class VanDerWaals implements MaskingInterface,
         this.parallelTeam = parallelTeam;
 
         nAtoms = atoms.length;
-        nSymm = this.crystal.spaceGroup.getNumberOfSymOps();
+        nSymm = crystal.spaceGroup.getNumberOfSymOps();
         /**
          * Set up the Buffered-14-7 parameters.
          */

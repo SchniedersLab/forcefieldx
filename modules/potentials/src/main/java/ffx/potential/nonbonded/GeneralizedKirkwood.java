@@ -830,7 +830,11 @@ public class GeneralizedKirkwood {
                     List<Bond> bonds = atom.getBonds();
                     for (Bond bond : bonds) {
                         Atom atom2 = bond.get1_2(atom);
-                        omit[atom2.xyzIndex - 1] = i;
+                        int k = atom2.xyzIndex - 1;
+                        if (!use[k]) {
+                            continue;
+                        }
+                        omit[k] = i;
                         if (atom2.getAtomicNumber() == 16) {
                             ssAtom = atom2;
                         }
@@ -839,7 +843,11 @@ public class GeneralizedKirkwood {
                     for (Angle angle : angles) {
                         Atom atom2 = angle.get1_3(atom);
                         if (atom2 != null) {
-                            omit[atom2.xyzIndex - 1] = i;
+                            int k = atom2.xyzIndex - 1;
+                            if (!use[k]) {
+                                continue;
+                            }
+                            omit[k] = i;
                         }
                     }
                     List<Torsion> torsions = atom.getTorsions();
@@ -847,6 +855,9 @@ public class GeneralizedKirkwood {
                         Atom atom2 = torsion.get1_4(atom);
                         if (atom2 != null) {
                             int k = atom2.xyzIndex - 1;
+                            if (!use[k]) {
+                                continue;
+                            }
                             omit[k] = i;
                             if (ssAtom != null) {
                                 List<Bond> bonds2 = atom2.getBonds();
