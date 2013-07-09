@@ -139,11 +139,21 @@ public class RotamerLibrary {
             case PHE:
                 rotamerCache[n] = new Rotamer[4];
                 rotamerCache[n][0] = new Rotamer(name, -66.3, 10.2, 94.3, 19.5);
-                rotamerCache[n][1] = new Rotamer(name, -179.2, 9.3, 7.8, 8.9);
+                rotamerCache[n][1] = new Rotamer(name, -179.2, 9.3, 78.9, 8.9);
                 rotamerCache[n][2] = new Rotamer(name, 66.0, 12.0, 90.7, 9.4);
                 rotamerCache[n][3] = new Rotamer(name, -71.9, 16.3, -0.4, 26.1);
                 break;
             case TYR:
+                rotamerCache[n] = new Rotamer[8];
+                rotamerCache[n][0] = new Rotamer(name, -66.5, 11.4, 96.6, 21.8, 0, 0);
+                rotamerCache[n][1] = new Rotamer(name, -179.7, 12.6, 71.9, 13.4, 0, 0);
+                rotamerCache[n][2] = new Rotamer(name, 63.3, 9.4, 89.1, 13.0, 0, 0);
+                rotamerCache[n][3] = new Rotamer(name, -67.2, 13.2, -1.0, 20.1, 0, 0);
+                rotamerCache[n][0] = new Rotamer(name, -66.5, 11.4, 96.6, 21.8, 180.0, 0);
+                rotamerCache[n][1] = new Rotamer(name, -179.7, 12.6, 71.9, 13.4, 180.0, 0);
+                rotamerCache[n][2] = new Rotamer(name, 63.3, 9.4, 89.1, 13.0, 180.0, 0);
+                rotamerCache[n][3] = new Rotamer(name, -67.2, 13.2, -1.0, 20.1, 180.0, 0);
+                break;
             case TYD:
                 rotamerCache[n] = new Rotamer[4];
                 rotamerCache[n][0] = new Rotamer(name, -66.5, 11.4, 96.6, 21.8);
