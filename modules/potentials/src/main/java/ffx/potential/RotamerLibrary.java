@@ -531,6 +531,19 @@ public class RotamerLibrary {
         return rotamerCache[n];
     }
 
+    public static void measureRotamers(ArrayList<Residue> residueList, boolean print) {
+        double chi[] = new double[4];
+        for (Residue residue : residueList) {
+            chi[0] = 0.0;
+            chi[1] = 0.0;
+            chi[2] = 0.0;
+            chi[3] = 0.0;
+            measureRotamer(residue, chi, print);
+            logger.info(String.format(" %c %s %8.3f %8.3f %8.3f %8.3f", residue.getChainID(), residue,
+                    chi[0], chi[1], chi[2], chi[3]));
+        }
+    }
+
     public static void measureRotamer(Residue residue, double chi[], boolean print) {
         AminoAcid3 name = AminoAcid3.valueOf(residue.getName());
         switch (name) {
@@ -544,7 +557,7 @@ public class RotamerLibrary {
                     Torsion torsion = (Torsion) rols;
                     if (torsion.compare(N, CA, CB, CG1)) {
                         chi[0] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
                         break;
@@ -563,17 +576,16 @@ public class RotamerLibrary {
                     Torsion torsion = (Torsion) rols;
                     if (torsion.compare(N, CA, CB, CG)) {
                         chi[0] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
+
                     }
-                    if (torsion.compare(CA, CB, CD1, CG)) {
+                    if (torsion.compare(CA, CB, CG, CD1)) {
                         chi[1] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
                 }
                 break;
@@ -589,43 +601,39 @@ public class RotamerLibrary {
                     Torsion torsion = (Torsion) rols;
                     if (torsion.compare(N, CA, CB, CG1)) {
                         chi[0] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
-                    if (torsion.compare(CA, CB, CD1, CG1)){
-                        chi[1]= torsion.getValue();
-                        if (print){
+                    if (torsion.compare(CA, CB, CG1, CD1)) {
+                        chi[1] = torsion.getValue();
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
                 }
                 break;
             }
-            case SER:{
+            case SER: {
                 ArrayList<ROLS> torsions = residue.getTorsionList();
                 Atom N = (Atom) residue.getAtomNode("N");
                 Atom CA = (Atom) residue.getAtomNode("CA");
                 Atom CB = (Atom) residue.getAtomNode("CB");
                 Atom OG = (Atom) residue.getAtomNode("OG");
                 Atom HG = (Atom) residue.getAtomNode("HG");
-                for (ROLS rols : torsions){
+                for (ROLS rols : torsions) {
                     Torsion torsion = (Torsion) rols;
-                    if (torsion.compare(N, CA, CB, OG)){
+                    if (torsion.compare(N, CA, CB, OG)) {
                         chi[0] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
-                    if (torsion.compare(CA, CB, OG,HG)){
+                    if (torsion.compare(CA, CB, OG, HG)) {
                         chi[1] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
                 }
                 break;
@@ -641,32 +649,30 @@ public class RotamerLibrary {
                     Torsion torsion = (Torsion) rols;
                     if (torsion.compare(N, CA, CB, OG1)) {
                         chi[0] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
                     if (torsion.compare(CA, CB, OG1, HG1)) {
                         chi[1] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
                 }
                 break;
             }
-            case CYX :{
+            case CYX: {
                 ArrayList<ROLS> torsions = residue.getTorsionList();
                 Atom N = (Atom) residue.getAtomNode("N");
                 Atom CA = (Atom) residue.getAtomNode("CA");
                 Atom CB = (Atom) residue.getAtomNode("CB");
                 Atom SG = (Atom) residue.getAtomNode("SG");
-                for (ROLS rols : torsions){
+                for (ROLS rols : torsions) {
                     Torsion torsion = (Torsion) rols;
-                    if (torsion.compare(CA, CB, N, SG)){
+                    if (torsion.compare(N, CA, CB, SG)) {
                         chi[0] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
                         break;
@@ -674,17 +680,17 @@ public class RotamerLibrary {
                 }
                 break;
             }
-            case CYD:{
+            case CYD: {
                 ArrayList<ROLS> torsions = residue.getTorsionList();
                 Atom N = (Atom) residue.getAtomNode("N");
                 Atom CA = (Atom) residue.getAtomNode("CA");
                 Atom CB = (Atom) residue.getAtomNode("CB");
                 Atom SG = (Atom) residue.getAtomNode("SG");
-                for (ROLS rols : torsions){
+                for (ROLS rols : torsions) {
                     Torsion torsion = (Torsion) rols;
-                    if (torsion.compare(N, CA, CB, SG)){
+                    if (torsion.compare(N, CA, CB, SG)) {
                         chi[0] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
                         break;
@@ -692,18 +698,18 @@ public class RotamerLibrary {
                 }
                 break;
             }
-            case PHE:{
+            case PHE: {
                 ArrayList<ROLS> torsions = residue.getTorsionList();
                 Atom N = (Atom) residue.getAtomNode("N");
                 Atom CA = (Atom) residue.getAtomNode("CA");
                 Atom CB = (Atom) residue.getAtomNode("CB");
                 Atom CD1 = (Atom) residue.getAtomNode("CD1");
                 Atom CG = (Atom) residue.getAtomNode("CG");
-                for (ROLS rols : torsions){
+                for (ROLS rols : torsions) {
                     Torsion torsion = (Torsion) rols;
-                    if (torsion.compare(N, CA, CB, CG)){
+                    if (torsion.compare(N, CA, CB, CG)) {
                         chi[0] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
                         break;
@@ -722,22 +728,20 @@ public class RotamerLibrary {
                     Torsion torsion = (Torsion) rols;
                     if (torsion.compare(N, CA, CB, CG)) {
                         chi[0] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
-                    if (torsion.compare(CA, CB, CD, CG)) {
+                    if (torsion.compare(CA, CB, CG, CD)) {
                         chi[1] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
                 }
                 break;
             }
-            case TYR:{
+            case TYR: {
                 ArrayList<ROLS> torsions = residue.getTorsionList();
                 Atom N = (Atom) residue.getAtomNode("N");
                 Atom CA = (Atom) residue.getAtomNode("CA");
@@ -752,29 +756,26 @@ public class RotamerLibrary {
                     Torsion torsion = (Torsion) rols;
                     if (torsion.compare(N, CA, CB, CG)) {
                         chi[0] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
-                    if (torsion.compare(CA, CB, CD1, CG)){
+                    if (torsion.compare(CA, CB, CG, CD1)) {
                         chi[1] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
-                    if (torsion.compare(CE2, CZ, OH, HH)){
+                    if (torsion.compare(CE2, CZ, OH, HH)) {
                         chi[2] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
                 }
                 break;
             }
-            case TYD:{
+            case TYD: {
                 ArrayList<ROLS> torsions = residue.getTorsionList();
                 Atom N = (Atom) residue.getAtomNode("N");
                 Atom CA = (Atom) residue.getAtomNode("CA");
@@ -785,22 +786,20 @@ public class RotamerLibrary {
                     Torsion torsion = (Torsion) rols;
                     if (torsion.compare(N, CA, CB, CG)) {
                         chi[0] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
-                    if (torsion.compare(CA, CB, CD1, CG)){
+                    if (torsion.compare(CA, CB, CG, CD1)) {
                         chi[1] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
                 }
                 break;
             }
-            case TRP:{
+            case TRP: {
                 ArrayList<ROLS> torsions = residue.getTorsionList();
                 Atom N = (Atom) residue.getAtomNode("N");
                 Atom CA = (Atom) residue.getAtomNode("CA");
@@ -811,17 +810,15 @@ public class RotamerLibrary {
                     Torsion torsion = (Torsion) rols;
                     if (torsion.compare(N, CA, CB, CG)) {
                         chi[0] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
-                    if (torsion.compare(CA, CB, CD1, CG)){
+                    if (torsion.compare(CA, CB, CG, CD1)) {
                         chi[1] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
                 }
                 break;
@@ -837,17 +834,15 @@ public class RotamerLibrary {
                     Torsion torsion = (Torsion) rols;
                     if (torsion.compare(N, CA, CB, CG)) {
                         chi[0] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
                     if (torsion.compare(CA, CB, CG, ND1)) {
                         chi[1] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
                 }
                 break;
@@ -863,17 +858,15 @@ public class RotamerLibrary {
                     Torsion torsion = (Torsion) rols;
                     if (torsion.compare(N, CA, CB, CG)) {
                         chi[0] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
                     if (torsion.compare(CA, CB, CG, ND1)) {
                         chi[1] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
                 }
                 break;
@@ -889,17 +882,15 @@ public class RotamerLibrary {
                     Torsion torsion = (Torsion) rols;
                     if (torsion.compare(N, CA, CB, CG)) {
                         chi[0] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
                     if (torsion.compare(CA, CB, CG, ND1)) {
                         chi[1] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
                 }
                 break;
@@ -914,7 +905,7 @@ public class RotamerLibrary {
                     Torsion torsion = (Torsion) rols;
                     if (torsion.compare(N, CA, CB, CG)) {
                         chi[0] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
                         break;
@@ -933,22 +924,20 @@ public class RotamerLibrary {
                     Torsion torsion = (Torsion) rols;
                     if (torsion.compare(N, CA, CB, CG)) {
                         chi[0] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
                     if (torsion.compare(CA, CB, CG, OD1)) {
                         chi[1] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
                 }
                 break;
             }
-            case ASN:{
+            case ASN: {
                 ArrayList<ROLS> torsions = residue.getTorsionList();
                 Atom N = (Atom) residue.getAtomNode("N");
                 Atom CA = (Atom) residue.getAtomNode("CA");
@@ -959,22 +948,20 @@ public class RotamerLibrary {
                     Torsion torsion = (Torsion) rols;
                     if (torsion.compare(N, CA, CB, CG)) {
                         chi[0] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
                     if (torsion.compare(CA, CB, CG, OD1)) {
                         chi[1] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
                 }
                 break;
             }
-            case GLU:{
+            case GLU: {
                 ArrayList<ROLS> torsions = residue.getTorsionList();
                 Atom N = (Atom) residue.getAtomNode("N");
                 Atom CA = (Atom) residue.getAtomNode("CA");
@@ -982,34 +969,30 @@ public class RotamerLibrary {
                 Atom CG = (Atom) residue.getAtomNode("CG");
                 Atom CD = (Atom) residue.getAtomNode("CD");
                 Atom OE1 = (Atom) residue.getAtomNode("OE1");
-                for (ROLS rols :torsions){
+                for (ROLS rols : torsions) {
                     Torsion torsion = (Torsion) rols;
-                    if (torsion.compare(N, CA, CB, CG)){
+                    if (torsion.compare(N, CA, CB, CG)) {
                         chi[0] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
-                    if (torsion.compare(CA, CB, CG, CD)){
+                    if (torsion.compare(CA, CB, CG, CD)) {
                         chi[1] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
-                    if (torsion.compare(CB, CG, CD, OE1)){
+                    if (torsion.compare(CB, CG, CD, OE1)) {
                         chi[2] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
-                    
                 }
                 break;
             }
-            case GLH:{
+            case GLH: {
                 ArrayList<ROLS> torsions = residue.getTorsionList();
                 Atom N = (Atom) residue.getAtomNode("N");
                 Atom CA = (Atom) residue.getAtomNode("CA");
@@ -1017,34 +1000,30 @@ public class RotamerLibrary {
                 Atom CG = (Atom) residue.getAtomNode("CG");
                 Atom CD = (Atom) residue.getAtomNode("CD");
                 Atom OE1 = (Atom) residue.getAtomNode("OE1");
-                for (ROLS rols :torsions){
+                for (ROLS rols : torsions) {
                     Torsion torsion = (Torsion) rols;
-                    if (torsion.compare(N, CA, CB, CG)){
+                    if (torsion.compare(N, CA, CB, CG)) {
                         chi[0] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
-                    if (torsion.compare(CA, CB, CG, CD)){
+                    if (torsion.compare(CA, CB, CG, CD)) {
                         chi[1] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
-                    if (torsion.compare(CB, CG, CD, OE1)){
+                    if (torsion.compare(CB, CG, CD, OE1)) {
                         chi[2] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
-                    
                 }
                 break;
             }
-            case GLN:{
+            case GLN: {
                 ArrayList<ROLS> torsions = residue.getTorsionList();
                 Atom N = (Atom) residue.getAtomNode("N");
                 Atom CA = (Atom) residue.getAtomNode("CA");
@@ -1052,34 +1031,30 @@ public class RotamerLibrary {
                 Atom CG = (Atom) residue.getAtomNode("CG");
                 Atom CD = (Atom) residue.getAtomNode("CD");
                 Atom OE1 = (Atom) residue.getAtomNode("OE1");
-                for (ROLS rols :torsions){
+                for (ROLS rols : torsions) {
                     Torsion torsion = (Torsion) rols;
-                    if (torsion.compare(N, CA, CB, CG)){
+                    if (torsion.compare(N, CA, CB, CG)) {
                         chi[0] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
-                    if (torsion.compare(CA, CB, CG, CD)){
+                    if (torsion.compare(CA, CB, CG, CD)) {
                         chi[1] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
-                    if (torsion.compare(CB, CG, CD, OE1)){
+                    if (torsion.compare(CB, CG, CD, OE1)) {
                         chi[2] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
-                    
                 }
                 break;
             }
-            case MET:{
+            case MET: {
                 ArrayList<ROLS> torsions = residue.getTorsionList();
                 Atom N = (Atom) residue.getAtomNode("N");
                 Atom CA = (Atom) residue.getAtomNode("CA");
@@ -1087,118 +1062,107 @@ public class RotamerLibrary {
                 Atom CG = (Atom) residue.getAtomNode("CG");
                 Atom CE = (Atom) residue.getAtomNode("CE");
                 Atom SD = (Atom) residue.getAtomNode("SD");
-                for (ROLS rols :torsions){
+                for (ROLS rols : torsions) {
                     Torsion torsion = (Torsion) rols;
-                    if (torsion.compare(N, CA, CB, CG)){
+                    if (torsion.compare(N, CA, CB, CG)) {
                         chi[0] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
-                    if (torsion.compare(CA, CB, CG, SD)){
+                    if (torsion.compare(CA, CB, CG, SD)) {
                         chi[1] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
-                    if (torsion.compare(CB, CG, CE, SD)){
+                    if (torsion.compare(CB, CG, SD, CE)) {
                         chi[2] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
                 }
                 break;
             }
-            case LYS:{
+            case LYS: {
                 ArrayList<ROLS> torsions = residue.getTorsionList();
                 Atom N = (Atom) residue.getAtomNode("N");
                 Atom CA = (Atom) residue.getAtomNode("CA");
                 Atom CB = (Atom) residue.getAtomNode("CB");
                 Atom CD = (Atom) residue.getAtomNode("CD");
                 Atom CE = (Atom) residue.getAtomNode("CE");
-                Atom CG = (Atom) residue.getAtomNode("CG"); 
+                Atom CG = (Atom) residue.getAtomNode("CG");
                 Atom NZ = (Atom) residue.getAtomNode("NZ");
-                for (ROLS rols :torsions){
+                for (ROLS rols : torsions) {
                     Torsion torsion = (Torsion) rols;
-                    if (torsion.compare(N, CA, CB, CG)){
+                    if (torsion.compare(N, CA, CB, CG)) {
                         chi[0] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
-                    if (torsion.compare(CA, CB, CG, CD)){
+                    if (torsion.compare(CA, CB, CG, CD)) {
                         chi[1] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
-                    if (torsion.compare(CB, CD, CE, CG)){
+                    if (torsion.compare(CB, CG, CD, CE)) {
                         chi[2] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
-                    if (torsion.compare(CD, CG, CE, NZ)){
+                    if (torsion.compare(CG, CD, CE, NZ)) {
                         chi[3] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
                 }
                 break;
             }
-            case LYD:{
+            case LYD: {
                 ArrayList<ROLS> torsions = residue.getTorsionList();
                 Atom N = (Atom) residue.getAtomNode("N");
                 Atom CA = (Atom) residue.getAtomNode("CA");
                 Atom CB = (Atom) residue.getAtomNode("CB");
                 Atom CD = (Atom) residue.getAtomNode("CD");
                 Atom CE = (Atom) residue.getAtomNode("CE");
-                Atom CG = (Atom) residue.getAtomNode("CG"); 
+                Atom CG = (Atom) residue.getAtomNode("CG");
                 Atom NZ = (Atom) residue.getAtomNode("NZ");
-                for (ROLS rols :torsions){
+                for (ROLS rols : torsions) {
                     Torsion torsion = (Torsion) rols;
-                    if (torsion.compare(N, CA, CB, CG)){
+                    if (torsion.compare(N, CA, CB, CG)) {
                         chi[0] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
-                    if (torsion.compare(CA, CB, CD, CG)){
+                    if (torsion.compare(CA, CB, CG, CD)) {
                         chi[1] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
-                    if (torsion.compare(CB, CD, CE, CG)){
+                    if (torsion.compare(CB, CG, CD, CE)) {
                         chi[2] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
-                    if (torsion.compare(CD, CG, CE, NZ)){
+                    if (torsion.compare(CG, CD, CE, NZ)) {
                         chi[3] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
-                    
+
                 }
                 break;
             }
-            case ARG:{
+            case ARG: {
                 ArrayList<ROLS> torsions = residue.getTorsionList();
                 Atom N = (Atom) residue.getAtomNode("N");
                 Atom CA = (Atom) residue.getAtomNode("CA");
@@ -1207,39 +1171,35 @@ public class RotamerLibrary {
                 Atom CG = (Atom) residue.getAtomNode("CG");
                 Atom CZ = (Atom) residue.getAtomNode("CZ");
                 Atom NE = (Atom) residue.getAtomNode("NE");
-                for (ROLS rols :torsions){
+                for (ROLS rols : torsions) {
                     Torsion torsion = (Torsion) rols;
-                    if (torsion.compare(N, CA, CB, CG)){
+                    if (torsion.compare(N, CA, CB, CG)) {
                         chi[0] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
-                    if (torsion.compare(CA, CB, CD, CG)){
+                    if (torsion.compare(CA, CB, CG, CD)) {
                         chi[1] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
-                    if (torsion.compare(CB, CD, CG, NE)){
+                    if (torsion.compare(CB, CG, CD, NE)) {
                         chi[2] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
-                    if (torsion.compare(CD, CG, CZ, NE)){
+                    if (torsion.compare(CG, CD, NE, CZ)) {
                         chi[3] = torsion.getValue();
-                        if (print){
+                        if (print) {
                             logger.info(torsion.toString());
                         }
-                        break;
                     }
                 }
                 break;
-            }    
+            }
             default: {
             }
 
