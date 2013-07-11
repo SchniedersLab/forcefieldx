@@ -23,6 +23,7 @@
 package ffx.potential.nonbonded;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
@@ -777,17 +778,6 @@ public class ParticleMeshEwald implements LambdaInterface {
             generalizedKirkwood = new GeneralizedKirkwood(forceField, atoms, this, parallelTeam);
         } else {
             generalizedKirkwood = null;
-        }
-    }
-
-        /**
-     * Set the atoms that will be included the electrostatics energy.
-     * @param use
-     */
-    public void setUse(boolean use[]) {
-        this.use = use;
-        if (generalizedKirkwoodTerm) {
-            generalizedKirkwood.setUse(use);
         }
     }
 
@@ -4139,20 +4129,12 @@ public class ParticleMeshEwald implements LambdaInterface {
             @Override
             public void start() {
                 int threadID = getThreadIndex();
-                double gX[] = grad[threadID][0];
-                double gY[] = grad[threadID][1];
-                double gZ[] = grad[threadID][2];
-                double tX[] = torque[threadID][0];
-                double tY[] = torque[threadID][1];
-                double tZ[] = torque[threadID][2];
-                for (int i = 0; i < nAtoms; i++) {
-                    gX[i] = 0.0;
-                    gY[i] = 0.0;
-                    gZ[i] = 0.0;
-                    tX[i] = 0.0;
-                    tY[i] = 0.0;
-                    tZ[i] = 0.0;
-                }
+                Arrays.fill(grad[threadID][0], 0.0);
+                Arrays.fill(grad[threadID][1], 0.0);
+                Arrays.fill(grad[threadID][2], 0.0);
+                Arrays.fill(torque[threadID][0], 0.0);
+                Arrays.fill(torque[threadID][1], 0.0);
+                Arrays.fill(torque[threadID][2], 0.0);
             }
 
             @Override
@@ -4161,11 +4143,12 @@ public class ParticleMeshEwald implements LambdaInterface {
                  * Initialize the local coordinate arrays.
                  */
                 for (int i = lb; i <= ub; i++) {
-                    double xyz[] = atoms[i].getXYZ();
+                    Atom atom = atoms[i];
+                    double xyz[] = atom.getXYZ();
                     x[i] = xyz[0];
                     y[i] = xyz[1];
                     z[i] = xyz[2];
-                    use[i] = true;
+                    use[i] = atom.isActive();
                     /**
                      * Real space Ewald is cutoff at ~7 A, compared to ~12 A for
                      * vdW, so the number of neighbors is much more compact. A

@@ -48,6 +48,9 @@ import static ffx.numerics.VectorMath.*;
 public class XRayEnergy implements LambdaInterface, Potential {
 
     private static final Logger logger = Logger.getLogger(XRayEnergy.class.getName());
+    private static final double kBkcal = kB / convert;
+    private static final double eightpi2 = 8.0 * Math.PI * Math.PI;
+    private static final double eightpi23 = eightpi2 * eightpi2 * eightpi2;
     private final DiffractionData diffractiondata;
     private final RefinementModel refinementmodel;
     private final Atom atomarray[];
@@ -67,9 +70,6 @@ public class XRayEnergy implements LambdaInterface, Potential {
     private double kTbsim;
     private double occmass;
     private double temp = 50.0;
-    private static final double kBkcal = kB / convert;
-    private static final double eightpi2 = 8.0 * Math.PI * Math.PI;
-    private static final double eightpi23 = eightpi2 * eightpi2 * eightpi2;
     protected double lambda = 1.0;
     private double totalEnergy;
 
@@ -108,6 +108,63 @@ public class XRayEnergy implements LambdaInterface, Potential {
             logger.info(" Non-zero restraint weight:   " + diffractiondata.bnonzeroweight);
             logger.info(" Similarity restraint weight: " + diffractiondata.bsimweight);
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double energy(double[] x) {
+        double e = 0.0;
+        /**
+         * Unscale the coordinates.
+         */
+        if (optimizationScaling != null) {
+            int len = x.length;
+            for (int i = 0; i < len; i++) {
+                x[i] /= optimizationScaling[i];
+            }
+        }
+
+        if (refinexyz) {
+            // update coordinates
+            diffractiondata.setFFTCoordinates(x);
+        }
+        if (refineb) {
+            // update B factors
+            setBFactors(x);
+        }
+        if (refineocc) {
+            // update occupancies
+            setOccupancies(x);
+        }
+
+        if (xrayterms) {
+            // compute new structure factors
+            diffractiondata.computeAtomicDensity();
+
+            // compute crystal likelihood
+            e = diffractiondata.computeLikelihood();
+        }
+
+        if (restraintterms) {
+            if (refineb) {
+                // add B restraints
+                e += getBFactorRestraints();
+            }
+        }
+
+        /**
+         * Scale the coordinates and gradients.
+         */
+        if (optimizationScaling != null) {
+            int len = x.length;
+            for (int i = 0; i < len; i++) {
+                x[i] *= optimizationScaling[i];
+            }
+        }
+        totalEnergy = e;
+        return e;
     }
 
     /**

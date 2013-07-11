@@ -63,19 +63,19 @@ if (options.h || arguments == null || arguments.size() < 1) {
 }
 
 // Name of the file (PDB or XYZ).
-String modelfilename = arguments.get(0);
+String modelFilename = arguments.get(0);
 
 // set up real space map data (can be multiple files)
-List mapfiles = new ArrayList();
+List mapFiles = new ArrayList();
 if (arguments.size() > 1) {
-    RealSpaceFile realspacefile = new RealSpaceFile(arguments.get(1), 1.0);
-    mapfiles.add(realspacefile);
+    RealSpaceFile realSpaceFile = new RealSpaceFile(arguments.get(1), 1.0);
+    mapFiles.add(realSpaceFile);
 }
 if (options.d) {
     for (int i=0; i<options.ds.size(); i+=2) {
 	double wA = Double.parseDouble(options.ds[i+1]);
-	RealSpaceFile realspacefile = new RealSpaceFile(options.ds[i], wA);
-	mapfiles.add(realspacefile);
+	RealSpaceFile realSpaceFile = new RealSpaceFile(options.ds[i], wA);
+	mapFiles.add(realSpaceFile);
     }
 }
 
@@ -95,19 +95,17 @@ if (options.p) {
     System.setProperty("polarization", options.p);
 }
 
-logger.info("\n Running x-ray minimize on " + modelfilename);
-systems = open(modelfilename);
-
-if (mapfiles.size() == 0) {
-    RealSpaceFile realspacefile = new RealSpaceFile(systems, 1.0);
-    mapfiles.add(realspacefile);
+logger.info("\n Running x-ray minimize on " + modelFilename);
+systems = open(modelFilename);
+if (mapFiles.size() == 0) {
+    RealSpaceFile realspacefile = new RealSpaceFile(systems);
+    mapFiles.add(realspacefile);
 }
-
-RealSpaceData realspacedata = new RealSpaceData(systems, systems[0].getProperties(), mapfiles.toArray(new RealSpaceFile[mapfiles.size()]));
-
+RealSpaceData realspacedata = new RealSpaceData(systems, systems[0].getProperties(), mapFiles.toArray(new RealSpaceFile[mapFiles.size()]));
 energy();
 
-RefinementMinimize refinementMinimize = new RefinementMinimize(diffractiondata, RefinementMode.COORDINATES);
+RefinementMinimize refinementMinimize = new RefinementMinimize(realspacedata, RefinementMode.COORDINATES);
+
 if (eps < 0.0) {
     eps = 1.0;
 }
@@ -115,5 +113,4 @@ logger.info("\n RMS gradient convergence criteria: " + eps + " max number of ite
 refinementMinimize.minimize(eps, maxiter);
 
 energy();
-
-saveAsPDB(systems, new File(FilenameUtils.removeExtension(modelfilename) + suffix + ".pdb"));
+saveAsPDB(systems, new File(FilenameUtils.removeExtension(modelFilename) + suffix + ".pdb"));

@@ -41,6 +41,15 @@ public interface Potential {
     };
 
     /**
+     * This method is called repeatedly to compute the function energy.
+     *
+     * @param x Input parameters.
+     * @return Function value at <code>x</code>.
+     * @since 1.0
+     */
+    public abstract double energy(double x[]);
+
+    /**
      * This method is called repeatedly to compute the function energy and
      * gradient.
      *

@@ -81,6 +81,44 @@ public class SigmaAEnergy implements Potential {
     private static final double sim_p = 0.04613803811;
     private static final double sim_q = 1.82167089029;
     private static final double sim_r = -0.74817947490;
+
+    /*
+     * from sim and sim_integ functions in clipper utils:
+     * http://www.ysbl.york.ac.uk/~cowtan/clipper/clipper.html and from ln_of_i0
+     * and i1_over_i0 functions in bessel.h in scitbx module of cctbx:
+     * http://cci.lbl.gov/cctbx_sources/scitbx/math/bessel.h
+     */
+    /**
+     * <p>sim</p>
+     *
+     * @param x a double.
+     * @return a double.
+     */
+    public static double sim(double x) {
+        if (x >= 0.0) {
+            return (((x + sim_a) * x + sim_b) * x)
+                    / (((x + sim_c) * x + sim_d) * x + sim_e);
+        } else {
+            return -(-(-(-x + sim_a) * x + sim_b) * x)
+                    / (-(-(-x + sim_c) * x + sim_d) * x + sim_e);
+        }
+    }
+
+    /**
+     * <p>sim_integ</p>
+     *
+     * @param x0 a double.
+     * @return a double.
+     */
+    public static double sim_integ(double x0) {
+        double x = abs(x0);
+        double z = (x + sim_p) / sim_q;
+
+        return sim_A * log(x + sim_g)
+                + 0.5 * sim_B * log(z * z + 1.0)
+                + sim_r * atan(z)
+                + x + 1.0;
+    }
     private final ReflectionList reflectionlist;
     private final ReflectionSpline spline;
     private final int n;
@@ -390,6 +428,30 @@ public class SigmaAEnergy implements Potential {
      * {@inheritDoc}
      */
     @Override
+    public double energy(double x[]) {
+        if (optimizationScaling != null) {
+            int len = x.length;
+            for (int i = 0; i < len; i++) {
+                x[i] /= optimizationScaling[i];
+            }
+        }
+
+        double sum = target(x, null, false, false);
+
+        if (optimizationScaling != null) {
+            int len = x.length;
+            for (int i = 0; i < len; i++) {
+                x[i] *= optimizationScaling[i];
+            }
+        }
+
+        return sum;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public double energyAndGradient(double x[], double g[]) {
         if (optimizationScaling != null) {
             int len = x.length;
@@ -429,44 +491,6 @@ public class SigmaAEnergy implements Potential {
     @Override
     public double[] getScaling() {
         return optimizationScaling;
-    }
-
-    /*
-     * from sim and sim_integ functions in clipper utils:
-     * http://www.ysbl.york.ac.uk/~cowtan/clipper/clipper.html and from ln_of_i0
-     * and i1_over_i0 functions in bessel.h in scitbx module of cctbx:
-     * http://cci.lbl.gov/cctbx_sources/scitbx/math/bessel.h
-     */
-    /**
-     * <p>sim</p>
-     *
-     * @param x a double.
-     * @return a double.
-     */
-    public static double sim(double x) {
-        if (x >= 0.0) {
-            return (((x + sim_a) * x + sim_b) * x)
-                    / (((x + sim_c) * x + sim_d) * x + sim_e);
-        } else {
-            return -(-(-(-x + sim_a) * x + sim_b) * x)
-                    / (-(-(-x + sim_c) * x + sim_d) * x + sim_e);
-        }
-    }
-
-    /**
-     * <p>sim_integ</p>
-     *
-     * @param x0 a double.
-     * @return a double.
-     */
-    public static double sim_integ(double x0) {
-        double x = abs(x0);
-        double z = (x + sim_p) / sim_q;
-
-        return sim_A * log(x + sim_g)
-                + 0.5 * sim_B * log(z * z + 1.0)
-                + sim_r * atan(z)
-                + x + 1.0;
     }
 
     /**

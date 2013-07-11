@@ -43,22 +43,6 @@ import ffx.numerics.Potential;
  *
  */
 public class SplineEnergy implements Potential {
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public double[] getCoordinates(double[] parameters) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    public static interface Type {
-
-        public static final int FOFC = 1;
-        public static final int F1F2 = 2;
-        public static final int FCTOESQ = 3;
-        public static final int FOTOESQ = 4;
-    }
     private static final Logger logger = Logger.getLogger(SplineEnergy.class.getName());
     private static final double twopi2 = 2.0 * PI * PI;
     private final ReflectionList reflectionlist;
@@ -103,6 +87,14 @@ public class SplineEnergy implements Potential {
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double[] getCoordinates(double[] parameters) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
      * <p>target</p>
      *
      * @param x an array of double.
@@ -111,131 +103,154 @@ public class SplineEnergy implements Potential {
      * @param print a boolean.
      * @return a double.
      */
-    public double target(double x[], double g[],
-            boolean gradient, boolean print) {
-        double r, rf, rfree, rfreef, sum, sumfo;
+        public double target(double x[], double g[], boolean gradient, boolean print) {
+double r, rf, rfree, rfreef, sum, sumfo;
 
-        // zero out the gradient
-        if (gradient) {
-            for (int i = 0; i < g.length; i++) {
-                g[i] = 0.0;
+// zero out the gradient
+if (gradient) {
+    for (int i = 0; i < g.length; i++) {
+        g[i] = 0.0;
+    }
+}
+
+r = rf = rfree = rfreef = sum = sumfo = 0.0;
+for (HKL ih : reflectionlist.hkllist) {
+    int i = ih.index();
+    if (Double.isNaN(fc[i][0])
+            || Double.isNaN(fo[i][0])
+            || fo[i][1] <= 0.0) {
+        continue;
+    }
+
+    if (type == Type.FOTOESQ
+            && fo[i][0] <= 0.0) {
+        continue;
+    }
+
+    double eps = ih.epsilon();
+    double s = Crystal.invressq(crystal, ih);
+
+    // spline setup
+    double fh = spline.f(s, x);
+
+    refinementdata.get_fctot_ip(i, fct);
+
+    double f1, f2, d, d2, dr, w;
+    f1 = f2 = d = d2 = dr = w = 0.0;
+    switch (type) {
+        case Type.FOFC:
+            w = 1.0;
+            f1 = refinementdata.get_f(i);
+            f2 = fct.abs();
+            d = f1 - fh * f2;
+            d2 = d * d;
+            dr = -2.0 * f2 * d;
+            sumfo += f1 * f1;
+            break;
+        case Type.F1F2:
+            w = 2.0 / ih.epsilonc();
+            f1 = pow(fct.abs(), 2.0) / eps;
+            f2 = pow(refinementdata.get_f(i), 2.0) / eps;
+            d = fh * f1 - f2;
+            d2 = d * d / f1;
+            dr = 2.0 * d;
+            sumfo = 1.0;
+            break;
+        case Type.FCTOESQ:
+            w = 2.0 / ih.epsilonc();
+            f1 = pow(fct.abs() / sqrt(eps), 2.0);
+            d = f1 * fh - 1.0;
+            d2 = d * d / f1;
+            dr = 2.0 * d;
+            sumfo = 1.0;
+            break;
+        case Type.FOTOESQ:
+            w = 2.0 / ih.epsilonc();
+            f1 = pow(refinementdata.get_f(i) / sqrt(eps), 2.0);
+            d = f1 * fh - 1.0;
+            d2 = d * d / f1;
+            dr = 2.0 * d;
+            sumfo = 1.0;
+            break;
+    }
+
+    sum += w * d2;
+
+    if (refinementdata.isfreer(i)) {
+        rfree += abs(abs(fo[i][0]) - abs(fh * fct.abs()));
+        rfreef += abs(fo[i][0]);
+    } else {
+        r += abs(abs(fo[i][0]) - abs(fh * fct.abs()));
+        rf += abs(fo[i][0]);
+    }
+
+    if (gradient) {
+        int i0 = spline.i0();
+        int i1 = spline.i1();
+        int i2 = spline.i2();
+        double g0 = spline.dfi0();
+        double g1 = spline.dfi1();
+        double g2 = spline.dfi2();
+
+        g[i0] += w * dr * g0;
+        g[i1] += w * dr * g1;
+        g[i2] += w * dr * g2;
+    }
+}
+
+if (gradient) {
+    for (int i = 0; i < g.length; i++) {
+        g[i] /= sumfo;
+    }
+}
+
+if (print) {
+    StringBuilder sb = new StringBuilder("\n");
+    sb.append(" Computed Potential Energy\n");
+    sb.append(String.format("   residual:  %8.3f\n",
+            sum / sumfo));
+    if (type == Type.FOFC || type == Type.F1F2) {
+        sb.append(String.format("   R:  %8.3f  Rfree:  %8.3f\n",
+                (r / rf) * 100.0, (rfree / rfreef) * 100.0));
+    }
+    sb.append("x: ");
+    for (int i = 0; i < x.length; i++) {
+        sb.append(String.format("%8g ", x[i]));
+    }
+    sb.append("\ng: ");
+    for (int i = 0; i < g.length; i++) {
+        sb.append(String.format("%8g ", g[i]));
+    }
+    sb.append("\n");
+    logger.info(sb.toString());
+}
+
+totalEnergy = sum / sumfo;
+return sum / sumfo;
+}
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double energy(double x[]) {
+        if (optimizationScaling != null) {
+            int len = x.length;
+            for (int i = 0; i < len; i++) {
+                x[i] /= optimizationScaling[i];
             }
         }
 
-        r = rf = rfree = rfreef = sum = sumfo = 0.0;
-        for (HKL ih : reflectionlist.hkllist) {
-            int i = ih.index();
-            if (Double.isNaN(fc[i][0])
-                    || Double.isNaN(fo[i][0])
-                    || fo[i][1] <= 0.0) {
-                continue;
-            }
+        double sum = target(x, null, false, false);
 
-            if (type == Type.FOTOESQ
-                    && fo[i][0] <= 0.0) {
-                continue;
-            }
-
-            double eps = ih.epsilon();
-            double s = Crystal.invressq(crystal, ih);
-
-            // spline setup
-            double fh = spline.f(s, x);
-
-            refinementdata.get_fctot_ip(i, fct);
-
-            double f1, f2, d, d2, dr, w;
-            f1 = f2 = d = d2 = dr = w = 0.0;
-            switch (type) {
-                case Type.FOFC:
-                    w = 1.0;
-                    f1 = refinementdata.get_f(i);
-                    f2 = fct.abs();
-                    d = f1 - fh * f2;
-                    d2 = d * d;
-                    dr = -2.0 * f2 * d;
-                    sumfo += f1 * f1;
-                    break;
-                case Type.F1F2:
-                    w = 2.0 / ih.epsilonc();
-                    f1 = pow(fct.abs(), 2.0) / eps;
-                    f2 = pow(refinementdata.get_f(i), 2.0) / eps;
-                    d = fh * f1 - f2;
-                    d2 = d * d / f1;
-                    dr = 2.0 * d;
-                    sumfo = 1.0;
-                    break;
-                case Type.FCTOESQ:
-                    w = 2.0 / ih.epsilonc();
-                    f1 = pow(fct.abs() / sqrt(eps), 2.0);
-                    d = f1 * fh - 1.0;
-                    d2 = d * d / f1;
-                    dr = 2.0 * d;
-                    sumfo = 1.0;
-                    break;
-                case Type.FOTOESQ:
-                    w = 2.0 / ih.epsilonc();
-                    f1 = pow(refinementdata.get_f(i) / sqrt(eps), 2.0);
-                    d = f1 * fh - 1.0;
-                    d2 = d * d / f1;
-                    dr = 2.0 * d;
-                    sumfo = 1.0;
-                    break;
-            }
-
-            sum += w * d2;
-
-            if (refinementdata.isfreer(i)) {
-                rfree += abs(abs(fo[i][0]) - abs(fh * fct.abs()));
-                rfreef += abs(fo[i][0]);
-            } else {
-                r += abs(abs(fo[i][0]) - abs(fh * fct.abs()));
-                rf += abs(fo[i][0]);
-            }
-
-            if (gradient) {
-                int i0 = spline.i0();
-                int i1 = spline.i1();
-                int i2 = spline.i2();
-                double g0 = spline.dfi0();
-                double g1 = spline.dfi1();
-                double g2 = spline.dfi2();
-
-                g[i0] += w * dr * g0;
-                g[i1] += w * dr * g1;
-                g[i2] += w * dr * g2;
+        if (optimizationScaling != null) {
+            int len = x.length;
+            for (int i = 0; i < len; i++) {
+                x[i] *= optimizationScaling[i];
             }
         }
 
-        if (gradient) {
-            for (int i = 0; i < g.length; i++) {
-                g[i] /= sumfo;
-            }
-        }
-
-        if (print) {
-            StringBuilder sb = new StringBuilder("\n");
-            sb.append(" Computed Potential Energy\n");
-            sb.append(String.format("   residual:  %8.3f\n",
-                    sum / sumfo));
-            if (type == Type.FOFC || type == Type.F1F2) {
-                sb.append(String.format("   R:  %8.3f  Rfree:  %8.3f\n",
-                        (r / rf) * 100.0, (rfree / rfreef) * 100.0));
-            }
-            sb.append("x: ");
-            for (int i = 0; i < x.length; i++) {
-                sb.append(String.format("%8g ", x[i]));
-            }
-            sb.append("\ng: ");
-            for (int i = 0; i < g.length; i++) {
-                sb.append(String.format("%8g ", g[i]));
-            }
-            sb.append("\n");
-            logger.info(sb.toString());
-        }
-
-        totalEnergy = sum / sumfo;
-        return sum / sumfo;
+        return sum;
     }
 
     /**
@@ -319,5 +334,13 @@ public class SplineEnergy implements Potential {
 
     @Override
     public void setEnergyTermState(STATE state) {
+    }
+
+    public static interface Type {
+
+        public static final int FOFC = 1;
+        public static final int F1F2 = 2;
+        public static final int FCTOESQ = 3;
+        public static final int FOTOESQ = 4;
     }
 }
