@@ -1063,6 +1063,11 @@ public class OSRW implements Potential {
         potential.setEnergyTermState(state);
     }
 
+    @Override
+    public double energy(double[] x) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
     private class OSRWHistogramWriter extends PrintWriter {
 
         public OSRWHistogramWriter(Writer writer) {
