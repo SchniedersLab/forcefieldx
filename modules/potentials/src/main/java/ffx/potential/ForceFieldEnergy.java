@@ -54,6 +54,7 @@ import ffx.potential.parameters.ForceField.ForceFieldString;
 public class ForceFieldEnergy implements Potential, LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(ForceFieldEnergy.class.getName());
+    private static final double toSeconds = 0.000000001;
     private final Atom[] atoms;
     private Crystal crystal;
     private final ParallelTeam parallelTeam;
@@ -131,7 +132,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     protected double lambda = 1.0;
     protected double[] optimizationScaling = null;
     protected VARIABLE_TYPE[] variableTypes = null;
-    private static final double toSeconds = 0.000000001;
 
     /**
      * <p>Constructor for ForceFieldEnergy.</p>
@@ -149,9 +149,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         nAtoms = atoms.length;
 
         // Check that atom ordering is correct.
-        for (int i=0; i<nAtoms; i++) {
+        for (int i = 0; i < nAtoms; i++) {
             int index = atoms[i].xyzIndex - 1;
-            assert(i == index);
+            assert (i == index);
         }
 
         ForceField forceField = molecularAssembly.getForceField();
@@ -893,6 +893,31 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         return type;
     }
 
+    @Override
+    public double energy(double[] x) {
+        /**
+         * Unscale the coordinates.
+         */
+        if (optimizationScaling != null) {
+            int len = x.length;
+            for (int i = 0; i < len; i++) {
+                x[i] /= optimizationScaling[i];
+            }
+        }
+        setCoordinates(x);
+        double e = energy(false, false);
+        /**
+         * Rescale the coordinates.
+         */
+        if (optimizationScaling != null) {
+            int len = x.length;
+            for (int i = 0; i < len; i++) {
+                x[i] *= optimizationScaling[i];
+            }
+        }
+        return e;
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -1157,6 +1182,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
     /**
      * Set the boundary conditions for this calculation.
+     *
      * @param crystal
      */
     public void setCrystal(Crystal crystal) {
@@ -1175,19 +1201,5 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
          * TODO: update GeneralizedKirkwood to include support for symmetry
          * operators and periodic boundary conditions.
          */
-    }
-
-    /**
-     * Set the atoms that will be included in non-bonded calculations.
-     * @param use
-     */
-    public void setUse(boolean use[]) {
-        if (vanderWaalsTerm == true) {
-            vanderWaals.setUse(use);
-        }
-
-        if (multipoleTerm == true) {
-            particleMeshEwald.setUse(use);
-        }
     }
 }

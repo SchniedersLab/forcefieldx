@@ -40,6 +40,13 @@ import ffx.potential.bonded.Residue;
 import ffx.xray.RefinementMinimize.RefinementMode;
 
 import static ffx.numerics.VectorMath.b2u;
+import static ffx.xray.RefinementMinimize.RefinementMode.BFACTORS;
+import static ffx.xray.RefinementMinimize.RefinementMode.BFACTORS_AND_OCCUPANCIES;
+import static ffx.xray.RefinementMinimize.RefinementMode.COORDINATES;
+import static ffx.xray.RefinementMinimize.RefinementMode.COORDINATES_AND_BFACTORS;
+import static ffx.xray.RefinementMinimize.RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES;
+import static ffx.xray.RefinementMinimize.RefinementMode.COORDINATES_AND_OCCUPANCIES;
+import static ffx.xray.RefinementMinimize.RefinementMode.OCCUPANCIES;
 
 /**
  * Combine the X-ray target and chemical potential energy using the
@@ -217,6 +224,73 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
             xChemical[i] = new double[len];
             gChemical[i] = new double[len];
         }
+    }
+
+    @Override
+    public double energy(double[] x) {
+        double weight = data.getWeight();
+        double e = 0.0;
+
+        if (thermostat != null) {
+            ktscale = Thermostat.convert / (thermostat.getTargetTemperature() * Thermostat.kB);
+        }
+
+        if (optimizationScaling != null) {
+            int len = x.length;
+            for (int i = 0; i < len; i++) {
+                x[i] /= optimizationScaling[i];
+            }
+        }
+
+        int assemblysize = molecularAssembly.length;
+        switch (refinementMode) {
+            case COORDINATES:
+                // Compute the chemical energy and gradient.
+                for (int i = 0; i < assemblysize; i++) {
+                    ForceFieldEnergy fe = molecularAssembly[i].getPotentialEnergy();
+                    getAssemblyi(i, x, xChemical[i]);
+                    double curE = fe.energy(xChemical[i]);
+                    e += (curE - e) / (i + 1);
+                }
+                double chemE = e;
+
+                e = chemE * ktscale;
+
+                // Compute the X-ray target energy.
+                double xE = dataEnergy.energy(x);
+                e += weight * xE;
+                break;
+            case BFACTORS:
+            case OCCUPANCIES:
+            case BFACTORS_AND_OCCUPANCIES:
+                // Compute the X-ray target energy and gradient.
+                e = dataEnergy.energy(x);
+                break;
+            case COORDINATES_AND_BFACTORS:
+            case COORDINATES_AND_OCCUPANCIES:
+            case COORDINATES_AND_BFACTORS_AND_OCCUPANCIES:
+                // Compute the chemical energy and gradient.
+                for (int i = 0; i < assemblysize; i++) {
+                    ForceFieldEnergy fe = molecularAssembly[i].getPotentialEnergy();
+                    getAssemblyi(i, x, xChemical[i]);
+                    double curE = fe.energy(xChemical[i]);
+                    e += (curE - e) / (i + 1);
+                }
+                e += weight * dataEnergy.energy(x);
+                break;
+            default:
+                String message = "Unknown refinement mode.";
+                logger.log(Level.SEVERE, message);
+        }
+
+        if (optimizationScaling != null) {
+            int len = x.length;
+            for (int i = 0; i < len; i++) {
+                x[i] *= optimizationScaling[i];
+            }
+        }
+        totalEnergy = e;
+        return e;
     }
 
     /**

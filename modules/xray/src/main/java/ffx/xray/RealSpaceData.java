@@ -247,6 +247,10 @@ public class RealSpaceData implements DataContainer {
                     continue;
                 }
 
+                if (!a.isActive()) {
+                    continue;
+                }
+
                 final double lambdai = dLambda ? 1.0 : a.applyLambda() ? lambda : 1.0;
                 a.getXYZ(xyz);
                 a.setXYZGradient(0.0, 0.0, 0.0);

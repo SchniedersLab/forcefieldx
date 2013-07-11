@@ -581,14 +581,6 @@ public class VanDerWaals implements MaskingInterface,
     }
 
     /**
-     * Set the atoms that will be included in the van der Waals energy.
-     * @param use
-     */
-    public void setUse(boolean use[]) {
-        this.use = use;
-    }
-
-    /**
      * Get the total van der Waals potential energy.
      *
      * @return The energy.
@@ -992,11 +984,14 @@ public class VanDerWaals implements MaskingInterface,
 
             @Override
             public void run(int lb, int ub) {
+
                 for (int i = lb, i3 = 3 * lb; i <= ub; i++, i3 += 3) {
-                    final double xyz[] = atoms[i].getXYZ();
+                    Atom atom = atoms[i];
+                    final double xyz[] = atom.getXYZ();
                     coordinates[i3 + XX] = xyz[XX];
                     coordinates[i3 + YY] = xyz[YY];
                     coordinates[i3 + ZZ] = xyz[ZZ];
+                    use[i] = atom.isActive();
                 }
 
                 int threadIndex = getThreadIndex();

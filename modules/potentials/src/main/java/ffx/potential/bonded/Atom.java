@@ -38,7 +38,6 @@ import javax.vecmath.Vector3d;
 
 import ffx.potential.bonded.RendererCache.ColorModel;
 import ffx.potential.bonded.RendererCache.ViewModel;
-import ffx.potential.parameters.AngleType;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.PolarizeType;
@@ -294,6 +293,10 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * @since 1.0
      */
     private double anisouGradient[];
+    /**
+     * If the atom is active, it should be included in target functions.
+     */
+    private boolean active = true;
     private String segID = null;
     private double formFactorWidth = 3.5;
     private int formFactorIndex = -1;
@@ -448,6 +451,14 @@ public class Atom extends MSNode implements Comparable<Atom> {
         }
         return false;
     }
+    
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
 
     /**
      * <p>isDeuterium</p>
@@ -510,7 +521,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     public Angle getAngle(Atom centralAtom, Atom endAtom) {
         for (Angle angle : angles) {
             Atom atom13 = angle.get1_3(this);
-            if (atom13 != null && atom13.equals(endAtom) && 
+            if (atom13 != null && atom13.equals(endAtom) &&
                     angle.getCentralAtom().equals(centralAtom)) {
                 return angle;
             }

@@ -43,6 +43,10 @@ import ffx.potential.bonded.MolecularAssembly;
 public class DualTopologyEnergy implements Potential, LambdaInterface {
 
     /**
+     * Logger for the DualTopologyEnergy class.
+     */
+    private static final Logger logger = Logger.getLogger(DualTopologyEnergy.class.getName());
+    /**
      * Topology 1 number of atoms.
      */
     private final int nAtoms1;
@@ -192,10 +196,6 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
      * Topology 2 ForceFieldEnergy.
      */
     private final ForceFieldEnergy forceFieldEnergy2;
-    /**
-     * Logger for the DualTopologyEnergy class.
-     */
-    private static final Logger logger = Logger.getLogger(DualTopologyEnergy.class.getName());
 
     public DualTopologyEnergy(MolecularAssembly topology1, MolecularAssembly topology2) {
         forceFieldEnergy1 = topology1.getPotentialEnergy();
@@ -299,6 +299,48 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
         }
     }
 
+    @Override
+    public double energy(double[] x) {
+        /**
+         * Update the coordinates of both topologies.
+         */
+        unpackCoordinates(x);
+
+        /**
+         * Compute the energy of topology 1.
+         */
+        energy1 = forceFieldEnergy1.energy(x1);
+        forceFieldEnergy1.setLambdaBondedTerms(true);
+        restraintEnergy1 = forceFieldEnergy1.energy(x1);
+        forceFieldEnergy1.setLambdaBondedTerms(false);
+
+        /**
+         * Compute the energy of topology 2.
+         */
+        energy2 = forceFieldEnergy2.energy(x2);
+        forceFieldEnergy2.setLambdaBondedTerms(true);
+        restraintEnergy2 = forceFieldEnergy2.energy(x2);
+        forceFieldEnergy2.setLambdaBondedTerms(false);
+
+        /**
+         * Apply the dual-topology scaling for the total energy.
+         */
+        totalEnergy = lambdaPow * energy1 + oneMinusLambdaPow * restraintEnergy1
+                + oneMinusLambdaPow * energy2 + lambdaPow * restraintEnergy2;
+
+        if (logger.isLoggable(Level.FINEST)) {
+            logger.finest(String.format(" Topology 1 Energy & Restraints: %15.8f %15.8f\n", lambdaPow * energy1, oneMinusLambdaPow * restraintEnergy1));
+            logger.finest(String.format(" Topology 2 Energy & Restraints: %15.8f %15.8f\n", oneMinusLambdaPow * energy2, lambdaPow * restraintEnergy2));
+        }
+
+        /**
+         * Rescale the coordinates.
+         */
+        packCoordinates(x);
+
+        return totalEnergy;
+    }
+
     /**
      * The coordinate and gradient arrays are unpacked/packed based on the dual
      * topology.
@@ -358,6 +400,15 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
     @Override
     public double[] getScaling() {
         return scaling;
+    }
+
+    private void packCoordinates(double x[]) {
+        if (scaling != null) {
+            int len = x.length;
+            for (int i = 0; i < len; i++) {
+                x[i] *= scaling[i];
+            }
+        }
     }
 
     private void packGradient(double x[], double g[]) {
@@ -508,11 +559,6 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
     public void setEnergyTermState(STATE state) {
         forceFieldEnergy1.setEnergyTermState(state);
         forceFieldEnergy2.setEnergyTermState(state);
-    }
-
-    public void setUse(boolean use[]) {
-        forceFieldEnergy1.setUse(use);
-        forceFieldEnergy2.setUse(use);
     }
 
     @Override

@@ -103,6 +103,11 @@ public class PME_2 implements Potential {
     public static final Logger logger = Logger.getLogger(PME_2.class.getName());
     private double totalEnergy;
 
+    @Override
+    public double energy(double[] x) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
     /**
      * Polarization modes include "direct", in which induced dipoles do not
      * interact, and "mutual" that converges the self-consistent field to a

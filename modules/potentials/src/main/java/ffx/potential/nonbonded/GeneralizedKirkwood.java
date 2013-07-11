@@ -242,10 +242,6 @@ public class GeneralizedKirkwood {
         logger.info("");
     }
 
-    public void setUse(boolean use[]) {
-        this.use = use;
-    }
-
     /**
      * <p>computeBornRadii</p>
      */
@@ -300,6 +296,11 @@ public class GeneralizedKirkwood {
      * @return a double.
      */
     public double solvationEnergy(boolean gradient, boolean print) {
+
+        for (int j = 0; j < nAtoms; j++) {
+            use[j] = atoms[j].isActive();
+        }
+
         /**
          * Initialize the gradient accumulation arrays.
          */

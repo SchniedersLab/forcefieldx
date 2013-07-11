@@ -74,6 +74,44 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
         setRefinementBooleans();
     }
 
+    @Override
+    public double energy(double[] x) {
+        double e = 0.0;
+        /**
+         * Unscale the coordinates.
+         */
+        if (optimizationScaling != null) {
+            int len = x.length;
+            for (int i = 0; i < len; i++) {
+                x[i] /= optimizationScaling[i];
+            }
+        }
+
+        if (refinexyz) {
+            for (Atom a : atomarray) {
+                a.setXYZGradient(0.0, 0.0, 0.0);
+            }
+        }
+
+        // target function for real space refinement
+        if (refinexyz) {
+            e = realspacedata.computeRealSpaceTarget(false);
+        }
+
+        /**
+         * Scale the coordinates and gradients.
+         */
+        if (optimizationScaling != null) {
+            int len = x.length;
+            for (int i = 0; i < len; i++) {
+                x[i] *= optimizationScaling[i];
+            }
+        }
+
+        totalEnergy = e;
+        return e;
+    }
+
     /**
      * {@inheritDoc}
      */

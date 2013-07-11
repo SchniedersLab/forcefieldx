@@ -314,6 +314,30 @@ public class ScaleBulkEnergy implements Potential {
      * {@inheritDoc}
      */
     @Override
+    public double energy(double[] x) {
+        if (optimizationScaling != null) {
+            int len = x.length;
+            for (int i = 0; i < len; i++) {
+                x[i] /= optimizationScaling[i];
+            }
+        }
+
+        double sum = target(x, null, false, false);
+
+        if (optimizationScaling != null) {
+            int len = x.length;
+            for (int i = 0; i < len; i++) {
+                x[i] *= optimizationScaling[i];
+            }
+        }
+
+        return sum;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public double energyAndGradient(double[] x, double[] g) {
         if (optimizationScaling != null) {
             int len = x.length;
