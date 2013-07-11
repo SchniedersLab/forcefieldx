@@ -1628,7 +1628,7 @@ public class MolecularAssembly extends MSGroup {
 
         for (li = residues.listIterator(); li.hasNext();) {
             r = (Residue) li.next();
-            r.printSideChainCOM();
+            r.logSideChainCOM();
         }
     }
 }
