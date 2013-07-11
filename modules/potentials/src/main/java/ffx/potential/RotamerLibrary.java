@@ -25,12 +25,6 @@ package ffx.potential;
 import java.util.logging.Logger;
 
 import ffx.potential.ResidueEnumerations.AminoAcid3;
-<<<<<<< HEAD
-import static ffx.potential.ResidueEnumerations.AminoAcid3.ASH;
-import static ffx.potential.ResidueEnumerations.AminoAcid3.GLH;
-=======
-import static ffx.potential.ResidueEnumerations.AminoAcid3.VAL;
->>>>>>> 4386fa04f82918e8e5f5c705fea0d18948bbd9cb
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
