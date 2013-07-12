@@ -579,7 +579,6 @@ public class RotamerLibrary {
                         if (print) {
                             logger.info(torsion.toString());
                         }
-
                     }
                     if (torsion.compare(CA, CB, CG, CD1)) {
                         chi[1] = torsion.getValue();
