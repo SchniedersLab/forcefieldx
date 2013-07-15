@@ -150,10 +150,10 @@ public class RotamerLibrary {
                 rotamerCache[n][1] = new Rotamer(name, -179.7, 12.6, 71.9, 13.4, 0, 0);
                 rotamerCache[n][2] = new Rotamer(name, 63.3, 9.4, 89.1, 13.0, 0, 0);
                 rotamerCache[n][3] = new Rotamer(name, -67.2, 13.2, -1.0, 20.1, 0, 0);
-                rotamerCache[n][0] = new Rotamer(name, -66.5, 11.4, 96.6, 21.8, 180.0, 0);
-                rotamerCache[n][1] = new Rotamer(name, -179.7, 12.6, 71.9, 13.4, 180.0, 0);
-                rotamerCache[n][2] = new Rotamer(name, 63.3, 9.4, 89.1, 13.0, 180.0, 0);
-                rotamerCache[n][3] = new Rotamer(name, -67.2, 13.2, -1.0, 20.1, 180.0, 0);
+                rotamerCache[n][4] = new Rotamer(name, -66.5, 11.4, 96.6, 21.8, 180.0, 0);
+                rotamerCache[n][5] = new Rotamer(name, -179.7, 12.6, 71.9, 13.4, 180.0, 0);
+                rotamerCache[n][6] = new Rotamer(name, 63.3, 9.4, 89.1, 13.0, 180.0, 0);
+                rotamerCache[n][7] = new Rotamer(name, -67.2, 13.2, -1.0, 20.1, 180.0, 0);
                 break;
             case TYD:
                 rotamerCache[n] = new Rotamer[4];
