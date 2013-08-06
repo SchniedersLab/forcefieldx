@@ -22,6 +22,7 @@
  */
 package ffx.potential;
 
+import java.util.ArrayList;
 import java.util.logging.Logger;
 
 import ffx.potential.ResidueEnumerations.AminoAcid3;
@@ -33,7 +34,6 @@ import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Torsion;
 
 import static ffx.potential.parsers.INTFilter.intxyz;
-import java.util.ArrayList;
 
 /**
  * The Rotamer Library Class manages a library of side-chain Rotamers.
@@ -47,7 +47,6 @@ public class RotamerLibrary {
     private static final int numberOfAminoAcids = AminoAcid3.values().length;
     private static final Rotamer[][] rotamerCache = new Rotamer[numberOfAminoAcids][];
     private static LibraryName libraryName = LibraryName.PonderAndRichards;
-    private static int evaluatedPermutations = 0;
 
     public static void setLibrary(LibraryName name) {
         libraryName = name;
@@ -61,6 +60,9 @@ public class RotamerLibrary {
     }
 
     public static Rotamer[] getRotamers(Residue residue) {
+        if (residue == null) {
+            return null;
+        }
         AminoAcid3 name = AminoAcid3.valueOf(residue.getName());
         return getRotamers(name);
     }
@@ -232,7 +234,7 @@ public class RotamerLibrary {
                 rotamerCache[n][11] = new Rotamer(name, 69.8, 10.6, -179.0, 23.7, -173.4, 64.2);
                 rotamerCache[n][12] = new Rotamer(name, -173.6, 14.6, 70.6, 8.7, -166.0, 37.1);
                 rotamerCache[n][13] = new Rotamer(name, 63.0, 4.3, -80.4, 13.9, -163.7, 20.8);
-                break;    
+                break;
             case GLN:
                 rotamerCache[n] = new Rotamer[10];
                 rotamerCache[n][0] = new Rotamer(name, -66.7, 14.1, -178.5, 14.9, -24.0, 38.0);
