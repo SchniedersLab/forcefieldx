@@ -38,6 +38,8 @@ import edu.rit.pj.cluster.JobBackend;
 
 import ffx.numerics.Potential;
 import ffx.potential.LambdaInterface;
+import ffx.potential.bonded.MolecularAssembly;
+import ffx.potential.parsers.PDBFilter;
 
 /**
  * An implementation of the Orthogonal Space Random Walk algorithm.
@@ -214,6 +216,21 @@ public class OSRW implements Potential {
      */
     private int printFrequency = 100;
     /**
+     * Keeps track of full lambda-traversals for snapshot output.
+     */
+    private double traversalSnapshotTarget = 0;
+    /**
+     * Ensemble files containing full-traversal snapshots, plus an assembly, filter, and counter for each.
+     */
+    private File lambdaOneFile;
+    private int lambdaOneStructures = 0;
+    private MolecularAssembly lambdaOneAssembly;
+    private PDBFilter lambdaOneFilter;
+    private File lambdaZeroFile;
+    private int lambdaZeroStructures = 0;
+    private MolecularAssembly lambdaZeroAssembly;
+    private PDBFilter lambdaZeroFilter;
+    /**
      * Interval between how often the free energy is updated from the count
      * matrix.
      */
@@ -246,7 +263,7 @@ public class OSRW implements Potential {
     /**
      * Are FAST varying energy terms being computed, SLOW varying energy terms,
      * or BOTH. OSRW is not active when only FAST varying energy terms are being
-     * propogated.
+     * propagated.
      */
     private STATE state = STATE.BOTH;
     /**
@@ -432,7 +449,7 @@ public class OSRW implements Potential {
         }
 
     }
-
+   
     public void setPropagateLambda(boolean propagateLambda) {
         this.propagateLambda = propagateLambda;
     }
@@ -462,7 +479,7 @@ public class OSRW implements Potential {
     public double energyAndGradient(double[] x, double[] gradient) {
 
         /**
-         * OSRW is propogated with the slowly varying terms.
+         * OSRW is propagated with the slowly varying terms.
          */
         if (state == STATE.FAST) {
             return potential.energyAndGradient(x, gradient);
@@ -580,6 +597,61 @@ public class OSRW implements Potential {
                     String message = " Exception writing OSRW lambda restart file.";
                     logger.log(Level.INFO, message, ex);
                 }
+            }
+            /**
+             * Write out snapshot upon each full lambda traversal.
+             */
+            if (traversalSnapshotTarget == 0 && lambda < 0.1) {
+                if (lambdaZeroFilter == null) {
+                    lambdaZeroFilter = new PDBFilter(lambdaZeroFile, lambdaZeroAssembly, null, null);
+                }
+                try {
+                    FileWriter fw = new FileWriter(lambdaZeroFile, true);
+                    BufferedWriter bw = new BufferedWriter(fw);
+                    bw.write(String.format("MODEL        %d          L=%.4f  counts=%d", ++lambdaZeroStructures, lambda, totalCounts));
+                    for (int i=0; i < 50; i++) {
+                        bw.write(" ");
+                    }
+                    bw.newLine();
+                    bw.flush();
+                    lambdaZeroFilter.writeFile(lambdaZeroFile, true);
+                    bw.write(String.format("ENDMDL"));
+                    for (int i=0; i < 75; i++) {
+                        bw.write(" ");
+                    }
+                    bw.newLine();
+                    bw.flush();
+                    bw.close();
+                    logger.info(String.format(" Wrote traversal structure L=%.4f", lambda));
+                } catch (Exception exception) {
+                    logger.warning(String.format("Exception writing to filename: %s", lambdaZeroFile.getName()));
+                }
+                traversalSnapshotTarget = 1;
+            } else if (traversalSnapshotTarget == 1 && lambda > 0.9) {
+                if (lambdaOneFilter == null) {
+                    lambdaOneFilter = new PDBFilter(new File(lambdaOneFile.getAbsolutePath()), lambdaOneAssembly, null, null);
+                }
+                try {
+                    FileWriter fw = new FileWriter(lambdaOneFile, true);
+                    BufferedWriter bw = new BufferedWriter(fw);
+                    bw.write(String.format("MODEL        %d          L=%.4f  counts=%d", ++lambdaOneStructures, lambda, totalCounts));
+                    for (int i=0; i < 60; i++) {
+                        bw.write(" ");
+                    }
+                    bw.newLine();
+                    bw.flush();
+                    lambdaOneFilter.writeFile(lambdaOneFile, true);
+                    bw.write(String.format("ENDMDL"));
+                    for (int i=0; i < 75; i++) {
+                        bw.write(" ");
+                    }
+                    bw.newLine();
+                    bw.close();
+                    logger.info(String.format(" Wrote traversal structure L=%.4f", lambda));
+                } catch (Exception exception) {
+                    logger.warning(String.format("Exception writing to filename: %s", lambdaOneFile.getName()));
+                }
+                traversalSnapshotTarget = 0;
             }
         }
 
@@ -958,7 +1030,15 @@ public class OSRW implements Potential {
     public void setLambda(double lambda) {
         lambdaInterface.setLambda(lambda);
         this.lambda = lambda;
+        this.traversalSnapshotTarget = Math.round(lambda);
         theta = Math.asin(Math.sqrt(lambda));
+    }
+    
+    public void setTraversalOutput(File lambdaOneFile, MolecularAssembly topology1, File lambdaZeroFile, MolecularAssembly topology2) {
+        this.lambdaOneFile = lambdaOneFile;
+        this.lambdaOneAssembly = topology1;
+        this.lambdaZeroFile = lambdaZeroFile;
+        this.lambdaZeroAssembly = topology2;
     }
 
     public void setThetaMass(double thetaMass) {
