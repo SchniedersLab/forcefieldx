@@ -265,7 +265,7 @@ public final class MainPanel extends JPanel implements ActionListener,
         helpFrame.setTitle("Force Field X Help");
         helpFrame.setSize(jhelp.getPreferredSize());
         helpFrame.setVisible(true);
-        jhelp.setCurrentID("ForceFieldXplorerBook");
+        jhelp.setCurrentID("ForceFieldXBook");
         helpFrame.toFront();
     }
 

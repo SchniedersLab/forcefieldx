@@ -141,8 +141,8 @@ public class KeyFilter {
                     }
                     /**
                      * Multipoles and TORTORS are the only keywords that span
-                     * multiple lines. Editing these from within Force Field
-                     * Xplor seems unlikely, so they are treated as comments.
+                     * multiple lines. Editing these from within Force Field X
+                     * seems unlikely, so they are treated as comments.
                      */
                     if (keyword.equalsIgnoreCase("MULTIPOLE")) {
                         int mnum[] = {3, 1, 2, 3};

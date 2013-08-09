@@ -35,8 +35,7 @@ import ffx.potential.parameters.AtomType;
 import ffx.potential.parsers.SystemFilter;
 
 /**
- * The SimulationFilter class parses system data sent by TINKER to Force Field
- * Xplor.
+ * The SimulationFilter class parses system data sent by TINKER to Force Field X.
  *
  * @author Michael J. Schnieders
  *

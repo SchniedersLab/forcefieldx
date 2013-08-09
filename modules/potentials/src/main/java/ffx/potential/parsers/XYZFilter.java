@@ -543,14 +543,14 @@ public class XYZFilter extends SystemFilter {
                 }
             } catch (Exception e) {
                 logger.severe(
-                        "Their was an unexpected error writing to " + getActiveMolecularSystem().toString() + "\n" + e + "\nForce Field Xplor will continue...");
+                        "Their was an unexpected error writing to " + getActiveMolecularSystem().toString() + "\n" + e + "\nForce Field X will continue...");
                 return false;
             }
             bw.close();
             fw.close();
         } catch (IOException e) {
             logger.severe(
-                    "Their was an unexpected error writing to " + getActiveMolecularSystem().toString() + "\n" + e + "\nForce Field Xplor will continue...");
+                    "Their was an unexpected error writing to " + getActiveMolecularSystem().toString() + "\n" + e + "\nForce Field X will continue...");
             return false;
         }
         return true;
