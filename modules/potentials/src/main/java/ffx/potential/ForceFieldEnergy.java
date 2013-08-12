@@ -264,8 +264,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             this.crystal = unitCell;
         }
 
-
-
         boolean rigidHydrogens = forceField.getBoolean(ForceFieldBoolean.RIGID_HYDROGENS, false);
         double rigidScale = forceField.getDouble(ForceFieldDouble.RIGID_SCALE, 10.0);
 
