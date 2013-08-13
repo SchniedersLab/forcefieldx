@@ -40,6 +40,8 @@ import ffx.numerics.Potential;
 import ffx.potential.LambdaInterface;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.parsers.PDBFilter;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * An implementation of the Orthogonal Space Random Walk algorithm.
@@ -216,11 +218,16 @@ public class OSRW implements Potential {
      */
     private int printFrequency = 100;
     /**
+     * Whether to write out lambda-traversal snapshots.
+     */
+    private boolean writeTraversalSnapshots = false;
+    /**
      * Keeps track of full lambda-traversals for snapshot output.
      */
-    private double traversalSnapshotTarget = 0;
+    private int traversalSnapshotTarget = -1;
     /**
-     * Ensemble files containing full-traversal snapshots, plus an assembly, filter, and counter for each.
+     * Ensemble files containing full-traversal snapshots, plus an assembly,
+     * filter, and counter for each.
      */
     private File lambdaOneFile;
     private int lambdaOneStructures = 0;
@@ -230,6 +237,10 @@ public class OSRW implements Potential {
     private int lambdaZeroStructures = 0;
     private MolecularAssembly lambdaZeroAssembly;
     private PDBFilter lambdaZeroFilter;
+    /**
+     * Stores a traversal snapshot that has not yet been written to file.
+     */
+    private ArrayList<String> traversalInHand = new ArrayList<String>();
     /**
      * Interval between how often the free energy is updated from the count
      * matrix.
@@ -449,7 +460,7 @@ public class OSRW implements Potential {
         }
 
     }
-   
+
     public void setPropagateLambda(boolean propagateLambda) {
         this.propagateLambda = propagateLambda;
     }
@@ -601,57 +612,71 @@ public class OSRW implements Potential {
             /**
              * Write out snapshot upon each full lambda traversal.
              */
-            if (traversalSnapshotTarget == 0 && lambda < 0.1) {
-                if (lambdaZeroFilter == null) {
-                    lambdaZeroFilter = new PDBFilter(lambdaZeroFile, lambdaZeroAssembly, null, null);
-                }
-                try {
-                    FileWriter fw = new FileWriter(lambdaZeroFile, true);
-                    BufferedWriter bw = new BufferedWriter(fw);
-                    bw.write(String.format("MODEL        %d          L=%.4f  counts=%d", ++lambdaZeroStructures, lambda, totalCounts));
-                    for (int i=0; i < 50; i++) {
-                        bw.write(" ");
+            if (writeTraversalSnapshots) {
+                double heldTraversalLambda = 0.5;
+                if (!traversalInHand.isEmpty()) {
+                    heldTraversalLambda = Double.parseDouble(traversalInHand.get(0).split(",")[0]);
+                    if ((lambda > 0.2 && traversalSnapshotTarget == 0)
+                            || (lambda < 0.8 && traversalSnapshotTarget == 1)) {
+                        int snapshotCounts = Integer.parseInt(traversalInHand.get(0).split(",")[1]);
+                        traversalInHand.remove(0);
+                        File fileToWrite;
+                        int numStructures;
+                        if (traversalSnapshotTarget == 0) {
+                            fileToWrite = lambdaZeroFile;
+                            numStructures = ++lambdaZeroStructures;
+                        } else {
+                            fileToWrite = lambdaOneFile;
+                            numStructures = ++lambdaOneStructures;
+                        }
+                        try {
+                            FileWriter fw = new FileWriter(fileToWrite, true);
+                            BufferedWriter bw = new BufferedWriter(fw);
+                            bw.write(String.format("MODEL        %d          L=%.4f  counts=%d", numStructures, heldTraversalLambda, snapshotCounts));
+                            for (int i = 0; i < 50; i++) {
+                                bw.write(" ");
+                            }
+                            bw.newLine();
+                            for (int i = 0; i < traversalInHand.size(); i++) {
+                                bw.write(traversalInHand.get(i));
+                                bw.newLine();
+                            }
+                            bw.write(String.format("ENDMDL"));
+                            for (int i = 0; i < 75; i++) {
+                                bw.write(" ");
+                            }
+                            bw.newLine();
+                            bw.close();
+                            logger.info(String.format(" Wrote traversal structure L=%.4f", heldTraversalLambda));
+                        } catch (Exception exception) {
+                            logger.warning(String.format("Exception writing to file: %s", fileToWrite.getName()));
+                        }
+                        heldTraversalLambda = 0.5;
+                        traversalInHand.clear();
+                        traversalSnapshotTarget = 1 - traversalSnapshotTarget;
                     }
-                    bw.newLine();
-                    bw.flush();
-                    lambdaZeroFilter.writeFile(lambdaZeroFile, true);
-                    bw.write(String.format("ENDMDL"));
-                    for (int i=0; i < 75; i++) {
-                        bw.write(" ");
-                    }
-                    bw.newLine();
-                    bw.flush();
-                    bw.close();
-                    logger.info(String.format(" Wrote traversal structure L=%.4f", lambda));
-                } catch (Exception exception) {
-                    logger.warning(String.format("Exception writing to filename: %s", lambdaZeroFile.getName()));
                 }
-                traversalSnapshotTarget = 1;
-            } else if (traversalSnapshotTarget == 1 && lambda > 0.9) {
-                if (lambdaOneFilter == null) {
-                    lambdaOneFilter = new PDBFilter(new File(lambdaOneFile.getAbsolutePath()), lambdaOneAssembly, null, null);
-                }
-                try {
-                    FileWriter fw = new FileWriter(lambdaOneFile, true);
-                    BufferedWriter bw = new BufferedWriter(fw);
-                    bw.write(String.format("MODEL        %d          L=%.4f  counts=%d", ++lambdaOneStructures, lambda, totalCounts));
-                    for (int i=0; i < 60; i++) {
-                        bw.write(" ");
+                if (((lambda < 0.1 && traversalInHand.isEmpty()) || (lambda < heldTraversalLambda - 0.025 && !traversalInHand.isEmpty()))
+                        && (traversalSnapshotTarget == 0 || traversalSnapshotTarget == -1)) {
+                    if (lambdaZeroFilter == null) {
+                        lambdaZeroFilter = new PDBFilter(lambdaZeroFile, lambdaZeroAssembly, null, null);
+                        lambdaZeroFilter.setListMode(true);
                     }
-                    bw.newLine();
-                    bw.flush();
-                    lambdaOneFilter.writeFile(lambdaOneFile, true);
-                    bw.write(String.format("ENDMDL"));
-                    for (int i=0; i < 75; i++) {
-                        bw.write(" ");
+                    lambdaZeroFilter.clearListOutput();
+                    lambdaZeroFilter.writeFileWithHeader(lambdaFile, new StringBuilder(String.format("%.4f,%d", lambda, totalCounts)));
+                    traversalInHand = lambdaZeroFilter.getListOutput();
+                    traversalSnapshotTarget = 0;
+                } else if (((lambda > 0.9 && traversalInHand.isEmpty()) || (lambda > heldTraversalLambda + 0.025 && !traversalInHand.isEmpty()))
+                        && (traversalSnapshotTarget == 1 || traversalSnapshotTarget == -1)) {
+                    if (lambdaOneFilter == null) {
+                        lambdaOneFilter = new PDBFilter(lambdaOneFile, lambdaOneAssembly, null, null);
+                        lambdaOneFilter.setListMode(true);
                     }
-                    bw.newLine();
-                    bw.close();
-                    logger.info(String.format(" Wrote traversal structure L=%.4f", lambda));
-                } catch (Exception exception) {
-                    logger.warning(String.format("Exception writing to filename: %s", lambdaOneFile.getName()));
+                    lambdaOneFilter.clearListOutput();
+                    lambdaOneFilter.writeFileWithHeader(lambdaFile, new StringBuilder(String.format("%.4f,%d", lambda, totalCounts)));
+                    traversalInHand = lambdaOneFilter.getListOutput();
+                    traversalSnapshotTarget = 1;
                 }
-                traversalSnapshotTarget = 0;
             }
         }
 
@@ -1030,11 +1055,11 @@ public class OSRW implements Potential {
     public void setLambda(double lambda) {
         lambdaInterface.setLambda(lambda);
         this.lambda = lambda;
-        this.traversalSnapshotTarget = Math.round(lambda);
         theta = Math.asin(Math.sqrt(lambda));
     }
-    
+
     public void setTraversalOutput(File lambdaOneFile, MolecularAssembly topology1, File lambdaZeroFile, MolecularAssembly topology2) {
+        this.writeTraversalSnapshots = true;
         this.lambdaOneFile = lambdaOneFile;
         this.lambdaOneAssembly = topology1;
         this.lambdaZeroFile = lambdaZeroFile;
