@@ -102,6 +102,11 @@ public final class PDBFilter extends SystemFilter {
     private int mutateResID = 0;
     private String mutateToResname = null;
     private Character mutateChainID = null;
+    /**
+     * If true, output is directed into arrayOutput instead of the file.
+     */
+    private boolean listMode = false;
+    private ArrayList<String> listOutput = new ArrayList<String>();
 
     /**
      * Mutate a residue at the PDB file is being parsed.
@@ -2855,10 +2860,14 @@ public final class PDBFilter extends SystemFilter {
             File newFile = saveFile;
             activeMolecularAssembly.setFile(newFile);
             activeMolecularAssembly.setName(newFile.getName());
-            fw = new FileWriter(newFile, false);
-            bw = new BufferedWriter(fw);
-            bw.write(header.toString());
-            bw.close();
+            if (!listMode) {
+                fw = new FileWriter(newFile, false);
+                bw = new BufferedWriter(fw);
+                bw.write(header.toString());
+                bw.close();
+            } else {
+                listOutput.add(header.toString());
+            }
         } catch (Exception e) {
             String message = "Exception writing to file: " + saveFile.toString();
             logger.log(Level.WARNING, message, e);
@@ -2918,8 +2927,13 @@ public final class PDBFilter extends SystemFilter {
             Crystal crystal = activeMolecularAssembly.getCrystal();
             if (crystal != null && !crystal.aperiodic()) {
                 Crystal c = crystal.getUnitCell();
-                bw.write(format("CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f %10s\n", c.a, c.b, c.c, c.alpha, c.beta,
-                        c.gamma, padRight(c.spaceGroup.pdbName, 10)));
+                if (!listMode) {
+                    bw.write(format("CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f %10s\n", c.a, c.b, c.c, c.alpha, c.beta,
+                            c.gamma, padRight(c.spaceGroup.pdbName, 10)));
+                } else {
+                    listOutput.add(format("CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f %10s", c.a, c.b, c.c, c.alpha, c.beta,
+                            c.gamma, padRight(c.spaceGroup.pdbName, 10)));
+                }
             }
 // =============================================================================
 // The SSBOND record identifies each disulfide bond in protein and polypeptide
@@ -2966,11 +2980,19 @@ public final class PDBFilter extends SystemFilter {
                                 if (SG2.getName().equalsIgnoreCase("SG")) {
                                     if (SG1.xyzIndex < SG2.xyzIndex) {
                                         bond.energy(false);
-                                        bw.write(format("SSBOND %3d CYS %1s %4s    CYS %1s %4s %36s %5.2f\n",
-                                                serNum++,
-                                                SG1.getChainID().toString(), Hybrid36.encode(4, SG1.getResidueNumber()),
-                                                SG2.getChainID().toString(), Hybrid36.encode(4, SG2.getResidueNumber()),
-                                                "", bond.getValue()));
+                                        if (!listMode) {
+                                            bw.write(format("SSBOND %3d CYS %1s %4s    CYS %1s %4s %36s %5.2f\n",
+                                                    serNum++,
+                                                    SG1.getChainID().toString(), Hybrid36.encode(4, SG1.getResidueNumber()),
+                                                    SG2.getChainID().toString(), Hybrid36.encode(4, SG2.getResidueNumber()),
+                                                    "", bond.getValue()));
+                                        } else {
+                                            listOutput.add(format("SSBOND %3d CYS %1s %4s    CYS %1s %4s %36s %5.2f\n",
+                                                    serNum++,
+                                                    SG1.getChainID().toString(), Hybrid36.encode(4, SG1.getResidueNumber()),
+                                                    SG2.getChainID().toString(), Hybrid36.encode(4, SG2.getResidueNumber()),
+                                                    "", bond.getValue()));
+                                        }
                                     }
                                 }
                             }
@@ -3048,8 +3070,12 @@ public final class PDBFilter extends SystemFilter {
                     terSB.replace(6, 11, String.format("%5s", Hybrid36.encode(5, serial++)));
                     terSB.replace(12, 16, "    ");
                     terSB.replace(16, 26, sb.substring(16, 26));
-                    bw.write(terSB.toString());
-                    bw.newLine();
+                    if (!listMode) {
+                        bw.write(terSB.toString());
+                        bw.newLine();
+                    } else {
+                        listOutput.add(terSB.toString());
+                    }
                 }
             }
             sb.replace(0, 6, "HETATM");
@@ -3183,8 +3209,12 @@ public final class PDBFilter extends SystemFilter {
                 resID++;
             }
 
-            bw.write("END");
-            bw.newLine();
+            if (!listMode) {
+                bw.write("END");
+                bw.newLine();
+            } else {
+                listOutput.add("END");
+            }
             bw.close();
         } catch (Exception e) {
             String message = "Exception writing to file: " + saveFile.toString();
@@ -3236,8 +3266,12 @@ public final class PDBFilter extends SystemFilter {
         }
         sb.replace(76, 78, padLeft(name, 2));
         sb.replace(78, 80, String.format("%2d", 0));
-        bw.write(sb.toString());
-        bw.newLine();
+        if (!listMode) {
+            bw.write(sb.toString());
+            bw.newLine();
+        } else {
+            listOutput.add(sb.toString());
+        }
 // =============================================================================
 //  1 - 6        Record name   "ANISOU"
 //  7 - 11       Integer       serial         Atom serial number.
@@ -3263,11 +3297,28 @@ public final class PDBFilter extends SystemFilter {
                     (int) (anisou[0] * 1e4), (int) (anisou[1] * 1e4),
                     (int) (anisou[2] * 1e4), (int) (anisou[3] * 1e4),
                     (int) (anisou[4] * 1e4), (int) (anisou[5] * 1e4)));
-            bw.write(anisouSB.toString());
-            bw.newLine();
+            if (!listMode) {
+                bw.write(anisouSB.toString());
+                bw.newLine();
+            } else {
+                listOutput.add(anisouSB.toString());
+            }
         }
     }
 
+    public void setListMode(boolean set) {
+        listMode = set;
+        listOutput = new ArrayList<String>();
+    }
+    
+    public ArrayList<String> getListOutput() {
+        return listOutput;
+    }
+    
+    public void clearListOutput() {
+        listOutput.clear();
+    }
+    
     /**
      * The location of a residue within a chain.
      */
