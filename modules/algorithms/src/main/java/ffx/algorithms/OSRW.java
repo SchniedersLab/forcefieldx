@@ -23,6 +23,7 @@
 package ffx.algorithms;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -40,8 +41,6 @@ import ffx.numerics.Potential;
 import ffx.potential.LambdaInterface;
 import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.parsers.PDBFilter;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * An implementation of the Orthogonal Space Random Walk algorithm.
