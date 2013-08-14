@@ -1224,11 +1224,15 @@ public class MolecularAssembly extends MSGroup {
     protected void removeLeaves() {
         super.removeLeaves();
         MSNode macroNode = getAtomNode();
-        if (macroNode != null && macroNode.getChildCount() > 0) {
-            getAtomNode().setName(
-                    "Macromolecules " + "(" + macroNode.getChildCount() + ")");
-        } else {
-            remove(macroNode);
+        if (macroNode != null) {
+            if (macroNode.getChildCount() > 0) {
+                getAtomNode().setName(
+                        "Macromolecules " + "(" + macroNode.getChildCount() + ")");
+            } else {
+                if (macroNode.getParent() == this) {
+                    remove(macroNode);
+                }
+            }
         }
 
         if (molecules.getChildCount() == 0) {

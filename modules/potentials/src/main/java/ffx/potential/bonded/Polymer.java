@@ -261,6 +261,15 @@ public class Polymer extends MSGroup {
         return chainID;
     }
 
+    public void addMultiResidue(MultiResidue multiResidue) {
+        Residue residue = multiResidue.getActive();
+        MSNode residueNode = getAtomNode();
+        int index = residueNode.getIndex(residue);
+        residueNode.remove(index);
+        residueNode.insert(multiResidue, index);
+        multiResidue.add(residue);
+    }
+    
     /**
      * Get the Phi Psi List for the Polymer
      *

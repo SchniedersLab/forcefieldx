@@ -22,6 +22,8 @@
  */
 package ffx.potential.bonded;
 
+import ffx.potential.ResidueEnumerations.AminoAcid3;
+import ffx.potential.Rotamer;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.Hashtable;
@@ -36,6 +38,7 @@ import javax.vecmath.Color3f;
 import javax.vecmath.Point2d;
 import javax.vecmath.Point3d;
 import javax.vecmath.Vector3d;
+import ffx.potential.RotamerLibrary;
 
 import static ffx.utilities.HashCodeUtil.SEED;
 import static ffx.utilities.HashCodeUtil.hash;
@@ -49,53 +52,7 @@ import static ffx.utilities.HashCodeUtil.hash;
 public class Residue extends MSGroup {
 
     private static final Logger logger = Logger.getLogger(ffx.potential.bonded.Residue.class.getName());
-
-    public enum AA {
-
-        GLYCINE, ALANINE, VALINE, LEUCINE, ILLUECINE, SERINE, THREONINE,
-        CYSTIENE, PROLINE, PHENYLALANINE, TYROSINE, TYPTOPHAN, ASPARTATE,
-        ASPARTAMINE, GLUTAMATE, GLUTAMINE, METHIONINE, LYSINE, ARGININE,
-        HISTIDINE;
-    }
-
-    public enum AA1 {
-
-        G, A, V, L, I, S, T, C, P, F, Y, W, D, N, E, Q, M, K, R, H, U, Z, O, B,
-        J, f, a, n, m, X;
-    }
-
-    public enum AA3 {
-
-        GLY, ALA, VAL, LEU, ILE, SER, THR, CYS, PRO, PHE, TYR, TRP, ASP, ASN,
-        GLU, GLN, MET, LYS, ARG, HIS, HID, HIE, ORN, AIB, PCA, FOR, ACE, NH2,
-        NME, UNK;
-    }
-
-    public enum NA {
-
-        ADENINE, CYTOSINE, GUANINE, URACIL, DEOXYADENINE, DEOXYCYTOSINE,
-        DEOXYGUANINE, THYMINE, MONOPHOSPHATE, DIPHOSPHATE, TRIPHOSPHATE;
-    }
-
-    public enum NA1 {
-
-        A, C, G, U, D, I, B, T, P, Q, R, X;
-    }
-
-    public enum NA3 {
-
-        A, C, G, U, DA, DC, DG, DT, MPO, DPO, TPO, UNK;
-    }
-
-    public enum ResidueType {
-
-        NA, AA, UNK;
-    }
-
-    public enum SSType {
-
-        NONE, HELIX, SHEET, TURN;
-    }
+    
     private static final long serialVersionUID = 1L;
     private static Point3d point3d = new Point3d();
     private static Point2d point2d = new Point2d();
@@ -280,6 +237,7 @@ public class Residue extends MSGroup {
      * @param rt a {@link ffx.potential.bonded.Residue.ResidueType} object.
      */
     public Residue(int num, ResidueType rt) {
+        super();
         resNumber = num;
         residueType = rt;
         assignResidueType();
@@ -343,6 +301,18 @@ public class Residue extends MSGroup {
         residueType = rt;
         assignResidueType();
         finalize(true);
+    }
+
+    public Rotamer[] getRotamers(Residue residue) {
+        if (residue == null) {
+            return null;
+        }
+        AminoAcid3 name = AminoAcid3.valueOf(residue.getName());
+        return RotamerLibrary.getRotamers(name);
+    }
+
+    public ResidueType getResidueType() {
+        return residueType;
     }
 
     /**
@@ -548,7 +518,8 @@ public class Residue extends MSGroup {
     @Override
     public final int hashCode() {
         int hash = hash(SEED, getParent().hashCode());
-        return hash(hash, getResidueNumber());
+        hash = hash(hash, getResidueNumber());
+        return hash(hash, getName());
     }
 
     /**
@@ -598,7 +569,7 @@ public class Residue extends MSGroup {
     @Override
     public void setColor(RendererCache.ColorModel newColorModel, Color3f color,
             Material mat) {
-        // If Color by Residue, pass this Residue's Color
+// If Color by Residue, pass this Residue's Color
         if (newColorModel == RendererCache.ColorModel.RESIDUE) {
             switch (residueType) {
                 case AA:
@@ -669,5 +640,52 @@ public class Residue extends MSGroup {
             shortString = new String("" + resNumber + "-" + getName());
         }
         return shortString;
+    }
+
+    public enum AA {
+
+        GLYCINE, ALANINE, VALINE, LEUCINE, ILLUECINE, SERINE, THREONINE,
+        CYSTIENE, PROLINE, PHENYLALANINE, TYROSINE, TYPTOPHAN, ASPARTATE,
+        ASPARTAMINE, GLUTAMATE, GLUTAMINE, METHIONINE, LYSINE, ARGININE,
+        HISTIDINE;
+    }
+
+    public enum AA1 {
+
+        G, A, V, L, I, S, T, C, P, F, Y, W, D, N, E, Q, M, K, R, H, U, Z, O, B,
+        J, f, a, n, m, X;
+    }
+
+    public enum AA3 {
+
+        GLY, ALA, VAL, LEU, ILE, SER, THR, CYS, PRO, PHE, TYR, TRP, ASP, ASN,
+        GLU, GLN, MET, LYS, ARG, HIS, HID, HIE, ORN, AIB, PCA, FOR, ACE, NH2,
+        NME, UNK;
+    }
+
+    public enum NA {
+
+        ADENINE, CYTOSINE, GUANINE, URACIL, DEOXYADENINE, DEOXYCYTOSINE,
+        DEOXYGUANINE, THYMINE, MONOPHOSPHATE, DIPHOSPHATE, TRIPHOSPHATE;
+    }
+
+    public enum NA1 {
+
+        A, C, G, U, D, I, B, T, P, Q, R, X;
+    }
+
+    public enum NA3 {
+
+        A, C, G, U, DA, DC, DG, DT, MPO, DPO, TPO, UNK;
+    }
+
+    public enum ResidueType {
+
+        NA, AA, UNK;
+    }
+
+    public enum SSType {
+
+        NONE, HELIX, SHEET, TURN;
     }
 }

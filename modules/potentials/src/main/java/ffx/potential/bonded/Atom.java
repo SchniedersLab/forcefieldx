@@ -57,57 +57,18 @@ import static ffx.utilities.HashCodeUtil.hash;
 public class Atom extends MSNode implements Comparable<Atom> {
 
     private static final Logger logger = Logger.getLogger(Atom.class.getName());
-
-    /**
-     * {@inheritDoc}
-     *
-     * Implementation of the Comparable interface.
-     */
-    @Override
-    public int compareTo(Atom a) {
-        if (a == null) {
-            throw new NullPointerException();
-        }
-        if (a == this) {
-            return 0;
-        }
-        int a0 = a.xyzIndex;
-        if (xyzIndex < a0) {
-            return -1;
-        }
-        if (xyzIndex > a0) {
-            return 1;
-        }
-        // There should not be duplicate, identical atom objects.
-        // assert (xyzIndex != a0);
-        return 0;
-    }
-
-    /**
-     * Element symbols for the first 109 elements.
-     */
-    public static enum ElementSymbol {
-
-        H, He, Li, Be, B, C, N, O, F, Ne, Na, Mg,
-        Al, Si, P, S, Cl, Ar, K, Ca, Sc, Ti, V, Cr, Mn, Fe, Co, Ni, Cu, Zn, Ga,
-        Ge, As, Se, Br, Kr, Rb, Sr, Y, Zr, Nb, Mo, Tc, Ru, Rh, Pd, Ag, Cd, In,
-        Sn, Sb, Te, I, Xe, Cs, Ba, La, Ce, Pr, Nd, Pm, Sm, Eu, Gd, Tb, Dy, Ho,
-        Er, Tm, Yb, Lu, Hf, Ta, W, Re, Os, Ir, Pt, Au, Hg, Tl, Pb, Bi, Po, At,
-        Rn, Fr, Ra, Ac, Th, Pa, U, Np, Pu, Am, Cm, Bk, Cf, Es, Fm, Md, No, Lr,
-        Rf, Db, Sg, Bh, Hs, Mt;
-    }
     private static Point3d point3d = new Point3d();
     private static Point2d point2d = new Point2d();
     /**
      * Constant
      * <code>AtomColor</code>
      */
-    public static final Map<Integer, Color3f> AtomColor = new HashMap<Integer, Color3f>();
+    public static final Map<Integer, Color3f> AtomColor;
     /**
      * Constant
      * <code>AtomVDW</code>
      */
-    public static final Map<Integer, Double> AtomVDW = new HashMap<Integer, Double>();
+    public static final Map<Integer, Double> AtomVDW;
     /**
      * Hybridizations
      */
@@ -124,38 +85,14 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * Constant
      * <code>hybridTable</code>
      */
-    public static final Map<String, Integer> hybridTable = new HashMap<String, Integer>();
+    public static final Map<String, Integer> hybridTable;
 
     static {
-        AtomColor.put(0, RendererCache.RED);
-        AtomColor.put(1, RendererCache.WHITE);
-        AtomColor.put(2, RendererCache.GREEN);
-        AtomColor.put(3, RendererCache.MAGENTA);
-        AtomColor.put(4, RendererCache.MAGENTA);
-        AtomColor.put(5, RendererCache.MAGENTA);
-        AtomColor.put(6, RendererCache.GRAY);
-        AtomColor.put(7, RendererCache.BLUE);
-        AtomColor.put(8, RendererCache.RED);
-        AtomColor.put(9, RendererCache.GREEN);
-        AtomColor.put(10, RendererCache.GREEN);
-        AtomColor.put(11, RendererCache.MAGENTA);
-        AtomColor.put(12, RendererCache.MAGENTA);
-        AtomColor.put(13, RendererCache.MAGENTA);
-        AtomColor.put(14, RendererCache.GRAY);
-        AtomColor.put(15, RendererCache.ORANGE);
-        AtomColor.put(16, RendererCache.YELLOW);
-        AtomColor.put(17, RendererCache.GREEN);
-        AtomColor.put(18, RendererCache.GREEN);
-        for (int i = 19; i < 109; i++) {
-            if (i != 36 && i != 54 && i != 86) {
-                AtomColor.put(i, RendererCache.MAGENTA);
-            } else {
-                AtomColor.put(i, RendererCache.GREEN);
-            }
-        }
-    }
-
-    static {
+        // Initialize HashMaps
+        AtomColor = new HashMap<Integer, Color3f>();
+        AtomVDW = new HashMap<Integer, Double>();
+        hybridTable = new HashMap<String, Integer>();
+        // van der Waals
         AtomVDW.put(0, 1.0);
         AtomVDW.put(1, 1.20);
         AtomVDW.put(2, 1.22);
@@ -196,9 +133,35 @@ public class Atom extends MSNode implements Comparable<Atom> {
         for (int i = 37; i < 109; i++) {
             AtomVDW.put(i, 2.00);
         }
-    }
-
-    static {
+        // Colors
+        AtomColor.put(0, RendererCache.RED);
+        AtomColor.put(1, RendererCache.WHITE);
+        AtomColor.put(2, RendererCache.GREEN);
+        AtomColor.put(3, RendererCache.MAGENTA);
+        AtomColor.put(4, RendererCache.MAGENTA);
+        AtomColor.put(5, RendererCache.MAGENTA);
+        AtomColor.put(6, RendererCache.GRAY);
+        AtomColor.put(7, RendererCache.BLUE);
+        AtomColor.put(8, RendererCache.RED);
+        AtomColor.put(9, RendererCache.GREEN);
+        AtomColor.put(10, RendererCache.GREEN);
+        AtomColor.put(11, RendererCache.MAGENTA);
+        AtomColor.put(12, RendererCache.MAGENTA);
+        AtomColor.put(13, RendererCache.MAGENTA);
+        AtomColor.put(14, RendererCache.GRAY);
+        AtomColor.put(15, RendererCache.ORANGE);
+        AtomColor.put(16, RendererCache.YELLOW);
+        AtomColor.put(17, RendererCache.GREEN);
+        AtomColor.put(18, RendererCache.GREEN);
+        for (int i = 19; i < 109; i++) {
+            if (i != 36 && i != 54 && i != 86) {
+                AtomColor.put(i, RendererCache.MAGENTA);
+            } else {
+                AtomColor.put(i, RendererCache.GREEN);
+            }
+        }
+         
+        // Default hybridization
         hybridTable.put("1", 1);
         hybridTable.put("6", 4);
         hybridTable.put("7", 3);
@@ -208,6 +171,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
         hybridTable.put("19", 0);
         hybridTable.put("26", 8);
     }
+    
     private boolean hetatm;
     /**
      * Either the PDB "name" record or the molecular mechanics atom type name.
@@ -340,6 +304,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
     // "stale" is True if this Atom's J3D transforms need to be updated before
     // making it visible
     private boolean stale = false;
+    private String shortString = null;
+    private Vector3d vector3d = new Vector3d();
 
     /**
      * Default constructor.
@@ -406,6 +372,31 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     /**
+     * {@inheritDoc}
+     *
+     * Implementation of the Comparable interface.
+     */
+    @Override
+    public int compareTo(Atom a) {
+        if (a == null) {
+            throw new NullPointerException();
+        }
+        if (a == this) {
+            return 0;
+        }
+        int a0 = a.xyzIndex;
+        if (xyzIndex < a0) {
+            return -1;
+        }
+        if (xyzIndex > a0) {
+            return 1;
+        }
+        // There should not be duplicate, identical atom objects.
+        // assert (xyzIndex != a0);
+        return 0;
+    }
+
+    /**
      * <p>addTrajectoryCoords</p>
      *
      * @param coords a {@link javax.vecmath.Vector3d} object.
@@ -437,6 +428,15 @@ public class Atom extends MSNode implements Comparable<Atom> {
         return hetatm;
     }
 
+    public Atom copy() {
+        double coords[] = {xyz[0], xyz[1], xyz[2]};
+        Atom atom = new Atom(getXYZIndex(), getName(), getAltLoc(), coords, 
+                getResidueName(), getResidueNumber(), getChainID(), 
+                getOccupancy(), getTempFactor(), getSegID());
+        atom.setAtomType(getAtomType());
+        return atom;
+    }
+    
     /**
      * <p>isHydrogen</p>
      *
@@ -465,7 +465,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      *
      * @return a boolean.
      */
-    public boolean isDeuterium() {
+        public boolean isDeuterium() {
         String name = getName();
         return (isHydrogen() && (name.charAt(0) == 'D'
                 || name.charAt(0) == 'd'));
@@ -565,7 +565,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      *
      * @return Atomic Number
      */
-    public int getAtomicNumber() {
+        public int getAtomicNumber() {
         return atomType.atomicNumber;
     }
 
@@ -995,7 +995,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      *
      * @return z coordinate
      */
-    public final double getZ() {
+        public final double getZ() {
         return xyz[2];
     }
 
@@ -1112,6 +1112,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     // True if this Atom's Sphere or Vector is visible
+
     /**
      * <p>isVisible</p>
      *
@@ -1170,7 +1171,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      *
      * @param v a {@link javax.vecmath.Vector3d} object.
      */
-    public void moveTo(Vector3d v) {
+        public void moveTo(Vector3d v) {
         moveTo(v.x, v.y, v.z);
     }
 
@@ -1473,7 +1474,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      *
      * @param bornRadius a double.
      */
-    public void setBornRadius(double bornRadius) {
+        public void setBornRadius(double bornRadius) {
         this.bornRadius = bornRadius;
     }
 
@@ -1483,84 +1484,83 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * Polymorphic setColor method.
      */
     @Override
-    public void setColor(ColorModel newColorModel, Color3f newCol,
-            Material newMat) {
-        switch (newColorModel) {
-            case CPK:
-                newCol = RendererCache.getColor(this, ColorModel.CPK);
-                if (newCol == currentCol) {
-                    return;
-                }
-                colorModel = newColorModel;
-                currentCol = previousCol = newCol;
-                break;
-            case USERCOLOR:
-                colorModel = newColorModel;
-                currentCol = previousCol = userColor;
-                break;
-            case APPLYUSERCOLOR:
-                userColor = RendererCache.userColor;
-                currentCol = previousCol = userColor;
-                break;
-            case MONOCHROME:
-                colorModel = newColorModel;
-                currentCol = previousCol = RendererCache.WHITE;
-                break;
-            case SELECT:
-                if (isSelected()) {
-                    newCol = RendererCache.selectionColor;
-                    if (newCol != currentCol) {
-                        currentCol = newCol;
-                    } else {
-                        return;
-                    }
-                } else {
-                    currentCol = previousCol;
-                }
-                break;
-            case PICK:
-                newCol = RendererCache.pickingColor;
-                if (newCol != currentCol) {
-                    currentCol = newCol;
-                } else {
-                    return;
-                }
-                break;
-            case REVERT:
-                if (RendererCache.highlightSelections && isSelected()) {
-                    currentCol = RendererCache.selectionColor;
-                } else {
-                    currentCol = previousCol;
-                }
-                break;
-            case PARTIALCHARGE:
-                newCol = RendererCache.getColor(this, ColorModel.PARTIALCHARGE);
-                if (newCol == currentCol) {
-                    return;
-                }
-                colorModel = newColorModel;
-                currentCol = previousCol = newCol;
-                break;
-            default:
-                // Check for a Color Choice sent from a higher level structure
-                // (residue,polymer,etc)
-                if (newCol == currentCol || newCol == null) {
-                    return;
-                }
-                colorModel = newColorModel;
-                currentCol = previousCol = newCol;
+    public void setColor(ColorModel newColorModel, Color3f newCol, Material newMat) {
+switch (newColorModel) {
+    case CPK:
+        newCol = RendererCache.getColor(this, ColorModel.CPK);
+        if (newCol == currentCol) {
+            return;
         }
-        // Apply the Color Change
-        appearance = RendererCache.appearanceFactory(currentCol, polygonType);
-        if (branchGroup != null && viewModel != ViewModel.INVISIBLE) {
-            sphere.setAppearance(appearance);
-        }
-        if (bonds != null) {
-            for (Bond bond : bonds) {
-                bond.setColor(this);
+        colorModel = newColorModel;
+        currentCol = previousCol = newCol;
+        break;
+    case USERCOLOR:
+        colorModel = newColorModel;
+        currentCol = previousCol = userColor;
+        break;
+    case APPLYUSERCOLOR:
+        userColor = RendererCache.userColor;
+        currentCol = previousCol = userColor;
+        break;
+    case MONOCHROME:
+        colorModel = newColorModel;
+        currentCol = previousCol = RendererCache.WHITE;
+        break;
+    case SELECT:
+        if (isSelected()) {
+            newCol = RendererCache.selectionColor;
+            if (newCol != currentCol) {
+                currentCol = newCol;
+            } else {
+                return;
             }
+        } else {
+            currentCol = previousCol;
         }
+        break;
+    case PICK:
+        newCol = RendererCache.pickingColor;
+        if (newCol != currentCol) {
+            currentCol = newCol;
+        } else {
+            return;
+        }
+        break;
+    case REVERT:
+        if (RendererCache.highlightSelections && isSelected()) {
+            currentCol = RendererCache.selectionColor;
+        } else {
+            currentCol = previousCol;
+        }
+        break;
+    case PARTIALCHARGE:
+        newCol = RendererCache.getColor(this, ColorModel.PARTIALCHARGE);
+        if (newCol == currentCol) {
+            return;
+        }
+        colorModel = newColorModel;
+        currentCol = previousCol = newCol;
+        break;
+    default:
+        // Check for a Color Choice sent from a higher level structure
+        // (residue,polymer,etc)
+        if (newCol == currentCol || newCol == null) {
+            return;
+        }
+        colorModel = newColorModel;
+        currentCol = previousCol = newCol;
+}
+// Apply the Color Change
+appearance = RendererCache.appearanceFactory(currentCol, polygonType);
+if (branchGroup != null && viewModel != ViewModel.INVISIBLE) {
+    sphere.setAppearance(appearance);
+}
+if (bonds != null) {
+    for (Bond bond : bonds) {
+        bond.setColor(this);
     }
+}
+}
 
     /**
      * <p>setCurrentCycle</p>
@@ -1670,11 +1670,10 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * @param multipoleReferenceSites an array of
      * {@link ffx.potential.bonded.Atom} objects.
      */
-    public void setMultipoleType(MultipoleType multipoleType,
-            Atom[] multipoleReferenceSites) {
-        this.multipoleType = multipoleType;
-        this.multipoleReferenceSites = multipoleReferenceSites;
-    }
+    public void setMultipoleType(MultipoleType multipoleType, Atom[] multipoleReferenceSites) {
+this.multipoleType = multipoleType;
+this.multipoleReferenceSites = multipoleReferenceSites;
+}
 
     /**
      * <p>Setter for the field
@@ -1683,7 +1682,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * @param polarizeType a {@link ffx.potential.parameters.PolarizeType}
      * object.
      */
-    public void setPolarizeType(PolarizeType polarizeType) {
+        public void setPolarizeType(PolarizeType polarizeType) {
         this.polarizeType = polarizeType;
     }
 
@@ -1696,30 +1695,30 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     // Vector Methods
+
     /**
      * <p>setSphereVisible</p>
      *
      * @param sphereVisible a boolean.
      * @param newShapes a {@link java.util.List} object.
      */
-    public void setSphereVisible(boolean sphereVisible,
-            List<BranchGroup> newShapes) {
-        if (!sphereVisible) {
-            // Make this atom invisible.
-            if (branchGroup != null) {
-                sphere.setPickable(false);
-                sphere.setAppearance(RendererCache.nullAp);
-            }
-        } else {
-            // Make this atom visible.
-            if (branchGroup == null) {
-                initSphere(newShapes);
-            }
-            sphere.setAppearance(appearance);
-            sphere.setPickable(true);
-            updateSphere();
-        }
+        public void setSphereVisible(boolean sphereVisible, List<BranchGroup> newShapes) {
+if (!sphereVisible) {
+    // Make this atom invisible.
+    if (branchGroup != null) {
+        sphere.setPickable(false);
+        sphere.setAppearance(RendererCache.nullAp);
     }
+} else {
+    // Make this atom visible.
+    if (branchGroup == null) {
+        initSphere(newShapes);
+    }
+    sphere.setAppearance(appearance);
+    sphere.setPickable(true);
+    updateSphere();
+}
+}
 
     /**
      * {@inheritDoc}
@@ -1836,14 +1835,13 @@ public class Atom extends MSNode implements Comparable<Atom> {
             return multipoleBuffer.toString();
         }
     }
-    private String shortString = null;
 
     /**
      * <p>toShortString</p>
      *
      * @return a {@link java.lang.String} object.
      */
-    public String toShortString() {
+        public String toShortString() {
         if (shortString == null) {
             shortString = format("%d-%s", xyzIndex, getName());
         }
@@ -1880,7 +1878,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
             stale = false;
         }
     }
-    private Vector3d vector3d = new Vector3d();
 
     /**
      * <p>updateSphere</p>
@@ -1892,5 +1889,19 @@ public class Atom extends MSNode implements Comparable<Atom> {
             transform3D.setScale(scale);
             transformGroup.setTransform(transform3D);
         }
+    }
+
+    /**
+     * Element symbols for the first 109 elements.
+     */
+    public static enum ElementSymbol {
+
+        H, He, Li, Be, B, C, N, O, F, Ne, Na, Mg,
+        Al, Si, P, S, Cl, Ar, K, Ca, Sc, Ti, V, Cr, Mn, Fe, Co, Ni, Cu, Zn, Ga,
+        Ge, As, Se, Br, Kr, Rb, Sr, Y, Zr, Nb, Mo, Tc, Ru, Rh, Pd, Ag, Cd, In,
+        Sn, Sb, Te, I, Xe, Cs, Ba, La, Ce, Pr, Nd, Pm, Sm, Eu, Gd, Tb, Dy, Ho,
+        Er, Tm, Yb, Lu, Hf, Ta, W, Re, Os, Ir, Pt, Au, Hg, Tl, Pb, Bi, Po, At,
+        Rn, Fr, Ra, Ac, Th, Pa, U, Np, Pu, Am, Cm, Bk, Cf, Es, Fm, Md, No, Lr,
+        Rf, Db, Sg, Bh, Hs, Mt;
     }
 }

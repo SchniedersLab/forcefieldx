@@ -122,6 +122,26 @@ public final class PDBFilter extends SystemFilter {
         segIDs.clear();
     }
 
+    public ResiduePosition getResiduePosition(int residueNumber) {
+        ResiduePosition position;
+        int numberOfResidues = 0;
+        Polymer polymers[] = activeMolecularAssembly.getChains();
+        int nPolymers = polymers.length;
+        for (int i = 0; i < nPolymers; i++) {
+            Polymer polymer = polymers[i];
+            ArrayList<Residue> residues = polymer.getResidues();
+            numberOfResidues += residues.size();
+        }
+        if (residueNumber == 0) {
+            position = FIRST_RESIDUE;
+        } else if (residueNumber == numberOfResidues - 1) {
+            position = LAST_RESIDUE;
+        } else {
+            position = MIDDLE_RESIDUE;
+        }
+        return position;
+    }
+
     /**
      * Convert possibly duplicate chain IDs into unique segIDs.
      *
@@ -182,6 +202,7 @@ public final class PDBFilter extends SystemFilter {
     public PDBFilter(List<File> files, MolecularAssembly molecularAssembly,
             ForceField forceField, CompositeConfiguration properties) {
         super(files, molecularAssembly, forceField, properties);
+        bondList = new ArrayList<Bond>();
         this.fileType = FileType.PDB;
     }
 
@@ -198,6 +219,7 @@ public final class PDBFilter extends SystemFilter {
     public PDBFilter(File file, MolecularAssembly molecularAssembly,
             ForceField forceField, CompositeConfiguration properties) {
         super(file, molecularAssembly, forceField, properties);
+        bondList = new ArrayList<Bond>();
         this.fileType = FileType.PDB;
     }
 
@@ -213,6 +235,7 @@ public final class PDBFilter extends SystemFilter {
     public PDBFilter(File file, List<MolecularAssembly> molecularAssemblies,
             ForceField forceField, CompositeConfiguration properties) {
         super(file, molecularAssemblies, forceField, properties);
+        bondList = new ArrayList<Bond>();
         this.fileType = FileType.PDB;
     }
 
@@ -2361,7 +2384,7 @@ public final class PDBFilter extends SystemFilter {
      *
      * @throws ffx.potential.parsers.PDBFilter.MissingHeavyAtomException
      */
-    private void assignAminoAcidSideChain(ResiduePosition position, AminoAcid3 aminoAcid, Residue residue,
+    public void assignAminoAcidSideChain(ResiduePosition position, AminoAcid3 aminoAcid, Residue residue,
             Atom CA, Atom N, Atom C) throws MissingHeavyAtomException {
         int k = cbType[aminoAcid.ordinal()];
         switch (aminoAcid) {
@@ -2741,7 +2764,7 @@ public final class PDBFilter extends SystemFilter {
     /**
      * This exception is thrown when a heavy atom is not found.
      */
-    private class MissingHeavyAtomException extends Exception {
+    public class MissingHeavyAtomException extends Exception {
 
         public final String atomName;
         public final AtomType atomType;
@@ -4015,7 +4038,7 @@ public final class PDBFilter extends SystemFilter {
         return atom;
     }
 
-    private Bond buildBond(Atom a1, Atom a2) {
+    public Bond buildBond(Atom a1, Atom a2) {
         Bond bond = new Bond(a1, a2);
         int c[] = new int[2];
         c[0] = a1.getAtomType().atomClass;
