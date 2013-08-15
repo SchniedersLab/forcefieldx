@@ -45,6 +45,7 @@ import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
 import ffx.potential.parameters.ForceField;
 
 import static ffx.potential.parameters.MultipoleType.*;
+import ffx.potential.parameters.VDWType;
 
 /**
  * This Generalized Kirkwood class implements GK for the AMOEBA polarizable
@@ -85,6 +86,13 @@ public class GeneralizedKirkwood {
      * Empirical scaling of the Bondi radii.
      */
     private static final double bondiScale = 1.03;
+    private static final double dispersionOverlapScaleFactor = 0.81;
+    private static final double slevy = 1.0;
+    private static final double awater = 0.033428;
+    private static final double epso = 0.1100;
+    private static final double epsh = 0.0135;
+    private static final double rmino = 1.7025;
+    private static final double rminh = 1.3275;
     private boolean use[] = null;
     private final Polarization polarization;
     private final Atom atoms[];
@@ -94,6 +102,7 @@ public class GeneralizedKirkwood {
     private final double inducedDipoleCR[][];
     private final double baseRadius[];
     private final double overlapScale[];
+    private final double rDisp[];
     private final double born[];
     private final int nAtoms;
     private final ParallelTeam parallelTeam;
@@ -102,7 +111,8 @@ public class GeneralizedKirkwood {
     private final InducedGKFieldRegion inducedGKFieldRegion;
     private final GKEnergyRegion gkEnergyRegion;
     private final BornCRRegion bornGradRegion;
-    private final HydrophobicPMFRegion hydrophobicPMFRegion;
+    //private final HydrophobicPMFRegion hydrophobicPMFRegion;
+    private final DispersionRegion dispersionRegion;
     private final double grad[][][];
     private final double torque[][][];
     private final SharedDoubleArray sharedBornGrad;
@@ -147,9 +157,9 @@ public class GeneralizedKirkwood {
         sharedGKFieldCR[2] = new SharedDoubleArray(nAtoms);
 
         sharedBornGrad = new SharedDoubleArray(nAtoms);
-
         baseRadius = new double[nAtoms];
         overlapScale = new double[nAtoms];
+        rDisp = new double[nAtoms];
         born = new double[nAtoms];
 
         use = new boolean[nAtoms];
@@ -238,7 +248,8 @@ public class GeneralizedKirkwood {
 
         logger.info("\n Continuum Solvation ");
         logger.info(String.format(" Generalized Kirkwood cut-off:         %8.2f (A)", cutoff));
-        hydrophobicPMFRegion = new HydrophobicPMFRegion(threadCount);
+        //hydrophobicPMFRegion = new HydrophobicPMFRegion(threadCount);
+        dispersionRegion = new DispersionRegion(threadCount);
         logger.info("");
     }
 
@@ -314,7 +325,8 @@ public class GeneralizedKirkwood {
          * Specify whether to compute gradients.
          */
         gkEnergyRegion.setGradient(gradient);
-        hydrophobicPMFRegion.setGradient(gradient);
+        //hydrophobicPMFRegion.setGradient(gradient);
+        dispersionRegion.setGradient(gradient);
 
         try {
             /**
@@ -324,7 +336,8 @@ public class GeneralizedKirkwood {
             /**
              * Find the nonpolar energy.
              */
-            parallelTeam.execute(hydrophobicPMFRegion);
+            //parallelTeam.execute(hydrophobicPMFRegion);
+            parallelTeam.execute(dispersionRegion);
         } catch (Exception e) {
             String message = "Fatal exception computing the continuum solvation energy.";
             logger.log(Level.SEVERE, message, e);
@@ -345,11 +358,14 @@ public class GeneralizedKirkwood {
         if (print) {
             logger.info(String.format(" Generalized Kirkwood %16.8f",
                     gkEnergyRegion.getEnergy()));
+            /*
             logger.info(String.format(" Hydrophibic PMF      %16.8f",
-                    hydrophobicPMFRegion.getEnergy()));
+                    hydrophobicPMFRegion.getEnergy())); */
+            logger.info(String.format(" Dispersion           %16.8f",
+                    dispersionRegion.getEnergy()));
         }
 
-        return gkEnergyRegion.getEnergy() + hydrophobicPMFRegion.getEnergy();
+        return gkEnergyRegion.getEnergy() + dispersionRegion.getEnergy();
     }
 
     /**
@@ -3154,11 +3170,6 @@ public class GeneralizedKirkwood {
                 gX = grad[threadID][0];
                 gY = grad[threadID][1];
                 gZ = grad[threadID][2];
-                for (int i = 0; i < nAtoms; i++) {
-                    gX[i] = 0.0;
-                    gY[i] = 0.0;
-                    gZ[i] = 0.0;
-                }
             }
 
             @Override
@@ -3229,6 +3240,365 @@ public class GeneralizedKirkwood {
                             }
                         }
                     }
+                }
+            }
+        }
+    }
+
+    /**
+     * Compute Dispersion energy in parallel via the Grycuk method.
+     *
+     * @since 1.0
+     */
+    private class DispersionRegion extends ParallelRegion {
+
+        private final DispersionRegion.DispersionLoop dispersionLoop[];
+        private final SharedDouble sharedDispersion;
+        private boolean gradient = false;
+        private double[] cdisp = null;
+
+        public DispersionRegion(int nt) {
+            dispersionLoop = new DispersionRegion.DispersionLoop[nt];
+            for (int i = 0; i < nt; i++) {
+                dispersionLoop[i] = new DispersionRegion.DispersionLoop();
+            }
+            sharedDispersion = new SharedDouble();
+            cdisp = new double[nAtoms];
+
+            for (int i = 0; i < nAtoms; i++) {
+                VDWType type = atoms[i].getVDWType();
+                double rmini = type.radius;
+                rDisp[i] = rmini / 2.0;
+            }
+            maxDispersionEnergy();
+        }
+
+        public double getEnergy() {
+            return sharedDispersion.get();
+        }
+
+        private void maxDispersionEnergy() {
+            for (int i = 0; i < nAtoms; i++) {
+                VDWType type = atoms[i].getVDWType();
+                double epsi = type.wellDepth;
+                double rmini = type.radius / 2.0;
+                if (rDisp[i] > 0.0 && epsi > 0.0) {
+                    double sqEpsoEpsi = sqrt(epso) + sqrt(epsi);
+                    double sqEpshEpsi = sqrt(epsh) + sqrt(epsi);
+                    double emixo = 4.0 * epso * epsi / (pow(sqEpsoEpsi, 2));
+                    double rmixo = 2.0 * (pow(rmino, 3) + pow(rmini, 3)) / (pow(rmino, 2) + pow(rmini, 2));
+                    double rmixo3 = pow(rmixo, 3);
+                    double rmixo7 = pow(rmixo, 7);
+                    double ao = emixo * rmixo7;
+                    double emixh = 4.0 * epsh * epsi / (pow(sqEpshEpsi, 2));
+                    double rmixh = 2.0 * (pow(rminh, 3) + pow(rmini, 3)) / (pow(rminh, 2) + pow(rmini, 2));
+                    double rmixh3 = pow(rmixh, 3);
+                    double rmixh7 = pow(rmixh, 7);
+                    double ah = emixh * rmixh7;
+                    double ri = rDisp[i] + 0.26;
+                    double ri3 = pow(ri, 3);
+                    double ri7 = pow(ri, 7);
+                    double ri11 = pow(ri, 11);
+                    if (ri < rmixh) {
+                        cdisp[i] = -4.0 * PI * emixh * (rmixh3 - ri3) / 3.0;
+                        cdisp[i] = cdisp[i] - emixh * 18.0 / 11.0 * rmixh3 * PI;
+                    } else {
+                        cdisp[i] = 2.0 * PI * (2.0 * rmixh7 - 11.0 * ri7) * ah;
+                        cdisp[i] = cdisp[i] / (11.0 * ri11);
+                    }
+                    cdisp[i] = 2.0 * cdisp[i];
+                    if (ri < rmixo) {
+                        cdisp[i] = cdisp[i] - 4.0 * PI * emixo * (rmixo3 - ri3) / 3.0;
+                        cdisp[i] = cdisp[i] - emixo * 18.0 / 11.0 * rmixo3 * PI;
+                    } else {
+                        cdisp[i] = cdisp[i] + 2.0 * PI * (2.0 * rmixo7 - 11.0 * ri7) * ao / (11.0 * ri11);
+                    }
+                }
+                cdisp[i] = slevy * awater * cdisp[i];
+            }
+        }
+
+        public void setGradient(boolean gradient) {
+            this.gradient = gradient;
+        }
+
+        @Override
+        public void start() {
+            sharedDispersion.set(0.0);
+        }
+
+        @Override
+        public void run() {
+            try {
+                execute(0, nAtoms - 1, dispersionLoop[getThreadIndex()]);
+            } catch (Exception e) {
+                String message = "Fatal exception computing Dispersion energy in thread " + getThreadIndex() + "\n";
+                logger.log(Level.SEVERE, message, e);
+            }
+        }
+
+        /**
+         * Compute Dispersion energy for a range of atoms via the Grycuk method.
+         *
+         * @since 1.0
+         */
+        private class DispersionLoop extends IntegerForLoop {
+
+            private double gX[];
+            private double gY[];
+            private double gZ[];
+            private double edisp;
+            // Extra padding to avert cache interference.
+            private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
+            private long pad8, pad9, pada, padb, padc, padd, pade, padf;
+
+            @Override
+            public void start() {
+                int threadID = getThreadIndex();
+                gX = grad[threadID][0];
+                gY = grad[threadID][1];
+                gZ = grad[threadID][2];
+                edisp = 0;
+            }
+
+            @Override
+            public void finish() {
+                sharedDispersion.addAndGet(edisp);
+            }
+
+            @Override
+            public void run(int lb, int ub) {
+                for (int i = lb; i <= ub; i++) {
+                    if (!use[i]) {
+                        continue;
+                    }
+                    VDWType type = atoms[i].getVDWType();
+                    double epsi = type.wellDepth;
+                    double rmini = type.radius / 2.0;
+                    double emixo = (4.0 * epso * epsi) / (pow(sqrt(epso) + sqrt(epsi), 2));
+                    double rmixo = 2.0 * (pow(rmino, 3) + pow(rmini, 3)) / (pow(rmino, 2) + pow(rmini, 2));
+                    double rmixo7 = pow(rmixo, 7);
+                    double ao = emixo * rmixo7;
+                    double emixh = 4.0 * epsh * epsi / (pow(sqrt(epsh) + sqrt(epsi), 2));
+                    double rmixh = 2.0 * (pow(rminh, 3) + pow(rmini, 3)) / (pow(rminh, 2) + pow(rmini, 2));
+                    double rmixh7 = pow(rmixh, 7);
+                    double ah = emixh * rmixh7;
+                    final double ri = rDisp[i];
+                    final double xi = x[i];
+                    final double yi = y[i];
+                    final double zi = z[i];
+                    // Integral initialized to the limit of atom alone in solvent.
+                    double sum = 0.0;
+                    for (int k = 0; k < nAtoms; k++) {
+                        final double rk = rDisp[k];
+                        if (i != k && rk > 0.0 && use[k]) {
+                            final double xr = xi - x[k];
+                            final double yr = yi - y[k];
+                            final double zr = zi - z[k];
+                            final double r2 = xr * xr + yr * yr + zr * zr;
+                            /* 
+                             if (r2 > cut2) {
+                             continue;
+                             } */
+                            final double r = sqrt(r2);
+                            final double r3 = r * r2;
+                            double sk = rk * dispersionOverlapScaleFactor;
+                            double sk2 = sk * sk;
+                            if (ri < r + sk) {
+                                double de = 0.0;
+                                double rmax = max(ri, r - sk);
+                                double lik = rmax;
+                                double lik2 = lik * lik;
+                                double lik3 = lik2 * lik;
+                                double lik4 = lik3 * lik;
+                                if (lik < rmixo) {
+                                    double uik = min(r + sk, rmixo);
+                                    double uik2 = uik * uik;
+                                    double uik3 = uik2 * uik;
+                                    double uik4 = uik3 * uik;
+                                    double term = 4.0 * PI / (48.0 * r) * (3.0 * (lik4 - uik4)
+                                            - 8.0 * r * (lik3 - uik3) + 6.0 * (r2 - sk2) * (lik2 - uik2));
+                                    double iwca = -emixo * term;
+                                    sum = sum + iwca;
+                                    if (gradient) {
+                                        double dl;
+                                        if (ri > r - sk) {
+                                            dl = -lik2 + 2.0 * r2 + 2.0 * sk2;
+                                            dl = dl * lik2;
+                                        } else {
+                                            dl = -lik3 + 4.0 * lik2 * r
+                                                    - 6.0 * lik * r2
+                                                    + 2.0 * lik * sk2 + 4.0 * r3
+                                                    - 4.0 * r * sk2;
+                                            dl = dl * lik;
+                                        }
+                                        double du;
+                                        if (r + sk > rmixo) {
+                                            du = -uik2 + 2.0 * r2 + 2.0 * sk2;
+                                            du = -du * uik2;
+                                        } else {
+                                            du = -uik3 + 4.0 * uik2 * r
+                                                    - 6.0 * uik * r2
+                                                    + 2.0 * uik * sk2 + 4.0 * r3
+                                                    - 4.0 * r * sk2;
+                                            du = -du * uik;
+                                        }
+                                        de = de - emixo * PI * (dl + du) / (4.0 * r2);
+                                    }
+                                }
+                                if (lik < rmixh) {
+                                    double uik = min(r + sk, rmixh);
+                                    double uik2 = uik * uik;
+                                    double uik3 = uik2 * uik;
+                                    double uik4 = uik3 * uik;
+                                    double term = 4.0 * PI / (48.0 * r) * (3.0 * (lik4 - uik4)
+                                            - 8.0 * r * (lik3 - uik3) + 6.0 * (r2 - sk2) * (lik2 - uik2));
+                                    double iwca = -2.0 * emixh * term;
+                                    sum = sum + iwca;
+                                    if (gradient) {
+                                        double dl;
+                                        if (ri > r - sk) {
+                                            dl = -lik2 + 2.0 * r2 + 2.0 * sk2;
+                                            dl = dl * lik2;
+                                        } else {
+                                            dl = -lik3 + 4.0 * lik2 * r - 6.0 * lik * r2
+                                                    + 2.0 * lik * sk2 + 4.0 * r3 - 4.0 * r * sk2;
+                                            dl = dl * lik;
+                                        }
+                                        double du;
+                                        if (r + sk > rmixh) {
+                                            du = -uik2 + 2.0 * r2 + 2.0 * sk2;
+                                            du = -du * uik2;
+                                        } else {
+                                            du = -uik3 + 4.0 * uik2 * r - 6.0 * uik * r2
+                                                    + 2.0 * uik * sk2 + 4.0 * r3 - 4.0 * r * sk2;
+                                            du = -du * uik;
+                                        }
+                                        de = de - 2.0 * emixh * PI * (dl + du) / (4.0 * r2);
+                                    }
+                                }
+                                double uik = r + sk;
+                                double uik2 = uik * uik;
+                                double uik3 = uik2 * uik;
+                                double uik4 = uik3 * uik;
+                                double uik5 = uik4 * uik;
+                                double uik6 = uik5 * uik;
+                                double uik10 = uik5 * uik5;
+                                double uik11 = uik10 * uik;
+                                double uik12 = uik11 * uik;
+                                double uik13 = uik12 * uik;
+                                if (uik > rmixo) {
+                                    lik = max(rmax, rmixo);
+                                    lik2 = lik * lik;
+                                    lik3 = lik2 * lik;
+                                    lik4 = lik3 * lik;
+                                    double lik5 = lik4 * lik;
+                                    double lik6 = lik5 * lik;
+                                    double lik10 = lik5 * lik5;
+                                    double lik11 = lik10 * lik;
+                                    double lik12 = lik11 * lik;
+                                    double lik13 = lik12 * lik;
+                                    double term = 4.0 * PI / (120.0 * r * lik5 * uik5) * (15.0 * uik * lik * r * (uik4 - lik4)
+                                            - 10.0 * uik2 * lik2 * (uik3 - lik3) + 6.0 * (sk2 - r2) * (uik5 - lik5));
+                                    double term2 = 4.0 * PI / (2640.0 * r * lik12 * uik12) * (120.0 * uik * lik * r * (uik11 - lik11)
+                                            - 66.0 * uik2 * lik2 * (uik10 - lik10) + 55.0 * (sk2 - r2) * (uik12 - lik12));
+                                    double idisp = -2.0 * ao * term;
+                                    double irep = ao * rmixo7 * term2;
+                                    sum = sum + irep + idisp;
+                                    if (gradient) {
+                                        double dl;
+                                        if (ri > r - sk || rmax < rmixo) {
+                                            dl = -5.0 * lik2 + 3.0 * r2 + 3.0 * sk2;
+                                            dl = -dl / lik5;
+                                        } else {
+                                            dl = 5.0 * lik3 - 33.0 * lik * r2 - 3.0 * lik * sk2
+                                                    + 15.0 * (lik2 * r + r3 - r * sk2);
+                                            dl = dl / lik6;
+                                        }
+                                        double du;
+                                        du = 5.0 * uik3 - 33.0 * uik * r2 - 3.0 * uik * sk2
+                                                + 15.0 * (uik2 * r + r3 - r * sk2);
+                                        du = -du / uik6;
+                                        de = de - 2.0 * ao * PI * (dl + du) / (15.0 * r2);
+
+                                        if (ri > r - sk || rmax < rmixo) {
+                                            dl = -6.0 * lik2 + 5.0 * r2 + 5.0 * sk2;
+                                            dl = -dl / lik12;
+                                        } else {
+                                            dl = 6.0 * lik3 - 125.0 * lik * r2 - 5.0 * lik * sk2 + 60.0 * (lik2 * r + r3 - r * sk2);
+                                            dl = dl / lik13;
+                                        }
+                                        du = 6.0 * uik3 - 125.0 * uik * r2 - 5.0 * uik * sk2 + 60.0 * (uik2 * r + r3 - r * sk2);
+                                        du = -du / uik13;
+                                        de = de + ao * rmixo7 * PI * (dl + du) / (60.0 * r2);
+                                    }
+
+                                }
+                                if (uik > rmixh) {
+                                    lik = max(rmax, rmixh);
+                                    lik2 = lik * lik;
+                                    lik3 = lik2 * lik;
+                                    lik4 = lik3 * lik;
+                                    double lik5 = lik4 * lik;
+                                    double lik6 = lik5 * lik;
+                                    double lik10 = lik5 * lik5;
+                                    double lik11 = lik10 * lik;
+                                    double lik12 = lik11 * lik;
+                                    double lik13 = lik12 * lik;
+                                    double term = 4.0 * PI / (120.0 * r * lik5 * uik5) * (15.0 * uik * lik * r * (uik4 - lik4)
+                                            - 10.0 * uik2 * lik2 * (uik3 - lik3) + 6.0 * (sk2 - r2) * (uik5 - lik5));
+                                    double term2 = 4.0 * PI / (2640.0 * r * lik12 * uik12) * (120.0 * uik * lik * r * (uik11 - lik11)
+                                            - 66.0 * uik2 * lik2 * (uik10 - lik10) + 55.0 * (sk2 - r2) * (uik12 - lik12));
+                                    double idisp = -4.0 * ah * term;
+                                    double irep = 2.0 * ah * rmixh7 * term2;
+                                    sum = sum + irep + idisp;
+                                    if (gradient) {
+                                        double dl;
+                                        if (ri > r - sk || rmax < rmixh) {
+                                            dl = -5.0 * lik2 + 3.0 * r2 + 3.0 * sk2;
+                                            dl = -dl / lik5;
+                                        } else {
+                                            dl = 5.0 * lik3 - 33.0 * lik * r2
+                                                    - 3.0 * lik * sk2 + 15.0 * (lik2 * r + r3 - r * sk2);
+                                            dl = dl / lik6;
+                                        }
+                                        double du;
+                                        du = 5.0 * uik3 - 33.0 * uik * r2
+                                                - 3.0 * uik * sk2 + 15.0 * (uik2 * r + r3 - r * sk2);
+                                        du = -du / uik6;
+                                        de = de - 4.0 * ah * PI * (dl + du) / (15.0 * r2);
+                                        if (ri > r - sk || rmax < rmixh) {
+                                            dl = -6.0 * lik2 + 5.0 * r2 + 5.0 * sk2;
+                                            dl = -dl / lik12;
+                                        } else {
+                                            dl = 6.0 * lik3 - 125.0 * lik * r2 - 5.0 * lik * sk2 + 60.0 * (lik2 * r + r3 - r * sk2);
+                                            dl = dl / lik13;
+                                        }
+                                        du = 6.0 * uik3 - 125.0 * uik * r2 - 5.0 * uik * sk2 + 60.0 * (uik2 * r + r3 - r * sk2);
+                                        du = -du / uik13;
+                                        de = de + ah * rmixh7 * PI * (dl + du) / (30.0 * r2);
+                                    }
+
+                                }
+                                //   increment the individual dispersion gradient components
+                                if (gradient) {
+                                    de = -de / r * slevy * awater;
+                                    double dedx = de * xr;
+                                    double dedy = de * yr;
+                                    double dedz = de * zr;
+                                    gX[i] += dedx;
+                                    gY[i] += dedy;
+                                    gZ[i] += dedz;
+                                    gX[k] -= dedx;
+                                    gY[k] -= dedy;
+                                    gZ[k] -= dedz;
+                                }
+                            }
+                        }
+                    }
+                    // increment the overall dispersion energy component
+                    double e = cdisp[i] - slevy * awater * sum;
+                    edisp += e;
                 }
             }
         }
