@@ -1007,6 +1007,9 @@ public abstract class MSGroup extends MSNode {
         if (termNode.getChildCount() == 0) {
             remove(termNode);
         }
+        if (atomNode.getChildCount() == 0) {
+            remove(atomNode);
+        }
     }
 
     /**

@@ -1072,6 +1072,13 @@ public class VanDerWaals implements MaskingInterface,
                 }
 
                 List<SymOp> symOps = crystal.spaceGroup.symOps;
+
+                if (symOps.size() != nSymm) {
+                    logger.info(String.format(" Programming Error: nSymm %d != symOps.size %d", nSymm, symOps.size()));
+                    logger.info(" Replicates\n" + crystal.toString());
+                    logger.info(" Unit Cell\n" + crystal.getUnitCell().toString());
+                }
+
                 double sp2 = crystal.getSpecialPositionCutoff();
                 sp2 *= sp2;
                 for (int iSymOp = 1; iSymOp < nSymm; iSymOp++) {
