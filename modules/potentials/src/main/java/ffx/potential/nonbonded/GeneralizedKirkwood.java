@@ -43,9 +43,9 @@ import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.Torsion;
 import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
 import ffx.potential.parameters.ForceField;
+import ffx.potential.parameters.VDWType;
 
 import static ffx.potential.parameters.MultipoleType.*;
-import ffx.potential.parameters.VDWType;
 
 /**
  * This Generalized Kirkwood class implements GK for the AMOEBA polarizable
@@ -111,8 +111,9 @@ public class GeneralizedKirkwood {
     private final InducedGKFieldRegion inducedGKFieldRegion;
     private final GKEnergyRegion gkEnergyRegion;
     private final BornCRRegion bornGradRegion;
-    //private final HydrophobicPMFRegion hydrophobicPMFRegion;
+    private final HydrophobicPMFRegion hydrophobicPMFRegion;
     private final DispersionRegion dispersionRegion;
+    private final CavitationRegion cavitationRegion;
     private final double grad[][][];
     private final double torque[][][];
     private final SharedDoubleArray sharedBornGrad;
@@ -120,6 +121,7 @@ public class GeneralizedKirkwood {
     protected final SharedDoubleArray sharedGKFieldCR[];
     private final double cutoff;
     private final double cut2;
+    private NonPolar nonPolar = NonPolar.CAV_DISP;
 
     /**
      * <p>Constructor for GeneralizedKirkwood.</p>
@@ -246,10 +248,21 @@ public class GeneralizedKirkwood {
         gkEnergyRegion = new GKEnergyRegion(threadCount);
         bornGradRegion = new BornCRRegion(threadCount);
 
-        logger.info("\n Continuum Solvation ");
-        logger.info(String.format(" Generalized Kirkwood cut-off:         %8.2f (A)", cutoff));
-        //hydrophobicPMFRegion = new HydrophobicPMFRegion(threadCount);
-        dispersionRegion = new DispersionRegion(threadCount);
+        logger.info(" Continuum Solvation ");
+        logger.info(String.format("  Generalized Kirkwood cut-off:        %8.2f (A)", cutoff));
+        logger.info(String.format("  Non-Polar Model:                     %s",
+                nonPolar.toString().replace('_', '-')));
+
+        if (nonPolar == NonPolar.CAV_DISP) {
+            dispersionRegion = new DispersionRegion(threadCount);
+            cavitationRegion = new CavitationRegion(threadCount);
+            hydrophobicPMFRegion = null;
+        } else {
+            hydrophobicPMFRegion = new HydrophobicPMFRegion(threadCount);
+            dispersionRegion = null;
+            cavitationRegion = null;
+        }
+
         logger.info("");
     }
 
@@ -321,23 +334,25 @@ public class GeneralizedKirkwood {
             }
         }
 
-        /**
-         * Specify whether to compute gradients.
-         */
-        gkEnergyRegion.setGradient(gradient);
-        //hydrophobicPMFRegion.setGradient(gradient);
-        dispersionRegion.setGradient(gradient);
-
         try {
             /**
              * Find the GK energy.
              */
+            gkEnergyRegion.setGradient(gradient);
             parallelTeam.execute(gkEnergyRegion);
+
             /**
              * Find the nonpolar energy.
              */
-            //parallelTeam.execute(hydrophobicPMFRegion);
-            parallelTeam.execute(dispersionRegion);
+            if (nonPolar == NonPolar.HYDROPHOBIC_PMF) {
+                hydrophobicPMFRegion.setGradient(gradient);
+                parallelTeam.execute(hydrophobicPMFRegion);
+            } else {
+                dispersionRegion.setGradient(gradient);
+                cavitationRegion.setGradient(gradient);
+                parallelTeam.execute(dispersionRegion);
+                parallelTeam.execute(cavitationRegion);
+            }
         } catch (Exception e) {
             String message = "Fatal exception computing the continuum solvation energy.";
             logger.log(Level.SEVERE, message, e);
@@ -358,14 +373,19 @@ public class GeneralizedKirkwood {
         if (print) {
             logger.info(String.format(" Generalized Kirkwood %16.8f",
                     gkEnergyRegion.getEnergy()));
-            /*
-            logger.info(String.format(" Hydrophibic PMF      %16.8f",
-                    hydrophobicPMFRegion.getEnergy())); */
-            logger.info(String.format(" Dispersion           %16.8f",
-                    dispersionRegion.getEnergy()));
+            if (nonPolar == NonPolar.HYDROPHOBIC_PMF) {
+                logger.info(String.format(" Hydrophibic PMF      %16.8f", hydrophobicPMFRegion.getEnergy()));
+            } else {
+                logger.info(String.format(" Dispersion           %16.8f", dispersionRegion.getEnergy()));
+                logger.info(String.format(" Cavitation           %16.8f", cavitationRegion.getEnergy()));
+            }
         }
 
-        return gkEnergyRegion.getEnergy() + dispersionRegion.getEnergy();
+        if (nonPolar == NonPolar.HYDROPHOBIC_PMF) {
+            return gkEnergyRegion.getEnergy() + hydrophobicPMFRegion.getEnergy();
+        } else {
+            return gkEnergyRegion.getEnergy() + dispersionRegion.getEnergy() + cavitationRegion.getEnergy();
+        }
     }
 
     /**
@@ -375,6 +395,11 @@ public class GeneralizedKirkwood {
      */
     public int getInteractions() {
         return gkEnergyRegion.getInteractions();
+    }
+
+    private enum NonPolar {
+
+        CAV_DISP, HYDROPHOBIC_PMF
     }
 
     /**
@@ -809,9 +834,6 @@ public class GeneralizedKirkwood {
 
             public HydrophobicPMFLoop() {
                 omit = new int[nAtoms];
-                gX = new double[nAtoms];
-                gY = new double[nAtoms];
-                gZ = new double[nAtoms];
             }
 
             @Override
@@ -967,9 +989,6 @@ public class GeneralizedKirkwood {
             private double gZ[];
 
             public CarbonSASACRLoop() {
-                gX = new double[nAtoms];
-                gY = new double[nAtoms];
-                gZ = new double[nAtoms];
             }
 
             @Override
@@ -1609,7 +1628,7 @@ public class GeneralizedKirkwood {
             try {
                 int threadIndex = getThreadIndex();
                 gkEnergyLoop[threadIndex].setGradient(gradient);
-                execute(0, nAtoms - 1, gkEnergyLoop[getThreadIndex()]);
+                execute(0, nAtoms - 1, gkEnergyLoop[threadIndex]);
             } catch (Exception e) {
                 String message = "Fatal exception computing GK Energy in thread " + getThreadIndex() + "\n";
                 logger.log(Level.SEVERE, message, e);
@@ -1663,12 +1682,6 @@ public class GeneralizedKirkwood {
                 gqxy = new double[31];
                 gqxz = new double[31];
                 gqyz = new double[31];
-                gX = new double[nAtoms];
-                gY = new double[nAtoms];
-                gZ = new double[nAtoms];
-                tX = new double[nAtoms];
-                tY = new double[nAtoms];
-                tZ = new double[nAtoms];
                 gb_local = new double[nAtoms];
                 gbi_local = new double[nAtoms];
             }
@@ -1689,10 +1702,8 @@ public class GeneralizedKirkwood {
                 tY = torque[threadID][1];
                 tZ = torque[threadID][2];
                 if (gradient) {
-                    for (int j = 0; j < nAtoms; j++) {
-                        gb_local[j] = 0.0;
-                        gbi_local[j] = 0.0;
-                    }
+                    Arrays.fill(gb_local, 0.0);
+                    Arrays.fill(gbi_local, 0.0);
                 }
             }
 
@@ -3246,21 +3257,21 @@ public class GeneralizedKirkwood {
     }
 
     /**
-     * Compute Dispersion energy in parallel via the Grycuk method.
+     * Compute Dispersion energy in parallel via pairwise descreening.
      *
      * @since 1.0
      */
     private class DispersionRegion extends ParallelRegion {
 
-        private final DispersionRegion.DispersionLoop dispersionLoop[];
+        private final DispersionLoop dispersionLoop[];
         private final SharedDouble sharedDispersion;
         private boolean gradient = false;
         private double[] cdisp = null;
 
         public DispersionRegion(int nt) {
-            dispersionLoop = new DispersionRegion.DispersionLoop[nt];
+            dispersionLoop = new DispersionLoop[nt];
             for (int i = 0; i < nt; i++) {
-                dispersionLoop[i] = new DispersionRegion.DispersionLoop();
+                dispersionLoop[i] = new DispersionLoop();
             }
             sharedDispersion = new SharedDouble();
             cdisp = new double[nAtoms];
@@ -3277,6 +3288,11 @@ public class GeneralizedKirkwood {
             return sharedDispersion.get();
         }
 
+        /**
+         * Compute the maximum Dispersion energy for each atom in isolation. The
+         * loss of dispersion energy due to descreening of other atoms is then
+         * calculated in the DispersionLoop.
+         */
         private void maxDispersionEnergy() {
             for (int i = 0; i < nAtoms; i++) {
                 VDWType type = atoms[i].getVDWType();
@@ -3338,7 +3354,8 @@ public class GeneralizedKirkwood {
         }
 
         /**
-         * Compute Dispersion energy for a range of atoms via the Grycuk method.
+         * Compute Dispersion energy for a range of atoms via pairwise
+         * descreening.
          *
          * @since 1.0
          */
@@ -3396,7 +3413,7 @@ public class GeneralizedKirkwood {
                             final double yr = yi - y[k];
                             final double zr = zi - z[k];
                             final double r2 = xr * xr + yr * yr + zr * zr;
-                            /* 
+                            /*
                              if (r2 > cut2) {
                              continue;
                              } */
@@ -3600,6 +3617,119 @@ public class GeneralizedKirkwood {
                     double e = cdisp[i] - slevy * awater * sum;
                     edisp += e;
                 }
+            }
+        }
+    }
+
+    /**
+     * Compute Cavitation energy in parallel.
+     *
+     * @since 1.0
+     */
+    private class CavitationRegion extends ParallelRegion {
+
+        private final CavitationLoop cavitationLoop[];
+        private final SharedDouble sharedCavitation;
+        private boolean gradient = false;
+
+        public CavitationRegion(int nt) {
+            cavitationLoop = new CavitationLoop[nt];
+            for (int i = 0; i < nt; i++) {
+                cavitationLoop[i] = new CavitationLoop();
+            }
+            sharedCavitation = new SharedDouble();
+        }
+
+        public double getEnergy() {
+            return sharedCavitation.get();
+        }
+
+        public void setGradient(boolean gradient) {
+            this.gradient = gradient;
+        }
+
+        @Override
+        public void start() {
+            sharedCavitation.set(0.0);
+        }
+
+        @Override
+        public void run() {
+            try {
+                execute(0, nAtoms - 1, cavitationLoop[getThreadIndex()]);
+            } catch (Exception e) {
+                String message = "Fatal exception computing Dispersion energy in thread " + getThreadIndex() + "\n";
+                logger.log(Level.SEVERE, message, e);
+            }
+        }
+
+        /**
+         * Compute Cavitation energy for a range of atoms.
+         *
+         * @since 1.0
+         */
+        private class CavitationLoop extends IntegerForLoop {
+
+            private double gX[];
+            private double gY[];
+            private double gZ[];
+            private double ecav;
+            // Extra padding to avert cache interference.
+            private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
+            private long pad8, pad9, pada, padb, padc, padd, pade, padf;
+
+            @Override
+            public void start() {
+                int threadID = getThreadIndex();
+                gX = grad[threadID][0];
+                gY = grad[threadID][1];
+                gZ = grad[threadID][2];
+                ecav = 0;
+            }
+
+            @Override
+            public void finish() {
+                sharedCavitation.addAndGet(ecav);
+            }
+
+            @Override
+            public void run(int lb, int ub) {
+                for (int i = lb; i <= ub; i++) {
+                    if (!use[i]) {
+                        continue;
+                    }
+                    final double xi = x[i];
+                    final double yi = y[i];
+                    final double zi = z[i];
+                    for (int k = 0; k < nAtoms; k++) {
+                        if (i != k && use[k]) {
+                            final double xr = xi - x[k];
+                            final double yr = yi - y[k];
+                            final double zr = zi - z[k];
+                            final double r2 = xr * xr + yr * yr + zr * zr;
+                            /*
+                             if (r2 > cut2) {
+                             continue;
+                             } */
+                            final double r = sqrt(r2);
+                            double de = 0.0;
+                            if (gradient) {
+                                double dedx = de * xr;
+                                double dedy = de * yr;
+                                double dedz = de * zr;
+                                gX[i] += dedx;
+                                gY[i] += dedy;
+                                gZ[i] += dedz;
+                                gX[k] -= dedx;
+                                gY[k] -= dedy;
+                                gZ[k] -= dedz;
+                            }
+                        }
+                    }
+                }
+                // Increment the overall cavitation energy component
+                double e = 0.0;
+                ecav += e;
             }
         }
     }
