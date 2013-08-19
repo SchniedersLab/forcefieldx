@@ -584,7 +584,8 @@ public class OSRW implements Potential {
                  */
                 if (rank == 0) {
                     try {
-                        OSRWHistogramWriter osrwHistogramRestart = new OSRWHistogramWriter(new BufferedWriter(new FileWriter(histogramFile)));
+                        OSRWHistogramWriter osrwHistogramRestart = new OSRWHistogramWriter(
+                                new BufferedWriter(new FileWriter(histogramFile)));
                         osrwHistogramRestart.writeHistogramFile();
                         osrwHistogramRestart.flush();
                         osrwHistogramRestart.close();
@@ -949,7 +950,8 @@ public class OSRW implements Potential {
                         FLambda[iL], deltaFreeEnergy, freeEnergy));
             }
         }
-        logger.info(String.format(" The free energy is %12.4f kcal/mol from %d counts.", freeEnergy, totalCounts));
+        logger.info(String.format(" The free energy is %12.4f kcal/mol from %d counts.",
+                freeEnergy, totalCounts));
 
         return freeEnergy;
     }
