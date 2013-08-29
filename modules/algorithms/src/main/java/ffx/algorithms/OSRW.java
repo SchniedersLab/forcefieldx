@@ -513,7 +513,7 @@ public class OSRW implements Potential {
         int lambdaBin = binForLambda(lambda);
         int FLambdaBin = binForFLambda(dEdLambda);
         double dEdU = dEdLambda;
-        
+
         if (!collectStatistics) {
             if (lambda > startBiasAtLambda1Value) {
                 collectStatistics = true;
@@ -752,6 +752,15 @@ public class OSRW implements Potential {
          */
         if (propagateLambda) {
             langevin();
+            if (!this.collectStatistics) {
+                equilibrationCounts++;
+                if (jobBackend != null) {
+                    jobBackend.setComment(String.format("Equilibration [L=%6.4f, F_L=%10.4f]", lambda, dEdU));
+                }
+                if (equilibrationCounts % 10 == 0) {
+                    logger.info(String.format(" L=%6.4f, F_L=%10.4f", lambda, dEdU));
+                }
+            }
         } else {
             equilibrationCounts++;
             if (jobBackend != null) {
@@ -1090,8 +1099,9 @@ public class OSRW implements Potential {
         this.thetaMass = thetaMass;
     }
 
-    public void setCollectStatstics(boolean collectStatistics) {
+    public void setCollectStatistics(boolean collectStatistics) {
         this.collectStatistics = collectStatistics;
+        logger.info(String.format(" Collect statstics set to %b", this.collectStatistics));
     }
 
     public void setThetaFrication(double thetaFriction) {
