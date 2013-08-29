@@ -237,14 +237,13 @@ public class OSRW implements Potential {
     private MolecularAssembly lambdaZeroAssembly;
     private PDBFilter lambdaZeroFilter;
     /**
-     * The beginning lambda value that must be sampled before OSRW statistics
-     * are collected.
+     * Once the lambda reset value is reached, OSRW statistics are reset.
      */
-    private double startBiasAtLambda1Value = 0.99;
+    private double lambdaResetValue = 0.99;
     /**
-     * Flag set to true once OSRW statistics should be calculated.
+     * Flag set to false once OSRW statistics are reset at lambdaResetValue.
      */
-    private boolean collectStatistics = true;
+    private boolean resetStatistics = false;
     /**
      * Stores a traversal snapshot that has not yet been written to file.
      */
@@ -497,7 +496,6 @@ public class OSRW implements Potential {
     @Override
     public double energyAndGradient(double[] x, double[] gradient) {
 
-
         double e = potential.energyAndGradient(x, gradient);
 
         /**
@@ -514,237 +512,227 @@ public class OSRW implements Potential {
         int FLambdaBin = binForFLambda(dEdLambda);
         double dEdU = dEdLambda;
 
-        if (!collectStatistics) {
-            if (lambda > startBiasAtLambda1Value) {
-                collectStatistics = true;
+        if (propagateLambda) {
+            energyCount++;
+        }
+
+        /**
+         * Calculate recursion kernel G(L, F_L) and its derivatives with respect
+         * to L and F_L.
+         */
+        double dGdLambda = 0.0;
+        double dGdFLambda = 0.0;
+        double ls2 = (2.0 * dL) * (2.0 * dL);
+        double FLs2 = (2.0 * dFL) * (2.0 * dFL);
+        for (int iL = -biasCutoff; iL <= biasCutoff; iL++) {
+            int lcenter = lambdaBin + iL;
+            double deltaL = lambda - (lcenter * dL);
+            double deltaL2 = deltaL * deltaL;
+            // Mirror conditions for recursion kernel counts.
+            int lcount = lcenter;
+            double mirrorFactor = 1.0;
+            if (lcount == 0 || lcount == lambdaBins - 1) {
+                mirrorFactor = 2.0;
+            } else if (lcount < 0) {
+                lcount = -lcount;
+            } else if (lcount > lambdaBins - 1) {
+                // Number of bins past the last bin
+                lcount -= (lambdaBins - 1);
+                // Mirror bin
+                lcount = lambdaBins - 1 - lcount;
+            }
+            for (int iFL = -biasCutoff; iFL <= biasCutoff; iFL++) {
+                int FLcenter = FLambdaBin + iFL;
+                /**
+                 * If either of the following FL edge conditions are true, then
+                 * there are no counts and we continue.
+                 */
+                if (FLcenter < 0 || FLcenter >= FLambdaBins) {
+                    continue;
+                }
+                double deltaFL = dEdLambda - (minFLambda + FLcenter * dFL + dFL_2);
+                double deltaFL2 = deltaFL * deltaFL;
+                double weight = mirrorFactor * recursionKernel[lcount][FLcenter];
+                double bias = weight * biasMag
+                        * exp(-deltaL2 / (2.0 * ls2))
+                        * exp(-deltaFL2 / (2.0 * FLs2));
+                biasEnergy += bias;
+                dGdLambda -= deltaL / ls2 * bias;
+                dGdFLambda -= deltaFL / FLs2 * bias;
             }
         }
 
-        if (collectStatistics) {
-            if (propagateLambda) {
-                energyCount++;
-            }
+        /**
+         * Lambda gradient due to recursion kernel G(L, F_L).
+         */
+        dEdLambda += dGdLambda + dGdFLambda * d2EdLambda2;
 
+        /**
+         * Cartesian coordinate gradient due to recursion kernel G(L, F_L).
+         */
+        fill(dUdXdL, 0.0);
+        lambdaInterface.getdEdXdL(dUdXdL);
+        for (int i = 0; i < nVariables; i++) {
+            gradient[i] += dGdFLambda * dUdXdL[i];
+        }
+
+        if (propagateLambda && energyCount > 0) {
             /**
-             * Calculate recursion kernel G(L, F_L) and its derivatives with
-             * respect to L and F_L.
+             * Update free energy F(L) every ~10 steps.
              */
-            double dGdLambda = 0.0;
-            double dGdFLambda = 0.0;
-            double ls2 = (2.0 * dL) * (2.0 * dL);
-            double FLs2 = (2.0 * dFL) * (2.0 * dFL);
-            for (int iL = -biasCutoff; iL <= biasCutoff; iL++) {
-                int lcenter = lambdaBin + iL;
-                double deltaL = lambda - (lcenter * dL);
-                double deltaL2 = deltaL * deltaL;
-                // Mirror conditions for recursion kernel counts.
-                int lcount = lcenter;
-                double mirrorFactor = 1.0;
-                if (lcount == 0 || lcount == lambdaBins - 1) {
-                    mirrorFactor = 2.0;
-                } else if (lcount < 0) {
-                    lcount = -lcount;
-                } else if (lcount > lambdaBins - 1) {
-                    // Number of bins past the last bin
-                    lcount -= (lambdaBins - 1);
-                    // Mirror bin
-                    lcount = lambdaBins - 1 - lcount;
-                }
-                for (int iFL = -biasCutoff; iFL <= biasCutoff; iFL++) {
-                    int FLcenter = FLambdaBin + iFL;
-                    /**
-                     * If either of the following FL edge conditions are true,
-                     * then there are no counts and we continue.
-                     */
-                    if (FLcenter < 0 || FLcenter >= FLambdaBins) {
-                        continue;
-                    }
-                    double deltaFL = dEdLambda - (minFLambda + FLcenter * dFL + dFL_2);
-                    double deltaFL2 = deltaFL * deltaFL;
-                    double weight = mirrorFactor * recursionKernel[lcount][FLcenter];
-                    double bias = weight * biasMag
-                            * exp(-deltaL2 / (2.0 * ls2))
-                            * exp(-deltaFL2 / (2.0 * FLs2));
-                    biasEnergy += bias;
-                    dGdLambda -= deltaL / ls2 * bias;
-                    dGdFLambda -= deltaFL / FLs2 * bias;
-                }
+            if (energyCount % 10 == 0) {
+                fLambdaUpdates++;
+                boolean printFLambda = fLambdaUpdates % fLambdaPrintInterval == 0;
+                totalFreeEnergy = updateFLambda(printFLambda);
             }
-
-            /**
-             * Lambda gradient due to recursion kernel G(L, F_L).
-             */
-            dEdLambda += dGdLambda + dGdFLambda * d2EdLambda2;
-
-            /**
-             * Cartesian coordinate gradient due to recursion kernel G(L, F_L).
-             */
-            fill(dUdXdL, 0.0);
-            lambdaInterface.getdEdXdL(dUdXdL);
-            for (int i = 0; i < nVariables; i++) {
-                gradient[i] += dGdFLambda * dUdXdL[i];
-            }
-
-            if (propagateLambda && energyCount > 0) {
+            if (energyCount % saveFrequency == 0) {
                 /**
-                 * Update free energy F(L) every ~10 steps.
+                 * Only the rank 0 process writes the histogram restart file.
                  */
-                if (energyCount % 10 == 0) {
-                    fLambdaUpdates++;
-                    boolean printFLambda = fLambdaUpdates % fLambdaPrintInterval == 0;
-                    totalFreeEnergy = updateFLambda(printFLambda);
-                }
-                if (energyCount % saveFrequency == 0) {
-                    /**
-                     * Only the rank 0 process writes the histogram restart
-                     * file.
-                     */
-                    if (rank == 0) {
-                        try {
-                            OSRWHistogramWriter osrwHistogramRestart = new OSRWHistogramWriter(
-                                    new BufferedWriter(new FileWriter(histogramFile)));
-                            osrwHistogramRestart.writeHistogramFile();
-                            osrwHistogramRestart.flush();
-                            osrwHistogramRestart.close();
-                            logger.info(String.format(" Wrote OSRW histogram restart file to %s.", histogramFile.getName()));
-                        } catch (IOException ex) {
-                            String message = " Exception writing OSRW histogram restart file.";
-                            logger.log(Level.INFO, message, ex);
-                        }
-                    }
-                    /**
-                     * All ranks write a lambda restart file.
-                     */
+                if (rank == 0) {
                     try {
-                        OSRWLambdaWriter osrwLambdaRestart = new OSRWLambdaWriter(new BufferedWriter(new FileWriter(lambdaFile)));
-                        osrwLambdaRestart.writeLambdaFile();
-                        osrwLambdaRestart.flush();
-                        osrwLambdaRestart.close();
-                        logger.info(String.format(" Wrote OSRW lambda restart file to %s.", lambdaFile.getName()));
+                        OSRWHistogramWriter osrwHistogramRestart = new OSRWHistogramWriter(
+                                new BufferedWriter(new FileWriter(histogramFile)));
+                        osrwHistogramRestart.writeHistogramFile();
+                        osrwHistogramRestart.flush();
+                        osrwHistogramRestart.close();
+                        logger.info(String.format(" Wrote OSRW histogram restart file to %s.", histogramFile.getName()));
                     } catch (IOException ex) {
-                        String message = " Exception writing OSRW lambda restart file.";
+                        String message = " Exception writing OSRW histogram restart file.";
                         logger.log(Level.INFO, message, ex);
                     }
                 }
                 /**
-                 * Write out snapshot upon each full lambda traversal.
+                 * All ranks write a lambda restart file.
                  */
-                if (writeTraversalSnapshots) {
-                    double heldTraversalLambda = 0.5;
-                    if (!traversalInHand.isEmpty()) {
-                        heldTraversalLambda = Double.parseDouble(traversalInHand.get(0).split(",")[0]);
-                        if ((lambda > 0.2 && traversalSnapshotTarget == 0)
-                                || (lambda < 0.8 && traversalSnapshotTarget == 1)) {
-                            int snapshotCounts = Integer.parseInt(traversalInHand.get(0).split(",")[1]);
-                            traversalInHand.remove(0);
-                            File fileToWrite;
-                            int numStructures;
-                            if (traversalSnapshotTarget == 0) {
-                                fileToWrite = lambdaZeroFile;
-                                numStructures = ++lambdaZeroStructures;
-                            } else {
-                                fileToWrite = lambdaOneFile;
-                                numStructures = ++lambdaOneStructures;
+                try {
+                    OSRWLambdaWriter osrwLambdaRestart = new OSRWLambdaWriter(new BufferedWriter(new FileWriter(lambdaFile)));
+                    osrwLambdaRestart.writeLambdaFile();
+                    osrwLambdaRestart.flush();
+                    osrwLambdaRestart.close();
+                    logger.info(String.format(" Wrote OSRW lambda restart file to %s.", lambdaFile.getName()));
+                } catch (IOException ex) {
+                    String message = " Exception writing OSRW lambda restart file.";
+                    logger.log(Level.INFO, message, ex);
+                }
+            }
+            /**
+             * Write out snapshot upon each full lambda traversal.
+             */
+            if (writeTraversalSnapshots) {
+                double heldTraversalLambda = 0.5;
+                if (!traversalInHand.isEmpty()) {
+                    heldTraversalLambda = Double.parseDouble(traversalInHand.get(0).split(",")[0]);
+                    if ((lambda > 0.2 && traversalSnapshotTarget == 0)
+                            || (lambda < 0.8 && traversalSnapshotTarget == 1)) {
+                        int snapshotCounts = Integer.parseInt(traversalInHand.get(0).split(",")[1]);
+                        traversalInHand.remove(0);
+                        File fileToWrite;
+                        int numStructures;
+                        if (traversalSnapshotTarget == 0) {
+                            fileToWrite = lambdaZeroFile;
+                            numStructures = ++lambdaZeroStructures;
+                        } else {
+                            fileToWrite = lambdaOneFile;
+                            numStructures = ++lambdaOneStructures;
+                        }
+                        try {
+                            FileWriter fw = new FileWriter(fileToWrite, true);
+                            BufferedWriter bw = new BufferedWriter(fw);
+                            bw.write(String.format("MODEL        %d          L=%.4f  counts=%d", numStructures, heldTraversalLambda, snapshotCounts));
+                            for (int i = 0; i < 50; i++) {
+                                bw.write(" ");
                             }
-                            try {
-                                FileWriter fw = new FileWriter(fileToWrite, true);
-                                BufferedWriter bw = new BufferedWriter(fw);
-                                bw.write(String.format("MODEL        %d          L=%.4f  counts=%d", numStructures, heldTraversalLambda, snapshotCounts));
-                                for (int i = 0; i < 50; i++) {
-                                    bw.write(" ");
-                                }
+                            bw.newLine();
+                            for (int i = 0; i < traversalInHand.size(); i++) {
+                                bw.write(traversalInHand.get(i));
                                 bw.newLine();
-                                for (int i = 0; i < traversalInHand.size(); i++) {
-                                    bw.write(traversalInHand.get(i));
-                                    bw.newLine();
-                                }
-                                bw.write(String.format("ENDMDL"));
-                                for (int i = 0; i < 75; i++) {
-                                    bw.write(" ");
-                                }
-                                bw.newLine();
-                                bw.close();
-                                logger.info(String.format(" Wrote traversal structure L=%.4f", heldTraversalLambda));
-                            } catch (Exception exception) {
-                                logger.warning(String.format("Exception writing to file: %s", fileToWrite.getName()));
                             }
-                            heldTraversalLambda = 0.5;
-                            traversalInHand.clear();
-                            traversalSnapshotTarget = 1 - traversalSnapshotTarget;
+                            bw.write(String.format("ENDMDL"));
+                            for (int i = 0; i < 75; i++) {
+                                bw.write(" ");
+                            }
+                            bw.newLine();
+                            bw.close();
+                            logger.info(String.format(" Wrote traversal structure L=%.4f", heldTraversalLambda));
+                        } catch (Exception exception) {
+                            logger.warning(String.format("Exception writing to file: %s", fileToWrite.getName()));
                         }
+                        heldTraversalLambda = 0.5;
+                        traversalInHand.clear();
+                        traversalSnapshotTarget = 1 - traversalSnapshotTarget;
                     }
-                    if (((lambda < 0.1 && traversalInHand.isEmpty()) || (lambda < heldTraversalLambda - 0.025 && !traversalInHand.isEmpty()))
-                            && (traversalSnapshotTarget == 0 || traversalSnapshotTarget == -1)) {
-                        if (lambdaZeroFilter == null) {
-                            lambdaZeroFilter = new PDBFilter(lambdaZeroFile, lambdaZeroAssembly, null, null);
-                            lambdaZeroFilter.setListMode(true);
-                        }
-                        lambdaZeroFilter.clearListOutput();
-                        lambdaZeroFilter.writeFileWithHeader(lambdaFile, new StringBuilder(String.format("%.4f,%d", lambda, totalCounts)));
-                        traversalInHand = lambdaZeroFilter.getListOutput();
-                        traversalSnapshotTarget = 0;
-                    } else if (((lambda > 0.9 && traversalInHand.isEmpty()) || (lambda > heldTraversalLambda + 0.025 && !traversalInHand.isEmpty()))
-                            && (traversalSnapshotTarget == 1 || traversalSnapshotTarget == -1)) {
-                        if (lambdaOneFilter == null) {
-                            lambdaOneFilter = new PDBFilter(lambdaOneFile, lambdaOneAssembly, null, null);
-                            lambdaOneFilter.setListMode(true);
-                        }
-                        lambdaOneFilter.clearListOutput();
-                        lambdaOneFilter.writeFileWithHeader(lambdaFile, new StringBuilder(String.format("%.4f,%d", lambda, totalCounts)));
-                        traversalInHand = lambdaOneFilter.getListOutput();
-                        traversalSnapshotTarget = 1;
+                }
+                if (((lambda < 0.1 && traversalInHand.isEmpty()) || (lambda < heldTraversalLambda - 0.025 && !traversalInHand.isEmpty()))
+                        && (traversalSnapshotTarget == 0 || traversalSnapshotTarget == -1)) {
+                    if (lambdaZeroFilter == null) {
+                        lambdaZeroFilter = new PDBFilter(lambdaZeroFile, lambdaZeroAssembly, null, null);
+                        lambdaZeroFilter.setListMode(true);
                     }
+                    lambdaZeroFilter.clearListOutput();
+                    lambdaZeroFilter.writeFileWithHeader(lambdaFile, new StringBuilder(String.format("%.4f,%d", lambda, totalCounts)));
+                    traversalInHand = lambdaZeroFilter.getListOutput();
+                    traversalSnapshotTarget = 0;
+                } else if (((lambda > 0.9 && traversalInHand.isEmpty()) || (lambda > heldTraversalLambda + 0.025 && !traversalInHand.isEmpty()))
+                        && (traversalSnapshotTarget == 1 || traversalSnapshotTarget == -1)) {
+                    if (lambdaOneFilter == null) {
+                        lambdaOneFilter = new PDBFilter(lambdaOneFile, lambdaOneAssembly, null, null);
+                        lambdaOneFilter.setListMode(true);
+                    }
+                    lambdaOneFilter.clearListOutput();
+                    lambdaOneFilter.writeFileWithHeader(lambdaFile, new StringBuilder(String.format("%.4f,%d", lambda, totalCounts)));
+                    traversalInHand = lambdaOneFilter.getListOutput();
+                    traversalSnapshotTarget = 1;
+                }
+            }
+        }
+
+        /**
+         * Compute the energy and gradient for the recursion slave at F(L) using
+         * interpolation.
+         */
+        double freeEnergy = currentFreeEnergy();
+        biasEnergy += freeEnergy;
+
+        if (print) {
+            logger.info(String.format(" %s %16.8f", "Bias Energy       ", biasEnergy));
+            logger.info(String.format(" %s %16.8f  %s",
+                    "OSRW Potential    ", e + biasEnergy, "(Kcal/mole)"));
+        }
+
+        if (propagateLambda && energyCount > 0) {
+            /**
+             * Log the current Lambda state.
+             */
+            if (energyCount % printFrequency == 0) {
+                if (lambdaBins < 1000) {
+                    logger.info(String.format(" L=%6.4f (%3d) F_LU=%10.4f F_LB=%10.4f F_L=%10.4f",
+                            lambda, lambdaBin, dEdU, dEdLambda - dEdU, dEdLambda));
+                } else {
+                    logger.info(String.format(" L=%6.4f (%4d) F_LU=%10.4f F_LB=%10.4f F_L=%10.4f",
+                            lambda, lambdaBin, dEdU, dEdLambda - dEdU, dEdLambda));
                 }
             }
 
             /**
-             * Compute the energy and gradient for the recursion slave at F(L)
-             * using interpolation.
+             * Metadynamics grid counts (every 'countInterval' steps).
              */
-            double freeEnergy = currentFreeEnergy();
-            biasEnergy += freeEnergy;
-
-            if (print) {
-                logger.info(String.format(" %s %16.8f", "Bias Energy       ", biasEnergy));
-                logger.info(String.format(" %s %16.8f  %s",
-                        "OSRW Potential    ", e + biasEnergy, "(Kcal/mole)"));
-            }
-
-            if (propagateLambda && energyCount > 0) {
-                /**
-                 * Log the current Lambda state.
-                 */
-                if (energyCount % printFrequency == 0) {
-                    if (lambdaBins < 1000) {
-                        logger.info(String.format(" L=%6.4f (%3d) F_LU=%10.4f F_LB=%10.4f F_L=%10.4f",
-                                lambda, lambdaBin, dEdU, dEdLambda - dEdU, dEdLambda));
+            if (energyCount % countInterval == 0) {
+                if (jobBackend != null) {
+                    if (world.size() > 1) {
+                        jobBackend.setComment(String.format("Overall dG=%10.4f at %7.3e psec, Current: [L=%6.4f, F_L=%10.4f, dG=%10.4f] at %7.3e psec",
+                                totalFreeEnergy, totalCounts * dt * countInterval, lambda, dEdU, -freeEnergy, energyCount * dt));
                     } else {
-                        logger.info(String.format(" L=%6.4f (%4d) F_LU=%10.4f F_LB=%10.4f F_L=%10.4f",
-                                lambda, lambdaBin, dEdU, dEdLambda - dEdU, dEdLambda));
+                        jobBackend.setComment(String.format("Overall dG=%10.4f at %7.3e psec, Current: [L=%6.4f, F_L=%10.4f, dG=%10.4f]",
+                                totalFreeEnergy, totalCounts * dt * countInterval, lambda, dEdU, -freeEnergy));
                     }
                 }
-
-                /**
-                 * Metadynamics grid counts (every 'countInterval' steps).
-                 */
-                if (energyCount % countInterval == 0) {
-                    if (jobBackend != null) {
-                        if (world.size() > 1) {
-                            jobBackend.setComment(String.format("Overall dG=%10.4f at %7.3e psec, Current: [L=%6.4f, F_L=%10.4f, dG=%10.4f] at %7.3e psec",
-                                    totalFreeEnergy, totalCounts * dt * countInterval, lambda, dEdU, -freeEnergy, energyCount * dt));
-                        } else {
-                            jobBackend.setComment(String.format("Overall dG=%10.4f at %7.3e psec, Current: [L=%6.4f, F_L=%10.4f, dG=%10.4f]",
-                                    totalFreeEnergy, totalCounts * dt * countInterval, lambda, dEdU, -freeEnergy));
-                        }
-                    }
-                    if (asynchronous) {
-                        asynchronousSend(lambda, dEdU);
-                    } else {
-                        synchronousSend(lambda, dEdU);
-                    }
+                if (asynchronous) {
+                    asynchronousSend(lambda, dEdU);
+                } else {
+                    synchronousSend(lambda, dEdU);
                 }
             }
-
         }
 
         /**
@@ -752,15 +740,6 @@ public class OSRW implements Potential {
          */
         if (propagateLambda) {
             langevin();
-            if (!this.collectStatistics) {
-                equilibrationCounts++;
-                if (jobBackend != null) {
-                    jobBackend.setComment(String.format("Equilibration [L=%6.4f, F_L=%10.4f]", lambda, dEdU));
-                }
-                if (equilibrationCounts % 10 == 0) {
-                    logger.info(String.format(" L=%6.4f, F_L=%10.4f", lambda, dEdU));
-                }
-            }
         } else {
             equilibrationCounts++;
             if (jobBackend != null) {
@@ -819,6 +798,13 @@ public class OSRW implements Potential {
         for (int i = 0; i < numProc; i++) {
             int walkerLambda = binForLambda(recursionCounts[i][0]);
             int walkerFLambda = binForFLambda(recursionCounts[i][1]);
+
+            if (resetStatistics && recursionCounts[i][0] > lambdaResetValue) {
+                recursionKernel = new int[lambdaBins][FLambdaBins];
+                resetStatistics = false;
+                logger.info(String.format(" Cleared OSRW histogram (Lambda = %6.4f).", recursionCounts[i][0]));
+            }
+
             recursionKernel[walkerLambda][walkerFLambda]++;
         }
     }
@@ -1099,9 +1085,8 @@ public class OSRW implements Potential {
         this.thetaMass = thetaMass;
     }
 
-    public void setCollectStatistics(boolean collectStatistics) {
-        this.collectStatistics = collectStatistics;
-        logger.info(String.format(" Collect statstics set to %b", this.collectStatistics));
+    public void setResetStatistics(boolean resetStatistics) {
+        this.resetStatistics = resetStatistics;
     }
 
     public void setThetaFrication(double thetaFriction) {
@@ -1328,6 +1313,17 @@ public class OSRW implements Potential {
                  */
                 int walkerLambda = binForLambda(recursionCount[0]);
                 int walkerFLambda = binForFLambda(recursionCount[1]);
+
+                if (resetStatistics && recursionCount[0] > lambdaResetValue) {
+                    recursionKernel = new int[lambdaBins][FLambdaBins];
+                    resetStatistics = false;
+                    logger.info(String.format(" Cleared OSRW histogram (Lambda = %6.4f).", recursionCount[0]));
+                }
+
+                /**
+                 * Increment the Recursion Kernel based on the input of current
+                 * walker.
+                 */
                 recursionKernel[walkerLambda][walkerFLambda]++;
             }
         }
