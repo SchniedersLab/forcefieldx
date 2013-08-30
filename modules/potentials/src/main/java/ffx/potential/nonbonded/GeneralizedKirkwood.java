@@ -93,6 +93,8 @@ public class GeneralizedKirkwood {
     private static final double epsh = 0.0135;
     private static final double rmino = 1.7025;
     private static final double rminh = 1.3275;
+    private static final double probe = 1.4;
+    private static final double maxarc = 1000;
     private boolean use[] = null;
     private final Polarization polarization;
     private final Atom atoms[];
@@ -3631,6 +3633,7 @@ public class GeneralizedKirkwood {
         private final CavitationLoop cavitationLoop[];
         private final SharedDouble sharedCavitation;
         private boolean gradient = false;
+        private int maxarc = 1000;
 
         public CavitationRegion(int nt) {
             cavitationLoop = new CavitationLoop[nt];
@@ -3670,21 +3673,132 @@ public class GeneralizedKirkwood {
          */
         private class CavitationLoop extends IntegerForLoop {
 
-            private double gX[];
-            private double gY[];
-            private double gZ[];
+            private double area[];
+            private double darea[][];
+            private double r[];
+            private boolean skip[];
+            private IndexedDouble gr[];
+            private IndexedDouble arci[];
+            private double xc1[];
+            private double yc1[];
+            private double zc1[];
+            private double dsq1[];
+            private double bsq1[];
+            private double b1[];
+            private int intag[];
+            private int intag1[];
+            private double xc[];
+            private double yc[];
+            private double zc[];
+            private double dsq[];
+            private double b[];
+            private double bsq[];
+            private boolean omit[];
+            private double bg[];
+            private double risq[];
+            private double ri[];
+            private double ther[];
+            private int lt[];
+            private double ider[];
+            private double sign_yder[];
+            private double arcf[];
+            private double ex[];
+            private double ux[];
+            private double uy[];
+            private double uz[];
+            private double kent[];
+            private double kout[];
             private double ecav;
+            final double pix2 = 2.0 * PI;
+            final double pix4 = 4.0 * PI;
+            final double pid2 = PI / 2.0;
+            final double delta = 1.0e-8;
+            final double delta2 = pow(delta, 2);
+            final double eps = 1.0e-8;
+            boolean goto160 = false;
+            private final static double rmove = 1.0e-8;
             // Extra padding to avert cache interference.
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
             private long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
+            public CavitationLoop() {
+                area = new double[nAtoms];
+                r = new double[nAtoms];
+                skip = new boolean[nAtoms];
+                allocateMemory(maxarc);
+            }
+
+            private void allocateMemory(int maxarc) {
+                gr = new IndexedDouble[maxarc];
+                arci = new IndexedDouble[maxarc];
+                arcf = new double[maxarc];
+                risq = new double[maxarc];
+                ri = new double[maxarc];
+                dsq1 = new double[maxarc];
+                bsq1 = new double[maxarc];
+                dsq = new double[maxarc];
+                bsq = new double[maxarc];
+                intag = new int[maxarc];
+                intag1 = new int[maxarc];
+                lt = new int[maxarc];
+                kent = new double[maxarc];
+                kout = new double[maxarc];
+                ider = new double[maxarc];
+                sign_yder = new double[maxarc];
+                xc1 = new double[maxarc];
+                yc1 = new double[maxarc];
+                zc1 = new double[maxarc];
+                b1 = new double[maxarc];
+                xc = new double[maxarc];
+                yc = new double[maxarc];
+                zc = new double[maxarc];
+                b = new double[maxarc];
+                omit = new boolean[maxarc];
+                bg = new double[maxarc];
+                ther = new double[maxarc];
+                ex = new double[maxarc];
+                ux = new double[maxarc];
+                uy = new double[maxarc];
+                uz = new double[maxarc];
+            }
+
             @Override
             public void start() {
                 int threadID = getThreadIndex();
-                gX = grad[threadID][0];
-                gY = grad[threadID][1];
-                gZ = grad[threadID][2];
+                darea[0] = grad[threadID][0];
+                darea[1] = grad[threadID][1];
+                darea[2] = grad[threadID][2];
                 ecav = 0;
+
+                Arrays.fill(area, 0.0);
+                Arrays.fill(darea[0], 0.0);
+                Arrays.fill(darea[1], 0.0);
+                Arrays.fill(darea[2], 0.0);
+                Arrays.fill(ider, 0);
+                Arrays.fill(sign_yder, 0);
+                Arrays.fill(skip, true);
+                for (int i = 0; i < nAtoms; i++) {
+                    if (use[i]) {
+                        double xr = x[i];
+                        double yr = y[i];
+                        double zr = z[i];
+                        double rr = r[i];
+                        for (int k = 0; k < nAtoms; k++) {
+                            double rplus = pow((rr + r[k]), 2);
+                            double ccsq = pow((x[k] - xr), 2) + pow((y[k] - yr), 2) + pow((z[k] - zr), 2);
+                            if (ccsq <= rplus) {
+                                skip[k] = false;
+                            }
+
+                        }
+                    }
+                }
+                for (int i = 0; i < nAtoms; i++) {
+                    r[i] = rDisp[i];
+                    if (r[i] != 0.0) {
+                        r[i] = r[i] + probe;
+                    }
+                }
             }
 
             @Override
@@ -3694,42 +3808,575 @@ public class GeneralizedKirkwood {
 
             @Override
             public void run(int lb, int ub) {
-                for (int i = lb; i <= ub; i++) {
-                    if (!use[i]) {
+                /**
+                 * Compute the area and derivatives of current "ir" sphere
+                 */
+                for (int ir = lb; ir <= ub; ir++) {
+                    if (!use[ir]) {
                         continue;
                     }
-                    final double xi = x[i];
-                    final double yi = y[i];
-                    final double zi = z[i];
-                    for (int k = 0; k < nAtoms; k++) {
-                        if (i != k && use[k]) {
-                            final double xr = xi - x[k];
-                            final double yr = yi - y[k];
-                            final double zr = zi - z[k];
-                            final double r2 = xr * xr + yr * yr + zr * zr;
-                            /*
-                             if (r2 > cut2) {
-                             continue;
-                             } */
-                            final double r = sqrt(r2);
-                            double de = 0.0;
-                            if (gradient) {
-                                double dedx = de * xr;
-                                double dedy = de * yr;
-                                double dedz = de * zr;
-                                gX[i] += dedx;
-                                gY[i] += dedy;
-                                gZ[i] += dedz;
-                                gX[k] -= dedx;
-                                gY[k] -= dedy;
-                                gZ[k] -= dedz;
+                    if (!skip[ir]) {
+                        continue;
+                    }
+
+                    double xr = x[ir];
+                    double yr = y[ir];
+                    double zr = z[ir];
+                    double rr = r[ir];
+                    double rrx2 = 2.0 * rr;
+                    double rrsq = pow(rr, 2);
+                    double wght = atoms[ir].getAtomType().atomicWeight;
+                    boolean moved = false;
+                    //10    continue
+                    goto160 = false;
+                    begin(xr, yr, zr, rr, rrx2, rrsq, wght, moved, ir);
+                    //        goto 10 recursive call begin method
+                    // 180    continue          DELETE
+                    if (goto160) {
+                        area[ir] = area[ir] * rrsq;
+                        if (area[ir] < 0.0) {
+                            if (moved) {
+                                logger.warning(String.format(" Negative surface area for atom %d.", ir));
                             }
+                        } else {
+                            moved = true;
+                            xr = xr + rmove;
+                            yr = yr + rmove;
+                            zr = zr + rmove;
+                            begin(xr, yr, zr, rr, rrx2, rrsq, wght, moved, ir);
+                        }
+                    }
+                    for (int i = 0; i < nAtoms; i++) {
+                        if (!use[i]) {
+                            darea[0][i] = 0.0;
+                            darea[1][i] = 0.0;
+                            darea[2][i] = 0.0;
                         }
                     }
                 }
+//c
+//c     print out the surface area and derivatives for each atom
+//c
+//c     if (debug) then
+//c        write (iout,190)
+//c 190    format (/,' Weighted Atomic Surface Areas and Derivatives :',
+//c    &           //,4x,'Atom',7x,'Area Term',10x,'dA/dx',
+//c    &              7x,'dA/dy',7x,'dA/dz',6x,'Weight',/)
+//c        do i = 1, n
+//c           if (.not. skip(i)) then
+//c              write (iout,200)  i,area(i),(darea(j,i),j=1,3),weight(i)
+//c 200          format (i8,4x,f12.4,3x,3f12.4,f12.4)
+//c           end if
+//c        end do
+//c        write (iout,210)  total
+//c 210    format (/,' Total Weighted Surface Area :',5x,f16.4)
+//c     end if
+                //                   return end
+
+                /*
+                 final double xi = x[i];
+                 final double yi = y[i];
+                 final double zi = z[i];
+                 for (int k = 0; k < nAtoms; k++) {
+                 if (i != k && use[k]) {
+                 final double xr = xi - x[k];
+                 final double yr = yi - y[k];
+                 final double zr = zi - z[k];
+                 final double r2 = xr * xr + yr * yr + zr * zr;
+                 if (r2 > cut2) {
+                 continue;
+                 }
+                 double d = sqrt(r2);
+                 double de = 0.0;
+                 if (gradient) {
+                 double dedx = de * xr;
+                 double dedy = de * yr;
+                 double dedz = de * zr;
+                 gX[i] += dedx;
+                 gY[i] += dedy;
+                 gZ[i] += dedz;
+                 gX[k] -= dedx;
+                 gY[k] -= dedy;
+                 gZ[k] -= dedz;
+                 }
+                 }
+                 } */
                 // Increment the overall cavitation energy component
                 double e = 0.0;
                 ecav += e;
+            }
+
+            public void begin(double xr, double yr, double zr, double rr, double rrx2,
+                    double rrsq, double wght, boolean moved, int ir) {
+                // begin (xr, yr, zr, rr, rrx2, rrsq, wght, moved)
+                int io = -1;
+                int jb = 0;
+                double ib = 0;
+                double arclen = 0.0;
+                double exang = 0.0;
+
+                double the = 0;
+                double arcsum = 2.0 * PI;
+
+                // test each sphere to see if it overlaps the "ir" sphere
+                for (int i = 0; i < nAtoms; i++) {
+                    if (i == ir) {
+                        continue;
+                    }
+                    double rplus = rr + r[i];
+                    double tx = x[i] - xr;
+                    if (abs(tx) >= rplus) {
+                        continue;
+                    }
+                    double ty = y[i] - yr;
+                    if (abs(ty) >= rplus) {
+                        continue;
+                    }
+                    double tz = z[i] - zr;
+                    if (abs(tz) >= rplus) {
+                        continue;
+                    }
+                    /**
+                     * Check for overlap of spheres by testing center to center
+                     * distance against sum and difference of radii.
+                     */
+                    double xysq = pow(tx, 2) + pow(ty, 2);
+                    if (xysq < delta2) {
+                        tx = delta;
+                        ty = 0.0;
+                        xysq = delta2;
+                    }
+                    double ccsq = xysq + pow(tz, 2);
+                    double cc = sqrt(ccsq);
+                    if (rplus - cc <= delta) {
+                        continue;
+                    }
+                    double rminus = rr - r[i];
+                    // Check for a completely buried "ir" sphere.
+                    if (cc - abs(rminus) <= delta) {
+                        if (rminus <= 0.0) {
+                            return;
+                        } else {
+                            continue;
+                        }
+                    }
+                    // Calculate overlap parameters between "i" and "ir" sphere.
+                    io = io + 1;
+                    xc1[io] = tx;
+                    yc1[io] = ty;
+                    zc1[io] = tz;
+                    dsq1[io] = xysq;
+                    bsq1[io] = ccsq;
+                    b1[io] = cc;
+                    gr[io].value = (ccsq + rplus * rminus) / (rrx2 * b1[io]);
+                    gr[io].key = io;
+                    intag1[io] = i;
+                    if (io > maxarc) {
+                        logger.severe(String.format(" Increase the value of MAXarc %d.", io));
+                    }
+                }
+                // Case where no other spheres overlap the current sphere.
+                if (io == 0) {
+                    area[ir] = pix4;
+                    //goto 160
+                    goto160 = true;
+                }
+                // Case where only one sphere overlaps the current sphere.
+                if (io == 1) {
+                    int k = 1;
+                    double txk = xc1[0];
+                    double tyk = yc1[0];
+                    double tzk = zc1[0];
+                    double bsqk = bsq1[0];
+                    double bk = b1[0];
+                    intag[0] = intag1[0];
+                    ib = ib + 1;
+                    arclen = arclen + gr[k].value * arcsum;
+                    if (!moved) {
+                        int in = intag[k];
+                        double t1 = arcsum * rrsq * pow((bsqk - rrsq + r[in]), 2) / (rrx2 * bsqk * bk);
+                        darea[0][ir] -= txk * t1 * wght;
+                        darea[1][ir] -= tyk * t1 * wght;
+                        darea[2][ir] -= tzk * t1 * wght;
+                        darea[0][in] += txk * t1 * wght;
+                        darea[1][in] += tyk * t1 * wght;
+                        darea[2][in] += tzk * t1 * wght;
+                    }
+                    area[ir] = ib * pix2 + exang + arclen;
+                    area[ir] = area[ir] % pix4;
+                    //goto 160
+                    goto160 = true;
+                }
+                /**
+                 * general case where more than one sphere intersects the
+                 * current sphere; sort intersecting spheres by their degree of
+                 * overlap with the current main sphere
+                 */
+                Arrays.sort(gr, 0, io);
+                for (int i = 0; i < io; i++) {
+                    int k = gr[i].key;
+                    intag[i] = intag1[k];
+                    xc[i] = xc1[k];
+                    yc[i] = yc1[k];
+                    zc[i] = zc1[k];
+                    dsq[i] = dsq1[k];
+                    b[i] = b1[k];
+                    bsq[i] = bsq1[k];
+                    omit[i] = false;
+                }
+                /**
+                 * Radius of the each circle on the surface of the "ir" sphere.
+                 */
+                for (int i = 0; i < io; i++) {
+                    double gi = gr[i].value * rr;
+                    bg[i] = b[i] * gi;
+                    risq[i] = rrsq - pow(gi, 2);
+                    ri[i] = sqrt(risq[i]);
+                    // Check asin FORTRAN vs. Java.
+                    ther[i] = pid2 - asin(min(1.0, max(-1.0, gr[i].value)));
+                }
+                // find boundary of inaccessible area on "ir" sphere
+                for (int k = 0; k < io - 1; k++) {
+                    if (!omit[k]) {
+                        double txk = xc[k];
+                        double tyk = yc[k];
+                        double tzk = zc[k];
+                        double bk = b[k];
+                        double therk = ther[k];
+                        for (int j = k + 1; j < io; j++) {
+                            if (omit[j]) {
+                                continue;
+                            }
+                            /*
+                             *  Check to see if J circle is intersecting K circle;
+                             * get distance between circle centers and sum of radii.
+                             */
+                            double cc = (txk * xc[j] + tyk * yc[j] + tzk * zc[j]) / (bk * b[j]);
+                            // Check acos FORTRAN vs. Java.
+                            cc = acos(min(1.0, max(-1.0, cc)));
+                            double td = therk + ther[j];
+                            // Check to see if circles enclose separate regions
+                            if (cc >= td) {
+                                continue;
+                            }
+                            // Check for circle J completely inside circle K
+                            if (cc + ther[j] < therk) {
+                                omit[j] = true;
+                                continue;
+                            }
+                            // Check for circles essentially parallel.
+                            if (cc > delta) {
+                                if (pix2 - cc <= td) {
+                                    return;
+                                }
+                            }
+                            omit[j] = true;
+                        }
+                    }
+                }
+                /**
+                 * Find T value of circle intersections.
+                 */
+                for (int k = 1; k < io; k++) {
+                    if (omit[k]) {
+                        continue;
+                    }
+                    boolean komit = omit[k];
+                    omit[k] = true;
+                    int narc = 0;
+                    boolean top = false;
+                    double txk = xc[k];
+                    double tyk = yc[k];
+                    double tzk = zc[k];
+                    double dk = sqrt(dsq[k]);
+                    double bsqk = bsq[k];
+                    double bk = b[k];
+                    double gk = gr[k].value * rr;
+                    double risqk = risq[k];
+                    double rik = ri[k];
+                    double therk = ther[k];
+                    // Rotation matrix elements. 
+                    double t1 = tzk / (bk * dk);
+                    double axx = txk * t1;
+                    double axy = tyk * t1;
+                    double axz = dk / bk;
+                    double ayx = tyk / dk;
+                    double ayy = txk / dk;
+                    double azx = txk / bk;
+                    double azy = tyk / bk;
+                    double azz = tzk / bk;
+                    for (int l = 0; l < io; l++) {
+                        if (!omit[l]) {
+                            double txl = xc[l];
+                            double tyl = yc[l];
+                            double tzl = zc[l];
+                            // Rotate spheres so K vector colinear with z-axis.
+                            double uxl = txl * axx + tyl * axy - tzl * axz;
+                            double uyl = tyl * ayy - txl * ayx;
+                            double uzl = txl * azx + tyl * azy + tzl * azz;
+                            double cosine = min(1.0, max(-1.0, uzl / b[l]));
+                            if (acos(cosine) < therk + ther[l]) {
+                                double dsql = pow(uxl, 2) + pow(uyl, 2);
+                                double tb = uzl * gk - bg[l];
+                                double txb = uxl * tb;
+                                double tyb = uyl * tb;
+                                double td = rik * dsql;
+                                double tr2 = risqk * dsql - pow(tb, 2);
+                                tr2 = max(eps, tr2);
+                                double tr = sqrt(tr2);
+                                double txr = uxl * tr;
+                                double tyr = uyl * tr;
+                                // Get T values of intersection for K circle.
+                                tb = (txb + tyr) / td;
+                                tb = min(1.0, max(-1.0, tb));
+                                double tk1 = acos(tb);
+                                double tk2 = 0.0;
+                                if (tyb - txr < 0.0) {
+                                    tk1 = pix2 - tk1;
+                                    tb = (txb - tyr) / td;
+                                    tb = min(1.0, max(-1.0, tb));
+                                    tk2 = acos(tb);
+                                }
+
+
+                                if (tyb + txr < 0.0) {
+                                    tk2 = pix2 - tk2;
+                                    double thec = (rrsq * uzl - gk * bg[l]) / (rik * ri[l] * b[l]);
+                                    if (abs(thec) < 1.0) {
+                                        the = -acos(thec);
+                                    } else if (thec >= 1.0) {
+                                        the = 0.0;
+                                    } else if (thec <= -1.0) {
+                                        the = -PI;
+                                    }
+                                }
+                                /**
+                                 * See if "tk1" is entry or exit point; check t=0 point;
+                                 * "ti" is exit point, "tf" is entry point.
+                                 */
+                                double ti;
+                                double tf;
+                                cosine = min(1.0, max(-1.0, (uzl * gk - uxl * rik) / (b[l] * rr)));
+                                if ((acos(cosine) - ther[l]) * (tk2 - tk1) <= 0.0) {
+                                    ti = tk2;
+                                    tf = tk1;
+                                } else {
+                                    ti = tk1;
+                                    tf = tk2;
+                                }
+                                narc = narc + 1;
+                                if (narc >= maxarc) {
+                                    logger.severe(String.format(" Increase value of MAXARC %d.", narc));
+                                }
+                                if (tf <= ti) {
+                                    arcf[narc] = tf;
+                                    arci[narc].value = 0.0;
+                                    tf = pix2;
+                                    lt[narc] = l;
+                                    ex[narc] = the;
+                                    top = true;
+                                    narc = narc + 1;
+                                }
+                                arcf[narc] = tf;
+                                arci[narc].value = ti;
+                                lt[narc] = l;
+                                ex[narc] = the;
+                                ux[l] = uxl;
+                                uy[l] = uyl;
+                                uz[l] = uzl;
+                            }
+                        }
+                    }
+                    omit[k] = komit;
+                    // Special case; K circle without intersections.
+                    if (narc <= 0) {
+                        arcsum = pix2;
+                        ib += 1;
+                        // goto 100
+                    }
+                    // General case; sum up arclength and set connectivity code.
+                    Arrays.sort(arci, 0, narc);
+                    arcsum = arci[0].value;
+                    int mi = arci[0].key;
+                    double t = arcf[mi];
+                    int ni = mi;
+                    if (narc > 0) {
+                        for (int j = 1; j < narc; j++) {
+                            int m = arci[j].key;
+                            if (t < arci[j].value) {
+                                arcsum += arci[j].value - t;
+                                exang += ex[ni];
+                                jb += 1;
+                                if (jb >= maxarc) {
+                                    logger.severe(String.format("Increase the value of MAXARC %d", jb));
+                                }
+                                int l = lt[ni];
+                                ider[l] += 1;
+                                sign_yder[l] += 1;
+                                kent[jb] = maxarc * l + k;
+                                l = lt[m];
+                                ider[l] += 1;
+                                sign_yder[l] -= 1;
+                                kout[jb] = maxarc * k + l;
+                            }
+                            double tt = arcf[m];
+                            if (tt >= t) {
+                                t = tt;
+                                ni = m;
+                            }
+                        }
+                    }
+                    arcsum += pix2 - t;
+                    if (!top) {
+                        exang = exang + ex[ni];
+                        jb = jb + 1;
+                        int l = lt[ni];
+                        ider[l] += 1;
+                        sign_yder[l] += 1;
+                        kent[jb] = maxarc * l + k;
+                        l = lt[mi];
+                        ider[l] += 1;
+                        sign_yder[l] -= 1;
+                        kout[jb] = maxarc * k + l;
+                    }
+                    // Calculate the surface area derivatives.
+                    for (int l = 0; l < io; l++) {
+                        if (ider[l] != 0) {
+                            double rcn = ider[l] * rrsq;
+                            ider[l] = 0;
+                            double uzl = uz[l];
+                            double gl = gr[l].value * rr;
+                            double bgl = bg[l];
+                            double bsql = bsq[l];
+                            double risql = risq[l];
+                            double wxlsq = bsql - pow(uzl, 2);
+                            double wxl = sqrt(wxlsq);
+                            double p = bgl - gk * uzl;
+                            double v = risqk * wxlsq - pow(p, 2);
+                            v = max(eps, v);
+                            v = sqrt(v);
+                            t1 = rr * (gk * (bgl - bsql) + uzl * (bgl - rrsq)) / (v * risql * bsql);
+                            double deal = -wxl * t1;
+                            double decl = -uzl * t1 - rr / v;
+                            double dtkal = (wxlsq - p) / (wxl * v);
+                            double dtkcl = (uzl - gk) / v;
+                            double s = gk * b[l] - gl * uzl;
+                            t1 = 2.0 * gk - uzl;
+                            double t2 = rrsq - bgl;
+                            double dtlal = -(risql * wxlsq * b[l] * t1 - s * (wxlsq * t2 + risql * bsql)) / (risql * wxl * bsql * v);
+                            double dtlcl = -(risql * b[l] * (uzl * t1 - bgl) - uzl * t2 * s) / (risql * bsql * v);
+                            double gaca = rcn * (deal - (gk * dtkal - gl * dtlal) / rr) / wxl;
+                            double gacb = (gk - uzl * gl / b[l]) * sign_yder[l] * rr / wxlsq;
+                            sign_yder[l] = 0;
+                            if (!moved) {
+                                double faca = ux[l] * gaca - uy[l] * gacb;
+                                double facb = uy[l] * gaca + ux[l] * gacb;
+                                double facc = rcn * (decl - (gk * dtkcl - gl * dtlcl) / rr);
+                                double dax = axx * faca - ayx * facb + azx * facc;
+                                double day = axy * faca + ayy * facb + azy * facc;
+                                double daz = azz * facc - axz * faca;
+                                int in = intag[l];
+                                darea[0][ir] += dax * wght;
+                                darea[1][ir] += day * wght;
+                                darea[2][ir] += daz * wght;
+                                darea[0][in] -= dax * wght;
+                                darea[1][in] -= day * wght;
+                                darea[2][in] -= daz * wght;
+                            }
+                        }
+                    }
+                    arclen = arclen + gr[k].value * arcsum;
+                    if (!moved) {
+                        int in = intag[k];
+                        t1 = arcsum * rrsq * (bsqk - rrsq + pow(r[in], 2)) / (rrx2 * bsqk * bk);
+                        darea[0][ir] -= txk * t1 * wght;
+                        darea[1][ir] -= tyk * t1 * wght;
+                        darea[2][ir] -= tzk * t1 * wght;
+                        darea[0][in] += txk * t1 * wght;
+                        darea[1][in] += tyk * t1 * wght;
+                        darea[2][in] += tzk * t1 * wght;
+                    }
+                    // 110       continue
+                }
+                if (arclen == 0.0) {
+                    return;
+                }
+                if (jb == 0) {
+                    area[ir] = ib * pix2 + exang + arclen;
+                    area[ir] = area[ir] % pix4;
+                    // goto 160
+                    goto160 = true;
+                }
+                int j = 0;
+                for (int k = 0; k < jb; k++) {
+                    if (kout[k] != 0) {
+                        int i = k;
+                        run120(i, k, exang, ib, kout, j, kent, jb, ir, area, arclen, goto160);
+                    }
+                }
+                ib = ib + 1;
+                if (moved) {
+                    //         write (iout,140)  ir
+                    logger.warning(String.format("Connectivity Error at atom %d.", ir));
+                    // 140       format (/,' SURFACE1  --  Connectivity Error at Atom',i6)
+                } else {
+                    moved = true;
+                    xr += rmove;
+                    yr += rmove;
+                    zr += rmove;
+                    //          goto 10 recursive call begin method
+                    begin(xr, yr, zr, rr, rrx2, rrsq, wght, moved, ir);
+                }
+            }
+
+            public void run120(int i, int k, double exang, double ib, double kout[], int j, double kent[], int jb, int ir, double area[], double arclen, boolean goto160) {
+
+                double m = kout[i];
+                kout[i] = 0;
+                j = j + 1;
+                for (int ii = 0; ii < jb; ii++) {
+                    if (m == kent[ii]) {
+                        if (ii == k) {
+                            ib = ib + 1;
+                            if (j == jb) {
+                                area[ir] = ib * 2 * PI + exang + arclen;
+                                area[ir] = area[ir] % (4 * PI);
+                                //goto 160
+                                goto160 = true;
+                            }
+                            break;
+                        }
+                        i = ii;
+                        run120(i, k, exang, ib, kout, j, kent, jb, ir, area, arclen, goto160);
+                    }
+                }
+                // 130          continue        DELETE
+            }
+
+            private class IndexedDouble implements Comparable {
+
+                public double value;
+                public int key;
+
+                public IndexedDouble(double value, int key) {
+                    this.value = value;
+                    this.key = key;
+                }
+
+                @Override
+                public int compareTo(Object o) {
+                    if (o instanceof IndexedDouble) {
+                        return 0;
+                    }
+                    IndexedDouble d = (IndexedDouble) o;
+                    if (value < d.value) {
+                        return -1;
+                    } else if (value == d.value) {
+                        return 0;
+                    } else {
+                        return 1;
+                    }
+                }
             }
         }
     }
