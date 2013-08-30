@@ -23,6 +23,7 @@
 package ffx.potential.bonded;
 
 import ffx.potential.ResidueEnumerations.AminoAcid3;
+import ffx.potential.ResidueEnumerations.NucleicAcid3;
 import ffx.potential.Rotamer;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -303,12 +304,21 @@ public class Residue extends MSGroup {
         finalize(true);
     }
 
+    // Should eventually replace the try-catch with an if-else.
     public Rotamer[] getRotamers(Residue residue) {
         if (residue == null) {
             return null;
         }
-        AminoAcid3 name = AminoAcid3.valueOf(residue.getName());
-        return RotamerLibrary.getRotamers(name);
+        // Try for an amino acid residue.
+        try{
+            AminoAcid3 name = AminoAcid3.valueOf(residue.getName());
+            return RotamerLibrary.getRotamers(name);
+        }
+        // Catch block assumes it's a nucleic acid.
+        catch (IllegalArgumentException e){
+            NucleicAcid3 name = NucleicAcid3.valueOf(residue.getName());
+            return RotamerLibrary.getRotamers(name);
+        }
     }
 
     public ResidueType getResidueType() {

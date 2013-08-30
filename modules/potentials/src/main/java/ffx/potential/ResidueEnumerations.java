@@ -62,6 +62,8 @@ public class ResidueEnumerations {
         ADE, GUA, CYT, URI, DAD, DGU, DCY, DTY, THY, MP1, DP2, TP3, UNK, M2MG,
         H2U, M2G, OMC, OMG, PSU, M5MC, M7MG, M5MU, M1MA, YYG
     };
+    // There does not appear to be an enumeration for deoxy-uracil.
+    // Not sure if this is an issue.  JML.
 
     public static final List<NucleicAcid3> nucleicAcidList = Arrays.asList(NucleicAcid3.values());
 

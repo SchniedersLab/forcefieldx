@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.logging.Logger;
 
 import ffx.potential.ResidueEnumerations.AminoAcid3;
+import ffx.potential.ResidueEnumerations.NucleicAcid3;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
@@ -84,6 +85,16 @@ public class RotamerLibrary {
                 break;
         }
         return rotamers;
+    }
+    
+    /**
+     * Return an array of Rotamers for the given amino acid.
+     *
+     * @param name The name of the nucleic acid.
+     * @return Presently .
+     */
+    public static Rotamer[] getRotamers(NucleicAcid3 name){
+        return null;
     }
 
     private static Rotamer[] getPonderAndRichardsRotamers(AminoAcid3 name) {
