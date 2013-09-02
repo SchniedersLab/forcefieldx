@@ -64,8 +64,19 @@ public class RotamerLibrary {
         if (residue == null) {
             return null;
         }
-        AminoAcid3 name = AminoAcid3.valueOf(residue.getName());
-        return getRotamers(name);
+        /*
+         * Try block will get the typical case, of an amino acid call.
+         * Catch block will get nucleic acids.
+         * The try-catch should be replaced by an if-else at some point.
+         */
+        try{
+            AminoAcid3 name = AminoAcid3.valueOf(residue.getName());
+            return getRotamers(name);
+        }
+        catch (IllegalArgumentException e){
+            NucleicAcid3 name = NucleicAcid3.valueOf(residue.getName());
+            return getRotamers(name);
+        }
     }
 
     /**
