@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.logging.Logger;
 
 import ffx.potential.ResidueEnumerations.AminoAcid3;
+import ffx.potential.ResidueEnumerations.NucleicAcid3;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
@@ -63,8 +64,19 @@ public class RotamerLibrary {
         if (residue == null) {
             return null;
         }
-        AminoAcid3 name = AminoAcid3.valueOf(residue.getName());
-        return getRotamers(name);
+        /*
+         * Try block will get the typical case, of an amino acid call.
+         * Catch block will get nucleic acids.
+         * The try-catch should be replaced by an if-else at some point.
+         */
+        try{
+            AminoAcid3 name = AminoAcid3.valueOf(residue.getName());
+            return getRotamers(name);
+        }
+        catch (IllegalArgumentException e){
+            NucleicAcid3 name = NucleicAcid3.valueOf(residue.getName());
+            return getRotamers(name);
+        }
     }
 
     /**
@@ -84,6 +96,16 @@ public class RotamerLibrary {
                 break;
         }
         return rotamers;
+    }
+    
+    /**
+     * Return an array of Rotamers for the given amino acid.
+     *
+     * @param name The name of the nucleic acid.
+     * @return Presently .
+     */
+    public static Rotamer[] getRotamers(NucleicAcid3 name){
+        return null;
     }
 
     private static Rotamer[] getPonderAndRichardsRotamers(AminoAcid3 name) {
