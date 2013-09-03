@@ -3883,7 +3883,7 @@ public class GeneralizedKirkwood {
                     double rrsq, double wght, boolean moved, int ir) {
                 int io = 0;
                 int jb = 0;
-                double ib = 0;
+                int ib = 0;
                 double arclen = 0.0;
                 double exang = 0.0;
                 /**
@@ -3976,6 +3976,7 @@ public class GeneralizedKirkwood {
                         darea[2][in] += tzk * t1 * wght;
                     }
                     area[ir] = ib * pix2 + exang + arclen;
+                    logger.info(String.format(" Atom %d %d %16.8f %16.8f", ir, ib, exang, arclen));
                     area[ir] = area[ir] % pix4;
                     computeSA = true;
                     return;
@@ -4236,7 +4237,7 @@ public class GeneralizedKirkwood {
                     }
                     arcsum += (pix2 - t);
                     if (!top) {
-                        exang = exang + ex[ni];
+                        exang += ex[ni];
                         jb = jb + 1;
                         int l = lt[ni];
                         ider[l] += 1;
@@ -4322,6 +4323,7 @@ public class GeneralizedKirkwood {
                 }
                 if (jb == 0) {
                     area[ir] = ib * pix2 + exang + arclen;
+                    logger.info(String.format(" Atom %d %d %16.8f %16.8f", ir, ib, exang, arclen));
                     area[ir] = area[ir] % pix4;
                     computeSA = true;
                     return;
