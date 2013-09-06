@@ -984,6 +984,7 @@ public class ReciprocalSpace {
                     final double u0 = splyi[0];
                     final double u1 = splyi[1];
                     final double u2 = splyi[2];
+                    // Pieces of a multipole
                     final double term0 = (c0 + dz1 + qzz2) * u0 + (dy0 + qyz1) * u1 + qyy0 * u2;
                     final double term1 = (dx0 + qxz1) * u0 + qxy0 * u1;
                     final double term2 = qxx0 * u0;
