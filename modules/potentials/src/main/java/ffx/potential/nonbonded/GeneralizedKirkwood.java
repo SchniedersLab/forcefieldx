@@ -3661,7 +3661,7 @@ public class GeneralizedKirkwood {
             try {
                 execute(0, nAtoms - 1, cavitationLoop[getThreadIndex()]);
             } catch (Exception e) {
-                String message = "Fatal exception computing Dispersion energy in thread " + getThreadIndex() + "\n";
+                String message = "Fatal exception computing Cavitation energy in thread " + getThreadIndex() + "\n";
                 logger.log(Level.SEVERE, message, e);
             }
         }
@@ -3673,6 +3673,7 @@ public class GeneralizedKirkwood {
          */
         private class CavitationLoop extends IntegerForLoop {
 
+            private double thec = 0;
             private IndexedDouble gr[];
             private IndexedDouble arci[];
             private double area[];
@@ -3703,13 +3704,15 @@ public class GeneralizedKirkwood {
             private double ux[];
             private double uy[];
             private double uz[];
-            private double kent[];
-            private double kout[];
+            private int kent[];
+            private int kout[];
             private int intag[];
             private int intag1[];
             private int lt[];
+            private int i;
+            private int j;
+            private int ib;
             private double ecav;
-            boolean computeSA = false;
             // Set pi multiples, overlap criterion and tolerances.
             private final static double pix2 = 2.0 * PI;
             private final static double pix4 = 4.0 * PI;
@@ -3718,7 +3721,7 @@ public class GeneralizedKirkwood {
             private final static double delta = 1.0e-8;
             private final static double delta2 = delta * delta;
             private final static double rmove = 1.0e-8;
-            private final static double surfaceTension = 0.1;
+            private final static double surfaceTension = 0.08;
             // Extra padding to avert cache interference.
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
             private long pad8, pad9, pada, padb, padc, padd, pade, padf;
@@ -3744,8 +3747,8 @@ public class GeneralizedKirkwood {
                 intag = new int[maxarc];
                 intag1 = new int[maxarc];
                 lt = new int[maxarc];
-                kent = new double[maxarc];
-                kout = new double[maxarc];
+                kent = new int[maxarc];
+                kout = new int[maxarc];
                 ider = new double[maxarc];
                 sign_yder = new double[maxarc];
                 xc1 = new double[maxarc];
@@ -3836,36 +3839,23 @@ public class GeneralizedKirkwood {
                     double rrsq = rr * rr;
                     double wght = surfaceTension;
                     boolean moved = false;
-                    /**
-                     * If the computeSA flag is not set to true by the "surface"
-                     * method then give up and continue with the next atom.
-                     */
-                    computeSA = false;
                     surface(xr, yr, zr, rr, rrx2, rrsq, wght, moved, ir);
-                    while (computeSA) {
-                        // 160 continue
+                    if (area[ir] < 0.0) {
+                        xr = xr + rmove;
+                        yr = yr + rmove;
+                        zr = zr + rmove;
+                        moved = true;
+                        surface(xr, yr, zr, rr, rrx2, rrsq, wght, moved, ir);
                         if (area[ir] < 0.0) {
-                            if (moved) {
-                                logger.warning(String.format(" Negative surface area for atom %d.", ir));
-                                area[ir] = 0.0;
-                                break;
-                            } else {
-                                moved = true;
-                                xr = xr + rmove;
-                                yr = yr + rmove;
-                                zr = zr + rmove;
-                                computeSA = false;
-                                surface(xr, yr, zr, rr, rrx2, rrsq, wght, moved, ir);
-                                continue;
-                            }
-                        } else {
-                            logger.info(String.format(" %s %16.8f %16.8f",
-                                    atoms[ir].toString(), rr, area[ir] * rrsq));
-                            area[ir] *= rrsq * wght;
-                            ecav += area[ir];
-                            break;
+                            logger.warning(String.format(" Negative surface area set to 0 for atom %d.", ir));
+                            area[ir] = 0.0;
+                            continue;
                         }
                     }
+                    logger.info(String.format(" %s %16.8f %16.8f",
+                            atoms[ir].toString(), rr, area[ir] * rrsq));
+                    area[ir] *= rrsq * wght;
+                    ecav += area[ir];
                 }
                 /**
                  * Zero out the area derivatives for the inactive atoms.
@@ -3883,7 +3873,7 @@ public class GeneralizedKirkwood {
                     double rrsq, double wght, boolean moved, int ir) {
                 int io = 0;
                 int jb = 0;
-                int ib = 0;
+                ib = 0;
                 double arclen = 0.0;
                 double exang = 0.0;
                 /**
@@ -3923,7 +3913,7 @@ public class GeneralizedKirkwood {
                     if (cc - abs(rminus) <= delta) {
                         if (rminus <= 0.0) {
                             // SA for this atom is zero.
-                            computeSA = false;
+                            area[ir] = 0.0;
                             return;
                         }
                         continue;
@@ -3949,11 +3939,10 @@ public class GeneralizedKirkwood {
                 // Case where no other spheres overlap the current sphere.
                 if (io == 0) {
                     area[ir] = pix4;
-                    computeSA = true;
                     return;
                 }
                 // Case where only one sphere overlaps the current sphere.
-                if (io == 1) {
+                if (io == 0) {
                     int k = 0;
                     double txk = xc1[0];
                     double tyk = yc1[0];
@@ -3976,9 +3965,8 @@ public class GeneralizedKirkwood {
                         darea[2][in] += tzk * t1 * wght;
                     }
                     area[ir] = ib * pix2 + exang + arclen;
-                    logger.info(String.format(" Atom %d %d %16.8f %16.8f", ir, ib, exang, arclen));
+                    //logger.info(String.format(" Atom %d %d %16.8f %16.8f", ir, ib, exang, arclen));
                     area[ir] = area[ir] % pix4;
-                    computeSA = true;
                     return;
                 }
                 /**
@@ -4008,6 +3996,7 @@ public class GeneralizedKirkwood {
                     ri[i] = sqrt(risq[i]);
                     // Check asin FORTRAN vs. Java.
                     ther[i] = pid2 - asin(min(1.0, max(-1.0, gr[i].value)));
+                    //logger.info(String.format(" %d %d %16.8f", ir, i, ther[i]));
                 }
                 /**
                  * Find boundary of inaccessible area on "ir" sphere.
@@ -4021,7 +4010,7 @@ public class GeneralizedKirkwood {
                     double tzk = zc[k];
                     double bk = b[k];
                     double therk = ther[k];
-                    for (int j = k + 1; j < io; j++) {
+                    for (j = k + 1; j < io; j++) {
                         if (omit[j]) {
                             continue;
                         }
@@ -4047,13 +4036,12 @@ public class GeneralizedKirkwood {
                         if (cc > delta) {
                             if (pix2 - cc <= td) {
                                 area[ir] = 0.0;
-                                computeSA = false;
                                 return;
                             }
                         }
-                        omit[j] = true;
                     }
                 }
+
                 /**
                  * Find T value of circle intersections.
                  */
@@ -4075,6 +4063,7 @@ public class GeneralizedKirkwood {
                     double risqk = risq[k];
                     double rik = ri[k];
                     double therk = ther[k];
+                    //logger.info(String.format(" therk %d %16.8f %16.8f", ir, gk, therk));
                     /**
                      * Rotation matrix elements.
                      */
@@ -4095,87 +4084,89 @@ public class GeneralizedKirkwood {
                         double tyl = yc[l];
                         double tzl = zc[l];
                         /**
-                         * Rotate spheres so K vector colinear with z-axis.
+                         * Rotate spheres so K vector collinear with z-axis.
                          */
                         double uxl = txl * axx + tyl * axy - tzl * axz;
                         double uyl = tyl * ayy - txl * ayx;
                         double uzl = txl * azx + tyl * azy + tzl * azz;
                         double cosine = min(1.0, max(-1.0, uzl / b[l]));
-                        if (acos(cosine) >= therk + ther[l]) {
-                            continue;
-                        }
-                        double dsql = uxl * uxl + uyl * uyl;
-                        double tb = uzl * gk - bg[l];
-                        double txb = uxl * tb;
-                        double tyb = uyl * tb;
-                        double td = rik * dsql;
-                        double tr2 = risqk * dsql - tb * tb;
-                        tr2 = max(eps, tr2);
-                        double tr = sqrt(tr2);
-                        double txr = uxl * tr;
-                        double tyr = uyl * tr;
-                        /**
-                         * Get T values of intersection for K circle.
-                         */
-                        tb = (txb + tyr) / td;
-                        tb = min(1.0, max(-1.0, tb));
-                        double tk1 = acos(tb);
-                        if (tyb - txr < 0.0) {
-                            tk1 = pix2 - tk1;
-                        }
-                        tb = (txb - tyr) / td;
-                        tb = min(1.0, max(-1.0, tb));
-                        double tk2 = acos(tb);
-                        if (tyb + txr < 0.0) {
-                            tk2 = pix2 - tk2;
-                        }
-                        double thec = (rrsq * uzl - gk * bg[l])
-                                / (rik * ri[l] * b[l]);
-                        double the = 0.0;
-                        if (abs(thec) < 1.0) {
-                            the = -acos(thec);
-                        } else if (thec >= 1.0) {
-                            the = 0.0;
-                        } else if (thec <= -1.0) {
-                            the = -PI;
-                        }
-                        /**
-                         * See if "tk1" is entry or exit point; check t=0 point;
-                         * "ti" is exit point, "tf" is entry point.
-                         */
-                        cosine = min(1.0, max(-1.0, (uzl * gk - uxl * rik)
-                                / (b[l] * rr)));
-                        double ti, tf;
-                        if ((acos(cosine) - ther[l]) * (tk2 - tk1) <= 0.0) {
-                            ti = tk2;
-                            tf = tk1;
-                        } else {
-                            ti = tk1;
-                            tf = tk2;
-                        }
-                        narc = narc + 1;
-                        if (narc > maxarc) {
-                            logger.severe(String.
-                                    format(" Increase value of MAXARC %d.", narc));
-                        }
-                        int narc1 = narc - 1;
-                        if (tf <= ti) {
+                        //logger.info(String.format(" cosine %d %16.8f %16.8f", ir,
+                        //        acos(cosine), therk + ther[l]));
+                        if (acos(cosine) < therk + ther[l]) {
+                            double dsql = uxl * uxl + uyl * uyl;
+                            double tb = uzl * gk - bg[l];
+                            double txb = uxl * tb;
+                            double tyb = uyl * tb;
+                            double td = rik * dsql;
+                            double tr2 = risqk * dsql - tb * tb;
+                            tr2 = max(eps, tr2);
+                            double tr = sqrt(tr2);
+                            double txr = uxl * tr;
+                            double tyr = uyl * tr;
+                            /**
+                             * Get T values of intersection for K circle.
+                             */
+                            tb = (txb + tyr) / td;
+                            tb = min(1.0, max(-1.0, tb));
+                            double tk1 = acos(tb);
+                            if (tyb - txr < 0.0) {
+                                tk1 = pix2 - tk1;
+                            }
+                            tb = (txb - tyr) / td;
+                            tb = min(1.0, max(-1.0, tb));
+                            double tk2 = acos(tb);
+                            if (tyb + txr < 0.0) {
+                                tk2 = pix2 - tk2;
+                            }
+                            thec = (rrsq * uzl - gk * bg[l])
+                                    / (rik * ri[l] * b[l]);
+                            double the = 0.0;
+                            if (abs(thec) < 1.0) {
+                                the = -acos(thec);
+                            } else if (thec >= 1.0) {
+                                the = 0.0;
+                            } else if (thec <= -1.0) {
+                                the = -PI;
+                            }
+                            /**
+                             * See if "tk1" is entry or exit point; check t=0
+                             * point; "ti" is exit point, "tf" is entry point.
+                             */
+                            cosine = min(1.0, max(-1.0, (uzl * gk - uxl * rik)
+                                    / (b[l] * rr)));
+                            double ti, tf;
+                            if ((acos(cosine) - ther[l]) * (tk2 - tk1) <= 0.0) {
+                                ti = tk2;
+                                tf = tk1;
+                            } else {
+                                ti = tk1;
+                                tf = tk2;
+                            }
+                            narc += 1;
+                            if (narc > maxarc) {
+                                logger.severe(String.
+                                        format(" Increase value of MAXARC %d.", narc));
+                            }
+                            int narc1 = narc - 1;
+                            if (tf <= ti) {
+                                arcf[narc1] = tf;
+                                arci[narc1] = new IndexedDouble(0.0, narc1);
+                                tf = pix2;
+                                lt[narc1] = l;
+                                ex[narc1] = the;
+                                top = true;
+                                narc = narc + 1;
+                                narc1 = narc - 1;
+                            }
                             arcf[narc1] = tf;
-                            arci[narc1] = new IndexedDouble(0.0, narc1);
-                            tf = pix2;
+                            arci[narc1] = new IndexedDouble(ti, narc1);
+                            //logger.info(String.format(" arci %d %d %16.8f %16.8f", ir, narc1, ti, tf));
                             lt[narc1] = l;
                             ex[narc1] = the;
-                            top = true;
-                            narc = narc + 1;
-                            narc1 = narc - 1;
+                            ux[l] = uxl;
+                            uy[l] = uyl;
+                            uz[l] = uzl;
                         }
-                        arcf[narc1] = tf;
-                        arci[narc1] = new IndexedDouble(ti, narc1);
-                        lt[narc1] = l;
-                        ex[narc1] = the;
-                        ux[l] = uxl;
-                        uy[l] = uyl;
-                        uz[l] = uzl;
                     }
                     omit[k] = komit;
                     /**
@@ -4208,31 +4199,31 @@ public class GeneralizedKirkwood {
                     int mi = arci[0].key;
                     double t = arcf[mi];
                     int ni = mi;
-                    if (narc > 1) {
-                        for (int j = 1; j < narc; j++) {
-                            int m = arci[j].key;
-                            if (t < arci[j].value) {
-                                arcsum += (arci[j].value - t);
-                                exang += ex[ni];
-                                jb += 1;
-                                if (jb > maxarc) {
-                                    logger.severe(String.
-                                            format("Increase the value of MAXARC (%d).", jb));
-                                }
-                                int l = lt[ni];
-                                ider[l] += 1;
-                                sign_yder[l] += 1;
-                                kent[jb] = maxarc * l + k;
-                                l = lt[m];
-                                ider[l] += 1;
-                                sign_yder[l] -= 1;
-                                kout[jb] = maxarc * k + l;
+                    for (j = 1; j < narc; j++) {
+                        int m = arci[j].key;
+                        if (t < arci[j].value) {
+                            arcsum += (arci[j].value - t);
+                            exang += ex[ni];
+                            jb += 1;
+                            if (jb >= maxarc) {
+                                logger.severe(String.
+                                        format("Increase the value of MAXARC (%d).", jb));
                             }
-                            double tt = arcf[m];
-                            if (tt >= t) {
-                                t = tt;
-                                ni = m;
-                            }
+                            int l = lt[ni];
+                            ider[l] += 1;
+                            sign_yder[l] += 1;
+                            kent[jb] = maxarc * (l + 1) + (k + 1);
+                            l = lt[m];
+                            ider[l] += 1;
+                            sign_yder[l] -= 1;
+                            kout[jb] = maxarc * (k + 1) + (l + 1);
+                            //logger.info(String.format(" %d %d %d %d %16.8f %16.8f",
+                            //        ir, jb, kent[jb], kout[jb], arcsum, exang));
+                        }
+                        double tt = arcf[m];
+                        if (tt >= t) {
+                            t = tt;
+                            ni = m;
                         }
                     }
                     arcsum += (pix2 - t);
@@ -4242,11 +4233,11 @@ public class GeneralizedKirkwood {
                         int l = lt[ni];
                         ider[l] += 1;
                         sign_yder[l] += 1;
-                        kent[jb] = maxarc * l + k;
+                        kent[jb] = maxarc * (l + 1) + (k + 1);
                         l = lt[mi];
                         ider[l] += 1;
                         sign_yder[l] -= 1;
-                        kout[jb] = maxarc * k + l;
+                        kout[jb] = maxarc * (k + 1) + (l + 1);
                     }
                     /**
                      * Calculate the surface area derivatives.
@@ -4317,37 +4308,32 @@ public class GeneralizedKirkwood {
                     // 110 continue
                 }
                 if (arclen == 0.0) {
-                    computeSA = false;
                     area[ir] = 0.0;
                     return;
                 }
                 if (jb == 0) {
                     area[ir] = ib * pix2 + exang + arclen;
-                    logger.info(String.format(" Atom %d %d %16.8f %16.8f", ir, ib, exang, arclen));
                     area[ir] = area[ir] % pix4;
-                    computeSA = true;
                     return;
                 }
                 /**
                  * Find number of independent boundaries and check connectivity.
                  */
-                int j = 0;
-                for (int k = 0; k < jb; k++) {
-                    if (kout[k] == 0) {
+                j = 0;
+                for (int k = 1; k <= jb; k++) {
+                    if (kout[k] == -1) {
                         continue;
                     }
-                    int i = k;
-                    independentBoundaries(i, k, exang, ib, kout, j, kent,
-                            jb, ir, area, arclen);
-                    /**
-                     * Previous method may set the computeSA flag.
-                     */
-                    if (computeSA) {
+                    i = k;
+                    //logger.info(String.format(" Setting i to k %d", i));
+                    boolean success = independentBoundaries(k, exang, jb, ir, arclen);
+                    if (success) {
                         return;
                     }
                 }
+                ib = ib + 1;
                 if (moved) {
-                    logger.warning(String.format("Connectivity error at atom %d.", ir));
+                    logger.warning(String.format(" Bottom of Surface Method: Connectivity error at atom %d.", ir));
                 } else {
                     moved = true;
                     xr += rmove;
@@ -4361,44 +4347,35 @@ public class GeneralizedKirkwood {
              * Find number of independent boundaries and check connectivity.
              * This method may set the "goto160" flag.
              *
-             * @param i
              * @param k
              * @param exang
-             * @param ib
-             * @param kout
-             * @param j
-             * @param kent
              * @param jb
              * @param ir
-             * @param area
              * @param arclen
              */
-            public void independentBoundaries(int i, int k, double exang, double ib, double kout[],
-                    int j, double kent[], int jb, int ir, double area[], double arclen) {
-                double m = kout[i];
-                kout[i] = 0;
+            public boolean independentBoundaries(int k, double exang,
+                    int jb, int ir, double arclen) {
+                int m = kout[i];
+                kout[i] = -1;
                 j = j + 1;
-                for (int ii = 0; ii < jb; ii++) {
+                //logger.info(String.format(" %d %d %d %d %d %d %16.8f %16.8f", ir, j, m, i, ib, jb, exang, arclen));
+                for (int ii = 1; ii <= jb; ii++) {
                     if (m == kent[ii]) {
                         if (ii == k) {
                             ib = ib + 1;
                             if (j == jb) {
-                                // goto 150 is the next 2 lines
                                 area[ir] = ib * 2 * PI + exang + arclen;
                                 area[ir] = area[ir] % (4 * PI);
-                                // goto 160 handled by the calling method.
-                                computeSA = true;
+                                return true;
                             }
-                            break;
+                            return false;
                         }
                         i = ii;
-                        independentBoundaries(i, k, exang, ib, kout, j, kent, jb, ir, area, arclen);
-                        if (computeSA) {
-                            return;
-                        }
+                        //logger.info(String.format(" Setting i to ii %d", i));
+                        return independentBoundaries(k, exang, jb, ir, arclen);
                     }
                 }
-                // 130 continue
+                return false;
             }
 
             private class IndexedDouble implements Comparable {
@@ -4413,7 +4390,7 @@ public class GeneralizedKirkwood {
 
                 @Override
                 public int compareTo(Object o) {
-                    if (o instanceof IndexedDouble) {
+                    if (!(o instanceof IndexedDouble)) {
                         return 0;
                     }
                     IndexedDouble d = (IndexedDouble) o;
