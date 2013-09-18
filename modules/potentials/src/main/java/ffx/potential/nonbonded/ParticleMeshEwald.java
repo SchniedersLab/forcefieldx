@@ -1141,6 +1141,7 @@ public class ParticleMeshEwald implements LambdaInterface {
          * Initialize number of interactions.
          */
         interactions = 0;
+        gkInteractions = 0;
         /**
          * Initialize timing variables.
          */

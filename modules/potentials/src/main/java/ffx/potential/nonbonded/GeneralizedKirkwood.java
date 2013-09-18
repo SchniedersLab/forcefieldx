@@ -3775,11 +3775,8 @@ public class GeneralizedKirkwood {
                 darea[1] = grad[threadID][1];
                 darea[2] = grad[threadID][2];
                 ecav = 0;
-                // Initialize the area and derivatives.
+                // Initialize the area.
                 Arrays.fill(area, 0.0);
-                Arrays.fill(darea[0], 0.0);
-                Arrays.fill(darea[1], 0.0);
-                Arrays.fill(darea[2], 0.0);
                 Arrays.fill(ider, 0);
                 Arrays.fill(sign_yder, 0);
                 Arrays.fill(skip, true);
@@ -3852,8 +3849,6 @@ public class GeneralizedKirkwood {
                             continue;
                         }
                     }
-                    logger.info(String.format(" %s %16.8f %16.8f",
-                            atoms[ir].toString(), rr, area[ir] * rrsq));
                     area[ir] *= rrsq * wght;
                     ecav += area[ir];
                 }
@@ -3965,7 +3960,6 @@ public class GeneralizedKirkwood {
                         darea[2][in] += tzk * t1 * wght;
                     }
                     area[ir] = ib * pix2 + exang + arclen;
-                    //logger.info(String.format(" Atom %d %d %16.8f %16.8f", ir, ib, exang, arclen));
                     area[ir] = area[ir] % pix4;
                     return;
                 }
@@ -3994,9 +3988,7 @@ public class GeneralizedKirkwood {
                     bg[i] = b[i] * gi;
                     risq[i] = rrsq - gi * gi;
                     ri[i] = sqrt(risq[i]);
-                    // Check asin FORTRAN vs. Java.
                     ther[i] = pid2 - asin(min(1.0, max(-1.0, gr[i].value)));
-                    //logger.info(String.format(" %d %d %16.8f", ir, i, ther[i]));
                 }
                 /**
                  * Find boundary of inaccessible area on "ir" sphere.
@@ -4063,7 +4055,6 @@ public class GeneralizedKirkwood {
                     double risqk = risq[k];
                     double rik = ri[k];
                     double therk = ther[k];
-                    //logger.info(String.format(" therk %d %16.8f %16.8f", ir, gk, therk));
                     /**
                      * Rotation matrix elements.
                      */
@@ -4090,8 +4081,6 @@ public class GeneralizedKirkwood {
                         double uyl = tyl * ayy - txl * ayx;
                         double uzl = txl * azx + tyl * azy + tzl * azz;
                         double cosine = min(1.0, max(-1.0, uzl / b[l]));
-                        //logger.info(String.format(" cosine %d %16.8f %16.8f", ir,
-                        //        acos(cosine), therk + ther[l]));
                         if (acos(cosine) < therk + ther[l]) {
                             double dsql = uxl * uxl + uyl * uyl;
                             double tb = uzl * gk - bg[l];
@@ -4160,7 +4149,6 @@ public class GeneralizedKirkwood {
                             }
                             arcf[narc1] = tf;
                             arci[narc1] = new IndexedDouble(ti, narc1);
-                            //logger.info(String.format(" arci %d %d %16.8f %16.8f", ir, narc1, ti, tf));
                             lt[narc1] = l;
                             ex[narc1] = the;
                             ux[l] = uxl;
@@ -4173,15 +4161,15 @@ public class GeneralizedKirkwood {
                      * Special case; K circle without intersections.
                      */
                     if (narc <= 0) {
-                        // 90 continue
                         double arcsum = pix2;
                         ib += 1;
-                        // 100 continue
                         arclen += gr[k].value * arcsum;
                         if (!moved) {
                             int in = intag[k];
                             t1 = arcsum * rrsq * (bsqk - rrsq + r[in] * r[in])
                                     / (rrx2 * bsqk * bk);
+                            //logger.info(String.format(" %d %d t1 %16.8f %16.8f %16.8f %16.8f",
+                            //        ir, in, txk, tyk, tzk, t1));
                             darea[0][ir] -= txk * t1 * wght;
                             darea[1][ir] -= tyk * t1 * wght;
                             darea[2][ir] -= tzk * t1 * wght;
@@ -4189,7 +4177,7 @@ public class GeneralizedKirkwood {
                             darea[1][in] += tyk * t1 * wght;
                             darea[2][in] += tzk * t1 * wght;
                         }
-                        continue; // goto 110
+                        continue;
                     }
                     /**
                      * General case; sum up arclength and set connectivity code.
@@ -4217,8 +4205,6 @@ public class GeneralizedKirkwood {
                             ider[l] += 1;
                             sign_yder[l] -= 1;
                             kout[jb] = maxarc * (k + 1) + (l + 1);
-                            //logger.info(String.format(" %d %d %d %d %16.8f %16.8f",
-                            //        ir, jb, kent[jb], kout[jb], arcsum, exang));
                         }
                         double tt = arcf[m];
                         if (tt >= t) {
@@ -4283,6 +4269,7 @@ public class GeneralizedKirkwood {
                             double day = axy * faca + ayy * facb + azy * facc;
                             double daz = azz * facc - axz * faca;
                             int in = intag[l];
+                            //logger.info(String.format(" %d %d dax,y,z %16.8f %16.8f %16.8f", ir, in, dax,day,daz));
                             darea[0][ir] += dax * wght;
                             darea[1][ir] += day * wght;
                             darea[2][ir] += daz * wght;
@@ -4292,12 +4279,13 @@ public class GeneralizedKirkwood {
                         }
 
                     }
-                    // 100 continue
                     arclen = arclen + gr[k].value * arcsum;
                     if (!moved) {
                         int in = intag[k];
                         t1 = arcsum * rrsq * (bsqk - rrsq + r[in] * r[in])
                                 / (rrx2 * bsqk * bk);
+                        //logger.info(String.format(" %d %d t1 %16.8f %16.8f %16.8f %16.8f",
+                        //        ir, in, txk, tyk, tzk, t1));
                         darea[0][ir] -= txk * t1 * wght;
                         darea[1][ir] -= tyk * t1 * wght;
                         darea[2][ir] -= tzk * t1 * wght;
@@ -4305,7 +4293,6 @@ public class GeneralizedKirkwood {
                         darea[1][in] += tyk * t1 * wght;
                         darea[2][in] += tzk * t1 * wght;
                     }
-                    // 110 continue
                 }
                 if (arclen == 0.0) {
                     area[ir] = 0.0;
@@ -4325,7 +4312,6 @@ public class GeneralizedKirkwood {
                         continue;
                     }
                     i = k;
-                    //logger.info(String.format(" Setting i to k %d", i));
                     boolean success = independentBoundaries(k, exang, jb, ir, arclen);
                     if (success) {
                         return;
@@ -4333,7 +4319,7 @@ public class GeneralizedKirkwood {
                 }
                 ib = ib + 1;
                 if (moved) {
-                    logger.warning(String.format(" Bottom of Surface Method: Connectivity error at atom %d.", ir));
+                    logger.warning(String.format(" Connectivity error at atom %d.", ir));
                 } else {
                     moved = true;
                     xr += rmove;
@@ -4358,7 +4344,6 @@ public class GeneralizedKirkwood {
                 int m = kout[i];
                 kout[i] = -1;
                 j = j + 1;
-                //logger.info(String.format(" %d %d %d %d %d %d %16.8f %16.8f", ir, j, m, i, ib, jb, exang, arclen));
                 for (int ii = 1; ii <= jb; ii++) {
                     if (m == kent[ii]) {
                         if (ii == k) {
@@ -4371,7 +4356,6 @@ public class GeneralizedKirkwood {
                             return false;
                         }
                         i = ii;
-                        //logger.info(String.format(" Setting i to ii %d", i));
                         return independentBoundaries(k, exang, jb, ir, arclen);
                     }
                 }
