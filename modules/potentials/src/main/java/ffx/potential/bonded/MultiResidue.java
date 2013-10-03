@@ -349,8 +349,8 @@ public class MultiResidue extends Residue {
             pdbFilter.assignAminoAcidSideChain(position, name, residue, CA, N, C);
             add(residue);
             residue.finalize(true);
-        } catch (MissingHeavyAtomException e) {
-            logger.severe("MissingHeavyAtomException--FFX will not continue...");
+        } catch (MissingHeavyAtomException missingHeavyAtomException) {
+            logger.severe(missingHeavyAtomException.toString());
         }
 
     }
