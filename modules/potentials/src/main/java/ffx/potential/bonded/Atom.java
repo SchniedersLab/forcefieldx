@@ -210,7 +210,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     private Character altLoc;
     /**
-     * Array of XYZ coordiantes for each altLoc.
+     * Array of XYZ coordinates for each altLoc.
      *
      * @since 1.0
      */
@@ -669,6 +669,23 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     public double getCharge() {
         return 1.0;
+    }
+    
+    /**
+     * Finds a Torsion which contains this atom, and atoms 2, 3, and 4.
+     * 
+     * @param atom2
+     * @param atom3
+     * @param atom4
+     * @return Torsion.
+     */
+    public Torsion getTorsion(Atom atom2, Atom atom3, Atom atom4){
+        for (Torsion torsion : torsions) {
+            if (torsion.compare(this, atom2, atom3, atom4)){
+                return torsion;
+            }
+        }
+        return null;
     }
 
     /**

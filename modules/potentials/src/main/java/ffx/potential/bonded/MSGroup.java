@@ -817,7 +817,7 @@ public abstract class MSGroup extends MSNode {
     public MSNode getAtomNode(String n) {
         ArrayList<MSNode> list = getAtomNodeList();
         for (MSNode msNode : list) {
-            if (msNode.getName().compareToIgnoreCase(n) == 0) {
+            if (msNode.getName().compareTo(n) == 0) {
                 return msNode;
             }
         }
