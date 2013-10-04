@@ -3139,17 +3139,21 @@ public class RotamerLibrary {
     }
 
     /**
-     * Applies a Rotamer to a nucleic acid Residue, and throws
-     * NACorrectionTooLargeException if the Rotamer must be corrected too far to
-     * correctly join to Residue i-1.  correctionThreshold and independent are 
-     * both special-case variables; a non-zero correctionThreshold is used to
-     * prune Rotamers with excessively large corrections, and independent 
-     * disables the NA correction, presently only performed by saveRotamers.
+     * Applies a nucleic acid Rotamer, and throws NACorrectionTooLargeException 
+     * if the Rotamer must be corrected too far to correctly join to Residue i-1.
+     * correctionThreshold and independent are both special-case variables; a 
+     * non-zero correctionThreshold is used to prune Rotamers with excessively 
+     * large corrections, and independent disables the NA correction, presently 
+     * only performed by saveRotamers.
      * 
      * Note that the independent flag is separate from DEE independence: DEE
      * independence is preserved by applying corrections based on a non-variable
      * set of coordinates, and is wholly independent of what is happening to
      * residue i-1.
+     * 
+     * Cannot presently handle 3' phosphate caps: I do not know what they would
+     * be labeled as in PDB files.  A template for how to handle 3' phosphate
+     * caps is written but commented out.
      *
      * @param residue Residue.
      * @param rotamer Rotamer to be applied to Residue.
@@ -3383,7 +3387,6 @@ public class RotamerLibrary {
         Atom HOs = (Atom) residue.getAtomNode("HO\'");
         // Common hydrogens
         Atom H3s = (Atom) residue.getAtomNode("H3\'");
-        Atom H3T = (Atom) residue.getAtomNode("H3T");
         Atom H4s = (Atom) residue.getAtomNode("H4\'");
         Atom H1s = (Atom) residue.getAtomNode("H1\'");
         Atom H5s1 = (Atom) residue.getAtomNode("H5\'1");
@@ -3466,13 +3469,48 @@ public class RotamerLibrary {
         intxyz(H5s2, C5s, dC5s_H5s2, C4s, dC4s_C5s_H5s2, O5s, 109.4, 1);
 
         if (is3sTerminal) {
-            // TODO: Handle 3' phosphate caps.
-            Bond O3s_H3T = O3s.getBond(H3T);
-            double dO3s_H3T = O3s_H3T.bondType.distance;
-            Angle C3s_O3s_H3T = C3s.getAngle(O3s, H3T);
-            double dC3s_O3s_H3T = C3s_O3s_H3T.angleType.angle[C3s_O3s_H3T.nh];
-            // H3T defaulted to the antiperiplanar value of 180 degrees.
-            intxyz(H3T, O3s, dO3s_H3T, C3s, dC3s_O3s_H3T, C4s, 180, 0);
+            // TODO: Determine proper labels for 3' phosphate caps so they may
+            // be implemented.
+            Atom H3T = (Atom) residue.getAtomNode("H3T");
+            // if (H3T != null) {
+                Bond O3s_H3T = O3s.getBond(H3T);
+                double dO3s_H3T = O3s_H3T.bondType.distance;
+                Angle C3s_O3s_H3T = C3s.getAngle(O3s, H3T);
+                double dC3s_O3s_H3T = C3s_O3s_H3T.angleType.angle[C3s_O3s_H3T.nh];
+                // H3T defaulted to the antiperiplanar value of 180 degrees.
+                intxyz(H3T, O3s, dO3s_H3T, C3s, dC3s_O3s_H3T, C4s, 180, 0);
+            /* } else {
+                Atom P3sT = (Atom) residue.getAtomNode("Unknown");
+                Atom O3sT1 = (Atom) residue.getAtomNode("Unknown");
+                Atom O3sT2 = (Atom) residue.getAtomNode("Unknown");
+                Atom O3sT3 = (Atom) residue.getAtomNode("Unknown");
+                // Possibly one or two hydrogens as well.
+                
+                Bond O3s_P3sT = O3s.getBond(P3sT);
+                double dO3s_P3sT = O3s_P3sT.bondType.distance;
+                Angle C3s_O3s_P3sT = C3s.getAngle(O3s, P3sT);
+                double dC3s_O3s_P3sT = C3s_O3s_P3sT.angleType.angle[C3s_O3s_P3sT.nh];
+                intxyz(P3sT, O3s, dO3s_P3sT, C3s, dC3s_O3s_P3sT, C4s, 180, 0);
+                // Again, antiperiplanar default of 180 degrees.
+                
+                Bond P3sT_O3sT1 = P3sT.getBond(O3sT1);
+                double dP3sT_O3sT1 = P3sT_O3sT1.bondType.distance;
+                Angle O3s_P3sT_O3sT1 = O3s.getAngle(P3sT, O3sT1);
+                double dO3s_P3sT_O3sT1 = O3s_P3sT_O3sT1.angleType.angle[O3s_P3sT_O3sT1.nh];
+                intxyz(O3sT1, O3s, dP3sT_O3sT1, C3s, dO3s_P3sT_O3sT1, C4s, 180, 0);
+                
+                Bond P3sT_O3sT2 = P3sT.getBond(O3sT2);
+                double dP3sT_O3sT2 = P3sT_O3sT2.bondType.distance;
+                Angle O3s_P3sT_O3sT2 = O3s.getAngle(P3sT, O3sT2);
+                double dO3s_P3sT_O3sT2 = O3s_P3sT_O3sT2.angleType.angle[O3s_P3sT_O3sT2.nh];
+                intxyz(O3sT2, O3s, dP3sT_O3sT2, C3s, dO3s_P3sT_O3sT2, O3sT1, 109.4, 1);
+                
+                Bond P3sT_O3sT3 = P3sT.getBond(O3sT3);
+                double dP3sT_O3sT3 = P3sT_O3sT3.bondType.distance;
+                Angle O3s_P3sT_O3sT3 = O3s.getAngle(P3sT, O3sT3);
+                double dO3s_P3sT_O3sT3 = O3s_P3sT_O3sT3.angleType.angle[O3s_P3sT_O3sT3.nh];
+                intxyz(O3sT3, O3s, dP3sT_O3sT3, C3s, dO3s_P3sT_O3sT3, O3sT1, 109.4, -1);
+            } */
         }
 
         if (P != null) {
@@ -3492,6 +3530,8 @@ public class RotamerLibrary {
             double dP_OP2 = P_OP2.bondType.distance;
             Angle O5s_P_OP2 = C5s.getAngle(O5s, P);
             double dO5s_P_OP2 = O5s_P_OP2.angleType.angle[O5s_P_OP2.nh];
+            
+            // TODO: Handle hydrogens attached to 5'-terminal phosphates.
 
             /*
              * If there is a prior residue, draw tetrahedrally based on O3' 
