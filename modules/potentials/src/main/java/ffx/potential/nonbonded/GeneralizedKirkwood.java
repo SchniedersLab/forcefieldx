@@ -4553,11 +4553,8 @@ public class GeneralizedKirkwood {
             private double vdwrad[] = new double[nAtoms];
             private double radius[] = new double[nAtoms];
             private double a[][] = new double[3][nAtoms];
-<<<<<<< HEAD
             private double dex[][] = new double[3][nAtoms];
-=======
-            private double dex[][] = new double[3][nAtoms]; 
->>>>>>> fcefa7e8f2a22b42ca11a7021b7f01ddba9a6e2f
+
             // Extra padding to avert cache interference.
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
             private long pad8, pad9, pada, padb, padc, padd, pade, padf;
@@ -4582,14 +4579,9 @@ public class GeneralizedKirkwood {
                 final double exclude = 1.4;
 
                 /*
-<<<<<<< HEAD
                  * Set atom coordinates and radii, the excluded buffer
-=======
-                 * Set atom coordinates and radii, the excluded buffer 
->>>>>>> fcefa7e8f2a22b42ca11a7021b7f01ddba9a6e2f
                  * radius ("exclude") is added to atomic radii.
                  */
-
                 for (i = 0; i < nAtoms; i++) {
                     if (radius[i] == 0.0) {
                         skip[i] = true;
@@ -4600,7 +4592,6 @@ public class GeneralizedKirkwood {
                 }
 
                 // Find the analytical volume and surface area.
-
                 wiggle();
                 nearby();
                 torus();
@@ -4616,289 +4607,282 @@ public class GeneralizedKirkwood {
                 double vector[] = new double[3];
 
                 // Apply a small perturbation of fixed magnitude to each atom.
-
                 size = 0.000001;
                 for (i = 0; i < nAtoms; i++) {
                     vector = getRandomVector(vector);
-                    a[0][i] = x[i] + (size*vector[0]);
-                    a[1][i] = y[i] + (size*vector[1]);
-                    a[2][i] = z[i] + (size*vector[2]);
+                    a[0][i] = x[i] + (size * vector[0]);
+                    a[1][i] = y[i] + (size * vector[1]);
+                    a[2][i] = z[i] + (size * vector[2]);
                 }
             }
 
             public void nearby() {
-               int maxclsa=1000;
-      int iptr,juse;
-      int i1,j1,k1;
-      int iatom,jatom;
-      int ici,icj,ick;
-      int jci,jcj,jck;
-      int jcls,jmin;
-      int jmincls,jmold;
-      int ncls,nclsa;
-      int clsa[] = new int[maxclsa];
-      int itnl[] = new int[maxclsa];
-      int icuptr[];
-      int ico[][];
-      int icube[][][] = new int[maxcube][maxcube][maxcube];
-      double radmax,width;
-      double sum,sumi;
-      double dist2,d2,r2;
-      double vect1,vect2,vect3;
-      double comin[] = new double[3];
-      boolean scube[][][] = new boolean[maxcube][maxcube][maxcube];
-      boolean sscube[][][] = new boolean[maxcube][maxcube][maxcube];
+                int maxclsa = 1000;
+                int iptr, juse;
+                int i1, j1, k1;
+                int iatom, jatom;
+                int ici, icj, ick;
+                int jci, jcj, jck;
+                int jcls, jmin;
+                int jmincls, jmold;
+                int ncls, nclsa;
+                int clsa[] = new int[maxclsa];
+                int itnl[] = new int[maxclsa];
+                int icuptr[];
+                int ico[][];
+                int icube[][][] = new int[maxcube][maxcube][maxcube];
+                double radmax, width;
+                double sum, sumi;
+                double dist2, d2, r2;
+                double vect1, vect2, vect3;
+                double comin[] = new double[3];
+                boolean scube[][][] = new boolean[maxcube][maxcube][maxcube];
+                boolean sscube[][][] = new boolean[maxcube][maxcube][maxcube];
 
-/*
- * Ignore all atoms that are completely inside another atom;
-<<<<<<< HEAD
- * may give nonsense results if this step is not taken.
- */
+                /*
+                 * Ignore all atoms that are completely inside another atom;
+                 * may give nonsense results if this step is not taken.
+                 */
 
-=======
- * may give nonsense results if this step is not taken. 
- */
-     
->>>>>>> fcefa7e8f2a22b42ca11a7021b7f01ddba9a6e2f
-   /*   for(i=0; i < nAtoms-1; i++) {
-         if (!skip[i]) {
-            for(j=i+1; j < nAtoms; j++) {
-               d2 = dist2[a[0][i]][a[0][j]];
-               r2 = (radius[i] - radius[j])*(radius[i] - radius[j]);
-               if (!skip(j) && d2 < r2) then
-                  if (ar(i) .lt. ar(j)) then
-                     skip(i) = .true.
-                  else
-                     skip(j) = .true.
-                  end if
-               end if
-                       }
-                }
-        }
+                /*   for(i=0; i < nAtoms-1; i++) {
+                 if (!skip[i]) {
+                 for(j=i+1; j < nAtoms; j++) {
+                 d2 = dist2[a[0][i]][a[0][j]];
+                 r2 = (radius[i] - radius[j])*(radius[i] - radius[j]);
+                 if (!skip(j) && d2 < r2) then
+                 if (ar(i) .lt. ar(j)) then
+                 skip(i) = .true.
+                 else
+                 skip(j) = .true.
+                 end if
+                 end if
+                 }
+                 }
+                 }
 
-    // Check for new coordinate minima and radii maxima.
+                 // Check for new coordinate minima and radii maxima.
 
-      radmax = 0.0;
-      do k = 1, 3
-         comin(k) = a(k,1)
-      end do
-      do i = 1, na
-         do k = 1, 3
-            if (a(k,i) .lt. comin(k))  comin(k) = a(k,i)
-         end do
-                     if (ar(i) .gt. radmax)  radmax = ar(i)
-      end do
-c
-c     calculate width of cube from maximum
-c     atom radius and probe radius
-c
-      width = 2.0d0 * (radmax+pr)
-c
-c     perform dynamic allocation of some local arrays
-c
-      allocate (icuptr(na))
-      allocate (ico(3,na))
-c
-c     set up cube arrays; first the integer coordinate arrays
-c
-      do i = 1, na
-         do k = 1, 3
-            ico(k,i) = (a(k,i)-comin(k))/width + 1
-            if (ico(k,i) .lt. 1) then
-               call cerror ('Cube Coordinate Too Small')
-            else if (ico(k,i) .gt. maxcube) then
-               call cerror ('Cube Coordinate Too Large')
-            end if
-         end do
-      end do
-c
-c     initialize head pointer and srn=2 arrays
-c
-      do i = 1, maxcube
-         do j = 1, maxcube
-            do k = 1, maxcube
-               icube(i,j,k) = 0
-               scube(i,j,k) = .false.
-               sscube(i,j,k) = .false.
-            end do
-         end do
-      end do
-c
-c     initialize linked list pointers
-c
-      do i = 1, na
-         icuptr(i) = 0
-      end do
-c
-c     set up head and later pointers for each atom
-c
-      do iatom = 1, na
-c
-c     skip atoms with surface request numbers of zero
-c
-         if (skip(iatom))  goto 30
-         i = ico(1,iatom)
-         j = ico(2,iatom)
-         k = ico(3,iatom)
-         if (icube(i,j,k) .le. 0) then
-c
-c     first atom in this cube
-c
-            icube(i,j,k) = iatom
-         else
-            c
-c     add to end of linked list
-c
-            iptr = icube(i,j,k)
-   10       continue
-c
-c     check for duplicate atoms, turn off one of them
-c
-            if (dist2(a(1,iatom),a(1,iptr)) .le. 0.0d0) then
-               skip(iatom) = .true.
-               goto 30
-            end if
-c
-c     move on down the list
-c
-            if (icuptr(iptr) .le. 0)  goto 20
-            iptr = icuptr(iptr)
-            goto 10
-   20       continue
-c
-c     store atom number
-c
-            icuptr(iptr) = iatom
-         end if
-c
-c     check for surfaced atom
-c
-         if (.not. skip(iatom))  scube(i,j,k) = .true.
-   30    continue
-      end do
-c
-c     check if this cube or any adjacent cube has active atoms
-c
-      do k = 1, maxcube
-         do j = 1, maxcube
-            do i = 1, maxcube
-               if (icube(i,j,k) .ne. 0) then
-                  do k1 = max(k-1,1), min(k+1,maxcube)
-                     do j1 = max(j-1,1), min(j+1,maxcube)
-                        do i1 = max(i-1,1), min(i+1,maxcube)
-                           if (scube(i1,j1,k1)) then
-                              sscube(i,j,k) = .true.
-                           end if
-                        end do
-                     end do
-                  end do
-               end if
-            end do
-         end do
-      end do
-      ncls = 0
-c
-c     zero pointers for atom and find its cube
-c
-      do i = 1, na
-         nclsa = 0
-         nosurf(i) = skip(i)
-         acls(1,i) = 0
-         acls(2,i) = 0
-         if (skip(i))  goto 70
-            ici = ico(1,i)
-         icj = ico(2,i)
-         ick = ico(3,i)
-c
-c     skip iatom if its cube and adjoining
-c     cubes contain only blockers
-c
-         if (.not. sscube(ici,icj,ick))  goto 70
-         sumi = 2.0d0*pr + ar(i)
-c
-c     check iatom cube and adjacent cubes for neighboring atoms
-c
-         do jck = max(ick-1,1), min(ick+1,maxcube)
-            do jcj = max(icj-1,1), min(icj+1,maxcube)
-               do jci = max(ici-1,1), min(ici+1,maxcube)
-                  j = icube(jci,jcj,jck)
-   40             continue
-c
-c     check for end of linked list for this cube
-c
-                  if (j .le. 0)  goto 60
-                  if (i .eq. j)  goto 50
-                  if (skip(j))  goto 50
-c
-c     distance check
-c
-                  sum = sumi + ar(j)
-                  vect1 = abs(a(1,j) - a(1,i))
-                  if (vect1 .ge. sum)  goto 50
-                  vect2 = abs(a(2,j) - a(2,i))
-                  if (vect2 .ge. sum)  goto 50
-                  vect3 = abs(a(3,j) - a(3,i))
-                  if (vect3 .ge. sum)  goto 50
-                  d2 = vect1**2 + vect2**2 + vect3**2
-                  if (d2 .ge. sum**2)  goto 50
-c
-c     atoms are neighbors, save atom number in temporary array
-c
-                  if (.not. skip(j))  nosurf(i) = .false.
-                  nclsa = nclsa + 1
-                  if (nclsa .gt. maxclsa) then
-                     call cerror ('Too many Neighbors for Atom')
-                  end if
-                  itnl(nclsa) = j
-   50             continue
-c
-c     get number of next atom in cube
-c
-                  j = icuptr(j)
-                  goto 40
-   60             continue
-               end do
-            end do
-         end do
-         if (nosurf(i))  goto 70
-            c
-c     set up neighbors arrays with jatom in increasing order
-c
-         jmold = 0
-         do juse = 1, nclsa
-            jmin = na + 1
-            do jcls = 1, nclsa
-c
-c     don't use ones already sorted
-c
-               if (itnl(jcls) .gt. jmold) then
-                  if (itnl(jcls) .lt. jmin) then
-                     jmin = itnl(jcls)
-                     jmincls = jcls
-                  end if
-               end if
-            end do
-            jmold = jmin
-            jcls = jmincls
-            jatom = itnl(jcls)
-            clsa(juse) = jatom
-         end do
-c
-c     set up pointers to first and last neighbors of atom
-c
-         if (nclsa .gt. 0) then
-            acls(1,i) = ncls + 1
-            do m = 1, nclsa
-               ncls = ncls + 1
-               if (ncls > maxcls) {
-                  logger.severe("Too many Neighboring Atom Pairs");
-        }
-               cls(ncls) = clsa(m)
-            end do
-            acls(2,i) = ncls
-         end if
-   70    continue
-      end do*/
+                 radmax = 0.0;
+                 do k = 1, 3
+                 comin(k) = a(k,1)
+                 end do
+                 do i = 1, na
+                 do k = 1, 3
+                 if (a(k,i) .lt. comin(k))  comin(k) = a(k,i)
+                 end do
+                 if (ar(i) .gt. radmax)  radmax = ar(i)
+                 end do
+                 c
+                 c     calculate width of cube from maximum
+                 c     atom radius and probe radius
+                 c
+                 width = 2.0d0 * (radmax+pr)
+                 c
+                 c     perform dynamic allocation of some local arrays
+                 c
+                 allocate (icuptr(na))
+                 allocate (ico(3,na))
+                 c
+                 c     set up cube arrays; first the integer coordinate arrays
+                 c
+                 do i = 1, na
+                 do k = 1, 3
+                 ico(k,i) = (a(k,i)-comin(k))/width + 1
+                 if (ico(k,i) .lt. 1) then
+                 call cerror ('Cube Coordinate Too Small')
+                 else if (ico(k,i) .gt. maxcube) then
+                 call cerror ('Cube Coordinate Too Large')
+                 end if
+                 end do
+                 end do
+                 c
+                 c     initialize head pointer and srn=2 arrays
+                 c
+                 do i = 1, maxcube
+                 do j = 1, maxcube
+                 do k = 1, maxcube
+                 icube(i,j,k) = 0
+                 scube(i,j,k) = .false.
+                 sscube(i,j,k) = .false.
+                 end do
+                 end do
+                 end do
+                 c
+                 c     initialize linked list pointers
+                 c
+                 do i = 1, na
+                 icuptr(i) = 0
+                 end do
+                 c
+                 c     set up head and later pointers for each atom
+                 c
+                 do iatom = 1, na
+                 c
+                 c     skip atoms with surface request numbers of zero
+                 c
+                 if (skip(iatom))  goto 30
+                 i = ico(1,iatom)
+                 j = ico(2,iatom)
+                 k = ico(3,iatom)
+                 if (icube(i,j,k) .le. 0) then
+                 c
+                 c     first atom in this cube
+                 c
+                 icube(i,j,k) = iatom
+                 else
+                 c
+                 c     add to end of linked list
+                 c
+                 iptr = icube(i,j,k)
+                 10       continue
+                 c
+                 c     check for duplicate atoms, turn off one of them
+                 c
+                 if (dist2(a(1,iatom),a(1,iptr)) .le. 0.0d0) then
+                 skip(iatom) = .true.
+                 goto 30
+                 end if
+                 c
+                 c     move on down the list
+                 c
+                 if (icuptr(iptr) .le. 0)  goto 20
+                 iptr = icuptr(iptr)
+                 goto 10
+                 20       continue
+                 c
+                 c     store atom number
+                 c
+                 icuptr(iptr) = iatom
+                 end if
+                 c
+                 c     check for surfaced atom
+                 c
+                 if (.not. skip(iatom))  scube(i,j,k) = .true.
+                 30    continue
+                 end do
+                 c
+                 c     check if this cube or any adjacent cube has active atoms
+                 c
+                 do k = 1, maxcube
+                 do j = 1, maxcube
+                 do i = 1, maxcube
+                 if (icube(i,j,k) .ne. 0) then
+                 do k1 = max(k-1,1), min(k+1,maxcube)
+                 do j1 = max(j-1,1), min(j+1,maxcube)
+                 do i1 = max(i-1,1), min(i+1,maxcube)
+                 if (scube(i1,j1,k1)) then
+                 sscube(i,j,k) = .true.
+                 end if
+                 end do
+                 end do
+                 end do
+                 end if
+                 end do
+                 end do
+                 end do
+                 ncls = 0
+                 c
+                 c     zero pointers for atom and find its cube
+                 c
+                 do i = 1, na
+                 nclsa = 0
+                 nosurf(i) = skip(i)
+                 acls(1,i) = 0
+                 acls(2,i) = 0
+                 if (skip(i))  goto 70
+                 ici = ico(1,i)
+                 icj = ico(2,i)
+                 ick = ico(3,i)
+                 c
+                 c     skip iatom if its cube and adjoining
+                 c     cubes contain only blockers
+                 c
+                 if (.not. sscube(ici,icj,ick))  goto 70
+                 sumi = 2.0d0*pr + ar(i)
+                 c
+                 c     check iatom cube and adjacent cubes for neighboring atoms
+                 c
+                 do jck = max(ick-1,1), min(ick+1,maxcube)
+                 do jcj = max(icj-1,1), min(icj+1,maxcube)
+                 do jci = max(ici-1,1), min(ici+1,maxcube)
+                 j = icube(jci,jcj,jck)
+                 40             continue
+                 c
+                 c     check for end of linked list for this cube
+                 c
+                 if (j .le. 0)  goto 60
+                 if (i .eq. j)  goto 50
+                 if (skip(j))  goto 50
+                 c
+                 c     distance check
+                 c
+                 sum = sumi + ar(j)
+                 vect1 = abs(a(1,j) - a(1,i))
+                 if (vect1 .ge. sum)  goto 50
+                 vect2 = abs(a(2,j) - a(2,i))
+                 if (vect2 .ge. sum)  goto 50
+                 vect3 = abs(a(3,j) - a(3,i))
+                 if (vect3 .ge. sum)  goto 50
+                 d2 = vect1**2 + vect2**2 + vect3**2
+                 if (d2 .ge. sum**2)  goto 50
+                 c
+                 c     atoms are neighbors, save atom number in temporary array
+                 c
+                 if (.not. skip(j))  nosurf(i) = .false.
+                 nclsa = nclsa + 1
+                 if (nclsa .gt. maxclsa) then
+                 call cerror ('Too many Neighbors for Atom')
+                 end if
+                 itnl(nclsa) = j
+                 50             continue
+                 c
+                 c     get number of next atom in cube
+                 c
+                 j = icuptr(j)
+                 goto 40
+                 60             continue
+                 end do
+                 end do
+                 end do
+                 if (nosurf(i))  goto 70
+                 c
+                 c     set up neighbors arrays with jatom in increasing order
+                 c
+                 jmold = 0
+                 do juse = 1, nclsa
+                 jmin = na + 1
+                 do jcls = 1, nclsa
+                 c
+                 c     don't use ones already sorted
+                 c
+                 if (itnl(jcls) .gt. jmold) then
+                 if (itnl(jcls) .lt. jmin) then
+                 jmin = itnl(jcls)
+                 jmincls = jcls
+                 end if
+                 end if
+                 end do
+                 jmold = jmin
+                 jcls = jmincls
+                 jatom = itnl(jcls)
+                 clsa(juse) = jatom
+                 end do
+                 c
+                 c     set up pointers to first and last neighbors of atom
+                 c
+                 if (nclsa .gt. 0) then
+                 acls(1,i) = ncls + 1
+                 do m = 1, nclsa
+                 ncls = ncls + 1
+                 if (ncls > maxcls) {
+                 logger.severe("Too many Neighboring Atom Pairs");
+                 }
+                 cls(ncls) = clsa(m)
+                 end do
+                 acls(2,i) = ncls
+                 end if
+                 70    continue
+                 end do*/
             }
 
             public void torus() {
@@ -4926,7 +4910,6 @@ c
                 y = 0;
 
                 // Get a pair of appropriate components in the plane.
-
                 s = 2.0;
 
                 while (s >= 1.0) {
@@ -4936,7 +4919,6 @@ c
                 }
 
                 // Construct the 3-dimensional random unit vector.
-
                 vector[2] = 1.0 - 2.0 * s;
                 s = 2.0 * sqrt(1.0 - s);
                 vector[1] = s * y;
@@ -4954,9 +4936,7 @@ c
 
                 zstep = 0.0601;
 
-
                 // Initialize minimum and maximum ranges of atoms.
-
                 pix2 = 2.0 * PI;
                 rmax = 0.0;
                 xmin = x[0];
@@ -4971,8 +4951,6 @@ c
                  * the radii are incremented by the size of the probe;
                  * then get the maximum and minimum ranges of atoms.
                  */
-
-
                 for (i = 0; i < nAtoms; i++) {
                     radius[i] = atoms[i].getVDWType().radius / 2.0;
                     vdwrad[i] = radius[i];
@@ -5020,7 +4998,6 @@ c
                 }
 
                 // Initialize the coarse lattice of cubes.
-
                 for (i = 0; i <= nx; i++) {
                     for (j = 0; j <= ny; j++) {
                         for (k = 0; k <= nz; k++) {
@@ -5031,7 +5008,6 @@ c
                 }
 
                 // Find the number of atoms in each cube.
-
                 for (m = 0; m < nAtoms; m++) {
                     if (!skip[m]) {
                         i = (int) ((x[m] - xmin) / edge);
@@ -5048,7 +5024,6 @@ c
                  * for the atoms in the present cube is the final index of
                  * the last cube plus the number of atoms in the present cube.
                  */
-
                 isum = 0;
                 for (i = 0; i <= nx; i++) {
                     for (j = 0; j <= ny; j++) {
@@ -5067,7 +5042,6 @@ c
                  * giving the position of the last entry for the list of
                  * atoms in that cube of total number equal to "cube(0,,,)".
                  */
-
                 for (m = 0; m < nAtoms; m++) {
                     if (!skip[m]) {
                         i = (int) ((x[m] - xmin) / edge);
@@ -5084,7 +5058,6 @@ c
                  * for atom list of that cube; and "cube(0,,,)" to be
                  * the stop index.
                  */
-
                 isum = 0;
                 for (i = 0; i <= nx; i++) {
                     for (j = 0; j <= ny; j++) {
@@ -5104,7 +5077,6 @@ c
                  * Process in turn each atom from the coordinate list;
                  * first select the potential intersecting atoms.
                  */
-
                 for (ir = 0; ir < nAtoms; ir++) {
                     pre_dx = 0.0;
                     pre_dy = 0.0;
@@ -5120,7 +5092,6 @@ c
                     zr = z[ir];
 
                     // Find cubes to search for overlaps or current atom.
-
                     istart = (int) ((xr - xmin) / edge);
                     istop = min(istart + 2, nx + 1);
                     istart = max(istart, 1);
@@ -5132,7 +5103,6 @@ c
                     kstart = max(kstart, 1);
 
                     // Load all overlapping atoms into "inov".
-
                     io = -1;
                     logger.info(String.format(" %d %d %d %d %d %d %d ", ir, istart, istop, jstart, jstop, kstart, kstop));
                     for (i = istart - 1; i < istop; i++) {
@@ -5379,8 +5349,4 @@ c
             }
         }
     }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> fcefa7e8f2a22b42ca11a7021b7f01ddba9a6e2f
