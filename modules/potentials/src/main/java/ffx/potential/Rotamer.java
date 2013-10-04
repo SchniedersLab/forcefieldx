@@ -23,23 +23,36 @@
 package ffx.potential;
 
 import ffx.potential.ResidueEnumerations.AminoAcid3;
+import ffx.potential.ResidueEnumerations.NucleicAcid3;
 
 import static java.lang.Math.max;
 
 /**
- * The Rotamer Class represents one immutable amino acid Rotamer.
+ * The Rotamer Class usually represents one immutable amino acid Rotamer.
+ * It is additionally being extended to represent one nucleic acid Rotamer.
  *
  * @author Ava M. Lynn
+ * @author Jacob M. Litman
  */
 public class Rotamer {
 
+    /**
+     * Torsions chi 1-4 are used for amino acids and nucleic acids.
+     */
     public final double chi1;
     public final double chi2;
     public final double chi3;
     public final double chi4;
+    /**
+     * Torsions chi 5-7 are only currently used for nucleic acids.
+     */
+    public final double chi5;
+    public final double chi6;
+    public final double chi7;
     public final double angles[];
     public final double sigmas[];
     public final AminoAcid3 name;
+    public final NucleicAcid3 nucleicName;
     public final int length;
 
     public Rotamer(AminoAcid3 name, double... values) {
@@ -56,13 +69,40 @@ public class Rotamer {
         chi2 = angles[1];
         chi3 = angles[2];
         chi4 = angles[3];
+        chi5 = chi6 = chi7 = 0;
+        nucleicName = null;
+    }
+    
+    public Rotamer (NucleicAcid3 name, double... values){
+        length = values.length/2;
+        angles = new double[max(length, 7)];
+        sigmas = new double[max(length, 7)];
+        nucleicName = name;
+        this.name = null;
+        for (int i = 0; i < length; i++){
+            int ii = 2 * i;
+            angles[i] = values[ii];
+            sigmas[i] = values[ii + 1];
+        }
+        chi1 = angles[0];
+        chi2 = angles[1];
+        chi3 = angles[2];
+        chi4 = angles[3];
+        chi5 = angles[4];
+        chi6 = angles[5];
+        chi7 = angles[6];
     }
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(name.toString());
-        int length = angles.length;
-        for (int i = 0; i < length; i++) {
+        StringBuilder sb;
+        if (name != null){
+            sb = new StringBuilder(name.toString());
+        } else {
+            sb = new StringBuilder(nucleicName.toString());
+        }
+        int n = angles.length;
+        for (int i = 0; i < n; i++) {
             sb.append(String.format(" %6.1f %4.1f", angles[i], sigmas[i]));
         }
         return sb.toString();

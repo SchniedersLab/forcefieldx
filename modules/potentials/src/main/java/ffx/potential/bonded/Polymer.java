@@ -29,6 +29,7 @@ import javax.media.j3d.Material;
 import javax.vecmath.Color3f;
 
 import ffx.numerics.VectorMath;
+import ffx.potential.ResidueEnumerations;
 import ffx.potential.bonded.Residue.ResidueType;
 
 import static ffx.utilities.HashCodeUtil.SEED;
@@ -269,7 +270,7 @@ public class Polymer extends MSGroup {
         residueNode.insert(multiResidue, index);
         multiResidue.add(residue);
     }
-    
+
     /**
      * Get the Phi Psi List for the Polymer
      *
@@ -373,7 +374,6 @@ public class Polymer extends MSGroup {
                 return r;
             }
         }
-        //System.out.println(resName + ": " + resNum);
         if (!create) {
             return null;
         }
@@ -381,25 +381,25 @@ public class Polymer extends MSGroup {
         resName = resName.toUpperCase();
         if (resName.length() == 1) {
             try {
-                Residue.NA1.valueOf(resName);
+                ResidueEnumerations.NucleicAcid1 na = ResidueEnumerations.NucleicAcid1.valueOf(resName);
                 residue = new Residue(resName, resNum, Residue.ResidueType.NA,
                         chainID, getName());
             } catch (Exception e) {
                 try {
-                    Residue.AA1.valueOf(resName);
+                    ResidueEnumerations.AminoAcid1 aa = ResidueEnumerations.AminoAcid1.valueOf(resName);
                     residue = new Residue(resName, resNum, Residue.ResidueType.AA,
                             chainID, getName());
                 } catch (Exception ex) {
                 }
             }
-        } else if (resName.length() == 2 || resName.length() == 3) {
+        } else if (resName.length() >= 2) {
             try {
-                Residue.NA3.valueOf(resName);
+                ResidueEnumerations.NucleicAcid3 na = ResidueEnumerations.NucleicAcid3.valueOf(resName);
                 residue = new Residue(resName, resNum, Residue.ResidueType.NA,
                         chainID, getName());
             } catch (Exception e) {
                 try {
-                    Residue.AA3.valueOf(resName);
+                    ResidueEnumerations.AminoAcid3 aa = ResidueEnumerations.AminoAcid3.valueOf(resName);
                     residue = new Residue(resName, resNum, Residue.ResidueType.AA,
                             chainID, getName());
                 } catch (Exception ex) {

@@ -211,6 +211,131 @@ public class INTFilter extends SystemFilter {
             atom.moveTo(x);
         }
     }
+    
+    /**
+     * This routine was derived from a similar routine in TINKER.  It determines
+     * at what coordinates an atom would be placed without moving or calling
+     * any atoms, relying solely upon coordinates.  Passed arrays are copied
+     * into local arrays to avoid any over-writing of the passed arrays.
+     *
+     * @param ia a double[] of atomic coordinates.
+     * @param bond a double.
+     * @param ib a double[] of atomic coordinates.
+     * @param angle1 a double.
+     * @param ic a double[] of atomic coordinates.
+     * @param angle2 a double.
+     * @param chiral a int.
+     * @return A double[] with XYZ coordinates at which an atom would be placed.
+     */
+    public static double[] determineIntxyz(double[] ia, double bond, double[] ib, double angle1, double[] ic, double angle2, int chiral) {
+        angle1 = toRadians(angle1);
+        angle2 = toRadians(angle2);
+        double zcos0 = cos(angle1);
+        double zcos1 = cos(angle2);
+        double zsin0 = sin(angle1);
+        double zsin1 = sin(angle2);
+        double[] ret = new double[3];
+        
+        // No partners
+        if (ia == null) {
+            x[0] = x[1] = x[2] = 0.0;
+        } else if (ib == null) {
+            for (int i = 0; i < ia.length; i++) {
+                xa[i] = ia[i];
+            }
+            // One partner - place on the z-axis
+            x[0] = xa[0];
+            x[1] = xa[1];
+            x[2] = xa[2] + bond;
+        } else if (ic == null) {
+            for (int i = 0; i < ia.length; i++) {
+                xa[i] = ia[i];
+                xb[i] = ib[i];
+            }
+            // Two partners - place in the xz-plane
+            diff(xa, xb, xab);
+            rab = r(xab);
+            norm (xab, xab);
+            cosb = xab[2];
+            sinb = sqrt(xab[0] * xab[0] + xab[1] * xab[1]);
+            if (sinb == 0.0d) {
+                cosg = 1.0d;
+                sing = 0.0d;
+            } else {
+                cosg = xab[1] / sinb;
+                sing = xab[0] / sinb;
+            }
+            xtmp = bond * zsin0;
+            ztmp = rab - bond * zcos0;
+            x[0] = xb[0] + xtmp * cosg + ztmp * sing * sinb;
+            x[1] = xb[1] - xtmp * sing + ztmp * cosg * sinb;
+            x[2] = xb[2] + ztmp * cosb;
+        } else if (chiral == 0) {
+            for (int i = 0; i < ia.length; i++) {
+                xa[i] = ia[i];
+                xb[i] = ib[i];
+                xc[i] = ic[i];
+            }
+            // General case - with a dihedral
+            diff(xa, xb, xab);
+            norm(xab, xab);
+            diff(xb, xc, xbc);
+            norm(xbc, xbc);
+            xt[0] = xab[2] * xbc[1] - xab[1] * xbc[2];
+            xt[1] = xab[0] * xbc[2] - xab[2] * xbc[0];
+            xt[2] = xab[1] * xbc[0] - xab[0] * xbc[1];
+            cosine = xab[0] * xbc[0] + xab[1] * xbc[1] + xab[2] * xbc[2];
+            sine = sqrt(max(1.0d - cosine * cosine, eps));
+            if (abs(cosine) >= 1.0d) {
+                logger.warning("Undefined Dihedral");
+            }
+            scalar(xt, 1.0d / sine, xt);
+            xu[0] = xt[1] * xab[2] - xt[2] * xab[1];
+            xu[1] = xt[2] * xab[0] - xt[0] * xab[2];
+            xu[2] = xt[0] * xab[1] - xt[1] * xab[0];
+            x[0] = xa[0] + bond * (xu[0] * zsin0 * zcos1 + xt[0] * zsin0 * zsin1 - xab[0] * zcos0);
+            x[1] = xa[1] + bond * (xu[1] * zsin0 * zcos1 + xt[1] * zsin0 * zsin1 - xab[1] * zcos0);
+            x[2] = xa[2] + bond * (xu[2] * zsin0 * zcos1 + xt[2] * zsin0 * zsin1 - xab[2] * zcos0);
+        } else if (abs(chiral) == 1) {
+            for (int i = 0; i < ia.length; i++) {
+                xa[i] = ia[i];
+                xb[i] = ib[i];
+                xc[i] = ic[i];
+            }
+            diff(xb, xa, xba);
+            norm(xba, xba);
+            diff(xa, xc, xac);
+            norm(xac, xac);
+            xt[0] = xba[2] * xac[1] - xba[1] * xac[2];
+            xt[1] = xba[0] * xac[2] - xba[2] * xac[0];
+            xt[2] = xba[1] * xac[0] - xba[0] * xac[1];
+            cosine = xba[0] * xac[0] + xba[1] * xac[1] + xba[2] * xac[2];
+            sine2 = max(1.0d - cosine * cosine, eps);
+            if (abs(cosine) >= 1.0d) {
+                logger.warning("Defining Atom Colinear");
+            }
+            a = (-zcos1 - cosine * zcos0) / sine2;
+            b = (zcos0 + cosine * zcos1) / sine2;
+            c = (1.0d + a * zcos1 - b * zcos0) / sine2;
+            if (c > eps) {
+                c = chiral * sqrt(c);
+            } else if (c < -eps) {
+                c = sqrt((a * xac[0] + b * xba[0]) * (a * xac[0] + b * xba[0]) + (a * xac[1] + b * xba[1]) * (a * xac[1] + b * xba[1]) + (a * xac[2] + b * xba[2]) * (a * xac[2] + b * xba[2]));
+                a /= c;
+                b /= c;
+                c = 0.0d;
+            } else {
+                c = 0.0d;
+            }
+            x[0] = xa[0] + bond * (a * xac[0] + b * xba[0] + c * xt[0]);
+            x[1] = xa[1] + bond * (a * xac[1] + b * xba[1] + c * xt[1]);
+            x[2] = xa[2] + bond * (a * xac[2] + b * xba[2] + c * xt[2]);
+        }
+        for (int i = 0; i < ret.length; i++) {
+            ret[i] = x[i];
+        }
+        return ret;
+    }
 
     /**
      * {@inheritDoc}

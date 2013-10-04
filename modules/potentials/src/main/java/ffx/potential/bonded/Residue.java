@@ -43,17 +43,17 @@ import ffx.potential.RotamerLibrary;
 
 import static ffx.utilities.HashCodeUtil.SEED;
 import static ffx.utilities.HashCodeUtil.hash;
+import java.util.logging.Level;
 
 /**
  * The Residue class represents individual amino acids or nucleic acid bases.
  *
  * @author Michael J. Schnieders
- *
+ * @author Jacob M. Litman
  */
 public class Residue extends MSGroup {
 
     private static final Logger logger = Logger.getLogger(ffx.potential.bonded.Residue.class.getName());
-    
     private static final long serialVersionUID = 1L;
     private static Point3d point3d = new Point3d();
     private static Point2d point2d = new Point2d();
@@ -230,6 +230,25 @@ public class Residue extends MSGroup {
     protected ResidueType residueType = ResidueType.UNK;
     private AA3 aa;
     private NA3 na;
+    /**
+     * These arrays store default coordinates for certain atoms in nucleic acid
+     * Residues.  C1', O4', and C4' are the critical sugar atoms off which every
+     * other atom is drawn when applyRotamer is called; the backbone corrections,
+     * however, move these atoms, so they must be reverted to original 
+     * coordinates each time applyRotamer is called.
+     * 
+     * O3' North and South coordinates are technically non-essential, as they
+     * could be derived from C1', O4', C4', and a given sugar pucker, however,
+     * it is much less computationally expensive to calculate them once and
+     * then store them.
+     * 
+     * TODO: Add O3' coordinates for the DNA C3'-exo configuration.
+     */
+    private double[] O3sNorthCoords = null;
+    private double[] O3sSouthCoords = null;
+    private double[] C1sCoords = null;
+    private double[] O4sCoords = null;
+    private double[] C4sCoords = null;
 
     /**
      * Default Constructor where num is this Residue's position in the Polymer.
@@ -304,25 +323,75 @@ public class Residue extends MSGroup {
         finalize(true);
     }
 
-    // Should eventually replace the try-catch with an if-else.
     public Rotamer[] getRotamers(Residue residue) {
-        if (residue == null) {
-            return null;
-        }
-        // Try for an amino acid residue.
-        try{
-            AminoAcid3 name = AminoAcid3.valueOf(residue.getName());
-            return RotamerLibrary.getRotamers(name);
-        }
-        // Catch block assumes it's a nucleic acid.
-        catch (IllegalArgumentException e){
-            NucleicAcid3 name = NucleicAcid3.valueOf(residue.getName());
-            return RotamerLibrary.getRotamers(name);
-        }
+        return RotamerLibrary.getRotamers (residue);
     }
 
     public ResidueType getResidueType() {
         return residueType;
+    }
+
+    public Residue getNextResidue() {
+        switch (residueType) {
+            case AA: {
+                Atom carbon = (Atom) getAtomNode("C");
+                ArrayList<Bond> bonds = carbon.getBonds();
+                for (Bond b : bonds) {
+                    Atom other = b.get1_2(carbon);
+                    if (other.getName().equalsIgnoreCase("N")) {
+                        return (Residue) other.getParent().getParent();
+                    }
+                }
+                break;
+            }
+            case NA:
+                Atom oxygen = (Atom) getAtomNode("O3\'");
+                ArrayList<Bond> bonds = oxygen.getBonds();
+                for (Bond b : bonds) {
+                    Atom other = b.get1_2(oxygen);
+                    if (other.getName().equalsIgnoreCase("P")) {
+                        return (Residue) other.getParent().getParent();
+                    }
+                }
+                break;
+            default:
+                return null;
+        }
+        return null;
+        // Will generally indicate that you passed in the terminal residue.
+    }
+
+    public Residue getPreviousResidue() {
+        switch (residueType) {
+            case AA: {
+                Atom nitrogen = (Atom) getAtomNode("N");
+                ArrayList<Bond> bonds = nitrogen.getBonds();
+                for (Bond b : bonds) {
+                    Atom other = b.get1_2(nitrogen);
+                    if (other.getName().equalsIgnoreCase("C")) {
+                        return (Residue) other.getParent().getParent();
+                    }
+                }
+                break;
+            }
+            case NA:
+                Atom phosphate = (Atom) getAtomNode("P");
+                if (phosphate == null) {
+                    return null;
+                }
+                ArrayList<Bond> bonds = phosphate.getBonds();
+                for (Bond b : bonds) {
+                    Atom other = b.get1_2(phosphate);
+                    if (other.getName().equalsIgnoreCase("O3\'")) {
+                        return (Residue) other.getParent().getParent();
+                    }
+                }
+                break;
+            default:
+                return null;
+        }
+        return null;
+        // Will generally indicate that you passed in the beginning residue.
     }
 
     /**
@@ -379,17 +448,24 @@ public class Residue extends MSGroup {
     }
 
     public ArrayList<Atom> getSideChainAtoms() {
-        ArrayList<Atom> atoms = getAtomList();
-        ArrayList<Atom> ret = new ArrayList<Atom>(atoms);
-        for (Atom atom : atoms) {
-            String name = atom.getName().toUpperCase();
-            if (name.equals("N") || name.equals("H") || name.equals("H1") || name.equals("H2") || name.equals("H3")
-                    || name.equals("CA") || name.startsWith("HA")
-                    || name.equals("C") || name.equals("O") || name.equals("OXT") || name.equals("OT2")) {
-                ret.remove(atom);
-            }
+        switch (residueType){
+            case NA:
+                return null;
+            case AA:
+                ArrayList<Atom> atoms = getAtomList();
+                ArrayList<Atom> ret = new ArrayList<Atom>(atoms);
+                for (Atom atom : atoms) {
+                    String name = atom.getName().toUpperCase();
+                    if (name.equals("N") || name.equals("H") || name.equals("H1") || name.equals("H2") || name.equals("H3")
+                            || name.equals("CA") || name.startsWith("HA")
+                            || name.equals("C") || name.equals("O") || name.equals("OXT") || name.equals("OT2")) {
+                        ret.remove(atom);
+                    }
+                }
+                return ret;
+            default:
+                return null;
         }
-        return ret;
     }
 
     private void assignResidueType() {
@@ -398,7 +474,7 @@ public class Residue extends MSGroup {
             case AA:
                 aa = null;
                 try {
-                    if (name.length() == 3) {
+                    if (name.length() >= 2) {
                         aa = AA3.valueOf(name);
                     } else if (name.length() == 1) {
                         AA1 aa1 = AA1.valueOf(name);
@@ -411,7 +487,7 @@ public class Residue extends MSGroup {
             case NA:
                 na = null;
                 try {
-                    if (name.length() == 2 || name.length() == 3) {
+                    if (name.length() >= 2) {
                         na = NA3.valueOf(name);
                     } else if (name.length() == 1) {
                         NA1 na1 = NA1.valueOf(name);
@@ -485,6 +561,125 @@ public class Residue extends MSGroup {
         // findDangelingAtoms();
         setCenter(getMultiScaleCenter(false));
         setFinalized(true);
+    }
+    
+    /**
+     * Returns the position of this (presumably nucleic acid) Residue's default
+     * O3' coordinates given a North pucker.
+     *
+     * @return a new double[] with default XYZ coordinates for O3' in a North 
+     * pucker.
+     */
+    public double[] getO3sNorth() {
+        double[] ret = new double[3];
+        for (int i = 0; i < ret.length; i++) {
+            ret[i] = O3sNorthCoords[i];
+        }
+        return ret;
+    }
+    
+    /**
+     * Returns the position of this (presumably nucleic acid) Residue's default
+     * O3' coordinates given a South pucker.
+     *
+     * @return a new double[] with default XYZ coordinates for O3' in a South 
+     * pucker.
+     */
+    public double[] getO3sSouth() {
+        double[] ret = new double[3];
+        for (int i = 0; i < ret.length; i++) {
+            ret[i] = O3sSouthCoords[i];
+        }
+        return ret;
+    }
+    
+    /**
+     * Returns the position of this (presumably nucleic acid) Residue's original
+     * C1' coordinates.
+     *
+     * @return a new double[] with original XYZ coordinates for C1'.
+     */
+    public double[] getC1sCoords() {
+        double[] ret = new double[3];
+        for (int i = 0; i < ret.length; i++) {
+            ret[i] = C1sCoords[i];
+        }
+        return ret;
+    }
+    
+    /**
+     * Returns the position of this (presumably nucleic acid) Residue's original
+     * O4' coordinates.
+     *
+     * @return a new double[] with original XYZ coordinates for O4'.
+     */
+    public double[] getO4sCoords() {
+        double[] ret = new double[3];
+        for (int i = 0; i < ret.length; i++) {
+            ret[i] = O4sCoords[i];
+        }
+        return ret;
+    }
+    
+    /**
+     * Returns the position of this (presumably nucleic acid) Residue's original
+     * C4' coordinates.
+     *
+     * @return a new double[] with original XYZ coordinates for C4'.
+     */
+    public double[] getC4sCoords() {
+        double[] ret = new double[3];
+        for (int i = 0; i < ret.length; i++) {
+            ret[i] = C4sCoords[i];
+        }
+        return ret;
+    }
+    
+    /**
+     * Initializes this (presumably nucleic acid) Residue's C1s, O4s, C4s, 
+     * O3sNorth, and O3sSouth default coordinates based on default PDB atom 
+     * locations; to preserve rotamer independence, this must be called before 
+     * any NA rotamers are applied.
+     */
+    public void initializeDefaultAtomicCoordinates() {
+        if (residueType != ResidueType.NA) {
+            return;
+        }
+        boolean isDeoxy;
+        try {
+            switch (NucleicAcid3.valueOf(this.getName())) {
+                case DAD:
+                case DCY:
+                case DGU:
+                case DTY:
+                    isDeoxy = true;
+                    break;
+                case CYT:
+                case ADE:
+                case THY:
+                case URI:
+                case GUA:
+                default:
+                    isDeoxy = false;
+                    break;
+            }
+            C1sCoords = new double[3];
+            ((Atom) getAtomNode("C1\'")).getXYZ(C1sCoords);
+            O4sCoords = new double[3];
+            ((Atom) getAtomNode("O4\'")).getXYZ(O4sCoords);
+            C4sCoords = new double[3];
+            ((Atom) getAtomNode("C4\'")).getXYZ(C4sCoords);
+            
+            /**
+             * With the place flag set false, applySugarPucker returns
+             * hypothetical O3' coordinates based on default atom positions and
+             * the supplied sugar pucker.
+             */
+            O3sNorthCoords = RotamerLibrary.applySugarPucker(this, 1, isDeoxy, false);
+            O3sSouthCoords = RotamerLibrary.applySugarPucker(this, 2, isDeoxy, false);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, toString() , e);
+        }
     }
 
     /**
