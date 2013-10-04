@@ -27,16 +27,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static java.lang.Math.PI;
-import static java.lang.Math.abs;
-import static java.lang.Math.acos;
-import static java.lang.Math.asin;
-import static java.lang.Math.exp;
-import static java.lang.Math.max;
-import static java.lang.Math.min;
-import static java.lang.Math.pow;
-import static java.lang.Math.sqrt;
-import static java.lang.Math.tanh;
+import static java.lang.Math.*;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.ParallelRegion;
@@ -4562,7 +4553,7 @@ public class GeneralizedKirkwood {
             private double vdwrad[] = new double[nAtoms];
             private double radius[] = new double[nAtoms];
             private double a[][] = new double[3][nAtoms];
-            private double dex[][] = new double[3][nAtoms]; 
+            private double dex[][] = new double[3][nAtoms];
             // Extra padding to avert cache interference.
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
             private long pad8, pad9, pada, padb, padc, padd, pade, padf;
@@ -4587,7 +4578,7 @@ public class GeneralizedKirkwood {
                 final double exclude = 1.4;
 
                 /*
-                 * Set atom coordinates and radii, the excluded buffer 
+                 * Set atom coordinates and radii, the excluded buffer
                  * radius ("exclude") is added to atomic radii.
                  */
 
@@ -4652,9 +4643,9 @@ public class GeneralizedKirkwood {
 
 /*
  * Ignore all atoms that are completely inside another atom;
- * may give nonsense results if this step is not taken. 
+ * may give nonsense results if this step is not taken.
  */
-     
+
    /*   for(i=0; i < nAtoms-1; i++) {
          if (!skip[i]) {
             for(j=i+1; j < nAtoms; j++) {

@@ -22,7 +22,6 @@
  */
 package ffx.potential.bonded;
 
-import ffx.potential.ResidueEnumerations.AminoAcid3;
 import ffx.potential.ResidueEnumerations.NucleicAcid3;
 import ffx.potential.Rotamer;
 import java.util.ArrayList;
@@ -234,14 +233,14 @@ public class Residue extends MSGroup {
      * These arrays store default coordinates for certain atoms in nucleic acid
      * Residues.  C1', O4', and C4' are the critical sugar atoms off which every
      * other atom is drawn when applyRotamer is called; the backbone corrections,
-     * however, move these atoms, so they must be reverted to original 
+     * however, move these atoms, so they must be reverted to original
      * coordinates each time applyRotamer is called.
-     * 
+     *
      * O3' North and South coordinates are technically non-essential, as they
      * could be derived from C1', O4', C4', and a given sugar pucker, however,
      * it is much less computationally expensive to calculate them once and
      * then store them.
-     * 
+     *
      * TODO: Add O3' coordinates for the DNA C3'-exo configuration.
      */
     private double[] O3sNorthCoords = null;
@@ -562,12 +561,12 @@ public class Residue extends MSGroup {
         setCenter(getMultiScaleCenter(false));
         setFinalized(true);
     }
-    
+
     /**
      * Returns the position of this (presumably nucleic acid) Residue's default
      * O3' coordinates given a North pucker.
      *
-     * @return a new double[] with default XYZ coordinates for O3' in a North 
+     * @return a new double[] with default XYZ coordinates for O3' in a North
      * pucker.
      */
     public double[] getO3sNorth() {
@@ -577,12 +576,12 @@ public class Residue extends MSGroup {
         }
         return ret;
     }
-    
+
     /**
      * Returns the position of this (presumably nucleic acid) Residue's default
      * O3' coordinates given a South pucker.
      *
-     * @return a new double[] with default XYZ coordinates for O3' in a South 
+     * @return a new double[] with default XYZ coordinates for O3' in a South
      * pucker.
      */
     public double[] getO3sSouth() {
@@ -592,7 +591,7 @@ public class Residue extends MSGroup {
         }
         return ret;
     }
-    
+
     /**
      * Returns the position of this (presumably nucleic acid) Residue's original
      * C1' coordinates.
@@ -606,7 +605,7 @@ public class Residue extends MSGroup {
         }
         return ret;
     }
-    
+
     /**
      * Returns the position of this (presumably nucleic acid) Residue's original
      * O4' coordinates.
@@ -620,7 +619,7 @@ public class Residue extends MSGroup {
         }
         return ret;
     }
-    
+
     /**
      * Returns the position of this (presumably nucleic acid) Residue's original
      * C4' coordinates.
@@ -634,11 +633,11 @@ public class Residue extends MSGroup {
         }
         return ret;
     }
-    
+
     /**
-     * Initializes this (presumably nucleic acid) Residue's C1s, O4s, C4s, 
-     * O3sNorth, and O3sSouth default coordinates based on default PDB atom 
-     * locations; to preserve rotamer independence, this must be called before 
+     * Initializes this (presumably nucleic acid) Residue's C1s, O4s, C4s,
+     * O3sNorth, and O3sSouth default coordinates based on default PDB atom
+     * locations; to preserve rotamer independence, this must be called before
      * any NA rotamers are applied.
      */
     public void initializeDefaultAtomicCoordinates() {
@@ -669,7 +668,7 @@ public class Residue extends MSGroup {
             ((Atom) getAtomNode("O4\'")).getXYZ(O4sCoords);
             C4sCoords = new double[3];
             ((Atom) getAtomNode("C4\'")).getXYZ(C4sCoords);
-            
+
             /**
              * With the place flag set false, applySugarPucker returns
              * hypothetical O3' coordinates based on default atom positions and
