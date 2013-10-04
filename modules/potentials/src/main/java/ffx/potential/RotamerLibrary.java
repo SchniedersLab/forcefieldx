@@ -149,7 +149,25 @@ public class RotamerLibrary {
         return getRichardsonRNARotamers(name);
     }
 
-    public static void loadPriorAtomicCoordinates(MolecularAssembly molecularAssembly) {
+    /**
+     * Initializes default coordinates (presently PDB coordinates) for key atoms
+     * in all nucleic acid Residues.  This is necessary to preserve rotamer
+     * independence while still adjusting rotamers to correctly meet prior
+     * residues; C4', O4', and C1' are used to build the rest of the nucleic
+     * acid base, but are moved with each Rotamer to take part of the strain of
+     * correctly meeting O3' of residue i-1.
+     * 
+     * It also initializes the location of O3' in both North and South puckers; 
+     * while in theory this could be recalculated each time based off of C4', 
+     * O4', and C1', it is easier to just store these two locations and call 
+     * them when needed.
+     * 
+     * This MUST be called before any applyRotamer calls are made, else invalid
+     * coordinates will be stored.
+     * 
+     * @param molecularAssembly To search for nucleic acids.
+     */
+    public static void initializeDefaultAtomicCoordinates(MolecularAssembly molecularAssembly) {
         // Loads default atomic coordinates for all nucleic acid residues.
         Polymer[] polymers = molecularAssembly.getChains();
         for (int i = 0; i < polymers.length; i++) {
@@ -159,7 +177,7 @@ public class RotamerLibrary {
                 Residue residuej = current.get(j);
                 switch (residuej.getResidueType()) {
                     case NA:
-                        residuej.loadPriorAtomicCoordinates();
+                        residuej.initializeDefaultAtomicCoordinates();
                         break;
                     default:
                         break;
@@ -704,7 +722,9 @@ public class RotamerLibrary {
     }
 
     /**
-     * Returns the Rotamers for a specified nucleic acid type.
+     * Returns the Rotamers for a specified nucleic acid type.  Torsion angles
+     * are listed from delta (i-1) to delta (i), along with standard deviations
+     * calculated by Richardson et al.
      *
      * TODO: Add reference to Richardson et al, 2008.
      *
@@ -1015,7 +1035,7 @@ public class RotamerLibrary {
     }
 
     /**
-     * Measures the delta (sugar pucker) of a nucleic acid Residue.
+     * Measures the delta torsion (sugar pucker) of a nucleic acid Residue.
      *
      * @param residue To be measured
      * @return Delta torsion (sugar pucker angle).
@@ -1719,7 +1739,8 @@ public class RotamerLibrary {
     
     /**
      * Version of applyRotamer which allows for chain context-independent drawing
-     * of nucleic acid Rotamers.  Solely used in saveRotamers at this point.
+     * of nucleic acid Rotamers.  Solely used in saveRotamers at this point, 
+     * although it may be useful for debugging.
      * 
      * @param residue
      * @param rotamer Rotamer to be applied
@@ -3123,7 +3144,7 @@ public class RotamerLibrary {
      * correctly join to Residue i-1.  correctionThreshold and independent are 
      * both special-case variables; a non-zero correctionThreshold is used to
      * prune Rotamers with excessively large corrections, and independent 
-     * disables the NA correction.
+     * disables the NA correction, presently only performed by saveRotamers.
      * 
      * Note that the independent flag is separate from DEE independence: DEE
      * independence is preserved by applying corrections based on a non-variable
@@ -3303,11 +3324,9 @@ public class RotamerLibrary {
             double[] C3sXYZ;
             double[] O4sXYZ = new double[3];
             double[] C4sXYZ = new double[3];
-            for (int i = 0; i < C1sXYZ.length; i++) {
-                C1sXYZ[i] = C1s.getXYZ()[i];
-                O4sXYZ[i] = O4s.getXYZ()[i];
-                C4sXYZ[i] = C4s.getXYZ()[i];
-            }
+            C1s.getXYZ(C1sXYZ);
+            O4s.getXYZ(O4sXYZ);
+            C4s.getXYZ(C4sXYZ);
 
             // O3s coordinates will be filled into ret.
 

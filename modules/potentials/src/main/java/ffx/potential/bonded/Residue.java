@@ -640,10 +640,8 @@ public class Residue extends MSGroup {
      * O3sNorth, and O3sSouth default coordinates based on default PDB atom 
      * locations; to preserve rotamer independence, this must be called before 
      * any NA rotamers are applied.
-     *
-     * @return a {@link javax.vecmath.Vector3d} object.
      */
-    public void loadPriorAtomicCoordinates() {
+    public void initializeDefaultAtomicCoordinates() {
         if (residueType != ResidueType.NA) {
             return;
         }
