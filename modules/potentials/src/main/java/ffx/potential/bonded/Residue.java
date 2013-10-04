@@ -654,7 +654,7 @@ public class Residue extends MSGroup {
         if (residueType != ResidueType.NA) {
             return;
         }
-        boolean isDeoxy = false;
+        boolean isDeoxy;
         try {
             switch (NucleicAcid3.valueOf(this.getName())) {
                 case DAD:
