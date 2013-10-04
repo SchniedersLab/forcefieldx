@@ -233,14 +233,24 @@ public class Residue extends MSGroup {
      * These arrays store default coordinates for certain atoms in nucleic acid
      * Residues.  C1', O4', and C4' are the critical sugar atoms off which every
      * other atom is drawn when applyRotamer is called; the backbone corrections,
+<<<<<<< HEAD
      * however, move these atoms, so they must be reverted to original
      * coordinates each time applyRotamer is called.
      *
+=======
+     * however, move these atoms, so they must be reverted to original
+     * coordinates each time applyRotamer is called.
+     *
+>>>>>>> fcefa7e8f2a22b42ca11a7021b7f01ddba9a6e2f
      * O3' North and South coordinates are technically non-essential, as they
      * could be derived from C1', O4', C4', and a given sugar pucker, however,
      * it is much less computationally expensive to calculate them once and
      * then store them.
+<<<<<<< HEAD
      *
+=======
+     *
+>>>>>>> fcefa7e8f2a22b42ca11a7021b7f01ddba9a6e2f
      * TODO: Add O3' coordinates for the DNA C3'-exo configuration.
      */
     private double[] O3sNorthCoords = null;

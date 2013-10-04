@@ -4553,7 +4553,11 @@ public class GeneralizedKirkwood {
             private double vdwrad[] = new double[nAtoms];
             private double radius[] = new double[nAtoms];
             private double a[][] = new double[3][nAtoms];
+<<<<<<< HEAD
             private double dex[][] = new double[3][nAtoms];
+=======
+            private double dex[][] = new double[3][nAtoms]; 
+>>>>>>> fcefa7e8f2a22b42ca11a7021b7f01ddba9a6e2f
             // Extra padding to avert cache interference.
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
             private long pad8, pad9, pada, padb, padc, padd, pade, padf;
@@ -4578,7 +4582,11 @@ public class GeneralizedKirkwood {
                 final double exclude = 1.4;
 
                 /*
+<<<<<<< HEAD
                  * Set atom coordinates and radii, the excluded buffer
+=======
+                 * Set atom coordinates and radii, the excluded buffer 
+>>>>>>> fcefa7e8f2a22b42ca11a7021b7f01ddba9a6e2f
                  * radius ("exclude") is added to atomic radii.
                  */
 
@@ -4643,9 +4651,15 @@ public class GeneralizedKirkwood {
 
 /*
  * Ignore all atoms that are completely inside another atom;
+<<<<<<< HEAD
  * may give nonsense results if this step is not taken.
  */
 
+=======
+ * may give nonsense results if this step is not taken. 
+ */
+     
+>>>>>>> fcefa7e8f2a22b42ca11a7021b7f01ddba9a6e2f
    /*   for(i=0; i < nAtoms-1; i++) {
          if (!skip[i]) {
             for(j=i+1; j < nAtoms; j++) {
@@ -5365,4 +5379,8 @@ c
             }
         }
     }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> fcefa7e8f2a22b42ca11a7021b7f01ddba9a6e2f
