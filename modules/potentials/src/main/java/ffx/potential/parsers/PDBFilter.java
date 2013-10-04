@@ -113,6 +113,7 @@ public final class PDBFilter extends SystemFilter {
      */
     public void mutate(Character chainID, int resID, String name) {
         if (name != null && name.length() == 3) {
+            logger.info(String.format(" Mutating chain %c residue %d to %s.", chainID, resID, name));
             mutate = true;
             mutateResID = resID;
             mutateChainID = chainID;
@@ -121,7 +122,8 @@ public final class PDBFilter extends SystemFilter {
     }
 
     /**
-     * <p>clearSegIDs</p>
+     * <p>
+     * clearSegIDs</p>
      */
     public void clearSegIDs() {
         segIDs.clear();
@@ -163,7 +165,6 @@ public final class PDBFilter extends SystemFilter {
             return currentSegID;
         }
 
-
         // Loop through existing segIDs to find the first one that is unused.
         int n = segIDs.size();
         int count = 0;
@@ -195,7 +196,8 @@ public final class PDBFilter extends SystemFilter {
     private HashMap<Integer, Atom> atoms = new HashMap<Integer, Atom>();
 
     /**
-     * <p>Constructor for PDBFilter.</p>
+     * <p>
+     * Constructor for PDBFilter.</p>
      *
      * @param files a {@link java.util.List} object.
      * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly}
@@ -245,7 +247,8 @@ public final class PDBFilter extends SystemFilter {
     }
 
     /**
-     * <p>pdbForID</p>
+     * <p>
+     * pdbForID</p>
      *
      * @param id a {@link java.lang.String} object.
      * @return a {@link java.lang.String} object.
@@ -258,7 +261,8 @@ public final class PDBFilter extends SystemFilter {
     }
 
     /**
-     * <p>cifForID</p>
+     * <p>
+     * cifForID</p>
      *
      * @param id a {@link java.lang.String} object.
      * @return a {@link java.lang.String} object.
@@ -445,13 +449,16 @@ public final class PDBFilter extends SystemFilter {
                             Character chainID = line.substring(21, 22).charAt(0);
                             String segID = getSegID(chainID);
                             int resSeq = new Integer(Hybrid36.decode(4, line.substring(22, 26)));
+                            boolean printAtom = false;
                             if (mutate && chainID.equals(mutateChainID) && mutateResID == resSeq) {
-                                logger.info(" Mutate code reached");
                                 String atomName = name.toUpperCase();
                                 if (atomName.equals("N") || atomName.equals("C")
                                         || atomName.equals("O") || atomName.equals("CA")) {
+                                    printAtom = true;
                                     resName = mutateToResname;
                                 } else {
+                                    logger.info(String.format(" Deleting atom %s of %s %d",
+                                            atomName, resName, resSeq));
                                     break;
                                 }
                             }
@@ -476,6 +483,9 @@ public final class PDBFilter extends SystemFilter {
                                 // Check if the newAtom took the xyzIndex of a previous alternate conformer.
                                 if (newAtom.xyzIndex == 0) {
                                     newAtom.setXYZIndex(xyzIndex++);
+                                }
+                                if (printAtom) {
+                                    logger.info(newAtom.toString());
                                 }
                             }
                             break;
@@ -844,7 +854,8 @@ public final class PDBFilter extends SystemFilter {
     }
 
     /**
-     * <p>numberAtoms</p>
+     * <p>
+     * numberAtoms</p>
      */
     public void numberAtoms() {
         int index = 1;
@@ -1080,7 +1091,6 @@ public final class PDBFilter extends SystemFilter {
                 }
             }
         }
-
 
         // Assign small molecule atom types.
         ArrayList<Molecule> molecules = activeMolecularAssembly.getMolecules();
@@ -2825,7 +2835,8 @@ public final class PDBFilter extends SystemFilter {
     }
 
     /**
-     * <p>padRight</p>
+     * <p>
+     * padRight</p>
      *
      * @param s a {@link java.lang.String} object.
      * @param n a int.
@@ -2836,7 +2847,8 @@ public final class PDBFilter extends SystemFilter {
     }
 
     /**
-     * <p>padLeft</p>
+     * <p>
+     * padLeft</p>
      *
      * @param s a {@link java.lang.String} object.
      * @param n a int.
@@ -2847,7 +2859,8 @@ public final class PDBFilter extends SystemFilter {
     }
 
     /**
-     * <p>writeFileWithHeader</p>
+     * <p>
+     * writeFileWithHeader</p>
      *
      * @param saveFile a {@link java.io.File} object.
      * @param header a {@link java.lang.StringBuilder} object.
@@ -3225,7 +3238,8 @@ public final class PDBFilter extends SystemFilter {
     }
 
     /**
-     * <p>writeAtom</p>
+     * <p>
+     * writeAtom</p>
      *
      * @param atom a {@link ffx.potential.bonded.Atom} object.
      * @param serial a int.
@@ -3310,15 +3324,15 @@ public final class PDBFilter extends SystemFilter {
         listMode = set;
         listOutput = new ArrayList<String>();
     }
-    
+
     public ArrayList<String> getListOutput() {
         return listOutput;
     }
-    
+
     public void clearListOutput() {
         listOutput.clear();
     }
-    
+
     /**
      * The location of a residue within a chain.
      */

@@ -44,12 +44,11 @@ import ffx.potential.bonded.Atom;
  * The NeighborList class builds Verlet lists in parallel via a spatial
  * decomposition.
  * <br>
- * <ol><li> The unit cell is partitioned into
- * <code>nA * nB * nC</code> smaller axis-aligned cells, where {nA, nB, nC} are
- * chosen as large as possible subject to the criteria that the length of each
- * side of a sub-volume (rCellA, rCellB, rCellC) multiplied by (nEdgeA, nEdgeB,
- * nEdgeC), respectively, must be greater than the cutoff distance
- * <code>Rcut</code> plus a buffer distance
+ * <ol><li> The unit cell is partitioned into <code>nA * nB * nC</code> smaller
+ * axis-aligned cells, where {nA, nB, nC} are chosen as large as possible
+ * subject to the criteria that the length of each side of a sub-volume (rCellA,
+ * rCellB, rCellC) multiplied by (nEdgeA, nEdgeB, nEdgeC), respectively, must be
+ * greater than the cutoff distance <code>Rcut</code> plus a buffer distance
  * <code>delta</code>:
  * <center><code>rCellA * nEdgeA >= (Rcut + delta)</code></center>
  * <center><code>rCellB * nEdgeB >= (Rcut + delta)</code></center>
@@ -58,12 +57,14 @@ import ffx.potential.bonded.Atom;
  * All neighbors of an atom are in a block of
  * (2*nEdgeA+1)(2*nEdgeB+1)(2*nEdgeC+1) neighborCells. </li>
  * <br>
- * <p><li>
+ * <p>
+ * <li>
  * Interactions between an atom and neighbors in the asymmetric unit require
  * only half the neighboring cells to be searched to avoid double counting.
  * However, enumeration of interactions between an atom in the asymmetric unit
  * and its neighbors in a symmetry mate require all cells to be searched. </li>
- * <p> <li> Verlet lists from the search are stored, which reduces the number of
+ * <p>
+ * <li> Verlet lists from the search are stored, which reduces the number of
  * neighbors whose distances must be calculated by a factor of approximately:
  * <center><code>(4/3*Pi*Rcut^3)/(neighborCells*Vcell)</code></center> About 1/3
  * as many interactions are contained in the Verlet lists as in the neighboring
@@ -250,6 +251,7 @@ public class NeighborList extends ParallelRegion {
      * Number of threads used by the parallelTeam.
      */
     private final int threadCount;
+
     /**
      * A Verlet list loop for each thread.
      */
@@ -469,15 +471,16 @@ public class NeighborList extends ParallelRegion {
 
     /**
      * Return the Verlet list.
-     * @return  The Verlet list of size [nSymm][nAtoms][nNeighbors].
+     *
+     * @return The Verlet list of size [nSymm][nAtoms][nNeighbors].
      */
     public int[][][] getNeighborList() {
         return lists;
     }
 
     /**
-     * <p>Getter for the field
-     * <code>pairwiseSchedule</code>.</p>
+     * <p>
+     * Getter for the field <code>pairwiseSchedule</code>.</p>
      *
      * @return a {@link ffx.potential.nonbonded.PairwiseSchedule} object.
      */

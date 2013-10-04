@@ -823,6 +823,10 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         return sb.toString();
     }
 
+    public ParallelTeam getParallelTeam() {
+        return parallelTeam;
+    }
+
     /**
      * <p>Getter for the field
      * <code>crystal</code>.</p>

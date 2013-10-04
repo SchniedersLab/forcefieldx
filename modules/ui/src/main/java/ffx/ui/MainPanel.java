@@ -305,7 +305,9 @@ public final class MainPanel extends JPanel implements ActionListener,
     @Override
     public void actionPerformed(ActionEvent evt) {
         String arg = evt.getActionCommand();
-        logger.info(" Action: " + arg);
+        if (logger.isLoggable(Level.FINEST)) {
+            logger.finest(" Action: " + arg);
+        }
         // File Commands
         if (arg.equals("Open")) {
             open();

@@ -992,7 +992,7 @@ public class ParticleMeshEwald implements LambdaInterface {
          */
         generalizedKirkwoodTerm = forceField.getBoolean(ForceFieldBoolean.GKTERM, false);
         if (generalizedKirkwoodTerm) {
-            generalizedKirkwood = new GeneralizedKirkwood(forceField, atoms, this, parallelTeam);
+            generalizedKirkwood = new GeneralizedKirkwood(forceField, atoms, this, crystal, parallelTeam);
         } else {
             generalizedKirkwood = null;
         }

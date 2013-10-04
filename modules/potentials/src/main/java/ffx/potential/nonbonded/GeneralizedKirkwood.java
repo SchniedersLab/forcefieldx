@@ -27,7 +27,16 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static java.lang.Math.*;
+import static java.lang.Math.PI;
+import static java.lang.Math.abs;
+import static java.lang.Math.acos;
+import static java.lang.Math.asin;
+import static java.lang.Math.exp;
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+import static java.lang.Math.pow;
+import static java.lang.Math.sqrt;
+import static java.lang.Math.tanh;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.ParallelRegion;
@@ -37,6 +46,7 @@ import edu.rit.pj.reduction.SharedDouble;
 import edu.rit.pj.reduction.SharedDoubleArray;
 import edu.rit.pj.reduction.SharedInteger;
 
+import ffx.crystal.Crystal;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
@@ -45,7 +55,17 @@ import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.VDWType;
 
-import static ffx.potential.parameters.MultipoleType.*;
+import static ffx.potential.parameters.MultipoleType.ELECTRIC;
+import static ffx.potential.parameters.MultipoleType.t000;
+import static ffx.potential.parameters.MultipoleType.t001;
+import static ffx.potential.parameters.MultipoleType.t002;
+import static ffx.potential.parameters.MultipoleType.t010;
+import static ffx.potential.parameters.MultipoleType.t011;
+import static ffx.potential.parameters.MultipoleType.t020;
+import static ffx.potential.parameters.MultipoleType.t100;
+import static ffx.potential.parameters.MultipoleType.t101;
+import static ffx.potential.parameters.MultipoleType.t110;
+import static ffx.potential.parameters.MultipoleType.t200;
 
 /**
  * This Generalized Kirkwood class implements GK for the AMOEBA polarizable
@@ -94,7 +114,6 @@ public class GeneralizedKirkwood {
     private static final double rmino = 1.7025;
     private static final double rminh = 1.3275;
     private static final double probe = 1.4;
-    private static final double maxarc = 1000;
     private boolean use[] = null;
     private final Polarization polarization;
     private final Atom atoms[];
@@ -108,6 +127,7 @@ public class GeneralizedKirkwood {
     private final double born[];
     private final int nAtoms;
     private final ParallelTeam parallelTeam;
+    private final Crystal crystal;
     private final BornRadiiRegion bornRadiiRegion;
     private final PermanentGKFieldRegion permanentGKFieldRegion;
     private final InducedGKFieldRegion inducedGKFieldRegion;
@@ -118,6 +138,7 @@ public class GeneralizedKirkwood {
     private final CavitationRegion cavitationRegion;
     private final double grad[][][];
     private final double torque[][][];
+    private final int neighborLists[][][];
     private final SharedDoubleArray sharedBornGrad;
     protected final SharedDoubleArray sharedGKField[];
     protected final SharedDoubleArray sharedGKFieldCR[];
@@ -126,22 +147,25 @@ public class GeneralizedKirkwood {
     private NonPolar nonPolar = NonPolar.CAV_DISP;
 
     /**
-     * <p>Constructor for GeneralizedKirkwood.</p>
+     * <p>
+     * Constructor for GeneralizedKirkwood.</p>
      *
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
      * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
      * @param particleMeshEwald a
      * {@link ffx.potential.nonbonded.ParticleMeshEwald} object.
+     * @param crystal a {@link ffx.crystal.Crystal} object.
      * @param parallelTeam a {@link edu.rit.pj.ParallelTeam} object.
      */
     public GeneralizedKirkwood(ForceField forceField, Atom[] atoms,
-            ParticleMeshEwald particleMeshEwald,
+            ParticleMeshEwald particleMeshEwald, Crystal crystal,
             ParallelTeam parallelTeam) {
 
         this.parallelTeam = parallelTeam;
         nAtoms = atoms.length;
         polarization = particleMeshEwald.polarization;
-
+        neighborLists = particleMeshEwald.neighborLists;
+        this.crystal = crystal;
         this.atoms = atoms;
         x = particleMeshEwald.coordinates[0][0];
         y = particleMeshEwald.coordinates[0][1];
@@ -269,7 +293,8 @@ public class GeneralizedKirkwood {
     }
 
     /**
-     * <p>computeBornRadii</p>
+     * <p>
+     * computeBornRadii</p>
      */
     public void computeBornRadii() {
         try {
@@ -291,7 +316,8 @@ public class GeneralizedKirkwood {
     }
 
     /**
-     * <p>computePermanentGKField</p>
+     * <p>
+     * computePermanentGKField</p>
      */
     public void computePermanentGKField() {
         try {
@@ -303,7 +329,8 @@ public class GeneralizedKirkwood {
     }
 
     /**
-     * <p>computeInducedGKField</p>
+     * <p>
+     * computeInducedGKField</p>
      */
     public void computeInducedGKField() {
         try {
@@ -315,7 +342,8 @@ public class GeneralizedKirkwood {
     }
 
     /**
-     * <p>solvationEnergy</p>
+     * <p>
+     * solvationEnergy</p>
      *
      * @param gradient a boolean.
      * @param print a boolean.
@@ -391,7 +419,8 @@ public class GeneralizedKirkwood {
     }
 
     /**
-     * <p>getInteractions</p>
+     * <p>
+     * getInteractions</p>
      *
      * @return a int.
      */
@@ -456,13 +485,16 @@ public class GeneralizedKirkwood {
                         final double zi = z[i];
                         // Integral initialized to the limit of atom alone in solvent.
                         double sum = pi43 / (baseRi * baseRi * baseRi);
-                        for (int k = 0; k < nAtoms; k++) {
+                        int list[] = neighborLists[0][i];
+                        int npair = list.length;
+                        for (int l = 0; l < npair; l++) {
+                            int k = list[l];
                             final double baseRk = baseRadius[k];
                             if (i != k && baseRk > 0.0 && use[k]) {
                                 final double xr = x[k] - xi;
                                 final double yr = y[k] - yi;
                                 final double zr = z[k] - zi;
-                                final double r2 = xr * xr + yr * yr + zr * zr;
+                                final double r2 = crystal.image(xr, yr, zr);
                                 if (r2 > cut2) {
                                     continue;
                                 }
@@ -1097,6 +1129,7 @@ public class GeneralizedKirkwood {
             private final double fx_local[];
             private final double fy_local[];
             private final double fz_local[];
+            private final double dx_local[];
             // Extra padding to avert cache interference.
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
             private long pad8, pad9, pada, padb, padc, padd, pade, padf;
@@ -1116,6 +1149,7 @@ public class GeneralizedKirkwood {
                 fx_local = new double[nAtoms];
                 fy_local = new double[nAtoms];
                 fz_local = new double[nAtoms];
+                dx_local = new double[3];
             }
 
             @Override
@@ -1148,20 +1182,26 @@ public class GeneralizedKirkwood {
                     final double qyzi = multipolei[t011] / 3.0;
                     final double qzzi = multipolei[t002] / 3.0;
                     final double rbi = born[i];
-                    for (int k = i; k < nAtoms; k++) {
+                    int list[] = neighborLists[0][i];
+                    int npair = list.length;
+                    for (int l = 0; l < npair; l++) {
+                        int k = list[l];
                         if (!use[k]) {
                             continue;
                         }
-                        final double xr = x[k] - xi;
-                        final double yr = y[k] - yi;
-                        final double zr = z[k] - zi;
-                        final double xr2 = xr * xr;
-                        final double yr2 = yr * yr;
-                        final double zr2 = zr * zr;
-                        final double r2 = xr2 + yr2 + zr2;
+                        dx_local[0] = x[k] - xi;
+                        dx_local[1] = y[k] - yi;
+                        dx_local[2] = z[k] - zi;
+                        final double r2 = crystal.image(dx_local);
                         if (r2 > cut2) {
                             continue;
                         }
+                        double xr = dx_local[0];
+                        double yr = dx_local[1];
+                        double zr = dx_local[2];
+                        double xr2 = xr * xr;
+                        double yr2 = yr * yr;
+                        double zr2 = zr * zr;
                         final double rbk = born[k];
                         final double multipolek[] = globalMultipole[k];
                         final double ck = multipolek[t000];
@@ -1419,6 +1459,7 @@ public class GeneralizedKirkwood {
             private final double fxCR_local[];
             private final double fyCR_local[];
             private final double fzCR_local[];
+            private final double dx_local[];
             // Extra padding to avert cache interference.
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
             private long pad8, pad9, pada, padb, padc, padd, pade, padf;
@@ -1434,6 +1475,7 @@ public class GeneralizedKirkwood {
                 fxCR_local = new double[nAtoms];
                 fyCR_local = new double[nAtoms];
                 fzCR_local = new double[nAtoms];
+                dx_local = new double[3];
             }
 
             @Override
@@ -1464,20 +1506,26 @@ public class GeneralizedKirkwood {
                     final double uiyCR = inducedDipoleCR[i][1];
                     final double uizCR = inducedDipoleCR[i][2];
                     final double rbi = born[i];
-                    for (int k = i; k < nAtoms; k++) {
+                    int list[] = neighborLists[0][i];
+                    int nPair = list.length;
+                    for (int l = 0; l < nPair; l++) {
+                        int k = list[l];
                         if (!use[k]) {
                             continue;
                         }
-                        final double xr = x[k] - xi;
-                        final double yr = y[k] - yi;
-                        final double zr = z[k] - zi;
-                        final double xr2 = xr * xr;
-                        final double yr2 = yr * yr;
-                        final double zr2 = zr * zr;
-                        final double r2 = xr2 + yr2 + zr2;
+                        dx_local[0] = x[k] - xi;
+                        dx_local[1] = y[k] - yi;
+                        dx_local[2] = z[k] - zi;
+                        final double r2 = crystal.image(dx_local);
                         if (r2 > cut2) {
                             continue;
                         }
+                        double xr = dx_local[0];
+                        double yr = dx_local[1];
+                        double zr = dx_local[2];
+                        double xr2 = xr * xr;
+                        double yr2 = yr * yr;
+                        double zr2 = zr * zr;
                         final double ukx = inducedDipole[k][0];
                         final double uky = inducedDipole[k][1];
                         final double ukz = inducedDipole[k][2];
@@ -1661,6 +1709,7 @@ public class GeneralizedKirkwood {
             private double tZ[];
             private final double gb_local[];
             private final double gbi_local[];
+            private final double dx_local[];
             private double ci, uxi, uyi, uzi, qxxi, qxyi, qxzi, qyyi, qyzi, qzzi;
             private double ck, uxk, uyk, uzk, qxxk, qxyk, qxzk, qyyk, qyzk, qzzk;
             private double dxi, dyi, dzi, pxi, pyi, pzi, sxi, syi, szi;
@@ -1686,6 +1735,7 @@ public class GeneralizedKirkwood {
                 gqyz = new double[31];
                 gb_local = new double[nAtoms];
                 gbi_local = new double[nAtoms];
+                dx_local = new double[3];
             }
 
             public void setGradient(boolean gradient) {
@@ -1739,20 +1789,26 @@ public class GeneralizedKirkwood {
                     syi = dyi + pyi;
                     szi = dzi + pzi;
                     rbi = born[i];
-                    for (k = i; k < nAtoms; k++) {
+                    int list[] = neighborLists[0][i];
+                    int nPair = list.length;
+                    for (int l = 0; l < nPair; l++) {
+                        k = list[l];
                         if (!use[k]) {
                             continue;
                         }
-                        xr = x[k] - xi;
-                        yr = y[k] - yi;
-                        zr = z[k] - zi;
-                        xr2 = xr * xr;
-                        yr2 = yr * yr;
-                        zr2 = zr * zr;
-                        r2 = xr2 + yr2 + zr2;
+                        dx_local[0] = x[k] - xi;
+                        dx_local[1] = y[k] - yi;
+                        dx_local[2] = z[k] - zi;
+                        r2 = crystal.image(dx_local);
                         if (r2 > cut2) {
                             continue;
                         }
+                        xr = dx_local[0];
+                        yr = dx_local[1];
+                        zr = dx_local[2];
+                        xr2 = xr * xr;
+                        yr2 = yr * yr;
+                        zr2 = zr * zr;
                         rbk = born[k];
                         final double multipolek[] = globalMultipole[k];
                         ck = multipolek[t000];
@@ -2722,43 +2778,43 @@ public class GeneralizedKirkwood {
                  * Torque on quadrupoles due to permanent reaction field
                  * gradient.
                  */
-                final double ixx =
-                        -0.5 * (ck * gqxx[1] + uxk * gqxx[2] + uyk * gqxx[3] + uzk * gqxx[4]
+                final double ixx
+                        = -0.5 * (ck * gqxx[1] + uxk * gqxx[2] + uyk * gqxx[3] + uzk * gqxx[4]
                         + qxxk * gqxx[5] + qyyk * gqxx[8] + qzzk * gqxx[10]
                         + 2.0 * (qxyk * gqxx[6] + qxzk * gqxx[7] + qyzk * gqxx[9])
                         + ck * gc[5] + uxk * gux[5] + uyk * guy[5] + uzk * guz[5]
                         + qxxk * gqxx[5] + qyyk * gqyy[5] + qzzk * gqzz[5]
                         + 2.0 * (qxyk * gqxy[5] + qxzk * gqxz[5] + qyzk * gqyz[5]));
-                final double ixy =
-                        -0.5 * (ck * gqxy[1] + uxk * gqxy[2] + uyk * gqxy[3] + uzk * gqxy[4]
+                final double ixy
+                        = -0.5 * (ck * gqxy[1] + uxk * gqxy[2] + uyk * gqxy[3] + uzk * gqxy[4]
                         + qxxk * gqxy[5] + qyyk * gqxy[8] + qzzk * gqxy[10]
                         + 2.0 * (qxyk * gqxy[6] + qxzk * gqxy[7] + qyzk * gqxy[9])
                         + ck * gc[6] + uxk * gux[6] + uyk * guy[6] + uzk * guz[6]
                         + qxxk * gqxx[6] + qyyk * gqyy[6] + qzzk * gqzz[6]
                         + 2.0 * (qxyk * gqxy[6] + qxzk * gqxz[6] + qyzk * gqyz[6]));
-                final double ixz =
-                        -0.5 * (ck * gqxz[1] + uxk * gqxz[2] + uyk * gqxz[3] + uzk * gqxz[4]
+                final double ixz
+                        = -0.5 * (ck * gqxz[1] + uxk * gqxz[2] + uyk * gqxz[3] + uzk * gqxz[4]
                         + qxxk * gqxz[5] + qyyk * gqxz[8] + qzzk * gqxz[10]
                         + 2.0 * (qxyk * gqxz[6] + qxzk * gqxz[7] + qyzk * gqxz[9])
                         + ck * gc[7] + uxk * gux[7] + uyk * guy[7] + uzk * guz[7]
                         + qxxk * gqxx[7] + qyyk * gqyy[7] + qzzk * gqzz[7]
                         + 2.0 * (qxyk * gqxy[7] + qxzk * gqxz[7] + qyzk * gqyz[7]));
-                final double iyy =
-                        -0.5 * (ck * gqyy[1] + uxk * gqyy[2] + uyk * gqyy[3] + uzk * gqyy[4]
+                final double iyy
+                        = -0.5 * (ck * gqyy[1] + uxk * gqyy[2] + uyk * gqyy[3] + uzk * gqyy[4]
                         + qxxk * gqyy[5] + qyyk * gqyy[8] + qzzk * gqyy[10]
                         + 2.0 * (qxyk * gqyy[6] + qxzk * gqyy[7] + qyzk * gqyy[9])
                         + ck * gc[8] + uxk * gux[8] + uyk * guy[8] + uzk * guz[8]
                         + qxxk * gqxx[8] + qyyk * gqyy[8] + qzzk * gqzz[8]
                         + 2.0 * (qxyk * gqxy[8] + qxzk * gqxz[8] + qyzk * gqyz[8]));
-                final double iyz =
-                        -0.5 * (ck * gqyz[1] + uxk * gqyz[2] + uyk * gqyz[3] + uzk * gqyz[4]
+                final double iyz
+                        = -0.5 * (ck * gqyz[1] + uxk * gqyz[2] + uyk * gqyz[3] + uzk * gqyz[4]
                         + qxxk * gqyz[5] + qyyk * gqyz[8] + qzzk * gqyz[10]
                         + 2.0 * (qxyk * gqyz[6] + qxzk * gqyz[7] + qyzk * gqyz[9])
                         + ck * gc[9] + uxk * gux[9] + uyk * guy[9] + uzk * guz[9]
                         + qxxk * gqxx[9] + qyyk * gqyy[9] + qzzk * gqzz[9]
                         + 2.0 * (qxyk * gqxy[9] + qxzk * gqxz[9] + qyzk * gqyz[9]));
-                final double izz =
-                        -0.5 * (ck * gqzz[1] + uxk * gqzz[2] + uyk * gqzz[3] + uzk * gqzz[4]
+                final double izz
+                        = -0.5 * (ck * gqzz[1] + uxk * gqzz[2] + uyk * gqzz[3] + uzk * gqzz[4]
                         + qxxk * gqzz[5] + qyyk * gqzz[8] + qzzk * gqzz[10]
                         + 2.0 * (qxyk * gqzz[6] + qxzk * gqzz[7] + qyzk * gqzz[9])
                         + ck * gc[10] + uxk * gux[10] + uyk * guy[10] + uzk * guz[10]
@@ -2767,43 +2823,43 @@ public class GeneralizedKirkwood {
                 final double iyx = ixy;
                 final double izx = ixz;
                 final double izy = iyz;
-                final double kxx =
-                        -0.5 * (ci * gqxx[1] - uxi * gqxx[2] - uyi * gqxx[3] - uzi * gqxx[4]
+                final double kxx
+                        = -0.5 * (ci * gqxx[1] - uxi * gqxx[2] - uyi * gqxx[3] - uzi * gqxx[4]
                         + qxxi * gqxx[5] + qyyi * gqxx[8] + qzzi * gqxx[10]
                         + 2.0 * (qxyi * gqxx[6] + qxzi * gqxx[7] + qyzi * gqxx[9])
                         + ci * gc[5] - uxi * gux[5] - uyi * guy[5] - uzi * guz[5]
                         + qxxi * gqxx[5] + qyyi * gqyy[5] + qzzi * gqzz[5]
                         + 2.0 * (qxyi * gqxy[5] + qxzi * gqxz[5] + qyzi * gqyz[5]));
-                double kxy =
-                        -0.5 * (ci * gqxy[1] - uxi * gqxy[2] - uyi * gqxy[3] - uzi * gqxy[4]
+                double kxy
+                        = -0.5 * (ci * gqxy[1] - uxi * gqxy[2] - uyi * gqxy[3] - uzi * gqxy[4]
                         + qxxi * gqxy[5] + qyyi * gqxy[8] + qzzi * gqxy[10]
                         + 2.0 * (qxyi * gqxy[6] + qxzi * gqxy[7] + qyzi * gqxy[9])
                         + ci * gc[6] - uxi * gux[6] - uyi * guy[6] - uzi * guz[6]
                         + qxxi * gqxx[6] + qyyi * gqyy[6] + qzzi * gqzz[6]
                         + 2.0 * (qxyi * gqxy[6] + qxzi * gqxz[6] + qyzi * gqyz[6]));
-                double kxz =
-                        -0.5 * (ci * gqxz[1] - uxi * gqxz[2] - uyi * gqxz[3] - uzi * gqxz[4]
+                double kxz
+                        = -0.5 * (ci * gqxz[1] - uxi * gqxz[2] - uyi * gqxz[3] - uzi * gqxz[4]
                         + qxxi * gqxz[5] + qyyi * gqxz[8] + qzzi * gqxz[10]
                         + 2.0 * (qxyi * gqxz[6] + qxzi * gqxz[7] + qyzi * gqxz[9])
                         + ci * gc[7] - uxi * gux[7] - uyi * guy[7] - uzi * guz[7]
                         + qxxi * gqxx[7] + qyyi * gqyy[7] + qzzi * gqzz[7]
                         + 2.0 * (qxyi * gqxy[7] + qxzi * gqxz[7] + qyzi * gqyz[7]));
-                double kyy =
-                        -0.5 * (ci * gqyy[1] - uxi * gqyy[2] - uyi * gqyy[3] - uzi * gqyy[4]
+                double kyy
+                        = -0.5 * (ci * gqyy[1] - uxi * gqyy[2] - uyi * gqyy[3] - uzi * gqyy[4]
                         + qxxi * gqyy[5] + qyyi * gqyy[8] + qzzi * gqyy[10]
                         + 2.0 * (qxyi * gqyy[6] + qxzi * gqyy[7] + qyzi * gqyy[9])
                         + ci * gc[8] - uxi * gux[8] - uyi * guy[8] - uzi * guz[8]
                         + qxxi * gqxx[8] + qyyi * gqyy[8] + qzzi * gqzz[8]
                         + 2.0 * (qxyi * gqxy[8] + qxzi * gqxz[8] + qyzi * gqyz[8]));
-                double kyz =
-                        -0.5 * (ci * gqyz[1] - uxi * gqyz[2] - uyi * gqyz[3] - uzi * gqyz[4]
+                double kyz
+                        = -0.5 * (ci * gqyz[1] - uxi * gqyz[2] - uyi * gqyz[3] - uzi * gqyz[4]
                         + qxxi * gqyz[5] + qyyi * gqyz[8] + qzzi * gqyz[10]
                         + 2.0 * (qxyi * gqyz[6] + qxzi * gqyz[7] + qyzi * gqyz[9])
                         + ci * gc[9] - uxi * gux[9] - uyi * guy[9] - uzi * guz[9]
                         + qxxi * gqxx[9] + qyyi * gqyy[9] + qzzi * gqzz[9]
                         + 2.0 * (qxyi * gqxy[9] + qxzi * gqxz[9] + qyzi * gqyz[9]));
-                double kzz =
-                        -0.5 * (ci * gqzz[1] - uxi * gqzz[2] - uyi * gqzz[3] - uzi * gqzz[4]
+                double kzz
+                        = -0.5 * (ci * gqzz[1] - uxi * gqzz[2] - uyi * gqzz[3] - uzi * gqzz[4]
                         + qxxi * gqzz[5] + qyyi * gqzz[8] + qzzi * gqzz[10]
                         + 2.0 * (qxyi * gqzz[6] + qxzi * gqzz[7] + qyzi * gqzz[9])
                         + ci * gc[10] - uxi * gux[10] - uyi * guy[10] - uzi * guz[10]
@@ -3164,6 +3220,7 @@ public class GeneralizedKirkwood {
         private class BornCRLoop extends IntegerForLoop {
 
             private final double factor = -pow(PI, third) * pow(6.0, (2.0 * third)) / 9.0;
+            private final double dx_local[];
             private double gX[];
             private double gY[];
             private double gZ[];
@@ -3172,9 +3229,7 @@ public class GeneralizedKirkwood {
             private long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
             public BornCRLoop() {
-                gX = new double[nAtoms];
-                gY = new double[nAtoms];
-                gZ = new double[nAtoms];
+                dx_local = new double[3];
             }
 
             @Override
@@ -3199,19 +3254,25 @@ public class GeneralizedKirkwood {
                         final double rbi = born[i];
                         double term = pi43 / (rbi * rbi * rbi);
                         term = factor / pow(term, (4.0 * third));
-                        for (int k = 0; k < nAtoms; k++) {
+                        int list[] = neighborLists[0][i];
+                        int nPair = list.length;
+                        for (int l = 0; l < nPair; l++) {
+                            int k = list[l];
                             if (!use[k]) {
                                 continue;
                             }
                             final double rk = baseRadius[k];
                             if (k != i && rk > 0.0) {
-                                final double xr = x[k] - xi;
-                                final double yr = y[k] - yi;
-                                final double zr = z[k] - zi;
-                                final double r2 = xr * xr + yr * yr + zr * zr;
+                                dx_local[0] = x[k] - xi;
+                                dx_local[1] = y[k] - yi;
+                                dx_local[2] = z[k] - zi;
+                                double r2 = crystal.image(dx_local);
                                 if (r2 > cut2) {
                                     continue;
                                 }
+                                final double xr = dx_local[0];
+                                final double yr = dx_local[1];
+                                final double zr = dx_local[2];
                                 final double sk = rk * overlapScale[k];
                                 final double sk2 = sk * sk;
                                 final double r = sqrt(r2);
@@ -3367,9 +3428,14 @@ public class GeneralizedKirkwood {
             private double gY[];
             private double gZ[];
             private double edisp;
+            private final double dx_local[];
             // Extra padding to avert cache interference.
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
             private long pad8, pad9, pada, padb, padc, padd, pade, padf;
+
+            public DispersionLoop() {
+                dx_local = new double[3];
+            }
 
             @Override
             public void start() {
@@ -3408,17 +3474,23 @@ public class GeneralizedKirkwood {
                     final double zi = z[i];
                     // Integral initialized to the limit of atom alone in solvent.
                     double sum = 0.0;
-                    for (int k = 0; k < nAtoms; k++) {
+
+                    int list[] = neighborLists[0][i];
+                    int npair = list.length;
+                    for (int l = 0; l < npair; l++) {
+                        int k = list[l];
                         final double rk = rDisp[k];
                         if (i != k && rk > 0.0 && use[k]) {
-                            final double xr = xi - x[k];
-                            final double yr = yi - y[k];
-                            final double zr = zi - z[k];
-                            final double r2 = xr * xr + yr * yr + zr * zr;
-                            /*
-                             if (r2 > cut2) {
-                             continue;
-                             } */
+                            dx_local[0] = xi - x[k];
+                            dx_local[1] = yi - y[k];
+                            dx_local[2] = zi - z[k];
+                            double r2 = crystal.image(dx_local);
+                            if (r2 > cut2) {
+                                continue;
+                            }
+                            double xr = dx_local[0];
+                            double yr = dx_local[1];
+                            double zr = dx_local[2];
                             final double r = sqrt(r2);
                             final double r3 = r * r2;
                             double sk = rk * dispersionOverlapScaleFactor;
@@ -3633,7 +3705,7 @@ public class GeneralizedKirkwood {
         private final CavitationLoop cavitationLoop[];
         private final SharedDouble sharedCavitation;
         private boolean gradient = false;
-        private int maxarc = 1000;
+        private final int maxarc = 1000;
 
         public CavitationRegion(int nt) {
             cavitationLoop = new CavitationLoop[nt];

@@ -70,13 +70,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     public static final Map<Integer, Double> AtomVDW;
     /**
-     * Hybridizations
-     */
-    /**
-     * Constant
-     * <code>SP2=3</code>
-     */
-    /**
      * Constant
      * <code>SP3=4</code>
      */
@@ -160,7 +153,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
                 AtomColor.put(i, RendererCache.GREEN);
             }
         }
-         
+
         // Default hybridization
         hybridTable.put("1", 1);
         hybridTable.put("6", 4);
@@ -171,7 +164,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
         hybridTable.put("19", 0);
         hybridTable.put("26", 8);
     }
-    
+
     private boolean hetatm;
     /**
      * Either the PDB "name" record or the molecular mechanics atom type name.
@@ -430,13 +423,13 @@ public class Atom extends MSNode implements Comparable<Atom> {
 
     public Atom copy() {
         double coords[] = {xyz[0], xyz[1], xyz[2]};
-        Atom atom = new Atom(getXYZIndex(), getName(), getAltLoc(), coords, 
-                getResidueName(), getResidueNumber(), getChainID(), 
+        Atom atom = new Atom(getXYZIndex(), getName(), getAltLoc(), coords,
+                getResidueName(), getResidueNumber(), getChainID(),
                 getOccupancy(), getTempFactor(), getSegID());
         atom.setAtomType(getAtomType());
         return atom;
     }
-    
+
     /**
      * <p>isHydrogen</p>
      *
@@ -451,7 +444,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
         }
         return false;
     }
-    
+
     public boolean isActive() {
         return active;
     }
