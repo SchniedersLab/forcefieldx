@@ -114,7 +114,8 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
     }
 
     /**
-     * <p>incrementType</p>
+     * <p>
+     * incrementType</p>
      *
      * @param increment a int.
      */
@@ -350,98 +351,79 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
      */
     public static final int t000 = 0;
     /**
-     * Constant
-     * <code>t100=1</code>
+     * Constant <code>t100=1</code>
      */
     public static final int t100 = 1;
     /**
-     * Constant
-     * <code>t010=2</code>
+     * Constant <code>t010=2</code>
      */
     public static final int t010 = 2;
     /**
-     * Constant
-     * <code>t001=3</code>
+     * Constant <code>t001=3</code>
      */
     public static final int t001 = 3;
     /**
-     * Constant
-     * <code>t200=4</code>
+     * Constant <code>t200=4</code>
      */
     public static final int t200 = 4;
     /**
-     * Constant
-     * <code>t020=5</code>
+     * Constant <code>t020=5</code>
      */
     public static final int t020 = 5;
     /**
-     * Constant
-     * <code>t002=6</code>
+     * Constant <code>t002=6</code>
      */
     public static final int t002 = 6;
     /**
-     * Constant
-     * <code>t110=7</code>
+     * Constant <code>t110=7</code>
      */
     public static final int t110 = 7;
     /**
-     * Constant
-     * <code>t101=8</code>
+     * Constant <code>t101=8</code>
      */
     public static final int t101 = 8;
     /**
-     * Constant
-     * <code>t011=9</code>
+     * Constant <code>t011=9</code>
      */
     public static final int t011 = 9;
     /**
-     * Constant
-     * <code>t300=10</code>
+     * Constant <code>t300=10</code>
      */
     public static final int t300 = 10;
     /**
-     * Constant
-     * <code>t030=11</code>
+     * Constant <code>t030=11</code>
      */
     public static final int t030 = 11;
     /**
-     * Constant
-     * <code>t003=12</code>
+     * Constant <code>t003=12</code>
      */
     public static final int t003 = 12;
     /**
-     * Constant
-     * <code>t210=13</code>
+     * Constant <code>t210=13</code>
      */
     public static final int t210 = 13;
     /**
-     * Constant
-     * <code>t201=14</code>
+     * Constant <code>t201=14</code>
      */
     public static final int t201 = 14;
     /**
-     * Constant
-     * <code>t120=15</code>
+     * Constant <code>t120=15</code>
      */
     public static final int t120 = 15;
     /**
-     * Constant
-     * <code>t021=16</code>
+     * Constant <code>t021=16</code>
      */
     public static final int t021 = 16;
     /**
-     * Constant
-     * <code>t102=17</code>
+     * Constant <code>t102=17</code>
      */
     public static final int t102 = 17;
     /**
-     * Constant
-     * <code>t012=18</code>
+     * Constant <code>t012=18</code>
      */
     public static final int t012 = 18;
     /**
-     * Constant
-     * <code>t111=19</code>
+     * Constant <code>t111=19</code>
      */
     public static final int t111 = 19;
 }

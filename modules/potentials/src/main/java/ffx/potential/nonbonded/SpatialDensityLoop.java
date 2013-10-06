@@ -1,5 +1,6 @@
 /**
- * Title: Force Field X Description: Force Field X - Software for Molecular Biophysics
+ * Title: Force Field X Description: Force Field X - Software for Molecular
+ * Biophysics
  *
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2013.
  *
@@ -41,7 +42,8 @@ public abstract class SpatialDensityLoop extends IntegerForLoop {
     private int octant = 0;
 
     /**
-     * <p>Constructor for SpatialDensityLoop.</p>
+     * <p>
+     * Constructor for SpatialDensityLoop.</p>
      *
      * @param region a {@link ffx.potential.nonbonded.SpatialDensityRegion}
      * object.
@@ -72,7 +74,8 @@ public abstract class SpatialDensityLoop extends IntegerForLoop {
     }
 
     /**
-     * <p>setNsymm</p>
+     * <p>
+     * setNsymm</p>
      *
      * @param nSymm a int.
      */
@@ -82,8 +85,8 @@ public abstract class SpatialDensityLoop extends IntegerForLoop {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>octant</code>.</p>
+     * <p>
+     * Setter for the field <code>octant</code>.</p>
      *
      * @param octant a int.
      * @return a {@link ffx.potential.nonbonded.SpatialDensityLoop} object.
@@ -153,7 +156,8 @@ public abstract class SpatialDensityLoop extends IntegerForLoop {
     }
 
     /**
-     * <p>gridDensity</p>
+     * <p>
+     * gridDensity</p>
      *
      * @param iSymm a int.
      * @param iAtom a int.

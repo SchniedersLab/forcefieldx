@@ -49,9 +49,8 @@ public final class INTFileFilter extends FileFilter {
     /**
      * {@inheritDoc}
      *
-     * This method return
-     * <code>true</code> if the file is a directory or matches the extension for
-     * TINKER internal coordinates (*.INT).
+     * This method return <code>true</code> if the file is a directory or
+     * matches the extension for TINKER internal coordinates (*.INT).
      */
     @Override
     public boolean accept(File file) {
@@ -63,7 +62,8 @@ public final class INTFileFilter extends FileFilter {
     }
 
     /**
-     * <p>acceptDeep</p>
+     * <p>
+     * acceptDeep</p>
      *
      * @param parm a {@link java.io.File} object.
      * @return a boolean.

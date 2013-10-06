@@ -28,8 +28,8 @@ import ffx.potential.ResidueEnumerations.NucleicAcid3;
 import static java.lang.Math.max;
 
 /**
- * The Rotamer Class usually represents one immutable amino acid Rotamer.
- * It is additionally being extended to represent one nucleic acid Rotamer.
+ * The Rotamer Class usually represents one immutable amino acid Rotamer. It is
+ * additionally being extended to represent one nucleic acid Rotamer.
  *
  * @author Ava M. Lynn
  * @author Jacob M. Litman
@@ -56,7 +56,7 @@ public class Rotamer {
     public final int length;
 
     public Rotamer(AminoAcid3 name, double... values) {
-        length = values.length/2;
+        length = values.length / 2;
         angles = new double[max(length, 4)];
         sigmas = new double[max(length, 4)];
         for (int i = 0; i < length; i++) {
@@ -72,14 +72,14 @@ public class Rotamer {
         chi5 = chi6 = chi7 = 0;
         nucleicName = null;
     }
-    
-    public Rotamer (NucleicAcid3 name, double... values){
-        length = values.length/2;
+
+    public Rotamer(NucleicAcid3 name, double... values) {
+        length = values.length / 2;
         angles = new double[max(length, 7)];
         sigmas = new double[max(length, 7)];
         nucleicName = name;
         this.name = null;
-        for (int i = 0; i < length; i++){
+        for (int i = 0; i < length; i++) {
             int ii = 2 * i;
             angles[i] = values[ii];
             sigmas[i] = values[ii + 1];
@@ -96,7 +96,7 @@ public class Rotamer {
     @Override
     public String toString() {
         StringBuilder sb;
-        if (name != null){
+        if (name != null) {
             sb = new StringBuilder(name.toString());
         } else {
             sb = new StringBuilder(nucleicName.toString());

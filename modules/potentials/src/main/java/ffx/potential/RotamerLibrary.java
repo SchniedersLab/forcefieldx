@@ -151,20 +151,20 @@ public class RotamerLibrary {
 
     /**
      * Initializes default coordinates (presently PDB coordinates) for key atoms
-     * in all nucleic acid Residues.  This is necessary to preserve rotamer
+     * in all nucleic acid Residues. This is necessary to preserve rotamer
      * independence while still adjusting rotamers to correctly meet prior
      * residues; C4', O4', and C1' are used to build the rest of the nucleic
      * acid base, but are moved with each Rotamer to take part of the strain of
      * correctly meeting O3' of residue i-1.
-     * 
-     * It also initializes the location of O3' in both North and South puckers; 
-     * while in theory this could be recalculated each time based off of C4', 
-     * O4', and C1', it is easier to just store these two locations and call 
+     *
+     * It also initializes the location of O3' in both North and South puckers;
+     * while in theory this could be recalculated each time based off of C4',
+     * O4', and C1', it is easier to just store these two locations and call
      * them when needed.
-     * 
+     *
      * This MUST be called before any applyRotamer calls are made, else invalid
      * coordinates will be stored.
-     * 
+     *
      * @param molecularAssembly To search for nucleic acids.
      */
     public static void initializeDefaultAtomicCoordinates(MolecularAssembly molecularAssembly) {
@@ -722,7 +722,7 @@ public class RotamerLibrary {
     }
 
     /**
-     * Returns the Rotamers for a specified nucleic acid type.  Torsion angles
+     * Returns the Rotamers for a specified nucleic acid type. Torsion angles
      * are listed from delta (i-1) to delta (i), along with standard deviations
      * calculated by Richardson et al.
      *
@@ -921,7 +921,7 @@ public class RotamerLibrary {
         Atom P = (Atom) residue.getAtomNode("P");
 
 
-        /* 
+        /*
          * Start by measuring delta (i-1) if available, working up to delta.  If
          * there is no prior residue, start measuring from the 5'-most torsion.
          */
@@ -937,7 +937,7 @@ public class RotamerLibrary {
                 case DCY:
                 case DTY:
                     /*
-                     * If there is an H5T, measure alpha based on H5T.  Else, 
+                     * If there is an H5T, measure alpha based on H5T.  Else,
                      * measure zeta (i-1) based on OP3 and alpha on P.
                      */
                     Atom H5T = (Atom) residue.getAtomNode("H5T");
@@ -1736,12 +1736,12 @@ public class RotamerLibrary {
                 break;
         }
     }
-    
+
     /**
-     * Version of applyRotamer which allows for chain context-independent drawing
-     * of nucleic acid Rotamers.  Solely used in saveRotamers at this point, 
-     * although it may be useful for debugging.
-     * 
+     * Version of applyRotamer which allows for chain context-independent
+     * drawing of nucleic acid Rotamers. Solely used in saveRotamers at this
+     * point, although it may be useful for debugging.
+     *
      * @param residue
      * @param rotamer Rotamer to be applied
      * @param independent Whether to draw Rotamer independent of chain context.
@@ -3139,26 +3139,27 @@ public class RotamerLibrary {
     }
 
     /**
-     * Applies a nucleic acid Rotamer, and throws NACorrectionTooLargeException 
-     * if the Rotamer must be corrected too far to correctly join to Residue i-1.
-     * correctionThreshold and independent are both special-case variables; a 
-     * non-zero correctionThreshold is used to prune Rotamers with excessively 
-     * large corrections, and independent disables the NA correction, presently 
+     * Applies a nucleic acid Rotamer, and throws NACorrectionTooLargeException
+     * if the Rotamer must be corrected too far to correctly join to Residue
+     * i-1. correctionThreshold and independent are both special-case variables;
+     * a non-zero correctionThreshold is used to prune Rotamers with excessively
+     * large corrections, and independent disables the NA correction, presently
      * only performed by saveRotamers.
-     * 
+     *
      * Note that the independent flag is separate from DEE independence: DEE
      * independence is preserved by applying corrections based on a non-variable
      * set of coordinates, and is wholly independent of what is happening to
      * residue i-1.
-     * 
+     *
      * Cannot presently handle 3' phosphate caps: I do not know what they would
-     * be labeled as in PDB files.  A template for how to handle 3' phosphate
+     * be labeled as in PDB files. A template for how to handle 3' phosphate
      * caps is written but commented out.
      *
      * @param residue Residue.
      * @param rotamer Rotamer to be applied to Residue.
      * @param correctionThreshold Maximum acceptable backbone correction.
-     * @param independent Whether to draw NA rotamer independent of chain context.
+     * @param independent Whether to draw NA rotamer independent of chain
+     * context.
      * @throws NACorrectionTooLargeException If correction >
      * correctionThreshold.
      */
@@ -3192,7 +3193,6 @@ public class RotamerLibrary {
         }
 
         // Note: chi values will generally be applied from chi7 to chi1.
-
         // Will have to add an else-if to handle DNA C3'-exo configurations.
         // Sugar pucker = 1: North pucker.  2: South pucker.  3: C3'-exo pucker.
         if ((50 < rotamer.chi7) && (rotamer.chi7 < 110)) {
@@ -3222,8 +3222,9 @@ public class RotamerLibrary {
         if (prevResidue != null && !independent) {
             applyNACorrections(residue, prevResidue, rotamer, prevSugarPucker, correctionThreshold);
         } /* else if (!independent) {
-            startingResidueConsistencyCheck(residue, rotamer, correctionThreshold);
-        } */
+         startingResidueConsistencyCheck(residue, rotamer, correctionThreshold);
+         } */
+
         applyNASideAtoms(residue, rotamer, prevResidue, isDeoxy, is3sTerminal, prevSugarPucker);
     }
 
@@ -3333,7 +3334,6 @@ public class RotamerLibrary {
             C4s.getXYZ(C4sXYZ);
 
             // O3s coordinates will be filled into ret.
-
             if (isDeoxy) {
                 if (pucker == 1) {
                     C3sXYZ = INTFilter.determineIntxyz(C4sXYZ, dC3s_C4s, O4sXYZ, dC3s_C4s_O4s, C1sXYZ, C3_SP_NORTH_DNA, 0);
@@ -3473,44 +3473,44 @@ public class RotamerLibrary {
             // be implemented.
             Atom H3T = (Atom) residue.getAtomNode("H3T");
             // if (H3T != null) {
-                Bond O3s_H3T = O3s.getBond(H3T);
-                double dO3s_H3T = O3s_H3T.bondType.distance;
-                Angle C3s_O3s_H3T = C3s.getAngle(O3s, H3T);
-                double dC3s_O3s_H3T = C3s_O3s_H3T.angleType.angle[C3s_O3s_H3T.nh];
-                // H3T defaulted to the antiperiplanar value of 180 degrees.
-                intxyz(H3T, O3s, dO3s_H3T, C3s, dC3s_O3s_H3T, C4s, 180, 0);
+            Bond O3s_H3T = O3s.getBond(H3T);
+            double dO3s_H3T = O3s_H3T.bondType.distance;
+            Angle C3s_O3s_H3T = C3s.getAngle(O3s, H3T);
+            double dC3s_O3s_H3T = C3s_O3s_H3T.angleType.angle[C3s_O3s_H3T.nh];
+            // H3T defaulted to the antiperiplanar value of 180 degrees.
+            intxyz(H3T, O3s, dO3s_H3T, C3s, dC3s_O3s_H3T, C4s, 180, 0);
             /* } else {
-                Atom P3sT = (Atom) residue.getAtomNode("Unknown");
-                Atom O3sT1 = (Atom) residue.getAtomNode("Unknown");
-                Atom O3sT2 = (Atom) residue.getAtomNode("Unknown");
-                Atom O3sT3 = (Atom) residue.getAtomNode("Unknown");
-                // Possibly one or two hydrogens as well.
-                
-                Bond O3s_P3sT = O3s.getBond(P3sT);
-                double dO3s_P3sT = O3s_P3sT.bondType.distance;
-                Angle C3s_O3s_P3sT = C3s.getAngle(O3s, P3sT);
-                double dC3s_O3s_P3sT = C3s_O3s_P3sT.angleType.angle[C3s_O3s_P3sT.nh];
-                intxyz(P3sT, O3s, dO3s_P3sT, C3s, dC3s_O3s_P3sT, C4s, 180, 0);
-                // Again, antiperiplanar default of 180 degrees.
-                
-                Bond P3sT_O3sT1 = P3sT.getBond(O3sT1);
-                double dP3sT_O3sT1 = P3sT_O3sT1.bondType.distance;
-                Angle O3s_P3sT_O3sT1 = O3s.getAngle(P3sT, O3sT1);
-                double dO3s_P3sT_O3sT1 = O3s_P3sT_O3sT1.angleType.angle[O3s_P3sT_O3sT1.nh];
-                intxyz(O3sT1, O3s, dP3sT_O3sT1, C3s, dO3s_P3sT_O3sT1, C4s, 180, 0);
-                
-                Bond P3sT_O3sT2 = P3sT.getBond(O3sT2);
-                double dP3sT_O3sT2 = P3sT_O3sT2.bondType.distance;
-                Angle O3s_P3sT_O3sT2 = O3s.getAngle(P3sT, O3sT2);
-                double dO3s_P3sT_O3sT2 = O3s_P3sT_O3sT2.angleType.angle[O3s_P3sT_O3sT2.nh];
-                intxyz(O3sT2, O3s, dP3sT_O3sT2, C3s, dO3s_P3sT_O3sT2, O3sT1, 109.4, 1);
-                
-                Bond P3sT_O3sT3 = P3sT.getBond(O3sT3);
-                double dP3sT_O3sT3 = P3sT_O3sT3.bondType.distance;
-                Angle O3s_P3sT_O3sT3 = O3s.getAngle(P3sT, O3sT3);
-                double dO3s_P3sT_O3sT3 = O3s_P3sT_O3sT3.angleType.angle[O3s_P3sT_O3sT3.nh];
-                intxyz(O3sT3, O3s, dP3sT_O3sT3, C3s, dO3s_P3sT_O3sT3, O3sT1, 109.4, -1);
-            } */
+             Atom P3sT = (Atom) residue.getAtomNode("Unknown");
+             Atom O3sT1 = (Atom) residue.getAtomNode("Unknown");
+             Atom O3sT2 = (Atom) residue.getAtomNode("Unknown");
+             Atom O3sT3 = (Atom) residue.getAtomNode("Unknown");
+             // Possibly one or two hydrogens as well.
+
+             Bond O3s_P3sT = O3s.getBond(P3sT);
+             double dO3s_P3sT = O3s_P3sT.bondType.distance;
+             Angle C3s_O3s_P3sT = C3s.getAngle(O3s, P3sT);
+             double dC3s_O3s_P3sT = C3s_O3s_P3sT.angleType.angle[C3s_O3s_P3sT.nh];
+             intxyz(P3sT, O3s, dO3s_P3sT, C3s, dC3s_O3s_P3sT, C4s, 180, 0);
+             // Again, antiperiplanar default of 180 degrees.
+
+             Bond P3sT_O3sT1 = P3sT.getBond(O3sT1);
+             double dP3sT_O3sT1 = P3sT_O3sT1.bondType.distance;
+             Angle O3s_P3sT_O3sT1 = O3s.getAngle(P3sT, O3sT1);
+             double dO3s_P3sT_O3sT1 = O3s_P3sT_O3sT1.angleType.angle[O3s_P3sT_O3sT1.nh];
+             intxyz(O3sT1, O3s, dP3sT_O3sT1, C3s, dO3s_P3sT_O3sT1, C4s, 180, 0);
+
+             Bond P3sT_O3sT2 = P3sT.getBond(O3sT2);
+             double dP3sT_O3sT2 = P3sT_O3sT2.bondType.distance;
+             Angle O3s_P3sT_O3sT2 = O3s.getAngle(P3sT, O3sT2);
+             double dO3s_P3sT_O3sT2 = O3s_P3sT_O3sT2.angleType.angle[O3s_P3sT_O3sT2.nh];
+             intxyz(O3sT2, O3s, dP3sT_O3sT2, C3s, dO3s_P3sT_O3sT2, O3sT1, 109.4, 1);
+
+             Bond P3sT_O3sT3 = P3sT.getBond(O3sT3);
+             double dP3sT_O3sT3 = P3sT_O3sT3.bondType.distance;
+             Angle O3s_P3sT_O3sT3 = O3s.getAngle(P3sT, O3sT3);
+             double dO3s_P3sT_O3sT3 = O3s_P3sT_O3sT3.angleType.angle[O3s_P3sT_O3sT3.nh];
+             intxyz(O3sT3, O3s, dP3sT_O3sT3, C3s, dO3s_P3sT_O3sT3, O3sT1, 109.4, -1);
+             } */
         }
 
         if (P != null) {
@@ -3530,11 +3530,11 @@ public class RotamerLibrary {
             double dP_OP2 = P_OP2.bondType.distance;
             Angle O5s_P_OP2 = C5s.getAngle(O5s, P);
             double dO5s_P_OP2 = O5s_P_OP2.angleType.angle[O5s_P_OP2.nh];
-            
+
             // TODO: Handle hydrogens attached to 5'-terminal phosphates.
 
             /*
-             * If there is a prior residue, draw tetrahedrally based on O3' 
+             * If there is a prior residue, draw tetrahedrally based on O3'
              * (i-1).  Else, draw based on OP3.
              */
             if (prevResidue != null) {
@@ -3677,7 +3677,6 @@ public class RotamerLibrary {
         // Index 5 will be full correction, and indices 0-4 will be 1/6 to 5/6
         // of the full correction in increasing order.  Index 6 is a 1/12
         // correction applied to other atoms in the sugar.
-
         double[][] corrections = new double[7][3];
         for (int i = 0; i < 3; i++) {
             corrections[5][i] = O3sPriorCoords[i] - O3sHypCoords[i];
@@ -3711,22 +3710,23 @@ public class RotamerLibrary {
     }
 
     /**
-     * Will check for consistency of 5'-terminal Rotamers with original PDB 
-     * coordinates.  Not yet implemented; would have to store location of P
-     * in Residue, and I do not presently have time to make another addition
-     * to the overall algorithm.
-     * 
+     * Will check for consistency of 5'-terminal Rotamers with original PDB
+     * coordinates. Not yet implemented; would have to store location of P in
+     * Residue, and I do not presently have time to make another addition to the
+     * overall algorithm.
+     *
      * @param residue
      * @param rotamer Rotamer to be checked for consistency with original XYZ.
      * @param correctionThreshold Maximum allowable distance from P or H5T of
      * rotamer's structure to P or H5T of original PDB file.
      * @throws NACorrectionTooLargeException If distance > correctionThreshold.
      */
-    private static void startingResidueConsistencyCheck(Residue residue, Rotamer rotamer, double correctionThreshold) throws NACorrectionTooLargeException{
+    private static void startingResidueConsistencyCheck(Residue residue, Rotamer rotamer, double correctionThreshold) throws NACorrectionTooLargeException {
         if (correctionThreshold > 0 && residue.getPreviousResidue() == null) {
             // Not yet implemented.
         }
     }
+
     public enum ProteinLibrary {
 
         PonderAndRichards, Richardson

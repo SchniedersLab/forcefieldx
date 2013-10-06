@@ -59,7 +59,8 @@ public class XYZFilter extends SystemFilter {
     private int snapShot;
 
     /**
-     * <p>readOnto</p>
+     * <p>
+     * readOnto</p>
      *
      * @param newFile a {@link java.io.File} object.
      * @param oldSystem a {@link ffx.potential.bonded.MolecularAssembly} object.
@@ -116,7 +117,8 @@ public class XYZFilter extends SystemFilter {
     }
 
     /**
-     * <p>Constructor for XYZFilter.</p>
+     * <p>
+     * Constructor for XYZFilter.</p>
      *
      * @param files a {@link java.util.List} object.
      * @param system a {@link ffx.potential.bonded.MolecularAssembly} object.
@@ -131,7 +133,8 @@ public class XYZFilter extends SystemFilter {
     }
 
     /**
-     * <p>Constructor for XYZFilter.</p>
+     * <p>
+     * Constructor for XYZFilter.</p>
      *
      * @param file a {@link java.io.File} object.
      * @param system a {@link ffx.potential.bonded.MolecularAssembly} object.
@@ -408,7 +411,8 @@ public class XYZFilter extends SystemFilter {
     }
 
     /**
-     * <p>close</p>
+     * <p>
+     * close</p>
      */
     public void close() {
         if (bin != null) {
@@ -423,7 +427,8 @@ public class XYZFilter extends SystemFilter {
     }
 
     /**
-     * <p>readtrajectory</p>
+     * <p>
+     * readtrajectory</p>
      *
      * @return a boolean.
      */
@@ -557,7 +562,8 @@ public class XYZFilter extends SystemFilter {
     }
 
     /**
-     * <p>writeFileAsP1</p>
+     * <p>
+     * writeFileAsP1</p>
      *
      * @param saveFile a {@link java.io.File} object.
      * @param append a boolean.

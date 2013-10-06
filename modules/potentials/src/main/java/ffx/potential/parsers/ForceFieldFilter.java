@@ -62,7 +62,8 @@ public class ForceFieldFilter {
     private File forceFieldFile;
 
     /**
-     * <p>Constructor for ForceFieldFilter.</p>
+     * <p>
+     * Constructor for ForceFieldFilter.</p>
      *
      * @param properties a
      * {@link org.apache.commons.configuration.CompositeConfiguration} object.
@@ -85,7 +86,8 @@ public class ForceFieldFilter {
     }
 
     /**
-     * <p>parseParameterLocation</p>
+     * <p>
+     * parseParameterLocation</p>
      *
      * @param parameterLocation a {@link java.lang.String} object.
      * @param keyFile a {@link java.io.File} object.
@@ -112,7 +114,8 @@ public class ForceFieldFilter {
     }
 
     /**
-     * <p>parse</p>
+     * <p>
+     * parse</p>
      *
      * @return a {@link ffx.potential.parameters.ForceField} object.
      */
@@ -558,8 +561,8 @@ public class ForceFieldFilter {
             for (int i = 0; i < numTypes; i++) {
                 atomTypes[i] = Integer.parseInt(tokens[i + 1]);
             }
-            MultipoleType.MultipoleFrameDefinition frameDefinition =
-                    MultipoleType.MultipoleFrameDefinition.ZTHENX;
+            MultipoleType.MultipoleFrameDefinition frameDefinition
+                    = MultipoleType.MultipoleFrameDefinition.ZTHENX;
             if (atomTypes.length == 3 && (atomTypes[1] < 0 || atomTypes[2] < 0)) {
                 frameDefinition = MultipoleType.MultipoleFrameDefinition.BISECTOR;
             } else if (atomTypes.length == 4 && atomTypes[2] < 0 && atomTypes[3] < 0) {

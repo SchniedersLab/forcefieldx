@@ -51,8 +51,8 @@ public class UreyBradley extends BondedTerm implements Comparable<UreyBradley> {
     protected Angle angle = null;
 
     /**
-     * <p>Setter for the field
-     * <code>ureyBradleyType</code>.</p>
+     * <p>
+     * Setter for the field <code>ureyBradleyType</code>.</p>
      *
      * @param a a {@link ffx.potential.parameters.UreyBradleyType} object.
      */
@@ -61,8 +61,8 @@ public class UreyBradley extends BondedTerm implements Comparable<UreyBradley> {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>rigidScale</code>.</p>
+     * <p>
+     * Setter for the field <code>rigidScale</code>.</p>
      *
      * @param rigidScale a double.
      */
@@ -135,7 +135,8 @@ public class UreyBradley extends BondedTerm implements Comparable<UreyBradley> {
      * Log details for this Angle energy term.
      */
     /**
-     * <p>log</p>
+     * <p>
+     * log</p>
      */
     public void log() {
         logger.info(String.format(" %s %6d-%s %6d-%s %6.4f  %6.4f  %10.4f",

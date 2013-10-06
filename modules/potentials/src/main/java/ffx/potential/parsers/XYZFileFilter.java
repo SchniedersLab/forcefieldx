@@ -49,9 +49,8 @@ public final class XYZFileFilter extends FileFilter {
     /**
      * {@inheritDoc}
      *
-     * This method return
-     * <code>true</code> if the file is a directory or TINKER Cartesian
-     * coordinate (*.XYZ) file.
+     * This method return <code>true</code> if the file is a directory or TINKER
+     * Cartesian coordinate (*.XYZ) file.
      */
     @Override
     public boolean accept(File file) {
@@ -63,7 +62,8 @@ public final class XYZFileFilter extends FileFilter {
     }
 
     /**
-     * <p>acceptDeep</p>
+     * <p>
+     * acceptDeep</p>
      *
      * @param file a {@link java.io.File} object.
      * @return a boolean.

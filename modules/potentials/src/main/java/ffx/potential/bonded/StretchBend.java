@@ -58,8 +58,8 @@ public class StretchBend extends BondedTerm implements Comparable<StretchBend> {
     final private double bond1Eq;
 
     /**
-     * <p>Setter for the field
-     * <code>stretchBendType</code>.</p>
+     * <p>
+     * Setter for the field <code>stretchBendType</code>.</p>
      *
      * @param stretchBendType a {@link ffx.potential.parameters.StretchBendType}
      * object.
@@ -80,8 +80,8 @@ public class StretchBend extends BondedTerm implements Comparable<StretchBend> {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>rigidScale</code>.</p>
+     * <p>
+     * Setter for the field <code>rigidScale</code>.</p>
      *
      * @param rigidScale a double.
      */
@@ -115,28 +115,23 @@ public class StretchBend extends BondedTerm implements Comparable<StretchBend> {
         energy(false);
     }
     /**
-     * Constant
-     * <code>v10=new double[3]</code>
+     * Constant <code>v10=new double[3]</code>
      */
     protected static final double v10[] = new double[3];
     /**
-     * Constant
-     * <code>v12=new double[3]</code>
+     * Constant <code>v12=new double[3]</code>
      */
     protected static final double v12[] = new double[3];
     /**
-     * Constant
-     * <code>p=new double[3]</code>
+     * Constant <code>p=new double[3]</code>
      */
     protected static final double p[] = new double[3];
     /**
-     * Constant
-     * <code>dta=new double[3]</code>
+     * Constant <code>dta=new double[3]</code>
      */
     protected static final double dta[] = new double[3];
     /**
-     * Constant
-     * <code>dtc=new double[3]</code>
+     * Constant <code>dtc=new double[3]</code>
      */
     protected static final double dtc[] = new double[3];
     /**
@@ -207,7 +202,8 @@ public class StretchBend extends BondedTerm implements Comparable<StretchBend> {
     }
 
     /**
-     * <p>log</p>
+     * <p>
+     * log</p>
      */
     public void log() {
         logger.info(String.format(" %s %6d-%s %6d-%s %6d-%s"

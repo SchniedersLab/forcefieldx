@@ -21,12 +21,13 @@
  * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package ffx.potential;
+
 import ffx.potential.bonded.Residue;
 
 /**
  * This exception is thrown when a nucleic acid Rotamer must be distorted to an
  * excessive degree to meet the prior residue's 3' end.
- * 
+ *
  * @author Jacob M. Litman
  */
 public class NACorrectionTooLargeException extends RuntimeException {

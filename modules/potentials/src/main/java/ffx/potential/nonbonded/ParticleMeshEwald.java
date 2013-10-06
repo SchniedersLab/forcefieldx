@@ -1591,8 +1591,8 @@ public class ParticleMeshEwald implements LambdaInterface {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>interactions</code>.</p>
+     * <p>
+     * Getter for the field <code>interactions</code>.</p>
      *
      * @return a int.
      */
@@ -1601,7 +1601,8 @@ public class ParticleMeshEwald implements LambdaInterface {
     }
 
     /**
-     * <p>getPermanentEnergy</p>
+     * <p>
+     * getPermanentEnergy</p>
      *
      * @return a double.
      */
@@ -1610,8 +1611,8 @@ public class ParticleMeshEwald implements LambdaInterface {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>polarizationEnergy</code>.</p>
+     * <p>
+     * Getter for the field <code>polarizationEnergy</code>.</p>
      *
      * @return a double.
      */
@@ -1620,7 +1621,8 @@ public class ParticleMeshEwald implements LambdaInterface {
     }
 
     /**
-     * <p>getGKEnergy</p>
+     * <p>
+     * getGKEnergy</p>
      *
      * @return a double.
      */
@@ -1629,7 +1631,8 @@ public class ParticleMeshEwald implements LambdaInterface {
     }
 
     /**
-     * <p>getGKInteractions</p>
+     * <p>
+     * getGKInteractions</p>
      *
      * @return a int.
      */
@@ -1638,7 +1641,8 @@ public class ParticleMeshEwald implements LambdaInterface {
     }
 
     /**
-     * <p>getGradients</p>
+     * <p>
+     * getGradients</p>
      *
      * @param grad an array of double.
      */
@@ -1657,8 +1661,8 @@ public class ParticleMeshEwald implements LambdaInterface {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>gradient</code>.</p>
+     * <p>
+     * Getter for the field <code>gradient</code>.</p>
      *
      * @return an array of double.
      */
@@ -1667,8 +1671,8 @@ public class ParticleMeshEwald implements LambdaInterface {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>torque</code>.</p>
+     * <p>
+     * Getter for the field <code>torque</code>.</p>
      *
      * @return an array of double.
      */
@@ -5703,7 +5707,8 @@ public class ParticleMeshEwald implements LambdaInterface {
     }
 
     /**
-     * <p>ewaldCutoff</p>
+     * <p>
+     * ewaldCutoff</p>
      *
      * @param coeff a double.
      * @param maxCutoff a double.
@@ -6529,10 +6534,10 @@ public class ParticleMeshEwald implements LambdaInterface {
 
         for (int i = 0; i < nAtoms; i++) {
             for (int j = 0; j < 3; j++) {
-                predictorInducedDipole[mode][predictorStartIndex][i][j] =
-                        inducedDipole[0][i][j] - directDipole[i][j];
-                predictorInducedDipoleCR[mode][predictorStartIndex][i][j] =
-                        inducedDipoleCR[0][i][j] - directDipoleCR[i][j];
+                predictorInducedDipole[mode][predictorStartIndex][i][j]
+                        = inducedDipole[0][i][j] - directDipole[i][j];
+                predictorInducedDipoleCR[mode][predictorStartIndex][i][j]
+                        = inducedDipoleCR[0][i][j] - directDipoleCR[i][j];
             }
         }
     }
@@ -6555,12 +6560,12 @@ public class ParticleMeshEwald implements LambdaInterface {
             int maxEvals = 100;
             fill(leastSquaresPredictor.initialSolution, 0.0);
             leastSquaresPredictor.initialSolution[0] = 1.0;
-            PointVectorValuePair optimum =
-                    leastSquaresOptimizer.optimize(maxEvals,
-                    leastSquaresPredictor,
-                    leastSquaresPredictor.calculateTarget(),
-                    leastSquaresPredictor.weights,
-                    leastSquaresPredictor.initialSolution);
+            PointVectorValuePair optimum
+                    = leastSquaresOptimizer.optimize(maxEvals,
+                            leastSquaresPredictor,
+                            leastSquaresPredictor.calculateTarget(),
+                            leastSquaresPredictor.weights,
+                            leastSquaresPredictor.initialSolution);
             double[] optimalValues = optimum.getPoint();
             if (logger.isLoggable(Level.FINEST)) {
                 logger.finest(String.format("\n LS RMS:            %10.6f", leastSquaresOptimizer.getRMS()));
@@ -6745,13 +6750,13 @@ public class ParticleMeshEwald implements LambdaInterface {
         public MultivariateMatrixFunction jacobian() {
             return multivariateMatrixFunction;
         }
-        private MultivariateMatrixFunction multivariateMatrixFunction =
-                new MultivariateMatrixFunction() {
-            @Override
-            public double[][] value(double[] point) {
-                return jacobian(point);
-            }
-        };
+        private MultivariateMatrixFunction multivariateMatrixFunction
+                = new MultivariateMatrixFunction() {
+                    @Override
+                    public double[][] value(double[] point) {
+                        return jacobian(point);
+                    }
+                };
     }
 
     /**

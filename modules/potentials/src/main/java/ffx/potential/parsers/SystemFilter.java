@@ -91,7 +91,8 @@ public abstract class SystemFilter {
     }
 
     /**
-     * <p>previousVersion</p>
+     * <p>
+     * previousVersion</p>
      *
      * @param file a {@link java.io.File} object.
      * @return a {@link java.io.File} object.
@@ -179,7 +180,8 @@ public abstract class SystemFilter {
     protected boolean fileRead = false;
 
     /**
-     * <p>Constructor for SystemFilter.</p>
+     * <p>
+     * Constructor for SystemFilter.</p>
      *
      * @param files a {@link java.util.List} object.
      * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly}
@@ -200,7 +202,8 @@ public abstract class SystemFilter {
     }
 
     /**
-     * <p>Constructor for SystemFilter.</p>
+     * <p>
+     * Constructor for SystemFilter.</p>
      *
      * @param file a {@link java.io.File} object.
      * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly}
@@ -222,7 +225,8 @@ public abstract class SystemFilter {
     }
 
     /**
-     * <p>Constructor for SystemFilter.</p>
+     * <p>
+     * Constructor for SystemFilter.</p>
      *
      * @param file a {@link java.io.File} object.
      * @param molecularAssemblies a {@link java.util.List} object.
@@ -253,7 +257,8 @@ public abstract class SystemFilter {
     }
 
     /**
-     * <p>getAtomCount</p>
+     * <p>
+     * getAtomCount</p>
      *
      * @return a int.
      */
@@ -265,8 +270,8 @@ public abstract class SystemFilter {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>atomList</code>.</p>
+     * <p>
+     * Getter for the field <code>atomList</code>.</p>
      *
      * @return a {@link java.util.ArrayList} object.
      */
@@ -275,7 +280,8 @@ public abstract class SystemFilter {
     }
 
     /**
-     * <p>getBondCount</p>
+     * <p>
+     * getBondCount</p>
      *
      * @return a int.
      */
@@ -296,7 +302,8 @@ public abstract class SystemFilter {
     }
 
     /**
-     * <p>getMolecularAssemblys</p>
+     * <p>
+     * getMolecularAssemblys</p>
      *
      * @return an array of {@link ffx.potential.bonded.MolecularAssembly}
      * objects.
@@ -312,7 +319,8 @@ public abstract class SystemFilter {
     }
 
     /**
-     * <p>getType</p>
+     * <p>
+     * getType</p>
      *
      * @return a {@link ffx.potential.bonded.Utilities.FileType} object.
      */
@@ -321,7 +329,8 @@ public abstract class SystemFilter {
     }
 
     /**
-     * <p>getFile</p>
+     * <p>
+     * getFile</p>
      *
      * @return a {@link java.io.File} object.
      */
@@ -330,8 +339,8 @@ public abstract class SystemFilter {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>files</code>.</p>
+     * <p>
+     * Getter for the field <code>files</code>.</p>
      *
      * @return a {@link java.util.List} object.
      */
@@ -347,8 +356,8 @@ public abstract class SystemFilter {
     public abstract boolean readFile();
 
     /**
-     * <p>Setter for the field
-     * <code>fileRead</code>.</p>
+     * <p>
+     * Setter for the field <code>fileRead</code>.</p>
      *
      * @param fileRead a boolean.
      */
@@ -357,8 +366,8 @@ public abstract class SystemFilter {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>forceField</code>.</p>
+     * <p>
+     * Setter for the field <code>forceField</code>.</p>
      *
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
      */
@@ -367,8 +376,8 @@ public abstract class SystemFilter {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>properties</code>.</p>
+     * <p>
+     * Setter for the field <code>properties</code>.</p>
      *
      * @param properties a
      * {@link org.apache.commons.configuration.CompositeConfiguration} object.
@@ -378,7 +387,8 @@ public abstract class SystemFilter {
     }
 
     /**
-     * <p>setMolecularSystem</p>
+     * <p>
+     * setMolecularSystem</p>
      *
      * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly}
      * object.
@@ -388,7 +398,8 @@ public abstract class SystemFilter {
     }
 
     /**
-     * <p>setType</p>
+     * <p>
+     * setType</p>
      *
      * @param fileType a {@link ffx.potential.bonded.Utilities.FileType} object.
      */
@@ -397,7 +408,8 @@ public abstract class SystemFilter {
     }
 
     /**
-     * <p>setFile</p>
+     * <p>
+     * setFile</p>
      *
      * @param file a {@link java.io.File} object.
      */
@@ -410,8 +422,8 @@ public abstract class SystemFilter {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>files</code>.</p>
+     * <p>
+     * Setter for the field <code>files</code>.</p>
      *
      * @param files a {@link java.util.List} object.
      */

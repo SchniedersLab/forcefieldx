@@ -57,63 +57,51 @@ public class Residue extends MSGroup {
     private static Point3d point3d = new Point3d();
     private static Point2d point2d = new Point2d();
     /**
-     * Constant
-     * <code>NA1Set</code>
+     * Constant <code>NA1Set</code>
      */
     public static EnumSet NA1Set = EnumSet.allOf(NA1.class);
     /**
-     * Constant
-     * <code>NA3Set</code>
+     * Constant <code>NA3Set</code>
      */
     public static EnumSet NA3Set = EnumSet.allOf(NA3.class);
     /**
-     * Constant
-     * <code>NASet</code>
+     * Constant <code>NASet</code>
      */
     public static EnumSet NASet = EnumSet.allOf(NA.class);
     /**
-     * Constant
-     * <code>NA1toNA3</code>
+     * Constant <code>NA1toNA3</code>
      */
     public static Hashtable<NA1, NA3> NA1toNA3 = new Hashtable<NA1, NA3>();
     /**
-     * Constant
-     * <code>NA3Color</code>
+     * Constant <code>NA3Color</code>
      */
     public static Hashtable<NA3, Color3f> NA3Color = new Hashtable<NA3, Color3f>();
     /**
-     * Constant
-     * <code>AA1Set</code>
+     * Constant <code>AA1Set</code>
      */
     public static EnumSet AA1Set = EnumSet.allOf(AA1.class);
     /**
-     * Constant
-     * <code>AA3Set</code>
+     * Constant <code>AA3Set</code>
      */
     public static EnumSet AA3Set = EnumSet.allOf(AA3.class);
     /**
-     * Constant
-     * <code>AASet</code>
+     * Constant <code>AASet</code>
      */
     public static EnumSet AASet = EnumSet.allOf(AA.class);
     /**
-     * Constant
-     * <code>AA1toAA3</code>
+     * Constant <code>AA1toAA3</code>
      */
     public static Hashtable<AA1, AA3> AA1toAA3 = new Hashtable<AA1, AA3>();
     /**
-     * Constant
-     * <code>AA3Color</code>
+     * Constant <code>AA3Color</code>
      */
     public static Hashtable<AA3, Color3f> AA3Color = new Hashtable<AA3, Color3f>();
     /**
-     * Constant
-     * <code>SSTypeColor</code>
+     * Constant <code>SSTypeColor</code>
      */
     public static Hashtable<SSType, Color3f> SSTypeColor = new Hashtable<SSType, Color3f>();
     /**
-     * Constant
-     * <code>Ramachandran="new String[17]"</code>
+     * Constant <code>Ramachandran="new String[17]"</code>
      */
     public static String Ramachandran[] = new String[17];
 
@@ -231,27 +219,24 @@ public class Residue extends MSGroup {
     private NA3 na;
     /**
      * These arrays store default coordinates for certain atoms in nucleic acid
-     * Residues.  C1', O4', and C4' are the critical sugar atoms off which every
-     * other atom is drawn when applyRotamer is called; the backbone corrections,
-<<<<<<< HEAD
-     * however, move these atoms, so they must be reverted to original
+     * Residues. C1', O4', and C4' are the critical sugar atoms off which every
+     * other atom is drawn when applyRotamer is called; the backbone
+     * corrections, <<<<<<< HEAD however, move these atoms, so they must be
+     * reverted to original coordinates each time applyRotamer is called.
+     *
+     * ======= however, move these atoms, so they must be reverted to original
      * coordinates each time applyRotamer is called.
      *
-=======
-     * however, move these atoms, so they must be reverted to original
-     * coordinates each time applyRotamer is called.
+     * >>>>>>> fcefa7e8f2a22b42ca11a7021b7f01ddba9a6e2f O3' North and South
+     * coordinates are technically non-essential, as they could be derived from
+     * C1', O4', C4', and a given sugar pucker, however, it is much less
+     * computationally expensive to calculate them once and then store them.
+     * <<<<<<< HEAD
      *
->>>>>>> fcefa7e8f2a22b42ca11a7021b7f01ddba9a6e2f
-     * O3' North and South coordinates are technically non-essential, as they
-     * could be derived from C1', O4', C4', and a given sugar pucker, however,
-     * it is much less computationally expensive to calculate them once and
-     * then store them.
-<<<<<<< HEAD
+     * =======
      *
-=======
-     *
->>>>>>> fcefa7e8f2a22b42ca11a7021b7f01ddba9a6e2f
-     * TODO: Add O3' coordinates for the DNA C3'-exo configuration.
+     * >>>>>>> fcefa7e8f2a22b42ca11a7021b7f01ddba9a6e2f TODO: Add O3'
+     * coordinates for the DNA C3'-exo configuration.
      */
     private double[] O3sNorthCoords = null;
     private double[] O3sSouthCoords = null;
@@ -273,7 +258,8 @@ public class Residue extends MSGroup {
     }
 
     /**
-     * <p>Constructor for Residue.</p>
+     * <p>
+     * Constructor for Residue.</p>
      *
      * @param name a {@link java.lang.String} object.
      * @param rt a {@link ffx.potential.bonded.Residue.ResidueType} object.
@@ -333,7 +319,7 @@ public class Residue extends MSGroup {
     }
 
     public Rotamer[] getRotamers(Residue residue) {
-        return RotamerLibrary.getRotamers (residue);
+        return RotamerLibrary.getRotamers(residue);
     }
 
     public ResidueType getResidueType() {
@@ -443,7 +429,8 @@ public class Residue extends MSGroup {
     }
 
     /**
-     * <p>deleteAtom</p>
+     * <p>
+     * deleteAtom</p>
      *
      * @param atomToDelete a {@link ffx.potential.bonded.Atom} object.
      */
@@ -457,7 +444,7 @@ public class Residue extends MSGroup {
     }
 
     public ArrayList<Atom> getSideChainAtoms() {
-        switch (residueType){
+        switch (residueType) {
             case NA:
                 return null;
             case AA:
@@ -687,7 +674,7 @@ public class Residue extends MSGroup {
             O3sNorthCoords = RotamerLibrary.applySugarPucker(this, 1, isDeoxy, false);
             O3sSouthCoords = RotamerLibrary.applySugarPucker(this, 2, isDeoxy, false);
         } catch (Exception e) {
-            logger.log(Level.WARNING, toString() , e);
+            logger.log(Level.WARNING, toString(), e);
         }
     }
 
@@ -770,7 +757,8 @@ public class Residue extends MSGroup {
     }
 
     /**
-     * <p>printSideChainCOM</p>
+     * <p>
+     * printSideChainCOM</p>
      */
     public void logSideChainCOM() {
         double com[] = this.getSideChainCOM();
@@ -807,7 +795,8 @@ public class Residue extends MSGroup {
     }
 
     /**
-     * <p>setNumber</p>
+     * <p>
+     * setNumber</p>
      *
      * @param n a int.
      */
@@ -816,8 +805,8 @@ public class Residue extends MSGroup {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>chainID</code>.</p>
+     * <p>
+     * Setter for the field <code>chainID</code>.</p>
      *
      * @param c a {@link java.lang.Character} object.
      */
@@ -826,8 +815,8 @@ public class Residue extends MSGroup {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>segID</code>.</p>
+     * <p>
+     * Getter for the field <code>segID</code>.</p>
      *
      * @return a {@link java.lang.String} object.
      */
@@ -836,7 +825,8 @@ public class Residue extends MSGroup {
     }
 
     /**
-     * <p>setSSType</p>
+     * <p>
+     * setSSType</p>
      *
      * @param ss a {@link ffx.potential.bonded.Residue.SSType} object.
      */

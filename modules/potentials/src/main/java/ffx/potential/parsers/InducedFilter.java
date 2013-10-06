@@ -45,7 +45,8 @@ public class InducedFilter {
     File file;
 
     /**
-     * <p>Constructor for InducedFilter.</p>
+     * <p>
+     * Constructor for InducedFilter.</p>
      *
      * @param s a {@link ffx.potential.bonded.MolecularAssembly} object.
      * @param f a {@link java.io.File} object.
@@ -56,7 +57,8 @@ public class InducedFilter {
     }
 
     /**
-     * <p>read</p>
+     * <p>
+     * read</p>
      *
      * @return a boolean.
      */

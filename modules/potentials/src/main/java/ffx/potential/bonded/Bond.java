@@ -176,8 +176,8 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>rigidScale</code>.</p>
+     * <p>
+     * Setter for the field <code>rigidScale</code>.</p>
      *
      * @param rigidScale a double.
      */
@@ -314,7 +314,8 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
     }
 
     /**
-     * <p>sameGroup</p>
+     * <p>
+     * sameGroup</p>
      *
      * @return a boolean.
      */
@@ -335,7 +336,8 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
     }
 
     /**
-     * <p>setBondTransform3d</p>
+     * <p>
+     * setBondTransform3d</p>
      *
      * @param t3d a {@link javax.media.j3d.Transform3D} object.
      * @param pos an array of double.
@@ -515,7 +517,8 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
     }
 
     /**
-     * <p>setWire</p>
+     * <p>
+     * setWire</p>
      *
      * @param l a {@link javax.media.j3d.LineArray} object.
      * @param i a int.

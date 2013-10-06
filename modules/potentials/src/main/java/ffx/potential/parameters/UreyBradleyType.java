@@ -64,7 +64,8 @@ public final class UreyBradleyType extends BaseType implements Comparator<String
     }
 
     /**
-     * <p>incrementClasses</p>
+     * <p>
+     * incrementClasses</p>
      *
      * @param increment a int.
      */

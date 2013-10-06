@@ -47,9 +47,8 @@ public final class InducedFileFilter extends FileFilter {
     /**
      * {@inheritDoc}
      *
-     * This method return
-     * <code>true</code> if the file is a directory or matches the extension for
-     * TINKER induced dipole (*.*U) file.
+     * This method return <code>true</code> if the file is a directory or
+     * matches the extension for TINKER induced dipole (*.*U) file.
      */
     @Override
     public boolean accept(File file) {

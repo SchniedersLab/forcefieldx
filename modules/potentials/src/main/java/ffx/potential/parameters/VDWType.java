@@ -65,7 +65,7 @@ public final class VDWType extends BaseType implements Comparator<String> {
      * van der Waals constructor. If the reduction factor is <= 0.0, no
      * reduction is used for this atom type.
      *
-
+     *
      *
      * @param atomClass int
      * @param radius double
@@ -82,7 +82,8 @@ public final class VDWType extends BaseType implements Comparator<String> {
     }
 
     /**
-     * <p>incrementClass</p>
+     * <p>
+     * incrementClass</p>
      *
      * @param increment a int.
      */

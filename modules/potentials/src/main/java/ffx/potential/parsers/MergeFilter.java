@@ -40,7 +40,8 @@ import ffx.potential.bonded.MolecularAssembly;
 public class MergeFilter extends SystemFilter {
 
     /**
-     * <p>Constructor for MergeFilter.</p>
+     * <p>
+     * Constructor for MergeFilter.</p>
      *
      * @param f a {@link ffx.potential.bonded.MolecularAssembly} object.
      * @param a a {@link java.util.ArrayList} object.

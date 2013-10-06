@@ -102,7 +102,8 @@ public class Joint extends MSNode {
     }
 
     /**
-     * <p>getAngles</p>
+     * <p>
+     * getAngles</p>
      *
      * @return a {@link ffx.potential.bonded.MSNode} object.
      */
@@ -118,7 +119,8 @@ public class Joint extends MSNode {
     }
 
     /**
-     * <p>getBonds</p>
+     * <p>
+     * getBonds</p>
      *
      * @return a {@link ffx.potential.bonded.MSNode} object.
      */
@@ -134,7 +136,8 @@ public class Joint extends MSNode {
     }
 
     /**
-     * <p>getStretchBends</p>
+     * <p>
+     * getStretchBends</p>
      *
      * @return a {@link ffx.potential.bonded.MSNode} object.
      */
@@ -150,7 +153,8 @@ public class Joint extends MSNode {
     }
 
     /**
-     * <p>getUreyBradleys</p>
+     * <p>
+     * getUreyBradleys</p>
      *
      * @return a {@link ffx.potential.bonded.MSNode} object.
      */
@@ -166,7 +170,8 @@ public class Joint extends MSNode {
     }
 
     /**
-     * <p>getOutOfPlaneBends</p>
+     * <p>
+     * getOutOfPlaneBends</p>
      *
      * @return a {@link ffx.potential.bonded.MSNode} object.
      */
@@ -182,7 +187,8 @@ public class Joint extends MSNode {
     }
 
     /**
-     * <p>getTorsions</p>
+     * <p>
+     * getTorsions</p>
      *
      * @return a {@link ffx.potential.bonded.MSNode} object.
      */
@@ -198,7 +204,8 @@ public class Joint extends MSNode {
     }
 
     /**
-     * <p>getPiOrbitalTorsions</p>
+     * <p>
+     * getPiOrbitalTorsions</p>
      *
      * @return a {@link ffx.potential.bonded.MSNode} object.
      */
@@ -214,7 +221,8 @@ public class Joint extends MSNode {
     }
 
     /**
-     * <p>getTorsionTorsions</p>
+     * <p>
+     * getTorsionTorsions</p>
      *
      * @return a {@link ffx.potential.bonded.MSNode} object.
      */
@@ -230,7 +238,8 @@ public class Joint extends MSNode {
     }
 
     /**
-     * <p>merge</p>
+     * <p>
+     * merge</p>
      *
      * @param j a {@link ffx.potential.bonded.Joint} object.
      */
@@ -351,7 +360,8 @@ public class Joint extends MSNode {
     }
 
     /**
-     * <p>setColor</p>
+     * <p>
+     * setColor</p>
      *
      * @param newColorModel a
      * {@link ffx.potential.bonded.RendererCache.ColorModel} object.

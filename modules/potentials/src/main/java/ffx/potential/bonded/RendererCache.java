@@ -46,185 +46,149 @@ import javax.vecmath.Vector3d;
 public class RendererCache {
     // Scene Attributes
     /**
-     * Constant
-     * <code>lineAttributes</code>
+     * Constant <code>lineAttributes</code>
      */
     public static final LineAttributes lineAttributes = new LineAttributes();
     /**
-     * Constant
-     * <code>pointAttributes</code>
+     * Constant <code>pointAttributes</code>
      */
     public static final PointAttributes pointAttributes = new PointAttributes();
     /**
-     * Constant
-     * <code>coloringAttributes</code>
+     * Constant <code>coloringAttributes</code>
      */
     public static final ColoringAttributes coloringAttributes = new ColoringAttributes();
     /**
-     * Constant
-     * <code>renderingAttributes</code>
+     * Constant <code>renderingAttributes</code>
      */
     public static final RenderingAttributes renderingAttributes = new RenderingAttributes();
     /**
-     * Constant
-     * <code>transparencyAttributes</code>
+     * Constant <code>transparencyAttributes</code>
      */
     public static final TransparencyAttributes transparencyAttributes = new TransparencyAttributes();
     /**
-     * Constant
-     * <code>fillPolygonAttributes</code>
+     * Constant <code>fillPolygonAttributes</code>
      */
     public static final PolygonAttributes fillPolygonAttributes = new PolygonAttributes();
     /**
-     * Constant
-     * <code>pointPolygonAttributes</code>
+     * Constant <code>pointPolygonAttributes</code>
      */
     public static final PolygonAttributes pointPolygonAttributes = new PolygonAttributes();
     /**
-     * Constant
-     * <code>linePolygonAttributes</code>
+     * Constant <code>linePolygonAttributes</code>
      */
     public static final PolygonAttributes linePolygonAttributes = new PolygonAttributes();
     // Create colors that will be used frequently
     /**
-     * Constant
-     * <code>ORANGE</code>
+     * Constant <code>ORANGE</code>
      */
     public static final Color3f ORANGE = new Color3f(Color.orange);
     /**
-     * Constant
-     * <code>RED</code>
+     * Constant <code>RED</code>
      */
     public static final Color3f RED = new Color3f(Color.red);
     /**
-     * Constant
-     * <code>BLUE</code>
+     * Constant <code>BLUE</code>
      */
     public static final Color3f BLUE = new Color3f(Color.blue);
     /**
-     * Constant
-     * <code>GRAY</code>
+     * Constant <code>GRAY</code>
      */
     public static final Color3f GRAY = new Color3f(Color.lightGray);
     /**
-     * Constant
-     * <code>YELLOW</code>
+     * Constant <code>YELLOW</code>
      */
     public static final Color3f YELLOW = new Color3f(Color.yellow);
     /**
-     * Constant
-     * <code>CYAN</code>
+     * Constant <code>CYAN</code>
      */
     public static final Color3f CYAN = new Color3f(Color.cyan);
     /**
-     * Constant
-     * <code>GREEN</code>
+     * Constant <code>GREEN</code>
      */
     public static final Color3f GREEN = new Color3f(Color.green);
     /**
-     * Constant
-     * <code>WHITE</code>
+     * Constant <code>WHITE</code>
      */
     public static final Color3f WHITE = new Color3f(Color.white);
     /**
-     * Constant
-     * <code>PINK</code>
+     * Constant <code>PINK</code>
      */
     public static final Color3f PINK = new Color3f(Color.pink);
     /**
-     * Constant
-     * <code>MAGENTA</code>
+     * Constant <code>MAGENTA</code>
      */
     public static final Color3f MAGENTA = new Color3f(Color.magenta);
     /**
-     * Constant
-     * <code>BLACK</code>
+     * Constant <code>BLACK</code>
      */
     public static final Color3f BLACK = new Color3f(Color.black);
     /**
-     * Constant
-     * <code>NULLColor</code>
+     * Constant <code>NULLColor</code>
      */
     public static final Color3f NULLColor = new Color3f(Color.darkGray);
     /**
-     * Constant
-     * <code>bgColor</code>
+     * Constant <code>bgColor</code>
      */
     public static final Color bgColor = Color.black;
     // Some default values for the 3D Universe
     /**
-     * Constant
-     * <code>colorModel</code>
+     * Constant <code>colorModel</code>
      */
     public static ColorModel colorModel = ColorModel.CPK;
     /**
-     * Constant
-     * <code>viewModel</code>
+     * Constant <code>viewModel</code>
      */
     public static ViewModel viewModel = ViewModel.WIREFRAME;
     /**
-     * Constant
-     * <code>detail=3</code>
+     * Constant <code>detail=3</code>
      */
     public static int detail = 3;
     /**
-     * Constant
-     * <code>radius=1.0d</code>
+     * Constant <code>radius=1.0d</code>
      */
     public static double radius = 1.0d;
     /**
-     * Constant
-     * <code>bondRadius=1.0d</code>
+     * Constant <code>bondRadius=1.0d</code>
      */
     public static double bondRadius = 1.0d;
     /**
-     * Constant
-     * <code>vectorScale=1.8d</code>
+     * Constant <code>vectorScale=1.8d</code>
      */
     public static double vectorScale = 1.8d;
     /**
-     * Constant
-     * <code>bondwidth=3</code>
+     * Constant <code>bondwidth=3</code>
      */
     public static int bondwidth = 3;
     /**
-     * Constant
-     * <code>highlightSelections=false</code>
+     * Constant <code>highlightSelections=false</code>
      */
     public static boolean highlightSelections = false;
     /**
-     * Constant
-     * <code>labelAtoms=false</code>
+     * Constant <code>labelAtoms=false</code>
      */
     public static boolean labelAtoms = false;
     /**
-     * Constant
-     * <code>labelResidues=false</code>
+     * Constant <code>labelResidues=false</code>
      */
     public static boolean labelResidues = false;
     /**
-     * Constant
-     * <code>pickingColor</code>
+     * Constant <code>pickingColor</code>
      */
     public static Color3f pickingColor = MAGENTA;
     /**
-     * Constant
-     * <code>selectionColor</code>
+     * Constant <code>selectionColor</code>
      */
     public static Color3f selectionColor = YELLOW;
     /**
-     * Constant
-     * <code>userColor</code>
+     * Constant <code>userColor</code>
      */
     public static Color3f userColor = WHITE;
     /**
-     * Constant
-     * <code>viewModelHash</code>
+     * Constant <code>viewModelHash</code>
      */
     public static final Hashtable<String, ViewModel> viewModelHash = new Hashtable<String, ViewModel>();
     /**
-     * Constant
-     * <code>colorModelHash</code>
+     * Constant <code>colorModelHash</code>
      */
     public static final Hashtable<String, ColorModel> colorModelHash = new Hashtable<String, ColorModel>();
     /*
@@ -242,8 +206,7 @@ public class RendererCache {
      */
     private static List<Transform3D> transform3DPool = Collections.synchronizedList(new ArrayList<Transform3D>());
     /**
-     * Constant
-     * <code>spherePool</code>
+     * Constant <code>spherePool</code>
      */
     protected static List<BranchGroup> spherePool = Collections.synchronizedList(new ArrayList<BranchGroup>());
     private static List<BranchGroup> doubleCylinderPool = Collections.synchronizedList(new ArrayList<BranchGroup>());
@@ -258,8 +221,7 @@ public class RendererCache {
     private static final Color3f posCharge[] = new Color3f[1000];
     // For hiding live, but recycled Java3D Nodes
     /**
-     * Constant
-     * <code>nullAp</code>
+     * Constant <code>nullAp</code>
      */
     static public final Appearance nullAp;
 
@@ -304,7 +266,8 @@ public class RendererCache {
     }
 
     /**
-     * <p>appearanceFactory</p>
+     * <p>
+     * appearanceFactory</p>
      *
      * @param col a {@link javax.vecmath.Color3f} object.
      * @param polygonType a {@link ffx.potential.bonded.RendererCache.ViewModel}
@@ -331,7 +294,8 @@ public class RendererCache {
     }
 
     /**
-     * <p>coneFactory</p>
+     * <p>
+     * coneFactory</p>
      *
      * @param ap a {@link javax.media.j3d.Appearance} object.
      * @param res a int.
@@ -441,7 +405,8 @@ public class RendererCache {
     }
 
     /**
-     * <p>doubleCylinderFactory</p>
+     * <p>
+     * doubleCylinderFactory</p>
      *
      * @param a1 a {@link ffx.potential.bonded.Atom} object.
      * @param a2 a {@link ffx.potential.bonded.Atom} object.
@@ -484,7 +449,8 @@ public class RendererCache {
     }
 
     /**
-     * <p>getColor</p>
+     * <p>
+     * getColor</p>
      *
      * @param a a {@link ffx.potential.bonded.Atom} object.
      * @param mode a {@link ffx.potential.bonded.RendererCache.ColorModel}
@@ -535,7 +501,8 @@ public class RendererCache {
     }
 
     /**
-     * <p>getConeGeom</p>
+     * <p>
+     * getConeGeom</p>
      *
      * @param num a int.
      * @param res a int.
@@ -552,7 +519,8 @@ public class RendererCache {
     }
 
     /**
-     * <p>getCylinderGeom</p>
+     * <p>
+     * getCylinderGeom</p>
      *
      * @param num a int.
      * @param res a int.
@@ -572,7 +540,8 @@ public class RendererCache {
     }
 
     /**
-     * <p>getPolarGeom</p>
+     * <p>
+     * getPolarGeom</p>
      *
      * @param res a int.
      * @return a {@link javax.media.j3d.Geometry} object.
@@ -582,7 +551,8 @@ public class RendererCache {
     }
 
     /**
-     * <p>getScreenCoordinate</p>
+     * <p>
+     * getScreenCoordinate</p>
      *
      * @param canvas a {@link javax.media.j3d.Canvas3D} object.
      * @param node a {@link javax.media.j3d.Node} object.
@@ -613,8 +583,8 @@ public class RendererCache {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>sphereGeom</code>.</p>
+     * <p>
+     * Getter for the field <code>sphereGeom</code>.</p>
      *
      * @param res a int.
      * @return a {@link javax.media.j3d.Geometry} object.
@@ -682,7 +652,8 @@ public class RendererCache {
     }
 
     /**
-     * <p>materialFactory</p>
+     * <p>
+     * materialFactory</p>
      *
      * @param col a {@link javax.vecmath.Color3f} object.
      * @return a {@link javax.media.j3d.Material} object.
@@ -702,7 +673,8 @@ public class RendererCache {
 
     // A pool of TransformGroups with one child, a sphere.
     /**
-     * <p>poolDoubleCylinder</p>
+     * <p>
+     * poolDoubleCylinder</p>
      *
      * @param branchGroup a {@link javax.media.j3d.BranchGroup} object.
      */
@@ -714,7 +686,8 @@ public class RendererCache {
 
     // A pool of TransformGroups with one child, a sphere.
     /**
-     * <p>poolSphere</p>
+     * <p>
+     * poolSphere</p>
      *
      * @param tg a {@link javax.media.j3d.BranchGroup} object.
      */
@@ -725,7 +698,8 @@ public class RendererCache {
     }
 
     /**
-     * <p>poolTransform3D</p>
+     * <p>
+     * poolTransform3D</p>
      *
      * @param transform3D a {@link javax.media.j3d.Transform3D} object.
      */
@@ -736,7 +710,8 @@ public class RendererCache {
     }
 
     /**
-     * <p>sphereFactory</p>
+     * <p>
+     * sphereFactory</p>
      *
      * @param ap a {@link javax.media.j3d.Appearance} object.
      * @param div a int.
@@ -769,7 +744,8 @@ public class RendererCache {
     }
 
     /**
-     * <p>toAtomColor</p>
+     * <p>
+     * toAtomColor</p>
      *
      * @param s a {@link java.lang.String} object.
      * @return a {@link javax.vecmath.Color3f} object.
@@ -798,7 +774,8 @@ public class RendererCache {
     }
 
     /**
-     * <p>transform3DFactory</p>
+     * <p>
+     * transform3DFactory</p>
      *
      * @return a {@link javax.media.j3d.Transform3D} object.
      */
@@ -815,7 +792,8 @@ public class RendererCache {
     }
 
     /**
-     * <p>transform3DFactory</p>
+     * <p>
+     * transform3DFactory</p>
      *
      * @param position a {@link javax.vecmath.Vector3d} object.
      * @param scale a double.
@@ -839,13 +817,15 @@ public class RendererCache {
     }
 
     /**
-     * <p>Constructor for RendererCache.</p>
+     * <p>
+     * Constructor for RendererCache.</p>
      */
     public RendererCache() {
     }
 
     /**
-     * <p>Constructor for RendererCache.</p>
+     * <p>
+     * Constructor for RendererCache.</p>
      *
      * @param v a {@link ffx.potential.bonded.RendererCache.ViewModel} object.
      * @param c a {@link ffx.potential.bonded.RendererCache.ColorModel} object.

@@ -45,16 +45,14 @@ public class Polymer extends MSGroup {
 
     private static final long serialVersionUID = 1L;
     /**
-     * Constant
-     * <code>MultiScaleLevel=3</code>
+     * Constant <code>MultiScaleLevel=3</code>
      */
     public static final int MultiScaleLevel = 3;
     private static int count = 0;
     private static double[] da = new double[3];
     private static double[] db = new double[3];
     /**
-     * Constant
-     * <code>polymerColor</code>
+     * Constant <code>polymerColor</code>
      */
     public static Map<Integer, Color3f> polymerColor = new HashMap<Integer, Color3f>();
 
@@ -243,8 +241,8 @@ public class Polymer extends MSGroup {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>link</code>.</p>
+     * <p>
+     * Getter for the field <code>link</code>.</p>
      *
      * @return a boolean.
      */
@@ -253,8 +251,8 @@ public class Polymer extends MSGroup {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>chainID</code>.</p>
+     * <p>
+     * Getter for the field <code>chainID</code>.</p>
      *
      * @return a {@link java.lang.Character} object.
      */
@@ -304,7 +302,8 @@ public class Polymer extends MSGroup {
     }
 
     /**
-     * <p>getFirstResidue</p>
+     * <p>
+     * getFirstResidue</p>
      *
      * @return a {@link ffx.potential.bonded.Residue} object.
      */
@@ -317,7 +316,8 @@ public class Polymer extends MSGroup {
     }
 
     /**
-     * <p>getResidues</p>
+     * <p>
+     * getResidues</p>
      *
      * @return a {@link java.util.ArrayList} object.
      */
@@ -331,7 +331,8 @@ public class Polymer extends MSGroup {
     }
 
     /**
-     * <p>getResidue</p>
+     * <p>
+     * getResidue</p>
      *
      * @param resNum a int.
      * @return a {@link ffx.potential.bonded.Residue} object.
@@ -354,7 +355,8 @@ public class Polymer extends MSGroup {
     }
 
     /**
-     * <p>getResidue</p>
+     * <p>
+     * getResidue</p>
      *
      * @param resName a {@link java.lang.String} object.
      * @param resNum a int.
@@ -445,8 +447,8 @@ public class Polymer extends MSGroup {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>link</code>.</p>
+     * <p>
+     * Setter for the field <code>link</code>.</p>
      *
      * @param t a boolean.
      */

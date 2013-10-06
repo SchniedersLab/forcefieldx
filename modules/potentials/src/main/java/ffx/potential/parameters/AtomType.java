@@ -88,7 +88,8 @@ public final class AtomType extends BaseType implements Comparator<String> {
     }
 
     /**
-     * <p>incrementClassAndType</p>
+     * <p>
+     * incrementClassAndType</p>
      *
      * @param classIncrement a int.
      * @param typeIncrement a int.

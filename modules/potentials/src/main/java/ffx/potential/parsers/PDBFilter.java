@@ -1582,7 +1582,7 @@ public final class PDBFilter extends SystemFilter {
             buildHydrogen(residue, "H1\'", C1s, 1.09e0, O4s, 109.5e0, C2s, 109.5e0, -1, h1Typ[naNumber]);
             if (position == LAST_RESIDUE || numberOfResidues == 1) {
                 Atom H3T = (Atom) residue.getAtomNode("H3T");
-                if (H3T == null){
+                if (H3T == null) {
                     buildHydrogen(residue, "H3T", O3s, 1.00e0, C3s, 109.5e0, C4s, 180.0e0, 0, h3tTyp[naNumber]);
                     logger.info(residue.getAtomNode("H3T").toString());
                 }

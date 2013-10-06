@@ -46,9 +46,8 @@ public final class DYNFileFilter extends FileFilter {
     /**
      * {@inheritDoc}
      *
-     * This method return
-     * <code>true</code> if the file is a directory or TINKER Restart file
-     * (*.DYN).
+     * This method return <code>true</code> if the file is a directory or TINKER
+     * Restart file (*.DYN).
      */
     @Override
     public boolean accept(File file) {

@@ -73,43 +73,35 @@ public abstract class MSGroup extends MSNode {
     // List of underconstrained Atoms
     private ArrayList<Atom> dangelingatoms;
     /**
-     * Constant
-     * <code>bondTime=0</code>
+     * Constant <code>bondTime=0</code>
      */
     protected static long bondTime = 0;
     /**
-     * Constant
-     * <code>angleTime=0</code>
+     * Constant <code>angleTime=0</code>
      */
     protected static long angleTime = 0;
     /**
-     * Constant
-     * <code>stretchBendTime=0</code>
+     * Constant <code>stretchBendTime=0</code>
      */
     protected static long stretchBendTime = 0;
     /**
-     * Constant
-     * <code>ureyBradleyTime=0</code>
+     * Constant <code>ureyBradleyTime=0</code>
      */
     protected static long ureyBradleyTime = 0;
     /**
-     * Constant
-     * <code>outOfPlaneBendTime=0</code>
+     * Constant <code>outOfPlaneBendTime=0</code>
      */
     protected static long outOfPlaneBendTime = 0;
     /**
-     * Constant
-     * <code>torsionTime=0</code>
+     * Constant <code>torsionTime=0</code>
      */
     protected static long torsionTime = 0;
     /**
-     * Constant
-     * <code>piOrbitalTorsionTime=0</code>
+     * Constant <code>piOrbitalTorsionTime=0</code>
      */
     protected static long piOrbitalTorsionTime = 0;
     /**
-     * Constant
-     * <code>torsionTorsionTime=0</code>
+     * Constant <code>torsionTorsionTime=0</code>
      */
     protected static long torsionTorsionTime = 0;
 
@@ -165,7 +157,8 @@ public abstract class MSGroup extends MSNode {
     public abstract MSNode addMSNode(MSNode m);
 
     /**
-     * <p>reOrderAtoms</p>
+     * <p>
+     * reOrderAtoms</p>
      */
     public void reOrderAtoms() {
         ArrayList<Atom> atomList = getAtomList();
@@ -193,7 +186,8 @@ public abstract class MSGroup extends MSNode {
     }
 
     /**
-     * <p>collectValenceTerms</p>
+     * <p>
+     * collectValenceTerms</p>
      */
     public void collectValenceTerms() {
         MSNode newBondNode = new MSNode("Bonds");
@@ -457,7 +451,8 @@ public abstract class MSGroup extends MSNode {
     }
 
     /**
-     * <p>constructValenceTerms</p>
+     * <p>
+     * constructValenceTerms</p>
      */
     public void constructValenceTerms() {
         MSNode b = new MSNode("Bonds");
@@ -974,7 +969,8 @@ public abstract class MSGroup extends MSNode {
     }
 
     /**
-     * <p>removeLeaves</p>
+     * <p>
+     * removeLeaves</p>
      */
     protected void removeLeaves() {
         if (termNode.getParent() == null) {
@@ -1200,7 +1196,8 @@ public abstract class MSGroup extends MSNode {
     }
 
     /**
-     * <p>updateAtoms</p>
+     * <p>
+     * updateAtoms</p>
      */
     public void updateAtoms() {
         for (Atom a : getAtomList()) {
@@ -1209,7 +1206,8 @@ public abstract class MSGroup extends MSNode {
     }
 
     /**
-     * <p>updateBonds</p>
+     * <p>
+     * updateBonds</p>
      */
     public void updateBonds() {
         for (ROLS b : getBondList()) {

@@ -86,7 +86,8 @@ public abstract class BondedTerm extends MSNode {
     }
 
     /**
-     * <p>containsHydrogen</p>
+     * <p>
+     * containsHydrogen</p>
      *
      * @return a boolean.
      */
@@ -144,7 +145,8 @@ public abstract class BondedTerm extends MSNode {
     }
 
     /**
-     * <p>containsAtom</p>
+     * <p>
+     * containsAtom</p>
      *
      * @param atom a {@link ffx.potential.bonded.Atom} object.
      * @return a boolean.
@@ -249,7 +251,8 @@ public abstract class BondedTerm extends MSNode {
     }
 
     /**
-     * <p>setID_Key</p>
+     * <p>
+     * setID_Key</p>
      *
      * @param reverse a boolean.
      */
