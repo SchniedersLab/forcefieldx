@@ -1414,6 +1414,28 @@ public final class PDBFilter extends SystemFilter {
                 //name = name.replace('D', 'H');
                 atom.setName(name);
             }
+            
+            /**
+             * Check if this is a 3' phosphate being listed as its own residue.
+             */
+            /*if (residue.getAtomList().size() == 1) {
+                Atom P3s = (Atom) residue.getAtomNode("P");
+                if (P3s != null) {
+                    Residue prevResidue = residue.getPreviousResidue();
+                    if (prevResidue != null) {
+                        Atom O2sPrev = (Atom) prevResidue.getAtomNode("O2\'");
+                        if (O2sPrev == null) {
+                            P3s = buildHeavy(prevResidue, "P3s", null, 1247);
+                        } else {
+                            P3s = buildHeavy(prevResidue, "P3s", null, 1235);
+                        }
+                    } else {
+                        return;
+                    }
+                } else {
+                    return;
+                }
+            }*/
 
             /**
              * Check if the sugar is deoxyribose and change the residue name if

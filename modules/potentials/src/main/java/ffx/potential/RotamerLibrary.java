@@ -578,6 +578,7 @@ public class RotamerLibrary {
                 aminoAcidRotamerCache[n][7] = new Rotamer(name, -177, 0, -180, 0);
                 aminoAcidRotamerCache[n][8] = new Rotamer(name, -177, 0, -115, 0);
                 aminoAcidRotamerCache[n][9] = new Rotamer(name, -70, 0, 165, 0);
+                break;
             case ASN:
                 aminoAcidRotamerCache[n] = new Rotamer[7];
                 aminoAcidRotamerCache[n][0] = new Rotamer(name, 62, 0, -10, 0);
@@ -3172,6 +3173,11 @@ public class RotamerLibrary {
         if (residue.getNextResidue() == null) {
             is3sTerminal = true;
         }
+        
+        // Check if this is a 3' phosphate being listed as its own residue.
+        /* if (residue.getAtomList().size() == 1) {
+            return;
+        } */
 
         boolean isDeoxy; // Could be specified by appplySugarPucker, but that
         // would be confusing.
