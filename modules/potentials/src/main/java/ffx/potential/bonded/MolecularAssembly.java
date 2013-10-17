@@ -56,13 +56,11 @@ public class MolecularAssembly extends MSGroup {
     private static final Logger logger = Logger.getLogger(MolecularAssembly.class.getName());
     private static final long serialVersionUID = 1L;
     /**
-     * Constant
-     * <code>MultiScaleLevel=4</code>
+     * Constant <code>MultiScaleLevel=4</code>
      */
     public static final int MultiScaleLevel = 4;
     /**
-     * Constant
-     * <code>KCAL_TO_KJ=4.184</code>
+     * Constant <code>KCAL_TO_KJ=4.184</code>
      */
     public static final double KCAL_TO_KJ = 4.184;
     private static double[] a = new double[3];
@@ -104,7 +102,8 @@ public class MolecularAssembly extends MSGroup {
 
     // Constructors
     /**
-     * <p>Constructor for MolecularAssembly.</p>
+     * <p>
+     * Constructor for MolecularAssembly.</p>
      *
      * @param name a {@link java.lang.String} object.
      */
@@ -117,7 +116,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>Constructor for MolecularAssembly.</p>
+     * <p>
+     * Constructor for MolecularAssembly.</p>
      *
      * @param name a {@link java.lang.String} object.
      * @param Polymers a {@link ffx.potential.bonded.MSNode} object.
@@ -127,8 +127,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>forceField</code>.</p>
+     * <p>
+     * Setter for the field <code>forceField</code>.</p>
      *
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
      */
@@ -137,7 +137,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>setPotential</p>
+     * <p>
+     * setPotential</p>
      *
      * @param potentialEnergy a {@link ffx.potential.ForceFieldEnergy} object.
      */
@@ -146,8 +147,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>potentialEnergy</code>.</p>
+     * <p>
+     * Getter for the field <code>potentialEnergy</code>.</p>
      *
      * @return a {@link ffx.potential.ForceFieldEnergy} object.
      */
@@ -156,7 +157,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>getCrystal</p>
+     * <p>
+     * getCrystal</p>
      *
      * @return a {@link ffx.crystal.Crystal} object.
      */
@@ -168,8 +170,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>forceField</code>.</p>
+     * <p>
+     * Getter for the field <code>forceField</code>.</p>
      *
      * @return a {@link ffx.potential.parameters.ForceField} object.
      */
@@ -178,7 +180,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>addAltLocation</p>
+     * <p>
+     * addAltLocation</p>
      *
      * @param s a {@link java.lang.String} object.
      */
@@ -252,7 +255,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>center</p>
+     * <p>
+     * center</p>
      */
     public void center() {
         double center[] = getMultiScaleCenter(false);
@@ -273,7 +277,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>centerAt</p>
+     * <p>
+     * centerAt</p>
      *
      * @param d an array of double.
      */
@@ -298,7 +303,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>centerView</p>
+     * <p>
+     * centerView</p>
      *
      * @param rot a boolean.
      * @param trans a boolean.
@@ -320,7 +326,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>createBox</p>
+     * <p>
+     * createBox</p>
      */
     public void createBox() {
         int vertices = 8;
@@ -443,7 +450,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>detach</p>
+     * <p>
+     * detach</p>
      */
     public void detach() {
         synchronized (this) {
@@ -524,7 +532,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>findAtom</p>
+     * <p>
+     * findAtom</p>
      *
      * @param atom a {@link ffx.potential.bonded.Atom} object.
      * @return a {@link ffx.potential.bonded.Atom} object.
@@ -628,7 +637,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>getAltLocations</p>
+     * <p>
+     * getAltLocations</p>
      *
      * @return an array of {@link java.lang.String} objects.
      */
@@ -647,7 +657,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>getAtomFromWireVertex</p>
+     * <p>
+     * getAtomFromWireVertex</p>
      *
      * @param i a int.
      * @return a {@link ffx.potential.bonded.Atom} object.
@@ -661,7 +672,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>getAtomArray</p>
+     * <p>
+     * getAtomArray</p>
      *
      * @return an array of {@link ffx.potential.bonded.Atom} objects.
      */
@@ -674,7 +686,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>getBackBoneAtoms</p>
+     * <p>
+     * getBackBoneAtoms</p>
      *
      * @return a {@link java.util.ArrayList} object.
      */
@@ -707,8 +720,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>branchGroup</code>.</p>
+     * <p>
+     * Getter for the field <code>branchGroup</code>.</p>
      *
      * @return a {@link javax.media.j3d.BranchGroup} object.
      */
@@ -717,7 +730,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>getChain</p>
+     * <p>
+     * getChain</p>
      *
      * @param name a {@link java.lang.String} object.
      * @return a {@link ffx.potential.bonded.Polymer} object.
@@ -736,7 +750,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>getChainNames</p>
+     * <p>
+     * getChainNames</p>
      *
      * @return an array of {@link java.lang.String} objects.
      */
@@ -762,7 +777,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>getChains</p>
+     * <p>
+     * getChains</p>
      *
      * @return an array of {@link ffx.potential.bonded.Polymer} objects.
      */
@@ -781,8 +797,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>currentCycle</code>.</p>
+     * <p>
+     * Getter for the field <code>currentCycle</code>.</p>
      *
      * @return a int.
      */
@@ -791,8 +807,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>cycles</code>.</p>
+     * <p>
+     * Getter for the field <code>cycles</code>.</p>
      *
      * @return a int.
      */
@@ -824,8 +840,8 @@ public class MolecularAssembly extends MSGroup {
         for (ListIterator li = getAtomList().listIterator(); li.hasNext();) {
             ((Atom) li.next()).getXYZ(xyz);
             VectorMath.diff(xyz, Rc, xyz);
-            r =
-                    VectorMath.r(xyz);
+            r
+                    = VectorMath.r(xyz);
             if (d < r) {
                 d = r;
             }
@@ -835,8 +851,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>file</code>.</p>
+     * <p>
+     * Getter for the field <code>file</code>.</p>
      *
      * @return a {@link java.io.File} object.
      */
@@ -845,8 +861,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>offset</code>.</p>
+     * <p>
+     * Getter for the field <code>offset</code>.</p>
      *
      * @return a {@link javax.vecmath.Vector3d} object.
      */
@@ -859,8 +875,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>originToRot</code>.</p>
+     * <p>
+     * Getter for the field <code>originToRot</code>.</p>
      *
      * @return a {@link javax.media.j3d.TransformGroup} object.
      */
@@ -869,7 +885,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>getPolymer</p>
+     * <p>
+     * getPolymer</p>
      *
      * @param chainID a {@link java.lang.Character} object.
      * @param segID a {@link java.lang.String} object.
@@ -914,8 +931,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>ions</code>.</p>
+     * <p>
+     * Getter for the field <code>ions</code>.</p>
      *
      * @return a {@link java.util.ArrayList} object.
      */
@@ -924,8 +941,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>molecules</code>.</p>
+     * <p>
+     * Getter for the field <code>molecules</code>.</p>
      *
      * @return a {@link java.util.ArrayList} object.
      */
@@ -938,7 +955,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>getWaters</p>
+     * <p>
+     * getWaters</p>
      *
      * @return a {@link java.util.ArrayList} object.
      */
@@ -947,7 +965,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>deleteMolecule</p>
+     * <p>
+     * deleteMolecule</p>
      *
      * @param molecule a {@link ffx.potential.bonded.Molecule} object.
      */
@@ -1033,7 +1052,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>getResidueList</p>
+     * <p>
+     * getResidueList</p>
      *
      * @return a {@link java.util.ArrayList} object.
      */
@@ -1060,7 +1080,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>getNodeList</p>
+     * <p>
+     * getNodeList</p>
      *
      * @return a {@link java.util.ArrayList} object.
      */
@@ -1102,7 +1123,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>getTransformGroup</p>
+     * <p>
+     * getTransformGroup</p>
      *
      * @return a {@link javax.media.j3d.TransformGroup} object.
      */
@@ -1111,7 +1133,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>getWireFrame</p>
+     * <p>
+     * getWireFrame</p>
      *
      * @return a {@link javax.media.j3d.Node} object.
      */
@@ -1120,7 +1143,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>isVisible</p>
+     * <p>
+     * isVisible</p>
      *
      * @return a boolean.
      */
@@ -1129,7 +1153,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>loadVRML</p>
+     * <p>
+     * loadVRML</p>
      *
      * @return a {@link javax.media.j3d.BranchGroup} object.
      */
@@ -1160,7 +1185,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>moveCenter</p>
+     * <p>
+     * moveCenter</p>
      *
      * @param d an array of double.
      */
@@ -1280,17 +1306,17 @@ public class MolecularAssembly extends MSGroup {
         la.setCapability(LineArray.ALLOW_COUNT_READ);
         la.setCapability(LineArray.ALLOW_INTERSECT);
         la.setCapability(LineArray.ALLOW_FORMAT_READ);
-        atomLookUp =
-                new Atom[4 * numbonds];
+        atomLookUp
+                = new Atom[4 * numbonds];
         int i = 0;
         col[3] = 0.9f;
         for (ListIterator li = bondList.listIterator(); li.hasNext();) {
             bond = (Bond) li.next();
             bond.setWire(la, i);
-            atom1 =
-                    bond.getAtom(0);
-            atom2 =
-                    bond.getAtom(1);
+            atom1
+                    = bond.getAtom(0);
+            atom2
+                    = bond.getAtom(1);
             atom1.getV3D(v1);
             atom2.getV3D(v2);
             a1[0] = (float) v1.x;
@@ -1333,12 +1359,11 @@ public class MolecularAssembly extends MSGroup {
 
         }
 
-
         ColoringAttributes cola = new ColoringAttributes(new Color3f(),
                 ColoringAttributes.SHADE_GOURAUD);
         Appearance app = new Appearance();
-        lineAttributes =
-                new LineAttributes();
+        lineAttributes
+                = new LineAttributes();
         lineAttributes.setLineWidth(RendererCache.bondwidth);
         lineAttributes.setCapability(LineAttributes.ALLOW_WIDTH_WRITE);
         lineAttributes.setLineAntialiasingEnable(true);
@@ -1392,7 +1417,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>sceneGraphChange</p>
+     * <p>
+     * sceneGraphChange</p>
      *
      * @param newShapes a {@link java.util.List} object.
      */
@@ -1475,8 +1501,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>currentCycle</code>.</p>
+     * <p>
+     * Setter for the field <code>currentCycle</code>.</p>
      *
      * @param c a int.
      */
@@ -1491,8 +1517,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>cycles</code>.</p>
+     * <p>
+     * Setter for the field <code>cycles</code>.</p>
      *
      * @param c a int.
      */
@@ -1501,8 +1527,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>file</code>.</p>
+     * <p>
+     * Setter for the field <code>file</code>.</p>
      *
      * @param f a {@link java.io.File} object.
      */
@@ -1514,8 +1540,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>offset</code>.</p>
+     * <p>
+     * Setter for the field <code>offset</code>.</p>
      *
      * @param o a {@link javax.vecmath.Vector3d} object.
      */
@@ -1576,7 +1602,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>setVRML</p>
+     * <p>
+     * setVRML</p>
      *
      * @param v a {@link javax.media.j3d.BranchGroup} object.
      */
@@ -1587,29 +1614,32 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>setVRML</p>
+     * <p>
+     * setVRML</p>
      *
      * @param file a {@link java.io.File} object.
      */
     public void setVRML(File file) {
         vrmlFile = file;
-        vrmlURL =
-                null;
+        vrmlURL
+                = null;
     }
 
     /**
-     * <p>setVRML</p>
+     * <p>
+     * setVRML</p>
      *
      * @param url a {@link java.net.URL} object.
      */
     public void setVRML(URL url) {
         vrmlURL = url;
-        vrmlFile =
-                null;
+        vrmlFile
+                = null;
     }
 
     /**
-     * <p>setWireWidth</p>
+     * <p>
+     * setWireWidth</p>
      *
      * @param f a float.
      */
@@ -1622,7 +1652,8 @@ public class MolecularAssembly extends MSGroup {
     }
 
     /**
-     * <p>sidePolymerCOM</p>
+     * <p>
+     * sidePolymerCOM</p>
      */
     public void sidePolymerCOM() {
         ArrayList residues = getResidueList();

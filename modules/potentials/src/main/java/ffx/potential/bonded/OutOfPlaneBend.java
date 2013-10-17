@@ -126,8 +126,8 @@ public class OutOfPlaneBend extends BondedTerm implements
                         * outOfPlaneBendType.forceConstant
                         * dv
                         * toDegrees(2.0 + 3.0 * cubic * dv + 4.0 * quartic
-                        * dv2 + 5.0 * quintic * dv3 + 6.0 * sextic
-                        * dv4);
+                                * dv2 + 5.0 * quintic * dv3 + 6.0 * sextic
+                                * dv4);
                 double dedcos = 0.0;
                 if (ee != 0.0) {
                     dedcos = -deddt * signum(ee) / sqrt(cc * bkk2);

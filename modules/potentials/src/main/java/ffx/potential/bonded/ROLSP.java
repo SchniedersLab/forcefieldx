@@ -52,13 +52,11 @@ public class ROLSP extends MSNode implements ROLS, Runnable {
     }
     private static final long serialVersionUID = 1L;
     /**
-     * Constant
-     * <code>GO_PARALLEL=false</code>
+     * Constant <code>GO_PARALLEL=false</code>
      */
     public static boolean GO_PARALLEL = false;
     /**
-     * Constant
-     * <code>parallelNotDone=0</code>
+     * Constant <code>parallelNotDone=0</code>
      */
     public static int parallelNotDone = 0;
 
@@ -79,7 +77,8 @@ public class ROLSP extends MSNode implements ROLS, Runnable {
     private List<BranchGroup> newShapes = null;
 
     /**
-     * <p>Constructor for ROLSP.</p>
+     * <p>
+     * Constructor for ROLSP.</p>
      */
     public ROLSP() {
         super("Parallel Node");

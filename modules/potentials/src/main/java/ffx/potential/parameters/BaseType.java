@@ -76,8 +76,8 @@ public abstract class BaseType {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>key</code>.</p>
+     * <p>
+     * Setter for the field <code>key</code>.</p>
      *
      * @param keys an array of int.
      */
@@ -91,8 +91,8 @@ public abstract class BaseType {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>key</code>.</p>
+     * <p>
+     * Setter for the field <code>key</code>.</p>
      *
      * @param key a {@link java.lang.String} object.
      */
@@ -101,8 +101,7 @@ public abstract class BaseType {
     }
 
     /**
-     * Get the
-     * <code>key</code> for this Type.
+     * Get the <code>key</code> for this Type.
      *
      * @return the key
      * @since 1.0
@@ -112,8 +111,7 @@ public abstract class BaseType {
     }
 
     /**
-     * Log
-     * <code>this</code> type.
+     * Log <code>this</code> type.
      *
      * @since 1.0
      */
@@ -124,8 +122,7 @@ public abstract class BaseType {
     }
 
     /**
-     * Print
-     * <code>this</code> to System.out.
+     * Print <code>this</code> to System.out.
      *
      * @since 1.0
      */

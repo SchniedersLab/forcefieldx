@@ -57,7 +57,8 @@ public final class PiTorsionType extends BaseType implements Comparator<String> 
     }
 
     /**
-     * <p>incrementClasses</p>
+     * <p>
+     * incrementClasses</p>
      *
      * @param increment a int.
      */

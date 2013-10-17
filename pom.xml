@@ -16,7 +16,7 @@
     </prerequisites>
     <issueManagement>
         <system>Jira</system>
-        <url>http://kenai.com/jira/browse/ffx</url>
+        <url>http://kenai.com/jira/browse/ffx?pid=11160</url>
     </issueManagement>
     <ciManagement>
         <system>Jenkins</system>
@@ -462,9 +462,9 @@
                         <argument>ffx.Main</argument>
                         <argument>timer</argument>
                         <argument>-n</argument>
-                        <argument>10</argument>
+                        <argument>100</argument>
                         <argument>-c</argument>
-                        <argument>8</argument>
+                        <argument>4</argument>
                         <argument>examples/ubiquitin.xyz</argument>
                     </arguments>
                 </configuration>

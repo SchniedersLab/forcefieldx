@@ -46,9 +46,8 @@ public final class PDBFileFilter extends FileFilter {
     /**
      * {@inheritDoc}
      *
-     * This method return
-     * <code>true</code> if the file is a directory or Protein Databank File
-     * (*.PDB).
+     * This method return <code>true</code> if the file is a directory or
+     * Protein Databank File (*.PDB).
      */
     @Override
     public boolean accept(File file) {

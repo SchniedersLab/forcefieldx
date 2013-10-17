@@ -81,7 +81,8 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
     }
 
     /**
-     * <p>incrementType</p>
+     * <p>
+     * incrementType</p>
      *
      * @param increment a int.
      */
@@ -127,7 +128,8 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
     }
 
     /**
-     * <p>add</p>
+     * <p>
+     * add</p>
      *
      * @param key a int.
      */

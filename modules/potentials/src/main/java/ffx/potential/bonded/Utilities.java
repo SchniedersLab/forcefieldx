@@ -121,7 +121,8 @@ public final class Utilities {
     }
 
     /**
-     * <p>addAtomListToPool</p>
+     * <p>
+     * addAtomListToPool</p>
      *
      * @param a a {@link java.util.List} object.
      */
@@ -478,7 +479,8 @@ public final class Utilities {
     }
 
     /**
-     * <p>countCO</p>
+     * <p>
+     * countCO</p>
      *
      * @param adjacent a {@link ffx.potential.bonded.Atom} object.
      * @return a int.
@@ -500,7 +502,8 @@ public final class Utilities {
     }
 
     /**
-     * <p>divideBackbone</p>
+     * <p>
+     * divideBackbone</p>
      *
      * @param backbone a {@link java.util.List} object.
      * @param c a {@link ffx.potential.bonded.Polymer} object.
@@ -897,7 +900,8 @@ public final class Utilities {
     }
 
     /**
-     * <p>findPolymer</p>
+     * <p>
+     * findPolymer</p>
      *
      * @param atoms List
      * @param currentAtom Atom
@@ -1042,7 +1046,8 @@ public final class Utilities {
     }
 
     /**
-     * <p>getAtomListFromPool</p>
+     * <p>
+     * getAtomListFromPool</p>
      *
      * @return a {@link java.util.List} object.
      */

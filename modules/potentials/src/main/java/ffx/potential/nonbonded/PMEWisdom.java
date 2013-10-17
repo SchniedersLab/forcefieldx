@@ -148,7 +148,8 @@ public class PMEWisdom {
     private static double toSeconds = 0.000000001;
 
     /**
-     * <p>run</p>
+     * <p>
+     * run</p>
      */
     public void run() {
         final double maxCutoff = min(min(crystal.a, crystal.b), crystal.c)
@@ -158,9 +159,10 @@ public class PMEWisdom {
          * Following Essmann et al. (1995), we choose a real space Ewald cutoff
          * of 9.0 Angstroms and require that erfc(Beta * r) / r < 10^(-8) at the
          * cutoff. A beta value (aka the Ewald coefficient) of 0.42 satisfies
-         * this criteria. <p> In the limit of infinite b-Spline order a Gaussian
-         * is achieved. Here we use order 10. Finally, a reciprocal space grid
-         * spacing of 0.66 A is chosen.
+         * this criteria. <p>
+         * In the limit of infinite b-Spline order a Gaussian is achieved. Here
+         * we use order 10. Finally, a reciprocal space grid spacing of 0.66 A
+         * is chosen.
          */
         double beta = 0.42;
         double cutoff = ParticleMeshEwald.ewaldCutoff(beta, maxCutoff, 1e-10);
@@ -206,9 +208,9 @@ public class PMEWisdom {
             } else {
                 logger.info("Breaking due to slow time.\n"
                         + String.format("Best Time:                   %5.3f\n", bestTime
-                        * toSeconds)
+                                * toSeconds)
                         + String.format("New Time:                    %5.3f\n", newTime
-                        * toSeconds));
+                                * toSeconds));
                 break;
             }
         }

@@ -32,8 +32,7 @@ public class MSRoot extends MSNode {
 
     private static final long serialVersionUID = 1L;
     /**
-     * Constant
-     * <code>MultiScaleLevel=ROLS.MaxLengthScale</code>
+     * Constant <code>MultiScaleLevel=ROLS.MaxLengthScale</code>
      */
     public static final int MultiScaleLevel = ROLS.MaxLengthScale;
 

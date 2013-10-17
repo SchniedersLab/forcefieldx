@@ -47,8 +47,7 @@ import ffx.potential.bonded.Atom;
 public class SpatialDensityRegion extends ParallelRegion {
 
     /**
-     * Constant
-     * <code>logger</code>
+     * Constant <code>logger</code>
      */
     protected static final Logger logger = Logger.getLogger(SpatialDensityRegion.class.getName());
     /**
@@ -144,7 +143,8 @@ public class SpatialDensityRegion extends ParallelRegion {
     private GridInitLoop gridInitLoop;
 
     /**
-     * <p>Constructor for SpatialDensityRegion.</p>
+     * <p>
+     * Constructor for SpatialDensityRegion.</p>
      *
      * @param gX a int.
      * @param gY a int.
@@ -283,8 +283,8 @@ public class SpatialDensityRegion extends ParallelRegion {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>grid</code>.</p>
+     * <p>
+     * Getter for the field <code>grid</code>.</p>
      *
      * @return an array of double.
      */
@@ -297,7 +297,8 @@ public class SpatialDensityRegion extends ParallelRegion {
     }
 
     /**
-     * <p>getNsymm</p>
+     * <p>
+     * getNsymm</p>
      *
      * @return a int.
      */
@@ -306,7 +307,8 @@ public class SpatialDensityRegion extends ParallelRegion {
     }
 
     /**
-     * <p>setDensityLoop</p>
+     * <p>
+     * setDensityLoop</p>
      *
      * @param loops an array of
      * {@link ffx.potential.nonbonded.SpatialDensityLoop} objects.
@@ -340,8 +342,8 @@ public class SpatialDensityRegion extends ParallelRegion {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>initValue</code>.</p>
+     * <p>
+     * Setter for the field <code>initValue</code>.</p>
      *
      * @param initValue a double.
      */
@@ -556,7 +558,8 @@ public class SpatialDensityRegion extends ParallelRegion {
     }
 
     /**
-     * <p>index</p>
+     * <p>
+     * index</p>
      *
      * @param ia a int.
      * @param ib a int.

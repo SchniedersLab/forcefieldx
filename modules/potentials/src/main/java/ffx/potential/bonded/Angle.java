@@ -91,8 +91,8 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>angleMode</code>.</p>
+     * <p>
+     * Setter for the field <code>angleMode</code>.</p>
      *
      * @param mode a {@link ffx.potential.bonded.Angle.AngleMode} object.
      * @param a4 a {@link ffx.potential.bonded.Atom} object.
@@ -130,8 +130,8 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>rigidScale</code>.</p>
+     * <p>
+     * Setter for the field <code>rigidScale</code>.</p>
      *
      * @param rigidScale a double.
      */
@@ -165,7 +165,7 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
         }
         return null;
     }
-    
+
     public Atom getCentralAtom() {
         return atoms[1];
     }
@@ -452,23 +452,19 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
      */
     protected static final double p[] = new double[3];
     /**
-     * Constant
-     * <code>ip=new double[3]</code>
+     * Constant <code>ip=new double[3]</code>
      */
     protected static final double ip[] = new double[3];
     /**
-     * Constant
-     * <code>jp=new double[3]</code>
+     * Constant <code>jp=new double[3]</code>
      */
     protected static final double jp[] = new double[3];
     /**
-     * Constant
-     * <code>kp=new double[3]</code>
+     * Constant <code>kp=new double[3]</code>
      */
     protected static final double kp[] = new double[3];
     /**
-     * Constant
-     * <code>lp=new double[3]</code>
+     * Constant <code>lp=new double[3]</code>
      */
     protected static final double lp[] = new double[3];
     /**
@@ -484,8 +480,7 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
      */
     protected static final double g2[] = new double[3];
     /**
-     * Constant
-     * <code>g3=new double[3]</code>
+     * Constant <code>g3=new double[3]</code>
      */
     protected static final double g3[] = new double[3];
     private static final double ded0[] = new double[3];

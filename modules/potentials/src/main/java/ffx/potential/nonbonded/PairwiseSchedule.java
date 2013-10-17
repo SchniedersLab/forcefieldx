@@ -43,7 +43,8 @@ public class PairwiseSchedule extends IntegerSchedule {
     private final boolean threadDone[];
 
     /**
-     * <p>Constructor for PairwiseSchedule.</p>
+     * <p>
+     * Constructor for PairwiseSchedule.</p>
      *
      * @param nThreads a int.
      * @param nAtoms a int.
@@ -93,7 +94,8 @@ public class PairwiseSchedule extends IntegerSchedule {
     }
 
     /**
-     * <p>updateRanges</p>
+     * <p>
+     * updateRanges</p>
      *
      * @param totalInteractions a int.
      * @param listCount an array of int.

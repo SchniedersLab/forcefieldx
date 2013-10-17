@@ -83,7 +83,8 @@ public interface Potential {
      * returned.
      *
      * @param parameters Supplied array.
-     * @return The array filled with paramter values.
+     * 
+     * @return The array filled with parameter values.
      */
     public abstract double[] getCoordinates(double[] parameters);
 

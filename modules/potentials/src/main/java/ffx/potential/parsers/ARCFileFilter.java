@@ -46,8 +46,8 @@ public final class ARCFileFilter extends FileFilter {
     /**
      * {@inheritDoc}
      *
-     * This method return
-     * <code>true</code> if the file is a directory or TINKER Archive (*.ARC).
+     * This method return <code>true</code> if the file is a directory or TINKER
+     * Archive (*.ARC).
      */
     @Override
     public boolean accept(File file) {

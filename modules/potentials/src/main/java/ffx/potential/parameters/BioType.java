@@ -62,7 +62,8 @@ public final class BioType extends BaseType implements Comparator<String> {
     }
 
     /**
-     * <p>incrementIndexAndType</p>
+     * <p>
+     * incrementIndexAndType</p>
      *
      * @param indexIncrement a int.
      * @param typeIncrement a int.

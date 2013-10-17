@@ -43,7 +43,8 @@ public class DYNFilter {
     private String label;
 
     /**
-     * <p>Constructor for DYNFilter.</p>
+     * <p>
+     * Constructor for DYNFilter.</p>
      *
      */
     public DYNFilter(String label) {
@@ -51,7 +52,8 @@ public class DYNFilter {
     }
 
     /**
-     * <p>readDYN</p>
+     * <p>
+     * readDYN</p>
      *
      * @param dynFile a {@link java.io.File} object.
      * @param x an array of double.
@@ -170,7 +172,8 @@ public class DYNFilter {
     }
 
     /**
-     * <p>writeDYN</p>
+     * <p>
+     * writeDYN</p>
      *
      * @param dynFile a {@link java.io.File} object.
      * @param unitCell a {@link ffx.crystal.Crystal} object.

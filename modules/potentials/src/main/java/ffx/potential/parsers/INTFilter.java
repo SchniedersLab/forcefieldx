@@ -54,24 +54,11 @@ import static ffx.numerics.VectorMath.*;
 public class INTFilter extends SystemFilter {
 
     private static final Logger logger = Logger.getLogger(INTFilter.class.getName());
-    private static double x[] = new double[3];
-    private static double xa[] = new double[3];
-    private static double xb[] = new double[3];
-    private static double xc[] = new double[3];
-    private static double xab[] = new double[3];
-    private static double xba[] = new double[3];
-    private static double xbc[] = new double[3];
-    private static double xac[] = new double[3];
-    private static double xt[] = new double[3];
-    private static double xu[] = new double[3];
-    private static double rab, cosb, sinb, cosg, sing;
-    private static double sine, sine2, cosine;
-    private static double a, b, c;
-    private static double xtmp, ztmp;
     private static double eps = 0.0000001d;
 
     /**
-     * <p>Constructor for INTFilter.</p>
+     * <p>
+     * Constructor for INTFilter.</p>
      *
      * @param files a {@link java.util.List} object.
      * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly}
@@ -87,7 +74,8 @@ public class INTFilter extends SystemFilter {
     }
 
     /**
-     * <p>Constructor for INTFilter.</p>
+     * <p>
+     * Constructor for INTFilter.</p>
      *
      * @param file a {@link java.io.File} object.
      * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly}
@@ -125,19 +113,25 @@ public class INTFilter extends SystemFilter {
         if (ia == null) {
             atom.moveTo(0.0d, 0.0d, 0.0d);
         } else if (ib == null) {
+            double xa[] = new double[3];
             // One partner - place on the z-axis
             ia.getXYZ(xa);
             xa[2] += bond;
             atom.moveTo(xa);
         } else if (ic == null) {
             // Two partners - place in the xz-plane
+            double xa[] = new double[3];
+            double xb[] = new double[3];
+            double xab[] = new double[3];
+            double x[] = new double[3];
             ia.getXYZ(xa);
             ib.getXYZ(xb);
             diff(xa, xb, xab);
-            rab = r(xab);
+            double rab = r(xab);
             norm(xab, xab);
-            cosb = xab[2];
-            sinb = sqrt(xab[0] * xab[0] + xab[1] * xab[1]);
+            double cosb = xab[2];
+            double sinb = sqrt(xab[0] * xab[0] + xab[1] * xab[1]);
+            double cosg, sing;
             if (sinb == 0.0d) {
                 cosg = 1.0d;
                 sing = 0.0d;
@@ -145,13 +139,21 @@ public class INTFilter extends SystemFilter {
                 cosg = xab[1] / sinb;
                 sing = xab[0] / sinb;
             }
-            xtmp = bond * zsin0;
-            ztmp = rab - bond * zcos0;
+            double xtmp = bond * zsin0;
+            double ztmp = rab - bond * zcos0;
             x[0] = xb[0] + xtmp * cosg + ztmp * sing * sinb;
             x[1] = xb[1] - xtmp * sing + ztmp * cosg * sinb;
             x[2] = xb[2] + ztmp * cosb;
             atom.moveTo(x);
         } else if (chiral == 0) {
+            double xa[] = new double[3];
+            double xb[] = new double[3];
+            double xc[] = new double[3];
+            double xab[] = new double[3];
+            double xbc[] = new double[3];
+            double xt[] = new double[3];
+            double xu[] = new double[3];
+            double x[] = new double[3];
             // General case - with a dihedral
             ia.getXYZ(xa);
             ib.getXYZ(xb);
@@ -163,8 +165,8 @@ public class INTFilter extends SystemFilter {
             xt[0] = xab[2] * xbc[1] - xab[1] * xbc[2];
             xt[1] = xab[0] * xbc[2] - xab[2] * xbc[0];
             xt[2] = xab[1] * xbc[0] - xab[0] * xbc[1];
-            cosine = xab[0] * xbc[0] + xab[1] * xbc[1] + xab[2] * xbc[2];
-            sine = sqrt(max(1.0d - cosine * cosine, eps));
+            double cosine = xab[0] * xbc[0] + xab[1] * xbc[1] + xab[2] * xbc[2];
+            double sine = sqrt(max(1.0d - cosine * cosine, eps));
             if (abs(cosine) >= 1.0d) {
                 logger.warning("Undefined Dihedral");
             }
@@ -177,6 +179,13 @@ public class INTFilter extends SystemFilter {
             x[2] = xa[2] + bond * (xu[2] * zsin0 * zcos1 + xt[2] * zsin0 * zsin1 - xab[2] * zcos0);
             atom.moveTo(x);
         } else if (abs(chiral) == 1) {
+            double xa[] = new double[3];
+            double xb[] = new double[3];
+            double xc[] = new double[3];
+            double xba[] = new double[3];
+            double xac[] = new double[3];
+            double xt[] = new double[3];
+            double x[] = new double[3];
             ia.getXYZ(xa);
             ib.getXYZ(xb);
             ic.getXYZ(xc);
@@ -187,14 +196,14 @@ public class INTFilter extends SystemFilter {
             xt[0] = xba[2] * xac[1] - xba[1] * xac[2];
             xt[1] = xba[0] * xac[2] - xba[2] * xac[0];
             xt[2] = xba[1] * xac[0] - xba[0] * xac[1];
-            cosine = xba[0] * xac[0] + xba[1] * xac[1] + xba[2] * xac[2];
-            sine2 = max(1.0d - cosine * cosine, eps);
+            double cosine = xba[0] * xac[0] + xba[1] * xac[1] + xba[2] * xac[2];
+            double sine2 = max(1.0d - cosine * cosine, eps);
             if (abs(cosine) >= 1.0d) {
                 logger.warning("Defining Atom Colinear");
             }
-            a = (-zcos1 - cosine * zcos0) / sine2;
-            b = (zcos0 + cosine * zcos1) / sine2;
-            c = (1.0d + a * zcos1 - b * zcos0) / sine2;
+            double a = (-zcos1 - cosine * zcos0) / sine2;
+            double b = (zcos0 + cosine * zcos1) / sine2;
+            double c = (1.0d + a * zcos1 - b * zcos0) / sine2;
             if (c > eps) {
                 c = chiral * sqrt(c);
             } else if (c < -eps) {
@@ -210,6 +219,150 @@ public class INTFilter extends SystemFilter {
             x[2] = xa[2] + bond * (a * xac[2] + b * xba[2] + c * xt[2]);
             atom.moveTo(x);
         }
+    }
+
+    /**
+     * This routine was derived from a similar routine in TINKER. It determines
+     * at what coordinates an atom would be placed without moving or calling any
+     * atoms, relying solely upon coordinates. Passed arrays are copied into
+     * local arrays to avoid any over-writing of the passed arrays.
+     *
+     * @param ia a double[] of atomic coordinates.
+     * @param bond a double.
+     * @param ib a double[] of atomic coordinates.
+     * @param angle1 a double.
+     * @param ic a double[] of atomic coordinates.
+     * @param angle2 a double.
+     * @param chiral a int.
+     * @return A double[] with XYZ coordinates at which an atom would be placed.
+     */
+    public static double[] determineIntxyz(double[] ia, double bond, double[] ib, double angle1, double[] ic, double angle2, int chiral) {
+        angle1 = toRadians(angle1);
+        angle2 = toRadians(angle2);
+        double zcos0 = cos(angle1);
+        double zcos1 = cos(angle2);
+        double zsin0 = sin(angle1);
+        double zsin1 = sin(angle2);
+        double[] ret = new double[3];
+        double x[] = new double[3];
+
+        // No partners
+        if (ia == null) {
+            x[0] = x[1] = x[2] = 0.0;
+        } else if (ib == null) {
+            double xa[] = new double[3];
+            for (int i = 0; i < ia.length; i++) {
+                xa[i] = ia[i];
+            }
+            // One partner - place on the z-axis
+            x[0] = xa[0];
+            x[1] = xa[1];
+            x[2] = xa[2] + bond;
+        } else if (ic == null) {
+            double xa[] = new double[3];
+            double xb[] = new double[3];
+            double xab[] = new double[3];
+            for (int i = 0; i < ia.length; i++) {
+                xa[i] = ia[i];
+                xb[i] = ib[i];
+            }
+            // Two partners - place in the xz-plane
+            diff(xa, xb, xab);
+            double rab = r(xab);
+            norm(xab, xab);
+            double cosb = xab[2];
+            double sinb = sqrt(xab[0] * xab[0] + xab[1] * xab[1]);
+            double cosg, sing;
+            if (sinb == 0.0d) {
+                cosg = 1.0d;
+                sing = 0.0d;
+            } else {
+                cosg = xab[1] / sinb;
+                sing = xab[0] / sinb;
+            }
+            double xtmp = bond * zsin0;
+            double ztmp = rab - bond * zcos0;
+            x[0] = xb[0] + xtmp * cosg + ztmp * sing * sinb;
+            x[1] = xb[1] - xtmp * sing + ztmp * cosg * sinb;
+            x[2] = xb[2] + ztmp * cosb;
+        } else if (chiral == 0) {
+            double xa[] = new double[3];
+            double xb[] = new double[3];
+            double xc[] = new double[3];
+            double xab[] = new double[3];
+            double xbc[] = new double[3];
+            double xt[] = new double[3];
+            double xu[] = new double[3];
+            for (int i = 0; i < ia.length; i++) {
+                xa[i] = ia[i];
+                xb[i] = ib[i];
+                xc[i] = ic[i];
+            }
+            // General case - with a dihedral
+            diff(xa, xb, xab);
+            norm(xab, xab);
+            diff(xb, xc, xbc);
+            norm(xbc, xbc);
+            xt[0] = xab[2] * xbc[1] - xab[1] * xbc[2];
+            xt[1] = xab[0] * xbc[2] - xab[2] * xbc[0];
+            xt[2] = xab[1] * xbc[0] - xab[0] * xbc[1];
+            double cosine = xab[0] * xbc[0] + xab[1] * xbc[1] + xab[2] * xbc[2];
+            double sine = sqrt(max(1.0d - cosine * cosine, eps));
+            if (abs(cosine) >= 1.0d) {
+                logger.warning("Undefined Dihedral");
+            }
+            scalar(xt, 1.0d / sine, xt);
+            xu[0] = xt[1] * xab[2] - xt[2] * xab[1];
+            xu[1] = xt[2] * xab[0] - xt[0] * xab[2];
+            xu[2] = xt[0] * xab[1] - xt[1] * xab[0];
+            x[0] = xa[0] + bond * (xu[0] * zsin0 * zcos1 + xt[0] * zsin0 * zsin1 - xab[0] * zcos0);
+            x[1] = xa[1] + bond * (xu[1] * zsin0 * zcos1 + xt[1] * zsin0 * zsin1 - xab[1] * zcos0);
+            x[2] = xa[2] + bond * (xu[2] * zsin0 * zcos1 + xt[2] * zsin0 * zsin1 - xab[2] * zcos0);
+        } else if (abs(chiral) == 1) {
+            double xa[] = new double[3];
+            double xb[] = new double[3];
+            double xc[] = new double[3];
+            double xba[] = new double[3];
+            double xac[] = new double[3];
+            double xt[] = new double[3];
+            for (int i = 0; i < ia.length; i++) {
+                xa[i] = ia[i];
+                xb[i] = ib[i];
+                xc[i] = ic[i];
+            }
+            diff(xb, xa, xba);
+            norm(xba, xba);
+            diff(xa, xc, xac);
+            norm(xac, xac);
+            xt[0] = xba[2] * xac[1] - xba[1] * xac[2];
+            xt[1] = xba[0] * xac[2] - xba[2] * xac[0];
+            xt[2] = xba[1] * xac[0] - xba[0] * xac[1];
+            double cosine = xba[0] * xac[0] + xba[1] * xac[1] + xba[2] * xac[2];
+            double sine2 = max(1.0d - cosine * cosine, eps);
+            if (abs(cosine) >= 1.0d) {
+                logger.warning("Defining Atom Colinear");
+            }
+            double a = (-zcos1 - cosine * zcos0) / sine2;
+            double b = (zcos0 + cosine * zcos1) / sine2;
+            double c = (1.0d + a * zcos1 - b * zcos0) / sine2;
+            if (c > eps) {
+                c = chiral * sqrt(c);
+            } else if (c < -eps) {
+                c = sqrt((a * xac[0] + b * xba[0]) * (a * xac[0] + b * xba[0]) + (a * xac[1] + b * xba[1]) * (a * xac[1] + b * xba[1]) + (a * xac[2] + b * xba[2]) * (a * xac[2] + b * xba[2]));
+                a /= c;
+                b /= c;
+                c = 0.0d;
+            } else {
+                c = 0.0d;
+            }
+            x[0] = xa[0] + bond * (a * xac[0] + b * xba[0] + c * xt[0]);
+            x[1] = xa[1] + bond * (a * xac[1] + b * xba[1] + c * xt[1]);
+            x[2] = xa[2] + bond * (a * xac[2] + b * xba[2] + c * xt[2]);
+        }
+        for (int i = 0; i < ret.length; i++) {
+            ret[i] = x[i];
+        }
+        return ret;
     }
 
     /**

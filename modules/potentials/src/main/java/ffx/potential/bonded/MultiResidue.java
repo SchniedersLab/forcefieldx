@@ -62,7 +62,6 @@ public class MultiResidue extends Residue {
         consideredResidues.add(residue);
         removeLeaves();
     }
-    
 
     @Override
     public MSNode addMSNode(MSNode o) {
@@ -314,7 +313,7 @@ public class MultiResidue extends Residue {
         ResiduePosition position = pdbFilter.getResiduePosition(number);
         AminoAcid3 name = AminoAcid3.valueOf(residue.getName());
         // Create copies of CA, N, C
-        
+
         Atom CA = (Atom) activeResidue.getAtomNode("CA");
         Atom HA = (Atom) activeResidue.getAtomNode("HA");
         Atom C = (Atom) activeResidue.getAtomNode("C");
@@ -333,11 +332,11 @@ public class MultiResidue extends Residue {
         newC.setResName(residue.getName());
         Atom newO = O.copy();
         newO.setResName(residue.getName());
-        pdbFilter.buildBond(newN,newH);
-        pdbFilter.buildBond(newN,newCA);
-        pdbFilter.buildBond(newCA,newHA);
-        pdbFilter.buildBond(newCA,newC);
-        pdbFilter.buildBond(newC,newO);
+        pdbFilter.buildBond(newN, newH);
+        pdbFilter.buildBond(newN, newCA);
+        pdbFilter.buildBond(newCA, newHA);
+        pdbFilter.buildBond(newCA, newC);
+        pdbFilter.buildBond(newC, newO);
         // Add them to residue
         residue.addMSNode(newN);
         residue.addMSNode(newH);
@@ -349,8 +348,8 @@ public class MultiResidue extends Residue {
             pdbFilter.assignAminoAcidSideChain(position, name, residue, CA, N, C);
             add(residue);
             residue.finalize(true);
-        } catch (MissingHeavyAtomException e) {
-            logger.severe("MissingHeavyAtomException--FFX will not continue...");
+        } catch (MissingHeavyAtomException missingHeavyAtomException) {
+            logger.severe(missingHeavyAtomException.toString());
         }
 
     }

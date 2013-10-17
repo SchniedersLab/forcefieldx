@@ -47,9 +47,8 @@ public final class ForceFieldFileFilter extends FileFilter {
     /**
      * {@inheritDoc}
      *
-     * This method return
-     * <code>true</code> if the file is a directory or TINKER Parameter file
-     * (*.PRM).
+     * This method return <code>true</code> if the file is a directory or TINKER
+     * Parameter file (*.PRM).
      */
     @Override
     public boolean accept(File file) {
