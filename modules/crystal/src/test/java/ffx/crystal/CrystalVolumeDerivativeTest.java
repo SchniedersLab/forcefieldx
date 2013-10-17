@@ -132,7 +132,7 @@ public class CrystalVolumeDerivativeTest {
                 break;
             case TRIGONAL:
                 if (a == b && b == c && alpha == beta && beta == gamma) {
-                    // Rombohedral axes, primitive cell.
+                    // Rhombohedral axes, primitive cell.
                     crystal.changeUnitCellParameters(a + eps, b + eps, c + eps, alpha, beta, gamma);
                     dV = crystal.volume;
                     crystal.changeUnitCellParameters(a - eps, b - eps, c - eps, alpha, beta, gamma);
