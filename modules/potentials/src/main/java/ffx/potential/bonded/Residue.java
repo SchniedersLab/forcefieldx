@@ -326,6 +326,15 @@ public class Residue extends MSGroup {
         return residueType;
     }
 
+    /**
+     * Returns the Residue bonded to this Residue at this Residue's 3' or 
+     * C-terminal end.  Any use of this method to add Residues to a sliding
+     * window or similar MUST not add that residue if that residue has no 
+     * Rotamers, as several algorithms (such as the distance matrix) assume
+     * that all Residues being optimized have Rotamers.
+     * 
+     * @return The next Residue.
+     */
     public Residue getNextResidue() {
         switch (residueType) {
             case AA: {
@@ -353,9 +362,18 @@ public class Residue extends MSGroup {
                 return null;
         }
         return null;
-        // Will generally indicate that you passed in the terminal residue.
+        // Will generally indicate that you passed in a chain-terminal residue.
     }
 
+    /**
+     * Returns the Residue bonded to this Residue at this Residue's 5' or 
+     * N-terminal end.  Any use of this method to add Residues to a sliding
+     * window or similar MUST not add that residue if that residue has no 
+     * Rotamers, as several algorithms (such as the distance matrix) assume
+     * that all Residues being optimized have Rotamers.
+     * 
+     * @return The previous Residue.
+     */
     public Residue getPreviousResidue() {
         switch (residueType) {
             case AA: {
@@ -386,7 +404,7 @@ public class Residue extends MSGroup {
                 return null;
         }
         return null;
-        // Will generally indicate that you passed in the beginning residue.
+        // Will generally indicate that you passed in a chain-starting residue.
     }
 
     /**

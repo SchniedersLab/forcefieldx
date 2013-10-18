@@ -929,7 +929,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     @Override
     public double energyAndGradient(double x[], double g[]) {
         /**
-         * Unscale the coordinates.
+         * Un-scale the coordinates.
          */
         if (optimizationScaling != null) {
             int len = x.length;
