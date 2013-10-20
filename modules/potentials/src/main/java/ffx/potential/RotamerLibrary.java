@@ -3201,17 +3201,8 @@ public class RotamerLibrary {
         // Note: chi values will generally be applied from chi7 to chi1.
         // Will have to add an else-if to handle DNA C3'-exo configurations.
         // Sugar pucker = 1: North pucker.  2: South pucker.  3: C3'-exo pucker.
-        if ((50 < rotamer.chi7) && (rotamer.chi7 < 110)) {
-            sugarPucker = 1;
-        } else {
-            sugarPucker = 2;
-        }
-
-        if ((50 < rotamer.chi1) && (rotamer.chi1 < 110)) {
-            prevSugarPucker = 1;
-        } else {
-            prevSugarPucker = 2;
-        }
+        sugarPucker = checkPucker(rotamer.chi7);
+        prevSugarPucker = checkPucker(rotamer.chi1);
 
         // Revert C1', O4', and C4' coordinates to PDB defaults.
         Atom C1s = (Atom) residue.getAtomNode("C1\'");
@@ -3713,6 +3704,35 @@ public class RotamerLibrary {
         P.move(corrections[4]);
         C1s.move(corrections[6]);
         C2s.move(corrections[6]);
+    }
+    
+    /**
+     * Returns 1 if a North pucker, 2 if a South pucker, and eventually 3 if a
+     * C3'-exo pucker (DNA only).
+     * 
+     * @param delta Delta torsion to check
+     * @return Pucker
+     */
+    public static int checkPucker(double delta) {
+        /*
+         * Midpoint between North, South is 115 degrees.
+         * 
+         * 0-360: North is 0-115 or 295-360.
+         * -180 to 180: North is -65 to 115.
+         */
+        if (delta > 115.0) {
+            if (delta < 295.0) { // 115-295
+                return 2;
+            } else { // 295-360
+                return 1;
+            }
+        } else {
+            if (delta > -65.0) { // -65 to 115
+                return 1;
+            } else {
+                return 2; // -180 to -65
+            }
+        } // TODO: Add else-if to handle C3'-exo pucker.
     }
 
     /**
