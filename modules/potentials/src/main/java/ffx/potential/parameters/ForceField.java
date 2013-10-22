@@ -49,7 +49,7 @@ public class ForceField {
     public enum Force_Field {
 
         AMOEBA_WATER, AMOEBA_2004, AMOEBA_PROTEIN_2004, AMOEBA_PROTEIN_2004_U1,
-        AMOEBA_2009, AMOEBA_BIO_2009, AMOEBA_BIO_2009_ORIG
+        AMOEBA_2009, AMOEBA_BIO_2009, AMOEBA_BIO_2009_ORIG, AMOEBA_PROTEIN_2013
     }
 
     public enum ForceFieldString {
