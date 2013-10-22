@@ -174,7 +174,7 @@ if (saveAllRotamers) {
             RotamerLibrary.applyRotamer(residue, rotamers[i], independent);
             if (upstreamPucker) {
                 double prevDelta = rotamers[i].chi1;
-                if (50 < prevDelta && prevDelta < 110) {
+                if (RotamerLibrary.checkPucker(prevDelta) == 1) {
                     // North pucker
                     RotamerLibrary.applySugarPucker(prevResidue, 1, isDeoxy, true);
                 } else {
@@ -202,7 +202,7 @@ if (saveAllRotamers) {
             RotamerLibrary.applyRotamer(residue, rotamers[i], independent);
             if (upstreamPucker) {
                 double prevDelta = rotamers[i].chi1;
-                if (50 < prevDelta && prevDelta < 110) {
+                if (RotamerLibrary.checkPucker(prevDelta) == 1) {
                     // North pucker
                     RotamerLibrary.applySugarPucker(prevResidue, 1, isDeoxy, true);
                 } else {

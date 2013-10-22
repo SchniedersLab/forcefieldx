@@ -406,6 +406,36 @@ public class Residue extends MSGroup {
         return null;
         // Will generally indicate that you passed in a chain-starting residue.
     }
+    
+    /**
+     * Returns a reference Atom for a Residue, primarily intended for rough 
+     * distance calculations. This atom should be roughly centrally located
+     * within the residue, and be invariant.
+     * 
+     * @return A reference Atom.
+     */
+    public Atom getReferenceAtom() {
+        Atom atom = null;
+        switch (this.getResidueType()) {
+            case AA:
+                atom = (Atom) this.getAtomNode("CA");
+                break;
+            case NA:
+                // If pyrimidine, atom will be N1.  Else, if purine, 
+                // N1 will return null, so grab N9.
+                atom = (Atom) this.getAtomNode("N1");
+                if (atom == null) {
+                    atom = (Atom) this.getAtomNode("N9");
+                }
+                break;
+            default:
+                break;
+        }
+        if (atom == null) {
+            atom = (Atom) this.getAtomNode(0);
+        }
+        return atom;
+    }
 
     /**
      * {@inheritDoc}
@@ -461,13 +491,33 @@ public class Residue extends MSGroup {
         }
     }
 
+    /**
+     * Returns a list of side chain atoms; for our purposes, nucleic acid side
+     * chain atoms are the sugar and the phosphate.
+     * 
+     * @return ArrayList of side chain (or nucleobase) atoms.
+     */
     public ArrayList<Atom> getSideChainAtoms() {
+        ArrayList<Atom> atoms = getAtomList();
+        ArrayList<Atom> ret;
         switch (residueType) {
             case NA:
-                return null;
+                ret = new ArrayList<Atom>();
+                for (Atom atom : atoms) {
+                    String name = atom.getName().toUpperCase();
+                    /*
+                     * Very conveniently for our purposes, the entire sugar is
+                     * denoted with ' at the end. Note that we add the side chain
+                     * atoms for NAs, instead of removing the backbone.
+                     */
+                    if (name.contains("\'") || name.equals("P") || name.startsWith("OP") || name.equals("H5T")
+                            || name.equals("H3T")) {
+                        ret.add(atom);
+                    }
+                }
+                return ret;
             case AA:
-                ArrayList<Atom> atoms = getAtomList();
-                ArrayList<Atom> ret = new ArrayList<Atom>(atoms);
+                ret = new ArrayList<Atom>(atoms);
                 for (Atom atom : atoms) {
                     String name = atom.getName().toUpperCase();
                     if (name.equals("N") || name.equals("H") || name.equals("H1") || name.equals("H2") || name.equals("H3")
