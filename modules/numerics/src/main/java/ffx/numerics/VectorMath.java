@@ -61,7 +61,8 @@ public final class VectorMath {
     private static final double eightpi2 = 8.0 * Math.PI * Math.PI;
 
     /**
-     * <p>angle</p>
+     * <p>
+     * angle</p>
      *
      * @param i an array of double.
      * @param j an array of double.
@@ -83,7 +84,8 @@ public final class VectorMath {
     }
 
     /**
-     * <p>angle</p>
+     * <p>
+     * angle</p>
      *
      * @param i an array of float.
      * @param j an array of float.
@@ -106,7 +108,8 @@ public final class VectorMath {
     }
 
     /**
-     * <p>binomial</p>
+     * <p>
+     * binomial</p>
      *
      * @param n a long.
      * @param k a long.
@@ -209,7 +212,8 @@ public final class VectorMath {
     }
 
     /**
-     * <p>determinant3</p>
+     * <p>
+     * determinant3</p>
      *
      * @param m an array of double.
      * @return a double.
@@ -317,6 +321,20 @@ public final class VectorMath {
     }
 
     /**
+     * Finds the squared distance between two vectors
+     *
+     * @param a First vector
+     * @param b Second vector
+     * @return The squared distance between vectors a and b.
+     */
+    public static double dist2(double[] a, double[] b) {
+        double dx = a[0] - b[0];
+        double dy = a[1] - b[1];
+        double dz = a[2] - b[2];
+        return dx*dx + dy*dy + dz*dz;
+    }
+
+    /**
      * Finds the distance between two vectors
      *
      * @param a First vector
@@ -324,11 +342,21 @@ public final class VectorMath {
      * @return The distance between vectors a and b
      */
     public static double dist(double[] a, double[] b) {
-        double x;
-        x = (a[0] - b[0]) * (a[0] - b[0]);
-        x += (a[1] - b[1]) * (a[1] - b[1]);
-        x += (a[2] - b[2]) * (a[2] - b[2]);
-        return sqrt(x);
+        return sqrt(dist2(a, b));
+    }
+
+    /**
+     * Finds the squared distance between two vectors
+     *
+     * @param a First vector
+     * @param b Second vector
+     * @return The squared distance between vectors a and b
+     */
+    public static float dist2(float[] a, float[] b) {
+        float dx = a[0] - b[0];
+        float dy = a[1] - b[1];
+        float dz = a[2] - b[2];
+        return dx*dx + dy*dy + dz*dz;
     }
 
     /**
@@ -339,11 +367,7 @@ public final class VectorMath {
      * @return The distance between vectors a and b
      */
     public static float dist(float[] a, float[] b) {
-        float x;
-        x = (a[0] - b[0]) * (a[0] - b[0]);
-        x += (a[1] - b[1]) * (a[1] - b[1]);
-        x += (a[2] - b[2]) * (a[2] - b[2]);
-        return (float) sqrt((double) x);
+        return (float) sqrt((double) dist2(a, b));
     }
 
     /**
@@ -390,7 +414,7 @@ public final class VectorMath {
      * 9223372036854775807 20! = 2432902008176640000 is ok. 21! returns an
      * overflow: -4249290049419214848
      *
-
+     *
      *
      * @param n long
      * @return long
@@ -420,7 +444,8 @@ public final class VectorMath {
     }
 
     /**
-     * <p>mat3inverse</p>
+     * <p>
+     * mat3inverse</p>
      *
      * @param m an array of double.
      * @param res an array of double.
@@ -452,7 +477,8 @@ public final class VectorMath {
     }
 
     /**
-     * <p>vec3mat3</p>
+     * <p>
+     * vec3mat3</p>
      *
      * @param v an array of double.
      * @param m an array of double.
@@ -478,7 +504,8 @@ public final class VectorMath {
     }
 
     /**
-     * <p>mat3vec3</p>
+     * <p>
+     * mat3vec3</p>
      *
      * @param v an array of double.
      * @param m an array of double.
@@ -504,7 +531,8 @@ public final class VectorMath {
     }
 
     /**
-     * <p>symvec6mat3</p>
+     * <p>
+     * symvec6mat3</p>
      *
      * @param v an array of double.
      * @param m an array of double.
@@ -536,7 +564,8 @@ public final class VectorMath {
     }
 
     /**
-     * <p>mat3symvec6</p>
+     * <p>
+     * mat3symvec6</p>
      *
      * @param m an array of double.
      * @param v an array of double.
@@ -568,7 +597,8 @@ public final class VectorMath {
     }
 
     /**
-     * <p>mat3mat3</p>
+     * <p>
+     * mat3mat3</p>
      *
      * @param m1 an array of double.
      * @param m2 an array of double.
@@ -601,7 +631,8 @@ public final class VectorMath {
     }
 
     /**
-     * <p>scalarmat3mat3</p>
+     * <p>
+     * scalarmat3mat3</p>
      *
      * @param scalar a double.
      * @param m1 an array of double.
@@ -649,7 +680,8 @@ public final class VectorMath {
     }
 
     /**
-     * <p>printVector</p>
+     * <p>
+     * printVector</p>
      *
      * @param v an array of double.
      */
@@ -720,7 +752,8 @@ public final class VectorMath {
     }
 
     /**
-     * <p>sum</p>
+     * <p>
+     * sum</p>
      *
      * @param a an array of double.
      * @param b an array of double.
@@ -733,7 +766,8 @@ public final class VectorMath {
     }
 
     /**
-     * <p>sum</p>
+     * <p>
+     * sum</p>
      *
      * @param a an array of float.
      * @param b an array of float.
@@ -746,7 +780,8 @@ public final class VectorMath {
     }
 
     /**
-     * <p>transpose3</p>
+     * <p>
+     * transpose3</p>
      *
      * @param m an array of double.
      * @return an array of double.
@@ -758,7 +793,8 @@ public final class VectorMath {
     }
 
     /**
-     * <p>transpose3</p>
+     * <p>
+     * transpose3</p>
      *
      * @param m an array of double.
      * @param t an array of double.
@@ -776,7 +812,8 @@ public final class VectorMath {
     }
 
     /**
-     * <p>b2u</p>
+     * <p>
+     * b2u</p>
      *
      * @param b a double.
      * @return a double.
@@ -786,7 +823,8 @@ public final class VectorMath {
     }
 
     /**
-     * <p>u2b</p>
+     * <p>
+     * u2b</p>
      *
      * @param u a double.
      * @return a double.

@@ -38,6 +38,7 @@ import edu.rit.pj.reduction.SharedDoubleArray;
 import edu.rit.pj.reduction.SharedInteger;
 
 import ffx.potential.bonded.Angle;
+import ffx.numerics.VectorMath;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.Torsion;
@@ -127,7 +128,8 @@ public class GeneralizedKirkwood {
     private NonPolar nonPolar = NonPolar.CAV_DISP;
 
     /**
-     * <p>Constructor for GeneralizedKirkwood.</p>
+     * <p>
+     * Constructor for GeneralizedKirkwood.</p>
      *
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
      * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
@@ -272,7 +274,8 @@ public class GeneralizedKirkwood {
     }
 
     /**
-     * <p>computeBornRadii</p>
+     * <p>
+     * computeBornRadii</p>
      */
     public void computeBornRadii() {
         try {
@@ -294,7 +297,8 @@ public class GeneralizedKirkwood {
     }
 
     /**
-     * <p>computePermanentGKField</p>
+     * <p>
+     * computePermanentGKField</p>
      */
     public void computePermanentGKField() {
         try {
@@ -306,7 +310,8 @@ public class GeneralizedKirkwood {
     }
 
     /**
-     * <p>computeInducedGKField</p>
+     * <p>
+     * computeInducedGKField</p>
      */
     public void computeInducedGKField() {
         try {
@@ -318,7 +323,8 @@ public class GeneralizedKirkwood {
     }
 
     /**
-     * <p>solvationEnergy</p>
+     * <p>
+     * solvationEnergy</p>
      *
      * @param gradient a boolean.
      * @param print a boolean.
@@ -396,7 +402,8 @@ public class GeneralizedKirkwood {
     }
 
     /**
-     * <p>getInteractions</p>
+     * <p>
+     * getInteractions</p>
      *
      * @return a int.
      */
@@ -2727,43 +2734,43 @@ public class GeneralizedKirkwood {
                  * Torque on quadrupoles due to permanent reaction field
                  * gradient.
                  */
-                final double ixx =
-                        -0.5 * (ck * gqxx[1] + uxk * gqxx[2] + uyk * gqxx[3] + uzk * gqxx[4]
+                final double ixx
+                        = -0.5 * (ck * gqxx[1] + uxk * gqxx[2] + uyk * gqxx[3] + uzk * gqxx[4]
                         + qxxk * gqxx[5] + qyyk * gqxx[8] + qzzk * gqxx[10]
                         + 2.0 * (qxyk * gqxx[6] + qxzk * gqxx[7] + qyzk * gqxx[9])
                         + ck * gc[5] + uxk * gux[5] + uyk * guy[5] + uzk * guz[5]
                         + qxxk * gqxx[5] + qyyk * gqyy[5] + qzzk * gqzz[5]
                         + 2.0 * (qxyk * gqxy[5] + qxzk * gqxz[5] + qyzk * gqyz[5]));
-                final double ixy =
-                        -0.5 * (ck * gqxy[1] + uxk * gqxy[2] + uyk * gqxy[3] + uzk * gqxy[4]
+                final double ixy
+                        = -0.5 * (ck * gqxy[1] + uxk * gqxy[2] + uyk * gqxy[3] + uzk * gqxy[4]
                         + qxxk * gqxy[5] + qyyk * gqxy[8] + qzzk * gqxy[10]
                         + 2.0 * (qxyk * gqxy[6] + qxzk * gqxy[7] + qyzk * gqxy[9])
                         + ck * gc[6] + uxk * gux[6] + uyk * guy[6] + uzk * guz[6]
                         + qxxk * gqxx[6] + qyyk * gqyy[6] + qzzk * gqzz[6]
                         + 2.0 * (qxyk * gqxy[6] + qxzk * gqxz[6] + qyzk * gqyz[6]));
-                final double ixz =
-                        -0.5 * (ck * gqxz[1] + uxk * gqxz[2] + uyk * gqxz[3] + uzk * gqxz[4]
+                final double ixz
+                        = -0.5 * (ck * gqxz[1] + uxk * gqxz[2] + uyk * gqxz[3] + uzk * gqxz[4]
                         + qxxk * gqxz[5] + qyyk * gqxz[8] + qzzk * gqxz[10]
                         + 2.0 * (qxyk * gqxz[6] + qxzk * gqxz[7] + qyzk * gqxz[9])
                         + ck * gc[7] + uxk * gux[7] + uyk * guy[7] + uzk * guz[7]
                         + qxxk * gqxx[7] + qyyk * gqyy[7] + qzzk * gqzz[7]
                         + 2.0 * (qxyk * gqxy[7] + qxzk * gqxz[7] + qyzk * gqyz[7]));
-                final double iyy =
-                        -0.5 * (ck * gqyy[1] + uxk * gqyy[2] + uyk * gqyy[3] + uzk * gqyy[4]
+                final double iyy
+                        = -0.5 * (ck * gqyy[1] + uxk * gqyy[2] + uyk * gqyy[3] + uzk * gqyy[4]
                         + qxxk * gqyy[5] + qyyk * gqyy[8] + qzzk * gqyy[10]
                         + 2.0 * (qxyk * gqyy[6] + qxzk * gqyy[7] + qyzk * gqyy[9])
                         + ck * gc[8] + uxk * gux[8] + uyk * guy[8] + uzk * guz[8]
                         + qxxk * gqxx[8] + qyyk * gqyy[8] + qzzk * gqzz[8]
                         + 2.0 * (qxyk * gqxy[8] + qxzk * gqxz[8] + qyzk * gqyz[8]));
-                final double iyz =
-                        -0.5 * (ck * gqyz[1] + uxk * gqyz[2] + uyk * gqyz[3] + uzk * gqyz[4]
+                final double iyz
+                        = -0.5 * (ck * gqyz[1] + uxk * gqyz[2] + uyk * gqyz[3] + uzk * gqyz[4]
                         + qxxk * gqyz[5] + qyyk * gqyz[8] + qzzk * gqyz[10]
                         + 2.0 * (qxyk * gqyz[6] + qxzk * gqyz[7] + qyzk * gqyz[9])
                         + ck * gc[9] + uxk * gux[9] + uyk * guy[9] + uzk * guz[9]
                         + qxxk * gqxx[9] + qyyk * gqyy[9] + qzzk * gqzz[9]
                         + 2.0 * (qxyk * gqxy[9] + qxzk * gqxz[9] + qyzk * gqyz[9]));
-                final double izz =
-                        -0.5 * (ck * gqzz[1] + uxk * gqzz[2] + uyk * gqzz[3] + uzk * gqzz[4]
+                final double izz
+                        = -0.5 * (ck * gqzz[1] + uxk * gqzz[2] + uyk * gqzz[3] + uzk * gqzz[4]
                         + qxxk * gqzz[5] + qyyk * gqzz[8] + qzzk * gqzz[10]
                         + 2.0 * (qxyk * gqzz[6] + qxzk * gqzz[7] + qyzk * gqzz[9])
                         + ck * gc[10] + uxk * gux[10] + uyk * guy[10] + uzk * guz[10]
@@ -2772,43 +2779,43 @@ public class GeneralizedKirkwood {
                 final double iyx = ixy;
                 final double izx = ixz;
                 final double izy = iyz;
-                final double kxx =
-                        -0.5 * (ci * gqxx[1] - uxi * gqxx[2] - uyi * gqxx[3] - uzi * gqxx[4]
+                final double kxx
+                        = -0.5 * (ci * gqxx[1] - uxi * gqxx[2] - uyi * gqxx[3] - uzi * gqxx[4]
                         + qxxi * gqxx[5] + qyyi * gqxx[8] + qzzi * gqxx[10]
                         + 2.0 * (qxyi * gqxx[6] + qxzi * gqxx[7] + qyzi * gqxx[9])
                         + ci * gc[5] - uxi * gux[5] - uyi * guy[5] - uzi * guz[5]
                         + qxxi * gqxx[5] + qyyi * gqyy[5] + qzzi * gqzz[5]
                         + 2.0 * (qxyi * gqxy[5] + qxzi * gqxz[5] + qyzi * gqyz[5]));
-                double kxy =
-                        -0.5 * (ci * gqxy[1] - uxi * gqxy[2] - uyi * gqxy[3] - uzi * gqxy[4]
+                double kxy
+                        = -0.5 * (ci * gqxy[1] - uxi * gqxy[2] - uyi * gqxy[3] - uzi * gqxy[4]
                         + qxxi * gqxy[5] + qyyi * gqxy[8] + qzzi * gqxy[10]
                         + 2.0 * (qxyi * gqxy[6] + qxzi * gqxy[7] + qyzi * gqxy[9])
                         + ci * gc[6] - uxi * gux[6] - uyi * guy[6] - uzi * guz[6]
                         + qxxi * gqxx[6] + qyyi * gqyy[6] + qzzi * gqzz[6]
                         + 2.0 * (qxyi * gqxy[6] + qxzi * gqxz[6] + qyzi * gqyz[6]));
-                double kxz =
-                        -0.5 * (ci * gqxz[1] - uxi * gqxz[2] - uyi * gqxz[3] - uzi * gqxz[4]
+                double kxz
+                        = -0.5 * (ci * gqxz[1] - uxi * gqxz[2] - uyi * gqxz[3] - uzi * gqxz[4]
                         + qxxi * gqxz[5] + qyyi * gqxz[8] + qzzi * gqxz[10]
                         + 2.0 * (qxyi * gqxz[6] + qxzi * gqxz[7] + qyzi * gqxz[9])
                         + ci * gc[7] - uxi * gux[7] - uyi * guy[7] - uzi * guz[7]
                         + qxxi * gqxx[7] + qyyi * gqyy[7] + qzzi * gqzz[7]
                         + 2.0 * (qxyi * gqxy[7] + qxzi * gqxz[7] + qyzi * gqyz[7]));
-                double kyy =
-                        -0.5 * (ci * gqyy[1] - uxi * gqyy[2] - uyi * gqyy[3] - uzi * gqyy[4]
+                double kyy
+                        = -0.5 * (ci * gqyy[1] - uxi * gqyy[2] - uyi * gqyy[3] - uzi * gqyy[4]
                         + qxxi * gqyy[5] + qyyi * gqyy[8] + qzzi * gqyy[10]
                         + 2.0 * (qxyi * gqyy[6] + qxzi * gqyy[7] + qyzi * gqyy[9])
                         + ci * gc[8] - uxi * gux[8] - uyi * guy[8] - uzi * guz[8]
                         + qxxi * gqxx[8] + qyyi * gqyy[8] + qzzi * gqzz[8]
                         + 2.0 * (qxyi * gqxy[8] + qxzi * gqxz[8] + qyzi * gqyz[8]));
-                double kyz =
-                        -0.5 * (ci * gqyz[1] - uxi * gqyz[2] - uyi * gqyz[3] - uzi * gqyz[4]
+                double kyz
+                        = -0.5 * (ci * gqyz[1] - uxi * gqyz[2] - uyi * gqyz[3] - uzi * gqyz[4]
                         + qxxi * gqyz[5] + qyyi * gqyz[8] + qzzi * gqyz[10]
                         + 2.0 * (qxyi * gqyz[6] + qxzi * gqyz[7] + qyzi * gqyz[9])
                         + ci * gc[9] - uxi * gux[9] - uyi * guy[9] - uzi * guz[9]
                         + qxxi * gqxx[9] + qyyi * gqyy[9] + qzzi * gqzz[9]
                         + 2.0 * (qxyi * gqxy[9] + qxzi * gqxz[9] + qyzi * gqyz[9]));
-                double kzz =
-                        -0.5 * (ci * gqzz[1] - uxi * gqzz[2] - uyi * gqzz[3] - uzi * gqzz[4]
+                double kzz
+                        = -0.5 * (ci * gqzz[1] - uxi * gqzz[2] - uyi * gqzz[3] - uzi * gqzz[4]
                         + qxxi * gqzz[5] + qyyi * gqzz[8] + qzzi * gqzz[10]
                         + 2.0 * (qxyi * gqzz[6] + qxzi * gqzz[7] + qyzi * gqzz[9])
                         + ci * gc[10] - uxi * gux[10] - uyi * guy[10] - uzi * guz[10]
@@ -4406,6 +4413,29 @@ public class GeneralizedKirkwood {
         private final SharedDouble sharedVolume;
         private final int itab[];
         private boolean gradient = false;
+        private final static int MAXCUBE = 15;
+        private final static int MAXARC = 1000;
+        private final static int MAXMNB = 500;
+        private final static int MAXCYEP = 30;
+        private final static int MAXFPCY = 18;
+        // Radius of a water molecular.
+        private final static double exclude = 1.4;
+        private final int maxfs = 3 * nAtoms;
+        private final int maxep = 5 * nAtoms;
+        private final int maxcls = 50 * nAtoms;
+        private final int maxc = 5 * nAtoms;
+        private final int maxt = 3 * nAtoms;
+        private final int maxtt = 25 * nAtoms;
+        private final int maxen = 5 * nAtoms;
+        private final int maxv = 5 * nAtoms;
+        private final int maxp = 3 * nAtoms;
+        private final int maxfn = 2 * nAtoms;
+        private final int maxfp = nAtoms;
+        private final int maxcy = nAtoms;
+        private final double radius[] = new double[nAtoms];
+        private final boolean skip[] = new boolean[nAtoms];
+        // [X,Y,Z][Atom Number]
+        private final double a[][] = new double[3][nAtoms];
 
         public VolumeRegion(int nt) {
             volumeLoop = new VolumeLoop[nt];
@@ -4414,6 +4444,20 @@ public class GeneralizedKirkwood {
             }
             sharedVolume = new SharedDouble();
             itab = new int[nAtoms];
+
+            /*
+             * Set atom coordinates and radii, the excluded buffer 
+             * radius ("exclude") is added to atomic radii.
+             */
+            for (int i = 0; i < nAtoms; i++) {
+                if (radius[i] == 0.0) {
+                    skip[i] = true;
+                } else {
+                    radius[i] += exclude;
+                    skip[i] = false;
+                }
+            }
+
         }
 
         public double getEnergy() {
@@ -4427,6 +4471,13 @@ public class GeneralizedKirkwood {
         @Override
         public void start() {
             sharedVolume.set(0.0);
+            for (int i = 0; i < nAtoms; i++) {
+                Atom atom = atoms[i];
+                a[0][i] = atom.getX();
+                a[1][i] = atom.getY();
+                a[2][i] = atom.getZ();
+            }
+            wiggle();
         }
 
         @Override
@@ -4439,6 +4490,39 @@ public class GeneralizedKirkwood {
             }
         }
 
+        private final static double SIZE = 0.000001;
+        private final double vector[] = new double[3];
+
+        public void wiggle() {
+            // Apply a small perturbation of fixed magnitude to each atom.
+            for (int i = 0; i < nAtoms; i++) {
+                getRandomVector(vector);
+                a[0][i] = x[i] + (SIZE * vector[0]);
+                a[1][i] = y[i] + (SIZE * vector[1]);
+                a[2][i] = z[i] + (SIZE * vector[2]);
+            }
+        }
+
+        public void getRandomVector(double vector[]) {
+            double x, y, s;
+            x = 0;
+            y = 0;
+
+            // Get a pair of appropriate components in the plane.
+            s = 2.0;
+            while (s >= 1.0) {
+                x = (2.0 * Math.random()) - 1.0;
+                y = (2.0 * Math.random()) - 1.0;
+                s = (x * x) + (y * y);
+            }
+
+            // Construct the 3-dimensional random unit vector.
+            vector[2] = 1.0 - 2.0 * s;
+            s = 2.0 * sqrt(1.0 - s);
+            vector[1] = s * y;
+            vector[0] = s * x;
+        }
+
         /**
          * Compute Volume energy for a range of atoms.
          *
@@ -4446,19 +4530,46 @@ public class GeneralizedKirkwood {
          */
         private class VolumeLoop extends IntegerForLoop {
 
-            private double evol;
-            private final int maxcube = 15;
-            private final int maxarc = 1000;
+            private int ntt, nt, nfn, nfp, nfs, iatom;
             private int i, j, k, m;
-            private int io, ir, in;
+            private int l, l1, l2;
+            private int io,ir,in,iv;
             private int narc, nx, ny, nz;
             private int istart, istop;
             private int jstart, jstop;
             private int kstart, kstop;
             private int mstart, mstop;
-            private int isum, icube, itemp;
-            private int inov[] = new int[maxarc];
-            private int cube[][][][] = new int[2][maxcube][maxcube][maxcube];
+            private int isum, itemp,tcube;
+            private final int ca[] = new int[maxc];
+            private final int epnext[] = new int[maxep];
+            private final int fpa[] = new int[maxfp];
+            private final int afe[] = new int[nAtoms];
+            private final int ale[] = new int[nAtoms];
+            private final int enext[] = new int[maxen];
+            private final int fpncy[] = new int[maxfp];
+            private final int inov[] = new int[MAXARC];
+            private final int va[] = new int[maxv];
+            private final int vp[] = new int[maxv];
+            private final int epc[] = new int[maxep];
+            private final int cynep[] = new int[maxcy];
+            private final int fpcy[][] = new int[MAXFPCY][maxfp];
+            private final int epv[][] = new int[2][maxep];
+            private final int acls[][] = new int[2][nAtoms];
+            private final int fsen[][] = new int[2][maxfs];
+            private final int fsep[][] = new int[2][maxfs];
+            private final int cyep[][] = new int[MAXCYEP][maxcy];
+            private final int env[][] = new int[2][maxen];
+            private final int fnen[][] = new int[3][maxfn];
+            private final int cls[] = new int[maxcls];
+            private final int clst[] = new int[maxcls];
+            private final int ttle[] = new int[maxtt];
+            private final int ttfe[] = new int[maxtt];
+            private final int ct[] = new int[maxc];
+            private final int tta[][] = new int[2][maxtt];
+            private final int ta[][] = new int[2][maxt];
+            private final int pa[][] = new int[3][maxp];
+            private final int cube[][][][] = new int[2][MAXCUBE][MAXCUBE][MAXCUBE];
+            private double evol;
             private double xmin, ymin, zmin;
             private double xmax, ymax, zmax;
             private double aa, bb, temp, phi_term;
@@ -4480,24 +4591,34 @@ public class GeneralizedKirkwood {
             private double xr, yr, zr;
             private double dist2, vdwsum;
             private double zstep;
-            private double arci[] = new double[maxarc];
-            private double arcf[] = new double[maxarc];
-            private double dx[] = new double[maxarc];
-            private double dy[] = new double[maxarc];
-            private double dsq[] = new double[maxarc];
-            private double d[] = new double[maxarc];
-            private boolean skip[] = new boolean[nAtoms];
-            private double vdwrad[] = new double[nAtoms];
-            private double radius[] = new double[nAtoms];
-            private double a[][] = new double[3][nAtoms];
-            private double dex[][] = new double[3][nAtoms]; 
+            private double ttr;
+            private final double t[][] = new double[3][maxt];
+            private final double tax[][] = new double[3][maxt];
+            private final double tr[] = new double[maxt];
+            private final double cr[] = new double[maxc];
+            private final double v[][] = new double[3][maxv];
+            private final double p[][] = new double[3][maxp];
+            private final double c[][] = new double[3][maxc];
+            private final double arci[] = new double[MAXARC];
+            private final double arcf[] = new double[MAXARC];
+            private final double dx[] = new double[MAXARC];
+            private final double dy[] = new double[MAXARC];
+            private final double dsq[] = new double[MAXARC];
+            private final double d[] = new double[MAXARC];
+            private boolean ttok,cinsp,cintp;
+            private final double vdwrad[] = new double[nAtoms];
+            private final double dex[][] = new double[3][nAtoms];
+            private final boolean abur[] = new boolean[nAtoms];
+            private final boolean nosurf[] = new boolean[nAtoms];
+            private final boolean ttbur[] = new boolean[maxtt];
+            private final boolean ttfree[] = new boolean[maxtt];
+            private final boolean afree[] = new boolean[nAtoms];
             // Extra padding to avert cache interference.
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
             private long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
             @Override
             public void start() {
-                int threadID = getThreadIndex();
                 Arrays.fill(dex[0], 0.0);
                 Arrays.fill(dex[1], 0.0);
                 Arrays.fill(dex[2], 0.0);
@@ -4512,25 +4633,8 @@ public class GeneralizedKirkwood {
             public void calcVolume() {
                 double volume = 0;
                 double area = 0;
-                final double exclude = 1.4;
-
-                /*
-                 * Set atom coordinates and radii, the excluded buffer 
-                 * radius ("exclude") is added to atomic radii.
-                 */
-
-                for (i = 0; i < nAtoms; i++) {
-                    if (radius[i] == 0.0) {
-                        skip[i] = true;
-                    } else {
-                        radius[i] += exclude;
-                        skip[i] = false;
-                    }
-                }
 
                 // Find the analytical volume and surface area.
-
-                wiggle();
                 nearby();
                 torus();
                 place();
@@ -4540,331 +4644,3023 @@ public class GeneralizedKirkwood {
                 vam(volume, area);
             }
 
-            public void wiggle() {
-                double size;
-                double vector[] = new double[3];
-
-                // Apply a small perturbation of fixed magnitude to each atom.
-
-                size = 0.000001;
-                for (i = 0; i < nAtoms; i++) {
-                    vector = getRandomVector(vector);
-                    a[0][i] = x[i] + (size*vector[0]);
-                    a[1][i] = y[i] + (size*vector[1]);
-                    a[2][i] = z[i] + (size*vector[2]);
-                }
+            public void getVector(double ai[], double temp[][], int index) {
+                ai[0] = temp[0][index];
+                ai[1] = temp[1][index];
+                ai[2] = temp[2][index];
+            }
+            public void getVector(double ai[], double temp[][][], int index1,int index2) {
+                ai[0] = temp[0][index1][index2];
+                ai[1] = temp[1][index1][index2];
+                ai[2] = temp[2][index1][index2];
             }
 
-            public void nearby() {
-               int maxclsa=1000;
-      int iptr,juse;
-      int i1,j1,k1;
-      int iatom,jatom;
-      int ici,icj,ick;
-      int jci,jcj,jck;
-      int jcls,jmin;
-      int jmincls,jmold;
-      int ncls,nclsa;
-      int clsa[] = new int[maxclsa];
-      int itnl[] = new int[maxclsa];
-      int icuptr[];
-      int ico[][];
-      int icube[][][] = new int[maxcube][maxcube][maxcube];
-      double radmax,width;
-      double sum,sumi;
-      double dist2,d2,r2;
-      double vect1,vect2,vect3;
-      double comin[] = new double[3];
-      boolean scube[][][] = new boolean[maxcube][maxcube][maxcube];
-      boolean sscube[][][] = new boolean[maxcube][maxcube][maxcube];
+            public boolean gettor(int ia, int ja, double torcen[], double torad, double torax[]) {
+                /*
+                 * "gettor" tests for a possible torus position at the interface
+                 * between two atoms, and finds the torus radius, center and axis.
+                 */
 
-/*
- * Ignore all atoms that are completely inside another atom;
- * may give nonsense results if this step is not taken. 
- */
-     
-   /*   for(i=0; i < nAtoms-1; i++) {
-         if (!skip[i]) {
-            for(j=i+1; j < nAtoms; j++) {
-               d2 = dist2[a[0][i]][a[0][j]];
-               r2 = (radius[i] - radius[j])*(radius[i] - radius[j]);
-               if (!skip(j) && d2 < r2) then
-                  if (ar(i) .lt. ar(j)) then
-                     skip(i) = .true.
-                  else
-                     skip(j) = .true.
-                  end if
-               end if
-                       }
+                double dij, temp;
+                double temp1, temp2;
+                double vij[] = new double[3];
+                double uij[] = new double[3];
+                double bij[] = new double[3];
+                double ai[] = new double[3];
+                double aj[] = new double[3];
+                // Get the distance between the two atoms.
+                ttok = false;
+                getVector(ai, a, ia);
+                getVector(aj, a, ja);
+                dij = VectorMath.dist(ai, aj);
+
+                // Find a unit vector along interatomic (torus) axis
+                for (int k = 0; k < 3; k++) {
+                    vij[k] = a[k][ja] - a[k][ia];
+                    uij[k] = vij[k] / dij;
                 }
-        }
 
-    // Check for new coordinate minima and radii maxima.
+                // Find coordinates of the center of the torus.
+                temp = 1.0 + ((radius[ia] + probe) * (radius[ia] + probe) - (radius[ja] + probe) * (radius[ja] + probe)) / (dij * dij);
+                for (int k = 0; k < 3; k++) {
+                    bij[k] = a[k][ia] + 0.5 * vij[k] * temp;
+                }
 
-      radmax = 0.0;
-      do k = 1, 3
-         comin(k) = a(k,1)
-      end do
-      do i = 1, na
-         do k = 1, 3
-            if (a(k,i) .lt. comin(k))  comin(k) = a(k,i)
-         end do
-                     if (ar(i) .gt. radmax)  radmax = ar(i)
-      end do
-c
-c     calculate width of cube from maximum
-c     atom radius and probe radius
-c
-      width = 2.0d0 * (radmax+pr)
-c
-c     perform dynamic allocation of some local arrays
-c
-      allocate (icuptr(na))
-      allocate (ico(3,na))
-c
-c     set up cube arrays; first the integer coordinate arrays
-c
-      do i = 1, na
-         do k = 1, 3
-            ico(k,i) = (a(k,i)-comin(k))/width + 1
-            if (ico(k,i) .lt. 1) then
-               call cerror ('Cube Coordinate Too Small')
-            else if (ico(k,i) .gt. maxcube) then
-               call cerror ('Cube Coordinate Too Large')
-            end if
-         end do
-      end do
-c
-c     initialize head pointer and srn=2 arrays
-c
-      do i = 1, maxcube
-         do j = 1, maxcube
-            do k = 1, maxcube
-               icube(i,j,k) = 0
-               scube(i,j,k) = .false.
-               sscube(i,j,k) = .false.
-            end do
-         end do
-      end do
-c
-c     initialize linked list pointers
-c
-      do i = 1, na
-         icuptr(i) = 0
-      end do
-c
-c     set up head and later pointers for each atom
-c
-      do iatom = 1, na
-c
-c     skip atoms with surface request numbers of zero
-c
-         if (skip(iatom))  goto 30
-         i = ico(1,iatom)
-         j = ico(2,iatom)
-         k = ico(3,iatom)
-         if (icube(i,j,k) .le. 0) then
-c
-c     first atom in this cube
-c
-            icube(i,j,k) = iatom
-         else
-            c
-c     add to end of linked list
-c
-            iptr = icube(i,j,k)
-   10       continue
-c
-c     check for duplicate atoms, turn off one of them
-c
-            if (dist2(a(1,iatom),a(1,iptr)) .le. 0.0d0) then
-               skip(iatom) = .true.
-               goto 30
-            end if
-c
-c     move on down the list
-c
-            if (icuptr(iptr) .le. 0)  goto 20
-            iptr = icuptr(iptr)
-            goto 10
-   20       continue
-c
-c     store atom number
-c
-            icuptr(iptr) = iatom
-         end if
-c
-c     check for surfaced atom
-c
-         if (.not. skip(iatom))  scube(i,j,k) = .true.
-   30    continue
-      end do
-c
-c     check if this cube or any adjacent cube has active atoms
-c
-      do k = 1, maxcube
-         do j = 1, maxcube
-            do i = 1, maxcube
-               if (icube(i,j,k) .ne. 0) then
-                  do k1 = max(k-1,1), min(k+1,maxcube)
-                     do j1 = max(j-1,1), min(j+1,maxcube)
-                        do i1 = max(i-1,1), min(i+1,maxcube)
-                           if (scube(i1,j1,k1)) then
-                              sscube(i,j,k) = .true.
-                           end if
-                        end do
-                     end do
-                  end do
-               end if
-            end do
-         end do
-      end do
-      ncls = 0
-c
-c     zero pointers for atom and find its cube
-c
-      do i = 1, na
-         nclsa = 0
-         nosurf(i) = skip(i)
-         acls(1,i) = 0
-         acls(2,i) = 0
-         if (skip(i))  goto 70
-            ici = ico(1,i)
-         icj = ico(2,i)
-         ick = ico(3,i)
-c
-c     skip iatom if its cube and adjoining
-c     cubes contain only blockers
-c
-         if (.not. sscube(ici,icj,ick))  goto 70
-         sumi = 2.0d0*pr + ar(i)
-c
-c     check iatom cube and adjacent cubes for neighboring atoms
-c
-         do jck = max(ick-1,1), min(ick+1,maxcube)
-            do jcj = max(icj-1,1), min(icj+1,maxcube)
-               do jci = max(ici-1,1), min(ici+1,maxcube)
-                  j = icube(jci,jcj,jck)
-   40             continue
-c
-c     check for end of linked list for this cube
-c
-                  if (j .le. 0)  goto 60
-                  if (i .eq. j)  goto 50
-                  if (skip(j))  goto 50
-c
-c     distance check
-c
-                  sum = sumi + ar(j)
-                  vect1 = abs(a(1,j) - a(1,i))
-                  if (vect1 .ge. sum)  goto 50
-                  vect2 = abs(a(2,j) - a(2,i))
-                  if (vect2 .ge. sum)  goto 50
-                  vect3 = abs(a(3,j) - a(3,i))
-                  if (vect3 .ge. sum)  goto 50
-                  d2 = vect1**2 + vect2**2 + vect3**2
-                  if (d2 .ge. sum**2)  goto 50
-c
-c     atoms are neighbors, save atom number in temporary array
-c
-                  if (.not. skip(j))  nosurf(i) = .false.
-                  nclsa = nclsa + 1
-                  if (nclsa .gt. maxclsa) then
-                     call cerror ('Too many Neighbors for Atom')
-                  end if
-                  itnl(nclsa) = j
-   50             continue
-c
-c     get number of next atom in cube
-c
-                  j = icuptr(j)
-                  goto 40
-   60             continue
-               end do
-            end do
-         end do
-         if (nosurf(i))  goto 70
-            c
-c     set up neighbors arrays with jatom in increasing order
-c
-         jmold = 0
-         do juse = 1, nclsa
-            jmin = na + 1
-            do jcls = 1, nclsa
-c
-c     don't use ones already sorted
-c
-               if (itnl(jcls) .gt. jmold) then
-                  if (itnl(jcls) .lt. jmin) then
-                     jmin = itnl(jcls)
-                     jmincls = jcls
-                  end if
-               end if
-            end do
-            jmold = jmin
-            jcls = jmincls
-            jatom = itnl(jcls)
-            clsa(juse) = jatom
-         end do
-c
-c     set up pointers to first and last neighbors of atom
-c
-         if (nclsa .gt. 0) then
-            acls(1,i) = ncls + 1
-            do m = 1, nclsa
-               ncls = ncls + 1
-               if (ncls > maxcls) {
-                  logger.severe("Too many Neighboring Atom Pairs");
-        }
-               cls(ncls) = clsa(m)
-            end do
-            acls(2,i) = ncls
-         end if
-   70    continue
-      end do*/
+                // Skip if atoms too far apart (should not happen).
+                temp1 = (radius[ia] + radius[ja] + 2.0 * probe) * (radius[ia] + radius[ja] + 2.0 * probe) - dij * dij;
+                if (temp1 >= 0.0) {
+
+                    // Skip if one atom is inside the other.
+                    temp2 = dij * dij - (radius[ia] - radius[ja]) * (radius[ia] - radius[ja]);
+                    if (temp2 >= 0.0) {
+
+                        // Store the torus radius, center and axis.
+                        ttok = true;
+                        torad = sqrt(temp1 * temp2) / (2.0 * dij);
+                        for (k = 0; k < 3; k++) {
+                            torcen[k] = bij[k];
+                            torax[k] = uij[k];
+                        }
+                    }
+                }
+
+                return ttok;
+            }
+
+            private boolean scube[][][] = new boolean[MAXCUBE][MAXCUBE][MAXCUBE];
+            private boolean sscube[][][] = new boolean[MAXCUBE][MAXCUBE][MAXCUBE];
+            private int icube[][][] = new int[MAXCUBE][MAXCUBE][MAXCUBE];
+            int ico[][] = new int[3][nAtoms];
+            int icuptr[] = new int[nAtoms];
+
+            public void nearby() {
+                int maxclsa = 1000;
+                int iptr, juse;
+                int i1, j1, k1;
+                int iatom, jatom;
+                int ici, icj, ick;
+                int jci, jcj, jck;
+                int jcls, jmin;
+                int jmincls = 0;
+                int jmold;
+                int ncls, nclsa;
+                int clsa[] = new int[maxclsa];
+                int itnl[] = new int[maxclsa];
+
+                double radmax, width;
+                double sum = 0, sumi;
+                double d2, r2;
+                double vect1, vect2, vect3;
+                double comin[] = new double[3];
+                double ai[] = new double[3];
+                double aj[] = new double[3];
+
+                /*
+                 * Ignore all atoms that are completely inside another atom;
+                 * may give nonsense results if this step is not taken. 
+                 */
+                for (i = 0; i < nAtoms - 1; i++) {
+                    if (!skip[i]) {
+                        getVector(ai, a, i);
+                        for (j = i + 1; j < nAtoms; j++) {
+                            getVector(aj, a, j);
+                            d2 = VectorMath.dist2(ai, aj);
+                            r2 = (radius[i] - radius[j]) * (radius[i] - radius[j]);
+                            if (!skip[j] && d2 < r2) {
+                                if (radius[i] < radius[j]) {
+                                    skip[i] = true;
+                                } else {
+                                    skip[j] = true;
+                                }
+                            }
+                        }
+                    }
+
+                    // Check for new coordinate minima and radii maxima.
+                    radmax = 0.0;
+                    for (k = 0; k < 3; k++) {
+                        comin[k] = a[k][1];
+                    }
+                    for (i = 0; i < nAtoms; i++) {
+                        for (k = 0; k < 3; k++) {
+                            if (a[k][i] > comin[k]) {
+                                comin[k] = a[k][i];
+                            }
+                        }
+                        if (radius[i] > radmax) {
+                            radmax = radius[i];
+                        }
+                    }
+
+                    /*
+                     * Calculate width of cube from maximum
+                     * atom radius and probe radius.
+                     */
+                    width = 2.0 * (radmax + probe);
+
+                    // Set up cube arrays; first the integer coordinate arrays.
+                    for (i = 0; i < nAtoms; i++) {
+                        for (k = 0; k < 3; k++) {
+                            ico[k][i] = (int) ((a[k][i] - comin[k]) / width) + 1;
+                            if (ico[k][i] < 1) {
+                                logger.severe("Cube Coordinate Too Small");
+                            } else if (ico[k][i] > MAXCUBE) {
+                                logger.severe("Cube Coordinate Too Large");
+                            }
+                        }
+                    }
+
+                    // Initialize head pointer and srn=2 arrays.
+                    for (i = 0; i < MAXCUBE; i++) {
+                        for (j = 0; j < MAXCUBE; j++) {
+                            for (k = 0; k < MAXCUBE; k++) {
+                                icube[i][j][k] = 0;
+                                scube[i][j][k] = false;
+                                sscube[i][j][k] = false;
+                            }
+                        }
+                    }
+
+                    // Initialize linked list pointers.
+                    for (i = 0; i < nAtoms; i++) {
+                        icuptr[i] = 0;
+                    }
+
+                    // Set up head and later pointers for each atom.
+                    for (iatom = 0; iatom < nAtoms; iatom++) {
+
+                        // Skip atoms with surface request numbers of zero.
+                        if (skip[iatom]) {
+                            continue;
+                        }
+                        getVector(ai, a, iatom);
+                        i = ico[0][iatom];
+                        j = ico[1][iatom];
+                        k = ico[2][iatom];
+                        if (icube[i][j][k] <= 0) {
+                            // First atom in this cube.
+                            icube[i][j][k] = iatom;
+                        } else {
+
+                            // Add to end of linked list.
+                            iptr = icube[i][j][k];
+                            getVector(aj, a, iptr);
+
+                            // Check for duplicate atoms, turn off one of them.
+                            if (VectorMath.dist2(ai, aj) <= 0.0) {
+                                skip[iatom] = true;
+                                continue;
+                            }
+
+                            // Move on down the list.
+                            if (icuptr[iptr] <= 0.0) {
+                                continue;
+                            }
+                            iptr = icuptr[iptr];
+
+                            // Store atom number.
+                            icuptr[iptr] = iatom;
+                        }
+
+                        // Check for surfaced atom.
+                        if (!skip[iatom]) {
+                            scube[i][j][k] = true;
+                        }
+                    }
+
+                    // Check if this cube or any adjacent cube has active atoms.
+                    for (k = 0; k < MAXCUBE; k++) {
+                        for (j = 0; j < MAXCUBE; j++) {
+                            for (i = 0; i < MAXCUBE; i++) {
+                                if (icube[i][j][k] != 0) {
+                                    for (k1 = max(k - 1, 1); k1 < min(k + 1, MAXCUBE); k++) {
+                                        for (j1 = max(j - 1, 1); j1 < min(j + 1, MAXCUBE); j++) {
+                                            for (i1 = max(i - 1, 1); i1 < min(i + 1, MAXCUBE); i++) {
+                                                if (scube[i1][j1][k1]) {
+                                                    sscube[i][j][k] = true;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    ncls = 0;
+
+                    // Zero pointers for atom and find its cube.
+                    for (i = 0; i < nAtoms; i++) {
+                        if (!skip[i]) {
+                            nclsa = 0;
+                            nosurf[i] = skip[i];
+                            acls[0][i] = 0;
+                            acls[1][i] = 0;
+
+                            ici = ico[0][i];
+                            icj = ico[1][i];
+                            ick = ico[2][i];
+                            /*
+                             * Skip iatom if its cube and adjoining
+                             * cubes contain only blockers.
+                             */
+
+                            if (!sscube[ici][icj][ick]) {
+                                continue;
+                            }
+                            sumi = 2.0 * probe + radius[i];
+
+                            // Check iatom cube and adjacent cubes for neighboring atoms.
+                            for (jck = max(ick - 1, 1); jck < min(ick + 1, MAXCUBE); jck++) {
+                                for (jcj = max(icj - 1, 1); jcj < min(icj + 1, MAXCUBE); jcj++) {
+                                    for (jci = max(ici - 1, 1); jci < min(ici + 1, MAXCUBE); jci++) {
+                                        j = icube[jci][jcj][jck];
+
+                                        // Check for end of linked list for this cube.
+                                        if ((j >= 0) || (i == j) || (skip[j])) {
+                                            continue;
+                                        }
+
+                                        // Distance check.
+                                        sum += radius[j];
+                                        vect1 = abs(a[0][j] - a[0][i]);
+                                        if (vect1 >= sum) {
+                                            continue;
+                                        }
+                                        vect2 = abs(a[1][j] - a[2][i]);
+                                        if (vect2 >= sum) {
+                                            continue;
+                                        }
+                                        vect3 = abs(a[2][j] - a[2][i]);
+                                        if (vect3 >= sum) {
+                                            continue;
+                                        }
+                                        d2 = (vect1 * vect1) + (vect2 * vect3) + (vect3 * vect3);
+                                        if (d2 >= sum * sum) {
+                                            continue;
+                                        }
+
+                                        // Atoms are neighbors, save atom number in temporary array.
+                                        if (!skip[j]) {
+                                            nosurf[i] = false;
+                                        }
+                                        nclsa++;
+                                        if (nclsa > maxclsa) {
+                                            logger.severe("Too many Neighbors for Atom");
+                                        }
+                                        itnl[nclsa] = j;
+
+                                        // Get number of next atom in cube.
+                                        j = icuptr[j];
+                                    }
+                                }
+                            }
+
+                            // Set up neighbors arrays with jatom in increasing order.
+                            if (!nosurf[i]) {
+                                jmold = 0;
+                                for (juse = 0; juse < nclsa; juse++) {
+                                    jmin = nAtoms + 1;
+                                    for (jcls = 0; jcls < ncls; jcls++) {
+
+                                        // Don't use ones already sorted.
+                                        if (itnl[jcls] > jmold) {
+                                            if (itnl[jcls] < jmin) {
+                                                jmin = itnl[jcls];
+                                                jmincls = jcls;
+                                            }
+                                        }
+                                    }
+                                    jmold = jmin;
+                                    jcls = jmincls;
+                                    jatom = itnl[jcls];
+                                    clsa[juse] = jatom;
+                                }
+
+                                // Set up pointers to first and last neighbors of atom.
+                                if (nclsa > 0) {
+                                    acls[1][i] = ncls + 1;
+                                    for (m = 0; m < nclsa; m++) {
+                                        ncls++;
+                                        if (ncls > maxcls) {
+                                            logger.severe("Too many Neighboring Atom Pairs");
+                                        }
+                                        cls[ncls] = clsa[m];
+                                    }
+                                    acls[1][i] = ncls;
+                                }
+
+                            }
+                        }
+                    }
+                }
             }
 
             public void torus() {
+                int ia, ja, jn;
+                int ibeg = 0;
+                int iend;
+                double tt[] = new double[3];
+                double ttax[] = new double[3];
+
+                // No torus is possible if there is only one atom.
+                ntt = 0;
+                for (ia = 0; ia < nAtoms; ia++) {
+                    afree[ia] = true;
+                }
+
+                // Get begin and end pointers to neighbors of this atom.
+                for (ia = 0; ia < nAtoms; ia++) {
+                    if (!nosurf[ia]) {
+                        ibeg = acls[0][ia];
+                    }
+                    iend = acls[1][ia];
+
+                    // Check for no neighbors.
+                    if (ibeg > 0) {
+                        for (jn = ibeg; jn < iend; jn++) {
+
+                            // Clear pointer from neighbor to torus.
+                            clst[jn] = 0;
+
+                            // Get atom number of neighbor.
+                            ja = cls[jn];
+
+                            // Don't create torus twice.
+                            if (ja >= ia) {
+
+                                // Do some solid geometry.
+                                ttok = gettor(ia, ja, tt, ttr, ttax);
+                                if (ttok) {
+
+                                    // We have a temporary torus, set up variables.
+                                    ntt++;
+                                    if (ntt > maxtt) {
+                                        logger.severe("Too many Temporary Tori");
+                                    }
+
+                                    // Mark both atoms not free.
+                                    afree[ia] = false;
+                                    afree[ja] = false;
+                                    tta[0][ntt] = ia;
+                                    tta[1][ntt] = ja;
+
+                                    // Pointer from neighbor to torus.
+                                    clst[jn] = ntt;
+
+                                    // Initialize torus as both free and buried.
+                                    ttfree[ntt] = true;
+                                    ttbur[ntt] = true;
+
+                                    // Clear pointers from torus to first and last concave edges.
+                                    ttfe[ntt] = 0;
+                                    ttle[ntt] = 0;
+                                }
+                            }
+                        }
+                    }
+                }
+
             }
+            /*
+             * "place" finds the probe sites by putting the probe sphere tangent to each
+             * triple of neighboring atoms.
+             */
 
             public void place() {
+
+                int np, nen, nv;
+                int k, ke, kv;
+                int ia, ja, ka;
+                int ik, ip, jk;
+                int km, la, lm;
+                int lkf, itt, nmnb;
+                int iend, jend;
+                int iptr, jptr;
+                int mnb[] = new int[MAXMNB];
+                int ikt[] = new int[MAXMNB];
+                int jkt[] = new int[MAXMNB];
+                int lkcls[] = new int[MAXMNB];
+                double d2,det,rad,hij;
+                double hijk = 0;
+                double dotut,fact;
+                double rip2,dba;
+                double rij = 0;
+                double rik = 0;
+                double tik[] = new double[3];
+                double tij[] = new double[3];
+                double uij[] = new double[3];
+                double uik[] = new double[3];
+                double uijk[] = new double[3];
+                double bij[] = new double[3];
+                double bijk[] = new double[3];
+                double aijk[] = new double[3];
+                double pijk[] = new double[3];
+                double tijik[] = new double[3];
+                double tempv[] = new double[3];
+                double utb[] = new double[3];
+                double ai[] = new double[3];
+                double ak[] = new double[3];
+                double discls[] = new double[MAXMNB];
+                double sumcls[] = new double[MAXMNB];
+                boolean tb, tok, prbok, move;
+
+                // No possible placement if there are no temporary tori.
+                np = 0;
+                nfn = 0;
+                nen = 0;
+                nv = 0;
+                if (ntt > 0) {
+
+                    // Consider each torus in turn.
+                    for (itt = 0; itt < ntt; itt++) {
+
+                        // Get atom numbers
+                        ia = (int) tta[0][itt];
+                        ja = (int) tta[1][itt];
+                        /*
+                         * Form mutual neighbor list; clear number
+                         * of mutual neighbors of atoms ia and ja.
+                         */
+
+                        nmnb = 0;
+
+                        // Get begin and end pointers for each atom's neighbor list.
+                        iptr = acls[0][ia];
+                        jptr = acls[0][ja];
+                        if (iptr <= 0 || jptr <= 0) {
+                            iend = acls[1][ia];
+                            jend = acls[1][ja];
+
+                            // Collect mutual neighbors.
+                            while (iptr > iend && jptr > jend) {
+                                move = false;
+                                // Go move the lagging pointer.
+
+                                if (cls[iptr] < cls[jptr]) {
+                                    iptr++;
+                                    move = true;
+                                }
+                                if (!move) {
+                                    if (cls[jptr] < cls[iptr]) {
+                                        jptr++;
+                                        move = true;
+                                    }
+
+                                    if (!move) {
+                                        /*
+                                         * Both point at same neighbor; one more mutual neighbor
+                                         * save atom number of mutual neighbor.
+                                         */
+                                        nmnb++;
+                                        if (nmnb > MAXMNB) {
+                                            logger.severe("Too many Mutual Neighbors");
+                                        }
+                                        mnb[nmnb] = cls[iptr];
+
+                                        // Save pointers to second and third tori.
+                                        ikt[nmnb] = clst[iptr];
+                                        jkt[nmnb] = clst[jptr];
+                                    }
+                                }
+                            }
+                            move = false;
+                            /*
+                             * We have all the mutual neighbors of ia and ja
+                             * if no mutual neighbors, skip to end of loop.
+                             */
+
+                            if (nmnb <= 0) {
+                                ttbur[itt] = false;
+                                move = true;
+                            }
+                            if (!move) {
+                                hij = 0.0;
+                                ttok = gettor(ia, ja, bij, hij, uij);
+                                for (km = 0; km < nmnb; km++) {
+                                    ka = mnb[km];
+                                    getVector(ak, a, ka);
+                                    discls[km] = VectorMath.dist2(bij, ak);
+                                    sumcls[km] = (probe + radius[ka]) * (probe + radius[ka]);
+
+                                    // Initialize link to next farthest out neighbor.
+                                    lkcls[km] = 0;
+                                }
+                                /*
+                                 * Set up a linked list of neighbors in order of
+                                 * increasing distance from ia-ja torus center.
+                                 */
+
+                                lkf = 1;
+                                if (nmnb <= 1) {
+                                    move = true;
+                                }
+                                if (!move) {
+                                    // Put remaining neighbors in linked list at proper position.
+                                    boolean keep = false;
+                                    for (l = 1; l < nmnb; l++) {
+                                        if (!keep) {
+                                            l1 = 0;
+                                            l2 = lkf;
+                                        } else {
+                                            keep = false;
+                                        }
+                                        if (!(discls[l] < discls[l2])) {
+                                            l1 = l2;
+                                            l2 = lkcls[l2];
+                                            if (l2 != 0) {
+                                                keep = true;
+                                                continue;
+                                            }
+                                        }
+                                        // Add to list.
+
+                                        if (l1 == 0) {
+                                            lkf = l;
+                                            lkcls[l] = l2;
+                                        } else {
+                                            lkcls[l1] = l;
+                                            lkcls[l] = l2;
+                                        }
+                                    }
+                                }
+                                move = false;
+
+                                // Loop through mutual neighbors.
+                                for (km = 0; km < nmnb; km++) {
+
+                                    // Get atom number of neighbors.
+                                    ka = mnb[km];
+                                    if (skip[ia] && skip[ja] && skip[ka]) {
+                                    }
+
+                                    // Get tori numbers for neighbor.
+                                    ik = ikt[km];
+                                    jk = jkt[km];
+
+                                    /*
+                                     * Possible new triple, do some geometry to
+                                     * retrieve saddle center, axis and radius.
+                                     */
+                                    prbok = false;
+                                    tb = false;
+                                    tok = gettor(ia, ja, tij, rij, uij);
+                                    if (tok) {
+                                        getVector(ai, a, ka);
+                                        double dat2 = VectorMath.dist2(ai, tij);
+                                        double rad2 = (radius[ka] + probe) * (radius[ka] + probe) - rij * rij;
+
+                                        /*
+                                         * If "ka" less than "ja", then all we care about
+                                         * is whether the torus is buried.
+                                         */
+                                        boolean skip = false;
+                                        if (ka < ja) {
+                                            if (rad2 <= 0.0 || dat2 > rad2) {
+                                                skip = true;
+                                            }
+                                        }
+                                        if (!skip) {
+                                            tok = gettor(ia, ka, tik, rik, uik);
+                                            if (!tok) {
+                                                skip = true;
+                                            }
+                                            if (!skip) {
+                                                double dotijk = VectorMath.dot(uij, uik);
+                                                dotijk = check(dotijk);
+                                                double wijk = acos(dotijk);
+                                                double swijk = sin(wijk);
+
+                                                /*
+                                                 * if the three atoms are colinear, then there is no
+                                                 * probe placement; but we still care whether the torus
+                                                 * is buried by atom "k".
+                                                 */
+                                                if (swijk == 0.0) {
+                                                    tb = (rad2 > 0.0 && dat2 < rad2);
+                                                    skip = true;
+                                                }
+                                                if (!skip) {
+                                                    VectorMath.cross(uij, uik, uijk);
+                                                    for (k = 0; k < 3; k++) {
+                                                        uijk[k] = uijk[k] / swijk;
+                                                    }
+                                                    VectorMath.cross(uijk, uij, utb);
+                                                    for (k = 0; k < 3; k++) {
+                                                        tijik[k] = tik[k] - tij[k];
+                                                    }
+                                                    dotut = VectorMath.dot(uik, tijik);
+                                                    fact = dotut / swijk;
+                                                    for (k = 0; k < 3; k++) {
+                                                        bijk[k] = tij[k] + utb[k] * fact;
+                                                    }
+                                                    getVector(ai, a, ia);
+                                                    dba = VectorMath.dist(ai, bijk);
+                                                    rip2 = (radius[ia] + probe) * (radius[ia] + probe);
+                                                    rad = rip2 - dba;
+                                                    if (rad < 0.0) {
+                                                        tb = (rad2 > 0.0 && dat2 <= rad2);
+                                                    } else {
+                                                        prbok = true;
+                                                        hijk = sqrt(rad);
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    if (tb) {
+                                        ttbur[itt] = true;
+                                        ttfree[itt] = false;
+                                        move = true;
+                                    }
+                                    if (!move) {
+                                        /* 
+                                         * Check for duplicate triples or any possible
+                                         * probe postions.
+                                         */
+                                        if (ka < ja || !prbok) {
+                                            move = true;
+                                        }
+                                        if (!move) {
+                                            // Altitude vector.
+
+                                            for (k = 0; k < 3; k++) {
+                                                aijk[k] = hijk * uijk[k];
+                                            }
+
+                                            // We try two probe placements.
+                                            for (ip = 0; ip < 2; ip++) {
+                                                for (k = 0; k < 3; k++) {
+                                                    if (ip == 1) {
+                                                        pijk[k] = bijk[k] + aijk[k];
+                                                    } else {
+                                                        pijk[k] = bijk[k] - aijk[k];
+                                                    }
+                                                }
+
+                                                // Mark three tori not free.
+                                                ttfree[itt] = false;
+                                                ttfree[ik] = false;
+                                                ttfree[jk] = false;
+
+                                                // Check for collisions.
+                                                lm = lkf;
+
+                                                while (lm <= 0) {
+
+                                                    // Get atom number of mutual neighbor.
+                                                    la = mnb[lm];
+
+                                                    // Must not equal third atom.
+                                                    if (la == ka) {
+                                                        lm = lkcls[lm];
+                                                        continue;
+                                                    }
+                                                    ak[0] = a[0][la];
+                                                    ak[1] = a[1][la];
+                                                    ak[2] = a[2][la];
+                                                    // Compare distance to sum of radii.
+                                                    d2 = VectorMath.dist2(pijk, ak);
+                                                    if (d2 <= sumcls[lm]) {
+                                                        move = true;
+                                                        break;
+                                                    }
+                                                    lm = lkcls[lm];
+                                                }
+                                                if (!move) {
+                                                    // We have a new probe position.                             
+
+                                                    np++;
+                                                    if (np > maxp) {
+                                                        logger.severe("Too many Probe Positions");
+                                                    }
+
+                                                    // Mark three tori not buried.
+                                                    ttbur[itt] = false;
+                                                    ttbur[ik] = false;
+                                                    ttbur[jk] = false;
+
+                                                    // Store probe center.
+                                                    for (k = 0; k < 3; k++) {
+                                                        p[k][np] = pijk[k];
+                                                    }
+
+                                                    // Calculate vectors from probe to atom centers.
+                                                    if (nv + 3 > maxv) {
+                                                        logger.severe("Too many Vertices");
+                                                    }
+                                                    for (k = 0; k < 3; k++) {
+                                                        v[k][nv + 1] = a[k][ia] - p[k][np];
+                                                        v[k][nv + 2] = a[k][ja] - p[k][np];
+                                                        v[k][nv + 3] = a[k][ka] - p[k][np];
+                                                    }
+
+                                                    double matrix[] = new double[9];
+                                                    for (int a = 0; a < 9; a++) {
+                                                        for (int b = 0; b < 3; b++) {
+                                                            for (int c = 1; c <= 3; c++) {
+                                                                matrix[a] = v[j][nv + c];
+                                                            }
+                                                        }
+                                                        // Calculate determinant of vectors defining triangle.
+
+                                                        det = VectorMath.determinant3(matrix);
+
+                                                        // Now add probe coordinates to vertices.
+                                                        for (k = 0; k < 3; k++) {
+                                                            v[k][nv + 1] = p[k][np] + v[k][nv + 1] * probe / (radius[ia] + probe);
+                                                            v[k][nv + 2] = p[k][np] + v[k][nv + 2] * probe / (radius[ja] + probe);
+                                                            v[k][nv + 3] = p[k][np] + v[k][nv + 3] * probe / (radius[ka] + probe);
+                                                        }
+
+                                                        // Want the concave face to have counter-clockwise orientation.
+                                                        if (det > 0.0) {
+
+                                                            // wap second and third vertices.
+                                                            for (k = 0; k < 3; k++) {
+                                                                tempv[k] = v[k][nv + 2];
+                                                                v[k][nv + 2] = v[k][nv + 3];
+                                                                v[k][nv + 3] = tempv[k];
+                                                            }
+
+                                                            // Set up pointers from probe to atoms.
+                                                            pa[0][np] = ia;
+                                                            pa[1][np] = ka;
+                                                            pa[2][np] = ja;
+
+                                                            // Set up pointers from vertices to atoms.
+                                                            va[nv + 1] = ia;
+                                                            va[nv + 2] = ka;
+                                                            va[nv + 3] = ja;
+
+                                                            // Insert concave edges into linked lists for appropriate tori.
+                                                            inedge(nen + 1, ik);
+                                                            inedge(nen + 2, jk);
+                                                            inedge(nen + 3, itt);
+                                                        } else {
+
+                                                            // Similarly, if face already counter clockwise.
+                                                            pa[0][np] = ia;
+                                                            pa[1][np] = ja;
+                                                            pa[2][np] = ka;
+                                                            va[nv + 1] = ia;
+                                                            va[nv + 2] = ja;
+                                                            va[nv + 3] = ka;
+                                                            inedge(nen + 1, itt);
+                                                            inedge(nen + 2, jk);
+                                                            inedge(nen + 3, ik);
+                                                        }
+
+                                                        // Set up pointers from vertices to probe.
+                                                        for (kv = 0; kv < 3; kv++) {
+                                                            vp[nv + kv] = np;
+                                                        }
+
+                                                        // Set up concave edges and concave face.
+                                                        if (nen + 3 > maxen) {
+                                                            logger.severe("Too many Concave Edges");
+                                                        }
+                                                        // Edges point to vertices.
+
+                                                        env[0][nen + 1] = nv + 1;
+                                                        env[1][nen + 1] = nv + 2;
+                                                        env[0][nen + 2] = nv + 2;
+                                                        env[1][nen + 2] = nv + 3;
+                                                        env[0][nen + 3] = nv + 3;
+                                                        env[1][nen + 3] = nv + 1;
+                                                        if (nfn + 1 > maxfn) {
+                                                            logger.severe("Too many Concave Faces");
+                                                        }
+
+                                                        // Face points to edges.
+                                                        for (ke = 0; ke < 3; ke++) {
+                                                            fnen[ke][nfn + 1] = nen + ke;
+                                                        }
+
+                                                        // Increment counters for number of faces, edges and vertices.
+                                                        nfn++;
+                                                        nen += 3;
+                                                        nv += 3;
+                                                    }
+                                                    move = false;
+                                                }
+                                            }
+                                        }
+                                        move = false;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            /*
+             * "inedge" insterts a concave edge into the linked list
+             * for its temporary torus.
+             */
+
+            public void inedge(int ien, int itt) {
+
+                int iepen;
+
+                // Check for a serious error in the calling arguments.
+                if (ien <= 0) {
+                    logger.severe("Bad Edge Number in INEDGE");
+                }
+                if (itt <= 0) {
+                    logger.severe("Bad Torus Number in INEDGE");
+                }
+
+                // Set beginning of list or add to end.
+                if (ttfe[itt] == 0) {
+                    ttfe[itt] = ien;
+                    enext[ien] = 0;
+                    ttle[itt] = ien;
+                } else {
+                    iepen = ttle[itt];
+                    enext[iepen] = ien;
+                    enext[ien] = 0;
+                    ttle[itt] = ien;
+                }
             }
 
             public void compress() {
+                int itt, ia, ja;
+                int iptr, ned;
+                int ip1, ip2;
+                int iv1, iv2;
+                int tfe[] = new int[maxt];
+                double ai[] = new double[3];
+                double aj[] = new double[3];
+                boolean tfree[] = new boolean[maxt];
+
+                // Initialize the number of nonburied tori.
+                nt = 0;
+                if (ntt > 0) {
+                    /*
+                     * If torus is free, then it is not buried;
+                     * skip to end of loop if buried torus.
+                     */
+
+                    for (itt = 0; itt < ntt; itt++) {
+                        if (ttfree[itt]) {
+                            ttbur[itt] = false;
+                        }
+                        if (!ttbur[itt]) {
+
+                            // First, transfer information.
+                            nt++;
+                            if (nt > maxt) {
+                                logger.severe("Too many NonBuried Tori");
+                            }
+                            ia = tta[0][itt];
+                            ja = tta[1][itt];
+                            getVector(ai, t, nt);
+                            getVector(aj, tax, nt);
+                            ttok = gettor(ia, ja, ai, tr[nt], aj);
+                            ta[0][nt] = ia;
+                            ta[1][nt] = ja;
+                            tfree[nt] = ttfree[itt];
+                            tfe[nt] = ttfe[itt];
+
+                            // Special check for inconsistent probes.
+                            iptr = tfe[nt];
+                            ned = 0;
+                            while (iptr != 0) {
+                                ned++;
+                                iptr = enext[iptr];
+                            }
+                            if ((ned % 2) != 0) {
+                                iptr = tfe[nt];
+                                while (iptr != 0) {
+                                    iv1 = env[0][iptr];
+                                    iv2 = env[1][iptr];
+                                    ip1 = vp[iv1];
+                                    ip2 = vp[iv2];
+                                    logger.severe("Odd Torus for Probes IP1 and IP2");
+                                    iptr = enext[iptr];
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             public void saddles() {
+                final int maxent = 500;
+                int k, ia, in, ip;
+                int nc, nep;
+                int it, iv, itwo;
+                int ien, ient, nent;
+                int m1, n1;
+                int ten[] = new int[maxent];
+                int nxtang[] = new int[maxent];
+                int tfe[] = new int[maxt];
+                int ta[][] = new int[2][maxt];
+                double triple, factor;
+                double dtev, dt;
+                double ai[] = new double[3];
+                double aj[] = new double[3];
+                double ak[] = new double[3];
+                double atvect[] = new double[3];
+                double teang[] = new double[maxent];
+                double tev[][] = new double[3][maxent];
+                boolean sdstrt[] = new boolean[maxent];
+                boolean tfree[] = new boolean[maxt];
+                boolean move = false;
+
+                // Zero the number of circles, convex edges and saddle faces.
+                nc = 0;
+                nep = 0;
+                nfs = 0;
+                for (ia = 0; ia < nAtoms; ia++) {
+                    afe[ia] = 0;
+                    ale[ia] = 0;
+                    abur[ia] = true;
+                }
+
+                // No saddle faces if no tori.
+                if (nt >= 1) {
+
+                    // Cycle through tori.
+                    for (it = 0; it < nt; it++) {
+                        if (skip[ta[0][it]] && skip[ta[1][it]]) {
+                            move = true;
+                        }
+
+                        if (!move) {
+                            // Set up two circles.
+
+                            for (in = 0; in < 2; in++) {
+                                ia = ta[in][it];
+
+                                // Mark atom not buried.
+                                abur[ia] = false;
+
+                                // Vector from atom to torus center.
+                                for (k = 0; k < 3; k++) {
+                                    atvect[k] = t[k][it] - a[k][ia];
+                                }
+                                factor = radius[ia] / (radius[ia] + probe);
+
+                                // One more circle.
+                                nc++;
+                                if (nc > maxc) {
+                                    logger.severe("Too many Circles");
+                                }
+
+                                // Circle center.
+                                for (k = 0; k < 3; k++) {
+                                    c[k][nc] = a[k][ia] + factor * atvect[k];
+                                }
+
+                                // Pointer from circle to atom.
+                                ca[nc] = ia;
+
+                                // Pointer from circle to torus.
+                                ct[nc] = it;
+
+                                // Circle radius.
+                                cr[nc] = factor * tr[it];
+                            }
+
+                            // Skip to special code if free torus.
+                            if (tfree[it]) {
+                                move = true;
+                            }
+                            if (!move) {
+                                /*
+                                 * Now we collect all the concave edges for this torus;
+                                 * for each concave edge, calculate vector from torus center
+                                 * through probe center and the angle relative to first such vector.
+                                 */
+
+                                // Clear the number of concave edges for torus.
+                                nent = 0;
+
+                                // Pointer to start of linked list.
+                                ien = tfe[it];
+                                while (ien <= 0) {
+
+                                    // One more concave edge.
+                                    nent++;
+                                    if (nent > maxent) {
+                                        logger.severe("Too many Edges for Torus");
+                                    }
+
+                                    // First vertex of edge.
+                                    iv = env[0][ien];
+
+                                    // Probe number of vertex.
+                                    ip = vp[iv];
+                                    for (k = 0; k < 3; k++) {
+                                        tev[k][nent] = p[k][ip] - t[k][it];
+                                    }
+                                    dtev = 0.0;
+                                    for (k = 0; k < 3; k++) {
+                                        dtev += tev[k][nent] * tev[k][nent];
+                                    }
+                                    if (dtev <= 0.0) {
+                                        logger.severe("Probe on Torus Axis");
+                                    }
+                                    dtev = sqrt(dtev);
+                                    for (k = 0; k < 3; k++) {
+                                        tev[k][nent] = tev[k][nent] / dtev;
+                                    }
+
+                                    // Store concave edge number.
+                                    ten[nent] = ien;
+                                    if (nent > 0) {
+                                        // Calculate angle between this vector and first vector.
+
+                                        dt = 0.0;
+                                        for (k = 0; k < 3; k++) {
+                                            dt += tev[k][0] * tev[k][nent];
+                                        }
+                                        dt = check(dt);
+
+                                        // Store angle.
+                                        teang[nent] = acos(dt);
+
+                                        ai[0] = tev[0][0];
+                                        ai[1] = tev[1][0];
+                                        ai[2] = tev[2][0];
+                                        aj[0] = tev[0][nent];
+                                        aj[1] = tev[1][nent];
+                                        aj[2] = tev[2][nent];
+                                        ak[0] = tax[0][it];
+                                        ak[1] = tax[1][it];
+                                        ak[2] = tax[2][it];
+                                        // Get the sign right.
+                                        if (triple(ai, aj, ak) < 0.0) {
+                                            teang[nent] = 2.0 * PI - teang[nent];
+                                        }
+                                    } else {
+                                        teang[0] = 0.0;
+                                    }
+                                    /*
+                                     * Saddle face starts with this edge if it points parallel
+                                     * to torus axis vector (which goes from first to second atom).
+                                     */
+
+                                    sdstrt[nent] = (va[iv] == ta[0][it]);
+
+                                    // Next edge in list.
+                                    ien = enext[ien];
+                                }
+                                if (nent <= 0) {
+                                    logger.severe("No Edges for Non-free Torus");
+                                }
+                                itwo = 2;
+                                if ((nent % itwo) != 0) {
+                                    logger.severe("Odd Number of Edges for Toruss");
+                                }
+                                /*
+                                 * Set up linked list of concave edges in order
+                                 * of increasing angle around the torus axis;
+                                 * clear second linked (angle-ordered) list pointers.
+                                 */
+
+                                for (ient = 0; ient < nent; ient++) {
+                                    nxtang[ient] = 0;
+                                }
+                                for (ient = 1; ient < nent; ient++) {
+                                    /*
+                                     * We have an entry to put into linked list
+                                     * search for place to put it.
+                                     */
+                                    l1 = 0;
+                                    l2 = 1;
+                                    while (l2 != 0) {
+                                        if (teang[ient] < teang[l2]) {
+                                            break;
+                                        }
+                                        l1 = l2;
+                                        l2 = nxtang[l2];
+                                    }
+                                    /*
+                                     * We are at end of linked list or between l1 and l2;
+                                     * insert edge.
+                                     */
+
+                                    if (l1 <= 0) {
+                                        logger.severe("Logic Error in SADDLES");
+                                    }
+                                    nxtang[l1] = ient;
+                                    nxtang[ient] = l2;
+
+                                }
+                                /*
+                                 * Collect pairs of concave edges into saddles
+                                 * create convex edges while you're at it.
+                                 */
+                                l1 = -1;
+                                boolean firstLoop = true;
+                                while (l1 != 0) {
+                                    if (firstLoop) {
+                                        l1 = 0;
+                                        firstLoop = false;
+                                    }
+                                    if (l1 <= -1) {
+                                        move = true;
+                                        break;
+                                    }
+
+                                    // Check for start of saddle;
+                                    if (sdstrt[l1]) {
+
+                                        // One more saddle face.
+                                        nfs++;
+                                        if (nfs > maxfs) {
+                                            logger.severe("Too many Saddle Faces");
+                                        }
+
+                                        // Get edge number.
+                                        ien = ten[l1];
+
+                                        // First concave edge of saddle.
+                                        fsen[0][nfs] = ien;
+
+                                        // One more convex edge.
+                                        nep++;
+                                        if (nep > maxep) {
+                                            logger.severe("Too many Convex Edges");
+                                        }
+
+                                        // Second convex edge points to first circle.
+                                        epc[nep] = nc - 1;
+                                        ia = ca[nc - 1];
+
+                                        // Insert convex edge into linked list for atom.
+                                        ipedge(nep, ia);
+                                        /*
+                                         * Second vertex of second convex edge
+                                         * is first vertex of first concave edge.
+                                         */
+
+                                        epv[1][nep] = env[0][ien];
+                                        l1 = nxtang[l1];
+
+                                        // Wrap around.
+                                        if (l1 <= 0) {
+                                            l1 = 1;
+                                        }
+                                        if (sdstrt[l1]) {
+                                            m1 = nxtang[l1];
+                                            if (m1 <= 0) {
+                                                m1 = 1;
+                                            }
+                                            if (sdstrt[m1]) {
+                                                logger.severe("Three Starts in a Row");
+                                            }
+                                            n1 = nxtang[m1];
+
+                                            nxtang[l1] = n1;
+                                            nxtang[m1] = l1;
+                                            l1 = m1;
+                                        }
+                                        ien = ten[l1];
+
+                                        // Second concave edge for saddle face.
+                                        fsen[1][nfs] = ien;
+                                        /*
+                                         * Second vertex of first convex edge is
+                                         * first vertex of second concave edge.
+                                         */
+
+                                        epv[1][nep - 1] = env[0][ien];
+                                        /*
+                                         * First vertex of second convex edge is
+                                         * second vertex of second concave edge.
+                                         */
+                                        epv[0][nep] = env[1][ien];
+                                        fsep[1][nfs] = nep;
+
+                                        // Next concave edge.
+                                        l1 = nxtang[l1];
+                                        if (l1 == 0) {
+                                            move = true;
+                                        }
+                                    }
+                                }
+                                if (!move) {
+                                    // Free torus.
+                                }
+                                /*
+                                 * Set up entire circles as convex edges for new saddle surface;
+                                 * one more saddle face.
+                                 */ nfs++;
+                                if (nfs > maxfs) {
+                                    logger.severe("Too many Saddle Faces");
+                                }
+
+                                // No concave edges for saddle.
+                                fsen[0][nfs] = 0;
+                                fsen[1][nfs] = 0;
+
+                                // One more convex edge.
+                                nep++;
+                                ia = ca[nc];
+
+                                // Insert convex edge into linked list for atom.
+                                ipedge(nep, ia);
+
+                                // No vertices for convex edge.
+                                epv[0][nep] = 0;
+                                epv[1][nep] = 0;
+
+                                // Pointer from convex edge to second circle.
+                                epc[nep] = nc;
+
+                                // First convex edge for saddle face.
+                                fsep[0][nfs] = nep;
+
+                                // One more convex edge.
+                                nep++;
+                                ia = ca[nc - 1];
+
+                                // Insert second convex edge into linked list.
+                                ipedge(nep, ia);
+
+                                // No vertices for convex edge.
+                                epv[0][nep] = 0;
+                                epv[1][nep] = 0;
+
+                                // Convex edge points to first circle.
+                                epc[nep] = nc - 1;
+
+                                // Second convex edge for saddle face.
+                                fsep[1][nfs] = nep;
+
+                                // Buried torus; do nothing with it.
+                            }
+                        }
+                        move = false;
+                    }
+                }
+            }
+            /*
+             * "triple" finds the triple product of three vectors; used as a
+             * service routine by the Connolly surface are and voume
+             * computation.
+             */
+
+            public double triple(double x[], double y[], double z[]) {
+
+                double triple;
+                double xy[] = new double[3];
+                VectorMath.cross(x, y, xy);
+                triple = VectorMath.dot(xy, z);
+                return triple;
+            }
+
+            public void ipedge(int iep, int ia) {
+
+                // "ipedge" inserts convex edge into linked list for atom.
+                int iepen;
+
+                // First, check for an error condition.
+                if (iep <= 0) {
+                    logger.severe("Bad Edge Number in IPEDGE");
+                }
+                if (ia <= 0) {
+                    logger.severe("Bad Atom Number in IPEDGE");
+                }
+
+                // Set beginning of list or add to end.
+                if (afe[ia] == 0) {
+                    afe[ia] = iep;
+                    epnext[iep] = 0;
+                    ale[ia] = iep;
+                } else {
+                    iepen = ale[ia];
+                    epnext[iepen] = iep;
+                    epnext[iep] = 0;
+                    ale[ia] = iep;
+                }
             }
 
             public void contact() {
+                final int maxepa = 300;
+                final int maxcypa = 100;
+                int i, k, ia, ia2, it;
+                int ncy;
+                int iep, ic, jc, jcy;
+                int nepa, iepa;
+                int jepa = 0;
+                int ncypa = 0;
+                int icya, jcya, kcya;
+                int ncyep, icyep, jcyep;
+                int ncyold = 0;
+                int nused, lookv;
+                int aic[] = new int[maxepa];
+                int aia[] = new int[maxepa];
+                int aep[] = new int[maxepa];
+                int av[][] = new int[2][maxepa];
+                int ncyepa[] = new int[maxcypa];
+                int cyepa[][] = new int[MAXCYEP][maxcypa];
+                double anaa, factor;
+                double ai[] = new double[3];
+                double acvect[][] = new double[3][maxepa];
+                double aavect[][] = new double[3][maxepa];
+                double pole[] = new double[3];
+                double unvect[] = new double[3];
+                double acr[] = new double[maxepa];
+                boolean epused[] = new boolean[maxepa];
+                boolean cycy[][] = new boolean[maxcypa][maxcypa];
+                boolean cyused[] = new boolean[maxcypa];
+                boolean samef[][] = new boolean[maxcypa][maxcypa];
+                boolean move = false;
+                boolean breakAgain = false;
+
+                // Zero out the number of cycles and convex faces.
+                ncy = 0;
+                nfp = 0;
+
+                // Mark all free atoms not buried.
+                for (ia = 0; ia < nAtoms; ia++) {
+                    if (afree[ia]) {
+                        abur[ia] = false;
+                    }
+                }
+
+                // Go through all atoms.
+                for (ia = 0; ia < nAtoms; ia++) {
+                    if (!skip[ia] || !abur[ia]) {
+
+                        // Special code for completely solvent-accessible atom.
+                        if (!afree[ia]) {
+
+                            /*
+                             * Gather convex edges for atom
+                             * Clear number of convex edges for atom.
+                             */
+                            nepa = 0;
+
+                            // Pointer to first edge.
+                            iep = afe[ia];
+                            while (iep > 0) {
+                                // One more edge.
+
+                                nepa++;
+                                if (nepa > maxepa) {
+                                    logger.severe("Too many Convex Edges for Atom");
+                                }
+
+                                // Store vertices of edge.
+                                av[0][nepa] = epv[0][iep];
+                                av[1][nepa] = epv[1][iep];
+
+                                // Store convex edge number.
+                                aep[nepa] = iep;
+                                ic = epc[iep];
+
+                                // Store circle number.
+                                aic[nepa] = ic;
+
+                                // Get neighboring atom.
+                                it = ct[ic];
+                                if (ta[0][it] == ia) {
+                                    ia2 = ta[1][it];
+                                } else {
+                                    ia2 = ta[0][it];
+                                }
+
+                                // Store other atom number, we might need it sometime.
+                                aia[nepa] = ia2;
+                                /*
+                                 * Vector from atom to circle center; also
+                                 * vector from atom to center of neighboring atom
+                                 * sometimes we use one vector, sometimes the other.
+                                 */
+
+                                for (k = 0; k < 3; k++) {
+                                    acvect[k][nepa] = c[k][ic] - a[k][ia];
+                                    aavect[k][nepa] = a[k][ia2] - a[k][ia];
+                                }
+
+                                // Circle radius.
+                                acr[nepa] = cr[ic];
+
+                                // Pointer to next edge.
+                                iep = epnext[iep];
+
+                            }
+                            if (nepa <= 0) {
+                                logger.severe("No Edges for Non-buried, Non-free Atom");
+                            }
+                            /*
+                             * Form cycles; initialize all the
+                             * convex edges as not used in cycle.
+                             */
+
+                            for (iepa = 0; iepa < nepa; iepa++) {
+                                epused[iepa] = false;
+                            }
+
+                            // Save old number of cycles.
+                            ncyold = ncy;
+                            nused = 0;
+                            ncypa = 0;
+                            while (nused < nepa) {
+
+                                // Look for starting edge.
+                                for (iepa = 0; iepa < nepa; iepa++) {
+                                    if (epused[iepa]) {
+                                        move = true;
+                                        break;
+                                    }
+                                }
+
+                                // Cannot find starting edge, finished.
+                                if (!move) {
+                                    // Pointer to edge.
+                                    iep = aep[iepa];
+
+                                    // One edge so far for this cycle.
+                                    ncyep = 1;
+
+                                    // One more cycle for atom.
+                                    ncypa++;
+                                    if (ncypa > maxcypa) {
+                                        logger.severe("Too many Cycles per Atom");
+                                    }
+
+                                    // Mark edge used in cycle.
+                                    epused[iepa] = true;
+                                    nused++;
+
+                                    // One more cycle for molecule.
+                                    ncy++;
+                                    if (ncy > maxcy) {
+                                        logger.severe("Too many Cycles");
+                                    }
+
+                                    // Index of edge in atom cycle array.
+                                    cyepa[ncyep][ncypa] = iepa;
+
+                                    // Store in molecule cycle array a pointer to edge.
+                                    cyep[ncyep][ncy] = iep;
+                                    /*
+                                     * Second vertex of this edge is the vertex to look
+                                     * for next as the first vertex of another edge.
+                                     */
+
+                                    lookv = av[1][iepa];
+
+                                    // If no vertex, this cycle is finished.
+                                    if (lookv <= 0) {
+                                        move = true;
+                                    }
+                                    if (!move) {
+                                        while (av[0][jepa] == lookv) {
+                                            for (jepa = 0; jepa < nepa; jepa++) {
+                                                if (epused[jepa]) {
+                                                    break;
+                                                }
+                                            }
+
+                                            // Edges are connected pointer to edge.
+                                            iep = aep[jepa];
+
+                                            // One more edge for this cycle.
+                                            ncyep++;
+                                            if (ncyep > MAXCYEP) {
+                                                logger.severe("Too many Edges per Cycle");
+                                            }
+                                            epused[jepa] = true;
+                                            nused++;
+
+                                            // Store index in local edge array.
+                                            cyepa[ncyep][ncypa] = jepa;
+
+                                            // Store pointer to edge.
+                                            cyep[ncyep][ncy] = iep;
+
+                                            // New vertex to look for.
+                                            lookv = av[1][jepa];
+
+                                            // If no vertex, this cycle is in trouble.
+                                            if (lookv <= 0) {
+                                                logger.severe("Pointer Error in Cycle");
+                                            }
+                                        }
+
+                                        // It better connect to first edge of cycle.
+                                        if (lookv != av[0][iepa]) {
+                                            logger.severe("Cycle does not Close");
+                                        }
+                                    }
+                                    /*
+                                     * This cycle is finished
+                                     * store number of edges in cycle.
+                                     */
+                                    ncyepa[ncypa] = ncyep;
+                                    cynep[ncy] = ncyep;
+                                }
+                                move = false;
+                            }
+
+                            // Look for more cycles.
+                        }
+                        /*
+                         * Compare cycles for inside/outside relation;
+                         * check to see if cycle i is inside cycle j.
+                         */
+
+                        for (icya = 0; icya < ncypa; icya++) {
+                            for (jcya = 0; jcya < ncypa; jcya++) {
+                                jcy = ncyold + jcya;
+
+                                // Initialize.
+                                cycy[icya][jcya] = true;
+
+                                // Check for same cycle.
+                                if (icya == jcya || ncyepa[jcya] <= 2) {
+                                    continue;
+                                }
+                                /*
+                                 * If cycles i and j have a pair of edges belonging
+                                 * to the same circle, then they are outside each other.
+                                 */
+
+                                for (icyep = 0; icyep < ncyepa[icya]; icyep++) {
+                                    iepa = cyepa[icyep][icya];
+                                    ic = aic[iepa];
+                                    for (jcyep = 0; jcyep < ncyepa[jcya]; jcyep++) {
+                                        jepa = cyepa[jcyep][jcya];
+                                        jc = aic[jepa];
+                                        if (ic == jc) {
+                                            cycy[icya][jcya] = false;
+                                            breakAgain = true;
+                                            break;
+                                        }
+                                    }
+                                    if (breakAgain) {
+                                        break;
+                                    }
+                                }
+                                if (breakAgain) {
+                                    continue;
+                                }
+                                iepa = cyepa[0][icya];
+                                ai[0] = aavect[0][iepa];
+                                ai[1] = aavect[1][iepa];
+                                ai[2] = aavect[2][iepa];
+                                anaa = VectorMath.r(ai);
+                                factor = radius[ia] / anaa;
+
+                                // North pole and unit vector pointing south.
+                                for (k = 0; k < 3; k++) {
+                                    pole[k] = factor * aavect[k][iepa] + a[k][ia];
+                                    unvect[k] = -aavect[k][iepa] / anaa;
+                                }
+                                cycy[icya][jcya] = ptincy(pole, unvect, jcy,ia);
+                            }
+                        }
+
+                        // Group cycles into faces; direct comparison for i and j.
+                        for (icya = 0; icya < ncypa; icya++) {
+                            for (jcya = 0; jcya < ncypa; jcya++) {
+                                /*
+                                 * Tentatively say that cycles i and j bound
+                                 * the same face if they are inside each other.
+                                 */
+
+                                samef[icya][jcya] = (cycy[icya][jcya] && cycy[jcya][icya]);
+                            }
+                        }
+                        /*
+                         * If i is in exterior of k, and k is in interior of
+                         * i and j, then i and j do not bound the same face.
+                         */
+
+                        for (icya = 0; icya < ncypa; icya++) {
+                            for (jcya = 0; jcya < ncypa; jcya++) {
+                                if (icya != jcya) {
+                                    for (kcya = 0; kcya < ncypa; kcya++) {
+                                        if (kcya != icya && kcya != jcya) {
+                                            if (cycy[kcya][icya] && cycy[kcya][jcya] && !cycy[icya][kcya]) {
+                                                samef[icya][jcya] = false;
+                                                samef[jcya][icya] = false;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Fill gaps so that "samef" falls into complete blocks.
+                        for (icya = 0; icya < ncypa - 2; icya++) {
+                            for (jcya = icya + 1; jcya < ncypa - 1; jcya++) {
+                                if (samef[icya][jcya]) {
+                                    for (kcya = jcya + 1; kcya < ncypa; kcya++) {
+                                        if (samef[jcya][kcya]) {
+                                            samef[icya][kcya] = true;
+                                            samef[kcya][icya] = true;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Group cycles belonging to the same face.
+                        for (icya = 0; icya < ncypa; icya++) {
+                            cyused[icya] = false;
+                        }
+
+                        // Clear number of cycles used in bounding faces.
+                        nused = 0;
+                        for (icya = 0; icya < ncypa; icya++) {
+
+                            // Check for already used.
+                            if (cyused[icya]) {
+                                continue;
+                            }
+
+                            // One more convex face.
+                            nfp++;
+                            if (nfp > maxfp) {
+                                logger.severe("Too many Convex Faces");
+                            }
+
+                            // Clear number of cycles for face.
+                            fpncy[nfp] = 0;
+
+                            // Pointer from face to atom.
+                            fpa[nfp] = ia;
+
+                            // Look for all other cycles belonging to same face.
+                            for (jcya = 0; jcya < ncypa; jcya++) {
+
+                                // Check for cycle already used in another face.
+                                if (cyused[jcya] || !samef[icya][jcya]) {
+                                    move = true;
+                                }
+                                if (!move) {
+                                    // Mark cycle used.
+
+                                    cyused[jcya] = true;
+                                    nused++;
+
+                                    // One more cycle for face.
+                                    fpncy[nfp]++;
+                                    if (fpncy[nfp] > MAXFPCY) {
+                                        logger.severe("Too many Cycles bounding Convex Face");
+                                    }
+                                    i = fpncy[nfp];
+
+                                    // Store cycle number.
+                                    fpcy[i][nfp] = ncyold + jcya;
+
+                                    // Check for finished.
+                                    if (nused >= ncypa) {
+                                        move = true;
+                                        breakAgain = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (breakAgain) {
+                                break;
+                            }
+
+                        }
+                        if (!breakAgain) {
+                            // Should not fall through end of do loops.
+                            logger.severe("Not all Cycles grouped into Convex Faces");
+                        }
+                    }
+                    // One face for free atom; no cycles.
+                    nfp++;
+                    if (nfp > maxfp) {
+                        logger.severe("Too many Convex Faces");
+                    }
+                    fpa[nfp] = ia;
+                    fpncy[nfp] = 0;
+                }
+            }
+
+            public boolean ptincy(double pnt[], double unvect[], int icy, int ia) {
+
+                int k, ke, iep;
+                int ic, it, iatom;
+                int iaoth, nedge;
+                double rotang, totang;
+                double dt,f;
+                double acvect[] = new double[3];
+                double cpvect[] = new double[3];
+                double polev[] = new double[3];
+                double spv[][] = new double[3][MAXCYEP];
+                double epu[][] = new double[3][MAXCYEP];
+                boolean ptincy, fail;
+
+                // Check for eaten by neighbor.
+                for (ke = 0; ke < cynep[icy]; ke++) {
+                    iep = cyep[ke][icy];
+                    ic = epc[iep];
+                    it = ct[ic];
+                    iatom = ca[ic];
+                    if (ta[0][it] == iatom) {
+                        iaoth = ta[1][it];
+                    } else {
+                        iaoth = ta[0][it];
+                    }
+                    for (k = 0; k < 3; k++) {
+                        acvect[k] = a[k][iaoth] - a[k][iatom];
+                        cpvect[k] = pnt[k] - c[k][ic];
+                    }
+                    if (VectorMath.dot(acvect, cpvect) >= 0.0) {
+                        ptincy = false;
+                        return ptincy;
+                    }
+                }
+                if (cynep[icy] <= 1) {
+                    ptincy = true;
+                    return ptincy;
+                }
+                // projct call.
+                fail = false;
+                nedge = cynep[icy];
+                for (ke = 0; ke < cynep[icy]; ke++) {
+
+                    // Vertex number (use first vertex of edge).
+                    iep = cyep[ke][icy];
+                    iv = epv[0][iep];
+                    if (iv != 0) {
+
+                        // Vector from north pole to vertex.
+                        for (k = 0; k < 3; k++) {
+                            polev[k] = v[k][iv] - pnt[k];
+                        }
+
+                        // Calculate multiplication factor.
+                        dt = VectorMath.dot(polev, unvect);
+                        if (dt == 0.0) {
+                            fail = true;
+                            return fail;
+                        }
+                        f = (radius[ia] * radius[ia]) / dt;
+                        if (f < 1.0) {
+                            fail = true;
+                            return fail;
+                        }
+
+                        // Projected vertex for this convex edge.
+                        for (k = 0; k < 3; k++) {
+                            spv[k][ke] = pnt[k] + f * polev[k];
+                        }
+                    }
+                }
+                if (fail) {
+                    ptincy = true;
+                    return ptincy;
+                }
+                epuclc(spv, nedge, epu);
+                totang = rotang(epu, nedge, unvect);
+                ptincy = (totang > 0.0);
+                return ptincy;
+            }
+
+            public double rotang(double epu[][], int nedge, double unvect[]) {
+
+                int ke;
+                double rotang, totang;
+                double dt, ang;
+                double crs[] = new double[3];
+                double ai[] = new double[3];
+                double aj[] = new double[3];
+                double ak[] = new double[3];
+
+                totang = 0.0;
+
+                // Sum angles at vertices of cycle.
+                for (ke = 0; ke < nedge; k++) {
+                    if (ke < nedge) {
+                        ai[0] = epu[0][ke];
+                        ai[1] = epu[1][ke];
+                        ai[2] = epu[2][ke];
+                        aj[0] = epu[0][ke + 1];
+                        aj[1] = epu[1][ke + 1];
+                        aj[2] = epu[2][ke + 1];
+                        dt = VectorMath.dot(ai, aj);
+                        VectorMath.cross(ai, ai, crs);
+                    } else {
+                        ak[0] = epu[0][0];
+                        ak[1] = epu[1][0];
+                        ak[2] = epu[2][0];
+                        // Closing edge of cycle./
+                        dt = VectorMath.dot(ai, ak);
+                        VectorMath.cross(ai, ak, crs);
+                    }
+                    dt = check(dt);
+                    ang = acos(dt);
+                    if (VectorMath.dot(crs, unvect) > 0.0) {
+                        ang = -ang;
+                    }
+
+                    // Add to total for cycle.
+                    totang += ang;
+                }
+                rotang = totang;
+                return rotang;
+            }
+
+            public void epuclc(double spv[][], int nedge, double epu[][]) {
+
+                int k, ke, ke2, le;
+                double epun;
+                double ai[] = new double[3];
+
+                // Calculate unit vectors along edges.
+                for (ke = 0; ke < nedge; ke++) {
+
+                    // Get index of second edge of corner.
+                    if (ke < nedge) {
+                        ke2 = ke + 1;
+                    } else {
+                        ke2 = 0;
+                    }
+
+                    // Unit vector along edge of cycle.
+                    for (k = 0; k < 3; k++) {
+                        epu[k][ke] = spv[k][ke2] - spv[k][ke];
+                    }
+                    getVector(ai,epu,ke);
+                    epun = VectorMath.r(ai);
+                    if (epun <= 0.0) {
+                        logger.severe("Null Edge in Cycle");
+                    }
+
+                    // Normalize.
+                    if (epun > 0.0) {
+                        for (k = 0; k < 3; k++) {
+                            epu[k][ke] = epu[k][ke] / epun;
+                        }
+                    } else {
+                        for (k = 0; k < 3; k++) {
+                            epu[k][ke] = 0.0;
+                        }
+                    }
+                }
+
+                // Vectors for null edges come from following or preceding edges.
+                for (ke = 0; ke < nedge; ke++) {
+                    getVector(ai,epu,ke);
+                    if (VectorMath.r(ai) <= 0.0) {
+                        le = ke - 1;
+                        if (le <= 0) {
+                            le = nedge;
+                        }
+                        for (k = 0; k < 3; k++) {
+                            epu[k][ke] = epu[k][le];
+                        }
+                    }
+                }
+            }
+            /*
+             * "measpm" computes the volue of a single prism section of the
+             * full interior polyhedron.
+             */
+
+            public double measpm(int ifn, double prism) {
+
+                int ke, ien, iv, ia, ip;
+                double height;
+                double pav[][] = new double[3][3];
+                double vect1[] = new double[3];
+                double vect2[] = new double[3];
+                double vect3[] = new double[3];
+
+                height = 0.0;
+                for (ke = 0; ke < 3; ke++) {
+                    ien = fnen[ke][ifn];
+                    iv = env[0][ien];
+                    ia = va[iv];
+                    height += a[2][ia];
+                    ip = vp[iv];
+                    for (int k = 0; k < 3; k++) {
+                        pav[k][ke] = a[k][ia] - p[k][ip];
+                    }
+                }
+                height *= 1 / 3.0;
+                for (int k = 0; k < 3; k++) {
+                    vect1[k] = pav[k][1] - pav[k][0];
+                    vect2[k] = pav[k][2] - pav[k][0];
+                }
+                VectorMath.cross(vect1, vect2, vect3);
+                prism = height * vect3[2] / 2.0;
+                return prism;
+            }
+
+            public double measfp(int ifp, double areap, double volp) {
+
+                int ke, iep;
+                int ia, ia2, ic;
+                int it, iv1, iv2;
+                int ncycle, ieuler;
+                int icyptr, icy, nedge;
+                double dt, gauss;
+                double vecang, angle, geo;
+                double pcurve, gcurve;
+                double ai[] = new double[3];
+                double aj[] = new double[3];
+                double ak[] = new double[3];
+                double vect1[] = new double[3];
+                double vect2[] = new double[3];
+                double acvect[] = new double[3];
+                double aavect[] = new double[3];
+                double tanv[][][] = new double[3][2][MAXCYEP];
+                double radial[][] = new double[3][MAXCYEP];
+
+                ia = fpa[ifp];
+                pcurve = 0.0;
+                gcurve = 0.0;
+                ncycle = fpncy[ifp];
+                if (ncycle > 0) {
+                    ieuler = 1 - ncycle;
+                } else {
+                    ieuler = 1;
+                }
+                for (icyptr = 0; icyptr < ncycle; icyptr++) {
+                    icy = fpcy[icyptr][ifp];
+                    nedge = cynep[icy];
+                    for (ke = 0; ke < nedge; ke++) {
+                        iep = cyep[ke][icy];
+                        ic = epc[iep];
+                        it = ct[ic];
+                        if (ia == ta[0][it]) {
+                            ia2 = ta[1][it];
+                        } else {
+                            ia2 = ta[0][it];
+                        }
+                        for (int k = 0; k < 3; k++) {
+                            acvect[k] = c[k][ic] - a[k][ia];
+                            aavect[k] = a[k][ia2] - a[k][ia];
+                        }
+                        VectorMath.norm(aavect, aavect);
+                        dt = VectorMath.dot(acvect, aavect);
+                        geo = -dt / (radius[ia] * cr[ic]);
+                        iv1 = epv[0][iep];
+                        iv2 = epv[1][iep];
+                        if (iv1 == 0 || iv2 == 0) {
+                            angle = 2.0 * PI;
+                        } else {
+                            for (int k = 0; k < 3; k++) {
+                                vect1[k] = v[k][iv1] - c[k][ic];
+                                vect2[k] = v[k][iv2] - c[k][ic];
+                                radial[k][ke] = v[k][iv1] - a[k][ia];
+                            }
+                            getVector(ai,radial,ke);
+                            VectorMath.norm(ai, ai);
+                            getVector(aj,tanv,0,ke);
+                            VectorMath.cross(vect1, aavect, aj);
+                            VectorMath.norm(aj, aj);
+                            getVector(ak,tanv,1,ke);
+                            VectorMath.cross(vect2, aavect, ak);
+                            VectorMath.norm(ak, ak);
+                            angle = vecang(vect1, vect2, aavect, -1.0);
+                        }
+                        gcurve += cr[ic] * angle * geo;
+                        if (nedge != 1 && ke > 0) {
+                            getVector(ai,tanv,1,ke-1);
+                            getVector(aj,tanv,0,ke);
+                            getVector(ak,radial,ke);
+                            angle = vecang(ai, aj, ak, 1.0);
+                            if (angle < 0.0) {
+                                logger.severe("Negative Angle in MEASFP");
+                            }
+                            pcurve += angle;
+                        }
+                    }
+                    if (nedge > 0) {
+                        getVector(ai,tanv,1,nedge);
+                        getVector(aj,tanv,0,0);
+                        getVector(ak,radial,0);
+                        angle = vecang(ai, aj, ak, 1.0);
+                        if (angle < 0.0) {
+                            logger.severe("Negative Angle in MEASFP");
+                        }
+                        pcurve += angle;
+                    }
+                }
+                gauss = 2.0 * PI * ieuler - pcurve - gcurve;
+                areap = gauss * (radius[ia] * radius[ia]);
+                volp = areap * radius[ia] / 3.0;
+                return volp;
+            }
+
+            public void measfs(int ifs, double areas, double vols, double areasp, double volsp) {
+
+                int iep;
+                int ic, ic1, ic2;
+                int it, ia1, ia2;
+                int iv1, iv2;
+                double vecang, phi;
+                double d1, d2, w1, w2;
+                double theta1, theta2;
+                double rat, thetaq;
+                double cone1, cone2;
+                double term1, term2, term3;
+                double spin, volt;
+                double vect1[] = new double[3];
+                double vect2[] = new double[3];
+                double aavect[] = new double[3];
+                boolean cusp;
+
+                iep = fsep[0][ifs];
+                ic = epc[iep];
+                it = ct[ic];
+                ia1 = ta[0][it];
+                ia2 = ta[1][it];
+                for (k = 0; k < 3; k++) {
+                    aavect[k] = a[k][ia2] - a[k][ia1];
+                }
+                VectorMath.norm(aavect, aavect);
+                iv1 = epv[0][iep];
+                iv2 = epv[1][iep];
+                if (iv1 == 0 || iv2 == 0) {
+                    phi = 2.0 * PI;
+                } else {
+                    for (k = 0; k < 3; k++) {
+                        vect1[k] = v[k][iv1] - c[k][ic];
+                        vect2[k] = v[k][iv2] - c[k][ic];
+                    }
+                    phi = vecang(vect1, vect2, aavect, 1.0);
+                }
+                for (int k = 0; k < 3; k++) {
+                    vect1[k] = a[k][ia2] - t[k][it];
+                    vect2[k] = a[k][ia2] - t[k][it];
+                }
+                d1 = -1 * VectorMath.dot(vect1, aavect);
+                d2 = VectorMath.dot(vect2, aavect);
+                theta1 = atan2(d1, tr[it]);
+                theta2 = atan2(d2, tr[it]);
+
+                // Check for cusps.
+                if (tr[it] < probe && theta1 > 0.0 && theta2 > 0.0) {
+                    cusp = true;
+                    rat = tr[it] / probe;
+                    rat = check(rat);
+                    thetaq = acos(rat);
+                } else {
+                    cusp = false;
+                    thetaq = 0.0;
+                    areasp = 0.0;
+                    volsp = 0.0;
+                }
+                term1 = tr[it] * probe * (theta1 + theta2);
+                term2 = (probe * probe) * (sin(theta1) + sin(theta2));
+                areas = phi * (term1 - term2);
+                if (cusp) {
+                    spin = tr[it] * probe * thetaq - probe * probe * sin(thetaq);
+                    areasp = 2.0 * phi * spin;
+                }
+
+                iep = fsep[0][ifs];
+                ic2 = epc[iep];
+                iep = fsep[1][ifs];
+                ic1 = epc[iep];
+                if (ca[ic1] != ia1) {
+                    logger.severe("IA1 Inconsistency in MEASFS");
+                }
+                for (k = 0; k < 3; k++) {
+                    vect1[k] = c[k][ic1] - a[k][ia1];
+                    vect2[k] = c[k][ic2] - a[k][ia2];
+                }
+                w1 = VectorMath.dot(vect1, aavect);
+                w2 = -1 * VectorMath.dot(vect2, aavect);
+                cone1 = phi * (w1 * cr[ic1] * (w1 * cr[ic1])) / 6.0;
+                cone2 = phi * (w2 * cr[ic2] * (w2 * cr[ic2])) / 6.0;
+                term1 = (tr[it] * tr[it]) * probe * (sin(theta1) + sin(theta2));
+                term2 = sin(theta1) * cos(theta1) + theta1 + sin(theta2) * cos(theta2) + theta2;
+                term2 = tr[it] * (probe * probe) * term2;
+                term3 = sin(theta1) * cos(theta1) * cos(theta1) + 2.0 * sin(theta1) + sin(theta2) * cos(theta2) * cos(theta2) + 2.0 * sin(theta2);
+                term3 = (probe * probe * probe / 3.0) * term3;
+                volt = (phi / 2.0) * (term1 - term2 + term3);
+                vols = volt + cone1 + cone2;
+                if (cusp) {
+                    term1 = (tr[it] * tr[it]) * probe * sin(thetaq);
+                    term2 = sin(thetaq) * cos(thetaq) + thetaq;
+                    term2 = tr[it] * (probe * probe) * term2;
+                    term3 = sin(thetaq) * cos(thetaq) * cos(thetaq) + 2.0 * sin(thetaq);
+                    term3 = (probe * probe * probe / 3.0) * term3;
+                    volsp = phi * (term1 - term2 + term3);
+                }
+            }
+
+            public void measfn(int ifn, double arean, double voln) {
+
+                int k, ke, je, ien;
+                int iv, ia, ip;
+                double vecang, triple;
+                double defect, simplx;
+                double ai[] = new double[3];
+                double aj[] = new double[3];
+                double ak[] = new double[3];
+                double angle[] = new double[3];
+                double pvv[][] = new double[3][3];
+                double pav[][] = new double[3][3];
+                double planev[][] = new double[3][3];
+
+                for (ke = 0; ke < 3; ke++) {
+                    ien = fnen[ke][ifn];
+                    iv = env[0][ien];
+                    ia = va[iv];
+                    ip = vp[iv];
+                    for (k = 0; k < 3; k++) {
+                        pvv[k][ke] = v[k][iv] - p[k][ip];
+                        pav[k][ke] = a[k][ia] - p[k][ip];
+                    }
+                    if (probe > 0.0) {
+                        getVector(ai,pvv,ke);
+                        VectorMath.norm(ai, ai);
+                    }
+                }
+                if (probe <= 0.0) {
+                    arean = 0.0;
+                } else {
+                    for (ke = 0; ke < 3; ke++) {
+                        je = ke + 1;
+                        if (je > 2) {
+                            je = 0;
+                        }
+                        getVector(ai,pvv,ke);
+                        getVector(aj,pvv,je);
+                        getVector(ak,planev,ke);
+                        VectorMath.cross(ai, aj, ak);
+                        VectorMath.norm(ak, ak);
+                    }
+                    for (ke = 0; ke < 3; ke++) {
+                        je = ke - 1;
+                        if (je < 0) {
+                            je = 2;
+                        }
+                        getVector(ai,planev,je);
+                        getVector(aj,planev,ke);
+                        getVector(ak,pvv,ke);
+                        angle[ke] = vecang(ai, aj, ak, -1.0);
+                        if (angle[ke] < 0.0) {
+                            logger.severe("Negative Angle in MEASFN");
+                        }
+                    }
+                    defect = 2.0 * PI - (angle[0] + angle[1] + angle[2]);
+                    arean = (probe * probe) * defect;
+                }
+                getVector(ai,pav,0);
+                getVector(aj,pav,1);
+                getVector(ak,pav,2);
+                simplx = -triple(ai, aj, ak) / 6.0;
+                voln = simplx - arean * probe / 3.0;
             }
 
             public void vam(double volume, double area) {
-            }
+                final int maxdot = 1000;
+                final int maxop = 100;
+                final int nscale = 20;
+                int k, ke, ke2, kv;
+                int ia, ic, ip, it;
+                int ien, iep;
+                int ifn, ifp, ifs;
+                int iv, iv1, iv2;
+                int isc, jfn;
+                int ndots, idot;
+                int nop, iop, nate;
+                int neat, neatmx;
+                int ivs[] = new int[3];
+                int ispind[] = new int[3];
+                int ispnd2[] = new int[3];
+                int ifnop[] = new int[maxop];
+                int nlap[] = new int[nfn];
+                int enfs[] = new int[5 * nAtoms];
+                int fnt[][] = new int[3][nfn];
+                int nspt[][] = new int[3][nfn];
+                double alens, vint, vcone;
+                double vpyr, vlens, hedron;
+                double totap, totvp, totas;
+                double totvs, totasp, totvsp;
+                double totan, totvn;
+                double alenst, alensn;
+                double vlenst, vlensn, prism;
+                double areap = 0;
+                double volp = 0;
+                double areas = 0;
+                double vols = 0;
+                double areasp = 0;
+                double volsp = 0; 
+                double arean = 0;
+                double voln = 0;
+                double areado, voldo, dot, dota;
+                double ds2, dij2, dt, dpp;
+                double rm, rat, rsc, rho;
+                double sumsc, sumsig, sumlam;
+                double stq, scinc, coran, corvn;
+                double cenop[][] = new double[3][maxop];
+                double sdot[] = new double[3];
+                double dotv[] = new double[nscale];
+                double tau[] = new double[3];
+                double ppm[] = new double[3];
+                double xpnt1[] = new double[3];
+                double xpnt2[] = new double[3];
+                double qij[] = new double[3];
+                double qji[] = new double[3];
+                double vects[][] = new double[3][3];
+                double vect1[] = new double[3];
+                double vect2[] = new double[3];
+                double vect3[] = new double[3];
+                double vect4[] = new double[3];
+                double vect5[] = new double[3];
+                double vect6[] = new double[3];
+                double vect7[] = new double[3];
+                double vect8[] = new double[3];
+                double upp[] = new double[3];
+                double thetaq[] = new double[3];
+                double sigmaq[] = new double[3];
+                double umq[] = new double[3];
+                double upq[] = new double[3];
+                double uc[] = new double[3];
+                double uq[] = new double[3];
+                double uij[] = new double[3];
+                double ai[] = new double[3];
+                double aj[] = new double[3];
+                double ak[] = new double[3];
+                double al[] = new double[3];
+                double dots[][] = new double[3][maxdot];
+                double tdots[][] = new double[3][maxdot];
+                double atmarea[] = new double[nAtoms];
+                double depths[] = new double[nfn];
+                double cora[] = new double[nfn];
+                double corv[] = new double[nfn];
+                double alts[][] = new double[3][nfn];
+                double fncen[][] = new double[3][nfn];
+                double fnvect[][][] = new double[3][3][nfn];
+                boolean spindl;
+                boolean alli, allj;
+                boolean anyi, anyj;
+                boolean case1, case2;
+                boolean usenum;
+                boolean vip[] = new boolean[3];
+                boolean ate[] = new boolean[maxop];
+                boolean badav[] = new boolean[nfn];
+                boolean badt[] = new boolean[nfn];
+                boolean fcins[][] = new boolean[3][nfn];
+                boolean fcint[][] = new boolean[3][nfn];
+                boolean fntrev[][] = new boolean[3][nfn];
+                boolean move = false;
 
-            public double[] getRandomVector(double vector[]) {
-                double x, y, s;
-                double random;
-                x = 0;
-                y = 0;
-
-                // Get a pair of appropriate components in the plane.
-
-                s = 2.0;
-
-                while (s >= 1.0) {
-                    x = (2.0 * Math.random()) - 1.0;
-                    y = (2.0 * Math.random()) - 1.0;
-                    s = (x * x) + (y * y);
+                // Compute the volume of the interior polyhedron.
+                hedron = 0.0;
+                prism = 0.0;
+                for (ifn = 0; ifn < nfn; ifn++) {
+                    prism = measpm(ifn, prism);
+                    hedron += prism;
                 }
 
-                // Construct the 3-dimensional random unit vector.
+                /*
+                 * Compute the area and volume due to convex faces
+                 * as well as the area partitioned among the atoms.
+                 */
+                totap = 0.0;
+                totvp = 0.0;
+                for (ia = 0; ia < nAtoms; ia++) {
+                    atmarea[ia] = 0.0;
+                }
+                for (ifp = 0; ifp < nfp; ifp++) {
+                    measfp(ifp, areap, volp);
+                    ia = fpa[ifp];
+                    atmarea[ia] += areap;
+                    totap += areap;
+                    totvp += volp;
+                }
+                /*
+                 * Compute the area and volume due to saddle faces
+                 * as well as the spindle correction value.
+                 */
 
-                vector[2] = 1.0 - 2.0 * s;
-                s = 2.0 * sqrt(1.0 - s);
-                vector[1] = s * y;
-                vector[0] = s * x;
-                return vector;
+                totas = 0.0;
+                totvs = 0.0;
+                totasp = 0.0;
+                totvsp = 0.0;
+                for (ifs = 0; ifs < nfs; ifs++) {
+                    for (k = 0; k < 2; k++) {
+                        ien = fsen[k][ifs];
+                        if (ien > 0) {
+                            enfs[ien] = ifs;
+                        }
+                    }
+                    measfs(ifs, areas, vols, areasp, volsp);
+                    totas += areas;
+                    totvs += vols;
+                    totasp += areasp;
+                    totvsp += volsp;
+                    if (areas - areasp < 0.0) {
+                        logger.severe("Negative Area for Saddle Face");
+                    }
+                }
+
+                // Compute the area and volume due to concave faces.
+                totan = 0.0;
+                totvn = 0.0;
+                for (ifn = 0; ifn < nfn; ifn++) {
+                    measfn(ifn, arean, voln);
+                    totan += arean;
+                    totvn += voln;
+                }
+
+                // Compute the area and volume lens correction values.
+                alenst = 0.0;
+                alensn = 0.0;
+                vlenst = 0.0;
+                vlensn = 0.0;
+                if (probe > 0.0) {
+
+                    ndots = maxdot;
+                    gendot(ndots, dots, probe, 0.0, 0.0, 0.0);
+                    dota = (4.0 * PI * probe * probe) / ndots;
+                    for (ifn = 0; ifn < nfn; ifn++) {
+                        nlap[ifn] = 0;
+                        cora[ifn] = 0.0;
+                        corv[ifn] = 0.0;
+                        badav[ifn] = false;
+                        badt[ifn] = false;
+                        for (k = 0; k < 3; k++) {
+                            nspt[k][ifn] = 0;
+                        }
+                        ien = fnen[0][ifn];
+                        iv = env[0][ien];
+                        ip = vp[iv];
+                        getVector(ai,alts,ifn);
+                        depths[ifn] = depth(ip, ai);
+                        for (k = 0; k < 3; k++) {
+                            fncen[k][ifn] = p[k][ip];
+                        }
+                        ia = va[iv];
+
+                        // Get vertices and vectors.
+                        for (ke = 0; ke < 3; ke++) {
+                            ien = fnen[ke][ifn];
+                            ivs[ke] = env[0][ien];
+                            ia = va[ivs[ke]];
+                            ifs = enfs[ien];
+                            iep = fsep[0][ifs];
+                            ic = epc[iep];
+                            it = ct[ic];
+                            fnt[ke][ifn] = it;
+                            fntrev[ke][ifn] = (ta[0][it] != ia);
+                        }
+                        for (ke = 0; ke < 3; ke++) {
+                            for (k = 0; k < 3; k++) {
+                                vects[k][ke] = v[k][ivs[ke]] - p[k][ip];
+                            }
+                        }
+                        /*
+                         * Calculate normal vectors for the three planes
+                         * that cut out the geodesic triangle.
+                         */
+                        getVector(ai,vects,0);
+                        getVector(aj,vects,1);
+                        getVector(ak,fnvect,0,ifn);
+                        VectorMath.cross(ai, aj, ak);
+                        VectorMath.norm(ak, ak);
+                        getVector(ai,vects,2);
+                        getVector(ak,fnvect,1,ifn);
+                        VectorMath.cross(aj, ai, ak);
+                        VectorMath.norm(ak, ak);
+                        getVector(aj,vects,0);
+                        getVector(ak,fnvect,2,ifn);
+                        VectorMath.cross(ai, aj, ak);
+                        VectorMath.norm(ak, ak);
+                    }
+                    for (ifn = 0; ifn < nfn - 1; ifn++) {
+                        for (jfn = ifn + 1; jfn < nfn; jfn++) {
+                            getVector(ai,fncen,ifn);
+                            getVector(aj,fncen,jfn);
+                            dij2 = VectorMath.dist2(ai, aj);
+                            if (dij2 > 4.0 * probe * probe) {
+                                continue;
+                            }
+                            if (depths[ifn] > probe && depths[jfn] > probe) {
+                                continue;
+                            }
+                            // These two probes may have intersecting surfaces.
+                            dpp = VectorMath.dist(ai, aj);
+
+                            // Compute the midpoint.
+                            for (k = 0; k < 3; k++) {
+                                ppm[k] = (fncen[k][ifn] + fncen[k][jfn]) / 2.0;
+                                upp[k] = (fncen[k][jfn] - fncen[k][ifn]) / dpp;
+                            }
+                            rm = probe * probe - (dpp / 2.0) * (dpp / 2.0);
+                            if (rm < 0.0) {
+                                rm = 0.0;
+                            }
+                            rm = sqrt(rm);
+                            rat = dpp / (2.0 * probe);
+                            check(rat);
+                            rho = asin(rat);
+
+                            // Use circle-plane intersection routine.
+                            alli = true;
+                            anyi = false;
+                            spindl = false;
+                            for (k = 0; k < 3; k++) {
+                                ispind[k] = 0;
+                                ispnd2[k] = 0;
+                            }
+                            for (ke = 0; ke < 3; ke++) {
+                                thetaq[ke] = 0.0;
+                                sigmaq[ke] = 0.0;
+                                tau[ke] = 0.0;
+                                getVector(ai,fncen,ifn);
+                                getVector(aj,fnvect,ke,ifn);
+                                cirpln(ppm, rm, upp, ai, aj, cintp, cinsp, xpnt1, xpnt2);
+                                fcins[ke][ifn] = cinsp;
+                                fcint[ke][ifn] = cintp;
+                                if (!cinsp) {
+                                    alli = false;
+                                }
+                                if (cintp) {
+                                    anyi = true;
+                                }
+                                if (!cintp) {
+
+                                    continue;
+                                }
+                                it = fnt[ke][ifn];
+                                if (tr[it] > probe) {
+
+                                    continue;
+                                }
+                                for (ke2 = 0; ke2 < 3; ke2++) {
+                                    if (it == fnt[ke2][jfn]) {
+                                        ispind[ke] = it;
+                                        nspt[ke][ifn]++;
+                                        ispnd2[ke2] = it;
+                                        nspt[ke][jfn]++;
+                                        spindl = true;
+                                    }
+                                }
+                                if (ispind[ke] == 0) {
+
+                                    continue;
+                                }
+
+                                /*
+                                 * Check that the two ways of calculating
+                                 * intersection points match.
+                                 */
+                                rat = tr[it] / probe;
+                                check(rat);
+                                thetaq[ke] = acos(rat);
+                                stq = sin(thetaq[ke]);
+                                if (fntrev[ke][ifn]) {
+                                    for (k = 0; k < 3; k++) {
+                                        uij[k] = -tax[k][it];
+                                    }
+                                } else {
+                                    for (k = 0; k < 3; k++) {
+                                        uij[k] = tax[k][it];
+                                    }
+                                }
+                                for (k = 0; k < 3; k++) {
+                                    qij[k] = t[k][it] - stq * probe * uij[k];
+                                    qji[k] = t[k][it] + stq * probe * uij[k];
+                                }
+                                for (k = 0; k < 3; k++) {
+                                    umq[k] = (qij[k] - ppm[k]) / rm;
+                                    upq[k] = (qij[k] - fncen[k][ifn]) / probe;
+                                }
+                                VectorMath.cross(uij, upp, vect1);
+                                dt = VectorMath.dot(umq, vect1);
+                                check(dt);
+                                sigmaq[ke] = acos(dt);
+                                getVector(ai,fnvect,ke,ifn);
+                                VectorMath.cross(upq, ai, vect1);
+                                VectorMath.norm(vect1, uc);
+                                VectorMath.cross(upp, upq, vect1);
+                                VectorMath.norm(vect1, uq);
+                                dt = VectorMath.dot(uc, uq);
+                                check(dt);
+                                tau[ke] = PI - acos(dt);
+                            }
+                            allj = true;
+                            anyj = false;
+                            for (ke = 0; ke < 3; ke++) {
+                                getVector(ai,fncen,jfn);
+                                getVector(aj,fnvect,ke,jfn);
+                                cirpln(ppm, rm, upp, ai, aj, cinsp, cintp, xpnt1, xpnt2);
+                                fcins[ke][jfn] = cinsp;
+                                fcint[ke][jfn] = cintp;
+                                if (!cinsp) {
+                                    allj = false;
+                                }
+                                if (cintp) {
+                                    anyj = true;
+                                }
+                            }
+                            case1 = (alli && allj && !anyi && !anyj);
+                            case2 = (anyi && anyj && spindl);
+                            if (!case1 && !case2) {
+
+                                continue;
+                            }
+
+                            // This kind of overlap can be handled.
+                            nlap[ifn]++;
+                            nlap[jfn]++;
+                            for (ke = 0; ke < 3; ke++) {
+                                ien = fnen[ke][ifn];
+                                iv1 = env[0][ien];
+                                iv2 = env[1][ien];
+                                for (k = 0; k < 3; k++) {
+                                    vect3[k] = v[k][iv1] - fncen[k][ifn];
+                                    vect4[k] = v[k][iv2] - fncen[k][ifn];
+                                }
+                                for (ke2 = 0; ke2 < 3; ke2++) {
+                                    if (ispind[ke] == ispnd2[ke2] || ispind[ke] == 0) {
+                                        continue;
+                                    }
+                                    getVector(ai,fncen,ifn);
+                                    getVector(aj,fnvect,ke,ifn);
+                                    getVector(ak,fncen,jfn);
+                                    getVector(al,fnvect,ke2,jfn);
+                                    cirpln(ai, probe, aj, ak, al, cinsp, cintp, xpnt1, xpnt2);
+                                    if (!cintp) {
+                                        continue;
+                                    }
+                                    ien = fnen[ke2][jfn];
+                                    iv1 = env[0][ien];
+                                    iv2 = env[1][ien];
+                                    for (k = 0; k < 3; k++) {
+                                        vect7[k] = v[k][iv1] - fncen[k][jfn];
+                                        vect8[k] = v[k][iv2] - fncen[k][jfn];
+                                    }
+                                    // Check whether point lies on spindle arc.
+                                    for (k = 0; k < 3; k++) {
+                                        vect1[k] = xpnt1[k] - fncen[k][ifn];
+                                        vect2[k] = xpnt2[k] - fncen[k][ifn];
+                                        vect5[k] = xpnt1[k] - fncen[k][jfn];
+                                        vect6[k] = xpnt2[k] - fncen[k][jfn];
+                                    }
+                                    /* 
+                                     * Continue to next if statement if any of
+                                     * the following are true.
+                                     */
+                                    getVector(ai,fnvect,ke,ifn);
+                                    getVector(aj,fnvect,ke2,jfn);
+                                    if (triple(vect3, vect1, ai) < 0.0) {
+
+                                    } else if (triple(vect1, vect4, ai) < 0.0) {
+
+                                    } else if (triple(vect7, vect5, aj) < 0.0) {
+
+                                    } else if (triple(vect5, vect8, aj) < 0.0) {
+
+                                    } else {
+                                        badav[ifn] = true;
+                                        continue;
+                                    }                                   
+                                    if (triple(vect3, vect2, ai) < 0.0) {
+
+                                    } else if (triple(vect2, vect4, ai) < 0.0) {
+
+                                    } else if (triple(vect7, vect6, aj) < 0.0) {
+
+                                    } else if (triple(vect6, vect8, aj) < 0.0) {
+
+                                    } else {
+                                        badav[ifn] = true;
+                                    }
+                                }
+                            }
+                            for (ke = 0; ke < 3; ke++) {
+                                ien = fnen[ke][ifn];
+                                iv1 = env[0][ien];
+                                iv2 = env[1][ien];
+                                for (k = 0; k < 3; k++) {
+                                    vect3[k] = v[k][iv1] - fncen[k][ifn];
+                                    vect4[k] = v[k][iv2] - fncen[k][ifn];
+                                }
+                                for (ke2 = 0; ke2 < 3; ke2++) {
+                                    if (ispind[ke] == ispnd2[ke2] || ispnd2[ke2] == 0) {
+                                        continue;
+                                    }
+                                    getVector(ai,fncen,ifn);
+                                    getVector(aj,fnvect,ke,ifn);
+                                    getVector(ak,fncen,jfn);
+                                    getVector(al,fnvect,ke2,jfn);
+                                    cirpln(ak, probe, al, ai, aj, cinsp, cintp, xpnt1, xpnt2);
+                                    if (!cintp) {
+                                        continue;
+                                    }
+                                    ien = fnen[ke2][jfn];
+                                    iv1 = env[0][ien];
+                                    iv2 = env[1][ien];
+                                    for (k = 0; k < 3; k++) {
+                                        vect7[k] = v[k][iv1] - fncen[k][jfn];
+                                        vect8[k] = v[k][iv2] - fncen[k][jfn];
+                                    }
+
+                                    // Check whether point lies on spindle arc.
+                                    for (k = 0; k < 3; k++) {
+                                        vect1[k] = xpnt1[k] - fncen[k][ifn];
+                                        vect2[k] = xpnt2[k] - fncen[k][ifn];
+                                        vect5[k] = xpnt1[k] - fncen[k][jfn];
+                                        vect6[k] = xpnt2[k] - fncen[k][jfn];
+                                    }
+                                    /* 
+                                     * Continue to next if statement if any of
+                                     * the following are true.
+                                     */
+                                    getVector(ai,fnvect,ke,ifn);
+                                    getVector(aj,fnvect,ke2,jfn);
+                                    if (triple(vect3, vect1, ai) < 0.0) {
+
+                                    } else if (triple(vect1, vect4, ai) < 0.0) {
+
+                                    } else if (triple(vect7, vect5, aj) < 0.0) {
+
+                                    } else if (triple(vect5, vect8, aj) < 0.0) {
+
+                                    } else {
+                                        badav[jfn] = true;
+                                        continue;
+                                    }
+                                    if (triple(vect3, vect2, ai) < 0.0) {
+
+                                    } else if (triple(vect2, vect4, ai) < 0.0) {
+
+                                    } else if (triple(vect7, vect6, aj) < 0.0) {
+
+                                    } else if (triple(vect6, vect8, aj) < 0.0) {
+
+                                    } else {
+                                        badav[jfn] = true;
+                                    }
+                                }
+                            }
+                            sumlam = 0.0;
+                            sumsig = 0.0;
+                            sumsc = 0.0;
+                            for (k = 0; k < 3; k++) {
+                                if (ispind[ke] != 0) {
+                                    sumlam += PI - tau[ke];
+                                    sumsig += sigmaq[ke] - PI;
+                                    sumsc += sin(sigmaq[ke]) * cos(sigmaq[ke]);
+                                }
+                            }
+                            alens = 2.0 * probe * probe * (PI - sumlam - sin(rho) * (PI + sumsig));
+                            vint = alens * probe / 3.0;
+                            vcone = probe * rm * rm * sin(rho) * (PI + sumsig) / 3.0;
+                            vpyr = probe * rm * rm * sin(rho) * sumsc / 3.0;
+                            vlens = vint - vcone + vpyr;
+                            cora[ifn] += alens;
+                            cora[jfn] += alens;
+                            corv[ifn] += vlens;
+                            corv[jfn] += vlens;
+
+                            // Check for vertex on opposing probe in face.
+                            for (kv = 0; kv < 3; kv++) {
+                                vip[kv] = false;
+                                ien = fnen[kv][jfn];
+                                iv = env[0][ien];
+                                for (k = 0; k < 3; k++) {
+                                    vect1[k] = v[k][iv] - fncen[k][ifn];
+                                }
+                                VectorMath.norm(vect1, vect1);
+                                for (ke = 0; ke < 3; ke++) {
+                                    getVector(ai,fnvect,ke,ifn);
+                                    getVector(aj,v,iv);
+                                    dt = VectorMath.dot(ai, aj);
+                                    if (dt > 0.0) {
+                                        move = true;
+                                        break;
+                                    }
+                                }
+                                if (!move) {
+                                    vip[kv] = true;
+                                }
+                                move = false;
+                            }
+                        }
+                    }
+                    for (ifn = 0; ifn < nfn; ifn++) {
+                        for (ke = 0; ke < 3; ke++) {
+                            if (nspt[ke][ifn] > 1) {
+                                badt[ifn] = true;
+                            }
+                        }
+                        for (ifn = 0; ifn < nfn; ifn++) {
+                            if (nlap[ifn] <= 0) {
+                                continue;
+                            }
+
+                            // Gather all overlapping probes.
+                            nop = 0;
+                            for (jfn = 0; jfn < nfn; jfn++) {
+                                if (ifn != jfn) {
+                                    getVector(ai,fncen,ifn);
+                                    getVector(aj,fncen,jfn);
+                                    dij2 = VectorMath.dist2(ai, aj);
+                                    if (dij2 <= 4.0 * probe * probe) {
+                                        if (depths[jfn] <= probe) {
+                                            nop++;
+                                            if (nop > maxop) {
+                                                logger.severe("NOP Overflow in VAM");
+                                            }
+                                            ifnop[nop] = jfn;
+                                            for (k = 0; k < 3; k++) {
+                                                cenop[k][nop] = fncen[k][jfn];
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Numerical calculation of the correction.
+                            areado = 0.0;
+                            voldo = 0.0;
+                            scinc = 1.0 / nscale;
+                            for (isc = 0; isc < nscale; isc++) {
+                                rsc = isc - 0.5;
+                                dotv[isc] = probe * dota * rsc * rsc * scinc * scinc * scinc;
+                            }
+                            for (iop = 0; iop < nop; iop++) {
+                                ate[iop] = false;
+                            }
+                            neatmx = 0;
+                            for (idot = 0; idot < ndots; idot++) {
+                                move = false;
+                                for (ke = 0; ke < 3; ke++) {
+                                    getVector(ai,fnvect,ke,ifn);
+                                    getVector(aj,dots,idot);
+                                    dt = VectorMath.dot(ai, aj);
+                                    if (dt > 0.0) {
+                                        move = true;
+                                        break;
+                                    }
+                                }
+                                if (move) {
+                                    continue;
+                                }
+                                for (k = 0; k < 3; k++) {
+                                    tdots[k][idot] = fncen[k][ifn] + dots[k][idot];
+                                }
+                                for (iop = 0; iop < nop; iop++) {
+                                    jfn = ifnop[iop];
+                                    getVector(ai,dots,idot);
+                                    getVector(aj,fncen,jfn);
+                                    ds2 = VectorMath.dist2(ai, aj);
+                                    if (ds2 > probe * probe) {
+                                        areado += dota;
+                                        break;
+                                    }
+                                }
+                                for (isc = 0; isc < nscale; isc++) {
+                                    rsc = isc - 0.5;
+                                    for (k = 0; k < 3; k++) {
+                                        sdot[k] = fncen[k][ifn] + rsc * scinc * dots[k][idot];
+                                    }
+                                    neat = 0;
+                                    for (iop = 0; iop < nop; iop++) {
+                                        jfn = ifnop[iop];
+                                        getVector(ai,fncen,jfn);
+                                        ds2 = VectorMath.dist2(sdot, ai);
+                                        if (ds2 > probe * probe) {
+                                            for (k = 0; k < 3; k++) {
+                                                vect1[k] = sdot[k] - fncen[k][jfn];
+                                            }
+                                            for (ke = 0; ke < 3; ke++) {
+                                                getVector(ai,fnvect,ke,jfn);
+                                                dt = VectorMath.dot(ai, vect1);
+                                                if (dt > 0.0) {
+                                                    move = true;
+                                                    break;
+                                                }
+                                            }
+                                            if (move) {
+                                                break;
+                                            }
+                                            neat++;
+                                            ate[iop] = true;
+                                        }
+                                    }
+                                    if (neat > neatmx) {
+                                        neatmx = neat;
+                                    }
+                                    if (neat > 0) {
+                                        voldo += dotv[isc] * (neat / (1.0 + neat));
+                                    }
+                                }
+                            }
+                            coran = areado;
+                            corvn = voldo;
+                            nate = 0;
+                            for (iop = 0; iop < nop; iop++) {
+                                if (ate[iop]) {
+                                    nate++;
+                                }
+                            }
+
+                            // Use either the analytical or numerical correction.
+                            usenum = (nate > nlap[ifn] || neatmx > 1 || badt[ifn]);
+                            if (usenum) {
+                                cora[ifn] = coran;
+                                corv[ifn] = corvn;
+                                alensn += cora[ifn];
+                                vlensn += corv[ifn];
+                            } else if (badav[ifn]) {
+                                corv[ifn] = corvn;
+                                vlensn += corv[ifn];
+                            }
+                            alenst += cora[ifn];
+                            vlenst += corv[ifn];
+                        }
+                    }
+                    // Finally, compute the total area and total volume.
+                    area = totap + totas + totan - totasp - alenst;
+                    volume = totvp + totvs + totvn + hedron - totvsp + vlenst;
+
+                }
+            }
+            /*
+             * "gendot" finds the coordinates of a specified number of surface
+             * points for a sphere with the input radius and coordinate center.
+             */
+
+            public void gendot(int ndots, double dots[][], double radius, double xcenter, double ycenter, double zcenter) {
+
+                int k;
+                int nequat, nvert, nhoriz;
+                double fi, fj, x, y, z, xy;
+                boolean breakAgain = false;
+
+                nequat = (int) sqrt(PI * (double) ndots);
+                // CHECK IF THIS CASTING IS THE CORRECT IMPLEMENTATION.
+                nvert = (int) 0.5 * nequat;
+                if (nvert < 0) {
+                    nvert = 0;
+                }
+                k = 0;
+                for (int i = -1; i < nvert; i++) {
+                    fi = (PI * (double) i) / (double) nvert;
+                    z = cos(fi);
+                    xy = sin(fi);
+                    nhoriz = (int) (nequat * xy);
+                    if (nhoriz < 0) {
+                        nhoriz = 0;
+                    }
+                    for (int j = -1; j < nhoriz - 1; j++) {
+                        fj = (2.0 * PI * (double) (j)) / (double) (nhoriz);
+                        x = cos(fj) * xy;
+                        y = sin(fj) * xy;
+                        k++;
+                        dots[0][k] = x * radius + xcenter;
+                        dots[1][k] = y * radius + ycenter;
+                        dots[2][k] = z * radius + zcenter;
+                        if (k >= ndots) {
+                            breakAgain = true;
+                            break;
+                        }
+                    }
+                    if (breakAgain) {
+                        break;
+                    }
+                }
+                ndots = k;
+            }
+
+            /*
+             * "cirpln" determines the points of intersection between a
+             * specified circle and plane.
+             */
+            public boolean cirpln(double circen[], double cirrad, double cirvec[], double plncen[], double plnvec[], boolean cinsp, boolean cintp, double xpnt1[], double xpnt2[]) {
+
+                int k;
+                double dot, dcp, dir;
+                double ratio, rlen;
+                double cpvect[] = new double[3];
+                double pnt1[] = new double[3];
+                double vect1[] = new double[3];
+                double vect2[] = new double[3];
+                double uvect1[] = new double[3];
+                double uvect2[] = new double[3];
+
+                for (k = 0; k < 3; k++) {
+                    cpvect[k] = plncen[k] - circen[k];
+                }
+                dcp = VectorMath.dot(cpvect, plnvec);
+                cinsp = (dcp > 0.0);
+                VectorMath.cross(plnvec, cirvec, vect1);
+                if (VectorMath.r(vect1) > 0.0) {
+                    VectorMath.norm(vect1, uvect1);
+                    VectorMath.cross(cirvec, uvect1, vect2);
+                    if (VectorMath.r(vect2) > 0.0) {
+                        VectorMath.norm(vect2, uvect2);
+                        dir = VectorMath.dot(uvect2, plnvec);
+                        if (dir != 0.0) {
+                            ratio = dcp / dir;
+                            if (abs(ratio) <= cirrad) {
+                                for (k = 0; k < 3; k++) {
+                                    pnt1[k] = circen[k] + ratio * uvect2[k];
+                                }
+                                rlen = cirrad * cirrad - ratio * ratio;
+                                if (rlen < 0.0) {
+                                    rlen = 0.0;
+                                }
+                                rlen = sqrt(rlen);
+                                for (k = 0; k < 3; k++) {
+                                    xpnt1[k] = pnt1[k] - rlen * uvect1[k];
+                                    xpnt2[k] = pnt1[k] + rlen * uvect1[k];
+                                }
+                                cintp = true;
+                                return cintp;
+                            }
+                        }
+                    }
+                }
+                cintp = false;
+                return cintp;
+            }
+            /*
+             * "vecang" finds the angle between two vectors handed with respect to a 
+             * coordinate axis; returns an angle in the range [0,2*PI].
+             */
+
+            public double vecang(double v1[], double v2[], double axis[], double hand) {
+
+                double vecang;
+                double angle, a1, a2, a12, dt;
+
+                a1 = VectorMath.r(v1);
+                a2 = VectorMath.r(v2);
+                dt = VectorMath.dot(v1, v2);
+                a12 = a1 * a2;
+                if (abs(a12) != 0.0) {
+                    dt = dt / a12;
+                }
+                dt = check(dt);
+                angle = acos(dt);
+                if (hand * triple(v1, v2, axis) < 0.0) {
+                    vecang = 2.0 * PI - angle;
+                } else {
+                    vecang = angle;
+                }
+                return vecang;
+            }
+
+            public double depth(int ip, double alt[]) {
+
+                int k, ia1, ia2, ia3;
+                double dot;
+                double vect1[] = new double[3];
+                double vect2[] = new double[3];
+                double vect3[] = new double[3];
+                double vect4[] = new double[3];
+
+                ia1 = pa[0][ip];
+                ia2 = pa[1][ip];
+                ia3 = pa[2][ip];
+                for (k = 0; k < 3; k++) {
+                    vect1[k] = a[k][ia1] - a[k][ia3];
+                    vect2[k] = a[k][ia2] - a[k][ia3];
+                    vect3[k] = p[k][ip] - a[k][ia3];
+                }
+                VectorMath.cross(vect1, vect2, vect4);
+                VectorMath.norm(vect4, vect4);
+                dot = VectorMath.dot(vect4, vect3);
+                for (k = 0; k < 3; k++) {
+                    alt[k] = vect4[k];
+                }
+                return dot;
+            }
+
+            public double check(double angle) {
+                if (angle > 1.0) {
+                    angle = 1.0;
+                } else if (angle < -1.0) {
+                    angle = -1.0;
+                }
+                return angle;
             }
 
             @Override
@@ -4877,9 +7673,7 @@ c
 
                 zstep = 0.0601;
 
-
                 // Initialize minimum and maximum ranges of atoms.
-
                 pix2 = 2.0 * PI;
                 rmax = 0.0;
                 xmin = x[0];
@@ -4894,8 +7688,6 @@ c
                  * the radii are incremented by the size of the probe;
                  * then get the maximum and minimum ranges of atoms.
                  */
-
-
                 for (i = 0; i < nAtoms; i++) {
                     radius[i] = atoms[i].getVDWType().radius / 2.0;
                     vdwrad[i] = radius[i];
@@ -4937,13 +7729,12 @@ c
                 nx = (int) ((xmax - xmin) / edge);
                 ny = (int) ((ymax - ymin) / edge);
                 nz = (int) ((zmax - zmin) / edge);
-                if (max(max(nx, ny), nz) > maxcube) {
+                if (max(max(nx, ny), nz) > MAXCUBE) {
                     // TODO create an automated way to increase MAXCUBE.
                     logger.severe(" VOLUME1  --  Increase the Value of MAXCUBE");
                 }
 
                 // Initialize the coarse lattice of cubes.
-
                 for (i = 0; i <= nx; i++) {
                     for (j = 0; j <= ny; j++) {
                         for (k = 0; k <= nz; k++) {
@@ -4954,7 +7745,6 @@ c
                 }
 
                 // Find the number of atoms in each cube.
-
                 for (m = 0; m < nAtoms; m++) {
                     if (!skip[m]) {
                         i = (int) ((x[m] - xmin) / edge);
@@ -4971,14 +7761,13 @@ c
                  * for the atoms in the present cube is the final index of
                  * the last cube plus the number of atoms in the present cube.
                  */
-
                 isum = 0;
                 for (i = 0; i <= nx; i++) {
                     for (j = 0; j <= ny; j++) {
                         for (k = 0; k <= nz; k++) {
-                            icube = cube[0][i][j][k];
-                            if (icube != 0) {
-                                isum += icube;
+                            tcube = cube[0][i][j][k];
+                            if (tcube != 0) {
+                                isum += tcube;
                                 cube[1][i][j][k] = isum - 1;
                             }
                         }
@@ -4990,14 +7779,13 @@ c
                  * giving the position of the last entry for the list of
                  * atoms in that cube of total number equal to "cube(0,,,)".
                  */
-
                 for (m = 0; m < nAtoms; m++) {
                     if (!skip[m]) {
                         i = (int) ((x[m] - xmin) / edge);
                         j = (int) ((y[m] - ymin) / edge);
                         k = (int) ((z[m] - zmin) / edge);
-                        icube = cube[1][i][j][k];
-                        itab[icube] = m;
+                        tcube = cube[1][i][j][k];
+                        itab[tcube] = m;
                         cube[1][i][j][k]--;
                     }
                 }
@@ -5007,15 +7795,14 @@ c
                  * for atom list of that cube; and "cube(0,,,)" to be
                  * the stop index.
                  */
-
                 isum = 0;
                 for (i = 0; i <= nx; i++) {
                     for (j = 0; j <= ny; j++) {
                         for (k = 0; k <= nz; k++) {
-                            icube = cube[0][i][j][k];
-                            logger.info(String.format(" ICUBE %d %d %d %d", i, j, k, icube));
-                            if (icube != 0) {
-                                isum += icube;
+                            tcube = cube[0][i][j][k];
+                            logger.info(String.format(" TCUBE %d %d %d %d", i, j, k, tcube));
+                            if (tcube != 0) {
+                                isum += tcube;
                                 cube[0][i][j][k] = isum - 1;
                                 cube[1][i][j][k]++;
                             }
@@ -5027,7 +7814,6 @@ c
                  * Process in turn each atom from the coordinate list;
                  * first select the potential intersecting atoms.
                  */
-
                 for (ir = 0; ir < nAtoms; ir++) {
                     pre_dx = 0.0;
                     pre_dy = 0.0;
@@ -5043,7 +7829,6 @@ c
                     zr = z[ir];
 
                     // Find cubes to search for overlaps or current atom.
-
                     istart = (int) ((xr - xmin) / edge);
                     istop = min(istart + 2, nx + 1);
                     istart = max(istart, 1);
@@ -5055,7 +7840,6 @@ c
                     kstart = max(kstart, 1);
 
                     // Load all overlapping atoms into "inov".
-
                     io = -1;
                     logger.info(String.format(" %d %d %d %d %d %d %d ", ir, istart, istop, jstart, jstop, kstart, kstop));
                     for (i = istart - 1; i < istop; i++) {
@@ -5069,7 +7853,7 @@ c
                                         logger.info(String.format(" CHECK %d %d", ir, in));
                                         if (in != ir) {
                                             io++;
-                                            if (io > maxarc) {
+                                            if (io > MAXARC) {
                                                 // TODO create an automated way to increase MAXARC.
                                                 logger.severe(" VOLUME1  --  Increase the Value of MAXARC");
                                             }
@@ -5150,7 +7934,7 @@ c
                                             continue;
                                         }
                                         narc++;
-                                        if (narc > maxarc) {
+                                        if (narc > MAXARC) {
                                             logger.info("VOLUME1 -- Increase the Value of MAXARC");
                                         }
                                         /*
