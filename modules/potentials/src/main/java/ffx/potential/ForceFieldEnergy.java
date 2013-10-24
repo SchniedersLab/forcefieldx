@@ -134,7 +134,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     protected VARIABLE_TYPE[] variableTypes = null;
 
     /**
-     * <p>Constructor for ForceFieldEnergy.</p>
+     * <p>
+     * Constructor for ForceFieldEnergy.</p>
      *
      * @param molecularAssembly a {@link ffx.potential.bonded.MolecularAssembly}
      * object.
@@ -433,7 +434,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
 
     /**
-     * <p>energy</p>
+     * <p>
+     * energy</p>
      *
      * @param gradient a boolean.
      * @param print a boolean.
@@ -654,7 +656,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
 
     /**
-     * <p>getPDBHeaderString</p>
+     * <p>
+     * getPDBHeaderString</p>
      *
      * @return a {@link java.lang.String} object.
      */
@@ -823,9 +826,13 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         return sb.toString();
     }
 
+    public ParallelTeam getParallelTeam() {
+        return parallelTeam;
+    }
+
     /**
-     * <p>Getter for the field
-     * <code>crystal</code>.</p>
+     * <p>
+     * Getter for the field <code>crystal</code>.</p>
      *
      * @return a {@link ffx.crystal.Crystal} object.
      */
@@ -922,7 +929,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     @Override
     public double energyAndGradient(double x[], double g[]) {
         /**
-         * Unscale the coordinates.
+         * Un-scale the coordinates.
          */
         if (optimizationScaling != null) {
             int len = x.length;
@@ -947,7 +954,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
 
     /**
-     * <p>getGradients</p>
+     * <p>
+     * getGradients</p>
      *
      * @param g an array of double.
      */
@@ -1102,7 +1110,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
 
     /**
-     * <p>setRestraintBond</p>
+     * <p>
+     * setRestraintBond</p>
      *
      * @param a1 a {@link ffx.potential.bonded.Atom} object.
      * @param a2 a {@link ffx.potential.bonded.Atom} object.

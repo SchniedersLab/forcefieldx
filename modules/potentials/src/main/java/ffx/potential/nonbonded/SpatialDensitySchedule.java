@@ -46,7 +46,8 @@ public class SpatialDensitySchedule extends IntegerSchedule {
     private Range ranges[];
 
     /**
-     * <p>Constructor for SpatialDensitySchedule.</p>
+     * <p>
+     * Constructor for SpatialDensitySchedule.</p>
      *
      * @param nThreads a int.
      * @param nAtoms a int.
@@ -121,7 +122,7 @@ public class SpatialDensitySchedule extends IntegerSchedule {
         int total = 0;
 
         // Calculate the total number of atoms that will be place on the grid.
-        for (int i=0; i<atomsPerChunk.length; i++) {
+        for (int i = 0; i < atomsPerChunk.length; i++) {
             total += atomsPerChunk[i];
         }
         int goal = (int) ((total * loadBalancePercentage) / nThreads);

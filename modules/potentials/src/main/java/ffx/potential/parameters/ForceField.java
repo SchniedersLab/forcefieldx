@@ -49,7 +49,7 @@ public class ForceField {
     public enum Force_Field {
 
         AMOEBA_WATER, AMOEBA_2004, AMOEBA_PROTEIN_2004, AMOEBA_PROTEIN_2004_U1,
-        AMOEBA_2009, AMOEBA_BIO_2009, AMOEBA_BIO_2009_ORIG
+        AMOEBA_2009, AMOEBA_BIO_2009, AMOEBA_BIO_2009_ORIG, AMOEBA_PROTEIN_2013
     }
 
     public enum ForceFieldString {
@@ -125,8 +125,8 @@ public class ForceField {
     private final Map<ForceFieldType, Map> forceFieldTypes;
 
     /**
-     * <p>Getter for the field
-     * <code>forceFieldURL</code>.</p>
+     * <p>
+     * Getter for the field <code>forceFieldURL</code>.</p>
      *
      * @param forceField a
      * {@link ffx.potential.parameters.ForceField.Force_Field} object.
@@ -404,7 +404,8 @@ public class ForceField {
     }
 
     /**
-     * <p>getDouble</p>
+     * <p>
+     * getDouble</p>
      *
      * @param forceFieldDouble a
      * {@link ffx.potential.parameters.ForceField.ForceFieldDouble} object.
@@ -424,7 +425,8 @@ public class ForceField {
     }
 
     /**
-     * <p>getDouble</p>
+     * <p>
+     * getDouble</p>
      *
      * @param forceFieldDouble a
      * {@link ffx.potential.parameters.ForceField.ForceFieldDouble} object.
@@ -441,7 +443,8 @@ public class ForceField {
     }
 
     /**
-     * <p>getInteger</p>
+     * <p>
+     * getInteger</p>
      *
      * @param forceFieldInteger a
      * {@link ffx.potential.parameters.ForceField.ForceFieldInteger} object.
@@ -461,7 +464,8 @@ public class ForceField {
     }
 
     /**
-     * <p>getInteger</p>
+     * <p>
+     * getInteger</p>
      *
      * @param forceFieldInteger a
      * {@link ffx.potential.parameters.ForceField.ForceFieldInteger} object.
@@ -478,7 +482,8 @@ public class ForceField {
     }
 
     /**
-     * <p>getString</p>
+     * <p>
+     * getString</p>
      *
      * @param forceFieldString a
      * {@link ffx.potential.parameters.ForceField.ForceFieldString} object.
@@ -498,7 +503,8 @@ public class ForceField {
     }
 
     /**
-     * <p>getString</p>
+     * <p>
+     * getString</p>
      *
      * @param forceFieldString a
      * {@link ffx.potential.parameters.ForceField.ForceFieldString} object.
@@ -515,7 +521,8 @@ public class ForceField {
     }
 
     /**
-     * <p>getBoolean</p>
+     * <p>
+     * getBoolean</p>
      *
      * @param forceFieldBoolean a
      * {@link ffx.potential.parameters.ForceField.ForceFieldBoolean} object.
@@ -535,7 +542,8 @@ public class ForceField {
     }
 
     /**
-     * <p>getBoolean</p>
+     * <p>
+     * getBoolean</p>
      *
      * @param forceFieldBoolean a
      * {@link ffx.potential.parameters.ForceField.ForceFieldBoolean} object.
@@ -671,7 +679,8 @@ public class ForceField {
     }
 
     /**
-     * <p>getAngleType</p>
+     * <p>
+     * getAngleType</p>
      *
      * @param key a {@link java.lang.String} object.
      * @return a {@link ffx.potential.parameters.AngleType} object.
@@ -681,7 +690,8 @@ public class ForceField {
     }
 
     /**
-     * <p>getAtomType</p>
+     * <p>
+     * getAtomType</p>
      *
      * @param key a {@link java.lang.String} object.
      * @return a {@link ffx.potential.parameters.AtomType} object.
@@ -691,7 +701,8 @@ public class ForceField {
     }
 
     /**
-     * <p>getAtomType</p>
+     * <p>
+     * getAtomType</p>
      *
      * @param moleculeName a {@link java.lang.String} object.
      * @param atomName a {@link java.lang.String} object.
@@ -709,8 +720,8 @@ public class ForceField {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>atomTypes</code>.</p>
+     * <p>
+     * Getter for the field <code>atomTypes</code>.</p>
      *
      * @param moleculeName a {@link java.lang.String} object.
      * @return a {@link java.util.HashMap} object.
@@ -728,7 +739,8 @@ public class ForceField {
     }
 
     /**
-     * <p>getBonds</p>
+     * <p>
+     * getBonds</p>
      *
      * @param moleculeName a {@link java.lang.String} object.
      * @param atomName a {@link java.lang.String} object.
@@ -745,7 +757,8 @@ public class ForceField {
     }
 
     /**
-     * <p>getBondType</p>
+     * <p>
+     * getBondType</p>
      *
      * @param key a {@link java.lang.String} object.
      * @return a {@link ffx.potential.parameters.BondType} object.
@@ -755,7 +768,8 @@ public class ForceField {
     }
 
     /**
-     * <p>getBioType</p>
+     * <p>
+     * getBioType</p>
      *
      * @param key a {@link java.lang.String} object.
      * @return a {@link ffx.potential.parameters.BioType} object.
@@ -765,7 +779,8 @@ public class ForceField {
     }
 
     /**
-     * <p>getMultipoleType</p>
+     * <p>
+     * getMultipoleType</p>
      *
      * @param key a {@link java.lang.String} object.
      * @return a {@link ffx.potential.parameters.MultipoleType} object.
@@ -775,7 +790,8 @@ public class ForceField {
     }
 
     /**
-     * <p>getOutOfPlaneBendType</p>
+     * <p>
+     * getOutOfPlaneBendType</p>
      *
      * @param key a {@link java.lang.String} object.
      * @return a {@link ffx.potential.parameters.OutOfPlaneBendType} object.
@@ -785,7 +801,8 @@ public class ForceField {
     }
 
     /**
-     * <p>getPolarizeType</p>
+     * <p>
+     * getPolarizeType</p>
      *
      * @param key a {@link java.lang.String} object.
      * @return a {@link ffx.potential.parameters.PolarizeType} object.
@@ -795,7 +812,8 @@ public class ForceField {
     }
 
     /**
-     * <p>getStretchBendType</p>
+     * <p>
+     * getStretchBendType</p>
      *
      * @param key a {@link java.lang.String} object.
      * @return a {@link ffx.potential.parameters.StretchBendType} object.
@@ -805,7 +823,8 @@ public class ForceField {
     }
 
     /**
-     * <p>getPiTorsionType</p>
+     * <p>
+     * getPiTorsionType</p>
      *
      * @param key a {@link java.lang.String} object.
      * @return a {@link ffx.potential.parameters.PiTorsionType} object.
@@ -815,7 +834,8 @@ public class ForceField {
     }
 
     /**
-     * <p>getTorsionType</p>
+     * <p>
+     * getTorsionType</p>
      *
      * @param key a {@link java.lang.String} object.
      * @return a {@link ffx.potential.parameters.TorsionType} object.
@@ -825,7 +845,8 @@ public class ForceField {
     }
 
     /**
-     * <p>getTorsionTorsionType</p>
+     * <p>
+     * getTorsionTorsionType</p>
      *
      * @param key a {@link java.lang.String} object.
      * @return a {@link ffx.potential.parameters.TorsionTorsionType} object.
@@ -835,7 +856,8 @@ public class ForceField {
     }
 
     /**
-     * <p>getUreyBradleyType</p>
+     * <p>
+     * getUreyBradleyType</p>
      *
      * @param key a {@link java.lang.String} object.
      * @return a {@link ffx.potential.parameters.UreyBradleyType} object.
@@ -845,7 +867,8 @@ public class ForceField {
     }
 
     /**
-     * <p>getVDWType</p>
+     * <p>
+     * getVDWType</p>
      *
      * @param key a {@link java.lang.String} object.
      * @return a {@link ffx.potential.parameters.VDWType} object.
@@ -855,7 +878,8 @@ public class ForceField {
     }
 
     /**
-     * <p>getVDWTypes</p>
+     * <p>
+     * getVDWTypes</p>
      *
      * @return a {@link java.util.Map} object.
      */
@@ -864,15 +888,16 @@ public class ForceField {
     }
 
     /**
-     * <p>getForceFieldTypeCount</p>
+     * <p>
+     * getForceFieldTypeCount</p>
      *
      * @param type a {@link ffx.potential.parameters.ForceField.ForceFieldType}
      * object.
      * @return a int.
      */
     public int getForceFieldTypeCount(ForceFieldType type) {
-        TreeMap<String, BaseType> treeMap =
-                (TreeMap<String, BaseType>) forceFieldTypes.get(type);
+        TreeMap<String, BaseType> treeMap
+                = (TreeMap<String, BaseType>) forceFieldTypes.get(type);
         if (treeMap == null) {
             logger.warning("Unrecognized Force Field Type: " + type);
             return 0;
@@ -927,7 +952,8 @@ public class ForceField {
     }
 
     /**
-     * <p>log</p>
+     * <p>
+     * log</p>
      */
     public void log() {
         for (ForceFieldType s : forceFieldTypes.keySet()) {
@@ -946,7 +972,8 @@ public class ForceField {
     }
 
     /**
-     * <p>print</p>
+     * <p>
+     * print</p>
      */
     public void print() {
         for (ForceFieldType s : forceFieldTypes.keySet()) {
@@ -955,7 +982,8 @@ public class ForceField {
     }
 
     /**
-     * <p>print</p>
+     * <p>
+     * print</p>
      *
      * @param key a {@link java.lang.String} object.
      */
@@ -985,7 +1013,8 @@ public class ForceField {
     }
 
     /**
-     * <p>toString</p>
+     * <p>
+     * toString</p>
      *
      * @param key a {@link java.lang.String} object.
      * @return a {@link java.lang.String} object.

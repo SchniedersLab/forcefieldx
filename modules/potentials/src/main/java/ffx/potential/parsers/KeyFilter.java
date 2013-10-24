@@ -44,7 +44,8 @@ public class KeyFilter {
     private static final Logger logger = Logger.getLogger(KeyFilter.class.getName());
 
     /**
-     * <p>loadSystemKeywords</p>
+     * <p>
+     * loadSystemKeywords</p>
      *
      * @return a {@link java.util.Hashtable} object.
      */
@@ -65,7 +66,8 @@ public class KeyFilter {
     }
 
     /**
-     * <p>open</p>
+     * <p>
+     * open</p>
      *
      * @param keyFile a {@link java.io.File} object.
      * @return a {@link java.util.Hashtable} object.
@@ -79,7 +81,8 @@ public class KeyFilter {
     }
 
     /**
-     * <p>open</p>
+     * <p>
+     * open</p>
      *
      * @param keyFile a {@link java.io.File} object.
      * @param keywordHash a {@link java.util.Hashtable} object.
@@ -207,7 +210,8 @@ public class KeyFilter {
     }
 
     /**
-     * <p>Constructor for KeyFilter.</p>
+     * <p>
+     * Constructor for KeyFilter.</p>
      */
     public KeyFilter() {
     }

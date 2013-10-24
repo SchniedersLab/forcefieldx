@@ -482,8 +482,8 @@ public class VanDerWaals implements MaskingInterface,
     }
 
     /**
-     * <p>Getter for the field
-     * <code>pairwiseSchedule</code>.</p>
+     * <p>
+     * Getter for the field <code>pairwiseSchedule</code>.</p>
      *
      * @return a {@link edu.rit.pj.IntegerSchedule} object.
      */
@@ -672,8 +672,8 @@ public class VanDerWaals implements MaskingInterface,
     }
 
     /**
-     * <p>Getter for the field
-     * <code>neighborLists</code>.</p>
+     * <p>
+     * Getter for the field <code>neighborLists</code>.</p>
      *
      * @return an array of int.
      */
@@ -880,7 +880,7 @@ public class VanDerWaals implements MaskingInterface,
             if (initializationLoop[threadIndex] == null) {
                 initializationLoop[threadIndex] = new InitializationLoop();
                 expandLoop[threadIndex] = new ExpandLoop();
-                vanDerWaalsLoop[threadIndex] = new VanDerWaalsLoop(threadCount);
+                vanDerWaalsLoop[threadIndex] = new VanDerWaalsLoop();
                 reductionLoop[threadIndex] = new ReductionLoop();
             }
 
@@ -1132,14 +1132,14 @@ public class VanDerWaals implements MaskingInterface,
             private double lxi_local[];
             private double lyi_local[];
             private double lzi_local[];
-            private double dx_local[];
-            private double transOp[][];
+            private final double dx_local[];
+            private final double transOp[][];
             private final byte mask[];
             // Extra padding to avert cache interference.
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
             private long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
-            public VanDerWaalsLoop(int threadId) {
+            public VanDerWaalsLoop() {
                 super();
                 mask = new byte[nAtoms];
                 dx_local = new double[3];

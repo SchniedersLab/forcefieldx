@@ -40,18 +40,17 @@ import ffx.potential.bonded.RendererCache.ViewModel;
 public interface ROLS {
 
     /**
-     * Constant
-     * <code>MaxLengthScale=5</code>
+     * Constant <code>MaxLengthScale=5</code>
      */
     public static final int MaxLengthScale = 5;
     /**
-     * Constant
-     * <code>LengthScale=MaxLengthScale</code>
+     * Constant <code>LengthScale=MaxLengthScale</code>
      */
     public static int LengthScale = MaxLengthScale;
 
     /**
-     * <p>drawLabel</p>
+     * <p>
+     * drawLabel</p>
      *
      * @param graphics a {@link javax.media.j3d.Canvas3D} object.
      * @param g2d a {@link javax.media.j3d.J3DGraphics2D} object.
@@ -60,7 +59,8 @@ public interface ROLS {
     public void drawLabel(Canvas3D graphics, J3DGraphics2D g2d, Node node);
 
     /**
-     * <p>getCenter</p>
+     * <p>
+     * getCenter</p>
      *
      * @param w a boolean.
      * @return an array of double.
@@ -68,7 +68,8 @@ public interface ROLS {
     public double[] getCenter(boolean w);
 
     /**
-     * <p>getList</p>
+     * <p>
+     * getList</p>
      *
      * @param c a {@link java.lang.Class} object.
      * @param nodes a {@link java.util.ArrayList} object.
@@ -77,7 +78,8 @@ public interface ROLS {
     public ArrayList<ROLS> getList(Class c, ArrayList<ROLS> nodes);
 
     /**
-     * <p>getMSCount</p>
+     * <p>
+     * getMSCount</p>
      *
      * @param c a {@link java.lang.Class} object.
      * @param count a long.
@@ -86,7 +88,8 @@ public interface ROLS {
     public long getMSCount(Class c, long count);
 
     /**
-     * <p>getMSNode</p>
+     * <p>
+     * getMSNode</p>
      *
      * @param c a {@link java.lang.Class} object.
      * @return a {@link ffx.potential.bonded.ROLS} object.
@@ -94,14 +97,16 @@ public interface ROLS {
     public ROLS getMSNode(Class c);
 
     /**
-     * <p>getMW</p>
+     * <p>
+     * getMW</p>
      *
      * @return a double.
      */
     public double getMW();
 
     /**
-     * <p>setColor</p>
+     * <p>
+     * setColor</p>
      *
      * @param colorModel a {@link ffx.potential.bonded.RendererCache.ColorModel}
      * object.
@@ -111,7 +116,8 @@ public interface ROLS {
     public void setColor(ColorModel colorModel, Color3f color, Material mat);
 
     /**
-     * <p>setView</p>
+     * <p>
+     * setView</p>
      *
      * @param viewModel a {@link ffx.potential.bonded.RendererCache.ViewModel}
      * object.
@@ -120,7 +126,8 @@ public interface ROLS {
     public void setView(ViewModel viewModel, List<BranchGroup> newShapes);
 
     /**
-     * <p>update</p>
+     * <p>
+     * update</p>
      */
     public void update();
 }

@@ -61,7 +61,8 @@ public final class OutOfPlaneBendType extends BaseType implements Comparator<Str
     }
 
     /**
-     * <p>incrementClasses</p>
+     * <p>
+     * incrementClasses</p>
      *
      * @param increment a int.
      */

@@ -107,7 +107,8 @@ public class Renderer extends Behavior {
     }
 
     /**
-     * <p>arm</p>
+     * <p>
+     * arm</p>
      *
      * @param node a {@link ffx.potential.bonded.MSNode} object.
      * @param t a boolean.
@@ -150,7 +151,8 @@ public class Renderer extends Behavior {
     }
 
     /**
-     * <p>isCacheFull</p>
+     * <p>
+     * isCacheFull</p>
      *
      * @return a boolean.
      */

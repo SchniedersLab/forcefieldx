@@ -53,7 +53,8 @@ public final class ChargeType extends BaseType {
     }
 
     /**
-     * <p>incrementType</p>
+     * <p>
+     * incrementType</p>
      *
      * @param increment a int.
      */

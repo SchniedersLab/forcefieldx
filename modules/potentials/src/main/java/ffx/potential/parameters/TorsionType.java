@@ -109,7 +109,8 @@ public final class TorsionType extends BaseType implements Comparator<String> {
     }
 
     /**
-     * <p>incrementClasses</p>
+     * <p>
+     * incrementClasses</p>
      *
      * @param increment a int.
      */
@@ -253,8 +254,7 @@ public final class TorsionType extends BaseType implements Comparator<String> {
     /**
      * {@inheritDoc}
      *
-     * Override the default
-     * <code>equals</code> method.
+     * Override the default <code>equals</code> method.
      *
      * @since 1.0
      */
@@ -278,8 +278,7 @@ public final class TorsionType extends BaseType implements Comparator<String> {
     /**
      * {@inheritDoc}
      *
-     * Implementation of the
-     * <code>hashCode</code> method.
+     * Implementation of the <code>hashCode</code> method.
      *
      * @since 1.0
      */

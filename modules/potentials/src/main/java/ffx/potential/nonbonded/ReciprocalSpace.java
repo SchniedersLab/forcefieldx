@@ -56,11 +56,14 @@ import static ffx.potential.parameters.MultipoleType.*;
  * {@link ParticleMeshEwald} for the AMOEBA force field.
  *
  * <ol> <li> Assignment of polarizable multipole charge density to the 3D grid,
- * via b-Splines, is parallelized using a spatial decomposition. </li> <p> <li>
+ * via b-Splines, is parallelized using a spatial decomposition. </li>
+ * <p>
+ * <li>
  * The convolution depends on methods of the {@link Real3DParallel} and
- * {@link Complex3DParallel} classes. </li> <p> <li> Finally, the electric
- * potential and its gradients are collected, in parallel, off the grid using
- * b-Splines. </li> </ol>
+ * {@link Complex3DParallel} classes. </li>
+ * <p>
+ * <li> Finally, the electric potential and its gradients are collected, in
+ * parallel, off the grid using b-Splines. </li> </ol>
  *
  * @author Michael J. Schnieders
  * @since 1.0
@@ -469,7 +472,8 @@ public class ReciprocalSpace {
     }
 
     /**
-     * <p>computeBSplines</p>
+     * <p>
+     * computeBSplines</p>
      */
     public void computeBSplines() {
         try {
@@ -508,7 +512,8 @@ public class ReciprocalSpace {
     }
 
     /**
-     * <p>permanentMultipoleConvolution</p>
+     * <p>
+     * permanentMultipoleConvolution</p>
      */
     public void permanentMultipoleConvolution() {
         convTotal -= System.nanoTime();
@@ -570,8 +575,11 @@ public class ReciprocalSpace {
 
     /**
      * Note that the Java function "signum" and the FORTRAN version have
-     * different definitions for an argument of zero. <p> JAVA: Math.signum(0.0)
-     * == 0.0 <p> FORTRAN: signum(0.0) .eq. 1.0
+     * different definitions for an argument of zero.
+     * <p>
+     * JAVA: Math.signum(0.0) == 0.0
+     * <p>
+     * FORTRAN: signum(0.0) .eq. 1.0
      */
     public void inducedDipoleConvolution() {
         convTotal -= System.nanoTime();
@@ -589,7 +597,8 @@ public class ReciprocalSpace {
     }
 
     /**
-     * <p>computeInducedPhi</p>
+     * <p>
+     * computeInducedPhi</p>
      *
      * @param cartInducedDipolePhi an array of double.
      * @param cartInducedDipoleCRPhi an array of double.
@@ -609,7 +618,8 @@ public class ReciprocalSpace {
     }
 
     /**
-     * <p>cartToFracInducedDipoles</p>
+     * <p>
+     * cartToFracInducedDipoles</p>
      *
      * @param inducedDipole an array of double.
      * @param inducedDipoleCR an array of double.
@@ -633,8 +643,8 @@ public class ReciprocalSpace {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>fracMultipolePhi</code>.</p>
+     * <p>
+     * Getter for the field <code>fracMultipolePhi</code>.</p>
      *
      * @return an array of double.
      */
@@ -643,7 +653,8 @@ public class ReciprocalSpace {
     }
 
     /**
-     * <p>getFracMultipoles</p>
+     * <p>
+     * getFracMultipoles</p>
      *
      * @return an array of double.
      */
@@ -652,8 +663,8 @@ public class ReciprocalSpace {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>fracInducedDipolePhi</code>.</p>
+     * <p>
+     * Getter for the field <code>fracInducedDipolePhi</code>.</p>
      *
      * @return an array of double.
      */
@@ -662,7 +673,8 @@ public class ReciprocalSpace {
     }
 
     /**
-     * <p>getFracInducedDipoles</p>
+     * <p>
+     * getFracInducedDipoles</p>
      *
      * @return an array of double.
      */
@@ -671,7 +683,8 @@ public class ReciprocalSpace {
     }
 
     /**
-     * <p>getFracInducedDipoleCRPhi</p>
+     * <p>
+     * getFracInducedDipoleCRPhi</p>
      *
      * @return an array of double.
      */
@@ -680,7 +693,8 @@ public class ReciprocalSpace {
     }
 
     /**
-     * <p>getFracInducedDipolesCR</p>
+     * <p>
+     * getFracInducedDipolesCR</p>
      *
      * @return an array of double.
      */
@@ -689,7 +703,8 @@ public class ReciprocalSpace {
     }
 
     /**
-     * <p>getXDim</p>
+     * <p>
+     * getXDim</p>
      *
      * @return a double.
      */
@@ -698,7 +713,8 @@ public class ReciprocalSpace {
     }
 
     /**
-     * <p>getYDim</p>
+     * <p>
+     * getYDim</p>
      *
      * @return a double.
      */
@@ -707,7 +723,8 @@ public class ReciprocalSpace {
     }
 
     /**
-     * <p>getZDim</p>
+     * <p>
+     * getZDim</p>
      *
      * @return a double.
      */

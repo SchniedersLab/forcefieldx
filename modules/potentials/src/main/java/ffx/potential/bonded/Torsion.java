@@ -61,7 +61,8 @@ public class Torsion extends BondedTerm {
     }
 
     /**
-     * <p>compare</p>
+     * <p>
+     * compare</p>
      *
      * @param a0 a {@link ffx.potential.bonded.Atom} object.
      * @param a1 a {@link ffx.potential.bonded.Atom} object.

@@ -29,6 +29,7 @@ import javax.media.j3d.Material;
 import javax.vecmath.Color3f;
 
 import ffx.numerics.VectorMath;
+import ffx.potential.ResidueEnumerations;
 import ffx.potential.bonded.Residue.ResidueType;
 
 import static ffx.utilities.HashCodeUtil.SEED;
@@ -44,16 +45,14 @@ public class Polymer extends MSGroup {
 
     private static final long serialVersionUID = 1L;
     /**
-     * Constant
-     * <code>MultiScaleLevel=3</code>
+     * Constant <code>MultiScaleLevel=3</code>
      */
     public static final int MultiScaleLevel = 3;
     private static int count = 0;
     private static double[] da = new double[3];
     private static double[] db = new double[3];
     /**
-     * Constant
-     * <code>polymerColor</code>
+     * Constant <code>polymerColor</code>
      */
     public static Map<Integer, Color3f> polymerColor = new HashMap<Integer, Color3f>();
 
@@ -242,8 +241,8 @@ public class Polymer extends MSGroup {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>link</code>.</p>
+     * <p>
+     * Getter for the field <code>link</code>.</p>
      *
      * @return a boolean.
      */
@@ -252,8 +251,8 @@ public class Polymer extends MSGroup {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>chainID</code>.</p>
+     * <p>
+     * Getter for the field <code>chainID</code>.</p>
      *
      * @return a {@link java.lang.Character} object.
      */
@@ -269,7 +268,7 @@ public class Polymer extends MSGroup {
         residueNode.insert(multiResidue, index);
         multiResidue.add(residue);
     }
-    
+
     /**
      * Get the Phi Psi List for the Polymer
      *
@@ -303,7 +302,8 @@ public class Polymer extends MSGroup {
     }
 
     /**
-     * <p>getFirstResidue</p>
+     * <p>
+     * getFirstResidue</p>
      *
      * @return a {@link ffx.potential.bonded.Residue} object.
      */
@@ -316,7 +316,8 @@ public class Polymer extends MSGroup {
     }
 
     /**
-     * <p>getResidues</p>
+     * <p>
+     * getResidues</p>
      *
      * @return a {@link java.util.ArrayList} object.
      */
@@ -330,7 +331,8 @@ public class Polymer extends MSGroup {
     }
 
     /**
-     * <p>getResidue</p>
+     * <p>
+     * getResidue</p>
      *
      * @param resNum a int.
      * @return a {@link ffx.potential.bonded.Residue} object.
@@ -353,7 +355,8 @@ public class Polymer extends MSGroup {
     }
 
     /**
-     * <p>getResidue</p>
+     * <p>
+     * getResidue</p>
      *
      * @param resName a {@link java.lang.String} object.
      * @param resNum a int.
@@ -373,7 +376,6 @@ public class Polymer extends MSGroup {
                 return r;
             }
         }
-        //System.out.println(resName + ": " + resNum);
         if (!create) {
             return null;
         }
@@ -381,25 +383,25 @@ public class Polymer extends MSGroup {
         resName = resName.toUpperCase();
         if (resName.length() == 1) {
             try {
-                Residue.NA1.valueOf(resName);
+                ResidueEnumerations.NucleicAcid1 na = ResidueEnumerations.NucleicAcid1.valueOf(resName);
                 residue = new Residue(resName, resNum, Residue.ResidueType.NA,
                         chainID, getName());
             } catch (Exception e) {
                 try {
-                    Residue.AA1.valueOf(resName);
+                    ResidueEnumerations.AminoAcid1 aa = ResidueEnumerations.AminoAcid1.valueOf(resName);
                     residue = new Residue(resName, resNum, Residue.ResidueType.AA,
                             chainID, getName());
                 } catch (Exception ex) {
                 }
             }
-        } else if (resName.length() == 2 || resName.length() == 3) {
+        } else if (resName.length() >= 2) {
             try {
-                Residue.NA3.valueOf(resName);
+                ResidueEnumerations.NucleicAcid3 na = ResidueEnumerations.NucleicAcid3.valueOf(resName);
                 residue = new Residue(resName, resNum, Residue.ResidueType.NA,
                         chainID, getName());
             } catch (Exception e) {
                 try {
-                    Residue.AA3.valueOf(resName);
+                    ResidueEnumerations.AminoAcid3 aa = ResidueEnumerations.AminoAcid3.valueOf(resName);
                     residue = new Residue(resName, resNum, Residue.ResidueType.AA,
                             chainID, getName());
                 } catch (Exception ex) {
@@ -445,8 +447,8 @@ public class Polymer extends MSGroup {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>link</code>.</p>
+     * <p>
+     * Setter for the field <code>link</code>.</p>
      *
      * @param t a boolean.
      */

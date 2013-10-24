@@ -382,7 +382,6 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
                     scaleEnergy1 * lambdaPow * energy1, scaleEnergy1 * oneMinusLambdaPow * restraintEnergy1));
         }
 
-
         /**
          * Compute the energy and gradient of topology 2.
          */
@@ -488,7 +487,6 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
                 x[i] /= scaling[i];
             }
         }
-
 
         int index = 0;
         int indexCommon = 0;

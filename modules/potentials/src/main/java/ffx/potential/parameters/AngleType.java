@@ -53,7 +53,8 @@ public final class AngleType extends BaseType implements Comparator<String> {
     public final double angle[];
 
     /**
-     * <p>Constructor for AngleType.</p>
+     * <p>
+     * Constructor for AngleType.</p>
      *
      * @param atomClasses an array of int.
      * @param forceConstant a double.
@@ -67,7 +68,8 @@ public final class AngleType extends BaseType implements Comparator<String> {
     }
 
     /**
-     * <p>incrementClasses</p>
+     * <p>
+     * incrementClasses</p>
      *
      * @param increment a int.
      */

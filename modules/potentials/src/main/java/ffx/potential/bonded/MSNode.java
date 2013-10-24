@@ -42,8 +42,7 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
 
     private static final long serialVersionUID = 1L;
     /**
-     * Constant
-     * <code>UNIT_TESTING=false</code>
+     * Constant <code>UNIT_TESTING=false</code>
      */
     public static boolean UNIT_TESTING = false;
 
@@ -78,7 +77,8 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
     }
 
     /**
-     * <p>Constructor for MSNode.</p>
+     * <p>
+     * Constructor for MSNode.</p>
      *
      * @param n a {@link java.lang.String} object.
      * @param multiScaleLevel a int.
@@ -108,7 +108,8 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
     }
 
     /**
-     * <p>destroy</p>
+     * <p>
+     * destroy</p>
      *
      * @return a boolean.
      */
@@ -177,9 +178,8 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
     }
 
     /**
-     * If
-     * <code>this</code> MSNode or any MSNode below it
-     * <code>equals</code> the argument, that MSNode is returned.
+     * If <code>this</code> MSNode or any MSNode below it <code>equals</code>
+     * the argument, that MSNode is returned.
      *
      * @param msNode a {@link ffx.potential.bonded.MSNode} object.
      * @return a {@link ffx.potential.bonded.MSNode} object.
@@ -325,7 +325,8 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
     }
 
     /**
-     * <p>getExtent</p>
+     * <p>
+     * getExtent</p>
      *
      * @return a double.
      */
@@ -393,7 +394,8 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
     }
 
     /**
-     * <p>getMultiScaleLevel</p>
+     * <p>
+     * getMultiScaleLevel</p>
      *
      * @return a int.
      */
@@ -435,7 +437,8 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
     }
 
     /**
-     * <p>isSelected</p>
+     * <p>
+     * isSelected</p>
      *
      * @return a boolean.
      */
@@ -472,8 +475,8 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
     }
 
     /**
-     * <p>Setter for the field
-     * <code>selected</code>.</p>
+     * <p>
+     * Setter for the field <code>selected</code>.</p>
      *
      * @param b a boolean.
      */

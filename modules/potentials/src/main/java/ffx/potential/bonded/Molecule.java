@@ -36,8 +36,7 @@ public class Molecule extends MSGroup {
     private Logger logger = Logger.getLogger(Molecule.class.getName());
     private static final long serialVersionUID = 1L;
     /**
-     * Constant
-     * <code>MultiScaleLevel=2</code>
+     * Constant <code>MultiScaleLevel=2</code>
      */
     public static final int MultiScaleLevel = 2;
     /**
@@ -58,13 +57,15 @@ public class Molecule extends MSGroup {
     private String segID = null;
 
     /**
-     * <p>Constructor for Molecule.</p>
+     * <p>
+     * Constructor for Molecule.</p>
      */
     public Molecule() {
     }
 
     /**
-     * <p>Constructor for Molecule.</p>
+     * <p>
+     * Constructor for Molecule.</p>
      *
      * @param name a {@link java.lang.String} object.
      */
@@ -75,7 +76,8 @@ public class Molecule extends MSGroup {
     }
 
     /**
-     * <p>Constructor for Molecule.</p>
+     * <p>
+     * Constructor for Molecule.</p>
      *
      * @param name a {@link java.lang.String} object.
      * @param residueNum a int.
@@ -105,8 +107,8 @@ public class Molecule extends MSGroup {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>residueName</code>.</p>
+     * <p>
+     * Getter for the field <code>residueName</code>.</p>
      *
      * @return a {@link java.lang.String} object.
      */
@@ -115,7 +117,8 @@ public class Molecule extends MSGroup {
     }
 
     /**
-     * <p>getResidueNumber</p>
+     * <p>
+     * getResidueNumber</p>
      *
      * @return a int.
      */
@@ -124,8 +127,8 @@ public class Molecule extends MSGroup {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>chainID</code>.</p>
+     * <p>
+     * Getter for the field <code>chainID</code>.</p>
      *
      * @return a {@link java.lang.Character} object.
      */
@@ -134,8 +137,8 @@ public class Molecule extends MSGroup {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>segID</code>.</p>
+     * <p>
+     * Getter for the field <code>segID</code>.</p>
      *
      * @return a {@link java.lang.String} object.
      */
@@ -144,7 +147,8 @@ public class Molecule extends MSGroup {
     }
 
     /**
-     * <p>getAtom</p>
+     * <p>
+     * getAtom</p>
      *
      * @param name a {@link java.lang.String} object.
      * @return a {@link ffx.potential.bonded.Atom} object.

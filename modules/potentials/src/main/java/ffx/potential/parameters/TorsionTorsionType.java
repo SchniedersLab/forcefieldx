@@ -227,7 +227,8 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
     public final boolean cyclic;
 
     /**
-     * <p>Constructor for TorsionTorsionType.</p>
+     * <p>
+     * Constructor for TorsionTorsionType.</p>
      *
      * @param atomClasses an array of int.
      * @param gridPoints an array of int.
@@ -383,7 +384,8 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
     }
 
     /**
-     * <p>incrementClasses</p>
+     * <p>
+     * incrementClasses</p>
      *
      * @param increment a int.
      */

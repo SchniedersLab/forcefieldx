@@ -47,9 +47,8 @@ public final class KeyFileFilter extends FileFilter {
     /**
      * {@inheritDoc}
      *
-     * This method return
-     * <code>true</code> if the file is a directory or Force Field X script
-     * (*.FFX).
+     * This method return <code>true</code> if the file is a directory or Force
+     * Field X script (*.FFX).
      */
     @Override
     public boolean accept(File file) {

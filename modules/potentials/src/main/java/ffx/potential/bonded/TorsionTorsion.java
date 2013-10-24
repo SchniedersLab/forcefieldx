@@ -96,73 +96,59 @@ public class TorsionTorsion extends BondedTerm {
         energy(false);
     }
     /**
-     * Constant
-     * <code>v01=new double[3]</code>
+     * Constant <code>v01=new double[3]</code>
      */
     protected static final double v01[] = new double[3];
     /**
-     * Constant
-     * <code>v12=new double[3]</code>
+     * Constant <code>v12=new double[3]</code>
      */
     protected static final double v12[] = new double[3];
     /**
-     * Constant
-     * <code>v23=new double[3]</code>
+     * Constant <code>v23=new double[3]</code>
      */
     protected static final double v23[] = new double[3];
     /**
-     * Constant
-     * <code>v34=new double[3]</code>
+     * Constant <code>v34=new double[3]</code>
      */
     protected static final double v34[] = new double[3];
     /**
-     * Constant
-     * <code>v02=new double[3]</code>
+     * Constant <code>v02=new double[3]</code>
      */
     protected static final double[] v02 = new double[3];
     /**
-     * Constant
-     * <code>v13=new double[3]</code>
+     * Constant <code>v13=new double[3]</code>
      */
     protected static final double[] v13 = new double[3];
     /**
-     * Constant
-     * <code>v24=new double[3]</code>
+     * Constant <code>v24=new double[3]</code>
      */
     protected static final double[] v24 = new double[3];
     /**
-     * Constant
-     * <code>t=new double[3]</code>
+     * Constant <code>t=new double[3]</code>
      */
     protected static final double t[] = new double[3];
     /**
-     * Constant
-     * <code>u=new double[3]</code>
+     * Constant <code>u=new double[3]</code>
      */
     protected static final double u[] = new double[3];
     /**
-     * Constant
-     * <code>v=new double[3]</code>
+     * Constant <code>v=new double[3]</code>
      */
     protected static final double v[] = new double[3];
     /**
-     * Constant
-     * <code>x1=new double[3]</code>
+     * Constant <code>x1=new double[3]</code>
      */
     protected static final double[] x1 = new double[3];
     /**
-     * Constant
-     * <code>x2=new double[3]</code>
+     * Constant <code>x2=new double[3]</code>
      */
     protected static final double[] x2 = new double[3];
     /**
-     * Constant
-     * <code>tu=new double[3]</code>
+     * Constant <code>tu=new double[3]</code>
      */
     protected static final double tu[] = new double[3];
     /**
-     * Constant
-     * <code>uv=new double[3]</code>
+     * Constant <code>uv=new double[3]</code>
      */
     protected static final double uv[] = new double[3];
     /**
@@ -202,8 +188,7 @@ public class TorsionTorsion extends BondedTerm {
      */
     protected static final double g3[] = new double[3];
     /**
-     * Constant
-     * <code>g4=new double[3]</code>
+     * Constant <code>g4=new double[3]</code>
      */
     protected static final double g4[] = new double[3];
 
@@ -358,7 +343,8 @@ public class TorsionTorsion extends BondedTerm {
      * Log details for this Torsion-Torsion energy term.
      */
     /**
-     * <p>log</p>
+     * <p>
+     * log</p>
      */
     public void log() {
         logger.info(String.format(" %s %6d-%s %6d-%s %6d-%s %6d-%s %10.4f",
@@ -452,7 +438,8 @@ public class TorsionTorsion extends BondedTerm {
     private static double c[][] = new double[4][4];
 
     /**
-     * <p>bcuint</p>
+     * <p>
+     * bcuint</p>
      *
      * @param x1l a double.
      * @param x1u a double.
@@ -477,7 +464,8 @@ public class TorsionTorsion extends BondedTerm {
     }
 
     /**
-     * <p>bcuint1</p>
+     * <p>
+     * bcuint1</p>
      *
      * @param x1l a double.
      * @param x1u a double.

@@ -77,7 +77,8 @@ public final class StretchBendType extends BaseType implements Comparator<String
     }
 
     /**
-     * <p>incrementClasses</p>
+     * <p>
+     * incrementClasses</p>
      *
      * @param increment a int.
      */
@@ -148,8 +149,7 @@ public final class StretchBendType extends BaseType implements Comparator<String
                 forceConstants[0], forceConstants[1]);
     }
     /**
-     * Constant
-     * <code>units=PI / 180.0</code>
+     * Constant <code>units=PI / 180.0</code>
      */
     public static final double units = PI / 180.0;
 
