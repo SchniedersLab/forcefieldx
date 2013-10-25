@@ -100,14 +100,16 @@ public class FFXClassLoader extends ClassLoader {
                     "edu.rit.pj/pj.jar",
                     // Aparapi
                     "com.amd.aparapi/aparapi.jar",
-                    // Java3D 1.6.1 (depends on JOGL v. 2.0.0)
+                    // Java3D 1.6.1 (depends on JOGL v. 2.1.1)
                     "java3d/j3dcore.jar",
                     "java3d/j3dutils.jar",
                     "java3d/j3dvrml.jar",
                     "java3d/vecmath.jar",
-                    // JOGAMP GLUEGEN, JOGL and JOCL v. 2.0.0
+                    // JOGAMP GLUEGEN, JOGL and JOCL v. 2.1.1
                     "org.jogamp.gluegen/gluegen-rt.jar",
+                    "org.jogamp.gluegen/gluegen-rt-main.jar",
                     "org.jogamp.jogl/jogl-all.jar",
+                    "org.jogamp.jogl/jogl-all-main.jar",
                     "org.jogamp.jocl/jocl.jar",
                     // Apache Commons
                     "commons-beanutils/commons-beanutils.jar",
