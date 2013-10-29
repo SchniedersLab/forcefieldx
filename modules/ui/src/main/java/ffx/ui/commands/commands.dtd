@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--  
+<!--
 /**
  * Title: Force Field X.
  *
@@ -23,8 +23,8 @@
  * Place, Suite 330, Boston, MA 02111-1307 USA
  */
 -->
-<!ELEMENT TinkerCommands (Command+)>
+<!ELEMENT FFXCommands (Command+)>
 <!ELEMENT Command name, description, fileType, action, (Option*)>
-<!ELEMENT Option name, description, gui, default, blank, lowerLimit, upperLimit, (Value*, Conditional?)>
+<!ELEMENT Option name, description, flag, gui, default, blank, lowerLimit, upperLimit, (Value*, Conditional?)>
 <!ELEMENT Value name>
 <!ELEMENT Conditional name, description, gui, default>

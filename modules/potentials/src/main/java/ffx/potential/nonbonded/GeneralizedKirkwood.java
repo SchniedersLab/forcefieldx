@@ -27,7 +27,19 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static java.lang.Math.*;
+import static java.lang.Math.PI;
+import static java.lang.Math.abs;
+import static java.lang.Math.acos;
+import static java.lang.Math.asin;
+import static java.lang.Math.atan2;
+import static java.lang.Math.cos;
+import static java.lang.Math.exp;
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+import static java.lang.Math.pow;
+import static java.lang.Math.sin;
+import static java.lang.Math.sqrt;
+import static java.lang.Math.tanh;
 
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.ParallelRegion;
@@ -38,8 +50,8 @@ import edu.rit.pj.reduction.SharedDoubleArray;
 import edu.rit.pj.reduction.SharedInteger;
 
 import ffx.crystal.Crystal;
-import ffx.potential.bonded.Angle;
 import ffx.numerics.VectorMath;
+import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.Torsion;
@@ -4503,7 +4515,7 @@ public class GeneralizedKirkwood {
             itab = new int[nAtoms];
 
             /*
-             * Set atom coordinates and radii, the excluded buffer 
+             * Set atom coordinates and radii, the excluded buffer
              * radius ("exclude") is added to atomic radii.
              */
             for (int i = 0; i < nAtoms; i++) {
@@ -4590,13 +4602,13 @@ public class GeneralizedKirkwood {
             private int ntt, nt, nfn, nfp, nfs, iatom;
             private int i, j, k, m;
             private int l, l1, l2;
-            private int io,ir,in,iv;
+            private int io, ir, in, iv;
             private int narc, nx, ny, nz;
             private int istart, istop;
             private int jstart, jstop;
             private int kstart, kstop;
             private int mstart, mstop;
-            private int isum, itemp,tcube;
+            private int isum, itemp, tcube;
             private final int ca[] = new int[maxc];
             private final int epnext[] = new int[maxep];
             private final int fpa[] = new int[maxfp];
@@ -4662,7 +4674,7 @@ public class GeneralizedKirkwood {
             private final double dy[] = new double[MAXARC];
             private final double dsq[] = new double[MAXARC];
             private final double d[] = new double[MAXARC];
-            private boolean ttok,cinsp,cintp;
+            private boolean ttok, cinsp, cintp;
             private final double vdwrad[] = new double[nAtoms];
             private final double dex[][] = new double[3][nAtoms];
             private final boolean abur[] = new boolean[nAtoms];
@@ -4706,7 +4718,8 @@ public class GeneralizedKirkwood {
                 ai[1] = temp[1][index];
                 ai[2] = temp[2][index];
             }
-            public void getVector(double ai[], double temp[][][], int index1,int index2) {
+
+            public void getVector(double ai[], double temp[][][], int index1, int index2) {
                 ai[0] = temp[0][index1][index2];
                 ai[1] = temp[1][index1][index2];
                 ai[2] = temp[2][index1][index2];
@@ -4764,9 +4777,9 @@ public class GeneralizedKirkwood {
                 return ttok;
             }
 
-            private boolean scube[][][] = new boolean[MAXCUBE][MAXCUBE][MAXCUBE];
-            private boolean sscube[][][] = new boolean[MAXCUBE][MAXCUBE][MAXCUBE];
-            private int icube[][][] = new int[MAXCUBE][MAXCUBE][MAXCUBE];
+            private final boolean scube[][][] = new boolean[MAXCUBE][MAXCUBE][MAXCUBE];
+            private final boolean sscube[][][] = new boolean[MAXCUBE][MAXCUBE][MAXCUBE];
+            private final int icube[][][] = new int[MAXCUBE][MAXCUBE][MAXCUBE];
             int ico[][] = new int[3][nAtoms];
             int icuptr[] = new int[nAtoms];
 
@@ -4794,7 +4807,7 @@ public class GeneralizedKirkwood {
 
                 /*
                  * Ignore all atoms that are completely inside another atom;
-                 * may give nonsense results if this step is not taken. 
+                 * may give nonsense results if this step is not taken.
                  */
                 for (i = 0; i < nAtoms - 1; i++) {
                     if (!skip[i]) {
@@ -5117,10 +5130,10 @@ public class GeneralizedKirkwood {
                 int ikt[] = new int[MAXMNB];
                 int jkt[] = new int[MAXMNB];
                 int lkcls[] = new int[MAXMNB];
-                double d2,det,rad,hij;
+                double d2, det, rad, hij;
                 double hijk = 0;
-                double dotut,fact;
-                double rip2,dba;
+                double dotut, fact;
+                double rip2, dba;
                 double rij = 0;
                 double rik = 0;
                 double tik[] = new double[3];
@@ -5350,7 +5363,7 @@ public class GeneralizedKirkwood {
                                         move = true;
                                     }
                                     if (!move) {
-                                        /* 
+                                        /*
                                          * Check for duplicate triples or any possible
                                          * probe postions.
                                          */
@@ -5404,7 +5417,7 @@ public class GeneralizedKirkwood {
                                                     lm = lkcls[lm];
                                                 }
                                                 if (!move) {
-                                                    // We have a new probe position.                             
+                                                    // We have a new probe position.
 
                                                     np++;
                                                     if (np > maxp) {
@@ -6291,7 +6304,7 @@ public class GeneralizedKirkwood {
                                     pole[k] = factor * aavect[k][iepa] + a[k][ia];
                                     unvect[k] = -aavect[k][iepa] / anaa;
                                 }
-                                cycy[icya][jcya] = ptincy(pole, unvect, jcy,ia);
+                                cycy[icya][jcya] = ptincy(pole, unvect, jcy, ia);
                             }
                         }
 
@@ -6423,7 +6436,7 @@ public class GeneralizedKirkwood {
                 int ic, it, iatom;
                 int iaoth, nedge;
                 double rotang, totang;
-                double dt,f;
+                double dt, f;
                 double acvect[] = new double[3];
                 double cpvect[] = new double[3];
                 double polev[] = new double[3];
@@ -6562,7 +6575,7 @@ public class GeneralizedKirkwood {
                     for (k = 0; k < 3; k++) {
                         epu[k][ke] = spv[k][ke2] - spv[k][ke];
                     }
-                    getVector(ai,epu,ke);
+                    getVector(ai, epu, ke);
                     epun = VectorMath.r(ai);
                     if (epun <= 0.0) {
                         logger.severe("Null Edge in Cycle");
@@ -6582,7 +6595,7 @@ public class GeneralizedKirkwood {
 
                 // Vectors for null edges come from following or preceding edges.
                 for (ke = 0; ke < nedge; ke++) {
-                    getVector(ai,epu,ke);
+                    getVector(ai, epu, ke);
                     if (VectorMath.r(ai) <= 0.0) {
                         le = ke - 1;
                         if (le <= 0) {
@@ -6687,21 +6700,21 @@ public class GeneralizedKirkwood {
                                 vect2[k] = v[k][iv2] - c[k][ic];
                                 radial[k][ke] = v[k][iv1] - a[k][ia];
                             }
-                            getVector(ai,radial,ke);
+                            getVector(ai, radial, ke);
                             VectorMath.norm(ai, ai);
-                            getVector(aj,tanv,0,ke);
+                            getVector(aj, tanv, 0, ke);
                             VectorMath.cross(vect1, aavect, aj);
                             VectorMath.norm(aj, aj);
-                            getVector(ak,tanv,1,ke);
+                            getVector(ak, tanv, 1, ke);
                             VectorMath.cross(vect2, aavect, ak);
                             VectorMath.norm(ak, ak);
                             angle = vecang(vect1, vect2, aavect, -1.0);
                         }
                         gcurve += cr[ic] * angle * geo;
                         if (nedge != 1 && ke > 0) {
-                            getVector(ai,tanv,1,ke-1);
-                            getVector(aj,tanv,0,ke);
-                            getVector(ak,radial,ke);
+                            getVector(ai, tanv, 1, ke - 1);
+                            getVector(aj, tanv, 0, ke);
+                            getVector(ak, radial, ke);
                             angle = vecang(ai, aj, ak, 1.0);
                             if (angle < 0.0) {
                                 logger.severe("Negative Angle in MEASFP");
@@ -6710,9 +6723,9 @@ public class GeneralizedKirkwood {
                         }
                     }
                     if (nedge > 0) {
-                        getVector(ai,tanv,1,nedge);
-                        getVector(aj,tanv,0,0);
-                        getVector(ak,radial,0);
+                        getVector(ai, tanv, 1, nedge);
+                        getVector(aj, tanv, 0, 0);
+                        getVector(ak, radial, 0);
                         angle = vecang(ai, aj, ak, 1.0);
                         if (angle < 0.0) {
                             logger.severe("Negative Angle in MEASFP");
@@ -6849,7 +6862,7 @@ public class GeneralizedKirkwood {
                         pav[k][ke] = a[k][ia] - p[k][ip];
                     }
                     if (probe > 0.0) {
-                        getVector(ai,pvv,ke);
+                        getVector(ai, pvv, ke);
                         VectorMath.norm(ai, ai);
                     }
                 }
@@ -6861,9 +6874,9 @@ public class GeneralizedKirkwood {
                         if (je > 2) {
                             je = 0;
                         }
-                        getVector(ai,pvv,ke);
-                        getVector(aj,pvv,je);
-                        getVector(ak,planev,ke);
+                        getVector(ai, pvv, ke);
+                        getVector(aj, pvv, je);
+                        getVector(ak, planev, ke);
                         VectorMath.cross(ai, aj, ak);
                         VectorMath.norm(ak, ak);
                     }
@@ -6872,9 +6885,9 @@ public class GeneralizedKirkwood {
                         if (je < 0) {
                             je = 2;
                         }
-                        getVector(ai,planev,je);
-                        getVector(aj,planev,ke);
-                        getVector(ak,pvv,ke);
+                        getVector(ai, planev, je);
+                        getVector(aj, planev, ke);
+                        getVector(ak, pvv, ke);
                         angle[ke] = vecang(ai, aj, ak, -1.0);
                         if (angle[ke] < 0.0) {
                             logger.severe("Negative Angle in MEASFN");
@@ -6883,9 +6896,9 @@ public class GeneralizedKirkwood {
                     defect = 2.0 * PI - (angle[0] + angle[1] + angle[2]);
                     arean = (probe * probe) * defect;
                 }
-                getVector(ai,pav,0);
-                getVector(aj,pav,1);
-                getVector(ak,pav,2);
+                getVector(ai, pav, 0);
+                getVector(aj, pav, 1);
+                getVector(ak, pav, 2);
                 simplx = -triple(ai, aj, ak) / 6.0;
                 voln = simplx - arean * probe / 3.0;
             }
@@ -6923,7 +6936,7 @@ public class GeneralizedKirkwood {
                 double areas = 0;
                 double vols = 0;
                 double areasp = 0;
-                double volsp = 0; 
+                double volsp = 0;
                 double arean = 0;
                 double voln = 0;
                 double areado, voldo, dot, dota;
@@ -7065,7 +7078,7 @@ public class GeneralizedKirkwood {
                         ien = fnen[0][ifn];
                         iv = env[0][ien];
                         ip = vp[iv];
-                        getVector(ai,alts,ifn);
+                        getVector(ai, alts, ifn);
                         depths[ifn] = depth(ip, ai);
                         for (k = 0; k < 3; k++) {
                             fncen[k][ifn] = p[k][ip];
@@ -7093,24 +7106,24 @@ public class GeneralizedKirkwood {
                          * Calculate normal vectors for the three planes
                          * that cut out the geodesic triangle.
                          */
-                        getVector(ai,vects,0);
-                        getVector(aj,vects,1);
-                        getVector(ak,fnvect,0,ifn);
+                        getVector(ai, vects, 0);
+                        getVector(aj, vects, 1);
+                        getVector(ak, fnvect, 0, ifn);
                         VectorMath.cross(ai, aj, ak);
                         VectorMath.norm(ak, ak);
-                        getVector(ai,vects,2);
-                        getVector(ak,fnvect,1,ifn);
+                        getVector(ai, vects, 2);
+                        getVector(ak, fnvect, 1, ifn);
                         VectorMath.cross(aj, ai, ak);
                         VectorMath.norm(ak, ak);
-                        getVector(aj,vects,0);
-                        getVector(ak,fnvect,2,ifn);
+                        getVector(aj, vects, 0);
+                        getVector(ak, fnvect, 2, ifn);
                         VectorMath.cross(ai, aj, ak);
                         VectorMath.norm(ak, ak);
                     }
                     for (ifn = 0; ifn < nfn - 1; ifn++) {
                         for (jfn = ifn + 1; jfn < nfn; jfn++) {
-                            getVector(ai,fncen,ifn);
-                            getVector(aj,fncen,jfn);
+                            getVector(ai, fncen, ifn);
+                            getVector(aj, fncen, jfn);
                             dij2 = VectorMath.dist2(ai, aj);
                             if (dij2 > 4.0 * probe * probe) {
                                 continue;
@@ -7147,8 +7160,8 @@ public class GeneralizedKirkwood {
                                 thetaq[ke] = 0.0;
                                 sigmaq[ke] = 0.0;
                                 tau[ke] = 0.0;
-                                getVector(ai,fncen,ifn);
-                                getVector(aj,fnvect,ke,ifn);
+                                getVector(ai, fncen, ifn);
+                                getVector(aj, fnvect, ke, ifn);
                                 cirpln(ppm, rm, upp, ai, aj, cintp, cinsp, xpnt1, xpnt2);
                                 fcins[ke][ifn] = cinsp;
                                 fcint[ke][ifn] = cintp;
@@ -7210,7 +7223,7 @@ public class GeneralizedKirkwood {
                                 dt = VectorMath.dot(umq, vect1);
                                 check(dt);
                                 sigmaq[ke] = acos(dt);
-                                getVector(ai,fnvect,ke,ifn);
+                                getVector(ai, fnvect, ke, ifn);
                                 VectorMath.cross(upq, ai, vect1);
                                 VectorMath.norm(vect1, uc);
                                 VectorMath.cross(upp, upq, vect1);
@@ -7222,8 +7235,8 @@ public class GeneralizedKirkwood {
                             allj = true;
                             anyj = false;
                             for (ke = 0; ke < 3; ke++) {
-                                getVector(ai,fncen,jfn);
-                                getVector(aj,fnvect,ke,jfn);
+                                getVector(ai, fncen, jfn);
+                                getVector(aj, fnvect, ke, jfn);
                                 cirpln(ppm, rm, upp, ai, aj, cinsp, cintp, xpnt1, xpnt2);
                                 fcins[ke][jfn] = cinsp;
                                 fcint[ke][jfn] = cintp;
@@ -7256,10 +7269,10 @@ public class GeneralizedKirkwood {
                                     if (ispind[ke] == ispnd2[ke2] || ispind[ke] == 0) {
                                         continue;
                                     }
-                                    getVector(ai,fncen,ifn);
-                                    getVector(aj,fnvect,ke,ifn);
-                                    getVector(ak,fncen,jfn);
-                                    getVector(al,fnvect,ke2,jfn);
+                                    getVector(ai, fncen, ifn);
+                                    getVector(aj, fnvect, ke, ifn);
+                                    getVector(ak, fncen, jfn);
+                                    getVector(al, fnvect, ke2, jfn);
                                     cirpln(ai, probe, aj, ak, al, cinsp, cintp, xpnt1, xpnt2);
                                     if (!cintp) {
                                         continue;
@@ -7278,12 +7291,12 @@ public class GeneralizedKirkwood {
                                         vect5[k] = xpnt1[k] - fncen[k][jfn];
                                         vect6[k] = xpnt2[k] - fncen[k][jfn];
                                     }
-                                    /* 
+                                    /*
                                      * Continue to next if statement if any of
                                      * the following are true.
                                      */
-                                    getVector(ai,fnvect,ke,ifn);
-                                    getVector(aj,fnvect,ke2,jfn);
+                                    getVector(ai, fnvect, ke, ifn);
+                                    getVector(aj, fnvect, ke2, jfn);
                                     if (triple(vect3, vect1, ai) < 0.0) {
 
                                     } else if (triple(vect1, vect4, ai) < 0.0) {
@@ -7295,7 +7308,7 @@ public class GeneralizedKirkwood {
                                     } else {
                                         badav[ifn] = true;
                                         continue;
-                                    }                                   
+                                    }
                                     if (triple(vect3, vect2, ai) < 0.0) {
 
                                     } else if (triple(vect2, vect4, ai) < 0.0) {
@@ -7321,10 +7334,10 @@ public class GeneralizedKirkwood {
                                     if (ispind[ke] == ispnd2[ke2] || ispnd2[ke2] == 0) {
                                         continue;
                                     }
-                                    getVector(ai,fncen,ifn);
-                                    getVector(aj,fnvect,ke,ifn);
-                                    getVector(ak,fncen,jfn);
-                                    getVector(al,fnvect,ke2,jfn);
+                                    getVector(ai, fncen, ifn);
+                                    getVector(aj, fnvect, ke, ifn);
+                                    getVector(ak, fncen, jfn);
+                                    getVector(al, fnvect, ke2, jfn);
                                     cirpln(ak, probe, al, ai, aj, cinsp, cintp, xpnt1, xpnt2);
                                     if (!cintp) {
                                         continue;
@@ -7344,12 +7357,12 @@ public class GeneralizedKirkwood {
                                         vect5[k] = xpnt1[k] - fncen[k][jfn];
                                         vect6[k] = xpnt2[k] - fncen[k][jfn];
                                     }
-                                    /* 
+                                    /*
                                      * Continue to next if statement if any of
                                      * the following are true.
                                      */
-                                    getVector(ai,fnvect,ke,ifn);
-                                    getVector(aj,fnvect,ke2,jfn);
+                                    getVector(ai, fnvect, ke, ifn);
+                                    getVector(aj, fnvect, ke2, jfn);
                                     if (triple(vect3, vect1, ai) < 0.0) {
 
                                     } else if (triple(vect1, vect4, ai) < 0.0) {
@@ -7405,8 +7418,8 @@ public class GeneralizedKirkwood {
                                 }
                                 VectorMath.norm(vect1, vect1);
                                 for (ke = 0; ke < 3; ke++) {
-                                    getVector(ai,fnvect,ke,ifn);
-                                    getVector(aj,v,iv);
+                                    getVector(ai, fnvect, ke, ifn);
+                                    getVector(aj, v, iv);
                                     dt = VectorMath.dot(ai, aj);
                                     if (dt > 0.0) {
                                         move = true;
@@ -7435,8 +7448,8 @@ public class GeneralizedKirkwood {
                             nop = 0;
                             for (jfn = 0; jfn < nfn; jfn++) {
                                 if (ifn != jfn) {
-                                    getVector(ai,fncen,ifn);
-                                    getVector(aj,fncen,jfn);
+                                    getVector(ai, fncen, ifn);
+                                    getVector(aj, fncen, jfn);
                                     dij2 = VectorMath.dist2(ai, aj);
                                     if (dij2 <= 4.0 * probe * probe) {
                                         if (depths[jfn] <= probe) {
@@ -7468,8 +7481,8 @@ public class GeneralizedKirkwood {
                             for (idot = 0; idot < ndots; idot++) {
                                 move = false;
                                 for (ke = 0; ke < 3; ke++) {
-                                    getVector(ai,fnvect,ke,ifn);
-                                    getVector(aj,dots,idot);
+                                    getVector(ai, fnvect, ke, ifn);
+                                    getVector(aj, dots, idot);
                                     dt = VectorMath.dot(ai, aj);
                                     if (dt > 0.0) {
                                         move = true;
@@ -7484,8 +7497,8 @@ public class GeneralizedKirkwood {
                                 }
                                 for (iop = 0; iop < nop; iop++) {
                                     jfn = ifnop[iop];
-                                    getVector(ai,dots,idot);
-                                    getVector(aj,fncen,jfn);
+                                    getVector(ai, dots, idot);
+                                    getVector(aj, fncen, jfn);
                                     ds2 = VectorMath.dist2(ai, aj);
                                     if (ds2 > probe * probe) {
                                         areado += dota;
@@ -7500,14 +7513,14 @@ public class GeneralizedKirkwood {
                                     neat = 0;
                                     for (iop = 0; iop < nop; iop++) {
                                         jfn = ifnop[iop];
-                                        getVector(ai,fncen,jfn);
+                                        getVector(ai, fncen, jfn);
                                         ds2 = VectorMath.dist2(sdot, ai);
                                         if (ds2 > probe * probe) {
                                             for (k = 0; k < 3; k++) {
                                                 vect1[k] = sdot[k] - fncen[k][jfn];
                                             }
                                             for (ke = 0; ke < 3; ke++) {
-                                                getVector(ai,fnvect,ke,jfn);
+                                                getVector(ai, fnvect, ke, jfn);
                                                 dt = VectorMath.dot(ai, vect1);
                                                 if (dt > 0.0) {
                                                     move = true;
@@ -7659,7 +7672,7 @@ public class GeneralizedKirkwood {
                 return cintp;
             }
             /*
-             * "vecang" finds the angle between two vectors handed with respect to a 
+             * "vecang" finds the angle between two vectors handed with respect to a
              * coordinate axis; returns an angle in the range [0,2*PI].
              */
 
