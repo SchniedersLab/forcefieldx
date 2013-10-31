@@ -966,9 +966,8 @@ public final class MainPanel extends JPanel implements ActionListener,
         ImageIcon graphicsIcon = new ImageIcon(loader.getResource("ffx/ui/icons/monitor.png"));
         ImageIcon keywordIcon = new ImageIcon(loader.getResource("ffx/ui/icons/key.png"));
         ImageIcon modelingIcon = new ImageIcon(loader.getResource("ffx/ui/icons/cog.png"));
-
         tabbedPane.addTab(locale.getValue("Graphics"), graphicsIcon, graphicsPanel);
-        //tabbedPane.addTab(locale.getValue("KeywordEditor"), keywordIcon, keywordPanel);
+        tabbedPane.addTab(locale.getValue("KeywordEditor"), keywordIcon, keywordPanel);
         tabbedPane.addTab(locale.getValue("ModelingCommands"), modelingIcon, modelingPanel);
         tabbedPane.addChangeListener(this);
         splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, false, treePane, tabbedPane);

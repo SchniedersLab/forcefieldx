@@ -39,11 +39,16 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Vector;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
+
+import static java.lang.String.format;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -78,6 +83,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import ffx.FFXClassLoader;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Utilities.FileType;
 import ffx.potential.parsers.SystemFilter;
@@ -95,8 +101,10 @@ public class ModelingPanel extends JPanel implements ActionListener,
         MouseListener {
 
     private static final Logger logger = Logger.getLogger(ModelingPanel.class.getName());
+    private static final Preferences prefs = Preferences.userNodeForPackage(ModelingPanel.class);
     private static final long serialVersionUID = 1L;
-    private MainPanel mainPanel;
+
+    private final MainPanel mainPanel;
     /**
      * Active System
      */
@@ -112,7 +120,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
     /**
      * File Types for this Command
      */
-    private Vector<FileType> commandFileTypes = new Vector<FileType>();
+    private final Vector<FileType> commandFileTypes = new Vector<>();
     /**
      * Actions to take for this Command when it finishes
      */
@@ -120,11 +128,11 @@ public class ModelingPanel extends JPanel implements ActionListener,
     /**
      * Executing Commands
      */
-    private Vector<Thread> executingCommands = new Vector<Thread>();
+    private final Vector<Thread> executingCommands = new Vector<>();
     /**
      * Log Settings
      */
-    private JComboBox logSettings = new JComboBox();
+    private final JComboBox logSettings = new JComboBox();
     private String logString = null;
     /**
      * Commands for supported file types
@@ -195,46 +203,58 @@ public class ModelingPanel extends JPanel implements ActionListener,
 
     /**
      * {@inheritDoc}
+     *
+     * @param evt
      */
     @Override
     public void actionPerformed(ActionEvent evt) {
         synchronized (this) {
             String actionCommand = evt.getActionCommand();
             // A change to the selected TINKER Command
-            if (actionCommand == "FFXCommand") {
-                JComboBox jcb = (JComboBox) toolBar.getComponentAtIndex(2);
-                String com = jcb.getSelectedItem().toString();
-                if (!com.equals(activeCommand)) {
-                    activeCommand = com.toLowerCase();
-                    loadCommand();
-                }
-            } else if (actionCommand == "LogSettings") {
-                // A change to the Log Settings.
-                loadLogSettings();
-                statusLabel.setText("  " + createCommandInput());
-            } else if (actionCommand == "Launch") {
-                // Launch the selected command
-                executeCommand();
-            } else if (actionCommand == "NUCLEIC" || actionCommand == "PROTEIN") {
-                // Editor functions for the Protein and Nucleic Acid Builders
-                builderCommandEvent(evt);
-            } else if (actionCommand == "Conditional") {
-                // Some command options are conditional on other input.
-                conditionalCommandEvent(evt);
-            } else if (actionCommand == "End") {
-                // Create/Remove TINKER "end" files that tell executing commands
-                // to exit gracefully.
-                setEnd();
-            } else if (actionCommand == "Delete") {
-                // Delete log files.
-                deleteLogs();
-            } else if (actionCommand == "Description") {
-                // Allow command descriptions to be hidden.
-                JCheckBoxMenuItem box = (JCheckBoxMenuItem) evt.getSource();
-                setDivider(box.isSelected());
-            } else {
-                logger.warning("ModelingPanel ActionCommand not recognized: "
-                        + evt);
+            switch (actionCommand) {
+                case "FFXCommand":
+                    JComboBox jcb = (JComboBox) toolBar.getComponentAtIndex(2);
+                    String com = jcb.getSelectedItem().toString();
+                    if (!com.equals(activeCommand)) {
+                        activeCommand = com.toLowerCase();
+                        loadCommand();
+                    }
+                    break;
+                case "LogSettings":
+                    // A change to the Log Settings.
+                    loadLogSettings();
+                    statusLabel.setText("  " + createCommandInput());
+                    break;
+                case "Launch":
+                    // Launch the selected command
+                    runScript();
+                    break;
+                case "NUCLEIC":
+                case "PROTEIN":
+                    // Editor functions for the Protein and Nucleic Acid Builders
+                    builderCommandEvent(evt);
+                    break;
+                case "Conditional":
+                    // Some command options are conditional on other input.
+                    conditionalCommandEvent(evt);
+                    break;
+                case "End":
+                    // Create/Remove TINKER "end" files that tell executing commands
+                    // to exit gracefully.
+                    setEnd();
+                    break;
+                case "Delete":
+                    // Delete log files.
+                    deleteLogs();
+                    break;
+                case "Description":
+                    // Allow command descriptions to be hidden.
+                    JCheckBoxMenuItem box = (JCheckBoxMenuItem) evt.getSource();
+                    setDivider(box.isSelected());
+                    break;
+                default:
+                    logger.log(Level.WARNING, "ModelingPanel ActionCommand not recognized: {0}", evt);
+                    break;
             }
         }
     }
@@ -826,6 +846,38 @@ public class ModelingPanel extends JPanel implements ActionListener,
         descriptCheckBox.doClick();
     }
 
+    private void runScript() {
+        String name = activeCommand;
+        name = name.replace('.', File.separatorChar);
+        ClassLoader loader = getClass().getClassLoader();
+        URL embeddedScript = loader.getResource("ffx/scripts/" + name + ".ffx");
+        if (embeddedScript == null) {
+            embeddedScript = loader.getResource("ffx/scripts/" + name + ".groovy");
+        }
+        File scriptFile = null;
+        if (embeddedScript != null) {
+            try {
+                scriptFile = new File(
+                        FFXClassLoader.copyInputStreamToTmpFile(
+                                embeddedScript.openStream(), name, ".ffx"));
+            } catch (IOException e) {
+                logger.log(Level.WARNING, "Exception extracting embedded script {0}\n{1}",
+                        new Object[]{embeddedScript.toString(), e.toString()});
+            }
+        }
+        if (scriptFile != null && scriptFile.exists()) {
+            String args[] = statusLabel.getText().trim().split(" +");
+            // Remove the command (first token) and system name (last token).
+            args = Arrays.copyOfRange(args, 1, args.length - 1);
+            List<String> argList = Arrays.asList(args);
+            mainPanel.getModelingShell().setArgList(argList);
+            mainPanel.open(scriptFile, null);
+        } else {
+            logger.warning(format("%s was not found.", name));
+        }
+
+    }
+
     /**
      * Launch the active command on the active system in the specified
      * directory.
@@ -835,7 +887,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
      * @return a {@link ffx.ui.FFXExec} object.
      */
     public FFXExec launch(String command, String dir) {
-        logger.info("Command: " + command + "\nDirectory: " + dir);
+        logger.log(Level.INFO, "Command: {0}\nDirectory: {1}", new Object[]{command, dir});
         synchronized (this) {
             // Check that the TINKER *.exe exists in TINKER/bin
             String path = MainPanel.ffxDir.getAbsolutePath();
@@ -1498,35 +1550,50 @@ public class ModelingPanel extends JPanel implements ActionListener,
      * {@inheritDoc}
      *
      * Mouse events are used to trigger status bar updates.
+     *
+     * @param evt
      */
+    @Override
     public void mouseClicked(MouseEvent evt) {
         statusLabel.setText("  " + createCommandInput());
     }
 
     /**
      * {@inheritDoc}
+     *
+     * @param evt
      */
+    @Override
     public void mouseEntered(MouseEvent evt) {
         mouseClicked(evt);
     }
 
     /**
      * {@inheritDoc}
+     *
+     * @param evt
      */
+    @Override
     public void mouseExited(MouseEvent evt) {
         mouseClicked(evt);
     }
 
     /**
      * {@inheritDoc}
+     *
+     * @param evt
      */
+    @Override
     public void mousePressed(MouseEvent evt) {
         mouseClicked(evt);
     }
 
     /**
      * {@inheritDoc}
+     *
+     * @param evt
      */
+    @Override
     public void mouseReleased(MouseEvent evt) {
         mouseClicked(evt);
     }
@@ -1558,7 +1625,6 @@ public class ModelingPanel extends JPanel implements ActionListener,
             end.delete();
         }
     }
-    private static final Preferences prefs = Preferences.userNodeForPackage(ModelingPanel.class);
 
     /**
      * Save ModelingPanel user preferences
@@ -1603,11 +1669,11 @@ public class ModelingPanel extends JPanel implements ActionListener,
     /**
      * Set the description divider location
      *
-     * @param b True to show the command description
+     * @param showDescription True to show the command description
      */
-    private void setDivider(boolean b) {
-        descriptCheckBox.setSelected(b);
-        if (b) {
+    private void setDivider(boolean showDescription) {
+        descriptCheckBox.setSelected(showDescription);
+        if (showDescription) {
             int spDivider = (int) (this.getHeight() * (3.0f / 5.0f));
             splitPane.setDividerLocation(spDivider);
         } else {

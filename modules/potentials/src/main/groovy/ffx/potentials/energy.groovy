@@ -35,15 +35,19 @@ cli.h(longOpt:'help', 'Print this help message.');
 def options = cli.parse(args);
 
 List<String> arguments = options.arguments();
-if (options.h || arguments == null || arguments.size() != 1) {
+if (options.h) {
     return cli.usage();
 }
 
-// Read in command line.
-String filename = arguments.get(0);
-
-logger.info("\n Running energy on " + filename);
-
-open(filename);
+if (arguments != null && arguments.size() == 1) {
+    // Read in command line.
+    String filename = arguments.get(0);
+    logger.info("\n Running energy on " + filename);
+    open(filename);
+} else if (active != null) {
+    logger.info("\n Running energy on " + active.getName());
+} else {
+    return cli.usage();
+}
 
 energy();

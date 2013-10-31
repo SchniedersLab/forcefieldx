@@ -103,7 +103,7 @@ public class ModelingShell extends Console implements AlgorithmListener {
     /**
      * <p>Constructor for ModelingShell.</p>
      *
-     * @param m a {@link ffx.ui.MainPanel} object.
+     * @param mainPanel
      */
     public ModelingShell(MainPanel mainPanel) {
         this.mainPanel = mainPanel;
