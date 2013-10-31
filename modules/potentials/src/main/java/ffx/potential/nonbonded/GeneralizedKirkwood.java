@@ -387,7 +387,6 @@ public class GeneralizedKirkwood {
             } else {
                 dispersionRegion.setGradient(gradient);
                 cavitationRegion.setGradient(gradient);
-                volumeRegion.setGradient(gradient);
                 parallelTeam.execute(dispersionRegion);
                 parallelTeam.execute(cavitationRegion);
                 parallelTeam.execute(volumeRegion);
@@ -4481,8 +4480,7 @@ public class GeneralizedKirkwood {
         private final VolumeLoop volumeLoop[];
         private final SharedDouble sharedVolume;
         private final int itab[];
-        private boolean gradient = false;
-        private final static int MAXCUBE = 15;
+        private final static int MAXCUBE = 40;
         private final static int MAXARC = 1000;
         private final static int MAXMNB = 500;
         private final static int MAXCYEP = 30;
@@ -4531,10 +4529,6 @@ public class GeneralizedKirkwood {
 
         public double getEnergy() {
             return sharedVolume.get();
-        }
-
-        public void setGradient(boolean gradient) {
-            this.gradient = gradient;
         }
 
         @Override
@@ -4599,7 +4593,7 @@ public class GeneralizedKirkwood {
          */
         private class VolumeLoop extends IntegerForLoop {
 
-            private int ntt, nt, nfn, nfp, nfs, iatom;
+            private int ntt, nt, nfn, nfp, nfs;
             private int i, j, k, m;
             private int l, l1, l2;
             private int io, ir, in, iv;
@@ -4608,6 +4602,7 @@ public class GeneralizedKirkwood {
             private int jstart, jstop;
             private int kstart, kstop;
             private int mstart, mstop;
+            private int mxcube = 15;
             private int isum, itemp, tcube;
             private final int ca[] = new int[maxc];
             private final int epnext[] = new int[maxep];
@@ -4637,7 +4632,7 @@ public class GeneralizedKirkwood {
             private final int tta[][] = new int[2][maxtt];
             private final int ta[][] = new int[2][maxt];
             private final int pa[][] = new int[3][maxp];
-            private final int cube[][][][] = new int[2][MAXCUBE][MAXCUBE][MAXCUBE];
+            private final int cube[][][][] = new int[2][mxcube][mxcube][mxcube];
             private double evol;
             private double xmin, ymin, zmin;
             private double xmax, ymax, zmax;
@@ -4796,9 +4791,8 @@ public class GeneralizedKirkwood {
                 int ncls, nclsa;
                 int clsa[] = new int[maxclsa];
                 int itnl[] = new int[maxclsa];
-
                 double radmax, width;
-                double sum = 0, sumi;
+                double sum, sumi;
                 double d2, r2;
                 double vect1, vect2, vect3;
                 double comin[] = new double[3];
@@ -4825,110 +4819,110 @@ public class GeneralizedKirkwood {
                             }
                         }
                     }
+                }
 
-                    // Check for new coordinate minima and radii maxima.
-                    radmax = 0.0;
+                // Check for new coordinate minima and radii maxima.
+                radmax = 0.0;
+                for (k = 0; k < 3; k++) {
+                    comin[k] = a[k][1];
+                }
+                for (i = 0; i < nAtoms; i++) {
                     for (k = 0; k < 3; k++) {
-                        comin[k] = a[k][1];
-                    }
-                    for (i = 0; i < nAtoms; i++) {
-                        for (k = 0; k < 3; k++) {
-                            if (a[k][i] > comin[k]) {
-                                comin[k] = a[k][i];
-                            }
-                        }
-                        if (radius[i] > radmax) {
-                            radmax = radius[i];
+                        if (a[k][i] > comin[k]) {
+                            comin[k] = a[k][i];
                         }
                     }
+                    if (radius[i] > radmax) {
+                        radmax = radius[i];
+                    }
+                }
 
-                    /*
-                     * Calculate width of cube from maximum
-                     * atom radius and probe radius.
-                     */
-                    width = 2.0 * (radmax + probe);
+                /*
+                 * Calculate width of cube from maximum
+                 * atom radius and probe radius.
+                 */
+                width = 2.0 * (radmax + probe);
 
-                    // Set up cube arrays; first the integer coordinate arrays.
-                    for (i = 0; i < nAtoms; i++) {
-                        for (k = 0; k < 3; k++) {
-                            ico[k][i] = (int) ((a[k][i] - comin[k]) / width) + 1;
-                            if (ico[k][i] < 1) {
-                                logger.severe("Cube Coordinate Too Small");
-                            } else if (ico[k][i] > MAXCUBE) {
-                                logger.severe("Cube Coordinate Too Large");
-                            }
+                // Set up cube arrays; first the integer coordinate arrays.
+                for (i = 0; i < nAtoms; i++) {
+                    for (k = 0; k < 3; k++) {
+                        ico[k][i] = (int) ((a[k][i] - comin[k]) / width) + 1;
+                        if (ico[k][i] < 0) {
+                            logger.severe("Cube Coordinate Too Small");
+                        } else if (ico[k][i] > MAXCUBE) {
+                            logger.severe("Cube Coordinate Too Large");
                         }
                     }
+                }
 
-                    // Initialize head pointer and srn=2 arrays.
-                    for (i = 0; i < MAXCUBE; i++) {
-                        for (j = 0; j < MAXCUBE; j++) {
-                            for (k = 0; k < MAXCUBE; k++) {
-                                icube[i][j][k] = 0;
-                                scube[i][j][k] = false;
-                                sscube[i][j][k] = false;
-                            }
+                // Initialize head pointer and srn=2 arrays.
+                for (i = 0; i < MAXCUBE; i++) {
+                    for (j = 0; j < MAXCUBE; j++) {
+                        for (k = 0; k < MAXCUBE; k++) {
+                            icube[i][j][k] = 0;
+                            scube[i][j][k] = false;
+                            sscube[i][j][k] = false;
                         }
                     }
+                }
 
-                    // Initialize linked list pointers.
-                    for (i = 0; i < nAtoms; i++) {
-                        icuptr[i] = 0;
+                // Initialize linked list pointers.
+                for (i = 0; i < nAtoms; i++) {
+                    icuptr[i] = 0;
+                }
+
+                // Set up head and later pointers for each atom.
+                for (iatom = 0; iatom < nAtoms; iatom++) {
+
+                    // Skip atoms with surface request numbers of zero.
+                    if (skip[iatom]) {
+                        continue;
                     }
+                    getVector(ai, a, iatom);
+                    i = ico[0][iatom];
+                    j = ico[1][iatom];
+                    k = ico[2][iatom];
+                    if (icube[i][j][k] <= 0) {
+                        // First atom in this cube.
+                        icube[i][j][k] = iatom;
+                    } else {
 
-                    // Set up head and later pointers for each atom.
-                    for (iatom = 0; iatom < nAtoms; iatom++) {
+                        // Add to end of linked list.
+                        iptr = icube[i][j][k];
+                        getVector(aj, a, iptr);
 
-                        // Skip atoms with surface request numbers of zero.
-                        if (skip[iatom]) {
+                        // Check for duplicate atoms, turn off one of them.
+                        if (VectorMath.dist2(ai, aj) <= 0.0) {
+                            skip[iatom] = true;
                             continue;
                         }
-                        getVector(ai, a, iatom);
-                        i = ico[0][iatom];
-                        j = ico[1][iatom];
-                        k = ico[2][iatom];
-                        if (icube[i][j][k] <= 0) {
-                            // First atom in this cube.
-                            icube[i][j][k] = iatom;
-                        } else {
 
-                            // Add to end of linked list.
-                            iptr = icube[i][j][k];
-                            getVector(aj, a, iptr);
-
-                            // Check for duplicate atoms, turn off one of them.
-                            if (VectorMath.dist2(ai, aj) <= 0.0) {
-                                skip[iatom] = true;
-                                continue;
-                            }
-
-                            // Move on down the list.
-                            if (icuptr[iptr] <= 0.0) {
-                                continue;
-                            }
-                            iptr = icuptr[iptr];
-
-                            // Store atom number.
-                            icuptr[iptr] = iatom;
+                        // Move on down the list.
+                        if (icuptr[iptr] <= 0.0) {
+                            continue;
                         }
+                        iptr = icuptr[iptr];
 
-                        // Check for surfaced atom.
-                        if (!skip[iatom]) {
-                            scube[i][j][k] = true;
-                        }
+                        // Store atom number.
+                        icuptr[iptr] = iatom;
                     }
 
-                    // Check if this cube or any adjacent cube has active atoms.
-                    for (k = 0; k < MAXCUBE; k++) {
-                        for (j = 0; j < MAXCUBE; j++) {
-                            for (i = 0; i < MAXCUBE; i++) {
-                                if (icube[i][j][k] != 0) {
-                                    for (k1 = max(k - 1, 1); k1 < min(k + 1, MAXCUBE); k++) {
-                                        for (j1 = max(j - 1, 1); j1 < min(j + 1, MAXCUBE); j++) {
-                                            for (i1 = max(i - 1, 1); i1 < min(i + 1, MAXCUBE); i++) {
-                                                if (scube[i1][j1][k1]) {
-                                                    sscube[i][j][k] = true;
-                                                }
+                    // Check for surfaced atom.
+                    if (!skip[iatom]) {
+                        scube[i][j][k] = true;
+                    }
+                }
+
+                // Check if this cube or any adjacent cube has active atoms.
+                for (k = 0; k < MAXCUBE; k++) {
+                    for (j = 0; j < MAXCUBE; j++) {
+                        for (i = 0; i < MAXCUBE; i++) {
+                            if (icube[i][j][k] != 0) {
+                                for (k1 = max(k - 1, 1); k1 < min(k + 1, MAXCUBE); k1++) {
+                                    for (j1 = max(j - 1, 1); j1 < min(j + 1, MAXCUBE); j1++) {
+                                        for (i1 = max(i - 1, 1); i1 < min(i + 1, MAXCUBE); i1++) {
+                                            if (scube[i1][j1][k1]) {
+                                                sscube[i][j][k] = true;
                                             }
                                         }
                                     }
@@ -4936,110 +4930,110 @@ public class GeneralizedKirkwood {
                             }
                         }
                     }
-                    ncls = 0;
+                }
+                ncls = 0;
 
-                    // Zero pointers for atom and find its cube.
-                    for (i = 0; i < nAtoms; i++) {
-                        if (!skip[i]) {
-                            nclsa = 0;
-                            nosurf[i] = skip[i];
-                            acls[0][i] = 0;
-                            acls[1][i] = 0;
+                // Zero pointers for atom and find its cube.
+                for (i = 0; i < nAtoms; i++) {
+                    if (!skip[i]) {
+                        nclsa = 0;
+                        nosurf[i] = skip[i];
+                        acls[0][i] = 0;
+                        acls[1][i] = 0;
 
-                            ici = ico[0][i];
-                            icj = ico[1][i];
-                            ick = ico[2][i];
-                            /*
-                             * Skip iatom if its cube and adjoining
-                             * cubes contain only blockers.
-                             */
+                        ici = ico[0][i];
+                        icj = ico[1][i];
+                        ick = ico[2][i];
+                        /*
+                         * Skip iatom if its cube and adjoining
+                         * cubes contain only blockers.
+                         */
 
-                            if (!sscube[ici][icj][ick]) {
-                                continue;
-                            }
-                            sumi = 2.0 * probe + radius[i];
+                        if (!sscube[ici][icj][ick]) {
+                            continue;
+                        }
+                        sumi = 2.0 * probe + radius[i];
 
-                            // Check iatom cube and adjacent cubes for neighboring atoms.
-                            for (jck = max(ick - 1, 1); jck < min(ick + 1, MAXCUBE); jck++) {
-                                for (jcj = max(icj - 1, 1); jcj < min(icj + 1, MAXCUBE); jcj++) {
-                                    for (jci = max(ici - 1, 1); jci < min(ici + 1, MAXCUBE); jci++) {
-                                        j = icube[jci][jcj][jck];
+                        // Check iatom cube and adjacent cubes for neighboring atoms.
+                        for (jck = max(ick - 1, 1); jck < min(ick + 1, MAXCUBE); jck++) {
+                            for (jcj = max(icj - 1, 1); jcj < min(icj + 1, MAXCUBE); jcj++) {
+                                for (jci = max(ici - 1, 1); jci < min(ici + 1, MAXCUBE); jci++) {
+                                    j = icube[jci][jcj][jck];
 
-                                        // Check for end of linked list for this cube.
-                                        if ((j >= 0) || (i == j) || (skip[j])) {
-                                            continue;
-                                        }
-
-                                        // Distance check.
-                                        sum += radius[j];
-                                        vect1 = abs(a[0][j] - a[0][i]);
-                                        if (vect1 >= sum) {
-                                            continue;
-                                        }
-                                        vect2 = abs(a[1][j] - a[2][i]);
-                                        if (vect2 >= sum) {
-                                            continue;
-                                        }
-                                        vect3 = abs(a[2][j] - a[2][i]);
-                                        if (vect3 >= sum) {
-                                            continue;
-                                        }
-                                        d2 = (vect1 * vect1) + (vect2 * vect3) + (vect3 * vect3);
-                                        if (d2 >= sum * sum) {
-                                            continue;
-                                        }
-
-                                        // Atoms are neighbors, save atom number in temporary array.
-                                        if (!skip[j]) {
-                                            nosurf[i] = false;
-                                        }
-                                        nclsa++;
-                                        if (nclsa > maxclsa) {
-                                            logger.severe("Too many Neighbors for Atom");
-                                        }
-                                        itnl[nclsa] = j;
-
-                                        // Get number of next atom in cube.
-                                        j = icuptr[j];
+                                    // Check for end of linked list for this cube.
+                                    if ((j >= 0) || (i == j) || (skip[j])) {
+                                        continue;
                                     }
+
+                                    // Distance check.
+                                    sum = sumi + radius[j];
+                                    vect1 = abs(a[0][j] - a[0][i]);
+                                    if (vect1 >= sum) {
+                                        continue;
+                                    }
+                                    vect2 = abs(a[1][j] - a[2][i]);
+                                    if (vect2 >= sum) {
+                                        continue;
+                                    }
+                                    vect3 = abs(a[2][j] - a[2][i]);
+                                    if (vect3 >= sum) {
+                                        continue;
+                                    }
+                                    d2 = (vect1 * vect1) + (vect2 * vect3) + (vect3 * vect3);
+                                    if (d2 >= sum * sum) {
+                                        continue;
+                                    }
+
+                                    // Atoms are neighbors, save atom number in temporary array.
+                                    if (!skip[j]) {
+                                        nosurf[i] = false;
+                                    }
+                                    nclsa++;
+                                    if (nclsa > maxclsa) {
+                                        logger.severe("Too many Neighbors for Atom");
+                                    }
+                                    itnl[nclsa] = j;
+
+                                    // Get number of next atom in cube.
+                                    j = icuptr[j];
                                 }
                             }
+                        }
 
-                            // Set up neighbors arrays with jatom in increasing order.
-                            if (!nosurf[i]) {
-                                jmold = 0;
-                                for (juse = 0; juse < nclsa; juse++) {
-                                    jmin = nAtoms + 1;
-                                    for (jcls = 0; jcls < ncls; jcls++) {
+                        // Set up neighbors arrays with jatom in increasing order.
+                        if (!nosurf[i]) {
+                            jmold = 0;
+                            for (juse = 0; juse < nclsa; juse++) {
+                                jmin = nAtoms + 1;
+                                for (jcls = 0; jcls < ncls; jcls++) {
 
-                                        // Don't use ones already sorted.
-                                        if (itnl[jcls] > jmold) {
-                                            if (itnl[jcls] < jmin) {
-                                                jmin = itnl[jcls];
-                                                jmincls = jcls;
-                                            }
+                                    // Don't use ones already sorted.
+                                    if (itnl[jcls] > jmold) {
+                                        if (itnl[jcls] < jmin) {
+                                            jmin = itnl[jcls];
+                                            jmincls = jcls;
                                         }
                                     }
-                                    jmold = jmin;
-                                    jcls = jmincls;
-                                    jatom = itnl[jcls];
-                                    clsa[juse] = jatom;
                                 }
-
-                                // Set up pointers to first and last neighbors of atom.
-                                if (nclsa > 0) {
-                                    acls[1][i] = ncls + 1;
-                                    for (m = 0; m < nclsa; m++) {
-                                        ncls++;
-                                        if (ncls > maxcls) {
-                                            logger.severe("Too many Neighboring Atom Pairs");
-                                        }
-                                        cls[ncls] = clsa[m];
-                                    }
-                                    acls[1][i] = ncls;
-                                }
-
+                                jmold = jmin;
+                                jcls = jmincls;
+                                jatom = itnl[jcls];
+                                clsa[juse] = jatom;
                             }
+
+                            // Set up pointers to first and last neighbors of atom.
+                            if (nclsa > -1) {
+                                acls[0][i] = ncls + 1;
+                                for (m = 0; m < nclsa; m++) {
+                                    ncls++;
+                                    if (ncls > maxcls) {
+                                        logger.severe("Too many Neighboring Atom Pairs");
+                                    }
+                                    cls[ncls] = clsa[m];
+                                }
+                                acls[1][i] = ncls;
+                            }
+
                         }
                     }
                 }
@@ -6076,189 +6070,189 @@ public class GeneralizedKirkwood {
                 // Go through all atoms.
                 for (ia = 0; ia < nAtoms; ia++) {
                     if (!skip[ia] || !abur[ia]) {
+                        continue;
+                    }
 
-                        // Special code for completely solvent-accessible atom.
-                        if (!afree[ia]) {
+                    // Special code for completely solvent-accessible atom.
+                    if (!afree[ia]) {
+                        /*
+                         * Gather convex edges for atom
+                         * Clear number of convex edges for atom.
+                         */
+                        nepa = 0;
 
+                        // Pointer to first edge.
+                        iep = afe[ia];
+                        while (iep > 0) {
+                            // One more edge.
+
+                            nepa++;
+                            if (nepa > maxepa) {
+                                logger.severe("Too many Convex Edges for Atom");
+                            }
+
+                            // Store vertices of edge.
+                            av[0][nepa] = epv[0][iep];
+                            av[1][nepa] = epv[1][iep];
+
+                            // Store convex edge number.
+                            aep[nepa] = iep;
+                            ic = epc[iep];
+
+                            // Store circle number.
+                            aic[nepa] = ic;
+
+                            // Get neighboring atom.
+                            it = ct[ic];
+                            if (ta[0][it] == ia) {
+                                ia2 = ta[1][it];
+                            } else {
+                                ia2 = ta[0][it];
+                            }
+
+                            // Store other atom number, we might need it sometime.
+                            aia[nepa] = ia2;
                             /*
-                             * Gather convex edges for atom
-                             * Clear number of convex edges for atom.
+                             * Vector from atom to circle center; also
+                             * vector from atom to center of neighboring atom
+                             * sometimes we use one vector, sometimes the other.
                              */
-                            nepa = 0;
 
-                            // Pointer to first edge.
-                            iep = afe[ia];
-                            while (iep > 0) {
-                                // One more edge.
+                            for (k = 0; k < 3; k++) {
+                                acvect[k][nepa] = c[k][ic] - a[k][ia];
+                                aavect[k][nepa] = a[k][ia2] - a[k][ia];
+                            }
 
-                                nepa++;
-                                if (nepa > maxepa) {
-                                    logger.severe("Too many Convex Edges for Atom");
+                            // Circle radius.
+                            acr[nepa] = cr[ic];
+
+                            // Pointer to next edge.
+                            iep = epnext[iep];
+
+                        }
+                        if (nepa <= 0) {
+                            logger.severe("No Edges for Non-buried, Non-free Atom");
+                        }
+                        /*
+                         * Form cycles; initialize all the
+                         * convex edges as not used in cycle.
+                         */
+
+                        for (iepa = 0; iepa < nepa; iepa++) {
+                            epused[iepa] = false;
+                        }
+
+                        // Save old number of cycles.
+                        ncyold = ncy;
+                        nused = 0;
+                        ncypa = 0;
+                        while (nused < nepa) {
+
+                            // Look for starting edge.
+                            for (iepa = 0; iepa < nepa; iepa++) {
+                                if (epused[iepa]) {
+                                    move = true;
+                                    break;
+                                }
+                            }
+
+                            // Cannot find starting edge, finished.
+                            if (!move) {
+                                // Pointer to edge.
+                                iep = aep[iepa];
+
+                                // One edge so far for this cycle.
+                                ncyep = 1;
+
+                                // One more cycle for atom.
+                                ncypa++;
+                                if (ncypa > maxcypa) {
+                                    logger.severe("Too many Cycles per Atom");
                                 }
 
-                                // Store vertices of edge.
-                                av[0][nepa] = epv[0][iep];
-                                av[1][nepa] = epv[1][iep];
+                                // Mark edge used in cycle.
+                                epused[iepa] = true;
+                                nused++;
 
-                                // Store convex edge number.
-                                aep[nepa] = iep;
-                                ic = epc[iep];
-
-                                // Store circle number.
-                                aic[nepa] = ic;
-
-                                // Get neighboring atom.
-                                it = ct[ic];
-                                if (ta[0][it] == ia) {
-                                    ia2 = ta[1][it];
-                                } else {
-                                    ia2 = ta[0][it];
+                                // One more cycle for molecule.
+                                ncy++;
+                                if (ncy > maxcy) {
+                                    logger.severe("Too many Cycles");
                                 }
 
-                                // Store other atom number, we might need it sometime.
-                                aia[nepa] = ia2;
+                                // Index of edge in atom cycle array.
+                                cyepa[ncyep][ncypa] = iepa;
+
+                                // Store in molecule cycle array a pointer to edge.
+                                cyep[ncyep][ncy] = iep;
                                 /*
-                                 * Vector from atom to circle center; also
-                                 * vector from atom to center of neighboring atom
-                                 * sometimes we use one vector, sometimes the other.
+                                 * Second vertex of this edge is the vertex to look
+                                 * for next as the first vertex of another edge.
                                  */
 
-                                for (k = 0; k < 3; k++) {
-                                    acvect[k][nepa] = c[k][ic] - a[k][ia];
-                                    aavect[k][nepa] = a[k][ia2] - a[k][ia];
+                                lookv = av[1][iepa];
+
+                                // If no vertex, this cycle is finished.
+                                if (lookv <= 0) {
+                                    move = true;
                                 }
-
-                                // Circle radius.
-                                acr[nepa] = cr[ic];
-
-                                // Pointer to next edge.
-                                iep = epnext[iep];
-
-                            }
-                            if (nepa <= 0) {
-                                logger.severe("No Edges for Non-buried, Non-free Atom");
-                            }
-                            /*
-                             * Form cycles; initialize all the
-                             * convex edges as not used in cycle.
-                             */
-
-                            for (iepa = 0; iepa < nepa; iepa++) {
-                                epused[iepa] = false;
-                            }
-
-                            // Save old number of cycles.
-                            ncyold = ncy;
-                            nused = 0;
-                            ncypa = 0;
-                            while (nused < nepa) {
-
-                                // Look for starting edge.
-                                for (iepa = 0; iepa < nepa; iepa++) {
-                                    if (epused[iepa]) {
-                                        move = true;
-                                        break;
-                                    }
-                                }
-
-                                // Cannot find starting edge, finished.
                                 if (!move) {
-                                    // Pointer to edge.
-                                    iep = aep[iepa];
-
-                                    // One edge so far for this cycle.
-                                    ncyep = 1;
-
-                                    // One more cycle for atom.
-                                    ncypa++;
-                                    if (ncypa > maxcypa) {
-                                        logger.severe("Too many Cycles per Atom");
-                                    }
-
-                                    // Mark edge used in cycle.
-                                    epused[iepa] = true;
-                                    nused++;
-
-                                    // One more cycle for molecule.
-                                    ncy++;
-                                    if (ncy > maxcy) {
-                                        logger.severe("Too many Cycles");
-                                    }
-
-                                    // Index of edge in atom cycle array.
-                                    cyepa[ncyep][ncypa] = iepa;
-
-                                    // Store in molecule cycle array a pointer to edge.
-                                    cyep[ncyep][ncy] = iep;
-                                    /*
-                                     * Second vertex of this edge is the vertex to look
-                                     * for next as the first vertex of another edge.
-                                     */
-
-                                    lookv = av[1][iepa];
-
-                                    // If no vertex, this cycle is finished.
-                                    if (lookv <= 0) {
-                                        move = true;
-                                    }
-                                    if (!move) {
-                                        while (av[0][jepa] == lookv) {
-                                            for (jepa = 0; jepa < nepa; jepa++) {
-                                                if (epused[jepa]) {
-                                                    break;
-                                                }
-                                            }
-
-                                            // Edges are connected pointer to edge.
-                                            iep = aep[jepa];
-
-                                            // One more edge for this cycle.
-                                            ncyep++;
-                                            if (ncyep > MAXCYEP) {
-                                                logger.severe("Too many Edges per Cycle");
-                                            }
-                                            epused[jepa] = true;
-                                            nused++;
-
-                                            // Store index in local edge array.
-                                            cyepa[ncyep][ncypa] = jepa;
-
-                                            // Store pointer to edge.
-                                            cyep[ncyep][ncy] = iep;
-
-                                            // New vertex to look for.
-                                            lookv = av[1][jepa];
-
-                                            // If no vertex, this cycle is in trouble.
-                                            if (lookv <= 0) {
-                                                logger.severe("Pointer Error in Cycle");
+                                    while (av[0][jepa] == lookv) {
+                                        for (jepa = 0; jepa < nepa; jepa++) {
+                                            if (epused[jepa]) {
+                                                break;
                                             }
                                         }
 
-                                        // It better connect to first edge of cycle.
-                                        if (lookv != av[0][iepa]) {
-                                            logger.severe("Cycle does not Close");
+                                        // Edges are connected pointer to edge.
+                                        iep = aep[jepa];
+
+                                        // One more edge for this cycle.
+                                        ncyep++;
+                                        if (ncyep > MAXCYEP) {
+                                            logger.severe("Too many Edges per Cycle");
+                                        }
+                                        epused[jepa] = true;
+                                        nused++;
+
+                                        // Store index in local edge array.
+                                        cyepa[ncyep][ncypa] = jepa;
+
+                                        // Store pointer to edge.
+                                        cyep[ncyep][ncy] = iep;
+
+                                        // New vertex to look for.
+                                        lookv = av[1][jepa];
+
+                                        // If no vertex, this cycle is in trouble.
+                                        if (lookv <= 0) {
+                                            logger.severe("Pointer Error in Cycle");
                                         }
                                     }
-                                    /*
-                                     * This cycle is finished
-                                     * store number of edges in cycle.
-                                     */
-                                    ncyepa[ncypa] = ncyep;
-                                    cynep[ncy] = ncyep;
+
+                                    // It better connect to first edge of cycle.
+                                    if (lookv != av[0][iepa]) {
+                                        logger.severe("Cycle does not Close");
+                                    }
                                 }
-                                move = false;
+                                /*
+                                 * This cycle is finished
+                                 * store number of edges in cycle.
+                                 */
+                                ncyepa[ncypa] = ncyep;
+                                cynep[ncy] = ncyep;
                             }
+                            move = false;
+                        }
 
                             // Look for more cycles.
-                        }
                         /*
                          * Compare cycles for inside/outside relation;
                          * check to see if cycle i is inside cycle j.
                          */
-
                         for (icya = 0; icya < ncypa; icya++) {
                             for (jcya = 0; jcya < ncypa; jcya++) {
+                                breakAgain = false;
                                 jcy = ncyold + jcya;
 
                                 // Initialize.
@@ -7567,8 +7561,11 @@ public class GeneralizedKirkwood {
                         }
                     }
                     // Finally, compute the total area and total volume.
+                    logger.info(String.format("totap=%16.8f,totas=%16.8f,totan=%16.8f,totasp=%16.8f,alenst=%16.8f", totap, totas, totan, totasp, alenst));
                     area = totap + totas + totan - totasp - alenst;
+                    logger.info(String.format("totvp=%16.8f,totvs=%16.8f,totvn=%16.8f,hedron=%16.8f,totvsp=%16.8f,vlenst=%16.8f", totvp, totvs, totvn, hedron, totvsp, vlenst));
                     volume = totvp + totvs + totvn + hedron - totvsp + vlenst;
+                    logger.info(String.format("volume=%16.8f area= %16.8f", volume, area));
 
                 }
             }
@@ -7799,8 +7796,7 @@ public class GeneralizedKirkwood {
                 nx = (int) ((xmax - xmin) / edge);
                 ny = (int) ((ymax - ymin) / edge);
                 nz = (int) ((zmax - zmin) / edge);
-                if (max(max(nx, ny), nz) > MAXCUBE) {
-                    // TODO create an automated way to increase MAXCUBE.
+                if (max(max(nx, ny), nz) > mxcube) {
                     logger.severe(" VOLUME1  --  Increase the Value of MAXCUBE");
                 }
 
@@ -7870,7 +7866,7 @@ public class GeneralizedKirkwood {
                     for (j = 0; j <= ny; j++) {
                         for (k = 0; k <= nz; k++) {
                             tcube = cube[0][i][j][k];
-                            logger.info(String.format(" TCUBE %d %d %d %d", i, j, k, tcube));
+                            //logger.info(String.format(" TCUBE %d %d %d %d", i, j, k, tcube));
                             if (tcube != 0) {
                                 isum += tcube;
                                 cube[0][i][j][k] = isum - 1;
@@ -7911,7 +7907,7 @@ public class GeneralizedKirkwood {
 
                     // Load all overlapping atoms into "inov".
                     io = -1;
-                    logger.info(String.format(" %d %d %d %d %d %d %d ", ir, istart, istop, jstart, jstop, kstart, kstop));
+                    //logger.info(String.format(" %d %d %d %d %d %d %d ", ir, istart, istop, jstart, jstop, kstart, kstop));
                     for (i = istart - 1; i < istop; i++) {
                         for (j = jstart - 1; j < jstop; j++) {
                             for (k = kstart - 1; k < kstop; k++) {
@@ -7920,12 +7916,11 @@ public class GeneralizedKirkwood {
                                     mstop = cube[0][i][j][k];
                                     for (m = mstart; m <= mstop; m++) {
                                         in = itab[m];
-                                        logger.info(String.format(" CHECK %d %d", ir, in));
+                                        //logger.info(String.format(" CHECK %d %d", ir, in));
                                         if (in != ir) {
                                             io++;
                                             if (io > MAXARC) {
-                                                // TODO create an automated way to increase MAXARC.
-                                                logger.severe(" VOLUME1  --  Increase the Value of MAXARC");
+                                                //logger.severe(" VOLUME1  --  Increase the Value of MAXARC");
                                             }
                                             dx[io] = x[in] - xr;
                                             dy[io] = y[in] - yr;
@@ -7937,7 +7932,7 @@ public class GeneralizedKirkwood {
                                             } else {
                                                 d[io] = sqrt(dsq[io]);
                                                 inov[io] = in;
-                                                logger.info(String.format(" INIT %d %d %d %16.8f", ir, io, in, d[io]));
+                                                //logger.info(String.format(" INIT %d %d %d %16.8f", ir, io, in, d[io]));
                                             }
                                         }
                                     }
@@ -7946,7 +7941,7 @@ public class GeneralizedKirkwood {
                         }
                     }
 
-                    logger.info(String.format("ir %d io %d", ir, io));
+                    //logger.info(String.format("ir %d io %d", ir, io));
                     //  Determine resolution along the z-axis.
                     if (io != -1) {
                         ztop = zr + rr;
@@ -7988,24 +7983,24 @@ public class GeneralizedKirkwood {
                                 in = inov[k];
                                 rinsq = vdwrad[in] * vdwrad[in];
                                 rsec2n = rinsq - ((zgrid - z[in]) * (zgrid - z[in]));
-                                logger.info(String.format(" NARC %d %d %16.8f %16.8f %16.8f", ir, k, rinsq, z[in], zgrid));
+                                //logger.info(String.format(" NARC %d %d %16.8f %16.8f %16.8f", ir, k, rinsq, z[in], zgrid));
                                 if (rsec2n > 0.0) {
                                     rsecn = sqrt(rsec2n);
                                     if (d[k] < (rsecr + rsecn)) {
                                         rdiff = rsecr - rsecn;
-                                        logger.info(String.format(" DIFF %d %d %16.8f %16.8f %16.8f", ir, k, d[k], rsecr, rsecn));
+                                        //logger.info(String.format(" DIFF %d %d %16.8f %16.8f %16.8f", ir, k, d[k], rsecr, rsecn));
                                         if (d[k] <= abs(rdiff)) {
                                             if (rdiff < 0.0) {
                                                 narc = 0;
                                                 arci[narc] = 0.0;
                                                 arcf[narc] = pix2;
                                             }
-                                            logger.info(String.format("%d Continue", ir));
+                                            //logger.info(String.format("%d Continue", ir));
                                             continue;
                                         }
                                         narc++;
                                         if (narc > MAXARC) {
-                                            logger.info("VOLUME1 -- Increase the Value of MAXARC");
+                                            //logger.info("VOLUME1 -- Increase the Value of MAXARC");
                                         }
                                         /*
                                          * Initial and final arc endpoints are found for intersection
@@ -8046,7 +8041,7 @@ public class GeneralizedKirkwood {
                                             //logger.info(String.format("ir= %d narc= %d arci= %16.8f", ir, narc, arci[narc]));
                                         }
                                         arcf[narc] = tf;
-                                        logger.info(String.format(" ARCF %d %d %16.8f %16.8f", ir, narc, tf, ti));
+                                        //logger.info(String.format(" ARCF %d %d %16.8f %16.8f", ir, narc, tf, ti));
                                         // BELOW HERE
                                     }
                                 }
@@ -8057,11 +8052,11 @@ public class GeneralizedKirkwood {
                              * "pre-" means a multiplicative factor is yet to be applied.
                              */
                             if (narc == -1) {
-                                logger.info(String.format(" %d cos_phi %16.8f %16.8f %16.8f %16.8f",
-                                        ir, phi1, cos_phi1, phi2, cos_phi2));
+                                //logger.info(String.format(" %d cos_phi %16.8f %16.8f %16.8f %16.8f",
+                                //ir, phi1, cos_phi1, phi2, cos_phi2));
                                 seg_dz = pix2 * ((cos_phi1 * cos_phi1) - (cos_phi2 * cos_phi2));
                                 pre_dz += seg_dz;
-                                logger.info(String.format(" seg_dx %16.8f pre_dz %16.8f ", seg_dz, pre_dz));
+                                //logger.info(String.format(" seg_dx %16.8f pre_dz %16.8f ", seg_dz, pre_dz));
                             } else {
                                 /*
                                  * Sort the arc endpoint arrays, each with "narc" entries,
@@ -8116,13 +8111,12 @@ public class GeneralizedKirkwood {
                                         arci[narc] = arcf[narc];
                                         arcf[narc] = temp;
                                         // SOME PRINTS ARE WRONG AFTER FIRST ENTRY
-                                        logger.info(String.format(" ARCF1 %d %16.8f", ir, arcf[0]));
+                                        //logger.info(String.format(" ARCF1 %d %16.8f", ir, arcf[0]));
                                     }
                                 }
 
                                 // SOME OF THE FOLLOWING PRINTS ARE WRONG
-                                logger.info(String.format(" SORT %d %d %16.8f %16.8f", ir, narc, arci[0], arcf[0]));
-
+                                //logger.info(String.format(" SORT %d %d %16.8f %16.8f", ir, narc, arci[0], arcf[0]));
                                 // Compute the numerical pre-derivative values.
                                 for (k = 0; k <= narc; k++) {
                                     theta1 = arci[k];
@@ -8141,9 +8135,9 @@ public class GeneralizedKirkwood {
                                     pre_dy += seg_dy;
                                     pre_dz += seg_dz;
                                     // SOME OF THE FOLLOWING PRINTS ARE WRONG
-                                    logger.info(String.format(" FINAL %d %16.8f %16.8f %16.8f", ir, seg_dx, seg_dy, seg_dz));
+                                    //logger.info(String.format(" FINAL %d %16.8f %16.8f %16.8f", ir, seg_dx, seg_dy, seg_dz));
                                 }
-                                logger.info(String.format(" LAST %d %16.8f %16.8f %16.8f", ir, pre_dx, pre_dy, pre_dz));
+                                //logger.info(String.format(" LAST %d %16.8f %16.8f %16.8f", ir, pre_dx, pre_dy, pre_dz));
                             }
                             zgrid += zstep;
                         }
@@ -8151,7 +8145,7 @@ public class GeneralizedKirkwood {
                     dex[0][ir] = 0.5 * rrsq * pre_dx;
                     dex[1][ir] = 0.5 * rrsq * pre_dy;
                     dex[2][ir] = 0.5 * rrsq * pre_dz;
-                    logger.info(String.format(" de/dx %d %16.8f %16.8f %16.8f", ir, dex[0][ir], dex[1][ir], dex[2][ir]));
+                    //logger.info(String.format(" de/dx %d %16.8f %16.8f %16.8f", ir, dex[0][ir], dex[1][ir], dex[2][ir]));
                 }
             }
         }
