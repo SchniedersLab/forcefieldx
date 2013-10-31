@@ -202,7 +202,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
             String actionCommand = evt.getActionCommand();
             // A change to the selected TINKER Command
             if (actionCommand == "FFXCommand") {
-                JComboBox jcb = (JComboBox) toolBar.getComponentAtIndex(3);
+                JComboBox jcb = (JComboBox) toolBar.getComponentAtIndex(2);
                 String com = jcb.getSelectedItem().toString();
                 if (!com.equals(activeCommand)) {
                     activeCommand = com.toLowerCase();
