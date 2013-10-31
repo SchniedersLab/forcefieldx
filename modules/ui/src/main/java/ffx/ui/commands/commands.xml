@@ -216,7 +216,7 @@
             <Option name="Mode"
                     flag="r"
                     description="type of refinement"
-                    gui="RADIOBUTTONS>
+                    gui="RADIOBUTTONS">
             <Value name="Coordinates"/>
             <Value name="Bfactors"/>
             <Value name="Coordinates and Bfactors"/>
@@ -224,6 +224,8 @@
             <Value name="Bfactors and Occupancies"/>
             <Value name="Coordinates and Occupancies"/>
             <Value name="Coordinates, Bfactors and Occupancies"/>
+            </Option>
+        </Command>
     <Command
         name="Protein"
         description="A program for automated building of peptide and protein structures.
