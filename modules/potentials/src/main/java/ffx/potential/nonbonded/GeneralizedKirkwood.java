@@ -287,7 +287,8 @@ public class GeneralizedKirkwood {
         if (nonPolar == NonPolar.CAV_DISP) {
             dispersionRegion = new DispersionRegion(threadCount);
             cavitationRegion = new CavitationRegion(threadCount);
-            volumeRegion = new VolumeRegion(threadCount);
+            //volumeRegion = new VolumeRegion(threadCount);
+            volumeRegion = null;
             hydrophobicPMFRegion = null;
         } else {
             hydrophobicPMFRegion = new HydrophobicPMFRegion(threadCount);
@@ -295,7 +296,6 @@ public class GeneralizedKirkwood {
             cavitationRegion = null;
             volumeRegion = null;
         }
-
         logger.info("");
     }
 
@@ -389,7 +389,7 @@ public class GeneralizedKirkwood {
                 cavitationRegion.setGradient(gradient);
                 parallelTeam.execute(dispersionRegion);
                 parallelTeam.execute(cavitationRegion);
-                parallelTeam.execute(volumeRegion);
+                //parallelTeam.execute(volumeRegion);
             }
         } catch (Exception e) {
             String message = "Fatal exception computing the continuum solvation energy.";
@@ -449,11 +449,20 @@ public class GeneralizedKirkwood {
     private class BornRadiiRegion extends ParallelRegion {
 
         private final BornRadiiLoop bornRadiiLoop[];
+        private final SharedDoubleArray sharedBorn;
 
         public BornRadiiRegion(int nt) {
             bornRadiiLoop = new BornRadiiLoop[nt];
             for (int i = 0; i < nt; i++) {
                 bornRadiiLoop[i] = new BornRadiiLoop();
+            }
+            sharedBorn = new SharedDoubleArray(nAtoms);
+        }
+
+        @Override
+        public void start() {
+            for (int i = 0; i < nAtoms; i++) {
+                sharedBorn.set(i, 0.0);
             }
         }
 
@@ -467,6 +476,25 @@ public class GeneralizedKirkwood {
             }
         }
 
+        @Override
+        public void finish() {
+            for (int i = 0; i < nAtoms; i++) {
+                final double baseRi = baseRadius[i];
+                if (!use[i]) {
+                    born[i] = baseRi;
+                } else {
+                    double sum = sharedBorn.get(i);
+                    if (sum <= 0.0) {
+                        sum = 0.001;
+                    }
+                    born[i] = pow(sum / pi43, third);
+                    born[i] = 1.0 / born[i];
+
+                }
+                //logger.info(String.format(" %d Born radius:  %16.8f", i + 1, born[i]));
+            }
+        }
+
         /**
          * Compute Born radii for a range of atoms via the Grycuk method.
          *
@@ -474,80 +502,130 @@ public class GeneralizedKirkwood {
          */
         private class BornRadiiLoop extends IntegerForLoop {
 
+            private final double localBorn[];
             // Extra padding to avert cache interference.
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
             private long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
+            public BornRadiiLoop() {
+                localBorn = new double[nAtoms];
+            }
+
+            @Override
+            public void start() {
+                Arrays.fill(localBorn, 0.0);
+            }
+
+            @Override
+            public void finish() {
+                sharedBorn.reduce(localBorn, DoubleOp.SUM);
+            }
+
             @Override
             public void run(int lb, int ub) {
                 for (int i = lb; i <= ub; i++) {
-                    born[i] = 0.0;
-                    final double baseRi = baseRadius[i];
                     if (!use[i]) {
-                        born[i] = baseRi;
                         continue;
                     }
-                    if (baseRi > 0.0) {
-                        final double xi = x[i];
-                        final double yi = y[i];
-                        final double zi = z[i];
-                        // Integral initialized to the limit of atom alone in solvent.
-                        double sum = pi43 / (baseRi * baseRi * baseRi);
-                        int list[] = neighborLists[0][i];
-                        int npair = list.length;
-                        for (int l = 0; l < npair; l++) {
-                            int k = list[l];
-                            final double baseRk = baseRadius[k];
-                            if (i != k && baseRk > 0.0 && use[k]) {
-                                final double xr = x[k] - xi;
-                                final double yr = y[k] - yi;
-                                final double zr = z[k] - zi;
-                                final double r2 = crystal.image(xr, yr, zr);
-                                if (r2 > cut2) {
-                                    continue;
-                                }
-                                final double r = sqrt(r2);
-                                final double scaledRk = baseRk * overlapScale[k];
-                                final double scaledRk2 = scaledRk * scaledRk;
-                                // Atom i is engulfed atom by atom k.
-                                if (baseRi + r < scaledRk) {
-                                    final double lower = baseRi;
-                                    final double upper = scaledRk - r;
-                                    sum = sum + pi43 * (1.0 / (upper * upper * upper)
-                                            - 1.0 / (lower * lower * lower));
-                                }
-                                // Upper integration bound is always the same.
-                                final double upper = r + scaledRk;
-                                // Lower integration bound depends on atoms sizes and separation.
-                                double lower;
-                                if (baseRi + r < scaledRk) {
-                                    // Atom i is engulfed by atom k.
-                                    lower = scaledRk - r;
-                                } else if (r < baseRi + scaledRk) {
-                                    // Atoms are overlapped, begin integration from ri.
-                                    lower = baseRi;
-                                } else {
-                                    // No overlap between atoms.
-                                    lower = r - scaledRk;
-                                }
-                                final double l2 = lower * lower;
-                                final double l4 = l2 * l2;
-                                final double lr = lower * r;
-                                final double l4r = l4 * r;
-                                final double u2 = upper * upper;
-                                final double u4 = u2 * u2;
-                                final double ur = upper * r;
-                                final double u4r = u4 * r;
-                                final double term = (3.0 * (r2 - scaledRk2) + 6.0 * u2 - 8.0 * ur) / u4r
-                                        - (3.0 * (r2 - scaledRk2) + 6.0 * l2 - 8.0 * lr) / l4r;
-                                sum = sum - pi12 * term;
+                    final double baseRi = baseRadius[i];
+                    assert (baseRi > 0.0);
+                    final double xi = x[i];
+                    final double yi = y[i];
+                    final double zi = z[i];
+                    /**
+                     * The descreening integral is initialized to the limit of
+                     * the atom alone in solvent.
+                     *
+                     * Lower values of i may have contributed descreening, so
+                     * the integral is incremented rather than initialized.
+                     */
+                    localBorn[i] += pi43 / (baseRi * baseRi * baseRi);
+                    int list[] = neighborLists[0][i];
+                    int npair = list.length;
+                    for (int l = 0; l < npair; l++) {
+                        int k = list[l];
+                        final double baseRk = baseRadius[k];
+                        if (i != k && baseRk > 0.0 && use[k]) {
+                            final double xr = x[k] - xi;
+                            final double yr = y[k] - yi;
+                            final double zr = z[k] - zi;
+                            final double r2 = crystal.image(xr, yr, zr);
+                            if (r2 > cut2) {
+                                continue;
                             }
+                            final double r = sqrt(r2);
+
+                            // Atom i being descreeened by atom k.
+                            final double scaledRk = baseRk * overlapScale[k];
+                            final double scaledRk2 = scaledRk * scaledRk;
+                            // Atom i is engulfed by atom k.
+                            if (baseRi + r < scaledRk) {
+                                final double lower = baseRi;
+                                final double upper = scaledRk - r;
+                                localBorn[i] += (pi43 * (1.0 / (upper * upper * upper)
+                                        - 1.0 / (lower * lower * lower)));
+                            }
+                            // Upper integration bound is always the same.
+                            double upper = r + scaledRk;
+                            // Lower integration bound depends on atoms sizes and separation.
+                            double lower;
+                            if (baseRi + r < scaledRk) {
+                                // Atom i is engulfed by atom k.
+                                lower = scaledRk - r;
+                            } else if (r < baseRi + scaledRk) {
+                                // Atoms are overlapped, begin integration from ri.
+                                lower = baseRi;
+                            } else {
+                                // No overlap between atoms.
+                                lower = r - scaledRk;
+                            }
+                            double l2 = lower * lower;
+                            double l4 = l2 * l2;
+                            double lr = lower * r;
+                            double l4r = l4 * r;
+                            double u2 = upper * upper;
+                            double u4 = u2 * u2;
+                            double ur = upper * r;
+                            double u4r = u4 * r;
+                            double term = (3.0 * (r2 - scaledRk2) + 6.0 * u2 - 8.0 * ur) / u4r
+                                    - (3.0 * (r2 - scaledRk2) + 6.0 * l2 - 8.0 * lr) / l4r;
+                            localBorn[i] -= pi12 * term;
+
+                            // Atom k being descreeened by atom i.
+                            final double scaledRi = baseRi * overlapScale[i];
+                            final double scaledRi2 = scaledRi * scaledRi;
+                            // Atom k is engulfed by atom i.
+                            if (baseRk + r < scaledRi) {
+                                lower = baseRk;
+                                upper = scaledRi - r;
+                                localBorn[k] += (pi43 * (1.0 / (upper * upper * upper)
+                                        - 1.0 / (lower * lower * lower)));
+                            }
+                            // Upper integration bound is always the same.
+                            upper = r + scaledRi;
+                            // Lower integration bound depends on atoms sizes and separation.
+                            if (baseRk + r < scaledRi) {
+                                // Atom k is engulfed by atom i.
+                                lower = scaledRi - r;
+                            } else if (r < baseRk + scaledRi) {
+                                // Atoms are overlapped, begin integration from rk.
+                                lower = baseRk;
+                            } else {
+                                // No overlap between atoms.
+                                lower = r - scaledRi;
+                            }
+                            l2 = lower * lower;
+                            l4 = l2 * l2;
+                            lr = lower * r;
+                            l4r = l4 * r;
+                            u2 = upper * upper;
+                            u4 = u2 * u2;
+                            ur = upper * r;
+                            u4r = u4 * r;
+                            term = (3.0 * (r2 - scaledRi2) + 6.0 * u2 - 8.0 * ur) / u4r
+                                    - (3.0 * (r2 - scaledRi2) + 6.0 * l2 - 8.0 * lr) / l4r;
+                            localBorn[k] -= pi12 * term;
                         }
-                        if (sum <= 0.0) {
-                            sum = 0.001;
-                        }
-                        born[i] = pow(sum / pi43, third);
-                        born[i] = 1.0 / born[i];
                     }
                 }
             }
@@ -1087,7 +1165,7 @@ public class GeneralizedKirkwood {
     }
 
     /**
-     * Compute the Generalized Kirkwood reaction field energy.
+     * Compute the Generalized Kirkwood permanent reaction field in parallel.
      *
      * @since 1.0
      */
@@ -1123,7 +1201,7 @@ public class GeneralizedKirkwood {
         }
 
         /**
-         * Compute Born radii for a range of atoms via the Grycuk method.
+         * Compute the Generalized Kirkwood permanent reaction field.
          *
          * @since 1.0
          */
@@ -1138,6 +1216,10 @@ public class GeneralizedKirkwood {
             private final double fy_local[];
             private final double fz_local[];
             private final double dx_local[];
+            private double multipolei[];
+            private double xi, yi, zi;
+            private double ci, uxi, uyi, uzi, qxxi, qxyi, qxzi, qyyi, qyzi, qzzi;
+            private double rbi;
             // Extra padding to avert cache interference.
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
             private long pad8, pad9, pada, padb, padc, padd, pade, padf;
@@ -1162,242 +1244,9 @@ public class GeneralizedKirkwood {
 
             @Override
             public void start() {
-                for (int j = 0; j < nAtoms; j++) {
-                    fx_local[j] = 0.0;
-                    fy_local[j] = 0.0;
-                    fz_local[j] = 0.0;
-                }
-            }
-
-            @Override
-            public void run(int lb, int ub) {
-                for (int i = lb; i <= ub; i++) {
-                    if (!use[i]) {
-                        continue;
-                    }
-                    final double xi = x[i];
-                    final double yi = y[i];
-                    final double zi = z[i];
-                    final double multipolei[] = globalMultipole[i];
-                    final double ci = multipolei[t000];
-                    final double uxi = multipolei[t100];
-                    final double uyi = multipolei[t010];
-                    final double uzi = multipolei[t001];
-                    final double qxxi = multipolei[t200] / 3.0;
-                    final double qxyi = multipolei[t110] / 3.0;
-                    final double qxzi = multipolei[t101] / 3.0;
-                    final double qyyi = multipolei[t020] / 3.0;
-                    final double qyzi = multipolei[t011] / 3.0;
-                    final double qzzi = multipolei[t002] / 3.0;
-                    final double rbi = born[i];
-                    int list[] = neighborLists[0][i];
-                    int npair = list.length;
-                    for (int l = 0; l < npair; l++) {
-                        int k = list[l];
-                        if (!use[k]) {
-                            continue;
-                        }
-                        dx_local[0] = x[k] - xi;
-                        dx_local[1] = y[k] - yi;
-                        dx_local[2] = z[k] - zi;
-                        final double r2 = crystal.image(dx_local);
-                        if (r2 > cut2) {
-                            continue;
-                        }
-                        double xr = dx_local[0];
-                        double yr = dx_local[1];
-                        double zr = dx_local[2];
-                        double xr2 = xr * xr;
-                        double yr2 = yr * yr;
-                        double zr2 = zr * zr;
-                        final double rbk = born[k];
-                        final double multipolek[] = globalMultipole[k];
-                        final double ck = multipolek[t000];
-                        final double uxk = multipolek[t100];
-                        final double uyk = multipolek[t010];
-                        final double uzk = multipolek[t001];
-                        final double qxxk = multipolek[t200] / 3.0;
-                        final double qxyk = multipolek[t110] / 3.0;
-                        final double qxzk = multipolek[t101] / 3.0;
-                        final double qyyk = multipolek[t020] / 3.0;
-                        final double qyzk = multipolek[t011] / 3.0;
-                        final double qzzk = multipolek[t002] / 3.0;
-                        final double rb2 = rbi * rbk;
-                        final double expterm = exp(-r2 / (gkc * rb2));
-                        final double expc = expterm / gkc;
-                        final double expc1 = 1.0 - expc;
-                        final double dexpc = -2.0 / (gkc * rb2);
-                        final double expcdexpc = -expc * dexpc;
-                        final double gf2 = 1.0 / (r2 + rb2 * expterm);
-                        final double gf = sqrt(gf2);
-                        final double gf3 = gf2 * gf;
-                        final double gf5 = gf3 * gf2;
-                        final double gf7 = gf5 * gf2;
-                        /**
-                         * Reaction potential auxiliary terms.
-                         */
-                        a[0][0] = gf;
-                        a[1][0] = -gf3;
-                        a[2][0] = 3.0 * gf5;
-                        a[3][0] = -15.0 * gf7;
-                        /**
-                         * Reaction potential gradient auxiliary terms.
-                         */
-                        a[0][1] = expc1 * a[1][0];
-                        a[1][1] = expc1 * a[2][0];
-                        a[2][1] = expc1 * a[3][0];
-                        /**
-                         * 2nd reaction potential gradient auxiliary terms.
-                         */
-                        a[1][2] = expc1 * a[2][1] + expcdexpc * a[2][0];
-                        /**
-                         * Multiply the potential auxiliary terms by their
-                         * dielectric functions.
-                         */
-                        a[0][1] = fc * a[0][1];
-                        a[1][0] = fd * a[1][0];
-                        a[1][1] = fd * a[1][1];
-                        a[1][2] = fd * a[1][2];
-                        a[2][0] = fq * a[2][0];
-                        a[2][1] = fq * a[2][1];
-                        /**
-                         * Unweighted reaction potential tensor.
-                         */
-                        gux[1] = xr * a[1][0];
-                        guy[1] = yr * a[1][0];
-                        guz[1] = zr * a[1][0];
-                        /**
-                         * Unweighted reaction potential gradient tensor.
-                         */
-                        gc[2] = xr * a[0][1];
-                        gc[3] = yr * a[0][1];
-                        gc[4] = zr * a[0][1];
-                        gux[2] = a[1][0] + xr2 * a[1][1];
-                        gux[3] = xr * yr * a[1][1];
-                        gux[4] = xr * zr * a[1][1];
-                        guy[2] = gux[3];
-                        guy[3] = a[1][0] + yr2 * a[1][1];
-                        guy[4] = yr * zr * a[1][1];
-                        guz[2] = gux[4];
-                        guz[3] = guy[4];
-                        guz[4] = a[1][0] + zr2 * a[1][1];
-                        gqxx[2] = xr * (2.0 * a[2][0] + xr2 * a[2][1]);
-                        gqxx[3] = yr * xr2 * a[2][1];
-                        gqxx[4] = zr * xr2 * a[2][1];
-                        gqyy[2] = xr * yr2 * a[2][1];
-                        gqyy[3] = yr * (2.0 * a[2][0] + yr2 * a[2][1]);
-                        gqyy[4] = zr * yr2 * a[2][1];
-                        gqzz[2] = xr * zr2 * a[2][1];
-                        gqzz[3] = yr * zr2 * a[2][1];
-                        gqzz[4] = zr * (2.0 * a[2][0] + zr2 * a[2][1]);
-                        gqxy[2] = yr * (a[2][0] + xr2 * a[2][1]);
-                        gqxy[3] = xr * (a[2][0] + yr2 * a[2][1]);
-                        gqxy[4] = zr * xr * yr * a[2][1];
-                        gqxz[2] = zr * (a[2][0] + xr2 * a[2][1]);
-                        gqxz[3] = gqxy[4];
-                        gqxz[4] = xr * (a[2][0] + zr2 * a[2][1]);
-                        gqyz[2] = gqxy[4];
-                        gqyz[3] = zr * (a[2][0] + yr2 * a[2][1]);
-                        gqyz[4] = yr * (a[2][0] + zr2 * a[2][1]);
-                        /**
-                         * Unweighted 2nd reaction potential gradient tensor.
-                         */
-                        gux[5] = xr * (3.0 * a[1][1] + xr2 * a[1][2]);
-                        gux[6] = yr * (a[1][1] + xr2 * a[1][2]);
-                        gux[7] = zr * (a[1][1] + xr2 * a[1][2]);
-                        gux[8] = xr * (a[1][1] + yr2 * a[1][2]);
-                        gux[9] = zr * xr * yr * a[1][2];
-                        gux[10] = xr * (a[1][1] + zr2 * a[1][2]);
-                        guy[5] = yr * (a[1][1] + xr2 * a[1][2]);
-                        guy[6] = xr * (a[1][1] + yr2 * a[1][2]);
-                        guy[7] = gux[9];
-                        guy[8] = yr * (3.0 * a[1][1] + yr2 * a[1][2]);
-                        guy[9] = zr * (a[1][1] + yr2 * a[1][2]);
-                        guy[10] = yr * (a[1][1] + zr2 * a[1][2]);
-                        guz[5] = zr * (a[1][1] + xr2 * a[1][2]);
-                        guz[6] = gux[9];
-                        guz[7] = xr * (a[1][1] + zr2 * a[1][2]);
-                        guz[8] = zr * (a[1][1] + yr2 * a[1][2]);
-                        guz[9] = yr * (a[1][1] + zr2 * a[1][2]);
-                        guz[10] = zr * (3.0 * a[1][1] + zr2 * a[1][2]);
-
-                        /**
-                         * Generalized Kirkwood permanent reaction field.
-                         */
-                        double fix = uxk * gux[2] + uyk * gux[3] + uzk * gux[4]
-                                + 0.5 * (ck * gux[1] + qxxk * gux[5]
-                                + qyyk * gux[8] + qzzk * gux[10]
-                                + 2.0 * (qxyk * gux[6] + qxzk * gux[7]
-                                + qyzk * gux[9]))
-                                + 0.5 * (ck * gc[2] + qxxk * gqxx[2]
-                                + qyyk * gqyy[2] + qzzk * gqzz[2]
-                                + 2.0 * (qxyk * gqxy[2] + qxzk * gqxz[2]
-                                + qyzk * gqyz[2]));
-                        double fiy = uxk * guy[2] + uyk * guy[3] + uzk * guy[4]
-                                + 0.5 * (ck * guy[1] + qxxk * guy[5]
-                                + qyyk * guy[8] + qzzk * guy[10]
-                                + 2.0 * (qxyk * guy[6] + qxzk * guy[7]
-                                + qyzk * guy[9]))
-                                + 0.5 * (ck * gc[3] + qxxk * gqxx[3]
-                                + qyyk * gqyy[3] + qzzk * gqzz[3]
-                                + 2.0 * (qxyk * gqxy[3] + qxzk * gqxz[3]
-                                + qyzk * gqyz[3]));
-                        double fiz = uxk * guz[2] + uyk * guz[3] + uzk * guz[4]
-                                + 0.5 * (ck * guz[1] + qxxk * guz[5]
-                                + qyyk * guz[8] + qzzk * guz[10]
-                                + 2.0 * (qxyk * guz[6] + qxzk * guz[7]
-                                + qyzk * guz[9]))
-                                + 0.5 * (ck * gc[4] + qxxk * gqxx[4]
-                                + qyyk * gqyy[4] + qzzk * gqzz[4]
-                                + 2.0 * (qxyk * gqxy[4] + qxzk * gqxz[4]
-                                + qyzk * gqyz[4]));
-                        double fkx = uxi * gux[2] + uyi * gux[3] + uzi * gux[4]
-                                - 0.5 * (ci * gux[1] + qxxi * gux[5]
-                                + qyyi * gux[8] + qzzi * gux[10]
-                                + 2.0 * (qxyi * gux[6] + qxzi * gux[7]
-                                + qyzi * gux[9]))
-                                - 0.5 * (ci * gc[2] + qxxi * gqxx[2]
-                                + qyyi * gqyy[2] + qzzi * gqzz[2]
-                                + 2.0 * (qxyi * gqxy[2] + qxzi * gqxz[2]
-                                + qyzi * gqyz[2]));
-                        double fky = uxi * guy[2] + uyi * guy[3] + uzi * guy[4]
-                                - 0.5 * (ci * guy[1] + qxxi * guy[5]
-                                + qyyi * guy[8] + qzzi * guy[10]
-                                + 2.0 * (qxyi * guy[6] + qxzi * guy[7]
-                                + qyzi * guy[9]))
-                                - 0.5 * (ci * gc[3] + qxxi * gqxx[3]
-                                + qyyi * gqyy[3] + qzzi * gqzz[3]
-                                + 2.0 * (qxyi * gqxy[3] + qxzi * gqxz[3]
-                                + qyzi * gqyz[3]));
-                        double fkz = uxi * guz[2] + uyi * guz[3] + uzi * guz[4]
-                                - 0.5 * (ci * guz[1] + qxxi * guz[5]
-                                + qyyi * guz[8] + qzzi * guz[10]
-                                + 2.0 * (qxyi * guz[6] + qxzi * guz[7]
-                                + qyzi * guz[9]))
-                                - 0.5 * (ci * gc[4] + qxxi * gqxx[4]
-                                + qyyi * gqyy[4] + qzzi * gqzz[4]
-                                + 2.0 * (qxyi * gqxy[4] + qxzi * gqxz[4]
-                                + qyzi * gqyz[4]));
-                        /**
-                         * Scale the self-field by half, such that it sums to
-                         * one below.
-                         */
-                        if (i == k) {
-                            fix *= 0.5;
-                            fiy *= 0.5;
-                            fiz *= 0.5;
-                            fkx *= 0.5;
-                            fky *= 0.5;
-                            fkz *= 0.5;
-                        }
-                        fx_local[i] += fix;
-                        fy_local[i] += fiy;
-                        fz_local[i] += fiz;
-                        fx_local[k] += fkx;
-                        fy_local[k] += fky;
-                        fz_local[k] += fkz;
-                    }
-                }
+                Arrays.fill(fx_local, 0.0);
+                Arrays.fill(fy_local, 0.0);
+                Arrays.fill(fz_local, 0.0);
             }
 
             @Override
@@ -1410,11 +1259,250 @@ public class GeneralizedKirkwood {
                 sharedGKField[1].reduce(fy_local, DoubleOp.SUM);
                 sharedGKField[2].reduce(fz_local, DoubleOp.SUM);
             }
+
+            @Override
+            public void run(int lb, int ub) {
+                for (int i = lb; i <= ub; i++) {
+                    if (!use[i]) {
+                        continue;
+                    }
+                    xi = x[i];
+                    yi = y[i];
+                    zi = z[i];
+                    multipolei = globalMultipole[i];
+                    ci = multipolei[t000];
+                    uxi = multipolei[t100];
+                    uyi = multipolei[t010];
+                    uzi = multipolei[t001];
+                    qxxi = multipolei[t200] / 3.0;
+                    qxyi = multipolei[t110] / 3.0;
+                    qxzi = multipolei[t101] / 3.0;
+                    qyyi = multipolei[t020] / 3.0;
+                    qyzi = multipolei[t011] / 3.0;
+                    qzzi = multipolei[t002] / 3.0;
+                    rbi = born[i];
+                    int list[] = neighborLists[0][i];
+                    int npair = list.length;
+                    for (int l = 0; l < npair; l++) {
+                        int k = list[l];
+                        if (!use[k]) {
+                            continue;
+                        }
+                        permanentGKField(i, k);
+                    }
+                    /**
+                     * Include the self permanent reaction field, which is not
+                     * in the neighbor list.
+                     */
+                    permanentGKField(i, i);
+                }
+            }
+
+            private void permanentGKField(int i, int k) {
+                dx_local[0] = x[k] - xi;
+                dx_local[1] = y[k] - yi;
+                dx_local[2] = z[k] - zi;
+                final double r2 = crystal.image(dx_local);
+                if (r2 > cut2) {
+                    return;
+                }
+                double xr = dx_local[0];
+                double yr = dx_local[1];
+                double zr = dx_local[2];
+                double xr2 = xr * xr;
+                double yr2 = yr * yr;
+                double zr2 = zr * zr;
+                final double rbk = born[k];
+                final double multipolek[] = globalMultipole[k];
+                final double ck = multipolek[t000];
+                final double uxk = multipolek[t100];
+                final double uyk = multipolek[t010];
+                final double uzk = multipolek[t001];
+                final double qxxk = multipolek[t200] / 3.0;
+                final double qxyk = multipolek[t110] / 3.0;
+                final double qxzk = multipolek[t101] / 3.0;
+                final double qyyk = multipolek[t020] / 3.0;
+                final double qyzk = multipolek[t011] / 3.0;
+                final double qzzk = multipolek[t002] / 3.0;
+                final double rb2 = rbi * rbk;
+                final double expterm = exp(-r2 / (gkc * rb2));
+                final double expc = expterm / gkc;
+                final double expc1 = 1.0 - expc;
+                final double dexpc = -2.0 / (gkc * rb2);
+                final double expcdexpc = -expc * dexpc;
+                final double gf2 = 1.0 / (r2 + rb2 * expterm);
+                final double gf = sqrt(gf2);
+                final double gf3 = gf2 * gf;
+                final double gf5 = gf3 * gf2;
+                final double gf7 = gf5 * gf2;
+                /**
+                 * Reaction potential auxiliary terms.
+                 */
+                a[0][0] = gf;
+                a[1][0] = -gf3;
+                a[2][0] = 3.0 * gf5;
+                a[3][0] = -15.0 * gf7;
+                /**
+                 * Reaction potential gradient auxiliary terms.
+                 */
+                a[0][1] = expc1 * a[1][0];
+                a[1][1] = expc1 * a[2][0];
+                a[2][1] = expc1 * a[3][0];
+                /**
+                 * 2nd reaction potential gradient auxiliary terms.
+                 */
+                a[1][2] = expc1 * a[2][1] + expcdexpc * a[2][0];
+                /**
+                 * Multiply the potential auxiliary terms by their dielectric
+                 * functions.
+                 */
+                a[0][1] = fc * a[0][1];
+                a[1][0] = fd * a[1][0];
+                a[1][1] = fd * a[1][1];
+                a[1][2] = fd * a[1][2];
+                a[2][0] = fq * a[2][0];
+                a[2][1] = fq * a[2][1];
+                /**
+                 * Unweighted reaction potential tensor.
+                 */
+                gux[1] = xr * a[1][0];
+                guy[1] = yr * a[1][0];
+                guz[1] = zr * a[1][0];
+                /**
+                 * Unweighted reaction potential gradient tensor.
+                 */
+                gc[2] = xr * a[0][1];
+                gc[3] = yr * a[0][1];
+                gc[4] = zr * a[0][1];
+                gux[2] = a[1][0] + xr2 * a[1][1];
+                gux[3] = xr * yr * a[1][1];
+                gux[4] = xr * zr * a[1][1];
+                guy[2] = gux[3];
+                guy[3] = a[1][0] + yr2 * a[1][1];
+                guy[4] = yr * zr * a[1][1];
+                guz[2] = gux[4];
+                guz[3] = guy[4];
+                guz[4] = a[1][0] + zr2 * a[1][1];
+                gqxx[2] = xr * (2.0 * a[2][0] + xr2 * a[2][1]);
+                gqxx[3] = yr * xr2 * a[2][1];
+                gqxx[4] = zr * xr2 * a[2][1];
+                gqyy[2] = xr * yr2 * a[2][1];
+                gqyy[3] = yr * (2.0 * a[2][0] + yr2 * a[2][1]);
+                gqyy[4] = zr * yr2 * a[2][1];
+                gqzz[2] = xr * zr2 * a[2][1];
+                gqzz[3] = yr * zr2 * a[2][1];
+                gqzz[4] = zr * (2.0 * a[2][0] + zr2 * a[2][1]);
+                gqxy[2] = yr * (a[2][0] + xr2 * a[2][1]);
+                gqxy[3] = xr * (a[2][0] + yr2 * a[2][1]);
+                gqxy[4] = zr * xr * yr * a[2][1];
+                gqxz[2] = zr * (a[2][0] + xr2 * a[2][1]);
+                gqxz[3] = gqxy[4];
+                gqxz[4] = xr * (a[2][0] + zr2 * a[2][1]);
+                gqyz[2] = gqxy[4];
+                gqyz[3] = zr * (a[2][0] + yr2 * a[2][1]);
+                gqyz[4] = yr * (a[2][0] + zr2 * a[2][1]);
+                /**
+                 * Unweighted 2nd reaction potential gradient tensor.
+                 */
+                gux[5] = xr * (3.0 * a[1][1] + xr2 * a[1][2]);
+                gux[6] = yr * (a[1][1] + xr2 * a[1][2]);
+                gux[7] = zr * (a[1][1] + xr2 * a[1][2]);
+                gux[8] = xr * (a[1][1] + yr2 * a[1][2]);
+                gux[9] = zr * xr * yr * a[1][2];
+                gux[10] = xr * (a[1][1] + zr2 * a[1][2]);
+                guy[5] = yr * (a[1][1] + xr2 * a[1][2]);
+                guy[6] = xr * (a[1][1] + yr2 * a[1][2]);
+                guy[7] = gux[9];
+                guy[8] = yr * (3.0 * a[1][1] + yr2 * a[1][2]);
+                guy[9] = zr * (a[1][1] + yr2 * a[1][2]);
+                guy[10] = yr * (a[1][1] + zr2 * a[1][2]);
+                guz[5] = zr * (a[1][1] + xr2 * a[1][2]);
+                guz[6] = gux[9];
+                guz[7] = xr * (a[1][1] + zr2 * a[1][2]);
+                guz[8] = zr * (a[1][1] + yr2 * a[1][2]);
+                guz[9] = yr * (a[1][1] + zr2 * a[1][2]);
+                guz[10] = zr * (3.0 * a[1][1] + zr2 * a[1][2]);
+
+                /**
+                 * Generalized Kirkwood permanent reaction field.
+                 */
+                double fix = uxk * gux[2] + uyk * gux[3] + uzk * gux[4]
+                        + 0.5 * (ck * gux[1] + qxxk * gux[5]
+                        + qyyk * gux[8] + qzzk * gux[10]
+                        + 2.0 * (qxyk * gux[6] + qxzk * gux[7]
+                        + qyzk * gux[9]))
+                        + 0.5 * (ck * gc[2] + qxxk * gqxx[2]
+                        + qyyk * gqyy[2] + qzzk * gqzz[2]
+                        + 2.0 * (qxyk * gqxy[2] + qxzk * gqxz[2]
+                        + qyzk * gqyz[2]));
+                double fiy = uxk * guy[2] + uyk * guy[3] + uzk * guy[4]
+                        + 0.5 * (ck * guy[1] + qxxk * guy[5]
+                        + qyyk * guy[8] + qzzk * guy[10]
+                        + 2.0 * (qxyk * guy[6] + qxzk * guy[7]
+                        + qyzk * guy[9]))
+                        + 0.5 * (ck * gc[3] + qxxk * gqxx[3]
+                        + qyyk * gqyy[3] + qzzk * gqzz[3]
+                        + 2.0 * (qxyk * gqxy[3] + qxzk * gqxz[3]
+                        + qyzk * gqyz[3]));
+                double fiz = uxk * guz[2] + uyk * guz[3] + uzk * guz[4]
+                        + 0.5 * (ck * guz[1] + qxxk * guz[5]
+                        + qyyk * guz[8] + qzzk * guz[10]
+                        + 2.0 * (qxyk * guz[6] + qxzk * guz[7]
+                        + qyzk * guz[9]))
+                        + 0.5 * (ck * gc[4] + qxxk * gqxx[4]
+                        + qyyk * gqyy[4] + qzzk * gqzz[4]
+                        + 2.0 * (qxyk * gqxy[4] + qxzk * gqxz[4]
+                        + qyzk * gqyz[4]));
+                double fkx = uxi * gux[2] + uyi * gux[3] + uzi * gux[4]
+                        - 0.5 * (ci * gux[1] + qxxi * gux[5]
+                        + qyyi * gux[8] + qzzi * gux[10]
+                        + 2.0 * (qxyi * gux[6] + qxzi * gux[7]
+                        + qyzi * gux[9]))
+                        - 0.5 * (ci * gc[2] + qxxi * gqxx[2]
+                        + qyyi * gqyy[2] + qzzi * gqzz[2]
+                        + 2.0 * (qxyi * gqxy[2] + qxzi * gqxz[2]
+                        + qyzi * gqyz[2]));
+                double fky = uxi * guy[2] + uyi * guy[3] + uzi * guy[4]
+                        - 0.5 * (ci * guy[1] + qxxi * guy[5]
+                        + qyyi * guy[8] + qzzi * guy[10]
+                        + 2.0 * (qxyi * guy[6] + qxzi * guy[7]
+                        + qyzi * guy[9]))
+                        - 0.5 * (ci * gc[3] + qxxi * gqxx[3]
+                        + qyyi * gqyy[3] + qzzi * gqzz[3]
+                        + 2.0 * (qxyi * gqxy[3] + qxzi * gqxz[3]
+                        + qyzi * gqyz[3]));
+                double fkz = uxi * guz[2] + uyi * guz[3] + uzi * guz[4]
+                        - 0.5 * (ci * guz[1] + qxxi * guz[5]
+                        + qyyi * guz[8] + qzzi * guz[10]
+                        + 2.0 * (qxyi * guz[6] + qxzi * guz[7]
+                        + qyzi * guz[9]))
+                        - 0.5 * (ci * gc[4] + qxxi * gqxx[4]
+                        + qyyi * gqyy[4] + qzzi * gqzz[4]
+                        + 2.0 * (qxyi * gqxy[4] + qxzi * gqxz[4]
+                        + qyzi * gqyz[4]));
+                /**
+                 * Scale the self-field by half, such that it sums to one below.
+                 */
+                if (i == k) {
+                    fix *= 0.5;
+                    fiy *= 0.5;
+                    fiz *= 0.5;
+                    fkx *= 0.5;
+                    fky *= 0.5;
+                    fkz *= 0.5;
+                }
+                fx_local[i] += fix;
+                fy_local[i] += fiy;
+                fz_local[i] += fiz;
+                fx_local[k] += fkx;
+                fy_local[k] += fky;
+                fz_local[k] += fkz;
+            }
         }
     }
 
     /**
-     * Compute the Generalized Kirkwood reaction field energy.
+     * Compute the Generalized Kirkwood induced reaction field in parallel.
      *
      * @since 1.0
      */
@@ -1453,7 +1541,7 @@ public class GeneralizedKirkwood {
         }
 
         /**
-         * Compute Born radii for a range of atoms via the Grycuk method.
+         * Compute the Generalized Kirkwood induced reaction field.
          *
          * @since 1.0
          */
@@ -1468,6 +1556,10 @@ public class GeneralizedKirkwood {
             private final double fyCR_local[];
             private final double fzCR_local[];
             private final double dx_local[];
+            private double xi, yi, zi;
+            private double uix, uiy, uiz;
+            private double uixCR, uiyCR, uizCR;
+            private double rbi;
             // Extra padding to avert cache interference.
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
             private long pad8, pad9, pada, padb, padc, padd, pade, padf;
@@ -1488,142 +1580,12 @@ public class GeneralizedKirkwood {
 
             @Override
             public void start() {
-                for (int j = 0; j < nAtoms; j++) {
-                    fx_local[j] = 0.0;
-                    fy_local[j] = 0.0;
-                    fz_local[j] = 0.0;
-                    fxCR_local[j] = 0.0;
-                    fyCR_local[j] = 0.0;
-                    fzCR_local[j] = 0.0;
-                }
-            }
-
-            @Override
-            public void run(int lb, int ub) {
-                for (int i = lb; i <= ub; i++) {
-                    if (!use[i]) {
-                        continue;
-                    }
-                    final double xi = x[i];
-                    final double yi = y[i];
-                    final double zi = z[i];
-                    final double uix = inducedDipole[i][0];
-                    final double uiy = inducedDipole[i][1];
-                    final double uiz = inducedDipole[i][2];
-                    final double uixCR = inducedDipoleCR[i][0];
-                    final double uiyCR = inducedDipoleCR[i][1];
-                    final double uizCR = inducedDipoleCR[i][2];
-                    final double rbi = born[i];
-                    int list[] = neighborLists[0][i];
-                    int nPair = list.length;
-                    for (int l = 0; l < nPair; l++) {
-                        int k = list[l];
-                        if (!use[k]) {
-                            continue;
-                        }
-                        dx_local[0] = x[k] - xi;
-                        dx_local[1] = y[k] - yi;
-                        dx_local[2] = z[k] - zi;
-                        final double r2 = crystal.image(dx_local);
-                        if (r2 > cut2) {
-                            continue;
-                        }
-                        double xr = dx_local[0];
-                        double yr = dx_local[1];
-                        double zr = dx_local[2];
-                        double xr2 = xr * xr;
-                        double yr2 = yr * yr;
-                        double zr2 = zr * zr;
-                        final double ukx = inducedDipole[k][0];
-                        final double uky = inducedDipole[k][1];
-                        final double ukz = inducedDipole[k][2];
-                        final double ukxCR = inducedDipoleCR[k][0];
-                        final double ukyCR = inducedDipoleCR[k][1];
-                        final double ukzCR = inducedDipoleCR[k][2];
-                        final double rbk = born[k];
-                        final double rb2 = rbi * rbk;
-                        final double expterm = exp(-r2 / (gkc * rb2));
-                        final double expc = expterm / gkc;
-                        final double expc1 = 1.0 - expc;
-                        final double gf2 = 1.0 / (r2 + rb2 * expterm);
-                        final double gf = sqrt(gf2);
-                        final double gf3 = gf2 * gf;
-                        final double gf5 = gf3 * gf2;
-                        /**
-                         * Reaction potential auxiliary terms.
-                         */
-                        a[1][0] = -gf3;
-                        a[2][0] = 3.0 * gf5;
-                        /**
-                         * Reaction potential gradient auxiliary term.
-                         */
-                        a[1][1] = expc1 * a[2][0];
-                        /**
-                         * Multiply the potential auxiliary terms by their
-                         * dielectric functions.
-                         */
-                        a[1][0] = fd * a[1][0];
-                        a[1][1] = fd * a[1][1];
-                        a[2][0] = fq * a[2][0];
-                        /**
-                         * Unweighted reaction potential gradient tensor.
-                         */
-                        gux[2] = a[1][0] + xr2 * a[1][1];
-                        gux[3] = xr * yr * a[1][1];
-                        gux[4] = xr * zr * a[1][1];
-                        guy[2] = gux[3];
-                        guy[3] = a[1][0] + yr2 * a[1][1];
-                        guy[4] = yr * zr * a[1][1];
-                        guz[2] = gux[4];
-                        guz[3] = guy[4];
-                        guz[4] = a[1][0] + zr2 * a[1][1];
-                        /**
-                         * Compute the reaction field due to induced dipoles.
-                         */
-                        double fix = ukx * gux[2] + uky * guy[2] + ukz * guz[2];
-                        double fiy = ukx * gux[3] + uky * guy[3] + ukz * guz[3];
-                        double fiz = ukx * gux[4] + uky * guy[4] + ukz * guz[4];
-                        double fkx = uix * gux[2] + uiy * guy[2] + uiz * guz[2];
-                        double fky = uix * gux[3] + uiy * guy[3] + uiz * guz[3];
-                        double fkz = uix * gux[4] + uiy * guy[4] + uiz * guz[4];
-                        double fixCR = ukxCR * gux[2] + ukyCR * guy[2] + ukzCR * guz[2];
-                        double fiyCR = ukxCR * gux[3] + ukyCR * guy[3] + ukzCR * guz[3];
-                        double fizCR = ukxCR * gux[4] + ukyCR * guy[4] + ukzCR * guz[4];
-                        double fkxCR = uixCR * gux[2] + uiyCR * guy[2] + uizCR * guz[2];
-                        double fkyCR = uixCR * gux[3] + uiyCR * guy[3] + uizCR * guz[3];
-                        double fkzCR = uixCR * gux[4] + uiyCR * guy[4] + uizCR * guz[4];
-                        /**
-                         * Scale the self-field by half, such that it sums to
-                         * one below.
-                         */
-                        if (i == k) {
-                            fix *= 0.5;
-                            fiy *= 0.5;
-                            fiz *= 0.5;
-                            fkx *= 0.5;
-                            fky *= 0.5;
-                            fkz *= 0.5;
-                            fixCR *= 0.5;
-                            fiyCR *= 0.5;
-                            fizCR *= 0.5;
-                            fkxCR *= 0.5;
-                            fkyCR *= 0.5;
-                            fkzCR *= 0.5;
-                        }
-                        fx_local[i] += fix;
-                        fy_local[i] += fiy;
-                        fz_local[i] += fiz;
-                        fx_local[k] += fkx;
-                        fy_local[k] += fky;
-                        fz_local[k] += fkz;
-                        fxCR_local[i] += fixCR;
-                        fyCR_local[i] += fiyCR;
-                        fzCR_local[i] += fizCR;
-                        fxCR_local[k] += fkxCR;
-                        fyCR_local[k] += fkyCR;
-                        fzCR_local[k] += fkzCR;
-                    }
-                }
+                Arrays.fill(fx_local, 0.0);
+                Arrays.fill(fy_local, 0.0);
+                Arrays.fill(fz_local, 0.0);
+                Arrays.fill(fxCR_local, 0.0);
+                Arrays.fill(fyCR_local, 0.0);
+                Arrays.fill(fzCR_local, 0.0);
             }
 
             @Override
@@ -1638,6 +1600,142 @@ public class GeneralizedKirkwood {
                 sharedGKFieldCR[0].reduce(fxCR_local, DoubleOp.SUM);
                 sharedGKFieldCR[1].reduce(fyCR_local, DoubleOp.SUM);
                 sharedGKFieldCR[2].reduce(fzCR_local, DoubleOp.SUM);
+            }
+
+            @Override
+            public void run(int lb, int ub) {
+                for (int i = lb; i <= ub; i++) {
+                    if (!use[i]) {
+                        continue;
+                    }
+                    xi = x[i];
+                    yi = y[i];
+                    zi = z[i];
+                    uix = inducedDipole[i][0];
+                    uiy = inducedDipole[i][1];
+                    uiz = inducedDipole[i][2];
+                    uixCR = inducedDipoleCR[i][0];
+                    uiyCR = inducedDipoleCR[i][1];
+                    uizCR = inducedDipoleCR[i][2];
+                    rbi = born[i];
+                    int list[] = neighborLists[0][i];
+                    int nPair = list.length;
+                    for (int l = 0; l < nPair; l++) {
+                        int k = list[l];
+                        if (!use[k]) {
+                            continue;
+                        }
+                        inducedGKField(i, k);
+                    }
+                    /**
+                     * Include the self induced reaction field, which is not in
+                     * the neighbor list.
+                     */
+                    inducedGKField(i, i);
+                }
+            }
+
+            private void inducedGKField(int i, int k) {
+                dx_local[0] = x[k] - xi;
+                dx_local[1] = y[k] - yi;
+                dx_local[2] = z[k] - zi;
+                final double r2 = crystal.image(dx_local);
+                if (r2 > cut2) {
+                    return;
+                }
+                double xr = dx_local[0];
+                double yr = dx_local[1];
+                double zr = dx_local[2];
+                double xr2 = xr * xr;
+                double yr2 = yr * yr;
+                double zr2 = zr * zr;
+                final double ukx = inducedDipole[k][0];
+                final double uky = inducedDipole[k][1];
+                final double ukz = inducedDipole[k][2];
+                final double ukxCR = inducedDipoleCR[k][0];
+                final double ukyCR = inducedDipoleCR[k][1];
+                final double ukzCR = inducedDipoleCR[k][2];
+                final double rbk = born[k];
+                final double rb2 = rbi * rbk;
+                final double expterm = exp(-r2 / (gkc * rb2));
+                final double expc = expterm / gkc;
+                final double expc1 = 1.0 - expc;
+                final double gf2 = 1.0 / (r2 + rb2 * expterm);
+                final double gf = sqrt(gf2);
+                final double gf3 = gf2 * gf;
+                final double gf5 = gf3 * gf2;
+                /**
+                 * Reaction potential auxiliary terms.
+                 */
+                a[1][0] = -gf3;
+                a[2][0] = 3.0 * gf5;
+                /**
+                 * Reaction potential gradient auxiliary term.
+                 */
+                a[1][1] = expc1 * a[2][0];
+                /**
+                 * Multiply the potential auxiliary terms by their dielectric
+                 * functions.
+                 */
+                a[1][0] = fd * a[1][0];
+                a[1][1] = fd * a[1][1];
+                a[2][0] = fq * a[2][0];
+                /**
+                 * Unweighted reaction potential gradient tensor.
+                 */
+                gux[2] = a[1][0] + xr2 * a[1][1];
+                gux[3] = xr * yr * a[1][1];
+                gux[4] = xr * zr * a[1][1];
+                guy[2] = gux[3];
+                guy[3] = a[1][0] + yr2 * a[1][1];
+                guy[4] = yr * zr * a[1][1];
+                guz[2] = gux[4];
+                guz[3] = guy[4];
+                guz[4] = a[1][0] + zr2 * a[1][1];
+                /**
+                 * Compute the reaction field due to induced dipoles.
+                 */
+                double fix = ukx * gux[2] + uky * guy[2] + ukz * guz[2];
+                double fiy = ukx * gux[3] + uky * guy[3] + ukz * guz[3];
+                double fiz = ukx * gux[4] + uky * guy[4] + ukz * guz[4];
+                double fkx = uix * gux[2] + uiy * guy[2] + uiz * guz[2];
+                double fky = uix * gux[3] + uiy * guy[3] + uiz * guz[3];
+                double fkz = uix * gux[4] + uiy * guy[4] + uiz * guz[4];
+                double fixCR = ukxCR * gux[2] + ukyCR * guy[2] + ukzCR * guz[2];
+                double fiyCR = ukxCR * gux[3] + ukyCR * guy[3] + ukzCR * guz[3];
+                double fizCR = ukxCR * gux[4] + ukyCR * guy[4] + ukzCR * guz[4];
+                double fkxCR = uixCR * gux[2] + uiyCR * guy[2] + uizCR * guz[2];
+                double fkyCR = uixCR * gux[3] + uiyCR * guy[3] + uizCR * guz[3];
+                double fkzCR = uixCR * gux[4] + uiyCR * guy[4] + uizCR * guz[4];
+                /**
+                 * Scale the self-field by half, such that it sums to one below.
+                 */
+                if (i == k) {
+                    fix *= 0.5;
+                    fiy *= 0.5;
+                    fiz *= 0.5;
+                    fkx *= 0.5;
+                    fky *= 0.5;
+                    fkz *= 0.5;
+                    fixCR *= 0.5;
+                    fiyCR *= 0.5;
+                    fizCR *= 0.5;
+                    fkxCR *= 0.5;
+                    fkyCR *= 0.5;
+                    fkzCR *= 0.5;
+                }
+                fx_local[i] += fix;
+                fy_local[i] += fiy;
+                fz_local[i] += fiz;
+                fx_local[k] += fkx;
+                fy_local[k] += fky;
+                fz_local[k] += fkz;
+                fxCR_local[i] += fixCR;
+                fyCR_local[i] += fiyCR;
+                fzCR_local[i] += fizCR;
+                fxCR_local[k] += fkxCR;
+                fyCR_local[k] += fkyCR;
+                fzCR_local[k] += fkzCR;
             }
         }
     }
@@ -1700,30 +1798,30 @@ public class GeneralizedKirkwood {
          */
         private class GKEnergyLoop extends IntegerForLoop {
 
-            private boolean gradient = false;
-            private int count;
-            private double gkEnergy;
             private final double a[][];
             private final double b[][];
             private final double gc[];
             private final double gux[], guy[], guz[];
             private final double gqxx[], gqyy[], gqzz[];
             private final double gqxy[], gqxz[], gqyz[];
+            private final double gb_local[];
+            private final double gbi_local[];
+            private final double dx_local[];
             private double gX[];
             private double gY[];
             private double gZ[];
             private double tX[];
             private double tY[];
             private double tZ[];
-            private final double gb_local[];
-            private final double gbi_local[];
-            private final double dx_local[];
             private double ci, uxi, uyi, uzi, qxxi, qxyi, qxzi, qyyi, qyzi, qzzi;
             private double ck, uxk, uyk, uzk, qxxk, qxyk, qxzk, qyyk, qyzk, qzzk;
             private double dxi, dyi, dzi, pxi, pyi, pzi, sxi, syi, szi;
             private double dxk, dyk, dzk, pxk, pyk, pzk, sxk, syk, szk;
             private double xr, yr, zr, xr2, yr2, zr2, r2, rbi, rbk;
-            private int i, k;
+            private double xi, yi, zi;
+            private boolean gradient = false;
+            private int count;
+            private double gkEnergy;
             // Extra padding to avert cache interference.
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
             private long pad8, pad9, pada, padb, padc, padd, pade, padf;
@@ -1769,13 +1867,13 @@ public class GeneralizedKirkwood {
 
             @Override
             public void run(int lb, int ub) {
-                for (i = lb; i <= ub; i++) {
+                for (int i = lb; i <= ub; i++) {
                     if (!use[i]) {
                         continue;
                     }
-                    final double xi = x[i];
-                    final double yi = y[i];
-                    final double zi = z[i];
+                    xi = x[i];
+                    yi = y[i];
+                    zi = z[i];
                     final double multipolei[] = globalMultipole[i];
                     ci = multipolei[t000];
                     uxi = multipolei[t100];
@@ -1800,175 +1898,14 @@ public class GeneralizedKirkwood {
                     int list[] = neighborLists[0][i];
                     int nPair = list.length;
                     for (int l = 0; l < nPair; l++) {
-                        k = list[l];
+                        int k = list[l];
                         if (!use[k]) {
                             continue;
                         }
-                        dx_local[0] = x[k] - xi;
-                        dx_local[1] = y[k] - yi;
-                        dx_local[2] = z[k] - zi;
-                        r2 = crystal.image(dx_local);
-                        if (r2 > cut2) {
-                            continue;
-                        }
-                        xr = dx_local[0];
-                        yr = dx_local[1];
-                        zr = dx_local[2];
-                        xr2 = xr * xr;
-                        yr2 = yr * yr;
-                        zr2 = zr * zr;
-                        rbk = born[k];
-                        final double multipolek[] = globalMultipole[k];
-                        ck = multipolek[t000];
-                        uxk = multipolek[t100];
-                        uyk = multipolek[t010];
-                        uzk = multipolek[t001];
-                        qxxk = multipolek[t200] / 3.0;
-                        qxyk = multipolek[t110] / 3.0;
-                        qxzk = multipolek[t101] / 3.0;
-                        qyyk = multipolek[t020] / 3.0;
-                        qyzk = multipolek[t011] / 3.0;
-                        qzzk = multipolek[t002] / 3.0;
-                        dxk = inducedDipole[k][0];
-                        dyk = inducedDipole[k][1];
-                        dzk = inducedDipole[k][2];
-                        pxk = inducedDipoleCR[k][0];
-                        pyk = inducedDipoleCR[k][1];
-                        pzk = inducedDipoleCR[k][2];
-                        sxk = dxk + pxk;
-                        syk = dyk + pyk;
-                        szk = dzk + pzk;
-                        final double rb2 = rbi * rbk;
-                        final double expterm = exp(-r2 / (gkc * rb2));
-                        final double expc = expterm / gkc;
-                        final double expc1 = 1.0 - expc;
-                        final double expcr = r2 * expterm / (gkc * gkc * rb2 * rb2);
-                        final double dexpc = -2.0 / (gkc * rb2);
-                        double expcdexpc = -expc * dexpc;
-                        final double dexpcr = 2.0 / (gkc * rb2 * rb2);
-                        final double dgfdr = 0.5 * expterm * (1.0 + r2 / (rb2 * gkc));
-                        final double gf2 = 1.0 / (r2 + rb2 * expterm);
-                        final double gf = sqrt(gf2);
-                        final double gf3 = gf2 * gf;
-                        final double gf5 = gf3 * gf2;
-                        final double gf7 = gf5 * gf2;
-                        final double gf9 = gf7 * gf2;
-                        final double gf11 = gf9 * gf2;
-                        /**
-                         * Reaction potential auxiliary terms.
-                         */
-                        a[0][0] = gf;
-                        a[1][0] = -gf3;
-                        a[2][0] = 3.0 * gf5;
-                        a[3][0] = -15.0 * gf7;
-                        a[4][0] = 105.0 * gf9;
-                        a[5][0] = -945.0 * gf11;
-                        /**
-                         * Reaction potential gradient auxiliary terms.
-                         */
-                        a[0][1] = expc1 * a[1][0];
-                        a[1][1] = expc1 * a[2][0];
-                        a[2][1] = expc1 * a[3][0];
-                        a[3][1] = expc1 * a[4][0];
-                        a[4][1] = expc1 * a[5][0];
-                        /**
-                         * 2nd reaction potential gradient auxiliary terms.
-                         */
-                        a[0][2] = expc1 * a[1][1] + expcdexpc * a[1][0];
-                        a[1][2] = expc1 * a[2][1] + expcdexpc * a[2][0];
-                        a[2][2] = expc1 * a[3][1] + expcdexpc * a[3][0];
-                        a[3][2] = expc1 * a[4][1] + expcdexpc * a[4][0];
-
-                        if (gradient) {
-                            /**
-                             * 3rd reaction potential gradient auxiliary terms.
-                             */
-                            expcdexpc = 2.0 * expcdexpc;
-                            a[0][3] = expc1 * a[1][2] + expcdexpc * a[1][1];
-                            a[1][3] = expc1 * a[2][2] + expcdexpc * a[2][1];
-                            a[2][3] = expc1 * a[3][2] + expcdexpc * a[3][1];
-                            expcdexpc = -expc * dexpc * dexpc;
-                            a[0][3] = a[0][3] + expcdexpc * a[1][0];
-                            a[1][3] = a[1][3] + expcdexpc * a[2][0];
-                            a[2][3] = a[2][3] + expcdexpc * a[3][0];
-                            /**
-                             * Born radii derivatives of reaction potential
-                             * auxiliary terms.
-                             */
-                            b[0][0] = dgfdr * a[1][0];
-                            b[1][0] = dgfdr * a[2][0];
-                            b[2][0] = dgfdr * a[3][0];
-                            b[3][0] = dgfdr * a[4][0];
-                            b[4][0] = dgfdr * a[5][0];
-                            /**
-                             * Born radii gradients of reaction potential
-                             * gradient auxiliary terms.
-                             */
-                            b[0][1] = b[1][0] - expcr * a[1][0] - expc * b[1][0];
-                            b[1][1] = b[2][0] - expcr * a[2][0] - expc * b[2][0];
-                            b[2][1] = b[3][0] - expcr * a[3][0] - expc * b[3][0];
-                            b[3][1] = b[4][0] - expcr * a[4][0] - expc * b[4][0];
-                            /**
-                             * Born radii derivatives of the 2nd reaction
-                             * potential gradient auxiliary terms.
-                             */
-                            b[0][2] = b[1][1] - (expcr * (a[1][1] + dexpc * a[1][0])
-                                    + expc * (b[1][1] + dexpcr * a[1][0] + dexpc * b[1][0]));
-                            b[1][2] = b[2][1] - (expcr * (a[2][1] + dexpc * a[2][0])
-                                    + expc * (b[2][1] + dexpcr * a[2][0] + dexpc * b[2][0]));
-                            b[2][2] = b[3][1] - (expcr * (a[3][1] + dexpc * a[3][0])
-                                    + expc * (b[3][1] + dexpcr * a[3][0] + dexpc * b[3][0]));
-                            /**
-                             * Multiply the Born radii auxiliary terms by their
-                             * dielectric functions.
-                             */
-                            b[0][0] = ELECTRIC * fc * b[0][0];
-                            b[0][1] = ELECTRIC * fc * b[0][1];
-                            b[0][2] = ELECTRIC * fc * b[0][2];
-                            b[1][0] = ELECTRIC * fd * b[1][0];
-                            b[1][1] = ELECTRIC * fd * b[1][1];
-                            b[1][2] = ELECTRIC * fd * b[1][2];
-                            b[2][0] = ELECTRIC * fq * b[2][0];
-                            b[2][1] = ELECTRIC * fq * b[2][1];
-                            b[2][2] = ELECTRIC * fq * b[2][2];
-                        }
-
-                        /**
-                         * Multiply the potential auxiliary terms by their
-                         * dielectric functions.
-                         */
-                        a[0][0] = ELECTRIC * fc * a[0][0];
-                        a[0][1] = ELECTRIC * fc * a[0][1];
-                        a[0][2] = ELECTRIC * fc * a[0][2];
-                        a[0][3] = ELECTRIC * fc * a[0][3];
-                        a[1][0] = ELECTRIC * fd * a[1][0];
-                        a[1][1] = ELECTRIC * fd * a[1][1];
-                        a[1][2] = ELECTRIC * fd * a[1][2];
-                        a[1][3] = ELECTRIC * fd * a[1][3];
-                        a[2][0] = ELECTRIC * fq * a[2][0];
-                        a[2][1] = ELECTRIC * fq * a[2][1];
-                        a[2][2] = ELECTRIC * fq * a[2][2];
-                        a[2][3] = ELECTRIC * fq * a[2][3];
-                        /**
-                         * Compute the GK tensors required to compute the
-                         * energy.
-                         */
-                        energyTensors();
-                        double gkPairEnergy = energy();
-                        gkEnergy += gkPairEnergy;
-                        count++;
-                        if (gradient) {
-                            /**
-                             * Compute the additional GK tensors required to
-                             * compute the energy gradient.
-                             */
-                            gradientTensors();
-                            permanentEnergyGradient();
-                            if (polarization != Polarization.NONE) {
-                                polarizationEnergyGradient();
-                            }
-                        }
+                        interaction(i, k);
                     }
+                    // Include the self-interaction.
+                    interaction(i, i);
                 }
             }
 
@@ -1978,10 +1915,184 @@ public class GeneralizedKirkwood {
                 sharedGKEnergy.addAndGet(gkEnergy);
                 if (gradient) {
                     /**
-                     * Reduce the force and torque contributions computed by the
-                     * current thread into the shared arrays.
+                     * Reduce the torque contributions computed by the current
+                     * thread into the shared array.
                      */
                     sharedBornGrad.reduce(gb_local, DoubleOp.SUM);
+                }
+            }
+
+            private void interaction(int i, int k) {
+                dx_local[0] = x[k] - xi;
+                dx_local[1] = y[k] - yi;
+                dx_local[2] = z[k] - zi;
+                r2 = crystal.image(dx_local);
+                if (r2 > cut2) {
+                    return;
+                }
+                xr = dx_local[0];
+                yr = dx_local[1];
+                zr = dx_local[2];
+                xr2 = xr * xr;
+                yr2 = yr * yr;
+                zr2 = zr * zr;
+                rbk = born[k];
+                final double multipolek[] = globalMultipole[k];
+                ck = multipolek[t000];
+                uxk = multipolek[t100];
+                uyk = multipolek[t010];
+                uzk = multipolek[t001];
+                qxxk = multipolek[t200] / 3.0;
+                qxyk = multipolek[t110] / 3.0;
+                qxzk = multipolek[t101] / 3.0;
+                qyyk = multipolek[t020] / 3.0;
+                qyzk = multipolek[t011] / 3.0;
+                qzzk = multipolek[t002] / 3.0;
+                dxk = inducedDipole[k][0];
+                dyk = inducedDipole[k][1];
+                dzk = inducedDipole[k][2];
+                pxk = inducedDipoleCR[k][0];
+                pyk = inducedDipoleCR[k][1];
+                pzk = inducedDipoleCR[k][2];
+                sxk = dxk + pxk;
+                syk = dyk + pyk;
+                szk = dzk + pzk;
+                final double rb2 = rbi * rbk;
+                final double expterm = exp(-r2 / (gkc * rb2));
+                final double expc = expterm / gkc;
+                final double expc1 = 1.0 - expc;
+                final double expcr = r2 * expterm / (gkc * gkc * rb2 * rb2);
+                final double dexpc = -2.0 / (gkc * rb2);
+                double expcdexpc = -expc * dexpc;
+                final double dexpcr = 2.0 / (gkc * rb2 * rb2);
+                final double dgfdr = 0.5 * expterm * (1.0 + r2 / (rb2 * gkc));
+                final double gf2 = 1.0 / (r2 + rb2 * expterm);
+                final double gf = sqrt(gf2);
+                final double gf3 = gf2 * gf;
+                final double gf5 = gf3 * gf2;
+                final double gf7 = gf5 * gf2;
+                final double gf9 = gf7 * gf2;
+                final double gf11 = gf9 * gf2;
+                /**
+                 * Reaction potential auxiliary terms.
+                 */
+                a[0][0] = gf;
+                a[1][0] = -gf3;
+                a[2][0] = 3.0 * gf5;
+                a[3][0] = -15.0 * gf7;
+                a[4][0] = 105.0 * gf9;
+                a[5][0] = -945.0 * gf11;
+                /**
+                 * Reaction potential gradient auxiliary terms.
+                 */
+                a[0][1] = expc1 * a[1][0];
+                a[1][1] = expc1 * a[2][0];
+                a[2][1] = expc1 * a[3][0];
+                a[3][1] = expc1 * a[4][0];
+                a[4][1] = expc1 * a[5][0];
+                /**
+                 * 2nd reaction potential gradient auxiliary terms.
+                 */
+                a[0][2] = expc1 * a[1][1] + expcdexpc * a[1][0];
+                a[1][2] = expc1 * a[2][1] + expcdexpc * a[2][0];
+                a[2][2] = expc1 * a[3][1] + expcdexpc * a[3][0];
+                a[3][2] = expc1 * a[4][1] + expcdexpc * a[4][0];
+
+                if (gradient) {
+                    /**
+                     * 3rd reaction potential gradient auxiliary terms.
+                     */
+                    expcdexpc = 2.0 * expcdexpc;
+                    a[0][3] = expc1 * a[1][2] + expcdexpc * a[1][1];
+                    a[1][3] = expc1 * a[2][2] + expcdexpc * a[2][1];
+                    a[2][3] = expc1 * a[3][2] + expcdexpc * a[3][1];
+                    expcdexpc = -expc * dexpc * dexpc;
+                    a[0][3] = a[0][3] + expcdexpc * a[1][0];
+                    a[1][3] = a[1][3] + expcdexpc * a[2][0];
+                    a[2][3] = a[2][3] + expcdexpc * a[3][0];
+                    /**
+                     * Born radii derivatives of reaction potential auxiliary
+                     * terms.
+                     */
+                    b[0][0] = dgfdr * a[1][0];
+                    b[1][0] = dgfdr * a[2][0];
+                    b[2][0] = dgfdr * a[3][0];
+                    b[3][0] = dgfdr * a[4][0];
+                    b[4][0] = dgfdr * a[5][0];
+                    /**
+                     * Born radii gradients of reaction potential gradient
+                     * auxiliary terms.
+                     */
+                    b[0][1] = b[1][0] - expcr * a[1][0] - expc * b[1][0];
+                    b[1][1] = b[2][0] - expcr * a[2][0] - expc * b[2][0];
+                    b[2][1] = b[3][0] - expcr * a[3][0] - expc * b[3][0];
+                    b[3][1] = b[4][0] - expcr * a[4][0] - expc * b[4][0];
+                    /**
+                     * Born radii derivatives of the 2nd reaction potential
+                     * gradient auxiliary terms.
+                     */
+                    b[0][2] = b[1][1] - (expcr * (a[1][1] + dexpc * a[1][0])
+                            + expc * (b[1][1] + dexpcr * a[1][0] + dexpc * b[1][0]));
+                    b[1][2] = b[2][1] - (expcr * (a[2][1] + dexpc * a[2][0])
+                            + expc * (b[2][1] + dexpcr * a[2][0] + dexpc * b[2][0]));
+                    b[2][2] = b[3][1] - (expcr * (a[3][1] + dexpc * a[3][0])
+                            + expc * (b[3][1] + dexpcr * a[3][0] + dexpc * b[3][0]));
+                    /**
+                     * Multiply the Born radii auxiliary terms by their
+                     * dielectric functions.
+                     */
+                    b[0][0] = ELECTRIC * fc * b[0][0];
+                    b[0][1] = ELECTRIC * fc * b[0][1];
+                    b[0][2] = ELECTRIC * fc * b[0][2];
+                    b[1][0] = ELECTRIC * fd * b[1][0];
+                    b[1][1] = ELECTRIC * fd * b[1][1];
+                    b[1][2] = ELECTRIC * fd * b[1][2];
+                    b[2][0] = ELECTRIC * fq * b[2][0];
+                    b[2][1] = ELECTRIC * fq * b[2][1];
+                    b[2][2] = ELECTRIC * fq * b[2][2];
+                }
+
+                /**
+                 * Multiply the potential auxiliary terms by their dielectric
+                 * functions.
+                 */
+                a[0][0] = ELECTRIC * fc * a[0][0];
+                a[0][1] = ELECTRIC * fc * a[0][1];
+                a[0][2] = ELECTRIC * fc * a[0][2];
+                a[0][3] = ELECTRIC * fc * a[0][3];
+                a[1][0] = ELECTRIC * fd * a[1][0];
+                a[1][1] = ELECTRIC * fd * a[1][1];
+                a[1][2] = ELECTRIC * fd * a[1][2];
+                a[1][3] = ELECTRIC * fd * a[1][3];
+                a[2][0] = ELECTRIC * fq * a[2][0];
+                a[2][1] = ELECTRIC * fq * a[2][1];
+                a[2][2] = ELECTRIC * fq * a[2][2];
+                a[2][3] = ELECTRIC * fq * a[2][3];
+                /**
+                 * Compute the GK tensors required to compute the energy.
+                 */
+                energyTensors();
+                /**
+                 * Compute the GK interaction energy.
+                 */
+                gkEnergy += energy(i, k);;
+                count++;
+                if (gradient) {
+                    /**
+                     * Compute the additional GK tensors required to compute the
+                     * energy gradient.
+                     */
+                    gradientTensors();
+                    /**
+                     * Compute the permanent GK energy gradient.
+                     */
+                    permanentEnergyGradient(i, k);
+                    if (polarization != Polarization.NONE) {
+                        /**
+                         * Compute the induced GK energy gradient.
+                         */
+                        polarizationEnergyGradient(i, k);
+                    }
                 }
             }
 
@@ -2097,7 +2208,7 @@ public class GeneralizedKirkwood {
                 gqyz[10] = yr * zr * (3.0 * a[2][1] + zr2 * a[2][2]);
             }
 
-            private double energy() {
+            private double energy(int i, int k) {
                 /**
                  * Electrostatic solvation energy of the permanent multipoles in
                  * their own GK reaction potential.
@@ -2444,7 +2555,7 @@ public class GeneralizedKirkwood {
                 gqzz[20] = zr * (12.0 * a[2][1] + zr2 * (9.0 * a[2][2] + zr2 * a[2][3]));
             }
 
-            private void permanentEnergyGradient() {
+            private void permanentEnergyGradient(int i, int k) {
                 final double desymdr = ci * ck * gc[21]
                         - (uxi * (uxk * gux[22] + uyk * guy[22] + uzk * guz[22])
                         + uyi * (uxk * gux[23] + uyk * guy[23] + uzk * guz[23])
@@ -2532,7 +2643,7 @@ public class GeneralizedKirkwood {
                 gY[k] += dedy;
                 gZ[k] += dedz;
                 gb_local[k] += drbk;
-                permanentEnergyTorque();
+                permanentEnergyTorque(i, k);
 
             }
 
@@ -2742,7 +2853,7 @@ public class GeneralizedKirkwood {
                 return desymdx + 0.5 * (dewidx + dewkdx);
             }
 
-            private void permanentEnergyTorque() {
+            private void permanentEnergyTorque(int i, int k) {
                 /**
                  * Torque on permanent dipoles due to permanent reaction field.
                  */
@@ -2890,7 +3001,7 @@ public class GeneralizedKirkwood {
                 tZ[k] += tkz;
             }
 
-            private void polarizationEnergyGradient() {
+            private void polarizationEnergyGradient(int i, int k) {
                 /**
                  * Electrostatic solvation free energy gradient of the permanent
                  * multipoles in the reaction potential of the induced dipoles.
@@ -3086,10 +3197,10 @@ public class GeneralizedKirkwood {
                     gZ[k] += dpdz;
                     gb_local[k] += dbk;
                 }
-                polarizationEnergyTorque();
+                polarizationEnergyTorque(i, k);
             }
 
-            private void polarizationEnergyTorque() {
+            private void polarizationEnergyTorque(int i, int k) {
                 double fix = 0.5 * (sxk * gux[2] + syk * guy[2] + szk * guz[2]);
                 double fiy = 0.5 * (sxk * gux[3] + syk * guy[3] + szk * guz[3]);
                 double fiz = 0.5 * (sxk * gux[4] + syk * guy[4] + szk * guz[4]);
@@ -3255,71 +3366,127 @@ public class GeneralizedKirkwood {
                         continue;
                     }
                     final double ri = baseRadius[i];
-                    if (ri > 0.0) {
-                        final double xi = x[i];
-                        final double yi = y[i];
-                        final double zi = z[i];
-                        final double rbi = born[i];
-                        double term = pi43 / (rbi * rbi * rbi);
-                        term = factor / pow(term, (4.0 * third));
-                        int list[] = neighborLists[0][i];
-                        int nPair = list.length;
-                        for (int l = 0; l < nPair; l++) {
-                            int k = list[l];
-                            if (!use[k]) {
+                    assert (ri > 0.0);
+                    final double xi = x[i];
+                    final double yi = y[i];
+                    final double zi = z[i];
+                    final double rbi = born[i];
+                    double termi = pi43 / (rbi * rbi * rbi);
+                    termi = factor / pow(termi, (4.0 * third));
+                    int list[] = neighborLists[0][i];
+                    int nPair = list.length;
+                    for (int l = 0; l < nPair; l++) {
+                        int k = list[l];
+                        if (!use[k]) {
+                            continue;
+                        }
+                        final double rk = baseRadius[k];
+                        if (k != i && rk > 0.0) {
+                            dx_local[0] = x[k] - xi;
+                            dx_local[1] = y[k] - yi;
+                            dx_local[2] = z[k] - zi;
+                            double r2 = crystal.image(dx_local);
+                            if (r2 > cut2) {
                                 continue;
                             }
-                            final double rk = baseRadius[k];
-                            if (k != i && rk > 0.0) {
-                                dx_local[0] = x[k] - xi;
-                                dx_local[1] = y[k] - yi;
-                                dx_local[2] = z[k] - zi;
-                                double r2 = crystal.image(dx_local);
-                                if (r2 > cut2) {
-                                    continue;
-                                }
-                                final double xr = dx_local[0];
-                                final double yr = dx_local[1];
-                                final double zr = dx_local[2];
-                                final double sk = rk * overlapScale[k];
-                                final double sk2 = sk * sk;
-                                final double r = sqrt(r2);
-                                double de = 0.0;
-                                if (ri + r < sk) {
-                                    final double uik = sk - r;
-                                    de = -4.0 * PI / pow(uik, 4);
-                                }
-                                if (ri + r < sk) {
-                                    final double lik = sk - r;
-                                    double lik4 = pow(lik, 4);
-                                    de = de + 0.25 * PI * (sk2 - 4.0 * sk * r + 17.0 * r2) / (r2 * lik4);
-                                } else if (r < ri + sk) {
-                                    double lik = ri;
-                                    double lik4 = pow(lik, 4);
-                                    de = de + 0.25 * PI * (2.0 * ri * ri - sk2 - r2) / (r2 * lik4);
-                                } else {
-                                    double lik = r - sk;
-                                    double lik4 = pow(lik, 4);
-                                    de = de + 0.25 * PI * (sk2 - 4.0 * sk * r + r2) / (r2 * lik4);
-                                }
-                                double uik = r + sk;
-                                double uik4 = pow(uik, 4);
-                                de = de - 0.25 * PI * (sk2 + 4.0 * sk * r + r2) / (r2 * uik4);
-                                double dbr = term * de / r;
-                                de = dbr * sharedBornGrad.get(i);
-                                /**
-                                 * Increment the overall derivatives.
-                                 */
-                                final double dedx = de * xr;
-                                final double dedy = de * yr;
-                                final double dedz = de * zr;
-                                gX[i] += dedx;
-                                gY[i] += dedy;
-                                gZ[i] += dedz;
-                                gX[k] -= dedx;
-                                gY[k] -= dedy;
-                                gZ[k] -= dedz;
+                            final double xr = dx_local[0];
+                            final double yr = dx_local[1];
+                            final double zr = dx_local[2];
+
+                            // Atom i being descreeened by atom k.
+                            final double sk = rk * overlapScale[k];
+                            final double sk2 = sk * sk;
+                            final double r = sqrt(r2);
+                            double de = 0.0;
+                            // Atom i is engulfed by atom k.
+                            if (ri + r < sk) {
+                                final double uik = sk - r;
+                                de = -4.0 * PI / pow(uik, 4);
                             }
+                            // Lower integration bound depends on atoms sizes and separation.
+                            if (ri + r < sk) {
+                                // Atom i is engulfed by atom k.
+                                final double lik = sk - r;
+                                double lik4 = pow(lik, 4);
+                                de = de + 0.25 * PI * (sk2 - 4.0 * sk * r + 17.0 * r2) / (r2 * lik4);
+                            } else if (r < ri + sk) {
+                                // Atoms are overlapped, begin integration from ri.
+                                double lik = ri;
+                                double lik4 = pow(lik, 4);
+                                de = de + 0.25 * PI * (2.0 * ri * ri - sk2 - r2) / (r2 * lik4);
+                            } else {
+                                // No overlap between atoms.
+                                double lik = r - sk;
+                                double lik4 = pow(lik, 4);
+                                de = de + 0.25 * PI * (sk2 - 4.0 * sk * r + r2) / (r2 * lik4);
+                            }
+                            // Upper integration bound is always the same.
+                            double uik = r + sk;
+                            double uik4 = pow(uik, 4);
+                            de = de - 0.25 * PI * (sk2 + 4.0 * sk * r + r2) / (r2 * uik4);
+
+                            double dbr = termi * de / r;
+                            de = dbr * sharedBornGrad.get(i);
+                            /**
+                             * Increment the overall derivatives.
+                             */
+                            double dedx = de * xr;
+                            double dedy = de * yr;
+                            double dedz = de * zr;
+                            gX[i] += dedx;
+                            gY[i] += dedy;
+                            gZ[i] += dedz;
+                            gX[k] -= dedx;
+                            gY[k] -= dedy;
+                            gZ[k] -= dedz;
+
+                            // Atom k being descreeened by atom i.
+                            double rbk = born[k];
+                            double termk = pi43 / (rbk * rbk * rbk);
+                            termk = factor / pow(termk, (4.0 * third));
+                            final double si = ri * overlapScale[i];
+                            final double si2 = si * si;
+                            de = 0.0;
+                            // Atom i is engulfed by atom k.
+                            if (rk + r < si) {
+                                uik = si - r;
+                                de = -4.0 * PI / pow(uik, 4);
+                            }
+                            // Lower integration bound depends on atoms sizes and separation.
+                            if (rk + r < si) {
+                                // Atom i is engulfed by atom k.
+                                final double lik = si - r;
+                                double lik4 = pow(lik, 4);
+                                de = de + 0.25 * PI * (si2 - 4.0 * si * r + 17.0 * r2) / (r2 * lik4);
+                            } else if (r < rk + si) {
+                                // Atoms are overlapped, begin integration from ri.
+                                double lik = rk;
+                                double lik4 = pow(lik, 4);
+                                de = de + 0.25 * PI * (2.0 * rk * rk - si2 - r2) / (r2 * lik4);
+                            } else {
+                                // No overlap between atoms.
+                                double lik = r - si;
+                                double lik4 = pow(lik, 4);
+                                de = de + 0.25 * PI * (si2 - 4.0 * si * r + r2) / (r2 * lik4);
+                            }
+                            // Upper integration bound is always the same.
+                            uik = r + si;
+                            uik4 = pow(uik, 4);
+                            de = de - 0.25 * PI * (si2 + 4.0 * si * r + r2) / (r2 * uik4);
+                            dbr = termk * de / r;
+                            de = dbr * sharedBornGrad.get(k);
+                            /**
+                             * Increment the overall derivatives.
+                             */
+                            dedx = de * xr;
+                            dedy = de * yr;
+                            dedz = de * zr;
+                            gX[i] += dedx;
+                            gY[i] += dedy;
+                            gZ[i] += dedz;
+                            gX[k] -= dedx;
+                            gY[k] -= dedy;
+                            gZ[k] -= dedz;
                         }
                     }
                 }
@@ -3437,6 +3604,8 @@ public class GeneralizedKirkwood {
             private double gZ[];
             private double edisp;
             private final double dx_local[];
+            private double r, r2, r3;
+            private double xr, yr, zr;
             // Extra padding to avert cache interference.
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
             private long pad8, pad9, pada, padb, padc, padd, pade, padf;
@@ -3465,24 +3634,18 @@ public class GeneralizedKirkwood {
                     if (!use[i]) {
                         continue;
                     }
-                    VDWType type = atoms[i].getVDWType();
-                    double epsi = type.wellDepth;
-                    double rmini = type.radius / 2.0;
-                    double emixo = (4.0 * epso * epsi) / (pow(sqrt(epso) + sqrt(epsi), 2));
-                    double rmixo = 2.0 * (pow(rmino, 3) + pow(rmini, 3)) / (pow(rmino, 2) + pow(rmini, 2));
-                    double rmixo7 = pow(rmixo, 7);
-                    double ao = emixo * rmixo7;
-                    double emixh = 4.0 * epsh * epsi / (pow(sqrt(epsh) + sqrt(epsi), 2));
-                    double rmixh = 2.0 * (pow(rminh, 3) + pow(rmini, 3)) / (pow(rminh, 2) + pow(rmini, 2));
-                    double rmixh7 = pow(rmixh, 7);
-                    double ah = emixh * rmixh7;
-                    final double ri = rDisp[i];
+                    /**
+                     * Begin with the limit of atom alone in solvent.
+                     */
+                    edisp += cdisp[i];
+
+                    /**
+                     * Now descreen over neighbors.
+                     */
+                    double sum = 0.0;
                     final double xi = x[i];
                     final double yi = y[i];
                     final double zi = z[i];
-                    // Integral initialized to the limit of atom alone in solvent.
-                    double sum = 0.0;
-
                     int list[] = neighborLists[0][i];
                     int npair = list.length;
                     for (int l = 0; l < npair; l++) {
@@ -3492,213 +3655,233 @@ public class GeneralizedKirkwood {
                             dx_local[0] = xi - x[k];
                             dx_local[1] = yi - y[k];
                             dx_local[2] = zi - z[k];
-                            double r2 = crystal.image(dx_local);
+                            r2 = crystal.image(dx_local);
                             if (r2 > cut2) {
                                 continue;
                             }
-                            double xr = dx_local[0];
-                            double yr = dx_local[1];
-                            double zr = dx_local[2];
-                            final double r = sqrt(r2);
-                            final double r3 = r * r2;
-                            double sk = rk * dispersionOverlapScaleFactor;
-                            double sk2 = sk * sk;
-                            if (ri < r + sk) {
-                                double de = 0.0;
-                                double rmax = max(ri, r - sk);
-                                double lik = rmax;
-                                double lik2 = lik * lik;
-                                double lik3 = lik2 * lik;
-                                double lik4 = lik3 * lik;
-                                if (lik < rmixo) {
-                                    double uik = min(r + sk, rmixo);
-                                    double uik2 = uik * uik;
-                                    double uik3 = uik2 * uik;
-                                    double uik4 = uik3 * uik;
-                                    double term = 4.0 * PI / (48.0 * r) * (3.0 * (lik4 - uik4)
-                                            - 8.0 * r * (lik3 - uik3) + 6.0 * (r2 - sk2) * (lik2 - uik2));
-                                    double iwca = -emixo * term;
-                                    sum = sum + iwca;
-                                    if (gradient) {
-                                        double dl;
-                                        if (ri > r - sk) {
-                                            dl = -lik2 + 2.0 * r2 + 2.0 * sk2;
-                                            dl = dl * lik2;
-                                        } else {
-                                            dl = -lik3 + 4.0 * lik2 * r
-                                                    - 6.0 * lik * r2
-                                                    + 2.0 * lik * sk2 + 4.0 * r3
-                                                    - 4.0 * r * sk2;
-                                            dl = dl * lik;
-                                        }
-                                        double du;
-                                        if (r + sk > rmixo) {
-                                            du = -uik2 + 2.0 * r2 + 2.0 * sk2;
-                                            du = -du * uik2;
-                                        } else {
-                                            du = -uik3 + 4.0 * uik2 * r
-                                                    - 6.0 * uik * r2
-                                                    + 2.0 * uik * sk2 + 4.0 * r3
-                                                    - 4.0 * r * sk2;
-                                            du = -du * uik;
-                                        }
-                                        de = de - emixo * PI * (dl + du) / (4.0 * r2);
-                                    }
-                                }
-                                if (lik < rmixh) {
-                                    double uik = min(r + sk, rmixh);
-                                    double uik2 = uik * uik;
-                                    double uik3 = uik2 * uik;
-                                    double uik4 = uik3 * uik;
-                                    double term = 4.0 * PI / (48.0 * r) * (3.0 * (lik4 - uik4)
-                                            - 8.0 * r * (lik3 - uik3) + 6.0 * (r2 - sk2) * (lik2 - uik2));
-                                    double iwca = -2.0 * emixh * term;
-                                    sum = sum + iwca;
-                                    if (gradient) {
-                                        double dl;
-                                        if (ri > r - sk) {
-                                            dl = -lik2 + 2.0 * r2 + 2.0 * sk2;
-                                            dl = dl * lik2;
-                                        } else {
-                                            dl = -lik3 + 4.0 * lik2 * r - 6.0 * lik * r2
-                                                    + 2.0 * lik * sk2 + 4.0 * r3 - 4.0 * r * sk2;
-                                            dl = dl * lik;
-                                        }
-                                        double du;
-                                        if (r + sk > rmixh) {
-                                            du = -uik2 + 2.0 * r2 + 2.0 * sk2;
-                                            du = -du * uik2;
-                                        } else {
-                                            du = -uik3 + 4.0 * uik2 * r - 6.0 * uik * r2
-                                                    + 2.0 * uik * sk2 + 4.0 * r3 - 4.0 * r * sk2;
-                                            du = -du * uik;
-                                        }
-                                        de = de - 2.0 * emixh * PI * (dl + du) / (4.0 * r2);
-                                    }
-                                }
-                                double uik = r + sk;
-                                double uik2 = uik * uik;
-                                double uik3 = uik2 * uik;
-                                double uik4 = uik3 * uik;
-                                double uik5 = uik4 * uik;
-                                double uik6 = uik5 * uik;
-                                double uik10 = uik5 * uik5;
-                                double uik11 = uik10 * uik;
-                                double uik12 = uik11 * uik;
-                                double uik13 = uik12 * uik;
-                                if (uik > rmixo) {
-                                    lik = max(rmax, rmixo);
-                                    lik2 = lik * lik;
-                                    lik3 = lik2 * lik;
-                                    lik4 = lik3 * lik;
-                                    double lik5 = lik4 * lik;
-                                    double lik6 = lik5 * lik;
-                                    double lik10 = lik5 * lik5;
-                                    double lik11 = lik10 * lik;
-                                    double lik12 = lik11 * lik;
-                                    double lik13 = lik12 * lik;
-                                    double term = 4.0 * PI / (120.0 * r * lik5 * uik5) * (15.0 * uik * lik * r * (uik4 - lik4)
-                                            - 10.0 * uik2 * lik2 * (uik3 - lik3) + 6.0 * (sk2 - r2) * (uik5 - lik5));
-                                    double term2 = 4.0 * PI / (2640.0 * r * lik12 * uik12) * (120.0 * uik * lik * r * (uik11 - lik11)
-                                            - 66.0 * uik2 * lik2 * (uik10 - lik10) + 55.0 * (sk2 - r2) * (uik12 - lik12));
-                                    double idisp = -2.0 * ao * term;
-                                    double irep = ao * rmixo7 * term2;
-                                    sum = sum + irep + idisp;
-                                    if (gradient) {
-                                        double dl;
-                                        if (ri > r - sk || rmax < rmixo) {
-                                            dl = -5.0 * lik2 + 3.0 * r2 + 3.0 * sk2;
-                                            dl = -dl / lik5;
-                                        } else {
-                                            dl = 5.0 * lik3 - 33.0 * lik * r2 - 3.0 * lik * sk2
-                                                    + 15.0 * (lik2 * r + r3 - r * sk2);
-                                            dl = dl / lik6;
-                                        }
-                                        double du;
-                                        du = 5.0 * uik3 - 33.0 * uik * r2 - 3.0 * uik * sk2
-                                                + 15.0 * (uik2 * r + r3 - r * sk2);
-                                        du = -du / uik6;
-                                        de = de - 2.0 * ao * PI * (dl + du) / (15.0 * r2);
-
-                                        if (ri > r - sk || rmax < rmixo) {
-                                            dl = -6.0 * lik2 + 5.0 * r2 + 5.0 * sk2;
-                                            dl = -dl / lik12;
-                                        } else {
-                                            dl = 6.0 * lik3 - 125.0 * lik * r2 - 5.0 * lik * sk2 + 60.0 * (lik2 * r + r3 - r * sk2);
-                                            dl = dl / lik13;
-                                        }
-                                        du = 6.0 * uik3 - 125.0 * uik * r2 - 5.0 * uik * sk2 + 60.0 * (uik2 * r + r3 - r * sk2);
-                                        du = -du / uik13;
-                                        de = de + ao * rmixo7 * PI * (dl + du) / (60.0 * r2);
-                                    }
-
-                                }
-                                if (uik > rmixh) {
-                                    lik = max(rmax, rmixh);
-                                    lik2 = lik * lik;
-                                    lik3 = lik2 * lik;
-                                    lik4 = lik3 * lik;
-                                    double lik5 = lik4 * lik;
-                                    double lik6 = lik5 * lik;
-                                    double lik10 = lik5 * lik5;
-                                    double lik11 = lik10 * lik;
-                                    double lik12 = lik11 * lik;
-                                    double lik13 = lik12 * lik;
-                                    double term = 4.0 * PI / (120.0 * r * lik5 * uik5) * (15.0 * uik * lik * r * (uik4 - lik4)
-                                            - 10.0 * uik2 * lik2 * (uik3 - lik3) + 6.0 * (sk2 - r2) * (uik5 - lik5));
-                                    double term2 = 4.0 * PI / (2640.0 * r * lik12 * uik12) * (120.0 * uik * lik * r * (uik11 - lik11)
-                                            - 66.0 * uik2 * lik2 * (uik10 - lik10) + 55.0 * (sk2 - r2) * (uik12 - lik12));
-                                    double idisp = -4.0 * ah * term;
-                                    double irep = 2.0 * ah * rmixh7 * term2;
-                                    sum = sum + irep + idisp;
-                                    if (gradient) {
-                                        double dl;
-                                        if (ri > r - sk || rmax < rmixh) {
-                                            dl = -5.0 * lik2 + 3.0 * r2 + 3.0 * sk2;
-                                            dl = -dl / lik5;
-                                        } else {
-                                            dl = 5.0 * lik3 - 33.0 * lik * r2
-                                                    - 3.0 * lik * sk2 + 15.0 * (lik2 * r + r3 - r * sk2);
-                                            dl = dl / lik6;
-                                        }
-                                        double du;
-                                        du = 5.0 * uik3 - 33.0 * uik * r2
-                                                - 3.0 * uik * sk2 + 15.0 * (uik2 * r + r3 - r * sk2);
-                                        du = -du / uik6;
-                                        de = de - 4.0 * ah * PI * (dl + du) / (15.0 * r2);
-                                        if (ri > r - sk || rmax < rmixh) {
-                                            dl = -6.0 * lik2 + 5.0 * r2 + 5.0 * sk2;
-                                            dl = -dl / lik12;
-                                        } else {
-                                            dl = 6.0 * lik3 - 125.0 * lik * r2 - 5.0 * lik * sk2 + 60.0 * (lik2 * r + r3 - r * sk2);
-                                            dl = dl / lik13;
-                                        }
-                                        du = 6.0 * uik3 - 125.0 * uik * r2 - 5.0 * uik * sk2 + 60.0 * (uik2 * r + r3 - r * sk2);
-                                        du = -du / uik13;
-                                        de = de + ah * rmixh7 * PI * (dl + du) / (30.0 * r2);
-                                    }
-
-                                }
-                                //   increment the individual dispersion gradient components
-                                if (gradient) {
-                                    de = -de / r * slevy * awater;
-                                    double dedx = de * xr;
-                                    double dedy = de * yr;
-                                    double dedz = de * zr;
-                                    gX[i] += dedx;
-                                    gY[i] += dedy;
-                                    gZ[i] += dedz;
-                                    gX[k] -= dedx;
-                                    gY[k] -= dedy;
-                                    gZ[k] -= dedz;
-                                }
-                            }
+                            xr = dx_local[0];
+                            yr = dx_local[1];
+                            zr = dx_local[2];
+                            r = sqrt(r2);
+                            r3 = r * r2;
+                            sum += descreen(i, k) + descreen(k, i);
                         }
                     }
-                    // increment the overall dispersion energy component
-                    double e = cdisp[i] - slevy * awater * sum;
-                    edisp += e;
+                    /**
+                     * Subtract descreening.
+                     */
+                    edisp -= slevy * awater * sum;
                 }
+            }
+
+            private double descreen(int i, int k) {
+                double sum = 0.0;
+                VDWType type = atoms[i].getVDWType();
+                double epsi = type.wellDepth;
+                double rmini = type.radius / 2.0;
+                double emixo = (4.0 * epso * epsi) / (pow(sqrt(epso) + sqrt(epsi), 2));
+                double rmixo = 2.0 * (pow(rmino, 3) + pow(rmini, 3)) / (pow(rmino, 2) + pow(rmini, 2));
+                double rmixo7 = pow(rmixo, 7);
+                double ao = emixo * rmixo7;
+                double emixh = 4.0 * epsh * epsi / (pow(sqrt(epsh) + sqrt(epsi), 2));
+                double rmixh = 2.0 * (pow(rminh, 3) + pow(rmini, 3)) / (pow(rminh, 2) + pow(rmini, 2));
+                double rmixh7 = pow(rmixh, 7);
+                double ah = emixh * rmixh7;
+                double ri = rDisp[i];
+                double rk = rDisp[k];
+                double sk = rk * dispersionOverlapScaleFactor;
+                double sk2 = sk * sk;
+                if (ri < r + sk) {
+                    double de = 0.0;
+                    double rmax = max(ri, r - sk);
+                    double lik = rmax;
+                    double lik2 = lik * lik;
+                    double lik3 = lik2 * lik;
+                    double lik4 = lik3 * lik;
+                    if (lik < rmixo) {
+                        double uik = min(r + sk, rmixo);
+                        double uik2 = uik * uik;
+                        double uik3 = uik2 * uik;
+                        double uik4 = uik3 * uik;
+                        double term = 4.0 * PI / (48.0 * r) * (3.0 * (lik4 - uik4)
+                                - 8.0 * r * (lik3 - uik3) + 6.0 * (r2 - sk2) * (lik2 - uik2));
+                        double iwca = -emixo * term;
+                        sum = sum + iwca;
+                        if (gradient) {
+                            double dl;
+                            if (ri > r - sk) {
+                                dl = -lik2 + 2.0 * r2 + 2.0 * sk2;
+                                dl = dl * lik2;
+                            } else {
+                                dl = -lik3 + 4.0 * lik2 * r
+                                        - 6.0 * lik * r2
+                                        + 2.0 * lik * sk2 + 4.0 * r3
+                                        - 4.0 * r * sk2;
+                                dl = dl * lik;
+                            }
+                            double du;
+                            if (r + sk > rmixo) {
+                                du = -uik2 + 2.0 * r2 + 2.0 * sk2;
+                                du = -du * uik2;
+                            } else {
+                                du = -uik3 + 4.0 * uik2 * r
+                                        - 6.0 * uik * r2
+                                        + 2.0 * uik * sk2 + 4.0 * r3
+                                        - 4.0 * r * sk2;
+                                du = -du * uik;
+                            }
+                            de = de - emixo * PI * (dl + du) / (4.0 * r2);
+                        }
+                    }
+                    if (lik < rmixh) {
+                        double uik = min(r + sk, rmixh);
+                        double uik2 = uik * uik;
+                        double uik3 = uik2 * uik;
+                        double uik4 = uik3 * uik;
+                        double term = 4.0 * PI / (48.0 * r) * (3.0 * (lik4 - uik4)
+                                - 8.0 * r * (lik3 - uik3) + 6.0 * (r2 - sk2) * (lik2 - uik2));
+                        double iwca = -2.0 * emixh * term;
+                        sum = sum + iwca;
+                        if (gradient) {
+                            double dl;
+                            if (ri > r - sk) {
+                                dl = -lik2 + 2.0 * r2 + 2.0 * sk2;
+                                dl = dl * lik2;
+                            } else {
+                                dl = -lik3 + 4.0 * lik2 * r - 6.0 * lik * r2
+                                        + 2.0 * lik * sk2 + 4.0 * r3 - 4.0 * r * sk2;
+                                dl = dl * lik;
+                            }
+                            double du;
+                            if (r + sk > rmixh) {
+                                du = -uik2 + 2.0 * r2 + 2.0 * sk2;
+                                du = -du * uik2;
+                            } else {
+                                du = -uik3 + 4.0 * uik2 * r - 6.0 * uik * r2
+                                        + 2.0 * uik * sk2 + 4.0 * r3 - 4.0 * r * sk2;
+                                du = -du * uik;
+                            }
+                            de = de - 2.0 * emixh * PI * (dl + du) / (4.0 * r2);
+                        }
+                    }
+                    double uik = r + sk;
+                    double uik2 = uik * uik;
+                    double uik3 = uik2 * uik;
+                    double uik4 = uik3 * uik;
+                    double uik5 = uik4 * uik;
+                    double uik6 = uik5 * uik;
+                    double uik10 = uik5 * uik5;
+                    double uik11 = uik10 * uik;
+                    double uik12 = uik11 * uik;
+                    double uik13 = uik12 * uik;
+                    if (uik > rmixo) {
+                        lik = max(rmax, rmixo);
+                        lik2 = lik * lik;
+                        lik3 = lik2 * lik;
+                        lik4 = lik3 * lik;
+                        double lik5 = lik4 * lik;
+                        double lik6 = lik5 * lik;
+                        double lik10 = lik5 * lik5;
+                        double lik11 = lik10 * lik;
+                        double lik12 = lik11 * lik;
+                        double lik13 = lik12 * lik;
+                        double term = 4.0 * PI / (120.0 * r * lik5 * uik5) * (15.0 * uik * lik * r * (uik4 - lik4)
+                                - 10.0 * uik2 * lik2 * (uik3 - lik3) + 6.0 * (sk2 - r2) * (uik5 - lik5));
+                        double term2 = 4.0 * PI / (2640.0 * r * lik12 * uik12) * (120.0 * uik * lik * r * (uik11 - lik11)
+                                - 66.0 * uik2 * lik2 * (uik10 - lik10) + 55.0 * (sk2 - r2) * (uik12 - lik12));
+                        double idisp = -2.0 * ao * term;
+                        double irep = ao * rmixo7 * term2;
+                        sum = sum + irep + idisp;
+                        if (gradient) {
+                            double dl;
+                            if (ri > r - sk || rmax < rmixo) {
+                                dl = -5.0 * lik2 + 3.0 * r2 + 3.0 * sk2;
+                                dl = -dl / lik5;
+                            } else {
+                                dl = 5.0 * lik3 - 33.0 * lik * r2 - 3.0 * lik * sk2
+                                        + 15.0 * (lik2 * r + r3 - r * sk2);
+                                dl = dl / lik6;
+                            }
+                            double du;
+                            du = 5.0 * uik3 - 33.0 * uik * r2 - 3.0 * uik * sk2
+                                    + 15.0 * (uik2 * r + r3 - r * sk2);
+                            du = -du / uik6;
+                            de = de - 2.0 * ao * PI * (dl + du) / (15.0 * r2);
+
+                            if (ri > r - sk || rmax < rmixo) {
+                                dl = -6.0 * lik2 + 5.0 * r2 + 5.0 * sk2;
+                                dl = -dl / lik12;
+                            } else {
+                                dl = 6.0 * lik3 - 125.0 * lik * r2 - 5.0 * lik * sk2 + 60.0 * (lik2 * r + r3 - r * sk2);
+                                dl = dl / lik13;
+                            }
+                            du = 6.0 * uik3 - 125.0 * uik * r2 - 5.0 * uik * sk2 + 60.0 * (uik2 * r + r3 - r * sk2);
+                            du = -du / uik13;
+                            de = de + ao * rmixo7 * PI * (dl + du) / (60.0 * r2);
+                        }
+
+                    }
+                    if (uik > rmixh) {
+                        lik = max(rmax, rmixh);
+                        lik2 = lik * lik;
+                        lik3 = lik2 * lik;
+                        lik4 = lik3 * lik;
+                        double lik5 = lik4 * lik;
+                        double lik6 = lik5 * lik;
+                        double lik10 = lik5 * lik5;
+                        double lik11 = lik10 * lik;
+                        double lik12 = lik11 * lik;
+                        double lik13 = lik12 * lik;
+                        double term = 4.0 * PI / (120.0 * r * lik5 * uik5) * (15.0 * uik * lik * r * (uik4 - lik4)
+                                - 10.0 * uik2 * lik2 * (uik3 - lik3) + 6.0 * (sk2 - r2) * (uik5 - lik5));
+                        double term2 = 4.0 * PI / (2640.0 * r * lik12 * uik12) * (120.0 * uik * lik * r * (uik11 - lik11)
+                                - 66.0 * uik2 * lik2 * (uik10 - lik10) + 55.0 * (sk2 - r2) * (uik12 - lik12));
+                        double idisp = -4.0 * ah * term;
+                        double irep = 2.0 * ah * rmixh7 * term2;
+                        sum = sum + irep + idisp;
+                        if (gradient) {
+                            double dl;
+                            if (ri > r - sk || rmax < rmixh) {
+                                dl = -5.0 * lik2 + 3.0 * r2 + 3.0 * sk2;
+                                dl = -dl / lik5;
+                            } else {
+                                dl = 5.0 * lik3 - 33.0 * lik * r2
+                                        - 3.0 * lik * sk2 + 15.0 * (lik2 * r + r3 - r * sk2);
+                                dl = dl / lik6;
+                            }
+                            double du;
+                            du = 5.0 * uik3 - 33.0 * uik * r2
+                                    - 3.0 * uik * sk2 + 15.0 * (uik2 * r + r3 - r * sk2);
+                            du = -du / uik6;
+                            de = de - 4.0 * ah * PI * (dl + du) / (15.0 * r2);
+                            if (ri > r - sk || rmax < rmixh) {
+                                dl = -6.0 * lik2 + 5.0 * r2 + 5.0 * sk2;
+                                dl = -dl / lik12;
+                            } else {
+                                dl = 6.0 * lik3 - 125.0 * lik * r2 - 5.0 * lik * sk2 + 60.0 * (lik2 * r + r3 - r * sk2);
+                                dl = dl / lik13;
+                            }
+                            du = 6.0 * uik3 - 125.0 * uik * r2 - 5.0 * uik * sk2 + 60.0 * (uik2 * r + r3 - r * sk2);
+                            du = -du / uik13;
+                            de = de + ah * rmixh7 * PI * (dl + du) / (30.0 * r2);
+                        }
+
+                    }
+                    // increment the individual dispersion gradient components
+                    if (gradient) {
+                        de = -de / r * slevy * awater;
+                        double dedx = de * xr;
+                        double dedy = de * yr;
+                        double dedz = de * zr;
+                        gX[i] += dedx;
+                        gY[i] += dedy;
+                        gZ[i] += dedz;
+                        gX[k] -= dedx;
+                        gY[k] -= dedy;
+                        gZ[k] -= dedz;
+                    }
+                }
+                return sum;
             }
         }
     }
@@ -4483,27 +4666,310 @@ public class GeneralizedKirkwood {
         private final static int MAXCUBE = 40;
         private final static int MAXARC = 1000;
         private final static int MAXMNB = 500;
+        /**
+         * maximum number of cycle convex edges.
+         */
         private final static int MAXCYEP = 30;
+        /**
+         * maximum number of convex face cycles
+         */
         private final static int MAXFPCY = 18;
-        // Radius of a water molecular.
+        /**
+         * Radius of a water molecular.
+         */
         private final static double exclude = 1.4;
+        /**
+         * maximum number of saddle faces.
+         */
         private final int maxfs = 3 * nAtoms;
+        /**
+         * maximum number of convex edges.
+         */
         private final int maxep = 5 * nAtoms;
+        /**
+         * maximum number of neighboring atom pairs.
+         */
         private final int maxcls = 50 * nAtoms;
+        /**
+         * maximum number of circles.
+         */
         private final int maxc = 5 * nAtoms;
+        /**
+         * maximum number of total tori.
+         */
         private final int maxt = 3 * nAtoms;
+        /**
+         * maximum number of temporary tori.
+         */
         private final int maxtt = 25 * nAtoms;
+        /**
+         * maximum number of concave edges.
+         */
         private final int maxen = 5 * nAtoms;
+        /**
+         * maximum number of vertices.
+         */
         private final int maxv = 5 * nAtoms;
+        /**
+         * maximum number of probe positions.
+         */
         private final int maxp = 3 * nAtoms;
+        /**
+         * maximum number of concave faces.
+         */
         private final int maxfn = 2 * nAtoms;
+        /**
+         * maximum number of convex faces.
+         */
         private final int maxfp = nAtoms;
+        /**
+         * maximum number of cycles.
+         */
         private final int maxcy = nAtoms;
+        /**
+         * Atomic radii.
+         */
         private final double radius[] = new double[nAtoms];
+        /**
+         * If true, atom is not used.
+         */
         private final boolean skip[] = new boolean[nAtoms];
-        // [X,Y,Z][Atom Number]
+        /**
+         * Copy of the atomic coordinates. [X,Y,Z][Atom Number]
+         */
         private final double a[][] = new double[3][nAtoms];
+        /**
+         * If true, atom has no free surface.
+         */
+        private final boolean nosurf[] = new boolean[nAtoms];
+        /**
+         * Atom free of neighbors.
+         */
+        private final boolean afree[] = new boolean[nAtoms];
+        /**
+         * Atom buried.
+         */
+        private final boolean abur[] = new boolean[nAtoms];
+        /**
+         * Begin and end pointers for atoms neighbors.
+         */
+        private final int acls[][] = new int[2][nAtoms];
+        /**
+         * Atom numbers of neighbors.
+         */
+        private final int cls[] = new int[maxcls];
+        /**
+         * Pointer from neighbor to torus.
+         */
+        private final int clst[] = new int[maxcls];
+        /**
+         * Number of temporary tori.
+         */
+        private int ntt;
+        /**
+         * Temporary torus atom numbers.
+         */
+        private final int tta[][] = new int[2][maxtt];
+        /**
+         * First edge of each temporary torus.
+         */
+        private final int ttfe[] = new int[maxtt];
+        /**
+         * Last edge of each temporary torus.
+         */
+        private final int ttle[] = new int[maxtt];
+        /**
+         * Pointer to next edge of temporary torus.
+         */
+        private final int enext[] = new int[maxen];
+        /**
+         * Temporary torus buried.
+         */
+        private final boolean ttbur[] = new boolean[maxtt];
+        /**
+         * Temporary torus free.
+         */
+        private final boolean ttfree[] = new boolean[maxtt];
+        /**
+         * Torus center.
+         */
+        private final double t[][] = new double[3][maxt];
+        /**
+         * Torus radius.
+         */
+        private final double tr[] = new double[maxt];
+        /**
+         * Torus axis.
+         */
+        private final double tax[][] = new double[3][maxt];
+        /**
+         * Number of tori.
+         */
+        private int nt;
+        /**
+         * Torus atom number.
+         */
+        private final int ta[][] = new int[2][maxt];
+        /**
+         * Torus first edge.
+         */
+        int tfe[] = new int[maxt];
+        /**
+         * Torus free edge of neighbor.
+         */
+        boolean tfree[] = new boolean[maxt];
+        /**
+         * Probe position coordinates.
+         */
+        private final double p[][] = new double[3][maxp];
+        /**
+         * Number of probe positions.
+         */
+        private int np;
+        /**
+         * Probe position atom numbers.
+         */
+        private final int pa[][] = new int[3][maxp];
+        /**
+         * Vertex coordinates.
+         */
+        private final double v[][] = new double[3][maxv];
+        /**
+         * Number of vertices.
+         */
+        private int nv;
+        /**
+         * Vertex atom number.
+         */
+        private final int va[] = new int[maxv];
+        /**
+         * Vertex probe number.
+         */
+        private final int vp[] = new int[maxv];
+        /**
+         * Number of concave edges.
+         */
+        private int nen;
+        /**
+         * Vertex numbers for each concave edge.
+         */
+        private final int env[][] = new int[2][maxen];
+        /**
+         * Concave face concave edge numbers.
+         */
+        private final int fnen[][] = new int[3][maxfn];
+        /**
+         * Circle center.
+         */
+        private final double c[][] = new double[3][maxc];
+        /**
+         * Circle radius.
+         */
+        private final double cr[] = new double[maxc];
+        /**
+         * Number of circles.
+         */
+        private int nc;
+        /**
+         * Circle atom number.
+         */
+        private final int ca[] = new int[maxc];
+        /**
+         * Circle torus number.
+         */
+        private final int ct[] = new int[maxc];
+        /**
+         * Number of convex edges.
+         */
+        private int nep;
+        /**
+         * Convex edge circle number.
+         */
+        private final int epc[] = new int[maxep];
+        /**
+         * Convex edge vertex number.
+         */
+        private final int epv[][] = new int[2][maxep];
+        /**
+         * First convex edge of each atom.
+         */
+        private final int afe[] = new int[nAtoms];
+        /**
+         * Last convex edge of each atom.
+         */
+        private final int ale[] = new int[nAtoms];
+        /**
+         * Pointer to next convex edge of atom.
+         */
+        private final int epnext[] = new int[maxep];
+        /**
+         * Number of saddle faces.
+         */
+        private int nfs;
+        /**
+         * Saddle face concave edge numbers.
+         */
+        private final int fsen[][] = new int[2][maxfs];
+        /**
+         * Saddle face convex edge numbers.
+         */
+        private final int fsep[][] = new int[2][maxfs];
+        /**
+         * Number of cycles.
+         */
+        private int ncy;
+        /**
+         * Number of convex edges in cycle.
+         */
+        private final int cynep[] = new int[maxcy];
+        /**
+         * Cycle convex edge numbers.
+         */
+        private final int cyep[][] = new int[MAXCYEP][maxcy];
+        /**
+         * Number of convex faces.
+         */
+        private int nfp;
+        /**
+         * Atom number of convex face.
+         */
+        private final int fpa[] = new int[maxfp];
+        /**
+         * Convex face cycle numbers
+         */
+        private final int fpcy[][] = new int[MAXFPCY][maxfp];
+        /**
+         * Number of cycles bounding convex face.
+         */
+        private final int fpncy[] = new int[maxfp];
 
+        // These are from the "nearby" method.
+        /**
+         * True if cube contains active atoms.
+         */
+        private final boolean activeCube[][][] = new boolean[MAXCUBE][MAXCUBE][MAXCUBE];
+        /**
+         * True if cube or adjacent cubes have active atoms.
+         */
+        private final boolean activeAdjacentCube[][][] = new boolean[MAXCUBE][MAXCUBE][MAXCUBE];
+        /**
+         * Pointer to first atom in list for cube.
+         */
+        private final int firstAtomPointer[][][] = new int[MAXCUBE][MAXCUBE][MAXCUBE];
+        /**
+         * Integer cube coordinates.
+         */
+        private final int cubeCoordinates[][] = new int[3][nAtoms];
+        /**
+         * Pointer to next atom in cube.
+         */
+        private final int nextAtomPointer[] = new int[nAtoms];
+
+        /**
+         * VolumeRegion constructor.
+         *
+         * @param nt Number of threads.
+         */
         public VolumeRegion(int nt) {
             volumeLoop = new VolumeLoop[nt];
             for (int i = 0; i < nt; i++) {
@@ -4593,8 +5059,7 @@ public class GeneralizedKirkwood {
          */
         private class VolumeLoop extends IntegerForLoop {
 
-            private int ntt, nt, nfn, nfp, nfs;
-            private int i, j, k, m;
+            private int nfn;
             private int l, l1, l2;
             private int io, ir, in, iv;
             private int narc, nx, ny, nz;
@@ -4602,36 +5067,9 @@ public class GeneralizedKirkwood {
             private int jstart, jstop;
             private int kstart, kstop;
             private int mstart, mstop;
-            private int mxcube = 15;
             private int isum, itemp, tcube;
-            private final int ca[] = new int[maxc];
-            private final int epnext[] = new int[maxep];
-            private final int fpa[] = new int[maxfp];
-            private final int afe[] = new int[nAtoms];
-            private final int ale[] = new int[nAtoms];
-            private final int enext[] = new int[maxen];
-            private final int fpncy[] = new int[maxfp];
+            private final int mxcube = 15;
             private final int inov[] = new int[MAXARC];
-            private final int va[] = new int[maxv];
-            private final int vp[] = new int[maxv];
-            private final int epc[] = new int[maxep];
-            private final int cynep[] = new int[maxcy];
-            private final int fpcy[][] = new int[MAXFPCY][maxfp];
-            private final int epv[][] = new int[2][maxep];
-            private final int acls[][] = new int[2][nAtoms];
-            private final int fsen[][] = new int[2][maxfs];
-            private final int fsep[][] = new int[2][maxfs];
-            private final int cyep[][] = new int[MAXCYEP][maxcy];
-            private final int env[][] = new int[2][maxen];
-            private final int fnen[][] = new int[3][maxfn];
-            private final int cls[] = new int[maxcls];
-            private final int clst[] = new int[maxcls];
-            private final int ttle[] = new int[maxtt];
-            private final int ttfe[] = new int[maxtt];
-            private final int ct[] = new int[maxc];
-            private final int tta[][] = new int[2][maxtt];
-            private final int ta[][] = new int[2][maxt];
-            private final int pa[][] = new int[3][maxp];
             private final int cube[][][][] = new int[2][mxcube][mxcube][mxcube];
             private double evol;
             private double xmin, ymin, zmin;
@@ -4655,14 +5093,6 @@ public class GeneralizedKirkwood {
             private double xr, yr, zr;
             private double dist2, vdwsum;
             private double zstep;
-            private double ttr;
-            private final double t[][] = new double[3][maxt];
-            private final double tax[][] = new double[3][maxt];
-            private final double tr[] = new double[maxt];
-            private final double cr[] = new double[maxc];
-            private final double v[][] = new double[3][maxv];
-            private final double p[][] = new double[3][maxp];
-            private final double c[][] = new double[3][maxc];
             private final double arci[] = new double[MAXARC];
             private final double arcf[] = new double[MAXARC];
             private final double dx[] = new double[MAXARC];
@@ -4672,11 +5102,7 @@ public class GeneralizedKirkwood {
             private boolean ttok, cinsp, cintp;
             private final double vdwrad[] = new double[nAtoms];
             private final double dex[][] = new double[3][nAtoms];
-            private final boolean abur[] = new boolean[nAtoms];
-            private final boolean nosurf[] = new boolean[nAtoms];
-            private final boolean ttbur[] = new boolean[maxtt];
-            private final boolean ttfree[] = new boolean[maxtt];
-            private final boolean afree[] = new boolean[nAtoms];
+
             // Extra padding to avert cache interference.
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
             private long pad8, pad9, pada, padb, padc, padd, pade, padf;
@@ -4694,11 +5120,12 @@ public class GeneralizedKirkwood {
                 sharedVolume.addAndGet(evol);
             }
 
+            /**
+             * Find the analytical volume and surface area.
+             */
             public void calcVolume() {
                 double volume = 0;
                 double area = 0;
-
-                // Find the analytical volume and surface area.
                 nearby();
                 torus();
                 place();
@@ -4720,12 +5147,11 @@ public class GeneralizedKirkwood {
                 ai[2] = temp[2][index1][index2];
             }
 
-            public boolean gettor(int ia, int ja, double torcen[], double torad, double torax[]) {
+            public boolean gettor(int ia, int ja, double torcen[], double torad[], double torax[]) {
                 /*
                  * "gettor" tests for a possible torus position at the interface
                  * between two atoms, and finds the torus radius, center and axis.
                  */
-
                 double dij, temp;
                 double temp1, temp2;
                 double vij[] = new double[3];
@@ -4761,8 +5187,8 @@ public class GeneralizedKirkwood {
 
                         // Store the torus radius, center and axis.
                         ttok = true;
-                        torad = sqrt(temp1 * temp2) / (2.0 * dij);
-                        for (k = 0; k < 3; k++) {
+                        torad[0] = sqrt(temp1 * temp2) / (2.0 * dij);
+                        for (int k = 0; k < 3; k++) {
                             torcen[k] = bij[k];
                             torax[k] = uij[k];
                         }
@@ -4772,12 +5198,10 @@ public class GeneralizedKirkwood {
                 return ttok;
             }
 
-            private final boolean scube[][][] = new boolean[MAXCUBE][MAXCUBE][MAXCUBE];
-            private final boolean sscube[][][] = new boolean[MAXCUBE][MAXCUBE][MAXCUBE];
-            private final int icube[][][] = new int[MAXCUBE][MAXCUBE][MAXCUBE];
-            int ico[][] = new int[3][nAtoms];
-            int icuptr[] = new int[nAtoms];
-
+            /**
+             * The "nearby" method finds all of the through-space neighbors of
+             * each atom for use in surface area and volume calculations
+             */
             public void nearby() {
                 int maxclsa = 1000;
                 int iptr, juse;
@@ -4790,12 +5214,18 @@ public class GeneralizedKirkwood {
                 int jmold;
                 int ncls, nclsa;
                 int clsa[] = new int[maxclsa];
-                int itnl[] = new int[maxclsa];
+                /**
+                 * Temporary neighbor list, before sorting.
+                 */
+                int tempNeighborList[] = new int[maxclsa];
                 double radmax, width;
                 double sum, sumi;
                 double d2, r2;
                 double vect1, vect2, vect3;
-                double comin[] = new double[3];
+                /**
+                 * Minimum atomic coordinates (cube corner).
+                 */
+                double minAtomicCoordinates[] = new double[3];
                 double ai[] = new double[3];
                 double aj[] = new double[3];
 
@@ -4803,10 +5233,10 @@ public class GeneralizedKirkwood {
                  * Ignore all atoms that are completely inside another atom;
                  * may give nonsense results if this step is not taken.
                  */
-                for (i = 0; i < nAtoms - 1; i++) {
+                for (int i = 0; i < nAtoms - 1; i++) {
                     if (!skip[i]) {
                         getVector(ai, a, i);
-                        for (j = i + 1; j < nAtoms; j++) {
+                        for (int j = i + 1; j < nAtoms; j++) {
                             getVector(aj, a, j);
                             d2 = VectorMath.dist2(ai, aj);
                             r2 = (radius[i] - radius[j]) * (radius[i] - radius[j]);
@@ -4821,15 +5251,17 @@ public class GeneralizedKirkwood {
                     }
                 }
 
-                // Check for new coordinate minima and radii maxima.
+                /**
+                 * Check for new coordinate minima and radii maxima.
+                 */
                 radmax = 0.0;
-                for (k = 0; k < 3; k++) {
-                    comin[k] = a[k][1];
+                for (int k = 0; k < 3; k++) {
+                    minAtomicCoordinates[k] = a[k][1];
                 }
-                for (i = 0; i < nAtoms; i++) {
-                    for (k = 0; k < 3; k++) {
-                        if (a[k][i] > comin[k]) {
-                            comin[k] = a[k][i];
+                for (int i = 0; i < nAtoms; i++) {
+                    for (int k = 0; k < 3; k++) {
+                        if (a[k][i] > minAtomicCoordinates[k]) {
+                            minAtomicCoordinates[k] = a[k][i];
                         }
                     }
                     if (radius[i] > radmax) {
@@ -4843,33 +5275,35 @@ public class GeneralizedKirkwood {
                  */
                 width = 2.0 * (radmax + probe);
 
-                // Set up cube arrays; first the integer coordinate arrays.
-                for (i = 0; i < nAtoms; i++) {
-                    for (k = 0; k < 3; k++) {
-                        ico[k][i] = (int) ((a[k][i] - comin[k]) / width) + 1;
-                        if (ico[k][i] < 0) {
+                /**
+                 * Set up cube arrays; first the integer coordinate arrays.
+                 */
+                for (int i = 0; i < nAtoms; i++) {
+                    for (int k = 0; k < 3; k++) {
+                        cubeCoordinates[k][i] = (int) ((a[k][i] - minAtomicCoordinates[k]) / width) + 1;
+                        if (cubeCoordinates[k][i] < 0) {
                             logger.severe("Cube Coordinate Too Small");
-                        } else if (ico[k][i] > MAXCUBE) {
+                        } else if (cubeCoordinates[k][i] > MAXCUBE) {
                             logger.severe("Cube Coordinate Too Large");
                         }
                     }
                 }
 
-                // Initialize head pointer and srn=2 arrays.
-                for (i = 0; i < MAXCUBE; i++) {
-                    for (j = 0; j < MAXCUBE; j++) {
-                        for (k = 0; k < MAXCUBE; k++) {
-                            icube[i][j][k] = 0;
-                            scube[i][j][k] = false;
-                            sscube[i][j][k] = false;
+                /**
+                 * Initialize head pointer and srn=2 arrays.
+                 */
+                for (int i = 0; i < MAXCUBE; i++) {
+                    for (int j = 0; j < MAXCUBE; j++) {
+                        for (int k = 0; k < MAXCUBE; k++) {
+                            firstAtomPointer[i][j][k] = 0;
+                            activeCube[i][j][k] = false;
+                            activeAdjacentCube[i][j][k] = false;
                         }
                     }
                 }
 
                 // Initialize linked list pointers.
-                for (i = 0; i < nAtoms; i++) {
-                    icuptr[i] = 0;
-                }
+                Arrays.fill(nextAtomPointer, 0);
 
                 // Set up head and later pointers for each atom.
                 for (iatom = 0; iatom < nAtoms; iatom++) {
@@ -4879,16 +5313,15 @@ public class GeneralizedKirkwood {
                         continue;
                     }
                     getVector(ai, a, iatom);
-                    i = ico[0][iatom];
-                    j = ico[1][iatom];
-                    k = ico[2][iatom];
-                    if (icube[i][j][k] <= 0) {
+                    int i = cubeCoordinates[0][iatom];
+                    int j = cubeCoordinates[1][iatom];
+                    int k = cubeCoordinates[2][iatom];
+                    if (firstAtomPointer[i][j][k] <= 0) {
                         // First atom in this cube.
-                        icube[i][j][k] = iatom;
+                        firstAtomPointer[i][j][k] = iatom;
                     } else {
-
                         // Add to end of linked list.
-                        iptr = icube[i][j][k];
+                        iptr = firstAtomPointer[i][j][k];
                         getVector(aj, a, iptr);
 
                         // Check for duplicate atoms, turn off one of them.
@@ -4898,31 +5331,31 @@ public class GeneralizedKirkwood {
                         }
 
                         // Move on down the list.
-                        if (icuptr[iptr] <= 0.0) {
+                        if (nextAtomPointer[iptr] <= 0.0) {
                             continue;
                         }
-                        iptr = icuptr[iptr];
+                        iptr = nextAtomPointer[iptr];
 
                         // Store atom number.
-                        icuptr[iptr] = iatom;
+                        nextAtomPointer[iptr] = iatom;
                     }
 
                     // Check for surfaced atom.
                     if (!skip[iatom]) {
-                        scube[i][j][k] = true;
+                        activeCube[i][j][k] = true;
                     }
                 }
 
                 // Check if this cube or any adjacent cube has active atoms.
-                for (k = 0; k < MAXCUBE; k++) {
-                    for (j = 0; j < MAXCUBE; j++) {
-                        for (i = 0; i < MAXCUBE; i++) {
-                            if (icube[i][j][k] != 0) {
+                for (int k = 0; k < MAXCUBE; k++) {
+                    for (int j = 0; j < MAXCUBE; j++) {
+                        for (int i = 0; i < MAXCUBE; i++) {
+                            if (firstAtomPointer[i][j][k] != 0) {
                                 for (k1 = max(k - 1, 1); k1 < min(k + 1, MAXCUBE); k1++) {
                                     for (j1 = max(j - 1, 1); j1 < min(j + 1, MAXCUBE); j1++) {
                                         for (i1 = max(i - 1, 1); i1 < min(i + 1, MAXCUBE); i1++) {
-                                            if (scube[i1][j1][k1]) {
-                                                sscube[i][j][k] = true;
+                                            if (activeCube[i1][j1][k1]) {
+                                                activeAdjacentCube[i][j][k] = true;
                                             }
                                         }
                                     }
@@ -4933,23 +5366,25 @@ public class GeneralizedKirkwood {
                 }
                 ncls = 0;
 
-                // Zero pointers for atom and find its cube.
-                for (i = 0; i < nAtoms; i++) {
+                /**
+                 * Zero pointers for atom and find its cube.
+                 */
+                for (int i = 0; i < nAtoms; i++) {
                     if (!skip[i]) {
                         nclsa = 0;
                         nosurf[i] = skip[i];
                         acls[0][i] = 0;
                         acls[1][i] = 0;
 
-                        ici = ico[0][i];
-                        icj = ico[1][i];
-                        ick = ico[2][i];
+                        ici = cubeCoordinates[0][i];
+                        icj = cubeCoordinates[1][i];
+                        ick = cubeCoordinates[2][i];
                         /*
                          * Skip iatom if its cube and adjoining
                          * cubes contain only blockers.
                          */
 
-                        if (!sscube[ici][icj][ick]) {
+                        if (!activeAdjacentCube[ici][icj][ick]) {
                             continue;
                         }
                         sumi = 2.0 * probe + radius[i];
@@ -4958,7 +5393,7 @@ public class GeneralizedKirkwood {
                         for (jck = max(ick - 1, 1); jck < min(ick + 1, MAXCUBE); jck++) {
                             for (jcj = max(icj - 1, 1); jcj < min(icj + 1, MAXCUBE); jcj++) {
                                 for (jci = max(ici - 1, 1); jci < min(ici + 1, MAXCUBE); jci++) {
-                                    j = icube[jci][jcj][jck];
+                                    int j = firstAtomPointer[jci][jcj][jck];
 
                                     // Check for end of linked list for this cube.
                                     if ((j >= 0) || (i == j) || (skip[j])) {
@@ -4992,15 +5427,18 @@ public class GeneralizedKirkwood {
                                     if (nclsa > maxclsa) {
                                         logger.severe("Too many Neighbors for Atom");
                                     }
-                                    itnl[nclsa] = j;
+                                    tempNeighborList[nclsa] = j;
 
                                     // Get number of next atom in cube.
-                                    j = icuptr[j];
+                                    j = nextAtomPointer[j];
                                 }
                             }
                         }
 
-                        // Set up neighbors arrays with jatom in increasing order.
+                        /**
+                         * Set up neighbors arrays with jatom in increasing
+                         * order.
+                         */
                         if (!nosurf[i]) {
                             jmold = 0;
                             for (juse = 0; juse < nclsa; juse++) {
@@ -5008,23 +5446,26 @@ public class GeneralizedKirkwood {
                                 for (jcls = 0; jcls < ncls; jcls++) {
 
                                     // Don't use ones already sorted.
-                                    if (itnl[jcls] > jmold) {
-                                        if (itnl[jcls] < jmin) {
-                                            jmin = itnl[jcls];
+                                    if (tempNeighborList[jcls] > jmold) {
+                                        if (tempNeighborList[jcls] < jmin) {
+                                            jmin = tempNeighborList[jcls];
                                             jmincls = jcls;
                                         }
                                     }
                                 }
                                 jmold = jmin;
                                 jcls = jmincls;
-                                jatom = itnl[jcls];
+                                jatom = tempNeighborList[jcls];
                                 clsa[juse] = jatom;
                             }
 
-                            // Set up pointers to first and last neighbors of atom.
+                            /**
+                             * Set up pointers to first and last neighbors of
+                             * atom.
+                             */
                             if (nclsa > -1) {
                                 acls[0][i] = ncls + 1;
-                                for (m = 0; m < nclsa; m++) {
+                                for (int m = 0; m < nclsa; m++) {
                                     ncls++;
                                     if (ncls > maxcls) {
                                         logger.severe("Too many Neighboring Atom Pairs");
@@ -5039,6 +5480,11 @@ public class GeneralizedKirkwood {
                 }
             }
 
+            /**
+             * The torus method sets a list of all of the temporary torus
+             * positions by testing for a torus between each atom and its
+             * neighbors
+             */
             public void torus() {
                 int ia, ja, jn;
                 int ibeg = 0;
@@ -5046,13 +5492,17 @@ public class GeneralizedKirkwood {
                 double tt[] = new double[3];
                 double ttax[] = new double[3];
 
-                // No torus is possible if there is only one atom.
+                /**
+                 * No torus is possible if there is only one atom.
+                 */
                 ntt = 0;
                 for (ia = 0; ia < nAtoms; ia++) {
                     afree[ia] = true;
                 }
 
-                // Get begin and end pointers to neighbors of this atom.
+                /**
+                 * Get begin and end pointers to neighbors of this atom.
+                 */
                 for (ia = 0; ia < nAtoms; ia++) {
                     if (!nosurf[ia]) {
                         ibeg = acls[0][ia];
@@ -5073,6 +5523,7 @@ public class GeneralizedKirkwood {
                             if (ja >= ia) {
 
                                 // Do some solid geometry.
+                                double ttr[] = {0.0};
                                 ttok = gettor(ia, ja, tt, ttr, ttax);
                                 if (ttok) {
 
@@ -5105,31 +5556,16 @@ public class GeneralizedKirkwood {
                 }
 
             }
-            /*
-             * "place" finds the probe sites by putting the probe sphere tangent to each
-             * triple of neighboring atoms.
+
+            /**
+             * The place method finds the probe sites by putting the probe
+             * sphere tangent to each triple of neighboring atoms.
              */
-
             public void place() {
-
-                int np, nen, nv;
-                int k, ke, kv;
-                int ia, ja, ka;
-                int ik, ip, jk;
-                int km, la, lm;
-                int lkf, itt, nmnb;
-                int iend, jend;
-                int iptr, jptr;
                 int mnb[] = new int[MAXMNB];
                 int ikt[] = new int[MAXMNB];
                 int jkt[] = new int[MAXMNB];
                 int lkcls[] = new int[MAXMNB];
-                double d2, det, rad, hij;
-                double hijk = 0;
-                double dotut, fact;
-                double rip2, dba;
-                double rij = 0;
-                double rik = 0;
                 double tik[] = new double[3];
                 double tij[] = new double[3];
                 double uij[] = new double[3];
@@ -5148,481 +5584,480 @@ public class GeneralizedKirkwood {
                 double sumcls[] = new double[MAXMNB];
                 boolean tb, tok, prbok, move;
 
-                // No possible placement if there are no temporary tori.
+                /**
+                 * No possible placement if there are no temporary tori.
+                 */
+                if (ntt <= 0) {
+                    return;
+                }
+
                 np = 0;
                 nfn = 0;
                 nen = 0;
                 nv = 0;
-                if (ntt > 0) {
+                /**
+                 * Consider each torus in turn.
+                 */
+                for (int itt = 0; itt < ntt; itt++) {
 
-                    // Consider each torus in turn.
-                    for (itt = 0; itt < ntt; itt++) {
+                    // Get atom numbers
+                    int ia = tta[0][itt];
+                    int ja = tta[1][itt];
 
-                        // Get atom numbers
-                        ia = (int) tta[0][itt];
-                        ja = (int) tta[1][itt];
-                        /*
-                         * Form mutual neighbor list; clear number
-                         * of mutual neighbors of atoms ia and ja.
+                    /**
+                     * Form mutual neighbor list; clear number of mutual
+                     * neighbors of atoms ia and ja.
+                     */
+                    int nmnb = 0;
+
+                    /**
+                     * Get begin and end pointers for each atom's neighbor list.
+                     */
+                    int iptr = acls[0][ia];
+                    int jptr = acls[0][ja];
+
+                    if (iptr >= 0 && jptr >= 0) {
+                        int iend = acls[1][ia];
+                        int jend = acls[1][ja];
+
+                        /**
+                         * Collect mutual neighbors.
                          */
-
-                        nmnb = 0;
-
-                        // Get begin and end pointers for each atom's neighbor list.
-                        iptr = acls[0][ia];
-                        jptr = acls[0][ja];
-                        if (iptr <= 0 || jptr <= 0) {
-                            iend = acls[1][ia];
-                            jend = acls[1][ja];
-
-                            // Collect mutual neighbors.
-                            while (iptr > iend && jptr > jend) {
-                                move = false;
-                                // Go move the lagging pointer.
-
-                                if (cls[iptr] < cls[jptr]) {
-                                    iptr++;
+                        while (iptr > iend && jptr > jend) {
+                            move = false;
+                            /**
+                             * Go move the lagging pointer.
+                             */
+                            if (cls[iptr] < cls[jptr]) {
+                                iptr++;
+                                move = true;
+                            }
+                            if (!move) {
+                                if (cls[jptr] < cls[iptr]) {
+                                    jptr++;
                                     move = true;
                                 }
                                 if (!move) {
-                                    if (cls[jptr] < cls[iptr]) {
-                                        jptr++;
-                                        move = true;
+                                    /**
+                                     * Both point at same neighbor; one more
+                                     * mutual neighbor save atom number of
+                                     * mutual neighbor.
+                                     */
+                                    nmnb++;
+                                    if (nmnb > MAXMNB) {
+                                        logger.severe("Too many Mutual Neighbors");
                                     }
+                                    mnb[nmnb] = cls[iptr];
 
-                                    if (!move) {
-                                        /*
-                                         * Both point at same neighbor; one more mutual neighbor
-                                         * save atom number of mutual neighbor.
-                                         */
-                                        nmnb++;
-                                        if (nmnb > MAXMNB) {
-                                            logger.severe("Too many Mutual Neighbors");
+                                    /**
+                                     * Save pointers to second and third tori.
+                                     */
+                                    ikt[nmnb] = clst[iptr];
+                                    jkt[nmnb] = clst[jptr];
+                                }
+                            }
+                        }
+                        move = false;
+                        /**
+                         * We have all the mutual neighbors of ia and ja if no
+                         * mutual neighbors, skip to end of loop.
+                         */
+                        if (nmnb <= 0) {
+                            ttbur[itt] = false;
+                            move = true;
+                        }
+                        if (!move) {
+                            double hij[] = {0.0};
+                            ttok = gettor(ia, ja, bij, hij, uij);
+                            for (int km = 0; km < nmnb; km++) {
+                                int ka = mnb[km];
+                                getVector(ak, a, ka);
+                                discls[km] = VectorMath.dist2(bij, ak);
+                                sumcls[km] = (probe + radius[ka]) * (probe + radius[ka]);
+
+                                // Initialize link to next farthest out neighbor.
+                                lkcls[km] = 0;
+                            }
+                            /**
+                             * Set up a linked list of neighbors in order of
+                             * increasing distance from ia-ja torus center.
+                             */
+                            int lkf = 1;
+                            if (nmnb <= 1) {
+                                move = true;
+                            }
+                            if (!move) {
+                                // Put remaining neighbors in linked list at proper position.
+                                boolean keep = false;
+                                for (l = 1; l < nmnb; l++) {
+                                    if (!keep) {
+                                        l1 = 0;
+                                        l2 = lkf;
+                                    } else {
+                                        keep = false;
+                                    }
+                                    if (!(discls[l] < discls[l2])) {
+                                        l1 = l2;
+                                        l2 = lkcls[l2];
+                                        if (l2 != 0) {
+                                            keep = true;
+                                            continue;
                                         }
-                                        mnb[nmnb] = cls[iptr];
-
-                                        // Save pointers to second and third tori.
-                                        ikt[nmnb] = clst[iptr];
-                                        jkt[nmnb] = clst[jptr];
+                                    }
+                                    // Add to list.
+                                    if (l1 == 0) {
+                                        lkf = l;
+                                        lkcls[l] = l2;
+                                    } else {
+                                        lkcls[l1] = l;
+                                        lkcls[l] = l2;
                                     }
                                 }
                             }
                             move = false;
-                            /*
-                             * We have all the mutual neighbors of ia and ja
-                             * if no mutual neighbors, skip to end of loop.
-                             */
 
-                            if (nmnb <= 0) {
-                                ttbur[itt] = false;
-                                move = true;
-                            }
-                            if (!move) {
-                                hij = 0.0;
-                                ttok = gettor(ia, ja, bij, hij, uij);
-                                for (km = 0; km < nmnb; km++) {
-                                    ka = mnb[km];
-                                    getVector(ak, a, ka);
-                                    discls[km] = VectorMath.dist2(bij, ak);
-                                    sumcls[km] = (probe + radius[ka]) * (probe + radius[ka]);
+                            // Loop through mutual neighbors.
+                            for (int km = 0; km < nmnb; km++) {
 
-                                    // Initialize link to next farthest out neighbor.
-                                    lkcls[km] = 0;
+                                // Get atom number of neighbors.
+                                int ka = mnb[km];
+                                if (skip[ia] && skip[ja] && skip[ka]) {
                                 }
+
+                                // Get tori numbers for neighbor.
+                                int ik = ikt[km];
+                                int jk = jkt[km];
+
                                 /*
-                                 * Set up a linked list of neighbors in order of
-                                 * increasing distance from ia-ja torus center.
+                                 * Possible new triple, do some geometry to
+                                 * retrieve saddle center, axis and radius.
                                  */
-
-                                lkf = 1;
-                                if (nmnb <= 1) {
-                                    move = true;
-                                }
-                                if (!move) {
-                                    // Put remaining neighbors in linked list at proper position.
-                                    boolean keep = false;
-                                    for (l = 1; l < nmnb; l++) {
-                                        if (!keep) {
-                                            l1 = 0;
-                                            l2 = lkf;
-                                        } else {
-                                            keep = false;
-                                        }
-                                        if (!(discls[l] < discls[l2])) {
-                                            l1 = l2;
-                                            l2 = lkcls[l2];
-                                            if (l2 != 0) {
-                                                keep = true;
-                                                continue;
-                                            }
-                                        }
-                                        // Add to list.
-
-                                        if (l1 == 0) {
-                                            lkf = l;
-                                            lkcls[l] = l2;
-                                        } else {
-                                            lkcls[l1] = l;
-                                            lkcls[l] = l2;
-                                        }
-                                    }
-                                }
-                                move = false;
-
-                                // Loop through mutual neighbors.
-                                for (km = 0; km < nmnb; km++) {
-
-                                    // Get atom number of neighbors.
-                                    ka = mnb[km];
-                                    if (skip[ia] && skip[ja] && skip[ka]) {
-                                    }
-
-                                    // Get tori numbers for neighbor.
-                                    ik = ikt[km];
-                                    jk = jkt[km];
+                                prbok = false;
+                                tb = false;
+                                double rij[] = {0.0};
+                                double hijk = 0.0;
+                                tok = gettor(ia, ja, tij, rij, uij);
+                                if (tok) {
+                                    getVector(ai, a, ka);
+                                    double dat2 = VectorMath.dist2(ai, tij);
+                                    double rad2 = (radius[ka] + probe) * (radius[ka] + probe) - rij[0] * rij[0];
 
                                     /*
-                                     * Possible new triple, do some geometry to
-                                     * retrieve saddle center, axis and radius.
+                                     * If "ka" less than "ja", then all we care about
+                                     * is whether the torus is buried.
                                      */
-                                    prbok = false;
-                                    tb = false;
-                                    tok = gettor(ia, ja, tij, rij, uij);
-                                    if (tok) {
-                                        getVector(ai, a, ka);
-                                        double dat2 = VectorMath.dist2(ai, tij);
-                                        double rad2 = (radius[ka] + probe) * (radius[ka] + probe) - rij * rij;
+                                    boolean skip = false;
+                                    if (ka < ja) {
+                                        if (rad2 <= 0.0 || dat2 > rad2) {
+                                            skip = true;
+                                        }
+                                    }
 
-                                        /*
-                                         * If "ka" less than "ja", then all we care about
-                                         * is whether the torus is buried.
-                                         */
-                                        boolean skip = false;
-                                        if (ka < ja) {
-                                            if (rad2 <= 0.0 || dat2 > rad2) {
-                                                skip = true;
-                                            }
+                                    if (!skip) {
+                                        double rik[] = {0.0};
+                                        tok = gettor(ia, ka, tik, rik, uik);
+                                        if (!tok) {
+                                            skip = true;
                                         }
                                         if (!skip) {
-                                            tok = gettor(ia, ka, tik, rik, uik);
-                                            if (!tok) {
+                                            double dotijk = VectorMath.dot(uij, uik);
+                                            dotijk = check(dotijk);
+                                            double wijk = acos(dotijk);
+                                            double swijk = sin(wijk);
+
+                                            /*
+                                             * if the three atoms are colinear, then there is no
+                                             * probe placement; but we still care whether the torus
+                                             * is buried by atom "k".
+                                             */
+                                            if (swijk == 0.0) {
+                                                tb = (rad2 > 0.0 && dat2 < rad2);
                                                 skip = true;
                                             }
                                             if (!skip) {
-                                                double dotijk = VectorMath.dot(uij, uik);
-                                                dotijk = check(dotijk);
-                                                double wijk = acos(dotijk);
-                                                double swijk = sin(wijk);
-
-                                                /*
-                                                 * if the three atoms are colinear, then there is no
-                                                 * probe placement; but we still care whether the torus
-                                                 * is buried by atom "k".
-                                                 */
-                                                if (swijk == 0.0) {
-                                                    tb = (rad2 > 0.0 && dat2 < rad2);
-                                                    skip = true;
+                                                VectorMath.cross(uij, uik, uijk);
+                                                for (int k = 0; k < 3; k++) {
+                                                    uijk[k] = uijk[k] / swijk;
                                                 }
-                                                if (!skip) {
-                                                    VectorMath.cross(uij, uik, uijk);
-                                                    for (k = 0; k < 3; k++) {
-                                                        uijk[k] = uijk[k] / swijk;
-                                                    }
-                                                    VectorMath.cross(uijk, uij, utb);
-                                                    for (k = 0; k < 3; k++) {
-                                                        tijik[k] = tik[k] - tij[k];
-                                                    }
-                                                    dotut = VectorMath.dot(uik, tijik);
-                                                    fact = dotut / swijk;
-                                                    for (k = 0; k < 3; k++) {
-                                                        bijk[k] = tij[k] + utb[k] * fact;
-                                                    }
-                                                    getVector(ai, a, ia);
-                                                    dba = VectorMath.dist(ai, bijk);
-                                                    rip2 = (radius[ia] + probe) * (radius[ia] + probe);
-                                                    rad = rip2 - dba;
-                                                    if (rad < 0.0) {
-                                                        tb = (rad2 > 0.0 && dat2 <= rad2);
-                                                    } else {
-                                                        prbok = true;
-                                                        hijk = sqrt(rad);
-                                                    }
+                                                VectorMath.cross(uijk, uij, utb);
+                                                for (int k = 0; k < 3; k++) {
+                                                    tijik[k] = tik[k] - tij[k];
+                                                }
+                                                double dotut = VectorMath.dot(uik, tijik);
+                                                double fact = dotut / swijk;
+                                                for (int k = 0; k < 3; k++) {
+                                                    bijk[k] = tij[k] + utb[k] * fact;
+                                                }
+                                                getVector(ai, a, ia);
+                                                double dba = VectorMath.dist(ai, bijk);
+                                                double rip2 = (radius[ia] + probe) * (radius[ia] + probe);
+                                                double rad = rip2 - dba;
+                                                if (rad < 0.0) {
+                                                    tb = (rad2 > 0.0 && dat2 <= rad2);
+                                                } else {
+                                                    prbok = true;
+                                                    hijk = sqrt(rad);
                                                 }
                                             }
                                         }
                                     }
-                                    if (tb) {
-                                        ttbur[itt] = true;
-                                        ttfree[itt] = false;
+                                }
+                                if (tb) {
+                                    ttbur[itt] = true;
+                                    ttfree[itt] = false;
+                                    move = true;
+                                }
+                                if (!move) {
+                                    /**
+                                     * Check for duplicate triples or any
+                                     * possible probe positions.
+                                     */
+                                    if (ka < ja || !prbok) {
                                         move = true;
                                     }
                                     if (!move) {
-                                        /*
-                                         * Check for duplicate triples or any possible
-                                         * probe postions.
-                                         */
-                                        if (ka < ja || !prbok) {
-                                            move = true;
+                                        // Altitude vector.
+                                        for (int k = 0; k < 3; k++) {
+                                            aijk[k] = hijk * uijk[k];
                                         }
-                                        if (!move) {
-                                            // Altitude vector.
 
-                                            for (k = 0; k < 3; k++) {
-                                                aijk[k] = hijk * uijk[k];
+                                        // We try two probe placements.
+                                        for (int ip = 0; ip < 2; ip++) {
+                                            for (int k = 0; k < 3; k++) {
+                                                if (ip == 1) {
+                                                    pijk[k] = bijk[k] + aijk[k];
+                                                } else {
+                                                    pijk[k] = bijk[k] - aijk[k];
+                                                }
                                             }
 
-                                            // We try two probe placements.
-                                            for (ip = 0; ip < 2; ip++) {
-                                                for (k = 0; k < 3; k++) {
-                                                    if (ip == 1) {
-                                                        pijk[k] = bijk[k] + aijk[k];
-                                                    } else {
-                                                        pijk[k] = bijk[k] - aijk[k];
-                                                    }
-                                                }
+                                            // Mark three tori not free.
+                                            ttfree[itt] = false;
+                                            ttfree[ik] = false;
+                                            ttfree[jk] = false;
 
-                                                // Mark three tori not free.
-                                                ttfree[itt] = false;
-                                                ttfree[ik] = false;
-                                                ttfree[jk] = false;
+                                            // Check for collisions.
+                                            int lm = lkf;
 
-                                                // Check for collisions.
-                                                lm = lkf;
+                                            while (lm <= 0) {
 
-                                                while (lm <= 0) {
+                                                // Get atom number of mutual neighbor.
+                                                int la = mnb[lm];
 
-                                                    // Get atom number of mutual neighbor.
-                                                    la = mnb[lm];
-
-                                                    // Must not equal third atom.
-                                                    if (la == ka) {
-                                                        lm = lkcls[lm];
-                                                        continue;
-                                                    }
-                                                    ak[0] = a[0][la];
-                                                    ak[1] = a[1][la];
-                                                    ak[2] = a[2][la];
-                                                    // Compare distance to sum of radii.
-                                                    d2 = VectorMath.dist2(pijk, ak);
-                                                    if (d2 <= sumcls[lm]) {
-                                                        move = true;
-                                                        break;
-                                                    }
+                                                // Must not equal third atom.
+                                                if (la == ka) {
                                                     lm = lkcls[lm];
+                                                    continue;
                                                 }
-                                                if (!move) {
-                                                    // We have a new probe position.
-
-                                                    np++;
-                                                    if (np > maxp) {
-                                                        logger.severe("Too many Probe Positions");
-                                                    }
-
-                                                    // Mark three tori not buried.
-                                                    ttbur[itt] = false;
-                                                    ttbur[ik] = false;
-                                                    ttbur[jk] = false;
-
-                                                    // Store probe center.
-                                                    for (k = 0; k < 3; k++) {
-                                                        p[k][np] = pijk[k];
-                                                    }
-
-                                                    // Calculate vectors from probe to atom centers.
-                                                    if (nv + 3 > maxv) {
-                                                        logger.severe("Too many Vertices");
-                                                    }
-                                                    for (k = 0; k < 3; k++) {
-                                                        v[k][nv + 1] = a[k][ia] - p[k][np];
-                                                        v[k][nv + 2] = a[k][ja] - p[k][np];
-                                                        v[k][nv + 3] = a[k][ka] - p[k][np];
-                                                    }
-
-                                                    double matrix[] = new double[9];
-                                                    for (int a = 0; a < 9; a++) {
-                                                        for (int b = 0; b < 3; b++) {
-                                                            for (int c = 1; c <= 3; c++) {
-                                                                matrix[a] = v[j][nv + c];
-                                                            }
-                                                        }
-                                                        // Calculate determinant of vectors defining triangle.
-
-                                                        det = VectorMath.determinant3(matrix);
-
-                                                        // Now add probe coordinates to vertices.
-                                                        for (k = 0; k < 3; k++) {
-                                                            v[k][nv + 1] = p[k][np] + v[k][nv + 1] * probe / (radius[ia] + probe);
-                                                            v[k][nv + 2] = p[k][np] + v[k][nv + 2] * probe / (radius[ja] + probe);
-                                                            v[k][nv + 3] = p[k][np] + v[k][nv + 3] * probe / (radius[ka] + probe);
-                                                        }
-
-                                                        // Want the concave face to have counter-clockwise orientation.
-                                                        if (det > 0.0) {
-
-                                                            // wap second and third vertices.
-                                                            for (k = 0; k < 3; k++) {
-                                                                tempv[k] = v[k][nv + 2];
-                                                                v[k][nv + 2] = v[k][nv + 3];
-                                                                v[k][nv + 3] = tempv[k];
-                                                            }
-
-                                                            // Set up pointers from probe to atoms.
-                                                            pa[0][np] = ia;
-                                                            pa[1][np] = ka;
-                                                            pa[2][np] = ja;
-
-                                                            // Set up pointers from vertices to atoms.
-                                                            va[nv + 1] = ia;
-                                                            va[nv + 2] = ka;
-                                                            va[nv + 3] = ja;
-
-                                                            // Insert concave edges into linked lists for appropriate tori.
-                                                            inedge(nen + 1, ik);
-                                                            inedge(nen + 2, jk);
-                                                            inedge(nen + 3, itt);
-                                                        } else {
-
-                                                            // Similarly, if face already counter clockwise.
-                                                            pa[0][np] = ia;
-                                                            pa[1][np] = ja;
-                                                            pa[2][np] = ka;
-                                                            va[nv + 1] = ia;
-                                                            va[nv + 2] = ja;
-                                                            va[nv + 3] = ka;
-                                                            inedge(nen + 1, itt);
-                                                            inedge(nen + 2, jk);
-                                                            inedge(nen + 3, ik);
-                                                        }
-
-                                                        // Set up pointers from vertices to probe.
-                                                        for (kv = 0; kv < 3; kv++) {
-                                                            vp[nv + kv] = np;
-                                                        }
-
-                                                        // Set up concave edges and concave face.
-                                                        if (nen + 3 > maxen) {
-                                                            logger.severe("Too many Concave Edges");
-                                                        }
-                                                        // Edges point to vertices.
-
-                                                        env[0][nen + 1] = nv + 1;
-                                                        env[1][nen + 1] = nv + 2;
-                                                        env[0][nen + 2] = nv + 2;
-                                                        env[1][nen + 2] = nv + 3;
-                                                        env[0][nen + 3] = nv + 3;
-                                                        env[1][nen + 3] = nv + 1;
-                                                        if (nfn + 1 > maxfn) {
-                                                            logger.severe("Too many Concave Faces");
-                                                        }
-
-                                                        // Face points to edges.
-                                                        for (ke = 0; ke < 3; ke++) {
-                                                            fnen[ke][nfn + 1] = nen + ke;
-                                                        }
-
-                                                        // Increment counters for number of faces, edges and vertices.
-                                                        nfn++;
-                                                        nen += 3;
-                                                        nv += 3;
-                                                    }
-                                                    move = false;
+                                                ak[0] = a[0][la];
+                                                ak[1] = a[1][la];
+                                                ak[2] = a[2][la];
+                                                // Compare distance to sum of radii.
+                                                double d2 = VectorMath.dist2(pijk, ak);
+                                                if (d2 <= sumcls[lm]) {
+                                                    move = true;
+                                                    break;
                                                 }
+                                                lm = lkcls[lm];
                                             }
+                                            if (!move) {
+                                                // We have a new probe position.
+                                                np++;
+                                                if (np > maxp) {
+                                                    logger.severe("Too many Probe Positions");
+                                                }
+
+                                                // Mark three tori not buried.
+                                                ttbur[itt] = false;
+                                                ttbur[ik] = false;
+                                                ttbur[jk] = false;
+
+                                                // Store probe center.
+                                                for (int k = 0; k < 3; k++) {
+                                                    p[k][np] = pijk[k];
+                                                }
+
+                                                // Calculate vectors from probe to atom centers.
+                                                if (nv + 3 > maxv) {
+                                                    logger.severe("Too many Vertices");
+                                                }
+                                                for (int k = 0; k < 3; k++) {
+                                                    v[k][nv + 1] = a[k][ia] - p[k][np];
+                                                    v[k][nv + 2] = a[k][ja] - p[k][np];
+                                                    v[k][nv + 3] = a[k][ka] - p[k][np];
+                                                }
+
+                                                double matrix[] = new double[9];
+                                                int a = 0;
+                                                for (int b = 0; b < 3; b++) {
+                                                    for (int c = 0; c < 3; c++) {
+                                                        matrix[a++] = v[b][nv + c];
+                                                    }
+                                                }
+                                                // Calculate determinant of vectors defining triangle.
+                                                double det = VectorMath.determinant3(matrix);
+
+                                                // Now add probe coordinates to vertices.
+                                                for (int k = 0; k < 3; k++) {
+                                                    v[k][nv + 1] = p[k][np] + v[k][nv + 1] * probe / (radius[ia] + probe);
+                                                    v[k][nv + 2] = p[k][np] + v[k][nv + 2] * probe / (radius[ja] + probe);
+                                                    v[k][nv + 3] = p[k][np] + v[k][nv + 3] * probe / (radius[ka] + probe);
+                                                }
+
+                                                // Want the concave face to have counter-clockwise orientation.
+                                                if (det > 0.0) {
+                                                    // wap second and third vertices.
+                                                    for (int k = 0; k < 3; k++) {
+                                                        tempv[k] = v[k][nv + 2];
+                                                        v[k][nv + 2] = v[k][nv + 3];
+                                                        v[k][nv + 3] = tempv[k];
+                                                    }
+
+                                                    // Set up pointers from probe to atoms.
+                                                    pa[0][np] = ia;
+                                                    pa[1][np] = ka;
+                                                    pa[2][np] = ja;
+
+                                                    // Set up pointers from vertices to atoms.
+                                                    va[nv + 1] = ia;
+                                                    va[nv + 2] = ka;
+                                                    va[nv + 3] = ja;
+
+                                                    // Insert concave edges into linked lists for appropriate tori.
+                                                    inedge(nen + 1, ik);
+                                                    inedge(nen + 2, jk);
+                                                    inedge(nen + 3, itt);
+                                                } else {
+                                                    // Similarly, if face already counter clockwise.
+                                                    pa[0][np] = ia;
+                                                    pa[1][np] = ja;
+                                                    pa[2][np] = ka;
+                                                    va[nv + 1] = ia;
+                                                    va[nv + 2] = ja;
+                                                    va[nv + 3] = ka;
+                                                    inedge(nen + 1, itt);
+                                                    inedge(nen + 2, jk);
+                                                    inedge(nen + 3, ik);
+                                                }
+
+                                                // Set up pointers from vertices to probe.
+                                                for (int kv = 0; kv < 3; kv++) {
+                                                    vp[nv + kv] = np;
+                                                }
+
+                                                // Set up concave edges and concave face.
+                                                if (nen + 3 > maxen) {
+                                                    logger.severe("Too many Concave Edges");
+                                                }
+
+                                                // Edges point to vertices.
+                                                env[0][nen + 1] = nv + 1;
+                                                env[1][nen + 1] = nv + 2;
+                                                env[0][nen + 2] = nv + 2;
+                                                env[1][nen + 2] = nv + 3;
+                                                env[0][nen + 3] = nv + 3;
+                                                env[1][nen + 3] = nv + 1;
+                                                if (nfn + 1 > maxfn) {
+                                                    logger.severe("Too many Concave Faces");
+                                                }
+
+                                                // Face points to edges.
+                                                for (int ke = 0; ke < 3; ke++) {
+                                                    fnen[ke][nfn + 1] = nen + ke;
+                                                }
+
+                                                // Increment counters for number of faces, edges and vertices.
+                                                nfn++;
+                                                nen += 3;
+                                                nv += 3;
+                                            }
+                                            move = false;
                                         }
-                                        move = false;
                                     }
+                                    move = false;
                                 }
                             }
                         }
                     }
                 }
             }
-            /*
-             * "inedge" insterts a concave edge into the linked list
+
+            /**
+             * The inedge method insterts a concave edge into the linked list
              * for its temporary torus.
              */
-
-            public void inedge(int ien, int itt) {
-
-                int iepen;
-
+            public void inedge(int edgeNumber, int torusNumber) {
                 // Check for a serious error in the calling arguments.
-                if (ien <= 0) {
+                if (edgeNumber <= 0) {
                     logger.severe("Bad Edge Number in INEDGE");
                 }
-                if (itt <= 0) {
+                if (torusNumber <= 0) {
                     logger.severe("Bad Torus Number in INEDGE");
                 }
-
                 // Set beginning of list or add to end.
-                if (ttfe[itt] == 0) {
-                    ttfe[itt] = ien;
-                    enext[ien] = 0;
-                    ttle[itt] = ien;
+                if (ttfe[torusNumber] == 0) {
+                    ttfe[torusNumber] = edgeNumber;
+                    enext[edgeNumber] = 0;
+                    ttle[torusNumber] = edgeNumber;
                 } else {
-                    iepen = ttle[itt];
-                    enext[iepen] = ien;
-                    enext[ien] = 0;
-                    ttle[itt] = ien;
+                    enext[ttle[torusNumber]] = edgeNumber;
+                    enext[edgeNumber] = 0;
+                    ttle[torusNumber] = edgeNumber;
                 }
             }
 
+            /**
+             * The compress method transfers only the non-buried tori from the
+             * temporary tori arrays to the final tori arrays.
+             */
             public void compress() {
-                int itt, ia, ja;
-                int iptr, ned;
-                int ip1, ip2;
-                int iv1, iv2;
-                int tfe[] = new int[maxt];
                 double ai[] = new double[3];
                 double aj[] = new double[3];
-                boolean tfree[] = new boolean[maxt];
 
                 // Initialize the number of nonburied tori.
-                nt = 0;
-                if (ntt > 0) {
-                    /*
-                     * If torus is free, then it is not buried;
-                     * skip to end of loop if buried torus.
-                     */
+                nt = -1;
 
-                    for (itt = 0; itt < ntt; itt++) {
-                        if (ttfree[itt]) {
-                            ttbur[itt] = false;
+                /**
+                 * If torus is free, then it is not buried; skip to end of loop
+                 * if buried torus.
+                 */
+                double trtemp[] = {0};
+                for (int itt = 0; itt < ntt; itt++) {
+                    if (ttfree[itt]) {
+                        ttbur[itt] = false;
+                        // First, transfer information.
+                        nt++;
+                        if (nt > maxt) {
+                            logger.severe("Too many non-buried tori.");
                         }
-                        if (!ttbur[itt]) {
+                        int ia = tta[0][itt];
+                        int ja = tta[1][itt];
+                        getVector(ai, t, nt);
+                        getVector(aj, tax, nt);
+                        ttok = gettor(ia, ja, ai, trtemp, aj);
+                        tr[nt] = trtemp[0];
+                        ta[0][nt] = ia;
+                        ta[1][nt] = ja;
+                        tfree[nt] = ttfree[itt];
+                        tfe[nt] = ttfe[itt];
 
-                            // First, transfer information.
-                            nt++;
-                            if (nt > maxt) {
-                                logger.severe("Too many NonBuried Tori");
-                            }
-                            ia = tta[0][itt];
-                            ja = tta[1][itt];
-                            getVector(ai, t, nt);
-                            getVector(aj, tax, nt);
-                            ttok = gettor(ia, ja, ai, tr[nt], aj);
-                            ta[0][nt] = ia;
-                            ta[1][nt] = ja;
-                            tfree[nt] = ttfree[itt];
-                            tfe[nt] = ttfe[itt];
-
-                            // Special check for inconsistent probes.
+                        // Special check for inconsistent probes.
+                        int iptr = tfe[nt];
+                        int ned = 0;
+                        while (iptr != 0) {
+                            ned++;
+                            iptr = enext[iptr];
+                        }
+                        if ((ned % 2) != 0) {
                             iptr = tfe[nt];
-                            ned = 0;
                             while (iptr != 0) {
-                                ned++;
+                                int iv1 = env[0][iptr];
+                                int iv2 = env[1][iptr];
+                                int ip1 = vp[iv1];
+                                int ip2 = vp[iv2];
+                                logger.warning(
+                                        String.format("Odd Torus for Probes IP1 %d and IP2 %d", ip1, ip2));
                                 iptr = enext[iptr];
-                            }
-                            if ((ned % 2) != 0) {
-                                iptr = tfe[nt];
-                                while (iptr != 0) {
-                                    iv1 = env[0][iptr];
-                                    iv2 = env[1][iptr];
-                                    ip1 = vp[iv1];
-                                    ip2 = vp[iv2];
-                                    logger.severe("Odd Torus for Probes IP1 and IP2");
-                                    iptr = enext[iptr];
-                                }
                             }
                         }
                     }
@@ -5632,7 +6067,6 @@ public class GeneralizedKirkwood {
             public void saddles() {
                 final int maxent = 500;
                 int k, ia, in, ip;
-                int nc, nep;
                 int it, iv, itwo;
                 int ien, ient, nent;
                 int m1, n1;
@@ -5982,14 +6416,13 @@ public class GeneralizedKirkwood {
                     }
                 }
             }
-            /*
-             * "triple" finds the triple product of three vectors; used as a
-             * service routine by the Connolly surface are and voume
+
+            /**
+             * The triple method finds the triple product of three vectors; used
+             * as a service routine by the Connolly surface are and voume
              * computation.
              */
-
             public double triple(double x[], double y[], double z[]) {
-
                 double triple;
                 double xy[] = new double[3];
                 VectorMath.cross(x, y, xy);
@@ -5997,58 +6430,53 @@ public class GeneralizedKirkwood {
                 return triple;
             }
 
-            public void ipedge(int iep, int ia) {
-
-                // "ipedge" inserts convex edge into linked list for atom.
-                int iepen;
+            /**
+             * The ipedge method inserts a convex edge into linked list for
+             * atom.
+             *
+             * @param edgeNumber
+             * @param atomNumber
+             */
+            public void ipedge(int edgeNumber, int atomNumber) {
 
                 // First, check for an error condition.
-                if (iep <= 0) {
+                if (edgeNumber <= 0) {
                     logger.severe("Bad Edge Number in IPEDGE");
                 }
-                if (ia <= 0) {
+                if (atomNumber <= 0) {
                     logger.severe("Bad Atom Number in IPEDGE");
                 }
 
                 // Set beginning of list or add to end.
-                if (afe[ia] == 0) {
-                    afe[ia] = iep;
-                    epnext[iep] = 0;
-                    ale[ia] = iep;
+                if (afe[atomNumber] == 0) {
+                    afe[atomNumber] = edgeNumber;
+                    epnext[edgeNumber] = 0;
+                    ale[atomNumber] = edgeNumber;
                 } else {
-                    iepen = ale[ia];
-                    epnext[iepen] = iep;
-                    epnext[iep] = 0;
-                    ale[ia] = iep;
+                    epnext[ale[atomNumber]] = edgeNumber;
+                    epnext[edgeNumber] = 0;
+                    ale[atomNumber] = edgeNumber;
                 }
             }
 
+            /**
+             * The contact method constructs the contact surface, cycles and
+             * convex faces.
+             */
             public void contact() {
                 final int maxepa = 300;
                 final int maxcypa = 100;
-                int i, k, ia, ia2, it;
-                int ncy;
-                int iep, ic, jc, jcy;
-                int nepa, iepa;
                 int jepa = 0;
-                int ncypa = 0;
-                int icya, jcya, kcya;
-                int ncyep, icyep, jcyep;
-                int ncyold = 0;
-                int nused, lookv;
                 int aic[] = new int[maxepa];
-                int aia[] = new int[maxepa];
                 int aep[] = new int[maxepa];
                 int av[][] = new int[2][maxepa];
                 int ncyepa[] = new int[maxcypa];
                 int cyepa[][] = new int[MAXCYEP][maxcypa];
-                double anaa, factor;
                 double ai[] = new double[3];
                 double acvect[][] = new double[3][maxepa];
                 double aavect[][] = new double[3][maxepa];
                 double pole[] = new double[3];
                 double unvect[] = new double[3];
-                double acr[] = new double[maxepa];
                 boolean epused[] = new boolean[maxepa];
                 boolean cycy[][] = new boolean[maxcypa][maxcypa];
                 boolean cyused[] = new boolean[maxcypa];
@@ -6061,14 +6489,14 @@ public class GeneralizedKirkwood {
                 nfp = 0;
 
                 // Mark all free atoms not buried.
-                for (ia = 0; ia < nAtoms; ia++) {
+                for (int ia = 0; ia < nAtoms; ia++) {
                     if (afree[ia]) {
                         abur[ia] = false;
                     }
                 }
 
                 // Go through all atoms.
-                for (ia = 0; ia < nAtoms; ia++) {
+                for (int ia = 0; ia < nAtoms; ia++) {
                     if (!skip[ia] || !abur[ia]) {
                         continue;
                     }
@@ -6079,10 +6507,10 @@ public class GeneralizedKirkwood {
                          * Gather convex edges for atom
                          * Clear number of convex edges for atom.
                          */
-                        nepa = 0;
+                        int nepa = 0;
 
                         // Pointer to first edge.
-                        iep = afe[ia];
+                        int iep = afe[ia];
                         while (iep > 0) {
                             // One more edge.
 
@@ -6097,34 +6525,29 @@ public class GeneralizedKirkwood {
 
                             // Store convex edge number.
                             aep[nepa] = iep;
-                            ic = epc[iep];
+                            int ic = epc[iep];
 
                             // Store circle number.
                             aic[nepa] = ic;
 
                             // Get neighboring atom.
-                            it = ct[ic];
+                            int it = ct[ic];
+                            int ia2;
                             if (ta[0][it] == ia) {
                                 ia2 = ta[1][it];
                             } else {
                                 ia2 = ta[0][it];
                             }
 
-                            // Store other atom number, we might need it sometime.
-                            aia[nepa] = ia2;
                             /*
                              * Vector from atom to circle center; also
                              * vector from atom to center of neighboring atom
                              * sometimes we use one vector, sometimes the other.
                              */
-
-                            for (k = 0; k < 3; k++) {
+                            for (int k = 0; k < 3; k++) {
                                 acvect[k][nepa] = c[k][ic] - a[k][ia];
                                 aavect[k][nepa] = a[k][ia2] - a[k][ia];
                             }
-
-                            // Circle radius.
-                            acr[nepa] = cr[ic];
 
                             // Pointer to next edge.
                             iep = epnext[iep];
@@ -6137,18 +6560,16 @@ public class GeneralizedKirkwood {
                          * Form cycles; initialize all the
                          * convex edges as not used in cycle.
                          */
-
-                        for (iepa = 0; iepa < nepa; iepa++) {
-                            epused[iepa] = false;
-                        }
+                        Arrays.fill(epused, 0, nepa, false);
 
                         // Save old number of cycles.
-                        ncyold = ncy;
-                        nused = 0;
-                        ncypa = 0;
+                        int ncyold = ncy;
+                        int nused = 0;
+                        int ncypa = 0;
                         while (nused < nepa) {
 
                             // Look for starting edge.
+                            int iepa;
                             for (iepa = 0; iepa < nepa; iepa++) {
                                 if (epused[iepa]) {
                                     move = true;
@@ -6162,7 +6583,7 @@ public class GeneralizedKirkwood {
                                 iep = aep[iepa];
 
                                 // One edge so far for this cycle.
-                                ncyep = 1;
+                                int ncyep = 1;
 
                                 // One more cycle for atom.
                                 ncypa++;
@@ -6190,7 +6611,7 @@ public class GeneralizedKirkwood {
                                  * for next as the first vertex of another edge.
                                  */
 
-                                lookv = av[1][iepa];
+                                int lookv = av[1][iepa];
 
                                 // If no vertex, this cycle is finished.
                                 if (lookv <= 0) {
@@ -6245,15 +6666,15 @@ public class GeneralizedKirkwood {
                             move = false;
                         }
 
-                            // Look for more cycles.
+                        // Look for more cycles.
                         /*
                          * Compare cycles for inside/outside relation;
                          * check to see if cycle i is inside cycle j.
                          */
-                        for (icya = 0; icya < ncypa; icya++) {
-                            for (jcya = 0; jcya < ncypa; jcya++) {
+                        for (int icya = 0; icya < ncypa; icya++) {
+                            for (int jcya = 0; jcya < ncypa; jcya++) {
                                 breakAgain = false;
-                                jcy = ncyold + jcya;
+                                int jcy = ncyold + jcya;
 
                                 // Initialize.
                                 cycy[icya][jcya] = true;
@@ -6267,12 +6688,12 @@ public class GeneralizedKirkwood {
                                  * to the same circle, then they are outside each other.
                                  */
 
-                                for (icyep = 0; icyep < ncyepa[icya]; icyep++) {
-                                    iepa = cyepa[icyep][icya];
-                                    ic = aic[iepa];
-                                    for (jcyep = 0; jcyep < ncyepa[jcya]; jcyep++) {
+                                for (int icyep = 0; icyep < ncyepa[icya]; icyep++) {
+                                    int iepa = cyepa[icyep][icya];
+                                    int ic = aic[iepa];
+                                    for (int jcyep = 0; jcyep < ncyepa[jcya]; jcyep++) {
                                         jepa = cyepa[jcyep][jcya];
-                                        jc = aic[jepa];
+                                        int jc = aic[jepa];
                                         if (ic == jc) {
                                             cycy[icya][jcya] = false;
                                             breakAgain = true;
@@ -6286,25 +6707,25 @@ public class GeneralizedKirkwood {
                                 if (breakAgain) {
                                     continue;
                                 }
-                                iepa = cyepa[0][icya];
+                                int iepa = cyepa[0][icya];
                                 ai[0] = aavect[0][iepa];
                                 ai[1] = aavect[1][iepa];
                                 ai[2] = aavect[2][iepa];
-                                anaa = VectorMath.r(ai);
-                                factor = radius[ia] / anaa;
+                                double anaa = VectorMath.r(ai);
+                                double factor = radius[ia] / anaa;
 
                                 // North pole and unit vector pointing south.
-                                for (k = 0; k < 3; k++) {
+                                for (int k = 0; k < 3; k++) {
                                     pole[k] = factor * aavect[k][iepa] + a[k][ia];
                                     unvect[k] = -aavect[k][iepa] / anaa;
                                 }
-                                cycy[icya][jcya] = ptincy(pole, unvect, jcy, ia);
+                                cycy[icya][jcya] = ptincy(pole, unvect, jcy);
                             }
                         }
 
                         // Group cycles into faces; direct comparison for i and j.
-                        for (icya = 0; icya < ncypa; icya++) {
-                            for (jcya = 0; jcya < ncypa; jcya++) {
+                        for (int icya = 0; icya < ncypa; icya++) {
+                            for (int jcya = 0; jcya < ncypa; jcya++) {
                                 /*
                                  * Tentatively say that cycles i and j bound
                                  * the same face if they are inside each other.
@@ -6318,10 +6739,10 @@ public class GeneralizedKirkwood {
                          * i and j, then i and j do not bound the same face.
                          */
 
-                        for (icya = 0; icya < ncypa; icya++) {
-                            for (jcya = 0; jcya < ncypa; jcya++) {
+                        for (int icya = 0; icya < ncypa; icya++) {
+                            for (int jcya = 0; jcya < ncypa; jcya++) {
                                 if (icya != jcya) {
-                                    for (kcya = 0; kcya < ncypa; kcya++) {
+                                    for (int kcya = 0; kcya < ncypa; kcya++) {
                                         if (kcya != icya && kcya != jcya) {
                                             if (cycy[kcya][icya] && cycy[kcya][jcya] && !cycy[icya][kcya]) {
                                                 samef[icya][jcya] = false;
@@ -6334,10 +6755,10 @@ public class GeneralizedKirkwood {
                         }
 
                         // Fill gaps so that "samef" falls into complete blocks.
-                        for (icya = 0; icya < ncypa - 2; icya++) {
-                            for (jcya = icya + 1; jcya < ncypa - 1; jcya++) {
+                        for (int icya = 0; icya < ncypa - 2; icya++) {
+                            for (int jcya = icya + 1; jcya < ncypa - 1; jcya++) {
                                 if (samef[icya][jcya]) {
-                                    for (kcya = jcya + 1; kcya < ncypa; kcya++) {
+                                    for (int kcya = jcya + 1; kcya < ncypa; kcya++) {
                                         if (samef[jcya][kcya]) {
                                             samef[icya][kcya] = true;
                                             samef[kcya][icya] = true;
@@ -6348,13 +6769,13 @@ public class GeneralizedKirkwood {
                         }
 
                         // Group cycles belonging to the same face.
-                        for (icya = 0; icya < ncypa; icya++) {
+                        for (int icya = 0; icya < ncypa; icya++) {
                             cyused[icya] = false;
                         }
 
                         // Clear number of cycles used in bounding faces.
                         nused = 0;
-                        for (icya = 0; icya < ncypa; icya++) {
+                        for (int icya = 0; icya < ncypa; icya++) {
 
                             // Check for already used.
                             if (cyused[icya]) {
@@ -6374,7 +6795,7 @@ public class GeneralizedKirkwood {
                             fpa[nfp] = ia;
 
                             // Look for all other cycles belonging to same face.
-                            for (jcya = 0; jcya < ncypa; jcya++) {
+                            for (int jcya = 0; jcya < ncypa; jcya++) {
 
                                 // Check for cycle already used in another face.
                                 if (cyused[jcya] || !samef[icya][jcya]) {
@@ -6391,7 +6812,7 @@ public class GeneralizedKirkwood {
                                     if (fpncy[nfp] > MAXFPCY) {
                                         logger.severe("Too many Cycles bounding Convex Face");
                                     }
-                                    i = fpncy[nfp];
+                                    int i = fpncy[nfp];
 
                                     // Store cycle number.
                                     fpcy[i][nfp] = ncyold + jcya;
@@ -6424,102 +6845,85 @@ public class GeneralizedKirkwood {
                 }
             }
 
-            public boolean ptincy(double pnt[], double unvect[], int icy, int ia) {
-
-                int k, ke, iep;
-                int ic, it, iatom;
-                int iaoth, nedge;
-                double rotang, totang;
-                double dt, f;
+            public boolean ptincy(double pnt[], double unvect[], int icy) {
                 double acvect[] = new double[3];
                 double cpvect[] = new double[3];
                 double polev[] = new double[3];
                 double spv[][] = new double[3][MAXCYEP];
                 double epu[][] = new double[3][MAXCYEP];
-                boolean ptincy, fail;
-
-                // Check for eaten by neighbor.
-                for (ke = 0; ke < cynep[icy]; ke++) {
-                    iep = cyep[ke][icy];
-                    ic = epc[iep];
-                    it = ct[ic];
+                /**
+                 * Check for being eaten by neighbor.
+                 */
+                int iatom = 0;
+                for (int ke = 0; ke < cynep[icy]; ke++) {
+                    int iep = cyep[ke][icy];
+                    int ic = epc[iep];
+                    int it = ct[ic];
                     iatom = ca[ic];
+                    int iaoth;
                     if (ta[0][it] == iatom) {
                         iaoth = ta[1][it];
                     } else {
                         iaoth = ta[0][it];
                     }
-                    for (k = 0; k < 3; k++) {
+                    for (int k = 0; k < 3; k++) {
                         acvect[k] = a[k][iaoth] - a[k][iatom];
                         cpvect[k] = pnt[k] - c[k][ic];
                     }
                     if (VectorMath.dot(acvect, cpvect) >= 0.0) {
-                        ptincy = false;
-                        return ptincy;
+                        return false;
                     }
                 }
                 if (cynep[icy] <= 1) {
-                    ptincy = true;
-                    return ptincy;
+                    return true;
                 }
                 // projct call.
-                fail = false;
-                nedge = cynep[icy];
-                for (ke = 0; ke < cynep[icy]; ke++) {
+                int nedge = cynep[icy];
+                for (int ke = 0; ke < cynep[icy]; ke++) {
 
                     // Vertex number (use first vertex of edge).
-                    iep = cyep[ke][icy];
+                    int iep = cyep[ke][icy];
                     iv = epv[0][iep];
                     if (iv != 0) {
 
                         // Vector from north pole to vertex.
-                        for (k = 0; k < 3; k++) {
+                        for (int k = 0; k < 3; k++) {
                             polev[k] = v[k][iv] - pnt[k];
                         }
 
                         // Calculate multiplication factor.
-                        dt = VectorMath.dot(polev, unvect);
+                        double dt = VectorMath.dot(polev, unvect);
                         if (dt == 0.0) {
-                            fail = true;
-                            return fail;
+                            return true;
                         }
-                        f = (radius[ia] * radius[ia]) / dt;
+                        double f = (radius[iatom] * radius[iatom]) / dt;
                         if (f < 1.0) {
-                            fail = true;
-                            return fail;
+                            return true;
                         }
 
                         // Projected vertex for this convex edge.
-                        for (k = 0; k < 3; k++) {
+                        for (int k = 0; k < 3; k++) {
                             spv[k][ke] = pnt[k] + f * polev[k];
                         }
                     }
                 }
-                if (fail) {
-                    ptincy = true;
-                    return ptincy;
-                }
                 epuclc(spv, nedge, epu);
-                totang = rotang(epu, nedge, unvect);
-                ptincy = (totang > 0.0);
-                return ptincy;
+                double totang = rotang(epu, nedge, unvect);
+                return (totang > 0.0);
             }
 
             public double rotang(double epu[][], int nedge, double unvect[]) {
-
-                int ke;
-                double rotang, totang;
-                double dt, ang;
+                //double dt, ang;
                 double crs[] = new double[3];
                 double ai[] = new double[3];
                 double aj[] = new double[3];
                 double ak[] = new double[3];
 
-                totang = 0.0;
-
+                double totang = 0.0;
                 // Sum angles at vertices of cycle.
-                for (ke = 0; ke < nedge; k++) {
-                    if (ke < nedge) {
+                for (int ke = 0; ke < nedge; ke++) {
+                    double dt;
+                    if (ke < nedge - 1) {
                         ai[0] = epu[0][ke];
                         ai[1] = epu[1][ke];
                         ai[2] = epu[2][ke];
@@ -6532,96 +6936,83 @@ public class GeneralizedKirkwood {
                         ak[0] = epu[0][0];
                         ak[1] = epu[1][0];
                         ak[2] = epu[2][0];
-                        // Closing edge of cycle./
+                        // Closing edge of cycle
                         dt = VectorMath.dot(ai, ak);
                         VectorMath.cross(ai, ak, crs);
                     }
                     dt = check(dt);
-                    ang = acos(dt);
+                    double ang = acos(dt);
                     if (VectorMath.dot(crs, unvect) > 0.0) {
                         ang = -ang;
                     }
-
                     // Add to total for cycle.
                     totang += ang;
                 }
-                rotang = totang;
-                return rotang;
+                return totang;
             }
 
             public void epuclc(double spv[][], int nedge, double epu[][]) {
-
-                int k, ke, ke2, le;
-                double epun;
                 double ai[] = new double[3];
-
                 // Calculate unit vectors along edges.
-                for (ke = 0; ke < nedge; ke++) {
-
+                for (int ke = 0; ke < nedge; ke++) {
                     // Get index of second edge of corner.
+                    int ke2;
                     if (ke < nedge) {
                         ke2 = ke + 1;
                     } else {
                         ke2 = 0;
                     }
-
                     // Unit vector along edge of cycle.
-                    for (k = 0; k < 3; k++) {
+                    for (int k = 0; k < 3; k++) {
                         epu[k][ke] = spv[k][ke2] - spv[k][ke];
                     }
                     getVector(ai, epu, ke);
-                    epun = VectorMath.r(ai);
+                    double epun = VectorMath.r(ai);
                     if (epun <= 0.0) {
                         logger.severe("Null Edge in Cycle");
                     }
-
                     // Normalize.
                     if (epun > 0.0) {
-                        for (k = 0; k < 3; k++) {
+                        for (int k = 0; k < 3; k++) {
                             epu[k][ke] = epu[k][ke] / epun;
                         }
                     } else {
-                        for (k = 0; k < 3; k++) {
+                        for (int k = 0; k < 3; k++) {
                             epu[k][ke] = 0.0;
                         }
                     }
                 }
-
                 // Vectors for null edges come from following or preceding edges.
-                for (ke = 0; ke < nedge; ke++) {
+                for (int ke = 0; ke < nedge; ke++) {
                     getVector(ai, epu, ke);
                     if (VectorMath.r(ai) <= 0.0) {
-                        le = ke - 1;
+                        int le = ke - 1;
                         if (le <= 0) {
                             le = nedge;
                         }
-                        for (k = 0; k < 3; k++) {
+                        for (int k = 0; k < 3; k++) {
                             epu[k][ke] = epu[k][le];
                         }
                     }
                 }
             }
-            /*
-             * "measpm" computes the volue of a single prism section of the
-             * full interior polyhedron.
+
+            /**
+             * The measpm method computes the volume of a single prism section
+             * of the full interior polyhedron.
              */
-
-            public double measpm(int ifn, double prism) {
-
-                int ke, ien, iv, ia, ip;
-                double height;
+            public double measpm(int ifn) {
                 double pav[][] = new double[3][3];
                 double vect1[] = new double[3];
                 double vect2[] = new double[3];
                 double vect3[] = new double[3];
-
-                height = 0.0;
-                for (ke = 0; ke < 3; ke++) {
-                    ien = fnen[ke][ifn];
+                double height = 0.0;
+                for (int ke = 0; ke < 3; ke++) {
+                    int ien = fnen[ke][ifn];
                     iv = env[0][ien];
-                    ia = va[iv];
+                    int ia = va[iv];
                     height += a[2][ia];
-                    ip = vp[iv];
+                    int ip = vp[iv];
                     for (int k = 0; k < 3; k++) {
                         pav[k][ke] = a[k][ia] - p[k][ip];
                     }
@@ -6632,20 +7023,10 @@ public class GeneralizedKirkwood {
                     vect2[k] = pav[k][2] - pav[k][0];
                 }
                 VectorMath.cross(vect1, vect2, vect3);
-                prism = height * vect3[2] / 2.0;
-                return prism;
+                return height * vect3[2] / 2.0;
             }
 
-            public double measfp(int ifp, double areap, double volp) {
-
-                int ke, iep;
-                int ia, ia2, ic;
-                int it, iv1, iv2;
-                int ncycle, ieuler;
-                int icyptr, icy, nedge;
-                double dt, gauss;
-                double vecang, angle, geo;
-                double pcurve, gcurve;
+            public void measfp(int ifp, double av[]) {
                 double ai[] = new double[3];
                 double aj[] = new double[3];
                 double ak[] = new double[3];
@@ -6655,23 +7036,24 @@ public class GeneralizedKirkwood {
                 double aavect[] = new double[3];
                 double tanv[][][] = new double[3][2][MAXCYEP];
                 double radial[][] = new double[3][MAXCYEP];
-
-                ia = fpa[ifp];
-                pcurve = 0.0;
-                gcurve = 0.0;
-                ncycle = fpncy[ifp];
+                double pcurve = 0.0;
+                double gcurve = 0.0;
+                int ia = fpa[ifp];
+                int ncycle = fpncy[ifp];
+                int ieuler;
                 if (ncycle > 0) {
                     ieuler = 1 - ncycle;
                 } else {
                     ieuler = 1;
                 }
-                for (icyptr = 0; icyptr < ncycle; icyptr++) {
-                    icy = fpcy[icyptr][ifp];
-                    nedge = cynep[icy];
-                    for (ke = 0; ke < nedge; ke++) {
-                        iep = cyep[ke][icy];
-                        ic = epc[iep];
-                        it = ct[ic];
+                for (int icyptr = 0; icyptr < ncycle; icyptr++) {
+                    int icy = fpcy[icyptr][ifp];
+                    int nedge = cynep[icy];
+                    for (int ke = 0; ke < nedge; ke++) {
+                        int iep = cyep[ke][icy];
+                        int ic = epc[iep];
+                        int it = ct[ic];
+                        int ia2;
                         if (ia == ta[0][it]) {
                             ia2 = ta[1][it];
                         } else {
@@ -6682,10 +7064,11 @@ public class GeneralizedKirkwood {
                             aavect[k] = a[k][ia2] - a[k][ia];
                         }
                         VectorMath.norm(aavect, aavect);
-                        dt = VectorMath.dot(acvect, aavect);
-                        geo = -dt / (radius[ia] * cr[ic]);
-                        iv1 = epv[0][iep];
-                        iv2 = epv[1][iep];
+                        double dt = VectorMath.dot(acvect, aavect);
+                        double geo = -dt / (radius[ia] * cr[ic]);
+                        int iv1 = epv[0][iep];
+                        int iv2 = epv[1][iep];
+                        double angle;
                         if (iv1 == 0 || iv2 == 0) {
                             angle = 2.0 * PI;
                         } else {
@@ -6720,52 +7103,44 @@ public class GeneralizedKirkwood {
                         getVector(ai, tanv, 1, nedge);
                         getVector(aj, tanv, 0, 0);
                         getVector(ak, radial, 0);
-                        angle = vecang(ai, aj, ak, 1.0);
+                        double angle = vecang(ai, aj, ak, 1.0);
                         if (angle < 0.0) {
                             logger.severe("Negative Angle in MEASFP");
                         }
                         pcurve += angle;
                     }
                 }
-                gauss = 2.0 * PI * ieuler - pcurve - gcurve;
-                areap = gauss * (radius[ia] * radius[ia]);
-                volp = areap * radius[ia] / 3.0;
-                return volp;
+                double gauss = 2.0 * PI * ieuler - pcurve - gcurve;
+                double areap = gauss * (radius[ia] * radius[ia]);
+                double volp = areap * radius[ia] / 3.0;
+                av[0] = areap;
+                av[1] = volp;
             }
 
-            public void measfs(int ifs, double areas, double vols, double areasp, double volsp) {
-
-                int iep;
-                int ic, ic1, ic2;
-                int it, ia1, ia2;
-                int iv1, iv2;
-                double vecang, phi;
-                double d1, d2, w1, w2;
-                double theta1, theta2;
-                double rat, thetaq;
-                double cone1, cone2;
-                double term1, term2, term3;
-                double spin, volt;
+            public void measfs(int ifs, double saddle[]) {
+                double areas = 0.0;
+                double vols = 0.0;
+                double areasp = 0.0;
+                double volsp = 0.0;
                 double vect1[] = new double[3];
                 double vect2[] = new double[3];
                 double aavect[] = new double[3];
-                boolean cusp;
-
-                iep = fsep[0][ifs];
-                ic = epc[iep];
-                it = ct[ic];
-                ia1 = ta[0][it];
-                ia2 = ta[1][it];
-                for (k = 0; k < 3; k++) {
+                int iep = fsep[0][ifs];
+                int ic = epc[iep];
+                int it = ct[ic];
+                int ia1 = ta[0][it];
+                int ia2 = ta[1][it];
+                for (int k = 0; k < 3; k++) {
                     aavect[k] = a[k][ia2] - a[k][ia1];
                 }
                 VectorMath.norm(aavect, aavect);
-                iv1 = epv[0][iep];
-                iv2 = epv[1][iep];
+                int iv1 = epv[0][iep];
+                int iv2 = epv[1][iep];
+                double phi;
                 if (iv1 == 0 || iv2 == 0) {
                     phi = 2.0 * PI;
                 } else {
-                    for (k = 0; k < 3; k++) {
+                    for (int k = 0; k < 3; k++) {
                         vect1[k] = v[k][iv1] - c[k][ic];
                         vect2[k] = v[k][iv2] - c[k][ic];
                     }
@@ -6775,15 +7150,17 @@ public class GeneralizedKirkwood {
                     vect1[k] = a[k][ia2] - t[k][it];
                     vect2[k] = a[k][ia2] - t[k][it];
                 }
-                d1 = -1 * VectorMath.dot(vect1, aavect);
-                d2 = VectorMath.dot(vect2, aavect);
+                double d1 = -1.0 * VectorMath.dot(vect1, aavect);
+                double d2 = VectorMath.dot(vect2, aavect);
                 theta1 = atan2(d1, tr[it]);
                 theta2 = atan2(d2, tr[it]);
 
                 // Check for cusps.
+                double thetaq;
+                boolean cusp;
                 if (tr[it] < probe && theta1 > 0.0 && theta2 > 0.0) {
                     cusp = true;
-                    rat = tr[it] / probe;
+                    double rat = tr[it] / probe;
                     rat = check(rat);
                     thetaq = acos(rat);
                 } else {
@@ -6792,35 +7169,37 @@ public class GeneralizedKirkwood {
                     areasp = 0.0;
                     volsp = 0.0;
                 }
-                term1 = tr[it] * probe * (theta1 + theta2);
-                term2 = (probe * probe) * (sin(theta1) + sin(theta2));
+                double term1 = tr[it] * probe * (theta1 + theta2);
+                double term2 = (probe * probe) * (sin(theta1) + sin(theta2));
                 areas = phi * (term1 - term2);
                 if (cusp) {
-                    spin = tr[it] * probe * thetaq - probe * probe * sin(thetaq);
+                    double spin = tr[it] * probe * thetaq - probe * probe * sin(thetaq);
                     areasp = 2.0 * phi * spin;
                 }
 
                 iep = fsep[0][ifs];
-                ic2 = epc[iep];
+                int ic2 = epc[iep];
                 iep = fsep[1][ifs];
-                ic1 = epc[iep];
+                int ic1 = epc[iep];
                 if (ca[ic1] != ia1) {
                     logger.severe("IA1 Inconsistency in MEASFS");
                 }
-                for (k = 0; k < 3; k++) {
+                for (int k = 0; k < 3; k++) {
                     vect1[k] = c[k][ic1] - a[k][ia1];
                     vect2[k] = c[k][ic2] - a[k][ia2];
                 }
-                w1 = VectorMath.dot(vect1, aavect);
-                w2 = -1 * VectorMath.dot(vect2, aavect);
-                cone1 = phi * (w1 * cr[ic1] * (w1 * cr[ic1])) / 6.0;
-                cone2 = phi * (w2 * cr[ic2] * (w2 * cr[ic2])) / 6.0;
+                double w1 = VectorMath.dot(vect1, aavect);
+                double w2 = -1.0 * VectorMath.dot(vect2, aavect);
+                double cone1 = phi * (w1 * cr[ic1] * (w1 * cr[ic1])) / 6.0;
+                double cone2 = phi * (w2 * cr[ic2] * (w2 * cr[ic2])) / 6.0;
                 term1 = (tr[it] * tr[it]) * probe * (sin(theta1) + sin(theta2));
                 term2 = sin(theta1) * cos(theta1) + theta1 + sin(theta2) * cos(theta2) + theta2;
                 term2 = tr[it] * (probe * probe) * term2;
-                term3 = sin(theta1) * cos(theta1) * cos(theta1) + 2.0 * sin(theta1) + sin(theta2) * cos(theta2) * cos(theta2) + 2.0 * sin(theta2);
+                double term3 = sin(theta1) * cos(theta1) * cos(theta1)
+                        + 2.0 * sin(theta1) + sin(theta2) * cos(theta2) * cos(theta2)
+                        + 2.0 * sin(theta2);
                 term3 = (probe * probe * probe / 3.0) * term3;
-                volt = (phi / 2.0) * (term1 - term2 + term3);
+                double volt = (phi / 2.0) * (term1 - term2 + term3);
                 vols = volt + cone1 + cone2;
                 if (cusp) {
                     term1 = (tr[it] * tr[it]) * probe * sin(thetaq);
@@ -6830,14 +7209,13 @@ public class GeneralizedKirkwood {
                     term3 = (probe * probe * probe / 3.0) * term3;
                     volsp = phi * (term1 - term2 + term3);
                 }
+                saddle[0] = areas;
+                saddle[1] = vols;
+                saddle[2] = areasp;
+                saddle[3] = volsp;
             }
 
-            public void measfn(int ifn, double arean, double voln) {
-
-                int k, ke, je, ien;
-                int iv, ia, ip;
-                double vecang, triple;
-                double defect, simplx;
+            public void measfn(int ifn, double av[]) {
                 double ai[] = new double[3];
                 double aj[] = new double[3];
                 double ak[] = new double[3];
@@ -6845,13 +7223,14 @@ public class GeneralizedKirkwood {
                 double pvv[][] = new double[3][3];
                 double pav[][] = new double[3][3];
                 double planev[][] = new double[3][3];
-
-                for (ke = 0; ke < 3; ke++) {
-                    ien = fnen[ke][ifn];
-                    iv = env[0][ien];
-                    ia = va[iv];
-                    ip = vp[iv];
-                    for (k = 0; k < 3; k++) {
+                double arean = 0.0;
+                double voln = 0.0;
+                for (int ke = 0; ke < 3; ke++) {
+                    int ien = fnen[ke][ifn];
+                    int iv = env[0][ien];
+                    int ia = va[iv];
+                    int ip = vp[iv];
+                    for (int k = 0; k < 3; k++) {
                         pvv[k][ke] = v[k][iv] - p[k][ip];
                         pav[k][ke] = a[k][ia] - p[k][ip];
                     }
@@ -6863,8 +7242,8 @@ public class GeneralizedKirkwood {
                 if (probe <= 0.0) {
                     arean = 0.0;
                 } else {
-                    for (ke = 0; ke < 3; ke++) {
-                        je = ke + 1;
+                    for (int ke = 0; ke < 3; ke++) {
+                        int je = ke + 1;
                         if (je > 2) {
                             je = 0;
                         }
@@ -6874,8 +7253,8 @@ public class GeneralizedKirkwood {
                         VectorMath.cross(ai, aj, ak);
                         VectorMath.norm(ak, ak);
                     }
-                    for (ke = 0; ke < 3; ke++) {
-                        je = ke - 1;
+                    for (int ke = 0; ke < 3; ke++) {
+                        int je = ke - 1;
                         if (je < 0) {
                             je = 2;
                         }
@@ -6887,29 +7266,23 @@ public class GeneralizedKirkwood {
                             logger.severe("Negative Angle in MEASFN");
                         }
                     }
-                    defect = 2.0 * PI - (angle[0] + angle[1] + angle[2]);
+                    double defect = 2.0 * PI - (angle[0] + angle[1] + angle[2]);
                     arean = (probe * probe) * defect;
                 }
                 getVector(ai, pav, 0);
                 getVector(aj, pav, 1);
                 getVector(ak, pav, 2);
-                simplx = -triple(ai, aj, ak) / 6.0;
+                double simplx = -triple(ai, aj, ak) / 6.0;
                 voln = simplx - arean * probe / 3.0;
+                av[0] = arean;
+                av[1] = voln;
+
             }
 
             public void vam(double volume, double area) {
                 final int maxdot = 1000;
                 final int maxop = 100;
                 final int nscale = 20;
-                int k, ke, ke2, kv;
-                int ia, ic, ip, it;
-                int ien, iep;
-                int ifn, ifp, ifs;
-                int iv, iv1, iv2;
-                int isc, jfn;
-                int ndots, idot;
-                int nop, iop, nate;
-                int neat, neatmx;
                 int ivs[] = new int[3];
                 int ispind[] = new int[3];
                 int ispnd2[] = new int[3];
@@ -6918,26 +7291,6 @@ public class GeneralizedKirkwood {
                 int enfs[] = new int[5 * nAtoms];
                 int fnt[][] = new int[3][nfn];
                 int nspt[][] = new int[3][nfn];
-                double alens, vint, vcone;
-                double vpyr, vlens, hedron;
-                double totap, totvp, totas;
-                double totvs, totasp, totvsp;
-                double totan, totvn;
-                double alenst, alensn;
-                double vlenst, vlensn, prism;
-                double areap = 0;
-                double volp = 0;
-                double areas = 0;
-                double vols = 0;
-                double areasp = 0;
-                double volsp = 0;
-                double arean = 0;
-                double voln = 0;
-                double areado, voldo, dot, dota;
-                double ds2, dij2, dt, dpp;
-                double rm, rat, rsc, rho;
-                double sumsc, sumsig, sumlam;
-                double stq, scinc, coran, corvn;
                 double cenop[][] = new double[3][maxop];
                 double sdot[] = new double[3];
                 double dotv[] = new double[nscale];
@@ -6946,7 +7299,6 @@ public class GeneralizedKirkwood {
                 double xpnt1[] = new double[3];
                 double xpnt2[] = new double[3];
                 double qij[] = new double[3];
-                double qji[] = new double[3];
                 double vects[][] = new double[3][3];
                 double vect1[] = new double[3];
                 double vect2[] = new double[3];
@@ -6977,61 +7329,58 @@ public class GeneralizedKirkwood {
                 double alts[][] = new double[3][nfn];
                 double fncen[][] = new double[3][nfn];
                 double fnvect[][][] = new double[3][3][nfn];
-                boolean spindl;
-                boolean alli, allj;
-                boolean anyi, anyj;
-                boolean case1, case2;
-                boolean usenum;
-                boolean vip[] = new boolean[3];
                 boolean ate[] = new boolean[maxop];
                 boolean badav[] = new boolean[nfn];
                 boolean badt[] = new boolean[nfn];
                 boolean fcins[][] = new boolean[3][nfn];
                 boolean fcint[][] = new boolean[3][nfn];
                 boolean fntrev[][] = new boolean[3][nfn];
-                boolean move = false;
 
-                // Compute the volume of the interior polyhedron.
-                hedron = 0.0;
-                prism = 0.0;
-                for (ifn = 0; ifn < nfn; ifn++) {
-                    prism = measpm(ifn, prism);
-                    hedron += prism;
-                }
-
-                /*
-                 * Compute the area and volume due to convex faces
-                 * as well as the area partitioned among the atoms.
+                /**
+                 * Compute the volume of the interior polyhedron.
                  */
-                totap = 0.0;
-                totvp = 0.0;
-                for (ia = 0; ia < nAtoms; ia++) {
-                    atmarea[ia] = 0.0;
+                double polyhedronVolume = 0.0;
+                for (int ifn = 0; ifn < nfn; ifn++) {
+                    polyhedronVolume += measpm(ifn);
                 }
-                for (ifp = 0; ifp < nfp; ifp++) {
-                    measfp(ifp, areap, volp);
-                    ia = fpa[ifp];
-                    atmarea[ia] += areap;
-                    totap += areap;
-                    totvp += volp;
-                }
-                /*
-                 * Compute the area and volume due to saddle faces
-                 * as well as the spindle correction value.
-                 */
 
-                totas = 0.0;
-                totvs = 0.0;
-                totasp = 0.0;
-                totvsp = 0.0;
-                for (ifs = 0; ifs < nfs; ifs++) {
-                    for (k = 0; k < 2; k++) {
-                        ien = fsen[k][ifs];
+                /**
+                 * Compute the area and volume due to convex faces as well as
+                 * the area partitioned among the atoms.
+                 */
+                double totap = 0.0;
+                double totvp = 0.0;
+                Arrays.fill(atmarea, 0.0);
+                double convexFaces[] = {0.0, 0.0};
+                for (int ifp = 0; ifp < nfp; ifp++) {
+                    measfp(ifp, convexFaces);
+                    int ia = fpa[ifp];
+                    atmarea[ia] += convexFaces[0];
+                    totap += convexFaces[0];
+                    totvp += convexFaces[1];
+                }
+
+                /**
+                 * Compute the area and volume due to saddle faces as well as
+                 * the spindle correction value.
+                 */
+                double totas = 0.0;
+                double totvs = 0.0;
+                double totasp = 0.0;
+                double totvsp = 0.0;
+                double saddle[] = {0.0, 0.0, 0.0, 0.0};
+                for (int ifs = 0; ifs < nfs; ifs++) {
+                    for (int k = 0; k < 2; k++) {
+                        int ien = fsen[k][ifs];
                         if (ien > 0) {
                             enfs[ien] = ifs;
                         }
                     }
-                    measfs(ifs, areas, vols, areasp, volsp);
+                    measfs(ifs, saddle);
+                    double areas = saddle[0];
+                    double vols = saddle[1];
+                    double areasp = saddle[2];
+                    double volsp = saddle[3];
                     totas += areas;
                     totvs += vols;
                     totasp += areasp;
@@ -7041,58 +7390,65 @@ public class GeneralizedKirkwood {
                     }
                 }
 
-                // Compute the area and volume due to concave faces.
-                totan = 0.0;
-                totvn = 0.0;
-                for (ifn = 0; ifn < nfn; ifn++) {
-                    measfn(ifn, arean, voln);
+                /**
+                 * Compute the area and volume due to concave faces.
+                 */
+                double totan = 0.0;
+                double totvn = 0.0;
+                double concaveFaces[] = {0.0, 0.0};
+                for (int ifn = 0; ifn < nfn; ifn++) {
+                    measfn(ifn, concaveFaces);
+                    double arean = concaveFaces[0];
+                    double voln = concaveFaces[1];
                     totan += arean;
                     totvn += voln;
                 }
 
-                // Compute the area and volume lens correction values.
-                alenst = 0.0;
-                alensn = 0.0;
-                vlenst = 0.0;
-                vlensn = 0.0;
+                /**
+                 * Compute the area and volume lens correction values.
+                 */
+                double alenst = 0.0;
+                double alensn = 0.0;
+                double vlenst = 0.0;
+                double vlensn = 0.0;
                 if (probe > 0.0) {
-
-                    ndots = maxdot;
+                    int ndots[] = {maxdot};
                     gendot(ndots, dots, probe, 0.0, 0.0, 0.0);
-                    dota = (4.0 * PI * probe * probe) / ndots;
-                    for (ifn = 0; ifn < nfn; ifn++) {
+                    double dota = (4.0 * PI * probe * probe) / ndots[0];
+                    for (int ifn = 0; ifn < nfn; ifn++) {
                         nlap[ifn] = 0;
                         cora[ifn] = 0.0;
                         corv[ifn] = 0.0;
                         badav[ifn] = false;
                         badt[ifn] = false;
-                        for (k = 0; k < 3; k++) {
+                        for (int k = 0; k < 3; k++) {
                             nspt[k][ifn] = 0;
                         }
-                        ien = fnen[0][ifn];
+                        int ien = fnen[0][ifn];
                         iv = env[0][ien];
-                        ip = vp[iv];
+                        int ip = vp[iv];
                         getVector(ai, alts, ifn);
                         depths[ifn] = depth(ip, ai);
-                        for (k = 0; k < 3; k++) {
+                        for (int k = 0; k < 3; k++) {
                             fncen[k][ifn] = p[k][ip];
                         }
-                        ia = va[iv];
 
+                        // This assigned value was never used?
+                        //int ia = va[iv];
                         // Get vertices and vectors.
-                        for (ke = 0; ke < 3; ke++) {
+                        for (int ke = 0; ke < 3; ke++) {
                             ien = fnen[ke][ifn];
                             ivs[ke] = env[0][ien];
-                            ia = va[ivs[ke]];
-                            ifs = enfs[ien];
-                            iep = fsep[0][ifs];
-                            ic = epc[iep];
-                            it = ct[ic];
+                            int ia = va[ivs[ke]];
+                            int ifs = enfs[ien];
+                            int iep = fsep[0][ifs];
+                            int ic = epc[iep];
+                            int it = ct[ic];
                             fnt[ke][ifn] = it;
                             fntrev[ke][ifn] = (ta[0][it] != ia);
                         }
-                        for (ke = 0; ke < 3; ke++) {
-                            for (k = 0; k < 3; k++) {
+                        for (int ke = 0; ke < 3; ke++) {
+                            for (int k = 0; k < 3; k++) {
                                 vects[k][ke] = v[k][ivs[ke]] - p[k][ip];
                             }
                         }
@@ -7114,11 +7470,11 @@ public class GeneralizedKirkwood {
                         VectorMath.cross(ai, aj, ak);
                         VectorMath.norm(ak, ak);
                     }
-                    for (ifn = 0; ifn < nfn - 1; ifn++) {
-                        for (jfn = ifn + 1; jfn < nfn; jfn++) {
+                    for (int ifn = 0; ifn < nfn - 1; ifn++) {
+                        for (int jfn = ifn + 1; jfn < nfn; jfn++) {
                             getVector(ai, fncen, ifn);
                             getVector(aj, fncen, jfn);
-                            dij2 = VectorMath.dist2(ai, aj);
+                            double dij2 = VectorMath.dist2(ai, aj);
                             if (dij2 > 4.0 * probe * probe) {
                                 continue;
                             }
@@ -7126,31 +7482,30 @@ public class GeneralizedKirkwood {
                                 continue;
                             }
                             // These two probes may have intersecting surfaces.
-                            dpp = VectorMath.dist(ai, aj);
-
+                            double dpp = VectorMath.dist(ai, aj);
                             // Compute the midpoint.
-                            for (k = 0; k < 3; k++) {
+                            for (int k = 0; k < 3; k++) {
                                 ppm[k] = (fncen[k][ifn] + fncen[k][jfn]) / 2.0;
                                 upp[k] = (fncen[k][jfn] - fncen[k][ifn]) / dpp;
                             }
-                            rm = probe * probe - (dpp / 2.0) * (dpp / 2.0);
+                            double rm = probe * probe - (dpp / 2.0) * (dpp / 2.0);
                             if (rm < 0.0) {
                                 rm = 0.0;
                             }
                             rm = sqrt(rm);
-                            rat = dpp / (2.0 * probe);
+                            double rat = dpp / (2.0 * probe);
                             check(rat);
-                            rho = asin(rat);
+                            double rho = asin(rat);
 
                             // Use circle-plane intersection routine.
-                            alli = true;
-                            anyi = false;
-                            spindl = false;
-                            for (k = 0; k < 3; k++) {
+                            boolean alli = true;
+                            boolean anyi = false;
+                            boolean spindl = false;
+                            for (int k = 0; k < 3; k++) {
                                 ispind[k] = 0;
                                 ispnd2[k] = 0;
                             }
-                            for (ke = 0; ke < 3; ke++) {
+                            for (int ke = 0; ke < 3; ke++) {
                                 thetaq[ke] = 0.0;
                                 sigmaq[ke] = 0.0;
                                 tau[ke] = 0.0;
@@ -7166,15 +7521,13 @@ public class GeneralizedKirkwood {
                                     anyi = true;
                                 }
                                 if (!cintp) {
-
                                     continue;
                                 }
-                                it = fnt[ke][ifn];
+                                int it = fnt[ke][ifn];
                                 if (tr[it] > probe) {
-
                                     continue;
                                 }
-                                for (ke2 = 0; ke2 < 3; ke2++) {
+                                for (int ke2 = 0; ke2 < 3; ke2++) {
                                     if (it == fnt[ke2][jfn]) {
                                         ispind[ke] = it;
                                         nspt[ke][ifn]++;
@@ -7184,7 +7537,6 @@ public class GeneralizedKirkwood {
                                     }
                                 }
                                 if (ispind[ke] == 0) {
-
                                     continue;
                                 }
 
@@ -7195,26 +7547,26 @@ public class GeneralizedKirkwood {
                                 rat = tr[it] / probe;
                                 check(rat);
                                 thetaq[ke] = acos(rat);
-                                stq = sin(thetaq[ke]);
+                                double stq = sin(thetaq[ke]);
                                 if (fntrev[ke][ifn]) {
-                                    for (k = 0; k < 3; k++) {
+                                    for (int k = 0; k < 3; k++) {
                                         uij[k] = -tax[k][it];
                                     }
                                 } else {
-                                    for (k = 0; k < 3; k++) {
+                                    for (int k = 0; k < 3; k++) {
                                         uij[k] = tax[k][it];
                                     }
                                 }
-                                for (k = 0; k < 3; k++) {
+                                for (int k = 0; k < 3; k++) {
                                     qij[k] = t[k][it] - stq * probe * uij[k];
-                                    qji[k] = t[k][it] + stq * probe * uij[k];
+                                    //qji[k] = t[k][it] + stq * probe * uij[k];
                                 }
-                                for (k = 0; k < 3; k++) {
+                                for (int k = 0; k < 3; k++) {
                                     umq[k] = (qij[k] - ppm[k]) / rm;
                                     upq[k] = (qij[k] - fncen[k][ifn]) / probe;
                                 }
                                 VectorMath.cross(uij, upp, vect1);
-                                dt = VectorMath.dot(umq, vect1);
+                                double dt = VectorMath.dot(umq, vect1);
                                 check(dt);
                                 sigmaq[ke] = acos(dt);
                                 getVector(ai, fnvect, ke, ifn);
@@ -7226,9 +7578,9 @@ public class GeneralizedKirkwood {
                                 check(dt);
                                 tau[ke] = PI - acos(dt);
                             }
-                            allj = true;
-                            anyj = false;
-                            for (ke = 0; ke < 3; ke++) {
+                            boolean allj = true;
+                            boolean anyj = false;
+                            for (int ke = 0; ke < 3; ke++) {
                                 getVector(ai, fncen, jfn);
                                 getVector(aj, fnvect, ke, jfn);
                                 cirpln(ppm, rm, upp, ai, aj, cinsp, cintp, xpnt1, xpnt2);
@@ -7241,25 +7593,24 @@ public class GeneralizedKirkwood {
                                     anyj = true;
                                 }
                             }
-                            case1 = (alli && allj && !anyi && !anyj);
-                            case2 = (anyi && anyj && spindl);
+                            boolean case1 = (alli && allj && !anyi && !anyj);
+                            boolean case2 = (anyi && anyj && spindl);
                             if (!case1 && !case2) {
-
                                 continue;
                             }
 
                             // This kind of overlap can be handled.
                             nlap[ifn]++;
                             nlap[jfn]++;
-                            for (ke = 0; ke < 3; ke++) {
-                                ien = fnen[ke][ifn];
-                                iv1 = env[0][ien];
-                                iv2 = env[1][ien];
-                                for (k = 0; k < 3; k++) {
+                            for (int ke = 0; ke < 3; ke++) {
+                                int ien = fnen[ke][ifn];
+                                int iv1 = env[0][ien];
+                                int iv2 = env[1][ien];
+                                for (int k = 0; k < 3; k++) {
                                     vect3[k] = v[k][iv1] - fncen[k][ifn];
                                     vect4[k] = v[k][iv2] - fncen[k][ifn];
                                 }
-                                for (ke2 = 0; ke2 < 3; ke2++) {
+                                for (int ke2 = 0; ke2 < 3; ke2++) {
                                     if (ispind[ke] == ispnd2[ke2] || ispind[ke] == 0) {
                                         continue;
                                     }
@@ -7274,12 +7625,12 @@ public class GeneralizedKirkwood {
                                     ien = fnen[ke2][jfn];
                                     iv1 = env[0][ien];
                                     iv2 = env[1][ien];
-                                    for (k = 0; k < 3; k++) {
+                                    for (int k = 0; k < 3; k++) {
                                         vect7[k] = v[k][iv1] - fncen[k][jfn];
                                         vect8[k] = v[k][iv2] - fncen[k][jfn];
                                     }
                                     // Check whether point lies on spindle arc.
-                                    for (k = 0; k < 3; k++) {
+                                    for (int k = 0; k < 3; k++) {
                                         vect1[k] = xpnt1[k] - fncen[k][ifn];
                                         vect2[k] = xpnt2[k] - fncen[k][ifn];
                                         vect5[k] = xpnt1[k] - fncen[k][jfn];
@@ -7291,40 +7642,31 @@ public class GeneralizedKirkwood {
                                      */
                                     getVector(ai, fnvect, ke, ifn);
                                     getVector(aj, fnvect, ke2, jfn);
-                                    if (triple(vect3, vect1, ai) < 0.0) {
-
-                                    } else if (triple(vect1, vect4, ai) < 0.0) {
-
-                                    } else if (triple(vect7, vect5, aj) < 0.0) {
-
-                                    } else if (triple(vect5, vect8, aj) < 0.0) {
-
-                                    } else {
-                                        badav[ifn] = true;
-                                        continue;
-                                    }
-                                    if (triple(vect3, vect2, ai) < 0.0) {
-
-                                    } else if (triple(vect2, vect4, ai) < 0.0) {
-
-                                    } else if (triple(vect7, vect6, aj) < 0.0) {
-
-                                    } else if (triple(vect6, vect8, aj) < 0.0) {
-
+                                    if (triple(vect3, vect1, ai) < 0.0
+                                            || triple(vect1, vect4, ai) < 0.0
+                                            || triple(vect7, vect5, aj) < 0.0
+                                            || triple(vect5, vect8, aj) < 0.0) {
+                                        if (!((triple(vect3, vect2, ai) < 0.0
+                                                || triple(vect2, vect4, ai) < 0.0
+                                                || triple(vect7, vect6, aj) < 0.0
+                                                || triple(vect6, vect8, aj) < 0.0))) {
+                                            badav[ifn] = true;
+                                        }
                                     } else {
                                         badav[ifn] = true;
                                     }
                                 }
                             }
-                            for (ke = 0; ke < 3; ke++) {
-                                ien = fnen[ke][ifn];
-                                iv1 = env[0][ien];
-                                iv2 = env[1][ien];
-                                for (k = 0; k < 3; k++) {
+
+                            for (int ke = 0; ke < 3; ke++) {
+                                int ien = fnen[ke][ifn];
+                                int iv1 = env[0][ien];
+                                int iv2 = env[1][ien];
+                                for (int k = 0; k < 3; k++) {
                                     vect3[k] = v[k][iv1] - fncen[k][ifn];
                                     vect4[k] = v[k][iv2] - fncen[k][ifn];
                                 }
-                                for (ke2 = 0; ke2 < 3; ke2++) {
+                                for (int ke2 = 0; ke2 < 3; ke2++) {
                                     if (ispind[ke] == ispnd2[ke2] || ispnd2[ke2] == 0) {
                                         continue;
                                     }
@@ -7339,13 +7681,13 @@ public class GeneralizedKirkwood {
                                     ien = fnen[ke2][jfn];
                                     iv1 = env[0][ien];
                                     iv2 = env[1][ien];
-                                    for (k = 0; k < 3; k++) {
+                                    for (int k = 0; k < 3; k++) {
                                         vect7[k] = v[k][iv1] - fncen[k][jfn];
                                         vect8[k] = v[k][iv2] - fncen[k][jfn];
                                     }
 
                                     // Check whether point lies on spindle arc.
-                                    for (k = 0; k < 3; k++) {
+                                    for (int k = 0; k < 3; k++) {
                                         vect1[k] = xpnt1[k] - fncen[k][ifn];
                                         vect2[k] = xpnt2[k] - fncen[k][ifn];
                                         vect5[k] = xpnt1[k] - fncen[k][jfn];
@@ -7357,127 +7699,107 @@ public class GeneralizedKirkwood {
                                      */
                                     getVector(ai, fnvect, ke, ifn);
                                     getVector(aj, fnvect, ke2, jfn);
-                                    if (triple(vect3, vect1, ai) < 0.0) {
-
-                                    } else if (triple(vect1, vect4, ai) < 0.0) {
-
-                                    } else if (triple(vect7, vect5, aj) < 0.0) {
-
-                                    } else if (triple(vect5, vect8, aj) < 0.0) {
-
-                                    } else {
-                                        badav[jfn] = true;
-                                        continue;
-                                    }
-                                    if (triple(vect3, vect2, ai) < 0.0) {
-
-                                    } else if (triple(vect2, vect4, ai) < 0.0) {
-
-                                    } else if (triple(vect7, vect6, aj) < 0.0) {
-
-                                    } else if (triple(vect6, vect8, aj) < 0.0) {
-
+                                    if (triple(vect3, vect1, ai) < 0.0
+                                            || triple(vect1, vect4, ai) < 0.0
+                                            || triple(vect7, vect5, aj) < 0.0
+                                            || triple(vect5, vect8, aj) < 0.0) {
+                                        if (!(triple(vect3, vect2, ai) < 0.0
+                                                || triple(vect2, vect4, ai) < 0.0
+                                                || triple(vect7, vect6, aj) < 0.0
+                                                || triple(vect6, vect8, aj) < 0.0)) {
+                                            badav[jfn] = true;
+                                        }
                                     } else {
                                         badav[jfn] = true;
                                     }
                                 }
-                            }
-                            sumlam = 0.0;
-                            sumsig = 0.0;
-                            sumsc = 0.0;
-                            for (k = 0; k < 3; k++) {
-                                if (ispind[ke] != 0) {
-                                    sumlam += PI - tau[ke];
-                                    sumsig += sigmaq[ke] - PI;
-                                    sumsc += sin(sigmaq[ke]) * cos(sigmaq[ke]);
+
+                                double sumlam = 0.0;
+                                double sumsig = 0.0;
+                                double sumsc = 0.0;
+                                for (int k = 0; k < 3; k++) {
+                                    if (ispind[ke] != 0) {
+                                        sumlam += PI - tau[ke];
+                                        sumsig += sigmaq[ke] - PI;
+                                        sumsc += sin(sigmaq[ke]) * cos(sigmaq[ke]);
+                                    }
                                 }
+                                double alens = 2.0 * probe * probe
+                                        * (PI - sumlam - sin(rho) * (PI + sumsig));
+                                double vint = alens * probe / 3.0;
+                                double vcone = probe * rm * rm * sin(rho) * (PI + sumsig) / 3.0;
+                                double vpyr = probe * rm * rm * sin(rho) * sumsc / 3.0;
+                                double vlens = vint - vcone + vpyr;
+                                cora[ifn] += alens;
+                                cora[jfn] += alens;
+                                corv[ifn] += vlens;
+                                corv[jfn] += vlens;
                             }
-                            alens = 2.0 * probe * probe * (PI - sumlam - sin(rho) * (PI + sumsig));
-                            vint = alens * probe / 3.0;
-                            vcone = probe * rm * rm * sin(rho) * (PI + sumsig) / 3.0;
-                            vpyr = probe * rm * rm * sin(rho) * sumsc / 3.0;
-                            vlens = vint - vcone + vpyr;
-                            cora[ifn] += alens;
-                            cora[jfn] += alens;
-                            corv[ifn] += vlens;
-                            corv[jfn] += vlens;
 
                             // Check for vertex on opposing probe in face.
-                            for (kv = 0; kv < 3; kv++) {
-                                vip[kv] = false;
-                                ien = fnen[kv][jfn];
-                                iv = env[0][ien];
-                                for (k = 0; k < 3; k++) {
-                                    vect1[k] = v[k][iv] - fncen[k][ifn];
-                                }
-                                VectorMath.norm(vect1, vect1);
-                                for (ke = 0; ke < 3; ke++) {
-                                    getVector(ai, fnvect, ke, ifn);
-                                    getVector(aj, v, iv);
-                                    dt = VectorMath.dot(ai, aj);
-                                    if (dt > 0.0) {
-                                        move = true;
-                                        break;
-                                    }
-                                }
-                                if (!move) {
-                                    vip[kv] = true;
-                                }
-                                move = false;
-                            }
+                            /**
+                             * for (int kv = 0; kv < 3; kv++) { vip[kv] = false;
+                             * int ien = fnen[kv][jfn]; iv = env[0][ien]; for
+                             * (int k = 0; k < 3; k++) { vect1[k] = v[k][iv] -
+                             * fncen[k][ifn]; } VectorMath.norm(vect1, vect1);
+                             * for (int ke = 0; ke < 3; ke++) { getVector(ai,
+                             * fnvect, ke, ifn); getVector(aj, v, iv); double dt
+                             * = VectorMath.dot(ai, aj); if (dt > 0.0) { move =
+                             * true; break; } } if (!move) { vip[kv] = true; }
+                             * move = false; }
+                             */
                         }
                     }
-                    for (ifn = 0; ifn < nfn; ifn++) {
-                        for (ke = 0; ke < 3; ke++) {
+                    for (int ifn = 0; ifn < nfn; ifn++) {
+                        for (int ke = 0; ke < 3; ke++) {
                             if (nspt[ke][ifn] > 1) {
                                 badt[ifn] = true;
                             }
                         }
-                        for (ifn = 0; ifn < nfn; ifn++) {
-                            if (nlap[ifn] <= 0) {
-                                continue;
-                            }
-
-                            // Gather all overlapping probes.
-                            nop = 0;
-                            for (jfn = 0; jfn < nfn; jfn++) {
-                                if (ifn != jfn) {
-                                    getVector(ai, fncen, ifn);
-                                    getVector(aj, fncen, jfn);
-                                    dij2 = VectorMath.dist2(ai, aj);
-                                    if (dij2 <= 4.0 * probe * probe) {
-                                        if (depths[jfn] <= probe) {
-                                            nop++;
-                                            if (nop > maxop) {
-                                                logger.severe("NOP Overflow in VAM");
-                                            }
-                                            ifnop[nop] = jfn;
-                                            for (k = 0; k < 3; k++) {
-                                                cenop[k][nop] = fncen[k][jfn];
-                                            }
+                    }
+                    for (int ifn = 0; ifn < nfn; ifn++) {
+                        if (nlap[ifn] <= 0) {
+                            continue;
+                        }
+                        // Gather all overlapping probes.
+                        int nop = 0;
+                        for (int jfn = 0; jfn < nfn; jfn++) {
+                            if (ifn != jfn) {
+                                getVector(ai, fncen, ifn);
+                                getVector(aj, fncen, jfn);
+                                double dij2 = VectorMath.dist2(ai, aj);
+                                if (dij2 <= 4.0 * probe * probe) {
+                                    if (depths[jfn] <= probe) {
+                                        nop++;
+                                        if (nop > maxop) {
+                                            logger.severe("NOP Overflow in VAM");
+                                        }
+                                        ifnop[nop] = jfn;
+                                        for (int k = 0; k < 3; k++) {
+                                            cenop[k][nop] = fncen[k][jfn];
                                         }
                                     }
                                 }
                             }
 
                             // Numerical calculation of the correction.
-                            areado = 0.0;
-                            voldo = 0.0;
-                            scinc = 1.0 / nscale;
-                            for (isc = 0; isc < nscale; isc++) {
-                                rsc = isc - 0.5;
+                            double areado = 0.0;
+                            double voldo = 0.0;
+                            double scinc = 1.0 / nscale;
+                            for (int isc = 0; isc < nscale; isc++) {
+                                double rsc = isc - 0.5;
                                 dotv[isc] = probe * dota * rsc * rsc * scinc * scinc * scinc;
                             }
-                            for (iop = 0; iop < nop; iop++) {
+                            for (int iop = 0; iop < nop; iop++) {
                                 ate[iop] = false;
                             }
-                            neatmx = 0;
-                            for (idot = 0; idot < ndots; idot++) {
-                                move = false;
-                                for (ke = 0; ke < 3; ke++) {
+                            int neatmx = 0;
+                            for (int idot = 0; idot < ndots[0]; idot++) {
+                                boolean move = false;
+                                for (int ke = 0; ke < 3; ke++) {
                                     getVector(ai, fnvect, ke, ifn);
                                     getVector(aj, dots, idot);
-                                    dt = VectorMath.dot(ai, aj);
+                                    double dt = VectorMath.dot(ai, aj);
                                     if (dt > 0.0) {
                                         move = true;
                                         break;
@@ -7486,36 +7808,36 @@ public class GeneralizedKirkwood {
                                 if (move) {
                                     continue;
                                 }
-                                for (k = 0; k < 3; k++) {
+                                for (int k = 0; k < 3; k++) {
                                     tdots[k][idot] = fncen[k][ifn] + dots[k][idot];
                                 }
-                                for (iop = 0; iop < nop; iop++) {
+                                for (int iop = 0; iop < nop; iop++) {
                                     jfn = ifnop[iop];
                                     getVector(ai, dots, idot);
                                     getVector(aj, fncen, jfn);
-                                    ds2 = VectorMath.dist2(ai, aj);
+                                    double ds2 = VectorMath.dist2(ai, aj);
                                     if (ds2 > probe * probe) {
                                         areado += dota;
                                         break;
                                     }
                                 }
-                                for (isc = 0; isc < nscale; isc++) {
-                                    rsc = isc - 0.5;
-                                    for (k = 0; k < 3; k++) {
+                                for (int isc = 0; isc < nscale; isc++) {
+                                    double rsc = isc - 0.5;
+                                    for (int k = 0; k < 3; k++) {
                                         sdot[k] = fncen[k][ifn] + rsc * scinc * dots[k][idot];
                                     }
-                                    neat = 0;
-                                    for (iop = 0; iop < nop; iop++) {
+                                    int neat = 0;
+                                    for (int iop = 0; iop < nop; iop++) {
                                         jfn = ifnop[iop];
                                         getVector(ai, fncen, jfn);
-                                        ds2 = VectorMath.dist2(sdot, ai);
+                                        double ds2 = VectorMath.dist2(sdot, ai);
                                         if (ds2 > probe * probe) {
-                                            for (k = 0; k < 3; k++) {
+                                            for (int k = 0; k < 3; k++) {
                                                 vect1[k] = sdot[k] - fncen[k][jfn];
                                             }
-                                            for (ke = 0; ke < 3; ke++) {
+                                            for (int ke = 0; ke < 3; ke++) {
                                                 getVector(ai, fnvect, ke, jfn);
-                                                dt = VectorMath.dot(ai, vect1);
+                                                double dt = VectorMath.dot(ai, vect1);
                                                 if (dt > 0.0) {
                                                     move = true;
                                                     break;
@@ -7536,17 +7858,17 @@ public class GeneralizedKirkwood {
                                     }
                                 }
                             }
-                            coran = areado;
-                            corvn = voldo;
-                            nate = 0;
-                            for (iop = 0; iop < nop; iop++) {
+                            double coran = areado;
+                            double corvn = voldo;
+                            int nate = 0;
+                            for (int iop = 0; iop < nop; iop++) {
                                 if (ate[iop]) {
                                     nate++;
                                 }
                             }
 
                             // Use either the analytical or numerical correction.
-                            usenum = (nate > nlap[ifn] || neatmx > 1 || badt[ifn]);
+                            boolean usenum = (nate > nlap[ifn] || neatmx > 1 || badt[ifn]);
                             if (usenum) {
                                 cora[ifn] = coran;
                                 corv[ifn] = corvn;
@@ -7560,82 +7882,69 @@ public class GeneralizedKirkwood {
                             vlenst += corv[ifn];
                         }
                     }
-                    // Finally, compute the total area and total volume.
-                    logger.info(String.format("totap=%16.8f,totas=%16.8f,totan=%16.8f,totasp=%16.8f,alenst=%16.8f", totap, totas, totan, totasp, alenst));
-                    area = totap + totas + totan - totasp - alenst;
-                    logger.info(String.format("totvp=%16.8f,totvs=%16.8f,totvn=%16.8f,hedron=%16.8f,totvsp=%16.8f,vlenst=%16.8f", totvp, totvs, totvn, hedron, totvsp, vlenst));
-                    volume = totvp + totvs + totvn + hedron - totvsp + vlenst;
-                    logger.info(String.format("volume=%16.8f area= %16.8f", volume, area));
-
                 }
+                // Finally, compute the total area and total volume.
+                logger.info(String.format("totap=%16.8f,totas=%16.8f,totan=%16.8f,totasp=%16.8f,alenst=%16.8f", totap, totas, totan, totasp, alenst));
+                area = totap + totas + totan - totasp - alenst;
+                logger.info(String.format("totvp=%16.8f,totvs=%16.8f,totvn=%16.8f,hedron=%16.8f,totvsp=%16.8f,vlenst=%16.8f", totvp, totvs, totvn, polyhedronVolume, totvsp, vlenst));
+                volume = totvp + totvs + totvn + polyhedronVolume - totvsp + vlenst;
+                logger.info(String.format("volume=%16.8f area= %16.8f", volume, area));
             }
-            /*
-             * "gendot" finds the coordinates of a specified number of surface
-             * points for a sphere with the input radius and coordinate center.
+
+            /**
+             * The gendot method finds the coordinates of a specified number of
+             * surface points for a sphere with the input radius and coordinate
+             * center.
              */
-
-            public void gendot(int ndots, double dots[][], double radius, double xcenter, double ycenter, double zcenter) {
-
-                int k;
-                int nequat, nvert, nhoriz;
-                double fi, fj, x, y, z, xy;
-                boolean breakAgain = false;
-
-                nequat = (int) sqrt(PI * (double) ndots);
-                // CHECK IF THIS CASTING IS THE CORRECT IMPLEMENTATION.
-                nvert = (int) 0.5 * nequat;
+            public void gendot(int ndots[], double dots[][], double radius,
+                    double xcenter, double ycenter, double zcenter) {
+                int nequat = (int) sqrt(PI * (double) ndots[0]);
+                int nvert = nequat / 2;
                 if (nvert < 0) {
                     nvert = 0;
                 }
-                k = 0;
+                int k = 0;
                 for (int i = -1; i < nvert; i++) {
-                    fi = (PI * (double) i) / (double) nvert;
-                    z = cos(fi);
-                    xy = sin(fi);
-                    nhoriz = (int) (nequat * xy);
+                    double fi = (PI * (double) i) / (double) nvert;
+                    double z = cos(fi);
+                    double xy = sin(fi);
+                    int nhoriz = (int) (nequat * xy);
                     if (nhoriz < 0) {
                         nhoriz = 0;
                     }
                     for (int j = -1; j < nhoriz - 1; j++) {
-                        fj = (2.0 * PI * (double) (j)) / (double) (nhoriz);
-                        x = cos(fj) * xy;
-                        y = sin(fj) * xy;
+                        double fj = (2.0 * PI * (double) (j)) / (double) (nhoriz);
+                        double x = cos(fj) * xy;
+                        double y = sin(fj) * xy;
                         k++;
                         dots[0][k] = x * radius + xcenter;
                         dots[1][k] = y * radius + ycenter;
                         dots[2][k] = z * radius + zcenter;
-                        if (k >= ndots) {
-                            breakAgain = true;
-                            break;
+                        if (k >= ndots[0]) {
+                            ndots[0] = k;
+                            return;
                         }
                     }
-                    if (breakAgain) {
-                        break;
-                    }
                 }
-                ndots = k;
+                ndots[0] = k;
             }
 
-            /*
-             * "cirpln" determines the points of intersection between a
+            /**
+             * The cirpln method determines the points of intersection between a
              * specified circle and plane.
              */
-            public boolean cirpln(double circen[], double cirrad, double cirvec[], double plncen[], double plnvec[], boolean cinsp, boolean cintp, double xpnt1[], double xpnt2[]) {
-
-                int k;
-                double dot, dcp, dir;
-                double ratio, rlen;
+            public boolean cirpln(double circen[], double cirrad, double cirvec[], double plncen[],
+                    double plnvec[], boolean cinsp, boolean cintp, double xpnt1[], double xpnt2[]) {
                 double cpvect[] = new double[3];
                 double pnt1[] = new double[3];
                 double vect1[] = new double[3];
                 double vect2[] = new double[3];
                 double uvect1[] = new double[3];
                 double uvect2[] = new double[3];
-
-                for (k = 0; k < 3; k++) {
+                for (int k = 0; k < 3; k++) {
                     cpvect[k] = plncen[k] - circen[k];
                 }
-                dcp = VectorMath.dot(cpvect, plnvec);
+                double dcp = VectorMath.dot(cpvect, plnvec);
                 cinsp = (dcp > 0.0);
                 VectorMath.cross(plnvec, cirvec, vect1);
                 if (VectorMath.r(vect1) > 0.0) {
@@ -7643,50 +7952,46 @@ public class GeneralizedKirkwood {
                     VectorMath.cross(cirvec, uvect1, vect2);
                     if (VectorMath.r(vect2) > 0.0) {
                         VectorMath.norm(vect2, uvect2);
-                        dir = VectorMath.dot(uvect2, plnvec);
+                        double dir = VectorMath.dot(uvect2, plnvec);
                         if (dir != 0.0) {
-                            ratio = dcp / dir;
+                            double ratio = dcp / dir;
                             if (abs(ratio) <= cirrad) {
-                                for (k = 0; k < 3; k++) {
+                                for (int k = 0; k < 3; k++) {
                                     pnt1[k] = circen[k] + ratio * uvect2[k];
                                 }
-                                rlen = cirrad * cirrad - ratio * ratio;
+                                double rlen = cirrad * cirrad - ratio * ratio;
                                 if (rlen < 0.0) {
                                     rlen = 0.0;
                                 }
                                 rlen = sqrt(rlen);
-                                for (k = 0; k < 3; k++) {
+                                for (int k = 0; k < 3; k++) {
                                     xpnt1[k] = pnt1[k] - rlen * uvect1[k];
                                     xpnt2[k] = pnt1[k] + rlen * uvect1[k];
                                 }
-                                cintp = true;
-                                return cintp;
+                                return true;
                             }
                         }
                     }
                 }
-                cintp = false;
-                return cintp;
+                return false;
             }
-            /*
-             * "vecang" finds the angle between two vectors handed with respect to a
-             * coordinate axis; returns an angle in the range [0,2*PI].
+
+            /**
+             * The vecang method finds the angle between two vectors handed with
+             * respect to a coordinate axis; returns an angle in the range
+             * [0,2*PI].
              */
-
             public double vecang(double v1[], double v2[], double axis[], double hand) {
-
-                double vecang;
-                double angle, a1, a2, a12, dt;
-
-                a1 = VectorMath.r(v1);
-                a2 = VectorMath.r(v2);
-                dt = VectorMath.dot(v1, v2);
-                a12 = a1 * a2;
+                double a1 = VectorMath.r(v1);
+                double a2 = VectorMath.r(v2);
+                double dt = VectorMath.dot(v1, v2);
+                double a12 = a1 * a2;
                 if (abs(a12) != 0.0) {
                     dt = dt / a12;
                 }
                 dt = check(dt);
-                angle = acos(dt);
+                double angle = acos(dt);
+                double vecang;
                 if (hand * triple(v1, v2, axis) < 0.0) {
                     vecang = 2.0 * PI - angle;
                 } else {
@@ -7696,26 +8001,22 @@ public class GeneralizedKirkwood {
             }
 
             public double depth(int ip, double alt[]) {
-
-                int k, ia1, ia2, ia3;
-                double dot;
                 double vect1[] = new double[3];
                 double vect2[] = new double[3];
                 double vect3[] = new double[3];
                 double vect4[] = new double[3];
-
-                ia1 = pa[0][ip];
-                ia2 = pa[1][ip];
-                ia3 = pa[2][ip];
-                for (k = 0; k < 3; k++) {
+                int ia1 = pa[0][ip];
+                int ia2 = pa[1][ip];
+                int ia3 = pa[2][ip];
+                for (int k = 0; k < 3; k++) {
                     vect1[k] = a[k][ia1] - a[k][ia3];
                     vect2[k] = a[k][ia2] - a[k][ia3];
                     vect3[k] = p[k][ip] - a[k][ia3];
                 }
                 VectorMath.cross(vect1, vect2, vect4);
                 VectorMath.norm(vect4, vect4);
-                dot = VectorMath.dot(vect4, vect3);
-                for (k = 0; k < 3; k++) {
+                double dot = VectorMath.dot(vect4, vect3);
+                for (int k = 0; k < 3; k++) {
                     alt[k] = vect4[k];
                 }
                 return dot;
@@ -7755,7 +8056,7 @@ public class GeneralizedKirkwood {
                  * the radii are incremented by the size of the probe;
                  * then get the maximum and minimum ranges of atoms.
                  */
-                for (i = 0; i < nAtoms; i++) {
+                for (int i = 0; i < nAtoms; i++) {
                     radius[i] = atoms[i].getVDWType().radius / 2.0;
                     vdwrad[i] = radius[i];
                     if (vdwrad[i] == 0.0) {
@@ -7786,12 +8087,13 @@ public class GeneralizedKirkwood {
                         }
                     }
                 }
+
                 calcVolume();
+
                 /*
                  * Load the cubes based on coarse lattice; first of all
                  * set edge length to the maximum diameter of any atom.
                  */
-
                 edge = 2.0 * rmax;
                 nx = (int) ((xmax - xmin) / edge);
                 ny = (int) ((ymax - ymin) / edge);
@@ -7801,9 +8103,9 @@ public class GeneralizedKirkwood {
                 }
 
                 // Initialize the coarse lattice of cubes.
-                for (i = 0; i <= nx; i++) {
-                    for (j = 0; j <= ny; j++) {
-                        for (k = 0; k <= nz; k++) {
+                for (int i = 0; i <= nx; i++) {
+                    for (int j = 0; j <= ny; j++) {
+                        for (int k = 0; k <= nz; k++) {
                             cube[0][i][j][k] = 0;
                             cube[1][i][j][k] = -1;
                         }
@@ -7811,11 +8113,11 @@ public class GeneralizedKirkwood {
                 }
 
                 // Find the number of atoms in each cube.
-                for (m = 0; m < nAtoms; m++) {
+                for (int m = 0; m < nAtoms; m++) {
                     if (!skip[m]) {
-                        i = (int) ((x[m] - xmin) / edge);
-                        j = (int) ((y[m] - ymin) / edge);
-                        k = (int) ((z[m] - zmin) / edge);
+                        int i = (int) ((x[m] - xmin) / edge);
+                        int j = (int) ((y[m] - ymin) / edge);
+                        int k = (int) ((z[m] - zmin) / edge);
                         cube[0][i][j][k]++;
                     }
                 }
@@ -7828,9 +8130,9 @@ public class GeneralizedKirkwood {
                  * the last cube plus the number of atoms in the present cube.
                  */
                 isum = 0;
-                for (i = 0; i <= nx; i++) {
-                    for (j = 0; j <= ny; j++) {
-                        for (k = 0; k <= nz; k++) {
+                for (int i = 0; i <= nx; i++) {
+                    for (int j = 0; j <= ny; j++) {
+                        for (int k = 0; k <= nz; k++) {
                             tcube = cube[0][i][j][k];
                             if (tcube != 0) {
                                 isum += tcube;
@@ -7845,11 +8147,11 @@ public class GeneralizedKirkwood {
                  * giving the position of the last entry for the list of
                  * atoms in that cube of total number equal to "cube(0,,,)".
                  */
-                for (m = 0; m < nAtoms; m++) {
+                for (int m = 0; m < nAtoms; m++) {
                     if (!skip[m]) {
-                        i = (int) ((x[m] - xmin) / edge);
-                        j = (int) ((y[m] - ymin) / edge);
-                        k = (int) ((z[m] - zmin) / edge);
+                        int i = (int) ((x[m] - xmin) / edge);
+                        int j = (int) ((y[m] - ymin) / edge);
+                        int k = (int) ((z[m] - zmin) / edge);
                         tcube = cube[1][i][j][k];
                         itab[tcube] = m;
                         cube[1][i][j][k]--;
@@ -7862,9 +8164,9 @@ public class GeneralizedKirkwood {
                  * the stop index.
                  */
                 isum = 0;
-                for (i = 0; i <= nx; i++) {
-                    for (j = 0; j <= ny; j++) {
-                        for (k = 0; k <= nz; k++) {
+                for (int i = 0; i <= nx; i++) {
+                    for (int j = 0; j <= ny; j++) {
+                        for (int k = 0; k <= nz; k++) {
                             tcube = cube[0][i][j][k];
                             //logger.info(String.format(" TCUBE %d %d %d %d", i, j, k, tcube));
                             if (tcube != 0) {
@@ -7908,13 +8210,13 @@ public class GeneralizedKirkwood {
                     // Load all overlapping atoms into "inov".
                     io = -1;
                     //logger.info(String.format(" %d %d %d %d %d %d %d ", ir, istart, istop, jstart, jstop, kstart, kstop));
-                    for (i = istart - 1; i < istop; i++) {
-                        for (j = jstart - 1; j < jstop; j++) {
-                            for (k = kstart - 1; k < kstop; k++) {
+                    for (int i = istart - 1; i < istop; i++) {
+                        for (int j = jstart - 1; j < jstop; j++) {
+                            for (int k = kstart - 1; k < kstop; k++) {
                                 mstart = cube[1][i][j][k];
                                 if (mstart != -1) {
                                     mstop = cube[0][i][j][k];
-                                    for (m = mstart; m <= mstop; m++) {
+                                    for (int m = mstart; m <= mstop; m++) {
                                         in = itab[m];
                                         //logger.info(String.format(" CHECK %d %d", ir, in));
                                         if (in != ir) {
@@ -7979,7 +8281,7 @@ public class GeneralizedKirkwood {
                             }
                             // Check intersections of neighbor circles.
                             narc = -1;
-                            for (k = 0; k <= io; k++) {
+                            for (int k = 0; k <= io; k++) {
                                 in = inov[k];
                                 rinsq = vdwrad[in] * vdwrad[in];
                                 rsec2n = rinsq - ((zgrid - z[in]) * (zgrid - z[in]));
@@ -8062,11 +8364,11 @@ public class GeneralizedKirkwood {
                                  * Sort the arc endpoint arrays, each with "narc" entries,
                                  * in order of increasing values of the arguments in "arci".
                                  */
-                                for (k = 0; k < narc; k++) {
+                                for (int k = 0; k < narc; k++) {
                                     aa = arci[k];
                                     bb = arcf[k];
                                     temp = 1000000.0;
-                                    for (i = k; i <= narc; i++) {
+                                    for (int i = k; i <= narc; i++) {
                                         if (arci[i] <= temp) {
                                             temp = arci[i];
                                             itemp = i;
@@ -8079,8 +8381,8 @@ public class GeneralizedKirkwood {
                                 }
                                 // Consolidate arcs by removing overlapping arc endpoints.
                                 temp = arcf[0];
-                                j = 0;
-                                for (k = 1; k <= narc; k++) {
+                                int j = 0;
+                                for (int k = 1; k <= narc; k++) {
                                     if (temp < arci[k]) {
                                         arcf[j] = temp;
                                         j++;
@@ -8100,7 +8402,7 @@ public class GeneralizedKirkwood {
                                     arci[0] = 0.0;
                                 } else {
                                     temp = arci[0];
-                                    for (k = 0; k < narc; k++) {
+                                    for (int k = 0; k < narc; k++) {
                                         arci[k] = arcf[k];
                                         arcf[k] = arci[k + 1];
                                     }
@@ -8118,7 +8420,7 @@ public class GeneralizedKirkwood {
                                 // SOME OF THE FOLLOWING PRINTS ARE WRONG
                                 //logger.info(String.format(" SORT %d %d %16.8f %16.8f", ir, narc, arci[0], arcf[0]));
                                 // Compute the numerical pre-derivative values.
-                                for (k = 0; k <= narc; k++) {
+                                for (int k = 0; k <= narc; k++) {
                                     theta1 = arci[k];
                                     theta2 = arcf[k];
                                     //logger.info(String.format("%d theta1=%16.8f theta2=%16.8f", ir, theta1, theta2));
