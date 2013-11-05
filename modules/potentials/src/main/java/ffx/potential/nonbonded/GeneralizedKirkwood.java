@@ -3939,10 +3939,10 @@ public class GeneralizedKirkwood {
             private double thec = 0;
             private IndexedDouble gr[];
             private IndexedDouble arci[];
-            private double area[];
-            private double darea[][];
-            private double r[];
-            private boolean skip[];
+            private final double area[];
+            private final double darea[][];
+            private final double r[];
+            private final boolean skip[];
             private boolean omit[];
             private double xc1[];
             private double yc1[];
@@ -3976,7 +3976,9 @@ public class GeneralizedKirkwood {
             private int j;
             private int ib;
             private double ecav;
-            // Set pi multiples, overlap criterion and tolerances.
+            /**
+             * Set pi multiples, overlap criterion and tolerances.
+             */
             private final static double pix2 = 2.0 * PI;
             private final static double pix4 = 4.0 * PI;
             private final static double pid2 = PI / 2.0;
@@ -4612,8 +4614,8 @@ public class GeneralizedKirkwood {
                         if (ii == k) {
                             ib = ib + 1;
                             if (j == jb) {
-                                area[ir] = ib * 2 * PI + exang + arclen;
-                                area[ir] = area[ir] % (4 * PI);
+                                area[ir] = ib * 2.0 * PI + exang + arclen;
+                                area[ir] = area[ir] % (4.0 * PI);
                                 return true;
                             }
                             return false;
