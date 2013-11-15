@@ -34,20 +34,22 @@ def cli = new CliBuilder(usage:' ffxc energy [options] <filename>');
 cli.h(longOpt:'help', 'Print this help message.');
 def options = cli.parse(args);
 
-List<String> arguments = options.arguments();
 if (options.h) {
     return cli.usage();
 }
 
-if (arguments != null && arguments.size() == 1) {
+List<String> arguments = options.arguments();
+String modelfilename = null;
+if (arguments != null && arguments.size() > 0) {
     // Read in command line.
-    String filename = arguments.get(0);
-    logger.info("\n Running energy on " + filename);
-    open(filename);
-} else if (active != null) {
-    logger.info("\n Running energy on " + active.getName());
-} else {
+    modelfilename = arguments.get(0);
+    open(modelfilename);
+} else if (active == null) {
     return cli.usage();
+} else {
+    modelfilename = active.getFile();
 }
+
+logger.info("\n Running energy on " + modelfilename);
 
 energy();

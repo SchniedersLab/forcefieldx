@@ -72,6 +72,7 @@ import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
+import javax.swing.SwingWorker;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -207,7 +208,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
      * @param evt
      */
     @Override
-    public void actionPerformed(ActionEvent evt) {
+    public void actionPerformed(ActionEvent evt) {        
         synchronized (this) {
             String actionCommand = evt.getActionCommand();
             // A change to the selected TINKER Command
@@ -866,16 +867,36 @@ public class ModelingPanel extends JPanel implements ActionListener,
             }
         }
         if (scriptFile != null && scriptFile.exists()) {
-            String args[] = statusLabel.getText().trim().split(" +");
+            String argLine = statusLabel.getText().replace('\n', ' ');
+            String args[] = argLine.trim().split(" +");
             // Remove the command (first token) and system name (last token).
             args = Arrays.copyOfRange(args, 1, args.length - 1);
             List<String> argList = Arrays.asList(args);
-            mainPanel.getModelingShell().setArgList(argList);
-            mainPanel.open(scriptFile, null);
+            FFXLauncher launcher = new FFXLauncher(argList, scriptFile);
+            Thread thread = new Thread(launcher);
+            thread.start();
+            //mainPanel.getModelingShell().setArgList(argList);
+            //mainPanel.open(scriptFile, null);
         } else {
             logger.warning(format("%s was not found.", name));
         }
 
+    }
+
+    private class FFXLauncher implements Runnable {
+        List<String> argList;
+        File scriptFile;
+
+        public FFXLauncher(List<String> argList, File scriptFile) {
+            this.argList = argList;
+            this.scriptFile = scriptFile;
+        }
+
+        @Override
+        public void run() {
+            mainPanel.getModelingShell().setArgList(argList);
+            mainPanel.open(scriptFile, null);
+        }
     }
 
     /**
