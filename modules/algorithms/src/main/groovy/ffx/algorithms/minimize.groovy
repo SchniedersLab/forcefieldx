@@ -30,6 +30,7 @@ import org.apache.commons.io.FilenameUtils;
 import groovy.util.CliBuilder;
 
 // FFX Imports
+
 import ffx.algorithms.Minimize;
 import ffx.potential.DualTopologyEnergy;
 import ffx.potential.ForceFieldEnergy;
@@ -57,6 +58,10 @@ double lambda = -1;
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 
+for (String arg : args) {
+    logger.info(arg);
+}
+
 // Create the command line parser.
 def cli = new CliBuilder(usage:' ffxc minimize [options] <filename1> [filename2]');
 cli.h(longOpt:'help', 'Print this help message.');
@@ -69,18 +74,8 @@ cli.e(longOpt:'eps', args:1, argName:'1.0', 'RMS gradient convergence criteria')
 cli.p(longOpt:'polarization', args:1, 'polarization model: [none / direct / mutual]');
 def options = cli.parse(args);
 
-List<String> arguments = options.arguments();
-if (options.h || arguments == null || arguments.size() < 1) {
+if (options.h) {
     return cli.usage();
-}
-
-// Read in the first command line file.
-String filename = arguments.get(0);
-
-// Read in the second topology, if specified.
-String filename2 = null;
-if (arguments.size() > 1) {
-    filename2 = arguments.get(1);
 }
 
 // Starting ligand atom.
@@ -117,6 +112,23 @@ if (options.p) {
     System.setProperty("polarization", options.p);
 }
 
+List<String> arguments = options.arguments();
+String modelfilename = null;
+String filename2 = null;
+MolecularAssembly[] systems = null;
+if (arguments != null && arguments.size() > 0) {
+    // Read in command line.
+    modelfilename = arguments.get(0);
+    systems = open(modelfilename);
+    if (arguments.size() > 1) {
+       filename2 = arguments.get(1);
+    }
+} else if (active == null) {
+    return cli.usage();
+} else {
+    modelfilename = active.getFile();   
+}
+
 boolean lambdaTerm = false;
 if ((lambda >= 0.0 && lambda <= 1.0) || filename2 != null) {
     lambdaTerm = true;
@@ -126,9 +138,6 @@ if ((lambda >= 0.0 && lambda <= 1.0) || filename2 != null) {
         lambda = 0.0;
     }
 }
-
-// Open the first topology.
-systems = open(filename);
 
 if (lambdaTerm) {
     // Get a reference to the first system's ForceFieldEnergy.
@@ -146,16 +155,15 @@ if (lambdaTerm) {
     energy.getCrystal().setSpecialPositionCutoff(0.0);
 }
 
-if (filename2 == null) {
-    logger.info("\n Running minimize on " + filename);
+if (filename2 == null) {    
+    logger.info("\n Running minimize on " + active.getName());
     logger.info(" RMS gradient convergence criteria: " + eps);
 
     // Do the minimization
     e = minimize(eps);
-
+    
     String ext = FilenameUtils.getExtension(filename);
     filename = FilenameUtils.removeExtension(filename);
-
     if (ext.toUpperCase().contains("XYZ")) {
         saveAsXYZ(new File(filename + ".xyz"));
     } else {

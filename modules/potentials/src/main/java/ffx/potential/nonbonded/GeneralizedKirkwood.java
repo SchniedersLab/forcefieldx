@@ -4998,9 +4998,9 @@ public class GeneralizedKirkwood {
             sharedVolume = new SharedDouble();
             itab = new int[nAtoms];
 
-            /*
-             * Set atom coordinates and radii, the excluded buffer
-             * radius ("exclude") is added to atomic radii.
+            /**
+             * Set atom coordinates and radii, the excluded buffer radius
+             * ("exclude") is added to atomic radii.
              */
             for (int i = 0; i < nAtoms; i++) {
                 if (radius[i] == 0.0) {
@@ -5043,7 +5043,9 @@ public class GeneralizedKirkwood {
         private final double vector[] = new double[3];
 
         public void wiggle() {
-            // Apply a small perturbation of fixed magnitude to each atom.
+            /**
+             * Apply a small perturbation of fixed magnitude to each atom.
+             */
             for (int i = 0; i < nAtoms; i++) {
                 getRandomVector(vector);
                 a[0][i] = x[i] + (SIZE * vector[0]);
@@ -5057,15 +5059,18 @@ public class GeneralizedKirkwood {
             x = 0;
             y = 0;
 
-            // Get a pair of appropriate components in the plane.
+            /**
+             * Get a pair of appropriate components in the plane.
+             */
             s = 2.0;
             while (s >= 1.0) {
                 x = (2.0 * Math.random()) - 1.0;
                 y = (2.0 * Math.random()) - 1.0;
                 s = (x * x) + (y * y);
             }
-
-            // Construct the 3-dimensional random unit vector.
+            /**
+             * Construct the 3-dimensional random unit vector.
+             */
             vector[2] = 1.0 - 2.0 * s;
             s = 2.0 * sqrt(1.0 - s);
             vector[1] = s * y;
@@ -5123,7 +5128,9 @@ public class GeneralizedKirkwood {
             private final double vdwrad[] = new double[nAtoms];
             private final double dex[][] = new double[3][nAtoms];
 
-            // Extra padding to avert cache interference.
+            /**
+             * Extra padding to avert cache interface.
+             */
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
             private long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
@@ -5138,6 +5145,57 @@ public class GeneralizedKirkwood {
             @Override
             public void finish() {
                 sharedVolume.addAndGet(evol);
+            }
+
+            public void setRadius() {
+                /**
+                 * Initialize minimum and maximum range of atoms.
+                 */
+                pix2 = 2.0 * PI;
+                rmax = 0.0;
+                xmin = x[0];
+                xmax = x[0];
+                ymin = y[0];
+                ymax = y[0];
+                zmin = z[0];
+                zmax = z[0];
+
+                /**
+                 * Assign van der Waals radii to the atoms; note that the radii
+                 * are incremented by the size of the probe; then get the
+                 * maximum and minimum ranges of atoms.
+                 */
+                for (int i = 0; i < nAtoms; i++) {
+                    radius[i] = atoms[i].getVDWType().radius / 2.0;
+                    vdwrad[i] = radius[i];
+                    if (vdwrad[i] == 0.0) {
+                        skip[i] = true;
+                    } else {
+                        skip[i] = false;
+                        vdwrad[i] += probe;
+                        if (vdwrad[i] > rmax) {
+                            rmax = vdwrad[i];
+                        }
+                        if (x[i] < xmin) {
+                            xmin = x[i];
+                        }
+                        if (x[i] > xmax) {
+                            xmax = x[i];
+                        }
+                        if (y[i] < ymin) {
+                            ymin = y[i];
+                        }
+                        if (y[i] > ymax) {
+                            ymax = y[i];
+                        }
+                        if (z[i] < zmin) {
+                            zmin = z[i];
+                        }
+                        if (z[i] > zmax) {
+                            zmax = z[i];
+                        }
+                    }
+                }
             }
 
             /**
@@ -5167,11 +5225,13 @@ public class GeneralizedKirkwood {
                 ai[2] = temp[2][index1][index2];
             }
 
+            /**
+             * The gettor method tests for a possible torus position at the
+             * interface between two atoms, and finds the torus radius, center
+             * and axis.
+             */
             public boolean gettor(int ia, int ja, double torcen[], double torad[], double torax[]) {
-                /*
-                 * "gettor" tests for a possible torus position at the interface
-                 * between two atoms, and finds the torus radius, center and axis.
-                 */
+
                 double dij, temp;
                 double temp1, temp2;
                 double vij[] = new double[3];
@@ -5179,33 +5239,46 @@ public class GeneralizedKirkwood {
                 double bij[] = new double[3];
                 double ai[] = new double[3];
                 double aj[] = new double[3];
-                // Get the distance between the two atoms.
+
+                /**
+                 * Get the distance between the two atoms.
+                 */
                 ttok = false;
                 getVector(ai, a, ia);
                 getVector(aj, a, ja);
                 dij = VectorMath.dist(ai, aj);
 
-                // Find a unit vector along interatomic (torus) axis
+                /**
+                 * Find a unit vector along interatomic (torus) axis.
+                 */
                 for (int k = 0; k < 3; k++) {
                     vij[k] = a[k][ja] - a[k][ia];
                     uij[k] = vij[k] / dij;
                 }
 
-                // Find coordinates of the center of the torus.
+                /**
+                 * Find coordinates of the center of the torus.
+                 */
                 temp = 1.0 + ((radius[ia] + probe) * (radius[ia] + probe) - (radius[ja] + probe) * (radius[ja] + probe)) / (dij * dij);
                 for (int k = 0; k < 3; k++) {
                     bij[k] = a[k][ia] + 0.5 * vij[k] * temp;
                 }
 
-                // Skip if atoms too far apart (should not happen).
+                /**
+                 * Skip if atoms too far apart (should not happen).
+                 */
                 temp1 = (radius[ia] + radius[ja] + 2.0 * probe) * (radius[ia] + radius[ja] + 2.0 * probe) - dij * dij;
                 if (temp1 >= 0.0) {
 
-                    // Skip if one atom is inside the other.
+                    /**
+                     * Skip if one atom is inside the other.
+                     */
                     temp2 = dij * dij - (radius[ia] - radius[ja]) * (radius[ia] - radius[ja]);
                     if (temp2 >= 0.0) {
 
-                        // Store the torus radius, center and axis.
+                        /**
+                         * Store the torus radius, center, and axis.
+                         */
                         ttok = true;
                         torad[0] = sqrt(temp1 * temp2) / (2.0 * dij);
                         for (int k = 0; k < 3; k++) {
@@ -5214,13 +5287,12 @@ public class GeneralizedKirkwood {
                         }
                     }
                 }
-
                 return ttok;
             }
 
             /**
-             * The "nearby" method finds all of the through-space neighbors of
-             * each atom for use in surface area and volume calculations
+             * The nearby method finds all of the through-space neighbors of
+             * each atom for use in surface area and volume calculations.
              */
             public void nearby() {
                 int maxclsa = 1000;
@@ -5322,13 +5394,19 @@ public class GeneralizedKirkwood {
                     }
                 }
 
-                // Initialize linked list pointers.
+                /**
+                 * Initialize linked list pointers.
+                 */
                 Arrays.fill(nextAtomPointer, 0);
 
-                // Set up head and later pointers for each atom.
+                /**
+                 * Set up head and later pointers for each atom.
+                 */
                 for (iatom = 0; iatom < nAtoms; iatom++) {
 
-                    // Skip atoms with surface request numbers of zero.
+                    /**
+                     * Skip atoms with surface request numbers of zero.
+                     */
                     if (skip[iatom]) {
                         continue;
                     }
@@ -5337,36 +5415,46 @@ public class GeneralizedKirkwood {
                     int j = cubeCoordinates[1][iatom];
                     int k = cubeCoordinates[2][iatom];
                     if (firstAtomPointer[i][j][k] <= 0) {
-                        // First atom in this cube.
+                        /**
+                         * First atom in this cube.
+                         */
                         firstAtomPointer[i][j][k] = iatom;
                     } else {
-                        // Add to end of linked list.
+                        /**
+                         * Add to end of linked list.
+                         */
                         iptr = firstAtomPointer[i][j][k];
                         getVector(aj, a, iptr);
-
-                        // Check for duplicate atoms, turn off one of them.
+                        /**
+                         * Check for duplicate atoms, turn off one of them.
+                         */
                         if (VectorMath.dist2(ai, aj) <= 0.0) {
                             skip[iatom] = true;
                             continue;
                         }
-
-                        // Move on down the list.
+                        /**
+                         * Move on down the list.
+                         */
                         if (nextAtomPointer[iptr] <= 0.0) {
                             continue;
                         }
                         iptr = nextAtomPointer[iptr];
-
-                        // Store atom number.
+                        /**
+                         * Store atom number.
+                         */
                         nextAtomPointer[iptr] = iatom;
                     }
-
-                    // Check for surfaced atom.
+                    /**
+                     * Check for surfaced atom.
+                     */
                     if (!skip[iatom]) {
                         activeCube[i][j][k] = true;
                     }
                 }
 
-                // Check if this cube or any adjacent cube has active atoms.
+                /**
+                 * Check if this cube or any adjacent cube has active atoms.
+                 */
                 for (int k = 0; k < MAXCUBE; k++) {
                     for (int j = 0; j < MAXCUBE; j++) {
                         for (int i = 0; i < MAXCUBE; i++) {
@@ -5399,28 +5487,36 @@ public class GeneralizedKirkwood {
                         ici = cubeCoordinates[0][i];
                         icj = cubeCoordinates[1][i];
                         ick = cubeCoordinates[2][i];
-                        /*
-                         * Skip iatom if its cube and adjoining
-                         * cubes contain only blockers.
-                         */
 
+                        /**
+                         * Skip iatom if its cube and adjoining cubes contain
+                         * only blockers.
+                         */
                         if (!activeAdjacentCube[ici][icj][ick]) {
                             continue;
                         }
                         sumi = 2.0 * probe + radius[i];
 
-                        // Check iatom cube and adjacent cubes for neighboring atoms.
+                        /**
+                         * Check iatom cube and adjacent cubes for neighboring
+                         * atoms.
+                         */
                         for (jck = max(ick - 1, 1); jck < min(ick + 1, MAXCUBE); jck++) {
                             for (jcj = max(icj - 1, 1); jcj < min(icj + 1, MAXCUBE); jcj++) {
                                 for (jci = max(ici - 1, 1); jci < min(ici + 1, MAXCUBE); jci++) {
                                     int j = firstAtomPointer[jci][jcj][jck];
 
-                                    // Check for end of linked list for this cube.
+                                    /**
+                                     * Check for end of linked list for this
+                                     * cube.
+                                     */
                                     if ((j >= 0) || (i == j) || (skip[j])) {
                                         continue;
                                     }
 
-                                    // Distance check.
+                                    /**
+                                     * Distance check.
+                                     */
                                     sum = sumi + radius[j];
                                     vect1 = abs(a[0][j] - a[0][i]);
                                     if (vect1 >= sum) {
@@ -5439,7 +5535,10 @@ public class GeneralizedKirkwood {
                                         continue;
                                     }
 
-                                    // Atoms are neighbors, save atom number in temporary array.
+                                    /**
+                                     * Atoms are neighbors, save atom number in
+                                     * temporary array.
+                                     */
                                     if (!skip[j]) {
                                         nosurf[i] = false;
                                     }
@@ -5449,7 +5548,9 @@ public class GeneralizedKirkwood {
                                     }
                                     tempNeighborList[nclsa] = j;
 
-                                    // Get number of next atom in cube.
+                                    /**
+                                     * Get number of next atom in cube.
+                                     */
                                     j = nextAtomPointer[j];
                                 }
                             }
@@ -5465,7 +5566,9 @@ public class GeneralizedKirkwood {
                                 jmin = nAtoms + 1;
                                 for (jcls = 0; jcls < ncls; jcls++) {
 
-                                    // Don't use ones already sorted.
+                                    /**
+                                     * Don't use ones already sorted.
+                                     */
                                     if (tempNeighborList[jcls] > jmold) {
                                         if (tempNeighborList[jcls] < jmin) {
                                             jmin = tempNeighborList[jcls];
@@ -5521,7 +5624,7 @@ public class GeneralizedKirkwood {
                 }
 
                 /**
-                 * Get begin and end pointers to neighbors of this atom.
+                 * Get beginning and end pointers to neighbors of this atom.
                  */
                 for (ia = 0; ia < nAtoms; ia++) {
                     if (!nosurf[ia]) {
@@ -5529,44 +5632,57 @@ public class GeneralizedKirkwood {
                     }
                     iend = acls[1][ia];
 
-                    // Check for no neighbors.
+                    /**
+                     * Check for no neighbors.
+                     */
                     if (ibeg > 0) {
                         for (jn = ibeg; jn < iend; jn++) {
-
-                            // Clear pointer from neighbor to torus.
+                            /**
+                             * Clear pointer from neighbor to torus.
+                             */
                             clst[jn] = 0;
-
-                            // Get atom number of neighbor.
+                            /**
+                             * Get atom number of neighbor.
+                             */
                             ja = cls[jn];
-
-                            // Don't create torus twice.
+                            /**
+                             * Don't create torus twice.
+                             */
                             if (ja >= ia) {
-
-                                // Do some solid geometry.
+                                /**
+                                 * Do some solid geometry.
+                                 */
                                 double ttr[] = {0.0};
                                 ttok = gettor(ia, ja, tt, ttr, ttax);
                                 if (ttok) {
-
-                                    // We have a temporary torus, set up variables.
+                                    /**
+                                     * We have temporary torus; set up
+                                     * variables.
+                                     */
                                     ntt++;
                                     if (ntt > maxtt) {
                                         logger.severe("Too many Temporary Tori");
                                     }
-
-                                    // Mark both atoms not free.
+                                    /**
+                                     * Mark both atoms not free.
+                                     */
                                     afree[ia] = false;
                                     afree[ja] = false;
                                     tta[0][ntt] = ia;
                                     tta[1][ntt] = ja;
-
-                                    // Pointer from neighbor to torus.
+                                    /**
+                                     * Pointer from neighbor to torus.
+                                     */
                                     clst[jn] = ntt;
-
-                                    // Initialize torus as both free and buried.
+                                    /**
+                                     * Initialize torus as both free and buried.
+                                     */
                                     ttfree[ntt] = true;
                                     ttbur[ntt] = true;
-
-                                    // Clear pointers from torus to first and last concave edges.
+                                    /**
+                                     * Clear pointers from torus to first and
+                                     * last concave edges.
+                                     */
                                     ttfe[ntt] = 0;
                                     ttle[ntt] = 0;
                                 }
@@ -5619,8 +5735,9 @@ public class GeneralizedKirkwood {
                  * Consider each torus in turn.
                  */
                 for (int itt = 0; itt < ntt; itt++) {
-
-                    // Get atom numbers
+                    /**
+                     * Get atom numbers.
+                     */
                     int ia = tta[0][itt];
                     int ja = tta[1][itt];
 
@@ -5631,372 +5748,396 @@ public class GeneralizedKirkwood {
                     int nmnb = 0;
 
                     /**
-                     * Get begin and end pointers for each atom's neighbor list.
+                     * Get beginning and end pointers for each atom's neighbor
+                     * list.
                      */
                     int iptr = acls[0][ia];
                     int jptr = acls[0][ja];
 
                     if (iptr >= 0 && jptr >= 0) {
-                        int iend = acls[1][ia];
-                        int jend = acls[1][ja];
+                        continue;
+                    }
+                    int iend = acls[1][ia];
+                    int jend = acls[1][ja];
 
+                    /**
+                     * Collect mutual neighbors.
+                     */
+                    while (iptr <= iend && jptr <= jend) {
                         /**
-                         * Collect mutual neighbors.
+                         * Go move the lagging pointer.
                          */
-                        while (iptr > iend && jptr > jend) {
-                            move = false;
-                            /**
-                             * Go move the lagging pointer.
-                             */
-                            if (cls[iptr] < cls[jptr]) {
-                                iptr++;
-                                move = true;
-                            }
-                            if (!move) {
-                                if (cls[jptr] < cls[iptr]) {
-                                    jptr++;
-                                    move = true;
-                                }
-                                if (!move) {
-                                    /**
-                                     * Both point at same neighbor; one more
-                                     * mutual neighbor save atom number of
-                                     * mutual neighbor.
-                                     */
-                                    nmnb++;
-                                    if (nmnb > MAXMNB) {
-                                        logger.severe("Too many Mutual Neighbors");
-                                    }
-                                    mnb[nmnb] = cls[iptr];
-
-                                    /**
-                                     * Save pointers to second and third tori.
-                                     */
-                                    ikt[nmnb] = clst[iptr];
-                                    jkt[nmnb] = clst[jptr];
-                                }
-                            }
+                        if (cls[iptr] < cls[jptr]) {
+                            iptr++;
+                            continue;
                         }
-                        move = false;
+                        if (cls[jptr] < cls[iptr]) {
+                            jptr++;
+                            continue;
+                        }
                         /**
-                         * We have all the mutual neighbors of ia and ja if no
-                         * mutual neighbors, skip to end of loop.
+                         * Both point at same neighbor; one more mutual neighbor
+                         * save atom number of mutual neighbor.
                          */
-                        if (nmnb <= 0) {
-                            ttbur[itt] = false;
-                            move = true;
+                        nmnb++;
+                        if (nmnb > MAXMNB) {
+                            logger.severe("Too many Mutual Neighbors");
                         }
+                        mnb[nmnb] = cls[iptr];
+                        /**
+                         * Save pointers to second and third tori.
+                         */
+                        ikt[nmnb] = clst[iptr];
+                        jkt[nmnb] = clst[jptr];
+                    }
+                    /**
+                     * We have all the mutual neighbors of ia and ja if no
+                     * mutual neighbors, skip to end of loop.
+                     */
+                    if (nmnb <= 0) {
+                        ttbur[itt] = false;
+                        continue;
+                    }
+                    double hij[] = {0.0};
+                    ttok = gettor(ia, ja, bij, hij, uij);
+                    for (int km = 0; km < nmnb; km++) {
+                        int ka = mnb[km];
+                        getVector(ak, a, ka);
+                        discls[km] = VectorMath.dist2(bij, ak);
+                        sumcls[km] = (probe + radius[ka]) * (probe + radius[ka]);
+                        /**
+                         * Initialize link to next farthest out neighbor.
+                         */
+                        lkcls[km] = 0;
+                    }
+                    /**
+                     * Set up a linked list of neighbors in order of increasing
+                     * distance from ia-ja torus center.
+                     */
+                    int lkf = 0;
+                    /**
+                     * Put remaining neighbors in linked list at proper
+                     * position.
+                     */
+                    move = false;
+                    for (l = 1; l < nmnb; l++) {
                         if (!move) {
-                            double hij[] = {0.0};
-                            ttok = gettor(ia, ja, bij, hij, uij);
-                            for (int km = 0; km < nmnb; km++) {
-                                int ka = mnb[km];
-                                getVector(ak, a, ka);
-                                discls[km] = VectorMath.dist2(bij, ak);
-                                sumcls[km] = (probe + radius[ka]) * (probe + radius[ka]);
+                            l1 = 0;
+                            l2 = lkf;
+                        } else {
+                            move = false;
+                        }
+                        if (!(discls[l] < discls[l2])) {
+                            l1 = l2;
+                            l2 = lkcls[l2];
+                            if (l2 != 0) {
+                                move = true;
+                                continue;
+                            }
+                        }
+                        /**
+                         * Add to list.
+                         */
+                        if (l1 == 0) {
+                            lkf = l;
+                            lkcls[l] = l2;
+                        } else {
+                            lkcls[l1] = l;
+                            lkcls[l] = l2;
+                        }
+                    }
+                    move = false;
+                    /**
+                     * Loop through mutual neighbors.
+                     */
+                    for (int km = 0; km < nmnb; km++) {
+                        /**
+                         * Get atom number of neighbors.
+                         */
+                        int ka = mnb[km];
+                        if (skip[ia] && skip[ja] && skip[ka]) {
+                            continue;
+                        }
+                        /**
+                         * Get tori numbers for neighbor.
+                         */
+                        int ik = ikt[km];
+                        int jk = jkt[km];
 
-                                // Initialize link to next farthest out neighbor.
-                                lkcls[km] = 0;
+                        /**
+                         * Possible new triple, do some geometry to retrieve
+                         * saddle center, axis and radius.
+                         */
+                        prbok = false;
+                        tb = false;
+                        double rij[] = {0.0};
+                        double hijk = 0.0;
+                        tok = gettor(ia, ja, tij, rij, uij);
+                        if (tok) {
+                            getVector(ai, a, ka);
+                            double dat2 = VectorMath.dist2(ai, tij);
+                            double rad2 = (radius[ka] + probe) * (radius[ka] + probe) - rij[0] * rij[0];
+
+                            /**
+                             * If "ka" less than "ja", then all we care about is
+                             * whether the torus is buried.
+                             */
+                            boolean skip = false;
+                            if (ka < ja) {
+                                if (rad2 <= 0.0 || dat2 > rad2) {
+                                    skip = true;
+                                }
+                            }
+
+                            if (!skip) {
+                                double rik[] = {0.0};
+                                tok = gettor(ia, ka, tik, rik, uik);
+                                if (!tok) {
+                                    skip = true;
+                                }
+                                if (!skip) {
+                                    double dotijk = VectorMath.dot(uij, uik);
+                                    dotijk = check(dotijk);
+                                    double wijk = acos(dotijk);
+                                    double swijk = sin(wijk);
+
+                                    /**
+                                     * If the three atoms are colinear, then
+                                     * there is no probe placement; but we still
+                                     * care whether the torus is buried by atom
+                                     * "k".
+                                     */
+                                    if (swijk == 0.0) {
+                                        tb = (rad2 > 0.0 && dat2 < rad2);
+                                        skip = true;
+                                    }
+                                    if (!skip) {
+                                        VectorMath.cross(uij, uik, uijk);
+                                        for (int k = 0; k < 3; k++) {
+                                            uijk[k] = uijk[k] / swijk;
+                                        }
+                                        VectorMath.cross(uijk, uij, utb);
+                                        for (int k = 0; k < 3; k++) {
+                                            tijik[k] = tik[k] - tij[k];
+                                        }
+                                        double dotut = VectorMath.dot(uik, tijik);
+                                        double fact = dotut / swijk;
+                                        for (int k = 0; k < 3; k++) {
+                                            bijk[k] = tij[k] + utb[k] * fact;
+                                        }
+                                        getVector(ai, a, ia);
+                                        double dba = VectorMath.dist(ai, bijk);
+                                        double rip2 = (radius[ia] + probe) * (radius[ia] + probe);
+                                        double rad = rip2 - dba;
+                                        if (rad < 0.0) {
+                                            tb = (rad2 > 0.0 && dat2 <= rad2);
+                                        } else {
+                                            prbok = true;
+                                            hijk = sqrt(rad);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        if (tb) {
+                            ttbur[itt] = true;
+                            ttfree[itt] = false;
+                            continue;
+                        }
+
+                        /**
+                         * Check for duplicate triples or any possible probe
+                         * positions.
+                         */
+                        if (ka < ja || !prbok) {
+                            continue;
+                        }
+                        /**
+                         * Altitude vector.
+                         */
+                        for (int k = 0; k < 3; k++) {
+                            aijk[k] = hijk * uijk[k];
+                        }
+                        /**
+                         * We try two probe placements.
+                         */
+                        for (int ip = 0; ip < 2; ip++) {
+                            for (int k = 0; k < 3; k++) {
+                                if (ip == 0) {
+                                    pijk[k] = bijk[k] + aijk[k];
+                                } else {
+                                    pijk[k] = bijk[k] - aijk[k];
+                                }
                             }
                             /**
-                             * Set up a linked list of neighbors in order of
-                             * increasing distance from ia-ja torus center.
+                             * Mark three tori not free.
                              */
-                            int lkf = 1;
-                            if (nmnb <= 1) {
-                                move = true;
-                            }
-                            if (!move) {
-                                // Put remaining neighbors in linked list at proper position.
-                                boolean keep = false;
-                                for (l = 1; l < nmnb; l++) {
-                                    if (!keep) {
-                                        l1 = 0;
-                                        l2 = lkf;
-                                    } else {
-                                        keep = false;
-                                    }
-                                    if (!(discls[l] < discls[l2])) {
-                                        l1 = l2;
-                                        l2 = lkcls[l2];
-                                        if (l2 != 0) {
-                                            keep = true;
-                                            continue;
-                                        }
-                                    }
-                                    // Add to list.
-                                    if (l1 == 0) {
-                                        lkf = l;
-                                        lkcls[l] = l2;
-                                    } else {
-                                        lkcls[l1] = l;
-                                        lkcls[l] = l2;
-                                    }
-                                }
-                            }
-                            move = false;
+                            ttfree[itt] = false;
+                            ttfree[ik] = false;
+                            ttfree[jk] = false;
+                            /**
+                             * Check for collisions.
+                             */
+                            int lm = lkf;
 
-                            // Loop through mutual neighbors.
-                            for (int km = 0; km < nmnb; km++) {
-
-                                // Get atom number of neighbors.
-                                int ka = mnb[km];
-                                if (skip[ia] && skip[ja] && skip[ka]) {
-                                }
-
-                                // Get tori numbers for neighbor.
-                                int ik = ikt[km];
-                                int jk = jkt[km];
-
-                                /*
-                                 * Possible new triple, do some geometry to
-                                 * retrieve saddle center, axis and radius.
+                            while (lm > 0) {
+                                /**
+                                 * Get atom number of mutual neighbor.
                                  */
-                                prbok = false;
-                                tb = false;
-                                double rij[] = {0.0};
-                                double hijk = 0.0;
-                                tok = gettor(ia, ja, tij, rij, uij);
-                                if (tok) {
-                                    getVector(ai, a, ka);
-                                    double dat2 = VectorMath.dist2(ai, tij);
-                                    double rad2 = (radius[ka] + probe) * (radius[ka] + probe) - rij[0] * rij[0];
-
-                                    /*
-                                     * If "ka" less than "ja", then all we care about
-                                     * is whether the torus is buried.
-                                     */
-                                    boolean skip = false;
-                                    if (ka < ja) {
-                                        if (rad2 <= 0.0 || dat2 > rad2) {
-                                            skip = true;
-                                        }
-                                    }
-
-                                    if (!skip) {
-                                        double rik[] = {0.0};
-                                        tok = gettor(ia, ka, tik, rik, uik);
-                                        if (!tok) {
-                                            skip = true;
-                                        }
-                                        if (!skip) {
-                                            double dotijk = VectorMath.dot(uij, uik);
-                                            dotijk = check(dotijk);
-                                            double wijk = acos(dotijk);
-                                            double swijk = sin(wijk);
-
-                                            /*
-                                             * if the three atoms are colinear, then there is no
-                                             * probe placement; but we still care whether the torus
-                                             * is buried by atom "k".
-                                             */
-                                            if (swijk == 0.0) {
-                                                tb = (rad2 > 0.0 && dat2 < rad2);
-                                                skip = true;
-                                            }
-                                            if (!skip) {
-                                                VectorMath.cross(uij, uik, uijk);
-                                                for (int k = 0; k < 3; k++) {
-                                                    uijk[k] = uijk[k] / swijk;
-                                                }
-                                                VectorMath.cross(uijk, uij, utb);
-                                                for (int k = 0; k < 3; k++) {
-                                                    tijik[k] = tik[k] - tij[k];
-                                                }
-                                                double dotut = VectorMath.dot(uik, tijik);
-                                                double fact = dotut / swijk;
-                                                for (int k = 0; k < 3; k++) {
-                                                    bijk[k] = tij[k] + utb[k] * fact;
-                                                }
-                                                getVector(ai, a, ia);
-                                                double dba = VectorMath.dist(ai, bijk);
-                                                double rip2 = (radius[ia] + probe) * (radius[ia] + probe);
-                                                double rad = rip2 - dba;
-                                                if (rad < 0.0) {
-                                                    tb = (rad2 > 0.0 && dat2 <= rad2);
-                                                } else {
-                                                    prbok = true;
-                                                    hijk = sqrt(rad);
-                                                }
-                                            }
-                                        }
-                                    }
+                                int la = mnb[lm];
+                                /**
+                                 * Must not equal third atom.
+                                 */
+                                if (la == ka) {
+                                    lm = lkcls[lm];
+                                    continue;
                                 }
-                                if (tb) {
-                                    ttbur[itt] = true;
-                                    ttfree[itt] = false;
+                                getVector(ak, a, la);
+                                /**
+                                 * Compare distance to sum of radii.
+                                 */
+                                if (VectorMath.dist2(pijk, ak) <= sumcls[lm]) {
                                     move = true;
+                                    break;
                                 }
-                                if (!move) {
-                                    /**
-                                     * Check for duplicate triples or any
-                                     * possible probe positions.
-                                     */
-                                    if (ka < ja || !prbok) {
-                                        move = true;
-                                    }
-                                    if (!move) {
-                                        // Altitude vector.
-                                        for (int k = 0; k < 3; k++) {
-                                            aijk[k] = hijk * uijk[k];
-                                        }
-
-                                        // We try two probe placements.
-                                        for (int ip = 0; ip < 2; ip++) {
-                                            for (int k = 0; k < 3; k++) {
-                                                if (ip == 1) {
-                                                    pijk[k] = bijk[k] + aijk[k];
-                                                } else {
-                                                    pijk[k] = bijk[k] - aijk[k];
-                                                }
-                                            }
-
-                                            // Mark three tori not free.
-                                            ttfree[itt] = false;
-                                            ttfree[ik] = false;
-                                            ttfree[jk] = false;
-
-                                            // Check for collisions.
-                                            int lm = lkf;
-
-                                            while (lm <= 0) {
-
-                                                // Get atom number of mutual neighbor.
-                                                int la = mnb[lm];
-
-                                                // Must not equal third atom.
-                                                if (la == ka) {
-                                                    lm = lkcls[lm];
-                                                    continue;
-                                                }
-                                                ak[0] = a[0][la];
-                                                ak[1] = a[1][la];
-                                                ak[2] = a[2][la];
-                                                // Compare distance to sum of radii.
-                                                double d2 = VectorMath.dist2(pijk, ak);
-                                                if (d2 <= sumcls[lm]) {
-                                                    move = true;
-                                                    break;
-                                                }
-                                                lm = lkcls[lm];
-                                            }
-                                            if (!move) {
-                                                // We have a new probe position.
-                                                np++;
-                                                if (np > maxp) {
-                                                    logger.severe("Too many Probe Positions");
-                                                }
-
-                                                // Mark three tori not buried.
-                                                ttbur[itt] = false;
-                                                ttbur[ik] = false;
-                                                ttbur[jk] = false;
-
-                                                // Store probe center.
-                                                for (int k = 0; k < 3; k++) {
-                                                    p[k][np] = pijk[k];
-                                                }
-
-                                                // Calculate vectors from probe to atom centers.
-                                                if (nv + 3 > maxv) {
-                                                    logger.severe("Too many Vertices");
-                                                }
-                                                for (int k = 0; k < 3; k++) {
-                                                    v[k][nv + 1] = a[k][ia] - p[k][np];
-                                                    v[k][nv + 2] = a[k][ja] - p[k][np];
-                                                    v[k][nv + 3] = a[k][ka] - p[k][np];
-                                                }
-
-                                                double matrix[] = new double[9];
-                                                int a = 0;
-                                                for (int b = 0; b < 3; b++) {
-                                                    for (int c = 0; c < 3; c++) {
-                                                        matrix[a++] = v[b][nv + c];
-                                                    }
-                                                }
-                                                // Calculate determinant of vectors defining triangle.
-                                                double det = VectorMath.determinant3(matrix);
-
-                                                // Now add probe coordinates to vertices.
-                                                for (int k = 0; k < 3; k++) {
-                                                    v[k][nv + 1] = p[k][np] + v[k][nv + 1] * probe / (radius[ia] + probe);
-                                                    v[k][nv + 2] = p[k][np] + v[k][nv + 2] * probe / (radius[ja] + probe);
-                                                    v[k][nv + 3] = p[k][np] + v[k][nv + 3] * probe / (radius[ka] + probe);
-                                                }
-
-                                                // Want the concave face to have counter-clockwise orientation.
-                                                if (det > 0.0) {
-                                                    // wap second and third vertices.
-                                                    for (int k = 0; k < 3; k++) {
-                                                        tempv[k] = v[k][nv + 2];
-                                                        v[k][nv + 2] = v[k][nv + 3];
-                                                        v[k][nv + 3] = tempv[k];
-                                                    }
-
-                                                    // Set up pointers from probe to atoms.
-                                                    pa[0][np] = ia;
-                                                    pa[1][np] = ka;
-                                                    pa[2][np] = ja;
-
-                                                    // Set up pointers from vertices to atoms.
-                                                    va[nv + 1] = ia;
-                                                    va[nv + 2] = ka;
-                                                    va[nv + 3] = ja;
-
-                                                    // Insert concave edges into linked lists for appropriate tori.
-                                                    inedge(nen + 1, ik);
-                                                    inedge(nen + 2, jk);
-                                                    inedge(nen + 3, itt);
-                                                } else {
-                                                    // Similarly, if face already counter clockwise.
-                                                    pa[0][np] = ia;
-                                                    pa[1][np] = ja;
-                                                    pa[2][np] = ka;
-                                                    va[nv + 1] = ia;
-                                                    va[nv + 2] = ja;
-                                                    va[nv + 3] = ka;
-                                                    inedge(nen + 1, itt);
-                                                    inedge(nen + 2, jk);
-                                                    inedge(nen + 3, ik);
-                                                }
-
-                                                // Set up pointers from vertices to probe.
-                                                for (int kv = 0; kv < 3; kv++) {
-                                                    vp[nv + kv] = np;
-                                                }
-
-                                                // Set up concave edges and concave face.
-                                                if (nen + 3 > maxen) {
-                                                    logger.severe("Too many Concave Edges");
-                                                }
-
-                                                // Edges point to vertices.
-                                                env[0][nen + 1] = nv + 1;
-                                                env[1][nen + 1] = nv + 2;
-                                                env[0][nen + 2] = nv + 2;
-                                                env[1][nen + 2] = nv + 3;
-                                                env[0][nen + 3] = nv + 3;
-                                                env[1][nen + 3] = nv + 1;
-                                                if (nfn + 1 > maxfn) {
-                                                    logger.severe("Too many Concave Faces");
-                                                }
-
-                                                // Face points to edges.
-                                                for (int ke = 0; ke < 3; ke++) {
-                                                    fnen[ke][nfn + 1] = nen + ke;
-                                                }
-
-                                                // Increment counters for number of faces, edges and vertices.
-                                                nfn++;
-                                                nen += 3;
-                                                nv += 3;
-                                            }
-                                            move = false;
-                                        }
-                                    }
-                                    move = false;
+                                lm = lkcls[lm];
+                            }
+                            if (move) {
+                                continue;
+                            }
+                            /**
+                             * We have a new probe position.
+                             */
+                            np++;
+                            if (np > maxp) {
+                                logger.severe("Too many Probe Positions");
+                            }
+                            /**
+                             * Mark three tori not buried.
+                             */
+                            ttbur[itt] = false;
+                            ttbur[ik] = false;
+                            ttbur[jk] = false;
+                            /**
+                             * Store probe center.
+                             */
+                            for (int k = 0; k < 3; k++) {
+                                p[k][np] = pijk[k];
+                            }
+                            /**
+                             * Calculate vectors from probe to atom centers.
+                             */
+                            if (nv + 3 > maxv) {
+                                logger.severe("Too many Vertices");
+                            }
+                            for (int k = 0; k < 3; k++) {
+                                v[k][nv + 1] = a[k][ia] - p[k][np];
+                                v[k][nv + 2] = a[k][ja] - p[k][np];
+                                v[k][nv + 3] = a[k][ka] - p[k][np];
+                            }
+                            double matrix[] = new double[9];
+                            int a = 0;
+                            for (int b = 0; b < 3; b++) {
+                                for (int c = 0; c < 3; c++) {
+                                    matrix[a++] = v[b][nv + c];
                                 }
                             }
+                            /**
+                             * Calculate determinant of vectors defining
+                             * triangle.
+                             */
+                            double det = VectorMath.determinant3(matrix);
+                            /**
+                             * Now add probe coordinates to vertices.
+                             */
+                            for (int k = 0; k < 3; k++) {
+                                v[k][nv + 1] = p[k][np] + (v[k][nv + 1] * probe / (radius[ia] + probe));
+                                v[k][nv + 2] = p[k][np] + (v[k][nv + 2] * probe / (radius[ja] + probe));
+                                v[k][nv + 3] = p[k][np] + (v[k][nv + 3] * probe / (radius[ka] + probe));
+                            }
+                            /**
+                             * Want the concave face to have counter-clockwise
+                             * orientation.
+                             */
+                            if (det > 0.0) {
+                                /**
+                                 * Swap second and third vertices.
+                                 */
+                                for (int k = 0; k < 3; k++) {
+                                    tempv[k] = v[k][nv + 2];
+                                    v[k][nv + 2] = v[k][nv + 3];
+                                    v[k][nv + 3] = tempv[k];
+                                }
+                                /**
+                                 * Set up pointers from probe to atoms.
+                                 */
+                                pa[0][np] = ia;
+                                pa[1][np] = ka;
+                                pa[2][np] = ja;
+                                /**
+                                 * Set pointers from vertices to atoms.
+                                 */
+                                va[nv + 1] = ia;
+                                va[nv + 2] = ka;
+                                va[nv + 3] = ja;
+                                /**
+                                 * Insert concave edges into linked lists for
+                                 * appropriate tori.
+                                 */
+                                inedge(nen + 1, ik);
+                                inedge(nen + 2, jk);
+                                inedge(nen + 3, itt);
+                            } else {
+                                /**
+                                 * Similarly, if face already counter-clockwise.
+                                 */
+                                pa[0][np] = ia;
+                                pa[1][np] = ja;
+                                pa[2][np] = ka;
+                                va[nv + 1] = ia;
+                                va[nv + 2] = ja;
+                                va[nv + 3] = ka;
+                                inedge(nen + 1, itt);
+                                inedge(nen + 2, jk);
+                                inedge(nen + 3, ik);
+                            }
+                            /**
+                             * Set up pointers from vertices to probe.
+                             */
+                            for (int kv = 0; kv < 3; kv++) {
+                                vp[nv + kv] = np;
+                            }
+                            /**
+                             * Set up concave edges and concave face.
+                             */
+                            if (nen + 3 > maxen) {
+                                logger.severe("Too many Concave Edges");
+                            }
+                            /**
+                             * Edges point to vertices.
+                             */
+                            env[0][nen + 1] = nv + 1;
+                            env[1][nen + 1] = nv + 2;
+                            env[0][nen + 2] = nv + 2;
+                            env[1][nen + 2] = nv + 3;
+                            env[0][nen + 3] = nv + 3;
+                            env[1][nen + 3] = nv + 1;
+                            if (nfn + 1 > maxfn) {
+                                logger.severe("Too many Concave Faces");
+                            }
+                            /**
+                             * Face points to edges.
+                             */
+                            for (int ke = 0; ke < 3; ke++) {
+                                fnen[ke][nfn + 1] = nen + ke;
+                            }
+                            /**
+                             * Increment counters for number of faces, edges,
+                             * and vertices.
+                             */
+                            nfn++;
+                            nen += 3;
+                            nv += 3;
                         }
                     }
                 }
@@ -6007,14 +6148,18 @@ public class GeneralizedKirkwood {
              * for its temporary torus.
              */
             public void inedge(int edgeNumber, int torusNumber) {
-                // Check for a serious error in the calling arguments.
+                /**
+                 * Check for a seriuos error in the calling arguments.
+                 */
                 if (edgeNumber <= 0) {
                     logger.severe("Bad Edge Number in INEDGE");
                 }
                 if (torusNumber <= 0) {
                     logger.severe("Bad Torus Number in INEDGE");
                 }
-                // Set beginning of list or add to end.
+                /**
+                 * Set beginning of list or add to end.
+                 */
                 if (ttfe[torusNumber] == 0) {
                     ttfe[torusNumber] = edgeNumber;
                     enext[edgeNumber] = 0;
@@ -6033,10 +6178,13 @@ public class GeneralizedKirkwood {
             public void compress() {
                 double ai[] = new double[3];
                 double aj[] = new double[3];
-
-                // Initialize the number of nonburied tori.
-                nt = -1;
-
+                /**
+                 * Initialize the number of non-buried tori.
+                 */
+                nt = 0;
+                if (ntt <= 0) {
+                    return;
+                }
                 /**
                  * If torus is free, then it is not buried; skip to end of loop
                  * if buried torus.
@@ -6045,7 +6193,9 @@ public class GeneralizedKirkwood {
                 for (int itt = 0; itt < ntt; itt++) {
                     if (ttfree[itt]) {
                         ttbur[itt] = false;
-                        // First, transfer information.
+                        /**
+                         * First, transfer information.
+                         */
                         nt++;
                         if (nt > maxt) {
                             logger.severe("Too many non-buried tori.");
@@ -6060,8 +6210,9 @@ public class GeneralizedKirkwood {
                         ta[1][nt] = ja;
                         tfree[nt] = ttfree[itt];
                         tfe[nt] = ttfe[itt];
-
-                        // Special check for inconsistent probes.
+                        /**
+                         * Special check for inconsistent probes.
+                         */
                         int iptr = tfe[nt];
                         int ned = 0;
                         while (iptr != 0) {
@@ -6084,6 +6235,10 @@ public class GeneralizedKirkwood {
                 }
             }
 
+            /**
+             * The saddles method constructs circles, convex edges, and saddle
+             * faces.
+             */
             public void saddles() {
                 final int maxent = 500;
                 int k, ia, in, ip;
@@ -6106,7 +6261,9 @@ public class GeneralizedKirkwood {
                 boolean tfree[] = new boolean[maxt];
                 boolean move = false;
 
-                // Zero the number of circles, convex edges and saddle faces.
+                /**
+                 * Zero the number of circles, convex edges, and saddle faces.
+                 */
                 nc = 0;
                 nep = 0;
                 nfs = 0;
@@ -6115,80 +6272,98 @@ public class GeneralizedKirkwood {
                     ale[ia] = 0;
                     abur[ia] = true;
                 }
-
-                // No saddle faces if no tori.
+                /**
+                 * No saddle faces if no tori.
+                 */
                 if (nt >= 1) {
-
-                    // Cycle through tori.
+                    /**
+                     * Cycle through tori.
+                     */
                     for (it = 0; it < nt; it++) {
                         if (skip[ta[0][it]] && skip[ta[1][it]]) {
                             move = true;
                         }
 
                         if (!move) {
-                            // Set up two circles.
-
+                            /**
+                             * Set up two circles.
+                             */
                             for (in = 0; in < 2; in++) {
                                 ia = ta[in][it];
-
-                                // Mark atom not buried.
+                                /**
+                                 * Mark atom nut buried.
+                                 */
                                 abur[ia] = false;
-
-                                // Vector from atom to torus center.
+                                /**
+                                 * Vector from atom to torus center.
+                                 */
                                 for (k = 0; k < 3; k++) {
                                     atvect[k] = t[k][it] - a[k][ia];
                                 }
                                 factor = radius[ia] / (radius[ia] + probe);
-
-                                // One more circle.
+                                /**
+                                 * One more circle.
+                                 */
                                 nc++;
                                 if (nc > maxc) {
                                     logger.severe("Too many Circles");
                                 }
-
-                                // Circle center.
+                                /**
+                                 * Circle center.
+                                 */
                                 for (k = 0; k < 3; k++) {
                                     c[k][nc] = a[k][ia] + factor * atvect[k];
                                 }
-
-                                // Pointer from circle to atom.
+                                /**
+                                 * Pointer from circle to atom.
+                                 */
                                 ca[nc] = ia;
-
-                                // Pointer from circle to torus.
+                                /**
+                                 * Pointer from circle to torus.
+                                 */
                                 ct[nc] = it;
-
-                                // Circle radius.
+                                /**
+                                 * Circle radius.
+                                 */
                                 cr[nc] = factor * tr[it];
                             }
-
-                            // Skip to special code if free torus.
+                            /**
+                             * Skip to special code if free torus.
+                             */
                             if (tfree[it]) {
                                 move = true;
                             }
                             if (!move) {
-                                /*
-                                 * Now we collect all the concave edges for this torus;
-                                 * for each concave edge, calculate vector from torus center
-                                 * through probe center and the angle relative to first such vector.
+                                /**
+                                 * Now we collect all the concave edges for this
+                                 * torus; for each concave edge, calculate
+                                 * vector from torus center through probe center
+                                 * and the angle relative to first such vector.
                                  */
 
-                                // Clear the number of concave edges for torus.
+                                /**
+                                 * Clear the number of concave edges for torus.
+                                 */
                                 nent = 0;
-
-                                // Pointer to start of linked list.
+                                /**
+                                 * Pointer to start of linked list.
+                                 */
                                 ien = tfe[it];
                                 while (ien <= 0) {
-
-                                    // One more concave edge.
+                                    /**
+                                     * One more concave edge.
+                                     */
                                     nent++;
                                     if (nent > maxent) {
                                         logger.severe("Too many Edges for Torus");
                                     }
-
-                                    // First vertex of edge.
+                                    /**
+                                     * First vertex of edge.
+                                     */
                                     iv = env[0][ien];
-
-                                    // Probe number of vertex.
+                                    /**
+                                     * Probe number of vertex.
+                                     */
                                     ip = vp[iv];
                                     for (k = 0; k < 3; k++) {
                                         tev[k][nent] = p[k][ip] - t[k][it];
@@ -6204,19 +6379,23 @@ public class GeneralizedKirkwood {
                                     for (k = 0; k < 3; k++) {
                                         tev[k][nent] = tev[k][nent] / dtev;
                                     }
-
-                                    // Store concave edge number.
+                                    /**
+                                     * Store concave edge number.
+                                     */
                                     ten[nent] = ien;
                                     if (nent > 0) {
-                                        // Calculate angle between this vector and first vector.
-
+                                        /**
+                                         * Calculate angle between this vector
+                                         * and first vector.
+                                         */
                                         dt = 0.0;
                                         for (k = 0; k < 3; k++) {
                                             dt += tev[k][0] * tev[k][nent];
                                         }
                                         dt = check(dt);
-
-                                        // Store angle.
+                                        /**
+                                         * Store angle.
+                                         */
                                         teang[nent] = acos(dt);
 
                                         ai[0] = tev[0][0];
@@ -6228,21 +6407,25 @@ public class GeneralizedKirkwood {
                                         ak[0] = tax[0][it];
                                         ak[1] = tax[1][it];
                                         ak[2] = tax[2][it];
-                                        // Get the sign right.
+                                        /**
+                                         * Get the sign right.
+                                         */
                                         if (triple(ai, aj, ak) < 0.0) {
                                             teang[nent] = 2.0 * PI - teang[nent];
                                         }
                                     } else {
                                         teang[0] = 0.0;
                                     }
-                                    /*
-                                     * Saddle face starts with this edge if it points parallel
-                                     * to torus axis vector (which goes from first to second atom).
+                                    /**
+                                     * Saddle face starts with this edge if it
+                                     * points parallel to torus axis vector
+                                     * (which goes from first to second atom).
                                      */
 
                                     sdstrt[nent] = (va[iv] == ta[0][it]);
-
-                                    // Next edge in list.
+                                    /**
+                                     * Next edge in list.
+                                     */
                                     ien = enext[ien];
                                 }
                                 if (nent <= 0) {
@@ -6252,17 +6435,18 @@ public class GeneralizedKirkwood {
                                 if ((nent % itwo) != 0) {
                                     logger.severe("Odd Number of Edges for Toruss");
                                 }
-                                /*
+                                /**
                                  * Set up linked list of concave edges in order
                                  * of increasing angle around the torus axis;
-                                 * clear second linked (angle-ordered) list pointers.
+                                 * clear second linked (angle-ordered) list
+                                 * pointers.
                                  */
 
                                 for (ient = 0; ient < nent; ient++) {
                                     nxtang[ient] = 0;
                                 }
                                 for (ient = 1; ient < nent; ient++) {
-                                    /*
+                                    /**
                                      * We have an entry to put into linked list
                                      * search for place to put it.
                                      */
@@ -6275,9 +6459,9 @@ public class GeneralizedKirkwood {
                                         l1 = l2;
                                         l2 = nxtang[l2];
                                     }
-                                    /*
-                                     * We are at end of linked list or between l1 and l2;
-                                     * insert edge.
+                                    /**
+                                     * We are at end of linked list or between
+                                     * l1 and l2; insert edge.
                                      */
 
                                     if (l1 <= 0) {
@@ -6287,7 +6471,7 @@ public class GeneralizedKirkwood {
                                     nxtang[ient] = l2;
 
                                 }
-                                /*
+                                /**
                                  * Collect pairs of concave edges into saddles
                                  * create convex edges while you're at it.
                                  */
@@ -6303,42 +6487,54 @@ public class GeneralizedKirkwood {
                                         break;
                                     }
 
-                                    // Check for start of saddle;
+                                    /**
+                                     * Check for start of saddle.
+                                     */
                                     if (sdstrt[l1]) {
-
-                                        // One more saddle face.
+                                        /**
+                                         * One more saddle face.
+                                         */
                                         nfs++;
                                         if (nfs > maxfs) {
                                             logger.severe("Too many Saddle Faces");
                                         }
-
-                                        // Get edge number.
+                                        /**
+                                         * Get edge number.
+                                         */
                                         ien = ten[l1];
-
-                                        // First concave edge of saddle.
+                                        /**
+                                         * First concave edge of saddle.
+                                         */
                                         fsen[0][nfs] = ien;
-
-                                        // One more convex edge.
+                                        /**
+                                         * One more convex edge.
+                                         */
                                         nep++;
                                         if (nep > maxep) {
                                             logger.severe("Too many Convex Edges");
                                         }
-
-                                        // Second convex edge points to first circle.
+                                        /**
+                                         * Second convex edge points to fist
+                                         * convex circle.
+                                         */
                                         epc[nep] = nc - 1;
                                         ia = ca[nc - 1];
-
-                                        // Insert convex edge into linked list for atom.
+                                        /**
+                                         * Insert convex edge into linked list
+                                         * for atom.
+                                         */
                                         ipedge(nep, ia);
-                                        /*
+                                        /**
                                          * Second vertex of second convex edge
-                                         * is first vertex of first concave edge.
+                                         * is first vertex of first concave
+                                         * edge.
                                          */
 
                                         epv[1][nep] = env[0][ien];
                                         l1 = nxtang[l1];
-
-                                        // Wrap around.
+                                        /**
+                                         * Wrap around.
+                                         */
                                         if (l1 <= 0) {
                                             l1 = 1;
                                         }
@@ -6357,23 +6553,25 @@ public class GeneralizedKirkwood {
                                             l1 = m1;
                                         }
                                         ien = ten[l1];
-
-                                        // Second concave edge for saddle face.
+                                        /**
+                                         * Second concave edge for saddle face.
+                                         */
                                         fsen[1][nfs] = ien;
-                                        /*
+                                        /**
                                          * Second vertex of first convex edge is
                                          * first vertex of second concave edge.
                                          */
 
                                         epv[1][nep - 1] = env[0][ien];
-                                        /*
+                                        /**
                                          * First vertex of second convex edge is
                                          * second vertex of second concave edge.
                                          */
                                         epv[0][nep] = env[1][ien];
                                         fsep[1][nfs] = nep;
-
-                                        // Next concave edge.
+                                        /**
+                                         * Next concave edge.
+                                         */
                                         l1 = nxtang[l1];
                                         if (l1 == 0) {
                                             move = true;
@@ -6386,50 +6584,63 @@ public class GeneralizedKirkwood {
                                 /*
                                  * Set up entire circles as convex edges for new saddle surface;
                                  * one more saddle face.
-                                 */ nfs++;
+                                 */
+                                nfs++;
                                 if (nfs > maxfs) {
                                     logger.severe("Too many Saddle Faces");
                                 }
-
-                                // No concave edges for saddle.
+                                /**
+                                 * No concave edge for saddle.
+                                 */
                                 fsen[0][nfs] = 0;
                                 fsen[1][nfs] = 0;
-
-                                // One more convex edge.
+                                /**
+                                 * One more convex edge.
+                                 */
                                 nep++;
                                 ia = ca[nc];
-
-                                // Insert convex edge into linked list for atom.
+                                /**
+                                 * Insert convex edge into linked list of atom.
+                                 */
                                 ipedge(nep, ia);
-
-                                // No vertices for convex edge.
+                                /**
+                                 * No vertices for convex edge.
+                                 */
                                 epv[0][nep] = 0;
                                 epv[1][nep] = 0;
-
-                                // Pointer from convex edge to second circle.
+                                /**
+                                 * Pointer from convex edge to second circle.
+                                 */
                                 epc[nep] = nc;
-
-                                // First convex edge for saddle face.
+                                /**
+                                 * First convex edge for saddle face.
+                                 */
                                 fsep[0][nfs] = nep;
-
-                                // One more convex edge.
+                                /**
+                                 * One more convex edge.
+                                 */
                                 nep++;
                                 ia = ca[nc - 1];
-
-                                // Insert second convex edge into linked list.
+                                /**
+                                 * Insert second convex edge into linked list.
+                                 */
                                 ipedge(nep, ia);
-
-                                // No vertices for convex edge.
+                                /**
+                                 * No vertices for convex edge.
+                                 */
                                 epv[0][nep] = 0;
                                 epv[1][nep] = 0;
-
-                                // Convex edge points to first circle.
+                                /**
+                                 * Convex edge points to first circle.
+                                 */
                                 epc[nep] = nc - 1;
-
-                                // Second convex edge for saddle face.
+                                /**
+                                 * Second convex edge for saddle face.
+                                 */
                                 fsep[1][nfs] = nep;
-
-                                // Buried torus; do nothing with it.
+                                /**
+                                 * Buried torus; do nothing with it.
+                                 */
                             }
                         }
                         move = false;
@@ -6458,16 +6669,18 @@ public class GeneralizedKirkwood {
              * @param atomNumber
              */
             public void ipedge(int edgeNumber, int atomNumber) {
-
-                // First, check for an error condition.
+                /**
+                 * First, check for an error condition.
+                 */
                 if (edgeNumber <= 0) {
                     logger.severe("Bad Edge Number in IPEDGE");
                 }
                 if (atomNumber <= 0) {
                     logger.severe("Bad Atom Number in IPEDGE");
                 }
-
-                // Set beginning of list or add to end.
+                /**
+                 * Set beginning of list or add to end.
+                 */
                 if (afe[atomNumber] == 0) {
                     afe[atomNumber] = edgeNumber;
                     epnext[edgeNumber] = 0;
@@ -6504,53 +6717,64 @@ public class GeneralizedKirkwood {
                 boolean move = false;
                 boolean breakAgain = false;
 
-                // Zero out the number of cycles and convex faces.
+                /**
+                 * Zero out the number of cycles and convex faces.
+                 */
                 ncy = 0;
                 nfp = 0;
-
-                // Mark all free atoms not buried.
+                /**
+                 * Mark all free atoms not buried.
+                 */
                 for (int ia = 0; ia < nAtoms; ia++) {
                     if (afree[ia]) {
                         abur[ia] = false;
                     }
                 }
-
-                // Go through all atoms.
+                /**
+                 * Go through all atoms.
+                 */
                 for (int ia = 0; ia < nAtoms; ia++) {
-                    if (!skip[ia] || !abur[ia]) {
+                    if (skip[ia] || abur[ia]) {
                         continue;
                     }
-
-                    // Special code for completely solvent-accessible atom.
+                    /**
+                     * Special code for completely solvent-accessible atom.
+                     */
                     if (!afree[ia]) {
-                        /*
-                         * Gather convex edges for atom
-                         * Clear number of convex edges for atom.
+                        /**
+                         * Gather convex edges for atom Clear number of convex
+                         * edges for atom.
                          */
                         int nepa = 0;
-
-                        // Pointer to first edge.
+                        /**
+                         * Pointer to first edge.
+                         */
                         int iep = afe[ia];
                         while (iep > 0) {
-                            // One more edge.
-
+                            /**
+                             * One more edge.
+                             */
                             nepa++;
                             if (nepa > maxepa) {
                                 logger.severe("Too many Convex Edges for Atom");
                             }
-
-                            // Store vertices of edge.
+                            /**
+                             * Store vertices of edge.
+                             */
                             av[0][nepa] = epv[0][iep];
                             av[1][nepa] = epv[1][iep];
-
-                            // Store convex edge number.
+                            /**
+                             * Store convex edge number.
+                             */
                             aep[nepa] = iep;
                             int ic = epc[iep];
-
-                            // Store circle number.
+                            /**
+                             * Store circle number.
+                             */
                             aic[nepa] = ic;
-
-                            // Get neighboring atom.
+                            /**
+                             * Get nighboring atom.
+                             */
                             int it = ct[ic];
                             int ia2;
                             if (ta[0][it] == ia) {
@@ -6559,36 +6783,39 @@ public class GeneralizedKirkwood {
                                 ia2 = ta[0][it];
                             }
 
-                            /*
-                             * Vector from atom to circle center; also
-                             * vector from atom to center of neighboring atom
-                             * sometimes we use one vector, sometimes the other.
+                            /**
+                             * Vector from atom to circle center; also vector
+                             * from atom to center of neighboring atom sometimes
+                             * we use one vector, sometimes the other.
                              */
                             for (int k = 0; k < 3; k++) {
                                 acvect[k][nepa] = c[k][ic] - a[k][ia];
                                 aavect[k][nepa] = a[k][ia2] - a[k][ia];
                             }
-
-                            // Pointer to next edge.
+                            /**
+                             * Pointer to next edge.
+                             */
                             iep = epnext[iep];
 
                         }
                         if (nepa <= 0) {
                             logger.severe("No Edges for Non-buried, Non-free Atom");
                         }
-                        /*
-                         * Form cycles; initialize all the
-                         * convex edges as not used in cycle.
+                        /**
+                         * Form cycles; initialize all the convex edges as not
+                         * used in cycle.
                          */
                         Arrays.fill(epused, 0, nepa, false);
-
-                        // Save old number of cycles.
+                        /**
+                         * Save old number of cycles.
+                         */
                         int ncyold = ncy;
                         int nused = 0;
                         int ncypa = 0;
                         while (nused < nepa) {
-
-                            // Look for starting edge.
+                            /**
+                             * Look for starting edge.
+                             */
                             int iepa;
                             for (iepa = 0; iepa < nepa; iepa++) {
                                 if (epused[iepa]) {
@@ -6596,44 +6823,55 @@ public class GeneralizedKirkwood {
                                     break;
                                 }
                             }
-
-                            // Cannot find starting edge, finished.
+                            /**
+                             * Cannot find starting edge; finished.
+                             */
                             if (!move) {
-                                // Pointer to edge.
+                                /**
+                                 * Pointer to edge.
+                                 */
                                 iep = aep[iepa];
-
-                                // One edge so far for this cycle.
+                                /**
+                                 * One edge so far on this cycle.
+                                 */
                                 int ncyep = 1;
-
-                                // One more cycle for atom.
+                                /**
+                                 * One more cycle for atom.
+                                 */
                                 ncypa++;
                                 if (ncypa > maxcypa) {
                                     logger.severe("Too many Cycles per Atom");
                                 }
-
-                                // Mark edge used in cycle.
+                                /**
+                                 * Mark edge used in cycle.
+                                 */
                                 epused[iepa] = true;
                                 nused++;
-
-                                // One more cycle for molecule.
+                                /**
+                                 * One more cycle for molecule.
+                                 */
                                 ncy++;
                                 if (ncy > maxcy) {
                                     logger.severe("Too many Cycles");
                                 }
-
-                                // Index of edge in atom cycle array.
-                                cyepa[ncyep][ncypa] = iepa;
-
-                                // Store in molecule cycle array a pointer to edge.
-                                cyep[ncyep][ncy] = iep;
-                                /*
-                                 * Second vertex of this edge is the vertex to look
-                                 * for next as the first vertex of another edge.
+                                /**
+                                 * Index of edge in atom cycle array.
                                  */
-
+                                cyepa[ncyep][ncypa] = iepa;
+                                /**
+                                 * Store in molecule cycle array a pointer to
+                                 * edge.
+                                 */
+                                cyep[ncyep][ncy] = iep;
+                                /**
+                                 * Second vertex of this edge is the vertex to
+                                 * look for next as the first vertex of another
+                                 * edge.
+                                 */
                                 int lookv = av[1][iepa];
-
-                                // If no vertex, this cycle is finished.
+                                /**
+                                 * If no vertex, this cycle is finished.
+                                 */
                                 if (lookv <= 0) {
                                     move = true;
                                 }
@@ -6645,40 +6883,49 @@ public class GeneralizedKirkwood {
                                             }
                                         }
 
-                                        // Edges are connected pointer to edge.
+                                        /**
+                                         * Edges are connected pointer to edge.
+                                         */
                                         iep = aep[jepa];
-
-                                        // One more edge for this cycle.
+                                        /**
+                                         * One more edge for this cycle.
+                                         */
                                         ncyep++;
                                         if (ncyep > MAXCYEP) {
                                             logger.severe("Too many Edges per Cycle");
                                         }
                                         epused[jepa] = true;
                                         nused++;
-
-                                        // Store index in local edge array.
+                                        /**
+                                         * Store index in local edge array.
+                                         */
                                         cyepa[ncyep][ncypa] = jepa;
-
-                                        // Store pointer to edge.
+                                        /**
+                                         * Store pointer to edge.
+                                         */
                                         cyep[ncyep][ncy] = iep;
-
-                                        // New vertex to look for.
+                                        /**
+                                         * New vertex to look for.
+                                         */
                                         lookv = av[1][jepa];
-
-                                        // If no vertex, this cycle is in trouble.
+                                        /**
+                                         * If no vertex, this cycle is in
+                                         * trouble.
+                                         */
                                         if (lookv <= 0) {
                                             logger.severe("Pointer Error in Cycle");
                                         }
                                     }
-
-                                    // It better connect to first edge of cycle.
+                                    /**
+                                     * It better connect to first edge of cycle.
+                                     */
                                     if (lookv != av[0][iepa]) {
                                         logger.severe("Cycle does not Close");
                                     }
                                 }
-                                /*
-                                 * This cycle is finished
-                                 * store number of edges in cycle.
+                                /**
+                                 * This cycle is finished store number of edges
+                                 * in cycle.
                                  */
                                 ncyepa[ncypa] = ncyep;
                                 cynep[ncy] = ncyep;
@@ -6686,26 +6933,28 @@ public class GeneralizedKirkwood {
                             move = false;
                         }
 
-                        // Look for more cycles.
-                        /*
-                         * Compare cycles for inside/outside relation;
-                         * check to see if cycle i is inside cycle j.
+                        /**
+                         * Compare cycles for inside/outside relation; check to
+                         * see if cycle i is inside cycle j.
                          */
                         for (int icya = 0; icya < ncypa; icya++) {
                             for (int jcya = 0; jcya < ncypa; jcya++) {
                                 breakAgain = false;
                                 int jcy = ncyold + jcya;
-
-                                // Initialize.
+                                /**
+                                 * Initialize.
+                                 */
                                 cycy[icya][jcya] = true;
-
-                                // Check for same cycle.
+                                /**
+                                 * Check for same cycle.
+                                 */
                                 if (icya == jcya || ncyepa[jcya] <= 2) {
                                     continue;
                                 }
-                                /*
-                                 * If cycles i and j have a pair of edges belonging
-                                 * to the same circle, then they are outside each other.
+                                /**
+                                 * If cycles i and j have a pair of edges
+                                 * belonging to the same circle, then they are
+                                 * outside each other.
                                  */
 
                                 for (int icyep = 0; icyep < ncyepa[icya]; icyep++) {
@@ -6733,8 +6982,9 @@ public class GeneralizedKirkwood {
                                 ai[2] = aavect[2][iepa];
                                 double anaa = VectorMath.r(ai);
                                 double factor = radius[ia] / anaa;
-
-                                // North pole and unit vector pointing south.
+                                /**
+                                 * North pole and unit vector pointer south.
+                                 */
                                 for (int k = 0; k < 3; k++) {
                                     pole[k] = factor * aavect[k][iepa] + a[k][ia];
                                     unvect[k] = -aavect[k][iepa] / anaa;
@@ -6742,23 +6992,23 @@ public class GeneralizedKirkwood {
                                 cycy[icya][jcya] = ptincy(pole, unvect, jcy);
                             }
                         }
-
-                        // Group cycles into faces; direct comparison for i and j.
+                        /**
+                         * Group cycles into faces; direct comparison for i and
+                         * j.
+                         */
                         for (int icya = 0; icya < ncypa; icya++) {
                             for (int jcya = 0; jcya < ncypa; jcya++) {
-                                /*
-                                 * Tentatively say that cycles i and j bound
-                                 * the same face if they are inside each other.
+                                /**
+                                 * Tentatively say that cycles i and j bound the
+                                 * same face if they are inside each other.
                                  */
-
                                 samef[icya][jcya] = (cycy[icya][jcya] && cycy[jcya][icya]);
                             }
                         }
-                        /*
-                         * If i is in exterior of k, and k is in interior of
-                         * i and j, then i and j do not bound the same face.
+                        /**
+                         * If i is in exterior of k, and k is in interior of i
+                         * and j, then i and j do not bound the same face.
                          */
-
                         for (int icya = 0; icya < ncypa; icya++) {
                             for (int jcya = 0; jcya < ncypa; jcya++) {
                                 if (icya != jcya) {
@@ -6773,8 +7023,9 @@ public class GeneralizedKirkwood {
                                 }
                             }
                         }
-
-                        // Fill gaps so that "samef" falls into complete blocks.
+                        /**
+                         * Fill gaps so that "samef" falls into complete blocks.
+                         */
                         for (int icya = 0; icya < ncypa - 2; icya++) {
                             for (int jcya = icya + 1; jcya < ncypa - 1; jcya++) {
                                 if (samef[icya][jcya]) {
@@ -6787,57 +7038,69 @@ public class GeneralizedKirkwood {
                                 }
                             }
                         }
-
-                        // Group cycles belonging to the same face.
+                        /**
+                         * Group cycles belonging to the same face.
+                         */
                         for (int icya = 0; icya < ncypa; icya++) {
                             cyused[icya] = false;
                         }
-
-                        // Clear number of cycles used in bounding faces.
+                        /**
+                         * Clear number of cycles used in bounding faces.
+                         */
                         nused = 0;
                         for (int icya = 0; icya < ncypa; icya++) {
-
-                            // Check for already used.
+                            /**
+                             * Check for already used.
+                             */
                             if (cyused[icya]) {
                                 continue;
                             }
-
-                            // One more convex face.
+                            /**
+                             * One more convex face.
+                             */
                             nfp++;
                             if (nfp > maxfp) {
                                 logger.severe("Too many Convex Faces");
                             }
-
-                            // Clear number of cycles for face.
+                            /**
+                             * Clear number of cycles for face.
+                             */
                             fpncy[nfp] = 0;
-
-                            // Pointer from face to atom.
+                            /**
+                             * Pointer from face to atom.
+                             */
                             fpa[nfp] = ia;
-
-                            // Look for all other cycles belonging to same face.
+                            /**
+                             * Look for all other cycles belonging to same face.
+                             */
                             for (int jcya = 0; jcya < ncypa; jcya++) {
-
-                                // Check for cycle already used in another face.
+                                /**
+                                 * Check for cycle alraDY used in another face.
+                                 */
                                 if (cyused[jcya] || !samef[icya][jcya]) {
                                     move = true;
                                 }
                                 if (!move) {
-                                    // Mark cycle used.
-
+                                    /**
+                                     * Mark cycle used.
+                                     */
                                     cyused[jcya] = true;
                                     nused++;
-
-                                    // One more cycle for face.
+                                    /**
+                                     * One more cycle for face.
+                                     */
                                     fpncy[nfp]++;
                                     if (fpncy[nfp] > MAXFPCY) {
                                         logger.severe("Too many Cycles bounding Convex Face");
                                     }
                                     int i = fpncy[nfp];
-
-                                    // Store cycle number.
+                                    /**
+                                     * Store cycle number.
+                                     */
                                     fpcy[i][nfp] = ncyold + jcya;
-
-                                    // Check for finished.
+                                    /**
+                                     * Check for finished.
+                                     */
                                     if (nused >= ncypa) {
                                         move = true;
                                         breakAgain = true;
@@ -6851,11 +7114,15 @@ public class GeneralizedKirkwood {
 
                         }
                         if (!breakAgain) {
-                            // Should not fall through end of do loops.
+                            /**
+                             * Should not fall though end of for loops.
+                             */
                             logger.severe("Not all Cycles grouped into Convex Faces");
                         }
                     }
-                    // One face for free atom; no cycles.
+                    /**
+                     * Once face for free atom; no cycles.
+                     */
                     nfp++;
                     if (nfp > maxfp) {
                         logger.severe("Too many Convex Faces");
@@ -6897,21 +7164,24 @@ public class GeneralizedKirkwood {
                 if (cynep[icy] <= 1) {
                     return true;
                 }
-                // projct call.
                 int nedge = cynep[icy];
                 for (int ke = 0; ke < cynep[icy]; ke++) {
 
-                    // Vertex number (use first vertex of edge).
+                    /**
+                     * Vertex number (use first vertex of edge).
+                     */
                     int iep = cyep[ke][icy];
                     iv = epv[0][iep];
                     if (iv != 0) {
-
-                        // Vector from north pole to vertex.
+                        /**
+                         * Vector from north pole to vertex.
+                         */
                         for (int k = 0; k < 3; k++) {
                             polev[k] = v[k][iv] - pnt[k];
                         }
-
-                        // Calculate multiplication factor.
+                        /**
+                         * Calculate multiplication factor.
+                         */
                         double dt = VectorMath.dot(polev, unvect);
                         if (dt == 0.0) {
                             return true;
@@ -6920,8 +7190,9 @@ public class GeneralizedKirkwood {
                         if (f < 1.0) {
                             return true;
                         }
-
-                        // Projected vertex for this convex edge.
+                        /**
+                         * Projected vertex for this convex edge.
+                         */
                         for (int k = 0; k < 3; k++) {
                             spv[k][ke] = pnt[k] + f * polev[k];
                         }
@@ -6933,14 +7204,15 @@ public class GeneralizedKirkwood {
             }
 
             public double rotang(double epu[][], int nedge, double unvect[]) {
-                //double dt, ang;
                 double crs[] = new double[3];
                 double ai[] = new double[3];
                 double aj[] = new double[3];
                 double ak[] = new double[3];
 
                 double totang = 0.0;
-                // Sum angles at vertices of cycle.
+                /**
+                 * Sum angles at vertices of cycle.
+                 */
                 for (int ke = 0; ke < nedge; ke++) {
                     double dt;
                     if (ke < nedge - 1) {
@@ -6956,7 +7228,9 @@ public class GeneralizedKirkwood {
                         ak[0] = epu[0][0];
                         ak[1] = epu[1][0];
                         ak[2] = epu[2][0];
-                        // Closing edge of cycle
+                        /**
+                         * Closing edge of cycle.
+                         */
                         dt = VectorMath.dot(ai, ak);
                         VectorMath.cross(ai, ak, crs);
                     }
@@ -6965,7 +7239,9 @@ public class GeneralizedKirkwood {
                     if (VectorMath.dot(crs, unvect) > 0.0) {
                         ang = -ang;
                     }
-                    // Add to total for cycle.
+                    /**
+                     * Add to total for cycle.
+                     */
                     totang += ang;
                 }
                 return totang;
@@ -6973,16 +7249,22 @@ public class GeneralizedKirkwood {
 
             public void epuclc(double spv[][], int nedge, double epu[][]) {
                 double ai[] = new double[3];
-                // Calculate unit vectors along edges.
+                /**
+                 * Calculate unit vectors along edges.
+                 */
                 for (int ke = 0; ke < nedge; ke++) {
-                    // Get index of second edge of corner.
+                    /**
+                     * Get index of second edge of corner.
+                     */
                     int ke2;
                     if (ke < nedge) {
                         ke2 = ke + 1;
                     } else {
                         ke2 = 0;
                     }
-                    // Unit vector along edge of cycle.
+                    /**
+                     * Unit vector along edge of cycle.
+                     */
                     for (int k = 0; k < 3; k++) {
                         epu[k][ke] = spv[k][ke2] - spv[k][ke];
                     }
@@ -6991,7 +7273,9 @@ public class GeneralizedKirkwood {
                     if (epun <= 0.0) {
                         logger.severe("Null Edge in Cycle");
                     }
-                    // Normalize.
+                    /**
+                     * Normalize.
+                     */
                     if (epun > 0.0) {
                         for (int k = 0; k < 3; k++) {
                             epu[k][ke] = epu[k][ke] / epun;
@@ -7002,7 +7286,10 @@ public class GeneralizedKirkwood {
                         }
                     }
                 }
-                // Vectors for null edges come from following or preceding edges.
+                /**
+                 * Vectors for null edges come from following or preceding
+                 * edges.
+                 */
                 for (int ke = 0; ke < nedge; ke++) {
                     getVector(ai, epu, ke);
                     if (VectorMath.r(ai) <= 0.0) {
@@ -7175,7 +7462,9 @@ public class GeneralizedKirkwood {
                 theta1 = atan2(d1, tr[it]);
                 theta2 = atan2(d2, tr[it]);
 
-                // Check for cusps.
+                /**
+                 * Check for cusps.
+                 */
                 double thetaq;
                 boolean cusp;
                 if (tr[it] < probe && theta1 > 0.0 && theta2 > 0.0) {
@@ -7299,6 +7588,11 @@ public class GeneralizedKirkwood {
 
             }
 
+            /**
+             * The vam method takes the analytical molecular surface defined as
+             * a collection of spherical and toroidal polygons and uses it to
+             * compute the volume and surface area
+             */
             public void vam(double volume, double area) {
                 final int maxdot = 1000;
                 final int maxop = 100;
@@ -7455,7 +7749,9 @@ public class GeneralizedKirkwood {
 
                         // This assigned value was never used?
                         //int ia = va[iv];
-                        // Get vertices and vectors.
+                        /**
+                         * Get vertices and vectors.
+                         */
                         for (int ke = 0; ke < 3; ke++) {
                             ien = fnen[ke][ifn];
                             ivs[ke] = env[0][ien];
@@ -7472,9 +7768,9 @@ public class GeneralizedKirkwood {
                                 vects[k][ke] = v[k][ivs[ke]] - p[k][ip];
                             }
                         }
-                        /*
-                         * Calculate normal vectors for the three planes
-                         * that cut out the geodesic triangle.
+                        /**
+                         * Calculate normal vectors for the three planes that
+                         * cut out the geodesic triangle.
                          */
                         getVector(ai, vects, 0);
                         getVector(aj, vects, 1);
@@ -7501,9 +7797,13 @@ public class GeneralizedKirkwood {
                             if (depths[ifn] > probe && depths[jfn] > probe) {
                                 continue;
                             }
-                            // These two probes may have intersecting surfaces.
+                            /**
+                             * These two probes may have intersecting surfaces.
+                             */
                             double dpp = VectorMath.dist(ai, aj);
-                            // Compute the midpoint.
+                            /**
+                             * Compute the midpoint.
+                             */
                             for (int k = 0; k < 3; k++) {
                                 ppm[k] = (fncen[k][ifn] + fncen[k][jfn]) / 2.0;
                                 upp[k] = (fncen[k][jfn] - fncen[k][ifn]) / dpp;
@@ -7516,8 +7816,9 @@ public class GeneralizedKirkwood {
                             double rat = dpp / (2.0 * probe);
                             check(rat);
                             double rho = asin(rat);
-
-                            // Use circle-plane intersection routine.
+                            /**
+                             * Use circle-place intersection routine.
+                             */
                             boolean alli = true;
                             boolean anyi = false;
                             boolean spindl = false;
@@ -7560,7 +7861,7 @@ public class GeneralizedKirkwood {
                                     continue;
                                 }
 
-                                /*
+                                /**
                                  * Check that the two ways of calculating
                                  * intersection points match.
                                  */
@@ -7618,8 +7919,9 @@ public class GeneralizedKirkwood {
                             if (!case1 && !case2) {
                                 continue;
                             }
-
-                            // This kind of overlap can be handled.
+                            /**
+                             * This kind of overlap can be handled.
+                             */
                             nlap[ifn]++;
                             nlap[jfn]++;
                             for (int ke = 0; ke < 3; ke++) {
@@ -7649,14 +7951,16 @@ public class GeneralizedKirkwood {
                                         vect7[k] = v[k][iv1] - fncen[k][jfn];
                                         vect8[k] = v[k][iv2] - fncen[k][jfn];
                                     }
-                                    // Check whether point lies on spindle arc.
+                                    /**
+                                     * Check whether point lies on spindle arc.
+                                     */
                                     for (int k = 0; k < 3; k++) {
                                         vect1[k] = xpnt1[k] - fncen[k][ifn];
                                         vect2[k] = xpnt2[k] - fncen[k][ifn];
                                         vect5[k] = xpnt1[k] - fncen[k][jfn];
                                         vect6[k] = xpnt2[k] - fncen[k][jfn];
                                     }
-                                    /*
+                                    /**
                                      * Continue to next if statement if any of
                                      * the following are true.
                                      */
@@ -7705,15 +8009,16 @@ public class GeneralizedKirkwood {
                                         vect7[k] = v[k][iv1] - fncen[k][jfn];
                                         vect8[k] = v[k][iv2] - fncen[k][jfn];
                                     }
-
-                                    // Check whether point lies on spindle arc.
+                                    /**
+                                     * Check whether point lies on spindle arc.
+                                     */
                                     for (int k = 0; k < 3; k++) {
                                         vect1[k] = xpnt1[k] - fncen[k][ifn];
                                         vect2[k] = xpnt2[k] - fncen[k][ifn];
                                         vect5[k] = xpnt1[k] - fncen[k][jfn];
                                         vect6[k] = xpnt2[k] - fncen[k][jfn];
                                     }
-                                    /*
+                                    /**
                                      * Continue to next if statement if any of
                                      * the following are true.
                                      */
@@ -7756,9 +8061,11 @@ public class GeneralizedKirkwood {
                                 corv[jfn] += vlens;
                             }
 
-                            // Check for vertex on opposing probe in face.
                             /**
-                             * for (int kv = 0; kv < 3; kv++) { vip[kv] = false;
+                             * Check for vertex on opposing probe in face.
+                             */
+                            /**
+                             * For (int kv = 0; kv < 3; kv++) { vip[kv] = false;
                              * int ien = fnen[kv][jfn]; iv = env[0][ien]; for
                              * (int k = 0; k < 3; k++) { vect1[k] = v[k][iv] -
                              * fncen[k][ifn]; } VectorMath.norm(vect1, vect1);
@@ -7781,7 +8088,9 @@ public class GeneralizedKirkwood {
                         if (nlap[ifn] <= 0) {
                             continue;
                         }
-                        // Gather all overlapping probes.
+                        /**
+                         * Gather all overlapping probes.
+                         */
                         int nop = 0;
                         for (int jfn = 0; jfn < nfn; jfn++) {
                             if (ifn != jfn) {
@@ -7801,8 +8110,9 @@ public class GeneralizedKirkwood {
                                     }
                                 }
                             }
-
-                            // Numerical calculation of the correction.
+                            /**
+                             * Numerical calculation of the correction.
+                             */
                             double areado = 0.0;
                             double voldo = 0.0;
                             double scinc = 1.0 / nscale;
@@ -7886,8 +8196,10 @@ public class GeneralizedKirkwood {
                                     nate++;
                                 }
                             }
-
-                            // Use either the analytical or numerical correction.
+                            /**
+                             * Use either the analytical or numerical
+                             * correction.
+                             */
                             boolean usenum = (nate > nlap[ifn] || neatmx > 1 || badt[ifn]);
                             if (usenum) {
                                 cora[ifn] = coran;
@@ -7903,7 +8215,9 @@ public class GeneralizedKirkwood {
                         }
                     }
                 }
-                // Finally, compute the total area and total volume.
+                /**
+                 * Finally, compute the total area and total volume.
+                 */
                 logger.info(String.format("totap=%16.8f,totas=%16.8f,totan=%16.8f,totasp=%16.8f,alenst=%16.8f", totap, totas, totan, totasp, alenst));
                 area = totap + totas + totan - totasp - alenst;
                 logger.info(String.format("totvp=%16.8f,totvs=%16.8f,totvn=%16.8f,hedron=%16.8f,totvsp=%16.8f,vlenst=%16.8f", totvp, totvs, totvn, polyhedronVolume, totvsp, vlenst));
@@ -8051,68 +8365,16 @@ public class GeneralizedKirkwood {
                 return angle;
             }
 
-            @Override
-            public void run(int lb, int ub) {
-                /*
-                 * Fix the stepsize in the z-direction; this value sets
-                 * the accuracy of the numerical derivatives; zstep=0.06
-                 * is a good balance between compute time and accuracy.
+            public void calcDerivative(int lb, int ub) {
+                /**
+                 * Fix the step size in the z-direction; this value sets the
+                 * accuracy of the numerical derivatives; zstep=0.06 is a good
+                 * balance between compute time and accuracy.
                  */
-
                 zstep = 0.0601;
-
-                // Initialize minimum and maximum ranges of atoms.
-                pix2 = 2.0 * PI;
-                rmax = 0.0;
-                xmin = x[0];
-                xmax = x[0];
-                ymin = y[0];
-                ymax = y[0];
-                zmin = z[0];
-                zmax = z[0];
-
-                /*
-                 * Assign van der Waals radii to the atoms; note that
-                 * the radii are incremented by the size of the probe;
-                 * then get the maximum and minimum ranges of atoms.
-                 */
-                for (int i = 0; i < nAtoms; i++) {
-                    radius[i] = atoms[i].getVDWType().radius / 2.0;
-                    vdwrad[i] = radius[i];
-                    if (vdwrad[i] == 0.0) {
-                        skip[i] = true;
-                    } else {
-                        skip[i] = false;
-                        vdwrad[i] += probe;
-                        if (vdwrad[i] > rmax) {
-                            rmax = vdwrad[i];
-                        }
-                        if (x[i] < xmin) {
-                            xmin = x[i];
-                        }
-                        if (x[i] > xmax) {
-                            xmax = x[i];
-                        }
-                        if (y[i] < ymin) {
-                            ymin = y[i];
-                        }
-                        if (y[i] > ymax) {
-                            ymax = y[i];
-                        }
-                        if (z[i] < zmin) {
-                            zmin = z[i];
-                        }
-                        if (z[i] > zmax) {
-                            zmax = z[i];
-                        }
-                    }
-                }
-
-                calcVolume();
-
-                /*
-                 * Load the cubes based on coarse lattice; first of all
-                 * set edge length to the maximum diameter of any atom.
+                /**
+                 * Load the cubes based on coarse lattice; first of all set edge
+                 * length to the maximum diameter of any atom.
                  */
                 edge = 2.0 * rmax;
                 nx = (int) ((xmax - xmin) / edge);
@@ -8121,8 +8383,9 @@ public class GeneralizedKirkwood {
                 if (max(max(nx, ny), nz) > mxcube) {
                     logger.severe(" VOLUME1  --  Increase the Value of MAXCUBE");
                 }
-
-                // Initialize the coarse lattice of cubes.
+                /**
+                 * Initialize the coarse lattice of cubes.
+                 */
                 for (int i = 0; i <= nx; i++) {
                     for (int j = 0; j <= ny; j++) {
                         for (int k = 0; k <= nz; k++) {
@@ -8131,8 +8394,9 @@ public class GeneralizedKirkwood {
                         }
                     }
                 }
-
-                // Find the number of atoms in each cube.
+                /**
+                 * Find the number of atoms in each cube.
+                 */
                 for (int m = 0; m < nAtoms; m++) {
                     if (!skip[m]) {
                         int i = (int) ((x[m] - xmin) / edge);
@@ -8142,12 +8406,12 @@ public class GeneralizedKirkwood {
                     }
                 }
 
-                /*
-                 * Determine the highest index in the array "itab" for the
-                 * atoms that fall into each cube; the first cube that has
-                 * atoms defines the first index for "itab"; the final index
-                 * for the atoms in the present cube is the final index of
-                 * the last cube plus the number of atoms in the present cube.
+                /**
+                 * Determine the highest index in the array "itab" for the atoms
+                 * that fall into each cube; the first cube that has atoms
+                 * defines the first index for "itab"; the final index for the
+                 * atoms in the present cube is the final index of the last cube
+                 * plus the number of atoms in the present cube.
                  */
                 isum = 0;
                 for (int i = 0; i <= nx; i++) {
@@ -8162,10 +8426,10 @@ public class GeneralizedKirkwood {
                     }
                 }
 
-                /*
+                /**
                  * "cube(1,,,)" now contains a pointer to the array "itab"
-                 * giving the position of the last entry for the list of
-                 * atoms in that cube of total number equal to "cube(0,,,)".
+                 * giving the position of the last entry for the list of atoms
+                 * in that cube of total number equal to "cube(0,,,)".
                  */
                 for (int m = 0; m < nAtoms; m++) {
                     if (!skip[m]) {
@@ -8178,10 +8442,9 @@ public class GeneralizedKirkwood {
                     }
                 }
 
-                /*
-                 * Set "cube(1,,,)" to be the starting index in "itab"
-                 * for atom list of that cube; and "cube(0,,,)" to be
-                 * the stop index.
+                /**
+                 * Set "cube(1,,,)" to be the starting index in "itab" for atom
+                 * list of that cube; and "cube(0,,,)" to be the stop index.
                  */
                 isum = 0;
                 for (int i = 0; i <= nx; i++) {
@@ -8198,9 +8461,9 @@ public class GeneralizedKirkwood {
                     }
                 }
 
-                /*
-                 * Process in turn each atom from the coordinate list;
-                 * first select the potential intersecting atoms.
+                /**
+                 * Process in turn each atom from the coordinate list; first
+                 * select the potential intersecting atoms.
                  */
                 for (ir = 0; ir < nAtoms; ir++) {
                     pre_dx = 0.0;
@@ -8215,8 +8478,9 @@ public class GeneralizedKirkwood {
                     xr = x[ir];
                     yr = y[ir];
                     zr = z[ir];
-
-                    // Find cubes to search for overlaps or current atom.
+                    /**
+                     * Find cubes to search for overlaps for current atom.
+                     */
                     istart = (int) ((xr - xmin) / edge);
                     istop = min(istart + 2, nx + 1);
                     istart = max(istart, 1);
@@ -8226,8 +8490,9 @@ public class GeneralizedKirkwood {
                     kstart = (int) ((zr - zmin) / edge);
                     kstop = min(kstart + 2, nz + 1);
                     kstart = max(kstart, 1);
-
-                    // Load all overlapping atoms into "inov".
+                    /**
+                     * Load all overlapping atoms into "inov".
+                     */
                     io = -1;
                     //logger.info(String.format(" %d %d %d %d %d %d %d ", ir, istart, istop, jstart, jstop, kstart, kstop));
                     for (int i = istart - 1; i < istop; i++) {
@@ -8264,21 +8529,25 @@ public class GeneralizedKirkwood {
                     }
 
                     //logger.info(String.format("ir %d io %d", ir, io));
-                    //  Determine resolution along the z-axis.
+                    /**
+                     * Determine resolution along the z-axis.
+                     */
                     if (io != -1) {
                         ztop = zr + rr;
                         ztopshave = ztop - zstep;
                         zgrid = zr - rr;
-
-                        // Half of the part not covered by the planes.
+                        /**
+                         * Half of the part not covered by the planes.
+                         */
                         zgrid += 0.5 * (rrx2 - ((int) (rrx2 / zstep) * zstep));
                         zstart = zgrid;
-
-                        // Section atom spheres perpendicular to the z axis.
+                        /**
+                         * Section atom spheres perpendicular to the z-axis.
+                         */
                         while (zgrid <= ztop) {
-                            /*
-                             * "rsecr" is radius of circle of intersection
-                             * of "ir" sphere on the current sphere.
+                            /**
+                             * "rsecr" is radius of circle of intersection of
+                             * "ir" sphere on the current sphere.
                              */
                             rsec2r = rrsq - ((zgrid - zr) * (zgrid - zr));
                             if (rsec2r < 0.0) {
@@ -8299,7 +8568,9 @@ public class GeneralizedKirkwood {
                                 cos_phi2 = (zgrid - (0.5 * zstep) - zr) / rr;
                                 phi2 = acos(cos_phi2);
                             }
-                            // Check intersections of neighbor circles.
+                            /**
+                             * Check intersection of neighbor cirlces.
+                             */
                             narc = -1;
                             for (int k = 0; k <= io; k++) {
                                 in = inov[k];
@@ -8324,19 +8595,25 @@ public class GeneralizedKirkwood {
                                         if (narc > MAXARC) {
                                             //logger.info("VOLUME1 -- Increase the Value of MAXARC");
                                         }
-                                        /*
-                                         * Initial and final arc endpoints are found for intersection
-                                         * of "ir" circle with another circle contained in same plane;
-                                         * the initial endpoint of the enclosed arc is stored in "arci",
-                                         * the final endpoint in "arcf"; get "cosine" via law of cosines.
+                                        /**
+                                         * Initial and final arc endpoints are
+                                         * found for intersection of "ir" circle
+                                         * with another circle contained in same
+                                         * plane; the initial endpoint of the
+                                         * enclosed arc is stored in "arci", the
+                                         * final endpoint in "arcf"; get
+                                         * "cosine" via law of cosines.
                                          */
                                         cosine = (dsq[k] + rsec2r - rsec2n) / (2.0 * d[k] * rsecr);
                                         cosine = min(1.0, max(-1.0, cosine));
-                                        /*
-                                         * "alpha" is the angle between a line containing either point
-                                         * of intersection and the reference circle center and the
-                                         * line containing both circle centers; "beta" is the angle
-                                         * between the line containing both circle centers and x-axis.
+                                        /**
+                                         * "alpha" is the angle between a line
+                                         * containing either point of
+                                         * intersection and the reference circle
+                                         * center and the line containing both
+                                         * circle centers; "beta" is the angle
+                                         * between the line containing both
+                                         * circle centers and x-axis.
                                          */
                                         alpha = acos(cosine);
                                         beta = atan2(dy[k], dx[k]);
@@ -8352,9 +8629,11 @@ public class GeneralizedKirkwood {
                                             tf -= pix2;
                                         }
                                         arci[narc] = ti;
-                                        /*
-                                         * If the arc crosses zero, then it is broken into two segments;
-                                         * the first ends at two pi and the second begins at zero.
+                                        /**
+                                         * If the arc crosses zero, then it is
+                                         * broken into two segments; the first
+                                         * ends at two pi and the second begins
+                                         * at zero.
                                          */
                                         if (tf < ti) {
                                             arcf[narc] = pix2;
@@ -8369,9 +8648,10 @@ public class GeneralizedKirkwood {
                                 }
                             }
 
-                            /*
-                             * Find the pre-area and pre-forces on this section (band),
-                             * "pre-" means a multiplicative factor is yet to be applied.
+                            /**
+                             * Find the pre-area and pre-forces on this section
+                             * (band), "pre-" means a multiplicative factor is
+                             * yet to be applied.
                              */
                             if (narc == -1) {
                                 //logger.info(String.format(" %d cos_phi %16.8f %16.8f %16.8f %16.8f",
@@ -8380,9 +8660,10 @@ public class GeneralizedKirkwood {
                                 pre_dz += seg_dz;
                                 //logger.info(String.format(" seg_dx %16.8f pre_dz %16.8f ", seg_dz, pre_dz));
                             } else {
-                                /*
-                                 * Sort the arc endpoint arrays, each with "narc" entries,
-                                 * in order of increasing values of the arguments in "arci".
+                                /**
+                                 * Sort the arc endpoint arrays, each with
+                                 * "narc" entries, in order of increasing values
+                                 * of the arguments in "arci".
                                  */
                                 for (int k = 0; k < narc; k++) {
                                     aa = arci[k];
@@ -8399,7 +8680,10 @@ public class GeneralizedKirkwood {
                                     arci[itemp] = aa;
                                     arcf[itemp] = bb;
                                 }
-                                // Consolidate arcs by removing overlapping arc endpoints.
+                                /**
+                                 * Consolidate arcs by removing overlapping arc
+                                 * endpoints.
+                                 */
                                 temp = arcf[0];
                                 int j = 0;
                                 for (int k = 1; k <= narc; k++) {
@@ -8439,7 +8723,9 @@ public class GeneralizedKirkwood {
 
                                 // SOME OF THE FOLLOWING PRINTS ARE WRONG
                                 //logger.info(String.format(" SORT %d %d %16.8f %16.8f", ir, narc, arci[0], arcf[0]));
-                                // Compute the numerical pre-derivative values.
+                                /**
+                                 * Compute the numerical pre-derivative values.
+                                 */
                                 for (int k = 0; k <= narc; k++) {
                                     theta1 = arci[k];
                                     theta2 = arcf[k];
@@ -8469,6 +8755,13 @@ public class GeneralizedKirkwood {
                     dex[2][ir] = 0.5 * rrsq * pre_dz;
                     //logger.info(String.format(" de/dx %d %16.8f %16.8f %16.8f", ir, dex[0][ir], dex[1][ir], dex[2][ir]));
                 }
+            }
+
+            @Override
+            public void run(int lb, int ub) {
+                setRadius();
+                calcVolume();
+                calcDerivative(lb, ub);
             }
         }
     }
