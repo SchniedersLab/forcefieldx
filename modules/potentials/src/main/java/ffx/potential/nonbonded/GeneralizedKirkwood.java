@@ -299,6 +299,10 @@ public class GeneralizedKirkwood {
         logger.info("");
     }
 
+    public void setUse(boolean use[]) {
+        this.use = use;
+    }
+
     /**
      * <p>
      * computeBornRadii</p>
@@ -491,7 +495,10 @@ public class GeneralizedKirkwood {
                     born[i] = 1.0 / born[i];
 
                 }
-                //logger.info(String.format(" %d Born radius:  %16.8f", i + 1, born[i]));
+                /*
+                if (i < 25) {
+                    logger.info(String.format(" %d Born radius:  %16.8f", i + 1, born[i]));
+                } */
             }
         }
 
@@ -1791,6 +1798,7 @@ public class GeneralizedKirkwood {
             }
         }
 
+
         /**
          * Compute Born radii for a range of atoms via the Grycuk method.
          *
@@ -1888,6 +1896,11 @@ public class GeneralizedKirkwood {
                     dxi = inducedDipole[i][0];
                     dyi = inducedDipole[i][1];
                     dzi = inducedDipole[i][2];
+                    /*
+                    if (i < 25) {
+                        logger.info(String.format(" %d %10.6f %10.6f %10.6f", i, dxi * MultipoleType.DEBYE,
+                                dyi * MultipoleType.DEBYE, dzi * MultipoleType.DEBYE));
+                    } */
                     pxi = inducedDipoleCR[i][0];
                     pyi = inducedDipoleCR[i][1];
                     pzi = inducedDipoleCR[i][2];
@@ -2073,9 +2086,9 @@ public class GeneralizedKirkwood {
                  */
                 energyTensors();
                 /**
-                 * Compute the GK interaction energy.
+                 * Compute the GK interac tion energy.
                  */
-                gkEnergy += energy(i, k);;
+                gkEnergy += energy(i, k);
                 count++;
                 if (gradient) {
                     /**
@@ -4136,8 +4149,11 @@ public class GeneralizedKirkwood {
                 ib = 0;
                 double arclen = 0.0;
                 double exang = 0.0;
+
                 /**
-                 * Test each sphere to see if it overlaps the "ir" sphere. TODO:
+                 * Test each sphere to see if it overlaps the "ir" sphere.
+                 *
+                 * TODO:
                  * Use the neighbor list & loop over symmetry mates!
                  */
                 for (int i = 0; i < nAtoms; i++) {
@@ -4196,13 +4212,15 @@ public class GeneralizedKirkwood {
                                 format(" Increase the value of MAXARC to (%d).", io));
                     }
                 }
+
+
                 // Case where no other spheres overlap the current sphere.
                 if (io == 0) {
                     area[ir] = pix4;
                     return;
                 }
                 // Case where only one sphere overlaps the current sphere.
-                if (io == 0) {
+                if (io == 1) {
                     int k = 0;
                     double txk = xc1[0];
                     double tyk = yc1[0];

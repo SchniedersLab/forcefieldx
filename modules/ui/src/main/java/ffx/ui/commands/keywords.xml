@@ -93,6 +93,13 @@
                 <Value name="FALSE"/>
                 <Value name="DEFAULT"/>
             </subsection>
+            <subsection name="GKTERM" rep="COMBOBOX">This keyword controls use of the generalized Kirkwood implicit solvent.
+                In the absence of a modifying option, this keyword turns on use of the GK potential. TRUE/FALSE turns on/off use of this potential energy term,
+                otherwise use the DEFAULT behavior FALSE.
+                <Value name="TRUE"/>
+                <Value name="FALSE"/>
+                <Value name="DEFAULT"/>
+            </subsection>
             <subsection name="MPOLETERM" rep="COMBOBOX">This keyword controls use of the atomic multipole
                 electrostatics potential energy term. In the absence of a modifying option, this keyword turns
                 on use of the potential. TRUE/FALSE turns on/off use of this potential energy term, otherwise use the DEFAULT
@@ -172,6 +179,121 @@
                 <Value name="TRUE"/>
                 <Value name="FALSE"/>
                 <Value name="DEFAULT"/>
+            </subsection>
+        </section>
+        <section name="Non-Bonded Force Field">
+            <subsection name="ewald-alpha" rep="TEXTFIELD">
+                Specifies the Ewald convergence parameter. The default is 0.545.
+            </subsection>
+            <subsection name="ewald-cutoff" rep="TEXTFIELD">
+                Specifies the cut-off for the real space portion of PME. The default is 7.0 Angstroms.
+            </subsection>
+            <subsection name="polar-eps" rep="TEXTFIELD">
+                Specifies the self-consistent field convergence criteria. The default is 1.0e-5 RMS Debye.
+            </subsection>
+            <subsection name="pme-mesh-x" rep="TEXTFIELD">
+                Specifies the number of mesh points along the a-axis. The default is a-axis * pme-mesh-density.
+            </subsection>
+            <subsection name="pme-mesh-y" rep="TEXTFIELD">
+                Specifies the number of mesh points along the b-axis. The default is b-axis * pme-mesh-density.
+            </subsection>
+            <subsection name="pme-mesh-z" rep="TEXTFIELD">
+                Specifies the number of mesh points along the c-axis. The default is c-axis * pme-mesh-density.
+            </subsection>
+            <subsection name="pme-mesh-density" rep="TEXTFIELD">
+                Specifies the number of mesh points per Angstrom for the reciprocal space mesh. The default is 1.2.
+            </subsection>
+            <subsection name="pme-order" rep="TEXTFIELD">
+                Specifies the PME b-Spline order, which must be greater than or equal to 5 for AMOEBA. The default is 5.
+            </subsection>
+            <subsection name="vdw-cutoff" rep="TEXTFIELD">
+                Specifies the van der Waals cut-off radius. The default is 12.0 Angstroms.
+            </subsection>
+        </section>
+        <section name="X-ray Refinement">
+            <subsection name="fostring" rep="TEXTFIELD">
+                Title of the Fo column in the input MTZ file (if it is not one of the default values of F, Fo, Fp or Fobs).
+            </subsection>
+            <subsection name="sigfostring" rep="TEXTFIELD">
+                Title of the sigFo column in the input MTZ file (if it is not one of the default values of sigF, sigFo, sigFp or SigFobs).
+            </subsection>
+            <subsection name="rfreestring" rep="TEXTFIELD">
+                Title of the Rfree column in the input MTZ file (if it is not one of the default values of Rfree, freeR, freeRflag, Rfreeflag, test, freer_flag or R-free-flags).
+            </subsection>
+            <subsection name="use_3g" rep="COMBOBOX">
+                Uses 3 Gaussians in form factor equation rather than 6 (set to false for atomic resolution data).
+                <Value name="TRUE"/>
+                <Value name="FALSE"/>
+                <Value name="DEFAULT"/>
+            </subsection>
+            <subsection name="aradbuff" rep="TEXTFIELD">
+                Atom radius buffer for sampling grid density, added to dynamically determined radius.
+            </subsection>
+            <subsection name="splinefit" rep="COMBOBOX">
+                Apply a resolution dependent spline fit between Fo and Fc.
+                <Value name="TRUE"/>
+                <Value name="FALSE"/>
+                <Value name="DEFAULT"/>
+            </subsection>
+            <subsection name="fsigfcutoff" rep="TEXTFIELD">
+                F/sigF cutoff (negative: all values read in).
+            </subsection>
+            <subsection name="resolution" rep="TEXTFIELD">
+                Resolution cutoff (negative: all data read in).
+            </subsection>
+            <subsection name="rfreeflag" rep="TEXTFIELD">
+                Integer flag for Rfree reflections (negative: automatically determined from data).
+            </subsection>
+            <subsection name="nbins" rep="TEXTFIELD">
+                Number of bins to divide data into for purposes of statistics/sigmaA fits.
+            </subsection>
+            <subsection name="gridsearch" rep="COMBOBOX">
+                Grid over bulk solvent parameters to determine optimal starting values.
+                <Value name="TRUE"/>
+                <Value name="FALSE"/>
+                <Value name="DEFAULT"/>
+            </subsection>
+            <subsection name="xrayscaletol" rep="TEXTFIELD">
+                Gradient rms tolerance for scaling.
+            </subsection>
+                        <subsection name="sigmaatol" rep="TEXTFIELD">
+                Gradient rms tolerance for sigmaA fit.
+            </subsection>
+            <subsection name="xweight" rep="TEXTFIELD">
+                Weight for summed diffraction data (weights for individual data sets are provided at the script level).
+            </subsection>
+            <subsection name="bsimweight" rep="TEXTFIELD">
+                Harmonic restraint B-factor weight between bonded atoms (increase to 5 or 10 for low resolution structures if necessary)
+            </subsection>
+            <subsection name="bnonzeroweight" rep="TEXTFIELD">
+                Entropy term to prevent nonzero B factors.
+            </subsection>
+            <subsection name="bmass" rep="TEXTFIELD">
+                Fictitious mass to assign to B factors for extended Lagrangian methods.
+            </subsection>
+            <subsection name="residuebfactor" rep="COMBOBOX">
+                Set to true to refine a B factor for each residue.
+                <Value name="TRUE"/>
+                <Value name="FALSE"/>
+                <Value name="DEFAULT"/>
+            </subsection>
+            <subsection name="nresiduebfactor" rep="TEXTFIELD">
+                Number of residues per B factor (requires residuebfactor to be true).
+            </subsection>
+            <subsection name="addanisou" rep="COMBOBOX">
+                Set to true to add ANISOU records to the PDB file based on isotropic B factors.
+                <Value name="TRUE"/>
+                <Value name="FALSE"/>
+                <Value name="DEFAULT"/>
+            </subsection>
+            <subsection name="refinemolocc" rep="COMBOBOX">
+                Set to true to refine occupancies of HETATMs, only performed if hetatms are in alternate conformers or occ less than 1.0.
+                <Value name="TRUE"/>
+                <Value name="FALSE"/>
+                <Value name="DEFAULT"/>
+            </subsection>
+            <subsection name="occmass" rep="TEXTFIELD">
+                Fictitious mass to assign to occupancies for extended Lagrangian methods.
             </subsection>
         </section>
     </body>

@@ -1496,6 +1496,7 @@ public class ParticleMeshEwald implements LambdaInterface {
          */
         if (generalizedKirkwoodTerm) {
             bornRadiiTotal -= System.nanoTime();
+            generalizedKirkwood.setUse(use);
             generalizedKirkwood.computeBornRadii();
             bornRadiiTotal += System.nanoTime();
         }
@@ -1879,6 +1880,7 @@ public class ParticleMeshEwald implements LambdaInterface {
     /**
      * Converge the SCF using Conjugate Gradient (CG) optimization with a local
      * preconditioner.
+     * @return
      */
     public int scfByCG() {
         // Load B with the direct field (E_dir = U_dir / polarizability).
@@ -4908,14 +4910,11 @@ public class ParticleMeshEwald implements LambdaInterface {
 
         @Override
         public void run() {
-
             int threadIndex = getThreadIndex();
-
             if (initializationLoop[threadIndex] == null) {
                 initializationLoop[threadIndex] = new InitializationLoop();
                 rotateMultipolesLoop[threadIndex] = new RotateMultipolesLoop();
             }
-
             try {
                 execute(0, nAtoms - 1, initializationLoop[threadIndex]);
                 execute(0, nAtoms - 1, rotateMultipolesLoop[threadIndex]);
