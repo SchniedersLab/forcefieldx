@@ -432,12 +432,12 @@
                 gui="TEXTFIELD"
                 default="0.0001"/>
     </Command>
-    
+
     <Command name="realspace.minimize"
              description="Starting up the command line interface."
              fileType="XYZ PDB"
              action="NONE">
-        
+
         <Option name="Data"
                 description="Specify input data filename."
                 flag="d"
@@ -449,13 +449,13 @@
                 flag="e"
                 gui="TEXTFIELD"
                 default="1"/>
-        
+
         <Option name="Maxiter"
                 description="Maximum number of allowed refinement iterations."
                 flag="m"
                 gui="TEXTFIELD"
                 default="1000"/>
-        
+
         <Option name="Polarization"
                 description="Polarization model."
                 flag="p"
@@ -464,37 +464,38 @@
             <Value name="none"/>
             <Value name="direct"/>
             <Value name="mutual"/>
-            
+        </Option>
+
         <Option name="Suffix"
                 description="Output suffix."
                 flag="s"
                 gui="TEXTFIELD"
                 default="_rsrefine"/>
     </Command>
-    
+
     <Command name="realspace.anneal"
              description="Starting up the command line interface."
              fileType="XYZ PDB"
              action="NONE">
-        
+
         <Option name="Data"
                 description="Specify input data filename."
                 flag="d"
                 gui="TEXTFIELD"
                 default="data.map,1"/>
-        
+
         <Option name="Low"
                 description="Low temperature limit in degrees Kelvin."
                 flag="l"
                 gui="TEXTFIELD"
                 default="100"/>
-    
+
         <Option name="Steps"
                 description="Number of molecular dynamics steps at each temperature."
                 flag="n"
                 gui="TEXTFIELD"
                 default="1000"/>
-        
+
         <Option name="Polarization"
                 description="Polarization model."
                 flag="p"
@@ -503,31 +504,32 @@
             <Value name="none"/>
             <Value name="direct"/>
             <Value name="mutual"/>
-            
+        </Option>
+
         <Option name="Suffix"
                 description="Output suffix."
                 flag="s"
                 gui="TEXTFIELD"
-                default="_anneal"/>  
-            
+                default="_anneal"/>
+
         <Option name="High"
                 description="High temperature limit in degrees Kelvin."
                 flag="t"
                 gui="TEXTFIELD"
                 default="1000"/>
-        
+
         <Option name="Windows"
                 description="Number of annealing windows."
                 flag="w"
                 gui="TEXTFIELD"
                 default="10"/>
     </Command>
-    
+
     <Command name="realspace.md"
              description="Starting up the command line interface."
              fileType="XYZ PDB"
              action="NONE">
-            
+
         <Option name="Thermostat"
                 flag="b"
                 description="Choose the thermostat for controling the temperature."
@@ -537,31 +539,31 @@
             <Value name="Berendsen"/>
             <Value name="Bussi"/>
         </Option>
-        
+
         <Option name="Data"
                 description="Specify input data filename."
                 flag="d"
                 gui="TEXTFIELD"
                 default="data.map,1.0"/>
-        
+
         <Option name="Dt"
                 description="Time step in femtoseconds."
                 flag="f"
                 gui="TEXTFIELD"
                 default="1.0"/>
-        
+
         <Option name="Print"
                 description="Interval to print out thermodyanamics in picoseconds."
                 flag="i"
                 gui="TEXTFIELD"
                 default="0.01"/>
-        
+
         <Option name="Steps"
                 description="Number of molecular dynamics steps."
                 flag="n"
                 gui="TEXTFIELD"
                 default="1000"/>
-        
+
         <Option name="Polarization"
                 description="Polarization model."
                 flag="p"
@@ -570,20 +572,21 @@
             <Value name="none"/>
             <Value name="direct"/>
             <Value name="mutual"/>
-            
+        </Option>
+
         <Option name="Temperature"
                 flag="t"
                 description="Temperature in degrees Kelvin."
                 gui="TEXTFIELD"
                 default="100.0"/>
-        
+
         <Option name="Save"
                 flag="w"
                 description="Interval to write out coordinates in picoseconds."
                 gui="TEXTFIELD"
                 default="0.1"/>
     </Command>
-             
+
     <Command
         name="Protein"
         description="A program for automated building of peptide and protein structures.
