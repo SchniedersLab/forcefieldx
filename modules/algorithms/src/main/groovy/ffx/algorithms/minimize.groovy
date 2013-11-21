@@ -113,20 +113,20 @@ if (options.p) {
 }
 
 List<String> arguments = options.arguments();
-String modelfilename = null;
+String filename = null;
 String filename2 = null;
 MolecularAssembly[] systems = null;
 if (arguments != null && arguments.size() > 0) {
     // Read in command line.
     modelfilename = arguments.get(0);
-    systems = open(modelfilename);
+    systems = open(filename);
     if (arguments.size() > 1) {
        filename2 = arguments.get(1);
     }
 } else if (active == null) {
     return cli.usage();
 } else {
-    modelfilename = active.getFile();   
+    filename = active.getFile();   
 }
 
 boolean lambdaTerm = false;

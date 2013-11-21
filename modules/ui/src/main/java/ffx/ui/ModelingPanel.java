@@ -191,6 +191,11 @@ public class ModelingPanel extends JPanel implements ActionListener,
     private final Border etchedBorder = BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
     private final JTextField sizer = new JTextField(20);
 
+    private JButton jbLaunch;
+    private JButton jbStop;
+    private FFXLauncher ffxLauncher = null;
+    private Thread ffxThread = null;
+
     /**
      * Constructor
      *
@@ -208,7 +213,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
      * @param evt
      */
     @Override
-    public void actionPerformed(ActionEvent evt) {        
+    public void actionPerformed(ActionEvent evt) {
         synchronized (this) {
             String actionCommand = evt.getActionCommand();
             // A change to the selected TINKER Command
@@ -227,7 +232,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
                     statusLabel.setText("  " + createCommandInput());
                     break;
                 case "Launch":
-                    // Launch the selected command
+                    // Launch the selected Force Field X command.
                     runScript();
                     break;
                 case "NUCLEIC":
@@ -240,8 +245,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
                     conditionalCommandEvent(evt);
                     break;
                 case "End":
-                    // Create/Remove TINKER "end" files that tell executing commands
-                    // to exit gracefully.
+                    // End the currently executing command.
                     setEnd();
                     break;
                 case "Delete":
@@ -717,7 +721,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
         acidScrollPane.setPreferredSize(d);
         acidScrollPane.setMaximumSize(d);
         acidScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-        // Load the "ffe.tinker.commands.xml" file that defines TINKER Commands.
+        // Load the FFX commands.xml file that defines FFX commands.
         try {
             DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
             DocumentBuilder db = dbf.newDocumentBuilder();
@@ -746,7 +750,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
             System.err.println(e);
         } finally {
             if (commandList == null) {
-                System.out.println("ffe.tinker.commands.xml could not be parsed.");
+                System.out.println("Force Field X commands.xml could not be parsed.");
                 logger.severe("Force Field X will exit.");
                 System.exit(-1);
             }
@@ -797,23 +801,24 @@ public class ModelingPanel extends JPanel implements ActionListener,
         // Load the default Log File Settings.
         logSettings.setActionCommand("LogSettings");
         loadLogSettings();
+
         // Create the Toolbar.
         toolBar = new JToolBar("Modeling Commands", JToolBar.HORIZONTAL);
         toolBar.setLayout(new FlowLayout(FlowLayout.LEFT));
-        JButton jblaunch = new JButton(new ImageIcon(getClass().getClassLoader().getResource("ffx/ui/icons/cog_go.png")));
-        jblaunch.setActionCommand("Launch");
-        jblaunch.setToolTipText("Launch the Force Field X Command");
-        jblaunch.addActionListener(this);
+        jbLaunch = new JButton(new ImageIcon(getClass().getClassLoader().getResource("ffx/ui/icons/cog_go.png")));
+        jbLaunch.setActionCommand("Launch");
+        jbLaunch.setToolTipText("Launch the Force Field X Command");
+        jbLaunch.addActionListener(this);
         insets.set(2, 2, 2, 2);
-        jblaunch.setMargin(insets);
-        toolBar.add(jblaunch);
-        /*
-         JButton jbend = new JButton(new ImageIcon(getClass().getClassLoader().getResource("ffx/ui/icons/stop.png")));
-         jbend.setActionCommand("End");
-         jbend.setToolTipText("Toggle the Existence of a TINKER *.END File");
-         jbend.addActionListener(this);
-         jbend.setMargin(insets);
-         toolBar.add(jbend); */
+        jbLaunch.setMargin(insets);
+        toolBar.add(jbLaunch);
+        jbStop = new JButton(new ImageIcon(getClass().getClassLoader().getResource("ffx/ui/icons/stop.png")));
+        jbStop.setActionCommand("End");
+        jbStop.setToolTipText("Terminate the Current Force Field X Command");
+        jbStop.addActionListener(this);
+        jbStop.setMargin(insets);
+        jbStop.setEnabled(false);
+        toolBar.add(jbStop);
         toolBar.addSeparator();
         toolBar.add(anyCommands);
         currentCommandBox = anyCommands;
@@ -872,18 +877,23 @@ public class ModelingPanel extends JPanel implements ActionListener,
             // Remove the command (first token) and system name (last token).
             args = Arrays.copyOfRange(args, 1, args.length - 1);
             List<String> argList = Arrays.asList(args);
-            FFXLauncher launcher = new FFXLauncher(argList, scriptFile);
-            Thread thread = new Thread(launcher);
-            thread.start();
-            //mainPanel.getModelingShell().setArgList(argList);
-            //mainPanel.open(scriptFile, null);
+            ffxLauncher = new FFXLauncher(argList, scriptFile);
+            ffxThread = new Thread(ffxLauncher);
+            ffxThread.setName(statusLabel.getText());
+            ffxThread.setPriority(Thread.MAX_PRIORITY);
+            ffxThread.start();
         } else {
             logger.warning(format("%s was not found.", name));
         }
+    }
 
+    public void enableLaunch(boolean enable) {
+        jbLaunch.setEnabled(enable);
+        jbStop.setEnabled(!enable);
     }
 
     private class FFXLauncher implements Runnable {
+
         List<String> argList;
         File scriptFile;
 
@@ -891,7 +901,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
             this.argList = argList;
             this.scriptFile = scriptFile;
         }
-
+        
         @Override
         public void run() {
             mainPanel.getModelingShell().setArgList(argList);
@@ -1706,42 +1716,9 @@ public class ModelingPanel extends JPanel implements ActionListener,
      * Prompt the user to toggle the existence of a TINKER END file.
      */
     private void setEnd() {
-        if (activeSystem == null) {
-            return;
-        }
-        File activeFile = activeSystem.getFile();
-        if (activeFile == null) {
-            return;
-        }
-        File end;
-        try {
-            if (activeFile.getName().indexOf(".") > 0) {
-                String name = activeFile.getName().substring(0,
-                        activeFile.getName().lastIndexOf("."));
-                end = new File(activeFile.getParent(), name.toString() + ".end");
-            } else {
-                end = new File(activeFile.getParent(), activeFile.getName()
-                        + ".end");
-            }
-            if (end.exists()) {
-                int i = JOptionPane.showConfirmDialog(this, "Delete "
-                        + end.getName() + "?", "Delete TINKER End File",
-                        JOptionPane.YES_NO_OPTION);
-                if (i == JOptionPane.YES_OPTION) {
-                    end.delete();
-                }
-            } else {
-                int i = JOptionPane.showConfirmDialog(this, "Create "
-                        + end.getName() + "?", "Create TINKER End File",
-                        JOptionPane.YES_NO_OPTION);
-                if (i == JOptionPane.YES_OPTION) {
-                    end.createNewFile();
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            logger.warning("\n Error changing the state of a *.End file");
-            logger.warning("\n Force Field X will continue...");
+        if (ffxThread != null && ffxThread.isAlive()) {
+            ModelingShell modelingShell = mainPanel.getModelingShell();
+            modelingShell.doInterrupt();
         }
     }
 
