@@ -51,6 +51,7 @@ import edu.rit.pj.reduction.SharedInteger;
 
 import ffx.crystal.Crystal;
 import ffx.numerics.VectorMath;
+import ffx.potential.LambdaInterface;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
@@ -83,7 +84,7 @@ import static ffx.potential.parameters.MultipoleType.t200;
  * 2007, 3, (6), 2083-2097.</a><br>
  *
  */
-public class GeneralizedKirkwood {
+public class GeneralizedKirkwood implements LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(GeneralizedKirkwood.class.getName());
     /**
@@ -141,8 +142,22 @@ public class GeneralizedKirkwood {
     private final DispersionRegion dispersionRegion;
     private final CavitationRegion cavitationRegion;
     private final VolumeRegion volumeRegion;
+    /**
+     * Gradient array for each thread.
+     */
     private final double grad[][][];
+    /**
+     * Torque array for each thread.
+     */
     private final double torque[][][];
+    /**
+     * Lambda gradient array for each thread (dU/dX/dL)
+     */
+    private final double lambdaGrad[][][];
+    /**
+     * Lambda torque array for each thread.
+     */
+    private final double lambdaTorque[][][];
     private final int neighborLists[][][];
     private final SharedDoubleArray sharedBornGrad;
     protected final SharedDoubleArray sharedGKField[];
@@ -150,6 +165,10 @@ public class GeneralizedKirkwood {
     private final double cutoff;
     private final double cut2;
     private NonPolar nonPolar = NonPolar.CAV_DISP;
+
+    private double lambda = 1.0;
+    private double solvationEnergy = 0.0;
+    private boolean lambdaTerm = false;
 
     /**
      * <p>
@@ -178,6 +197,8 @@ public class GeneralizedKirkwood {
         globalMultipole = particleMeshEwald.globalMultipole[0];
         grad = particleMeshEwald.getGradient();
         torque = particleMeshEwald.getTorque();
+        lambdaGrad = particleMeshEwald.getLambdaGradient();
+        lambdaTorque = particleMeshEwald.getLambdaTorque();
 
         sharedGKField = new SharedDoubleArray[3];
         sharedGKField[0] = new SharedDoubleArray(nAtoms);
@@ -200,6 +221,16 @@ public class GeneralizedKirkwood {
 
         cutoff = forceField.getDouble(ForceField.ForceFieldDouble.VDW_CUTOFF, 12.0);
         cut2 = cutoff * cutoff;
+        lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
+        /**
+         * If polarization lambda exponent is set to 0.0, then we're running Dual-Topology and the GK
+         * energy will be scaled with the overall system lambda value.
+         */
+        double polLambdaExp = forceField.getDouble(ForceField.ForceFieldDouble.POLARIZATION_LAMBDA_EXPONENT, 1.0);
+        if (polLambdaExp == 0.0) {
+            lambdaTerm = false;
+            logger.info(" GK lambda term set to false.");
+        }
 
         for (int i = 0; i < nAtoms; i++) {
             baseRadius[i] = 2.0;
@@ -362,9 +393,10 @@ public class GeneralizedKirkwood {
      */
     public double solvationEnergy(boolean gradient, boolean print) {
 
+        /*
         for (int j = 0; j < nAtoms; j++) {
             use[j] = atoms[j].isActive();
-        }
+        } */
 
         /**
          * Initialize the gradient accumulation arrays.
@@ -381,7 +413,6 @@ public class GeneralizedKirkwood {
              */
             gkEnergyRegion.setGradient(gradient);
             parallelTeam.execute(gkEnergyRegion);
-
             /**
              * Find the nonpolar energy.
              */
@@ -424,9 +455,16 @@ public class GeneralizedKirkwood {
         }
 
         if (nonPolar == NonPolar.HYDROPHOBIC_PMF) {
-            return gkEnergyRegion.getEnergy() + hydrophobicPMFRegion.getEnergy();
+            solvationEnergy = gkEnergyRegion.getEnergy() + hydrophobicPMFRegion.getEnergy();
         } else {
-            return gkEnergyRegion.getEnergy() + dispersionRegion.getEnergy() + cavitationRegion.getEnergy();
+            solvationEnergy = gkEnergyRegion.getEnergy() + dispersionRegion.getEnergy()
+                    + cavitationRegion.getEnergy();
+        }
+
+        if (lambdaTerm) {
+            return lambda * solvationEnergy;
+        } else {
+            return solvationEnergy;
         }
     }
 
@@ -438,6 +476,56 @@ public class GeneralizedKirkwood {
      */
     public int getInteractions() {
         return gkEnergyRegion.getInteractions();
+    }
+
+    /**
+     * Updates the value of lambda.
+     * @param lambda
+     */
+    @Override
+    public void setLambda(double lambda) {
+        if (lambdaTerm) {
+            this.lambda = lambda;
+        } else {
+            /**
+             * If the lambdaTerm flag is false, lambda must be set to one.
+             */
+            this.lambda = 1.0;
+        }
+    }
+
+    @Override
+    public double getLambda() {
+        return lambda;
+    }
+
+    /**
+     *
+     * @return
+     */
+    @Override
+    public double getdEdL() {
+        if (lambdaTerm) {
+            return solvationEnergy;
+        }
+        return 0.0;
+    }
+
+    /**
+     * The 2nd derivative is 0.0. (U=Lambda*Egk, dU/dL=Egk, d2U/dL2=0.0)
+     * @return 0.0
+     */
+    @Override
+    public double getd2EdL2() {
+        return 0.0;
+    }
+
+    /**
+     * These contributions are already aggregated into the arrays used by PME.
+     * @param gradient
+     */
+    @Override
+    public void getdEdXdL(double[] gradient) {
     }
 
     private enum NonPolar {
@@ -493,12 +581,14 @@ public class GeneralizedKirkwood {
                     }
                     born[i] = pow(sum / pi43, third);
                     born[i] = 1.0 / born[i];
-
                 }
+
                 /*
-                if (i < 25) {
-                    logger.info(String.format(" %d Born radius:  %16.8f", i + 1, born[i]));
-                } */
+                 if (i < 25) {
+                 logger.info(String.format(" %d Born radius:  %16.8f", i + 1, born[i]));
+                 }
+                 born[i] = baseRi;
+                 */
             }
         }
 
@@ -1798,7 +1888,6 @@ public class GeneralizedKirkwood {
             }
         }
 
-
         /**
          * Compute Born radii for a range of atoms via the Grycuk method.
          *
@@ -1821,6 +1910,12 @@ public class GeneralizedKirkwood {
             private double tX[];
             private double tY[];
             private double tZ[];
+            private double lgX[];
+            private double lgY[];
+            private double lgZ[];
+            private double ltX[];
+            private double ltY[];
+            private double ltZ[];
             private double ci, uxi, uyi, uzi, qxxi, qxyi, qxzi, qyyi, qyzi, qzzi;
             private double ck, uxk, uyk, uzk, qxxk, qxyk, qxzk, qyyk, qyzk, qzzk;
             private double dxi, dyi, dzi, pxi, pyi, pzi, sxi, syi, szi;
@@ -1871,6 +1966,14 @@ public class GeneralizedKirkwood {
                     Arrays.fill(gb_local, 0.0);
                     Arrays.fill(gbi_local, 0.0);
                 }
+                if (lambdaTerm) {
+                    lgX = lambdaGrad[threadID][0];
+                    lgY = lambdaGrad[threadID][1];
+                    lgZ = lambdaGrad[threadID][2];
+                    ltX = lambdaTorque[threadID][0];
+                    ltY = lambdaTorque[threadID][1];
+                    ltZ = lambdaTorque[threadID][2];
+                }
             }
 
             @Override
@@ -1896,11 +1999,6 @@ public class GeneralizedKirkwood {
                     dxi = inducedDipole[i][0];
                     dyi = inducedDipole[i][1];
                     dzi = inducedDipole[i][2];
-                    /*
-                    if (i < 25) {
-                        logger.info(String.format(" %d %10.6f %10.6f %10.6f", i, dxi * MultipoleType.DEBYE,
-                                dyi * MultipoleType.DEBYE, dzi * MultipoleType.DEBYE));
-                    } */
                     pxi = inducedDipoleCR[i][0];
                     pyi = inducedDipoleCR[i][1];
                     pzi = inducedDipoleCR[i][2];
@@ -2090,7 +2188,7 @@ public class GeneralizedKirkwood {
                  */
                 gkEnergy += energy(i, k);
                 count++;
-                if (gradient) {
+                if (gradient || lambdaTerm) {
                     /**
                      * Compute the additional GK tensors required to compute the
                      * energy gradient.
@@ -2646,18 +2744,23 @@ public class GeneralizedKirkwood {
                 final double dedx = dEdX();
                 final double dedy = dEdY();
                 final double dedz = dEdZ();
-
-                gX[i] -= dedx;
-                gY[i] -= dedy;
-                gZ[i] -= dedz;
+                gX[i] -= lambda * dedx;
+                gY[i] -= lambda * dedy;
+                gZ[i] -= lambda * dedz;
                 gb_local[i] += drbi;
-
-                gX[k] += dedx;
-                gY[k] += dedy;
-                gZ[k] += dedz;
+                gX[k] += lambda * dedx;
+                gY[k] += lambda * dedy;
+                gZ[k] += lambda * dedz;
                 gb_local[k] += drbk;
+                if (lambdaTerm) {
+                    lgX[i] -= dedx;
+                    lgY[i] -= dedy;
+                    lgZ[i] -= dedz;
+                    lgX[k] += dedx;
+                    lgY[k] += dedy;
+                    lgZ[k] += dedz;
+                }
                 permanentEnergyTorque(i, k);
-
             }
 
             private double dEdZ() {
@@ -3006,12 +3109,20 @@ public class GeneralizedKirkwood {
                 tkx += 2.0 * (qxyk * kxz + qyyk * kyz + qyzk * kzz - qxzk * kxy - qyzk * kyy - qzzk * kzy);
                 tky += 2.0 * (qxzk * kxx + qyzk * kyx + qzzk * kzx - qxxk * kxz - qxyk * kyz - qxzk * kzz);
                 tkz += 2.0 * (qxxk * kxy + qxyk * kyy + qxzk * kzy - qxyk * kxx - qyyk * kyx - qyzk * kzx);
-                tX[i] += tix;
-                tY[i] += tiy;
-                tZ[i] += tiz;
-                tX[k] += tkx;
-                tY[k] += tky;
-                tZ[k] += tkz;
+                tX[i] += lambda * tix;
+                tY[i] += lambda * tiy;
+                tZ[i] += lambda * tiz;
+                tX[k] += lambda * tkx;
+                tY[k] += lambda * tky;
+                tZ[k] += lambda * tkz;
+                if (lambdaTerm) {
+                    ltX[i] += tix;
+                    ltY[i] += tiy;
+                    ltZ[i] += tiz;
+                    ltX[k] += tkx;
+                    ltY[k] += tky;
+                    ltZ[k] += tkz;
+                }
             }
 
             private void polarizationEnergyGradient(int i, int k) {
@@ -3200,15 +3311,22 @@ public class GeneralizedKirkwood {
                 if (i == k) {
                     gb_local[i] += dbi;
                 } else {
-                    gX[i] -= dpdx;
-                    gY[i] -= dpdy;
-                    gZ[i] -= dpdz;
+                    gX[i] -= lambda * dpdx;
+                    gY[i] -= lambda * dpdy;
+                    gZ[i] -= lambda * dpdz;
                     gb_local[i] += dbi;
-
-                    gX[k] += dpdx;
-                    gY[k] += dpdy;
-                    gZ[k] += dpdz;
+                    gX[k] += lambda * dpdx;
+                    gY[k] += lambda * dpdy;
+                    gZ[k] += lambda * dpdz;
                     gb_local[k] += dbk;
+                    if (lambdaTerm) {
+                        lgX[i] -= dpdx;
+                        lgY[i] -= dpdy;
+                        lgZ[i] -= dpdz;
+                        lgX[k] += dpdx;
+                        lgY[k] += dpdy;
+                        lgZ[k] += dpdz;
+                    }
                 }
                 polarizationEnergyTorque(i, k);
             }
@@ -3306,12 +3424,20 @@ public class GeneralizedKirkwood {
                 tkx += 2.0 * (qxyk * fkxz + qyyk * fkyz + qyzk * fkzz - qxzk * fkxy - qyzk * fkyy - qzzk * fkzy);
                 tky += 2.0 * (qxzk * fkxx + qyzk * fkyx + qzzk * fkzx - qxxk * fkxz - qxyk * fkyz - qxzk * fkzz);
                 tkz += 2.0 * (qxxk * fkxy + qxyk * fkyy + qxzk * fkzy - qxyk * fkxx - qyyk * fkyx - qyzk * fkzx);
-                tX[i] += tix;
-                tY[i] += tiy;
-                tZ[i] += tiz;
-                tX[k] += tkx;
-                tY[k] += tky;
-                tZ[k] += tkz;
+                tX[i] += lambda * tix;
+                tY[i] += lambda * tiy;
+                tZ[i] += lambda * tiz;
+                tX[k] += lambda * tkx;
+                tY[k] += lambda * tky;
+                tZ[k] += lambda * tkz;
+                if (lambdaTerm) {
+                    ltX[i] += tix;
+                    ltY[i] += tiy;
+                    ltZ[i] += tiz;
+                    ltX[k] += tkx;
+                    ltY[k] += tky;
+                    ltZ[k] += tkz;
+                }
             }
         }
     }
@@ -3356,6 +3482,9 @@ public class GeneralizedKirkwood {
             private double gX[];
             private double gY[];
             private double gZ[];
+            private double lgX[];
+            private double lgY[];
+            private double lgZ[];
             // Extra padding to avert cache interference.
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
             private long pad8, pad9, pada, padb, padc, padd, pade, padf;
@@ -3370,6 +3499,11 @@ public class GeneralizedKirkwood {
                 gX = grad[threadID][0];
                 gY = grad[threadID][1];
                 gZ = grad[threadID][2];
+                if (lambdaTerm) {
+                    lgX = lambdaGrad[threadID][0];
+                    lgY = lambdaGrad[threadID][1];
+                    lgZ = lambdaGrad[threadID][2];
+                }
             }
 
             @Override
@@ -3446,12 +3580,20 @@ public class GeneralizedKirkwood {
                             double dedx = de * xr;
                             double dedy = de * yr;
                             double dedz = de * zr;
-                            gX[i] += dedx;
-                            gY[i] += dedy;
-                            gZ[i] += dedz;
-                            gX[k] -= dedx;
-                            gY[k] -= dedy;
-                            gZ[k] -= dedz;
+                            gX[i] += lambda * dedx;
+                            gY[i] += lambda * dedy;
+                            gZ[i] += lambda * dedz;
+                            gX[k] -= lambda * dedx;
+                            gY[k] -= lambda * dedy;
+                            gZ[k] -= lambda * dedz;
+                            if (lambdaTerm) {
+                                lgX[i] += dedx;
+                                lgY[i] += dedy;
+                                lgZ[i] += dedz;
+                                lgX[k] -= dedx;
+                                lgY[k] -= dedy;
+                                lgZ[k] -= dedz;
+                            }
 
                             // Atom k being descreeened by atom i.
                             double rbk = born[k];
@@ -3494,12 +3636,20 @@ public class GeneralizedKirkwood {
                             dedx = de * xr;
                             dedy = de * yr;
                             dedz = de * zr;
-                            gX[i] += dedx;
-                            gY[i] += dedy;
-                            gZ[i] += dedz;
-                            gX[k] -= dedx;
-                            gY[k] -= dedy;
-                            gZ[k] -= dedz;
+                            gX[i] += lambda * dedx;
+                            gY[i] += lambda * dedy;
+                            gZ[i] += lambda * dedz;
+                            gX[k] -= lambda * dedx;
+                            gY[k] -= lambda * dedy;
+                            gZ[k] -= lambda * dedz;
+                            if (lambdaTerm) {
+                                lgX[i] += dedx;
+                                lgY[i] += dedy;
+                                lgZ[i] += dedz;
+                                lgX[k] -= dedx;
+                                lgY[k] -= dedy;
+                                lgZ[k] -= dedz;
+                            }
                         }
                     }
                 }
@@ -3615,6 +3765,9 @@ public class GeneralizedKirkwood {
             private double gX[];
             private double gY[];
             private double gZ[];
+            private double lgX[];
+            private double lgY[];
+            private double lgZ[];
             private double edisp;
             private final double dx_local[];
             private double r, r2, r3;
@@ -3633,6 +3786,11 @@ public class GeneralizedKirkwood {
                 gX = grad[threadID][0];
                 gY = grad[threadID][1];
                 gZ = grad[threadID][2];
+                if (lambdaTerm) {
+                    lgX = lambdaGrad[threadID][0];
+                    lgY = lambdaGrad[threadID][1];
+                    lgZ = lambdaGrad[threadID][2];
+                }
                 edisp = 0;
             }
 
@@ -3677,7 +3835,20 @@ public class GeneralizedKirkwood {
                             zr = dx_local[2];
                             r = sqrt(r2);
                             r3 = r * r2;
-                            sum += descreen(i, k) + descreen(k, i);
+                            /**
+                             * Atom i descreened by atom k.
+                             */
+                            sum += descreen(i, k);
+                            /**
+                             * Flip the sign on {xr, yr, zr};
+                             */
+                            xr = -xr;
+                            yr = -yr;
+                            zr = -zr;
+                            /**
+                             * Atom k descreened by atom i.
+                             */
+                            sum += descreen(k, i);
                         }
                     }
                     /**
@@ -3880,18 +4051,28 @@ public class GeneralizedKirkwood {
                         }
 
                     }
-                    // increment the individual dispersion gradient components
+                    /**
+                     * Increment the individual dispersion gradient components.
+                     */
                     if (gradient) {
                         de = -de / r * slevy * awater;
                         double dedx = de * xr;
                         double dedy = de * yr;
                         double dedz = de * zr;
-                        gX[i] += dedx;
-                        gY[i] += dedy;
-                        gZ[i] += dedz;
-                        gX[k] -= dedx;
-                        gY[k] -= dedy;
-                        gZ[k] -= dedz;
+                        gX[i] += lambda * dedx;
+                        gY[i] += lambda * dedy;
+                        gZ[i] += lambda * dedz;
+                        gX[k] -= lambda * dedx;
+                        gY[k] -= lambda * dedy;
+                        gZ[k] -= lambda * dedz;
+                        if (lambdaTerm) {
+                            lgX[i] += dedx;
+                            lgY[i] += dedy;
+                            lgZ[i] += dedz;
+                            lgX[k] -= dedx;
+                            lgY[k] -= dedy;
+                            lgZ[k] -= dedz;
+                        }
                     }
                 }
                 return sum;
@@ -3953,7 +4134,8 @@ public class GeneralizedKirkwood {
             private IndexedDouble gr[];
             private IndexedDouble arci[];
             private final double area[];
-            private final double darea[][];
+            private final double dArea[][];
+            private final double ldArea[][];
             private final double r[];
             private final boolean skip[];
             private boolean omit[];
@@ -4008,7 +4190,8 @@ public class GeneralizedKirkwood {
                 area = new double[nAtoms];
                 r = new double[nAtoms];
                 skip = new boolean[nAtoms];
-                darea = new double[3][];
+                dArea = new double[3][];
+                ldArea = new double[3][];
                 allocateMemory(maxarc);
             }
 
@@ -4049,9 +4232,14 @@ public class GeneralizedKirkwood {
             @Override
             public void start() {
                 int threadID = getThreadIndex();
-                darea[0] = grad[threadID][0];
-                darea[1] = grad[threadID][1];
-                darea[2] = grad[threadID][2];
+                dArea[0] = grad[threadID][0];
+                dArea[1] = grad[threadID][1];
+                dArea[2] = grad[threadID][2];
+                if (lambdaTerm) {
+                    ldArea[0] = lambdaGrad[threadID][0];
+                    ldArea[1] = lambdaGrad[threadID][1];
+                    ldArea[2] = lambdaGrad[threadID][2];
+                }
                 ecav = 0;
                 // Initialize the area.
                 Arrays.fill(area, 0.0);
@@ -4130,16 +4318,6 @@ public class GeneralizedKirkwood {
                     area[ir] *= rrsq * wght;
                     ecav += area[ir];
                 }
-                /**
-                 * Zero out the area derivatives for the inactive atoms.
-                 */
-                for (int i = 0; i < nAtoms; i++) {
-                    if (!use[i]) {
-                        darea[0][i] = 0.0;
-                        darea[1][i] = 0.0;
-                        darea[2][i] = 0.0;
-                    }
-                }
             }
 
             public void surface(double xr, double yr, double zr, double rr, double rrx2,
@@ -4153,8 +4331,7 @@ public class GeneralizedKirkwood {
                 /**
                  * Test each sphere to see if it overlaps the "ir" sphere.
                  *
-                 * TODO:
-                 * Use the neighbor list & loop over symmetry mates!
+                 * TODO: Use the neighbor list & loop over symmetry mates!
                  */
                 for (int i = 0; i < nAtoms; i++) {
                     if (i == ir || !use[i]) {
@@ -4213,7 +4390,6 @@ public class GeneralizedKirkwood {
                     }
                 }
 
-
                 // Case where no other spheres overlap the current sphere.
                 if (io == 0) {
                     area[ir] = pix4;
@@ -4235,12 +4411,20 @@ public class GeneralizedKirkwood {
                         int in = intag[k];
                         double t1 = arcsum * rrsq * (bsqk - rrsq + r[in] * r[in])
                                 / (rrx2 * bsqk * bk);
-                        darea[0][ir] -= txk * t1 * wght;
-                        darea[1][ir] -= tyk * t1 * wght;
-                        darea[2][ir] -= tzk * t1 * wght;
-                        darea[0][in] += txk * t1 * wght;
-                        darea[1][in] += tyk * t1 * wght;
-                        darea[2][in] += tzk * t1 * wght;
+                        dArea[0][ir] -= lambda * txk * t1 * wght;
+                        dArea[1][ir] -= lambda * tyk * t1 * wght;
+                        dArea[2][ir] -= lambda * tzk * t1 * wght;
+                        dArea[0][in] += lambda * txk * t1 * wght;
+                        dArea[1][in] += lambda * tyk * t1 * wght;
+                        dArea[2][in] += lambda * tzk * t1 * wght;
+                        if (lambdaTerm) {
+                            ldArea[0][ir] -= txk * t1 * wght;
+                            ldArea[1][ir] -= tyk * t1 * wght;
+                            ldArea[2][ir] -= tzk * t1 * wght;
+                            ldArea[0][in] += txk * t1 * wght;
+                            ldArea[1][in] += tyk * t1 * wght;
+                            ldArea[2][in] += tzk * t1 * wght;
+                        }
                     }
                     area[ir] = ib * pix2 + exang + arclen;
                     area[ir] = area[ir] % pix4;
@@ -4451,14 +4635,20 @@ public class GeneralizedKirkwood {
                             int in = intag[k];
                             t1 = arcsum * rrsq * (bsqk - rrsq + r[in] * r[in])
                                     / (rrx2 * bsqk * bk);
-                            //logger.info(String.format(" %d %d t1 %16.8f %16.8f %16.8f %16.8f",
-                            //        ir, in, txk, tyk, tzk, t1));
-                            darea[0][ir] -= txk * t1 * wght;
-                            darea[1][ir] -= tyk * t1 * wght;
-                            darea[2][ir] -= tzk * t1 * wght;
-                            darea[0][in] += txk * t1 * wght;
-                            darea[1][in] += tyk * t1 * wght;
-                            darea[2][in] += tzk * t1 * wght;
+                            dArea[0][ir] -= lambda * txk * t1 * wght;
+                            dArea[1][ir] -= lambda * tyk * t1 * wght;
+                            dArea[2][ir] -= lambda * tzk * t1 * wght;
+                            dArea[0][in] += lambda * txk * t1 * wght;
+                            dArea[1][in] += lambda * tyk * t1 * wght;
+                            dArea[2][in] += lambda * tzk * t1 * wght;
+                            if (lambdaTerm) {
+                                ldArea[0][ir] -= txk * t1 * wght;
+                                ldArea[1][ir] -= tyk * t1 * wght;
+                                ldArea[2][ir] -= tzk * t1 * wght;
+                                ldArea[0][in] += txk * t1 * wght;
+                                ldArea[1][in] += tyk * t1 * wght;
+                                ldArea[2][in] += tzk * t1 * wght;
+                            }
                         }
                         continue;
                     }
@@ -4552,13 +4742,20 @@ public class GeneralizedKirkwood {
                             double day = axy * faca + ayy * facb + azy * facc;
                             double daz = azz * facc - axz * faca;
                             int in = intag[l];
-                            //logger.info(String.format(" %d %d dax,y,z %16.8f %16.8f %16.8f", ir, in, dax,day,daz));
-                            darea[0][ir] += dax * wght;
-                            darea[1][ir] += day * wght;
-                            darea[2][ir] += daz * wght;
-                            darea[0][in] -= dax * wght;
-                            darea[1][in] -= day * wght;
-                            darea[2][in] -= daz * wght;
+                            dArea[0][ir] += lambda * dax * wght;
+                            dArea[1][ir] += lambda * day * wght;
+                            dArea[2][ir] += lambda * daz * wght;
+                            dArea[0][in] -= lambda * dax * wght;
+                            dArea[1][in] -= lambda * day * wght;
+                            dArea[2][in] -= lambda * daz * wght;
+                            if (lambdaTerm) {
+                                ldArea[0][ir] += dax * wght;
+                                ldArea[1][ir] += day * wght;
+                                ldArea[2][ir] += daz * wght;
+                                ldArea[0][in] -= dax * wght;
+                                ldArea[1][in] -= day * wght;
+                                ldArea[2][in] -= daz * wght;
+                            }
                         }
 
                     }
@@ -4567,14 +4764,20 @@ public class GeneralizedKirkwood {
                         int in = intag[k];
                         t1 = arcsum * rrsq * (bsqk - rrsq + r[in] * r[in])
                                 / (rrx2 * bsqk * bk);
-                        //logger.info(String.format(" %d %d t1 %16.8f %16.8f %16.8f %16.8f",
-                        //        ir, in, txk, tyk, tzk, t1));
-                        darea[0][ir] -= txk * t1 * wght;
-                        darea[1][ir] -= tyk * t1 * wght;
-                        darea[2][ir] -= tzk * t1 * wght;
-                        darea[0][in] += txk * t1 * wght;
-                        darea[1][in] += tyk * t1 * wght;
-                        darea[2][in] += tzk * t1 * wght;
+                        dArea[0][ir] -= lambda * txk * t1 * wght;
+                        dArea[1][ir] -= lambda * tyk * t1 * wght;
+                        dArea[2][ir] -= lambda * tzk * t1 * wght;
+                        dArea[0][in] += lambda * txk * t1 * wght;
+                        dArea[1][in] += lambda * tyk * t1 * wght;
+                        dArea[2][in] += lambda * tzk * t1 * wght;
+                        if (lambdaTerm) {
+                            ldArea[0][ir] -= txk * t1 * wght;
+                            ldArea[1][ir] -= tyk * t1 * wght;
+                            ldArea[2][ir] -= tzk * t1 * wght;
+                            ldArea[0][in] += txk * t1 * wght;
+                            ldArea[1][in] += tyk * t1 * wght;
+                            ldArea[2][in] += tzk * t1 * wght;
+                        }
                     }
                 }
                 if (arclen == 0.0) {

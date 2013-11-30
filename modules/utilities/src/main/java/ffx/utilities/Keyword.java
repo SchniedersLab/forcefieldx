@@ -260,13 +260,14 @@ public class Keyword {
          * Echo the interpolated configuration.
          */
         if (logger.isLoggable(Level.FINE)) {
-            Configuration config = properties.interpolatedConfiguration();
-            Iterator<String> i = config.getKeys();
+            //Configuration config = properties.interpolatedConfiguration();
+            Iterator<String> i = properties.getKeys();
             StringBuilder sb = new StringBuilder();
             sb.append(String.format("\n %-30s %s\n", "Property", "Value"));
             while (i.hasNext()) {
                 String s = i.next();
-                sb.append(String.format(" %-30s %s\n", s, Arrays.toString(config.getList(s).toArray())));
+                //sb.append(String.format(" %-30s %s\n", s, Arrays.toString(config.getList(s).toArray())));
+                sb.append(String.format(" %-30s %s\n", s, Arrays.toString(properties.getList(s).toArray())));
             }
             logger.fine(sb.toString());
         }
