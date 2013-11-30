@@ -27,6 +27,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Hashtable;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import ffx.utilities.Keyword;
@@ -51,7 +52,7 @@ public class KeyFilter {
      */
     public static Hashtable<String, Keyword> loadSystemKeywords() {
         File f = new File("/etc/ffx.conf");
-        Hashtable<String, Keyword> systemKeywords = new Hashtable<String, Keyword>();
+        Hashtable<String, Keyword> systemKeywords = new Hashtable<>();
         if (f.exists() && f.canRead()) {
             logger.info("Reading /etc/ffx.conf");
             systemKeywords = KeyFilter.open(f, systemKeywords);
@@ -59,7 +60,7 @@ public class KeyFilter {
         String path = System.getProperty("user.home") + File.separator + ".ffx/ffx.conf";
         f = new File(path);
         if (f.exists() && f.canRead()) {
-            logger.info("Reading " + path);
+            logger.log(Level.INFO, "Reading {0}", path);
             systemKeywords = KeyFilter.open(f, systemKeywords);
         }
         return systemKeywords;
@@ -202,8 +203,7 @@ public class KeyFilter {
             if (fr != null) {
                 try {
                     fr.close();
-                } catch (Exception e) {
-                    e.printStackTrace();
+                } catch (IOException e) {
                 }
             }
         }

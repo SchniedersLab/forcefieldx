@@ -25,6 +25,9 @@ package ffx.potential;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 
 import ffx.potential.ResidueEnumerations.AminoAcid3;
 import ffx.potential.ResidueEnumerations.NucleicAcid3;
@@ -76,6 +79,8 @@ public class RotamerLibrary {
      */
     private static final Rotamer[][] nucleicAcidRotamerCache = new Rotamer[numberOfNucleicAcids][];
     private static ProteinLibrary proteinLibrary = ProteinLibrary.PonderAndRichards;
+    private static boolean useOrigCoordsRotamer = false;
+    private static HashMap<Residue, Rotamer[]> origCoordsCache = new HashMap<Residue, Rotamer[]>();
 
     /**
      * Set the protein rotamer library to use.
@@ -87,6 +92,10 @@ public class RotamerLibrary {
         for (int i = 0; i < numberOfAminoAcids; i++) {
             aminoAcidRotamerCache[i] = null;
         }
+    }
+    
+    public static void setUseOrigCoordsRotamer(boolean set) {
+        useOrigCoordsRotamer = set;
     }
 
     /**
@@ -111,7 +120,25 @@ public class RotamerLibrary {
         switch (residue.getResidueType()) {
             case AA:
                 AminoAcid3 aa = AminoAcid3.valueOf(residue.getName());
-                return getRotamers(aa);
+                if (useOrigCoordsRotamer) {
+                    if (origCoordsCache.containsKey(residue)) {
+                        return origCoordsCache.get(residue);
+                    }
+                    Rotamer usual[] = getRotamers(aa);
+                    List<Rotamer> allRotamers = new ArrayList<>();
+                    if (usual != null) {
+                        allRotamers = new ArrayList<>(Arrays.asList(usual));
+                    }
+                    double chi[] = new double[4];
+                    measureAARotamer(residue, chi, false);
+                    Rotamer origCoordsRotamer = new Rotamer(aa, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0);
+                    allRotamers.add(0, origCoordsRotamer);
+                    Rotamer ret[] = allRotamers.toArray(new Rotamer[1]);
+                    origCoordsCache.put(residue, ret);
+                    return ret;
+                } else {
+                    return getRotamers(aa);
+                }
             case NA:
                 NucleicAcid3 na = NucleicAcid3.valueOf(residue.getName());
                 return getRotamers(na);
@@ -1791,6 +1818,9 @@ public class RotamerLibrary {
      * @param rotamer Rotamer to be applied to Residue
      */
     private static void applyAARotamer(Residue residue, Rotamer rotamer) {
+        if (residue == null || rotamer == null) {
+            return;
+        }
         AminoAcid3 name = AminoAcid3.valueOf(residue.getName());
         switch (name) {
             case VAL: {
@@ -2022,6 +2052,9 @@ public class RotamerLibrary {
                 Atom HB2 = (Atom) residue.getAtomNode("HB2");
                 Atom HB3 = (Atom) residue.getAtomNode("HB3");
                 Atom HG = (Atom) residue.getAtomNode("HG");
+                if (CA == null || CB == null || N == null || SG == null || HB2 == null || HB3 == null || HG == null) {
+                    break;
+                }
                 Bond SG_CB = SG.getBond(CB);
                 Bond HB_CB = HB2.getBond(CB);
                 Bond HG_SG = HG.getBond(SG);
@@ -3201,17 +3234,8 @@ public class RotamerLibrary {
         // Note: chi values will generally be applied from chi7 to chi1.
         // Will have to add an else-if to handle DNA C3'-exo configurations.
         // Sugar pucker = 1: North pucker.  2: South pucker.  3: C3'-exo pucker.
-        if ((50 < rotamer.chi7) && (rotamer.chi7 < 110)) {
-            sugarPucker = 1;
-        } else {
-            sugarPucker = 2;
-        }
-
-        if ((50 < rotamer.chi1) && (rotamer.chi1 < 110)) {
-            prevSugarPucker = 1;
-        } else {
-            prevSugarPucker = 2;
-        }
+        sugarPucker = checkPucker(rotamer.chi7);
+        prevSugarPucker = checkPucker(rotamer.chi1);
 
         // Revert C1', O4', and C4' coordinates to PDB defaults.
         Atom C1s = (Atom) residue.getAtomNode("C1\'");
@@ -3713,6 +3737,35 @@ public class RotamerLibrary {
         P.move(corrections[4]);
         C1s.move(corrections[6]);
         C2s.move(corrections[6]);
+    }
+    
+    /**
+     * Returns 1 if a North pucker, 2 if a South pucker, and eventually 3 if a
+     * C3'-exo pucker (DNA only).
+     * 
+     * @param delta Delta torsion to check
+     * @return Pucker
+     */
+    public static int checkPucker(double delta) {
+        /*
+         * Midpoint between North, South is 115 degrees.
+         * 
+         * 0-360: North is 0-115 or 295-360.
+         * -180 to 180: North is -65 to 115.
+         */
+        if (delta > 115.0) {
+            if (delta < 295.0) { // 115-295
+                return 2;
+            } else { // 295-360
+                return 1;
+            }
+        } else {
+            if (delta > -65.0) { // -65 to 115
+                return 1;
+            } else {
+                return 2; // -180 to -65
+            }
+        } // TODO: Add else-if to handle C3'-exo pucker.
     }
 
     /**

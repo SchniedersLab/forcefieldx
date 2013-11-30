@@ -138,7 +138,7 @@ public class ParticleMeshEwald implements LambdaInterface {
     /**
      * Flag to indicate use of generalized Kirkwood.
      */
-    private final boolean generalizedKirkwoodTerm;
+    private boolean generalizedKirkwoodTerm;
     /**
      * If lambdaTerm is true, some ligand atom interactions with the environment
      * are being turned on/off.
@@ -268,25 +268,25 @@ public class ParticleMeshEwald implements LambdaInterface {
      * The polarization Lambda value goes from 0.0 .. 1.0 as the global lambda
      * value varies between polarizationLambdaStart .. 1.0.
      */
-    private double polarizationLambda = 1.0;
+    private double polLambda = 1.0;
     /**
      * Constant α in: r' = sqrt(r^2 + α*(1 - L)^2)
      */
-    private double permanentLambdaAlpha = 1.0;
+    private double permLambdaAlpha = 1.0;
     /**
      * Power on L in front of the pairwise multipole potential.
      */
-    private double permanentLambdaExponent = 1.0;
+    private double permLambdaExponent = 1.0;
     /**
      * Start turning on polarization later in the Lambda path to prevent SCF
      * convergence problems when atoms nearly overlap.
      */
-    private double polarizationLambdaStart = 0.75;
-    private double polarizationLambdaEnd = 1.0;
+    private double polLambdaStart = 0.75;
+    private double polLambdaEnd = 1.0;
     /**
      * Power on L in front of the polarization energy.
      */
-    private double polarizationLambdaExponent = 3.0;
+    private double polLambdaExponent = 3.0;
     /**
      * Intramolecular electrostatics for the ligand in vapor is included by
      * default.
@@ -346,10 +346,14 @@ public class ParticleMeshEwald implements LambdaInterface {
      */
     private boolean softCoreInit = false;
     /**
-     * When computing the polarization energy at Lambda there are 3 pieces. 1.)
-     * Upol(1) = The polarization energy computed normally (ie. system with
-     * ligand). 2.) Uenv = The polarization energy of the system without the
-     * ligand. 3.) Uligand = The polarization energy of the ligand by itself.
+     * When computing the polarization energy at Lambda there are 3 pieces.
+     *
+     * 1.) Upol(1) = The polarization energy computed normally (ie. system with
+     * ligand).
+     *
+     * 2.) Uenv = The polarization energy of the system without the ligand.
+     *
+     * 3.) Uligand = The polarization energy of the ligand by itself.
      *
      * Upol(L) = L*Upol(1) + (1-L)*(Uenv + Uligand)
      *
@@ -751,9 +755,9 @@ public class ParticleMeshEwald implements LambdaInterface {
              * Values of PERMANENT_LAMBDA_ALPHA below 2 can lead to unstable
              * trajectories.
              */
-            permanentLambdaAlpha = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_ALPHA, 2.0);
-            if (permanentLambdaAlpha < 0.0 || permanentLambdaAlpha > 3.0) {
-                permanentLambdaAlpha = 2.0;
+            permLambdaAlpha = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_ALPHA, 2.0);
+            if (permLambdaAlpha < 0.0 || permLambdaAlpha > 3.0) {
+                permLambdaAlpha = 2.0;
             }
             /**
              * A PERMANENT_LAMBDA_EXPONENT of 1 gives linear charging of the
@@ -761,18 +765,18 @@ public class ParticleMeshEwald implements LambdaInterface {
              * schedule (PERMANENT_LAMBDA_EXPONENT) also works, but the dU/dL
              * forces near lambda=1 are may be larger by a factor of 2.
              */
-            permanentLambdaExponent = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_EXPONENT, 1.0);
-            if (permanentLambdaExponent < 1.0) {
-                permanentLambdaExponent = 1.0;
+            permLambdaExponent = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_EXPONENT, 1.0);
+            if (permLambdaExponent < 1.0) {
+                permLambdaExponent = 1.0;
             }
             /**
              * A POLARIZATION_LAMBDA_EXPONENT of 2 gives a non-zero d2U/dL2 at
              * the beginning of the polarization schedule. Choosing a power of 3
              * or greater ensures a smooth dU/dL and d2U/dL2 over the schedule.
              */
-            polarizationLambdaExponent = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_EXPONENT, 3.0);
-            if (polarizationLambdaExponent < 0.0) {
-                polarizationLambdaExponent = 0.0;
+            polLambdaExponent = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_EXPONENT, 3.0);
+            if (polLambdaExponent < 0.0) {
+                polLambdaExponent = 0.0;
             }
             /**
              * The POLARIZATION_LAMBDA_START defines the point in the lambda
@@ -783,20 +787,20 @@ public class ParticleMeshEwald implements LambdaInterface {
              * calculations are necessary from the beginning of the window to
              * lambda=1.
              */
-            polarizationLambdaStart = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_START, 0.75);
-            if (polarizationLambdaStart < 0.0 || polarizationLambdaStart > 0.9) {
-                polarizationLambdaStart = 0.75;
+            polLambdaStart = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_START, 0.75);
+            if (polLambdaStart < 0.0 || polLambdaStart > 0.9) {
+                polLambdaStart = 0.75;
             }
             /**
              * The POLARIZATION_LAMBDA_END defines the point in the lambda
              * schedule when the condensed phase polarization of ligand has been
              * completely turned on. Values other than 1.0 have not been tested.
              */
-            polarizationLambdaEnd = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_END, 1.0);
-            if (polarizationLambdaEnd < polarizationLambdaStart
-                    || polarizationLambdaEnd > 1.0
-                    || polarizationLambdaEnd - polarizationLambdaStart < 0.3) {
-                polarizationLambdaEnd = 1.0;
+            polLambdaEnd = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_END, 1.0);
+            if (polLambdaEnd < polLambdaStart
+                    || polLambdaEnd > 1.0
+                    || polLambdaEnd - polLambdaStart < 0.3) {
+                polLambdaEnd = 1.0;
             }
 
             /**
@@ -999,12 +1003,12 @@ public class ParticleMeshEwald implements LambdaInterface {
 
         if (lambdaTerm) {
             StringBuilder sb = new StringBuilder(" Lambda Parameters\n");
-            sb.append(format(" Permanent Multipole Softcore Alpha:      %5.3f\n", permanentLambdaAlpha));
-            sb.append(format(" Permanent Multipole Lambda Exponent:     %5.3f\n", permanentLambdaExponent));
+            sb.append(format(" Permanent Multipole Softcore Alpha:      %5.3f\n", permLambdaAlpha));
+            sb.append(format(" Permanent Multipole Lambda Exponent:     %5.3f\n", permLambdaExponent));
             if (polarization != Polarization.NONE) {
-                sb.append(format(" Polarization Lambda Exponent:            %5.3f\n", polarizationLambdaExponent));
+                sb.append(format(" Polarization Lambda Exponent:            %5.3f\n", polLambdaExponent));
                 sb.append(format(" Polarization Lambda Range:      %5.3f .. %5.3f\n",
-                        polarizationLambdaStart, polarizationLambdaEnd));
+                        polLambdaStart, polLambdaEnd));
                 sb.append(format(" Condensed SCF Without Ligand:            %B\n", doNoLigandCondensedSCF));
             }
             sb.append(format(" Vapor Electrostatics:                    %B\n", doLigandVaporElec));
@@ -1268,7 +1272,7 @@ public class ParticleMeshEwald implements LambdaInterface {
      * Polarization scaled by lambda.
      */
     private double condensedEnergy() {
-        if (lambda < polarizationLambdaStart) {
+        if (lambda < polLambdaStart) {
             /**
              * If the polarization has been completely decoupled, the
              * contribution of the complete system is zero.
@@ -1277,7 +1281,7 @@ public class ParticleMeshEwald implements LambdaInterface {
              */
             polarizationScale = 0.0;
             doPolarization = false;
-        } else if (lambda <= polarizationLambdaEnd) {
+        } else if (lambda <= polLambdaEnd) {
             polarizationScale = lPowPol;
             doPolarization = true;
         } else {
@@ -1325,13 +1329,19 @@ public class ParticleMeshEwald implements LambdaInterface {
          * If we are past the end of the polarization lambda window, then only
          * the condensed phase is necessary.
          */
-        if (lambda <= polarizationLambdaEnd && doNoLigandCondensedSCF) {
+        if (lambda <= polLambdaEnd && doNoLigandCondensedSCF) {
             doPolarization = true;
             polarizationScale = 1.0 - lPowPol;
         } else {
             doPolarization = false;
             polarizationScale = 0.0;
         }
+
+        /**
+         * Turn off GK.
+         */
+        boolean gkBack = generalizedKirkwoodTerm;
+        generalizedKirkwoodTerm = false;
 
         /*
          * If we are disappearing the entire system (ie. a small crystal) then
@@ -1346,6 +1356,9 @@ public class ParticleMeshEwald implements LambdaInterface {
                 use[i] = true;
             }
         }
+
+        generalizedKirkwoodTerm = gkBack;
+
         return energy;
     }
 
@@ -1358,11 +1371,7 @@ public class ParticleMeshEwald implements LambdaInterface {
      */
     private double vaporElec() {
         for (int i = 0; i < nAtoms; i++) {
-            if (atoms[i].applyLambda()) {
-                use[i] = true;
-            } else {
-                use[i] = false;
-            }
+            use[i] = atoms[i].applyLambda();
         }
 
         /**
@@ -1383,7 +1392,7 @@ public class ParticleMeshEwald implements LambdaInterface {
          * If we are past the end of the polarization lambda window, then only
          * the condensed phase is necessary.
          */
-        if (lambda <= polarizationLambdaEnd) {
+        if (lambda <= polLambdaEnd) {
             doPolarization = true;
             polarizationScale = 1.0 - lPowPol;
         } else {
@@ -1420,6 +1429,12 @@ public class ParticleMeshEwald implements LambdaInterface {
         crystal = vaporCrystal;
         nSymm = 1;
 
+        /**
+         * Turn off GK if in use.
+         */
+        boolean gkBack = generalizedKirkwoodTerm;
+        generalizedKirkwoodTerm = false;
+
         double energy = computeEnergy(false);
 
         /**
@@ -1437,6 +1452,7 @@ public class ParticleMeshEwald implements LambdaInterface {
         lAlpha = lAlphaBack;
         dlAlpha = dlAlphaBack;
         d2lAlpha = d2lAlphaBack;
+        generalizedKirkwoodTerm = gkBack;
 
         for (int i = 0; i < nAtoms; i++) {
             use[i] = true;
@@ -1496,6 +1512,7 @@ public class ParticleMeshEwald implements LambdaInterface {
          */
         if (generalizedKirkwoodTerm) {
             bornRadiiTotal -= System.nanoTime();
+            generalizedKirkwood.setUse(use);
             generalizedKirkwood.computeBornRadii();
             bornRadiiTotal += System.nanoTime();
         }
@@ -1555,9 +1572,6 @@ public class ParticleMeshEwald implements LambdaInterface {
          * Compute the generalized Kirkwood solvation free energy.
          */
         if (generalizedKirkwoodTerm) {
-            if (lambdaTerm) {
-                logger.severe("Use of generalized Kirkwood with Lambda is not yet supported.");
-            }
             gkEnergyTotal -= System.nanoTime();
             generalizedKirkwoodEnergy += generalizedKirkwood.solvationEnergy(gradient, print);
             gkInteractions += generalizedKirkwood.getInteractions();
@@ -1587,7 +1601,7 @@ public class ParticleMeshEwald implements LambdaInterface {
             logger.fine(sb.toString());
         }
 
-        return permanentMultipoleEnergy + polarizationEnergy;
+        return permanentMultipoleEnergy + polarizationEnergy + generalizedKirkwoodEnergy;
     }
 
     /**
@@ -1678,6 +1692,14 @@ public class ParticleMeshEwald implements LambdaInterface {
      */
     protected double[][][] getTorque() {
         return torque;
+    }
+
+    protected double[][][] getLambdaGradient() {
+        return lambdaGrad;
+    }
+
+    protected double[][][] getLambdaTorque() {
+        return lambdaTorque;
     }
 
     /**
@@ -1879,6 +1901,8 @@ public class ParticleMeshEwald implements LambdaInterface {
     /**
      * Converge the SCF using Conjugate Gradient (CG) optimization with a local
      * preconditioner.
+     *
+     * @return
      */
     public int scfByCG() {
         // Load B with the direct field (E_dir = U_dir / polarizability).
@@ -4908,14 +4932,11 @@ public class ParticleMeshEwald implements LambdaInterface {
 
         @Override
         public void run() {
-
             int threadIndex = getThreadIndex();
-
             if (initializationLoop[threadIndex] == null) {
                 initializationLoop[threadIndex] = new InitializationLoop();
                 rotateMultipolesLoop[threadIndex] = new RotateMultipolesLoop();
             }
-
             try {
                 execute(0, nAtoms - 1, initializationLoop[threadIndex]);
                 execute(0, nAtoms - 1, rotateMultipolesLoop[threadIndex]);
@@ -5099,7 +5120,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                                 }
                             }
                             if (referenceSites == null || referenceSites.length < 2) {
-                                out[t000] = in[0] * softcoreScale;
+                                out[t000] = in[0] * chargeScale * softcoreScale;
                                 out[t100] = 0.0;
                                 out[t010] = 0.0;
                                 out[t001] = 0.0;
@@ -5109,6 +5130,8 @@ public class ParticleMeshEwald implements LambdaInterface {
                                 out[t110] = 0.0;
                                 out[t101] = 0.0;
                                 out[t011] = 0.0;
+                                PolarizeType polarizeType = atoms[ii].getPolarizeType();
+                                polarizability[ii] = polarizeType.polarizability * softcoreScale;
                                 continue;
                             }
                             switch (frame[ii]) {
@@ -6402,60 +6425,62 @@ public class ParticleMeshEwald implements LambdaInterface {
         }
 
         /**
-         * f = sqrt(r^2 + lAlpha) df/dL = -alpha * (1.0 - lambda) / f df/dL =
-         * -dlAlpha / f
+         * f = sqrt(r^2 + lAlpha)
          *
-         * g = 1 / sqrt(r^2 + lAlpha) dg/dl = alpha * (1.0 - lambda) / (r^2 +
-         * lAlpha)^(3/2) dg/dl = dlAlpha * g^3
+         * df/dL = -alpha * (1.0 - lambda) / f
+         *
+         * g = 1 / sqrt(r^2 + lAlpha)
+         *
+         * dg/dL = alpha * (1.0 - lambda) / (r^2 + lAlpha)^(3/2)
+         *
+         * define dlAlpha = alpha * 1.0 - lambda)
+         *
+         * then df/dL = -dlAlpha / f and dg/dL = dlAlpha * g^3
          */
-        lAlpha = permanentLambdaAlpha * (1.0 - lambda) * (1.0 - lambda);
-        dlAlpha = permanentLambdaAlpha * (1.0 - lambda);
-        d2lAlpha = -permanentLambdaAlpha;
+        lAlpha = permLambdaAlpha * (1.0 - lambda) * (1.0 - lambda);
+        dlAlpha = permLambdaAlpha * (1.0 - lambda);
+        d2lAlpha = -permLambdaAlpha;
 
-        lPowPerm = pow(lambda, permanentLambdaExponent);
-        dlPowPerm = permanentLambdaExponent * pow(lambda, permanentLambdaExponent - 1.0);
-        if (permanentLambdaExponent >= 2.0) {
-            d2lPowPerm = permanentLambdaExponent * (permanentLambdaExponent - 1.0) * pow(lambda, permanentLambdaExponent - 2.0);
-        } else {
-            d2lPowPerm = 0.0;
+        lPowPerm = pow(lambda, permLambdaExponent);
+        dlPowPerm = permLambdaExponent * pow(lambda, permLambdaExponent - 1.0);
+        d2lPowPerm = 0.0;
+        if (permLambdaExponent >= 2.0) {
+            d2lPowPerm = permLambdaExponent * (permLambdaExponent - 1.0) * pow(lambda, permLambdaExponent - 2.0);
         }
 
         /**
          * Polarization is turned on from polarizationLambdaStart ..
          * polarizationLambdaEnd.
          */
-        if (lambda < polarizationLambdaStart) {
+        lPowPol = 1.0;
+        dlPowPol = 0.0;
+        d2lPowPol = 0.0;
+        if (lambda < polLambdaStart) {
             lPowPol = 0.0;
-            dlPowPol = 0.0;
-            d2lPowPol = 0.0;
-        } else if (lambda <= polarizationLambdaEnd) {
-            double polarizationWindow = polarizationLambdaEnd - polarizationLambdaStart;
-            double polarizationLambdaScale = 1.0 / polarizationWindow;
-            polarizationLambda = polarizationLambdaScale * (lambda - polarizationLambdaStart);
-            lPowPol = pow(polarizationLambda, polarizationLambdaExponent);
-            if (polarizationLambdaExponent >= 1.0) {
-                dlPowPol = polarizationLambdaExponent * pow(polarizationLambda, polarizationLambdaExponent - 1.0);
-                if (polarizationLambdaExponent >= 2.0) {
-                    d2lPowPol = polarizationLambdaExponent * (polarizationLambdaExponent - 1.0) * pow(polarizationLambda, polarizationLambdaExponent - 2.0);
-                } else {
-                    d2lPowPol = 0.0;
+        } else if (lambda <= polLambdaEnd) {
+            double polWindow = polLambdaEnd - polLambdaStart;
+            double polLambdaScale = 1.0 / polWindow;
+            polLambda = polLambdaScale * (lambda - polLambdaStart);
+            lPowPol = pow(polLambda, polLambdaExponent);
+            if (polLambdaExponent >= 1.0) {
+                dlPowPol = polLambdaExponent * pow(polLambda, polLambdaExponent - 1.0);
+                if (polLambdaExponent >= 2.0) {
+                    d2lPowPol = polLambdaExponent * (polLambdaExponent - 1.0)
+                            * pow(polLambda, polLambdaExponent - 2.0);
                 }
-            } else {
-                dlPowPol = 0.0;
-                d2lPowPol = 0.0;
             }
-
             /**
              * Add the chain rule term due to shrinking the lambda range for the
              * polarization energy.
              */
-            dlPowPol *= polarizationLambdaScale;
-            d2lPowPol *= (polarizationLambdaScale * polarizationLambdaScale);
-        } else {
-            lPowPol = 1.0;
-            dlPowPol = 0.0;
-            d2lPowPol = 0.0;
+            dlPowPol *= polLambdaScale;
+            d2lPowPol *= (polLambdaScale * polLambdaScale);
         }
+
+        if (generalizedKirkwoodTerm) {
+            generalizedKirkwood.setLambda(lambda);
+        }
+
     }
 
     /**
@@ -6473,7 +6498,11 @@ public class ParticleMeshEwald implements LambdaInterface {
      */
     @Override
     public double getdEdL() {
-        return shareddEdLambda.get();
+        double dEdL = shareddEdLambda.get();
+        if (generalizedKirkwoodTerm) {
+            dEdL += generalizedKirkwood.getdEdL();
+        }
+        return dEdL;
     }
 
     /**
@@ -6481,7 +6510,11 @@ public class ParticleMeshEwald implements LambdaInterface {
      */
     @Override
     public double getd2EdL2() {
-        return sharedd2EdLambda2.get();
+        double d2EdL2 = sharedd2EdLambda2.get();
+        if (generalizedKirkwoodTerm) {
+            d2EdL2 += generalizedKirkwood.getd2EdL2();
+        }
+        return d2EdL2;
     }
 
     /**
@@ -6493,6 +6526,10 @@ public class ParticleMeshEwald implements LambdaInterface {
             logger.warning(" The lambdaterm property is false.");
             return;
         }
+        /**
+         * Note that the Generalized Kirkwood contributions are already in the
+         * lambdaGrad array.
+         */
         int index = 0;
         for (int i = 0; i < nAtoms; i++) {
             gradient[index++] += lambdaGrad[0][0][i];

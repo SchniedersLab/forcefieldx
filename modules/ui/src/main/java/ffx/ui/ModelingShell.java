@@ -101,9 +101,10 @@ public class ModelingShell extends Console implements AlgorithmListener {
     private static final double toSeconds = 1.0e-9;
 
     /**
-     * <p>Constructor for ModelingShell.</p>
+     * <p>
+     * Constructor for ModelingShell.</p>
      *
-     * @param m a {@link ffx.ui.MainPanel} object.
+     * @param mainPanel
      */
     public ModelingShell(MainPanel mainPanel) {
         this.mainPanel = mainPanel;
@@ -235,7 +236,8 @@ public class ModelingShell extends Console implements AlgorithmListener {
     }
 
     /**
-     * <p>setArgList</p>
+     * <p>
+     * setArgList</p>
      *
      * @param argList a {@link java.util.List} object.
      */
@@ -244,7 +246,8 @@ public class ModelingShell extends Console implements AlgorithmListener {
     }
 
     /**
-     * <p>runFFXScript</p>
+     * <p>
+     * runFFXScript</p>
      *
      * @param file a {@link java.io.File} object.
      */
@@ -260,7 +263,8 @@ public class ModelingShell extends Console implements AlgorithmListener {
     }
 
     /**
-     * <p>time</p>
+     * <p>
+     * time</p>
      *
      * @return a {@link java.lang.Double} object.
      */
@@ -273,7 +277,8 @@ public class ModelingShell extends Console implements AlgorithmListener {
     }
 
     /**
-     * <p>select</p>
+     * <p>
+     * select</p>
      *
      * @param node a {@link ffx.potential.bonded.MSNode} object.
      */
@@ -286,7 +291,8 @@ public class ModelingShell extends Console implements AlgorithmListener {
     }
 
     /**
-     * <p>energy</p>
+     * <p>
+     * energy</p>
      *
      * @return a {@link ffx.potential.ForceFieldEnergy} object.
      */
@@ -314,7 +320,8 @@ public class ModelingShell extends Console implements AlgorithmListener {
     }
 
     /**
-     * <p>analyze</p>
+     * <p>
+     * analyze</p>
      *
      * @param xyzfname a {@link java.lang.String} object.
      * @param keyfile a {@link java.lang.String} object.
@@ -331,7 +338,8 @@ public class ModelingShell extends Console implements AlgorithmListener {
     }
 
     /**
-     * <p>minimize</p>
+     * <p>
+     * minimize</p>
      *
      * @param eps a double.
      * @return a {@link ffx.numerics.Potential} object.
@@ -359,7 +367,8 @@ public class ModelingShell extends Console implements AlgorithmListener {
     }
 
     /**
-     * <p>minimize_2</p>
+     * <p>
+     * minimize_2</p>
      *
      * @param xyzf a {@link java.lang.String} object.
      * @param eps a double.
@@ -390,7 +399,8 @@ public class ModelingShell extends Console implements AlgorithmListener {
     }
 
     /**
-     * <p>superpose</p>
+     * <p>
+     * superpose</p>
      *
      * @param file1 a {@link java.lang.String} object.
      * @param file2 a {@link java.lang.String} object.
@@ -400,7 +410,8 @@ public class ModelingShell extends Console implements AlgorithmListener {
     }
 
     /**
-     * <p>poledit</p>
+     * <p>
+     * poledit</p>
      *
      * @param gdmaoutfname a {@link java.lang.String} object.
      * @param peditinfname a {@link java.lang.String} object.
@@ -410,7 +421,8 @@ public class ModelingShell extends Console implements AlgorithmListener {
     }
 
     /**
-     * <p>md</p>
+     * <p>
+     * md</p>
      *
      * @param nStep a int.
      * @param timeStep a double.
@@ -440,7 +452,8 @@ public class ModelingShell extends Console implements AlgorithmListener {
     }
 
     /**
-     * <p>potential</p>
+     * <p>
+     * potential</p>
      *
      * @param choice a {@link java.lang.Integer} object.
      * @param fname a {@link java.lang.String} object.
@@ -488,7 +501,6 @@ public class ModelingShell extends Console implements AlgorithmListener {
      super.runSelectedScript(evt);
      }
      */
-
     /**
      * {@inheritDoc}
      *
@@ -579,23 +591,29 @@ public class ModelingShell extends Console implements AlgorithmListener {
     }
 
     /**
-     * <p>before</p>
+     * <p>
+     * before</p>
      */
     public void before() {
         interrupted = false;
         terminatableAlgorithm = null;
         time = System.nanoTime();
         subTime = time;
+        mainPanel.getModelingPanel().enableLaunch(false);
     }
 
     /**
-     * <p>after</p>
+     * <p>
+     * after</p>
      */
     public void after() {
         time = System.nanoTime() - time;
         if (!interrupted) {
             appendOutput(String.format("\n Total script time: %8.3f (sec)", time * toSeconds), getPromptStyle());
+        } else {
+            appendOutput(String.format("\n Script interrupted after: %8.3f (sec)", time * toSeconds), getPromptStyle());
         }
+        mainPanel.getModelingPanel().enableLaunch(true);
     }
 
     /**
@@ -631,7 +649,8 @@ public class ModelingShell extends Console implements AlgorithmListener {
     }
 
     /**
-     * <p>scroll</p>
+     * <p>
+     * scroll</p>
      */
     public void scroll() {
         JTextPane output = getOutputArea();
@@ -645,7 +664,8 @@ public class ModelingShell extends Console implements AlgorithmListener {
     }
 
     /**
-     * <p>appendOutput</p>
+     * <p>
+     * appendOutput</p>
      *
      * @param string a {@link java.lang.String} object.
      * @param style a {@link javax.swing.text.Style} object.
@@ -673,6 +693,13 @@ public class ModelingShell extends Console implements AlgorithmListener {
         }
     }
 
+    public void interruptScript() {
+        if (!scriptRunning) {
+            return;
+        }
+        doInterrupt();
+    }
+
     /**
      * If at exit time, a script is running, the user is given an option to
      * interrupt it first
@@ -697,19 +724,22 @@ public class ModelingShell extends Console implements AlgorithmListener {
     private static final Preferences preferences = Preferences.userNodeForPackage(ModelingShell.class);
 
     /**
-     * <p>loadPrefs</p>
+     * <p>
+     * loadPrefs</p>
      */
     final public void loadPrefs() {
     }
 
     /**
-     * <p>savePrefs</p>
+     * <p>
+     * savePrefs</p>
      */
     public void savePrefs() {
     }
 
     /**
-     * <p>setMeasurement</p>
+     * <p>
+     * setMeasurement</p>
      *
      * @param measurement a {@link java.lang.String} object.
      * @param d a double.
@@ -724,7 +754,8 @@ public class ModelingShell extends Console implements AlgorithmListener {
     }
 
     /**
-     * <p>sync</p>
+     * <p>
+     * sync</p>
      */
     public void sync() {
         try {
@@ -758,7 +789,9 @@ public class ModelingShell extends Console implements AlgorithmListener {
              * Use the blocking graphics update method so that only
              * self-consistent coordinate sets are displayed.
              */
-            graphics.updateSceneWait(active, true, false, null, false, null);
+            if (SwingUtilities.isEventDispatchThread()) {
+                graphics.updateSceneWait(active, true, false, null, false, null);
+            }
         }
 
         if (interrupted) {
@@ -783,7 +816,7 @@ public class ModelingShell extends Console implements AlgorithmListener {
                 "ffx/ui/icons/icon64.png");
         ImageIcon icon = new ImageIcon(iconURL);
         frame.setIconImage(icon.getImage());
-        frame.setSize(800,800);
+        frame.setSize(800, 800);
     }
 
     @Override

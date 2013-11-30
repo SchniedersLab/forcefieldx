@@ -84,13 +84,22 @@ cli.w(longOpt:'save', args:1, argName:'0.1', 'Interval to write out coordinates 
 cli.t(longOpt:'temperature', args:1, argName:'100.0', 'Temperature in degrees Kelvin.');
 cli.b(longOpt:'thermostat', args:1, argName:'Bussi', 'Thermostat: [Adiabatic/Berendsen/Bussi]');
 def options = cli.parse(args);
-List<String> arguments = options.arguments();
-if (options.h || arguments == null || arguments.size() < 1) {
+
+if (options.h) {
     return cli.usage();
 }
+List<String> arguments = options.arguments();
+String modelfilename = null;
+if (arguments != null && arguments.size() > 0) {
+    // Read in command line.
+    modelfilename = arguments.get(0);
+    open(modelfilename);
+} else if (active == null) {
+    return cli.usage();
+} else {
+    modelfilename = active.getFile();
+}
 
-// Name of the file (PDB or XYZ).
-String modelfilename = arguments.get(0);
 
 // set up diffraction data (can be multiple files)
 List diffractionfiles = new ArrayList();

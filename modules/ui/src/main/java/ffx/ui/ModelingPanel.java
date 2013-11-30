@@ -22,7 +22,14 @@
  */
 package ffx.ui;
 
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Button;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.GridLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
@@ -32,15 +39,40 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Vector;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 
-import javax.swing.*;
+import static java.lang.String.format;
+
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.ButtonGroup;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JRadioButton;
+import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
+import javax.swing.JTabbedPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.JToggleButton;
+import javax.swing.JToolBar;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
+import javax.swing.SwingWorker;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -52,6 +84,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import ffx.FFXClassLoader;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Utilities.FileType;
 import ffx.potential.parsers.SystemFilter;
@@ -59,8 +92,8 @@ import ffx.ui.commands.DTDResolver;
 import ffx.utilities.Keyword;
 
 /**
- * The ModelingPanel class encapsulates functionality needed to run TINKER
- * executables.
+ * The ModelingPanel class encapsulates functionality needed to run FFX Modeling
+ * Commands.
  *
  * @author Michael J. Schnieders
  *
@@ -69,8 +102,10 @@ public class ModelingPanel extends JPanel implements ActionListener,
         MouseListener {
 
     private static final Logger logger = Logger.getLogger(ModelingPanel.class.getName());
+    private static final Preferences prefs = Preferences.userNodeForPackage(ModelingPanel.class);
     private static final long serialVersionUID = 1L;
-    private MainPanel mainPanel;
+
+    private final MainPanel mainPanel;
     /**
      * Active System
      */
@@ -86,7 +121,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
     /**
      * File Types for this Command
      */
-    private Vector<FileType> commandFileTypes = new Vector<FileType>();
+    private final Vector<FileType> commandFileTypes = new Vector<>();
     /**
      * Actions to take for this Command when it finishes
      */
@@ -94,11 +129,11 @@ public class ModelingPanel extends JPanel implements ActionListener,
     /**
      * Executing Commands
      */
-    private Vector<Thread> executingCommands = new Vector<Thread>();
+    private final Vector<Thread> executingCommands = new Vector<>();
     /**
      * Log Settings
      */
-    private JComboBox logSettings = new JComboBox();
+    private final JComboBox logSettings = new JComboBox();
     private String logString = null;
     /**
      * Commands for supported file types
@@ -126,7 +161,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
     private JScrollPane descriptScrollPane;
     private JTextArea descriptTextArea;
     private JCheckBoxMenuItem descriptCheckBox;
-    private Vector<JLabel> conditionals = new Vector<JLabel>();
+    private final Vector<JLabel> conditionals = new Vector<>();
     /**
      * Command input is formed in the commandTextArea, then exported to an input
      * file.
@@ -135,80 +170,96 @@ public class ModelingPanel extends JPanel implements ActionListener,
     /**
      * Nucleic Acid and Protein builder components.
      */
-    private JComboBox acidComboBox = new JComboBox();
+    private final JComboBox acidComboBox = new JComboBox();
+    private final JTextField acidTextField = new JTextField();
+    private final JTextArea acidTextArea = new JTextArea();
     private JComboBox conformationComboBox;
-    private JTextField acidTextField = new JTextField();
-    private JTextArea acidTextArea = new JTextArea();
     private JScrollPane acidScrollPane = null;
     private JPanel aminoPanel = null;
     private JPanel nucleicPanel = null;
     /**
      * Reused FlowLayout.
      */
-    private FlowLayout flowLayout = new FlowLayout(FlowLayout.LEFT, 5, 5);
+    private final FlowLayout flowLayout = new FlowLayout(FlowLayout.LEFT, 5, 5);
     /**
      * Reused BorderLayout.
      */
-    private BorderLayout borderLayout = new BorderLayout();
+    private final BorderLayout borderLayout = new BorderLayout();
     /**
      * Reused EtchedBorder.
      */
-    private Border etchedBorder = BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
-    private JTextField sizer = new JTextField(20);
+    private final Border etchedBorder = BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
+    private final JTextField sizer = new JTextField(20);
+
+    private JButton jbLaunch;
+    private JButton jbStop;
+    private FFXLauncher ffxLauncher = null;
+    private Thread ffxThread = null;
 
     /**
      * Constructor
      *
-     * @param f a {@link ffx.ui.MainPanel} object.
+     * @param mainPanel a {@link ffx.ui.MainPanel} object.
      */
-    public ModelingPanel(MainPanel f) {
+    public ModelingPanel(MainPanel mainPanel) {
         super();
-        mainPanel = f;
+        this.mainPanel = mainPanel;
         initialize();
     }
 
     /**
      * {@inheritDoc}
+     *
+     * @param evt
      */
     @Override
     public void actionPerformed(ActionEvent evt) {
         synchronized (this) {
             String actionCommand = evt.getActionCommand();
             // A change to the selected TINKER Command
-            if (actionCommand == "TinkerCommand") {
-                JComboBox jcb = (JComboBox) toolBar.getComponentAtIndex(3);
-                String com = jcb.getSelectedItem().toString();
-                if (!com.equals(activeCommand)) {
-                    activeCommand = com.toLowerCase();
-                    loadCommand();
-                }
-            } else if (actionCommand == "LogSettings") {
-                // A change to the Log Settings.
-                loadLogSettings();
-                statusLabel.setText("  " + createCommandInput());
-            } else if (actionCommand == "Launch") {
-                // Launch the selected command
-                executeCommand();
-            } else if (actionCommand == "NUCLEIC" || actionCommand == "PROTEIN") {
-                // Editor functions for the Protein and Nucleic Acid Builders
-                builderCommandEvent(evt);
-            } else if (actionCommand == "Conditional") {
-                // Some command options are conditional on other input.
-                conditionalCommandEvent(evt);
-            } else if (actionCommand == "End") {
-                // Create/Remove TINKER "end" files that tell executing commands
-                // to exit gracefully.
-                setEnd();
-            } else if (actionCommand == "Delete") {
-                // Delete log files.
-                deleteLogs();
-            } else if (actionCommand == "Description") {
-                // Allow command descriptions to be hidden.
-                JCheckBoxMenuItem box = (JCheckBoxMenuItem) evt.getSource();
-                setDivider(box.isSelected());
-            } else {
-                logger.warning("ModelingPanel ActionCommand not recognized: "
-                        + evt);
+            switch (actionCommand) {
+                case "FFXCommand":
+                    JComboBox jcb = (JComboBox) toolBar.getComponentAtIndex(2);
+                    String com = jcb.getSelectedItem().toString();
+                    if (!com.equals(activeCommand)) {
+                        activeCommand = com.toLowerCase();
+                        loadCommand();
+                    }
+                    break;
+                case "LogSettings":
+                    // A change to the Log Settings.
+                    loadLogSettings();
+                    statusLabel.setText("  " + createCommandInput());
+                    break;
+                case "Launch":
+                    // Launch the selected Force Field X command.
+                    runScript();
+                    break;
+                case "NUCLEIC":
+                case "PROTEIN":
+                    // Editor functions for the Protein and Nucleic Acid Builders
+                    builderCommandEvent(evt);
+                    break;
+                case "Conditional":
+                    // Some command options are conditional on other input.
+                    conditionalCommandEvent(evt);
+                    break;
+                case "End":
+                    // End the currently executing command.
+                    setEnd();
+                    break;
+                case "Delete":
+                    // Delete log files.
+                    deleteLogs();
+                    break;
+                case "Description":
+                    // Allow command descriptions to be hidden.
+                    JCheckBoxMenuItem box = (JCheckBoxMenuItem) evt.getSource();
+                    setDivider(box.isSelected());
+                    break;
+                default:
+                    logger.log(Level.WARNING, "ModelingPanel ActionCommand not recognized: {0}", evt);
+                    break;
             }
         }
     }
@@ -363,23 +414,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
      * @return
      */
     private String createCommandInput() {
-        StringBuilder commandlineparams = new StringBuilder(activeCommand.toLowerCase()
-                + " ");
-        // The next token on the command line is the structure file name, except
-        // for protein and nucleic.
-        if (!activeCommand.equalsIgnoreCase("Protein")
-                && !activeCommand.equalsIgnoreCase("Nucleic")) {
-            File file = activeSystem.getFile();
-            if (file != null) {
-                String absolutePath = file.getAbsolutePath();
-                if (absolutePath.endsWith("xyz")) {
-                    absolutePath = absolutePath + "_1";
-                }
-                commandlineparams.append("\"" + absolutePath + "\" ");
-            } else {
-                return null;
-            }
-        }
+        StringBuilder commandLineParams = new StringBuilder(activeCommand + " ");
         // Now append command line input to a TextArea, one option per line.
         // This TextArea gets dumped to an input file.
         commandTextArea.setText("");
@@ -415,33 +450,17 @@ public class ModelingPanel extends JPanel implements ActionListener,
                     if (value instanceof JCheckBox) {
                         JCheckBox jcbox = (JCheckBox) value;
                         if (jcbox.isSelected()) {
+                            optionString.append("-");
+                            optionString.append(jcbox.getName());
+                            optionString.append(" ");
                             optionString.append(jcbox.getText());
                         }
                     } else if (value instanceof JTextField) {
                         JTextField jtfield = (JTextField) value;
-                        // Check for a Post-Processing instruction stored in the
-                        // JTextField's name.
-                        if (jtfield.getName() != null) {
-                            if (jtfield.getName().equalsIgnoreCase("APPEND")) {
-                                newLine = false;
-                                optionString.append(jtfield.getText());
-                                optionString.append(" ");
-                            } else if (jtfield.getName().equalsIgnoreCase(
-                                    "SPLIT")) {
-                                String inputs[] = jtfield.getText().split(" +");
-                                for (String input : inputs) {
-                                    optionString.append(input + "\n");
-                                }
-                            } else {
-                                // The Post-Processing command is not
-                                // understood, so just
-                                // append the TextField input to the
-                                // OptionString.
-                                optionString.append(jtfield.getText());
-                            }
-                        } else {
-                            optionString.append(jtfield.getText());
-                        }
+                        optionString.append("-");
+                        optionString.append(jtfield.getName());
+                        optionString.append(" ");
+                        optionString.append(jtfield.getText());
                     } else if (value instanceof JComboBox) {
                         JComboBox jcb = (JComboBox) value;
                         Object object = jcb.getSelectedItem();
@@ -460,18 +479,14 @@ public class ModelingPanel extends JPanel implements ActionListener,
                         JRadioButton jrbutton = (JRadioButton) value;
                         if (jrbutton.isSelected()) {
                             if (!jrbutton.getText().equalsIgnoreCase("NONE")) {
+                                optionString.append("-");
+                                optionString.append(jrbutton.getName());
+                                optionString.append(" ");
                                 optionString.append(jrbutton.getText());
                             }
                             if (title.equalsIgnoreCase("C-CAP")) {
                                 optionString.append("\n");
                             }
-                        }
-                        // Check for a Post-Processing instruction stored in the
-                        // RadioButton's name.
-                        if (jrbutton.getName() != null
-                                && jrbutton.getName().equalsIgnoreCase("APPEND")) {
-                            newLine = false;
-                            optionString.append(" ");
                         }
                     }
                 }
@@ -515,16 +530,24 @@ public class ModelingPanel extends JPanel implements ActionListener,
         }
         String commandInput = commandTextArea.getText();
         if (commandInput != null && !commandInput.trim().equalsIgnoreCase("")) {
-            commandlineparams.append(" < " + activeCommand.toLowerCase()
-                    + ".in ");
+            commandLineParams.append(commandInput.toString());
         }
-        if (!commandFileTypes.contains(FileType.ANY) && activeSystem != null
-                && activeSystem.getKeyFile() != null) {
-            commandlineparams.append(" -k \""
-                    + activeSystem.getKeyFile().getAbsolutePath() + "\"");
+
+        // The final token on the command line is the structure file name, except
+        // for protein and nucleic.
+        if (!activeCommand.equalsIgnoreCase("Protein")
+                && !activeCommand.equalsIgnoreCase("Nucleic")) {
+            File file = activeSystem.getFile();
+            if (file != null) {
+                String name = file.getName();
+                commandLineParams.append(name);
+                commandLineParams.append(" ");
+            } else {
+                return null;
+            }
         }
-        commandlineparams.append(logString);
-        return commandlineparams.toString();
+
+        return commandLineParams.toString();
     }
 
     /**
@@ -568,7 +591,8 @@ public class ModelingPanel extends JPanel implements ActionListener,
     }
 
     /**
-     * <p>getAvailableCommands</p>
+     * <p>
+     * getAvailableCommands</p>
      *
      * @return a {@link java.util.ArrayList} object.
      */
@@ -635,7 +659,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
     }
 
     private void initCommandComboBox(JComboBox commands) {
-        commands.setActionCommand("TinkerCommand");
+        commands.setActionCommand("FFXCommand");
         commands.setMaximumSize(xyzCommands.getPreferredSize());
         commands.setEditable(false);
         commands.setToolTipText("Select a Modeling Command");
@@ -697,7 +721,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
         acidScrollPane.setPreferredSize(d);
         acidScrollPane.setMaximumSize(d);
         acidScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-        // Load the "ffe.tinker.commands.xml" file that defines TINKER Commands.
+        // Load the FFX commands.xml file that defines FFX commands.
         try {
             DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
             DocumentBuilder db = dbf.newDocumentBuilder();
@@ -709,7 +733,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
             Node commandroot = null;
             for (int i = 0; i < nodelist.getLength(); i++) {
                 commandroot = nodelist.item(i);
-                if (commandroot.getNodeName().equals("TinkerCommands")
+                if (commandroot.getNodeName().equals("FFXCommands")
                         && commandroot instanceof Element) {
                     break;
                 }
@@ -726,7 +750,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
             System.err.println(e);
         } finally {
             if (commandList == null) {
-                System.out.println("ffe.tinker.commands.xml could not be parsed.");
+                System.out.println("Force Field X commands.xml could not be parsed.");
                 logger.severe("Force Field X will exit.");
                 System.exit(-1);
             }
@@ -777,34 +801,38 @@ public class ModelingPanel extends JPanel implements ActionListener,
         // Load the default Log File Settings.
         logSettings.setActionCommand("LogSettings");
         loadLogSettings();
+
         // Create the Toolbar.
         toolBar = new JToolBar("Modeling Commands", JToolBar.HORIZONTAL);
         toolBar.setLayout(new FlowLayout(FlowLayout.LEFT));
-        JButton jblaunch = new JButton(new ImageIcon(getClass().getClassLoader().getResource("ffx/ui/icons/cog_go.png")));
-        jblaunch.setActionCommand("Launch");
-        jblaunch.setToolTipText("Launch the TINKER Command");
-        jblaunch.addActionListener(this);
+        jbLaunch = new JButton(new ImageIcon(getClass().getClassLoader().getResource("ffx/ui/icons/cog_go.png")));
+        jbLaunch.setActionCommand("Launch");
+        jbLaunch.setToolTipText("Launch the Force Field X Command");
+        jbLaunch.addActionListener(this);
         insets.set(2, 2, 2, 2);
-        jblaunch.setMargin(insets);
-        toolBar.add(jblaunch);
-        JButton jbend = new JButton(new ImageIcon(getClass().getClassLoader().getResource("ffx/ui/icons/stop.png")));
-        jbend.setActionCommand("End");
-        jbend.setToolTipText("Toggle the Existence of a TINKER *.END File");
-        jbend.addActionListener(this);
-        jbend.setMargin(insets);
-        toolBar.add(jbend);
+        jbLaunch.setMargin(insets);
+        toolBar.add(jbLaunch);
+        jbStop = new JButton(new ImageIcon(getClass().getClassLoader().getResource("ffx/ui/icons/stop.png")));
+        jbStop.setActionCommand("End");
+        jbStop.setToolTipText("Terminate the Current Force Field X Command");
+        jbStop.addActionListener(this);
+        jbStop.setMargin(insets);
+        jbStop.setEnabled(false);
+        toolBar.add(jbStop);
         toolBar.addSeparator();
         toolBar.add(anyCommands);
         currentCommandBox = anyCommands;
         toolBar.addSeparator();
-        toolBar.add(logSettings);
-        JButton jbdelete = new JButton(new ImageIcon(getClass().getClassLoader().getResource("ffx/ui/icons/page_delete.png")));
-        jbdelete.setActionCommand("Delete");
-        jbdelete.setToolTipText("Delete Log Files");
-        jbdelete.addActionListener(this);
-        jbdelete.setMargin(insets);
-        toolBar.add(jbdelete);
-        toolBar.addSeparator();
+        /*
+         toolBar.add(logSettings);
+         JButton jbdelete = new JButton(new ImageIcon(getClass().getClassLoader().getResource("ffx/ui/icons/page_delete.png")));
+         jbdelete.setActionCommand("Delete");
+         jbdelete.setToolTipText("Delete Log Files");
+         jbdelete.addActionListener(this);
+         jbdelete.setMargin(insets);
+         toolBar.add(jbdelete);
+         toolBar.addSeparator();
+         */
         ImageIcon icinfo = new ImageIcon(getClass().getClassLoader().getResource("ffx/ui/icons/information.png"));
         descriptCheckBox = new JCheckBoxMenuItem(icinfo);
         descriptCheckBox.addActionListener(this);
@@ -824,6 +852,63 @@ public class ModelingPanel extends JPanel implements ActionListener,
         descriptCheckBox.doClick();
     }
 
+    private void runScript() {
+        String name = activeCommand;
+        name = name.replace('.', File.separatorChar);
+        ClassLoader loader = getClass().getClassLoader();
+        URL embeddedScript = loader.getResource("ffx/scripts/" + name + ".ffx");
+        if (embeddedScript == null) {
+            embeddedScript = loader.getResource("ffx/scripts/" + name + ".groovy");
+        }
+        File scriptFile = null;
+        if (embeddedScript != null) {
+            try {
+                scriptFile = new File(
+                        FFXClassLoader.copyInputStreamToTmpFile(
+                                embeddedScript.openStream(), name, ".ffx"));
+            } catch (IOException e) {
+                logger.log(Level.WARNING, "Exception extracting embedded script {0}\n{1}",
+                        new Object[]{embeddedScript.toString(), e.toString()});
+            }
+        }
+        if (scriptFile != null && scriptFile.exists()) {
+            String argLine = statusLabel.getText().replace('\n', ' ');
+            String args[] = argLine.trim().split(" +");
+            // Remove the command (first token) and system name (last token).
+            args = Arrays.copyOfRange(args, 1, args.length - 1);
+            List<String> argList = Arrays.asList(args);
+            ffxLauncher = new FFXLauncher(argList, scriptFile);
+            ffxThread = new Thread(ffxLauncher);
+            ffxThread.setName(statusLabel.getText());
+            ffxThread.setPriority(Thread.MAX_PRIORITY);
+            ffxThread.start();
+        } else {
+            logger.warning(format("%s was not found.", name));
+        }
+    }
+
+    public void enableLaunch(boolean enable) {
+        jbLaunch.setEnabled(enable);
+        jbStop.setEnabled(!enable);
+    }
+
+    private class FFXLauncher implements Runnable {
+
+        List<String> argList;
+        File scriptFile;
+
+        public FFXLauncher(List<String> argList, File scriptFile) {
+            this.argList = argList;
+            this.scriptFile = scriptFile;
+        }
+        
+        @Override
+        public void run() {
+            mainPanel.getModelingShell().setArgList(argList);
+            mainPanel.open(scriptFile, null);
+        }
+    }
+
     /**
      * Launch the active command on the active system in the specified
      * directory.
@@ -833,7 +918,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
      * @return a {@link ffx.ui.FFXExec} object.
      */
     public FFXExec launch(String command, String dir) {
-        logger.info("Command: " + command + "\nDirectory: " + dir);
+        logger.log(Level.INFO, "Command: {0}\nDirectory: {1}", new Object[]{command, dir});
         synchronized (this) {
             // Check that the TINKER *.exe exists in TINKER/bin
             String path = MainPanel.ffxDir.getAbsolutePath();
@@ -1039,7 +1124,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
             }
             if (fileType != activeFileType) {
                 activeFileType = fileType;
-                toolBar.remove(3);
+                toolBar.remove(2);
                 if (activeFileType == FileType.XYZ) {
                     toolBar.add(xyzCommands);
                     currentCommandBox = xyzCommands;
@@ -1056,7 +1141,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
                     toolBar.add(anyCommands);
                     currentCommandBox = anyCommands;
                 }
-                toolBar.add(currentCommandBox, 3);
+                toolBar.add(currentCommandBox, 2);
                 toolBar.validate();
                 toolBar.repaint();
                 activeCommand = (String) currentCommandBox.getSelectedItem();
@@ -1067,7 +1152,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
 
     private void loadCommand() {
         synchronized (this) {
-            // TINKER Command
+            // Force Field X Command
             Element command;
             // Command Options
             NodeList options;
@@ -1151,6 +1236,8 @@ public class ModelingPanel extends JPanel implements ActionListener,
                 } else {
                     conditional = null;
                 }
+                // Get the command line flag
+                String flag = option.getAttribute("flag").trim();
                 // Get the description
                 String optionDescript = option.getAttribute("description");
                 JTextArea optionTextArea = new JTextArea("  "
@@ -1161,14 +1248,6 @@ public class ModelingPanel extends JPanel implements ActionListener,
                 optionTextArea.setBorder(etchedBorder);
                 // Get the default for this Option (if one exists)
                 String defaultOption = option.getAttribute("default");
-                // Check a flag that specifies whether this input should be
-                // "Post-Processed".
-                // Current "Post-Processing Flags include:
-                // APPEND (no carriage return after this option, so that the
-                // next option is on the same line.
-                // SPLIT (split on white space, putting each field on its own
-                // line.
-                String postProcess = option.getAttribute("postProcess");
                 // Option Panel
                 optionPanel = new JPanel(new BorderLayout());
                 optionPanel.add(optionTextArea, BorderLayout.NORTH);
@@ -1184,9 +1263,10 @@ public class ModelingPanel extends JPanel implements ActionListener,
                         value = (Element) values.item(j);
                         JCheckBox jcb = new JCheckBox(value.getAttribute("name"));
                         jcb.addMouseListener(this);
+                        jcb.setName(flag);
                         if (defaultOption != null
                                 && jcb.getActionCommand().equalsIgnoreCase(
-                                defaultOption)) {
+                                        defaultOption)) {
                             jcb.setSelected(true);
                         }
                         optionValuesPanel.add(jcb);
@@ -1195,6 +1275,7 @@ public class ModelingPanel extends JPanel implements ActionListener,
                     // TEXTFIELD takes an arbitrary String as input
                     JTextField jtf = new JTextField(20);
                     jtf.addMouseListener(this);
+                    jtf.setName(flag);
                     if (defaultOption != null && defaultOption.equals("ATOMS")) {
                         FFXSystem sys = mainPanel.getHierarchy().getActive();
                         if (sys != null) {
@@ -1202,10 +1283,6 @@ public class ModelingPanel extends JPanel implements ActionListener,
                         }
                     } else if (defaultOption != null) {
                         jtf.setText(defaultOption);
-                    }
-                    // Hack - store the postProcess flag in the TextField's name
-                    if (postProcess != null) {
-                        jtf.setName(postProcess);
                     }
                     optionValuesPanel.add(jtf);
                 } else if (swing.equalsIgnoreCase("RADIOBUTTONS")) {
@@ -1217,18 +1294,14 @@ public class ModelingPanel extends JPanel implements ActionListener,
                         value = (Element) values.item(j);
                         JRadioButton jrb = new JRadioButton(value.getAttribute("name"));
                         jrb.addMouseListener(this);
+                        jrb.setName(flag);
                         bg.add(jrb);
                         if (defaultOption != null
                                 && jrb.getActionCommand().equalsIgnoreCase(
-                                defaultOption)) {
+                                        defaultOption)) {
                             jrb.setSelected(true);
                         }
                         optionValuesPanel.add(jrb);
-                        // Hack - store the postProcess flag in the
-                        // RadioButton's name
-                        if (postProcess != null) {
-                            jrb.setName(postProcess);
-                        }
                     }
                 } else if (swing.equalsIgnoreCase("PROTEIN")) {
                     // Protein allows selection of amino acids for the protein
@@ -1508,35 +1581,50 @@ public class ModelingPanel extends JPanel implements ActionListener,
      * {@inheritDoc}
      *
      * Mouse events are used to trigger status bar updates.
+     *
+     * @param evt
      */
+    @Override
     public void mouseClicked(MouseEvent evt) {
         statusLabel.setText("  " + createCommandInput());
     }
 
     /**
      * {@inheritDoc}
+     *
+     * @param evt
      */
+    @Override
     public void mouseEntered(MouseEvent evt) {
         mouseClicked(evt);
     }
 
     /**
      * {@inheritDoc}
+     *
+     * @param evt
      */
+    @Override
     public void mouseExited(MouseEvent evt) {
         mouseClicked(evt);
     }
 
     /**
      * {@inheritDoc}
+     *
+     * @param evt
      */
+    @Override
     public void mousePressed(MouseEvent evt) {
         mouseClicked(evt);
     }
 
     /**
      * {@inheritDoc}
+     *
+     * @param evt
      */
+    @Override
     public void mouseReleased(MouseEvent evt) {
         mouseClicked(evt);
     }
@@ -1568,7 +1656,6 @@ public class ModelingPanel extends JPanel implements ActionListener,
             end.delete();
         }
     }
-    private static final Preferences prefs = Preferences.userNodeForPackage(ModelingPanel.class);
 
     /**
      * Save ModelingPanel user preferences
@@ -1590,7 +1677,8 @@ public class ModelingPanel extends JPanel implements ActionListener,
     }
 
     /**
-     * <p>setCommand</p>
+     * <p>
+     * setCommand</p>
      *
      * @param command a {@link java.lang.String} object.
      * @return a boolean.
@@ -1612,11 +1700,11 @@ public class ModelingPanel extends JPanel implements ActionListener,
     /**
      * Set the description divider location
      *
-     * @param b True to show the command description
+     * @param showDescription True to show the command description
      */
-    private void setDivider(boolean b) {
-        descriptCheckBox.setSelected(b);
-        if (b) {
+    private void setDivider(boolean showDescription) {
+        descriptCheckBox.setSelected(showDescription);
+        if (showDescription) {
             int spDivider = (int) (this.getHeight() * (3.0f / 5.0f));
             splitPane.setDividerLocation(spDivider);
         } else {
@@ -1628,42 +1716,9 @@ public class ModelingPanel extends JPanel implements ActionListener,
      * Prompt the user to toggle the existence of a TINKER END file.
      */
     private void setEnd() {
-        if (activeSystem == null) {
-            return;
-        }
-        File activeFile = activeSystem.getFile();
-        if (activeFile == null) {
-            return;
-        }
-        File end;
-        try {
-            if (activeFile.getName().indexOf(".") > 0) {
-                String name = activeFile.getName().substring(0,
-                        activeFile.getName().lastIndexOf("."));
-                end = new File(activeFile.getParent(), name.toString() + ".end");
-            } else {
-                end = new File(activeFile.getParent(), activeFile.getName()
-                        + ".end");
-            }
-            if (end.exists()) {
-                int i = JOptionPane.showConfirmDialog(this, "Delete "
-                        + end.getName() + "?", "Delete TINKER End File",
-                        JOptionPane.YES_NO_OPTION);
-                if (i == JOptionPane.YES_OPTION) {
-                    end.delete();
-                }
-            } else {
-                int i = JOptionPane.showConfirmDialog(this, "Create "
-                        + end.getName() + "?", "Create TINKER End File",
-                        JOptionPane.YES_NO_OPTION);
-                if (i == JOptionPane.YES_OPTION) {
-                    end.createNewFile();
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            logger.warning("\n Error changing the state of a *.End file");
-            logger.warning("\n Force Field X will continue...");
+        if (ffxThread != null && ffxThread.isAlive()) {
+            ModelingShell modelingShell = mainPanel.getModelingShell();
+            modelingShell.doInterrupt();
         }
     }
 
@@ -1686,7 +1741,8 @@ public class ModelingPanel extends JPanel implements ActionListener,
     }
 
     /**
-     * <p>deleteLogs</p>
+     * <p>
+     * deleteLogs</p>
      */
     public void deleteLogs() {
         if (activeSystem != null) {
@@ -1715,7 +1771,8 @@ public class ModelingPanel extends JPanel implements ActionListener,
     }
 
     /**
-     * <p>toString</p>
+     * <p>
+     * toString</p>
      *
      * @return a {@link java.lang.String} object.
      */

@@ -29,8 +29,10 @@ import java.io.*;
 import java.net.URL;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Vector;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 
@@ -41,6 +43,9 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.PropertiesConfiguration;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -63,61 +68,93 @@ public final class KeywordPanel extends JPanel implements ActionListener {
 
     private static final long serialVersionUID = 1L;
     private static final Logger logger = Logger.getLogger(KeywordPanel.class.getName());
-    // True if a Key File is open.
+    private static final Preferences preferences = Preferences.userNodeForPackage(KeywordPanel.class);
+    /**
+     * True if a Key File is open.
+     */
     private boolean fileOpen = false;
-    // Currently open Keywords.
+    /**
+     * Currently open Keywords.
+     */
     private Hashtable<String, Keyword> currentKeys;
-    // Currently open Key File.
+    /**
+     * Currently open Key File.
+     */
     private File currentKeyFile;
-    // FFXSystem associated with currently open Key File (if any).
+    /**
+     * FFXSystem associated with currently open Key File (if any).
+     */
     private FFXSystem currentSystem;
-    // Swing Components.
-    // The MainPanel has references to many things the KeywordPanel uses.
-    private MainPanel mainPanel;
-    // HashMap for Keyword GUI Components.
+    /**
+     * The MainPanel has references to many things the KeywordPanel uses.
+     */
+    private final MainPanel mainPanel;
+    /**
+     * HashMap for Keyword GUI Components.
+     */
     private LinkedHashMap<String, KeywordComponent> keywordHashMap;
-    // HashMap for Keyword Groups.
+    /**
+     * HashMap for Keyword Groups.
+     */
     private LinkedHashMap<String, String> groupHashMap;
-    // JComboBox with Keyword Groups, plus a few special caes (Active, Flat
-    // File).
+    /**
+     * JComboBox with Keyword Groups, plus a few special cases (Active,
+     * FlatFile).
+     */
     private JComboBox groupComboBox;
-    // The editPanel holds the toolBar (north), splitPane (center) and
-    // statusLabel (south).
+    /**
+     * The editPanel holds the toolBar (north), splitPane (center) and statusLabel (south).
+     */
     private JPanel editPanel;
     private JToolBar toolBar;
-    // The splitPane holds the editScrollPane (top) and descriptScrollPane
-    // (bottom).
+/**
+ * The splitPane holds the editScrollPane (top) and descriptScrollPane (bottom).
+ */
     private JSplitPane splitPane;
-    private JLabel statusLabel = new JLabel("  ");
-    // The editScrollPane holds the gridPanel, where KeywordComponents actually
-    // live.
+    private final JLabel statusLabel = new JLabel("  ");
+    /**
+     * The editScrollPane holds the gridPanel, where KeywordComponents actually live.
+     */
     private JScrollPane editScrollPane;
-    // The descriptScrollPane holds the descriptTextArea for Keyword
-    // Descriptions.
+    /**
+     * The descriptScrollPane holds the descriptTextArea for Keyword Descriptions.
+     */
     private JScrollPane descriptScrollPane;
-    // The descriptTextArea actually holds Keyword Descriptions.
+    /**
+     *  The descriptTextArea actually holds Keyword Descriptions.
+     */
     private JTextArea descriptTextArea;
-    // Allow the user to show/hide Keyword Descriptions.
+    /**
+     *  Allow the user to show/hide Keyword Descriptions.
+     */
     private JCheckBoxMenuItem descriptCheckBox;
-    private GridBagLayout gridBagLayout = new GridBagLayout();
-    private GridBagConstraints gridBagConstraints = new GridBagConstraints();
-    // The gridPanel holds an array of KeywordComponents.
-    private JPanel gridPanel = new JPanel(gridBagLayout);
-    // Lines in Keyword files that are comments, unrecognized keywords, or
-    // keywords where editing is not supported are stored in a big StringBuilder.
+    private final GridBagLayout gridBagLayout = new GridBagLayout();
+    private final GridBagConstraints gridBagConstraints = new GridBagConstraints();
+    /**
+     *  The gridPanel holds an array of KeywordComponents.
+     */
+    private final JPanel gridPanel = new JPanel(gridBagLayout);
+    /**
+     * Lines in Keyword files that are comments, unrecognized keywords, or
+     * keywords where editing is not supported are stored in a big StringBuilder.
+     */
     private StringBuilder commentStringBuffer = new StringBuilder();
-    // This component shows what the saved Key file will look like (WYSIWYG).
+    /**
+     * This component shows what the saved Key file will look like (WYSIWYG).
+     */
     private JTextArea flatfileTextArea;
-    // A simple label if no Keyword File is open.
-    private JLabel noSystemLabel = new JLabel(
+    /**
+     * A simple label if no Keyword File is open.
+     */
+    private final JLabel noSystemLabel = new JLabel(
             "Keywords for the active system are edited here. ");
     // A simple label if no Keyword Description is available.
-    private JLabel noKeywordLabel = new JLabel(
+    private final JLabel noKeywordLabel = new JLabel(
             "Keyword desciptions are displayed here.");
-    private JPanel noKeywordPanel = new JPanel(new FlowLayout(FlowLayout.LEFT,
+    private final JPanel noKeywordPanel = new JPanel(new FlowLayout(FlowLayout.LEFT,
             5, 5));
-    private FlowLayout flowLayout = new FlowLayout(FlowLayout.LEFT, 5, 5);
-    private BorderLayout borderLayout = new BorderLayout();
+    private final FlowLayout flowLayout = new FlowLayout(FlowLayout.LEFT, 5, 5);
+    private final BorderLayout borderLayout = new BorderLayout();
     // Location of TINKER parameter files
     private File paramDir = null;
     private File paramFiles[] = null;
@@ -139,21 +176,28 @@ public final class KeywordPanel extends JPanel implements ActionListener {
      * {@inheritDoc}
      *
      * Handles input from KeywordPanel ToolBar buttons.
+     *
      */
     @Override
     public void actionPerformed(ActionEvent evt) {
         String arg = evt.getActionCommand();
-        if (arg.equals("Open...")) {
-            keyOpen();
-        } else if (arg.equals("Close")) {
-            keyClose();
-        } else if (arg.equals("Save")) {
-            keySave(currentKeyFile);
-        } else if (arg.equals("Save As...")) {
-            keySaveAs();
-        } else if (arg.equals("Description")) {
-            JCheckBoxMenuItem box = (JCheckBoxMenuItem) evt.getSource();
-            setDivider(box.isSelected());
+        switch (arg) {
+            case "Open...":
+                keyOpen();
+                break;
+            case "Close":
+                keyClose();
+                break;
+            case "Save":
+                keySave(currentKeyFile);
+                break;
+            case "Save As...":
+                keySaveAs();
+                break;
+            case "Description":
+                JCheckBoxMenuItem box = (JCheckBoxMenuItem) evt.getSource();
+                setDivider(box.isSelected());
+                break;
         }
         if (evt.getSource() instanceof JComboBox) {
             loadKeywordGroup();
@@ -161,7 +205,8 @@ public final class KeywordPanel extends JPanel implements ActionListener {
     }
 
     /**
-     * <p>getKeyword</p>
+     * <p>
+     * getKeyword</p>
      *
      * @param key a {@link java.lang.String} object.
      * @return a {@link java.lang.String} object.
@@ -180,7 +225,8 @@ public final class KeywordPanel extends JPanel implements ActionListener {
     }
 
     /**
-     * <p>getKeywordDescription</p>
+     * <p>
+     * getKeywordDescription</p>
      *
      * @param key a {@link java.lang.String} object.
      * @return a {@link java.lang.String} object.
@@ -199,7 +245,8 @@ public final class KeywordPanel extends JPanel implements ActionListener {
     }
 
     /**
-     * <p>getKeywordValue</p>
+     * <p>
+     * getKeywordValue</p>
      *
      * @param key a {@link java.lang.String} object.
      * @return a {@link java.lang.String} object.
@@ -226,8 +273,8 @@ public final class KeywordPanel extends JPanel implements ActionListener {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>paramFiles</code>.</p>
+     * <p>
+     * Getter for the field <code>paramFiles</code>.</p>
      *
      * @return an array of {@link java.lang.String} objects.
      */
@@ -236,7 +283,8 @@ public final class KeywordPanel extends JPanel implements ActionListener {
     }
 
     /**
-     * <p>getParamPath</p>
+     * <p>
+     * getParamPath</p>
      *
      * @param key a {@link java.lang.String} object.
      * @return a {@link java.lang.String} object.
@@ -296,7 +344,8 @@ public final class KeywordPanel extends JPanel implements ActionListener {
     }
 
     /**
-     * <p>initToolBar</p>
+     * <p>
+     * initToolBar</p>
      */
     public void initToolBar() {
         toolBar = new JToolBar("Keyword Editor");
@@ -312,7 +361,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
         insets.left = 2;
         insets.right = 2;
         jbopen.setMargin(insets);
-        toolBar.add(jbopen);
+        //toolBar.add(jbopen);
         JButton jbsave = new JButton(new ImageIcon(loader.getResource("ffx/ui/icons/disk.png")));
         jbsave.setActionCommand("Save");
         jbsave.setToolTipText("Save the Active *.KEY File");
@@ -330,7 +379,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
         jbclose.setToolTipText("Close the Active *.KEY File");
         jbclose.addActionListener(this);
         jbclose.setMargin(insets);
-        toolBar.add(jbclose);
+        //toolBar.add(jbclose);
         toolBar.addSeparator();
         groupComboBox.setMaximumSize(groupComboBox.getPreferredSize());
         groupComboBox.addActionListener(this);
@@ -352,7 +401,8 @@ public final class KeywordPanel extends JPanel implements ActionListener {
     }
 
     /**
-     * <p>isFileOpen</p>
+     * <p>
+     * isFileOpen</p>
      *
      * @return a boolean.
      */
@@ -361,7 +411,8 @@ public final class KeywordPanel extends JPanel implements ActionListener {
     }
 
     /**
-     * <p>isKeyword</p>
+     * <p>
+     * isKeyword</p>
      *
      * @param key a {@link java.lang.String} object.
      * @return a boolean.
@@ -369,15 +420,13 @@ public final class KeywordPanel extends JPanel implements ActionListener {
     public boolean isKeyword(String key) {
         synchronized (this) {
             KeywordComponent keyword = keywordHashMap.get(key.toUpperCase());
-            if (keyword == null) {
-                return false;
-            }
-            return true;
+            return keyword != null;
         }
     }
 
     /**
-     * <p>keyClear</p>
+     * <p>
+     * keyClear</p>
      */
     public void keyClear() {
         synchronized (this) {
@@ -399,7 +448,8 @@ public final class KeywordPanel extends JPanel implements ActionListener {
     }
 
     /**
-     * <p>keyClose</p>
+     * <p>
+     * keyClose</p>
      *
      * @return a boolean.
      */
@@ -448,7 +498,8 @@ public final class KeywordPanel extends JPanel implements ActionListener {
     }
 
     /**
-     * <p>keyOpen</p>
+     * <p>
+     * keyOpen</p>
      *
      * @param newKeyFile a {@link java.io.File} object.
      * @return a boolean.
@@ -469,7 +520,8 @@ public final class KeywordPanel extends JPanel implements ActionListener {
     }
 
     /**
-     * <p>keySave</p>
+     * <p>
+     * keySave</p>
      *
      * @param f a {@link java.io.File} object.
      */
@@ -485,7 +537,8 @@ public final class KeywordPanel extends JPanel implements ActionListener {
     }
 
     /**
-     * <p>keySaveAs</p>
+     * <p>
+     * keySaveAs</p>
      */
     public void keySaveAs() {
         if (!fileOpen) {
@@ -507,7 +560,8 @@ public final class KeywordPanel extends JPanel implements ActionListener {
     }
 
     /**
-     * <p>loadActive</p>
+     * <p>
+     * loadActive</p>
      *
      * @param newSystem a {@link ffx.ui.FFXSystem} object.
      * @return a boolean.
@@ -518,17 +572,54 @@ public final class KeywordPanel extends JPanel implements ActionListener {
                 keyClear();
                 return false;
             }
+            configToKeywords(newSystem);
             File newKeyFile = newSystem.getKeyFile();
+            if (newKeyFile != null) {
+                //logger.info(String.format("Key File %s.", newKeyFile.getAbsolutePath()));
+            }
             Hashtable<String, Keyword> newKeys = newSystem.getKeywords();
-            if (newKeyFile == null || newKeys == null) {
+            if (newKeyFile == null && newKeys == null) {
+                logger.info(String.format("Loaded %s with no keywords.", newSystem.toString()));
                 return false;
             }
+            //logger.info(String.format("Loading %s with %d keywords.", newSystem.toString(), newKeys.size()));
             return loadActive(newSystem, newKeys, newKeyFile);
         }
     }
 
+    private void configToKeywords(FFXSystem newSystem) {
+
+        CompositeConfiguration properties = newSystem.getProperties();
+        Hashtable<String, Keyword> keywordHash = new Hashtable<>();
+
+        // Create the "Comments" property.
+        Keyword keyword = new Keyword("COMMENTS");
+        keywordHash.put("COMMENTS", keyword);
+
+        // Loop over properties from the keyword file.
+        Configuration config = properties.getConfiguration(0);
+        if (config instanceof PropertiesConfiguration) {
+            PropertiesConfiguration prop = (PropertiesConfiguration) config;
+            Iterator<String> keys = prop.getKeys();
+            while (keys.hasNext()) {
+                String key = keys.next();
+                if (keywordHash.contains(key)) {
+                    keyword = keywordHash.get(key);
+                    keyword.append(prop.getStringArray(key));
+                } else {
+                    String[] values = prop.getStringArray(key);
+                    keyword = new Keyword(key, values);
+                    keywordHash.put(key, keyword);
+                }
+            }
+        }
+
+        newSystem.setKeywords(keywordHash);
+    }
+
     /**
-     * <p>loadActive</p>
+     * <p>
+     * loadActive</p>
      *
      * @param newSystem a {@link ffx.ui.FFXSystem} object.
      * @param newKeys a {@link java.util.Hashtable} object.
@@ -537,6 +628,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
      */
     public boolean loadActive(FFXSystem newSystem,
             Hashtable<String, Keyword> newKeys, File newKeyFile) {
+
         synchronized (this) {
             // Store changes made to the current system (if any) first.
             if (currentKeys != null && KeywordComponent.isKeywordModified()) {
@@ -723,7 +815,8 @@ public final class KeywordPanel extends JPanel implements ActionListener {
     }
 
     /**
-     * <p>loadPrefs</p>
+     * <p>
+     * loadPrefs</p>
      */
     public void loadPrefs() {
         String c = KeywordPanel.class.getName();
@@ -732,7 +825,7 @@ public final class KeywordPanel extends JPanel implements ActionListener {
     }
 
     /**
-     * Load up the TINKER Keyword Definitions
+     * Load up the Force Field X Keyword Definitions
      */
     private void loadXML() {
         NodeList groups, keywords, values;
@@ -751,15 +844,11 @@ public final class KeywordPanel extends JPanel implements ActionListener {
             Element document = doc.getDocumentElement();
             Element body = (Element) document.getElementsByTagName("body").item(0);
             groups = body.getElementsByTagName("section");
-        } catch (ParserConfigurationException e) {
-            logger.warning("" + e);
-        } catch (SAXException e) {
-            logger.warning("" + e);
-        } catch (IOException e) {
+        } catch (ParserConfigurationException | SAXException | IOException e) {
             logger.warning("" + e);
         }
-        keywordHashMap = new LinkedHashMap<String, KeywordComponent>();
-        groupHashMap = new LinkedHashMap<String, String>();
+        keywordHashMap = new LinkedHashMap<>();
+        groupHashMap = new LinkedHashMap<>();
         groupHashMap.put("ACTIVE KEYWORDS", "Active Keywords");
         groupHashMap.put("FLAT FILE VIEW", "Flat File View");
         groupComboBox = new JComboBox();
@@ -784,15 +873,14 @@ public final class KeywordPanel extends JPanel implements ActionListener {
                 keywordName = keyword.getAttribute("name");
                 Node text = keyword.getFirstChild();
                 keywordDescription = text.getNodeValue().replace('\n', ' ');
-                keywordDescription = keywordDescription.replace("  ", " ");
+                keywordDescription = keywordDescription.replaceAll("  +", " ");
                 keywordGUI = keyword.getAttribute("rep");
                 KeywordComponent.SwingRepresentation type;
                 try {
                     type = KeywordComponent.SwingRepresentation.valueOf(keywordGUI.toUpperCase());
                 } catch (Exception e) {
                     type = null;
-                    logger.warning(keywordName + ": Unknown GUI Component - "
-                            + type);
+                    logger.log(Level.WARNING, "{0}: Unknown GUI Component - {1}", new Object[]{keywordName, type});
                     System.exit(-1);
                 }
                 KeywordComponent key;
@@ -818,7 +906,8 @@ public final class KeywordPanel extends JPanel implements ActionListener {
     }
 
     /**
-     * <p>publishKeywords</p>
+     * <p>
+     * publishKeywords</p>
      */
     public void publishKeywords() {
         synchronized (this) {
@@ -854,7 +943,8 @@ public final class KeywordPanel extends JPanel implements ActionListener {
     }
 
     /**
-     * <p>saveChanges</p>
+     * <p>
+     * saveChanges</p>
      *
      * @return a boolean.
      */
@@ -867,7 +957,8 @@ public final class KeywordPanel extends JPanel implements ActionListener {
     }
 
     /**
-     * <p>saveKeywords</p>
+     * <p>
+     * saveKeywords</p>
      *
      * @param keyFile a {@link java.io.File} object.
      * @param keywordHashMap a {@link java.util.LinkedHashMap} object.
@@ -933,10 +1024,10 @@ public final class KeywordPanel extends JPanel implements ActionListener {
             return true;
         }
     }
-    private static final Preferences preferences = Preferences.userNodeForPackage(KeywordPanel.class);
 
     /**
-     * <p>savePrefs</p>
+     * <p>
+     * savePrefs</p>
      */
     public void savePrefs() {
         String c = KeywordPanel.class.getName();
@@ -945,7 +1036,8 @@ public final class KeywordPanel extends JPanel implements ActionListener {
     }
 
     /**
-     * <p>selected</p>
+     * <p>
+     * selected</p>
      */
     public void selected() {
         setDivider(descriptCheckBox.isSelected());
@@ -954,7 +1046,8 @@ public final class KeywordPanel extends JPanel implements ActionListener {
     }
 
     /**
-     * <p>setDivider</p>
+     * <p>
+     * setDivider</p>
      *
      * @param b a boolean.
      */
@@ -1012,7 +1105,8 @@ public final class KeywordPanel extends JPanel implements ActionListener {
     }
 
     /**
-     * <p>setParamPath</p>
+     * <p>
+     * setParamPath</p>
      */
     public void setParamPath() {
         paramDir = new File(MainPanel.ffxDir.getAbsolutePath() + File.separator

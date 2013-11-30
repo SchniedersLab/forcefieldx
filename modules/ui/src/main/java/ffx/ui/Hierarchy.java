@@ -386,17 +386,20 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
     /**
      * Sets the FFXSystem s to be active.
      *
-     * @param s a {@link ffx.ui.FFXSystem} object.
+     * @param ffxSystem a {@link ffx.ui.FFXSystem} object.
      */
-    public void setActive(FFXSystem s) {
-        if (s == activeSystem) {
+    public void setActive(FFXSystem ffxSystem) {
+        if (ffxSystem == activeSystem) {
             return;
         }
         synchronized (this) {
-            activeSystem = s;
+            activeSystem = ffxSystem;
             updateStatus();
             if (mainPanel.getKeywordPanel() != null) {
                 mainPanel.getKeywordPanel().loadActive(activeSystem);
+            }
+            if (mainPanel.getModelingPanel() != null) {
+                mainPanel.getModelingPanel().loadActive(activeSystem);
             }
             if (mainPanel.getModelingShell() != null) {
                 mainPanel.getModelingShell().sync();

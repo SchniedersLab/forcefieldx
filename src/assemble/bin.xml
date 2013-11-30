@@ -19,9 +19,9 @@
         <fileSet>
             <directory>bin</directory>
             <includes>
-                <!-- include>ffx</include -->
+                <include>ffx</include>
                 <include>ffxc</include>
-                <!-- include>ffx.bat</include -->
+                <include>ffx.bat</include>
                 <include>ffxc.bat</include>
                 <include>ffx-all.jar</include>
             </includes>

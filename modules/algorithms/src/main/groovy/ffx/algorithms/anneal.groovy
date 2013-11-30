@@ -69,13 +69,10 @@ cli.b(longOpt:'thermostat', args:1, argName:'Berendsen', 'Thermostat: [Adiabatic
 
 def options = cli.parse(args);
 
-List<String> arguments = options.arguments();
-if (options.h || arguments == null || arguments.size() != 1) {
+if (options.h) {
     return cli.usage();
 }
 
-// Read in command line.
-String filename = arguments.get(0);
 
 if (options.p) {
     System.setProperty("polarization", options.p);
@@ -124,17 +121,28 @@ if (options.i) {
     }
 }
 
-logger.info("\n Running simulated annealing on " + filename);
-systems = open(filename);
+List<String> arguments = options.arguments();
+String filename = null;
+if (arguments != null && arguments.size() > 0) {
+    // Read in command line.
+    modelfilename = arguments.get(0);
+    open(modelfilename);
+} else if (active == null) {
+    return cli.usage();
+} else {
+    modelfilename = active.getFile();
+}
+
+logger.info("\n Running simulated annealing on " + modelfilename);
 SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(active, active.getPotentialEnergy(),
     active.getProperties(), null, thermostat, integrator);
 simulatedAnnealing.anneal(high, low, windows, steps, timeStep);
 
-String ext = FilenameUtils.getExtension(filename);
-filename = FilenameUtils.removeExtension(filename);
+String ext = FilenameUtils.getExtension(modelfilename);
+modelfilename = FilenameUtils.removeExtension(modelfilename);
 
 if (ext.toUpperCase().contains("XYZ")) {
-    saveAsXYZ(new File(filename + ".xyz"));
+    saveAsXYZ(new File(modelfilename + ".xyz"));
 } else {
-    saveAsPDB(systems, new File(filename + ".pdb"));
+    saveAsPDB(systems, new File(modelfilename + ".pdb"));
 }

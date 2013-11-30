@@ -86,6 +86,9 @@
             <item name="Space Groups" href="/symmetry.html"/>
             <item name="Examples" href="/examples.html"/>
         </menu>
+        <!-- menu name="WebStart" inherit="top">
+            <item name="Side-Chain Optimization" href="/webstart.html"/>
+        </menu -->
         <menu name="FFX Commons" inherit="top">
             <item name="Organization" href="/project.html"/>
             <item name="Source Code" href="/source.html"/>

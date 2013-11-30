@@ -23,6 +23,7 @@
 package ffx.utilities;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Vector;
@@ -31,6 +32,7 @@ import java.util.logging.Logger;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.configuration.SystemConfiguration;
 
@@ -48,17 +50,19 @@ public class Keyword {
     private Vector<String> data = null;
 
     /**
-     * <p>Constructor for Keyword.</p>
+     * <p>
+     * Constructor for Keyword.</p>
      *
      * @param k a {@link java.lang.String} object.
      */
     public Keyword(String k) {
         keyword = k;
-        data = new Vector<String>();
+        data = new Vector<>();
     }
 
     /**
-     * <p>Constructor for Keyword.</p>
+     * <p>
+     * Constructor for Keyword.</p>
      *
      * @param k a {@link java.lang.String} object.
      * @param entry a {@link java.lang.String} object.
@@ -69,20 +73,20 @@ public class Keyword {
     }
 
     /**
-     * <p>Constructor for Keyword.</p>
+     * <p>
+     * Constructor for Keyword.</p>
      *
      * @param k a {@link java.lang.String} object.
      * @param entry an array of {@link java.lang.String} objects.
      */
     public Keyword(String k, String entry[]) {
         this(k);
-        for (String s : entry) {
-            data.add(s);
-        }
+        data.addAll(Arrays.asList(entry));
     }
 
     /**
-     * <p>append</p>
+     * <p>
+     * append</p>
      *
      * @param entry a {@link java.lang.String} object.
      */
@@ -91,25 +95,26 @@ public class Keyword {
     }
 
     /**
-     * <p>append</p>
+     * <p>
+     * append</p>
      *
      * @param entry an array of {@link java.lang.String} objects.
      */
     public void append(String entry[]) {
-        for (String s : entry) {
-            data.add(s);
-        }
+        data.addAll(Arrays.asList(entry));
     }
 
     /**
-     * <p>clear</p>
+     * <p>
+     * clear</p>
      */
     public void clear() {
         data.clear();
     }
 
     /**
-     * <p>getEntries</p>
+     * <p>
+     * getEntries</p>
      *
      * @return a {@link java.util.Vector} object.
      */
@@ -118,7 +123,8 @@ public class Keyword {
     }
 
     /**
-     * <p>getEntry</p>
+     * <p>
+     * getEntry</p>
      *
      * @param i a int.
      * @return a {@link java.lang.String} object.
@@ -128,8 +134,8 @@ public class Keyword {
     }
 
     /**
-     * <p>Getter for the field
-     * <code>keyword</code>.</p>
+     * <p>
+     * Getter for the field <code>keyword</code>.</p>
      *
      * @return a {@link java.lang.String} object.
      */
@@ -138,7 +144,8 @@ public class Keyword {
     }
 
     /**
-     * <p>print</p>
+     * <p>
+     * print</p>
      */
     public void print() {
         logger.info(this.toString());
@@ -158,10 +165,12 @@ public class Keyword {
 
     /**
      * This method sets up configuration properties in the following precedence
-     * order: 1.) Java system properties a.) -Dkey=value from the Java command
-     * line b.) System.setProperty("key","value") within Java code.
+     * * order:
      *
-     * 2.) Structure specific properties (for example pdbname.properties)
+     * 1.) Structure specific properties (for example pdbname.properties)
+     *
+     * 2.) Java system properties a.) -Dkey=value from the Java command line b.)
+     * System.setProperty("key","value") within Java code.
      *
      * 3.) User specific properties (~/.ffx/ffx.properties)
      *
@@ -180,10 +189,9 @@ public class Keyword {
          * Command line options take precedence.
          */
         CompositeConfiguration properties = new CompositeConfiguration();
-        properties.addConfiguration(new SystemConfiguration());
 
         /**
-         * Structure specific options are 2nd.
+         * Structure specific options are first.
          */
         if (file != null) {
             String filename = file.getAbsolutePath();
@@ -194,8 +202,8 @@ public class Keyword {
                 try {
                     properties.addConfiguration(new PropertiesConfiguration(structurePropFile));
                     properties.addProperty("propertyFile", structurePropFile.getCanonicalPath());
-                } catch (Exception e) {
-                    logger.info(" Error loading " + filename + ".");
+                } catch (ConfigurationException | IOException e) {
+                    logger.log(Level.INFO, " Error loading {0}.", filename);
                 }
             } else {
                 propertyFilename = filename + ".key";
@@ -204,12 +212,21 @@ public class Keyword {
                     try {
                         properties.addConfiguration(new PropertiesConfiguration(structurePropFile));
                         properties.addProperty("propertyFile", structurePropFile.getCanonicalPath());
-                    } catch (Exception e) {
-                        logger.info(" Error loading " + filename + ".");
+                    } catch (ConfigurationException | IOException e) {
+                        logger.log(Level.INFO, " Error loading {0}.", filename);
                     }
                 }
             }
         }
+
+        /**
+         * Java system properties
+         *
+         * a.) -Dkey=value from the Java command line
+         *
+         * b.) System.setProperty("key","value") within Java code.
+         */
+        properties.addConfiguration(new SystemConfiguration());
 
         /**
          * User specific options are 3rd.
@@ -219,8 +236,8 @@ public class Keyword {
         if (userPropFile.exists() && userPropFile.canRead()) {
             try {
                 properties.addConfiguration(new PropertiesConfiguration(userPropFile));
-            } catch (Exception e) {
-                logger.info(" Error loading " + filename + ".");
+            } catch (ConfigurationException e) {
+                logger.log(Level.INFO, " Error loading {0}.", filename);
             }
         }
 
@@ -233,8 +250,8 @@ public class Keyword {
             if (systemPropFile.exists() && systemPropFile.canRead()) {
                 try {
                     properties.addConfiguration(new PropertiesConfiguration(systemPropFile));
-                } catch (Exception e) {
-                    logger.info(" Error loading " + filename + ".");
+                } catch (ConfigurationException e) {
+                    logger.log(Level.INFO, " Error loading {0}.", filename);
                 }
             }
         }
@@ -243,13 +260,14 @@ public class Keyword {
          * Echo the interpolated configuration.
          */
         if (logger.isLoggable(Level.FINE)) {
-            Configuration config = properties.interpolatedConfiguration();
-            Iterator<String> i = config.getKeys();
+            //Configuration config = properties.interpolatedConfiguration();
+            Iterator<String> i = properties.getKeys();
             StringBuilder sb = new StringBuilder();
             sb.append(String.format("\n %-30s %s\n", "Property", "Value"));
             while (i.hasNext()) {
                 String s = i.next();
-                sb.append(String.format(" %-30s %s\n", s, Arrays.toString(config.getList(s).toArray())));
+                //sb.append(String.format(" %-30s %s\n", s, Arrays.toString(config.getList(s).toArray())));
+                sb.append(String.format(" %-30s %s\n", s, Arrays.toString(properties.getList(s).toArray())));
             }
             logger.fine(sb.toString());
         }

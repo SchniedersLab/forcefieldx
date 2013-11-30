@@ -156,7 +156,7 @@ System.setProperty("lambdaterm","true");
 
 // Relative free energies via the DualTopologyEnergy class require different
 // default OSRW parameters than absolute free energies.
-if (arguments.size() == 2) {
+if (arguments.size() > 1) {
     // Condensed phase polarization is evaluated over the entire range.
     System.setProperty("polarization-lambda-start","0.0");
     // Polarization energy is not scaled individually by lambda, but
@@ -175,14 +175,6 @@ open(filename);
 // Select ligand atoms
 Atom[] atoms = active.getAtomArray();
 int n = atoms.length;
-// Set the first ligand atom if it was not specified on the command line.
-if (ligandStart < 1 || ligandStart > n) {
-    ligandStart = 1;
-}
-// Set the final ligand atom if it was not specified on the command line.
-if (ligandStop == -1 || ligandStop > n || ligandStop < ligandStart) {
-    ligandStop = n;
-}
 // Apply ligand atom selection
 for (int i = ligandStart; i <= ligandStop; i++) {
     Atom ai = atoms[i - 1];
@@ -210,14 +202,6 @@ if (arguments.size() > 1) {
     // Select ligand atoms
     atoms = active.getAtomArray();
     n = atoms.length;
-    // Set the first ligand atom if it was not specified on the command line.
-    if (ligandStart2 < 1 || ligandStart2 > n) {
-        ligandStart2 = 1;
-    }
-    // Set the final ligand atom if it was not specified on the command line.
-    if (ligandStop2 == -1 || ligandStop2 > n || ligandStop2 < ligandStart2) {
-        ligandStop2 = n;
-    }
     // Apply ligand atom selection
     for (int i = ligandStart2; i <= ligandStop2; i++) {
         Atom ai = atoms[i - 1];

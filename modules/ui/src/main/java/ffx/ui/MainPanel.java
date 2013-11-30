@@ -235,7 +235,7 @@ public final class MainPanel extends JPanel implements ActionListener,
     private Hierarchy hierarchy;
     private MainMenu mainMenu;
     private GraphicsPanel graphicsPanel;
-    // private ModelingPanel modelingPanel;
+    private ModelingPanel modelingPanel;
     private KeywordPanel keywordPanel;
     // private LogPanel logPanel;
     private GraphicsCanvas graphicsCanvas;
@@ -775,9 +775,10 @@ public final class MainPanel extends JPanel implements ActionListener,
         return frame;
     }
 
-    /*
-     * public ModelingPanel getModelingPanel() { return modelingPanel; }
-     */
+    public ModelingPanel getModelingPanel() {
+        return modelingPanel;
+    }
+
     /**
      * <p>
      * Getter for the field <code>modelingShell</code>.</p>
@@ -954,24 +955,25 @@ public final class MainPanel extends JPanel implements ActionListener,
         hierarchy = new Hierarchy(this);
         hierarchy.setStatus(statusLabel, stepLabel, energyLabel);
         keywordPanel = new KeywordPanel(this);
-        // modelingPanel = new ModelingPanel(this);
+        modelingPanel = new ModelingPanel(this);
         JPanel treePane = new JPanel(new BorderLayout());
         JScrollPane scrollPane = new JScrollPane(hierarchy,
                 JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
                 JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
         treePane.add(scrollPane, BorderLayout.CENTER);
         tabbedPane = new JTabbedPane();
-        /**
-         * ImageIcon graphicsIcon = new ImageIcon(loader.getResource("ffx/ui/icons/monitor.png"));
-         * ImageIcon keywordIcon = new ImageIcon(loader.getResource("ffx/ui/icons/key.png"));
-         * tabbedPane.addTab(locale.getValue("Graphics"), graphicsIcon, graphicsPanel);
-         * tabbedPane.addTab(locale.getValue("KeywordEditor"), keywordIcon, keywordPanel);
-         * tabbedPane.addTab(locale.getValue("ModelingCommands"), modelingIcon, modelingPanel);
-         * tabbedPane.addChangeListener(this);
-         * splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, false, treePane, tabbedPane);
-        */
-        splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, false,
-                treePane, graphicsPanel);
+
+        ImageIcon graphicsIcon = new ImageIcon(loader.getResource("ffx/ui/icons/monitor.png"));
+        ImageIcon keywordIcon = new ImageIcon(loader.getResource("ffx/ui/icons/key.png"));
+        ImageIcon modelingIcon = new ImageIcon(loader.getResource("ffx/ui/icons/cog.png"));
+        tabbedPane.addTab(locale.getValue("Graphics"), graphicsIcon, graphicsPanel);
+        tabbedPane.addTab(locale.getValue("KeywordEditor"), keywordIcon, keywordPanel);
+        tabbedPane.addTab(locale.getValue("ModelingCommands"), modelingIcon, modelingPanel);
+        tabbedPane.addChangeListener(this);
+        splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, false, treePane, tabbedPane);
+
+        /* splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, false,
+         treePane, graphicsPanel); */
         splitPane.setResizeWeight(0.25);
         splitPane.setOneTouchExpandable(true);
         setLayout(new BorderLayout());
@@ -1908,9 +1910,10 @@ public final class MainPanel extends JPanel implements ActionListener,
             preferences.putInt(c + ".port", socketAddress.getPort());
         }
         preferences.put(c + ".cwd", pwd.toString());
-        /*
-         * if (modelingPanel != null) { modelingPanel.savePrefs(); }
-         */
+
+        if (modelingPanel != null) {
+            modelingPanel.savePrefs();
+        }
         if (keywordPanel != null) {
             keywordPanel.savePrefs();
         }
@@ -2110,10 +2113,9 @@ public final class MainPanel extends JPanel implements ActionListener,
             graphicsCanvas.selected();
         } else if (index == 1) {
             keywordPanel.selected();
+        } else if (index == 2) {
+            modelingPanel.selected();
         }
-        /*
-         * else if (index == 2) { modelingPanel.selected(); }
-         */
     }
 
     /**

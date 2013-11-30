@@ -72,13 +72,22 @@ cli.p(longOpt:'polarization', args:1, argName:'mutual', 'polarization model: [no
 cli.t(longOpt:'threestage', 'set to perform refinement in 3 stages: coordinates, bfactors, then occupancies - overrides mode setting if true');
 cli.s(longOpt:'suffix', args:1, argName:'_refine', 'output suffix');
 def options = cli.parse(args);
-List<String> arguments = options.arguments();
-if (options.h || arguments == null || arguments.size() < 1) {
+
+if (options.h) {
     return cli.usage();
 }
 
-// Name of the file (PDB or XYZ).
-String modelfilename = arguments.get(0);
+List<String> arguments = options.arguments();
+String modelfilename = null;
+if (arguments != null && arguments.size() > 0) {
+    // Read in command line.
+    modelfilename = arguments.get(0);
+    open(modelfilename);
+} else if (active == null) {
+    return cli.usage();
+} else {
+    modelfilename = active.getFile();
+}
 
 // set up diffraction data (can be multiple files)
 List diffractionfiles = new ArrayList();

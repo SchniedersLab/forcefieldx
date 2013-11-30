@@ -621,9 +621,11 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
 
     @Override
     public double getd2EdL2() {
-        double d2EdL2_1 = scaleEnergy1 * (lambdaPow * forceFieldEnergy1.getd2EdL2() + 2.0 * dLambdaPow * forceFieldEnergy1.getdEdL()
+        double d2EdL2_1 = scaleEnergy1 * (lambdaPow * forceFieldEnergy1.getd2EdL2()
+                + 2.0 * dLambdaPow * forceFieldEnergy1.getdEdL()
                 + d2LambdaPow * energy1 + d2OneMinusLambdaPow * restraintEnergy1);
-        double d2EdL2_2 = scaleEnergy2 * (oneMinusLambdaPow * forceFieldEnergy2.getd2EdL2() - 2.0 * dOneMinusLambdaPow * forceFieldEnergy2.getdEdL()
+        double d2EdL2_2 = scaleEnergy2 * (oneMinusLambdaPow * forceFieldEnergy2.getd2EdL2()
+                - 2.0 * dOneMinusLambdaPow * forceFieldEnergy2.getdEdL()
                 + d2OneMinusLambdaPow * energy2 + d2LambdaPow * restraintEnergy2);
         return d2EdL2_1 + d2EdL2_2;
     }

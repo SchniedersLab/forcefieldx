@@ -30,6 +30,8 @@ import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
 import ffx.potential.Rotamer;
 import ffx.potential.RotamerLibrary;
+import ffx.potential.bonded.Atom
+import ffx.potential.bonded.Residue;
 
 // Create the command line parser.
 def cli = new CliBuilder(usage:' ffxc saveRotamers [options] <PDB|XYZ>');
@@ -38,6 +40,10 @@ cli.c(longOpt:'chain', args:1, argName:' ', 'Single character chain name (defaul
 cli.l(longOpt:'library', args:1, argName:'1', 'Available rotamer libraries are Ponder and Richards (1) or Richardson (2).');
 cli.r(longOpt:'resid', args:1, argName:'1', 'Residue number.');
 cli.i(longOpt:'independent', args:1, argName: 'false', 'Independent draws nucleic acid rotamers independently of chain context.');
+cli.s(longOpt:'start', args:1, argName: '-1', 'First rotamer to draw. Indexed from rotamer 0.');
+cli.f(longOpt:'finish', args:1, argName: '-1', 'Last rotamer to draw. Indexed from rotamer 0.');
+cli.x(longOpt:'all', args:1, argName: '0', 'Draw all rotamers beginning from the passed rotamer number (overrides other options). Indexed from rotamer 0.');
+cli.u(longOpt:'upstreamPucker', args:1, argName: 'true', 'Adjusts the pucker of the 5\' residue to match the rotamer.');
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
@@ -49,6 +55,11 @@ int resID = 1;
 String chain = " ";
 int library = 1;
 boolean independent = false;
+int start = -1;
+int finish = -1;
+int allStart = 0;
+// Will be checked for validity, and set false if invalid.
+boolean upstreamPucker = true;
 
 // Residue number.
 if (options.r) {
@@ -70,6 +81,32 @@ if (options.i) {
     independent = Boolean.parseBoolean(options.i);
 }
 
+// Default behavior: draw all rotamers starting from 0 (as though set -x 0).
+boolean saveAllRotamers = true;
+
+// Start point
+if (options.s) {
+    start = Integer.parseInt(options.s);
+    saveAllRotamers = false;
+}
+
+// Finish point
+if (options.f) {
+    finish = Integer.parseInt(options.f);
+}
+
+// Start from to all
+if (options.x) {
+    allStart = Integer.parseInt(options.x);
+    saveAllRotamers = true;
+    // Over-rides options.s
+}
+
+// Upstream pucker adjustment
+if (options.u) {
+    upstreamPucker = Boolean.parseBoolean(options.u);
+}
+
 logger.info("\n Saving rotamers for residue number " + resID + " of chain " + chain + ".");
 
 // Read in command line.
@@ -79,7 +116,7 @@ String filename = arguments.get(0);
 systems = open(filename);
 
 MolecularAssembly molecularAssembly = (MolecularAssembly) active;
-RotamerLibrary.loadPriorAtomicCoordinates(molecularAssembly);
+RotamerLibrary.initializeDefaultAtomicCoordinates(molecularAssembly);
 Polymer polymer = molecularAssembly.getChain(chain);
 if (polymer == null) {
     logger.info(" Polymer + " + chain + " does not exist.");
@@ -99,18 +136,85 @@ if (library == 1) {
 
 Rotamer[] rotamers = RotamerLibrary.getRotamers(residue);
 if (rotamers == null) {
-    logger.info(" There are no rotamers for residue + " + residue.toString());
+    logger.severe(" There are no rotamers for residue + " + residue.toString());
+}
+int nrotamers = rotamers.length;
+
+boolean isDeoxy = false; // Applies to prevResidue.
+Residue prevResidue;
+// If upstreamPucker is specified true, ensure that it is valid to apply it
+// (residue is nucleic acid with an upstream partner), and set isDeoxy.
+// If it is invalid, set upstreamPucker false.
+if (upstreamPucker) {
+    if (residue.getResidueType() == NA) {
+        prevResidue = (Residue) residue.getPreviousResidue();
+        // If no previous residue, set upstream pucker false.
+        // The method used will ensure prevResidue is a nucleic acid.
+        if (prevResidue == null) {
+            upstreamPucker = false;
+        } else {
+            Atom HOs = (Atom) prevResidue.getAtomNode("HO\'");
+            if (HOs == null) {
+                isDeoxy = true;
+            }
+        }
+    } else {
+        upstreamPucker = false;
+    }
 }
 
 String ext = FilenameUtils.getExtension(filename);
 filename = FilenameUtils.removeExtension(filename);
 
-for (int i = 0; i < rotamers.length; i++){
-    RotamerLibrary.applyRotamer(residue, rotamers[i], independent);
-    if (ext.toUpperCase().contains("XYZ")) {
-        saveAsXYZ(new File(filename + ".xyz"));
+if (saveAllRotamers) {
+    if (allStart >= nrotamers) {
+        logger.info(" Specified start range is outside of rotamer range. No action taken.");
     } else {
-        saveAsPDB(systems, new File(filename + ".pdb"));
+        for (int i = allStart; i < nrotamers; i++) {
+            RotamerLibrary.applyRotamer(residue, rotamers[i], independent);
+            if (upstreamPucker) {
+                double prevDelta = rotamers[i].chi1;
+                if (RotamerLibrary.checkPucker(prevDelta) == 1) {
+                    // North pucker
+                    RotamerLibrary.applySugarPucker(prevResidue, 1, isDeoxy, true);
+                } else {
+                    RotamerLibrary.applySugarPucker(prevResidue, 2, isDeoxy, true);
+                }
+            }
+            if (ext.toUpperCase().contains("XYZ")) {
+                saveAsXYZ(new File(filename + ".xyz"));
+            } else {
+                saveAsPDB(systems, new File(filename + ".pdb"));
+            }
+        }
+    }
+} else {
+    if (start >= nrotamers) {
+        logger.info(" Specified start range is outside of rotamer range. No action taken.");
+    } else {
+        if (finish >= nrotamers) {
+            finish = nrotamers - 1;
+        } else if (finish < start) {
+            logger.info(" Specified finish point is before the start point; drawing only rotamer " + start);
+            finish = start;
+        }
+        for (int i = start; i <= finish; i++) {
+            RotamerLibrary.applyRotamer(residue, rotamers[i], independent);
+            if (upstreamPucker) {
+                double prevDelta = rotamers[i].chi1;
+                if (RotamerLibrary.checkPucker(prevDelta) == 1) {
+                    // North pucker
+                    RotamerLibrary.applySugarPucker(prevResidue, 1, isDeoxy, true);
+                } else {
+                    RotamerLibrary.applySugarPucker(prevResidue, 2, isDeoxy, true);
+                }
+            }
+            if (ext.toUpperCase().contains("XYZ")) {
+                saveAsXYZ(new File(filename + ".xyz"));
+            } else {
+                saveAsPDB(systems, new File(filename + ".pdb"));
+            }
+        }
     }
 }
 
