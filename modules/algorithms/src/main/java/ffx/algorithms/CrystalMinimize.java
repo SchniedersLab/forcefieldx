@@ -22,6 +22,7 @@
  */
 package ffx.algorithms;
 
+import ffx.crystal.Crystal;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -32,6 +33,7 @@ import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.XtalEnergy;
 import ffx.potential.bonded.MolecularAssembly;
+import static java.lang.Math.sqrt;
 
 /**
  * Minimize the potential energy of a system to an RMS gradient per atom
@@ -56,6 +58,7 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
     private long time;
     private double grms;
     private int nSteps;
+    private Crystal crystal;
 
     /**
      * <p>Constructor for Minimize.</p>
@@ -75,10 +78,20 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
         n = potential.getNumberOfVariables();
         x = new double[n];
         grad = new double[n];
+        crystal = molecularAssembly.getCrystal();
         scaling = new double[n];
-        for (int i = 0; i < n; i++) {
-            scaling[i] = 1.0;
+        for (int i = 0; i < n-6; i+=3) {
+            scaling[i] = 12.0 * crystal.a;
+            scaling[i+1] = 12.0 * crystal.b;
+            scaling[i+2] = 12.0 * crystal.c;
         }
+        scaling[n-6] = 4.0 * sqrt(crystal.a);
+        scaling[n-5] = 4.0 * sqrt(crystal.b);
+        scaling[n-4] = 4.0 * sqrt(crystal.c);
+        scaling[n-3] = 0.02 * sqrt(crystal.alpha);
+        scaling[n-2] = 0.02 * sqrt(crystal.beta);
+        scaling[n-1] = 0.02 * sqrt(crystal.gamma);
+        
         potential.setScaling(scaling);
     }
 
@@ -101,10 +114,20 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
         n = potential.getNumberOfVariables();
         x = new double[n];
         grad = new double[n];
+        crystal = molecularAssembly.getCrystal();
         scaling = new double[n];
-        for (int i = 0; i < n; i++) {
-            scaling[i] = 1.0;
+        for (int i = 0; i < n-6; i+=3) {
+            scaling[i] = 12.0 * crystal.a;
+            scaling[i+1] = 12.0 * crystal.b;
+            scaling[i+2] = 12.0 * crystal.c;
         }
+        scaling[n-6] = 4.0 * sqrt(crystal.a);
+        scaling[n-5] = 4.0 * sqrt(crystal.b);
+        scaling[n-4] = 4.0 * sqrt(crystal.c);
+        scaling[n-3] = 0.02 * sqrt(crystal.alpha);
+        scaling[n-2] = 0.02 * sqrt(crystal.beta);
+        scaling[n-1] = 0.02 * sqrt(crystal.gamma);
+        
         potential.setScaling(scaling);
     }
 
@@ -166,6 +189,8 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
         double e = potential.energyAndGradient(x, grad);
         status = LBFGS.minimize(n, m, x, e, grad, eps, potential, this);
         done = true;
+        
+        
 
         switch (status) {
             case 0:
@@ -177,6 +202,9 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
             default:
                 logger.warning("\n Optimization failed.\n");
         }
+        crystal = molecularAssembly.getCrystal();
+        logger.info(String.format("\n Final lattice parameters" + crystal));
+        
         return potential;
     }
 

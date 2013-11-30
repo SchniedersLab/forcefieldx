@@ -290,11 +290,16 @@ public class XtalEnergy implements Potential {
                 break;
             case CUBIC:
                 // a == b == c && alpha == beta == gamma == 90.0
-                g[index++] = finiteDifference3(x, index, index + 1, index + 2, eps);
-                g[index++] = g[index - 1];
-                g[index++] = g[index - 2];
-                g[index++] = 0.0;
-                g[index++] = 0.0;
+                g[index] = finiteDifference3(x, index, index + 1, index + 2, eps);
+                index++;
+                g[index] = g[index - 1];
+                index++;
+                g[index] = g[index - 2];
+                index++;
+                g[index] = 0.0;
+                index++;
+                g[index] = 0.0;
+                index++;
                 g[index] = 0.0;
                 break;
         }
@@ -437,8 +442,9 @@ public class XtalEnergy implements Potential {
         double alpha = coords[index + 3];
         double beta = coords[index + 4];
         double gamma = coords[index + 5];
-        /* logger.info(String.format("getOptimizedUCParams %16.8f %16.8f %16.8f %16.8f %16.8f %16.8f",
-                a, b, c, alpha, beta, gamma)); */
+        /*
+         * logger.info(String.format("getOptimizedUCParams %16.8f %16.8f %16.8f %16.8f %16.8f %16.8f",
+                a, b, c, alpha, beta, gamma));*/
         switch (crystal.spaceGroup.crystalSystem) {
             case TRICLINIC:
                 break;
@@ -545,15 +551,23 @@ public class XtalEnergy implements Potential {
         for (int i = 0; i < len; i++) {
             Atom a = atoms[i];
             a.getXYZ(coords);
-            x[index++] = coords[0];
-            x[index++] = coords[1];
-            x[index++] = coords[2];
+            x[index] = coords[0];
+            index++;
+            x[index] = coords[1];
+            index++;
+            x[index] = coords[2];
+            index++;
         }
-        x[index++] = unitCell.a;
-        x[index++] = unitCell.b;
-        x[index++] = unitCell.c;
-        x[index++] = unitCell.alpha;
-        x[index++] = unitCell.beta;
+        x[index] = unitCell.a;
+        index++;
+        x[index] = unitCell.b;
+        index++;
+        x[index] = unitCell.c;
+        index++;
+        x[index] = unitCell.alpha;
+        index++;
+        x[index] = unitCell.beta;
+        index++;
         x[index] = unitCell.gamma;
         /*
         logger.info(String.format("getUCParams %16.8f %16.8f %16.8f %16.8f %16.8f %16.8f",
