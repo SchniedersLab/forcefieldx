@@ -22,6 +22,7 @@
  */
 package ffx.algorithms;
 
+import ffx.crystal.Crystal;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -166,6 +167,8 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
         double e = potential.energyAndGradient(x, grad);
         status = LBFGS.minimize(n, m, x, e, grad, eps, potential, this);
         done = true;
+        
+        
 
         switch (status) {
             case 0:
@@ -177,6 +180,9 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
             default:
                 logger.warning("\n Optimization failed.\n");
         }
+        Crystal crystal = molecularAssembly.getCrystal();
+        logger.info(String.format("\n Final lattice parameters" + crystal));
+        
         return potential;
     }
 
