@@ -789,9 +789,9 @@ public class ModelingShell extends Console implements AlgorithmListener {
              * Use the blocking graphics update method so that only
              * self-consistent coordinate sets are displayed.
              */
-            if (SwingUtilities.isEventDispatchThread()) {
+            //if (SwingUtilities.isEventDispatchThread()) {
                 graphics.updateSceneWait(active, true, false, null, false, null);
-            }
+            //}
         }
 
         if (interrupted) {

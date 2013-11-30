@@ -118,7 +118,7 @@ String filename2 = null;
 MolecularAssembly[] systems = null;
 if (arguments != null && arguments.size() > 0) {
     // Read in command line.
-    modelfilename = arguments.get(0);
+    filename = arguments.get(0);
     systems = open(filename);
     if (arguments.size() > 1) {
        filename2 = arguments.get(1);
@@ -126,7 +126,7 @@ if (arguments != null && arguments.size() > 0) {
 } else if (active == null) {
     return cli.usage();
 } else {
-    filename = active.getFile();   
+    filename = active.getFile();
 }
 
 boolean lambdaTerm = false;
@@ -155,13 +155,13 @@ if (lambdaTerm) {
     energy.getCrystal().setSpecialPositionCutoff(0.0);
 }
 
-if (filename2 == null) {    
+if (filename2 == null) {
     logger.info("\n Running minimize on " + active.getName());
     logger.info(" RMS gradient convergence criteria: " + eps);
 
     // Do the minimization
     e = minimize(eps);
-    
+
     String ext = FilenameUtils.getExtension(filename);
     filename = FilenameUtils.removeExtension(filename);
     if (ext.toUpperCase().contains("XYZ")) {
