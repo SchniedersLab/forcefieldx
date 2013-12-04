@@ -99,6 +99,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
      * @param requestedThermostat a
      * {@link ffx.algorithms.Thermostat.Thermostats} object.
+     * @param requestedIntegrator
      */
     public MolecularDynamics(MolecularAssembly assembly,
             Potential potentialEnergy,
@@ -264,6 +265,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * @param timeStep a double.
      * @param printInterval a double.
      * @param saveInterval a double.
+     * @param fileType
+     * @param restartFrequency
      * @param temperature a double.
      * @param initVelocities a boolean.
      * @param dyn a {@link java.io.File} object.
@@ -357,14 +360,18 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * A version of init with the original method header. Redirects to the new
      * method with default values for added parameters. Needed by (at least)
      * ReplicaExchange, which calls this directly.
+     * @param nSteps
+     * @param timeStep
+     * @param printInterval
+     * @param saveInterval
+     * @param temperature
+     * @param initVelocities
+     * @param dyn
      */
     public void init(final int nSteps, final double timeStep, final double printInterval,
             final double saveInterval, final double temperature, final boolean initVelocities,
             final File dyn) {
-
-        final String fileType = "PDB";
-        final double restartFrequency = 0.1;
-        init(nSteps, timeStep, printInterval, saveInterval, fileType, restartFrequency, temperature, initVelocities, dyn);
+        init(nSteps, timeStep, printInterval, saveInterval, "PDB", 0.1, temperature, initVelocities, dyn);
     }
 
     /**
@@ -444,7 +451,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 while (dynamicThread.isAlive()) {
                     wait(100);
                 }
-            } catch (Exception e) {
+            } catch (InterruptedException e) {
                 String message = " Molecular dynamics interrupted.";
                 logger.log(Level.WARNING, message, e);
             }
