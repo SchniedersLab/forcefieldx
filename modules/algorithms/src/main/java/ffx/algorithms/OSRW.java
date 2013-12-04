@@ -53,24 +53,24 @@ public class OSRW implements Potential {
     /**
      * A potential energy that implements the LambdaInterface.
      */
-    private LambdaInterface lambdaInterface;
+    private final LambdaInterface lambdaInterface;
     /**
      * The potential energy of the system.
      */
-    private Potential potential;
+    private final Potential potential;
     /**
      * Number of variables.
      */
-    private int nVariables;
+    private final int nVariables;
     /**
      * Each walker has a unique lambda restart file.
      */
-    private File lambdaFile;
+    private final File lambdaFile;
     /**
      * Each walker reads the same histogram restart file. Only the walker of
      * rank 0 writes the histogram restart file.
      */
-    private File histogramFile;
+    private final File histogramFile;
     /**
      * State variable lambda ranges from 0.0 .. 1.0.
      */
@@ -110,7 +110,7 @@ public class OSRW implements Potential {
      * array must be wrapped inside a Parallel Java IntegerBuf for the
      * All-Gather communication calls.
      */
-    private double recursionCounts[][];
+    private final double recursionCounts[][];
     private final double myRecursionCount[];
     /**
      * These DoubleBufs wrap the recusionCount arrays.
@@ -176,7 +176,7 @@ public class OSRW implements Potential {
     private double d2EdLambda2;
     private double dUdXdL[] = null;
     private double biasMag = 0.001;
-    private double FLambda[];
+    private final double FLambda[];
     /**
      * Gas constant (in Kcal/mole/Kelvin).
      */
@@ -191,7 +191,7 @@ public class OSRW implements Potential {
      */
     private double thetaMass = 1.0e-18;
     private double halfThetaVelocity = 0.0;
-    private Random stochasticRandom;
+    private final Random stochasticRandom;
     /**
      * Random force conversion to kcal/mol/A;
      */
@@ -203,7 +203,7 @@ public class OSRW implements Potential {
     /**
      * Time step in picoseconds.
      */
-    private double dt;
+    private final double dt;
     /**
      * Temperature in Kelvin.
      */
@@ -239,7 +239,7 @@ public class OSRW implements Potential {
     /**
      * Once the lambda reset value is reached, OSRW statistics are reset.
      */
-    private double lambdaResetValue = 0.99;
+    private final double lambdaResetValue = 0.99;
     /**
      * Flag set to false once OSRW statistics are reset at lambdaResetValue.
      */
@@ -247,12 +247,12 @@ public class OSRW implements Potential {
     /**
      * Stores a traversal snapshot that has not yet been written to file.
      */
-    private ArrayList<String> traversalInHand = new ArrayList<String>();
+    private ArrayList<String> traversalInHand = new ArrayList<>();
     /**
      * Interval between how often the free energy is updated from the count
      * matrix.
      */
-    private int fLambdaPrintInterval = 10;
+    private final int fLambdaPrintInterval = 10;
     private int fLambdaUpdates = 0;
     /**
      * Interval between writing an OSRW restart file in steps.
@@ -261,7 +261,7 @@ public class OSRW implements Potential {
     /**
      * Print detailed energy information.
      */
-    private boolean print = false;
+    private final boolean print = false;
     /**
      * Total system energy.
      */
@@ -295,7 +295,7 @@ public class OSRW implements Potential {
      * The ReceiveThread accumulates OSRW statistics from multiple asynchronous
      * walkers.
      */
-    private ReceiveThread receiveThread;
+    private final ReceiveThread receiveThread;
 
     /**
      * OSRW Asynchronous MultiWalker Constructor.
@@ -770,7 +770,7 @@ public class OSRW implements Potential {
         myRecursionCount[1] = dEdU;
         try {
             world.allGather(myRecursionCountBuf, recursionCountsBuf);
-        } catch (Exception ex) {
+        } catch (IOException ex) {
             String message = " Multi-walker OSRW allGather failed.";
             logger.log(Level.SEVERE, message, ex);
         }
