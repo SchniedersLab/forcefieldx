@@ -379,6 +379,7 @@ public class FFXClassLoader extends ClassLoader {
                 while (entries.hasMoreElements()) {
                     JarEntry entry = entries.nextElement();
                     String name = entry.getName();
+                    // System.out.println(name);
                     if (name.startsWith("ffx") && name.endsWith(".groovy")) {
                         name = name.replace('/', '.');
                         name = name.replace("ffx.scripts.", "");
