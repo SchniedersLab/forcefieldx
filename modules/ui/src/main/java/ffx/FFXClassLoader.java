@@ -317,6 +317,7 @@ public class FFXClassLoader extends ClassLoader {
      * {@inheritDoc}
      *
      * Returns the library path of an extension DLL.
+     * @return
      */
     @Override
     protected String findLibrary(String libname) {
@@ -338,6 +339,7 @@ public class FFXClassLoader extends ClassLoader {
      *
      * Returns the URL of the given resource searching first if it exists among
      * the extension JARs given in constructor.
+     * @return
      */
     @Override
     protected URL findResource(String name) {
@@ -348,7 +350,6 @@ public class FFXClassLoader extends ClassLoader {
         if (name.equals("List all scripts")) {
             listScripts();
         }
-
         if (extensionJars != null) {
             // Try to find if resource belongs to one of the extracted jars
             for (int i = 0; i < extensionJars.length; i++) {
@@ -368,13 +369,13 @@ public class FFXClassLoader extends ClassLoader {
     }
 
     protected void listScripts() {
-        if (this.extensionJars != null) {
+        if (extensionJars != null) {
 
-            List<String> scripts = new ArrayList<String>();
+            List<String> scripts = new ArrayList<>();
 
             // Check if searched class is an extension class
-            for (int i = 0; i < this.extensionJars.length; i++) {
-                JarFile extensionJar = this.extensionJars[i];
+            for (int i = 0; i < extensionJars.length; i++) {
+                JarFile extensionJar = extensionJars[i];
                 Enumeration<JarEntry> entries = extensionJar.entries();
                 while (entries.hasMoreElements()) {
                     JarEntry entry = entries.nextElement();
@@ -401,6 +402,8 @@ public class FFXClassLoader extends ClassLoader {
      *
      * Loads a class with this class loader if its package belongs to
      * <code>applicationPackages</code> given in constructor.
+     * @return
+     * @throws java.lang.ClassNotFoundException
      */
     @Override
     protected Class loadClass(String name, boolean resolve) throws ClassNotFoundException {
@@ -470,7 +473,7 @@ public class FFXClassLoader extends ClassLoader {
         }
 
         // Find extension Jars and DLLs
-        ArrayList<JarFile> extensionJarList = new ArrayList<JarFile>();
+        ArrayList<JarFile> extensionJarList = new ArrayList<>();
         for (int i = 0; i < extensionJarsAndDlls.length; i++) {
             String extensionJarOrDll = extensionJarsAndDlls[i];
             try {

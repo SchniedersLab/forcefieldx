@@ -32,7 +32,11 @@ import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
 
-import ffx.crystal.*;
+import ffx.crystal.Crystal;
+import ffx.crystal.HKL;
+import ffx.crystal.ReflectionList;
+import ffx.crystal.Resolution;
+import ffx.crystal.SymOp;
 import ffx.numerics.ComplexNumber;
 import ffx.numerics.fft.Complex;
 import ffx.numerics.fft.Complex3DParallel;
@@ -246,13 +250,13 @@ import static ffx.numerics.fft.Complex3D.iComplex3D;
  * @see <a href="http://dx.doi.org/10.1107/S0907444910031045" target="_blank">
  * T.D. Fenn, M. J. Schnieders, A. T. Brunger, Acta Cryst. (2010). D66,
  * 1024-1031.</a>
- * @author Michael J. Schnieders
  *
+ * @author Timothy D. Fenn
  */
 public class CrystalReciprocalSpace {
 
     /**
-     * the possible solvent model methods
+     * The possible solvent model methods
      */
     public static interface SolventModel {
 
@@ -273,6 +277,7 @@ public class CrystalReciprocalSpace {
          */
         public static final int POLYNOMIAL = 4;
     }
+
     private static final Logger logger = Logger.getLogger(CrystalReciprocalSpace.class.getName());
     private static double toSeconds = 0.000000001;
     private final double badd;
@@ -560,14 +565,14 @@ public class CrystalReciprocalSpace {
             int minWork = nSymm;
 
             if (solventmodel != SolventModel.NONE) {
-                spatialDensityRegion =
-                        new SpatialDensityRegion(fftX, fftY, fftZ,
-                        densityGrid, (aradgrid + 2) * 2, nSymm, minWork,
-                        threadCount, crystal, atoms, coordinates);
-                bulkSpatialDensityRegion =
-                        new BulkSolventDensityRegion(fftX, fftY, fftZ,
-                        solventGrid, (aradgrid + 2) * 2, bulknsym, minWork,
-                        threadCount, crystal, atoms, coordinates, 4.0, parallelTeam);
+                spatialDensityRegion
+                        = new SpatialDensityRegion(fftX, fftY, fftZ,
+                                densityGrid, (aradgrid + 2) * 2, nSymm, minWork,
+                                threadCount, crystal, atoms, coordinates);
+                bulkSpatialDensityRegion
+                        = new BulkSolventDensityRegion(fftX, fftY, fftZ,
+                                solventGrid, (aradgrid + 2) * 2, bulknsym, minWork,
+                                threadCount, crystal, atoms, coordinates, 4.0, parallelTeam);
                 if (solventmodel == SolventModel.GAUSSIAN) {
                     spatialDensityRegion.setInitValue(0.0);
                 } else {
@@ -577,15 +582,15 @@ public class CrystalReciprocalSpace {
                 atomicDensityLoops = null;
                 solventDensityLoops = new SolventDensityLoop[threadCount];
                 for (int i = 0; i < threadCount; i++) {
-                    solventDensityLoops[i] =
-                            new SolventDensityLoop(spatialDensityRegion);
+                    solventDensityLoops[i]
+                            = new SolventDensityLoop(spatialDensityRegion);
                 }
                 spatialDensityRegion.setDensityLoop(solventDensityLoops);
 
                 bulkSolventDensityLoops = new SolventDensityLoop[threadCount];
                 for (int i = 0; i < threadCount; i++) {
-                    bulkSolventDensityLoops[i] =
-                            new SolventDensityLoop(bulkSpatialDensityRegion);
+                    bulkSolventDensityLoops[i]
+                            = new SolventDensityLoop(bulkSpatialDensityRegion);
                 }
                 bulkSpatialDensityRegion.setDensityLoop(bulkSolventDensityLoops);
 
@@ -617,8 +622,8 @@ public class CrystalReciprocalSpace {
             solventDensityLoops = null;
             bulkSolventDensityLoops = null;
             for (int i = 0; i < threadCount; i++) {
-                atomicDensityLoops[i] =
-                        new AtomicDensityLoop(spatialDensityRegion);
+                atomicDensityLoops[i]
+                        = new AtomicDensityLoop(spatialDensityRegion);
             }
             spatialDensityRegion.setDensityLoop(atomicDensityLoops);
 
@@ -917,7 +922,6 @@ public class CrystalReciprocalSpace {
          CCP4MapWriter mapout = new CCP4MapWriter(fftX, fftY, fftZ, crystal, "/tmp/foo.map");
          mapout.write(densityGrid);
          */
-
         startTime = System.nanoTime();
         long permanentDensityTime = 0;
         try {
@@ -991,7 +995,6 @@ public class CrystalReciprocalSpace {
 
         // CCP4MapWriter mapout = new CCP4MapWriter(fftX, fftY, fftZ, crystal, "/tmp/foo.map");
         // mapout.write(densityGrid);
-
         long startTime = System.nanoTime();
         complexFFT3D.fft(densityGrid);
         long fftTime = System.nanoTime() - startTime;
@@ -1171,7 +1174,6 @@ public class CrystalReciprocalSpace {
 
         // CCP4MapWriter mapout = new CCP4MapWriter(fftX, fftY, fftZ, crystal, "/tmp/foo.map");
         // mapout.write(densityGrid);
-
         startTime = System.nanoTime();
         complexFFT3D.fft(densityGrid);
         long fftTime = System.nanoTime() - startTime;
@@ -1257,7 +1259,6 @@ public class CrystalReciprocalSpace {
 
         // CCP4MapWriter mapout = new CCP4MapWriter(fftX, fftY, fftZ, crystal, "/tmp/foo.map");
         // mapout.write(solventGrid);
-
         sb.append(String.format(" Solvent grid density: %8.3f\n", permanentDensityTime * toSeconds));
         sb.append(String.format(" bulk solvent exponentiation: %8.3f\n", expTime * toSeconds));
         sb.append(String.format(" Solvent FFT: %8.3f\n", fftTime * toSeconds));
@@ -1285,6 +1286,9 @@ public class CrystalReciprocalSpace {
 
         @Override
         public void gridDensity(int iSymm, int n) {
+            if (!atoms[n].isActive()) {
+                return;
+            }
             final double lambdai = atoms[n].applyLambda() ? lambda : 1.0;
             xyz[0] = coordinates[iSymm][0][n];
             xyz[1] = coordinates[iSymm][1][n];
@@ -1342,6 +1346,9 @@ public class CrystalReciprocalSpace {
 
         @Override
         public void gridDensity(int iSymm, int n) {
+            if (!atoms[n].isActive()) {
+                return;
+            }
             final double lambdai = atoms[n].applyLambda() ? lambda : 1.0;
             xyz[0] = coordinates[iSymm][0][n];
             xyz[1] = coordinates[iSymm][1][n];
@@ -1442,6 +1449,9 @@ public class CrystalReciprocalSpace {
             @Override
             public void run(final int lb, final int ub) {
                 for (int n = lb; n <= ub; n++) {
+                    if (!atoms[n].isActive()) {
+                        continue;
+                    }
                     if (lambdaTerm) {
                         if (!atoms[n].applyLambda()) {
                             continue;
@@ -1530,6 +1540,9 @@ public class CrystalReciprocalSpace {
             @Override
             public void run(final int lb, final int ub) {
                 for (int n = lb; n <= ub; n++) {
+                    if (!atoms[n].isActive()) {
+                        continue;
+                    }
                     if (lambdaTerm) {
                         if (!atoms[n].applyLambda()) {
                             continue;
@@ -1597,7 +1610,8 @@ public class CrystalReciprocalSpace {
     }
 
     /**
-     * <p>getXDim</p>
+     * <p>
+     * getXDim</p>
      *
      * @return a double.
      */
@@ -1606,7 +1620,8 @@ public class CrystalReciprocalSpace {
     }
 
     /**
-     * <p>getYDim</p>
+     * <p>
+     * getYDim</p>
      *
      * @return a double.
      */
@@ -1615,7 +1630,8 @@ public class CrystalReciprocalSpace {
     }
 
     /**
-     * <p>getZDim</p>
+     * <p>
+     * getZDim</p>
      *
      * @return a double.
      */
@@ -1624,7 +1640,8 @@ public class CrystalReciprocalSpace {
     }
 
     /**
-     * <p>densityNorm</p>
+     * <p>
+     * densityNorm</p>
      *
      * @param data an array of double.
      * @param meansd an array of double.

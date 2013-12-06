@@ -392,11 +392,12 @@ public class Main extends JFrame {
              * See if the commandLineFile is an embedded script.
              */
             String name = commandLineFile.getName();
-            name = name.replace('.', File.separatorChar);
+            name = name.replace('.', '/');
+            String pathName = "ffx/scripts/" + name;
             ClassLoader loader = getClass().getClassLoader();
-            URL embeddedScript = loader.getResource("ffx/scripts/" + name + ".ffx");
+            URL embeddedScript = loader.getResource(pathName + ".ffx");
             if (embeddedScript == null) {
-                embeddedScript = loader.getResource("ffx/scripts/" + name + ".groovy");
+                embeddedScript = loader.getResource(pathName + ".groovy");
             }
             if (embeddedScript != null) {
                 try {

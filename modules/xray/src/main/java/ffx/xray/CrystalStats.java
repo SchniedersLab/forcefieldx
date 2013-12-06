@@ -214,7 +214,7 @@ public class CrystalStats {
         double sumfoall = 0.0;
         for (HKL ih : reflectionlist.hkllist) {
             int i = ih.index();
-            int b = ih.bin();
+            //int b = ih.bin();
 
             // ignored cases
             if (Double.isNaN(fc[i][0])
@@ -253,7 +253,6 @@ public class CrystalStats {
         double sumfo = 0.0;
         for (HKL ih : reflectionlist.hkllist) {
             int i = ih.index();
-            int b = ih.bin();
 
             // ignored cases
             if (Double.isNaN(fc[i][0])
@@ -290,7 +289,6 @@ public class CrystalStats {
 
         for (HKL ih : reflectionlist.hkllist) {
             int i = ih.index();
-            int b = ih.bin();
 
             // ignored cases
             if (Double.isNaN(fc[i][0])
@@ -324,7 +322,6 @@ public class CrystalStats {
 
         for (HKL ih : reflectionlist.hkllist) {
             int i = ih.index();
-            int b = ih.bin();
 
             // ignored cases
             if (Double.isNaN(fc[i][0])
@@ -394,7 +391,7 @@ public class CrystalStats {
         StringBuilder sb = new StringBuilder("\n");
         sb.append(String.format(" Blow DPI for all / non-H atoms:        %7.4f / %7.4f\n", blowdpih, blowdpi));
         sb.append(String.format(" Cruickshank DPI for all / non-H atoms: %7.4f / %7.4f", cruickdpih, cruickdpi));
-        //sb.append(String.format(" Acta Cryst (1999) D55, 583-601 and Acta Cryst (2002) D58, 792-797\n\n"));
+
         if (print) {
             logger.info(sb.toString());
         }

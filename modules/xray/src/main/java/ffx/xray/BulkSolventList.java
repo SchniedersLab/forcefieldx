@@ -107,7 +107,7 @@ public class BulkSolventList extends ParallelRegion {
     /**
      * The number of cells in one plane (nDivisions^2).
      */
-    private int nAB;
+    private final int nAB;
     /**
      * The number of cells (nDivisions^3).
      */
@@ -177,7 +177,7 @@ public class BulkSolventList extends ParallelRegion {
     private final SelectionListLoop selectionListLoop[];
     private long time;
     private long cellTime, selectTime, totalTime;
-    private double toSeconds = 1.0e-9;
+    private final double toSeconds = 1.0e-9;
 
     /**
      * Constructor for the NeighborList class.
