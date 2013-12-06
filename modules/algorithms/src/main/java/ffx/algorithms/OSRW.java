@@ -59,6 +59,10 @@ public class OSRW implements Potential {
      */
     private final Potential potential;
     /**
+     * The AlgorithmListener is called each time a count is added.
+     */
+    private final AlgorithmListener algorithmListener;
+    /**
      * Number of variables.
      */
     private final int nVariables;
@@ -310,17 +314,21 @@ public class OSRW implements Potential {
      * @param printInterval
      * @param saveInterval
      * @param asynchronous
+     * @param algorithmListener
      */
     public OSRW(LambdaInterface lambdaInterface, Potential potential,
             File lambdaFile, File histogramFile, CompositeConfiguration properties,
             double temperature, double dt, double printInterval,
-            double saveInterval, boolean asynchronous) {
+            double saveInterval, boolean asynchronous,
+            AlgorithmListener algorithmListener) {
         this.lambdaInterface = lambdaInterface;
         this.potential = potential;
         this.lambdaFile = lambdaFile;
         this.histogramFile = histogramFile;
         this.temperature = temperature;
         this.asynchronous = asynchronous;
+        this.algorithmListener = algorithmListener;
+
         nVariables = potential.getNumberOfVariables();
 
         /**
@@ -586,6 +594,9 @@ public class OSRW implements Potential {
                 totalFreeEnergy = updateFLambda(printFLambda);
             }
             if (energyCount % saveFrequency == 0) {
+                if (algorithmListener != null) {
+                    algorithmListener.algorithmUpdate(lambdaOneAssembly);
+                }
                 /**
                  * Only the rank 0 process writes the histogram restart file.
                  */
