@@ -903,6 +903,11 @@ public class OSRW implements Potential {
         }
     }
 
+    /**
+     * Eq. 7 from the Xtal Thermodynamics paper.
+     * @param print
+     * @return
+     */
     private double updateFLambda(boolean print) {
         double freeEnergy = 0.0;
         totalCounts = 0;
@@ -1019,6 +1024,17 @@ public class OSRW implements Potential {
             }
         }
         return -biasEnergy;
+    }
+
+    public void evaluatePMF() {
+        StringBuffer sb = new StringBuffer();
+        for (int lambdaBin = 0; lambdaBin < lambdaBins; lambdaBin++) {
+            for (int fLambdaBin = 0; fLambdaBin < FLambdaBins; fLambdaBin++) {
+                sb.append(String.format(" %16.8f",evaluateKernel(lambdaBin, fLambdaBin)));
+            }
+            sb.append("\n");
+        }
+        logger.info(sb.toString());
     }
 
     private double evaluateKernel(int cLambda, int cF_Lambda) {
