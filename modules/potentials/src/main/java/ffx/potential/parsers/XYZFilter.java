@@ -592,20 +592,17 @@ public class XYZFilter extends SystemFilter {
             StringBuilder line;
             StringBuilder lines[] = new StringBuilder[numberOfAtoms];
             // XYZ File Atom Lines
-            ArrayList<Atom> atoms = activeMolecularAssembly.getAtomList();
-            Vector3d offset = activeMolecularAssembly.getOffset();
+            Atom atoms[] = activeMolecularAssembly.getAtomArray();
             double xyz[] = new double[3];
-            List<SymOp> symOps = crystal.spaceGroup.symOps;
-            int ii = 0;
-            for (SymOp symOp : symOps) {
-                int indexOffset = ii * atoms.size();
-                ii++;
+            for (int iSym = 0; iSym < nSymm; iSym++) {
+                SymOp symOp = crystal.spaceGroup.getSymOp(iSym);
+                int indexOffset = iSym * atoms.length;
                 for (Atom a : atoms) {
                     int index = a.getXYZIndex() + indexOffset;
                     String id = a.getAtomType().name;
-                    xyz[0] = a.getX() - offset.x;
-                    xyz[1] = a.getY() - offset.y;
-                    xyz[2] = a.getZ() - offset.z;
+                    xyz[0] = a.getX();
+                    xyz[1] = a.getY();
+                    xyz[2] = a.getZ();
                     crystal.applySymOp(xyz, xyz, symOp);
                     int type = a.getType();
                     line = new StringBuilder(format(
