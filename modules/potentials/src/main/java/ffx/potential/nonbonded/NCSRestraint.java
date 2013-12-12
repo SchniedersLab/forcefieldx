@@ -153,13 +153,13 @@ public class NCSRestraint implements LambdaInterface {
     public void setLambda(double lambda) {
         if (lambdaTerm) {
             this.lambda = lambda;
-            if (lambda < 0.5) {
-                double l = 2.0 * lambda;
+            if (lambda < lambdaWindow) {
+                double dldgl = 1.0 / lambdaWindow;
+                double l = dldgl * lambda;
                 double l2 = l * l;
                 double l3 = l2 * l;
                 double l4 = l2 * l2;
                 double l5 = l4 * l;
-                double dldgl = 2.0;
                 double c3 = 10.0;
                 double c4 = -15.0;
                 double c5 = 6.0;
@@ -183,7 +183,6 @@ public class NCSRestraint implements LambdaInterface {
             dLambdaPow = 0.0;
             d2LambdaPow = 0.0;
         }
-
     }
 
     @Override
