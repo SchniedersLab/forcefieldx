@@ -68,7 +68,7 @@ public class VanDerWaals implements MaskingInterface,
     /**
      * MolecularAssembly
      */
-    private MolecularAssembly molecularAssembly;
+    private final MolecularAssembly molecularAssembly;
     /**
      * Crystal parameters.
      */
@@ -771,6 +771,7 @@ public class VanDerWaals implements MaskingInterface,
 
     /**
      * {@inheritDoc}
+     * @param lambdaGradient
      */
     @Override
     public void getdEdXdL(double[] lambdaGradient) {

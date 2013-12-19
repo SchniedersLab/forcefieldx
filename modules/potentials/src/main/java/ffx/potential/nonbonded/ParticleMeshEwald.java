@@ -1072,6 +1072,8 @@ public class ParticleMeshEwald implements LambdaInterface {
             vaporCrystal = new Crystal(3 * vacuumOff, 3 * vacuumOff, 3 * vacuumOff, 90.0, 90.0, 90.0, "P1");
             vaporCrystal.setAperiodic(true);
             NeighborList vacuumNeighborList = new NeighborList(null, vaporCrystal, atoms, vacuumOff, 2.0, parallelTeam);
+            vacuumNeighborList.setIntermolecular(false, molecularAssembly);
+
             vaporLists = new int[1][nAtoms][];
             double coords[][] = new double[1][nAtoms * 3];
             for (int i = 0; i < nAtoms; i++) {
@@ -1079,6 +1081,7 @@ public class ParticleMeshEwald implements LambdaInterface {
                 coords[0][i * 3 + 1] = atoms[i].getY();
                 coords[0][i * 3 + 2] = atoms[i].getZ();
             }
+
             vacuumNeighborList.buildList(coords, vaporLists, isSoft, true, true);
             vaporPermanentSchedule = vacuumNeighborList.getPairwiseSchedule();
             vaporEwaldSchedule = vaporPermanentSchedule;

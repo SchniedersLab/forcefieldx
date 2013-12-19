@@ -263,22 +263,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         Crystal unitCell = new Crystal(a, b, c, alpha, beta, gamma, spacegroup);
         unitCell.setAperiodic(aperiodic);
 
-        if (unitCell.spaceGroup.number == 1) {
-            ncsTerm = forceField.getBoolean(ForceFieldBoolean.NCSTERM, false);
-            ncsTermOrig = ncsTerm;
-            if (ncsTerm) {
-                String sg = forceField.getString(ForceFieldString.NCSGROUP, "P 1");
-                Crystal ncsCrystal = new Crystal(a, b, c, alpha, beta, gamma, sg);
-                ncsRestraint = new NCSRestraint(molecularAssembly, ncsCrystal);
-            } else {
-                ncsRestraint = null;
-            }
-        } else {
-            ncsTerm = false;
-            ncsTermOrig = false;
-            ncsRestraint = null;
-        }
-
         /**
          * If necessary, create a ReplicatesCrystal.
          */
@@ -442,6 +426,22 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     vanderWaals.getNeighborList(), parallelTeam);
         } else {
             particleMeshEwald = null;
+        }
+
+        if (unitCell.spaceGroup.number == 1) {
+            ncsTerm = forceField.getBoolean(ForceFieldBoolean.NCSTERM, false);
+            ncsTermOrig = ncsTerm;
+            if (ncsTerm) {
+                String sg = forceField.getString(ForceFieldString.NCSGROUP, "P 1");
+                Crystal ncsCrystal = new Crystal(a, b, c, alpha, beta, gamma, sg);
+                ncsRestraint = new NCSRestraint(molecularAssembly, ncsCrystal);
+            } else {
+                ncsRestraint = null;
+            }
+        } else {
+            ncsTerm = false;
+            ncsTermOrig = false;
+            ncsRestraint = null;
         }
 
         molecularAssembly.setPotential(this);

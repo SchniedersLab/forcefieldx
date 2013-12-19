@@ -39,6 +39,7 @@ import edu.rit.util.Range;
 
 import ffx.crystal.Crystal;
 import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.MolecularAssembly;
 
 /**
  * The NeighborList class builds Verlet lists in parallel via a spatial
@@ -111,19 +112,19 @@ public class NeighborList extends ParallelRegion {
     /**
      * Number of interactions per atom.
      */
-    private int listCount[];
+    private final int listCount[];
     /**
      * Total number of interactions.
      */
-    private SharedInteger sharedCount;
+    private final SharedInteger sharedCount;
     /**
      * Optimal pairwise ranges.
      */
-    private Range ranges[];
+    private final Range ranges[];
     /**
      * Pairwise ranges for load balancing.
      */
-    private PairwiseSchedule pairwiseSchedule;
+    private final PairwiseSchedule pairwiseSchedule;
     /**
      * Number of interactions between atoms in the asymmetric unit.
      */
@@ -238,7 +239,7 @@ public class NeighborList extends ParallelRegion {
     /**
      * List of atoms.
      */
-    private Atom atoms[];
+    private final Atom atoms[];
     /**
      * *************************************************************************
      * Parallel variables.
@@ -258,7 +259,15 @@ public class NeighborList extends ParallelRegion {
     private final NeighborListLoop verletListLoop[];
     private long time;
     private long cellTime, verletTime;
-    private int len = 1000;
+    private final int len = 1000;
+    /**
+     * Include intermolecular interactions.
+     */
+    private boolean intermolecular = true;
+    /**
+     * Molecule number for each atom.
+     */
+    private int molecules[] = null;
 
     /**
      * Constructor for the NeighborList class.
@@ -316,7 +325,13 @@ public class NeighborList extends ParallelRegion {
         sharedCount = new SharedInteger();
         ranges = new Range[threadCount];
         pairwiseSchedule = new PairwiseSchedule(threadCount, nAtoms, ranges);
+    }
 
+    public void setIntermolecular(boolean intermolecular, MolecularAssembly molecularAssembly) {
+        this.intermolecular = intermolecular;
+        if (molecularAssembly != null) {
+            this.molecules = molecularAssembly.getMoleculeNumbers();
+        }
     }
 
     private void initNeighborList(boolean print) {
@@ -895,6 +910,9 @@ public class NeighborList extends ParallelRegion {
             for (int j = start; j < pairStop; j++) {
                 final int aj = pairCellAtoms[j];
                 if (use != null && !use[aj]) {
+                    continue;
+                }
+                if (!intermolecular && (molecules[atomIndex] == molecules[aj])) {
                     continue;
                 }
                 if (mask[aj] > 0 && (iSymm == 0 || aj >= atomIndex)) {

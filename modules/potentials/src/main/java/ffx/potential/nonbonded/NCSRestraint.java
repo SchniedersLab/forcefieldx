@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.logging.Logger;
 
 import static java.lang.Math.pow;
+
 import ffx.crystal.Crystal;
 import ffx.crystal.SpaceGroup;
 import ffx.crystal.SymOp;
@@ -44,7 +45,7 @@ public class NCSRestraint implements LambdaInterface {
     private double d2LambdaPow = lambdaExp * (lambdaExp - 1.0) * pow(lambda, lambdaExp - 2.0);
     private double dEdL = 0.0;
     private double d2EdL2 = 0.0;
-    private double lambdaWindow = 0.5;
+    private final double lambdaWindow = 0.5;
     private final double lambdaGradient[];
     private boolean lambdaTerm = false;
 
@@ -70,6 +71,8 @@ public class NCSRestraint implements LambdaInterface {
         } else {
             lambdaGradient = null;
         }
+
+        logger.info(String.format("\n NCS Restraint%s", crystal.toString()));
 
     }
 
