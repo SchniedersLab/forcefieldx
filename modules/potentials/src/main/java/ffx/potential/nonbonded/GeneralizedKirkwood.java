@@ -4090,7 +4090,17 @@ public class GeneralizedKirkwood implements LambdaInterface {
         private final CavitationLoop cavitationLoop[];
         private final SharedDouble sharedCavitation;
         private boolean gradient = false;
-        private final int maxarc = 1000;
+        private final int maxarc = 100;
+        
+        private double xc1[][];
+        private double yc1[][];
+        private double zc1[][];
+        private double dsq1[][];
+        private double bsq1[][];
+        private double b1[][];
+        private IndexedDouble gr[][];
+        private int intag1[][];
+        private int count[];
 
         public CavitationRegion(int nt) {
             cavitationLoop = new CavitationLoop[nt];
@@ -4098,6 +4108,15 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 cavitationLoop[i] = new CavitationLoop();
             }
             sharedCavitation = new SharedDouble();
+            xc1 = new double[nAtoms][maxarc];
+            yc1 = new double[nAtoms][maxarc];
+            zc1 = new double[nAtoms][maxarc];
+            dsq1 = new double[nAtoms][maxarc];
+            bsq1 = new double[nAtoms][maxarc];
+            b1 = new double[nAtoms][maxarc];
+            gr = new IndexedDouble[nAtoms][maxarc];
+            intag1 = new int[nAtoms][maxarc];
+            
         }
 
         public double getEnergy() {
@@ -4122,6 +4141,31 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 logger.log(Level.SEVERE, message, e);
             }
         }
+         private class IndexedDouble implements Comparable {
+
+                public double value;
+                public int key;
+
+                public IndexedDouble(double value, int key) {
+                    this.value = value;
+                    this.key = key;
+                }
+
+                @Override
+                public int compareTo(Object o) {
+                    if (!(o instanceof IndexedDouble)) {
+                        return 0;
+                    }
+                    IndexedDouble d = (IndexedDouble) o;
+                    if (value < d.value) {
+                        return -1;
+                    } else if (value == d.value) {
+                        return 0;
+                    } else {
+                        return 1;
+                    }
+                }
+            }
 
         /**
          * Compute Cavitation energy for a range of atoms.
@@ -4374,7 +4418,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     /**
                      * Calculate overlap parameters between "i" and "ir" sphere.
                      */
-                    io = io + 1;
+                    io++;
                     int io1 = io - 1;
                     xc1[io1] = tx;
                     yc1[io1] = ty;
@@ -4759,7 +4803,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         }
 
                     }
-                    arclen = arclen + gr[k].value * arcsum;
+                    arclen += gr[k].value * arcsum;
                     if (!moved) {
                         int in = intag[k];
                         t1 = arcsum * rrsq * (bsqk - rrsq + r[in] * r[in])
@@ -4833,7 +4877,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 for (int ii = 1; ii <= jb; ii++) {
                     if (m == kent[ii]) {
                         if (ii == k) {
-                            ib = ib + 1;
+                            ib++;
                             if (j == jb) {
                                 area[ir] = ib * 2.0 * PI + exang + arclen;
                                 area[ir] = area[ir] % (4.0 * PI);
@@ -4848,31 +4892,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 return false;
             }
 
-            private class IndexedDouble implements Comparable {
-
-                public double value;
-                public int key;
-
-                public IndexedDouble(double value, int key) {
-                    this.value = value;
-                    this.key = key;
-                }
-
-                @Override
-                public int compareTo(Object o) {
-                    if (!(o instanceof IndexedDouble)) {
-                        return 0;
-                    }
-                    IndexedDouble d = (IndexedDouble) o;
-                    if (value < d.value) {
-                        return -1;
-                    } else if (value == d.value) {
-                        return 0;
-                    } else {
-                        return 1;
-                    }
-                }
-            }
         }
     }
 
