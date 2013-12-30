@@ -45,6 +45,7 @@ import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
 import edu.rit.pj.reduction.DoubleOp;
+import edu.rit.pj.reduction.SharedBooleanArray;
 import edu.rit.pj.reduction.SharedDouble;
 import edu.rit.pj.reduction.SharedDoubleArray;
 import edu.rit.pj.reduction.SharedInteger;
@@ -223,8 +224,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
         cut2 = cutoff * cutoff;
         lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
         /**
-         * If polarization lambda exponent is set to 0.0, then we're running Dual-Topology and the GK
-         * energy will be scaled with the overall system lambda value.
+         * If polarization lambda exponent is set to 0.0, then we're running
+         * Dual-Topology and the GK energy will be scaled with the overall
+         * system lambda value.
          */
         double polLambdaExp = forceField.getDouble(ForceField.ForceFieldDouble.POLARIZATION_LAMBDA_EXPONENT, 1.0);
         if (polLambdaExp == 0.0) {
@@ -394,10 +396,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
     public double solvationEnergy(boolean gradient, boolean print) {
 
         /*
-        for (int j = 0; j < nAtoms; j++) {
-            use[j] = atoms[j].isActive();
-        } */
-
+         for (int j = 0; j < nAtoms; j++) {
+         use[j] = atoms[j].isActive();
+         } */
         /**
          * Initialize the gradient accumulation arrays.
          */
@@ -421,7 +422,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 parallelTeam.execute(hydrophobicPMFRegion);
             } else {
                 dispersionRegion.setGradient(gradient);
-                cavitationRegion.setGradient(gradient);
                 parallelTeam.execute(dispersionRegion);
                 parallelTeam.execute(cavitationRegion);
                 //parallelTeam.execute(volumeRegion);
@@ -480,6 +480,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
     /**
      * Updates the value of lambda.
+     *
      * @param lambda
      */
     @Override
@@ -513,6 +514,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
     /**
      * The 2nd derivative is 0.0. (U=Lambda*Egk, dU/dL=Egk, d2U/dL2=0.0)
+     *
      * @return 0.0
      */
     @Override
@@ -522,6 +524,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
     /**
      * These contributions are already aggregated into the arrays used by PME.
+     *
      * @param gradient
      */
     @Override
@@ -4087,25 +4090,36 @@ public class GeneralizedKirkwood implements LambdaInterface {
      */
     private class CavitationRegion extends ParallelRegion {
 
+        private final AtomOverlapLoop atomOverlapLoop[];
         private final CavitationLoop cavitationLoop[];
+        private final InitLoop initLoop[];
         private final SharedDouble sharedCavitation;
-        private boolean gradient = false;
-        private final int maxarc = 100;
-        
-        private double xc1[][];
-        private double yc1[][];
-        private double zc1[][];
-        private double dsq1[][];
-        private double bsq1[][];
-        private double b1[][];
-        private IndexedDouble gr[][];
-        private int intag1[][];
-        private int count[];
+        private final int maxarc = 150;
+        private final static double delta = 1.0e-8;
+        private final static double delta2 = delta * delta;
+
+        private final double xc1[][];
+        private final double yc1[][];
+        private final double zc1[][];
+        private final double dsq1[][];
+        private final double bsq1[][];
+        private final double b1[][];
+        private final IndexedDouble gr[][];
+        private final int intag1[][];
+        private final Integer count[];
+        private final boolean buried[];
+        private final SharedBooleanArray skip;
+        private final double area[];
+        private final double r[];
 
         public CavitationRegion(int nt) {
+            atomOverlapLoop = new AtomOverlapLoop[nt];
             cavitationLoop = new CavitationLoop[nt];
+            initLoop = new InitLoop[nt];
             for (int i = 0; i < nt; i++) {
+                atomOverlapLoop[i] = new AtomOverlapLoop();
                 cavitationLoop[i] = new CavitationLoop();
+                initLoop[i] = new InitLoop();
             }
             sharedCavitation = new SharedDouble();
             xc1 = new double[nAtoms][maxarc];
@@ -4116,56 +4130,198 @@ public class GeneralizedKirkwood implements LambdaInterface {
             b1 = new double[nAtoms][maxarc];
             gr = new IndexedDouble[nAtoms][maxarc];
             intag1 = new int[nAtoms][maxarc];
-            
+            count = new Integer[nAtoms];
+            buried = new boolean[nAtoms];
+            skip = new SharedBooleanArray(nAtoms);
+            area = new double[nAtoms];
+            r = new double[nAtoms];
+
+            /**
+             * Set the sphere radii.
+             */
+            for (int i = 0; i < nAtoms; i++) {
+                r[i] = rDisp[i];
+                if (r[i] != 0.0) {
+                    r[i] = r[i] + probe;
+                }
+            }
         }
 
         public double getEnergy() {
             return sharedCavitation.get();
         }
 
-        public void setGradient(boolean gradient) {
-            this.gradient = gradient;
-        }
-
         @Override
         public void start() {
             sharedCavitation.set(0.0);
+            for (int i = 0; i < nAtoms; i++) {
+                skip.set(i, true);
+            }
         }
 
         @Override
         public void run() {
             try {
+                execute(0, nAtoms - 1, initLoop[getThreadIndex()]);
+                execute(0, nAtoms - 1, atomOverlapLoop[getThreadIndex()]);
                 execute(0, nAtoms - 1, cavitationLoop[getThreadIndex()]);
             } catch (Exception e) {
                 String message = "Fatal exception computing Cavitation energy in thread " + getThreadIndex() + "\n";
                 logger.log(Level.SEVERE, message, e);
             }
         }
-         private class IndexedDouble implements Comparable {
 
-                public double value;
-                public int key;
+        private class IndexedDouble implements Comparable {
 
-                public IndexedDouble(double value, int key) {
-                    this.value = value;
-                    this.key = key;
+            public double value;
+            public int key;
+
+            public IndexedDouble(double value, int key) {
+                this.value = value;
+                this.key = key;
+            }
+
+            @Override
+            public int compareTo(Object o) {
+                if (!(o instanceof IndexedDouble)) {
+                    return 0;
                 }
+                IndexedDouble d = (IndexedDouble) o;
+                if (value < d.value) {
+                    return -1;
+                } else if (value == d.value) {
+                    return 0;
+                } else {
+                    return 1;
+                }
+            }
+        }
 
-                @Override
-                public int compareTo(Object o) {
-                    if (!(o instanceof IndexedDouble)) {
-                        return 0;
-                    }
-                    IndexedDouble d = (IndexedDouble) o;
-                    if (value < d.value) {
-                        return -1;
-                    } else if (value == d.value) {
-                        return 0;
-                    } else {
-                        return 1;
+        /**
+         * Initialize arrays for Cavitation calculation.
+         */
+        private class InitLoop extends IntegerForLoop {
+
+            @Override
+            public void run(int lb, int ub) throws Exception {
+                for (int i = lb; i <= ub; i++) {
+                    buried[i] = false;
+                    area[i] = 0.0;
+                    count[i] = 0;
+                    if (use[i]) {
+                        //skip.set(i, false);
+                        double xr = x[i];
+                        double yr = y[i];
+                        double zr = z[i];
+                        double rri = r[i];
+                        final int list[] = neighborLists[0][i];
+                        int npair = list.length;
+                        for (int l = 0; l < npair; l++) {
+                            int k = list[l];
+                            double rrik = rri + r[k];
+                            double dx = x[k] - xr;
+                            double dy = y[k] - yr;
+                            double dz = z[k] - zr;
+                            double ccsq = dx * dx + dy * dy + dz * dz;
+                            if (ccsq <= rrik * rrik) {
+                                skip.set(k, false);
+                                skip.set(i, false);
+                            }
+                        }
                     }
                 }
             }
+        }
+
+        /**
+         * Compute Cavitation energy for a range of atoms.
+         *
+         * @since 1.0
+         */
+        private class AtomOverlapLoop extends IntegerForLoop {
+
+            @Override
+            public void run(int lb, int ub) {
+                /**
+                 * Find overlaps with the current sphere.
+                 */
+                for (int i = lb; i <= ub; i++) {
+                    if (skip.get(i)) {
+                        continue;
+                    }
+                    int list[] = neighborLists[0][i];
+                    int npair = list.length;
+                    for (int l = 0; l < npair; l++) {
+                        int k = list[l];
+                        if (k == i || !use[k]) {
+                            continue;
+                        }
+                        pair(i, k);
+                        pair(k, i);
+                    }
+                }
+            }
+
+            private void pair(int i, int k) {
+                double xi = x[i];
+                double yi = y[i];
+                double zi = z[i];
+                double rri = r[i];
+                double rri2 = 2.0 * rri;
+                double rplus = rri + r[k];
+                double dx = x[k] - xi;
+                double dy = y[k] - yi;
+                double dz = z[k] - zi;
+                if (abs(dx) >= rplus || abs(dy) >= rplus || abs(dz) >= rplus) {
+                    return;
+                }
+                /**
+                 * Check for overlap of spheres by testing center to center
+                 * distance against sum and difference of radii.
+                 */
+                double xysq = dx * dx + dy * dy;
+                if (xysq < delta2) {
+                    dx = delta;
+                    dy = 0.0;
+                    xysq = delta2;
+                }
+                double r2 = xysq + dz * dz;
+                double dr = sqrt(r2);
+                if (rplus - dr <= delta) {
+                    return;
+                }
+                double rminus = rri - r[k];
+                /**
+                 * Calculate overlap parameters between "i" and "ir" sphere.
+                 */
+                synchronized (count[i]) {
+                    /**
+                     * Check for a completely buried "ir" sphere.
+                     */
+                    if (dr - abs(rminus) <= delta) {
+                        if (rminus <= 0.0) {
+                            // SA for this atom is zero.
+                            buried[i] = true;
+                            return;
+                        }
+                        return;
+                    }
+                    int n = count[i];
+                    xc1[i][n] = dx;
+                    yc1[i][n] = dy;
+                    zc1[i][n] = dz;
+                    dsq1[i][n] = xysq;
+                    bsq1[i][n] = r2;
+                    b1[i][n] = dr;
+                    gr[i][n] = new IndexedDouble((r2 + rplus * rminus) / (rri2 * b1[i][n]), n);
+                    intag1[i][n] = k;
+                    count[i]++;
+                    if (count[i] >= maxarc) {
+                        logger.severe(String.format(" Increase the value of MAXARC to (%d).", count[i]));
+                    }
+                }
+            }
+        }
 
         /**
          * Compute Cavitation energy for a range of atoms.
@@ -4175,20 +4331,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
         private class CavitationLoop extends IntegerForLoop {
 
             private double thec = 0;
-            private IndexedDouble gr[];
             private IndexedDouble arci[];
-            private final double area[];
             private final double dArea[][];
             private final double ldArea[][];
-            private final double r[];
-            private final boolean skip[];
             private boolean omit[];
-            private double xc1[];
-            private double yc1[];
-            private double zc1[];
-            private double dsq1[];
-            private double bsq1[];
-            private double b1[];
             private double xc[];
             private double yc[];
             private double zc[];
@@ -4209,7 +4355,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
             private int kent[];
             private int kout[];
             private int intag[];
-            private int intag1[];
             private int lt[];
             private int i;
             private int j;
@@ -4222,44 +4367,30 @@ public class GeneralizedKirkwood implements LambdaInterface {
             private final static double pix4 = 4.0 * PI;
             private final static double pid2 = PI / 2.0;
             private final static double eps = 1.0e-8;
-            private final static double delta = 1.0e-8;
-            private final static double delta2 = delta * delta;
-            private final static double rmove = 1.0e-8;
             private final static double surfaceTension = 0.08;
             // Extra padding to avert cache interference.
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
             private long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
             public CavitationLoop() {
-                area = new double[nAtoms];
-                r = new double[nAtoms];
-                skip = new boolean[nAtoms];
                 dArea = new double[3][];
                 ldArea = new double[3][];
                 allocateMemory(maxarc);
             }
 
             private void allocateMemory(int maxarc) {
-                gr = new IndexedDouble[maxarc];
                 arci = new IndexedDouble[maxarc];
                 arcf = new double[maxarc];
                 risq = new double[maxarc];
                 ri = new double[maxarc];
-                dsq1 = new double[maxarc];
-                bsq1 = new double[maxarc];
                 dsq = new double[maxarc];
                 bsq = new double[maxarc];
                 intag = new int[maxarc];
-                intag1 = new int[maxarc];
                 lt = new int[maxarc];
                 kent = new int[maxarc];
                 kout = new int[maxarc];
                 ider = new double[maxarc];
                 sign_yder = new double[maxarc];
-                xc1 = new double[maxarc];
-                yc1 = new double[maxarc];
-                zc1 = new double[maxarc];
-                b1 = new double[maxarc];
                 xc = new double[maxarc];
                 yc = new double[maxarc];
                 zc = new double[maxarc];
@@ -4285,43 +4416,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     ldArea[2] = lambdaGrad[threadID][2];
                 }
                 ecav = 0;
-                // Initialize the area.
-                Arrays.fill(area, 0.0);
                 Arrays.fill(ider, 0);
                 Arrays.fill(sign_yder, 0);
-                Arrays.fill(skip, true);
-                /**
-                 * Set the sphere radii.
-                 */
-                for (int i = 0; i < nAtoms; i++) {
-                    r[i] = rDisp[i];
-                    if (r[i] != 0.0) {
-                        r[i] = r[i] + probe;
-                    }
-                }
-                /**
-                 * Set the "skip" array to exclude all inactive atoms that do
-                 * not overlap any of the current active atoms.
-                 */
-                for (int i = 0; i < nAtoms; i++) {
-                    if (use[i]) {
-                        double xr = x[i];
-                        double yr = y[i];
-                        double zr = z[i];
-                        double rr = r[i];
-                        for (int k = 0; k < nAtoms; k++) {
-                            double rrk = rr + r[k];
-                            double rplus = rrk * rrk;
-                            double dx = x[k] - xr;
-                            double dy = y[k] - yr;
-                            double dz = z[k] - zr;
-                            double ccsq = dx * dx + dy * dy + dz * dz;
-                            if (ccsq <= rplus) {
-                                skip[k] = false;
-                            }
-                        }
-                    }
-                }
             }
 
             @Override
@@ -4335,126 +4431,64 @@ public class GeneralizedKirkwood implements LambdaInterface {
                  * Compute the area and derivatives of current "ir" sphere
                  */
                 for (int ir = lb; ir <= ub; ir++) {
-                    if (!use[ir] || skip[ir]) {
+                    if (skip.get(ir)) {
                         continue;
                     }
-                    double xr = x[ir];
-                    double yr = y[ir];
-                    double zr = z[ir];
-                    double rr = r[ir];
-                    double rrx2 = 2.0 * rr;
-                    double rrsq = rr * rr;
+                    double xi = x[ir];
+                    double yi = y[ir];
+                    double zi = z[ir];
+                    double rri = r[ir];
+                    double rri2 = 2.0 * rri;
+                    double rrisq = rri * rri;
                     double wght = surfaceTension;
                     boolean moved = false;
-                    surface(xr, yr, zr, rr, rrx2, rrsq, wght, moved, ir);
+                    surface(xi, yi, zi, rri, rri2, rrisq, wght, moved, ir);
                     if (area[ir] < 0.0) {
-                        xr = xr + rmove;
-                        yr = yr + rmove;
-                        zr = zr + rmove;
-                        moved = true;
-                        surface(xr, yr, zr, rr, rrx2, rrsq, wght, moved, ir);
-                        if (area[ir] < 0.0) {
-                            logger.warning(String.format(" Negative surface area set to 0 for atom %d.", ir));
-                            area[ir] = 0.0;
-                            continue;
-                        }
+                        logger.warning(String.format(" Negative surface area set to 0 for atom %d.", ir));
+                        area[ir] = 0.0;
+                        /**
+                         * xi = xi + rmove; yi = yi + rmove; zi = zi + rmove;
+                         * moved = true; surface(xi, yi, zi, rri, rri2, rrisq,
+                         * wght, moved, ir); if (area[ir] < 0.0) {
+                         * logger.warning(String.format(" Negative surface area
+                         * set to 0 for atom %d.", ir)); area[ir] = 0.0;
+                         * continue; }
+                         */
                     }
-                    area[ir] *= rrsq * wght;
+                    area[ir] *= rrisq * wght;
                     ecav += area[ir];
                 }
             }
 
-            public void surface(double xr, double yr, double zr, double rr, double rrx2,
-                    double rrsq, double wght, boolean moved, int ir) {
-                int io = 0;
-                int jb = 0;
+            public void surface(double xi, double yi, double zi, double rri, double rri2,
+                    double rrisq, double wght, boolean moved, int ir) {
+
                 ib = 0;
+                int jb = 0;
                 double arclen = 0.0;
                 double exang = 0.0;
 
-                /**
-                 * Test each sphere to see if it overlaps the "ir" sphere.
-                 *
-                 * TODO: Use the neighbor list & loop over symmetry mates!
-                 */
-                for (int i = 0; i < nAtoms; i++) {
-                    if (i == ir || !use[i]) {
-                        continue;
-                    }
-                    double rplus = rr + r[i];
-                    double tx = x[i] - xr;
-                    double ty = y[i] - yr;
-                    double tz = z[i] - zr;
-                    if (abs(tx) >= rplus || abs(ty) >= rplus || abs(tz) >= rplus) {
-                        continue;
-                    }
-                    /**
-                     * Check for overlap of spheres by testing center to center
-                     * distance against sum and difference of radii.
-                     */
-                    double xysq = tx * tx + ty * ty;
-                    if (xysq < delta2) {
-                        tx = delta;
-                        ty = 0.0;
-                        xysq = delta2;
-                    }
-                    double ccsq = xysq + tz * tz;
-                    double cc = sqrt(ccsq);
-                    if (rplus - cc <= delta) {
-                        continue;
-                    }
-                    double rminus = rr - r[i];
-                    /**
-                     * Check for a completely buried "ir" sphere.
-                     */
-                    if (cc - abs(rminus) <= delta) {
-                        if (rminus <= 0.0) {
-                            // SA for this atom is zero.
-                            area[ir] = 0.0;
-                            return;
-                        }
-                        continue;
-                    }
-                    /**
-                     * Calculate overlap parameters between "i" and "ir" sphere.
-                     */
-                    io++;
-                    int io1 = io - 1;
-                    xc1[io1] = tx;
-                    yc1[io1] = ty;
-                    zc1[io1] = tz;
-                    dsq1[io1] = xysq;
-                    bsq1[io1] = ccsq;
-                    b1[io1] = cc;
-                    gr[io1] = new IndexedDouble((ccsq + rplus * rminus) / (rrx2 * b1[io1]), io1);
-                    intag1[io1] = i;
-                    if (io > maxarc) {
-                        logger.severe(String.
-                                format(" Increase the value of MAXARC to (%d).", io));
-                    }
-                }
-
                 // Case where no other spheres overlap the current sphere.
-                if (io == 0) {
+                if (count[ir] == 0) {
                     area[ir] = pix4;
                     return;
                 }
                 // Case where only one sphere overlaps the current sphere.
-                if (io == 1) {
+                if (count[ir] == 1) {
                     int k = 0;
-                    double txk = xc1[0];
-                    double tyk = yc1[0];
-                    double tzk = zc1[0];
-                    double bsqk = bsq1[0];
-                    double bk = b1[0];
-                    intag[0] = intag1[0];
+                    double txk = xc1[ir][0];
+                    double tyk = yc1[ir][0];
+                    double tzk = zc1[ir][0];
+                    double bsqk = bsq1[ir][0];
+                    double bk = b1[ir][0];
+                    intag[0] = intag1[ir][0];
                     double arcsum = pix2;
                     ib = ib + 1;
-                    arclen += gr[k].value * arcsum;
+                    arclen += gr[ir][k].value * arcsum;
                     if (!moved) {
                         int in = intag[k];
-                        double t1 = arcsum * rrsq * (bsqk - rrsq + r[in] * r[in])
-                                / (rrx2 * bsqk * bk);
+                        double t1 = arcsum * rrisq * (bsqk - rrisq + r[in] * r[in])
+                                / (rri2 * bsqk * bk);
                         dArea[0][ir] -= lambda * txk * t1 * wght;
                         dArea[1][ir] -= lambda * tyk * t1 * wght;
                         dArea[2][ir] -= lambda * tzk * t1 * wght;
@@ -4479,32 +4513,32 @@ public class GeneralizedKirkwood implements LambdaInterface {
                  * current sphere; sort intersecting spheres by their degree of
                  * overlap with the current main sphere
                  */
-                Arrays.sort(gr, 0, io);
-                for (int i = 0; i < io; i++) {
-                    int k = gr[i].key;
-                    intag[i] = intag1[k];
-                    xc[i] = xc1[k];
-                    yc[i] = yc1[k];
-                    zc[i] = zc1[k];
-                    dsq[i] = dsq1[k];
-                    b[i] = b1[k];
-                    bsq[i] = bsq1[k];
-                    omit[i] = false;
+                Arrays.sort(gr[ir], 0, count[ir]);
+                for (int j = 0; j < count[ir]; j++) {
+                    int k = gr[ir][j].key;
+                    intag[j] = intag1[ir][k];
+                    xc[j] = xc1[ir][k];
+                    yc[j] = yc1[ir][k];
+                    zc[j] = zc1[ir][k];
+                    dsq[j] = dsq1[ir][k];
+                    b[j] = b1[ir][k];
+                    bsq[j] = bsq1[ir][k];
+                    omit[j] = false;
                 }
                 /**
                  * Radius of the each circle on the surface of the "ir" sphere.
                  */
-                for (int i = 0; i < io; i++) {
-                    double gi = gr[i].value * rr;
+                for (int i = 0; i < count[ir]; i++) {
+                    double gi = gr[ir][i].value * rri;
                     bg[i] = b[i] * gi;
-                    risq[i] = rrsq - gi * gi;
+                    risq[i] = rrisq - gi * gi;
                     ri[i] = sqrt(risq[i]);
-                    ther[i] = pid2 - asin(min(1.0, max(-1.0, gr[i].value)));
+                    ther[i] = pid2 - asin(min(1.0, max(-1.0, gr[ir][i].value)));
                 }
                 /**
                  * Find boundary of inaccessible area on "ir" sphere.
                  */
-                for (int k = 0; k < io - 1; k++) {
+                for (int k = 0; k < count[ir] - 1; k++) {
                     if (omit[k]) {
                         continue;
                     }
@@ -4513,7 +4547,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     double tzk = zc[k];
                     double bk = b[k];
                     double therk = ther[k];
-                    for (j = k + 1; j < io; j++) {
+                    for (j = k + 1; j < count[ir]; j++) {
                         if (omit[j]) {
                             continue;
                         }
@@ -4548,7 +4582,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 /**
                  * Find T value of circle intersections.
                  */
-                for (int k = 0; k < io; k++) {
+                for (int k = 0; k < count[ir]; k++) {
                     if (omit[k]) {
                         continue; // goto 110
                     }
@@ -4562,7 +4596,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     double dk = sqrt(dsq[k]);
                     double bsqk = bsq[k];
                     double bk = b[k];
-                    double gk = gr[k].value * rr;
+                    double gk = gr[ir][k].value * rri;
                     double risqk = risq[k];
                     double rik = ri[k];
                     double therk = ther[k];
@@ -4578,7 +4612,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     double azx = txk / bk;
                     double azy = tyk / bk;
                     double azz = tzk / bk;
-                    for (int l = 0; l < io; l++) {
+                    for (int l = 0; l < count[ir]; l++) {
                         if (omit[l]) {
                             continue;
                         }
@@ -4618,7 +4652,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             if (tyb + txr < 0.0) {
                                 tk2 = pix2 - tk2;
                             }
-                            thec = (rrsq * uzl - gk * bg[l])
+                            thec = (rrisq * uzl - gk * bg[l])
                                     / (rik * ri[l] * b[l]);
                             double the = 0.0;
                             if (abs(thec) < 1.0) {
@@ -4633,7 +4667,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                              * point; "ti" is exit point, "tf" is entry point.
                              */
                             cosine = min(1.0, max(-1.0, (uzl * gk - uxl * rik)
-                                    / (b[l] * rr)));
+                                    / (b[l] * rri)));
                             double ti, tf;
                             if ((acos(cosine) - ther[l]) * (tk2 - tk1) <= 0.0) {
                                 ti = tk2;
@@ -4674,11 +4708,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     if (narc <= 0) {
                         double arcsum = pix2;
                         ib += 1;
-                        arclen += gr[k].value * arcsum;
+                        arclen += gr[ir][k].value * arcsum;
                         if (!moved) {
                             int in = intag[k];
-                            t1 = arcsum * rrsq * (bsqk - rrsq + r[in] * r[in])
-                                    / (rrx2 * bsqk * bk);
+                            t1 = arcsum * rrisq * (bsqk - rrisq + r[in] * r[in])
+                                    / (rri2 * bsqk * bk);
                             dArea[0][ir] -= lambda * txk * t1 * wght;
                             dArea[1][ir] -= lambda * tyk * t1 * wght;
                             dArea[2][ir] -= lambda * tzk * t1 * wght;
@@ -4745,14 +4779,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     /**
                      * Calculate the surface area derivatives.
                      */
-                    for (int l = 0; l <= io; l++) {
+                    for (int l = 0; l <= count[ir]; l++) {
                         if (ider[l] == 0) {
                             continue;
                         }
-                        double rcn = ider[l] * rrsq;
+                        double rcn = ider[l] * rrisq;
                         ider[l] = 0;
                         double uzl = uz[l];
-                        double gl = gr[l].value * rr;
+                        double gl = gr[ir][l].value * rri;
                         double bgl = bg[l];
                         double bsql = bsq[l];
                         double risql = risq[l];
@@ -4762,26 +4796,26 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         double v = risqk * wxlsq - p * p;
                         v = max(eps, v);
                         v = sqrt(v);
-                        t1 = rr * (gk * (bgl - bsql) + uzl * (bgl - rrsq))
+                        t1 = rri * (gk * (bgl - bsql) + uzl * (bgl - rrisq))
                                 / (v * risql * bsql);
                         double deal = -wxl * t1;
-                        double decl = -uzl * t1 - rr / v;
+                        double decl = -uzl * t1 - rri / v;
                         double dtkal = (wxlsq - p) / (wxl * v);
                         double dtkcl = (uzl - gk) / v;
                         double s = gk * b[l] - gl * uzl;
                         t1 = 2.0 * gk - uzl;
-                        double t2 = rrsq - bgl;
+                        double t2 = rrisq - bgl;
                         double dtlal = -(risql * wxlsq * b[l] * t1 - s * (wxlsq * t2 + risql * bsql))
                                 / (risql * wxl * bsql * v);
                         double dtlcl = -(risql * b[l] * (uzl * t1 - bgl) - uzl * t2 * s)
                                 / (risql * bsql * v);
-                        double gaca = rcn * (deal - (gk * dtkal - gl * dtlal) / rr) / wxl;
-                        double gacb = (gk - uzl * gl / b[l]) * sign_yder[l] * rr / wxlsq;
+                        double gaca = rcn * (deal - (gk * dtkal - gl * dtlal) / rri) / wxl;
+                        double gacb = (gk - uzl * gl / b[l]) * sign_yder[l] * rri / wxlsq;
                         sign_yder[l] = 0;
                         if (!moved) {
                             double faca = ux[l] * gaca - uy[l] * gacb;
                             double facb = uy[l] * gaca + ux[l] * gacb;
-                            double facc = rcn * (decl - (gk * dtkcl - gl * dtlcl) / rr);
+                            double facc = rcn * (decl - (gk * dtkcl - gl * dtlcl) / rri);
                             double dax = axx * faca - ayx * facb + azx * facc;
                             double day = axy * faca + ayy * facb + azy * facc;
                             double daz = azz * facc - axz * faca;
@@ -4803,11 +4837,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         }
 
                     }
-                    arclen += gr[k].value * arcsum;
+                    arclen += gr[ir][k].value * arcsum;
                     if (!moved) {
                         int in = intag[k];
-                        t1 = arcsum * rrsq * (bsqk - rrsq + r[in] * r[in])
-                                / (rrx2 * bsqk * bk);
+                        t1 = arcsum * rrisq * (bsqk - rrisq + r[in] * r[in])
+                                / (rri2 * bsqk * bk);
                         dArea[0][ir] -= lambda * txk * t1 * wght;
                         dArea[1][ir] -= lambda * tyk * t1 * wght;
                         dArea[2][ir] -= lambda * tzk * t1 * wght;
@@ -4848,15 +4882,20 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     }
                 }
                 ib = ib + 1;
-                if (moved) {
-                    logger.warning(String.format(" Connectivity error at atom %d.", ir));
-                } else {
-                    moved = true;
-                    xr += rmove;
-                    yr += rmove;
-                    zr += rmove;
-                    surface(xr, yr, zr, rr, rrx2, rrsq, wght, moved, ir);
-                }
+                /*
+                 if (moved) {
+                 logger.warning(String.format(" Connectivity error at atom %d.", ir));
+                 } else {
+                 */
+                logger.warning(String.format(" Connectivity error at atom %d.", ir));
+                area[ir] = 0.0;
+                /*
+                 moved = true;
+                 xi += rmove;
+                 yi += rmove;
+                 zi += rmove;
+                 surface(xi, yi, zi, rri, rri2, rrisq, wght, moved, ir);
+                 } */
             }
 
             /**
@@ -4891,7 +4930,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 }
                 return false;
             }
-
         }
     }
 
